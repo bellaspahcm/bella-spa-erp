@@ -5,10 +5,12 @@ import { toast } from 'sonner';
 
 import { calculateBookingPaymentState } from '@/lib/business-rules/payment';
 import { getLocalDateString } from '@/lib/utils';
+import { recordInvoicePrintLog } from '@/modules/booking/actions/invoice-print-actions';
 import { createSessionLog, rescheduleSession, updateSessionLog } from '@/modules/booking/actions/session-actions';
 import { getBookingDetailsWithPayment, updateBooking } from '@/modules/booking/actions/lifecycle-actions';
 
 import type { BookingModalData } from '../components/BookingDayDetailModal';
+import type { BookingThermalInvoiceData } from '../components/BookingThermalInvoicePrint';
 
 type TenantBankInfo = {
   qr_bank_code?: string | null;
@@ -20,6 +22,7 @@ type TenantBankInfo = {
 type RevenuePayment = {
   status?: string | null;
   amount?: number | string | null;
+  revenue_type?: string | null;
 };
 
 type TimeRange = {
@@ -51,23 +54,29 @@ export function useBookingsPageActions({
     amount: number;
     tenantInfo: TenantBankInfo | null;
   } | null>(null);
+  const [printInvoiceData, setPrintInvoiceData] = useState<BookingThermalInvoiceData | null>(null);
+
+  const buildPaymentSnapshot = async (bookingId: string) => {
+    const result = await getBookingDetailsWithPayment(bookingId);
+    if (result.error || !result.data) {
+      throw new Error(result.error || 'Không có dữ liệu');
+    }
+
+    const booking = result.data;
+    const paymentState = calculateBookingPaymentState({
+      fullPrice: booking.full_price,
+      discountPercent: booking.discount_percent,
+      depositAmount: booking.deposit_amount,
+      bookingStatus: booking.status,
+      revenues: booking.revenue as RevenuePayment[] | null,
+    });
+
+    return { booking, paymentState };
+  };
 
   const handleOpenQrModal = async (bookingId: string) => {
     try {
-      const result = await getBookingDetailsWithPayment(bookingId);
-      if (result.error || !result.data) {
-        toast.error('Không thể lấy thông tin thanh toán: ' + (result.error || 'Không có dữ liệu'));
-        return;
-      }
-
-      const booking = result.data;
-      const paymentState = calculateBookingPaymentState({
-        fullPrice: booking.full_price,
-        discountPercent: booking.discount_percent,
-        depositAmount: booking.deposit_amount,
-        bookingStatus: booking.status,
-        revenues: booking.revenue as RevenuePayment[] | null,
-      });
+      const { booking, paymentState } = await buildPaymentSnapshot(bookingId);
       const debt = paymentState.remainingDebt;
 
       if (debt <= 0) {
@@ -84,6 +93,66 @@ export function useBookingsPageActions({
     } catch (err) {
       console.error('Error opening QR Modal:', err);
       toast.error('Có lỗi xảy ra khi tải dữ liệu thanh toán');
+    }
+  };
+
+  const handlePrintThermalInvoice = async () => {
+    if (!modalData) return;
+
+    try {
+      const { booking, paymentState } = await buildPaymentSnapshot(modalData.bookingId);
+      const tenantInfo = booking.tenants || null;
+      const bankCode = tenantInfo?.qr_bank_code || '';
+      const accountNumber = tenantInfo?.qr_account_number || '';
+      const accountName = tenantInfo?.qr_account_name || '';
+      const bookingNumber = booking.booking_number || modalData.contractId || modalData.bookingId.slice(0, 8);
+      const transferMemo = `BELLA ${bookingNumber}`.replace(/\s+/g, ' ').trim();
+      const qrUrl = bankCode && accountNumber && paymentState.remainingDebt > 0
+        ? `https://img.vietqr.io/image/${bankCode}-${accountNumber}-compact.png?amount=${paymentState.remainingDebt}&addInfo=${encodeURIComponent(transferMemo)}&accountName=${encodeURIComponent(accountName)}`
+        : null;
+      const originalAmount = Number(booking.full_price || 0);
+      const discountAmount = Math.max(0, originalAmount - paymentState.priceAfterDiscount);
+      const invoiceNumber = `INV-${bookingNumber}`;
+
+      const logResult = await recordInvoicePrintLog({
+        bookingId: modalData.bookingId,
+        sessionLogId: modalData.id,
+        invoiceNumber,
+        amountDue: paymentState.remainingDebt,
+        transferMemo,
+      });
+
+      if (!logResult.success) {
+        toast.error('Không thể ghi lịch sử in hóa đơn: ' + (logResult.error || 'Lỗi không xác định'));
+        return;
+      }
+
+      setPrintInvoiceData({
+        invoiceNumber,
+        printedAt: new Intl.DateTimeFormat('vi-VN', {
+          dateStyle: 'short',
+          timeStyle: 'medium',
+        }).format(new Date()),
+        brandName: tenantInfo?.name || 'Bella Spa',
+        customerName: modalData.customer || 'Khách hàng',
+        bookingNumber,
+        packageName: modalData.package || booking.package_name || 'Gói dịch vụ',
+        ktvName: modalData.ktv || null,
+        sessionLabel: modalData.sessionNumber ? `Buổi ${modalData.sessionNumber}` : modalData.sessionCount || null,
+        originalAmount,
+        discountAmount,
+        paidAmount: paymentState.totalPaid,
+        amountDue: paymentState.remainingDebt,
+        paymentMethod: paymentState.remainingDebt > 0 ? 'VietQR' : 'Khác',
+        qrUrl,
+        transferMemo,
+        isReprint: (logResult.data?.print_count || 1) > 1,
+      });
+
+      toast.success('Đã chuẩn bị hóa đơn K80. Hộp thoại in sẽ mở ngay.');
+    } catch (err) {
+      console.error('Error preparing thermal invoice:', err);
+      toast.error('Không thể chuẩn bị hóa đơn in.');
     }
   };
 
@@ -183,7 +252,10 @@ export function useBookingsPageActions({
     showQrModal,
     setShowQrModal,
     qrModalData,
+    printInvoiceData,
+    setPrintInvoiceData,
     handleOpenQrModal,
+    handlePrintThermalInvoice,
     handleUpdatePlan,
     handleCreateScheduleSubmit,
   };

@@ -15,6 +15,7 @@ import { BookingsSpecialtyFilter, type KtvSpecialty } from './components/Booking
 import { BookingsTimelineDateRibbon } from './components/BookingsTimelineDateRibbon';
 import { BookingsMonthCalendar } from './components/BookingsMonthCalendar';
 import { BookingDayDetailModal, type BookingModalData } from './components/BookingDayDetailModal';
+import { BookingThermalInvoicePrint } from './components/BookingThermalInvoicePrint';
 import { BookingCreateScheduleModal } from './components/BookingCreateScheduleModal';
 import { BookingsTimelineGrid } from './components/BookingsTimelineGrid';
 import { BookingsDayTimelineList } from './components/BookingsDayTimelineList';
@@ -58,7 +59,10 @@ function BookingsContent() {
     showQrModal,
     setShowQrModal,
     qrModalData,
+    printInvoiceData,
+    setPrintInvoiceData,
     handleOpenQrModal,
+    handlePrintThermalInvoice,
     handleUpdatePlan,
     handleCreateScheduleSubmit,
   } = useBookingsPageActions({
@@ -275,7 +279,12 @@ function BookingsContent() {
         onClose={() => setShowDetailModal(false)}
         onModalDataChange={setModalData}
         onOpenQrModal={handleOpenQrModal}
+        onPrintInvoice={handlePrintThermalInvoice}
         onSave={handleUpdatePlan}
+      />
+      <BookingThermalInvoicePrint
+        invoice={printInvoiceData}
+        onAfterPrint={() => setPrintInvoiceData(null)}
       />
       <BookingCreateScheduleModal
         isOpen={showCreateModal}
