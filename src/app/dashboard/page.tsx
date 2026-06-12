@@ -14,6 +14,7 @@ import { completeSession,saveSessionNote } from '@/modules/booking/actions/sessi
 import {
 getDashboardPrimaryData,
 getDashboardSecondaryData,
+getImportantAlerts,
 type DashboardAlert
 } from '@/services/dashboard-actions';
 import { markNotificationAsRead } from '@/services/notification-actions';
@@ -127,7 +128,7 @@ export default function DashboardPage() {
   const [notifSearch, setNotifSearch] = useState('');
   const [notifTab, setNotifTab] = useState('all');
   const dashboardRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const dashboardSecondaryRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dashboardAlertsRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { tenantModuleKey } = useTenantModuleKey();
   const customerLabels = getTenantModulePresentationOrNeutral(tenantModuleKey);
   const businessLabel = tenantModuleKey === null
@@ -234,6 +235,19 @@ export default function DashboardPage() {
     }
   }, [tenantId, userRole]);
 
+  const fetchAlertsData = useCallback(async () => {
+    if (userRole === null) return;
+    if (!tenantId) return;
+
+    try {
+      const alertsData = await getImportantAlerts();
+      setAlerts(alertsData || []);
+    } catch (error) {
+      console.error('Error fetching dashboard alerts:', error);
+      toast.error('Không thể tải thông báo dashboard');
+    }
+  }, [tenantId, userRole]);
+
   const fetchData = useCallback(async () => {
     setIsSecondaryLoading(true);
     await Promise.all([fetchPrimaryData(), fetchSecondaryData()]);
@@ -256,16 +270,16 @@ export default function DashboardPage() {
     }, 500);
   }, [fetchPrimaryData, fetchSecondaryData]);
 
-  const scheduleDashboardSecondaryRefresh = useCallback(() => {
-    if (dashboardSecondaryRefreshTimerRef.current) {
-      clearTimeout(dashboardSecondaryRefreshTimerRef.current);
+  const scheduleDashboardAlertsRefresh = useCallback(() => {
+    if (dashboardAlertsRefreshTimerRef.current) {
+      clearTimeout(dashboardAlertsRefreshTimerRef.current);
     }
 
-    dashboardSecondaryRefreshTimerRef.current = setTimeout(() => {
-      dashboardSecondaryRefreshTimerRef.current = null;
-      void fetchSecondaryData();
+    dashboardAlertsRefreshTimerRef.current = setTimeout(() => {
+      dashboardAlertsRefreshTimerRef.current = null;
+      void fetchAlertsData();
     }, 500);
-  }, [fetchSecondaryData]);
+  }, [fetchAlertsData]);
 
   useEffect(() => {
     // REALTIME SUBSCRIPTION
@@ -285,7 +299,7 @@ export default function DashboardPage() {
         scheduleDashboardRefresh();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'app_notifications' }, () => {
-        scheduleDashboardSecondaryRefresh();
+        scheduleDashboardAlertsRefresh();
       })
       .subscribe();
 
@@ -293,12 +307,12 @@ export default function DashboardPage() {
       if (dashboardRefreshTimerRef.current) {
         clearTimeout(dashboardRefreshTimerRef.current);
       }
-      if (dashboardSecondaryRefreshTimerRef.current) {
-        clearTimeout(dashboardSecondaryRefreshTimerRef.current);
+      if (dashboardAlertsRefreshTimerRef.current) {
+        clearTimeout(dashboardAlertsRefreshTimerRef.current);
       }
       supabase.removeChannel(channel);
     };
-  }, [scheduleDashboardRefresh, scheduleDashboardSecondaryRefresh]);
+  }, [scheduleDashboardAlertsRefresh, scheduleDashboardRefresh]);
 
   const handleCompleteSession = async (sessionId: string, bookingId: string, note: string) => {
     setUpdatingId(sessionId);
