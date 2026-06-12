@@ -2,8 +2,7 @@
 
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
-import { getAccountingHealthSummary,getBalanceSheetReport } from '@/services/accounting-actions';
-import { getFinancialOverview } from '@/services/finance-actions';
+import { getCachedAccountingOverviewSnapshot } from '@/lib/accounting-subpages-client-cache';
 import { motion } from 'framer-motion';
 import {
 Activity,
@@ -24,9 +23,10 @@ import Link from 'next/link';
 import { useCallback,useEffect,useState } from 'react';
 import { toast } from 'sonner';
 
-type BalanceSheetReport = Awaited<ReturnType<typeof getBalanceSheetReport>>;
-type FinancialOverview = Awaited<ReturnType<typeof getFinancialOverview>>;
-type AccountingHealthSummary = Awaited<ReturnType<typeof getAccountingHealthSummary>>;
+type AccountingOverviewSnapshot = Awaited<ReturnType<typeof getCachedAccountingOverviewSnapshot>>;
+type BalanceSheetReport = NonNullable<AccountingOverviewSnapshot['balanceSheet']>;
+type FinancialOverview = NonNullable<AccountingOverviewSnapshot['financialOverview']>;
+type AccountingHealthSummary = NonNullable<AccountingOverviewSnapshot['healthSummary']>;
 type OutboxStatusCounts = {
   pending: number;
   processing: number;
@@ -49,26 +49,21 @@ export default function AccountingOverviewPage() {
     dead: 0
   });
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (options: { force?: boolean } = {}) => {
     setRefreshing(true);
     try {
       const nowStr = new Date().toISOString().slice(0, 10);
-      
-      const [bsRes, finRes, healthRes] = await Promise.allSettled([
-        getBalanceSheetReport(nowStr),
-        getFinancialOverview(),
-        getAccountingHealthSummary()
-      ]);
+      const snapshot = await getCachedAccountingOverviewSnapshot(nowStr, options);
 
-      if (bsRes.status === 'fulfilled' && bsRes.value) {
-        setBsData(bsRes.value);
+      if (snapshot.balanceSheet) {
+        setBsData(snapshot.balanceSheet);
       }
-      if (finRes.status === 'fulfilled' && finRes.value) {
-        setFinOverview(finRes.value);
+      if (snapshot.financialOverview) {
+        setFinOverview(snapshot.financialOverview);
       }
-      if (healthRes.status === 'fulfilled' && healthRes.value) {
-        setHealthSummary(healthRes.value);
-        const metrics = healthRes.value.metrics;
+      if (snapshot.healthSummary) {
+        setHealthSummary(snapshot.healthSummary);
+        const metrics = snapshot.healthSummary.metrics;
         const counts: OutboxStatusCounts = {
           pending: metrics.outbox_pending,
           processing: metrics.outbox_processing,
@@ -77,6 +72,10 @@ export default function AccountingOverviewPage() {
           dead: metrics.outbox_dead,
         };
         setOutboxCounts(counts);
+      }
+
+      if (snapshot.errors.balanceSheet || snapshot.errors.financialOverview || snapshot.errors.healthSummary) {
+        toast.error('Một phần dữ liệu kế toán tổng quan chưa tải được.');
       }
     } catch (err: unknown) {
       console.error('Error fetching accounting overview data:', err);
@@ -91,7 +90,11 @@ export default function AccountingOverviewPage() {
     fetchData();
   }, [fetchData]);
 
-  usePageRefresh(fetchData);
+  const handleSoftRefresh = useCallback(async () => {
+    await fetchData({ force: true });
+  }, [fetchData]);
+
+  usePageRefresh(handleSoftRefresh);
 
   const totalAssets = bsData?.total_assets || 0;
   const totalLiabilities = bsData?.total_liabilities || 0;

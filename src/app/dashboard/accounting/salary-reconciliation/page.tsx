@@ -1,7 +1,8 @@
 'use client';
 
 import { SkeletonTable } from '@/components/ui/SkeletonLoader';
-import { getSalaryReconciliationReport,type SalaryReconciliationRow } from '@/services/accounting-actions';
+import { getCachedSalaryReconciliationReportForPage } from '@/lib/accounting-subpages-client-cache';
+import { type SalaryReconciliationRow } from '@/services/accounting-actions';
 import { motion } from 'framer-motion';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -75,10 +76,10 @@ export default function SalaryReconciliationPage() {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
   });
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (options: { force?: boolean } = {}) => {
     setRefreshing(true);
     try {
-      const data = await getSalaryReconciliationReport(monthYear);
+      const data = await getCachedSalaryReconciliationReportForPage(monthYear, options);
       setRows(data || []);
     } catch (err: unknown) {
       console.error('Error fetching salary reconciliation:', err);
@@ -91,7 +92,11 @@ export default function SalaryReconciliationPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  usePageRefresh(fetchData);
+  const handleSoftRefresh = useCallback(async () => {
+    await fetchData({ force: true });
+  }, [fetchData]);
+
+  usePageRefresh(handleSoftRefresh);
 
   const hasLegacyRecord = useCallback((row: SalaryReconciliationRow) => (
     hasSalaryLegacyReconciliationRecord({
