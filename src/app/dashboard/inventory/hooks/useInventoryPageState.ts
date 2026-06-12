@@ -3,19 +3,21 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
+import {
+  getCachedInventoryItemsForPage,
+  getCachedInventoryLogsForPage,
+  getCachedInventoryTransferOrdersForPage,
+  getCachedMonthlyReconciliationForPage,
+} from '@/lib/inventory-page-client-cache';
 import { getLocalDateString } from '@/lib/utils';
 import {
   createInventoryRequest,
-  getInventoryTransferOrdersResult,
   confirmTransferReceipt,
   cancelTransferOrder,
   type InventoryTransferOrder,
 } from '@/services/inventory-transfer-actions';
 import {
   addInventoryItem,
-  getInventoryItems,
-  getInventoryLogs,
-  getMonthlyReconciliation,
   restockItem,
   saveMonthlyReconciliation,
 } from '@/services/inventory-actions';
@@ -43,6 +45,8 @@ const createBlankInventoryItem = (): NewInventoryItem => ({
 const getErrorMessage = (error: unknown, fallback: string) => (
   error instanceof Error ? error.message : fallback
 );
+
+type FetchOptions = { force?: boolean };
 
 export function useInventoryPageState() {
   const [activeTab, setActiveTab] = useState<ActiveInventoryTab>('stock');
@@ -82,12 +86,12 @@ export function useInventoryPageState() {
   const [reconLoading, setReconLoading] = useState(false);
   const [reconSaving, setReconSaving] = useState(false);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (options: FetchOptions = {}) => {
     setLoading(true);
     try {
       const [itemsData, logsData] = await Promise.all([
-        getInventoryItems(),
-        getInventoryLogs(200),
+        getCachedInventoryItemsForPage(options),
+        getCachedInventoryLogsForPage('200', options),
       ]);
 
       setItems(itemsData || []);
@@ -100,10 +104,10 @@ export function useInventoryPageState() {
     }
   }, []);
 
-  const fetchOrders = useCallback(async () => {
+  const fetchOrders = useCallback(async (options: FetchOptions = {}) => {
     setLoadingOrders(true);
     try {
-      const result = await getInventoryTransferOrdersResult();
+      const result = await getCachedInventoryTransferOrdersForPage(options);
       if (!result.success) {
         setOrders([]);
         toast.error(result.error || 'Lá»—i táº£i danh sÃ¡ch yÃªu cáº§u cáº¥p váº­t tÆ°');
@@ -118,10 +122,10 @@ export function useInventoryPageState() {
     }
   }, []);
 
-  const fetchReconciliation = useCallback(async () => {
+  const fetchReconciliation = useCallback(async (options: FetchOptions = {}) => {
     setReconLoading(true);
     try {
-      const res = await getMonthlyReconciliation(reconYear, reconMonth + 1);
+      const res = await getCachedMonthlyReconciliationForPage(`${reconYear}-${reconMonth + 1}`, options);
       if (!res.success) {
         toast.error(res.error || 'Lỗi tải báo cáo kiểm kê');
         setReconRows([]);
@@ -141,14 +145,14 @@ export function useInventoryPageState() {
   }, [reconMonth, reconYear]);
 
   const refreshPageData = useCallback(async () => {
-    const refreshTasks: Promise<void>[] = [fetchData()];
+    const refreshTasks: Promise<void>[] = [fetchData({ force: true })];
 
     if (activeTab === 'requests') {
-      refreshTasks.push(fetchOrders());
+      refreshTasks.push(fetchOrders({ force: true }));
     }
 
     if (activeTab === 'reconciliation') {
-      refreshTasks.push(fetchReconciliation());
+      refreshTasks.push(fetchReconciliation({ force: true }));
     }
 
     await Promise.all(refreshTasks);
@@ -205,11 +209,11 @@ export function useInventoryPageState() {
       if (res.success) {
         toast.success(`Đã lưu kiểm kê ${res.processed} mặt hàng`);
         if (res.error) toast.warning(res.error);
-        await Promise.all([fetchData(), fetchReconciliation()]);
+        await Promise.all([fetchData({ force: true }), fetchReconciliation({ force: true })]);
       } else {
         toast.error(res.error || 'Lỗi lưu kiểm kê');
         if (res.processed > 0) {
-          await Promise.all([fetchData(), fetchReconciliation()]);
+          await Promise.all([fetchData({ force: true }), fetchReconciliation({ force: true })]);
         }
       }
     } catch (error) {
@@ -263,7 +267,7 @@ export function useInventoryPageState() {
       toast.success(`Đã cập nhật +${restockAmt} ${restockTarget.unit} cho mặt hàng ${restockTarget.name}`);
       setRestockTarget(null);
       setRestockAmt(0);
-      await fetchData();
+      await fetchData({ force: true });
     } catch (error) {
       console.error('[handleRestock]', error);
       toast.error(getErrorMessage(error, 'Lỗi điều chỉnh kho'));
@@ -287,7 +291,7 @@ export function useInventoryPageState() {
       toast.success('Đã thêm vật tư mới');
       setShowAdd(false);
       setNewItem(createBlankInventoryItem());
-      await fetchData();
+      await fetchData({ force: true });
     } catch (error) {
       console.error('[handleAddItem]', error);
       toast.error(getErrorMessage(error, 'Lỗi thêm vật tư'));
@@ -343,7 +347,7 @@ export function useInventoryPageState() {
         setShowCreateRequest(false);
         setRequestCart([]);
         setRequestNotes('');
-        await Promise.all([fetchOrders(), fetchData()]);
+        await Promise.all([fetchOrders({ force: true }), fetchData({ force: true })]);
       } else {
         toast.error(res.error || 'Lỗi gửi yêu cầu');
       }
@@ -363,7 +367,7 @@ export function useInventoryPageState() {
       const res = await confirmTransferReceipt(orderId);
       if (res.success) {
         toast.success('Xác nhận nhận hàng thành công. Tồn kho đã được cập nhật và ghi log!');
-        await Promise.all([fetchOrders(), fetchData()]);
+        await Promise.all([fetchOrders({ force: true }), fetchData({ force: true })]);
       } else {
         toast.error(res.error || 'Lỗi xác nhận nhận hàng');
       }
@@ -383,7 +387,7 @@ export function useInventoryPageState() {
       const res = await cancelTransferOrder(orderId, 'Chi nhánh chủ động hủy yêu cầu');
       if (res.success) {
         toast.success('Đã hủy yêu cầu cấp vật tư');
-        await fetchOrders();
+        await fetchOrders({ force: true });
       } else {
         toast.error(res.error || 'Lỗi hủy yêu cầu');
       }
