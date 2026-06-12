@@ -4,11 +4,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
+import {
+  getCachedBookingPageResources,
+  getCachedBookingPageUsers,
+  getCachedBookingsForPage,
+} from '@/lib/bookings-page-client-cache';
 import { createClient } from '@/lib/supabase-client';
-import { getBookings } from '@/modules/booking/actions/lifecycle-actions';
 import { getCalendarSessions, getSessionLogs } from '@/modules/booking/actions/session-actions';
-import { getBookingResources } from '@/services/booking-resource-actions';
-import { getUsers } from '@/services/user-actions';
 import type { Database } from '@/types/database.types';
 
 import type { BookingOption } from '../components/BookingCreateScheduleModal';
@@ -42,6 +44,7 @@ export function useBookingsPageData(currentMonth: Date) {
   const [bookingResources, setBookingResources] = useState<BookingResourceRow[]>([]);
   const [sessionHistory, setSessionHistory] = useState<SessionHistoryItem[]>([]);
   const sessionsReloadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const bookingsReloadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const calendarSessionRange = useMemo(
     () => getCalendarSessionRange(currentMonth),
     [currentMonth]
@@ -53,9 +56,9 @@ export function useBookingsPageData(currentMonth: Date) {
     refreshTenantModuleKey,
   } = useTenantModuleKey();
 
-  const fetchAllBookings = useCallback(async () => {
+  const fetchAllBookings = useCallback(async (options: { force?: boolean } = {}) => {
     try {
-      const data = await getBookings();
+      const data = await getCachedBookingsForPage(options);
       setAllBookings(data);
     } catch (error) {
       console.error('Error fetching bookings:', error);
@@ -76,18 +79,18 @@ export function useBookingsPageData(currentMonth: Date) {
     }
   }, [calendarSessionRange]);
 
-  const fetchKtvs = useCallback(async () => {
-    const data = await getUsers();
+  const fetchKtvs = useCallback(async (options: { force?: boolean } = {}) => {
+    const data = await getCachedBookingPageUsers(options);
     setKtvs(data.filter((user: KtvOption & { role?: string | null }) => user.role?.toLowerCase() === 'ktv'));
   }, []);
 
-  const fetchBookingResources = useCallback(async () => {
+  const fetchBookingResources = useCallback(async (options: { force?: boolean } = {}) => {
     if (tenantModuleKey !== 'beauty_spa') {
       setBookingResources([]);
       return;
     }
 
-    const result = await getBookingResources();
+    const result = await getCachedBookingPageResources(options);
     if (result.success) {
       setBookingResources(result.data);
       return;
@@ -103,7 +106,13 @@ export function useBookingsPageData(currentMonth: Date) {
   }, []);
 
   const refreshBookingsPage = useCallback(async () => {
-    await Promise.all([fetchSessions(), fetchAllBookings(), fetchKtvs(), fetchBookingResources(), refreshTenantModuleKey()]);
+    await Promise.all([
+      fetchSessions(),
+      fetchAllBookings({ force: true }),
+      fetchKtvs({ force: true }),
+      fetchBookingResources({ force: true }),
+      refreshTenantModuleKey(),
+    ]);
   }, [fetchAllBookings, fetchBookingResources, fetchKtvs, fetchSessions, refreshTenantModuleKey]);
 
   const scheduleSessionsReload = useCallback(() => {
@@ -115,6 +124,16 @@ export function useBookingsPageData(currentMonth: Date) {
       void fetchSessions();
     }, 400);
   }, [fetchSessions]);
+
+  const scheduleBookingsReload = useCallback(() => {
+    if (bookingsReloadTimerRef.current) {
+      clearTimeout(bookingsReloadTimerRef.current);
+    }
+
+    bookingsReloadTimerRef.current = setTimeout(() => {
+      void fetchAllBookings({ force: true });
+    }, 400);
+  }, [fetchAllBookings]);
 
   useEffect(() => {
     void Promise.all([fetchSessions(), fetchKtvs(), refreshTenantModuleKey()]);
@@ -136,7 +155,7 @@ export function useBookingsPageData(currentMonth: Date) {
         scheduleSessionsReload();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => {
-        void fetchAllBookings();
+        scheduleBookingsReload();
         scheduleSessionsReload();
       })
       .subscribe();
@@ -145,9 +164,12 @@ export function useBookingsPageData(currentMonth: Date) {
       if (sessionsReloadTimerRef.current) {
         clearTimeout(sessionsReloadTimerRef.current);
       }
+      if (bookingsReloadTimerRef.current) {
+        clearTimeout(bookingsReloadTimerRef.current);
+      }
       void supabase.removeChannel(channel);
     };
-  }, [fetchAllBookings, scheduleSessionsReload]);
+  }, [scheduleBookingsReload, scheduleSessionsReload]);
 
   return {
     sessions,
