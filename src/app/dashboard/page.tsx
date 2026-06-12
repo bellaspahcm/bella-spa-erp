@@ -190,22 +190,8 @@ export default function DashboardPage() {
       const now = new Date();
       const localToday = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
       
-      const sb = createClient();
-      const inventoryQuery = sb
-        .from('inventory_items')
-        .select('id, stock_level, min_stock_level, price_per_unit')
-        .eq('tenant_id', tenantId);
-      const [{ statsData, sessionsData }, invRes] = await Promise.all([
-        getDashboardPrimaryData(startDate, endDate, localToday),
-        inventoryQuery
-      ]);
-
-      const invItems = invRes.data || [];
-      const invSummary = {
-        totalItems:    invItems.length,
-        lowStockCount: invItems.filter((i) => Number(i.stock_level) <= Number(i.min_stock_level)).length,
-        totalValue:    invItems.reduce((s: number, i) => s + Number(i.stock_level || 0) * Number(i.price_per_unit || 0), 0)
-      };
+      const { statsData, sessionsData, inventorySummary: nextInventorySummary } =
+        await getDashboardPrimaryData(startDate, endDate, localToday);
 
       const newStats = [
         { label: 'Tổng khách hàng', value: String(statsData.totalCustomers?.value || '0'), trend: Number(statsData.totalCustomers?.trend || 0), iconName: 'Users' as const, color: 'text-blue-600', bg: 'bg-blue-50' },
@@ -216,7 +202,7 @@ export default function DashboardPage() {
       
       setStats(newStats);
       setSessions((sessionsData || []) as unknown as DashboardSession[]);
-      setInventorySummary(invSummary || { totalItems: 0, lowStockCount: 0, totalValue: 0 });
+      setInventorySummary(nextInventorySummary || { totalItems: 0, lowStockCount: 0, totalValue: 0 });
       setIsLoading(false);
 
       try {
