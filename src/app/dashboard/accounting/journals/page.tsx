@@ -2,6 +2,7 @@
 
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { SkeletonTable } from '@/components/ui/SkeletonLoader';
+import { getCachedJournalEntriesForPage } from '@/lib/accounting-subpages-client-cache';
 import { getJournalEntries } from '@/services/accounting-actions';
 import { motion } from 'framer-motion';
 import {
@@ -50,7 +51,7 @@ export default function JournalsPage() {
   const [refTypeFilter, setRefTypeFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
 
-  const fetchJournals = useCallback(async () => {
+  const fetchJournals = useCallback(async (options: { force?: boolean } = {}) => {
     setRefreshing(true);
     try {
       const filters: JournalFilters = {
@@ -64,7 +65,7 @@ export default function JournalsPage() {
         filters.reference_type = refTypeFilter;
       }
 
-      const data = await getJournalEntries(filters);
+      const data = await getCachedJournalEntriesForPage(filters, options);
       setEntries(data || []);
     } catch (err: unknown) {
       console.error('Error fetching journals:', err);
@@ -79,7 +80,11 @@ export default function JournalsPage() {
     fetchJournals();
   }, [fetchJournals]);
 
-  usePageRefresh(fetchJournals);
+  const handleSoftRefresh = useCallback(async () => {
+    await fetchJournals({ force: true });
+  }, [fetchJournals]);
+
+  usePageRefresh(handleSoftRefresh);
 
   // Client side search filter
   const filteredEntries = entries.filter((e) => {
