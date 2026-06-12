@@ -46,9 +46,9 @@ const dateFieldClassName = 'grid w-full min-w-0 grid-cols-1 gap-1.5 sm:w-auto sm
 const dateLabelClassName = 'text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest whitespace-nowrap';
 const reportTableWrapperClassName =
   'w-full max-w-full overflow-x-auto overscroll-x-contain rounded-2xl border border-slate-100 bg-white shadow-sm dark:border-[#3E3A35]/50 dark:bg-[#11100F]/20';
-const reportTableClassName = 'w-full min-w-[64rem] table-fixed border-collapse';
-const reportWideTableClassName = 'w-full min-w-[72rem] table-fixed border-collapse';
-const reportLedgerTableClassName = 'w-full min-w-[78rem] table-fixed border-collapse';
+const reportTableClassName = 'w-full min-w-[64rem] table-auto border-collapse';
+const reportWideTableClassName = 'w-full min-w-[72rem] table-auto border-collapse';
+const reportLedgerTableClassName = 'w-full min-w-[78rem] table-auto border-collapse';
 const reportLabelCellClassName = 'min-w-0 whitespace-normal break-words leading-relaxed';
 const reportNumericCellClassName = 'whitespace-nowrap tabular-nums';
 const stickyHeaderCellClassName =
@@ -317,7 +317,7 @@ export default function AccountingReportsPage() {
                 </colgroup>
                 <thead>
                   <tr className="text-left bg-slate-50 dark:bg-[#11100F]/40 border-b border-slate-200 dark:border-[#3E3A35]/40">
-                    <th rowSpan={2} className={`${stickyHeaderCellClassName} px-4 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest border-r border-slate-100 dark:border-[#3E3A35]/20`}>Mã TK</th>
+                    <th rowSpan={2} className={`${stickyHeaderCellClassName} ${reportNumericCellClassName} px-4 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest border-r border-slate-100 dark:border-[#3E3A35]/20`}>Mã TK</th>
                     <th rowSpan={2} className="px-4 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest border-r border-slate-100 dark:border-[#3E3A35]/20">Tên Tài Khoản</th>
                     <th colSpan={2} className="px-4 py-2 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-center border-b border-r border-slate-100 dark:border-[#3E3A35]/20">Số dư đầu kỳ</th>
                     <th colSpan={2} className="px-4 py-2 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-center border-b border-r border-slate-100 dark:border-[#3E3A35]/20">Số phát sinh trong kỳ</th>
