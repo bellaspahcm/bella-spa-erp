@@ -18,6 +18,12 @@ export interface DashboardAlert {
   timestamp: number;
 }
 
+export interface DashboardInventorySummary {
+  totalItems: number;
+  lowStockCount: number;
+  totalValue: number;
+}
+
 export interface CompletedSessionDBRow {
   id: string;
   end_time: string | null;
@@ -122,6 +128,12 @@ function requireDashboardTenant(currentUser: { tenant_id?: string | null } | nul
 
 interface RevenueStatRow {
   amount: number | null;
+}
+
+interface DashboardInventoryItemRow {
+  stock_level: number | null;
+  min_stock_level: number | null;
+  price_per_unit: number | null;
 }
 
 export async function getDashboardStats(startDate?: string, endDate?: string, todayDate?: string) {
@@ -276,6 +288,32 @@ export async function getUpcomingSessions(date?: string) {
         }
       : null,
   }));
+}
+
+export async function getDashboardInventorySummary(): Promise<DashboardInventorySummary> {
+  const { createClient } = await import('@/lib/supabase-server');
+  const supabase = await createClient();
+  const currentUser = await getCurrentUser();
+  const tenantId = requireDashboardTenant(currentUser);
+
+  const { data, error } = await supabase
+    .from('inventory_items')
+    .select('stock_level, min_stock_level, price_per_unit')
+    .eq('tenant_id', tenantId);
+
+  if (error) {
+    throw new Error(`Failed to fetch dashboard inventory summary: ${error.message}`);
+  }
+
+  const items = (data as DashboardInventoryItemRow[] | null) || [];
+  return {
+    totalItems: items.length,
+    lowStockCount: items.filter((item) => Number(item.stock_level) <= Number(item.min_stock_level)).length,
+    totalValue: items.reduce(
+      (sum, item) => sum + Number(item.stock_level || 0) * Number(item.price_per_unit || 0),
+      0
+    ),
+  };
 }
 
 // ─── getTopTechnicians ────────────────────────────────────────────────────────
@@ -699,12 +737,13 @@ export async function getImportantAlerts() {
 
 // ─── Dashboard Data Bundles ───────────────────────────────────────────────────
 export async function getDashboardPrimaryData(startDate?: string, endDate?: string, todayDate?: string) {
-  const [statsData, sessionsData] = await Promise.all([
+  const [statsData, sessionsData, inventorySummary] = await Promise.all([
     getDashboardStats(startDate, endDate, todayDate),
     getUpcomingSessions(todayDate),
+    getDashboardInventorySummary(),
   ]);
 
-  return { statsData, sessionsData };
+  return { statsData, sessionsData, inventorySummary };
 }
 
 export async function getDashboardSecondaryData() {
