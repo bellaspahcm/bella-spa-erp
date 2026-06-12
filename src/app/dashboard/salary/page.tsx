@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import PremiumExportButton from '@/components/ui/PremiumExportButton';
-import { getSalaryData, getKtvSessionMatrix } from '@/modules/hr-salary/actions/query-salary-actions';
+import { getSalaryData } from '@/modules/hr-salary/actions/query-salary-actions';
 import { 
   approveSalary, 
   updateSalaryConfig, 
@@ -22,10 +22,13 @@ import {
   finalizeAllSalaryRecords, 
   checkAndAutoConfirm 
 } from '@/modules/hr-salary/actions/admin-salary-actions';
-import { getMonthlyAttendanceSummary } from '@/services/attendance-actions';
 import { exportSalaryToExcelResult, exportSessionMatrixToExcelResult } from '@/services/export-actions';
 import { toast } from 'sonner';
-import { getCurrentUser } from '@/services/user-actions';
+import { getCachedCurrentUser } from '@/lib/dashboard-client-context';
+import {
+  getCachedMonthlyAttendanceSummaryForSalary,
+  getCachedSalarySessionMatrix,
+} from '@/lib/salary-page-client-cache';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
 import { calculateSalaryTotal } from '@/lib/business-rules/salary';
 import SkeletonLoader, { SkeletonTable } from '@/components/ui/SkeletonLoader';
@@ -48,6 +51,13 @@ import SessionMatrixTable from './components/SessionMatrixTable';
 import AttendanceSummaryTable from './components/AttendanceSummaryTable';
 import HrProfileTable from './components/HrProfileTable';
 import ConfirmModal from './components/ConfirmModal';
+
+type SalaryRefreshOptions = {
+  includeAttendance?: boolean;
+  includeMatrix?: boolean;
+  forceAttendance?: boolean;
+  forceMatrix?: boolean;
+};
 
 function getCurrentMonthString() {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }).substring(0, 7);
@@ -180,7 +190,7 @@ export default function SalaryPage() {
 
   useEffect(() => {
     async function fetchUser() {
-      const user = await getCurrentUser();
+      const user = await getCachedCurrentUser();
       if (user) {
         setCurrentUser({
           id: user.id,
@@ -195,10 +205,10 @@ export default function SalaryPage() {
     fetchUser();
   }, []);
 
-  const loadAttendanceData = useCallback(async () => {
+  const loadAttendanceData = useCallback(async (options: { force?: boolean } = {}) => {
     setIsAttendanceLoading(true);
     try {
-      const attData = await getMonthlyAttendanceSummary(getCurrentMonthString());
+      const attData = await getCachedMonthlyAttendanceSummaryForSalary(getCurrentMonthString(), options);
       setAttendanceData(attData || []);
       setHasLoadedAttendance(true);
     } catch (error) {
@@ -208,11 +218,11 @@ export default function SalaryPage() {
     }
   }, []);
 
-  const loadMatrixData = useCallback(async () => {
+  const loadMatrixData = useCallback(async (options: { force?: boolean } = {}) => {
     setIsMatrixLoading(true);
     setMatrixLoadError(null);
     try {
-      const matrix = await getKtvSessionMatrix();
+      const matrix = await getCachedSalarySessionMatrix(options);
       setMatrixData(matrix || null);
       setHasLoadedMatrix(true);
     } catch (error) {
@@ -230,16 +240,16 @@ export default function SalaryPage() {
     setKtvSalaries(salaryData || []);
   }, []);
 
-  const refreshData = useCallback(async (options: { includeAttendance?: boolean; includeMatrix?: boolean } = {}) => {
+  const refreshData = useCallback(async (options: SalaryRefreshOptions = {}) => {
     try {
       await refreshSalaryData();
 
       if (options.includeMatrix) {
-        void loadMatrixData();
+        void loadMatrixData({ force: options.forceMatrix });
       }
 
       if (options.includeAttendance) {
-        await loadAttendanceData();
+        await loadAttendanceData({ force: options.forceAttendance });
       }
     } catch (error) {
       console.error('Refresh data error:', error);
@@ -258,6 +268,8 @@ export default function SalaryPage() {
     await refreshData({
       includeAttendance: hasLoadedAttendance || activeTab === 'attendance',
       includeMatrix: hasLoadedMatrix || activeTab === 'payroll',
+      forceAttendance: true,
+      forceMatrix: true,
     });
   }, [activeTab, hasLoadedAttendance, hasLoadedMatrix, refreshData]);
 
@@ -272,7 +284,7 @@ export default function SalaryPage() {
           toast.info(`Đã tự động xác nhận ${autoRes.count} bảng lương quá hạn 48h`);
         }
         await refreshData();
-        void loadMatrixData();
+        void loadMatrixData({ force: autoRes.count > 0 });
       } catch (error) {
         console.error('Fetch data error:', error);
       } finally {
@@ -295,6 +307,7 @@ export default function SalaryPage() {
           if (result.success) {
             toast.success('Đã phê duyệt lương thành công');
             setKtvSalaries(prev => prev.map(s => s.id === id ? { ...s, status: 'approved' } : s));
+            void loadMatrixData({ force: true });
           } else {
             toast.error(result.error || 'Lỗi khi phê duyệt lương');
           }
@@ -344,6 +357,7 @@ export default function SalaryPage() {
         return s;
       }));
       setIsEditModalOpen(false);
+      void loadMatrixData({ force: true });
     } else {
       toast.error('Lỗi khi cập nhật lương: ' + result.error);
     }
@@ -361,12 +375,12 @@ export default function SalaryPage() {
         if (res.success) {
           toast.success(`Đã gửi đối soát cho ${res.count} KTV`);
           await refreshSalaryData();
-          void loadMatrixData();
+          void loadMatrixData({ force: true });
         } else {
           toast.error(res.error || 'Lỗi khi gửi đối soát');
           if (res.count > 0) {
             await refreshSalaryData();
-            void loadMatrixData();
+            void loadMatrixData({ force: true });
           }
         }
         setIsLoading(false);
@@ -406,7 +420,7 @@ export default function SalaryPage() {
       if (res.success) {
         toast.success(`Đã gửi đối soát cho ${ktvName}`);
         await refreshSalaryData();
-        void loadMatrixData();
+        void loadMatrixData({ force: true });
       } else {
         toast.error('Lỗi: ' + res.error);
       }
@@ -430,7 +444,7 @@ export default function SalaryPage() {
           if (res.success) {
             toast.success(`Đã xác nhận thay cho ${ktvName}`);
             await refreshSalaryData();
-            void loadMatrixData();
+            void loadMatrixData({ force: true });
           } else {
             toast.error('Lỗi: ' + res.error);
           }
@@ -746,7 +760,7 @@ export default function SalaryPage() {
         isOpen={isCalendarModalOpen}
         onClose={() => setIsCalendarModalOpen(false)}
         selectedKtv={selectedKtv}
-        onSaveSuccess={() => refreshData({ includeAttendance: true })}
+        onSaveSuccess={() => refreshData({ includeAttendance: true, includeMatrix: true, forceAttendance: true, forceMatrix: true })}
       />
 
       {/* HR Profile Editor Modal */}
@@ -754,7 +768,12 @@ export default function SalaryPage() {
         isOpen={isHrModalOpen}
         onClose={() => setIsHrModalOpen(false)}
         hrKtvProfile={hrKtvProfile}
-        onSaveSuccess={() => refreshData({ includeAttendance: hasLoadedAttendance })}
+        onSaveSuccess={() => refreshData({
+          includeAttendance: hasLoadedAttendance,
+          includeMatrix: true,
+          forceAttendance: hasLoadedAttendance,
+          forceMatrix: true,
+        })}
       />
 
       {/* Edit Salary Modal */}
