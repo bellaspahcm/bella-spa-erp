@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
 
     if (configError || !config) {
-      console.warn(`[Telegram Webhook] Không tìm thấy cấu hình AI hoạt động cho Chat ID: ${chatId}`, configError);
+      console.warn('[Telegram Webhook] Không tìm thấy cấu hình AI hoạt động cho Chat ID %s', chatId, configError);
       return NextResponse.json({ ok: true, status: "no_active_config" });
     }
 

@@ -7,6 +7,6 @@ export async function safeRevalidatePath(path: string, type?: 'layout' | 'page')
       revalidatePath(path, type);
     }
   } catch (error) {
-    console.warn(`[Revalidation] Could not revalidate path: ${path}`, error);
+    console.warn('[Revalidation] Could not revalidate path: %s', path, error);
   }
 }

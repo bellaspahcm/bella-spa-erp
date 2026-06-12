@@ -1,0 +1,8 @@
+docs/**/*.html
+docs/archive/**
+public/user-manuals/**/*.html
+public/beauty_spa_demo.html
+src/__tests__/**
+e2e/**
+test-results/**
+.tmp/**

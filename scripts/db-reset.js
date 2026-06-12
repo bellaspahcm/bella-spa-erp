@@ -97,7 +97,7 @@ async function run() {
       console.log(`❌ Đang xóa tài khoản Auth: ${user.email} (ID: ${user.id})...`);
       const { error: delErr } = await supabase.auth.admin.deleteUser(user.id);
       if (delErr) {
-        console.error(` ❌ Lỗi khi xóa auth user ${user.email}:`, delErr.message);
+        console.error(' ❌ Lỗi khi xóa auth user %s:', user.email, delErr.message);
       } else {
         console.log(`  ✓ Đã xóa auth user: ${user.email}`);
       }

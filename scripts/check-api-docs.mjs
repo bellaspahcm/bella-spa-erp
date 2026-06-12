@@ -4,6 +4,15 @@ import { join, relative, sep } from 'node:path';
 const apiRoot = join(process.cwd(), 'src', 'app', 'api');
 const docsPath = join(process.cwd(), 'docs', 'api-reference.md');
 const httpMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
+const methodExportPatterns = {
+  GET: /export\s+async\s+function\s+GET\b/,
+  POST: /export\s+async\s+function\s+POST\b/,
+  PUT: /export\s+async\s+function\s+PUT\b/,
+  PATCH: /export\s+async\s+function\s+PATCH\b/,
+  DELETE: /export\s+async\s+function\s+DELETE\b/,
+  HEAD: /export\s+async\s+function\s+HEAD\b/,
+  OPTIONS: /export\s+async\s+function\s+OPTIONS\b/,
+};
 
 function walk(dir) {
   const entries = readdirSync(dir);
@@ -30,8 +39,7 @@ function routePath(filePath) {
 
 function exportedMethods(source) {
   return httpMethods.filter((method) => {
-    const pattern = new RegExp(`export\\s+async\\s+function\\s+${method}\\b`);
-    return pattern.test(source);
+    return methodExportPatterns[method].test(source);
   });
 }
 
@@ -53,7 +61,7 @@ for (const filePath of walk(apiRoot)) {
 if (missing.length > 0) {
   console.error('API documentation is missing these implemented routes:');
   for (const item of missing) {
-    console.error(`- ${item}`);
+    console.error('- %s', item);
   }
   process.exit(1);
 }

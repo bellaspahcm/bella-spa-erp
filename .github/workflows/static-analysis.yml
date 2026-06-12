@@ -112,6 +112,7 @@ jobs:
           output: trivy-results.sarif
           severity: HIGH,CRITICAL
           ignore-unfixed: true
+          trivyignores: .trivyignore
           skip-dirs: node_modules,mcp-server/node_modules,.next,test-results
           exit-code: "0"
 
@@ -137,6 +138,7 @@ jobs:
           format: table
           severity: HIGH,CRITICAL
           ignore-unfixed: true
+          trivyignores: .trivyignore
           skip-dirs: node_modules,mcp-server/node_modules,.next,test-results
           exit-code: "1"
 
