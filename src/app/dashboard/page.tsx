@@ -40,7 +40,7 @@ X
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useCallback,useEffect,useState } from 'react';
+import { useCallback,useEffect,useRef,useState } from 'react';
 import { toast } from 'sonner';
 
 type DashboardStat = {
@@ -126,6 +126,7 @@ export default function DashboardPage() {
   const [isAllNotificationsOpen, setIsAllNotificationsOpen] = useState(false);
   const [notifSearch, setNotifSearch] = useState('');
   const [notifTab, setNotifTab] = useState('all');
+  const dashboardRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { tenantModuleKey } = useTenantModuleKey();
   const customerLabels = getTenantModulePresentationOrNeutral(tenantModuleKey);
   const businessLabel = tenantModuleKey === null
@@ -248,32 +249,46 @@ export default function DashboardPage() {
     fetchData();
   }, [fetchData, userRole]);
 
+  const scheduleDashboardRefresh = useCallback(() => {
+    if (dashboardRefreshTimerRef.current) {
+      clearTimeout(dashboardRefreshTimerRef.current);
+    }
+
+    dashboardRefreshTimerRef.current = setTimeout(() => {
+      dashboardRefreshTimerRef.current = null;
+      void fetchData();
+    }, 500);
+  }, [fetchData]);
+
   useEffect(() => {
     // REALTIME SUBSCRIPTION
     const supabase = createClient();
     const channel = supabase
       .channel('dashboard-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'session_logs' }, () => {
-        fetchData();
+        scheduleDashboardRefresh();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => {
-        fetchData();
+        scheduleDashboardRefresh();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'revenue' }, () => {
-        fetchData();
+        scheduleDashboardRefresh();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'session_reviews' }, () => {
-        fetchData();
+        scheduleDashboardRefresh();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'app_notifications' }, () => {
-        fetchData();
+        scheduleDashboardRefresh();
       })
       .subscribe();
 
     return () => {
+      if (dashboardRefreshTimerRef.current) {
+        clearTimeout(dashboardRefreshTimerRef.current);
+      }
       supabase.removeChannel(channel);
     };
-  }, [fetchData]);
+  }, [scheduleDashboardRefresh]);
 
   const handleCompleteSession = async (sessionId: string, bookingId: string, note: string) => {
     setUpdatingId(sessionId);
