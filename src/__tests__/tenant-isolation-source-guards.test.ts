@@ -113,10 +113,34 @@ describe('dashboard tenant isolation source guards', () => {
     expect(rootLayoutSource).toContain('root.dataset.tenantModule = "pending"');
     expect(rootLayoutSource).toContain('"--primary": "#334155"');
     expect(rootLayoutSource).not.toContain('sessionStorage.getItem("bella.runtime.brand.v1")');
-    expect(dashboardLayoutSource).toContain('await applyDashboardTenantBrandRuntime()');
-    expect(dashboardLayoutSource.indexOf('await applyDashboardTenantBrandRuntime()')).toBeLessThan(
+    expect(dashboardLayoutSource).toContain('await applyDashboardTenantBrandRuntime(tenant)');
+    expect(dashboardLayoutSource.indexOf('await applyDashboardTenantBrandRuntime(tenant)')).toBeLessThan(
       dashboardLayoutSource.indexOf('setIsAuthorized(true)'),
     );
+  });
+
+  it('shares dashboard bootstrap reads through the client context cache', () => {
+    const contextSource = readSource('src/lib/dashboard-client-context.ts');
+    const dashboardLayoutSource = readSource('src/app/dashboard/layout.tsx');
+    const sidebarSource = readSource('src/components/layout/sidebar.tsx');
+    const settingsSource = readSource('src/app/dashboard/settings/page.tsx');
+
+    expect(contextSource).toContain('currentUserPromise');
+    expect(contextSource).toContain('tenantSettingsPromise');
+    expect(contextSource).toContain('currentUserRequestVersion');
+    expect(contextSource).toContain('tenantSettingsRequestVersion');
+    expect(contextSource).toContain('requestVersion === currentUserRequestVersion');
+    expect(contextSource).toContain('requestVersion === tenantSettingsRequestVersion');
+    expect(dashboardLayoutSource).toContain('getCachedCurrentUser()');
+    expect(dashboardLayoutSource).toContain('getCachedTenantSettings()');
+    expect(sidebarSource).toContain('getCachedCurrentUser()');
+    expect(sidebarSource).toContain('getCachedTenantSettings()');
+    expect(settingsSource).toContain('getCachedTenantSettings(options)');
+    expect(settingsSource).toContain('usePageRefresh(() => loadSettings({ force: true }))');
+    expect(settingsSource).toContain('nextPath !== currentPath');
+    expect(dashboardLayoutSource).not.toContain("from '@/services/user-actions'");
+    expect(sidebarSource).not.toContain("from '@/services/user-actions'");
+    expect(settingsSource).not.toContain('getTenantSettings()');
   });
 
   it('keeps GPS empty-state copy encoded correctly', () => {
