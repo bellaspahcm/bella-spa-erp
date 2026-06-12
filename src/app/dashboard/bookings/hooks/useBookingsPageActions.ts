@@ -31,7 +31,7 @@ type UseBookingsPageActionsArgs = {
   modalData: BookingModalData | null;
   createTimeRange: TimeRange;
   fetchSessions: () => Promise<void>;
-  fetchAllBookings: () => Promise<void>;
+  fetchAllBookings: (options?: { force?: boolean }) => Promise<void>;
   closeDetailModal: () => void;
   closeCreateModal: () => void;
 };
@@ -125,7 +125,7 @@ export function useBookingsPageActions({
       } else {
         toast.success(isDateChanged ? 'Đã dời lịch và cập nhật thành công!' : 'Đã cập nhật tiến độ và kế hoạch thành công!');
         await fetchSessions();
-        await fetchAllBookings();
+        await fetchAllBookings({ force: true });
         closeDetailModal();
       }
     } catch (error) {
