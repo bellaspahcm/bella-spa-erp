@@ -20,6 +20,7 @@ Moi phan he nganh moi phai duoc phat trien theo vong doi trong tai lieu nay. Kho
 - demo data co tao/xoa an toan khong
 - co regression test de chung minh Bella Spa hien tai khong bi anh huong khong
 - thay doi toi uu hieu nang co dang tac dong vao route core dung chung hay chi module rieng
+- static analysis/security gate co canh bao runtime that hay chi artifact docs/archive/test, va exception neu co da duoc ghi ly do chua
 
 Neu mot thay doi tao them nganh moi ma khong cap nhat playbook nay hoac artifact lien quan, task chua duoc xem la hoan tat.
 
@@ -72,6 +73,7 @@ Bang nay la nhat ky bai hoc thuc te. Khi lam nganh moi, bat buoc doi chieu tung 
 | UI mobile | Bang, filter ngay, dropdown, modal bi tran/cat noi dung | Tai su dung layout desktop hoac native select khong dong bo | Mobile-first visual smoke; table scroll trong box; dropdown dung component chung |
 | Finance leakage | Bao cao tai chinh Bella hien giao dich Beauty demo | Revenue/expenses demo hoac query finance thieu scope module/tenant | Finance read model bat buoc filter tenant; demo data repair; regression test |
 | Test blind spot | Co loi UI/data da sua thu cong nhung chua co guard | Test chua khoa dung invariant moi | Sau moi loi production/UI, them test guard nho nhat co the |
+| Static analysis gate drift | Semgrep/Trivy/Gitleaks fail sau khi them docs/demo/test artifact hoac dependency co CVE chua co ban sua | Gate quet ca artifact khong runtime, log dung format dong, hoac exception dependency khong co rationale | Ignore phai scope hep vao docs/archive/test; dependency exception phai ghi CVE/GHSA + ly do; runtime log dung constant format string; CI gate phai xanh truoc khi ban giao |
 | Retry duplicate | Webhook/cron/worker chay lai co nguy co nhan doi doanh thu/chi phi/but toan | Luong nhan event ngoai he thong thieu idempotency key hoac unique guard | Moi webhook/worker/sync phai co idempotency guard va test retry 2 lan |
 | Partial side effects | Action nhieu buoc loi giua chung nhung trang thai da bi cap nhat mot phan | Thieu transaction, snapshot rollback, hoac fail-closed contract | Multi-step write phai atomic hoac rollback ve snapshot khi bat ky buoc nao loi |
 | Direct ledger writes | Module nganh moi tu ghi `journal_entries`/`journal_lines` | Bo qua accounting outbox va worker TT133 | Phat sinh tai chinh phai day event qua accounting outbox, khong ghi so cai truc tiep; guard bang `src/__tests__/accounting-ledger-boundary.test.ts` |
@@ -271,6 +273,7 @@ Moi module moi can toi thieu cac nhom test:
 | Demo lifecycle | Tao/xoa demo tenant sach, co marker |
 | UI smoke | Desktop/mobile khong overflow, F5 khong flash sai brand/module |
 | Original product regression | Bella Spa hien tai van pass luong chinh |
+| Static analysis/security gates | Semgrep/Trivy/Gitleaks/audit/secret scan khong co canh bao runtime moi; exception neu co phai scope hep va co ly do |
 
 Lenh nen chay tuy scope:
 
@@ -278,8 +281,11 @@ Lenh nen chay tuy scope:
 npm.cmd test -- src/__tests__/beauty-spa-module-isolation.test.ts src/__tests__/booking-package-module-scope.test.ts --runInBand
 npm.cmd test -- src/__tests__/session-read-actions.test.ts src/__tests__/dashboard-actions.test.ts --runInBand
 npm.cmd run test:critical
+npm.cmd run security:audit
+npm.cmd run security:secrets
 npm.cmd run lint
 npm.cmd run build
+git diff --check
 ```
 
 Neu co migration/RLS:
@@ -337,6 +343,17 @@ Khi tu nay ve sau phat hien loi trong Beauty Spa hoac nganh moi, them vao bang n
 ```
 
 ## Lich Su Loi Moi
+
+### 2026-06-12 - Static analysis gate phai duoc xu ly co chu dich
+
+- Module/tenant: Toan he thong, ap dung cho Bella Spa va Beauty Spa.
+- Man hinh/luong: CI Static Analysis Security Suite, Quality and Security.
+- Dau hieu: Static Analysis fail do Trivy bao CVE cua `xlsx@0.18.5` va Semgrep bao nhieu finding trong docs/archive/static HTML, test path traversal, dynamic log format va dynamic RegExp.
+- Nguyen nhan goc: Gate security quet ca artifact khong runtime; dependency `xlsx` dang phuc vu export/test nhung co CVE chua co ban npm chinh thuc duoc du an dung; mot so server/script log dung template string voi gia tri dong.
+- Cach sua: Them `.semgrepignore` scope vao docs/archive/public static HTML/test artifact; them `.trivyignore` CVE hep co rationale cho `xlsx`; cap nhat workflow dung ignore; doi runtime/script log sang constant format string; giu API docs check dung pattern tinh.
+- Test/guard da them: `npm.cmd run docs:api:check`, `npm.cmd run security:audit`, `npm.cmd run security:secrets`, `npm.cmd run lint`, `npm.cmd run build`, `npm.cmd run test:critical`, `git diff --check`; GitHub Actions `Static Analysis Security Suite` va `Quality and Security` deu pass.
+- Commit: `299a42e4`.
+- Rui ro con lai: Khi them dependency export/report moi hoac static HTML demo moi, phai phan loai runtime vs artifact ro rang; khong them ignore rong lam mat tin hieu security that.
 
 ### 2026-06-12 - Beauty UAT smoke phai gom ca van hanh va tai nguyen
 
