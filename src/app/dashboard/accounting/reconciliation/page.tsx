@@ -11,11 +11,12 @@ import {
   HelpCircle,
 } from 'lucide-react';
 import Link from 'next/link';
-import { getReconciliationReport, getAccountingMode, syncLegacyToLedger, type ReconciliationRow } from '@/services/accounting-actions';
+import { getAccountingMode, syncLegacyToLedger, type ReconciliationRow } from '@/services/accounting-actions';
 import { toast } from 'sonner';
 import { SkeletonTable } from '@/components/ui/SkeletonLoader';
 import { getAccountingErrorMessage as getErrorMessage } from '@/lib/accounting-error-message';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
+import { getCachedReconciliationReportForPage } from '@/lib/accounting-subpages-client-cache';
 
 const fmtVND = (n: number) =>
   new Intl.NumberFormat('vi-VN', {
@@ -138,11 +139,15 @@ export default function ReconciliationPage() {
       });
   }, []);
 
-  const fetchData = useCallback(async (fromStr: string, toStr: string, options?: { toastOnError?: boolean }) => {
+  const fetchData = useCallback(async (
+    fromStr: string,
+    toStr: string,
+    options?: { force?: boolean; toastOnError?: boolean }
+  ) => {
     if (!fromStr || !toStr) return [];
     setRefreshing(true);
     try {
-      const data = await getReconciliationReport(fromStr, toStr);
+      const data = await getCachedReconciliationReportForPage(fromStr, toStr, { force: options?.force });
       const nextRows = data || [];
       setRows(nextRows);
       return nextRows;
@@ -172,7 +177,7 @@ export default function ReconciliationPage() {
       setShowSyncModal(false);
       if (fromDate && toDate) {
         try {
-          const refreshedRows = await fetchData(fromDate, toDate, { toastOnError: false });
+          const refreshedRows = await fetchData(fromDate, toDate, { force: true, toastOnError: false });
           const summary = buildPostSyncSummary({
             rows: refreshedRows,
             syncedRevenueCount: res.syncedRevenueCount,
@@ -210,7 +215,7 @@ export default function ReconciliationPage() {
   }, [fetchData, fromDate, toDate]);
 
   const handleSoftRefresh = useCallback(async () => {
-    await fetchData(fromDate, toDate);
+    await fetchData(fromDate, toDate, { force: true });
   }, [fetchData, fromDate, toDate]);
 
   usePageRefresh(handleSoftRefresh);
