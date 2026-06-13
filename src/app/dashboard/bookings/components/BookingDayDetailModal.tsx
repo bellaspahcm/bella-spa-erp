@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
+import type { BookingInvoicePrintLog } from '@/modules/booking/actions/invoice-print-actions';
 
 export type KtvOption = {
   id: string;
@@ -76,6 +77,8 @@ type BookingDayDetailModalProps = {
   ktvs: KtvOption[];
   bookingResources?: BookingResourceOption[];
   sessionHistory: SessionHistoryItem[];
+  invoicePrintLogs: BookingInvoicePrintLog[];
+  isLoadingInvoicePrintLogs: boolean;
   isUpdating: boolean;
   onClose: () => void;
   onModalDataChange: (modalData: BookingModalData) => void;
@@ -91,6 +94,8 @@ export function BookingDayDetailModal({
   ktvs,
   bookingResources = [],
   sessionHistory,
+  invoicePrintLogs,
+  isLoadingInvoicePrintLogs,
   isUpdating,
   onClose,
   onModalDataChange,
@@ -125,6 +130,19 @@ export function BookingDayDetailModal({
     })
     : resourceOptions;
   const visibleResourceOptions = matchingResourceOptions.length > 0 ? matchingResourceOptions : resourceOptions;
+  const formatLogTime = (value?: string | null) => {
+    if (!value) return '—';
+    return new Intl.DateTimeFormat('vi-VN', {
+      dateStyle: 'short',
+      timeStyle: 'short',
+    }).format(new Date(value));
+  };
+  const formatLogMoney = (value: number) =>
+    new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+      maximumFractionDigits: 0,
+    }).format(Number(value) || 0);
 
   return (
     <AnimatePresence>
@@ -326,6 +344,73 @@ export function BookingDayDetailModal({
                         <div className="text-center py-6">
                           <p className="text-[10px] text-slate-300 font-black uppercase tracking-widest italic">
                             Chưa có lịch sử hoàn thành
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="rounded-[24px] border border-slate-100 bg-slate-50 p-4 sm:rounded-[32px] sm:p-6">
+                    <div className="mb-4 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 text-slate-400">
+                        <Printer className="w-5 h-5" />
+                        <span className="text-xs font-black uppercase tracking-widest">Lịch sử in bill</span>
+                      </div>
+                      {isLoadingInvoicePrintLogs && (
+                        <Loader2 className="h-4 w-4 animate-spin text-slate-300" />
+                      )}
+                    </div>
+                    <div className="space-y-3 max-h-[180px] overflow-auto pr-2 custom-scrollbar">
+                      {invoicePrintLogs.length > 0 ? (
+                        invoicePrintLogs.map((log) => {
+                          const isVoided = Boolean(log.voided_at);
+                          const isReprint = log.print_type === 'reprint' || log.print_count > 1;
+                          return (
+                            <div key={log.id} className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+                              <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                                <div className="min-w-0">
+                                  <p className="break-words font-mono text-xs font-black text-slate-900">
+                                    {log.invoice_number}
+                                  </p>
+                                  <p className="mt-1 text-[10px] font-bold text-slate-400">
+                                    In lần {log.print_count} · {formatLogTime(log.created_at)}
+                                  </p>
+                                </div>
+                                <div className="flex flex-wrap gap-1.5">
+                                  <span className={`rounded-full px-2 py-1 text-[9px] font-black uppercase tracking-wider ${
+                                    isVoided ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'
+                                  }`}>
+                                    {isVoided ? 'Đã hủy' : 'Hiệu lực'}
+                                  </span>
+                                  {isReprint && (
+                                    <span className="rounded-full bg-amber-50 px-2 py-1 text-[9px] font-black uppercase tracking-wider text-amber-600">
+                                      In lại
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-1 gap-1 text-[10px] font-bold text-slate-500 sm:grid-cols-2">
+                                <p>Người in: {log.printed_by_user?.full_name || '—'}</p>
+                                <p className="sm:text-right">Còn thu: {formatLogMoney(log.amount_due)}</p>
+                                {log.voided_at && (
+                                  <>
+                                    <p>Người hủy: {log.voided_by_user?.full_name || '—'}</p>
+                                    <p className="sm:text-right">Hủy lúc: {formatLogTime(log.voided_at)}</p>
+                                  </>
+                                )}
+                              </div>
+                              {log.void_reason && (
+                                <p className="mt-2 rounded-xl bg-red-50 px-3 py-2 text-[10px] font-bold leading-relaxed text-red-600">
+                                  Lý do hủy: {log.void_reason}
+                                </p>
+                              )}
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <div className="py-6 text-center">
+                          <p className="text-[10px] text-slate-300 font-black uppercase tracking-widest italic">
+                            Chưa có lịch sử in bill
                           </p>
                         </div>
                       )}
