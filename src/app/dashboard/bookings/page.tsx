@@ -18,6 +18,7 @@ import { BookingDayDetailModal, type BookingModalData } from './components/Booki
 import { BookingThermalInvoicePrint } from './components/BookingThermalInvoicePrint';
 import { BookingCreateScheduleModal } from './components/BookingCreateScheduleModal';
 import { BookingsPosPanel } from './components/BookingsPosPanel';
+import { ReprintReasonModal } from './components/ReprintReasonModal';
 import { BookingsTimelineGrid } from './components/BookingsTimelineGrid';
 import { BookingsDayTimelineList } from './components/BookingsDayTimelineList';
 import { useBookingsPageData } from './hooks/useBookingsPageData';
@@ -65,6 +66,11 @@ function BookingsContent() {
     setPrintInvoiceData,
     invoicePrintLogs,
     isLoadingInvoicePrintLogs,
+    isPrintingInvoice,
+    printingSessionLogId,
+    reprintRequest,
+    closeReprintRequest,
+    confirmReprintRequest,
     fetchInvoicePrintLogs,
     handleOpenQrModal,
     handlePrintThermalInvoice,
@@ -196,6 +202,7 @@ function BookingsContent() {
               selectedDate={selectedDate}
               tenantModuleKey={resolvedTenantModuleKey}
               isSyncing={isSyncing}
+              printingSessionLogId={printingSessionLogId}
               isSameDay={isSameDay}
               onSessionSelect={(session) => {
                 openSessionDetail(session);
@@ -316,6 +323,7 @@ function BookingsContent() {
         sessionHistory={sessionHistory}
         invoicePrintLogs={invoicePrintLogs}
         isLoadingInvoicePrintLogs={isLoadingInvoicePrintLogs}
+        isPrintingInvoice={isPrintingInvoice}
         isUpdating={isUpdating}
         onClose={() => setShowDetailModal(false)}
         onModalDataChange={setModalData}
@@ -327,6 +335,12 @@ function BookingsContent() {
       <BookingThermalInvoicePrint
         invoice={printInvoiceData}
         onAfterPrint={() => setPrintInvoiceData(null)}
+      />
+      <ReprintReasonModal
+        isOpen={Boolean(reprintRequest)}
+        isSubmitting={isPrintingInvoice}
+        onClose={closeReprintRequest}
+        onConfirm={confirmReprintRequest}
       />
       <BookingCreateScheduleModal
         isOpen={showCreateModal}
