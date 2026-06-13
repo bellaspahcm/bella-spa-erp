@@ -27,6 +27,7 @@ import { buildSessionModalData, getMonthDays, isSameDay } from './utils/bookings
 function BookingsContent() {
   const searchParams = useSearchParams();
   const customerName = searchParams.get('name');
+  const surface = searchParams.get('surface') === 'pos' ? 'pos' : 'schedule';
 
   const [view, setView] = useState<BookingsViewMode>('timeline');
   const [ktvSpecialty, setKtvSpecialty] = useState<KtvSpecialty>('all');
@@ -118,6 +119,7 @@ function BookingsContent() {
         </AnimatePresence>
         <BookingsPageHeader
           view={view}
+          surface={surface}
           onViewChange={setView}
           onCreateClick={() => {
             setCreateDate(getLocalDateString());
@@ -163,6 +165,7 @@ function BookingsContent() {
       </AnimatePresence>
       <BookingsPageHeader
         view={view}
+        surface={surface}
         onViewChange={setView}
         onCreateClick={() => {
           setCreateDate(getLocalDateString());
