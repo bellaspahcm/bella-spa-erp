@@ -63,6 +63,7 @@ function BookingsContent() {
     setPrintInvoiceData,
     handleOpenQrModal,
     handlePrintThermalInvoice,
+    handleVoidLatestInvoice,
     handleUpdatePlan,
     handleCreateScheduleSubmit,
   } = useBookingsPageActions({
@@ -280,6 +281,7 @@ function BookingsContent() {
         onModalDataChange={setModalData}
         onOpenQrModal={handleOpenQrModal}
         onPrintInvoice={handlePrintThermalInvoice}
+        onVoidInvoice={handleVoidLatestInvoice}
         onSave={handleUpdatePlan}
       />
       <BookingThermalInvoicePrint
