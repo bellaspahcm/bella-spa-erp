@@ -212,6 +212,9 @@ export async function fetchBookingDetailsWithPayment(
       tenants (
         id,
         name,
+        logo_url,
+        brand_theme,
+        enabled_modules,
         qr_bank_code,
         qr_account_number,
         qr_account_name

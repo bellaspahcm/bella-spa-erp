@@ -6,6 +6,7 @@ export type BookingThermalInvoiceData = {
   invoiceNumber: string;
   printedAt: string;
   brandName: string;
+  logoUrl?: string | null;
   customerName: string;
   customerPhone?: string | null;
   cashierName?: string | null;
@@ -94,29 +95,44 @@ export function BookingThermalInvoicePrint({ invoice, onAfterPrint }: BookingThe
             display: block !important;
             position: absolute !important;
             inset: 0 auto auto 0 !important;
-            width: 80mm !important;
+            box-sizing: border-box !important;
+            width: 72mm !important;
+            max-width: 72mm !important;
             color: #000 !important;
             background: #fff !important;
             font-family: Arial, Helvetica, sans-serif !important;
+            overflow: hidden !important;
           }
 
           .thermal-invoice {
-            box-sizing: border-box;
-            width: 80mm;
-            padding: 4mm 4mm 6mm;
-            font-size: 10px;
+            box-sizing: border-box !important;
+            width: 72mm !important;
+            max-width: 72mm !important;
+            padding: 3mm 2mm 5mm !important;
+            font-size: 9.5px;
             line-height: 1.32;
+            overflow: hidden !important;
           }
 
           .thermal-invoice__center {
             text-align: center;
           }
 
+          .thermal-invoice__logo {
+            display: block;
+            width: auto;
+            max-width: 32mm;
+            max-height: 14mm;
+            object-fit: contain;
+            margin: 0 auto 2mm;
+          }
+
           .thermal-invoice__brand {
-            font-size: 15px;
+            font-size: 13px;
             font-weight: 900;
             text-transform: uppercase;
             letter-spacing: 0;
+            overflow-wrap: anywhere;
           }
 
           .thermal-invoice__title {
@@ -142,17 +158,25 @@ export function BookingThermalInvoicePrint({ invoice, onAfterPrint }: BookingThe
           .thermal-invoice__row {
             display: flex;
             justify-content: space-between;
-            gap: 3mm;
+            align-items: flex-start;
+            gap: 2mm;
             margin: 1mm 0;
+            width: 100%;
+            min-width: 0;
           }
 
           .thermal-invoice__label {
+            flex: 0 0 auto;
             font-weight: 700;
           }
 
           .thermal-invoice__value {
+            flex: 1 1 auto;
+            min-width: 0;
+            max-width: 42mm;
             text-align: right;
             font-weight: 700;
+            overflow-wrap: anywhere;
             word-break: break-word;
           }
 
@@ -162,16 +186,28 @@ export function BookingThermalInvoicePrint({ invoice, onAfterPrint }: BookingThe
 
           .thermal-invoice__item-name {
             font-weight: 900;
+            overflow-wrap: anywhere;
           }
 
           .thermal-invoice__muted {
             font-size: 9px;
+            overflow-wrap: anywhere;
           }
 
           .thermal-invoice__total {
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 900;
             text-transform: uppercase;
+          }
+
+          .thermal-invoice__total span:first-child {
+            flex: 0 1 auto;
+            min-width: 0;
+          }
+
+          .thermal-invoice__total .thermal-invoice__value {
+            max-width: 36mm;
+            font-size: 13px;
           }
 
           .thermal-invoice__qr {
@@ -199,6 +235,10 @@ export function BookingThermalInvoicePrint({ invoice, onAfterPrint }: BookingThe
 
       <section className="thermal-invoice">
         <div className="thermal-invoice__center">
+          {invoice.logoUrl && (
+            // eslint-disable-next-line @next/next/no-img-element -- The print document must render tenant-provided logos directly.
+            <img className="thermal-invoice__logo" src={invoice.logoUrl} alt="" />
+          )}
           <div className="thermal-invoice__brand">{invoice.brandName}</div>
           <div className="thermal-invoice__title">
             {invoice.amountDue > 0 ? 'Phiếu thanh toán' : 'Hóa đơn thanh toán'}
@@ -265,7 +305,7 @@ export function BookingThermalInvoicePrint({ invoice, onAfterPrint }: BookingThe
         </div>
         <div className="thermal-invoice__row thermal-invoice__total">
           <span>Còn thanh toán</span>
-          <span>{fmtVND(invoice.amountDue)}</span>
+          <span className="thermal-invoice__value">{fmtVND(invoice.amountDue)}</span>
         </div>
         <div className="thermal-invoice__row">
           <span>Phương thức</span>
