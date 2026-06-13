@@ -128,6 +128,20 @@ export function useBookingsPageActions({
 
     try {
       const { booking, paymentState } = await buildPaymentSnapshot(modalData.bookingId);
+      const hasActiveInvoice = invoicePrintLogs.some((log) => !log.voided_at);
+      let reprintReason: string | null = null;
+
+      if (hasActiveInvoice) {
+        const reason = window.prompt('Bill này đã có bản in hiệu lực. Nhập lý do in lại:');
+        if (!reason) return;
+
+        reprintReason = reason.trim();
+        if (reprintReason.length < 5) {
+          toast.error('Vui lòng nhập lý do in lại rõ ràng hơn.');
+          return;
+        }
+      }
+
       const tenantInfo = booking.tenants || null;
       const bankCode = tenantInfo?.qr_bank_code || '';
       const accountNumber = tenantInfo?.qr_account_number || '';
@@ -147,6 +161,7 @@ export function useBookingsPageActions({
         invoiceNumber,
         amountDue: paymentState.remainingDebt,
         transferMemo,
+        reason: reprintReason,
       });
 
       if (!logResult.success) {
