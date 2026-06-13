@@ -52,10 +52,10 @@ export default function TrainingDashboardPage() {
             </p>
           </div>
           <Link
-            href="/dashboard/settings"
+            href="/dashboard/training/courses"
             className="inline-flex items-center justify-center rounded-[var(--brand-button-radius)] border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-800 shadow-sm transition hover:border-primary hover:text-primary"
           >
-            Kiểm tra phân quyền
+            Mở giáo trình
           </Link>
         </header>
 
