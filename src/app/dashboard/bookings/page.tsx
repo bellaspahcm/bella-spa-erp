@@ -17,6 +17,7 @@ import { BookingsMonthCalendar } from './components/BookingsMonthCalendar';
 import { BookingDayDetailModal, type BookingModalData } from './components/BookingDayDetailModal';
 import { BookingThermalInvoicePrint } from './components/BookingThermalInvoicePrint';
 import { BookingCreateScheduleModal } from './components/BookingCreateScheduleModal';
+import { BookingsPosPanel } from './components/BookingsPosPanel';
 import { BookingsTimelineGrid } from './components/BookingsTimelineGrid';
 import { BookingsDayTimelineList } from './components/BookingsDayTimelineList';
 import { useBookingsPageData } from './hooks/useBookingsPageData';
@@ -148,6 +149,13 @@ function BookingsContent() {
     void fetchSessionHistory(session.booking_id);
     void fetchInvoicePrintLogs(session.booking_id);
   };
+  const printSessionInvoice = (session: Parameters<typeof buildSessionModalData>[0]) => {
+    const nextModalData = buildSessionModalData(session, {}, resolvedTenantModuleKey);
+    setModalData(nextModalData);
+    void fetchSessionHistory(session.booking_id);
+    void fetchInvoicePrintLogs(session.booking_id);
+    void handlePrintThermalInvoice(nextModalData);
+  };
 
   return (
     <div className="flex-1 overflow-auto bg-background/30 p-3 sm:p-6 md:p-10 relative">
@@ -175,7 +183,28 @@ function BookingsContent() {
 
       {/* Switch Rendering Views */}
       <AnimatePresence>
-        {view === 'calendar' ? (
+        {surface === 'pos' ? (
+          <motion.div
+            key="pos-view"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
+            transition={{ duration: 0.25 }}
+          >
+            <BookingsPosPanel
+              sessions={sessions}
+              selectedDate={selectedDate}
+              tenantModuleKey={resolvedTenantModuleKey}
+              isSyncing={isSyncing}
+              isSameDay={isSameDay}
+              onSessionSelect={(session) => {
+                openSessionDetail(session);
+              }}
+              onPrintInvoice={printSessionInvoice}
+              onQrClick={handleOpenQrModal}
+            />
+          </motion.div>
+        ) : view === 'calendar' ? (
           <motion.div
             key="calendar-view"
             initial={{ opacity: 0, y: 15 }}

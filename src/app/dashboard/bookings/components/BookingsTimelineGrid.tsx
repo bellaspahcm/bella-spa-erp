@@ -38,8 +38,18 @@ export type TimelineSession = {
     customers?: {
       name_mother?: string | null;
       name_baby?: string | null;
+      phone?: string | null;
       address?: string | null;
     } | null;
+    full_price?: number | string | null;
+    deposit_amount?: number | string | null;
+    discount_percent?: number | string | null;
+    status?: string | null;
+    revenue?: {
+      amount?: number | string | null;
+      status?: string | null;
+      revenue_type?: string | null;
+    }[] | null;
     packages?: {
       name?: string | null;
       module_key?: string | null;
