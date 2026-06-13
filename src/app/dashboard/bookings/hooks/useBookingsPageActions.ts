@@ -66,6 +66,9 @@ export function useBookingsPageActions({
   const [printInvoiceData, setPrintInvoiceData] = useState<BookingThermalInvoiceData | null>(null);
   const [invoicePrintLogs, setInvoicePrintLogs] = useState<BookingInvoicePrintLog[]>([]);
   const [isLoadingInvoicePrintLogs, setIsLoadingInvoicePrintLogs] = useState(false);
+  const [isPrintingInvoice, setIsPrintingInvoice] = useState(false);
+  const [printingSessionLogId, setPrintingSessionLogId] = useState<string | null>(null);
+  const [reprintRequest, setReprintRequest] = useState<BookingModalData | null>(null);
 
   const buildPaymentSnapshot = async (bookingId: string) => {
     const result = await getBookingDetailsWithPayment(bookingId);
@@ -127,9 +130,12 @@ export function useBookingsPageActions({
     }
   };
 
-  const handlePrintThermalInvoice = async (targetModalData = modalData) => {
+  const handlePrintThermalInvoice = async (targetModalData = modalData, approvedReprintReason?: string | null) => {
     if (!targetModalData) return;
+    if (isPrintingInvoice) return;
 
+    setIsPrintingInvoice(true);
+    setPrintingSessionLogId(targetModalData.id);
     try {
       const { booking, paymentState } = await buildPaymentSnapshot(targetModalData.bookingId);
       const logsResult = await getInvoicePrintLogsForBooking(targetModalData.bookingId);
@@ -144,10 +150,11 @@ export function useBookingsPageActions({
       let reprintReason: string | null = null;
 
       if (hasActiveInvoice) {
-        const reason = window.prompt('Bill này đã có bản in hiệu lực. Nhập lý do in lại:');
-        if (!reason) return;
-
-        reprintReason = reason.trim();
+        reprintReason = approvedReprintReason?.trim() || null;
+        if (!reprintReason) {
+          setReprintRequest(targetModalData);
+          return;
+        }
         if (reprintReason.length < 5) {
           toast.error('Vui lòng nhập lý do in lại rõ ràng hơn.');
           return;
@@ -216,7 +223,25 @@ export function useBookingsPageActions({
     } catch (err) {
       console.error('Error preparing thermal invoice:', err);
       toast.error('Không thể chuẩn bị hóa đơn in.');
+    } finally {
+      setIsPrintingInvoice(false);
+      setPrintingSessionLogId(null);
     }
+  };
+
+  const closeReprintRequest = () => {
+    setReprintRequest(null);
+    setIsPrintingInvoice(false);
+    setPrintingSessionLogId(null);
+  };
+
+  const confirmReprintRequest = async (reason: string) => {
+    if (!reprintRequest) return;
+    const target = reprintRequest;
+    setReprintRequest(null);
+    setIsPrintingInvoice(false);
+    setPrintingSessionLogId(null);
+    await handlePrintThermalInvoice(target, reason);
   };
 
   const handleVoidLatestInvoice = async () => {
@@ -350,6 +375,11 @@ export function useBookingsPageActions({
     setPrintInvoiceData,
     invoicePrintLogs,
     isLoadingInvoicePrintLogs,
+    isPrintingInvoice,
+    printingSessionLogId,
+    reprintRequest,
+    closeReprintRequest,
+    confirmReprintRequest,
     fetchInvoicePrintLogs,
     handleOpenQrModal,
     handlePrintThermalInvoice,

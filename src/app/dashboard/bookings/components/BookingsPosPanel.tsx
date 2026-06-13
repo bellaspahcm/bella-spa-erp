@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { CalendarClock, CreditCard, FileText, Printer, QrCode, Search } from 'lucide-react';
+import { CalendarClock, CreditCard, FileText, Loader2, Printer, QrCode, Search } from 'lucide-react';
 
 import { calculateBookingPaymentState } from '@/lib/business-rules/payment';
 import { formatBookingCustomerLabel } from '@/lib/business-rules/tenant-module-presentation';
@@ -14,6 +14,7 @@ type BookingsPosPanelProps = {
   selectedDate: Date;
   tenantModuleKey: TenantModuleKey;
   isSyncing: boolean;
+  printingSessionLogId: string | null;
   isSameDay: (d1: Date | string, d2: Date | string) => boolean;
   onSessionSelect: (session: TimelineSession) => void;
   onPrintInvoice: (session: TimelineSession) => void;
@@ -75,6 +76,7 @@ export function BookingsPosPanel({
   selectedDate,
   tenantModuleKey,
   isSyncing,
+  printingSessionLogId,
   isSameDay,
   onSessionSelect,
   onPrintInvoice,
@@ -207,14 +209,20 @@ export function BookingsPosPanel({
                   </div>
 
                   <div className="flex flex-wrap justify-end gap-2">
+                    {(() => {
+                      const isThisPrinting = printingSessionLogId === item.session.id;
+                      return (
                     <button
                       type="button"
                       onClick={() => onPrintInvoice(item.session)}
-                      className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-slate-900 px-3 text-xs font-black text-white transition hover:bg-slate-800"
+                      disabled={Boolean(printingSessionLogId)}
+                      className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-slate-900 px-3 text-xs font-black text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-emerald-600 disabled:opacity-80"
                     >
-                      <Printer className="h-4 w-4" />
-                      In bill
+                      {isThisPrinting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
+                      {isThisPrinting ? 'Đang in...' : 'In bill'}
                     </button>
+                      );
+                    })()}
                     <button
                       type="button"
                       onClick={() => onQrClick(item.session.booking_id)}
