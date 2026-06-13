@@ -79,6 +79,7 @@ type BookingDayDetailModalProps = {
   sessionHistory: SessionHistoryItem[];
   invoicePrintLogs: BookingInvoicePrintLog[];
   isLoadingInvoicePrintLogs: boolean;
+  isPrintingInvoice: boolean;
   isUpdating: boolean;
   onClose: () => void;
   onModalDataChange: (modalData: BookingModalData) => void;
@@ -96,6 +97,7 @@ export function BookingDayDetailModal({
   sessionHistory,
   invoicePrintLogs,
   isLoadingInvoicePrintLogs,
+  isPrintingInvoice,
   isUpdating,
   onClose,
   onModalDataChange,
@@ -447,10 +449,11 @@ export function BookingDayDetailModal({
               <div className="mt-6 flex flex-col gap-3 sm:mt-8 sm:flex-row">
                 <button
                   onClick={onPrintInvoice}
-                  className="flex-1 bg-slate-900 text-white py-4 rounded-2xl font-bold hover:bg-slate-800 transition-all active:scale-95 flex items-center justify-center gap-2"
+                  disabled={isPrintingInvoice}
+                  className="flex-1 bg-slate-900 text-white py-4 rounded-2xl font-bold hover:bg-slate-800 transition-all active:scale-95 flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:bg-emerald-600 disabled:active:scale-100"
                 >
-                  <Printer className="w-4 h-4" />
-                  <span>In hóa đơn</span>
+                  {isPrintingInvoice ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
+                  <span>{isPrintingInvoice ? 'Đang chuẩn bị...' : 'In hóa đơn'}</span>
                 </button>
                 <button
                   onClick={onVoidInvoice}
