@@ -208,7 +208,7 @@ describe('Branch Onboarding System (Owned vs Franchise)', () => {
     expect(mockCheckHqAuth).toHaveBeenCalledTimes(1);
     expect(mockFrom).toHaveBeenCalledWith('tenants');
     expect(tenantQueryMock.updateSpy).toHaveBeenCalledWith(expect.objectContaining({
-      enabled_modules: { babycare: false, beauty_spa: true },
+      enabled_modules: { babycare: false, beauty_spa: true, student_training: false },
     }));
     expect(tenantQueryMock.updateSpy).not.toHaveBeenCalledWith(expect.objectContaining({
       enabled_modules: expect.objectContaining({ babycare: true }),
@@ -217,7 +217,7 @@ describe('Branch Onboarding System (Owned vs Franchise)', () => {
     expect(mockRecordAuditLog).toHaveBeenCalledWith(expect.objectContaining({
       new_data: expect.objectContaining({
         business_module: 'beauty_spa',
-        enabled_modules: { babycare: false, beauty_spa: true },
+        enabled_modules: { babycare: false, beauty_spa: true, student_training: false },
       }),
     }));
     expect(mockSafeRevalidatePath).toHaveBeenCalledWith('/dashboard');

@@ -54,11 +54,12 @@ export async function proxy(request: NextRequest) {
 
   const isDashboardRoute = request.nextUrl.pathname.startsWith('/dashboard');
   const isKtvRoute = request.nextUrl.pathname.startsWith('/ktv');
+  const isStudentRoute = request.nextUrl.pathname.startsWith('/student');
   const isLoginRoute = request.nextUrl.pathname === '/login';
 
   // 2. Security Redirects: Chưa đăng nhập truy cập trang cần bảo vệ
   if (!user && !isMockDev) {
-    if (isDashboardRoute || isKtvRoute) {
+    if (isDashboardRoute || isKtvRoute || isStudentRoute) {
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('next', request.nextUrl.pathname);
       return NextResponse.redirect(loginUrl);
@@ -93,6 +94,11 @@ export async function proxy(request: NextRequest) {
 
   // 4. Kiểm tra phân quyền và điều hướng an toàn (Server-side Redirect)
   if (isDashboardRoute) {
+    if (role === 'student') {
+      const studentDashboardUrl = new URL('/student/dashboard', request.url);
+      return NextResponse.redirect(studentDashboardUrl);
+    }
+
     if (role === 'ktv') {
       const ktvDashboardUrl = new URL('/ktv/dashboard', request.url);
       return NextResponse.redirect(ktvDashboardUrl);
@@ -100,14 +106,29 @@ export async function proxy(request: NextRequest) {
   }
 
   if (isKtvRoute) {
+    if (role === 'student') {
+      const studentDashboardUrl = new URL('/student/dashboard', request.url);
+      return NextResponse.redirect(studentDashboardUrl);
+    }
+
     if (role && role !== 'ktv') {
       const dashboardUrl = new URL('/dashboard', request.url);
       return NextResponse.redirect(dashboardUrl);
     }
   }
 
+  if (isStudentRoute) {
+    if (role && role !== 'student') {
+      const targetUrl = new URL(role === 'ktv' ? '/ktv/dashboard' : '/dashboard', request.url);
+      return NextResponse.redirect(targetUrl);
+    }
+  }
+
   if (isLoginRoute) {
-    const targetUrl = new URL(role === 'ktv' ? '/ktv/dashboard' : '/dashboard', request.url);
+    const targetUrl = new URL(
+      role === 'student' ? '/student/dashboard' : role === 'ktv' ? '/ktv/dashboard' : '/dashboard',
+      request.url,
+    );
     return NextResponse.redirect(targetUrl);
   }
 
@@ -124,5 +145,5 @@ export async function proxy(request: NextRequest) {
 export const config = {
   // Chỉ chạy trên các route được bảo vệ
   // Loại trừ trang Portal (/portal/[token]) của khách hàng vì truy cập qua magic links token.
-  matcher: ['/dashboard/:path*', '/ktv/:path*', '/login'],
+  matcher: ['/dashboard/:path*', '/ktv/:path*', '/student/:path*', '/login'],
 };

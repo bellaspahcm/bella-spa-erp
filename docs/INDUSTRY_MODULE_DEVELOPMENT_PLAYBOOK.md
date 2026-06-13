@@ -39,6 +39,18 @@ Quyet dinh chinh:
 - Branding cua Beauty Spa phai doc tu tenant/brand config cua chinh spa do, khong hard-code Bella Spa.
 - Module key la quyen kinh doanh do HQ cap, khong phai feature flag ky thuat de tenant admin tu bat/tat.
 
+## Ghi Chu Phan He Dao Tao Hoc Vien
+
+`student_training` la add-on dao tao co the bat cho Bella Spa hoac Beauty Spa, khong phai module nganh chinh thay the `babycare`/`beauty_spa`.
+
+Quyet dinh chinh:
+
+- `babycare` va `beauty_spa` van la primary business module dung cho brand, service package va ngon ngu van hanh chinh.
+- `student_training` chi mo cac bang/course/portal dao tao, mac dinh tat cho tenant moi va tenant cu.
+- Học viên role `student` la user ngoai van hanh: khong duoc vao `/dashboard/*` hoac `/ktv/*`; nhan su spa khong duoc vao `/student/*`.
+- RLS cua bang dao tao phai tach staff tenant-scope va student own-record/enrolled-course scope; khong cho student doc toan bo du lieu dao tao cung tenant.
+- Thu hoc phi dao tao chua duoc xem la doanh thu ke toan cho den khi co server action va accounting outbox rieng.
+
 ## Lich Su Beauty Spa: Qua Trinh, Loi, Cach Sua
 
 Bang nay la nhat ky bai hoc thuc te. Khi lam nganh moi, bat buoc doi chieu tung nhom loi.

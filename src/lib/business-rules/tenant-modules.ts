@@ -1,8 +1,10 @@
 import type { Json } from '@/types/database.types';
 
-export const TENANT_MODULE_KEYS = ['babycare', 'beauty_spa'] as const;
+export const TENANT_MODULE_KEYS = ['babycare', 'beauty_spa', 'student_training'] as const;
+export const TENANT_PRIMARY_BUSINESS_MODULE_KEYS = ['babycare', 'beauty_spa'] as const;
 
 export type TenantModuleKey = (typeof TENANT_MODULE_KEYS)[number];
+export type TenantPrimaryBusinessModuleKey = (typeof TENANT_PRIMARY_BUSINESS_MODULE_KEYS)[number];
 
 export type TenantEnabledModules = Record<TenantModuleKey, boolean>;
 
@@ -44,6 +46,7 @@ export type ResolvedTenantBrandIdentity = TenantBrandTheme & {
 export const DEFAULT_ENABLED_MODULES: TenantEnabledModules = {
   babycare: true,
   beauty_spa: false,
+  student_training: false,
 };
 
 export const DEFAULT_TENANT_BRAND_THEME: TenantBrandTheme = {
@@ -153,16 +156,22 @@ export function normalizeEnabledModules(value: unknown): TenantEnabledModules {
     beauty_spa: typeof source.beauty_spa === 'boolean'
       ? source.beauty_spa
       : false,
+    student_training: typeof source.student_training === 'boolean'
+      ? source.student_training
+      : false,
   };
 }
 
 export function normalizeEnabledModulesForSave(value: unknown): TenantEnabledModules {
   const modules = normalizeEnabledModules(value);
   if (modules.babycare || modules.beauty_spa) return modules;
-  return DEFAULT_ENABLED_MODULES;
+  return {
+    ...modules,
+    babycare: true,
+  };
 }
 
-export function getDefaultTenantModuleKey(value: unknown): TenantModuleKey {
+export function getDefaultTenantModuleKey(value: unknown): TenantPrimaryBusinessModuleKey {
   const modules = normalizeEnabledModulesForSave(value);
   return modules.babycare ? 'babycare' : 'beauty_spa';
 }
