@@ -45,7 +45,7 @@ function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);
 }
 
-function canVoidInvoicePrintLog(role: string | null | undefined) {
+function canManageInvoicePrintLog(role: string | null | undefined) {
   return role === 'admin' || role === 'admin_staff' || role === 'accountant';
 }
 
@@ -126,6 +126,10 @@ export async function recordInvoicePrintLog(params: RecordInvoicePrintLogParams)
     }
 
     const printCount = (count || 0) + 1;
+    if (printCount > 1 && !canManageInvoicePrintLog(currentUser?.role)) {
+      return { success: false, error: 'Bạn không có quyền in lại bill.' };
+    }
+
     const payload: InvoicePrintLogInsert = {
       tenant_id: tenantId,
       booking_id: params.bookingId,
@@ -166,7 +170,7 @@ export async function voidLatestInvoicePrintLog(params: VoidLatestInvoicePrintLo
     const currentUser = await getCurrentUser();
     const tenantId = requireCurrentUserTenant(currentUser);
 
-    if (!canVoidInvoicePrintLog(currentUser?.role)) {
+    if (!canManageInvoicePrintLog(currentUser?.role)) {
       return { success: false, error: 'Bạn không có quyền hủy bill đã in.' };
     }
 
