@@ -8,11 +8,11 @@ import {
   buildServicePackageUpdatePayload,
 } from '@/lib/business-rules/service-package';
 import {
-  TENANT_MODULE_KEYS,
+  TENANT_PRIMARY_BUSINESS_MODULE_KEYS,
   getDefaultTenantModuleKey,
   normalizeEnabledModulesForSave,
   type TenantEnabledModules,
-  type TenantModuleKey,
+  type TenantPrimaryBusinessModuleKey,
 } from '@/lib/business-rules/tenant-modules';
 import { getAuthorizedTenantUser } from './auth-guards';
 import type { Database, Json } from '@/types/database.types';
@@ -61,8 +61,8 @@ const PACKAGE_MODULE_SETUP_ERROR = 'Không thể tải cấu hình module ngành
 
 type PackageTenantModuleScope = {
   enabledModules: TenantEnabledModules;
-  enabledModuleKeys: TenantModuleKey[];
-  defaultModuleKey: TenantModuleKey;
+  enabledModuleKeys: TenantPrimaryBusinessModuleKey[];
+  defaultModuleKey: TenantPrimaryBusinessModuleKey;
 };
 
 type TenantModuleScopeResult =
@@ -70,7 +70,7 @@ type TenantModuleScopeResult =
   | { success: false; error: string };
 
 type PackageModuleResult =
-  | { success: true; moduleKey: TenantModuleKey }
+  | { success: true; moduleKey: TenantPrimaryBusinessModuleKey }
   | { success: false; error: string };
 const PACKAGE_AUTH_ERROR = 'Không có quyền quản lý gói dịch vụ.';
 
@@ -96,12 +96,13 @@ async function createPackageDataClient(): Promise<SupabaseClient> {
   }) as unknown as SupabaseClient;
 }
 
-function isTenantModuleKey(value: unknown): value is TenantModuleKey {
-  return typeof value === 'string' && TENANT_MODULE_KEYS.includes(value as TenantModuleKey);
+function isServicePackageModuleKey(value: unknown): value is TenantPrimaryBusinessModuleKey {
+  return typeof value === 'string'
+    && TENANT_PRIMARY_BUSINESS_MODULE_KEYS.includes(value as TenantPrimaryBusinessModuleKey);
 }
 
 function getEnabledModuleKeys(enabledModules: TenantEnabledModules) {
-  return TENANT_MODULE_KEYS.filter(moduleKey => enabledModules[moduleKey]);
+  return TENANT_PRIMARY_BUSINESS_MODULE_KEYS.filter(moduleKey => enabledModules[moduleKey]);
 }
 
 function normalizeTenantId(value: string | null | undefined) {
@@ -155,7 +156,7 @@ function resolvePackageModuleForTenant(
   scope: PackageTenantModuleScope,
 ): PackageModuleResult {
   const normalizedRequestedModule = requestedModuleKey?.trim().toLowerCase();
-  const moduleKey = isTenantModuleKey(normalizedRequestedModule)
+  const moduleKey = isServicePackageModuleKey(normalizedRequestedModule)
     ? normalizedRequestedModule
     : scope.defaultModuleKey;
 

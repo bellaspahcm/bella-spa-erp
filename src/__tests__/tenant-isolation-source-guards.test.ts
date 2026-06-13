@@ -9,8 +9,8 @@ describe('dashboard tenant isolation source guards', () => {
   it('keeps inventory dashboard reads behind tenant-scoped server actions', () => {
     const source = readSource('src/app/dashboard/inventory/hooks/useInventoryPageState.ts');
 
-    expect(source).toContain('getInventoryItems()');
-    expect(source).toContain('getInventoryLogs(200)');
+    expect(source).toContain('getCachedInventoryItemsForPage');
+    expect(source).toContain('getCachedInventoryLogsForPage');
     expect(source).not.toMatch(/\.from\('inventory_(items|logs)'\)/);
   });
 
@@ -141,6 +141,23 @@ describe('dashboard tenant isolation source guards', () => {
     expect(dashboardLayoutSource).not.toContain("from '@/services/user-actions'");
     expect(sidebarSource).not.toContain("from '@/services/user-actions'");
     expect(settingsSource).not.toContain('getTenantSettings()');
+  });
+
+  it('keeps student training portal isolated at the proxy and sidebar layers', () => {
+    const proxySource = readSource('src/proxy.ts');
+    const sidebarSource = readSource('src/components/layout/sidebar.tsx');
+    const permissionsSource = readSource('src/lib/business-rules/permissions.ts');
+    const trainingPageSource = readSource('src/app/dashboard/training/page.tsx');
+
+    expect(proxySource).toContain("const isStudentRoute = request.nextUrl.pathname.startsWith('/student')");
+    expect(proxySource).toContain("role === 'student'");
+    expect(proxySource).toContain("new URL('/student/dashboard', request.url)");
+    expect(proxySource).toContain("matcher: ['/dashboard/:path*', '/ktv/:path*', '/student/:path*', '/login']");
+    expect(sidebarSource).toContain("label: 'Đào tạo'");
+    expect(sidebarSource).toContain("href: '/dashboard/training'");
+    expect(permissionsSource).toContain("'Đào tạo': 'student_training'");
+    expect(trainingPageSource).not.toMatch(/\.from\('(courses|students|student_lesson_progress|student_tuition_payments|training_classes|student_class_attendance)'/);
+    expect(trainingPageSource).not.toContain('createClient');
   });
 
   it('keeps GPS empty-state copy encoded correctly', () => {

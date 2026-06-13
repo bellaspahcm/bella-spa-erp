@@ -5,6 +5,23 @@
 
 ---
 
+### 14/06/2026: Student Training Foundation
+* **Muc tieu san pham**:
+  * Trien khai nen mong Giai doan 1 theo `docs/plans/student-training-expansion-plan.html` cho phan he dao tao hoc vien.
+  * Xac lap `student_training` la add-on dao tao, khong thay the primary module `babycare`/`beauty_spa`.
+  * Tach route hoc vien khoi dashboard van hanh de giam rui ro ro ri du lieu spa.
+* **Thay doi chinh**:
+  * Them spec `docs/implementation-artifacts/spec-student-training-foundation.md`.
+  * Them migration `20260613100000_create_student_training_foundation.sql` tao 8 bang training tenant-scoped, role `student`, default `enabled_modules.student_training = false`, RLS va grants.
+  * Them route guard `/student/*`, redirect student khoi `/dashboard/*` va `/ktv/*`, redirect staff khoi student portal.
+  * Them sidebar/tab `Đào tạo`, trang admin `/dashboard/training` va shell `/student/dashboard`.
+  * Cap nhat module registry de phan biet primary business modules voi add-on training.
+* **Kiem tra**:
+  * `npm.cmd test -- src/__tests__/platform-rule-engines.test.ts src/__tests__/tenant-isolation-source-guards.test.ts src/__tests__/package-actions.test.ts src/__tests__/onboarding.test.ts --runInBand` pass, 4 suites / 47 tests.
+  * `npm.cmd run lint` pass.
+  * `npm.cmd run build` pass.
+  * `git diff --check` pass, chi co canh bao LF/CRLF cua Windows.
+
 ### 11/06/2026: Defer Beauty Spa Chain Expansion Until Core Stabilization
 * **Muc tieu san pham**:
   * Luu lai ke hoach mo rong Beauty Spa theo mo hinh 1 spa chinh + nhieu chi nhanh con, nhung chua trien khai ngay.
