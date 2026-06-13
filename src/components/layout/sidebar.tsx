@@ -25,6 +25,7 @@ import {
   Scale,
   Wallet,
   HelpCircle,
+  ReceiptText,
   RefreshCw
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -240,6 +241,7 @@ const menuItems: SidebarMenuItem[] = [
   { type: 'header', label: 'Khách hàng & Dịch vụ' },
   { icon: Users,           label: 'Khách hàng',         href: '/dashboard/customers' },
   { icon: Calendar,        label: 'Lịch hẹn',           href: '/dashboard/bookings' },
+  { icon: ReceiptText,     label: 'POS / In bill',      href: '/dashboard/bookings?surface=pos' },
   { icon: Flower2,         label: 'Thẻ liệu trình',     href: '/dashboard/sessions' },
   { icon: MessageSquare,   label: 'Tin nhắn',           href: '/dashboard/chat' },
   { icon: Megaphone,       label: 'CRM & Zalo',         href: '/dashboard/crm' },

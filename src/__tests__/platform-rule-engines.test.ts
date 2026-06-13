@@ -108,6 +108,13 @@ describe('platform rule engines', () => {
   it('centralizes sidebar, manual, and AI access rules', () => {
     expect(isSidebarItemAllowed({ role: 'ktv', label: 'Tài chính' })).toBe(false);
     expect(isSidebarItemAllowed({ role: 'ktv', label: 'Thẻ liệu trình' })).toBe(true);
+    expect(isSidebarItemAllowed({ role: 'ktv', label: 'POS / In bill' })).toBe(true);
+    expect(isSidebarItemAllowed({ role: 'accountant', label: 'POS / In bill' })).toBe(false);
+    expect(isSidebarItemAllowed({
+      role: 'admin_staff',
+      label: 'POS / In bill',
+      rolePermissions: { bookings: false },
+    })).toBe(false);
     expect(isSidebarItemAllowed({
       role: 'accountant',
       label: 'Tài chính',
