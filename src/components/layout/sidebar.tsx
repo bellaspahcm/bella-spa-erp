@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { 
   LayoutDashboard, 
@@ -222,12 +222,28 @@ function isMenuHeader(item: SidebarMenuItem): item is MenuHeader {
   return item.type === 'header';
 }
 
-function isPathActive(pathname: string, href: string) {
+function isPathActive(pathname: string, searchParams: URLSearchParams, href: string) {
   const normalizedPath = pathname.replace(/\/+$/, '') || '/';
-  const normalizedHref = href.replace(/\/+$/, '') || '/';
+  const [hrefPathRaw, hrefQuery = ''] = href.split('?');
+  const normalizedHref = hrefPathRaw.replace(/\/+$/, '') || '/';
+  const hrefSearchParams = new URLSearchParams(hrefQuery);
 
   if (normalizedHref === '/dashboard') {
     return normalizedPath === '/dashboard';
+  }
+
+  if (hrefSearchParams.size > 0) {
+    if (normalizedPath !== normalizedHref) return false;
+
+    for (const [key, value] of hrefSearchParams.entries()) {
+      if (searchParams.get(key) !== value) return false;
+    }
+
+    return true;
+  }
+
+  if (normalizedHref === '/dashboard/bookings' && searchParams.get('surface') === 'pos') {
+    return false;
   }
 
   return normalizedPath === normalizedHref || normalizedPath.startsWith(`${normalizedHref}/`);
@@ -272,6 +288,7 @@ const customerMenuItems: SidebarMenuItem[] = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [rolePermissions, setRolePermissions] = useState<RolePermissions | null>(null);
@@ -408,7 +425,7 @@ export function Sidebar() {
   const activeHref = finalMenuItems
     .filter((item): item is MenuLink => !isMenuHeader(item))
     .map((item) => item.href)
-    .filter((href) => isPathActive(pathname, href))
+    .filter((href) => isPathActive(pathname, searchParams, href))
     .sort((a, b) => b.length - a.length)[0];
 
   const handleLogout = async () => {
