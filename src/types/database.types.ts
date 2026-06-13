@@ -1148,6 +1148,80 @@ export type Database = {
           },
         ]
       }
+      invoice_print_logs: {
+        Row: {
+          amount_due: number
+          booking_id: string
+          created_at: string
+          id: string
+          invoice_number: string
+          print_count: number
+          print_type: string
+          printed_by: string | null
+          reason: string | null
+          session_log_id: string | null
+          tenant_id: string
+          transfer_memo: string | null
+        }
+        Insert: {
+          amount_due?: number
+          booking_id: string
+          created_at?: string
+          id?: string
+          invoice_number: string
+          print_count?: number
+          print_type?: string
+          printed_by?: string | null
+          reason?: string | null
+          session_log_id?: string | null
+          tenant_id: string
+          transfer_memo?: string | null
+        }
+        Update: {
+          amount_due?: number
+          booking_id?: string
+          created_at?: string
+          id?: string
+          invoice_number?: string
+          print_count?: number
+          print_type?: string
+          printed_by?: string | null
+          reason?: string | null
+          session_log_id?: string | null
+          tenant_id?: string
+          transfer_memo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_print_logs_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_print_logs_printed_by_fkey"
+            columns: ["printed_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_print_logs_session_log_id_fkey"
+            columns: ["session_log_id"]
+            isOneToOne: false
+            referencedRelation: "session_logs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_print_logs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inter_branch_clearing_records: {
         Row: {
           calculated_amount: number

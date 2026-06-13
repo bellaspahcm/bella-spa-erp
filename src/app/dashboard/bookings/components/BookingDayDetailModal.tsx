@@ -9,6 +9,7 @@ import {
   Loader2,
   MessageSquare,
   Package,
+  Printer,
   QrCode,
   TrendingUp,
   Users,
@@ -78,6 +79,7 @@ type BookingDayDetailModalProps = {
   onClose: () => void;
   onModalDataChange: (modalData: BookingModalData) => void;
   onOpenQrModal: (bookingId: string) => void;
+  onPrintInvoice: () => void;
   onSave: () => void;
 };
 
@@ -91,6 +93,7 @@ export function BookingDayDetailModal({
   onClose,
   onModalDataChange,
   onOpenQrModal,
+  onPrintInvoice,
   onSave,
 }: BookingDayDetailModalProps) {
   const completedHistory = modalData
@@ -349,6 +352,13 @@ export function BookingDayDetailModal({
               </div>
 
               <div className="mt-6 flex flex-col gap-3 sm:mt-8 sm:flex-row">
+                <button
+                  onClick={onPrintInvoice}
+                  className="flex-1 bg-slate-900 text-white py-4 rounded-2xl font-bold hover:bg-slate-800 transition-all active:scale-95 flex items-center justify-center gap-2"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>In hóa đơn</span>
+                </button>
                 <button
                   onClick={() => {
                     onClose();
