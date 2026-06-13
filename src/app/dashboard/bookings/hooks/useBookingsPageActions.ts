@@ -4,6 +4,7 @@ import { type FormEvent, useState } from 'react';
 import { toast } from 'sonner';
 
 import { calculateBookingPaymentState } from '@/lib/business-rules/payment';
+import { resolveTenantBrandIdentity } from '@/lib/business-rules/tenant-modules';
 import { getLocalDateString } from '@/lib/utils';
 import {
   getInvoicePrintLogsForBooking,
@@ -21,6 +22,9 @@ type TenantBankInfo = {
   qr_bank_code?: string | null;
   qr_account_number?: string | null;
   qr_account_name?: string | null;
+  logo_url?: string | null;
+  brand_theme?: unknown;
+  enabled_modules?: unknown;
   name?: string;
 };
 
@@ -154,6 +158,13 @@ export function useBookingsPageActions({
       const originalAmount = Number(booking.full_price || 0);
       const discountAmount = Math.max(0, originalAmount - paymentState.priceAfterDiscount);
       const invoiceNumber = `INV-${bookingNumber}`;
+      const tenantBrand = resolveTenantBrandIdentity({
+        enabledModules: tenantInfo?.enabled_modules,
+        brandTheme: tenantInfo?.brand_theme,
+        logoUrl: tenantInfo?.logo_url,
+        tenantName: tenantInfo?.name,
+        surface: 'invoice',
+      });
 
       const logResult = await recordInvoicePrintLog({
         bookingId: modalData.bookingId,
@@ -175,7 +186,8 @@ export function useBookingsPageActions({
           dateStyle: 'short',
           timeStyle: 'medium',
         }).format(new Date()),
-        brandName: tenantInfo?.name || 'Bella Spa',
+        brandName: tenantBrand.displayName,
+        logoUrl: tenantBrand.logoUrl,
         customerName: modalData.customer || 'Khách hàng',
         bookingNumber,
         packageName: modalData.package || booking.package_name || 'Gói dịch vụ',
