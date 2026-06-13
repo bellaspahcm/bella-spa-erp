@@ -1,0 +1,630 @@
+'use server';
+
+import { createDevelopmentBypassClient } from '@/lib/supabase-dev-bypass-server';
+import { safeRevalidatePath } from '@/lib/revalidate';
+import { getAuthorizedTenantUser } from './auth-guards';
+import type {
+  TrainingContentType,
+  TrainingCourseInput,
+  TrainingCourseInsert,
+  TrainingCourseModuleInput,
+  TrainingCourseModuleInsert,
+  TrainingCourseModuleRow,
+  TrainingCourseModuleUpdate,
+  TrainingCourseRow,
+  TrainingCourseStatus,
+  TrainingCourseUpdate,
+  TrainingCourseWithContent,
+  TrainingLessonInput,
+  TrainingLessonInsert,
+  TrainingLessonRow,
+  TrainingLessonStatus,
+  TrainingLessonUpdate,
+} from '@/types/training';
+
+type DbError = { message: string };
+type QueryResult<T> = { data: T | null; error: DbError | null };
+type QueryListResult<T> = { data: T[] | null; error: DbError | null };
+
+type TrainingTableMap = {
+  courses: {
+    Row: TrainingCourseRow;
+    Insert: TrainingCourseInsert;
+    Update: TrainingCourseUpdate;
+  };
+  course_modules: {
+    Row: TrainingCourseModuleRow;
+    Insert: TrainingCourseModuleInsert;
+    Update: TrainingCourseModuleUpdate;
+  };
+  lessons: {
+    Row: TrainingLessonRow;
+    Insert: TrainingLessonInsert;
+    Update: TrainingLessonUpdate;
+  };
+};
+
+type OrderOptions = { ascending?: boolean };
+
+type TrainingSelectBuilder<T> = PromiseLike<QueryListResult<T>> & {
+  eq(column: string, value: unknown): TrainingSelectBuilder<T>;
+  in(column: string, values: readonly unknown[]): TrainingSelectBuilder<T>;
+  order(column: string, options?: OrderOptions): TrainingSelectBuilder<T>;
+  single(): Promise<QueryResult<T>>;
+};
+
+type TrainingMutationBuilder<T> = {
+  eq(column: string, value: unknown): TrainingMutationBuilder<T>;
+  select(columns?: string): TrainingSelectBuilder<T>;
+  single(): Promise<QueryResult<T>>;
+};
+
+type TrainingDeleteBuilder = PromiseLike<QueryResult<null>> & {
+  eq(column: string, value: unknown): TrainingDeleteBuilder;
+};
+
+type TrainingTableClient<T extends keyof TrainingTableMap> = {
+  select(columns?: string): TrainingSelectBuilder<TrainingTableMap[T]['Row']>;
+  insert(payload: readonly TrainingTableMap[T]['Insert'][]): {
+    select(columns?: string): TrainingSelectBuilder<TrainingTableMap[T]['Row']>;
+  };
+  update(payload: TrainingTableMap[T]['Update']): TrainingMutationBuilder<TrainingTableMap[T]['Row']>;
+  delete(): TrainingDeleteBuilder;
+};
+
+type TrainingDataClient = {
+  from<T extends keyof TrainingTableMap>(table: T): TrainingTableClient<T>;
+};
+
+type TrainingActionResult<T> =
+  | { success: true; data: T }
+  | { success: false; error: string };
+type TrainingDeleteResult =
+  | { success: true }
+  | { success: false; error: string };
+
+const TRAINING_READ_ROLES = ['admin', 'super_admin', 'admin_staff', 'hr'] as const;
+const TRAINING_MANAGE_ROLES = ['admin', 'super_admin'] as const;
+const TRAINING_AUTH_ERROR = 'Không có quyền quản lý đào tạo học viên.';
+const COURSE_NOT_FOUND = 'Không tìm thấy khóa học đào tạo trong chi nhánh hiện tại.';
+const MODULE_NOT_FOUND = 'Không tìm thấy chương học trong chi nhánh hiện tại.';
+const LESSON_NOT_FOUND = 'Không tìm thấy bài học trong chi nhánh hiện tại.';
+
+function cleanText(value: unknown, maxLength: number) {
+  if (typeof value !== 'string') return '';
+  return value.trim().slice(0, maxLength);
+}
+
+function cleanNullableText(value: unknown, maxLength: number) {
+  const text = cleanText(value, maxLength);
+  return text || null;
+}
+
+function parseNonNegativeNumber(value: unknown, fallback: number) {
+  if (value === null || value === undefined || value === '') return fallback;
+  const parsed = typeof value === 'number' ? value : Number(String(value).replace(/[,\s]/g, ''));
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : NaN;
+}
+
+function parsePositiveInteger(value: unknown, fallback: number) {
+  if (value === null || value === undefined || value === '') return fallback;
+  const parsed = typeof value === 'number' ? value : Number(String(value).replace(/[,\s]/g, ''));
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : NaN;
+}
+
+function isCourseStatus(value: unknown): value is TrainingCourseStatus {
+  return value === 'draft' || value === 'active' || value === 'archived';
+}
+
+function isLessonStatus(value: unknown): value is TrainingLessonStatus {
+  return value === 'draft' || value === 'published' || value === 'archived';
+}
+
+function isContentType(value: unknown): value is TrainingContentType {
+  return value === 'document'
+    || value === 'video'
+    || value === 'pdf'
+    || value === 'quiz'
+    || value === 'live_class';
+}
+
+function buildCoursePayload(
+  input: TrainingCourseInput,
+  context: { tenantId: string; userId?: string | null },
+): TrainingActionResult<TrainingCourseInsert> {
+  const title = cleanText(input.title, 160);
+  if (!title) {
+    return { success: false, error: 'Vui lòng nhập tên khóa học.' };
+  }
+
+  const tuitionAmount = parseNonNegativeNumber(input.tuitionAmount, 0);
+  if (Number.isNaN(tuitionAmount)) {
+    return { success: false, error: 'Học phí khóa học không hợp lệ.' };
+  }
+
+  const theoryDurationMinutes = parseNonNegativeNumber(input.theoryDurationMinutes, 0);
+  if (Number.isNaN(theoryDurationMinutes) || !Number.isInteger(theoryDurationMinutes)) {
+    return { success: false, error: 'Thời lượng lý thuyết phải là số phút hợp lệ.' };
+  }
+
+  const status = isCourseStatus(input.status) ? input.status : 'draft';
+
+  return {
+    success: true,
+    data: {
+      tenant_id: context.tenantId,
+      module_key: 'student_training',
+      title,
+      description: cleanNullableText(input.description, 2000),
+      specialty: cleanNullableText(input.specialty, 120),
+      tuition_amount: tuitionAmount,
+      theory_duration_minutes: theoryDurationMinutes,
+      status,
+      created_by: context.userId || null,
+    },
+  };
+}
+
+function buildModulePayload(input: TrainingCourseModuleInput): TrainingActionResult<TrainingCourseModuleInsert> {
+  const courseId = cleanText(input.courseId, 80);
+  const title = cleanText(input.title, 160);
+  const sequenceOrder = parsePositiveInteger(input.sequenceOrder, 1);
+
+  if (!courseId) return { success: false, error: 'Thiếu khóa học cần thêm chương.' };
+  if (!title) return { success: false, error: 'Vui lòng nhập tên chương học.' };
+  if (Number.isNaN(sequenceOrder)) return { success: false, error: 'Thứ tự chương học không hợp lệ.' };
+
+  return {
+    success: true,
+    data: {
+      course_id: courseId,
+      title,
+      description: cleanNullableText(input.description, 2000),
+      sequence_order: sequenceOrder,
+    },
+  };
+}
+
+function buildLessonPayload(input: TrainingLessonInput): TrainingActionResult<TrainingLessonInsert> {
+  const moduleId = cleanText(input.moduleId, 80);
+  const title = cleanText(input.title, 160);
+  const sequenceOrder = parsePositiveInteger(input.sequenceOrder, 1);
+  const requiredViewSeconds = parseNonNegativeNumber(input.requiredViewSeconds, 0);
+  const requiredViewPercentage = parseNonNegativeNumber(input.requiredViewPercentage, 90);
+
+  if (!moduleId) return { success: false, error: 'Thiếu chương học cần thêm bài.' };
+  if (!title) return { success: false, error: 'Vui lòng nhập tên bài học.' };
+  if (Number.isNaN(sequenceOrder)) return { success: false, error: 'Thứ tự bài học không hợp lệ.' };
+  if (Number.isNaN(requiredViewSeconds) || !Number.isInteger(requiredViewSeconds)) {
+    return { success: false, error: 'Thời lượng xem bắt buộc phải là số giây hợp lệ.' };
+  }
+  if (Number.isNaN(requiredViewPercentage) || requiredViewPercentage > 100) {
+    return { success: false, error: 'Phần trăm xem bắt buộc phải nằm trong khoảng 0-100.' };
+  }
+
+  return {
+    success: true,
+    data: {
+      module_id: moduleId,
+      title,
+      content_type: isContentType(input.contentType) ? input.contentType : 'document',
+      content_url: cleanNullableText(input.contentUrl, 500),
+      body: cleanNullableText(input.body, 8000),
+      sequence_order: sequenceOrder,
+      required_view_seconds: requiredViewSeconds,
+      required_view_percentage: requiredViewPercentage,
+      status: isLessonStatus(input.status) ? input.status : 'draft',
+    },
+  };
+}
+
+async function getTrainingClient(): Promise<TrainingDataClient> {
+  return (await createDevelopmentBypassClient()) as unknown as TrainingDataClient;
+}
+
+async function assertCourseBelongsToTenant(
+  db: TrainingDataClient,
+  courseId: string,
+  tenantId: string,
+): Promise<TrainingActionResult<TrainingCourseRow>> {
+  const { data, error } = await db
+    .from('courses')
+    .select('*')
+    .eq('id', courseId)
+    .eq('tenant_id', tenantId)
+    .single();
+
+  if (error) return { success: false, error: error.message };
+  if (!data) return { success: false, error: COURSE_NOT_FOUND };
+  return { success: true, data };
+}
+
+async function assertModuleBelongsToTenant(
+  db: TrainingDataClient,
+  moduleId: string,
+  tenantId: string,
+): Promise<TrainingActionResult<TrainingCourseModuleRow>> {
+  const { data, error } = await db
+    .from('course_modules')
+    .select('*')
+    .eq('id', moduleId)
+    .single();
+
+  if (error) return { success: false, error: error.message };
+  if (!data) return { success: false, error: MODULE_NOT_FOUND };
+
+  const courseResult = await assertCourseBelongsToTenant(db, data.course_id, tenantId);
+  if (!courseResult.success) return { success: false, error: courseResult.error };
+  return { success: true, data };
+}
+
+async function assertLessonBelongsToTenant(
+  db: TrainingDataClient,
+  lessonId: string,
+  tenantId: string,
+): Promise<TrainingActionResult<TrainingLessonRow>> {
+  const { data, error } = await db
+    .from('lessons')
+    .select('*')
+    .eq('id', lessonId)
+    .single();
+
+  if (error) return { success: false, error: error.message };
+  if (!data) return { success: false, error: LESSON_NOT_FOUND };
+
+  const moduleResult = await assertModuleBelongsToTenant(db, data.module_id, tenantId);
+  if (!moduleResult.success) return { success: false, error: moduleResult.error };
+  return { success: true, data };
+}
+
+function buildCourseTree(input: {
+  courses: TrainingCourseRow[];
+  modules: TrainingCourseModuleRow[];
+  lessons: TrainingLessonRow[];
+}): TrainingCourseWithContent[] {
+  const lessonsByModule = new Map<string, TrainingLessonRow[]>();
+  for (const lesson of input.lessons) {
+    const current = lessonsByModule.get(lesson.module_id) || [];
+    current.push(lesson);
+    lessonsByModule.set(lesson.module_id, current);
+  }
+
+  const modulesByCourse = new Map<string, TrainingCourseWithContent['modules']>();
+  for (const courseModule of input.modules) {
+    const current = modulesByCourse.get(courseModule.course_id) || [];
+    current.push({
+      ...courseModule,
+      lessons: lessonsByModule.get(courseModule.id) || [],
+    });
+    modulesByCourse.set(courseModule.course_id, current);
+  }
+
+  return input.courses.map((course) => ({
+    ...course,
+    modules: modulesByCourse.get(course.id) || [],
+  }));
+}
+
+export async function getTrainingAdminOverview(): Promise<TrainingActionResult<TrainingCourseWithContent[]>> {
+  const auth = await getAuthorizedTenantUser({
+    allowedRoles: TRAINING_READ_ROLES,
+    errorMessage: TRAINING_AUTH_ERROR,
+  });
+  if (!auth.ok) return { success: false, error: auth.error };
+
+  const db = await getTrainingClient();
+  const { data: courses, error: coursesError } = await db
+    .from('courses')
+    .select('*')
+    .eq('tenant_id', auth.tenantId)
+    .order('status', { ascending: true })
+    .order('created_at', { ascending: false });
+
+  if (coursesError) return { success: false, error: coursesError.message };
+  const courseRows = courses || [];
+  if (courseRows.length === 0) return { success: true, data: [] };
+
+  const courseIds = courseRows.map((course) => course.id);
+  const { data: modules, error: modulesError } = await db
+    .from('course_modules')
+    .select('*')
+    .in('course_id', courseIds)
+    .order('sequence_order', { ascending: true });
+
+  if (modulesError) return { success: false, error: modulesError.message };
+  const moduleRows = modules || [];
+  const moduleIds = moduleRows.map((moduleRow) => moduleRow.id);
+  const lessonResult: QueryListResult<TrainingLessonRow> = moduleIds.length === 0
+    ? { data: [], error: null }
+    : await db
+      .from('lessons')
+      .select('*')
+      .in('module_id', moduleIds)
+      .order('sequence_order', { ascending: true });
+
+  if (lessonResult.error) return { success: false, error: lessonResult.error.message };
+  return {
+    success: true,
+    data: buildCourseTree({ courses: courseRows, modules: moduleRows, lessons: lessonResult.data || [] }),
+  };
+}
+
+export async function createTrainingCourse(input: TrainingCourseInput): Promise<TrainingActionResult<TrainingCourseRow>> {
+  const auth = await getAuthorizedTenantUser({
+    allowedRoles: TRAINING_MANAGE_ROLES,
+    errorMessage: TRAINING_AUTH_ERROR,
+  });
+  if (!auth.ok) return { success: false, error: auth.error };
+
+  const payload = buildCoursePayload(input, { tenantId: auth.tenantId, userId: auth.user.id });
+  if (!payload.success) return payload;
+
+  const db = await getTrainingClient();
+  const { data, error } = await db
+    .from('courses')
+    .insert([payload.data])
+    .select('*')
+    .single();
+
+  if (error) return { success: false, error: error.message };
+  if (!data) return { success: false, error: 'Không xác định được khóa học vừa tạo.' };
+
+  safeRevalidatePath('/dashboard/training');
+  safeRevalidatePath('/dashboard/training/courses');
+  return { success: true, data };
+}
+
+export async function updateTrainingCourse(
+  courseId: string,
+  input: TrainingCourseInput,
+): Promise<TrainingActionResult<TrainingCourseRow>> {
+  const auth = await getAuthorizedTenantUser({
+    allowedRoles: TRAINING_MANAGE_ROLES,
+    errorMessage: TRAINING_AUTH_ERROR,
+  });
+  if (!auth.ok) return { success: false, error: auth.error };
+
+  const db = await getTrainingClient();
+  const existing = await assertCourseBelongsToTenant(db, courseId, auth.tenantId);
+  if (!existing.success) return existing;
+
+  const payload = buildCoursePayload(input, { tenantId: auth.tenantId, userId: auth.user.id });
+  if (!payload.success) return payload;
+
+  const dbPayload: TrainingCourseUpdate = {
+    title: payload.data.title,
+    description: payload.data.description,
+    specialty: payload.data.specialty,
+    tuition_amount: payload.data.tuition_amount,
+    theory_duration_minutes: payload.data.theory_duration_minutes,
+    status: payload.data.status,
+    updated_at: new Date().toISOString(),
+  };
+  const { data, error } = await db
+    .from('courses')
+    .update(dbPayload)
+    .eq('id', courseId)
+    .eq('tenant_id', auth.tenantId)
+    .select('*')
+    .single();
+
+  if (error) return { success: false, error: error.message };
+  if (!data) return { success: false, error: 'Không xác định được khóa học vừa cập nhật.' };
+
+  safeRevalidatePath('/dashboard/training');
+  safeRevalidatePath('/dashboard/training/courses');
+  return { success: true, data };
+}
+
+export async function archiveTrainingCourse(courseId: string): Promise<TrainingDeleteResult> {
+  const auth = await getAuthorizedTenantUser({
+    allowedRoles: TRAINING_MANAGE_ROLES,
+    errorMessage: TRAINING_AUTH_ERROR,
+  });
+  if (!auth.ok) return { success: false, error: auth.error };
+
+  const db = await getTrainingClient();
+  const existing = await assertCourseBelongsToTenant(db, courseId, auth.tenantId);
+  if (!existing.success) return { success: false, error: existing.error };
+
+  const { error } = await db
+    .from('courses')
+    .update({ status: 'archived', updated_at: new Date().toISOString() })
+    .eq('id', courseId)
+    .eq('tenant_id', auth.tenantId)
+    .select('*')
+    .single();
+
+  if (error) return { success: false, error: error.message };
+
+  safeRevalidatePath('/dashboard/training');
+  safeRevalidatePath('/dashboard/training/courses');
+  return { success: true };
+}
+
+export async function createCourseModule(
+  input: TrainingCourseModuleInput,
+): Promise<TrainingActionResult<TrainingCourseModuleRow>> {
+  const auth = await getAuthorizedTenantUser({
+    allowedRoles: TRAINING_MANAGE_ROLES,
+    errorMessage: TRAINING_AUTH_ERROR,
+  });
+  if (!auth.ok) return { success: false, error: auth.error };
+
+  const payload = buildModulePayload(input);
+  if (!payload.success) return payload;
+
+  const db = await getTrainingClient();
+  const courseResult = await assertCourseBelongsToTenant(db, payload.data.course_id, auth.tenantId);
+  if (!courseResult.success) return { success: false, error: courseResult.error };
+
+  const { data, error } = await db
+    .from('course_modules')
+    .insert([payload.data])
+    .select('*')
+    .single();
+
+  if (error) return { success: false, error: error.message };
+  if (!data) return { success: false, error: 'Không xác định được chương học vừa tạo.' };
+
+  safeRevalidatePath('/dashboard/training/courses');
+  return { success: true, data };
+}
+
+export async function updateCourseModule(
+  moduleId: string,
+  input: TrainingCourseModuleInput,
+): Promise<TrainingActionResult<TrainingCourseModuleRow>> {
+  const auth = await getAuthorizedTenantUser({
+    allowedRoles: TRAINING_MANAGE_ROLES,
+    errorMessage: TRAINING_AUTH_ERROR,
+  });
+  if (!auth.ok) return { success: false, error: auth.error };
+
+  const payload = buildModulePayload(input);
+  if (!payload.success) return payload;
+
+  const db = await getTrainingClient();
+  const existing = await assertModuleBelongsToTenant(db, moduleId, auth.tenantId);
+  if (!existing.success) return existing;
+  if (existing.data.course_id !== payload.data.course_id) {
+    return { success: false, error: 'Không thể chuyển chương học sang khóa khác.' };
+  }
+
+  const dbPayload: TrainingCourseModuleUpdate = {
+    title: payload.data.title,
+    description: payload.data.description,
+    sequence_order: payload.data.sequence_order,
+    updated_at: new Date().toISOString(),
+  };
+  const { data, error } = await db
+    .from('course_modules')
+    .update(dbPayload)
+    .eq('id', moduleId)
+    .select('*')
+    .single();
+
+  if (error) return { success: false, error: error.message };
+  if (!data) return { success: false, error: 'Không xác định được chương học vừa cập nhật.' };
+
+  safeRevalidatePath('/dashboard/training/courses');
+  return { success: true, data };
+}
+
+export async function deleteCourseModule(moduleId: string): Promise<TrainingDeleteResult> {
+  const auth = await getAuthorizedTenantUser({
+    allowedRoles: TRAINING_MANAGE_ROLES,
+    errorMessage: TRAINING_AUTH_ERROR,
+  });
+  if (!auth.ok) return { success: false, error: auth.error };
+
+  const db = await getTrainingClient();
+  const existing = await assertModuleBelongsToTenant(db, moduleId, auth.tenantId);
+  if (!existing.success) return { success: false, error: existing.error };
+
+  const { error } = await db
+    .from('course_modules')
+    .delete()
+    .eq('id', moduleId);
+
+  if (error) return { success: false, error: error.message };
+  safeRevalidatePath('/dashboard/training/courses');
+  return { success: true };
+}
+
+export async function createTrainingLesson(
+  input: TrainingLessonInput,
+): Promise<TrainingActionResult<TrainingLessonRow>> {
+  const auth = await getAuthorizedTenantUser({
+    allowedRoles: TRAINING_MANAGE_ROLES,
+    errorMessage: TRAINING_AUTH_ERROR,
+  });
+  if (!auth.ok) return { success: false, error: auth.error };
+
+  const payload = buildLessonPayload(input);
+  if (!payload.success) return payload;
+
+  const db = await getTrainingClient();
+  const moduleResult = await assertModuleBelongsToTenant(db, payload.data.module_id, auth.tenantId);
+  if (!moduleResult.success) return { success: false, error: moduleResult.error };
+
+  const { data, error } = await db
+    .from('lessons')
+    .insert([payload.data])
+    .select('*')
+    .single();
+
+  if (error) return { success: false, error: error.message };
+  if (!data) return { success: false, error: 'Không xác định được bài học vừa tạo.' };
+
+  safeRevalidatePath('/dashboard/training/courses');
+  return { success: true, data };
+}
+
+export async function updateTrainingLesson(
+  lessonId: string,
+  input: TrainingLessonInput,
+): Promise<TrainingActionResult<TrainingLessonRow>> {
+  const auth = await getAuthorizedTenantUser({
+    allowedRoles: TRAINING_MANAGE_ROLES,
+    errorMessage: TRAINING_AUTH_ERROR,
+  });
+  if (!auth.ok) return { success: false, error: auth.error };
+
+  const payload = buildLessonPayload(input);
+  if (!payload.success) return payload;
+
+  const db = await getTrainingClient();
+  const existing = await assertLessonBelongsToTenant(db, lessonId, auth.tenantId);
+  if (!existing.success) return existing;
+  if (existing.data.module_id !== payload.data.module_id) {
+    return { success: false, error: 'Không thể chuyển bài học sang chương khác.' };
+  }
+
+  const dbPayload: TrainingLessonUpdate = {
+    title: payload.data.title,
+    content_type: payload.data.content_type,
+    content_url: payload.data.content_url,
+    body: payload.data.body,
+    sequence_order: payload.data.sequence_order,
+    required_view_seconds: payload.data.required_view_seconds,
+    required_view_percentage: payload.data.required_view_percentage,
+    status: payload.data.status,
+    updated_at: new Date().toISOString(),
+  };
+  const { data, error } = await db
+    .from('lessons')
+    .update(dbPayload)
+    .eq('id', lessonId)
+    .select('*')
+    .single();
+
+  if (error) return { success: false, error: error.message };
+  if (!data) return { success: false, error: 'Không xác định được bài học vừa cập nhật.' };
+
+  safeRevalidatePath('/dashboard/training/courses');
+  return { success: true, data };
+}
+
+export async function archiveTrainingLesson(lessonId: string): Promise<TrainingDeleteResult> {
+  const auth = await getAuthorizedTenantUser({
+    allowedRoles: TRAINING_MANAGE_ROLES,
+    errorMessage: TRAINING_AUTH_ERROR,
+  });
+  if (!auth.ok) return { success: false, error: auth.error };
+
+  const db = await getTrainingClient();
+  const existing = await assertLessonBelongsToTenant(db, lessonId, auth.tenantId);
+  if (!existing.success) return { success: false, error: existing.error };
+
+  const { error } = await db
+    .from('lessons')
+    .update({ status: 'archived', updated_at: new Date().toISOString() })
+    .eq('id', lessonId)
+    .select('*')
+    .single();
+
+  if (error) return { success: false, error: error.message };
+  safeRevalidatePath('/dashboard/training/courses');
+  return { success: true };
+}
