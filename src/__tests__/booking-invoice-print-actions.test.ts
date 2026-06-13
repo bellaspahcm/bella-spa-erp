@@ -169,6 +169,33 @@ describe('booking invoice print actions', () => {
     ]);
   });
 
+  it('stores reprint reason when recording another active invoice print', async () => {
+    scriptedResults = [
+      { data: { id: 'booking-1' }, error: null },
+      { data: null, error: null, count: 2 },
+      { data: { id: 'log-3', print_count: 3, reason: 'Khách làm mất bill' }, error: null },
+    ];
+
+    const result = await recordInvoicePrintLog({
+      bookingId: 'booking-1',
+      invoiceNumber: 'INV-BK-1',
+      amountDue: 120000,
+      transferMemo: 'BELLA BK-1',
+      reason: 'Khách làm mất bill',
+    });
+
+    expect(result.success).toBe(true);
+    expect(queryCalls[2]).toEqual(expect.objectContaining({
+      table: 'invoice_print_logs',
+      operation: 'insert',
+      payload: expect.objectContaining({
+        print_count: 3,
+        print_type: 'reprint',
+        reason: 'Khách làm mất bill',
+      }),
+    }));
+  });
+
   it('returns invoice print logs scoped to the current tenant booking', async () => {
     scriptedResults = [
       { data: { id: 'booking-1' }, error: null },
