@@ -61,6 +61,9 @@ function BookingsContent() {
     qrModalData,
     printInvoiceData,
     setPrintInvoiceData,
+    invoicePrintLogs,
+    isLoadingInvoicePrintLogs,
+    fetchInvoicePrintLogs,
     handleOpenQrModal,
     handlePrintThermalInvoice,
     handleVoidLatestInvoice,
@@ -134,6 +137,15 @@ function BookingsContent() {
   }
 
   const resolvedTenantModuleKey = tenantModuleKey;
+  const openSessionDetail = (
+    session: Parameters<typeof buildSessionModalData>[0],
+    overrides: Partial<BookingModalData> = {},
+  ) => {
+    setModalData(buildSessionModalData(session, overrides, resolvedTenantModuleKey));
+    setShowDetailModal(true);
+    void fetchSessionHistory(session.booking_id);
+    void fetchInvoicePrintLogs(session.booking_id);
+  };
 
   return (
     <div className="flex-1 overflow-auto bg-background/30 p-3 sm:p-6 md:p-10 relative">
@@ -187,9 +199,7 @@ function BookingsContent() {
               isSyncing={isSyncing}
               isSameDay={isSameDay}
               onSessionSelect={(session) => {
-                setModalData(buildSessionModalData(session, {}, resolvedTenantModuleKey));
-                setShowDetailModal(true);
-                void fetchSessionHistory(session.booking_id);
+                openSessionDetail(session);
               }}
               onQrClick={handleOpenQrModal}
               onCareClick={(session) => {
@@ -198,7 +208,7 @@ function BookingsContent() {
                   return;
                 }
 
-                setModalData(buildSessionModalData(session, {
+                openSessionDetail(session, {
                   customer: formatBookingCustomerLabel({
                     moduleKey: resolvedTenantModuleKey,
                     primaryName: session.bookings?.customers?.name_mother,
@@ -207,9 +217,7 @@ function BookingsContent() {
                   time: session.assigned_time || new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
                   contractDetail: session.notes || '',
                   status: session.status === 'scheduled' ? 'in_progress' : session.status || undefined,
-                }, resolvedTenantModuleKey));
-                setShowDetailModal(true);
-                void fetchSessionHistory(session.booking_id);
+                });
               }}
             />
           </motion.div>
@@ -253,9 +261,7 @@ function BookingsContent() {
               isSyncing={isSyncing}
               isSameDay={isSameDay}
               onSessionSelect={(session) => {
-                setModalData(buildSessionModalData(session, {}, resolvedTenantModuleKey));
-                setShowDetailModal(true);
-                void fetchSessionHistory(session.booking_id);
+                openSessionDetail(session);
               }}
               onEmptySlotClick={(hour) => {
                 setSelectedBookingIdForCreate('');
@@ -276,6 +282,8 @@ function BookingsContent() {
         ktvs={ktvs}
         bookingResources={bookingResources}
         sessionHistory={sessionHistory}
+        invoicePrintLogs={invoicePrintLogs}
+        isLoadingInvoicePrintLogs={isLoadingInvoicePrintLogs}
         isUpdating={isUpdating}
         onClose={() => setShowDetailModal(false)}
         onModalDataChange={setModalData}

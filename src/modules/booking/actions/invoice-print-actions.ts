@@ -21,6 +21,17 @@ type VoidLatestInvoicePrintLogParams = {
   reason: string;
 };
 
+export type BookingInvoicePrintLog = Database['public']['Tables']['invoice_print_logs']['Row'] & {
+  printed_by_user?: {
+    full_name: string | null;
+    role: string | null;
+  } | null;
+  voided_by_user?: {
+    full_name: string | null;
+    role: string | null;
+  } | null;
+};
+
 const BOOKING_TENANT_ACCESS_ERROR = 'Khong xac dinh duoc don vi kinh doanh cua nguoi dung hien tai.';
 
 function requireCurrentUserTenant(currentUser: Awaited<ReturnType<typeof getCurrentUser>>) {
@@ -38,25 +49,70 @@ function canVoidInvoicePrintLog(role: string | null | undefined) {
   return role === 'admin' || role === 'admin_staff' || role === 'accountant';
 }
 
+async function assertBookingBelongsToTenant(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  bookingId: string,
+  tenantId: string,
+) {
+  const { data: booking, error: bookingError } = await supabase
+    .from('bookings')
+    .select('id')
+    .eq('id', bookingId)
+    .eq('tenant_id', tenantId)
+    .maybeSingle();
+
+  if (bookingError) {
+    return { success: false as const, error: bookingError.message };
+  }
+
+  if (!booking) {
+    return { success: false as const, error: 'Không tìm thấy booking thuộc chi nhánh hiện tại.' };
+  }
+
+  return { success: true as const };
+}
+
+export async function getInvoicePrintLogsForBooking(bookingId: string) {
+  try {
+    const supabase = await createClient();
+    const currentUser = await getCurrentUser();
+    const tenantId = requireCurrentUserTenant(currentUser);
+    const bookingGuard = await assertBookingBelongsToTenant(supabase, bookingId, tenantId);
+
+    if (!bookingGuard.success) {
+      return { success: false, error: bookingGuard.error, data: [] as BookingInvoicePrintLog[] };
+    }
+
+    const { data, error } = await supabase
+      .from('invoice_print_logs')
+      .select(`
+        *,
+        printed_by_user:users!invoice_print_logs_printed_by_fkey(full_name, role),
+        voided_by_user:users!invoice_print_logs_voided_by_fkey(full_name, role)
+      `)
+      .eq('tenant_id', tenantId)
+      .eq('booking_id', bookingId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      return { success: false, error: error.message, data: [] as BookingInvoicePrintLog[] };
+    }
+
+    return { success: true, data: (data || []) as BookingInvoicePrintLog[] };
+  } catch (error) {
+    return { success: false, error: getErrorMessage(error), data: [] as BookingInvoicePrintLog[] };
+  }
+}
+
 export async function recordInvoicePrintLog(params: RecordInvoicePrintLogParams) {
   try {
     const supabase = await createClient();
     const currentUser = await getCurrentUser();
     const tenantId = requireCurrentUserTenant(currentUser);
 
-    const { data: booking, error: bookingError } = await supabase
-      .from('bookings')
-      .select('id')
-      .eq('id', params.bookingId)
-      .eq('tenant_id', tenantId)
-      .maybeSingle();
-
-    if (bookingError) {
-      return { success: false, error: bookingError.message };
-    }
-
-    if (!booking) {
-      return { success: false, error: 'Không tìm thấy booking thuộc chi nhánh hiện tại.' };
+    const bookingGuard = await assertBookingBelongsToTenant(supabase, params.bookingId, tenantId);
+    if (!bookingGuard.success) {
+      return { success: false, error: bookingGuard.error };
     }
 
     const { count, error: countError } = await supabase
@@ -114,19 +170,9 @@ export async function voidLatestInvoicePrintLog(params: VoidLatestInvoicePrintLo
       return { success: false, error: 'Bạn không có quyền hủy bill đã in.' };
     }
 
-    const { data: booking, error: bookingError } = await supabase
-      .from('bookings')
-      .select('id')
-      .eq('id', params.bookingId)
-      .eq('tenant_id', tenantId)
-      .maybeSingle();
-
-    if (bookingError) {
-      return { success: false, error: bookingError.message };
-    }
-
-    if (!booking) {
-      return { success: false, error: 'Không tìm thấy booking thuộc chi nhánh hiện tại.' };
+    const bookingGuard = await assertBookingBelongsToTenant(supabase, params.bookingId, tenantId);
+    if (!bookingGuard.success) {
+      return { success: false, error: bookingGuard.error };
     }
 
     const { data: latestLog, error: latestLogError } = await supabase

@@ -3,7 +3,11 @@ jest.mock('../services/user-actions', () => ({
   getCurrentUser: jest.fn(),
 }));
 
-import { recordInvoicePrintLog, voidLatestInvoicePrintLog } from '../modules/booking/actions/invoice-print-actions';
+import {
+  getInvoicePrintLogsForBooking,
+  recordInvoicePrintLog,
+  voidLatestInvoicePrintLog,
+} from '../modules/booking/actions/invoice-print-actions';
 import { getCurrentUser } from '../services/user-actions';
 
 type QueryResult = {
@@ -161,6 +165,48 @@ describe('booking invoice print actions', () => {
           amount_due: 120000,
           transfer_memo: 'BELLA BK-1',
         }),
+      }),
+    ]);
+  });
+
+  it('returns invoice print logs scoped to the current tenant booking', async () => {
+    scriptedResults = [
+      { data: { id: 'booking-1' }, error: null },
+      {
+        data: [
+          {
+            id: 'log-1',
+            invoice_number: 'INV-BK-1',
+            booking_id: 'booking-1',
+            tenant_id: 'tenant-1',
+            print_count: 1,
+            printed_by_user: { full_name: 'Thu ngân A', role: 'admin_staff' },
+          },
+        ],
+        error: null,
+      },
+    ];
+
+    const result = await getInvoicePrintLogsForBooking('booking-1');
+
+    expect(result.success).toBe(true);
+    expect(result.data).toHaveLength(1);
+    expect(queryCalls).toEqual([
+      expect.objectContaining({
+        table: 'bookings',
+        operation: 'select',
+        filters: [
+          { column: 'id', value: 'booking-1' },
+          { column: 'tenant_id', value: 'tenant-1' },
+        ],
+      }),
+      expect.objectContaining({
+        table: 'invoice_print_logs',
+        operation: 'select',
+        filters: [
+          { column: 'tenant_id', value: 'tenant-1' },
+          { column: 'booking_id', value: 'booking-1' },
+        ],
       }),
     ]);
   });
