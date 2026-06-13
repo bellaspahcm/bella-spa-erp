@@ -3,7 +3,7 @@ jest.mock('../services/user-actions', () => ({
   getCurrentUser: jest.fn(),
 }));
 
-import { recordInvoicePrintLog } from '../modules/booking/actions/invoice-print-actions';
+import { recordInvoicePrintLog, voidLatestInvoicePrintLog } from '../modules/booking/actions/invoice-print-actions';
 import { getCurrentUser } from '../services/user-actions';
 
 type QueryResult = {
@@ -14,7 +14,7 @@ type QueryResult = {
 
 type QueryCall = {
   table: string;
-  operation: 'select' | 'insert';
+  operation: 'select' | 'insert' | 'update';
   payload?: unknown;
   filters: { column: string; value: unknown }[];
 };
@@ -39,8 +39,27 @@ class QueryBuilder implements PromiseLike<QueryResult> {
     return this;
   }
 
+  update(payload: unknown) {
+    this.operation = 'update';
+    this.payload = payload;
+    return this;
+  }
+
   eq(column: string, value: unknown) {
     this.filters.push({ column, value });
+    return this;
+  }
+
+  is(column: string, value: unknown) {
+    this.filters.push({ column, value });
+    return this;
+  }
+
+  order() {
+    return this;
+  }
+
+  limit() {
     return this;
   }
 
@@ -164,5 +183,70 @@ describe('booking invoice print actions', () => {
       table: 'bookings',
       operation: 'select',
     }));
+  });
+
+  it('voids the latest active invoice print log with reason and user side effect', async () => {
+    scriptedResults = [
+      { data: { id: 'booking-1' }, error: null },
+      { data: { id: 'log-1', invoice_number: 'INV-BK-1', print_count: 1 }, error: null },
+      { data: { id: 'log-1', void_reason: 'Sai voucher' }, error: null },
+    ];
+
+    const result = await voidLatestInvoicePrintLog({
+      bookingId: 'booking-1',
+      reason: 'Sai voucher',
+    });
+
+    expect(result.success).toBe(true);
+    expect(queryCalls).toEqual([
+      expect.objectContaining({
+        table: 'bookings',
+        operation: 'select',
+        filters: [
+          { column: 'id', value: 'booking-1' },
+          { column: 'tenant_id', value: 'tenant-1' },
+        ],
+      }),
+      expect.objectContaining({
+        table: 'invoice_print_logs',
+        operation: 'select',
+        filters: [
+          { column: 'tenant_id', value: 'tenant-1' },
+          { column: 'booking_id', value: 'booking-1' },
+          { column: 'voided_at', value: null },
+        ],
+      }),
+      expect.objectContaining({
+        table: 'invoice_print_logs',
+        operation: 'update',
+        payload: expect.objectContaining({
+          voided_by: 'user-1',
+          void_reason: 'Sai voucher',
+        }),
+        filters: [
+          { column: 'id', value: 'log-1' },
+          { column: 'tenant_id', value: 'tenant-1' },
+        ],
+      }),
+    ]);
+  });
+
+  it('blocks KTV users from voiding invoice print logs', async () => {
+    mockGetCurrentUser.mockResolvedValue({
+      id: 'ktv-1',
+      role: 'ktv',
+      tenant_id: 'tenant-1',
+    } as Awaited<ReturnType<typeof getCurrentUser>>);
+
+    const result = await voidLatestInvoicePrintLog({
+      bookingId: 'booking-1',
+      reason: 'Sai voucher',
+    });
+
+    expect(result).toEqual({
+      success: false,
+      error: 'Bạn không có quyền hủy bill đã in.',
+    });
+    expect(queryCalls).toHaveLength(0);
   });
 });

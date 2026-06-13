@@ -1162,6 +1162,9 @@ export type Database = {
           session_log_id: string | null
           tenant_id: string
           transfer_memo: string | null
+          void_reason: string | null
+          voided_at: string | null
+          voided_by: string | null
         }
         Insert: {
           amount_due?: number
@@ -1176,6 +1179,9 @@ export type Database = {
           session_log_id?: string | null
           tenant_id: string
           transfer_memo?: string | null
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
         }
         Update: {
           amount_due?: number
@@ -1190,6 +1196,9 @@ export type Database = {
           session_log_id?: string | null
           tenant_id?: string
           transfer_memo?: string | null
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
         }
         Relationships: [
           {
@@ -1218,6 +1227,13 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_print_logs_voided_by_fkey"
+            columns: ["voided_by"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
