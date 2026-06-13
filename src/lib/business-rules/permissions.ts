@@ -8,6 +8,7 @@ export const SIDEBAR_MODULE_BY_LABEL: Record<string, string> = {
   'AI Copilot': 'ai_copilot',
   'Khách hàng': 'customers',
   'Lịch hẹn': 'bookings',
+  'POS / In bill': 'bookings',
   'Thẻ liệu trình': 'sessions',
   'Tin nhắn': 'chat',
   'CRM & Zalo': 'crm',
@@ -65,6 +66,7 @@ const DEFAULT_DENIED_SIDEBAR_LABELS_BY_ROLE: Record<string, Set<string>> = {
   accountant: new Set([
     'Khách hàng',
     'Lịch hẹn',
+    'POS / In bill',
     'Thẻ liệu trình',
     'Tin nhắn',
     'CRM & Zalo',
@@ -77,6 +79,7 @@ const DEFAULT_DENIED_SIDEBAR_LABELS_BY_ROLE: Record<string, Set<string>> = {
   hr: new Set([
     'Khách hàng',
     'Lịch hẹn',
+    'POS / In bill',
     'Tin nhắn',
     'CRM & Zalo',
     'Dịch vụ',

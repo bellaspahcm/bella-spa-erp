@@ -8,20 +8,30 @@ export type BookingsViewMode = 'calendar' | 'timeline';
 
 type BookingsPageHeaderProps = {
   view: BookingsViewMode;
+  surface?: 'schedule' | 'pos';
   onViewChange: (view: BookingsViewMode) => void;
   onCreateClick: () => void;
 };
 
 export function BookingsPageHeader({
   view,
+  surface = 'schedule',
   onViewChange,
   onCreateClick,
 }: BookingsPageHeaderProps) {
+  const isPosSurface = surface === 'pos';
+
   return (
     <div className="mb-6 flex flex-col gap-4 md:mb-8 md:flex-row md:items-center md:justify-between">
       <div className="min-w-0">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Lịch hẹn</h1>
-        <p className="text-slate-500 font-medium mt-1">Điều phối và theo dõi lịch chăm sóc</p>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+          {isPosSurface ? 'POS / In bill' : 'Lịch hẹn'}
+        </h1>
+        <p className="text-slate-500 font-medium mt-1">
+          {isPosSurface
+            ? 'Mở lịch hẹn, chọn ca và in bill thanh toán K80'
+            : 'Điều phối và theo dõi lịch chăm sóc'}
+        </p>
       </div>
 
       <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
