@@ -8,7 +8,7 @@ import {
   toTenantBrandThemeJsonForModule,
   toTenantModuleJson,
   type TenantEnabledModules,
-  type TenantModuleKey,
+  type TenantPrimaryBusinessModuleKey,
 } from '@/lib/business-rules/tenant-modules';
 import { checkHqAuth } from './hq-actions';
 import type { Database } from '@/types/database.types';
@@ -22,7 +22,7 @@ type AdminAuthClient = {
   };
 };
 type TenantUpdate = Database['public']['Tables']['tenants']['Update'];
-type RegisterTenantBusinessModule = TenantModuleKey;
+type RegisterTenantBusinessModule = TenantPrimaryBusinessModuleKey;
 
 const BEAUTY_SPA_HQ_ONLY_ERROR = 'Chỉ Admin HQ mới được setup tenant Beauty Spa.';
 
@@ -70,8 +70,8 @@ function normalizeBusinessModule(value: unknown): RegisterTenantBusinessModule {
 
 function getEnabledModulesForBusinessModule(moduleKey: RegisterTenantBusinessModule): TenantEnabledModules {
   return moduleKey === 'beauty_spa'
-    ? { babycare: false, beauty_spa: true }
-    : { babycare: true, beauty_spa: false };
+    ? { babycare: false, beauty_spa: true, student_training: false }
+    : { babycare: true, beauty_spa: false, student_training: false };
 }
 
 async function assertBusinessModuleSetupAllowed(moduleKey: RegisterTenantBusinessModule) {

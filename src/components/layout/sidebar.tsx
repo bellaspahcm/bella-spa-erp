@@ -26,7 +26,8 @@ import {
   Wallet,
   HelpCircle,
   ReceiptText,
-  RefreshCw
+  RefreshCw,
+  GraduationCap
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -114,7 +115,7 @@ function isTenantBrandDisplay(value: unknown): value is CachedTenantBrandDisplay
     typeof source.displayName === 'string' &&
     typeof source.logoUrl === 'string' &&
     typeof source.subtitle === 'string' &&
-    (source.moduleKey === 'babycare' || source.moduleKey === 'beauty_spa') &&
+    (source.moduleKey === 'babycare' || source.moduleKey === 'beauty_spa' || source.moduleKey === 'student_training') &&
     typeof source.primaryColor === 'string' &&
     typeof source.accentColor === 'string' &&
     typeof source.primaryHoverColor === 'string' &&
@@ -263,6 +264,7 @@ const menuItems: SidebarMenuItem[] = [
   { icon: Megaphone,       label: 'CRM & Zalo',         href: '/dashboard/crm' },
   { icon: Megaphone,       label: 'Meta Ads',           href: '/dashboard/marketing' },
   { icon: Sparkles,        label: 'Dịch vụ',            href: '/dashboard/services' },
+  { icon: GraduationCap,   label: 'Đào tạo',            href: '/dashboard/training' },
 
   { type: 'header', label: 'Tài chính & Đối soát' },
   { icon: DollarSign,      label: 'Tài chính',           href: '/dashboard/finance' },

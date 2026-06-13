@@ -135,26 +135,40 @@ describe('platform rule engines', () => {
     expect(normalizeEnabledModules(null)).toEqual({
       babycare: true,
       beauty_spa: false,
+      student_training: false,
     });
     expect(normalizeEnabledModules({
       babycare: false,
       beauty_spa: true,
+      student_training: true,
       unknown_module: true,
     })).toEqual({
       babycare: false,
       beauty_spa: true,
+      student_training: true,
     });
     expect(normalizeEnabledModules({
       beauty_spa: true,
     })).toEqual({
       babycare: false,
       beauty_spa: true,
+      student_training: false,
     });
     expect(normalizeEnabledModules({
       babycare: true,
     })).toEqual({
       babycare: true,
       beauty_spa: false,
+      student_training: false,
+    });
+    expect(normalizeEnabledModulesForSave({
+      babycare: false,
+      beauty_spa: false,
+      student_training: true,
+    })).toEqual({
+      babycare: true,
+      beauty_spa: false,
+      student_training: true,
     });
     expect(normalizeEnabledModulesForSave({
       babycare: false,
@@ -162,6 +176,7 @@ describe('platform rule engines', () => {
     })).toEqual({
       babycare: false,
       beauty_spa: true,
+      student_training: false,
     });
     expect(normalizeEnabledModulesForSave({
       babycare: false,
@@ -169,6 +184,7 @@ describe('platform rule engines', () => {
     })).toEqual({
       babycare: true,
       beauty_spa: false,
+      student_training: false,
     });
     expect(getDefaultTenantModuleKey({
       babycare: false,
@@ -208,7 +224,7 @@ describe('platform rule engines', () => {
       menuStyle: 'comfortable',
     });
     expect(resolveTenantBrandIdentity({
-      enabledModules: { babycare: false, beauty_spa: true },
+      enabledModules: { babycare: false, beauty_spa: true, student_training: true },
       brandTheme: null,
       surface: 'app',
     })).toMatchObject({
