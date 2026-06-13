@@ -196,6 +196,81 @@ describe('booking invoice print actions', () => {
     }));
   });
 
+  it('allows KTV users to record the first invoice print only', async () => {
+    mockGetCurrentUser.mockResolvedValue({
+      id: 'ktv-1',
+      role: 'ktv',
+      tenant_id: 'tenant-1',
+    } as Awaited<ReturnType<typeof getCurrentUser>>);
+    scriptedResults = [
+      { data: { id: 'booking-1' }, error: null },
+      { data: null, error: null, count: 0 },
+      { data: { id: 'log-1', print_count: 1 }, error: null },
+    ];
+
+    const result = await recordInvoicePrintLog({
+      bookingId: 'booking-1',
+      invoiceNumber: 'INV-BK-1',
+      amountDue: 120000,
+      transferMemo: 'BELLA BK-1',
+    });
+
+    expect(result.success).toBe(true);
+    expect(queryCalls[2]).toEqual(expect.objectContaining({
+      table: 'invoice_print_logs',
+      operation: 'insert',
+      payload: expect.objectContaining({
+        printed_by: 'ktv-1',
+        print_count: 1,
+        print_type: 'original',
+      }),
+    }));
+  });
+
+  it('blocks KTV users from recording invoice reprints without inserting side effects', async () => {
+    mockGetCurrentUser.mockResolvedValue({
+      id: 'ktv-1',
+      role: 'ktv',
+      tenant_id: 'tenant-1',
+    } as Awaited<ReturnType<typeof getCurrentUser>>);
+    scriptedResults = [
+      { data: { id: 'booking-1' }, error: null },
+      { data: null, error: null, count: 1 },
+    ];
+
+    const result = await recordInvoicePrintLog({
+      bookingId: 'booking-1',
+      invoiceNumber: 'INV-BK-1',
+      amountDue: 120000,
+      transferMemo: 'BELLA BK-1',
+      reason: 'Khách cần in lại',
+    });
+
+    expect(result).toEqual({
+      success: false,
+      error: 'Bạn không có quyền in lại bill.',
+    });
+    expect(queryCalls).toEqual([
+      expect.objectContaining({
+        table: 'bookings',
+        operation: 'select',
+        filters: [
+          { column: 'id', value: 'booking-1' },
+          { column: 'tenant_id', value: 'tenant-1' },
+        ],
+      }),
+      expect.objectContaining({
+        table: 'invoice_print_logs',
+        operation: 'select',
+        filters: [
+          { column: 'tenant_id', value: 'tenant-1' },
+          { column: 'invoice_number', value: 'INV-BK-1' },
+        ],
+      }),
+    ]);
+    expect(queryCalls.some((call) => call.operation === 'insert')).toBe(false);
+  });
+
   it('returns invoice print logs scoped to the current tenant booking', async () => {
     scriptedResults = [
       { data: { id: 'booking-1' }, error: null },
