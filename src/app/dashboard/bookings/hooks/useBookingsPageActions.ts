@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 
 import { calculateBookingPaymentState } from '@/lib/business-rules/payment';
 import { getLocalDateString } from '@/lib/utils';
-import { recordInvoicePrintLog } from '@/modules/booking/actions/invoice-print-actions';
+import { recordInvoicePrintLog, voidLatestInvoicePrintLog } from '@/modules/booking/actions/invoice-print-actions';
 import { createSessionLog, rescheduleSession, updateSessionLog } from '@/modules/booking/actions/session-actions';
 import { getBookingDetailsWithPayment, updateBooking } from '@/modules/booking/actions/lifecycle-actions';
 
@@ -156,6 +156,36 @@ export function useBookingsPageActions({
     }
   };
 
+  const handleVoidLatestInvoice = async () => {
+    if (!modalData) return;
+
+    const reason = window.prompt('Nhập lý do hủy bill đã in để sửa thông tin/in lại:');
+    if (!reason) return;
+
+    try {
+      const { paymentState } = await buildPaymentSnapshot(modalData.bookingId);
+      if (paymentState.remainingDebt <= 0) {
+        toast.error('Booking đã thanh toán xong, không thể rollback bill từ màn hình này.');
+        return;
+      }
+
+      const result = await voidLatestInvoicePrintLog({
+        bookingId: modalData.bookingId,
+        reason,
+      });
+
+      if (!result.success) {
+        toast.error('Không thể hủy bill đã in: ' + (result.error || 'Lỗi không xác định'));
+        return;
+      }
+
+      toast.success('Đã hủy bill đã in. Bạn có thể sửa thông tin rồi in bill mới.');
+    } catch (err) {
+      console.error('Error voiding invoice print log:', err);
+      toast.error('Không thể hủy bill đã in.');
+    }
+  };
+
   const handleUpdatePlan = async () => {
     if (isUpdating) return;
     if (!modalData) return;
@@ -256,6 +286,7 @@ export function useBookingsPageActions({
     setPrintInvoiceData,
     handleOpenQrModal,
     handlePrintThermalInvoice,
+    handleVoidLatestInvoice,
     handleUpdatePlan,
     handleCreateScheduleSubmit,
   };

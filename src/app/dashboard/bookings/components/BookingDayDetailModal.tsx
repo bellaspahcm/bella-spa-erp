@@ -15,6 +15,7 @@ import {
   Users,
   X,
   XCircle,
+  RotateCcw,
 } from 'lucide-react';
 
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
@@ -80,6 +81,7 @@ type BookingDayDetailModalProps = {
   onModalDataChange: (modalData: BookingModalData) => void;
   onOpenQrModal: (bookingId: string) => void;
   onPrintInvoice: () => void;
+  onVoidInvoice: () => void;
   onSave: () => void;
 };
 
@@ -94,6 +96,7 @@ export function BookingDayDetailModal({
   onModalDataChange,
   onOpenQrModal,
   onPrintInvoice,
+  onVoidInvoice,
   onSave,
 }: BookingDayDetailModalProps) {
   const completedHistory = modalData
@@ -358,6 +361,13 @@ export function BookingDayDetailModal({
                 >
                   <Printer className="w-4 h-4" />
                   <span>In hóa đơn</span>
+                </button>
+                <button
+                  onClick={onVoidInvoice}
+                  className="flex-1 bg-red-50 hover:bg-red-100 text-red-600 border border-red-100/70 py-4 rounded-2xl font-bold transition-all active:scale-95 flex items-center justify-center gap-2"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  <span>Hủy bill</span>
                 </button>
                 <button
                   onClick={() => {
