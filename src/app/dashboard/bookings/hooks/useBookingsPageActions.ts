@@ -5,7 +5,12 @@ import { toast } from 'sonner';
 
 import { calculateBookingPaymentState } from '@/lib/business-rules/payment';
 import { getLocalDateString } from '@/lib/utils';
-import { recordInvoicePrintLog, voidLatestInvoicePrintLog } from '@/modules/booking/actions/invoice-print-actions';
+import {
+  getInvoicePrintLogsForBooking,
+  recordInvoicePrintLog,
+  voidLatestInvoicePrintLog,
+  type BookingInvoicePrintLog,
+} from '@/modules/booking/actions/invoice-print-actions';
 import { createSessionLog, rescheduleSession, updateSessionLog } from '@/modules/booking/actions/session-actions';
 import { getBookingDetailsWithPayment, updateBooking } from '@/modules/booking/actions/lifecycle-actions';
 
@@ -55,6 +60,8 @@ export function useBookingsPageActions({
     tenantInfo: TenantBankInfo | null;
   } | null>(null);
   const [printInvoiceData, setPrintInvoiceData] = useState<BookingThermalInvoiceData | null>(null);
+  const [invoicePrintLogs, setInvoicePrintLogs] = useState<BookingInvoicePrintLog[]>([]);
+  const [isLoadingInvoicePrintLogs, setIsLoadingInvoicePrintLogs] = useState(false);
 
   const buildPaymentSnapshot = async (bookingId: string) => {
     const result = await getBookingDetailsWithPayment(bookingId);
@@ -72,6 +79,26 @@ export function useBookingsPageActions({
     });
 
     return { booking, paymentState };
+  };
+
+  const fetchInvoicePrintLogs = async (bookingId: string) => {
+    setIsLoadingInvoicePrintLogs(true);
+    try {
+      const result = await getInvoicePrintLogsForBooking(bookingId);
+      if (!result.success) {
+        setInvoicePrintLogs([]);
+        toast.error('Không thể tải lịch sử in bill: ' + (result.error || 'Lỗi không xác định'));
+        return;
+      }
+
+      setInvoicePrintLogs(result.data);
+    } catch (err) {
+      console.error('Error fetching invoice print logs:', err);
+      setInvoicePrintLogs([]);
+      toast.error('Không thể tải lịch sử in bill.');
+    } finally {
+      setIsLoadingInvoicePrintLogs(false);
+    }
   };
 
   const handleOpenQrModal = async (bookingId: string) => {
@@ -149,6 +176,7 @@ export function useBookingsPageActions({
         isReprint: (logResult.data?.print_count || 1) > 1,
       });
 
+      await fetchInvoicePrintLogs(modalData.bookingId);
       toast.success('Đã chuẩn bị hóa đơn K80. Hộp thoại in sẽ mở ngay.');
     } catch (err) {
       console.error('Error preparing thermal invoice:', err);
@@ -179,6 +207,7 @@ export function useBookingsPageActions({
         return;
       }
 
+      await fetchInvoicePrintLogs(modalData.bookingId);
       toast.success('Đã hủy bill đã in. Bạn có thể sửa thông tin rồi in bill mới.');
     } catch (err) {
       console.error('Error voiding invoice print log:', err);
@@ -284,6 +313,9 @@ export function useBookingsPageActions({
     qrModalData,
     printInvoiceData,
     setPrintInvoiceData,
+    invoicePrintLogs,
+    isLoadingInvoicePrintLogs,
+    fetchInvoicePrintLogs,
     handleOpenQrModal,
     handlePrintThermalInvoice,
     handleVoidLatestInvoice,
