@@ -127,12 +127,20 @@ export function useBookingsPageActions({
     }
   };
 
-  const handlePrintThermalInvoice = async () => {
-    if (!modalData) return;
+  const handlePrintThermalInvoice = async (targetModalData = modalData) => {
+    if (!targetModalData) return;
 
     try {
-      const { booking, paymentState } = await buildPaymentSnapshot(modalData.bookingId);
-      const hasActiveInvoice = invoicePrintLogs.some((log) => !log.voided_at);
+      const { booking, paymentState } = await buildPaymentSnapshot(targetModalData.bookingId);
+      const logsResult = await getInvoicePrintLogsForBooking(targetModalData.bookingId);
+      if (!logsResult.success) {
+        setInvoicePrintLogs([]);
+        toast.error('Không thể tải lịch sử in bill: ' + (logsResult.error || 'Lỗi không xác định'));
+        return;
+      }
+
+      setInvoicePrintLogs(logsResult.data);
+      const hasActiveInvoice = logsResult.data.some((log) => !log.voided_at);
       let reprintReason: string | null = null;
 
       if (hasActiveInvoice) {
@@ -150,7 +158,7 @@ export function useBookingsPageActions({
       const bankCode = tenantInfo?.qr_bank_code || '';
       const accountNumber = tenantInfo?.qr_account_number || '';
       const accountName = tenantInfo?.qr_account_name || '';
-      const bookingNumber = booking.booking_number || modalData.contractId || modalData.bookingId.slice(0, 8);
+      const bookingNumber = booking.booking_number || targetModalData.contractId || targetModalData.bookingId.slice(0, 8);
       const transferMemo = `BELLA ${bookingNumber}`.replace(/\s+/g, ' ').trim();
       const qrUrl = bankCode && accountNumber && paymentState.remainingDebt > 0
         ? `https://img.vietqr.io/image/${bankCode}-${accountNumber}-compact.png?amount=${paymentState.remainingDebt}&addInfo=${encodeURIComponent(transferMemo)}&accountName=${encodeURIComponent(accountName)}`
@@ -167,8 +175,8 @@ export function useBookingsPageActions({
       });
 
       const logResult = await recordInvoicePrintLog({
-        bookingId: modalData.bookingId,
-        sessionLogId: modalData.id,
+        bookingId: targetModalData.bookingId,
+        sessionLogId: targetModalData.id,
         invoiceNumber,
         amountDue: paymentState.remainingDebt,
         transferMemo,
@@ -188,11 +196,11 @@ export function useBookingsPageActions({
         }).format(new Date()),
         brandName: tenantBrand.displayName,
         logoUrl: tenantBrand.logoUrl,
-        customerName: modalData.customer || 'Khách hàng',
+        customerName: targetModalData.customer || 'Khách hàng',
         bookingNumber,
-        packageName: modalData.package || booking.package_name || 'Gói dịch vụ',
-        ktvName: modalData.ktv || null,
-        sessionLabel: modalData.sessionNumber ? `Buổi ${modalData.sessionNumber}` : modalData.sessionCount || null,
+        packageName: targetModalData.package || booking.package_name || 'Gói dịch vụ',
+        ktvName: targetModalData.ktv || null,
+        sessionLabel: targetModalData.sessionNumber ? `Buổi ${targetModalData.sessionNumber}` : targetModalData.sessionCount || null,
         originalAmount,
         discountAmount,
         paidAmount: paymentState.totalPaid,
@@ -203,7 +211,7 @@ export function useBookingsPageActions({
         isReprint: (logResult.data?.print_count || 1) > 1,
       });
 
-      await fetchInvoicePrintLogs(modalData.bookingId);
+      await fetchInvoicePrintLogs(targetModalData.bookingId);
       toast.success('Đã chuẩn bị hóa đơn K80. Hộp thoại in sẽ mở ngay.');
     } catch (err) {
       console.error('Error preparing thermal invoice:', err);
