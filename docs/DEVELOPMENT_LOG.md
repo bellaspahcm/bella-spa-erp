@@ -5,6 +5,21 @@
 
 ---
 
+### 14/06/2026: Student Training Admin CRUD
+* **Muc tieu san pham**:
+  * Cho admin bat dau tao khoa hoc, chuong hoc va bai hoc tren nen schema dao tao da deploy.
+  * Giu toan bo thao tac doc/ghi bang training sau server actions tenant-scoped, khong query Supabase truc tiep tu client.
+* **Thay doi chinh**:
+  * Them `src/types/training.ts` va `src/services/training-actions.ts`.
+  * Them trang `/dashboard/training/courses` va UI quan tri giao trinh.
+  * Trang `/dashboard/training` tro CTA sang man hinh giao trinh moi.
+  * Them test `training-actions.test.ts` va source guard cho training course admin.
+* **Kiem tra**:
+  * `npm.cmd test -- src/__tests__/training-actions.test.ts src/__tests__/tenant-isolation-source-guards.test.ts --runInBand` pass, 2 suites / 23 tests.
+  * `npm.cmd run lint` pass.
+  * `npm.cmd run build` pass.
+  * `git diff --check` pass, chi co canh bao LF/CRLF cua Windows.
+
 ### 14/06/2026: Student Training Foundation
 * **Muc tieu san pham**:
   * Trien khai nen mong Giai doan 1 theo `docs/plans/student-training-expansion-plan.html` cho phan he dao tao hoc vien.
