@@ -215,8 +215,10 @@ export async function getCalendarSessions(options: GetCalendarSessionsOptions = 
           id,
           name_mother,
           name_baby,
+          phone,
           address
         ),
+        revenue(amount, status, revenue_type),
         assigned_ktv:users!bookings_assigned_ktv_id_fkey (
           id,
           full_name
