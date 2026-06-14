@@ -5,6 +5,17 @@
 
 ---
 
+### 14/06/2026: Student Training Enrollment Admin
+* **Muc tieu san pham**:
+  * Cho admin ghi danh tai khoan role `student` vao khoa hoc dao tao da tao san.
+  * Quan ly trang thai hoc vu ban dau va hoc phi tong/da thu tren bang `students`, chua ghi nhan doanh thu/accounting.
+* **Thay doi chinh**:
+  * Them action doc/tạo/cap nhat ghi danh trong `src/services/training-actions.ts` voi guard tenant, course va user role `student`.
+  * Them trang `/dashboard/training/enrollments` va CTA tu dashboard dao tao.
+  * Mo rong type `src/types/training.ts`, test action va source guard client khong query Supabase truc tiep.
+* **Kiem tra**:
+  * `npm.cmd test -- src/__tests__/training-actions.test.ts src/__tests__/tenant-isolation-source-guards.test.ts --runInBand` pass, 2 suites / 27 tests.
+
 ### 14/06/2026: Student Training Admin CRUD
 * **Muc tieu san pham**:
   * Cho admin bat dau tao khoa hoc, chuong hoc va bai hoc tren nen schema dao tao da deploy.

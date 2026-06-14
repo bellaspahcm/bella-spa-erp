@@ -111,8 +111,10 @@ const mockDb = {
 import {
   archiveTrainingCourse,
   createCourseModule,
+  createTrainingEnrollment,
   createTrainingCourse,
   getTrainingAdminOverview,
+  getTrainingEnrollmentAdminOverview,
 } from '@/services/training-actions';
 
 function grantAdmin() {
@@ -290,5 +292,143 @@ describe('training actions', () => {
       ],
     });
     expect(mockSafeRevalidatePath).toHaveBeenCalledWith('/dashboard/training/courses');
+  });
+
+  it('loads enrollment admin data through tenant-scoped queries', async () => {
+    scriptedResults = [
+      {
+        data: [{
+          id: 'course-1',
+          tenant_id: 'tenant-1',
+          module_key: 'student_training',
+          title: 'Massage nền tảng',
+          description: null,
+          specialty: null,
+          tuition_amount: 1200000,
+          theory_duration_minutes: 90,
+          status: 'active',
+          created_by: 'admin-1',
+          created_at: '2026-06-14T00:00:00.000Z',
+          updated_at: '2026-06-14T00:00:00.000Z',
+        }],
+        error: null,
+      },
+      {
+        data: [{
+          id: 'student-user-1',
+          tenant_id: 'tenant-1',
+          full_name: 'Nguyễn Học Viên',
+          email: 'student@example.com',
+          phone: '0900000000',
+          role: 'student',
+          status: 'active',
+        }],
+        error: null,
+      },
+      {
+        data: [{
+          id: 'enrollment-1',
+          tenant_id: 'tenant-1',
+          user_id: 'student-user-1',
+          course_id: 'course-1',
+          enrollment_status: 'active',
+          enrolled_at: '2026-06-14T00:00:00.000Z',
+          tuition_total: 1200000,
+          tuition_paid: 0,
+          notes: null,
+          created_at: '2026-06-14T00:00:00.000Z',
+          updated_at: '2026-06-14T00:00:00.000Z',
+        }],
+        error: null,
+      },
+    ];
+
+    const result = await getTrainingEnrollmentAdminOverview();
+
+    expect(result.success).toBe(true);
+    expect(result.success ? result.data.enrollments[0].user?.full_name : '').toBe('Nguyễn Học Viên');
+    expect(queryCalls[0]).toMatchObject({
+      table: 'courses',
+      filters: [{ type: 'eq', column: 'tenant_id', value: 'tenant-1' }],
+    });
+    expect(queryCalls[1]).toMatchObject({
+      table: 'users',
+      filters: [
+        { type: 'eq', column: 'tenant_id', value: 'tenant-1' },
+        { type: 'eq', column: 'role', value: 'student' },
+      ],
+    });
+    expect(queryCalls[2]).toMatchObject({
+      table: 'students',
+      filters: [{ type: 'eq', column: 'tenant_id', value: 'tenant-1' }],
+    });
+  });
+
+  it('verifies course tenant ownership before creating an enrollment', async () => {
+    scriptedResults = [
+      { data: null, error: { message: 'course outside tenant' } },
+    ];
+
+    const result = await createTrainingEnrollment({
+      userId: 'student-user-1',
+      courseId: 'course-outside',
+      tuitionTotal: '1200000',
+      tuitionPaid: '0',
+      enrollmentStatus: 'active',
+    });
+
+    expect(result).toEqual({ success: false, error: 'course outside tenant' });
+    expect(queryCalls).toHaveLength(1);
+    expect(queryCalls[0]).toMatchObject({
+      table: 'courses',
+      operation: 'select',
+      filters: [
+        { type: 'eq', column: 'id', value: 'course-outside' },
+        { type: 'eq', column: 'tenant_id', value: 'tenant-1' },
+      ],
+    });
+  });
+
+  it('verifies selected user is a tenant student before creating an enrollment', async () => {
+    scriptedResults = [
+      {
+        data: {
+          id: 'course-1',
+          tenant_id: 'tenant-1',
+          module_key: 'student_training',
+          title: 'Massage nền tảng',
+          description: null,
+          specialty: null,
+          tuition_amount: 1200000,
+          theory_duration_minutes: 90,
+          status: 'active',
+          created_by: 'admin-1',
+          created_at: '2026-06-14T00:00:00.000Z',
+          updated_at: '2026-06-14T00:00:00.000Z',
+        },
+        error: null,
+      },
+      { data: null, error: { message: 'student user outside tenant' } },
+    ];
+
+    const result = await createTrainingEnrollment({
+      userId: 'staff-user-1',
+      courseId: 'course-1',
+      tuitionTotal: '1200000',
+      tuitionPaid: '0',
+      enrollmentStatus: 'active',
+    });
+
+    expect(result).toEqual({ success: false, error: 'student user outside tenant' });
+    expect(queryCalls).toHaveLength(2);
+    expect(queryCalls[1]).toMatchObject({
+      table: 'users',
+      operation: 'select',
+      filters: [
+        { type: 'eq', column: 'id', value: 'staff-user-1' },
+        { type: 'eq', column: 'tenant_id', value: 'tenant-1' },
+        { type: 'eq', column: 'role', value: 'student' },
+      ],
+    });
   });
 });

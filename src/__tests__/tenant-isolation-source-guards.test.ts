@@ -176,6 +176,21 @@ describe('dashboard tenant isolation source guards', () => {
     expect(actionsSource).toContain(".eq('tenant_id', tenantId)");
   });
 
+  it('keeps training enrollment admin reads and writes behind server actions', () => {
+    const enrollmentsPageSource = readSource('src/app/dashboard/training/enrollments/page.tsx');
+    const enrollmentsClientSource = readSource('src/app/dashboard/training/enrollments/TrainingEnrollmentsClient.tsx');
+    const actionsSource = readSource('src/services/training-actions.ts');
+
+    expect(enrollmentsPageSource).toContain('getTrainingEnrollmentAdminOverview');
+    expect(enrollmentsClientSource).toContain('createTrainingEnrollment');
+    expect(enrollmentsClientSource).toContain('updateTrainingEnrollment');
+    expect(enrollmentsPageSource).not.toMatch(/\.from\('(courses|students|users|student_lesson_progress|student_tuition_payments)'/);
+    expect(enrollmentsClientSource).not.toMatch(/\.from\('(courses|students|users|student_lesson_progress|student_tuition_payments)'/);
+    expect(enrollmentsClientSource).not.toContain('createClient');
+    expect(actionsSource).toContain("const STUDENT_USER_NOT_FOUND");
+    expect(actionsSource).toContain(".eq('role', 'student')");
+  });
+
   it('keeps GPS empty-state copy encoded correctly', () => {
     const sessionDetailsSource = readSource('src/app/dashboard/sessions/components/SessionLogsDetailsModal.tsx');
 

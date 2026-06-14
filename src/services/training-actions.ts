@@ -5,6 +5,9 @@ import { safeRevalidatePath } from '@/lib/revalidate';
 import { getAuthorizedTenantUser } from './auth-guards';
 import type {
   TrainingContentType,
+  TrainingEnrollmentAdminOverview,
+  TrainingEnrollmentInput,
+  TrainingEnrollmentStatus,
   TrainingCourseInput,
   TrainingCourseInsert,
   TrainingCourseModuleInput,
@@ -20,6 +23,11 @@ import type {
   TrainingLessonRow,
   TrainingLessonStatus,
   TrainingLessonUpdate,
+  TrainingStudentEnrollmentInsert,
+  TrainingStudentEnrollmentRow,
+  TrainingStudentEnrollmentUpdate,
+  TrainingStudentEnrollmentWithDetails,
+  TrainingStudentUserRow,
 } from '@/types/training';
 
 type DbError = { message: string };
@@ -41,6 +49,16 @@ type TrainingTableMap = {
     Row: TrainingLessonRow;
     Insert: TrainingLessonInsert;
     Update: TrainingLessonUpdate;
+  };
+  students: {
+    Row: TrainingStudentEnrollmentRow;
+    Insert: TrainingStudentEnrollmentInsert;
+    Update: TrainingStudentEnrollmentUpdate;
+  };
+  users: {
+    Row: TrainingStudentUserRow;
+    Insert: TrainingStudentUserRow;
+    Update: Partial<TrainingStudentUserRow>;
   };
 };
 
@@ -89,6 +107,8 @@ const TRAINING_AUTH_ERROR = 'Không có quyền quản lý đào tạo học vi�
 const COURSE_NOT_FOUND = 'Không tìm thấy khóa học đào tạo trong chi nhánh hiện tại.';
 const MODULE_NOT_FOUND = 'Không tìm thấy chương học trong chi nhánh hiện tại.';
 const LESSON_NOT_FOUND = 'Không tìm thấy bài học trong chi nhánh hiện tại.';
+const STUDENT_USER_NOT_FOUND = 'Không tìm thấy tài khoản học viên trong chi nhánh hiện tại.';
+const ENROLLMENT_NOT_FOUND = 'Không tìm thấy hồ sơ ghi danh trong chi nhánh hiện tại.';
 
 function cleanText(value: unknown, maxLength: number) {
   if (typeof value !== 'string') return '';
@@ -120,12 +140,47 @@ function isLessonStatus(value: unknown): value is TrainingLessonStatus {
   return value === 'draft' || value === 'published' || value === 'archived';
 }
 
+function isEnrollmentStatus(value: unknown): value is TrainingEnrollmentStatus {
+  return value === 'active' || value === 'paused' || value === 'graduated' || value === 'withdrawn';
+}
+
 function isContentType(value: unknown): value is TrainingContentType {
   return value === 'document'
     || value === 'video'
     || value === 'pdf'
     || value === 'quiz'
     || value === 'live_class';
+}
+
+function buildEnrollmentPayload(
+  input: TrainingEnrollmentInput,
+  tenantId: string,
+): TrainingActionResult<TrainingStudentEnrollmentInsert> {
+  const userId = cleanText(input.userId, 80);
+  const courseId = cleanText(input.courseId, 80);
+  const tuitionTotal = parseNonNegativeNumber(input.tuitionTotal, 0);
+  const tuitionPaid = parseNonNegativeNumber(input.tuitionPaid, 0);
+
+  if (!userId) return { success: false, error: 'Vui lòng chọn học viên.' };
+  if (!courseId) return { success: false, error: 'Vui lòng chọn khóa học.' };
+  if (Number.isNaN(tuitionTotal)) return { success: false, error: 'Tổng học phí không hợp lệ.' };
+  if (Number.isNaN(tuitionPaid)) return { success: false, error: 'Số tiền đã thu không hợp lệ.' };
+  if (tuitionPaid > tuitionTotal) {
+    return { success: false, error: 'Số tiền đã thu không được lớn hơn tổng học phí.' };
+  }
+
+  return {
+    success: true,
+    data: {
+      tenant_id: tenantId,
+      user_id: userId,
+      course_id: courseId,
+      enrollment_status: isEnrollmentStatus(input.enrollmentStatus) ? input.enrollmentStatus : 'active',
+      tuition_total: tuitionTotal,
+      tuition_paid: tuitionPaid,
+      notes: cleanNullableText(input.notes, 2000),
+    },
+  };
 }
 
 function buildCoursePayload(
@@ -277,6 +332,41 @@ async function assertLessonBelongsToTenant(
   return { success: true, data };
 }
 
+async function assertStudentUserBelongsToTenant(
+  db: TrainingDataClient,
+  userId: string,
+  tenantId: string,
+): Promise<TrainingActionResult<TrainingStudentUserRow>> {
+  const { data, error } = await db
+    .from('users')
+    .select('id, tenant_id, full_name, email, phone, role, status')
+    .eq('id', userId)
+    .eq('tenant_id', tenantId)
+    .eq('role', 'student')
+    .single();
+
+  if (error) return { success: false, error: error.message };
+  if (!data) return { success: false, error: STUDENT_USER_NOT_FOUND };
+  return { success: true, data };
+}
+
+async function assertEnrollmentBelongsToTenant(
+  db: TrainingDataClient,
+  enrollmentId: string,
+  tenantId: string,
+): Promise<TrainingActionResult<TrainingStudentEnrollmentRow>> {
+  const { data, error } = await db
+    .from('students')
+    .select('*')
+    .eq('id', enrollmentId)
+    .eq('tenant_id', tenantId)
+    .single();
+
+  if (error) return { success: false, error: error.message };
+  if (!data) return { success: false, error: ENROLLMENT_NOT_FOUND };
+  return { success: true, data };
+}
+
 function buildCourseTree(input: {
   courses: TrainingCourseRow[];
   modules: TrainingCourseModuleRow[];
@@ -303,6 +393,31 @@ function buildCourseTree(input: {
     ...course,
     modules: modulesByCourse.get(course.id) || [],
   }));
+}
+
+function buildEnrollmentDetails(input: {
+  enrollments: TrainingStudentEnrollmentRow[];
+  courses: TrainingCourseRow[];
+  studentUsers: TrainingStudentUserRow[];
+}): TrainingStudentEnrollmentWithDetails[] {
+  const coursesById = new Map(input.courses.map((course) => [course.id, course]));
+  const usersById = new Map(input.studentUsers.map((user) => [user.id, user]));
+
+  return input.enrollments.map((enrollment) => {
+    const course = coursesById.get(enrollment.course_id);
+    return {
+      ...enrollment,
+      user: usersById.get(enrollment.user_id) || null,
+      course: course
+        ? {
+          id: course.id,
+          title: course.title,
+          status: course.status,
+          tuition_amount: course.tuition_amount,
+        }
+        : null,
+    };
+  });
 }
 
 export async function getTrainingAdminOverview(): Promise<TrainingActionResult<TrainingCourseWithContent[]>> {
@@ -346,6 +461,57 @@ export async function getTrainingAdminOverview(): Promise<TrainingActionResult<T
   return {
     success: true,
     data: buildCourseTree({ courses: courseRows, modules: moduleRows, lessons: lessonResult.data || [] }),
+  };
+}
+
+export async function getTrainingEnrollmentAdminOverview(): Promise<TrainingActionResult<TrainingEnrollmentAdminOverview>> {
+  const auth = await getAuthorizedTenantUser({
+    allowedRoles: TRAINING_READ_ROLES,
+    errorMessage: TRAINING_AUTH_ERROR,
+  });
+  if (!auth.ok) return { success: false, error: auth.error };
+
+  const db = await getTrainingClient();
+  const { data: courses, error: coursesError } = await db
+    .from('courses')
+    .select('*')
+    .eq('tenant_id', auth.tenantId)
+    .order('created_at', { ascending: false });
+
+  if (coursesError) return { success: false, error: coursesError.message };
+
+  const { data: studentUsers, error: usersError } = await db
+    .from('users')
+    .select('id, tenant_id, full_name, email, phone, role, status')
+    .eq('tenant_id', auth.tenantId)
+    .eq('role', 'student')
+    .order('full_name', { ascending: true });
+
+  if (usersError) return { success: false, error: usersError.message };
+
+  const { data: enrollments, error: enrollmentsError } = await db
+    .from('students')
+    .select('*')
+    .eq('tenant_id', auth.tenantId)
+    .order('created_at', { ascending: false });
+
+  if (enrollmentsError) return { success: false, error: enrollmentsError.message };
+
+  const courseRows = courses || [];
+  const studentUserRows = studentUsers || [];
+  const enrollmentRows = enrollments || [];
+
+  return {
+    success: true,
+    data: {
+      courses: courseRows,
+      studentUsers: studentUserRows,
+      enrollments: buildEnrollmentDetails({
+        courses: courseRows,
+        studentUsers: studentUserRows,
+        enrollments: enrollmentRows,
+      }),
+    },
   };
 }
 
@@ -440,6 +606,90 @@ export async function archiveTrainingCourse(courseId: string): Promise<TrainingD
   safeRevalidatePath('/dashboard/training');
   safeRevalidatePath('/dashboard/training/courses');
   return { success: true };
+}
+
+export async function createTrainingEnrollment(
+  input: TrainingEnrollmentInput,
+): Promise<TrainingActionResult<TrainingStudentEnrollmentRow>> {
+  const auth = await getAuthorizedTenantUser({
+    allowedRoles: TRAINING_MANAGE_ROLES,
+    errorMessage: TRAINING_AUTH_ERROR,
+  });
+  if (!auth.ok) return { success: false, error: auth.error };
+
+  const payload = buildEnrollmentPayload(input, auth.tenantId);
+  if (!payload.success) return payload;
+
+  const db = await getTrainingClient();
+  const courseResult = await assertCourseBelongsToTenant(db, payload.data.course_id, auth.tenantId);
+  if (!courseResult.success) return { success: false, error: courseResult.error };
+
+  const studentResult = await assertStudentUserBelongsToTenant(db, payload.data.user_id, auth.tenantId);
+  if (!studentResult.success) return { success: false, error: studentResult.error };
+
+  const { data, error } = await db
+    .from('students')
+    .insert([payload.data])
+    .select('*')
+    .single();
+
+  if (error) return { success: false, error: error.message };
+  if (!data) return { success: false, error: 'Không xác định được hồ sơ ghi danh vừa tạo.' };
+
+  safeRevalidatePath('/dashboard/training');
+  safeRevalidatePath('/dashboard/training/enrollments');
+  return { success: true, data };
+}
+
+export async function updateTrainingEnrollment(
+  enrollmentId: string,
+  input: TrainingEnrollmentInput,
+): Promise<TrainingActionResult<TrainingStudentEnrollmentRow>> {
+  const auth = await getAuthorizedTenantUser({
+    allowedRoles: TRAINING_MANAGE_ROLES,
+    errorMessage: TRAINING_AUTH_ERROR,
+  });
+  if (!auth.ok) return { success: false, error: auth.error };
+
+  const db = await getTrainingClient();
+  const existing = await assertEnrollmentBelongsToTenant(db, enrollmentId, auth.tenantId);
+  if (!existing.success) return existing;
+
+  if (input.userId && input.userId !== existing.data.user_id) {
+    return { success: false, error: 'Không thể chuyển hồ sơ ghi danh sang học viên khác.' };
+  }
+  if (input.courseId && input.courseId !== existing.data.course_id) {
+    return { success: false, error: 'Không thể chuyển hồ sơ ghi danh sang khóa học khác.' };
+  }
+
+  const payload = buildEnrollmentPayload({
+    ...input,
+    userId: existing.data.user_id,
+    courseId: existing.data.course_id,
+  }, auth.tenantId);
+  if (!payload.success) return payload;
+
+  const dbPayload: TrainingStudentEnrollmentUpdate = {
+    enrollment_status: payload.data.enrollment_status,
+    tuition_total: payload.data.tuition_total,
+    tuition_paid: payload.data.tuition_paid,
+    notes: payload.data.notes,
+    updated_at: new Date().toISOString(),
+  };
+  const { data, error } = await db
+    .from('students')
+    .update(dbPayload)
+    .eq('id', enrollmentId)
+    .eq('tenant_id', auth.tenantId)
+    .select('*')
+    .single();
+
+  if (error) return { success: false, error: error.message };
+  if (!data) return { success: false, error: 'Không xác định được hồ sơ ghi danh vừa cập nhật.' };
+
+  safeRevalidatePath('/dashboard/training');
+  safeRevalidatePath('/dashboard/training/enrollments');
+  return { success: true, data };
 }
 
 export async function createCourseModule(

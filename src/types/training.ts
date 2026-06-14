@@ -1,6 +1,7 @@
 export type TrainingCourseStatus = 'draft' | 'active' | 'archived';
 export type TrainingLessonStatus = 'draft' | 'published' | 'archived';
 export type TrainingContentType = 'document' | 'video' | 'pdf' | 'quiz' | 'live_class';
+export type TrainingEnrollmentStatus = 'active' | 'paused' | 'graduated' | 'withdrawn';
 
 export type TrainingCourseRow = {
   id: string;
@@ -91,6 +92,56 @@ export type TrainingCourseWithContent = TrainingCourseRow & {
   }>;
 };
 
+export type TrainingStudentUserRow = {
+  id: string;
+  tenant_id: string | null;
+  full_name: string;
+  email: string;
+  phone: string | null;
+  role: string;
+  status: string | null;
+};
+
+export type TrainingStudentEnrollmentRow = {
+  id: string;
+  tenant_id: string;
+  user_id: string;
+  course_id: string;
+  enrollment_status: TrainingEnrollmentStatus;
+  enrolled_at: string;
+  tuition_total: number | string;
+  tuition_paid: number | string;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type TrainingStudentEnrollmentInsert = {
+  tenant_id: string;
+  user_id: string;
+  course_id: string;
+  enrollment_status: TrainingEnrollmentStatus;
+  enrolled_at?: string;
+  tuition_total: number;
+  tuition_paid: number;
+  notes?: string | null;
+};
+
+export type TrainingStudentEnrollmentUpdate = Partial<Omit<TrainingStudentEnrollmentInsert, 'tenant_id' | 'user_id' | 'course_id'>> & {
+  updated_at: string;
+};
+
+export type TrainingStudentEnrollmentWithDetails = TrainingStudentEnrollmentRow & {
+  user: TrainingStudentUserRow | null;
+  course: Pick<TrainingCourseRow, 'id' | 'title' | 'status' | 'tuition_amount'> | null;
+};
+
+export type TrainingEnrollmentAdminOverview = {
+  courses: TrainingCourseRow[];
+  studentUsers: TrainingStudentUserRow[];
+  enrollments: TrainingStudentEnrollmentWithDetails[];
+};
+
 export type TrainingCourseInput = {
   title: string;
   description?: string | null;
@@ -117,4 +168,13 @@ export type TrainingLessonInput = {
   requiredViewSeconds?: number | string | null;
   requiredViewPercentage?: number | string | null;
   status?: TrainingLessonStatus | null;
+};
+
+export type TrainingEnrollmentInput = {
+  userId: string;
+  courseId: string;
+  enrollmentStatus?: TrainingEnrollmentStatus | null;
+  tuitionTotal?: number | string | null;
+  tuitionPaid?: number | string | null;
+  notes?: string | null;
 };
