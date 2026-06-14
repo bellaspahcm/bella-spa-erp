@@ -5,6 +5,17 @@
 
 ---
 
+### 14/06/2026: Student Training Lesson Progress
+* **Muc tieu san pham**:
+  * Cho hoc vien danh dau bai hoc da hoan thanh tren `/student/dashboard`.
+  * Tinh tien do khoa hoc tu bang `student_lesson_progress`, chua lam video heartbeat/quiz/khoa bai tuan tu.
+* **Thay doi chinh**:
+  * Them type progress va action `markStudentLessonComplete` voi guard lesson -> module -> course -> active enrollment.
+  * Portal hoc vien doc progress, hien thi completed/total, progress bar va nut hoan thanh tung bai.
+  * Them test side-effect insert progress va guard khong ghi khi bai hoc nam ngoai active enrollment.
+* **Kiem tra**:
+  * `npm.cmd test -- src/__tests__/training-actions.test.ts src/__tests__/tenant-isolation-source-guards.test.ts --runInBand` pass, 2 suites / 30 tests.
+
 ### 14/06/2026: Student Training Portal Readonly
 * **Muc tieu san pham**:
   * Cho hoc vien role `student` xem khoa hoc da duoc ghi danh tren `/student/dashboard`.
