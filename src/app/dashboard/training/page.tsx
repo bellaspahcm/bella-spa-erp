@@ -65,6 +65,12 @@ export default function TrainingDashboardPage() {
               Ghi danh học viên
             </Link>
             <Link
+              href="/dashboard/training/students"
+              className="inline-flex items-center justify-center rounded-[var(--brand-button-radius)] border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-800 shadow-sm transition hover:border-primary hover:text-primary"
+            >
+              Tạo học viên
+            </Link>
+            <Link
               href="/dashboard/training/classes"
               className="inline-flex items-center justify-center rounded-[var(--brand-button-radius)] border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-800 shadow-sm transition hover:border-primary hover:text-primary"
             >

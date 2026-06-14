@@ -1,7 +1,7 @@
 /**
  * End-to-End Spa Business Pipeline Negative Integration Tests.
  *
- * This test suite simulates the entire business lifecycle but intentionally injects 
+ * This test suite simulates the entire business lifecycle but intentionally injects
  * business logic errors to verify that the system correctly catches them (returns error)
  * and halts the pipeline progression.
  */
@@ -80,9 +80,13 @@ class MockQueryBuilder {
       inserted.push(newItem);
     }
     const result = { data: Array.isArray(data) ? inserted : inserted[0], error: null };
+    const singleResult = { data: inserted[0], error: null };
     return {
-      select: () => ({ single: () => Promise.resolve(result) }),
-      single: () => Promise.resolve(result),
+      select: () => ({
+        single: () => Promise.resolve(singleResult),
+        maybeSingle: () => Promise.resolve(singleResult)
+      }),
+      single: () => Promise.resolve(singleResult),
       then: (cb: any) => Promise.resolve(result).then(cb),
     };
   }
@@ -144,13 +148,13 @@ jest.mock('server-only', () => ({}), { virtual: true });
 jest.mock('@/lib/rate-limit', () => ({ rateLimit: jest.fn().mockReturnValue(true) }));
 jest.mock('next/headers', () => ({ headers: jest.fn().mockResolvedValue({ get: jest.fn().mockReturnValue('127.0.0.1') }) }));
 jest.mock('@/services/inventory-actions', () => ({ autoConsumeForSession: jest.fn().mockResolvedValue({ success: true }) }));
-jest.mock('@/services/audit-actions', () => ({ 
+jest.mock('@/services/audit-actions', () => ({
   recordAuditLog: jest.fn().mockResolvedValue({ success: true }),
   checkMonthLock: jest.fn().mockResolvedValue({ isLocked: false })
 }));
 jest.mock('@/lib/accounting-outbox', () => ({ enqueueWithAutoClient: jest.fn().mockResolvedValue(true) }));
-jest.mock('@/lib/utils', () => ({ 
-  resolvePackageName: jest.fn().mockReturnValue('Gói Dịch Vụ'), 
+jest.mock('@/lib/utils', () => ({
+  resolvePackageName: jest.fn().mockReturnValue('Gói Dịch Vụ'),
   getLocalDateString: jest.fn().mockReturnValue('2026-05-26'),
   sanitizeTime: jest.fn().mockReturnValue('10:00'),
   parsePercentInput: jest.fn((value, options = {}) => {
@@ -178,23 +182,23 @@ describe('E2E Negative Business Pipeline Suite', () => {
       deposit_amount: 1000000, total_sessions: 15, start_date: '2026-05-10', assigned_ktv_id: 'ktv-1',
     };
     const createResult = await createBooking(bookingFormData);
-    const booking = createResult.data;
+    const booking = (Array.isArray(createResult.data) ? createResult.data[0] : createResult.data) || { id: 'bk-1' };
 
     // 2. Admin cố tình hủy booking (cập nhật status = cancelled)
     const activeBooking = mockStore.bookings.find(b => b.id === booking?.id);
     if (activeBooking) {
       activeBooking.status = 'cancelled'; // Hủy booking
     } else {
-      mockStore.bookings.push({ id: booking?.id || 'bk-1', status: 'cancelled' });
+      mockStore.bookings.push({ id: booking?.id || 'bk-1', status: 'cancelled', tenant_id: 'tenant-a' });
     }
 
     // 3. KTV cố tình đăng nhập và ấn nút "Hoàn thành" ca dịch vụ
     mockGetCurrentUser.mockResolvedValue({ id: 'ktv-1', role: 'ktv', tenant_id: 'tenant-a' });
-    
+
     // Giả lập session logs
-    mockStore.session_logs.push({ id: 'ss-1', booking_id: booking?.id || 'bk-1', status: 'scheduled' });
+    mockStore.session_logs.push({ id: 'ss-1', booking_id: booking?.id || 'bk-1', status: 'scheduled', tenant_id: 'tenant-a' });
     const session1 = mockStore.session_logs[0];
-    
+
     let completeResult: any = {};
     try {
       completeResult = await completeSession(session1.id, session1.booking_id, 'Cố tình hoàn thành');
@@ -204,7 +208,7 @@ describe('E2E Negative Business Pipeline Suite', () => {
     
     // 4. KIỂM CHỨNG: Hệ thống bắt buộc phải trả về lỗi, luồng bị chặn đứng
     expect(completeResult.error).toBeDefined();
-    expect(completeResult.error).toMatch(/không ở trạng thái đang diễn ra|khoá|huỷ|tìm thấy thông tin booking|không hợp lệ/i); 
+    expect(completeResult.error).toMatch(/không ở trạng thái đang diễn ra|khoá|huỷ|hủy|tìm thấy thông tin booking|không hợp lệ/i);
   });
 
   it('Lỗi Xuyên Suốt Luồng 2: Thanh toán vượt quá số tiền của gói (Overpayment)', async () => {
@@ -218,7 +222,7 @@ describe('E2E Negative Business Pipeline Suite', () => {
     const revenueCountBeforeOverpayment = mockStore.revenue.length;
 
     const paymentAmount = 10000000;
-    
+
     let paymentResult: any = {};
     try {
       paymentResult = await recordRemainingPayment({
@@ -245,7 +249,7 @@ describe('E2E Negative Business Pipeline Suite', () => {
     const createResult = await createBooking(bookingFormData);
     const booking = (Array.isArray(createResult.data) ? createResult.data[0] : createResult.data) || { id: 'bk-3' };
     
-    mockStore.session_logs.push({ id: 'ss-3', booking_id: booking.id, status: 'scheduled' });
+    mockStore.session_logs.push({ id: 'ss-3', booking_id: booking.id, status: 'scheduled', tenant_id: 'tenant-a' });
     const session = mockStore.session_logs[mockStore.session_logs.length - 1];
 
     const inventoryActions = require('@/services/inventory-actions');
@@ -291,7 +295,7 @@ describe('E2E Negative Business Pipeline Suite', () => {
 
   it('Lỗi Xuyên Suốt Luồng 4: Kỳ kế toán đã chốt sổ (Locked Month), kế toán cố tình sửa doanh thu', async () => {
     const bookingId = 'bk-4';
-    mockStore.bookings.push({ id: bookingId, full_price: 5000000, deposit_amount: 1000000 });
+    mockStore.bookings.push({ id: bookingId, full_price: 5000000, deposit_amount: 1000000, tenant_id: 'tenant-a' });
 
     // Mocking the checkMonthLock logic that should exist in backend
     jest.spyOn(require('@/services/audit-actions'), 'checkMonthLock').mockResolvedValueOnce({ isLocked: true });
@@ -331,7 +335,7 @@ describe('E2E Negative Business Pipeline Suite', () => {
 
   it('Lỗi Xuyên Suốt Luồng 6: Thanh toán với số tiền = 0', async () => {
     const bookingId = 'bk-5';
-    mockStore.bookings.push({ id: bookingId, full_price: 5000000, deposit_amount: 1000000 });
+    mockStore.bookings.push({ id: bookingId, full_price: 5000000, deposit_amount: 1000000, tenant_id: 'tenant-a' });
 
     let paymentResult: any = {};
     try {
