@@ -309,7 +309,7 @@ export function TrainingCoursesClient({ initialCourses }: { initialCourses: Trai
               <select
                 value={courseForm.status}
                 onChange={(event) => setCourseForm({ ...courseForm, status: event.target.value as TrainingCourseStatus })}
-                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
               >
                 {Object.entries(courseStatusLabel).map(([value, label]) => (
                   <option key={value} value={value}>{label}</option>
@@ -360,7 +360,7 @@ export function TrainingCoursesClient({ initialCourses }: { initialCourses: Trai
             <select
               value={moduleForm.courseId}
               onChange={(event) => setModuleForm({ ...moduleForm, courseId: event.target.value })}
-              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
+              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
             >
               <option value="">Chọn khóa học</option>
               {activeCourses.map((course) => (
@@ -415,7 +415,7 @@ export function TrainingCoursesClient({ initialCourses }: { initialCourses: Trai
             <select
               value={lessonForm.moduleId}
               onChange={(event) => setLessonForm({ ...lessonForm, moduleId: event.target.value })}
-              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
+              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
             >
               <option value="">Chọn chương học</option>
               {moduleOptions.map((option) => (
@@ -432,7 +432,7 @@ export function TrainingCoursesClient({ initialCourses }: { initialCourses: Trai
               <select
                 value={lessonForm.contentType}
                 onChange={(event) => setLessonForm({ ...lessonForm, contentType: event.target.value as TrainingContentType })}
-                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
               >
                 {Object.entries(contentTypeLabel).map(([value, label]) => (
                   <option key={value} value={value}>{label}</option>
@@ -441,7 +441,7 @@ export function TrainingCoursesClient({ initialCourses }: { initialCourses: Trai
               <select
                 value={lessonForm.status}
                 onChange={(event) => setLessonForm({ ...lessonForm, status: event.target.value as TrainingLessonStatus })}
-                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
               >
                 {Object.entries(lessonStatusLabel).map(([value, label]) => (
                   <option key={value} value={value}>{label}</option>
