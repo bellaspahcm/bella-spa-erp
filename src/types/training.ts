@@ -86,6 +86,45 @@ export type TrainingLessonUpdate = Partial<TrainingLessonInsert> & {
   updated_at: string;
 };
 
+export type TrainingStudentLessonProgressRow = {
+  id: string;
+  tenant_id: string;
+  student_id: string;
+  lesson_id: string;
+  time_spent_seconds: number;
+  view_percentage: number | string;
+  is_completed: boolean;
+  completed_at: string | null;
+  last_accessed_at: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type TrainingStudentLessonProgressInsert = {
+  tenant_id: string;
+  student_id: string;
+  lesson_id: string;
+  time_spent_seconds?: number;
+  view_percentage?: number;
+  is_completed?: boolean;
+  completed_at?: string | null;
+  last_accessed_at?: string;
+};
+
+export type TrainingStudentLessonProgressUpdate = Partial<Omit<TrainingStudentLessonProgressInsert, 'tenant_id' | 'student_id' | 'lesson_id'>> & {
+  updated_at: string;
+};
+
+export type TrainingLessonWithProgress = TrainingLessonRow & {
+  progress: TrainingStudentLessonProgressRow | null;
+};
+
+export type TrainingCourseWithProgress = TrainingCourseRow & {
+  modules: Array<TrainingCourseModuleRow & {
+    lessons: TrainingLessonWithProgress[];
+  }>;
+};
+
 export type TrainingCourseWithContent = TrainingCourseRow & {
   modules: Array<TrainingCourseModuleRow & {
     lessons: TrainingLessonRow[];
@@ -143,7 +182,7 @@ export type TrainingEnrollmentAdminOverview = {
 };
 
 export type TrainingStudentPortalEnrollment = TrainingStudentEnrollmentRow & {
-  course: TrainingCourseWithContent | null;
+  course: TrainingCourseWithProgress | null;
 };
 
 export type TrainingStudentPortalOverview = {
