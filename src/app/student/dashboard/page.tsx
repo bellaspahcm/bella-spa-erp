@@ -58,7 +58,7 @@ export default async function StudentDashboardPage() {
             <LockKeyhole className="h-4 w-4" />
             Student portal
           </div>
-          <h1 className="text-3xl font-black text-white">Chào {result.data.student.full_name}</h1>
+          <h1 className="text-3xl font-black" style={{ color: '#ffffff' }}>Chào {result.data.student.full_name}</h1>
           <p className="mt-3 max-w-2xl text-sm font-semibold leading-6 text-slate-300">
             Đây là không gian học tập riêng của bạn. Nội dung bên dưới chỉ lấy từ hồ sơ ghi danh gắn với tài khoản học viên hiện tại.
           </p>
