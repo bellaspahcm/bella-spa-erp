@@ -161,22 +161,49 @@ export default async function StudentDashboardPage() {
                               <p className="text-sm font-semibold text-slate-400">Chương này chưa có bài học.</p>
                             ) : (
                               courseModule.lessons.map((lesson) => (
-                                <div key={lesson.id} className="flex flex-col gap-3 rounded-lg bg-white px-3 py-2 text-sm sm:flex-row sm:items-start">
-                                  <div className="mt-0.5 text-slate-500">
-                                    {lesson.content_type === 'video' ? <Video className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
+                                <div key={lesson.id} className="rounded-lg bg-white p-3 border border-slate-100">
+                                  <div className="flex flex-col gap-3 text-sm sm:flex-row sm:items-start">
+                                    <div className="mt-0.5 text-slate-500 shrink-0">
+                                      {lesson.content_type === 'video' ? <Video className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                      <p className="font-black text-slate-800">
+                                        {lesson.sequence_order}. {lesson.title}
+                                      </p>
+                                      {lesson.content_url && (
+                                        <a
+                                          href={lesson.content_url}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="mt-1.5 inline-flex items-center gap-1.5 text-xs font-black text-[#8B1D40] hover:text-primary transition-colors"
+                                        >
+                                          {lesson.content_type === 'video' ? '📺 Xem Video bài học' :
+                                           lesson.content_type === 'pdf' ? '📄 Tải tài liệu PDF' :
+                                           lesson.content_type === 'quiz' ? '📝 Làm bài trắc nghiệm' :
+                                           lesson.content_type === 'live_class' ? '🌐 Tham gia lớp trực tuyến' :
+                                           '🔗 Mở liên kết học tập'} ↗
+                                        </a>
+                                      )}
+                                    </div>
+                                    <div className="flex shrink-0 items-center gap-2">
+                                      <StudentLessonCompleteButton
+                                        lessonId={lesson.id}
+                                        isCompleted={Boolean(lesson.progress?.is_completed)}
+                                      />
+                                    </div>
                                   </div>
-                                  <div className="min-w-0 flex-1">
-                                    <p className="font-black text-slate-800">
-                                      {lesson.sequence_order}. {lesson.title}
-                                    </p>
-                                    <p className="font-semibold text-slate-500">
-                                      Yêu cầu xem {lesson.required_view_seconds}s · {lesson.required_view_percentage}%
-                                    </p>
-                                  </div>
-                                  <StudentLessonCompleteButton
-                                    lessonId={lesson.id}
-                                    isCompleted={Boolean(lesson.progress?.is_completed)}
-                                  />
+
+                                  {lesson.body && (
+                                    <details className="group mt-3 border-t border-slate-50 pt-2.5">
+                                      <summary className="flex cursor-pointer items-center justify-between text-xs font-bold text-slate-500 select-none hover:text-slate-800">
+                                        <span>Nội dung bài học bằng văn bản</span>
+                                        <span className="transition-transform group-open:rotate-180">▼</span>
+                                      </summary>
+                                      <div className="mt-2 text-xs font-medium leading-relaxed text-slate-600 whitespace-pre-wrap rounded-lg bg-slate-50 p-3">
+                                        {lesson.body}
+                                      </div>
+                                    </details>
+                                  )}
                                 </div>
                               ))
                             )}
