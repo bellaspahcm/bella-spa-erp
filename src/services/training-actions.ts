@@ -1179,7 +1179,12 @@ export async function createTrainingEnrollment(
 
   const { data, error } = await db
     .from('students')
-    .insert([payload.data])
+    .insert([{
+      ...payload.data,
+      full_name: studentResult.data.full_name,
+      email: studentResult.data.email,
+      phone: studentResult.data.phone,
+    }])
     .select('*')
     .single();
 
