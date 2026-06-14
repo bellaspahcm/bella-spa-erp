@@ -148,6 +148,9 @@ export type TrainingStudentEnrollmentRow = {
   tenant_id: string;
   user_id: string;
   course_id: string;
+  full_name: string;
+  phone: string | null;
+  email: string | null;
   enrollment_status: TrainingEnrollmentStatus;
   enrolled_at: string;
   tuition_total: number | string;
@@ -161,6 +164,9 @@ export type TrainingStudentEnrollmentInsert = {
   tenant_id: string;
   user_id: string;
   course_id: string;
+  full_name?: string;
+  phone?: string | null;
+  email?: string | null;
   enrollment_status: TrainingEnrollmentStatus;
   enrolled_at?: string;
   tuition_total: number;
