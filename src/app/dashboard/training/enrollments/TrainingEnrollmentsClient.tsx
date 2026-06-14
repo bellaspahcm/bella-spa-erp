@@ -65,17 +65,20 @@ function getOutstanding(enrollment: TrainingStudentEnrollmentWithDetails) {
 }
 
 export function TrainingEnrollmentsClient({ initialData }: { initialData: TrainingEnrollmentAdminOverview }) {
-  const [form, setForm] = useState<EnrollmentFormState>({
-    ...blankForm,
-    courseId: initialData.courses.find((course) => course.status !== 'archived')?.id || '',
-    userId: initialData.studentUsers[0]?.id || '',
-  });
-  const [isPending, startTransition] = useTransition();
-
   const activeCourses = useMemo(
     () => initialData.courses.filter((course) => course.status !== 'archived'),
     [initialData.courses],
   );
+
+  const initialCourse = activeCourses[0];
+
+  const [form, setForm] = useState<EnrollmentFormState>({
+    ...blankForm,
+    courseId: initialCourse?.id || '',
+    tuitionTotal: String(initialCourse?.tuition_amount || 0),
+    userId: initialData.studentUsers[0]?.id || '',
+  });
+  const [isPending, startTransition] = useTransition();
 
   const existingEnrollmentKeys = useMemo(
     () => new Set(initialData.enrollments.map((enrollment) => `${enrollment.user_id}:${enrollment.course_id}`)),
@@ -121,11 +124,15 @@ export function TrainingEnrollmentsClient({ initialData }: { initialData: Traini
             {form.id && (
               <button
                 type="button"
-                onClick={() => setForm({
-                  ...blankForm,
-                  courseId: activeCourses[0]?.id || '',
-                  userId: initialData.studentUsers[0]?.id || '',
-                })}
+                onClick={() => {
+                  const firstCourse = activeCourses[0];
+                  setForm({
+                    ...blankForm,
+                    courseId: firstCourse?.id || '',
+                    tuitionTotal: String(firstCourse?.tuition_amount || 0),
+                    userId: initialData.studentUsers[0]?.id || '',
+                  });
+                }}
                 className="text-xs font-bold text-slate-500 hover:text-primary"
               >
                 Hủy sửa
