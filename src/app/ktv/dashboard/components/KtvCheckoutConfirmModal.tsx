@@ -22,9 +22,11 @@ function getCheckoutTiming(session: KtvDashboardSession | null) {
   let elapsedMinutes = 0;
   let standardDuration = 60;
   let timeDeviation = 0;
+  let hasStartTime = false;
 
   if (session) {
     const startTime = session.start_time ? new Date(session.start_time) : null;
+    hasStartTime = startTime !== null;
     if (startTime) {
       elapsedMinutes = Math.round((new Date().getTime() - startTime.getTime()) / 60000);
     }
@@ -37,15 +39,19 @@ function getCheckoutTiming(session: KtvDashboardSession | null) {
       }
     }
 
-    timeDeviation = elapsedMinutes - standardDuration;
+    // Chỉ tính deviation khi có start_time thực sự
+    if (hasStartTime) {
+      timeDeviation = elapsedMinutes - standardDuration;
+    }
   }
 
   return {
     elapsedMinutes,
     standardDuration,
     timeDeviation,
-    isUnderTime: timeDeviation < 0 && Math.abs(timeDeviation) > 5,
-    isOverTime: timeDeviation > 0,
+    // Chỉ cảnh báo khi biết chắc thời gian bắt đầu
+    isUnderTime: hasStartTime && timeDeviation < 0 && Math.abs(timeDeviation) > 5,
+    isOverTime: hasStartTime && timeDeviation > 0,
   };
 }
 

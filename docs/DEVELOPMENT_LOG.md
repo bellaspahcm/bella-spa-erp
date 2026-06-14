@@ -5,6 +5,75 @@
 
 ---
 
+### 14/06/2026: Fix KTV Check-in/Check-out — Lỗi Người Dùng Báo Thường Xuyên
+
+* **Bối cảnh**:
+  * Người dùng phản hồi check-in/check-out ca làm thường xuyên lỗi, bấm nút không phản hồi hoặc báo "Session already completed".
+  * Đặc biệt trên Zalo Mini App / mobile webview.
+
+* **Nguyên nhân gốc rễ (6 bugs)**:
+  1. 🔴 **CRITICAL — `window.confirm` bị block trên mobile webview**: `handleCheckOut` dùng `window.confirm()` cho xác nhận cuối ca. API này bị Zalo và nhiều mobile webview block im lặng, không hiện dialog, không phản hồi khi bấm.
+  2. 🔴 **HIGH — `ktvCheckOut` thiếu `tenant_id` guard**: Hàm checkout ca thiếu `.eq('tenant_id', tenantId)` trong cả `select` lẫn `update`, trong khi `ktvCheckIn` đã có. Multi-tenant RLS có thể fail hoặc query sai tenant.
+  3. 🟠 **MEDIUM — Double-submission do `fetchData()` che toast**: Sau checkout thành công, `fetchData()` gọi `setIsLoading(true)` → toàn trang replace bằng loading spinner → toast xanh xác nhận bị che trước khi user nhìn thấy. User tưởng thất bại, bấm lại → "Session already completed".
+  4. 🟠 **MEDIUM — Double-tap gửi 2 request**: `isActionLoading` là React state (async), không block được double-tap trên mobile trước khi re-render disable button.
+  5. 🟡 **LOW — Null `start_time` tính overtime sai**: Nếu `start_time = null` (session sync từ offline), modal tính `timeDeviation = 0 - sessionStandard = âm`, hiện cảnh báo "thiếu thời gian" giả và block checkout.
+  6. 🟡 **LOW — Operator precedence sai trong role check**: `!A && B !== C && D !== E` thay vì `!(A && ...)` trong logic duyệt nghỉ phép.
+
+* **Thay đổi chính**:
+  * `src/services/attendance-actions.ts`:
+    * Thêm `tenant_id` guard vào `ktvCheckOut` (`.eq('tenant_id', tenantId)` cho cả select và update).
+    * Sửa operator precedence trong role check của `approveLeaveRequest`/`rejectLeaveRequest`.
+  * `src/app/ktv/dashboard/page.tsx`:
+    * Thay `window.confirm` bằng `framer-motion` bottom-sheet modal cho xác nhận cuối ca — an toàn trên mọi webview.
+    * Thêm `useRef` guards (`isStartingRef`, `isCompletingRef`): block double-tap đồng bộ, không phụ thuộc React re-render cycle.
+    * Thêm `refreshDataSilently()`: refresh danh sách session mà KHÔNG gọi `setIsLoading(true)` → toast xanh ở lại đủ thời gian để user thấy.
+    * Checkout thành công: optimistic remove session khỏi list ngay lập tức → `toast.success()` → `setTimeout(refreshDataSilently, 2500)`.
+    * Check-in thành công: optimistic add session vào active list → `toast.success()` → `setTimeout(refreshDataSilently, 1500)`.
+  * `src/app/ktv/dashboard/components/KtvCheckoutConfirmModal.tsx`:
+    * Thêm flag `hasStartTime`: chỉ tính `timeDeviation` khi `start_time !== null` — tránh cảnh báo "thiếu thời gian" giả.
+
+* **Pattern tái sử dụng — Bài học**:
+  > ⚠️ **KHÔNG dùng `window.confirm` / `window.alert` / `window.prompt`** trên bất kỳ flow nào trong app. Zalo Mini App, embedded webview iOS/Android đều block API này. Dùng `framer-motion` modal hoặc Radix Dialog.
+  >
+  > ⚠️ **KHÔNG dùng `setState` để guard double-submission trên mobile**. React state update là async. Dùng `useRef` để tạo synchronous guard trước `setState`.
+  >
+  > ⚠️ **KHÔNG gọi `fetchData()` (có `setIsLoading(true)`) ngay sau `toast.success()`**. Loading spinner sẽ che toast. Dùng pattern: optimistic UI update → toast → `setTimeout(refreshDataSilently, 2000+)`.
+  >
+  > ✅ **Pattern chuẩn cho async action thành công**:
+  > ```typescript
+  > // Synchronous guard (useRef, không phải useState)
+  > if (actionRef.current === id) return;
+  > actionRef.current = id;
+  > try {
+  >   const res = await serverAction(...);
+  >   if (res.success) {
+  >     setItems(prev => prev.filter(x => x.id !== id));  // optimistic
+  >     toast.success('Thành công!');                      // toast không bị che
+  >     setTimeout(() => void refreshSilently(), 2000);   // background sync
+  >   }
+  > } finally {
+  >   actionRef.current = null;
+  > }
+  > ```
+
+* **Kiểm tra**:
+  * `npm.cmd test -- src/__tests__/attendance-actions.test.ts src/__tests__/ktv-actions.test.ts --runInBand` pass, 2 suites / 25 tests.
+  * Production deployment `dpl_6VKUS3kCEVGi1b9KBuupJnju21NP` READY.
+  * Thứ hai deployment `dpl_06be24cc` READY (double-submission + toast fix).
+
+---
+
+### 14/06/2026: Student Training Student Accounts
+* **Muc tieu san pham**:
+  * Cho admin tao tai khoan hoc vien ngay trong module dao tao thay vi vao Settings gan role thu cong.
+  * Tai su dung central `createUser` de tao Supabase Auth + `public.users`, ep role `student`.
+* **Thay doi chinh**:
+  * Them action `getTrainingStudentAccountOverview` va `createTrainingStudentAccount`.
+  * Them route `/dashboard/training/students` hien danh sach student va mat khau tam sau khi tao.
+  * Them CTA "Tao hoc vien" trong dashboard dao tao va test/source guard.
+* **Kiem tra**:
+  * `npm.cmd test -- src/__tests__/training-actions.test.ts src/__tests__/tenant-isolation-source-guards.test.ts --runInBand` pass, 2 suites / 37 tests.
+
 ### 14/06/2026: Student Training Class Schedule
 * **Muc tieu san pham**:
   * Cho admin tao va quan ly lich lop dao tao cho khoa hoc.

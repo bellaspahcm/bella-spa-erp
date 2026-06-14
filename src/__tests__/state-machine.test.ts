@@ -151,8 +151,8 @@ describe('State Machine & Transition Validity Integrity Tests', () => {
   describe('Booking Status State Machine', () => {
     it('blocks session completion if the booking is cancelled', async () => {
       // Setup session log and a cancelled booking
-      const mockSession = { id: 'session-123', booking_id: 'booking-cancelled', status: 'scheduled' };
-      const mockBooking = { id: 'booking-cancelled', assigned_ktv_id: 'ktv-1', package_id: 'pkg-1', status: 'cancelled' };
+      const mockSession = { id: 'session-123', booking_id: 'booking-cancelled', status: 'scheduled', tenant_id: 'tenant-a' };
+      const mockBooking = { id: 'booking-cancelled', assigned_ktv_id: 'ktv-1', package_id: 'pkg-1', status: 'cancelled', tenant_id: 'tenant-a' };
 
       mockSupabase.from.mockImplementation((table: string) => {
         if (table === 'session_logs') {

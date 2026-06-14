@@ -3,6 +3,7 @@ jest.mock('server-only', () => ({}), { virtual: true });
 const mockGetAuthorizedTenantUser = jest.fn();
 const mockCreateDevelopmentBypassClient = jest.fn();
 const mockSafeRevalidatePath = jest.fn();
+const mockCreateUser = jest.fn();
 
 jest.mock('@/services/auth-guards', () => ({
   getAuthorizedTenantUser: (options: unknown) => mockGetAuthorizedTenantUser(options),
@@ -14,6 +15,10 @@ jest.mock('@/lib/supabase-dev-bypass-server', () => ({
 
 jest.mock('@/lib/revalidate', () => ({
   safeRevalidatePath: (path: string) => mockSafeRevalidatePath(path),
+}));
+
+jest.mock('@/services/user-actions', () => ({
+  createUser: (input: unknown) => mockCreateUser(input),
 }));
 
 type QueryResult = {
@@ -114,9 +119,11 @@ import {
   createTrainingClass,
   createTrainingEnrollment,
   createTrainingCourse,
+  createTrainingStudentAccount,
   getTrainingAdminOverview,
   getTrainingClassAdminOverview,
   getTrainingEnrollmentAdminOverview,
+  getTrainingStudentAccountOverview,
   getStudentTrainingPortalOverview,
   markStudentLessonComplete,
 } from '@/services/training-actions';
@@ -148,6 +155,18 @@ describe('training actions', () => {
     scriptedResults = [];
     grantAdmin();
     mockCreateDevelopmentBypassClient.mockResolvedValue(mockDb);
+    mockCreateUser.mockResolvedValue({
+      data: {
+        id: 'student-user-new',
+        tenant_id: 'tenant-1',
+        full_name: 'Học Viên Mới',
+        email: 'student-new@example.com',
+        phone: null,
+        role: 'student',
+        status: 'active',
+      },
+      defaultPassword: 'Bella-temp-123',
+    });
   });
 
   it('loads courses, modules, and lessons through tenant-scoped queries', async () => {
@@ -837,5 +856,61 @@ describe('training actions', () => {
         { type: 'eq', column: 'tenant_id', value: 'tenant-1' },
       ],
     });
+  });
+
+  it('loads student account admin data through tenant-scoped role queries', async () => {
+    scriptedResults = [
+      {
+        data: [{
+          id: 'student-user-1',
+          tenant_id: 'tenant-1',
+          full_name: 'Nguyễn Học Viên',
+          email: 'student@example.com',
+          phone: null,
+          role: 'student',
+          status: 'active',
+        }],
+        error: null,
+      },
+    ];
+
+    const result = await getTrainingStudentAccountOverview();
+
+    expect(result.success).toBe(true);
+    expect(result.success ? result.data.studentUsers[0].role : '').toBe('student');
+    expect(queryCalls[0]).toMatchObject({
+      table: 'users',
+      operation: 'select',
+      filters: [
+        { type: 'eq', column: 'tenant_id', value: 'tenant-1' },
+        { type: 'eq', column: 'role', value: 'student' },
+      ],
+    });
+  });
+
+  it('creates student accounts through the central user action with forced student role', async () => {
+    const result = await createTrainingStudentAccount({
+      fullName: ' Học Viên Mới ',
+      email: ' STUDENT-NEW@EXAMPLE.COM ',
+    });
+
+    expect(result.success).toBe(true);
+    expect(mockCreateUser).toHaveBeenCalledWith({
+      full_name: 'Học Viên Mới',
+      email: 'student-new@example.com',
+      role: 'student',
+    });
+    expect(mockSafeRevalidatePath).toHaveBeenCalledWith('/dashboard/training/students');
+    expect(mockSafeRevalidatePath).toHaveBeenCalledWith('/dashboard/training/enrollments');
+  });
+
+  it('rejects invalid student account input before creating auth users', async () => {
+    const result = await createTrainingStudentAccount({
+      fullName: '',
+      email: 'bad-email',
+    });
+
+    expect(result).toEqual({ success: false, error: 'Vui lòng nhập tên học viên.' });
+    expect(mockCreateUser).not.toHaveBeenCalled();
   });
 });

@@ -187,6 +187,9 @@ export async function ktvCheckOut() {
   const user = await getCurrentUser();
   if (!user || user.role !== 'ktv') return { success: false, error: 'Không có quyền truy cập' };
 
+  const tenantId = user.tenant_id;
+  if (!tenantId) return { success: false, error: 'Không xác định được chi nhánh của người dùng' };
+
   const todayStr = await getVNTodayString();
   const now = new Date();
 
@@ -195,6 +198,7 @@ export async function ktvCheckOut() {
     .select('*')
     .eq('ktv_id', user.id)
     .eq('date', todayStr)
+    .eq('tenant_id', tenantId)
     .maybeSingle();
 
   if (fetchErr || !existing) {
@@ -211,6 +215,7 @@ export async function ktvCheckOut() {
       checkout_time: now.toISOString(),
     })
     .eq('id', existing.id)
+    .eq('tenant_id', tenantId)
     .select()
     .single();
 
@@ -546,7 +551,7 @@ export async function approveLeaveRequest(
 ) {
   const supabase = await createClient();
   const currentUser = await getCurrentUser();
-  if (!currentUser || currentUser.role !== 'admin' && currentUser.role !== 'ktv_lead' && currentUser.role !== 'admin_staff' && currentUser.role !== 'accountant' && currentUser.role !== 'hr') {
+  if (!currentUser || !['admin', 'ktv_lead', 'admin_staff', 'accountant', 'hr'].includes(currentUser.role)) {
     return { success: false, error: 'Không có quyền thực hiện' };
   }
 
