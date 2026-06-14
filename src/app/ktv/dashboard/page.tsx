@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   RefreshCw,
 } from 'lucide-react';
@@ -276,6 +276,23 @@ export default function KTVDashboard() {
     }
   }, []);
 
+  /**
+   * Refresh session list silently — does NOT trigger setIsLoading(true).
+   * Prevents the full-page white-screen that hides the success toast.
+   */
+  const refreshDataSilently = useCallback(async () => {
+    try {
+      const [active, upcoming] = await Promise.all([
+        getKTVActiveSessions(),
+        getKTVUpcomingSessions(),
+      ]);
+      setActiveSessions(active);
+      setUpcomingSessions(upcoming);
+    } catch {
+      // silent — full fetchData handles errors on next explicit reload
+    }
+  }, []);
+
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -369,7 +386,14 @@ export default function KTVDashboard() {
     }
   };
 
+  // Guards against double-submission (double-tap on mobile before React disables the button)
+  const isStartingRef = useRef<string | null>(null);
+  const isCompletingRef = useRef<string | null>(null);
+
   const handleStart = async (sessionId: string) => {
+    // Synchronous guard — blocks re-entry before React's async state update
+    if (isStartingRef.current === sessionId) return;
+    isStartingRef.current = sessionId;
     setIsActionLoading(sessionId);
     try {
       let lat: number | undefined;
@@ -403,8 +427,19 @@ export default function KTVDashboard() {
         ]);
         setUpcomingSessions(prev => prev.filter(s => s.id !== sessionId));
       } else if (res && res.success) {
+        // Move session from upcoming → active immediately (no white-screen flash)
+        setActiveSessions(prev => [
+          ...prev,
+          ...upcomingSessions.filter(s => s.id === sessionId).map(s => ({
+            ...s,
+            status: 'in_progress',
+            start_time: new Date().toISOString()
+          }))
+        ]);
+        setUpcomingSessions(prev => prev.filter(s => s.id !== sessionId));
         toast.success('Đã bắt đầu buổi chăm sóc!');
-        void fetchData();
+        // Silent background refresh — does not trigger loading spinner
+        setTimeout(() => void refreshDataSilently(), 1500);
       } else {
         toast.error((res && res.error) || 'Không thể bắt đầu buổi chăm sóc');
       }
@@ -412,12 +447,16 @@ export default function KTVDashboard() {
       toast.error(getErrorMessage(error, 'Không thể bắt đầu buổi chăm sóc'));
     } finally {
       setIsActionLoading(null);
+      isStartingRef.current = null;
     }
   };
 
   const [ktvCheckoutNote, setKtvCheckoutNote] = useState<string>('');
 
   const handleComplete = async (sessionId: string, notes: string, checkoutNoteVal: string = '') => {
+    // Synchronous guard — prevents double-tap from sending two requests
+    if (isCompletingRef.current === sessionId) return;
+    isCompletingRef.current = sessionId;
     setIsActionLoading(sessionId);
     try {
       let lat: number | undefined;
@@ -450,11 +489,15 @@ export default function KTVDashboard() {
         setKtvCheckoutNote('');
         setActiveSessions(prev => prev.filter(s => s.id !== sessionId));
       } else if (res && res.success) {
-        toast.success('Đã hoàn thành buổi chăm sóc!');
+        // 1. Immediately close modal + remove session from list (instant visual feedback)
         setCheckoutSession(null);
         setCheckoutNotes('');
         setKtvCheckoutNote('');
-        void fetchData();
+        setActiveSessions(prev => prev.filter(s => s.id !== sessionId));
+        // 2. Show success toast — stays visible because we do NOT call setIsLoading(true)
+        toast.success('Đã hoàn thành buổi chăm sóc!');
+        // 3. Silent background refresh after toast has had time to display (2.5s)
+        setTimeout(() => void refreshDataSilently(), 2500);
       } else {
         toast.error((res && res.error) || 'Không thể hoàn tất buổi chăm sóc');
       }
@@ -462,6 +505,7 @@ export default function KTVDashboard() {
       toast.error(getErrorMessage(error, 'Không thể hoàn tất buổi chăm sóc'));
     } finally {
       setIsActionLoading(null);
+      isCompletingRef.current = null;
     }
   };
 
