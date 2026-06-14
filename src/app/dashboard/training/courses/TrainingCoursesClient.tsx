@@ -317,20 +317,24 @@ export function TrainingCoursesClient({ initialCourses }: { initialCourses: Trai
               </select>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <input
-                value={courseForm.tuitionAmount}
-                onChange={(event) => setCourseForm({ ...courseForm, tuitionAmount: event.target.value })}
-                placeholder="Học phí"
-                inputMode="numeric"
-                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
-              />
-              <input
-                value={courseForm.theoryDurationMinutes}
-                onChange={(event) => setCourseForm({ ...courseForm, theoryDurationMinutes: event.target.value })}
-                placeholder="Phút lý thuyết"
-                inputMode="numeric"
-                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
-              />
+              <label className="flex flex-col gap-1">
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Học phí (đ)</span>
+                <input
+                  value={courseForm.tuitionAmount}
+                  onChange={(event) => setCourseForm({ ...courseForm, tuitionAmount: event.target.value })}
+                  inputMode="numeric"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
+                />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Lý thuyết (phút)</span>
+                <input
+                  value={courseForm.theoryDurationMinutes}
+                  onChange={(event) => setCourseForm({ ...courseForm, theoryDurationMinutes: event.target.value })}
+                  inputMode="numeric"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
+                />
+              </label>
             </div>
           </div>
           <button
@@ -373,13 +377,15 @@ export function TrainingCoursesClient({ initialCourses }: { initialCourses: Trai
               placeholder="Tên chương"
               className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
             />
-            <input
-              value={moduleForm.sequenceOrder}
-              onChange={(event) => setModuleForm({ ...moduleForm, sequenceOrder: event.target.value })}
-              placeholder="Thứ tự"
-              inputMode="numeric"
-              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
-            />
+            <label className="flex flex-col gap-1">
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Thứ tự chương</span>
+              <input
+                value={moduleForm.sequenceOrder}
+                onChange={(event) => setModuleForm({ ...moduleForm, sequenceOrder: event.target.value })}
+                inputMode="numeric"
+                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
+              />
+            </label>
             <textarea
               value={moduleForm.description}
               onChange={(event) => setModuleForm({ ...moduleForm, description: event.target.value })}
@@ -455,27 +461,33 @@ export function TrainingCoursesClient({ initialCourses }: { initialCourses: Trai
               className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
             />
             <div className="grid grid-cols-3 gap-3">
-              <input
-                value={lessonForm.sequenceOrder}
-                onChange={(event) => setLessonForm({ ...lessonForm, sequenceOrder: event.target.value })}
-                placeholder="Thứ tự"
-                inputMode="numeric"
-                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
-              />
-              <input
-                value={lessonForm.requiredViewSeconds}
-                onChange={(event) => setLessonForm({ ...lessonForm, requiredViewSeconds: event.target.value })}
-                placeholder="Giây học"
-                inputMode="numeric"
-                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
-              />
-              <input
-                value={lessonForm.requiredViewPercentage}
-                onChange={(event) => setLessonForm({ ...lessonForm, requiredViewPercentage: event.target.value })}
-                placeholder="% xem"
-                inputMode="numeric"
-                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
-              />
+              <label className="flex flex-col gap-1">
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Thứ tự bài</span>
+                <input
+                  value={lessonForm.sequenceOrder}
+                  onChange={(event) => setLessonForm({ ...lessonForm, sequenceOrder: event.target.value })}
+                  inputMode="numeric"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
+                />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Xem tối thiểu (s)</span>
+                <input
+                  value={lessonForm.requiredViewSeconds}
+                  onChange={(event) => setLessonForm({ ...lessonForm, requiredViewSeconds: event.target.value })}
+                  inputMode="numeric"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
+                />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Hoàn thành (%)</span>
+                <input
+                  value={lessonForm.requiredViewPercentage}
+                  onChange={(event) => setLessonForm({ ...lessonForm, requiredViewPercentage: event.target.value })}
+                  inputMode="numeric"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
+                />
+              </label>
             </div>
             <textarea
               value={lessonForm.body}

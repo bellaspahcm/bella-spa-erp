@@ -172,20 +172,24 @@ export function TrainingEnrollmentsClient({ initialData }: { initialData: Traini
             </select>
 
             <div className="grid grid-cols-2 gap-3">
-              <input
-                value={form.tuitionTotal}
-                onChange={(event) => setForm({ ...form, tuitionTotal: event.target.value })}
-                placeholder="Tổng học phí"
-                inputMode="numeric"
-                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
-              />
-              <input
-                value={form.tuitionPaid}
-                onChange={(event) => setForm({ ...form, tuitionPaid: event.target.value })}
-                placeholder="Đã thu"
-                inputMode="numeric"
-                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
-              />
+              <label className="flex flex-col gap-1">
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Tổng học phí (đ)</span>
+                <input
+                  value={form.tuitionTotal}
+                  onChange={(event) => setForm({ ...form, tuitionTotal: event.target.value })}
+                  inputMode="numeric"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
+                />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Đã thu (đ)</span>
+                <input
+                  value={form.tuitionPaid}
+                  onChange={(event) => setForm({ ...form, tuitionPaid: event.target.value })}
+                  inputMode="numeric"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
+                />
+              </label>
             </div>
 
             <textarea

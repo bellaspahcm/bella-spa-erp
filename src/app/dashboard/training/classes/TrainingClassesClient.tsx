@@ -208,6 +208,7 @@ export function TrainingClassesClient({ initialData }: { initialData: TrainingCl
               />
             </div>
 
+
             <div className="grid grid-cols-[1fr_110px] gap-3">
               <input
                 value={form.locationNote}
@@ -215,13 +216,15 @@ export function TrainingClassesClient({ initialData }: { initialData: TrainingCl
                 placeholder="Địa điểm / phòng học"
                 className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
               />
-              <input
-                value={form.capacity}
-                onChange={(event) => setForm({ ...form, capacity: event.target.value })}
-                placeholder="Sức chứa"
-                inputMode="numeric"
-                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
-              />
+              <label className="flex flex-col gap-1">
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Sức chứa</span>
+                <input
+                  value={form.capacity}
+                  onChange={(event) => setForm({ ...form, capacity: event.target.value })}
+                  inputMode="numeric"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
+                />
+              </label>
             </div>
           </div>
 
