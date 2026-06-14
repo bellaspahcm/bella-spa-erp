@@ -183,6 +183,10 @@ export type TrainingEnrollmentAdminOverview = {
   enrollments: TrainingStudentEnrollmentWithDetails[];
 };
 
+export type TrainingStudentAccountOverview = {
+  studentUsers: TrainingStudentUserRow[];
+};
+
 export type TrainingClassRow = {
   id: string;
   tenant_id: string;
@@ -271,6 +275,12 @@ export type TrainingEnrollmentInput = {
   tuitionTotal?: number | string | null;
   tuitionPaid?: number | string | null;
   notes?: string | null;
+};
+
+export type TrainingStudentAccountInput = {
+  fullName: string;
+  email: string;
+  phone?: string | null;
 };
 
 export type TrainingClassInput = {

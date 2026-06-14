@@ -214,6 +214,20 @@ describe('dashboard tenant isolation source guards', () => {
     expect(actionsSource).toContain(".eq('tenant_id', auth.tenantId)");
   });
 
+  it('keeps training student account creation behind server actions', () => {
+    const studentsPageSource = readSource('src/app/dashboard/training/students/page.tsx');
+    const studentsClientSource = readSource('src/app/dashboard/training/students/TrainingStudentsClient.tsx');
+    const actionsSource = readSource('src/services/training-actions.ts');
+
+    expect(studentsPageSource).toContain('getTrainingStudentAccountOverview');
+    expect(studentsClientSource).toContain('createTrainingStudentAccount');
+    expect(studentsPageSource).not.toMatch(/\.from\('(users|students|courses)'/);
+    expect(studentsClientSource).not.toMatch(/\.from\('(users|students|courses)'/);
+    expect(studentsClientSource).not.toContain('createClient');
+    expect(actionsSource).toContain('role: \'student\'');
+    expect(actionsSource).toContain('createUser');
+  });
+
   it('keeps GPS empty-state copy encoded correctly', () => {
     const sessionDetailsSource = readSource('src/app/dashboard/sessions/components/SessionLogsDetailsModal.tsx');
 
