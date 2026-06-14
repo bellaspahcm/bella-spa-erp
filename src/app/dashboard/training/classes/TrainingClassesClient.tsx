@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition, type FormEvent } from 'react';
-import { CalendarDays, CheckCircle2, MapPin, Pencil, Plus, Users } from 'lucide-react';
+import { CalendarDays, CheckCircle2, Loader2, MapPin, Pencil, Plus, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
@@ -231,8 +231,12 @@ export function TrainingClassesClient({ initialData }: { initialData: TrainingCl
             disabled={isPending || !form.courseId || !form.title || !form.startsAt}
             className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-[var(--brand-button-radius)] bg-slate-950 px-4 py-2.5 text-sm font-black text-white transition hover:bg-primary disabled:opacity-60"
           >
-            {form.id ? <CheckCircle2 className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-            {form.id ? 'Lưu lịch lớp' : 'Tạo lịch lớp'}
+            {isPending
+              ? <><Loader2 className="h-4 w-4 animate-spin" />Đang lưu...</>
+              : form.id
+                ? <><CheckCircle2 className="h-4 w-4" />Lưu lịch lớp</>
+                : <><Plus className="h-4 w-4" />Tạo lịch lớp</>
+            }
           </button>
         </form>
       </aside>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState, useTransition, type FormEvent } from 'react';
-import { CheckCircle2, GraduationCap, Pencil, Plus, WalletCards } from 'lucide-react';
+import { CheckCircle2, GraduationCap, Loader2, Pencil, Plus, WalletCards } from 'lucide-react';
 import { toast } from 'sonner';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
@@ -211,8 +211,12 @@ export function TrainingEnrollmentsClient({ initialData }: { initialData: Traini
             disabled={isPending || !form.userId || !form.courseId}
             className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-[var(--brand-button-radius)] bg-slate-950 px-4 py-2.5 text-sm font-black text-white transition hover:bg-primary disabled:opacity-60"
           >
-            {form.id ? <CheckCircle2 className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-            {form.id ? 'Lưu ghi danh' : 'Ghi danh học viên'}
+            {isPending
+              ? <><Loader2 className="h-4 w-4 animate-spin" />Đang lưu...</>
+              : form.id
+                ? <><CheckCircle2 className="h-4 w-4" />Lưu ghi danh</>
+                : <><Plus className="h-4 w-4" />Ghi danh học viên</>
+            }
           </button>
         </form>
       </aside>
