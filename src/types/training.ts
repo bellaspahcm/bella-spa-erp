@@ -2,6 +2,8 @@ export type TrainingCourseStatus = 'draft' | 'active' | 'archived';
 export type TrainingLessonStatus = 'draft' | 'published' | 'archived';
 export type TrainingContentType = 'document' | 'video' | 'pdf' | 'quiz' | 'live_class';
 export type TrainingEnrollmentStatus = 'active' | 'paused' | 'graduated' | 'withdrawn';
+export type TrainingClassType = 'theory' | 'practice' | 'exam' | 'orientation';
+export type TrainingClassStatus = 'scheduled' | 'completed' | 'cancelled';
 
 export type TrainingCourseRow = {
   id: string;
@@ -181,6 +183,50 @@ export type TrainingEnrollmentAdminOverview = {
   enrollments: TrainingStudentEnrollmentWithDetails[];
 };
 
+export type TrainingClassRow = {
+  id: string;
+  tenant_id: string;
+  course_id: string;
+  trainer_id: string | null;
+  title: string;
+  class_type: TrainingClassType;
+  starts_at: string;
+  ends_at: string | null;
+  location_note: string | null;
+  capacity: number;
+  status: TrainingClassStatus;
+  created_at: string;
+  updated_at: string;
+};
+
+export type TrainingClassInsert = {
+  tenant_id: string;
+  course_id: string;
+  trainer_id?: string | null;
+  title: string;
+  class_type: TrainingClassType;
+  starts_at: string;
+  ends_at?: string | null;
+  location_note?: string | null;
+  capacity: number;
+  status: TrainingClassStatus;
+};
+
+export type TrainingClassUpdate = Partial<Omit<TrainingClassInsert, 'tenant_id' | 'course_id'>> & {
+  updated_at: string;
+};
+
+export type TrainingClassWithDetails = TrainingClassRow & {
+  course: Pick<TrainingCourseRow, 'id' | 'title' | 'status'> | null;
+  trainer: Pick<TrainingStudentUserRow, 'id' | 'full_name' | 'email' | 'role'> | null;
+};
+
+export type TrainingClassAdminOverview = {
+  courses: TrainingCourseRow[];
+  trainers: TrainingStudentUserRow[];
+  classes: TrainingClassWithDetails[];
+};
+
 export type TrainingStudentPortalEnrollment = TrainingStudentEnrollmentRow & {
   course: TrainingCourseWithProgress | null;
 };
@@ -225,4 +271,16 @@ export type TrainingEnrollmentInput = {
   tuitionTotal?: number | string | null;
   tuitionPaid?: number | string | null;
   notes?: string | null;
+};
+
+export type TrainingClassInput = {
+  courseId: string;
+  trainerId?: string | null;
+  title: string;
+  classType?: TrainingClassType | null;
+  startsAt: string;
+  endsAt?: string | null;
+  locationNote?: string | null;
+  capacity?: number | string | null;
+  status?: TrainingClassStatus | null;
 };

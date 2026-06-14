@@ -111,9 +111,11 @@ const mockDb = {
 import {
   archiveTrainingCourse,
   createCourseModule,
+  createTrainingClass,
   createTrainingEnrollment,
   createTrainingCourse,
   getTrainingAdminOverview,
+  getTrainingClassAdminOverview,
   getTrainingEnrollmentAdminOverview,
   getStudentTrainingPortalOverview,
   markStudentLessonComplete,
@@ -737,5 +739,103 @@ describe('training actions', () => {
     expect(queryCalls).toHaveLength(5);
     expect(queryCalls.some((call) => call.table === 'student_lesson_progress' && call.operation === 'insert')).toBe(false);
     expect(mockSafeRevalidatePath).not.toHaveBeenCalledWith('/student/dashboard');
+  });
+
+  it('loads training class admin data through tenant-scoped queries', async () => {
+    scriptedResults = [
+      {
+        data: [{
+          id: 'course-1',
+          tenant_id: 'tenant-1',
+          module_key: 'student_training',
+          title: 'Massage nền tảng',
+          description: null,
+          specialty: null,
+          tuition_amount: 1200000,
+          theory_duration_minutes: 90,
+          status: 'active',
+          created_by: 'admin-1',
+          created_at: '2026-06-14T00:00:00.000Z',
+          updated_at: '2026-06-14T00:00:00.000Z',
+        }],
+        error: null,
+      },
+      {
+        data: [{
+          id: 'trainer-1',
+          tenant_id: 'tenant-1',
+          full_name: 'Giảng viên A',
+          email: 'trainer@example.com',
+          phone: null,
+          role: 'ktv_lead',
+          status: 'active',
+        }],
+        error: null,
+      },
+      {
+        data: [{
+          id: 'class-1',
+          tenant_id: 'tenant-1',
+          course_id: 'course-1',
+          trainer_id: 'trainer-1',
+          title: 'Buổi thực hành 1',
+          class_type: 'practice',
+          starts_at: '2026-06-14T08:00:00.000Z',
+          ends_at: null,
+          location_note: 'Phòng 1',
+          capacity: 12,
+          status: 'scheduled',
+          created_at: '2026-06-14T00:00:00.000Z',
+          updated_at: '2026-06-14T00:00:00.000Z',
+        }],
+        error: null,
+      },
+    ];
+
+    const result = await getTrainingClassAdminOverview();
+
+    expect(result.success).toBe(true);
+    expect(result.success ? result.data.classes[0].course?.title : '').toBe('Massage nền tảng');
+    expect(queryCalls[0]).toMatchObject({
+      table: 'courses',
+      filters: [{ type: 'eq', column: 'tenant_id', value: 'tenant-1' }],
+    });
+    expect(queryCalls[1]).toMatchObject({
+      table: 'users',
+      filters: [
+        { type: 'eq', column: 'tenant_id', value: 'tenant-1' },
+        { type: 'in', column: 'role', value: ['admin', 'super_admin', 'admin_staff', 'hr', 'ktv_lead', 'ktv'] },
+      ],
+    });
+    expect(queryCalls[2]).toMatchObject({
+      table: 'training_classes',
+      filters: [{ type: 'eq', column: 'tenant_id', value: 'tenant-1' }],
+    });
+  });
+
+  it('verifies course tenant ownership before creating a training class', async () => {
+    scriptedResults = [
+      { data: null, error: { message: 'course outside tenant' } },
+    ];
+
+    const result = await createTrainingClass({
+      courseId: 'course-outside',
+      title: 'Buổi sai tenant',
+      classType: 'practice',
+      startsAt: '2026-06-14T08:00:00.000Z',
+      capacity: '12',
+      status: 'scheduled',
+    });
+
+    expect(result).toEqual({ success: false, error: 'course outside tenant' });
+    expect(queryCalls).toHaveLength(1);
+    expect(queryCalls[0]).toMatchObject({
+      table: 'courses',
+      operation: 'select',
+      filters: [
+        { type: 'eq', column: 'id', value: 'course-outside' },
+        { type: 'eq', column: 'tenant_id', value: 'tenant-1' },
+      ],
+    });
   });
 });
