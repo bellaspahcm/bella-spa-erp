@@ -5,6 +5,17 @@
 
 ---
 
+### 14/06/2026: Student Training Class Schedule
+* **Muc tieu san pham**:
+  * Cho admin tao va quan ly lich lop dao tao cho khoa hoc.
+  * Giu diem danh/hoc vien tham gia lop ngoai pham vi buoc nay.
+* **Thay doi chinh**:
+  * Them type lich lop va action `getTrainingClassAdminOverview`, `createTrainingClass`, `updateTrainingClass`.
+  * Them route `/dashboard/training/classes` voi form tao/sua lich lop.
+  * Them guard course/trainer cung tenant va source guard khong query Supabase truc tiep tu client/page.
+* **Kiem tra**:
+  * `npm.cmd test -- src/__tests__/training-actions.test.ts src/__tests__/tenant-isolation-source-guards.test.ts --runInBand` pass, 2 suites / 33 tests.
+
 ### 14/06/2026: Student Training Lesson Progress
 * **Muc tieu san pham**:
   * Cho hoc vien danh dau bai hoc da hoan thanh tren `/student/dashboard`.
