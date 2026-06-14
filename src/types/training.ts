@@ -142,6 +142,15 @@ export type TrainingEnrollmentAdminOverview = {
   enrollments: TrainingStudentEnrollmentWithDetails[];
 };
 
+export type TrainingStudentPortalEnrollment = TrainingStudentEnrollmentRow & {
+  course: TrainingCourseWithContent | null;
+};
+
+export type TrainingStudentPortalOverview = {
+  student: TrainingStudentUserRow;
+  enrollments: TrainingStudentPortalEnrollment[];
+};
+
 export type TrainingCourseInput = {
   title: string;
   description?: string | null;
