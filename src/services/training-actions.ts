@@ -27,6 +27,7 @@ import type {
   TrainingStudentEnrollmentRow,
   TrainingStudentEnrollmentUpdate,
   TrainingStudentEnrollmentWithDetails,
+  TrainingStudentPortalOverview,
   TrainingStudentUserRow,
 } from '@/types/training';
 
@@ -103,7 +104,9 @@ type TrainingDeleteResult =
 
 const TRAINING_READ_ROLES = ['admin', 'super_admin', 'admin_staff', 'hr'] as const;
 const TRAINING_MANAGE_ROLES = ['admin', 'super_admin'] as const;
+const TRAINING_STUDENT_ROLES = ['student'] as const;
 const TRAINING_AUTH_ERROR = 'Không có quyền quản lý đào tạo học viên.';
+const TRAINING_STUDENT_AUTH_ERROR = 'Không có quyền truy cập cổng học viên.';
 const COURSE_NOT_FOUND = 'Không tìm thấy khóa học đào tạo trong chi nhánh hiện tại.';
 const MODULE_NOT_FOUND = 'Không tìm thấy chương học trong chi nhánh hiện tại.';
 const LESSON_NOT_FOUND = 'Không tìm thấy bài học trong chi nhánh hiện tại.';
@@ -511,6 +514,85 @@ export async function getTrainingEnrollmentAdminOverview(): Promise<TrainingActi
         studentUsers: studentUserRows,
         enrollments: enrollmentRows,
       }),
+    },
+  };
+}
+
+export async function getStudentTrainingPortalOverview(): Promise<TrainingActionResult<TrainingStudentPortalOverview>> {
+  const auth = await getAuthorizedTenantUser({
+    allowedRoles: TRAINING_STUDENT_ROLES,
+    errorMessage: TRAINING_STUDENT_AUTH_ERROR,
+  });
+  if (!auth.ok) return { success: false, error: auth.error };
+
+  const db = await getTrainingClient();
+  const studentUserResult = await assertStudentUserBelongsToTenant(db, auth.user.id, auth.tenantId);
+  if (!studentUserResult.success) return { success: false, error: studentUserResult.error };
+
+  const { data: enrollments, error: enrollmentsError } = await db
+    .from('students')
+    .select('*')
+    .eq('tenant_id', auth.tenantId)
+    .eq('user_id', auth.user.id)
+    .order('created_at', { ascending: false });
+
+  if (enrollmentsError) return { success: false, error: enrollmentsError.message };
+  const enrollmentRows = enrollments || [];
+  if (enrollmentRows.length === 0) {
+    return {
+      success: true,
+      data: {
+        student: studentUserResult.data,
+        enrollments: [],
+      },
+    };
+  }
+
+  const courseIds = Array.from(new Set(enrollmentRows.map((enrollment) => enrollment.course_id)));
+  const { data: courses, error: coursesError } = await db
+    .from('courses')
+    .select('*')
+    .eq('tenant_id', auth.tenantId)
+    .in('id', courseIds)
+    .order('created_at', { ascending: false });
+
+  if (coursesError) return { success: false, error: coursesError.message };
+  const courseRows = courses || [];
+  const { data: modules, error: modulesError } = await db
+    .from('course_modules')
+    .select('*')
+    .in('course_id', courseRows.map((course) => course.id))
+    .order('sequence_order', { ascending: true });
+
+  if (modulesError) return { success: false, error: modulesError.message };
+  const moduleRows = modules || [];
+  const moduleIds = moduleRows.map((moduleRow) => moduleRow.id);
+  const lessonResult: QueryListResult<TrainingLessonRow> = moduleIds.length === 0
+    ? { data: [], error: null }
+    : await db
+      .from('lessons')
+      .select('*')
+      .in('module_id', moduleIds)
+      .order('sequence_order', { ascending: true });
+
+  if (lessonResult.error) return { success: false, error: lessonResult.error.message };
+
+  const coursesById = new Map(
+    buildCourseTree({
+      courses: courseRows,
+      modules: moduleRows,
+      lessons: lessonResult.data || [],
+    }).map((course) => [course.id, course]),
+  );
+
+  return {
+    success: true,
+    data: {
+      student: studentUserResult.data,
+      enrollments: enrollmentRows.map((enrollment) => ({
+        ...enrollment,
+        course: coursesById.get(enrollment.course_id) || null,
+      })),
     },
   };
 }

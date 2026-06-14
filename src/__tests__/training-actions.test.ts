@@ -115,6 +115,7 @@ import {
   createTrainingCourse,
   getTrainingAdminOverview,
   getTrainingEnrollmentAdminOverview,
+  getStudentTrainingPortalOverview,
 } from '@/services/training-actions';
 
 function grantAdmin() {
@@ -122,6 +123,16 @@ function grantAdmin() {
     ok: true,
     tenantId: 'tenant-1',
     user: { id: 'admin-1', tenant_id: 'tenant-1', role: 'admin' },
+    error: null,
+    reason: null,
+  });
+}
+
+function grantStudent() {
+  mockGetAuthorizedTenantUser.mockResolvedValue({
+    ok: true,
+    tenantId: 'tenant-1',
+    user: { id: 'student-user-1', tenant_id: 'tenant-1', role: 'student' },
     error: null,
     reason: null,
   });
@@ -428,6 +439,103 @@ describe('training actions', () => {
         { type: 'eq', column: 'id', value: 'staff-user-1' },
         { type: 'eq', column: 'tenant_id', value: 'tenant-1' },
         { type: 'eq', column: 'role', value: 'student' },
+      ],
+    });
+  });
+
+  it('loads student portal data only for the current student user', async () => {
+    grantStudent();
+    scriptedResults = [
+      {
+        data: {
+          id: 'student-user-1',
+          tenant_id: 'tenant-1',
+          full_name: 'Nguyễn Học Viên',
+          email: 'student@example.com',
+          phone: '0900000000',
+          role: 'student',
+          status: 'active',
+        },
+        error: null,
+      },
+      {
+        data: [{
+          id: 'enrollment-1',
+          tenant_id: 'tenant-1',
+          user_id: 'student-user-1',
+          course_id: 'course-1',
+          enrollment_status: 'active',
+          enrolled_at: '2026-06-14T00:00:00.000Z',
+          tuition_total: 1200000,
+          tuition_paid: 200000,
+          notes: null,
+          created_at: '2026-06-14T00:00:00.000Z',
+          updated_at: '2026-06-14T00:00:00.000Z',
+        }],
+        error: null,
+      },
+      {
+        data: [{
+          id: 'course-1',
+          tenant_id: 'tenant-1',
+          module_key: 'student_training',
+          title: 'Massage nền tảng',
+          description: 'Khóa cơ bản',
+          specialty: null,
+          tuition_amount: 1200000,
+          theory_duration_minutes: 90,
+          status: 'active',
+          created_by: 'admin-1',
+          created_at: '2026-06-14T00:00:00.000Z',
+          updated_at: '2026-06-14T00:00:00.000Z',
+        }],
+        error: null,
+      },
+      {
+        data: [{
+          id: 'module-1',
+          course_id: 'course-1',
+          title: 'Chương 1',
+          description: null,
+          sequence_order: 1,
+          created_at: '2026-06-14T00:00:00.000Z',
+          updated_at: '2026-06-14T00:00:00.000Z',
+        }],
+        error: null,
+      },
+      {
+        data: [{
+          id: 'lesson-1',
+          module_id: 'module-1',
+          title: 'Bài nhập môn',
+          content_type: 'document',
+          content_url: null,
+          body: null,
+          sequence_order: 1,
+          required_view_seconds: 60,
+          required_view_percentage: 90,
+          status: 'published',
+          created_at: '2026-06-14T00:00:00.000Z',
+          updated_at: '2026-06-14T00:00:00.000Z',
+        }],
+        error: null,
+      },
+    ];
+
+    const result = await getStudentTrainingPortalOverview();
+
+    expect(result.success).toBe(true);
+    expect(result.success ? result.data.enrollments[0].course?.modules[0].lessons[0].title : '').toBe('Bài nhập môn');
+    expect(mockGetAuthorizedTenantUser).toHaveBeenCalledWith({
+      allowedRoles: ['student'],
+      errorMessage: 'Không có quyền truy cập cổng học viên.',
+    });
+    expect(queryCalls[1]).toMatchObject({
+      table: 'students',
+      operation: 'select',
+      filters: [
+        { type: 'eq', column: 'tenant_id', value: 'tenant-1' },
+        { type: 'eq', column: 'user_id', value: 'student-user-1' },
       ],
     });
   });

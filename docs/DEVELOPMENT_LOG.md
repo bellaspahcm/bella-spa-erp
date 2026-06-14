@@ -5,6 +5,17 @@
 
 ---
 
+### 14/06/2026: Student Training Portal Readonly
+* **Muc tieu san pham**:
+  * Cho hoc vien role `student` xem khoa hoc da duoc ghi danh tren `/student/dashboard`.
+  * Chi doc enrollment cua chinh user hien tai, chua ghi progress/bai hoc hoan thanh.
+* **Thay doi chinh**:
+  * Them `getStudentTrainingPortalOverview` trong `src/services/training-actions.ts`.
+  * Thay placeholder `/student/dashboard` bang giao dien hien thi khoa hoc, chuong, bai hoc va hoc phi.
+  * Them type portal, test current-user filter va source guard khong query Supabase truc tiep.
+* **Kiem tra**:
+  * `npm.cmd test -- src/__tests__/training-actions.test.ts src/__tests__/tenant-isolation-source-guards.test.ts --runInBand` pass, 2 suites / 28 tests.
+
 ### 14/06/2026: Student Training Enrollment Admin
 * **Muc tieu san pham**:
   * Cho admin ghi danh tai khoan role `student` vao khoa hoc dao tao da tao san.
