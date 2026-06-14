@@ -148,6 +148,7 @@ describe('dashboard tenant isolation source guards', () => {
     const sidebarSource = readSource('src/components/layout/sidebar.tsx');
     const permissionsSource = readSource('src/lib/business-rules/permissions.ts');
     const trainingPageSource = readSource('src/app/dashboard/training/page.tsx');
+    const studentDashboardSource = readSource('src/app/student/dashboard/page.tsx');
 
     expect(proxySource).toContain("const isStudentRoute = request.nextUrl.pathname.startsWith('/student')");
     expect(proxySource).toContain("role === 'student'");
@@ -158,6 +159,9 @@ describe('dashboard tenant isolation source guards', () => {
     expect(permissionsSource).toContain("'Đào tạo': 'student_training'");
     expect(trainingPageSource).not.toMatch(/\.from\('(courses|students|student_lesson_progress|student_tuition_payments|training_classes|student_class_attendance)'/);
     expect(trainingPageSource).not.toContain('createClient');
+    expect(studentDashboardSource).toContain('getStudentTrainingPortalOverview');
+    expect(studentDashboardSource).not.toMatch(/\.from\('(courses|students|users|course_modules|lessons|student_lesson_progress)'/);
+    expect(studentDashboardSource).not.toContain('createClient');
   });
 
   it('keeps training course admin reads and writes behind server actions', () => {
