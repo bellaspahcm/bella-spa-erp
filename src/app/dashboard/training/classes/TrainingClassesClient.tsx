@@ -3,6 +3,7 @@
 import { useState, useTransition, type FormEvent } from 'react';
 import { CalendarDays, CheckCircle2, MapPin, Pencil, Plus, Users } from 'lucide-react';
 import { toast } from 'sonner';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 import {
   createTrainingClass,
@@ -140,17 +141,16 @@ export function TrainingClassesClient({ initialData }: { initialData: TrainingCl
           </div>
 
           <div className="space-y-3">
-            <select
+            <PremiumSelect
               value={form.courseId}
-              onChange={(event) => setForm({ ...form, courseId: event.target.value })}
+              options={[
+                { value: '', label: 'Chọn khóa học' },
+                ...activeCourses.map((course) => ({ value: course.id, label: course.title }))
+              ]}
+              onChange={(val) => setForm({ ...form, courseId: val })}
               disabled={Boolean(form.id)}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold outline-none focus:border-primary disabled:bg-slate-50 disabled:text-slate-500"
-            >
-              <option value="">Chọn khóa học</option>
-              {activeCourses.map((course) => (
-                <option key={course.id} value={course.id}>{course.title}</option>
-              ))}
-            </select>
+              placeholder="Chọn khóa học"
+            />
 
             <input
               value={form.title}
@@ -160,38 +160,32 @@ export function TrainingClassesClient({ initialData }: { initialData: TrainingCl
             />
 
             <div className="grid grid-cols-2 gap-3">
-              <select
+              <PremiumSelect
                 value={form.classType}
-                onChange={(event) => setForm({ ...form, classType: event.target.value as TrainingClassType })}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
-              >
-                {Object.entries(classTypeLabel).map(([value, label]) => (
-                  <option key={value} value={value}>{label}</option>
-                ))}
-              </select>
-              <select
+                options={Object.entries(classTypeLabel).map(([value, label]) => ({ value, label }))}
+                onChange={(val) => setForm({ ...form, classType: val as TrainingClassType })}
+                placeholder="Loại lớp"
+              />
+              <PremiumSelect
                 value={form.status}
-                onChange={(event) => setForm({ ...form, status: event.target.value as TrainingClassStatus })}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
-              >
-                {Object.entries(classStatusLabel).map(([value, label]) => (
-                  <option key={value} value={value}>{label}</option>
-                ))}
-              </select>
+                options={Object.entries(classStatusLabel).map(([value, label]) => ({ value, label }))}
+                onChange={(val) => setForm({ ...form, status: val as TrainingClassStatus })}
+                placeholder="Trạng thái"
+              />
             </div>
 
-            <select
+            <PremiumSelect
               value={form.trainerId}
-              onChange={(event) => setForm({ ...form, trainerId: event.target.value })}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
-            >
-              <option value="">Chưa phân công giảng viên</option>
-              {initialData.trainers.map((trainer) => (
-                <option key={trainer.id} value={trainer.id}>
-                  {trainer.full_name} - {trainer.role}
-                </option>
-              ))}
-            </select>
+              options={[
+                { value: '', label: 'Chưa phân công giảng viên' },
+                ...initialData.trainers.map((trainer) => ({
+                  value: trainer.id,
+                  label: `${trainer.full_name} - ${trainer.role}`
+                }))
+              ]}
+              onChange={(val) => setForm({ ...form, trainerId: val })}
+              placeholder="Chưa phân công giảng viên"
+            />
 
             <div className="grid grid-cols-2 gap-3">
               <input

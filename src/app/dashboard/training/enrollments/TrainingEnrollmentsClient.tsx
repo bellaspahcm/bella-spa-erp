@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition, type FormEvent } from 'react';
 import { CheckCircle2, GraduationCap, Pencil, Plus, WalletCards } from 'lucide-react';
 import { toast } from 'sonner';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 import {
   createTrainingEnrollment,
@@ -133,43 +134,34 @@ export function TrainingEnrollmentsClient({ initialData }: { initialData: Traini
           </div>
 
           <div className="space-y-3">
-            <select
+            <PremiumSelect
               value={form.userId}
-              onChange={(event) => setForm({ ...form, userId: event.target.value })}
+              options={[
+                { value: '', label: 'Chọn học viên' },
+                ...initialData.studentUsers.map((user) => ({ value: user.id, label: `${user.full_name} - ${user.email}` }))
+              ]}
+              onChange={(val) => setForm({ ...form, userId: val })}
+              placeholder="Chọn học viên"
               disabled={Boolean(form.id)}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold outline-none focus:border-primary disabled:bg-slate-50 disabled:text-slate-500"
-            >
-              <option value="">Chọn học viên</option>
-              {initialData.studentUsers.map((user) => (
-                <option key={user.id} value={user.id}>
-                  {user.full_name} - {user.email}
-                </option>
-              ))}
-            </select>
+            />
 
-            <select
+            <PremiumSelect
               value={form.courseId}
-              onChange={(event) => handleCourseChange(event.target.value)}
+              options={[
+                { value: '', label: 'Chọn khóa học' },
+                ...activeCourses.map((course) => ({ value: course.id, label: `${course.title} - ${money(course.tuition_amount)}` }))
+              ]}
+              onChange={(val) => handleCourseChange(val)}
+              placeholder="Chọn khóa học"
               disabled={Boolean(form.id)}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold outline-none focus:border-primary disabled:bg-slate-50 disabled:text-slate-500"
-            >
-              <option value="">Chọn khóa học</option>
-              {activeCourses.map((course) => (
-                <option key={course.id} value={course.id}>
-                  {course.title} - {money(course.tuition_amount)}
-                </option>
-              ))}
-            </select>
+            />
 
-            <select
+            <PremiumSelect
               value={form.enrollmentStatus}
-              onChange={(event) => setForm({ ...form, enrollmentStatus: event.target.value as TrainingEnrollmentStatus })}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
-            >
-              {Object.entries(enrollmentStatusLabel).map(([value, label]) => (
-                <option key={value} value={value}>{label}</option>
-              ))}
-            </select>
+              options={Object.entries(enrollmentStatusLabel).map(([value, label]) => ({ value, label }))}
+              onChange={(val) => setForm({ ...form, enrollmentStatus: val as TrainingEnrollmentStatus })}
+              placeholder="Trạng thái"
+            />
 
             <div className="grid grid-cols-2 gap-3">
               <label className="flex flex-col gap-1">
