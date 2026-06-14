@@ -5,6 +5,14 @@ import { safeRevalidatePath } from '@/lib/revalidate';
 import { getAuthorizedTenantUser } from './auth-guards';
 import type {
   TrainingContentType,
+  TrainingClassAdminOverview,
+  TrainingClassInput,
+  TrainingClassInsert,
+  TrainingClassRow,
+  TrainingClassStatus,
+  TrainingClassType,
+  TrainingClassUpdate,
+  TrainingClassWithDetails,
   TrainingEnrollmentAdminOverview,
   TrainingEnrollmentInput,
   TrainingEnrollmentStatus,
@@ -53,6 +61,11 @@ type TrainingTableMap = {
     Row: TrainingLessonRow;
     Insert: TrainingLessonInsert;
     Update: TrainingLessonUpdate;
+  };
+  training_classes: {
+    Row: TrainingClassRow;
+    Insert: TrainingClassInsert;
+    Update: TrainingClassUpdate;
   };
   students: {
     Row: TrainingStudentEnrollmentRow;
@@ -121,6 +134,7 @@ const LESSON_NOT_FOUND = 'Không tìm thấy bài học trong chi nhánh hiện 
 const STUDENT_USER_NOT_FOUND = 'Không tìm thấy tài khoản học viên trong chi nhánh hiện tại.';
 const ENROLLMENT_NOT_FOUND = 'Không tìm thấy hồ sơ ghi danh trong chi nhánh hiện tại.';
 const ACTIVE_ENROLLMENT_NOT_FOUND = 'Bài học không thuộc khóa học đang ghi danh của học viên hiện tại.';
+const CLASS_NOT_FOUND = 'Không tìm thấy lịch lớp trong chi nhánh hiện tại.';
 
 function cleanText(value: unknown, maxLength: number) {
   if (typeof value !== 'string') return '';
@@ -156,12 +170,64 @@ function isEnrollmentStatus(value: unknown): value is TrainingEnrollmentStatus {
   return value === 'active' || value === 'paused' || value === 'graduated' || value === 'withdrawn';
 }
 
+function isClassType(value: unknown): value is TrainingClassType {
+  return value === 'theory' || value === 'practice' || value === 'exam' || value === 'orientation';
+}
+
+function isClassStatus(value: unknown): value is TrainingClassStatus {
+  return value === 'scheduled' || value === 'completed' || value === 'cancelled';
+}
+
 function isContentType(value: unknown): value is TrainingContentType {
   return value === 'document'
     || value === 'video'
     || value === 'pdf'
     || value === 'quiz'
     || value === 'live_class';
+}
+
+function parseIsoDate(value: unknown) {
+  const text = cleanText(value, 80);
+  if (!text) return '';
+  const parsed = new Date(text);
+  return Number.isNaN(parsed.getTime()) ? '' : parsed.toISOString();
+}
+
+function buildClassPayload(
+  input: TrainingClassInput,
+  tenantId: string,
+): TrainingActionResult<TrainingClassInsert> {
+  const courseId = cleanText(input.courseId, 80);
+  const trainerId = cleanNullableText(input.trainerId, 80);
+  const title = cleanText(input.title, 160);
+  const startsAt = parseIsoDate(input.startsAt);
+  const endsAt = input.endsAt ? parseIsoDate(input.endsAt) : null;
+  const capacity = parsePositiveInteger(input.capacity, 12);
+
+  if (!courseId) return { success: false, error: 'Vui lòng chọn khóa học cho lớp.' };
+  if (!title) return { success: false, error: 'Vui lòng nhập tên buổi học.' };
+  if (!startsAt) return { success: false, error: 'Thời gian bắt đầu không hợp lệ.' };
+  if (input.endsAt && !endsAt) return { success: false, error: 'Thời gian kết thúc không hợp lệ.' };
+  if (endsAt && new Date(endsAt).getTime() <= new Date(startsAt).getTime()) {
+    return { success: false, error: 'Thời gian kết thúc phải sau thời gian bắt đầu.' };
+  }
+  if (Number.isNaN(capacity)) return { success: false, error: 'Sức chứa lớp không hợp lệ.' };
+
+  return {
+    success: true,
+    data: {
+      tenant_id: tenantId,
+      course_id: courseId,
+      trainer_id: trainerId,
+      title,
+      class_type: isClassType(input.classType) ? input.classType : 'practice',
+      starts_at: startsAt,
+      ends_at: endsAt,
+      location_note: cleanNullableText(input.locationNote, 500),
+      capacity,
+      status: isClassStatus(input.status) ? input.status : 'scheduled',
+    },
+  };
 }
 
 function buildEnrollmentPayload(
@@ -379,6 +445,44 @@ async function assertEnrollmentBelongsToTenant(
   return { success: true, data };
 }
 
+async function assertTrainerBelongsToTenant(
+  db: TrainingDataClient,
+  trainerId: string | null | undefined,
+  tenantId: string,
+): Promise<TrainingActionResult<TrainingStudentUserRow | null>> {
+  if (!trainerId) return { success: true, data: null };
+
+  const { data, error } = await db
+    .from('users')
+    .select('id, tenant_id, full_name, email, phone, role, status')
+    .eq('id', trainerId)
+    .eq('tenant_id', tenantId)
+    .single();
+
+  if (error) return { success: false, error: error.message };
+  if (!data || data.role === 'student') {
+    return { success: false, error: 'Không tìm thấy giảng viên hợp lệ trong chi nhánh hiện tại.' };
+  }
+  return { success: true, data };
+}
+
+async function assertClassBelongsToTenant(
+  db: TrainingDataClient,
+  classId: string,
+  tenantId: string,
+): Promise<TrainingActionResult<TrainingClassRow>> {
+  const { data, error } = await db
+    .from('training_classes')
+    .select('*')
+    .eq('id', classId)
+    .eq('tenant_id', tenantId)
+    .single();
+
+  if (error) return { success: false, error: error.message };
+  if (!data) return { success: false, error: CLASS_NOT_FOUND };
+  return { success: true, data };
+}
+
 function buildCourseTree(input: {
   courses: TrainingCourseRow[];
   modules: TrainingCourseModuleRow[];
@@ -428,6 +532,30 @@ function buildEnrollmentDetails(input: {
           tuition_amount: course.tuition_amount,
         }
         : null,
+    };
+  });
+}
+
+function buildClassDetails(input: {
+  classes: TrainingClassRow[];
+  courses: TrainingCourseRow[];
+  trainers: TrainingStudentUserRow[];
+}): TrainingClassWithDetails[] {
+  const coursesById = new Map(input.courses.map((course) => [course.id, course]));
+  const trainersById = new Map(input.trainers.map((trainer) => [trainer.id, trainer]));
+
+  return input.classes.map((trainingClass) => {
+    const course = coursesById.get(trainingClass.course_id);
+    const trainer = trainingClass.trainer_id ? trainersById.get(trainingClass.trainer_id) : null;
+    return {
+      ...trainingClass,
+      course: course ? { id: course.id, title: course.title, status: course.status } : null,
+      trainer: trainer ? {
+        id: trainer.id,
+        full_name: trainer.full_name,
+        email: trainer.email,
+        role: trainer.role,
+      } : null,
     };
   });
 }
@@ -544,6 +672,137 @@ export async function getTrainingEnrollmentAdminOverview(): Promise<TrainingActi
       }),
     },
   };
+}
+
+export async function getTrainingClassAdminOverview(): Promise<TrainingActionResult<TrainingClassAdminOverview>> {
+  const auth = await getAuthorizedTenantUser({
+    allowedRoles: TRAINING_READ_ROLES,
+    errorMessage: TRAINING_AUTH_ERROR,
+  });
+  if (!auth.ok) return { success: false, error: auth.error };
+
+  const db = await getTrainingClient();
+  const { data: courses, error: coursesError } = await db
+    .from('courses')
+    .select('*')
+    .eq('tenant_id', auth.tenantId)
+    .order('created_at', { ascending: false });
+
+  if (coursesError) return { success: false, error: coursesError.message };
+
+  const { data: trainers, error: trainersError } = await db
+    .from('users')
+    .select('id, tenant_id, full_name, email, phone, role, status')
+    .eq('tenant_id', auth.tenantId)
+    .in('role', ['admin', 'super_admin', 'admin_staff', 'hr', 'ktv_lead', 'ktv'])
+    .order('full_name', { ascending: true });
+
+  if (trainersError) return { success: false, error: trainersError.message };
+
+  const { data: classes, error: classesError } = await db
+    .from('training_classes')
+    .select('*')
+    .eq('tenant_id', auth.tenantId)
+    .order('starts_at', { ascending: false });
+
+  if (classesError) return { success: false, error: classesError.message };
+
+  const courseRows = courses || [];
+  const trainerRows = trainers || [];
+  return {
+    success: true,
+    data: {
+      courses: courseRows,
+      trainers: trainerRows,
+      classes: buildClassDetails({
+        courses: courseRows,
+        trainers: trainerRows,
+        classes: classes || [],
+      }),
+    },
+  };
+}
+
+export async function createTrainingClass(input: TrainingClassInput): Promise<TrainingActionResult<TrainingClassRow>> {
+  const auth = await getAuthorizedTenantUser({
+    allowedRoles: TRAINING_MANAGE_ROLES,
+    errorMessage: TRAINING_AUTH_ERROR,
+  });
+  if (!auth.ok) return { success: false, error: auth.error };
+
+  const payload = buildClassPayload(input, auth.tenantId);
+  if (!payload.success) return payload;
+
+  const db = await getTrainingClient();
+  const courseResult = await assertCourseBelongsToTenant(db, payload.data.course_id, auth.tenantId);
+  if (!courseResult.success) return { success: false, error: courseResult.error };
+  const trainerResult = await assertTrainerBelongsToTenant(db, payload.data.trainer_id, auth.tenantId);
+  if (!trainerResult.success) return { success: false, error: trainerResult.error };
+
+  const { data, error } = await db
+    .from('training_classes')
+    .insert([payload.data])
+    .select('*')
+    .single();
+
+  if (error) return { success: false, error: error.message };
+  if (!data) return { success: false, error: 'Không xác định được lịch lớp vừa tạo.' };
+
+  safeRevalidatePath('/dashboard/training/classes');
+  return { success: true, data };
+}
+
+export async function updateTrainingClass(
+  classId: string,
+  input: TrainingClassInput,
+): Promise<TrainingActionResult<TrainingClassRow>> {
+  const auth = await getAuthorizedTenantUser({
+    allowedRoles: TRAINING_MANAGE_ROLES,
+    errorMessage: TRAINING_AUTH_ERROR,
+  });
+  if (!auth.ok) return { success: false, error: auth.error };
+
+  const db = await getTrainingClient();
+  const existing = await assertClassBelongsToTenant(db, classId, auth.tenantId);
+  if (!existing.success) return existing;
+
+  if (input.courseId && input.courseId !== existing.data.course_id) {
+    return { success: false, error: 'Không thể chuyển lịch lớp sang khóa học khác.' };
+  }
+
+  const payload = buildClassPayload({
+    ...input,
+    courseId: existing.data.course_id,
+  }, auth.tenantId);
+  if (!payload.success) return payload;
+
+  const trainerResult = await assertTrainerBelongsToTenant(db, payload.data.trainer_id, auth.tenantId);
+  if (!trainerResult.success) return { success: false, error: trainerResult.error };
+
+  const dbPayload: TrainingClassUpdate = {
+    trainer_id: payload.data.trainer_id,
+    title: payload.data.title,
+    class_type: payload.data.class_type,
+    starts_at: payload.data.starts_at,
+    ends_at: payload.data.ends_at,
+    location_note: payload.data.location_note,
+    capacity: payload.data.capacity,
+    status: payload.data.status,
+    updated_at: new Date().toISOString(),
+  };
+  const { data, error } = await db
+    .from('training_classes')
+    .update(dbPayload)
+    .eq('id', classId)
+    .eq('tenant_id', auth.tenantId)
+    .select('*')
+    .single();
+
+  if (error) return { success: false, error: error.message };
+  if (!data) return { success: false, error: 'Không xác định được lịch lớp vừa cập nhật.' };
+
+  safeRevalidatePath('/dashboard/training/classes');
+  return { success: true, data };
 }
 
 export async function getStudentTrainingPortalOverview(): Promise<TrainingActionResult<TrainingStudentPortalOverview>> {
