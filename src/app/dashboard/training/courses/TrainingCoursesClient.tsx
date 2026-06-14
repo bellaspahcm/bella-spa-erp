@@ -13,6 +13,7 @@ import {
   Video,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 import {
   archiveTrainingCourse,
@@ -306,15 +307,12 @@ export function TrainingCoursesClient({ initialCourses }: { initialCourses: Trai
                 placeholder="Chuyên môn"
                 className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
               />
-              <select
+              <PremiumSelect
                 value={courseForm.status}
-                onChange={(event) => setCourseForm({ ...courseForm, status: event.target.value as TrainingCourseStatus })}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
-              >
-                {Object.entries(courseStatusLabel).map(([value, label]) => (
-                  <option key={value} value={value}>{label}</option>
-                ))}
-              </select>
+                options={Object.entries(courseStatusLabel).map(([value, label]) => ({ value, label }))}
+                onChange={(val) => setCourseForm({ ...courseForm, status: val as TrainingCourseStatus })}
+                placeholder="Trạng thái khóa học"
+              />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <label className="flex flex-col gap-1">
@@ -361,16 +359,15 @@ export function TrainingCoursesClient({ initialCourses }: { initialCourses: Trai
             )}
           </div>
           <div className="space-y-3">
-            <select
+            <PremiumSelect
               value={moduleForm.courseId}
-              onChange={(event) => setModuleForm({ ...moduleForm, courseId: event.target.value })}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
-            >
-              <option value="">Chọn khóa học</option>
-              {activeCourses.map((course) => (
-                <option key={course.id} value={course.id}>{course.title}</option>
-              ))}
-            </select>
+              options={[
+                { value: '', label: 'Chọn khóa học' },
+                ...activeCourses.map((course) => ({ value: course.id, label: course.title }))
+              ]}
+              onChange={(val) => setModuleForm({ ...moduleForm, courseId: val })}
+              placeholder="Chọn khóa học"
+            />
             <input
               value={moduleForm.title}
               onChange={(event) => setModuleForm({ ...moduleForm, title: event.target.value })}
@@ -418,16 +415,15 @@ export function TrainingCoursesClient({ initialCourses }: { initialCourses: Trai
             )}
           </div>
           <div className="space-y-3">
-            <select
+            <PremiumSelect
               value={lessonForm.moduleId}
-              onChange={(event) => setLessonForm({ ...lessonForm, moduleId: event.target.value })}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
-            >
-              <option value="">Chọn chương học</option>
-              {moduleOptions.map((option) => (
-                <option key={option.id} value={option.id}>{option.label}</option>
-              ))}
-            </select>
+              options={[
+                { value: '', label: 'Chọn chương học' },
+                ...moduleOptions.map((option) => ({ value: option.id, label: option.label }))
+              ]}
+              onChange={(val) => setLessonForm({ ...lessonForm, moduleId: val })}
+              placeholder="Chọn chương học"
+            />
             <input
               value={lessonForm.title}
               onChange={(event) => setLessonForm({ ...lessonForm, title: event.target.value })}
@@ -435,24 +431,18 @@ export function TrainingCoursesClient({ initialCourses }: { initialCourses: Trai
               className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
             />
             <div className="grid grid-cols-2 gap-3">
-              <select
+              <PremiumSelect
                 value={lessonForm.contentType}
-                onChange={(event) => setLessonForm({ ...lessonForm, contentType: event.target.value as TrainingContentType })}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
-              >
-                {Object.entries(contentTypeLabel).map(([value, label]) => (
-                  <option key={value} value={value}>{label}</option>
-                ))}
-              </select>
-              <select
+                options={Object.entries(contentTypeLabel).map(([value, label]) => ({ value, label }))}
+                onChange={(val) => setLessonForm({ ...lessonForm, contentType: val as TrainingContentType })}
+                placeholder="Loại nội dung"
+              />
+              <PremiumSelect
                 value={lessonForm.status}
-                onChange={(event) => setLessonForm({ ...lessonForm, status: event.target.value as TrainingLessonStatus })}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
-              >
-                {Object.entries(lessonStatusLabel).map(([value, label]) => (
-                  <option key={value} value={value}>{label}</option>
-                ))}
-              </select>
+                options={Object.entries(lessonStatusLabel).map(([value, label]) => ({ value, label }))}
+                onChange={(val) => setLessonForm({ ...lessonForm, status: val as TrainingLessonStatus })}
+                placeholder="Trạng thái"
+              />
             </div>
             <input
               value={lessonForm.contentUrl}
