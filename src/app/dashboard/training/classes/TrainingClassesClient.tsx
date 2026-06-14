@@ -192,12 +192,16 @@ export function TrainingClassesClient({ initialData }: { initialData: TrainingCl
                 value={form.startsAt}
                 onChange={(event) => setForm({ ...form, startsAt: event.target.value })}
                 type="datetime-local"
+                min="2020-01-01T00:00"
+                max="2099-12-31T23:59"
                 className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
               />
               <input
                 value={form.endsAt}
                 onChange={(event) => setForm({ ...form, endsAt: event.target.value })}
                 type="datetime-local"
+                min="2020-01-01T00:00"
+                max="2099-12-31T23:59"
                 className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
               />
             </div>
