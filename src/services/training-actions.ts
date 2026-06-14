@@ -1428,3 +1428,32 @@ export async function archiveTrainingLesson(lessonId: string): Promise<TrainingD
   safeRevalidatePath('/dashboard/training/courses');
   return { success: true };
 }
+
+export async function changeStudentPassword(password: string): Promise<TrainingActionResult<null>> {
+  const auth = await getAuthorizedTenantUser({
+    allowedRoles: ['student'],
+    errorMessage: 'Vui lòng đăng nhập tài khoản học viên.',
+  });
+  if (!auth.ok) return { success: false, error: auth.error };
+
+  const cleanPassword = (password || '').trim();
+  if (cleanPassword.length < 6) {
+    return { success: false, error: 'Mật khẩu phải chứa ít nhất 6 ký tự.' };
+  }
+
+  // To update user's own password, we should use their authenticated client session.
+  // Next.js Server Actions run with cookies, so createClient() will have user's session.
+  const { createClient: createBrowserClient } = await import('@/lib/supabase-server');
+  const supabase = await createBrowserClient();
+
+  const { error } = await supabase.auth.updateUser({
+    password: cleanPassword,
+  });
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  return { success: true, data: null };
+}
+
