@@ -51,12 +51,20 @@ export default function TrainingDashboardPage() {
               Quản lý khóa học, học viên, lịch học và học phí theo từng tenant. Phần này đang mở nền quản trị trước khi bật ghi danh và portal học tập chính thức.
             </p>
           </div>
-          <Link
-            href="/dashboard/training/courses"
-            className="inline-flex items-center justify-center rounded-[var(--brand-button-radius)] border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-800 shadow-sm transition hover:border-primary hover:text-primary"
-          >
-            Mở giáo trình
-          </Link>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Link
+              href="/dashboard/training/courses"
+              className="inline-flex items-center justify-center rounded-[var(--brand-button-radius)] border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-800 shadow-sm transition hover:border-primary hover:text-primary"
+            >
+              Mở giáo trình
+            </Link>
+            <Link
+              href="/dashboard/training/enrollments"
+              className="inline-flex items-center justify-center rounded-[var(--brand-button-radius)] bg-slate-950 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-primary"
+            >
+              Ghi danh học viên
+            </Link>
+          </div>
         </header>
 
         <section className="grid gap-4 md:grid-cols-3">
