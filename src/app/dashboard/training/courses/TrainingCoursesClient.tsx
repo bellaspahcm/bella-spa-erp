@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   FileText,
   Layers3,
+  Loader2,
   Pencil,
   Plus,
   Trash2,
@@ -340,8 +341,12 @@ export function TrainingCoursesClient({ initialCourses }: { initialCourses: Trai
             disabled={isPending}
             className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-[var(--brand-button-radius)] bg-slate-950 px-4 py-2.5 text-sm font-black text-white transition hover:bg-primary disabled:opacity-60"
           >
-            <Plus className="h-4 w-4" />
-            {courseForm.id ? 'Lưu khóa học' : 'Tạo khóa học'}
+            {isPending
+              ? <><Loader2 className="h-4 w-4 animate-spin" />Đang lưu...</>
+              : courseForm.id
+                ? <><CheckCircle2 className="h-4 w-4" />Lưu khóa học</>
+                : <><Plus className="h-4 w-4" />Tạo khóa học</>
+            }
           </button>
         </form>
 
@@ -396,8 +401,12 @@ export function TrainingCoursesClient({ initialCourses }: { initialCourses: Trai
             disabled={isPending}
             className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-[var(--brand-button-radius)] border border-slate-200 bg-white px-4 py-2.5 text-sm font-black text-slate-900 transition hover:border-primary hover:text-primary disabled:opacity-60"
           >
-            <Layers3 className="h-4 w-4" />
-            {moduleForm.id ? 'Lưu chương học' : 'Thêm chương học'}
+            {isPending
+              ? <><Loader2 className="h-4 w-4 animate-spin" />Đang lưu...</>
+              : moduleForm.id
+                ? <><CheckCircle2 className="h-4 w-4" />Lưu chương học</>
+                : <><Layers3 className="h-4 w-4" />Thêm chương học</>
+            }
           </button>
         </form>
 
@@ -492,8 +501,12 @@ export function TrainingCoursesClient({ initialCourses }: { initialCourses: Trai
             disabled={isPending}
             className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-[var(--brand-button-radius)] border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-black text-emerald-800 transition hover:border-emerald-400 disabled:opacity-60"
           >
-            <FileText className="h-4 w-4" />
-            {lessonForm.id ? 'Lưu bài học' : 'Thêm bài học'}
+            {isPending
+              ? <><Loader2 className="h-4 w-4 animate-spin" />Đang lưu...</>
+              : lessonForm.id
+                ? <><CheckCircle2 className="h-4 w-4" />Lưu bài học</>
+                : <><FileText className="h-4 w-4" />Thêm bài học</>
+            }
           </button>
         </form>
       </aside>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition, type FormEvent } from 'react';
-import { CheckCircle2, Copy, Mail, UserPlus } from 'lucide-react';
+import { CheckCircle2, Copy, Loader2, Mail, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { createTrainingStudentAccount } from '@/services/training-actions';
@@ -73,8 +73,17 @@ export function TrainingStudentsClient({ initialData }: { initialData: TrainingS
             disabled={isPending || !form.fullName || !form.email}
             className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-[var(--brand-button-radius)] bg-slate-950 px-4 py-2.5 text-sm font-black text-white transition hover:bg-primary disabled:opacity-60"
           >
-            <UserPlus className="h-4 w-4" />
-            Tạo tài khoản student
+            {isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Đang tạo...
+              </>
+            ) : (
+              <>
+                <UserPlus className="h-4 w-4" />
+                Tạo tài khoản student
+              </>
+            )}
           </button>
         </form>
 
