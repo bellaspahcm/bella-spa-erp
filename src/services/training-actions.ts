@@ -3,6 +3,7 @@
 import { createDevelopmentBypassClient } from '@/lib/supabase-dev-bypass-server';
 import { safeRevalidatePath } from '@/lib/revalidate';
 import { getAuthorizedTenantUser } from './auth-guards';
+import { createUser } from '@/services/user-actions';
 import type {
   TrainingContentType,
   TrainingClassAdminOverview,
@@ -38,6 +39,8 @@ import type {
   TrainingStudentLessonProgressInsert,
   TrainingStudentLessonProgressRow,
   TrainingStudentLessonProgressUpdate,
+  TrainingStudentAccountInput,
+  TrainingStudentAccountOverview,
   TrainingStudentPortalOverview,
   TrainingStudentUserRow,
 } from '@/types/training';
@@ -227,6 +230,20 @@ function buildClassPayload(
       capacity,
       status: isClassStatus(input.status) ? input.status : 'scheduled',
     },
+  };
+}
+
+function buildStudentAccountPayload(input: TrainingStudentAccountInput) {
+  const fullName = cleanText(input.fullName, 160);
+  const email = cleanText(input.email, 180).toLowerCase();
+  const phone = cleanNullableText(input.phone, 40);
+
+  if (!fullName) return { success: false as const, error: 'Vui lòng nhập tên học viên.' };
+  if (!email || !email.includes('@')) return { success: false as const, error: 'Email học viên không hợp lệ.' };
+
+  return {
+    success: true as const,
+    data: { fullName, email, phone },
   };
 }
 
@@ -670,6 +687,64 @@ export async function getTrainingEnrollmentAdminOverview(): Promise<TrainingActi
         studentUsers: studentUserRows,
         enrollments: enrollmentRows,
       }),
+    },
+  };
+}
+
+export async function getTrainingStudentAccountOverview(): Promise<TrainingActionResult<TrainingStudentAccountOverview>> {
+  const auth = await getAuthorizedTenantUser({
+    allowedRoles: TRAINING_READ_ROLES,
+    errorMessage: TRAINING_AUTH_ERROR,
+  });
+  if (!auth.ok) return { success: false, error: auth.error };
+
+  const db = await getTrainingClient();
+  const { data, error } = await db
+    .from('users')
+    .select('id, tenant_id, full_name, email, phone, role, status')
+    .eq('tenant_id', auth.tenantId)
+    .eq('role', 'student')
+    .order('created_at', { ascending: false });
+
+  if (error) return { success: false, error: error.message };
+  return {
+    success: true,
+    data: { studentUsers: data || [] },
+  };
+}
+
+export async function createTrainingStudentAccount(
+  input: TrainingStudentAccountInput,
+): Promise<TrainingActionResult<{ user: TrainingStudentUserRow; defaultPassword: string }>> {
+  const auth = await getAuthorizedTenantUser({
+    allowedRoles: TRAINING_MANAGE_ROLES,
+    errorMessage: TRAINING_AUTH_ERROR,
+  });
+  if (!auth.ok) return { success: false, error: auth.error };
+
+  const payload = buildStudentAccountPayload(input);
+  if (!payload.success) return payload;
+
+  const result = await createUser({
+    full_name: payload.data.fullName,
+    email: payload.data.email,
+    role: 'student',
+  });
+
+  if ('error' in result && result.error) {
+    return { success: false, error: result.error };
+  }
+  if (!('data' in result) || !result.data || !('defaultPassword' in result) || !result.defaultPassword) {
+    return { success: false, error: 'Không xác định được tài khoản học viên vừa tạo.' };
+  }
+
+  safeRevalidatePath('/dashboard/training/students');
+  safeRevalidatePath('/dashboard/training/enrollments');
+  return {
+    success: true,
+    data: {
+      user: result.data as unknown as TrainingStudentUserRow,
+      defaultPassword: result.defaultPassword,
     },
   };
 }
@@ -1353,3 +1428,32 @@ export async function archiveTrainingLesson(lessonId: string): Promise<TrainingD
   safeRevalidatePath('/dashboard/training/courses');
   return { success: true };
 }
+
+export async function changeStudentPassword(password: string): Promise<TrainingActionResult<null>> {
+  const auth = await getAuthorizedTenantUser({
+    allowedRoles: ['student'],
+    errorMessage: 'Vui lòng đăng nhập tài khoản học viên.',
+  });
+  if (!auth.ok) return { success: false, error: auth.error };
+
+  const cleanPassword = (password || '').trim();
+  if (cleanPassword.length < 6) {
+    return { success: false, error: 'Mật khẩu phải chứa ít nhất 6 ký tự.' };
+  }
+
+  // To update user's own password, we should use their authenticated client session.
+  // Next.js Server Actions run with cookies, so createClient() will have user's session.
+  const { createClient: createBrowserClient } = await import('@/lib/supabase-server');
+  const supabase = await createBrowserClient();
+
+  const { error } = await supabase.auth.updateUser({
+    password: cleanPassword,
+  });
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  return { success: true, data: null };
+}
+

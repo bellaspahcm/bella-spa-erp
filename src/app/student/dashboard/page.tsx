@@ -10,6 +10,7 @@ import {
 import { getStudentTrainingPortalOverview } from '@/services/training-actions';
 import type { TrainingEnrollmentStatus } from '@/types/training';
 import { StudentLessonCompleteButton } from './StudentLessonCompleteButton';
+import { StudentChangePasswordForm } from './StudentChangePasswordForm';
 
 const enrollmentStatusLabel: Record<TrainingEnrollmentStatus, string> = {
   active: 'Đang học',
@@ -57,7 +58,7 @@ export default async function StudentDashboardPage() {
             <LockKeyhole className="h-4 w-4" />
             Student portal
           </div>
-          <h1 className="text-3xl font-black">Chào {result.data.student.full_name}</h1>
+          <h1 className="text-3xl font-black" style={{ color: '#ffffff' }}>Chào {result.data.student.full_name}</h1>
           <p className="mt-3 max-w-2xl text-sm font-semibold leading-6 text-slate-300">
             Đây là không gian học tập riêng của bạn. Nội dung bên dưới chỉ lấy từ hồ sơ ghi danh gắn với tài khoản học viên hiện tại.
           </p>
@@ -72,11 +73,15 @@ export default async function StudentDashboardPage() {
             <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">Bài học</p>
             <p className="mt-3 text-3xl font-black text-slate-950">{completedLessons}/{totalLessons}</p>
           </div>
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">Tài khoản</p>
-            <p className="mt-3 truncate text-base font-black text-slate-950">{result.data.student.email}</p>
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm flex flex-col justify-between">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">Tài khoản</p>
+              <p className="mt-3 truncate text-base font-black text-slate-950">{result.data.student.email}</p>
+            </div>
+            <StudentChangePasswordForm />
           </div>
         </section>
+
 
         {result.data.enrollments.length === 0 ? (
           <section className="flex min-h-[320px] flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center shadow-sm">
