@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import {
   BookOpenCheck,
-  CheckCircle2,
   FileText,
   LockKeyhole,
   WalletCards,
@@ -10,6 +9,7 @@ import {
 
 import { getStudentTrainingPortalOverview } from '@/services/training-actions';
 import type { TrainingEnrollmentStatus } from '@/types/training';
+import { StudentLessonCompleteButton } from './StudentLessonCompleteButton';
 
 const enrollmentStatusLabel: Record<TrainingEnrollmentStatus, string> = {
   active: 'Đang học',
@@ -43,6 +43,11 @@ export default async function StudentDashboardPage() {
       moduleTotal + courseModule.lessons.length
     ), 0) || 0)
   ), 0);
+  const completedLessons = result.data.enrollments.reduce((total, enrollment) => (
+    total + (enrollment.course?.modules.reduce((moduleTotal, courseModule) => (
+      moduleTotal + courseModule.lessons.filter((lesson) => lesson.progress?.is_completed).length
+    ), 0) || 0)
+  ), 0);
 
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-6">
@@ -65,7 +70,7 @@ export default async function StudentDashboardPage() {
           </div>
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">Bài học</p>
-            <p className="mt-3 text-3xl font-black text-slate-950">{totalLessons}</p>
+            <p className="mt-3 text-3xl font-black text-slate-950">{completedLessons}/{totalLessons}</p>
           </div>
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">Tài khoản</p>
@@ -85,6 +90,15 @@ export default async function StudentDashboardPage() {
           <section className="space-y-5">
             {result.data.enrollments.map((enrollment) => {
               const outstanding = Math.max(0, Number(enrollment.tuition_total || 0) - Number(enrollment.tuition_paid || 0));
+              const courseLessonCount = enrollment.course?.modules.reduce((total, courseModule) => (
+                total + courseModule.lessons.length
+              ), 0) || 0;
+              const courseCompletedCount = enrollment.course?.modules.reduce((total, courseModule) => (
+                total + courseModule.lessons.filter((lesson) => lesson.progress?.is_completed).length
+              ), 0) || 0;
+              const courseProgress = courseLessonCount > 0
+                ? Math.round((courseCompletedCount / courseLessonCount) * 100)
+                : 0;
               return (
                 <article key={enrollment.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -114,6 +128,19 @@ export default async function StudentDashboardPage() {
                     </div>
                   </div>
 
+                  <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="mb-2 flex items-center justify-between gap-3 text-sm font-black text-slate-950">
+                      <span>Tiến độ khóa học</span>
+                      <span>{courseCompletedCount}/{courseLessonCount} bài · {courseProgress}%</span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-white">
+                      <div
+                        className="h-full rounded-full bg-emerald-500"
+                        style={{ width: `${courseProgress}%` }}
+                      />
+                    </div>
+                  </div>
+
                   <div className="mt-5 space-y-3">
                     {enrollment.course?.modules.length ? (
                       enrollment.course.modules.map((courseModule) => (
@@ -129,7 +156,7 @@ export default async function StudentDashboardPage() {
                               <p className="text-sm font-semibold text-slate-400">Chương này chưa có bài học.</p>
                             ) : (
                               courseModule.lessons.map((lesson) => (
-                                <div key={lesson.id} className="flex items-start gap-3 rounded-lg bg-white px-3 py-2 text-sm">
+                                <div key={lesson.id} className="flex flex-col gap-3 rounded-lg bg-white px-3 py-2 text-sm sm:flex-row sm:items-start">
                                   <div className="mt-0.5 text-slate-500">
                                     {lesson.content_type === 'video' ? <Video className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
                                   </div>
@@ -141,7 +168,10 @@ export default async function StudentDashboardPage() {
                                       Yêu cầu xem {lesson.required_view_seconds}s · {lesson.required_view_percentage}%
                                     </p>
                                   </div>
-                                  <CheckCircle2 className="h-4 w-4 shrink-0 text-slate-300" />
+                                  <StudentLessonCompleteButton
+                                    lessonId={lesson.id}
+                                    isCompleted={Boolean(lesson.progress?.is_completed)}
+                                  />
                                 </div>
                               ))
                             )}

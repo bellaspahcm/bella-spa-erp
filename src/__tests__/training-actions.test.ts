@@ -116,6 +116,7 @@ import {
   getTrainingAdminOverview,
   getTrainingEnrollmentAdminOverview,
   getStudentTrainingPortalOverview,
+  markStudentLessonComplete,
 } from '@/services/training-actions';
 
 function grantAdmin() {
@@ -538,5 +539,203 @@ describe('training actions', () => {
         { type: 'eq', column: 'user_id', value: 'student-user-1' },
       ],
     });
+  });
+
+  it('marks a lesson complete only after verifying active enrollment ownership', async () => {
+    grantStudent();
+    scriptedResults = [
+      {
+        data: {
+          id: 'student-user-1',
+          tenant_id: 'tenant-1',
+          full_name: 'Nguyễn Học Viên',
+          email: 'student@example.com',
+          phone: '0900000000',
+          role: 'student',
+          status: 'active',
+        },
+        error: null,
+      },
+      {
+        data: {
+          id: 'lesson-1',
+          module_id: 'module-1',
+          title: 'Bài nhập môn',
+          content_type: 'document',
+          content_url: null,
+          body: null,
+          sequence_order: 1,
+          required_view_seconds: 60,
+          required_view_percentage: 90,
+          status: 'published',
+          created_at: '2026-06-14T00:00:00.000Z',
+          updated_at: '2026-06-14T00:00:00.000Z',
+        },
+        error: null,
+      },
+      {
+        data: {
+          id: 'module-1',
+          course_id: 'course-1',
+          title: 'Chương 1',
+          description: null,
+          sequence_order: 1,
+          created_at: '2026-06-14T00:00:00.000Z',
+          updated_at: '2026-06-14T00:00:00.000Z',
+        },
+        error: null,
+      },
+      {
+        data: {
+          id: 'course-1',
+          tenant_id: 'tenant-1',
+          module_key: 'student_training',
+          title: 'Massage nền tảng',
+          description: null,
+          specialty: null,
+          tuition_amount: 1200000,
+          theory_duration_minutes: 90,
+          status: 'active',
+          created_by: 'admin-1',
+          created_at: '2026-06-14T00:00:00.000Z',
+          updated_at: '2026-06-14T00:00:00.000Z',
+        },
+        error: null,
+      },
+      {
+        data: [{
+          id: 'enrollment-1',
+          tenant_id: 'tenant-1',
+          user_id: 'student-user-1',
+          course_id: 'course-1',
+          enrollment_status: 'active',
+          enrolled_at: '2026-06-14T00:00:00.000Z',
+          tuition_total: 1200000,
+          tuition_paid: 0,
+          notes: null,
+          created_at: '2026-06-14T00:00:00.000Z',
+          updated_at: '2026-06-14T00:00:00.000Z',
+        }],
+        error: null,
+      },
+      { data: null, error: { message: 'No rows found' } },
+      {
+        data: {
+          id: 'progress-1',
+          tenant_id: 'tenant-1',
+          student_id: 'enrollment-1',
+          lesson_id: 'lesson-1',
+          time_spent_seconds: 0,
+          view_percentage: 100,
+          is_completed: true,
+          completed_at: '2026-06-14T00:00:00.000Z',
+          last_accessed_at: '2026-06-14T00:00:00.000Z',
+          created_at: '2026-06-14T00:00:00.000Z',
+          updated_at: '2026-06-14T00:00:00.000Z',
+        },
+        error: null,
+      },
+    ];
+
+    const result = await markStudentLessonComplete('lesson-1');
+
+    expect(result.success).toBe(true);
+    expect(queryCalls[4]).toMatchObject({
+      table: 'students',
+      operation: 'select',
+      filters: [
+        { type: 'eq', column: 'tenant_id', value: 'tenant-1' },
+        { type: 'eq', column: 'user_id', value: 'student-user-1' },
+        { type: 'eq', column: 'course_id', value: 'course-1' },
+        { type: 'eq', column: 'enrollment_status', value: 'active' },
+      ],
+    });
+    expect(queryCalls[6]).toMatchObject({
+      table: 'student_lesson_progress',
+      operation: 'insert',
+      payload: [expect.objectContaining({
+        tenant_id: 'tenant-1',
+        student_id: 'enrollment-1',
+        lesson_id: 'lesson-1',
+        is_completed: true,
+        view_percentage: 100,
+      })],
+    });
+    expect(mockSafeRevalidatePath).toHaveBeenCalledWith('/student/dashboard');
+  });
+
+  it('does not write lesson progress when the lesson is outside active enrollment', async () => {
+    grantStudent();
+    scriptedResults = [
+      {
+        data: {
+          id: 'student-user-1',
+          tenant_id: 'tenant-1',
+          full_name: 'Nguyễn Học Viên',
+          email: 'student@example.com',
+          phone: '0900000000',
+          role: 'student',
+          status: 'active',
+        },
+        error: null,
+      },
+      {
+        data: {
+          id: 'lesson-1',
+          module_id: 'module-1',
+          title: 'Bài nhập môn',
+          content_type: 'document',
+          content_url: null,
+          body: null,
+          sequence_order: 1,
+          required_view_seconds: 60,
+          required_view_percentage: 90,
+          status: 'published',
+          created_at: '2026-06-14T00:00:00.000Z',
+          updated_at: '2026-06-14T00:00:00.000Z',
+        },
+        error: null,
+      },
+      {
+        data: {
+          id: 'module-1',
+          course_id: 'course-outside-active-enrollment',
+          title: 'Chương 1',
+          description: null,
+          sequence_order: 1,
+          created_at: '2026-06-14T00:00:00.000Z',
+          updated_at: '2026-06-14T00:00:00.000Z',
+        },
+        error: null,
+      },
+      {
+        data: {
+          id: 'course-outside-active-enrollment',
+          tenant_id: 'tenant-1',
+          module_key: 'student_training',
+          title: 'Khóa khác',
+          description: null,
+          specialty: null,
+          tuition_amount: 1200000,
+          theory_duration_minutes: 90,
+          status: 'active',
+          created_by: 'admin-1',
+          created_at: '2026-06-14T00:00:00.000Z',
+          updated_at: '2026-06-14T00:00:00.000Z',
+        },
+        error: null,
+      },
+      { data: [], error: null },
+    ];
+
+    const result = await markStudentLessonComplete('lesson-1');
+
+    expect(result).toEqual({
+      success: false,
+      error: 'Bài học không thuộc khóa học đang ghi danh của học viên hiện tại.',
+    });
+    expect(queryCalls).toHaveLength(5);
+    expect(queryCalls.some((call) => call.table === 'student_lesson_progress' && call.operation === 'insert')).toBe(false);
+    expect(mockSafeRevalidatePath).not.toHaveBeenCalledWith('/student/dashboard');
   });
 });

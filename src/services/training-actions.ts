@@ -27,6 +27,9 @@ import type {
   TrainingStudentEnrollmentRow,
   TrainingStudentEnrollmentUpdate,
   TrainingStudentEnrollmentWithDetails,
+  TrainingStudentLessonProgressInsert,
+  TrainingStudentLessonProgressRow,
+  TrainingStudentLessonProgressUpdate,
   TrainingStudentPortalOverview,
   TrainingStudentUserRow,
 } from '@/types/training';
@@ -55,6 +58,11 @@ type TrainingTableMap = {
     Row: TrainingStudentEnrollmentRow;
     Insert: TrainingStudentEnrollmentInsert;
     Update: TrainingStudentEnrollmentUpdate;
+  };
+  student_lesson_progress: {
+    Row: TrainingStudentLessonProgressRow;
+    Insert: TrainingStudentLessonProgressInsert;
+    Update: TrainingStudentLessonProgressUpdate;
   };
   users: {
     Row: TrainingStudentUserRow;
@@ -112,6 +120,7 @@ const MODULE_NOT_FOUND = 'Không tìm thấy chương học trong chi nhánh hi�
 const LESSON_NOT_FOUND = 'Không tìm thấy bài học trong chi nhánh hiện tại.';
 const STUDENT_USER_NOT_FOUND = 'Không tìm thấy tài khoản học viên trong chi nhánh hiện tại.';
 const ENROLLMENT_NOT_FOUND = 'Không tìm thấy hồ sơ ghi danh trong chi nhánh hiện tại.';
+const ACTIVE_ENROLLMENT_NOT_FOUND = 'Bài học không thuộc khóa học đang ghi danh của học viên hiện tại.';
 
 function cleanText(value: unknown, maxLength: number) {
   if (typeof value !== 'string') return '';
@@ -423,6 +432,25 @@ function buildEnrollmentDetails(input: {
   });
 }
 
+function attachProgressToCourseTree(input: {
+  courses: TrainingCourseRow[];
+  modules: TrainingCourseModuleRow[];
+  lessons: TrainingLessonRow[];
+  progresses: TrainingStudentLessonProgressRow[];
+}) {
+  const progressByLessonId = new Map(input.progresses.map((progress) => [progress.lesson_id, progress]));
+  return buildCourseTree(input).map((course) => ({
+    ...course,
+    modules: course.modules.map((courseModule) => ({
+      ...courseModule,
+      lessons: courseModule.lessons.map((lesson) => ({
+        ...lesson,
+        progress: progressByLessonId.get(lesson.id) || null,
+      })),
+    })),
+  }));
+}
+
 export async function getTrainingAdminOverview(): Promise<TrainingActionResult<TrainingCourseWithContent[]>> {
   const auth = await getAuthorizedTenantUser({
     allowedRoles: TRAINING_READ_ROLES,
@@ -576,12 +604,24 @@ export async function getStudentTrainingPortalOverview(): Promise<TrainingAction
       .order('sequence_order', { ascending: true });
 
   if (lessonResult.error) return { success: false, error: lessonResult.error.message };
+  const lessonRows = lessonResult.data || [];
+  const lessonIds = lessonRows.map((lesson) => lesson.id);
+  const progressResult: QueryListResult<TrainingStudentLessonProgressRow> = lessonIds.length === 0
+    ? { data: [], error: null }
+    : await db
+      .from('student_lesson_progress')
+      .select('*')
+      .in('student_id', enrollmentRows.map((enrollment) => enrollment.id))
+      .in('lesson_id', lessonIds);
+
+  if (progressResult.error) return { success: false, error: progressResult.error.message };
 
   const coursesById = new Map(
-    buildCourseTree({
+    attachProgressToCourseTree({
       courses: courseRows,
       modules: moduleRows,
-      lessons: lessonResult.data || [],
+      lessons: lessonRows,
+      progresses: progressResult.data || [],
     }).map((course) => [course.id, course]),
   );
 
@@ -595,6 +635,100 @@ export async function getStudentTrainingPortalOverview(): Promise<TrainingAction
       })),
     },
   };
+}
+
+export async function markStudentLessonComplete(lessonId: string): Promise<TrainingActionResult<TrainingStudentLessonProgressRow>> {
+  const auth = await getAuthorizedTenantUser({
+    allowedRoles: TRAINING_STUDENT_ROLES,
+    errorMessage: TRAINING_STUDENT_AUTH_ERROR,
+  });
+  if (!auth.ok) return { success: false, error: auth.error };
+
+  const cleanLessonId = cleanText(lessonId, 80);
+  if (!cleanLessonId) return { success: false, error: 'Thiếu bài học cần hoàn thành.' };
+
+  const db = await getTrainingClient();
+  const studentUserResult = await assertStudentUserBelongsToTenant(db, auth.user.id, auth.tenantId);
+  if (!studentUserResult.success) return { success: false, error: studentUserResult.error };
+
+  const { data: lesson, error: lessonError } = await db
+    .from('lessons')
+    .select('*')
+    .eq('id', cleanLessonId)
+    .single();
+
+  if (lessonError) return { success: false, error: lessonError.message };
+  if (!lesson) return { success: false, error: LESSON_NOT_FOUND };
+
+  const moduleResult = await assertModuleBelongsToTenant(db, lesson.module_id, auth.tenantId);
+  if (!moduleResult.success) return { success: false, error: moduleResult.error };
+
+  const { data: enrollments, error: enrollmentsError } = await db
+    .from('students')
+    .select('*')
+    .eq('tenant_id', auth.tenantId)
+    .eq('user_id', auth.user.id)
+    .eq('course_id', moduleResult.data.course_id)
+    .eq('enrollment_status', 'active');
+
+  if (enrollmentsError) return { success: false, error: enrollmentsError.message };
+  const enrollment = enrollments?.[0] || null;
+  if (!enrollment) return { success: false, error: ACTIVE_ENROLLMENT_NOT_FOUND };
+
+  const { data: existingProgress, error: existingError } = await db
+    .from('student_lesson_progress')
+    .select('*')
+    .eq('student_id', enrollment.id)
+    .eq('lesson_id', cleanLessonId)
+    .single();
+
+  if (existingError && !existingError.message.toLowerCase().includes('no rows')) {
+    return { success: false, error: existingError.message };
+  }
+
+  const now = new Date().toISOString();
+  if (existingProgress) {
+    const updatePayload: TrainingStudentLessonProgressUpdate = {
+      is_completed: true,
+      view_percentage: 100,
+      completed_at: existingProgress.completed_at || now,
+      last_accessed_at: now,
+      updated_at: now,
+    };
+    const { data, error } = await db
+      .from('student_lesson_progress')
+      .update(updatePayload)
+      .eq('id', existingProgress.id)
+      .eq('tenant_id', auth.tenantId)
+      .select('*')
+      .single();
+
+    if (error) return { success: false, error: error.message };
+    if (!data) return { success: false, error: 'Không xác định được tiến độ bài học vừa cập nhật.' };
+    safeRevalidatePath('/student/dashboard');
+    return { success: true, data };
+  }
+
+  const insertPayload: TrainingStudentLessonProgressInsert = {
+    tenant_id: auth.tenantId,
+    student_id: enrollment.id,
+    lesson_id: cleanLessonId,
+    time_spent_seconds: 0,
+    view_percentage: 100,
+    is_completed: true,
+    completed_at: now,
+    last_accessed_at: now,
+  };
+  const { data, error } = await db
+    .from('student_lesson_progress')
+    .insert([insertPayload])
+    .select('*')
+    .single();
+
+  if (error) return { success: false, error: error.message };
+  if (!data) return { success: false, error: 'Không xác định được tiến độ bài học vừa tạo.' };
+  safeRevalidatePath('/student/dashboard');
+  return { success: true, data };
 }
 
 export async function createTrainingCourse(input: TrainingCourseInput): Promise<TrainingActionResult<TrainingCourseRow>> {
