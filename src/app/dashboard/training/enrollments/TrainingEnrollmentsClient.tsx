@@ -137,7 +137,7 @@ export function TrainingEnrollmentsClient({ initialData }: { initialData: Traini
               value={form.userId}
               onChange={(event) => setForm({ ...form, userId: event.target.value })}
               disabled={Boolean(form.id)}
-              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-primary disabled:bg-slate-50 disabled:text-slate-500"
+              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold outline-none focus:border-primary disabled:bg-slate-50 disabled:text-slate-500"
             >
               <option value="">Chọn học viên</option>
               {initialData.studentUsers.map((user) => (
@@ -151,7 +151,7 @@ export function TrainingEnrollmentsClient({ initialData }: { initialData: Traini
               value={form.courseId}
               onChange={(event) => handleCourseChange(event.target.value)}
               disabled={Boolean(form.id)}
-              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-primary disabled:bg-slate-50 disabled:text-slate-500"
+              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold outline-none focus:border-primary disabled:bg-slate-50 disabled:text-slate-500"
             >
               <option value="">Chọn khóa học</option>
               {activeCourses.map((course) => (
@@ -164,7 +164,7 @@ export function TrainingEnrollmentsClient({ initialData }: { initialData: Traini
             <select
               value={form.enrollmentStatus}
               onChange={(event) => setForm({ ...form, enrollmentStatus: event.target.value as TrainingEnrollmentStatus })}
-              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
+              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
             >
               {Object.entries(enrollmentStatusLabel).map(([value, label]) => (
                 <option key={value} value={value}>{label}</option>

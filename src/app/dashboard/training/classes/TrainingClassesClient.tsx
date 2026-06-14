@@ -144,7 +144,7 @@ export function TrainingClassesClient({ initialData }: { initialData: TrainingCl
               value={form.courseId}
               onChange={(event) => setForm({ ...form, courseId: event.target.value })}
               disabled={Boolean(form.id)}
-              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-primary disabled:bg-slate-50 disabled:text-slate-500"
+              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold outline-none focus:border-primary disabled:bg-slate-50 disabled:text-slate-500"
             >
               <option value="">Chọn khóa học</option>
               {activeCourses.map((course) => (
@@ -163,7 +163,7 @@ export function TrainingClassesClient({ initialData }: { initialData: TrainingCl
               <select
                 value={form.classType}
                 onChange={(event) => setForm({ ...form, classType: event.target.value as TrainingClassType })}
-                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
               >
                 {Object.entries(classTypeLabel).map(([value, label]) => (
                   <option key={value} value={value}>{label}</option>
@@ -172,7 +172,7 @@ export function TrainingClassesClient({ initialData }: { initialData: TrainingCl
               <select
                 value={form.status}
                 onChange={(event) => setForm({ ...form, status: event.target.value as TrainingClassStatus })}
-                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
               >
                 {Object.entries(classStatusLabel).map(([value, label]) => (
                   <option key={value} value={value}>{label}</option>
@@ -183,7 +183,7 @@ export function TrainingClassesClient({ initialData }: { initialData: TrainingCl
             <select
               value={form.trainerId}
               onChange={(event) => setForm({ ...form, trainerId: event.target.value })}
-              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
+              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
             >
               <option value="">Chưa phân công giảng viên</option>
               {initialData.trainers.map((trainer) => (
