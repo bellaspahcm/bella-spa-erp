@@ -49,13 +49,19 @@ function money(value: number | string) {
     : '0 đ';
 }
 
+const formatNumberString = (val: string) => {
+  const clean = val.replace(/\D/g, '');
+  if (!clean) return '';
+  return Number(clean).toLocaleString('vi-VN');
+};
+
 function toEnrollmentInput(form: EnrollmentFormState): TrainingEnrollmentInput {
   return {
     userId: form.userId,
     courseId: form.courseId,
     enrollmentStatus: form.enrollmentStatus,
-    tuitionTotal: form.tuitionTotal,
-    tuitionPaid: form.tuitionPaid,
+    tuitionTotal: form.tuitionTotal.replace(/\D/g, ''),
+    tuitionPaid: form.tuitionPaid.replace(/\D/g, ''),
     notes: form.notes,
   };
 }
@@ -75,7 +81,7 @@ export function TrainingEnrollmentsClient({ initialData }: { initialData: Traini
   const [form, setForm] = useState<EnrollmentFormState>({
     ...blankForm,
     courseId: initialCourse?.id || '',
-    tuitionTotal: String(initialCourse?.tuition_amount || 0),
+    tuitionTotal: formatNumberString(String(initialCourse?.tuition_amount || 0)),
     userId: initialData.studentUsers[0]?.id || '',
   });
   const [isPending, startTransition] = useTransition();
@@ -90,7 +96,7 @@ export function TrainingEnrollmentsClient({ initialData }: { initialData: Traini
     setForm((current) => ({
       ...current,
       courseId,
-      tuitionTotal: current.id ? current.tuitionTotal : String(course?.tuition_amount || 0),
+      tuitionTotal: current.id ? current.tuitionTotal : formatNumberString(String(course?.tuition_amount || 0)),
     }));
   };
 
@@ -129,7 +135,7 @@ export function TrainingEnrollmentsClient({ initialData }: { initialData: Traini
                   setForm({
                     ...blankForm,
                     courseId: firstCourse?.id || '',
-                    tuitionTotal: String(firstCourse?.tuition_amount || 0),
+                    tuitionTotal: formatNumberString(String(firstCourse?.tuition_amount || 0)),
                     userId: initialData.studentUsers[0]?.id || '',
                   });
                 }}
@@ -175,7 +181,7 @@ export function TrainingEnrollmentsClient({ initialData }: { initialData: Traini
                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Tổng học phí (đ)</span>
                 <input
                   value={form.tuitionTotal}
-                  onChange={(event) => setForm({ ...form, tuitionTotal: event.target.value })}
+                  onChange={(event) => setForm({ ...form, tuitionTotal: formatNumberString(event.target.value) })}
                   inputMode="numeric"
                   className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
                 />
@@ -184,7 +190,7 @@ export function TrainingEnrollmentsClient({ initialData }: { initialData: Traini
                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Đã thu (đ)</span>
                 <input
                   value={form.tuitionPaid}
-                  onChange={(event) => setForm({ ...form, tuitionPaid: event.target.value })}
+                  onChange={(event) => setForm({ ...form, tuitionPaid: formatNumberString(event.target.value) })}
                   inputMode="numeric"
                   className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold outline-none focus:border-primary"
                 />
@@ -269,8 +275,8 @@ export function TrainingEnrollmentsClient({ initialData }: { initialData: Traini
                       userId: enrollment.user_id,
                       courseId: enrollment.course_id,
                       enrollmentStatus: enrollment.enrollment_status,
-                      tuitionTotal: String(enrollment.tuition_total || 0),
-                      tuitionPaid: String(enrollment.tuition_paid || 0),
+                      tuitionTotal: formatNumberString(String(enrollment.tuition_total || 0)),
+                      tuitionPaid: formatNumberString(String(enrollment.tuition_paid || 0)),
                       notes: enrollment.notes || '',
                     })}
                     className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:text-primary"
