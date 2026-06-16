@@ -33,7 +33,7 @@ import type {
   InventorySummaryViewModel, 
   DashboardAlert 
 } from '@/services/dashboard-actions';
-import { markNotificationAsRead } from '@/services/notification-actions';
+import { markNotificationAsRead } from '@/core/services/notification/notification-actions';
 import { AnimatePresence,motion } from 'framer-motion';
 import {
 AlertTriangle,
