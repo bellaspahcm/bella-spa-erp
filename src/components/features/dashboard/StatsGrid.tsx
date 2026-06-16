@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Users, Calendar, DollarSign, Star, TrendingUp, TrendingDown } from 'lucide-react';
 
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
+import type { DashboardStatsViewModel } from '@/services/dashboard-actions';
 
 const ICON_MAP = {
   Users,
@@ -12,17 +13,8 @@ const ICON_MAP = {
   Star,
 };
 
-interface StatItem {
-  label: string;
-  value: string;
-  trend: number;
-  iconName: keyof typeof ICON_MAP;
-  color: string;
-  bg: string;
-}
-
 interface StatsGridProps {
-  stats: StatItem[];
+  stats: DashboardStatsViewModel[];
   isLoading?: boolean;
 }
 

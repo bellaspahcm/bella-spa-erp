@@ -23,13 +23,13 @@ jest.mock('@/modules/hr-salary/actions/admin-salary-actions', () => ({
   recalculateAndSaveSalaryRecord: (...args: unknown[]) => mockRecalculateAndSaveSalaryRecord(...args),
 }));
 
-import { processSessionCompletion } from '../modules/booking/actions/session-completion-engine';
+import { processSessionCompletion } from '../core/services/order/session-completion-engine';
 import {
   buildCompletedSessionAccountingUpdate,
   enqueueSessionDoneAccountingOutbox,
   ensureSessionReviewPlaceholder,
   recordSingleSessionRevenueIfNeeded,
-} from '../modules/booking/actions/session-completion-helpers';
+} from '../core/services/order/session-completion-helpers';
 
 type DbCall = {
   table: string;

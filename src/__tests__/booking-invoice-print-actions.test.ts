@@ -7,7 +7,7 @@ import {
   getInvoicePrintLogsForBooking,
   recordInvoicePrintLog,
   voidLatestInvoicePrintLog,
-} from '../modules/booking/actions/invoice-print-actions';
+} from '../core/services/order/invoice-print-actions';
 import { getCurrentUser } from '../services/user-actions';
 
 type QueryResult = {

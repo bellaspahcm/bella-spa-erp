@@ -33,7 +33,7 @@ jest.mock('../services/inventory-actions', () => ({
   rollbackInventoryConsumption: (...args: unknown[]) => mockRollbackInventoryConsumption(...args),
 }));
 
-jest.mock('../modules/booking/actions/session-completion-engine', () => ({
+jest.mock('@/core/services/order/session-completion-engine', () => ({
   processSessionCompletion: (...args: unknown[]) => mockProcessSessionCompletion(...args),
 }));
 

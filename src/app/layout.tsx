@@ -29,6 +29,7 @@ export const metadata: Metadata = {
 import { Toaster } from "sonner";
 import OfflineIndicator from "@/components/common/offline-indicator";
 import PwaRegister from "@/components/common/PwaRegister";
+import { TenantContextProvider } from "@/core/providers/TenantContextProvider";
 import { cookies } from "next/headers";
 
 const tenantThemeBootstrapScript = `
@@ -98,7 +99,9 @@ export default async function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: tenantThemeBootstrapScript }} />
       </head>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
-        {children}
+        <TenantContextProvider>
+          {children}
+        </TenantContextProvider>
         <PwaRegister />
         <OfflineIndicator />
         <Toaster position="top-center" richColors />

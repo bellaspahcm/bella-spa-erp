@@ -1,4 +1,4 @@
-import { validateBookingResourceSchedule } from '@/modules/booking/actions/booking-resource-schedule-guard';
+import { validateBookingResourceSchedule } from '@/core/services/order/booking-resource-schedule-guard';
 
 type QueryResult = {
   data: unknown;

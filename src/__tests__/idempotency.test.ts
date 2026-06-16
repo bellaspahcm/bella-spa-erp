@@ -6,8 +6,8 @@
  * 2. completeSession is called twice on the same session -> first succeeds, second fails with Idempotent error.
  */
 
-import { createBooking } from '../modules/booking/actions/lifecycle-actions';
-import { completeSession } from '../modules/booking/actions/session-actions';
+import { createBooking } from '../core/services/order/lifecycle-actions';
+import { completeSession } from '../core/services/order/session-actions';
 
 // Setup environment variables
 process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';

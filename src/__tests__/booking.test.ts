@@ -1,4 +1,4 @@
-import { resolveKtvCommission } from '../modules/booking/actions/commission-actions';
+import { resolveKtvCommission } from '../core/services/order/commission-actions';
 
 describe('resolveKtvCommission', () => {
   it('should use ktv_commission if present directly on booking', async () => {

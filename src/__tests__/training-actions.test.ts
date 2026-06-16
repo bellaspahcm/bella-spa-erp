@@ -5,7 +5,7 @@ const mockCreateDevelopmentBypassClient = jest.fn();
 const mockSafeRevalidatePath = jest.fn();
 const mockCreateUser = jest.fn();
 
-jest.mock('@/services/auth-guards', () => ({
+jest.mock('@/core/services/auth', () => ({
   getAuthorizedTenantUser: (options: unknown) => mockGetAuthorizedTenantUser(options),
 }));
 

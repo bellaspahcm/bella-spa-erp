@@ -9,7 +9,7 @@
  * 5. Inventory Transfer Order status is not 'shipped' -> Cannot confirm receipt.
  */
 
-import { completeSession } from '../modules/booking/actions/session-actions';
+import { completeSession } from '../core/services/order/session-actions';
 import {
   publishSalaryRecord,
   adminConfirmOnBehalf,

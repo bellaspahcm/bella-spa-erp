@@ -6,6 +6,28 @@ import { getCurrentUser } from './user-actions';
 type KtvLeaderboardRow = Database['public']['Functions']['get_ktv_leaderboard']['Returns'][number];
 const DASHBOARD_UPCOMING_SESSIONS_LIMIT = 20;
 
+/**
+ * Represents a stats card in the dashboard grid.
+ * 
+ * This interface defines the data structure for dashboard statistics cards
+ * that display key performance indicators (KPIs) with trend indicators.
+ * 
+ * @property {string} label - Display label for the stats card (e.g., "Tổng khách hàng")
+ * @property {string} value - Formatted value to display (e.g., "150", "1.5M", "4.85")
+ * @property {number} trend - Percentage change compared to previous period (positive or negative)
+ * @property {('Users' | 'Calendar' | 'DollarSign' | 'Star')} iconName - Icon to display on the card
+ * @property {string} color - Tailwind text color class for the icon (e.g., "text-blue-600")
+ * @property {string} bg - Tailwind background color class for the icon container (e.g., "bg-blue-50")
+ */
+export interface DashboardStatsViewModel {
+  label: string;
+  value: string;
+  trend: number;
+  iconName: 'Users' | 'Calendar' | 'DollarSign' | 'Star';
+  color: string;
+  bg: string;
+}
+
 export interface DashboardAlert {
   id?: string;
   isAppNotification?: boolean;
@@ -18,10 +40,60 @@ export interface DashboardAlert {
   timestamp: number;
 }
 
-export interface DashboardInventorySummary {
+/**
+ * View Model representing inventory summary metrics for dashboard display.
+ * 
+ * Represents aggregated inventory statistics including total item count,
+ * low stock alerts, and total inventory value.
+ * 
+ * @interface InventorySummaryViewModel
+ * @property {number} totalItems - Total count of inventory items
+ * @property {number} lowStockCount - Count of items at or below minimum stock level
+ * @property {number} totalValue - Total value of all inventory (stock_level * price_per_unit)
+ */
+export interface InventorySummaryViewModel {
   totalItems: number;
   lowStockCount: number;
   totalValue: number;
+}
+
+/**
+ * Represents a single data point on the monthly performance chart.
+ * Used to display revenue, expenses, customer acquisition, and service quality metrics over time.
+ * 
+ * @property {string} name - Month label (e.g., "T1", "T2" for Vietnamese month format)
+ * @property {number} customers - Number of new customers acquired during this month
+ * @property {number} revenue - Total confirmed revenue in millions of VND
+ * @property {number} expense - Total expenses in millions of VND
+ * @property {number | null} rating - Average service quality rating for the month (null when no rating data available)
+ */
+export interface PerformanceDataPointViewModel {
+  name: string;
+  customers: number;
+  revenue: number;
+  expense: number;
+  rating: number | null;
+}
+
+/**
+ * View Model interface representing a KTV (technician) in the performance leaderboard.
+ * 
+ * This interface defines the data structure for displaying top-performing technicians
+ * in the dashboard KTV performance table. Each row represents one KTV's monthly performance
+ * metrics including completed sessions, average rating, performance status, and earned bonuses.
+ * 
+ * @property {string} name - Full name of the KTV
+ * @property {number} sessions - Total number of completed sessions (with package multipliers applied)
+ * @property {number | string} rating - Average composite rating (60% customer + 40% discipline). Can be numeric or formatted string like "4.5"
+ * @property {string} status - Performance status label (e.g., "Xuất Sắc", "Tốt")
+ * @property {string} bonus - Formatted KPI bonus amount (e.g., "+1.2M", "+500k")
+ */
+export interface KtvPerformanceViewModel {
+  name: string;
+  sessions: number;
+  rating: number | string;
+  status: string;
+  bonus: string;
 }
 
 export interface CompletedSessionDBRow {
@@ -136,7 +208,16 @@ interface DashboardInventoryItemRow {
   price_per_unit: number | null;
 }
 
-export async function getDashboardStats(startDate?: string, endDate?: string, todayDate?: string) {
+export async function getDashboardStats(
+  startDate?: string, 
+  endDate?: string, 
+  todayDate?: string
+): Promise<{
+  totalCustomers: { value: string; trend: number };
+  todayBookings: { value: string; trend: number };
+  totalRevenue: { value: string; trend: number };
+  avgRating: { value: string; trend: number };
+}> {
   try {
     const { createClient } = await import('@/lib/supabase-server');
     const supabase = await createClient();
@@ -219,21 +300,122 @@ export async function getDashboardStats(startDate?: string, endDate?: string, to
 }
 
 // ─── getUpcomingSessions ──────────────────────────────────────────────────────
-interface UpcomingSession {
+type SessionLogRow = Database['public']['Tables']['session_logs']['Row'];
+
+type UpcomingSession = SessionLogRow & {
   bookings?: {
+    id: string;
     package_name?: string | null;
+    preferred_time?: string | null;
+    completed_sessions?: number;
+    total_sessions?: number;
     packages?: {
       name?: string | null;
       module_key?: string | null;
       service_category?: string | null;
     } | null;
+    customers?: {
+      id: string;
+      name_mother: string;
+      name_baby?: string | null;
+    } | null;
+    assigned_ktv?: {
+      id: string;
+      full_name: string;
+    } | null;
   } | null;
+};
+
+/**
+ * View model representing a session card in the "Sắp tới trong hôm nay" (Today's Schedule) widget.
+ * 
+ * This interface represents the data shape returned by `getUpcomingSessions()` and is used to render
+ * individual session cards in the dashboard. Each session includes full booking context with nested
+ * customer, package, and KTV assignment details.
+ * 
+ * The interface includes all fields from the `session_logs` table (via `select *`) plus nested
+ * booking relationships. Fields marked as optional may be null depending on the session state.
+ * 
+ * @property {string} id - Unique session log ID
+ * @property {string} booking_id - Foreign key to bookings table
+ * @property {string} status - Session status (e.g., 'scheduled', 'completed', 'cancelled')
+ * @property {string | null} assigned_time - Scheduled time slot for the session (HH:MM format)
+ * @property {object | null} bookings - Nested booking details including customer, package, and KTV data
+ * 
+ * @see Requirements 2.2 - Define Explicit View Models for Dashboard Data
+ * @see Requirements 10.2 - Type Dashboard State Variables with View Models
+ */
+export interface DashboardSessionViewModel {
+  // Primary fields from session_logs table
+  id: string;
+  booking_id: string;
+  session_number: number;
   assigned_date: string | null;
-  status: string | null;
   assigned_time: string | null;
+  completed_date: string | null;
+  completed_by_ktv_id: string | null;
+  status: string | null;
+  address: string | null;
+  notes: string | null;
+  ktv_checkout_note: string | null;
+  rating: number | null;
+  rating_comment: string | null;
+  tenant_id: string;
+  created_at: string | null;
+  
+  // Timing and duration fields
+  start_time: string | null;
+  end_time: string | null;
+  standard_duration: number | null;
+  actual_duration: number | null;
+  time_deviation: number | null;
+  duration_warning_type: string | null;
+  
+  // GPS verification fields
+  checkin_lat: number | null;
+  checkin_lon: number | null;
+  checkout_lat: number | null;
+  checkout_lon: number | null;
+  
+  // Accounting and business event fields
+  business_event_type: string | null;
+  accounting_template_id: string | null;
+  accounting_review_status: string;
+  accounting_metadata: Record<string, unknown> | null; // JSON field
+  
+  // Resource management
+  booking_resource_id: string | null;
+  
+  // Other fields
+  is_confirmed: boolean | null;
+  zalo_reminder_sent: boolean | null;
+  zalo_reminder_time: string | null;
+  
+  // Nested booking relationship with customer, package, and KTV details
+  bookings: {
+    id: string;
+    package_name: string;
+    preferred_time?: string | null;
+    completed_sessions?: number;
+    total_sessions?: number;
+    packages?: {
+      name?: string | null;
+      module_key?: string | null;
+      service_category?: string | null;
+    } | null;
+    customers?: {
+      id: string;
+      name_mother: string;
+      name_baby?: string | null;
+    } | null;
+    assigned_ktv?: {
+      id: string;
+      full_name: string;
+    } | null;
+  } | null;
 }
 
-export async function getUpcomingSessions(date?: string) {
+export async function getUpcomingSessions(date?: string): Promise<DashboardSessionViewModel[]> {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = await createClient();
   const currentUser = await getCurrentUser();
@@ -279,8 +461,11 @@ export async function getUpcomingSessions(date?: string) {
     throw new Error(`Failed to fetch dashboard upcoming sessions: ${error.message}`);
   }
 
-  return ((data || []) as UpcomingSession[]).map((session) => ({
+  return ((data || []) as UpcomingSession[]).map((session): DashboardSessionViewModel => ({
     ...session,
+    accounting_metadata: (typeof session.accounting_metadata === 'object' && session.accounting_metadata !== null && !Array.isArray(session.accounting_metadata))
+      ? session.accounting_metadata as Record<string, unknown>
+      : null,
     bookings: session.bookings
       ? {
           ...session.bookings,
@@ -290,7 +475,7 @@ export async function getUpcomingSessions(date?: string) {
   }));
 }
 
-export async function getDashboardInventorySummary(): Promise<DashboardInventorySummary> {
+export async function getDashboardInventorySummary(): Promise<InventorySummaryViewModel> {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = await createClient();
   const currentUser = await getCurrentUser();
@@ -317,7 +502,7 @@ export async function getDashboardInventorySummary(): Promise<DashboardInventory
 }
 
 // ─── getTopTechnicians ────────────────────────────────────────────────────────
-export async function getTopTechnicians() {
+export async function getTopTechnicians(): Promise<KtvPerformanceViewModel[]> {
   try {
     const { createClient } = await import('@/lib/supabase-server');
     const supabase = await createClient();
@@ -375,7 +560,7 @@ interface CustomerPerformanceRow {
   created_at: string | null;
 }
 
-export async function getMonthlyPerformance() {
+export async function getMonthlyPerformance(): Promise<PerformanceDataPointViewModel[]> {
   try {
     const { createClient } = await import('@/lib/supabase-server');
     const supabase = await createClient();
@@ -471,7 +656,7 @@ function parsePostgresTimestamp(tsStr: string): Date {
 
 // ─── getImportantAlerts ───────────────────────────────────────────────────────
 // Replaces missing RPC: get_important_alerts
-export async function getImportantAlerts() {
+export async function getImportantAlerts(): Promise<DashboardAlert[]> {
   try {
     const { createClient } = await import('@/lib/supabase-server');
     const { getPendingLeaveRequests } = await import('@/services/attendance-actions');
@@ -736,7 +921,15 @@ export async function getImportantAlerts() {
 }
 
 // ─── Dashboard Data Bundles ───────────────────────────────────────────────────
-export async function getDashboardPrimaryData(startDate?: string, endDate?: string, todayDate?: string) {
+export async function getDashboardPrimaryData(
+  startDate?: string, 
+  endDate?: string, 
+  todayDate?: string
+): Promise<{
+  statsData: Awaited<ReturnType<typeof getDashboardStats>>;
+  sessionsData: DashboardSessionViewModel[];
+  inventorySummary: InventorySummaryViewModel;
+}> {
   const [statsData, sessionsData, inventorySummary] = await Promise.all([
     getDashboardStats(startDate, endDate, todayDate),
     getUpcomingSessions(todayDate),
@@ -746,7 +939,11 @@ export async function getDashboardPrimaryData(startDate?: string, endDate?: stri
   return { statsData, sessionsData, inventorySummary };
 }
 
-export async function getDashboardSecondaryData() {
+export async function getDashboardSecondaryData(): Promise<{
+  ktvsData: KtvPerformanceViewModel[];
+  alertsData: DashboardAlert[];
+  perfData: PerformanceDataPointViewModel[];
+}> {
   const [ktvsData, alertsData, perfData] = await Promise.all([
     getTopTechnicians(),
     getImportantAlerts(),

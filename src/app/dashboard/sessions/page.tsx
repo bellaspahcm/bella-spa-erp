@@ -2,13 +2,13 @@
 
 import { createClient } from '@/lib/supabase-client';
 import { cn,resolvePackageName } from '@/lib/utils';
-import { reusePackage } from '@/modules/booking/actions/lifecycle-actions';
+import { reusePackage } from '@/core/services/order';
 import {
 completeSession,
 getSessionLogs,
 getSessionsWithDetails,
 saveSessionNote
-} from '@/modules/booking/actions/session-actions';
+} from '@/core/services/order';
 import { getPendingLeaveRequests } from '@/services/attendance-actions';
 import { getCurrentUser } from '@/services/user-actions';
 import { AnimatePresence,motion } from 'framer-motion';

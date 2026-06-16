@@ -6,7 +6,7 @@ import {
   buildBookingResourcePayload,
   type BookingResourceInput,
 } from '@/lib/business-rules/booking-resource';
-import { getAuthorizedTenantUser } from './auth-guards';
+import { getAuthorizedTenantUser } from '@/core/services/auth';
 import { recordAuditLog } from './audit-actions';
 import type { Database, Json } from '@/types/database.types';
 

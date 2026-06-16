@@ -1,4 +1,4 @@
-import { getPublicBabycareBookingPackages } from '@/modules/booking/actions/public-booking-packages';
+import { getPublicBabycareBookingPackages } from '@/core/services/order';
 
 const mockFrom = jest.fn();
 

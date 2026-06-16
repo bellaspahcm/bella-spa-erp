@@ -12,7 +12,7 @@ import {
   buildManualPaymentIdempotencyKey,
   recordBookingPaymentRpc,
   type RecordRemainingPaymentParams,
-} from '@/modules/booking/actions/payment-helpers';
+} from '@/core/services/order/payment-helpers';
 
 const migrationSql = readFileSync(
   join(process.cwd(), 'supabase/migrations/20260607231500_manual_payment_idempotency.sql'),

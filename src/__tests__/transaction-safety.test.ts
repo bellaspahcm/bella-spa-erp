@@ -7,8 +7,8 @@
  * 3. createBooking succeeds but audit logging fails -> rollback booking insert.
  */
 
-import { createBooking, recordRemainingPayment, reusePackage, submitOnlineBooking, updateBooking } from '../modules/booking/actions/lifecycle-actions';
-import { addExtraSession, completeSession, createSessionLog, rescheduleSession } from '../modules/booking/actions/session-actions';
+import { createBooking, recordRemainingPayment, reusePackage, submitOnlineBooking, updateBooking } from '../core/services/order/lifecycle-actions';
+import { addExtraSession, completeSession, createSessionLog, rescheduleSession } from '../core/services/order/session-actions';
 
 // Setup environment variables
 process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';

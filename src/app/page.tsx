@@ -32,7 +32,7 @@ import { FeedbackCarousel } from '@/components/features/landing/FeedbackCarousel
 import { LandingPackagesSection } from '@/components/features/landing/LandingPackagesSection';
 import { useLandingPackages, useLandingPromotions } from '@/components/features/landing/useLandingData';
 import type { LandingCategoryKey } from '@/components/features/landing/landing-data';
-import { submitOnlineBooking } from '@/modules/booking/actions/lifecycle-actions';
+import { submitOnlineBooking } from '@/core/services/order';
 
 export default function LandingPage() {
   const [activeTab, setActiveTab] = useState<LandingCategoryKey>('combo');

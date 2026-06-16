@@ -16,11 +16,11 @@ const resourceSessionMigrationSql = readFileSync(
   'utf8',
 );
 const resourceScheduleGuardSource = readFileSync(
-  path.join(process.cwd(), 'src/modules/booking/actions/booking-resource-schedule-guard.ts'),
+  path.join(process.cwd(), 'src/core/services/order/booking-resource-schedule-guard.ts'),
   'utf8',
 );
 const createSessionActionSource = readFileSync(
-  path.join(process.cwd(), 'src/modules/booking/actions/create-session-log-action.ts'),
+  path.join(process.cwd(), 'src/core/services/order/create-session-log-action.ts'),
   'utf8',
 );
 const updateSessionActionSource = readFileSync(

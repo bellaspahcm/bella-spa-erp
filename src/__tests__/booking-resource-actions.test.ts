@@ -10,7 +10,7 @@ const mockGetAuthorizedTenantUser = jest.fn();
 const mockRecordAuditLog = jest.fn();
 const mockSafeRevalidatePath = jest.fn();
 
-jest.mock('@/services/auth-guards', () => ({
+jest.mock('@/core/services/auth', () => ({
   getAuthorizedTenantUser: (options: unknown) => mockGetAuthorizedTenantUser(options),
 }));
 

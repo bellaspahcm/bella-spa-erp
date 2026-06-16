@@ -66,7 +66,7 @@ jest.mock('../services/audit-actions', () => ({
 }));
 
 const mockProcessSessionCompletion = jest.fn();
-jest.mock('../modules/booking/actions/session-completion-engine', () => ({
+jest.mock('@/core/services/order/session-completion-engine', () => ({
   processSessionCompletion: (...args: any[]) => mockProcessSessionCompletion(...args),
 }));
 

@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
-import type { BookingInvoicePrintLog } from '@/modules/booking/actions/invoice-print-actions';
+import type { BookingInvoicePrintLog } from '@/core/services/order/invoice-print-actions';
 
 export type KtvOption = {
   id: string;

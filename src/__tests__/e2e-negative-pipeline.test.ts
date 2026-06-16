@@ -6,8 +6,8 @@
  * and halts the pipeline progression.
  */
 
-import { createBooking, recordRemainingPayment } from '../modules/booking/actions/lifecycle-actions';
-import { completeSession } from '../modules/booking/actions/session-actions';
+import { createBooking, recordRemainingPayment } from '../core/services/order/lifecycle-actions';
+import { completeSession } from '../core/services/order/session-actions';
 
 // --- Global Mock Store ---
 interface MockStore {
@@ -166,7 +166,7 @@ jest.mock('@/lib/utils', () => ({
     return Math.min(max, Math.max(min, normalized));
   })
 }));
-jest.mock('@/modules/booking/actions/commission-actions', () => ({ resolveKtvCommission: jest.fn().mockResolvedValue(100000) }));
+jest.mock('@/core/services/order', () => ({ resolveKtvCommission: jest.fn().mockResolvedValue(100000) }));
 
 describe('E2E Negative Business Pipeline Suite', () => {
   beforeEach(() => {

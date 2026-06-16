@@ -8,7 +8,7 @@ import {
   getAuthorizedTenantUser,
   isRoleAllowed,
   normalizeAuthRole,
-} from '../services/auth-guards';
+} from '@/core/services/auth';
 
 describe('auth guard helpers', () => {
   beforeEach(() => {

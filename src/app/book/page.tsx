@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import BookingPageClient from './BookingPageClient';
-import { getPublicBabycareBookingPackages } from '@/modules/booking/actions/public-booking-packages';
+import { getPublicBabycareBookingPackages } from '@/core/services/order';
 
 export const metadata: Metadata = {
   title: 'Đặt Lịch Hẹn Trực Tuyến | Bella Spa Mẹ & Bé',

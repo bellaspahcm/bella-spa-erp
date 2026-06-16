@@ -1,13 +1,13 @@
 import {
   createCustomerForBookingIfNeeded,
   findPendingBookingForCustomer,
-} from '@/modules/booking/actions/create-booking-helpers';
+} from '@/core/services/order/create-booking-helpers';
 import {
   fetchBookingDetailsWithPayment,
   getBookingPaymentSnapshot,
   updateBookingShareToken,
-} from '@/modules/booking/actions/payment-helpers';
-import { reusePackage } from '@/modules/booking/actions/lifecycle-actions';
+} from '@/core/services/order/payment-helpers';
+import { reusePackage } from '@/core/services/order';
 
 jest.mock('server-only', () => ({}), { virtual: true });
 jest.mock('next/cache', () => ({ revalidatePath: jest.fn() }));

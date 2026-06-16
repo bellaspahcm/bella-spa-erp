@@ -2,7 +2,7 @@
 
 import { createDevelopmentBypassClient } from '@/lib/supabase-dev-bypass-server';
 import { safeRevalidatePath } from '@/lib/revalidate';
-import { getAuthorizedTenantUser } from './auth-guards';
+import { getAuthorizedTenantUser } from '@/core/services/auth';
 import { createUser } from '@/services/user-actions';
 import type {
   TrainingContentType,
