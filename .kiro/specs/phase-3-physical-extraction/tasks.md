@@ -23,22 +23,22 @@ This implementation plan executes the physical extraction of core platform code 
 
 ### Wave 1: Foundation (Week 1-2)
 
-- [ ] 1. Create core platform directory structure and foundational infrastructure
-  - [ ] 1.1 Create core platform directory hierarchy
+- [x] 1. Create core platform directory structure and foundational infrastructure
+  - [x] 1.1 Create core platform directory hierarchy
     - Create `src/core/` with subdirectories: `types/`, `services/`, `lib/`, `adapters/`, `middleware/`, `hooks/`, `providers/`
     - Create `src/core/services/` subdirectories: `auth/`, `order/`, `payment/`, `notification/`, `audit/`, `finance/`, `payroll/`, `analytics/`
     - Create README.md in each subdirectory explaining its purpose and usage patterns
     - Verify `src/core/types/` already exists from Phase 2 with all contract type definitions
     - _Requirements: REQ-3.1.1_
 
-  - [ ] 1.2 Implement TenantContext provider and React hook
+  - [x] 1.2 Implement TenantContext provider and React hook
     - Create `src/core/providers/TenantContextProvider.tsx` with loading and error states
     - Implement `/api/tenant/context` API route to fetch tenant configuration from database
     - Create `useTenantContext()` hook in `src/core/hooks/useTenantContext.ts`
     - Add error handling for missing or invalid tenant configurations
     - _Requirements: REQ-3.2.1_
 
-  - [ ] 1.3 Implement module registry system
+  - [x] 1.3 Implement module registry system
     - Create `ModuleRegistry` class in `src/core/adapters/registry.ts`
     - Implement `register()`, `get()`, `getRequired()`, and `has()` methods
     - Add validation to prevent duplicate module ID registration
@@ -46,20 +46,20 @@ This implementation plan executes the physical extraction of core platform code 
     - Create `src/core/adapters/types.ts` for adapter utility types
     - _Requirements: REQ-3.3.1_
 
-  - [ ] 1.4 Create API middleware for TenantContext extraction
+  - [x] 1.4 Create API middleware for TenantContext extraction
     - Create `src/core/middleware/tenantContext.ts` to extract tenant ID from request headers/session
     - Implement middleware to construct `TenantContext` object and attach to request
     - Add authorization check to reject requests with missing/invalid tenant ID
     - Create TypeScript types for extended request object with TenantContext
     - _Requirements: REQ-3.2.2_
 
-  - [ ] 1.5 Wrap Next.js app with TenantContextProvider
+  - [x] 1.5 Wrap Next.js app with TenantContextProvider
     - Update `src/app/layout.tsx` (or `src/pages/_app.tsx`) to wrap all pages with TenantContextProvider
     - Verify provider mounts correctly and fetches tenant configuration on startup
     - Test error states (network failure, invalid tenant, missing config)
     - _Requirements: REQ-3.2.1_
 
-- [ ] 2. Checkpoint - Verify Wave 1 foundation is stable
+- [x] 2. Checkpoint - Verify Wave 1 foundation is stable
   - Run `npm run build` and ensure TypeScript compilation succeeds
   - Run existing test suite and verify all tests pass
   - Manually test tenant context provider loading in browser
@@ -68,8 +68,8 @@ This implementation plan executes the physical extraction of core platform code 
 
 ### Wave 2: Core Services (Week 3-4)
 
-- [ ] 3. Extract authentication and authorization services to core platform
-  - [ ] 3.1 Move authentication services to core and refactor for TenantContext
+- [x] 3. Extract authentication and authorization services to core platform
+  - [x] 3.1 Move authentication services to core and refactor for TenantContext
     - Move existing auth services from `src/services/auth/` to `src/core/services/auth/`
     - Refactor all auth functions to accept `context: TenantContext` as first parameter
     - Update function signatures to use core contract types where applicable
@@ -83,8 +83,8 @@ This implementation plan executes the physical extraction of core platform code 
     - Run auth test suite and ensure all tests pass
     - _Requirements: REQ-3.6.1_
 
-- [ ] 4. Extract customer order management services to core platform
-  - [ ] 4.1 Move order services to core and refactor for CoreBookingOrder contract
+- [x] 4. Extract customer order management services to core platform
+  - [x] 4.1 Move order services to core and refactor for CoreBookingOrder contract
     - Move existing booking services from `src/services/bookings/` to `src/core/services/order/`
     - Refactor all order functions to accept `context: TenantContext` as first parameter
     - Update function signatures to return `CoreBookingOrder` type instead of ad-hoc booking types
@@ -98,6 +98,43 @@ This implementation plan executes the physical extraction of core platform code 
     - Verify tests use `CoreBookingOrder` type for assertions
     - Test tenant filtering in order queries
     - Run order test suite and ensure all tests pass
+    - _Requirements: REQ-3.6.1_
+
+
+- [ ] 5. Extract payment processing services to core platform
+  - [x] 5.1 Move payment services to core and refactor for PaymentIntent contract
+    - **SKIPPED**: Payment services already extracted with order services (Task 4.1)
+    - Payment logic resides in `src/core/services/order/payment-actions.ts` and `payment-helpers.ts`
+    - _Requirements: REQ-3.1.4, REQ-3.5.4_
+
+  - [ ]* 5.2 Update payment unit tests with TenantContext and PaymentIntent types
+    - **SKIPPED**: Payment tests already updated with order extraction
+    - _Requirements: REQ-3.6.1_
+
+- [x] 6. Extract notification services to core platform
+  - [x] 6.1 Move notification services to core and refactor for NotificationEvent contract
+    - Move existing notification services from `src/services/notifications/` to `src/core/services/notification/`
+    - Refactor all notification functions to accept `context: TenantContext` as first parameter
+    - Update function signatures to use `NotificationEvent` type
+    - Create database mapper helper `mapDbRowToNotification()` in `src/core/lib/database.ts`
+    - Ensure multi-channel delivery (in-app, email, SMS, webhook) works across modules
+    - **Commit**: 753e7983
+    - _Requirements: REQ-3.1.5_
+
+  - [ ]* 6.2 Update notification unit tests with TenantContext and NotificationEvent types
+    - Update all notification unit tests to use mock TenantContext
+    - Verify tests use `NotificationEvent` type for assertions
+    - Test tenant-specific notification preferences
+    - Run notification test suite and ensure all tests pass
+    - _Requirements: REQ-3.6.1_
+
+
+- [x] 7. Extract audit logging services to core platform
+  - [x] 7.1 Move audit services to core and refactor for AuditEvent contract
+    - Move existing audit services from `src/services/audit/` to `src/core/services/audit/`
+    - Refactor all audit functions to accept `context: TenantContext` as first parameter
+    - **Commit**: dcaf22ff
+    - _Requirements: REQ-3.1.6 (Note: Accounting services extracted separately as critical task - commit 2cb0260)
     - _Requirements: REQ-3.6.1_
 
 
