@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { getCurrentUser } from '@/services/user-actions';
 import { recordAuditLog } from '@/services/audit-actions';
 import { getLocalDateString, getMonthStart } from '@/lib/utils';
-import { createAccountingDataClient } from '@/services/accounting/client';
+import { createAccountingDataClient } from '@/core/services/accounting/client';
 import type { Database } from '@/types/database.types';
 
 type SalaryRecordRow = Database['public']['Tables']['salary_records']['Row'];

@@ -6,9 +6,9 @@ import {
   buildRevenueAccountingMetadata,
   inferBusinessEventType,
   resolveAccountingReviewStatus,
-} from '@/services/accounting/template-rules';
-import { assertOpenAccountingPeriod } from './accounting/period-guards';
-import { assertLegacyFinanceWriteAllowed } from './accounting/mode';
+} from '@/core/services/accounting/template-rules';
+import { assertOpenAccountingPeriod } from '../core/services/accounting/period-guards';
+import { assertLegacyFinanceWriteAllowed } from '../core/services/accounting/mode';
 import { getCurrentUser } from './user-actions';
 import type { Database } from '@/types/database.types';
 import {

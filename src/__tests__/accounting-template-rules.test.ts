@@ -5,7 +5,7 @@ import {
   inferBusinessEventType,
   resolveAccountingReviewStatus,
   resolvePaymentAccountCode,
-} from '../services/accounting/template-rules';
+} from '../core/services/accounting/template-rules';
 
 describe('accounting template rules', () => {
   it('maps SIMPLE revenue types to Vietnamese accounting business events', () => {

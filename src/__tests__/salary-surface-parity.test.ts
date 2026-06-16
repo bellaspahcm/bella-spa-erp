@@ -3,9 +3,9 @@ import { getKtvSalaryForConfirmation } from '@/modules/hr-salary/actions/base-sa
 import { getSalaryData } from '@/modules/hr-salary/actions/query-salary-actions';
 import { exportSalaryToExcel } from '@/services/export-actions';
 import { getMonthlyPnL } from '@/services/finance/monthly-pnl-report';
-import { getSalaryReconciliationReport } from '@/services/accounting/reports';
+import { getSalaryReconciliationReport } from '@/core/services/accounting/reports';
 import { createClient } from '@/lib/supabase-server';
-import { createAccountingDataClient } from '@/services/accounting/client';
+import { createAccountingDataClient } from '@/core/services/accounting/client';
 
 jest.mock('@/lib/supabase-server', () => ({
   createClient: jest.fn(),

@@ -1,1 +1,1 @@
-export { resolveAccountingReviewStatus } from '@/services/accounting/template-rules';
+export { resolveAccountingReviewStatus } from '@/core/services/accounting/template-rules';

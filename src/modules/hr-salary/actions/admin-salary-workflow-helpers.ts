@@ -1,6 +1,6 @@
 import { revalidatePath } from 'next/cache';
-import { assertOpenAccountingPeriod } from '@/services/accounting/period-guards';
-import { inferBusinessEventType, resolveAccountingReviewStatus } from '@/services/accounting/template-rules';
+import { assertOpenAccountingPeriod } from '@/core/services/accounting/period-guards';
+import { inferBusinessEventType, resolveAccountingReviewStatus } from '@/core/services/accounting/template-rules';
 import { recordAuditLog } from '@/services/audit-actions';
 import { Database } from '@/types/database.types';
 import type { SupabaseClient } from '@supabase/supabase-js';

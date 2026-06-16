@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Báo Cáo Đánh Giá Năng Lực Hệ Thống: Bella Spa</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* Light Theme Colors */
+      --bg-page: #f8f9fa;
+      --bg-card: #ffffff;
+      --bg-card-hover: #f1f3f5;
+      
+      --text-main: #343a40;
+      --text-muted: #6c757d;
+      
+      --primary: #0ca678; /* Soft Emerald */
+      --primary-light: #ebfbee;
+      --accent-gold: #d4a373;
+      --accent-gold-light: #fefae0;
+      
+      --border-color: #e9ecef;
+      
+      --color-excellent: #20c997;
+      --color-good: #339af0;
+      --color-fair: #fcc419;
+      --color-weak: #ff6b6b;
+      
+      --font-display: 'Cormorant Garamond', serif;
+      --font-body: 'Inter', sans-serif;
+      
+      --shadow-sm: 0 2px 4px rgba(0,0,0,0.02);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.05);
+      --shadow-lg: 0 12px 24px rgba(0,0,0,0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding: 40px 20px;
+    }
+
+    .main-container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: var(--bg-card);
+      border-radius: 24px;
+      box-shadow: var(--shadow-lg);
+      padding: 60px 80px;
+      overflow: hidden;
+    }
+
+    @media (max-width: 768px) {
+      .main-container {
+        padding: 40px 30px;
+      }
+    }
+
+    /* ========== HEADER ========== */
+    header {
+      text-align: center;
+      margin-bottom: 60px;
+    }
+
+    .header-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--accent-gold-light);
+      color: #9c6f44;
+      padding: 6px 16px;
+      border-radius: 30px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      margin-bottom: 24px;
+      border: 1px solid rgba(212, 163, 115, 0.3);
+    }
+
+    h1 {
+      font-family: var(--font-display);
+      font-size: 42px;
+      color: #2b3035;
+      line-height: 1.2;
+      margin-bottom: 24px;
+    }
+
+    .header-subtitle {
+      font-size: 16px;
+      color: var(--text-muted);
+      max-width: 800px;
+      margin: 0 auto 30px;
+      line-height: 1.7;
+    }
+
+    .header-meta {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+
+    .meta-badge {
+      font-size: 13px;
+      color: var(--text-muted);
+      background: #f8f9fa;
+      padding: 6px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+    }
+    
+    /* ========== SECTION STYLES ========== */
+    .content-section {
+      margin-bottom: 60px;
+    }
+
+    .section-header {
+      margin-bottom: 30px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid var(--primary-light);
+    }
+
+    .section-title {
+      font-family: var(--font-display);
+      font-size: 28px;
+      color: #2b3035;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .section-title span.number {
+      background: var(--primary);
+      color: white;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 700;
+      font-family: var(--font-body);
+    }
+
+    .section-desc {
+      font-size: 15px;
+      color: var(--text-muted);
+      margin-top: 10px;
+    }
+
+    /* ========== OVERVIEW SCORE ========== */
+    .overview-card {
+      display: flex;
+      align-items: center;
+      gap: 40px;
+      background: var(--primary-light);
+      padding: 40px;
+      border-radius: 20px;
+      margin-bottom: 40px;
+      border: 1px solid rgba(12, 166, 120, 0.1);
+    }
+
+    .score-circle {
+      width: 130px;
+      height: 130px;
+      background: white;
+      border-radius: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow-md);
+      border: 6px solid var(--primary);
+      flex-shrink: 0;
+    }
+
+    .score-circle .val {
+      font-family: var(--font-display);
+      font-size: 42px;
+      font-weight: 700;
+      color: var(--primary);
+      line-height: 1;
+    }
+
+    .score-circle .lbl {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-top: 4px;
+    }
+
+    .overview-text h3 {
+      font-family: var(--font-display);
+      font-size: 24px;
+      color: #2b3035;
+      margin-bottom: 12px;
+    }
+
+    .overview-text p {
+      color: var(--text-main);
+      line-height: 1.7;
+    }
+
+    /* ========== FEATURE CARDS ========== */
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 25px;
+    }
+
+    .feature-card {
+      background: white;
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 30px;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.3s ease;
+    }
+
+    .feature-card:hover {
+      box-shadow: var(--shadow-md);
+      border-color: var(--accent-gold);
+      transform: translateY(-3px);
+    }
+
+    .feature-icon {
+      width: 48px;
+      height: 48px;
+      background: var(--accent-gold-light);
+      color: #9c6f44;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .feature-card h3 {
+      font-family: var(--font-display);
+      font-size: 22px;
+      color: #2b3035;
+      margin-bottom: 12px;
+    }
+
+    .feature-card p {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    .feature-list {
+      list-style: none;
+      font-size: 14px;
+      color: var(--text-main);
+    }
+
+    .feature-list li {
+      margin-bottom: 10px;
+      padding-left: 24px;
+      position: relative;
+    }
+
+    .feature-list li::before {
+      content: '✓';
+      position: absolute;
+      left: 0;
+      color: var(--primary);
+      font-weight: bold;
+    }
+
+    /* ========== COMPARISON TABLE ========== */
+    .table-wrapper {
+      overflow-x: auto;
+      border-radius: 16px;
+      border: 1px solid var(--border-color);
+      background: white;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th {
+      background: #f8f9fa;
+      padding: 20px;
+      font-family: var(--font-display);
+      font-size: 18px;
+      color: #2b3035;
+      border-bottom: 2px solid var(--border-color);
+    }
+
+    td {
+      padding: 20px;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 14.5px;
+      vertical-align: top;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .highlight-cell {
+      background: var(--primary-light);
+      border-left: 2px solid var(--primary) !important;
+    }
+
+    .check-icon { color: var(--primary); font-weight: bold; }
+    .cross-icon { color: var(--color-weak); font-weight: bold; }
+    .warn-icon { color: var(--color-fair); font-weight: bold; }
+
+    /* ========== ROADMAP ========== */
+    .roadmap {
+      position: relative;
+      padding-left: 30px;
+    }
+
+    .roadmap::before {
+      content: '';
+      position: absolute;
+      left: 9px;
+      top: 10px;
+      bottom: 10px;
+      width: 2px;
+      background: var(--border-color);
+    }
+
+    .roadmap-item {
+      position: relative;
+      margin-bottom: 40px;
+    }
+
+    .roadmap-dot {
+      position: absolute;
+      left: -26px;
+      top: 5px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--primary);
+      border: 3px solid white;
+      box-shadow: 0 0 0 1px var(--primary);
+    }
+
+    .roadmap-phase {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--primary);
+      background: var(--primary-light);
+      padding: 4px 10px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .roadmap-title {
+      font-family: var(--font-display);
+      font-size: 20px;
+      color: #2b3035;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+
+    .roadmap-desc {
+      font-size: 14.5px;
+      color: var(--text-muted);
+    }
+
+    /* ========== FOOTER ========== */
+    footer {
+      margin-top: 60px;
+      padding-top: 30px;
+      border-top: 1px solid var(--border-color);
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 13.5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="main-container">
+    <header>
+      <div class="header-badge">Tài liệu phân tích chuyên sâu</div>
+      <h1>Báo Cáo Đánh Giá Năng Lực Hệ Thống Quản Trị: Bella Spa</h1>
+      <p class="header-subtitle">
+        Tài liệu được biên soạn nhằm phân tích sức mạnh vận hành, tính bảo mật và khả năng quản lý chuyên sâu của hệ thống. Ngôn ngữ trình bày được chuẩn hóa để chủ doanh nghiệp và các nhà quản lý dễ dàng nắm bắt tầm quan trọng của hệ thống trong việc mở rộng kinh doanh chuỗi.
+      </p>
+      <div class="header-meta">
+        <div class="meta-badge">Cập nhật: 12/06/2026</div>
+        <div class="meta-badge">Trạng thái: Đã sẵn sàng vận hành</div>
+      </div>
+    </header>
+
+    <div class="content-section">
+      <div class="overview-card">
+        <div class="score-circle">
+          <span class="val">93</span>
+          <span class="lbl">/ 100 ĐIỂM</span>
+        </div>
+        <div class="overview-text">
+          <h3>Hệ thống vững chắc, tối ưu cho chuỗi nhượng quyền</h3>
+          <p>
+            Hệ thống Bella Spa đạt mức độ hoàn thiện xuất sắc. Bằng cách thiết kế một bộ khung thông minh và linh hoạt, hệ thống cho phép mở rộng không giới hạn quy mô chi nhánh mà vẫn đảm bảo an toàn thông tin tuyệt đối. Mọi tính năng nghiệp vụ từ quản lý lịch hẹn, chăm sóc khách hàng đến kế toán đều được gắn kết tự động, mang lại trải nghiệm mượt mà cho nhân viên và sự an tâm tuyệt đối cho chủ doanh nghiệp.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="content-section">
+      <div class="section-header">
+        <h2 class="section-title"><span class="number">1</span> Điểm Mạnh Cốt Lõi Của Hệ Thống</h2>
+        <p class="section-desc">Những yếu tố kỹ thuật tiên tiến được diễn đạt dưới góc độ lợi ích doanh nghiệp.</p>
+      </div>
+
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+          </div>
+          <h3>Bảo Vệ Dữ Liệu Tuyệt Đối Giữa Các Chi Nhánh</h3>
+          <p>Hệ thống thiết lập bức tường an ninh đa lớp vững chắc cho từng chi nhánh và đối tác nhượng quyền.</p>
+          <ul class="feature-list">
+            <li>Nhân viên chi nhánh A không thể xem khách hàng của chi nhánh B.</li>
+            <li>Thông tin tài chính, doanh thu được khóa kín theo đúng thẩm quyền.</li>
+            <li>Ngăn chặn tận gốc việc rò rỉ dữ liệu khách hàng nội bộ.</li>
+          </ul>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"></path></svg>
+          </div>
+          <h3>Sổ Cái Kế Toán Thông Minh & Chống Mất Mát</h3>
+          <p>Cơ chế lưu trữ đa điểm giúp mọi giao dịch tài chính luôn chính xác 100%.</p>
+          <ul class="feature-list">
+            <li>Ghi nhận tài chính kép tự động (thu - chi rõ ràng).</li>
+            <li>Bảo toàn dữ liệu hóa đơn ngay cả khi cửa hàng bị rớt mạng internet đột ngột.</li>
+            <li>Tự động đồng bộ lên hệ thống tổng khi có mạng trở lại.</li>
+          </ul>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h7"></path></svg>
+          </div>
+          <h3>Quản Trị Lịch Hẹn & Tài Nguyên Hoàn Hảo</h3>
+          <p>Chống lại hoàn toàn tình trạng đặt trùng lịch, đảm bảo trải nghiệm khách hàng xuyên suốt.</p>
+          <ul class="feature-list">
+            <li>Tự động kiểm tra tính khả dụng của giường, phòng và máy móc công nghệ cao.</li>
+            <li>Hệ thống từ chối ngay lập tức nếu một máy đã được khách khác đặt.</li>
+            <li>Ngôn ngữ hiển thị tự động chuyển đổi phù hợp với từng dịch vụ (Mẹ & Bé hoặc Spa thẩm mỹ).</li>
+          </ul>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path></svg>
+          </div>
+          <h3>Giao Diện Nhận Diện Thương Hiệu Thông Minh</h3>
+          <p>Hệ thống tự động thay đổi màu sắc và phong cách theo từng thương hiệu riêng biệt của doanh nghiệp.</p>
+          <ul class="feature-list">
+            <li>Không cần tạo ra nhiều ứng dụng khác nhau cho mỗi thương hiệu.</li>
+            <li>Tự động thay đổi tông màu (xanh ngọc, vàng, hồng...) ngay khi nhân viên đăng nhập.</li>
+            <li>Dễ dàng mở rộng thêm ngành nghề kinh doanh mới với chi phí cực thấp.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="content-section">
+      <div class="section-header">
+        <h2 class="section-title"><span class="number">2</span> So Sánh Với Các Phần Mềm Hiện Có Trên Thị Trường</h2>
+        <p class="section-desc">Đánh giá sự khác biệt mang lại giá trị cạnh tranh thực tế so với các phần mềm quản lý bán hàng thông dụng.</p>
+      </div>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 25%">Tiêu Chí Quản Trị</th>
+              <th class="highlight-cell" style="width: 37.5%">Hệ Thống Bella Spa</th>
+              <th style="width: 37.5%">Các Đối Thủ Thông Dụng (KiotViet, Myspa...)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Bảo Mật Dữ Liệu Khách Nhượng Quyền</strong></td>
+              <td class="highlight-cell"><span class="check-icon">✔ Cực kỳ an toàn.</span> Phân tách và khóa dữ liệu bằng cơ chế nền tảng cốt lõi sâu bên trong. Tuyệt đối không thể nhìn thấy chéo dữ liệu.</td>
+              <td><span class="warn-icon">▲ Rủi ro rò rỉ.</span> Thường chỉ ẩn đi trên màn hình hiển thị, dễ bị khai thác nếu hệ thống xảy ra lỗi lọc dữ liệu.</td>
+            </tr>
+            <tr>
+              <td><strong>Sổ Cái Kế Toán Dành Cho Chuỗi</strong></td>
+              <td class="highlight-cell"><span class="check-icon">✔ Tự động & Kép.</span> Tiền ra - tiền vào được hạch toán minh bạch, báo cáo lợi nhuận chính xác tuyệt đối.</td>
+              <td><span class="cross-icon">✘ Thô sơ.</span> Chỉ ghi chép thu chi đơn giản như sổ tay, dễ thất thoát và khó đối soát khi có nhầm lẫn.</td>
+            </tr>
+            <tr>
+              <td><strong>Kiểm Soát Trùng Lịch Vật Lý</strong></td>
+              <td class="highlight-cell"><span class="check-icon">✔ Kiểm tra tại nguồn.</span> Hệ thống từ chối mọi yêu cầu đặt trùng phòng/máy móc ngay lập tức trước khi xác nhận lưu.</td>
+              <td><span class="warn-icon">▲ Chậm trễ.</span> Thường xử lý chậm, dễ gây tình trạng 2 khách hàng đến cùng lúc giành chung một máy trị liệu.</td>
+            </tr>
+            <tr>
+              <td><strong>Hoạt Động Không Cần Mạng (Offline)</strong></td>
+              <td class="highlight-cell"><span class="check-icon">✔ Ổn định liên tục.</span> Nhân viên vẫn thao tác, ghi nhận công việc tại giường bệnh bình thường kể cả khi mất wifi.</td>
+              <td><span class="cross-icon">✘ Đóng băng thao tác.</span> Mọi hoạt động tê liệt, phải ghi giấy tay và nhập lại sau khi có mạng, dễ sai sót.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="content-section">
+      <div class="section-header">
+        <h2 class="section-title"><span class="number">3</span> Lộ Trình Nâng Cấp Tương Lai</h2>
+        <p class="section-desc">Các bước tiếp theo nhằm đưa hệ thống trở thành nền tảng quản trị thẩm mỹ viện cao cấp nhất.</p>
+      </div>
+
+      <div class="roadmap">
+        <div class="roadmap-item">
+          <div class="roadmap-dot"></div>
+          <span class="roadmap-phase">Giai đoạn 1</span>
+          <h3 class="roadmap-title">Bảng Lịch Trình Thông Minh (Kéo & Thả)</h3>
+          <p class="roadmap-desc">
+            Xây dựng bảng hiển thị trực quan toàn bộ các phòng và máy móc trong ngày. Lễ tân chỉ việc dùng chuột "kéo" khách hàng thả vào giường trống, giúp thao tác đặt lịch nhanh gấp 3 lần và tránh nhầm lẫn.
+          </p>
+        </div>
+
+        <div class="roadmap-item">
+          <div class="roadmap-dot"></div>
+          <span class="roadmap-phase">Giai đoạn 2</span>
+          <h3 class="roadmap-title">Trợ Lý Ảo Kiểm Duyệt Hình Ảnh</h3>
+          <p class="roadmap-desc">
+            Hệ thống sẽ tự động quét các ảnh "Trước/Sau" mà nhân viên chụp cho khách. Trợ lý ảo nhận diện ảnh chụp có đủ độ sáng, đúng góc độ hay không, đảm bảo chất lượng hình ảnh hồ sơ khách hàng luôn ở mức cao nhất.
+          </p>
+        </div>
+
+        <div class="roadmap-item">
+          <div class="roadmap-dot"></div>
+          <span class="roadmap-phase">Giai đoạn 3</span>
+          <h3 class="roadmap-title">Hạch Toán Phí Nhượng Quyền Tự Động</h3>
+          <p class="roadmap-desc">
+            Tự động tính toán các khoản chiết khấu, phần trăm hoa hồng từ chi nhánh nhượng quyền gửi về công ty mẹ theo hợp đồng đã cài đặt. Rút ngắn thời gian chốt sổ kế toán cuối tháng từ vài ngày xuống chỉ còn vài phút.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <p>Báo cáo năng lực hệ thống được lập bởi AI Phân Tích Cấu Trúc Phần Mềm</p>
+      <p style="margin-top: 5px;">Tập đoàn Công Nghệ Bella Spa & Wellness</p>
+    </footer>
+  </div>
+</body>
+</html>

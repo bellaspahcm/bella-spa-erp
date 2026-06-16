@@ -1,0 +1,1635 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Báo Cáo Đánh Giá & So Sánh Toàn Diện: Bella ERP vs Beauty ERP</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-dark: #07090e;
+      --bg-card: rgba(17, 22, 34, 0.7);
+      --bg-card-hover: rgba(26, 32, 48, 0.8);
+      --border-glow: rgba(255, 133, 162, 0.15);
+      --border-color: rgba(255, 255, 255, 0.06);
+      
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-dark: #64748b;
+      
+      /* Colors for Bella ERP (Pastel Rose / Wine) */
+      --bella-primary: #ff85a2;
+      --bella-primary-glow: rgba(255, 133, 162, 0.4);
+      --bella-wine: #881337;
+      --bella-wine-dark: #4c0519;
+      --bella-wine-light: rgba(136, 19, 55, 0.15);
+      
+      /* Colors for Beauty ERP / Velora (Jade Green / Emerald) */
+      --beauty-primary: #10b981;
+      --beauty-primary-glow: rgba(16, 185, 129, 0.4);
+      --beauty-emerald-dark: #064e3b;
+      --beauty-emerald-light: rgba(16, 185, 129, 0.1);
+      
+      /* Status Colors */
+      --color-excellent: #34d399;
+      --color-good: #38bdf8;
+      --color-fair: #fbbf24;
+      --color-weak: #fb7185;
+      
+      --font-display: 'Plus Jakarta Sans', sans-serif;
+      --font-body: 'Be Vietnam Pro', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(circle at 10% 20%, rgba(255, 133, 162, 0.05) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.04) 0%, transparent 40%),
+        radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.03) 0%, transparent 50%);
+      color: var(--text-main);
+      line-height: 1.75;
+      font-size: 15px;
+      padding: 40px 20px;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .main-container {
+      max-width: 1120px;
+      width: 100%;
+      background: rgba(10, 13, 20, 0.85);
+      border: 1px solid var(--border-color);
+      border-radius: 28px;
+      padding: 40px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(20px);
+    }
+
+    /* ========== HEADER SECTION ========== */
+    header {
+      position: relative;
+      background: linear-gradient(135deg, #18050c 0%, #061511 100%);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 20px;
+      padding: 40px;
+      margin-bottom: 30px;
+      overflow: hidden;
+    }
+
+    header::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: linear-gradient(90deg, var(--bella-primary) 0%, var(--beauty-primary) 100%);
+    }
+
+    .header-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 99px;
+      padding: 5px 14px;
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+    }
+
+    .header-badge span.dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--bella-primary);
+      box-shadow: 0 0 8px var(--bella-primary);
+      animation: pulse 2s infinite;
+    }
+
+    header h1 {
+      font-family: var(--font-display);
+      font-size: clamp(24px, 4.5vw, 36px);
+      font-weight: 800;
+      line-height: 1.25;
+      margin-bottom: 12px;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #ffffff 40%, #ffd0dc 70%, #d1fae5 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .header-subtitle {
+      font-size: 15px;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+      max-width: 800px;
+    }
+
+    .header-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .meta-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .meta-badge strong {
+      color: #fff;
+    }
+
+    /* ========== TABS SYSTEM ========== */
+    .tabs-nav {
+      display: flex;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-color);
+      padding: 6px;
+      border-radius: 14px;
+      margin-bottom: 30px;
+      overflow-x: auto;
+    }
+
+    .tab-btn {
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: transparent;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 10px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.25s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tab-btn:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .tab-btn.active {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.08);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
+    }
+
+    .tab-btn.active.bella-tab {
+      border-left: 2px solid var(--bella-primary);
+      background: rgba(255, 133, 162, 0.06);
+    }
+
+    .tab-btn.active.beauty-tab {
+      border-left: 2px solid var(--beauty-primary);
+      background: rgba(16, 185, 129, 0.06);
+    }
+
+    .tab-content {
+      display: none;
+      animation: fadeIn 0.4s ease forwards;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ========== OVERVIEW SCORECARD ========== */
+    .scorecard-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 40px;
+    }
+
+    @media (max-width: 768px) {
+      .scorecard-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .score-card {
+      position: relative;
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 32px;
+      display: flex;
+      gap: 24px;
+      align-items: center;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .score-card.bella {
+      background: linear-gradient(135deg, rgba(136, 19, 55, 0.12) 0%, rgba(10, 13, 20, 0.9) 100%);
+      border-color: rgba(255, 133, 162, 0.15);
+    }
+    .score-card.bella:hover {
+      border-color: rgba(255, 133, 162, 0.3);
+      box-shadow: 0 10px 30px -10px rgba(255, 133, 162, 0.15);
+    }
+
+    .score-card.beauty {
+      background: linear-gradient(135deg, rgba(6, 78, 59, 0.1) 0%, rgba(10, 13, 20, 0.9) 100%);
+      border-color: rgba(16, 185, 129, 0.15);
+    }
+    .score-card.beauty:hover {
+      border-color: rgba(16, 185, 129, 0.3);
+      box-shadow: 0 10px 30px -10px rgba(16, 185, 129, 0.15);
+    }
+
+    .score-ring-container {
+      position: relative;
+      width: 110px;
+      height: 110px;
+      flex-shrink: 0;
+    }
+
+    .score-ring-svg {
+      transform: rotate(-90deg);
+      width: 100%;
+      height: 100%;
+    }
+
+    .score-ring-bg {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.04);
+      stroke-width: 8;
+    }
+
+    .score-ring-fill {
+      fill: none;
+      stroke-width: 8;
+      stroke-linecap: round;
+      stroke-dasharray: 282.6; /* 2 * PI * 45 */
+      transition: stroke-dashoffset 1s ease;
+    }
+
+    .bella .score-ring-fill {
+      stroke: var(--bella-primary);
+      stroke-dashoffset: 25.43; /* (1 - 0.91) * 282.6 */
+    }
+
+    .beauty .score-ring-fill {
+      stroke: var(--beauty-primary);
+      stroke-dashoffset: 155.43; /* (1 - 0.45) * 282.6 */
+    }
+
+    .score-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+
+    .score-value {
+      font-family: var(--font-display);
+      font-size: 26px;
+      font-weight: 800;
+      line-height: 1;
+      color: #fff;
+    }
+
+    .score-max {
+      font-size: 10px;
+      color: var(--text-dark);
+      display: block;
+      margin-top: 2px;
+      font-weight: 600;
+    }
+
+    .score-info {
+      flex-grow: 1;
+    }
+
+    .score-badge {
+      display: inline-flex;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+    }
+
+    .bella .score-badge {
+      background: rgba(255, 133, 162, 0.12);
+      color: var(--bella-primary);
+      border: 1px solid rgba(255, 133, 162, 0.2);
+    }
+
+    .beauty .score-badge {
+      background: rgba(16, 185, 129, 0.12);
+      color: var(--beauty-primary);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    .score-card-title {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+
+    .score-card-desc {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* ========== SECTION COMMON STYLES ========== */
+    .section-title-wrap {
+      margin-bottom: 24px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .section-title {
+      font-family: var(--font-display);
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-title span.number {
+      font-size: 13px;
+      color: var(--text-dark);
+      border: 1px solid var(--border-color);
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+    }
+
+    .section-desc {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+    }
+
+    /* ========== CARDS GRID ========== */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 24px;
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .feature-card:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(255, 255, 255, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .feature-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+
+    .feature-card-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .bella-theme .feature-card-icon {
+      background: var(--bella-wine-light);
+      color: var(--bella-primary);
+    }
+
+    .beauty-theme .feature-card-icon {
+      background: var(--beauty-emerald-light);
+      color: var(--beauty-primary);
+    }
+
+    .feature-score-badge {
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+
+    .score-excellent { background: rgba(52, 211, 153, 0.1); color: var(--color-excellent); }
+    .score-good { background: rgba(56, 189, 248, 0.1); color: var(--color-good); }
+    .score-fair { background: rgba(251, 191, 36, 0.1); color: var(--color-fair); }
+    .score-weak { background: rgba(251, 113, 133, 0.1); color: var(--color-weak); }
+
+    .feature-card h3 {
+      font-family: var(--font-display);
+      font-size: 15.5px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    .feature-card p {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 16px;
+      flex-grow: 1;
+    }
+
+    .tech-tag-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      border-top: 1px solid var(--border-color);
+      padding-top: 12px;
+    }
+
+    .tech-tag {
+      font-family: var(--font-display);
+      font-size: 10.5px;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      padding: 2px 8px;
+      color: var(--text-muted);
+    }
+
+    /* ========== COMPARE TABLE ========== */
+    .table-container {
+      overflow-x: auto;
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      background: rgba(10, 13, 20, 0.4);
+      margin-bottom: 40px;
+    }
+
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+    }
+
+    .compare-table th {
+      background: rgba(255, 255, 255, 0.02);
+      color: #fff;
+      font-family: var(--font-display);
+      font-weight: 700;
+      padding: 16px 20px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .compare-table td {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: top;
+      color: var(--text-muted);
+    }
+
+    .compare-table tr:hover td {
+      background: rgba(255, 255, 255, 0.01);
+    }
+
+    .compare-table .crit {
+      font-weight: 600;
+      color: #fff;
+      background: rgba(255, 255, 255, 0.005);
+      width: 20%;
+    }
+
+    .compare-table .col-bella {
+      width: 40%;
+      border-left: 1px solid var(--border-color);
+    }
+
+    .compare-table .col-beauty {
+      width: 40%;
+      border-left: 1px solid var(--border-color);
+    }
+
+    .compare-table strong.highlight-bella {
+      color: var(--bella-primary);
+    }
+
+    .compare-table strong.highlight-beauty {
+      color: var(--beauty-primary);
+    }
+
+    .check { color: var(--color-excellent); font-weight: bold; }
+    .cross { color: var(--color-weak); font-weight: bold; }
+    .warning-sign { color: var(--color-fair); font-weight: bold; }
+
+    /* ========== COMPETITOR BOX ========== */
+    .competitor-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      margin-bottom: 40px;
+    }
+
+    .comp-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 20px;
+      position: relative;
+    }
+
+    .comp-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .comp-name {
+      font-family: var(--font-display);
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .comp-score {
+      font-family: var(--font-display);
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--bella-primary);
+    }
+
+    .comp-bullet-list {
+      list-style: none;
+      font-size: 12.5px;
+      color: var(--text-muted);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .comp-bullet-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+    }
+
+    .comp-bullet-list li::before {
+      content: '•';
+      color: var(--bella-primary);
+      font-weight: bold;
+    }
+
+    /* ========== RADAR/BAR SVG CHART ========== */
+    .chart-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 30px;
+      margin-bottom: 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .chart-title {
+      font-family: var(--font-display);
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .bar-chart {
+      width: 100%;
+      max-width: 800px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .chart-row {
+      display: grid;
+      grid-template-columns: 180px 1fr;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .chart-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: #fff;
+      text-align: right;
+    }
+
+    .chart-bars {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .bar-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .bar-fill {
+      height: 8px;
+      border-radius: 99px;
+      transition: width 1s ease;
+    }
+
+    .bar-fill.bella-bar {
+      background: linear-gradient(90deg, var(--bella-wine), var(--bella-primary));
+      box-shadow: 0 0 10px rgba(255, 133, 162, 0.2);
+    }
+
+    .bar-fill.beauty-bar {
+      background: linear-gradient(90deg, var(--beauty-emerald-dark), var(--beauty-primary));
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
+    }
+
+    .bar-val {
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      width: 24px;
+    }
+
+    .chart-legend {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      margin-top: 24px;
+      font-size: 12.5px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-muted);
+    }
+
+    .legend-color {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+    }
+
+    .legend-color.bella-color { background: var(--bella-primary); }
+    .legend-color.beauty-color { background: var(--beauty-primary); }
+
+    /* ========== TIMELINE / ROADMAP ========== */
+    .timeline {
+      position: relative;
+      padding-left: 24px;
+      margin-bottom: 40px;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 7px;
+      top: 6px;
+      bottom: 0;
+      width: 2px;
+      background: linear-gradient(180deg, var(--bella-primary) 0%, var(--beauty-primary) 100%);
+    }
+
+    .timeline-item {
+      position: relative;
+      margin-bottom: 30px;
+    }
+
+    .timeline-dot {
+      position: absolute;
+      left: -21px;
+      top: 5px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 2px solid var(--bg-dark);
+    }
+
+    .bella-dot { background-color: var(--bella-primary); box-shadow: 0 0 8px var(--bella-primary); }
+    .beauty-dot { background-color: var(--beauty-primary); box-shadow: 0 0 8px var(--beauty-primary); }
+
+    .timeline-phase {
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .bella-phase { color: var(--bella-primary); }
+    .beauty-phase { color: var(--beauty-primary); }
+
+    .timeline-title {
+      font-family: var(--font-display);
+      font-size: 14.5px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    .timeline-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* ========== callout boxes ========== */
+    .callout-box {
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 30px;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+
+    .callout-box.info {
+      background: rgba(56, 189, 248, 0.04);
+      border: 1px solid rgba(56, 189, 248, 0.15);
+    }
+
+    .callout-box.warn {
+      background: rgba(251, 191, 36, 0.04);
+      border: 1px solid rgba(251, 191, 36, 0.15);
+    }
+
+    .callout-box.danger {
+      background: rgba(251, 113, 133, 0.04);
+      border: 1px solid rgba(251, 113, 133, 0.15);
+    }
+
+    .callout-icon {
+      font-size: 20px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .callout-box.info .callout-icon { color: var(--color-good); }
+    .callout-box.warn .callout-icon { color: var(--color-fair); }
+    .callout-box.danger .callout-icon { color: var(--color-weak); }
+
+    .callout-content h4 {
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+
+    .callout-content p {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* ========== FOOTER ========== */
+    footer {
+      margin-top: 60px;
+      border-top: 1px solid var(--border-color);
+      padding-top: 30px;
+      text-align: center;
+      font-size: 12.5px;
+      color: var(--text-dark);
+    }
+
+    footer strong {
+      color: var(--text-muted);
+    }
+
+    /* ========== ANIMATIONS ========== */
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.2); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="main-container">
+
+    <!-- ========== HEADER ========== -->
+    <header>
+      <div class="header-badge">
+        <span class="dot"></span> Đánh giá kiến trúc chuỗi & so sánh
+      </div>
+      <h1>Báo Cáo Đánh Giá & So Sánh Toàn Diện: Bella ERP vs Beauty ERP</h1>
+      <p class="header-subtitle">
+        Phân tích chuyên sâu hai codebase đang phát triển trong dự án spa: Bella Spa ERP (Postpartum Care & Beauty) và Beauty Spa ERP (Velora - Monolith Blueprint). Đánh giá tính năng, độ tin cậy, an toàn thông tin, kiểm thử và định vị cạnh tranh tại Việt Nam.
+      </p>
+      
+      <div class="header-meta">
+        <div class="meta-badge">📅 Ngày đánh giá: <strong>12/06/2026</strong></div>
+        <div class="meta-badge">💻 Môi trường: <strong>Local Audit Workspace</strong></div>
+        <div class="meta-badge">🔍 Người thực hiện: <strong>Antigravity AI Architect</strong></div>
+      </div>
+    </header>
+
+    <!-- ========== OVERVIEW SCORECARD ========== -->
+    <section class="scorecard-grid">
+      
+      <!-- BELLA ERP -->
+      <div class="score-card bella">
+        <div class="score-ring-container">
+          <svg class="score-ring-svg" viewBox="0 0 100 100">
+            <circle class="score-ring-bg" cx="50" cy="50" r="45" />
+            <circle class="score-ring-fill" cx="50" cy="50" r="45" />
+          </svg>
+          <div class="score-text">
+            <span class="score-value">91</span>
+            <span class="score-max">/100</span>
+          </div>
+        </div>
+        <div class="score-info">
+          <span class="score-badge">Production Live</span>
+          <h2 class="score-card-title">Bella Spa ERP</h2>
+          <p class="score-card-desc">
+            Hệ thống ERP hoàn chỉnh, phục vụ chuỗi nhượng quyền. Bảo mật RLS tối đa, tích hợp kế toán kép TT133 tự động, 1194 test cases pass, tích hợp Trợ lý ảo AI COO.
+          </p>
+        </div>
+      </div>
+
+      <!-- BEAUTY ERP -->
+      <div class="score-card beauty">
+        <div class="score-ring-container">
+          <svg class="score-ring-svg" viewBox="0 0 100 100">
+            <circle class="score-ring-bg" cx="50" cy="50" r="45" />
+            <circle class="score-ring-fill" cx="50" cy="50" r="45" />
+          </svg>
+          <div class="score-text">
+            <span class="score-value">45</span>
+            <span class="score-max">/100</span>
+          </div>
+        </div>
+        <div class="score-info">
+          <span class="score-badge">UI Mockup & Plan</span>
+          <h2 class="score-card-title">Beauty ERP (Velora)</h2>
+          <p class="score-card-desc">
+            Bản mô phỏng tương tác cao cấp (High-Fi UI Demo) đi kèm bản thiết kế kiến trúc Modular Monolith. Chưa triển khai mã nguồn backend, kết nối cơ sở dữ liệu và kiểm thử.
+          </p>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ========== TABS BUTTONS ========== -->
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="openTab(event, 'tab-scorecard')">📊 Bảng Điểm & Tổng Quan</button>
+      <button class="tab-btn bella-tab" onclick="openTab(event, 'tab-bella')">🍷 Phân Tích Bella ERP</button>
+      <button class="tab-btn beauty-tab" onclick="openTab(event, 'tab-beauty')">🌿 Phân Tích Beauty ERP</button>
+      <button class="tab-btn" onclick="openTab(event, 'tab-competitors')">⚖️ So Sánh Đối Thủ VN</button>
+      <button class="tab-btn" onclick="openTab(event, 'tab-roadmap')">🚀 Khuyến Nghị & Lộ Trình</button>
+    </div>
+
+    <!-- ==================== TAB: BẢNG ĐIỂM & TỔNG QUAN ==================== -->
+    <div id="tab-scorecard" class="tab-content active">
+      
+      <div class="section-title-wrap">
+        <div class="section-title">
+          <span class="number">01</span> Bảng Điểm So Sánh Từng Phân Hệ
+        </div>
+        <span style="font-size:12px; color:var(--text-dark);">Trọng số dựa trên quy mô vận hành thực tế</span>
+      </div>
+
+      <p class="section-desc">
+        Bella ERP và Beauty ERP (được đặt tên là Velora Spa trên demo) đại diện cho hai trạng thái phát triển khác nhau: một bên là sản phẩm thương mại đã tối ưu hóa qua hàng chục giai đoạn phát triển và một bên là dự án khung thiết kế với giao diện trình diễn.
+      </p>
+
+      <div class="chart-container">
+        <div class="chart-title">Biểu Đồ So Sánh Chỉ Số Đánh Giá (Điểm 100)</div>
+        <div class="bar-chart">
+          
+          <div class="chart-row">
+            <div class="chart-label">Hoàn thiện tính năng (15%)</div>
+            <div class="chart-bars">
+              <div class="bar-wrapper">
+                <div class="bar-fill bella-bar" style="width: 92%;"></div>
+                <span class="bar-val">92</span>
+              </div>
+              <div class="bar-wrapper">
+                <div class="bar-fill beauty-bar" style="width: 40%;"></div>
+                <span class="bar-val">40</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="chart-row">
+            <div class="chart-label">Bảo mật & RLS (12%)</div>
+            <div class="chart-bars">
+              <div class="bar-wrapper">
+                <div class="bar-fill bella-bar" style="width: 92%;"></div>
+                <span class="bar-val">92</span>
+              </div>
+              <div class="bar-wrapper">
+                <div class="bar-fill beauty-bar" style="width: 20%;"></div>
+                <span class="bar-val">20</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="chart-row">
+            <div class="chart-label">Độ chính xác tài chính (12%)</div>
+            <div class="chart-bars">
+              <div class="bar-wrapper">
+                <div class="bar-fill bella-bar" style="width: 95%;"></div>
+                <span class="bar-val">95</span>
+              </div>
+              <div class="bar-wrapper">
+                <div class="bar-fill beauty-bar" style="width: 30%;"></div>
+                <span class="bar-val">30</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="chart-row">
+            <div class="chart-label">Kiểm thử & QA (10%)</div>
+            <div class="chart-bars">
+              <div class="bar-wrapper">
+                <div class="bar-fill bella-bar" style="width: 95%;"></div>
+                <span class="bar-val">95</span>
+              </div>
+              <div class="bar-wrapper">
+                <div class="bar-fill beauty-bar" style="width: 0%;"></div>
+                <span class="bar-val">0</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="chart-row">
+            <div class="chart-label">Chất lượng mã nguồn (10%)</div>
+            <div class="chart-bars">
+              <div class="bar-wrapper">
+                <div class="bar-fill bella-bar" style="width: 82%;"></div>
+                <span class="bar-val">82</span>
+              </div>
+              <div class="bar-wrapper">
+                <div class="bar-fill beauty-bar" style="width: 50%;"></div>
+                <span class="bar-val">50</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="chart-row">
+            <div class="chart-label">Giao diện UX/UI (8%)</div>
+            <div class="chart-bars">
+              <div class="bar-wrapper">
+                <div class="bar-fill bella-bar" style="width: 83%;"></div>
+                <span class="bar-val">83</span>
+              </div>
+              <div class="bar-wrapper">
+                <div class="bar-fill beauty-bar" style="width: 88%;"></div>
+                <span class="bar-val">88</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="chart-row">
+            <div class="chart-label">Khả năng bảo trì (8%)</div>
+            <div class="chart-bars">
+              <div class="bar-wrapper">
+                <div class="bar-fill bella-bar" style="width: 85%;"></div>
+                <span class="bar-val">85</span>
+              </div>
+              <div class="bar-wrapper">
+                <div class="bar-fill beauty-bar" style="width: 45%;"></div>
+                <span class="bar-val">45</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+        <div class="chart-legend">
+          <div class="legend-item"><span class="legend-color bella-color"></span> Bella Spa ERP</div>
+          <div class="legend-item"><span class="legend-color beauty-color"></span> Beauty ERP (Velora Demo)</div>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th>Tiêu chí đánh giá</th>
+              <th>Trọng số</th>
+              <th style="color: var(--bella-primary);">Bella Spa ERP</th>
+              <th style="color: var(--beauty-primary);">Beauty ERP (Velora)</th>
+              <th>Nhận định so sánh cốt lõi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="crit">Hoàn thiện nghiệp vụ</td>
+              <td>15%</td>
+              <td><strong>92/100</strong> <span class="check">✓</span></td>
+              <td><strong>40/100</strong> <span class="warning-sign">⚡</span></td>
+              <td>Bella có chốt ca, trừ kho tự động, tính lương KTV nâng cao và AI hỗ trợ. Beauty chỉ mô phỏng các nút bấm tĩnh bằng JS trên giao diện.</td>
+            </tr>
+            <tr>
+              <td class="crit">Bảo mật thông tin</td>
+              <td>12%</td>
+              <td><strong>92/100</strong> <span class="check">✓</span></td>
+              <td><strong>20/100</strong> <span class="cross">✗</span></td>
+              <td>Bella bật RLS PostgreSQL toàn diện, mã hóa token Zalo AES-256, rate limit API. Beauty chưa xây dựng Auth và Database thực sự.</td>
+            </tr>
+            <tr>
+              <td class="crit">Chính xác tài chính</td>
+              <td>12%</td>
+              <td><strong>95/100</strong> <span class="check">✓</span></td>
+              <td><strong>30/100</strong> <span class="warning-sign">⚡</span></td>
+              <td>Bella tự động kết chuyển doanh thu hoãn lại, hạch toán kép TT133 qua Outbox, chốt sổ tháng. Beauty tính toán đơn giản phía client.</td>
+            </tr>
+            <tr>
+              <td class="crit">Kiểm thử tự động</td>
+              <td>10%</td>
+              <td><strong>95/100</strong> <span class="check">✓</span></td>
+              <td><strong>0/100</strong> <span class="cross">✗</span></td>
+              <td>Bella sở hữu 1194 Jest unit tests và Playwright E2E tests bảo vệ regression. Beauty hoàn toàn chưa có test.</td>
+            </tr>
+            <tr>
+              <td class="crit">Khả năng bảo trì</td>
+              <td>8%</td>
+              <td><strong>85/100</strong> <span class="check">✓</span></td>
+              <td><strong>45/100</strong> <span class="warning-sign">⚡</span></td>
+              <td>Bella đã refactor bóc tách UI và logic, an toàn khi nâng cấp. Beauty mới có bản thiết kế Modular Monolith, cần lập trình backend từ đầu.</td>
+            </tr>
+            <tr>
+              <td class="crit">Thiết kế UI/UX</td>
+              <td>8%</td>
+              <td><strong>83/100</strong> <span class="check">✓</span></td>
+              <td><strong>88/100</strong> <span class="check">✓</span></td>
+              <td>Bella dùng tông hồng pastel cho dịch vụ mẹ và bé. Beauty (Velora) dùng màu xanh ngọc sang trọng, micro-interactions rất mượt mà.</td>
+            </tr>
+            <tr style="background: rgba(255,255,255,0.02); font-weight: 700;">
+              <td class="crit" style="color: #fff;">ĐIỂM TỔNG THỂ</td>
+              <td>100%</td>
+              <td style="color: var(--bella-primary);">91 / 100 (Hạng A)</td>
+              <td style="color: var(--beauty-primary);">45 / 100 (Hạng D)</td>
+              <td style="color: #fff;">Bella ERP đã ở mức sẵn sàng sản xuất cho chuỗi lớn. Beauty ERP ở giai đoạn Prototype thương mại hóa bán hàng.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout-box info">
+        <span class="callout-icon">ℹ</span>
+        <div class="callout-content">
+          <h4>Về Bản Đồ Cơ Sở Dữ Liệu Lịch Sử</h4>
+          <p>
+            Lịch sử chấm điểm của Bella ERP cho thấy điểm số đã tăng trưởng vượt bậc từ <strong>85/100</strong> lên <strong>91/100</strong> sau đợt nâng cấp ngày 09/06/2026 nhờ việc tích hợp cấu hình phân lập Tenant đa phân hệ ngành Beauty Spa mới, sửa lỗi rò rỉ side-effects tại KTV Portal và pass toàn bộ suite 1194 test cases nghiêm ngặt.
+          </p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ==================== TAB: BELLA ERP DEEP DIVE ==================== -->
+    <div id="tab-bella" class="tab-content">
+      
+      <div class="section-title-wrap">
+        <div class="section-title">
+          <span class="number">02</span> Phân Tích Mã Nguồn & Chức Năng Bella Spa ERP
+        </div>
+        <span class="score-excellent" style="font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px; text-transform: uppercase;">Production Ready</span>
+      </div>
+
+      <p class="section-desc">
+        Bella Spa ERP là phân hệ điều hành hoàn chỉnh được viết bằng <strong>Next.js 16 + React 19</strong> và sử dụng hệ quản trị cơ sở dữ liệu đám mây <strong>Supabase (PostgreSQL 15)</strong>. Dự án được thiết kế chuyên biệt cho mô hình chuỗi spa trị liệu mẹ và bé cao cấp, hỗ trợ cơ chế đa chi nhánh (multi-tenant) cách ly tuyệt đối dữ liệu nhượng quyền.
+      </p>
+
+      <div class="cards-grid bella-theme">
+        
+        <!-- SECURITY -->
+        <div class="feature-card">
+          <div class="feature-card-header">
+            <div class="feature-card-icon">🛡️</div>
+            <span class="feature-score-badge score-excellent">92/100</span>
+          </div>
+          <h3>An Ninh Bảo Mật & Cách Ly</h3>
+          <p>
+            Kích hoạt Row-Level Security (RLS) ở mức cơ sở dữ liệu trên tất cả các bảng nhạy cảm như customers, users, và salary_records. Sử dụng các hàm trung gian có quyền quản trị tối cao (SECURITY DEFINER) để triệt tiêu lỗi vòng lặp đệ quy trong SQL. Tích hợp thuật toán Token Bucket giới hạn tần suất đặt lịch (5 yêu cầu/10 phút) trên IP.
+          </p>
+          <div class="tech-tag-list">
+            <span class="tech-tag">Supabase RLS</span>
+            <span class="tech-tag">Security Definer</span>
+            <span class="tech-tag">AES-256</span>
+            <span class="tech-tag">Rate Limiter</span>
+          </div>
+        </div>
+
+        <!-- TRANSACTION INTEGRITY -->
+        <div class="feature-card">
+          <div class="feature-card-header">
+            <div class="feature-card-icon">⚖️</div>
+            <span class="feature-score-badge score-excellent">95/100</span>
+          </div>
+          <h3>Toàn Vẹn Tài Chính & Rollback</h3>
+          <p>
+            Quy trình hoàn thành ca trị liệu (Session Completion) chốt công KTV, tự động trừ kho nguyên vật liệu theo định mức kỹ thuật (BOM), tính hoa hồng tức thời và tạo hàng đợi kế toán kép được đóng gói trong một transaction-safe engine. Khi phát sinh lỗi ở bất kỳ bước nào, hệ thống tự động hoàn tác (Restock & Rollback) chính xác 100%.
+          </p>
+          <div class="tech-tag-list">
+            <span class="tech-tag">BOM Engine</span>
+            <span class="tech-tag">Compensating Rollback</span>
+            <span class="tech-tag">Outbox Pattern</span>
+            <span class="tech-tag">TT133 Ledger</span>
+          </div>
+        </div>
+
+        <!-- OFFLINE FIRST -->
+        <div class="feature-card">
+          <div class="feature-card-header">
+            <div class="feature-card-icon">📡</div>
+            <span class="feature-score-badge score-good">90/100</span>
+          </div>
+          <h3>Đồng Bộ Ngoại Tuyến (Offline)</h3>
+          <p>
+            Phân hệ di động cho Kỹ thuật viên (KTV) sử dụng cơ sở dữ liệu IndexedDB cục bộ qua thư viện Dexie.js. KTV hoàn toàn yên tâm check-in định vị GPS, check-out và báo cáo liệu trình tại nhà khách hàng ngay cả khi mất sóng 4G/3G, dữ liệu tự đồng bộ hóa ngầm khi có mạng trở lại.
+          </p>
+          <div class="tech-tag-list">
+            <span class="tech-tag">IndexedDB</span>
+            <span class="tech-tag">Dexie.js</span>
+            <span class="tech-tag">GPS Off-Grid</span>
+            <span class="tech-tag">Sync Queue</span>
+          </div>
+        </div>
+
+        <!-- AI COO ASSISTANT -->
+        <div class="feature-card">
+          <div class="feature-card-header">
+            <div class="feature-card-icon">🧠</div>
+            <span class="feature-score-badge score-good">88/100</span>
+          </div>
+          <h3>Trợ Lý Ảo Điều Hành AI COO</h3>
+          <p>
+            Tích hợp mô hình ngôn ngữ lớn Gemini 3.5 Flash hoạt động như một Trợ lý Tổng Giám Đốc. Tự động thu thập dữ liệu tài chính P&L, hiệu suất KTV, định mức kho hàng để xuất báo cáo tóm tắt thông minh định kỳ, phát hiện bất thường kế toán và đề xuất các quyết định chiến lược bằng dữ liệu JSON ổn định.
+          </p>
+          <div class="tech-tag-list">
+            <span class="tech-tag">Gemini 3.5 Flash</span>
+            <span class="tech-tag">JSON Mode</span>
+            <span class="tech-tag">Autopilot Cron</span>
+            <span class="tech-tag">Telemetry</span>
+          </div>
+        </div>
+
+        <!-- AUTOMATED TESTING -->
+        <div class="feature-card">
+          <div class="feature-card-header">
+            <div class="feature-card-icon">🧪</div>
+            <span class="feature-score-badge score-excellent">95/100</span>
+          </div>
+          <h3>Bộ Kiểm Thử 1194 Cases Green</h3>
+          <p>
+            Chất lượng mã nguồn được bảo vệ bằng 122 test suites (với 1194 test cases độc lập) chạy tự động. Quy tắc kiểm thử nghiêm ngặt ép buộc kiểm duyệt side-effects tài chính (phải truy vấn bảng lương, bảng kho và đối soát kế toán để so khớp dữ liệu) sau mỗi hành động nghiệp vụ.
+          </p>
+          <div class="tech-tag-list">
+            <span class="tech-tag">Jest Unit Test</span>
+            <span class="tech-tag">Playwright E2E</span>
+            <span class="tech-tag">Coverage 80%+</span>
+            <span class="tech-tag">CI/CD Guard</span>
+          </div>
+        </div>
+
+        <!-- MODULAR ISOLATION -->
+        <div class="feature-card">
+          <div class="feature-card-header">
+            <div class="feature-card-icon">🧱</div>
+            <span class="feature-score-badge score-good">88/100</span>
+          </div>
+          <h3>Đa Phân Hệ Hóa (Multi-Module)</h3>
+          <p>
+            Gần đây hệ thống đã bổ sung cấu hình để tách biệt phạm vi gói dịch vụ giữa phân hệ Chăm sóc em bé (Babycare) và phân hệ Làm đẹp (Beauty Spa). Chặn đứng hành vi đặt lịch sai lệch dịch vụ hoặc truy xuất gói thuộc về chi nhánh nhượng quyền (tenant) khác.
+          </p>
+          <div class="tech-tag-list">
+            <span class="tech-tag">Tenant Isolation</span>
+            <span class="tech-tag">Scope Validator</span>
+            <span class="tech-tag">HQ Admin Guard</span>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="callout-box warn">
+        <span class="callout-icon">⚠️</span>
+        <div class="callout-content">
+          <h4>Vấn Đề Kỹ Thuật Tồn Tại & Khuyến Nghị Nâng Cấp</h4>
+          <p>
+            <strong>Cấu trúc Migration chưa squash:</strong> Cơ sở dữ liệu đang duy trì hàng trăm tệp tin di chuyển SQL nhỏ lẻ (`supabase/migrations/*`). Điều này làm tăng thời gian khởi chạy database và rủi ro mất đồng bộ khi cài đặt hệ thống mới dạng SaaS tự phục vụ. Nên thực hiện Squash Migrations về một tệp tin baseline thống nhất.
+          </p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ==================== TAB: BEAUTY ERP DEEP DIVE ==================== -->
+    <div id="tab-beauty" class="tab-content">
+      
+      <div class="section-title-wrap">
+        <div class="section-title">
+          <span class="number">03</span> Phân Tích Cấu Trúc & Demo Giao Diện Beauty ERP (Velora)
+        </div>
+        <span class="score-fair" style="font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px; text-transform: uppercase;">UI Mockup & Specifications</span>
+      </div>
+
+      <p class="section-desc">
+        Dự án Beauty Spa (có tên hiển thị là Velora Spa ERP) hiện tại là một <strong>bản trình diễn tương tác phía client (Frontend Mockup)</strong>. Dự án chứa một trang `index.html` nặng 42KB cùng tệp `index.css` nặng 12KB, đi kèm cấu trúc thư mục rỗng chuẩn bị cho kiến trúc Modular Monolith (`src/modules/*` với các thư mục con rỗng chứa file `.gitkeep`).
+      </p>
+
+      <div class="cards-grid beauty-theme">
+        
+        <!-- MONOLITH BLUEPRINT -->
+        <div class="feature-card">
+          <div class="feature-card-header">
+            <div class="feature-card-icon">📐</div>
+            <span class="feature-score-badge score-excellent">85/100</span>
+          </div>
+          <h3>Thiết Kế Modular Monolith</h3>
+          <p>
+            Mô tả thiết kế trong `IMPLEMENTATION_PLAN.md` rất khoa học: Mỗi mô-đun (Customers, Appointments, Billing, Inventory, Staff) đóng gói logic nghiệp vụ riêng, chỉ giao tiếp qua Public API (`index.ts`) hoặc bất đồng bộ qua Event Bus nội bộ. Tránh được tình trạng spaghetti code khi dự án phình to.
+          </p>
+          <div class="tech-tag-list">
+            <span class="tech-tag">Modular Boundary</span>
+            <span class="tech-tag">Public API Contracts</span>
+            <span class="tech-tag">Event-Driven</span>
+          </div>
+        </div>
+
+        <!-- HIGH-FI INTERACTIVE DEMO -->
+        <div class="feature-card">
+          <div class="feature-card-header">
+            <div class="feature-card-icon">🎨</div>
+            <span class="feature-score-badge score-excellent">88/100</span>
+          </div>
+          <h3>Giao Diện Jade Green Luxury</h3>
+          <p>
+            Trang demo `index.html` được thiết kế cực kỳ sang trọng với tông màu xanh ngọc chủ đạo, phù hợp phong cách spa làm đẹp/thẩm mỹ cao cấp. Chứa các bảng mô phỏng điều phối lịch làm việc thời gian thực, bảng chốt ca, trừ kho ảo, tính lương và bộ tính giá chiết khấu thành viên thông minh.
+          </p>
+          <div class="tech-tag-list">
+            <span class="tech-tag">Glassmorphism UI</span>
+            <span class="tech-tag">Interactive JS simulator</span>
+            <span class="tech-tag">Pastel Jade Theme</span>
+          </div>
+        </div>
+
+        <!-- RULE ENGINE SPECIFICATIONS -->
+        <div class="feature-card">
+          <div class="feature-card-header">
+            <div class="feature-card-icon">🎛️</div>
+            <span class="feature-score-badge score-good">80/100</span>
+          </div>
+          <h3>Bản Tả Quy Tắc Nghiệp Vụ</h3>
+          <p>
+            Tài liệu dự kiến xây dựng các Rule Engine riêng biệt cho từng mô-đun: Bộ tính giá cuối cùng và kết chuyển doanh thu hoãn lại (`price-calculator.ts`, `revenue-allocator.ts` thuộc billing), Bộ tính hoa hồng KTV (`commission-calculator.ts`), và Bộ tự động trừ kho vật tư (`bom-deductor.ts`).
+          </p>
+          <div class="tech-tag-list">
+            <span class="tech-tag">Rules Domain</span>
+            <span class="tech-tag">BOM Deductor Plan</span>
+            <span class="tech-tag">Deferred Revenue Plan</span>
+          </div>
+        </div>
+
+        <!-- BACKEND IMPLEMENTATION -->
+        <div class="feature-card">
+          <div class="feature-card-header">
+            <div class="feature-card-icon">☁️</div>
+            <span class="feature-score-badge score-weak">15/100</span>
+          </div>
+          <h3>Backend & Database (Chưa Code)</h3>
+          <p>
+            Chưa có mã nguồn kết nối database hoặc API endpoint. Mọi hành động tương tác trên giao diện demo (hoàn thành ca, check-in, tính tiền) đều được mô phỏng bằng logic JavaScript ghi đè tạm thời vào các biến cục bộ của trang web, tải lại trang sẽ bị mất dữ liệu.
+          </p>
+          <div class="tech-tag-list">
+            <span class="tech-tag">Unimplemented API</span>
+            <span class="tech-tag">No DB Schema</span>
+            <span class="tech-tag">No Auth Middleware</span>
+          </div>
+        </div>
+
+        <!-- SECURITY IMPLEMENTATION -->
+        <div class="feature-card">
+          <div class="feature-card-header">
+            <div class="feature-card-icon">🔑</div>
+            <span class="feature-score-badge score-weak">20/100</span>
+          </div>
+          <h3>An Ninh Bảo Mật (Chưa Code)</h3>
+          <p>
+            Mặc dù tài liệu đề cập đến ma trận phân quyền dựa trên vai trò (RBAC) cho Admin, Manager, Lễ tân và KTV, mã nguồn hiện tại hoàn toàn không có cơ chế xác thực đăng nhập, không có kiểm tra phân quyền API hay lá chắn chống tấn công mạng.
+          </p>
+          <div class="tech-tag-list">
+            <span class="tech-tag">RBAC Spec Only</span>
+            <span class="tech-tag">No Auth Session</span>
+            <span class="tech-tag">No RLS Policies</span>
+          </div>
+        </div>
+
+        <!-- TESTING IMPLEMENTATION -->
+        <div class="feature-card">
+          <div class="feature-card-header">
+            <div class="feature-card-icon">🛠️</div>
+            <span class="feature-score-badge score-weak">0/100</span>
+          </div>
+          <h3>Kiểm Thử & Đảm Bảo QA (Chưa Có)</h3>
+          <p>
+            Hoàn toàn không có tệp tin hoặc thư mục phục vụ viết kiểm thử tự động (Jest, Cypress, Playwright). Đây là rủi ro cực lớn nếu bắt đầu phát triển mã nguồn mà không thiết lập hạ tầng kiểm thử trước, rất dễ gây lỗi phá vỡ giao diện.
+          </p>
+          <div class="tech-tag-list">
+            <span class="tech-tag">No Unit Tests</span>
+            <span class="tech-tag">No QA Automation</span>
+            <span class="tech-tag">High Regression Risk</span>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="callout-box danger">
+        <span class="callout-icon">🚨</span>
+        <div class="callout-content">
+          <h4>Nhận Định Rủi Ro Cốt Lõi Dự Án Beauty Spa</h4>
+          <p>
+            Dự án Beauty Spa hiện mới chỉ là **cái vỏ giao diện rỗng** kèm một bản thiết kế lý thuyết đẹp. Việc thiếu hoàn toàn hạ tầng kiểm thử tự động và kết nối database thực khiến dự án không thể vận hành thực tế. Cần có kế hoạch kế thừa các module backend của Bella ERP để tiết kiệm thời gian phát triển và đảm bảo an toàn.
+          </p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ==================== TAB: SO SÁNH ĐỐI THỦ VN ==================== -->
+    <div id="tab-competitors" class="tab-content">
+      
+      <div class="section-title-wrap">
+        <div class="section-title">
+          <span class="number">04</span> So Sánh Vị Thế Đối Thủ Tại Thị Trường Việt Nam
+        </div>
+        <span style="font-size:12px; color:var(--text-dark);">Dữ liệu cập nhật quý 2/2026</span>
+      </div>
+
+      <p class="section-desc">
+        Hệ sinh thái phần mềm spa và bán hàng tại Việt Nam rất sôi động với nhiều phân khúc. Dưới đây là bảng đánh giá vị thế của Bella ERP so với các tên tuổi phổ biến nhất hiện nay:
+      </p>
+
+      <div class="competitor-grid">
+        
+        <div class="comp-card">
+          <div class="comp-card-header">
+            <span class="comp-name">KiotViet Spa</span>
+            <span class="comp-score">82/100</span>
+          </div>
+          <ul class="comp-bullet-list">
+            <li>Ưu điểm: Đại trà, dễ dùng, thương hiệu mạnh, quản lý kho tốt.</li>
+            <li>Nhược điểm: Nghiệp vụ spa ở mức cơ bản, thiếu tính lương KTV sâu, không hỗ trợ offline-first cho KTV di động làm tại nhà.</li>
+          </ul>
+        </div>
+
+        <div class="comp-card">
+          <div class="comp-card-header">
+            <span class="comp-name">Myspa / GoSpa</span>
+            <span class="comp-score">80/100</span>
+          </div>
+          <ul class="comp-bullet-list">
+            <li>Ưu điểm: Tính năng đặt lịch hẹn đa dạng, có app thương hiệu riêng.</li>
+            <li>Nhược điểm: Code đóng hoàn toàn, chi phí tích hợp cao, an ninh cấp ứng dụng (dễ rò rỉ dữ liệu nhượng quyền chéo nếu dev lỗi).</li>
+          </ul>
+        </div>
+
+        <div class="comp-card">
+          <div class="comp-card-header">
+            <span class="comp-name">Sapo Spa</span>
+            <span class="comp-score">78/100</span>
+          </div>
+          <ul class="comp-bullet-list">
+            <li>Ưu điểm: Tối ưu bán hàng đa kênh (Omni-channel), kết nối tốt với website bán hàng.</li>
+            <li>Nhược điểm: Thiếu chiều sâu quản lý nhân sự chuỗi, không tự động kế toán kép, không có trợ lý ảo điều hành.</li>
+          </ul>
+        </div>
+
+        <div class="comp-card">
+          <div class="comp-card-header">
+            <span class="comp-name">EasySalon</span>
+            <span class="comp-score">75/100</span>
+          </div>
+          <ul class="comp-bullet-list">
+            <li>Ưu điểm: Giao diện tối ưu rất tốt cho salon tóc, tiệm nails nhỏ, chạy mượt mà trên di động.</li>
+            <li>Nhược điểm: Không thiết kế cho chuỗi nhượng quyền lớn, không có chốt ca kiểm kho tự động theo định mức.</li>
+          </ul>
+        </div>
+
+      </div>
+
+      <div class="table-container">
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th>Tính năng so sánh chéo</th>
+              <th style="color:var(--bella-primary);">Bella Spa ERP</th>
+              <th>KiotViet Spa</th>
+              <th>Myspa</th>
+              <th>SalonHero</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="crit">Mô hình nhượng quyền chuỗi</td>
+              <td><span class="check">✓</span> <strong>Cô lập RLS Database</strong><br><small>Cách ly an toàn 100% dữ liệu chi nhánh.</small></td>
+              <td><span class="warning-sign">⚡</span> Phân quyền cấp app<br><small>Có rủi ro lộ chéo nếu cấu hình sai.</small></td>
+              <td><span class="warning-sign">⚡</span> Phân quyền cấp app<br><small>Dữ liệu dùng chung bảng không cô lập RLS.</small></td>
+              <td><span class="cross">✗</span> Không hỗ trợ chuỗi lớn<br><small>Chỉ phù hợp 1-2 cơ sở độc lập.</small></td>
+            </tr>
+            <tr>
+              <td class="crit">Nghiệp vụ KTV lưu động (tại nhà)</td>
+              <td><span class="check">✓</span> <strong>Offline-First & GPS check-in</strong><br><small>Lưu tạm ngoại tuyến khi mất sóng 4G.</small></td>
+              <td><span class="cross">✗</span> Không hỗ trợ<br><small>Yêu cầu mạng internet liên tục.</small></td>
+              <td><span class="warning-sign">⚡</span> Hỗ trợ cơ bản qua App<br><small>Hay gặp lỗi mất session khi rớt mạng.</small></td>
+              <td><span class="cross">✗</span> Không hỗ trợ<br><small>Chỉ quản lý tại quầy (desktop).</small></td>
+            </tr>
+            <tr>
+              <td class="crit">Toàn vẹn hạch toán tài chính</td>
+              <td><span class="check">✓</span> <strong>Kế toán kép TT133 tự động</strong><br><small>Mọi event đều tạo outbox đối soát.</small></td>
+              <td><span class="warning-sign">⚡</span> Sổ thu chi đơn giản<br><small>Không theo chuẩn hạch toán kép nợ/có.</small></td>
+              <td><span class="warning-sign">⚡</span> Sổ thu chi đơn giản<br><small>Không có Outbox Pattern chống nuốt lỗi.</small></td>
+              <td><span class="cross">✗</span> Không hỗ trợ<br><small>Chỉ quản lý hóa đơn bán hàng.</small></td>
+            </tr>
+            <tr>
+              <td class="crit">Trợ lý ảo AI</td>
+              <td><span class="check">✓</span> <strong>AI COO Assistant (Gemini)</strong><br><small>Đề xuất kinh doanh, kiểm tra bất thường.</small></td>
+              <td><span class="cross">✗</span> Không hỗ trợ</td>
+              <td><span class="cross">✗</span> Không hỗ trợ</td>
+              <td><span class="cross">✗</span> Không hỗ trợ</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout-box info">
+        <span class="callout-icon">💡</span>
+        <div class="callout-content">
+          <h4>Vị Thế Cạnh Tranh Rõ Rệt</h4>
+          <p>
+            Bella Spa ERP không cố gắng cạnh tranh ở phân khúc spa nhỏ hoặc các cửa hàng dịch vụ đơn lẻ (nơi KiotViet và EasySalon đang thống trị nhờ giá rẻ). Bella ERP thiết lập khoảng cách công nghệ vượt trội ở phân khúc **Chuỗi Spa cao cấp và Nhượng quyền thương mại** cần an ninh tuyệt đối, hạch toán tài chính chính xác và tự động hóa vận hành di động.
+          </p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ==================== TAB: KHUYẾN NGHỊ & LỘ TRÌNH ==================== -->
+    <div id="tab-roadmap" class="tab-content">
+      
+      <div class="section-title-wrap">
+        <div class="section-title">
+          <span class="number">05</span> Khuyến Nghị Công Nghệ & Lộ Trình Tiến Hóa
+        </div>
+        <span style="font-size:12px; color:var(--text-dark);">Bản kế hoạch hành động 3 tháng tới</span>
+      </div>
+
+      <p class="section-desc">
+        Dựa trên kết quả phân tích cấu trúc mã nguồn của cả hai dự án, chúng tôi đề xuất lộ trình hành động chia làm 3 giai đoạn để chuẩn hóa và đưa Beauty ERP từ một bản demo tĩnh thành một phân hệ sản xuất hoàn chỉnh kế thừa lõi công nghệ mạnh mẽ của Bella ERP:
+      </p>
+
+      <div class="timeline">
+        
+        <div class="timeline-item">
+          <div class="timeline-dot bella-dot"></div>
+          <span class="timeline-phase bella-phase">Giai Đoạn 1: Chuẩn Hóa Lõi Bella ERP (Tháng 1)</span>
+          <h3 class="timeline-title">Squash Migrations & Harden Security Logs</h3>
+          <p class="timeline-desc">
+            Thực hiện nén (Squash) toàn bộ hơn 100 tệp tin migrations cũ của cơ sở dữ liệu Supabase về một tệp tin baseline duy nhất để tăng tốc độ cài đặt và dễ bảo trì. Thiết lập các cơ chế kiểm tra định kỳ (Production Health Guards) để quét lỗi hạch toán kế toán kép và tự động cảnh báo lên Telegram Admin.
+          </p>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-dot beauty-dot"></div>
+          <span class="timeline-phase beauty-phase">Giai Đoạn 2: Tích Hợp & Kế Thừa Lõi Backend (Tháng 2)</span>
+          <h3 class="timeline-title">Kết Nối Beauty Spa Lên Database Chung</h3>
+          <p class="timeline-desc">
+            Thay vì phát triển backend cho Beauty Spa từ con số 0, hãy sử dụng cơ chế Multi-tenant của Bella ERP. Đăng ký một chi nhánh mới có cờ phân hệ `businessModule = 'beauty_spa'`. Lập trình cấu hình bảng packages, items phù hợp với menu dịch vụ của Beauty Spa. Kế thừa toàn bộ Server Actions và RLS có sẵn của Bella.
+          </p>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-dot beauty-dot"></div>
+          <span class="timeline-phase beauty-phase">Giai Đoạn 3: Hoàn Thiện & Đóng Gói SaaS (Tháng 3)</span>
+          <h3 class="timeline-title">Thương Mại Hóa & Xây Dựng Bộ Kiểm Thử</h3>
+          <p class="timeline-desc">
+            Thiết lập module quản lý hóa đơn (Billing SaaS) để tự động thu phí bản quyền (Royalty rate) từ các chi nhánh nhượng quyền. Sao chép bộ khung kiểm thử của Bella để viết tối thiểu 50 unit tests cho phân hệ Beauty Spa nhằm chặn đứng lỗi hồi quy giao diện khi tùy biến theme xanh ngọc.
+          </p>
+        </div>
+
+      </div>
+
+      <div class="callout-box danger">
+        <span class="callout-icon">🚨</span>
+        <div class="callout-content">
+          <h4>Lưu Ý Quan Trọng Từ Playbook Đa Phân Hệ</h4>
+          <p>
+            Theo quy trình **Industry Module Development Playbook**, việc nhân bản database hoặc tách dự án thành 2 cơ sở dữ liệu riêng biệt cho Bella và Beauty là **sai lầm kiến trúc nghiêm trọng**. Nó sẽ phá vỡ khả năng đối soát tập trung và báo cáo chuỗi của Super Admin. Phải sử dụng chung một lõi cơ sở dữ liệu và phân lập qua chính sách Tenant ID của PostgreSQL.
+          </p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ========== FOOTER ========== -->
+    <footer>
+      <p>Báo cáo phân tích kỹ thuật và định vị thị trường ERP Spa Việt Nam · Phiên bản 4.2</p>
+      <p style="margin-top: 6px;">Được biên soạn bởi <strong>Antigravity Engine</strong> · Bản quyền thuộc về Dự Án Bella Spa ERP</p>
+    </footer>
+
+  </div>
+
+  <!-- TAB SWITCHING LOGIC -->
+  <script>
+    function openTab(evt, tabId) {
+      // Hide all tabs content
+      const tabContents = document.getElementsByClassName("tab-content");
+      for (let i = 0; i < tabContents.length; i++) {
+        tabContents[i].classList.remove("active");
+      }
+
+      // Remove active class from all buttons
+      const tabButtons = document.getElementsByClassName("tab-btn");
+      for (let i = 0; i < tabButtons.length; i++) {
+        tabButtons[i].classList.remove("active");
+        tabButtons[i].classList.remove("bella-tab");
+        tabButtons[i].classList.remove("beauty-tab");
+      }
+
+      // Show current tab and add active class to button
+      document.getElementById(tabId).classList.add("active");
+      evt.currentTarget.classList.add("active");
+      
+      // Add specific tab accents
+      if (tabId === 'tab-bella') {
+        evt.currentTarget.classList.add("bella-tab");
+      } else if (tabId === 'tab-beauty') {
+        evt.currentTarget.classList.add("beauty-tab");
+      }
+    }
+  </script>
+
+</body>
+</html>

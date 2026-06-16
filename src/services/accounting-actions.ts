@@ -4,7 +4,7 @@
 
 export type {
   OutboxEventWithDiagnostics,
-} from './accounting/journals';
+} from '../core/services/accounting/journals';
 
 export type {
   AccountingEventTemplate,
@@ -37,31 +37,31 @@ export type {
   ProfessionalModeReadinessGate,
   ReconciliationRow,
   SalaryReconciliationRow,
-} from './accounting/types';
+} from '../core/services/accounting/types';
 
 export {
   getAccounts, createAccount, updateAccount,
-} from './accounting/coa';
+} from '../core/services/accounting/coa';
 
 export {
   assertLegacyFinanceWriteAllowed,
   getAccountingMode, getLegacyLedgerSyncPreview, getProfessionalModeReadinessGate, updateAccountingMode, syncLegacyToLedger,
-} from './accounting/mode';
+} from '../core/services/accounting/mode';
 
 export {
   getJournalEntries, getJournalEntryDetails, reverseJournalEntry,
   getOutboxEvents, replayOutboxEvent, postManualJournalEntry,
-} from './accounting/journals';
+} from '../core/services/accounting/journals';
 
 export {
   getAccountingPeriods, previewClosingEntries, closePeriodAction, reopenPeriodAction,
-} from './accounting/periods';
+} from '../core/services/accounting/periods';
 
 export {
   getTrialBalanceReport, getIncomeStatementReport, getBalanceSheetReport,
   getAccountLedgerReport, getCashFlowStatementReport,
   getReconciliationReport, getSalaryReconciliationReport,
-} from './accounting/reports';
+} from '../core/services/accounting/reports';
 
 export {
   getAccountingEventTemplates,
@@ -71,16 +71,16 @@ export {
   resolveAccountingReviewItem,
   runAccountingMetadataBackfill,
   classifyAccountingSourcePreview,
-} from './accounting/templates';
+} from '../core/services/accounting/templates';
 
 export {
   getAccountingHealthSummary,
   publishAccountingHealthAlertNotification,
   getMonthClosePreflight,
   assertMonthClosePreflight,
-} from './accounting/health';
+} from '../core/services/accounting/health';
 
 export {
   getBusinessHealthSummary,
   runBusinessHealthRepairAction,
-} from './accounting/business-health';
+} from '../core/services/accounting/business-health';

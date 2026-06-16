@@ -1,0 +1,96 @@
+
+> bella-spa-erp@0.1.0 dev
+> next dev -p 3100
+
+▲ Next.js 16.2.6 (Turbopack)
+- Local:         http://localhost:3100
+- Network:       http://192.168.1.217:3100
+- Environments: .env.local
+✓ Ready in 487ms
+- Experiments (use with caution):
+  · clientTraceMetadata
+  · optimizePackageImports
+
+ GET /dashboard/settings?tab=subscription 200 in 1170ms (next.js: 179ms, proxy.ts: 676ms, application-code: 315ms)
+ POST /dashboard/settings?tab=subscription 200 in 340ms (next.js: 5ms, proxy.ts: 106ms, application-code: 229ms)
+  └─ ƒ getCurrentUser() in 208ms src/services/user-actions.ts
+ POST /dashboard/settings?tab=subscription 200 in 634ms (next.js: 4ms, proxy.ts: 91ms, application-code: 538ms)
+  └─ ƒ getTenantSettings() in 530ms src/services/tenant-actions.ts
+ POST /dashboard/settings?tab=subscription 500 in 749ms (next.js: 10ms, proxy.ts: 100ms, application-code: 639ms)
+  └─ ƒ getSubscriptionStatus() in 240ms src/services/subscription-actions.ts
+ POST /dashboard/settings?tab=subscription 500 in 651ms (next.js: 12ms, proxy.ts: 151ms, application-code: 488ms)
+  └─ ƒ getSubscriptionInvoiceHistory() in 217ms src/services/subscription-actions.ts
+ POST /dashboard/settings?tab=subscription 500 in 732ms (next.js: 8ms, proxy.ts: 142ms, application-code: 582ms)
+  └─ ƒ getSubscriptionStatus() in 222ms src/services/subscription-actions.ts
+ POST /dashboard/settings?tab=subscription 500 in 749ms (next.js: 7ms, proxy.ts: 83ms, application-code: 660ms)
+  └─ ƒ getSubscriptionInvoiceHistory() in 237ms src/services/subscription-actions.ts
+ GET /dashboard/settings?tab=subscription 200 in 144ms (next.js: 6ms, proxy.ts: 84ms, application-code: 54ms)
+ POST /dashboard/settings?tab=subscription 200 in 258ms (next.js: 6ms, proxy.ts: 90ms, application-code: 162ms)
+  └─ ƒ getCurrentUser() in 155ms src/services/user-actions.ts
+ POST /dashboard/settings?tab=subscription 200 in 408ms (next.js: 18ms, proxy.ts: 75ms, application-code: 315ms)
+  └─ ƒ getTenantSettings() in 308ms src/services/tenant-actions.ts
+ POST /dashboard/settings?tab=subscription 500 in 687ms (next.js: 7ms, proxy.ts: 79ms, application-code: 602ms)
+  └─ ƒ getSubscriptionStatus() in 248ms src/services/subscription-actions.ts
+ POST /dashboard/settings?tab=subscription 500 in 696ms (next.js: 8ms, proxy.ts: 99ms, application-code: 589ms)
+  └─ ƒ getSubscriptionInvoiceHistory() in 217ms src/services/subscription-actions.ts
+ POST /dashboard/settings?tab=subscription 500 in 673ms (next.js: 7ms, proxy.ts: 81ms, application-code: 585ms)
+  └─ ƒ getSubscriptionStatus() in 238ms src/services/subscription-actions.ts
+ POST /dashboard/settings?tab=subscription 500 in 816ms (next.js: 25ms, proxy.ts: 79ms, application-code: 712ms)
+  └─ ƒ getSubscriptionInvoiceHistory() in 362ms src/services/subscription-actions.ts
+ GET / 200 in 434ms (next.js: 207ms, application-code: 227ms)
+ GET / 200 in 82ms (next.js: 3ms, application-code: 79ms)
+ GET /dashboard 200 in 637ms (next.js: 108ms, proxy.ts: 322ms, application-code: 207ms)
+ POST /dashboard 200 in 309ms (next.js: 6ms, proxy.ts: 93ms, application-code: 210ms)
+  └─ ƒ getCurrentUser() in 183ms src/services/user-actions.ts
+ POST /dashboard 200 in 758ms (next.js: 6ms, proxy.ts: 90ms, application-code: 663ms)
+  └─ ƒ getTenantSettings() in 654ms src/services/tenant-actions.ts
+ POST /dashboard 200 in 481ms (next.js: 10ms, proxy.ts: 99ms, application-code: 373ms)
+  └─ ƒ getTenantSettings() in 358ms src/services/tenant-actions.ts
+ POST /dashboard 200 in 487ms (next.js: 8ms, proxy.ts: 109ms, application-code: 370ms)
+  └─ ƒ getTenantSettings() in 362ms src/services/tenant-actions.ts
+ POST /dashboard 200 in 296ms (next.js: 7ms, proxy.ts: 91ms, application-code: 199ms)
+  └─ ƒ getCurrentUser() in 192ms src/services/user-actions.ts
+ POST /dashboard 200 in 285ms (next.js: 6ms, proxy.ts: 90ms, application-code: 189ms)
+  └─ ƒ getCurrentUser() in 182ms src/services/user-actions.ts
+ POST /dashboard 200 in 477ms (next.js: 6ms, proxy.ts: 91ms, application-code: 380ms)
+  └─ ƒ getTenantSettings() in 370ms src/services/tenant-actions.ts
+ POST /dashboard 200 in 435ms (next.js: 6ms, proxy.ts: 93ms, application-code: 336ms)
+  └─ ƒ getTenantSettings() in 329ms src/services/tenant-actions.ts
+ POST /dashboard 200 in 575ms (next.js: 6ms, proxy.ts: 104ms, application-code: 465ms)
+  └─ ƒ getDashboardPrimaryData("2026-06-01", "2026-06-30", "2026-06-12") in 457ms src/services/dashboard-actions.ts
+ POST /dashboard 200 in 974ms (next.js: 9ms, proxy.ts: 119ms, application-code: 846ms)
+  └─ ƒ getDashboardSecondaryData() in 838ms src/services/dashboard-actions.ts
+ GET /dashboard/accounting/reports 200 in 351ms (next.js: 97ms, proxy.ts: 88ms, application-code: 166ms)
+ POST /dashboard/accounting/reports 200 in 295ms (next.js: 3ms, proxy.ts: 91ms, application-code: 200ms)
+  └─ ƒ getCurrentUser() in 185ms src/services/user-actions.ts
+ POST /dashboard/accounting/reports 200 in 484ms (next.js: 4ms, proxy.ts: 95ms, application-code: 386ms)
+  └─ ƒ getTenantSettings() in 379ms src/services/tenant-actions.ts
+ POST /dashboard/accounting/reports 200 in 391ms (next.js: 5ms, proxy.ts: 93ms, application-code: 293ms)
+  └─ ƒ getAccounts() in 285ms src/services/accounting/coa.ts
+ POST /dashboard/accounting/reports 200 in 403ms (next.js: 4ms, proxy.ts: 108ms, application-code: 292ms)
+  └─ ƒ getAccounts() in 285ms src/services/accounting/coa.ts
+ POST /dashboard/accounting/reports 200 in 385ms (next.js: 3ms, proxy.ts: 101ms, application-code: 280ms)
+  └─ ƒ getTrialBalanceReport("2026-06-12") in 273ms src/services/accounting/reports.ts
+ POST /dashboard/accounting/reports 200 in 410ms (next.js: 8ms, proxy.ts: 101ms, application-code: 301ms)
+  └─ ƒ getTrialBalanceReport("2026-06-12") in 293ms src/services/accounting/reports.ts
+ POST /dashboard/accounting/reports 200 in 401ms (next.js: 4ms, proxy.ts: 90ms, application-code: 307ms)
+  └─ ƒ getTrialBalanceReport("2026-06-12") in 300ms src/services/accounting/reports.ts
+ GET /dashboard/accounting/reports 200 in 151ms (next.js: 3ms, proxy.ts: 89ms, application-code: 59ms)
+ POST /dashboard/accounting/reports 200 in 297ms (next.js: 3ms, proxy.ts: 99ms, application-code: 194ms)
+  └─ ƒ getCurrentUser() in 186ms src/services/user-actions.ts
+ POST /dashboard/accounting/reports 200 in 482ms (next.js: 4ms, proxy.ts: 91ms, application-code: 386ms)
+  └─ ƒ getTenantSettings() in 377ms src/services/tenant-actions.ts
+ POST /dashboard/accounting/reports 200 in 423ms (next.js: 7ms, proxy.ts: 99ms, application-code: 316ms)
+  └─ ƒ getAccounts() in 308ms src/services/accounting/coa.ts
+ POST /dashboard/accounting/reports 200 in 427ms (next.js: 6ms, proxy.ts: 97ms, application-code: 324ms)
+  └─ ƒ getAccounts() in 312ms src/services/accounting/coa.ts
+ POST /dashboard/accounting/reports 200 in 411ms (next.js: 7ms, proxy.ts: 96ms, application-code: 308ms)
+  └─ ƒ getTrialBalanceReport("2026-06-12") in 295ms src/services/accounting/reports.ts
+ POST /dashboard/accounting/reports 200 in 397ms (next.js: 8ms, proxy.ts: 109ms, application-code: 281ms)
+  └─ ƒ getTrialBalanceReport("2026-06-12") in 269ms src/services/accounting/reports.ts
+ POST /dashboard/accounting/reports 200 in 401ms (next.js: 6ms, proxy.ts: 94ms, application-code: 302ms)
+  └─ ƒ getTrialBalanceReport("2026-06-12") in 290ms src/services/accounting/reports.ts
+ GET / 200 in 349ms (next.js: 155ms, application-code: 195ms)
+ GET / 200 in 81ms (next.js: 3ms, application-code: 78ms)
+✓ Compiled in 333ms
+[?25h

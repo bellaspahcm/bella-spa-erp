@@ -1,0 +1,309 @@
+﻿  console.log
+    [createBooking] Level1 resolved tenant: tenant-a
+
+      at log (src/modules/booking/actions/create-booking-helpers.ts:185:15)
+
+  console.log
+    [createBooking] Final tenantId: tenant-a | user: null
+
+      at log (src/modules/booking/actions/create-booking-helpers.ts:219:11)
+
+  console.log
+    DEBUG createResult: {
+      data: [
+        {
+          id: 'mock-id-2wtcgbv51',
+          customer_id: 'cust-123',
+          booking_number: 'BK-1781273589702',
+          package_id: null,
+          package_name: 'G├│i Bß║ºu VIP',
+          status: 'booked',
+          full_price: 5000000,
+          deposit_amount: 1000000,
+          total_sessions: 15,
+          ktv_commission: 100000,
+          discount_percent: 0,
+          start_date: '2026-05-10',
+          assigned_ktv_id: 'ktv-1',
+          preferred_time: null,
+          tenant_id: 'tenant-a'
+        }
+      ]
+    }
+
+      at Object.log (src/__tests__/e2e-negative-pipeline.test.ts:181:13)
+
+  console.log
+    DEBUG Test 1: {
+      session1_id: 'mock-id-k30yaskdd',
+      session1_booking_id: undefined,
+      booking_id: undefined,
+      mockStore_session_logs: [
+        {
+          id: 'mock-id-k30yaskdd',
+          booking_id: undefined,
+          tenant_id: 'tenant-a'
+        },
+        {
+          id: 'mock-id-4fzgokhuo',
+          booking_id: undefined,
+          tenant_id: 'tenant-a'
+        },
+        {
+          id: 'mock-id-164y42kdr',
+          booking_id: undefined,
+          tenant_id: 'tenant-a'
+        },
+        {
+          id: 'mock-id-qcphvzquq',
+          booking_id: undefined,
+          tenant_id: 'tenant-a'
+        },
+        {
+          id: 'mock-id-g5mujk680',
+          booking_id: undefined,
+          tenant_id: 'tenant-a'
+        },
+        {
+          id: 'mock-id-c0dnqs2ol',
+          booking_id: undefined,
+          tenant_id: 'tenant-a'
+        },
+        {
+          id: 'mock-id-d6zk75lu4',
+          booking_id: undefined,
+          tenant_id: 'tenant-a'
+        },
+        {
+          id: 'mock-id-aqn8toypr',
+          booking_id: undefined,
+          tenant_id: 'tenant-a'
+        },
+        {
+          id: 'mock-id-s2eahr82x',
+          booking_id: undefined,
+          tenant_id: 'tenant-a'
+        },
+        {
+          id: 'mock-id-o9r3mbjta',
+          booking_id: undefined,
+          tenant_id: 'tenant-a'
+        },
+        {
+          id: 'mock-id-11393mfyb',
+          booking_id: undefined,
+          tenant_id: 'tenant-a'
+        },
+        {
+          id: 'mock-id-y859qdhxz',
+          booking_id: undefined,
+          tenant_id: 'tenant-a'
+        },
+        {
+          id: 'mock-id-8d3uwcwyg',
+          booking_id: undefined,
+          tenant_id: 'tenant-a'
+        },
+        {
+          id: 'mock-id-de3nmb0s4',
+          booking_id: undefined,
+          tenant_id: 'tenant-a'
+        },
+        {
+          id: 'mock-id-ykay5cakw',
+          booking_id: undefined,
+          tenant_id: 'tenant-a'
+        },
+        { id: 'ss-1', booking_id: 'bk-1', tenant_id: undefined }
+      ],
+      mockStore_bookings: [
+        {
+          id: 'mock-id-2wtcgbv51',
+          status: 'booked',
+          tenant_id: 'tenant-a'
+        },
+        { id: 'bk-1', status: 'cancelled', tenant_id: undefined }
+      ]
+    }
+
+      at Object.log (src/__tests__/e2e-negative-pipeline.test.ts:201:15)
+
+  console.log
+    DEBUG Test 1 Result: { error: 'Buß╗òi dß╗ïch vß╗Ñ kh├┤ng thuß╗Öc booking hiß╗çn tß║íi.' }
+
+      at Object.log (src/__tests__/e2e-negative-pipeline.test.ts:209:15)
+
+  console.log
+    [createBooking] Level1 resolved tenant: tenant-a
+
+      at log (src/modules/booking/actions/create-booking-helpers.ts:185:15)
+
+  console.log
+    [createBooking] Final tenantId: tenant-a | user: null
+
+      at log (src/modules/booking/actions/create-booking-helpers.ts:219:11)
+
+  console.error
+    Error recording remaining payment: Error: Sß╗æ tiß╗ün thanh to├ín v╞░ß╗út qu├í sß╗æ tiß╗ün c├▓n nß╗ú cß╗ºa g├│i (5.000.000 ─æ)
+        at recordRemainingPayment (D:\Antigravity\Projects\BELLA SPA ERP\src\modules\booking\actions\payment-actions.ts:42:13)
+        at Object.<anonymous> (D:\Antigravity\Projects\BELLA SPA ERP\src\__tests__\e2e-negative-pipeline.test.ts:233:23)
+
+    [0m [90m 66 |[39m     [36mreturn[39m { success[33m:[39m [36mtrue[39m[33m,[39m data[33m:[39m rpcResult[33m.[39mdata }[33m;[39m
+     [90m 67 |[39m   } [36mcatch[39m (error) {
+    [31m[1m>[22m[39m[90m 68 |[39m     console[33m.[39merror([32m'Error recording remaining payment:'[39m[33m,[39m error)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 69 |[39m     [36mreturn[39m { error[33m:[39m getErrorMessage(error) }[33m;[39m
+     [90m 70 |[39m   }
+     [90m 71 |[39m }[0m
+
+      at error (src/modules/booking/actions/payment-actions.ts:68:13)
+      at Object.<anonymous> (src/__tests__/e2e-negative-pipeline.test.ts:233:23)
+
+  console.log
+    [createBooking] Level1 resolved tenant: tenant-a
+
+      at log (src/modules/booking/actions/create-booking-helpers.ts:185:15)
+
+  console.log
+    [createBooking] Final tenantId: tenant-a | user: null
+
+      at log (src/modules/booking/actions/create-booking-helpers.ts:219:11)
+
+  console.error
+    Error recording remaining payment: Error: Kh├┤ng t├¼m thß║Ñy booking: No rows found
+        at recordRemainingPayment (D:\Antigravity\Projects\BELLA SPA ERP\src\modules\booking\actions\payment-actions.ts:37:13)
+        at Object.<anonymous> (D:\Antigravity\Projects\BELLA SPA ERP\src\__tests__\e2e-negative-pipeline.test.ts:310:23)
+
+    [0m [90m 66 |[39m     [36mreturn[39m { success[33m:[39m [36mtrue[39m[33m,[39m data[33m:[39m rpcResult[33m.[39mdata }[33m;[39m
+     [90m 67 |[39m   } [36mcatch[39m (error) {
+    [31m[1m>[22m[39m[90m 68 |[39m     console[33m.[39merror([32m'Error recording remaining payment:'[39m[33m,[39m error)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 69 |[39m     [36mreturn[39m { error[33m:[39m getErrorMessage(error) }[33m;[39m
+     [90m 70 |[39m   }
+     [90m 71 |[39m }[0m
+
+      at error (src/modules/booking/actions/payment-actions.ts:68:13)
+      at Object.<anonymous> (src/__tests__/e2e-negative-pipeline.test.ts:310:23)
+
+  console.error
+    Error recording remaining payment: Error: Kh├┤ng t├¼m thß║Ñy booking: No rows found
+        at recordRemainingPayment (D:\Antigravity\Projects\BELLA SPA ERP\src\modules\booking\actions\payment-actions.ts:37:13)
+        at Object.<anonymous> (D:\Antigravity\Projects\BELLA SPA ERP\src\__tests__\e2e-negative-pipeline.test.ts:347:23)
+
+    [0m [90m 66 |[39m     [36mreturn[39m { success[33m:[39m [36mtrue[39m[33m,[39m data[33m:[39m rpcResult[33m.[39mdata }[33m;[39m
+     [90m 67 |[39m   } [36mcatch[39m (error) {
+    [31m[1m>[22m[39m[90m 68 |[39m     console[33m.[39merror([32m'Error recording remaining payment:'[39m[33m,[39m error)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 69 |[39m     [36mreturn[39m { error[33m:[39m getErrorMessage(error) }[33m;[39m
+     [90m 70 |[39m   }
+     [90m 71 |[39m }[0m
+
+      at error (src/modules/booking/actions/payment-actions.ts:68:13)
+      at Object.<anonymous> (src/__tests__/e2e-negative-pipeline.test.ts:347:23)
+
+node.exe : FAIL src/__tests__/e2e-negative-pipeline.test.ts
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (FAIL src/__test...ipeline.test.ts:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  E2E Negative Business Pipeline Suite
+    ├ù Lß╗ùi Xuy├¬n Suß╗æt Luß╗ông 1: Hß╗ºy booking giß╗»a chß╗½ng, KTV kh├┤ng thß╗â ß║Ñn ho├án th├ánh dß╗ïch vß╗Ñ (42 
+ms)
+    ΓêÜ Lß╗ùi Xuy├¬n Suß╗æt Luß╗ông 2: Thanh to├ín v╞░ß╗út qu├í sß╗æ tiß╗ün cß╗ºa g├│i (Overpayment) (26 ms)
+    ├ù Lß╗ùi Xuy├¬n Suß╗æt Luß╗ông 3: Kho hß║┐t nguy├¬n liß╗çu nh╞░ng KTV vß║½n cß╗æ t├¼nh ho├án th├ánh dß╗ïch vß╗Ñ (2 
+ms)
+    ΓêÜ Lß╗ùi Xuy├¬n Suß╗æt Luß╗ông 5: Thay ─æß╗òi l╞░╞íng cß╗⌐ng tr├íi ph├⌐p (Salary Tampering) (1 ms)
+    ├ù Lß╗ùi Xuy├¬n Suß╗æt Luß╗ông 4: Kß╗│ kß║┐ to├ín ─æ├ú chß╗æt sß╗ò (Locked Month), kß║┐ to├ín cß╗æ t├¼nh sß╗¡a 
+doanh thu (2 ms)
+    ΓêÜ Lß╗ùi Xuy├¬n Suß╗æt Luß╗ông 5: Sß╗¡a tay dß╗» liß╗çu l╞░╞íng KTV (Audit chß║╖n) (1 ms)
+    ├ù Lß╗ùi Xuy├¬n Suß╗æt Luß╗ông 6: Thanh to├ín vß╗¢i sß╗æ tiß╗ün = 0 (2 ms)
+    ΓêÜ Lß╗ùi Xuy├¬n Suß╗æt Luß╗ông 7: Payload booking thiß║┐u tr╞░ß╗¥ng bß║»t buß╗Öc (2 ms)
+
+  ΓùÅ E2E Negative Business Pipeline Suite ΓÇ║ Lß╗ùi Xuy├¬n Suß╗æt Luß╗ông 1: Hß╗ºy booking giß╗»a chß╗½ng, KTV kh├┤ng 
+thß╗â ß║Ñn ho├án th├ánh dß╗ïch vß╗Ñ
+
+    expect(received).toMatch(expected)
+
+    Expected pattern: /kh├┤ng ß╗ƒ trß║íng th├íi ─æang diß╗àn ra|kho├í|huß╗╖|t├¼m thß║Ñy th├┤ng tin booking|kh├┤ng 
+hß╗úp lß╗ç/i
+    Received string:  "Buß╗òi dß╗ïch vß╗Ñ kh├┤ng thuß╗Öc booking hiß╗çn tß║íi."
+
+    [0m [90m 214 |[39m     [90m// 4. KIß╗éM CHß╗¿NG: Hß╗ç thß╗æng bß║»t buß╗Öc phß║úi trß║ú vß╗ü lß╗ùi, luß╗ông 
+bß╗ï chß║╖n ─æß╗⌐ng[39m
+     [90m 215 |[39m     expect(completeResult[33m.[39merror)[33m.[39mtoBeDefined()[33m;[39m
+    [31m[1m>[22m[39m[90m 216 |[39m     expect(completeResult[33m.[39merror)[33m.[39mtoMatch([35m/kh├┤ng ß╗ƒ 
+trß║íng th├íi ─æang diß╗àn ra|kho├í|huß╗╖|t├¼m thß║Ñy th├┤ng tin booking|kh├┤ng hß╗úp lß╗ç/i[39m)[33m;[39m 
+     [90m     |[39m                                  [31m[1m^[22m[39m
+     [90m 217 |[39m   })[33m;[39m
+     [90m 218 |[39m
+     [90m 219 |[39m   it([32m'Lß╗ùi Xuy├¬n Suß╗æt Luß╗ông 2: Thanh to├ín v╞░ß╗út qu├í sß╗æ tiß╗ün cß╗ºa g├│i 
+(Overpayment)'[39m[33m,[39m [36masync[39m () [33m=>[39m {[0m
+
+      at Object.toMatch (src/__tests__/e2e-negative-pipeline.test.ts:216:34)
+
+  ΓùÅ E2E Negative Business Pipeline Suite ΓÇ║ Lß╗ùi Xuy├¬n Suß╗æt Luß╗ông 3: Kho hß║┐t nguy├¬n liß╗çu nh╞░ng KTV 
+vß║½n cß╗æ t├¼nh ho├án th├ánh dß╗ïch vß╗Ñ
+
+    expect(received).toMatch(expected)
+
+    Expected pattern: /Kho kh├┤ng ─æß╗º nguy├¬n liß╗çu/i
+    Received string:  "No rows found"
+
+    [0m [90m 271 |[39m
+     [90m 272 |[39m     expect(completeResult[33m.[39merror)[33m.[39mtoBeDefined()[33m;[39m
+    [31m[1m>[22m[39m[90m 273 |[39m     expect(completeResult[33m.[39merror)[33m.[39mtoMatch([35m/Kho kh├┤ng 
+─æß╗º nguy├¬n liß╗çu/i[39m)[33m;[39m
+     [90m     |[39m                                  [31m[1m^[22m[39m
+     [90m 274 |[39m   })[33m;[39m
+     [90m 275 |[39m
+     [90m 276 |[39m   it([32m'Lß╗ùi Xuy├¬n Suß╗æt Luß╗ông 5: Thay ─æß╗òi l╞░╞íng cß╗⌐ng tr├íi ph├⌐p (Salary 
+Tampering)'[39m[33m,[39m [36masync[39m () [33m=>[39m {[0m
+
+      at Object.toMatch (src/__tests__/e2e-negative-pipeline.test.ts:273:34)
+
+  ΓùÅ E2E Negative Business Pipeline Suite ΓÇ║ Lß╗ùi Xuy├¬n Suß╗æt Luß╗ông 4: Kß╗│ kß║┐ to├ín ─æ├ú chß╗æt sß╗ò (Locked 
+Month), kß║┐ to├ín cß╗æ t├¼nh sß╗¡a doanh thu
+
+    expect(received).toContain(expected) // indexOf
+
+    Expected substring: "─æ├ú ─æ╞░ß╗úc chß╗æt sß╗ò"
+    Received string:    "Kh├┤ng t├¼m thß║Ñy booking: No rows found"
+
+    [0m [90m 316 |[39m
+     [90m 317 |[39m     expect(paymentResult[33m.[39merror)[33m.[39mtoBeDefined()[33m;[39m
+    [31m[1m>[22m[39m[90m 318 |[39m     expect(paymentResult[33m.[39merror)[33m.[39mtoContain([32m'─æ├ú 
+─æ╞░ß╗úc chß╗æt sß╗ò'[39m)[33m;[39m
+     [90m     |[39m                                 [31m[1m^[22m[39m
+     [90m 319 |[39m   })[33m;[39m
+     [90m 320 |[39m
+     [90m 321 |[39m   it([32m'Lß╗ùi Xuy├¬n Suß╗æt Luß╗ông 5: Sß╗¡a tay dß╗» liß╗çu l╞░╞íng KTV (Audit 
+chß║╖n)'[39m[33m,[39m [36masync[39m () [33m=>[39m {[0m
+
+      at Object.toContain (src/__tests__/e2e-negative-pipeline.test.ts:318:33)
+
+  ΓùÅ E2E Negative Business Pipeline Suite ΓÇ║ Lß╗ùi Xuy├¬n Suß╗æt Luß╗ông 6: Thanh to├ín vß╗¢i sß╗æ tiß╗ün = 0
+
+    expect(received).toContain(expected) // indexOf
+
+    Expected substring: "Sß╗æ tiß╗ün thanh to├ín phß║úi lß╗¢n h╞ín 0"
+    Received string:    "Kh├┤ng t├¼m thß║Ñy booking: No rows found"
+
+    [0m [90m 353 |[39m
+     [90m 354 |[39m     expect(paymentResult[33m.[39merror)[33m.[39mtoBeDefined()[33m;[39m
+    [31m[1m>[22m[39m[90m 355 |[39m     expect(paymentResult[33m.[39merror)[33m.[39mtoContain([32m'Sß╗æ 
+tiß╗ün thanh to├ín phß║úi lß╗¢n h╞ín 0'[39m)[33m;[39m
+     [90m     |[39m                                 [31m[1m^[22m[39m
+     [90m 356 |[39m   })[33m;[39m
+     [90m 357 |[39m
+     [90m 358 |[39m   it([32m'Lß╗ùi Xuy├¬n Suß╗æt Luß╗ông 7: Payload booking thiß║┐u tr╞░ß╗¥ng bß║»t 
+buß╗Öc'[39m[33m,[39m [36masync[39m () [33m=>[39m {[0m
+
+      at Object.toContain (src/__tests__/e2e-negative-pipeline.test.ts:355:33)
+
+Test Suites: 1 failed, 1 total
+Tests:       4 failed, 4 passed, 8 total
+Snapshots:   0 total
+Time:        0.68 s, estimated 1 s
+Ran all test suites matching src/__tests__/e2e-negative-pipeline.test.ts.

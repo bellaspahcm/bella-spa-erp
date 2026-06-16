@@ -4,8 +4,8 @@ import { buildPackageSaleOutboxEvent } from '@/lib/business-rules/accounting-out
 import { normalizeDiscountPercent } from '@/lib/business-rules/payment';
 import { normalizePackageModuleKey } from '@/lib/business-rules/service-package';
 import { normalizeEnabledModulesForSave } from '@/lib/business-rules/tenant-modules';
-import { assertOpenAccountingPeriod } from '@/services/accounting/period-guards';
-import { buildRevenueAccountingMetadata, inferBusinessEventType } from '@/services/accounting/template-rules';
+import { assertOpenAccountingPeriod } from '@/core/services/accounting/period-guards';
+import { buildRevenueAccountingMetadata, inferBusinessEventType } from '@/core/services/accounting/template-rules';
 import { resolveAccountingReviewStatus } from './accounting-review';
 import { resolveKtvCommission } from './commission-actions';
 import type { createClient } from '@/lib/supabase-server';

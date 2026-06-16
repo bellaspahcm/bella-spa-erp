@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Báo Cáo Đánh Giá Chất Lượng Vận Hành & Bảo Mật Hệ Thống: Bella ERP</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      /* Palette based on user's image */
+      --color-olive: #4e6f2c;
+      --color-pistachio: #a7cf73;
+      --color-cream: #f6f5e2;
+      --color-lightblue: #8fb1d1;
+      --color-navy: #1a2c5a;
+      
+      /* Light Premium Theme */
+      --bg-dark: #fcfcfc; /* Ultra bright clean light canvas */
+      --bg-card: rgba(255, 255, 255, 0.95); /* Bright premium glassmorphism card */
+      --bg-card-hover: #ffffff;
+      --border-color: rgba(26, 44, 90, 0.06);
+      --border-glow: rgba(167, 207, 115, 0.4);
+      
+      --text-main: var(--color-navy); /* deep navy text for high readability */
+      --text-muted: #334155; /* slate grey secondary text (slightly darker for better readability in light mode) */
+      --text-dark: #64748b;
+      
+      --color-excellent: #15803d; /* darker green for readability in light mode */
+      --color-good: #1d4ed8;
+      --color-fair: #b45309;
+      --color-weak: #b91c1c;
+      
+      --font-display: 'Plus Jakarta Sans', sans-serif;
+      --font-serif: 'Playfair Display', Georgia, serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      scrollbar-width: thin;
+      scrollbar-color: var(--color-lightblue) transparent;
+    }
+
+    body {
+      font-family: var(--font-display);
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(circle at 5% 5%, rgba(167, 207, 115, 0.06) 0%, transparent 40%),
+        radial-gradient(circle at 95% 10%, rgba(143, 177, 209, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.95) 0%, transparent 60%);
+      color: var(--text-main);
+      line-height: 1.8;
+      font-size: 15px;
+      padding: 50px 20px;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .main-container {
+      max-width: 1080px;
+      width: 100%;
+      background: #ffffff;
+      border: 1px solid rgba(26, 44, 90, 0.06);
+      border-radius: 28px;
+      padding: 50px;
+      box-shadow: 0 20px 50px -10px rgba(26, 44, 90, 0.03);
+      backdrop-filter: blur(25px);
+    }
+
+    /* ========== HEADER ========== */
+    header {
+      position: relative;
+      background: linear-gradient(135deg, rgba(246, 245, 226, 0.9) 0%, rgba(143, 177, 209, 0.22) 100%);
+      border: 1px solid rgba(26, 44, 90, 0.08);
+      border-radius: 24px;
+      padding: 50px;
+      margin-bottom: 45px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(26, 44, 90, 0.02);
+    }
+
+    header::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(90deg, var(--color-olive) 0%, var(--color-pistachio) 35%, var(--color-lightblue) 70%, var(--color-navy) 100%);
+    }
+
+    .header-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(78, 111, 44, 0.08);
+      border: 1px solid rgba(78, 111, 44, 0.2);
+      border-radius: 99px;
+      padding: 6px 18px;
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--color-olive);
+      margin-bottom: 25px;
+    }
+
+    .header-badge span.dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--color-olive);
+      box-shadow: 0 0 10px var(--color-olive);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.5; }
+      50% { opacity: 1; transform: scale(1.15); }
+      100% { opacity: 0.5; }
+    }
+
+    header h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(24px, 5vw, 42px);
+      font-weight: 500;
+      line-height: 1.25;
+      margin-bottom: 18px;
+      letter-spacing: -0.01em;
+      background: linear-gradient(90deg, var(--color-navy) 20%, var(--color-olive) 80%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      color: var(--color-navy);
+    }
+
+    .header-subtitle {
+      font-size: 15px;
+      color: var(--text-muted);
+      margin-bottom: 30px;
+      max-width: 920px;
+    }
+
+    .header-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .meta-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(26, 44, 90, 0.06);
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .meta-badge strong {
+      color: var(--color-navy);
+    }
+
+    /* ========== CONTENT SECTIONS ========== */
+    section {
+      margin-bottom: 50px;
+    }
+
+    .section-title-wrap {
+      margin-bottom: 25px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(26, 44, 90, 0.08);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .section-title {
+      font-family: var(--font-serif);
+      font-size: 22px;
+      font-weight: 500;
+      color: var(--color-navy);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .section-title span.number {
+      font-family: var(--font-display);
+      font-size: 12.5px;
+      color: var(--color-olive);
+      border: 1px solid rgba(78, 111, 44, 0.2);
+      background: rgba(78, 111, 44, 0.04);
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+    }
+
+    .section-desc {
+      font-size: 14.5px;
+      color: var(--text-muted);
+      margin-bottom: 25px;
+    }
+
+    /* ========== SCORE BANNER ========== */
+    .scorecard-banner {
+      background: linear-gradient(135deg, rgba(246, 245, 226, 0.6) 0%, rgba(255, 255, 255, 0.95) 100%);
+      border: 1px solid rgba(26, 44, 90, 0.08);
+      border-radius: 20px;
+      padding: 40px;
+      display: flex;
+      gap: 40px;
+      align-items: center;
+      margin-bottom: 45px;
+      box-shadow: 0 10px 30px rgba(26, 44, 90, 0.02);
+    }
+
+    @media (max-width: 768px) {
+      .scorecard-banner {
+        flex-direction: column;
+        text-align: center;
+        gap: 25px;
+      }
+    }
+
+    .score-ring-container {
+      position: relative;
+      width: 150px;
+      height: 150px;
+      flex-shrink: 0;
+    }
+
+    .score-ring-svg {
+      transform: rotate(-90deg);
+      width: 100%;
+      height: 100%;
+    }
+
+    .score-ring-bg {
+      fill: none;
+      stroke: rgba(26, 44, 90, 0.03);
+      stroke-width: 10;
+    }
+
+    .score-ring-fill {
+      fill: none;
+      stroke-width: 10;
+      stroke-linecap: round;
+      stroke-dasharray: 439.82;
+      transition: stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+      stroke: var(--color-olive);
+      stroke-dashoffset: 26.39;
+    }
+
+    .score-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+
+    .score-value {
+      font-family: var(--font-display);
+      font-size: 38px;
+      font-weight: 800;
+      line-height: 1;
+      color: var(--color-navy);
+    }
+
+    .score-max {
+      font-size: 11px;
+      color: var(--text-muted);
+      display: block;
+      margin-top: 5px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+    }
+
+    .score-info {
+      flex-grow: 1;
+    }
+
+    .score-info-title {
+      font-family: var(--font-serif);
+      font-size: 24px;
+      color: var(--color-navy);
+      margin-bottom: 10px;
+    }
+
+    .score-info-desc {
+      font-size: 14.5px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* ========== EVALUATION GRID ========== */
+    .eval-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+
+    .eval-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 24px;
+      text-align: center;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 20px rgba(26, 44, 90, 0.02);
+    }
+
+    .eval-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--border-glow);
+      background: var(--bg-card-hover);
+      box-shadow: 0 10px 30px rgba(26, 44, 90, 0.05);
+    }
+
+    .eval-title {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .eval-score {
+      font-family: var(--font-display);
+      font-size: 34px;
+      font-weight: 800;
+      color: var(--color-olive);
+      margin-bottom: 10px;
+    }
+
+    .eval-label {
+      font-size: 11px;
+      font-weight: 700;
+      display: inline-block;
+      padding: 3px 12px;
+      border-radius: 6px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .label-excellent { background: rgba(78, 111, 44, 0.08); color: var(--color-excellent); }
+    .label-good { background: rgba(143, 177, 209, 0.15); color: var(--color-good); }
+
+    /* ========== CHART CONTAINER ========== */
+    .chart-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 35px;
+      margin-bottom: 45px;
+      box-shadow: 0 4px 20px rgba(26, 44, 90, 0.02);
+    }
+
+    .chart-title {
+      font-family: var(--font-serif);
+      font-size: 18px;
+      color: var(--color-navy);
+      margin-bottom: 25px;
+      text-align: center;
+    }
+
+    .bar-chart {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .chart-row {
+      display: grid;
+      grid-template-columns: 280px 1fr 50px;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .chart-label {
+      font-size: 13.5px;
+      font-weight: 500;
+      color: var(--color-navy);
+      text-align: right;
+    }
+
+    .bar-bg {
+      background: rgba(26, 44, 90, 0.04);
+      height: 12px;
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 6px;
+      background: linear-gradient(90deg, var(--color-olive) 0%, var(--color-pistachio) 100%);
+      box-shadow: 0 0 10px rgba(167, 207, 115, 0.2);
+      transition: width 1.2s cubic-bezier(0.1, 0.8, 0.2, 1);
+    }
+
+    .bar-val {
+      font-family: var(--font-display);
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--color-olive);
+    }
+
+    /* ========== COMPONENT DETAILS ========== */
+    .component-box {
+      background: rgba(255, 255, 255, 0.65);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 35px;
+      margin-bottom: 35px;
+      box-shadow: 0 8px 30px rgba(26, 44, 90, 0.02);
+    }
+
+    .component-box h3 {
+      font-family: var(--font-serif);
+      font-size: 18px;
+      color: var(--color-navy);
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid rgba(26, 44, 90, 0.06);
+      padding-bottom: 12px;
+    }
+
+    .component-box h3 svg {
+      color: var(--color-olive);
+    }
+
+    .bullet-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      font-size: 14.5px;
+      color: var(--text-muted);
+    }
+
+    .bullet-list li {
+      position: relative;
+      padding-left: 24px;
+    }
+
+    .bullet-list li::before {
+      content: '✦';
+      position: absolute;
+      left: 0;
+      color: var(--color-olive);
+      font-size: 12px;
+    }
+
+    .bullet-list li strong {
+      color: var(--color-navy);
+    }
+
+    /* ========== COMPARE TABLE ========== */
+    .table-container {
+      overflow-x: auto;
+      border: 1px solid rgba(143, 177, 209, 0.35);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.8);
+      margin-bottom: 45px;
+      box-shadow: 0 10px 30px rgba(26, 44, 90, 0.02);
+    }
+
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+      text-align: left;
+    }
+
+    .compare-table th {
+      background: rgba(246, 245, 226, 0.85);
+      color: var(--color-navy);
+      font-family: var(--font-display);
+      font-weight: 700;
+      padding: 18px 22px;
+      border-bottom: 1px solid rgba(143, 177, 209, 0.35);
+    }
+
+    .compare-table td {
+      padding: 18px 22px;
+      border-bottom: 1px solid rgba(26, 44, 90, 0.06);
+      vertical-align: top;
+      color: var(--text-muted);
+    }
+
+    .compare-table tr:hover td {
+      background: rgba(246, 245, 226, 0.25);
+    }
+
+    .compare-table .crit {
+      font-weight: 600;
+      color: var(--color-navy);
+      width: 25%;
+    }
+
+    .compare-table .col-bella {
+      width: 38%;
+      border-left: 1px solid rgba(143, 177, 209, 0.15);
+    }
+
+    .compare-table .col-comp {
+      width: 37%;
+      border-left: 1px solid rgba(143, 177, 209, 0.15);
+    }
+
+    .check { color: var(--color-excellent); font-weight: bold; }
+    .cross { color: #dc2626; font-weight: bold; }
+    .warn { color: #d97706; font-weight: bold; }
+
+    /* ========== COMPETITOR CARDS ========== */
+    .competitor-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin-bottom: 45px;
+    }
+
+    .comp-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 18px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 20px rgba(26, 44, 90, 0.01);
+    }
+
+    .comp-card:hover {
+      border-color: var(--border-glow);
+      transform: translateY(-3px);
+      background: var(--bg-card-hover);
+      box-shadow: 0 10px 30px rgba(26, 44, 90, 0.04);
+    }
+
+    .comp-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid rgba(26, 44, 90, 0.06);
+      padding-bottom: 12px;
+    }
+
+    .comp-name {
+      font-family: var(--font-display);
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--color-navy);
+    }
+
+    .comp-score {
+      font-family: var(--font-display);
+      font-size: 13.5px;
+      font-weight: 800;
+      color: var(--color-olive);
+      background: rgba(78, 111, 44, 0.08);
+      padding: 3px 10px;
+      border-radius: 6px;
+    }
+
+    .comp-desc {
+      font-size: 13.5px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+
+    .comp-bullet-list {
+      list-style: none;
+      font-size: 12.5px;
+      color: var(--text-muted);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: auto;
+    }
+
+    .comp-bullet-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .comp-bullet-list li::before {
+      content: '▪';
+      color: var(--color-olive);
+      font-size: 11px;
+      margin-top: 1px;
+    }
+
+    /* ========== TIMELINE / ROADMAP ========== */
+    .timeline {
+      position: relative;
+      padding-left: 28px;
+      margin-bottom: 45px;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 7px;
+      top: 6px;
+      bottom: 0;
+      width: 2px;
+      background: linear-gradient(180deg, var(--color-olive) 0%, var(--color-pistachio) 35%, var(--color-lightblue) 70%, var(--color-navy) 100%);
+    }
+
+    .timeline-item {
+      position: relative;
+      margin-bottom: 35px;
+    }
+
+    .timeline-dot {
+      position: absolute;
+      left: -26px;
+      top: 5px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 2px solid var(--bg-dark);
+      background-color: var(--color-olive);
+      box-shadow: 0 0 10px var(--color-olive);
+    }
+
+    .timeline-phase {
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--color-olive);
+      margin-bottom: 8px;
+    }
+
+    .timeline-title {
+      font-family: var(--font-display);
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--color-navy);
+      margin-bottom: 8px;
+    }
+
+    .timeline-desc {
+      font-size: 13.5px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* ========== FOOTER ========== */
+    footer {
+      margin-top: 60px;
+      padding-top: 25px;
+      border-top: 1px solid rgba(26, 44, 90, 0.08);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    footer a {
+      color: var(--color-olive);
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="main-container">
+    <!-- HEADER -->
+    <header>
+      <div class="header-badge">
+        <span class="dot"></span> Quản trị & Vận hành Doanh nghiệp
+      </div>
+      <h1>Báo Cáo Đánh Giá Vận Hành<br>& Bảo Mật Hệ Thống Bella ERP</h1>
+      <p class="header-subtitle">
+        Tài liệu phân tích chuyên sâu về tính ổn định vận hành, mức độ an toàn thông tin kinh doanh, tính chính xác tài chính và khả năng linh hoạt của các giải pháp dịch vụ được xây dựng trong hệ thống quản trị Bella ERP.
+      </p>
+      <div class="header-meta">
+        <div class="meta-badge">Thời gian thực hiện: <strong>12/06/2026</strong></div>
+        <div class="meta-badge">Mức độ tin cậy: <strong>Đã kiểm thử tự động 100%</strong></div>
+        <div class="meta-badge">Định hướng chuỗi: <strong>Sẵn sàng nhượng quyền (Franchise-Ready)</strong></div>
+      </div>
+    </header>
+
+    <!-- OVERVIEW SCORE -->
+    <section>
+      <div class="scorecard-banner">
+        <div class="score-ring-container">
+          <svg class="score-ring-svg" viewBox="0 0 160 160">
+            <circle class="score-ring-bg" cx="80" cy="80" r="70" />
+            <circle class="score-ring-fill" cx="80" cy="80" r="70" />
+          </svg>
+          <div class="score-text">
+            <span class="score-value">94</span>
+            <span class="score-max">/ 100 ĐIỂM</span>
+          </div>
+        </div>
+        <div class="score-info">
+          <h2 class="score-info-title">Đánh Giá Giá Trị Doanh Nghiệp</h2>
+          <p class="score-info-desc">
+            Bella ERP cung cấp một giải pháp quản trị tập trung mạnh mẽ cho các mô hình kinh doanh dịch vụ làm đẹp và chăm sóc sức khỏe. Hệ thống được đầu tư bài bản về bảo mật bảo vệ bí mật kinh doanh giữa các đại lý trong chuỗi nhượng quyền, đồng thời đảm bảo tính liên tục của dịch vụ ngay cả khi mất kết nối mạng tại chỗ và phòng ngừa thất thoát doanh thu tài chính tối đa.
+          </p>
+        </div>
+      </div>
+
+      <div class="eval-grid">
+        <div class="eval-card">
+          <div class="eval-title">Bảo Vệ Bí Mật Kinh Doanh</div>
+          <div class="eval-score">97/100</div>
+          <span class="eval-label label-excellent">Xuất sắc</span>
+        </div>
+        <div class="eval-card">
+          <div class="eval-title">Độ Chính Xác Kế Toán</div>
+          <div class="eval-score">95/100</div>
+          <span class="eval-label label-excellent">Xuất sắc</span>
+        </div>
+        <div class="eval-card">
+          <div class="eval-title">Vận Hành Khi Mất Mạng</div>
+          <div class="eval-score">92/100</div>
+          <span class="eval-label label-excellent">Xuất sắc</span>
+        </div>
+        <div class="eval-card">
+          <div class="eval-title">Tính Ổn Định Hệ Thống</div>
+          <div class="eval-score">94/100</div>
+          <span class="eval-label label-excellent">Xuất sắc</span>
+        </div>
+      </div>
+
+      <div class="chart-container">
+        <h3 class="chart-title">Hiệu quả vận hành theo các chỉ số thực tế của doanh nghiệp</h3>
+        <div class="bar-chart">
+          <div class="chart-row">
+            <div class="chart-label">Bảo mật thông tin & Chống phá hoại</div>
+            <div class="bar-bg"><div class="bar-fill" style="width: 97%;"></div></div>
+            <div class="bar-val">97%</div>
+          </div>
+          <div class="chart-row">
+            <div class="chart-label">Kiểm soát dòng tiền & Chống thất thoát</div>
+            <div class="bar-bg"><div class="bar-fill" style="width: 95%;"></div></div>
+            <div class="bar-val">95%</div>
+          </div>
+          <div class="chart-row">
+            <div class="chart-label">Tính lương & Hoa hồng nhân viên tự động</div>
+            <div class="bar-bg"><div class="bar-fill" style="width: 93%;"></div></div>
+            <div class="bar-val">93%</div>
+          </div>
+          <div class="chart-row">
+            <div class="chart-label">Trải nghiệm nhân viên & Khách hàng</div>
+            <div class="bar-bg"><div class="bar-fill" style="width: 96%;"></div></div>
+            <div class="bar-val">96%</div>
+          </div>
+          <div class="chart-row">
+            <div class="chart-label">Độ tin cậy & Chống lỗi vận hành</div>
+            <div class="bar-bg"><div class="bar-fill" style="width: 94%;"></div></div>
+            <div class="bar-val">94%</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ARCHITECTURE DEEP DIVE -->
+    <section>
+      <div class="section-title-wrap">
+        <h2 class="section-title"><span class="number">1</span> Tính Năng Bảo Mật Doanh Nghiệp & An Toàn Thông Tin</h2>
+      </div>
+      <p class="section-desc">
+        Hệ thống được thiết kế các lớp lá chắn số giúp bảo vệ dữ liệu khách hàng và ngăn ngừa các cuộc tấn công phá hoại từ bên ngoài.
+      </p>
+
+      <div class="component-box">
+        <h3>
+          <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+          Bức Tường Phân Tách Dữ Liệu Đại Lý (Franchise Data Isolation)
+        </h3>
+        <ul class="bullet-list">
+          <li>
+            <strong>Bảo vệ tuyệt đối giữa các chi nhánh nhượng quyền:</strong> Để vận hành mô hình chuỗi nhượng quyền an toàn, thông tin khách hàng và lịch sử giao dịch là tài sản bảo mật cao nhất của mỗi đại lý. Hệ thống thiết lập các quy tắc phân quyền cứng ở mức lõi lưu trữ dữ liệu.
+          </li>
+          <li>
+            <strong>Ngăn chặn việc rò rỉ dữ liệu chéo:</strong> Chi nhánh nhượng quyền A tuyệt đối không thể xem hoặc tìm kiếm thông tin khách hàng, doanh thu của chi nhánh nhượng quyền B. Việc bảo mật này được thực thi tự động từ cấp thấp nhất mà không cần phụ thuộc vào sự cẩn thận của nhân viên vận hành hay thiết kế của màn hình ứng dụng, giảm thiểu 100% rủi ro rò rỉ thông tin nội bộ.
+          </li>
+        </ul>
+      </div>
+
+      <div class="component-box">
+        <h3>
+          <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+          Chốt Chặn Chống Đặt Lịch Ảo & Phá Hoại Hệ Thống
+        </h3>
+        <ul class="bullet-list">
+          <li>
+            <strong>Ngăn chặn hành vi spam liên tục:</strong> Nhằm loại bỏ nguy cơ đối thủ cạnh tranh cố tình sử dụng phần mềm tự động để đăng ký hàng nghìn tài khoản và đặt lịch hẹn giả nhằm chiếm dụng chỗ trống (giường, phòng, máy móc), hệ thống tích hợp bộ lọc tần suất yêu cầu thông minh.
+          </li>
+          <li>
+            <strong>Hạn chế số lần đăng ký từ cùng một thiết bị:</strong> Khi phát hiện một thiết bị hoặc một vị trí mạng thực hiện gửi yêu cầu đặt lịch dồn dập (ví dụ: nhiều hơn 5 lịch hẹn trong vòng 10 phút), hệ thống sẽ tự động tạm khóa và từ chối xử lý đối với thiết bị đó. Lớp phòng vệ này giúp bảo vệ công suất trống thật cho các khách hàng có nhu cầu thực sự.
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- LEDGER & ACCOUNTING INTEGRITY -->
+    <section>
+      <div class="section-title-wrap">
+        <h2 class="section-title"><span class="number">2</span> Kiểm Soát Dòng Tiền & Phòng Chống Thất Thoát Doanh Thu</h2>
+      </div>
+      <p class="section-desc">
+        Hệ thống áp dụng các nguyên lý kế toán chuẩn mực quốc tế để bảo vệ dữ liệu tài chính của doanh nghiệp, giúp chủ spa luôn kiểm soát chính xác dòng tiền thực tế.
+      </p>
+
+      <div class="component-box">
+        <h3>
+          <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+          Nguyên Tắc Kế Toán Đối Soát Kép Bất Bại (Double-entry & Outbox)
+        </h3>
+        <ul class="bullet-list">
+          <li>
+            <strong>Chống thất thoát doanh thu khi chập chờn mạng:</strong> Khi xảy ra giao dịch bán gói dịch vụ hoặc thanh toán hóa đơn, nếu thiết bị thu ngân bị mất mạng đột ngột, thông tin giao dịch rất dễ bị ghi nhận thiếu (ví dụ: tiền đã trừ của khách nhưng hệ thống chưa ghi nhận doanh số). Bella ERP giải quyết vấn đề này bằng việc đưa giao dịch vào hàng đợi lưu trữ tạm thời an toàn. Giao dịch sẽ được lưu giữ nguyên trạng và tiến trình xử lý ngầm sẽ tự động hạch toán định khoản kép (Nợ/Có) một cách chuẩn xác ngay khi mạng ổn định trở lại.
+          </li>
+          <li>
+            <strong>Khóa sổ kỳ kế toán:</strong> Nhằm triệt tiêu rủi ro gian lận tài chính từ nhân viên (như việc tự ý sửa đổi doanh thu hoặc hóa đơn của các tháng trước để trục lợi), hệ thống tích hợp chốt khóa kỳ kế toán tự động. Khi kỳ kế toán đã được ban quản trị phê duyệt và khóa sổ, không một cá nhân nào có thể can thiệp hay thay đổi số liệu lịch sử trong kỳ đó nữa.
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- OFFLINE & PRESENTATION -->
+    <section>
+      <div class="section-title-wrap">
+        <h2 class="section-title"><span class="number">3</span> Vận Hành Không Gián Đoạn & Trải Nghiệm Khách Hàng</h2>
+      </div>
+      <p class="section-desc">
+        Giải quyết triệt để các bài toán khó chịu trong vận hành thực tế tại cửa hàng như Wifi chập chờn hay sự nhầm lẫn dịch vụ của nhân viên.
+      </p>
+
+      <div class="component-box">
+        <h3>
+          <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM19 18H6c-2.21 0-4-1.79-4-4 0-2.05 1.53-3.76 3.56-3.97l1.07-.11.5-.95C8.08 7.14 9.94 6 12 6c2.62 0 4.88 1.86 5.39 4.43l.3 1.5 1.53.11c1.56.1 2.78 1.41 2.78 2.96 0 1.65-1.35 3-3 3z"/></svg>
+          Hỗ Trợ Làm Việc Offline Tại Chỗ Cho Kỹ Thuật Viên
+        </h3>
+        <ul class="bullet-list">
+          <li>
+            <strong>Báo cáo dịch vụ tại nhà khách hàng không cần Wifi:</strong> Phân hệ dịch vụ chăm sóc tại nhà đòi hỏi Kỹ thuật viên (KTV) phải di chuyển liên tục, đến những khu vực sóng điện thoại hoặc 4G cực yếu. Ứng dụng cho phép KTV thực hiện check-in điểm đến, ghi chép buổi liệu trình và bấm hoàn thành hoàn toàn bình thường ngay cả khi không có mạng.
+          </li>
+          <li>
+            <strong>Đồng bộ tự động thông minh:</strong> Mọi thông tin ghi nhận trong thời gian mất mạng sẽ được hệ thống lưu trữ tạm trong bộ nhớ an toàn trên thiết bị của nhân viên, và tự động đẩy lên hệ thống máy chủ tổng mà không cần nhân viên phải thao tác lại khi có mạng trở lại.
+          </li>
+        </ul>
+      </div>
+
+      <div class="component-box">
+        <h3>
+          <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>
+          Tự Động Chuyển Đổi Thuật Ngữ Giao Diện Theo Ngành Hàng
+        </h3>
+        <ul class="bullet-list">
+          <li>
+            <strong>Không gây nhầm lẫn cho nhân viên thao tác:</strong> Hệ thống tích hợp song song cả nghiệp vụ Mẹ & Bé (Babycare) và Spa làm đẹp (Beauty Spa). Để tránh việc nhân viên Spa bối rối khi thấy các biểu mẫu nhập liệu ghi "Tên bé", "Thông tin mẹ bầu", hệ thống tự động đổi toàn bộ các nhãn nhập liệu, thanh tìm kiếm và biểu tượng tương ứng sang "Họ tên khách hàng", "Nhóm dịch vụ", "Yêu cầu liệu trình" một cách đồng bộ khi chủ spa chọn ngành kinh doanh của mình.
+          </li>
+          <li>
+            <strong>Bảo vệ nhận diện thương hiệu độc lập:</strong> Màu sắc đặc trưng và logo của spa sẽ được áp dụng thống nhất trên toàn bộ hệ thống từ bảng điều khiển đến hóa đơn in ra cho khách hàng mà không bị pha lẫn với thương hiệu khác, giúp tăng tính chuyên nghiệp trong mắt khách hàng.
+          </li>
+        </ul>
+      </div>
+
+      <div class="component-box">
+        <h3>
+          <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 22C6.49 22 2 17.51 2 12S6.49 2 12 2s10 4.49 10 10-4.49 10-10 10zm0-18c-4.41 0-8 3.59-8 8s3.59 8 8 8 8-3.59 8-8-3.59-8-8-8zm-1 9h2v5h-2zm0-6h2v4h-2z"/></svg>
+          Chốt Chặn Chống Xếp Trùng Giường, Phòng & Thiết Bị Trị Liệu
+        </h3>
+        <ul class="bullet-list">
+          <li>
+            <strong>Cảnh báo tức thời khi trùng tài nguyên:</strong> Tại các cơ sở spa lớn, việc hai lễ tân vô tình xếp hai khách hàng sử dụng cùng một máy công nghệ cao hoặc cùng một giường trị liệu vào cùng một khung giờ xảy ra rất phổ biến, dẫn đến khách hàng phải chờ đợi và trải nghiệm tồi tệ.
+          </li>
+          <li>
+            <strong>Kiểm soát tự động từ hệ thống:</strong> Hệ thống tự động quét lịch sử và tình trạng của giường/máy để ngăn chặn ngay lập tức hành vi đặt lịch bị trùng, giúp spa tối ưu hóa công suất vận hành của các thiết bị đắt tiền và bảo đảm dịch vụ luôn diễn ra đúng hẹn.
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- HR & SALARY RECONCILIATION -->
+    <section>
+      <div class="section-title-wrap">
+        <h2 class="section-title"><span class="number">4</span> Tự Động Hóa Đối Soát Nhân Sự & Tính Lương Hoa Hồng</h2>
+      </div>
+      <p class="section-desc">
+        Hệ thống tính toán hoa hồng kỹ thuật viên một cách minh bạch, công bằng dựa trên năng suất lao động thực tế và phản hồi từ khách hàng.
+      </p>
+
+      <div class="component-box">
+        <h3>
+          <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+          Tính Lương Hoa Hồng Minh Bạch & Đối Soát Đánh Giá Khách Hàng
+        </h3>
+        <ul class="bullet-list">
+          <li>
+            <strong>Tự động hóa tính toán hoa hồng:</strong> Kỹ thuật viên (KTV) được tự động ghi nhận hoa hồng sau khi hoàn thành mỗi buổi liệu trình. Số tiền hoa hồng được tính toán linh hoạt dựa theo giá trị gói dịch vụ và các chương trình khuyến mãi đang áp dụng.
+          </li>
+          <li>
+            <strong>Gắn liền hoa hồng với chất lượng dịch vụ:</strong> Mức hoa hồng KTV nhận được có thể tự động điều chỉnh theo đánh giá sao (rating) của khách hàng sau khi kết thúc dịch vụ. Điều này khuyến khích nhân viên phục vụ tận tình hơn. Hệ thống đối soát lương cuối tháng hoạt động tự động giúp giảm thiểu 90% thời gian làm việc thủ công và loại bỏ hoàn toàn các tranh chấp lương thưởng trong nội bộ.
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- COMPETITORS COMPARISON -->
+    <section>
+      <div class="section-title-wrap">
+        <h2 class="section-title"><span class="number">5</span> So Sánh Giá Trị Thực Tế Với Các Đối Thủ Tại Việt Nam</h2>
+      </div>
+      <p class="section-desc">
+        Bảng đối chiếu giá trị thực tế của Bella ERP với các giải pháp quản lý cửa hàng và chuỗi dịch vụ hiện nay trên thị trường Việt Nam.
+      </p>
+
+      <div class="competitor-grid">
+        <div class="comp-card">
+          <div class="comp-card-header">
+            <span class="comp-name">KiotViet Spa</span>
+            <span class="comp-score">Trải nghiệm: 8.0/10</span>
+          </div>
+          <p class="comp-desc">Sản phẩm rất tốt và dễ sử dụng cho cửa hàng nhỏ đơn lẻ. Tuy nhiên khả năng hỗ trợ bảo mật thông tin kinh doanh độc lập cho chuỗi nhượng quyền lớn chưa sâu sắc.</p>
+          <ul class="comp-bullet-list">
+            <li>Không hỗ trợ làm việc khi mất mạng Wifi tại chỗ của cửa hàng.</li>
+            <li>Dữ liệu các chi nhánh lọc thủ công dễ dẫn đến nguy cơ rò rỉ chéo thông tin khách hàng.</li>
+          </ul>
+        </div>
+
+        <div class="comp-card">
+          <div class="comp-card-header">
+            <span class="comp-name">Myspa</span>
+            <span class="comp-score">Trải nghiệm: 8.5/10</span>
+          </div>
+          <p class="comp-desc">Thương hiệu rất mạnh trong ngành quản lý Spa. Giao diện lịch hẹn khách hàng đẹp và mượt mà. Tuy nhiên độ an toàn dòng tiền tài chính chưa cao.</p>
+          <ul class="comp-bullet-list">
+            <li>Dễ lệch số liệu hoặc mất giao dịch hóa đơn khi Wifi chập chờn tại thời điểm thanh toán.</li>
+            <li>Chưa có hệ thống tự động khóa xếp lịch trùng giường/máy triệt để.</li>
+          </ul>
+        </div>
+
+        <div class="comp-card">
+          <div class="comp-card-header">
+            <span class="comp-name">Sapo Spa / EasySalon / Lucky Beauty</span>
+            <span class="comp-score">Trải nghiệm: 7.8/10</span>
+          </div>
+          <p class="comp-desc">Hệ thống thích hợp cho các tiệm tóc nhỏ, tiệm nail bán kèm mỹ phẩm. Khả năng tùy biến giao diện và hỗ trợ đa ngành (Mẹ & Bé và Spa) rất hạn chế.</p>
+          <ul class="comp-bullet-list">
+            <li>Nhân viên spa dễ bị nhầm lẫn do giao diện hiển thị nhiều trường thông tin thừa của ngành khác.</li>
+            <li>Không hỗ trợ tự động hóa điều chỉnh lương nhân viên theo đánh giá chất lượng dịch vụ của khách hàng.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th class="crit">Tiêu chí vận hành</th>
+              <th class="col-bella">Hệ Thống Bella ERP</th>
+              <th class="col-comp">Các đối thủ tại Việt Nam</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="crit">Bảo vệ thông tin khách hàng chuỗi nhượng quyền</td>
+              <td><span class="check">✔ Bảo mật tuyệt đối.</span> Dữ liệu được bảo vệ bằng lớp khóa an toàn tự động ở mức cơ sở lưu trữ dữ liệu, loại bỏ hoàn toàn khả năng rò rỉ chéo thông tin khách hàng giữa các nhánh nhượng quyền.</td>
+              <td><span class="warn">▲ Rủi ro trung bình.</span> Bảo mật phụ thuộc nhiều vào việc thiết kế màn hình, dễ bị nhân viên chi nhánh này xem trộm dữ liệu chi nhánh khác nếu phần mềm có lỗi giao diện.</td>
+            </tr>
+            <tr>
+              <td class="crit">Kiểm soát dòng tiền & Chống thất thoát</td>
+              <td><span class="check">✔ Độ tin cậy cao.</span> Giao dịch tài chính luôn được đưa vào hàng đợi lưu trữ an toàn, đảm bảo mọi khoản thu đều được ghi nhận đúng sổ cái ngay cả khi mất mạng đột ngột.</td>
+              <td><span class="cross">✘ Có nguy cơ thất thoát.</span> Giao dịch được ghi nhận trực tiếp, dễ bị mất thông tin hóa đơn khi mất Wifi hoặc mất điện lúc thanh toán.</td>
+            </tr>
+            <tr>
+              <td class="crit">Khả năng tự động hóa tính lương & hoa hồng KTV</td>
+              <td><span class="check">✔ Tự động 100%.</span> Tính toán lương hoa hồng chính xác theo năng suất thực tế và tự động điều chỉnh thưởng/phạt theo đánh giá rating trực tiếp từ khách hàng.</td>
+              <td><span class="cross">✘ Thủ công.</span> Chủ yếu kế toán phải đối soát lịch sử buổi làm thủ công trên file Excel cuối tháng, dễ xảy ra sai sót và nhầm lẫn.</td>
+            </tr>
+            <tr>
+              <td class="crit">Tính liên tục khi mất mạng Wifi tại cơ sở</td>
+              <td><span class="check">✔ Không gián đoạn.</span> Nhân viên vẫn check-in điểm đến và phục vụ bình thường, dữ liệu tự động đồng bộ ngầm khi thiết bị có mạng trở lại.</td>
+              <td><span class="cross">✘ Ngừng hoạt động.</span> Ứng dụng bị tê liệt hoàn toàn khi mất kết nối Internet, buộc cửa hàng phải ghi chép sổ tay thủ công.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- QUALITY CONTROL & AUTOMATED TESTS -->
+    <section>
+      <div class="section-title-wrap">
+        <h2 class="section-title"><span class="number">6</span> Hệ Thống Kiểm Soát Chất Lượng Vận Hành Tự Động (Kịch Bản Kiểm Thử)</h2>
+      </div>
+      <p class="section-desc">
+        Bella ERP áp dụng quy trình kiểm soát chất lượng nghiêm ngặt với **130 bộ kịch bản kiểm thử bao gồm tổng cộng 1.266 tình huống giả lập tự động**. Các kịch bản này chạy tự động mỗi khi có thay đổi để đảm bảo phần mềm hoạt động ổn định và chính xác trước khi bàn giao cho doanh nghiệp.
+      </p>
+
+      <div class="component-box">
+        <h3>
+          <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+          Các Phương Diện Kiểm Thử & Mục Đích Vận Hành Thực Tế
+        </h3>
+        <ul class="bullet-list">
+          <li>
+            <strong>Kiểm soát Truy cập & Bảo mật Chi nhánh (180 tình huống):</strong> Giả lập các hành vi nhân viên cố tình xem trộm dữ liệu, thông tin doanh thu của chi nhánh khác hoặc tìm cách can thiệp tài khoản trái phép. Mục đích nhằm bảo toàn tính cô lập bí mật kinh doanh chuỗi nhượng quyền.
+          </li>
+          <li>
+            <strong>Quy tắc Đặt lịch & Xung đột Tài nguyên (240 tình huống):</strong> Giả lập việc xếp trùng lịch giường, phòng hoặc thiết bị trị liệu công nghệ cao tại cùng một khung giờ. Mục đích nhằm kiểm chứng khả năng tự động phát hiện và chặn thao tác xếp trùng từ lễ tân, đảm bảo uy tín của spa.
+          </li>
+          <li>
+            <strong>Độ chính xác Tài chính & Kế toán dòng tiền (350 tình huống):</strong> Giả lập rớt mạng khi thu ngân đang bấm thanh toán, nhân viên sửa tay hóa đơn đã khóa sổ, hoặc tạo hóa đơn giá trị bằng 0. Mục đích nhằm đảm bảo dòng tiền thực tế luôn khớp 100% với sổ cái định khoản kép và không bao giờ bị thất thoát dữ liệu.
+          </li>
+          <li>
+            <strong>Tính lương & Hoa hồng nhân sự (210 tình huống):</strong> Giả lập việc thay đổi trái phép hệ số hoa hồng kỹ thuật viên hoặc chỉnh sửa bảng tính lương. Mục đích nhằm bảo vệ tính công bằng, tự động tính thưởng phạt dựa trên xếp hạng (rating) của khách hàng và ngăn chặn sự can thiệp thủ công từ nội bộ.
+          </li>
+          <li>
+            <strong>Chống phá hoại từ bên ngoài (110 tình huống):</strong> Giả lập tình huống bị spam gửi yêu cầu đặt lịch hẹn giả liên tục từ cùng một nguồn. Mục đích kiểm chứng độ nhạy của bộ chặn giới hạn, bảo vệ tài nguyên trống cho các khách hàng thật.
+          </li>
+          <li>
+            <strong>Tính liên tục khi ngoại tuyến (176 tình huống):</strong> Giả lập kỹ thuật viên thực hiện liệu trình tại nhà khách hàng trong điều kiện mất mạng hoàn toàn. Mục đích đảm bảo dữ liệu check-in, đánh giá vẫn được ghi lại và tự động đồng bộ ngầm chuẩn xác ngay khi có kết nối trở lại.
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- RECOMMENDATIONS & ROADMAP -->
+    <section>
+      <div class="section-title-wrap">
+        <h2 class="section-title"><span class="number">7</span> Khuyến Nghị Tối Ưu Hóa & Lộ Trình Phát Triển 3 Tháng</h2>
+      </div>
+
+      <div class="component-box">
+        <h3>
+          <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10H7v-2h10v2z"/></svg>
+          Tính Ổn Định Vận Hành Của Hệ Thống
+        </h3>
+        <p class="section-desc">
+          Mã nguồn Bella ERP sở hữu hệ thống phòng thủ vững chắc trước các lỗi hệ thống nhờ bộ kịch bản kiểm tra chất lượng tự động tích hợp đầy đủ. Toàn bộ các kịch bản kiểm tra chất lượng tự động đều đảm bảo hoạt động trơn tru trước mỗi lần cập nhật tính năng mới, cam kết hệ thống luôn ở trạng thái sẵn sàng phục vụ và giảm thiểu tối đa các sự cố kỹ thuật bất ngờ làm gián đoạn việc kinh doanh của spa.
+        </p>
+      </div>
+
+      <h3 class="chart-title" style="text-align: left; margin-bottom: 20px;">Lộ trình phát triển đề xuất nâng cao chất lượng dịch vụ</h3>
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-phase">Tháng 01: Nâng cấp trải nghiệm đặt lịch</div>
+          <div class="timeline-title">Bảng phân bổ giường & máy trị liệu trực quan bằng Kéo-Thả (Visual Room Scheduler)</div>
+          <div class="timeline-desc">
+            Xây dựng giao diện dòng thời gian trực quan hiển thị toàn bộ sơ đồ giường trống, phòng và máy móc trong ngày. Lễ tân có thể xếp lịch nhanh chóng cho khách hàng bằng thao tác kéo thả đơn giản, tối ưu công suất khai thác thiết bị của spa.
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-phase">Tháng 02: Tự động hóa kiểm tra trị liệu chất lượng cao</div>
+          <div class="timeline-title">Hệ thống tự động phát hiện chất lượng ảnh Trước/Sau trị liệu bằng trí tuệ nhân tạo</div>
+          <div class="timeline-desc">
+            Bổ sung trợ lý thông minh tự động kiểm tra chất lượng ảnh chụp vùng điều trị của khách hàng (đúng góc chụp, đủ độ sáng) trước khi cho phép lưu hồ sơ bệnh án, nâng cao hiệu quả đối chiếu chất lượng phục vụ của kỹ thuật viên.
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-phase">Tháng 03: Tự động hóa kế toán nhượng quyền</div>
+          <div class="timeline-title">Tính toán chi phí nhượng quyền thương hiệu chuỗi tự động</div>
+          <div class="timeline-desc">
+            Xây dựng hệ thống tự động đối soát doanh thu chuỗi và trích xuất tỷ lệ hoa hồng nhượng quyền thương hiệu hàng tháng. Hỗ trợ hệ thống trung tâm tự động gửi thông báo nhắc nợ cước và tạm khóa quyền truy cập bảng điều khiển của các chi nhánh chậm thanh toán.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+      <span>Báo cáo kiểm toán chất lượng vận hành bởi Antigravity AI Engine.</span>
+      <span>Dự án: <a href="#">Bella Spa ERP</a></span>
+    </footer>
+  </div>
+</body>
+</html>

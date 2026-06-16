@@ -6,8 +6,8 @@ import { getSupabaseAdminKey, getSupabaseAdminUrl } from '@/lib/supabase-admin-e
 import type { Database, Json } from '@/types/database.types';
 import { getAuthorizedTenantUser } from '@/core/services/auth';
 import { decrypt, encrypt } from '@/lib/crypto';
-import { assertOpenAccountingPeriod } from '@/services/accounting/period-guards';
-import { inferBusinessEventType } from '@/services/accounting/template-rules';
+import { assertOpenAccountingPeriod } from '@/core/services/accounting/period-guards';
+import { inferBusinessEventType } from '@/core/services/accounting/template-rules';
 import { resolveReviewStatus } from '@/services/finance/transaction-review';
 import {
   assertOutboxEnqueued,

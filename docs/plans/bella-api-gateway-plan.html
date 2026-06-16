@@ -1,0 +1,1546 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bella Spa — Kế Hoạch Cổng API & Tích Hợp Thị Trường Việt Nam</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --primary: #7c3aed;
+      --primary-light: #ede9fe;
+      --primary-mid: #ddd6fe;
+      --accent: #ec4899;
+      --accent-light: #fce7f3;
+      --teal: #0d9488;
+      --teal-light: #ccfbf1;
+      --amber: #d97706;
+      --amber-light: #fef3c7;
+      --rose: #e11d48;
+      --rose-light: #ffe4e6;
+      --sky: #0284c7;
+      --sky-light: #e0f2fe;
+      --slate-50: #f8fafc;
+      --slate-100: #f1f5f9;
+      --slate-200: #e2e8f0;
+      --slate-300: #cbd5e1;
+      --slate-400: #94a3b8;
+      --slate-500: #64748b;
+      --slate-600: #475569;
+      --slate-700: #334155;
+      --slate-800: #1e293b;
+      --slate-900: #0f172a;
+      --white: #ffffff;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.05);
+      --shadow: 0 4px 16px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04);
+      --shadow-lg: 0 10px 40px rgba(0,0,0,0.10), 0 4px 12px rgba(0,0,0,0.06);
+      --radius: 12px;
+      --radius-sm: 8px;
+      --radius-lg: 16px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--slate-50);
+      color: var(--slate-800);
+      line-height: 1.7;
+      font-size: 15px;
+    }
+
+    /* ══════════════════════════════════════════
+       HEADER / HERO
+    ══════════════════════════════════════════ */
+    .hero {
+      background: linear-gradient(135deg, #7c3aed 0%, #a855f7 45%, #ec4899 100%);
+      padding: 56px 40px 60px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    }
+    .hero-inner { max-width: 960px; margin: 0 auto; position: relative; }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 100px; padding: 6px 16px; font-size: 12px;
+      font-weight: 600; color: #fff; letter-spacing: 0.5px; text-transform: uppercase;
+      margin-bottom: 20px; backdrop-filter: blur(8px);
+    }
+    .hero h1 {
+      font-size: clamp(24px, 4vw, 38px); font-weight: 800; color: #fff;
+      line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.5px;
+    }
+    .hero h1 span { opacity: 0.85; }
+    .hero-meta {
+      display: flex; flex-wrap: wrap; gap: 20px; margin-top: 24px;
+    }
+    .hero-meta-item {
+      display: flex; align-items: center; gap: 8px;
+      color: rgba(255,255,255,0.85); font-size: 13px; font-weight: 500;
+    }
+    .hero-meta-item svg { opacity: 0.7; flex-shrink: 0; }
+
+    /* ══════════════════════════════════════════
+       NAV SIDEBAR
+    ══════════════════════════════════════════ */
+    .layout {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      max-width: 1200px;
+      margin: 0 auto;
+      gap: 0;
+    }
+    .sidebar {
+      padding: 32px 20px;
+      position: sticky; top: 0; height: 100vh;
+      overflow-y: auto; border-right: 1px solid var(--slate-200);
+      background: var(--white);
+    }
+    .sidebar::-webkit-scrollbar { width: 4px; }
+    .sidebar::-webkit-scrollbar-track { background: transparent; }
+    .sidebar::-webkit-scrollbar-thumb { background: var(--slate-200); border-radius: 4px; }
+    .nav-label {
+      font-size: 10px; font-weight: 700; letter-spacing: 1px;
+      text-transform: uppercase; color: var(--slate-400);
+      margin: 20px 0 8px; padding: 0 8px;
+    }
+    .nav-label:first-child { margin-top: 0; }
+    .nav-link {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 10px; border-radius: var(--radius-sm);
+      font-size: 13px; font-weight: 500; color: var(--slate-600);
+      text-decoration: none; transition: all 0.15s ease;
+      cursor: pointer;
+    }
+    .nav-link:hover { background: var(--primary-light); color: var(--primary); }
+    .nav-link.active { background: var(--primary-light); color: var(--primary); font-weight: 600; }
+    .nav-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+
+    /* ══════════════════════════════════════════
+       MAIN CONTENT
+    ══════════════════════════════════════════ */
+    .main {
+      padding: 40px 48px;
+      min-width: 0;
+    }
+
+    section { margin-bottom: 60px; }
+
+    .section-header {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 28px; padding-bottom: 16px;
+      border-bottom: 2px solid var(--slate-100);
+    }
+    .section-icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+    h2 {
+      font-size: 22px; font-weight: 700; color: var(--slate-800);
+      letter-spacing: -0.3px;
+    }
+    h3 {
+      font-size: 17px; font-weight: 700; color: var(--slate-700);
+      margin: 32px 0 12px;
+    }
+    h4 {
+      font-size: 14px; font-weight: 700; color: var(--slate-600);
+      margin: 20px 0 8px; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    p { color: var(--slate-600); margin-bottom: 12px; }
+    strong { color: var(--slate-800); font-weight: 600; }
+
+    /* ══════════════════════════════════════════
+       GOAL CARDS
+    ══════════════════════════════════════════ */
+    .goal-cards {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+      margin-bottom: 24px;
+    }
+    .goal-card {
+      background: var(--white); border: 1px solid var(--slate-200);
+      border-radius: var(--radius); padding: 20px;
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .goal-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+    .goal-card-icon { font-size: 24px; margin-bottom: 10px; }
+    .goal-card-title { font-size: 14px; font-weight: 700; color: var(--slate-700); margin-bottom: 6px; }
+    .goal-card-desc { font-size: 13px; color: var(--slate-500); line-height: 1.5; }
+
+    /* ══════════════════════════════════════════
+       INTEGRATION MAP TABLES
+    ══════════════════════════════════════════ */
+    .integration-group { margin-bottom: 28px; }
+    .group-title {
+      font-size: 13px; font-weight: 700; color: var(--slate-500);
+      text-transform: uppercase; letter-spacing: 0.8px;
+      margin-bottom: 10px; padding-left: 4px;
+    }
+    .int-table {
+      width: 100%; border-collapse: collapse;
+      background: var(--white); border-radius: var(--radius);
+      overflow: hidden; box-shadow: var(--shadow-sm);
+      border: 1px solid var(--slate-200);
+    }
+    .int-table thead tr { background: var(--slate-50); }
+    .int-table th {
+      padding: 10px 16px; font-size: 11px; font-weight: 700;
+      color: var(--slate-500); text-align: left; text-transform: uppercase;
+      letter-spacing: 0.6px; border-bottom: 1px solid var(--slate-200);
+    }
+    .int-table td {
+      padding: 12px 16px; font-size: 13px; color: var(--slate-700);
+      border-bottom: 1px solid var(--slate-100); vertical-align: middle;
+    }
+    .int-table tr:last-child td { border-bottom: none; }
+    .int-table tr:hover td { background: var(--slate-50); }
+    .sys-name { font-weight: 600; color: var(--slate-800); }
+    .badge {
+      display: inline-block; border-radius: 100px;
+      padding: 2px 10px; font-size: 11px; font-weight: 600;
+    }
+    .badge-live  { background: #dcfce7; color: #15803d; }
+    .badge-high  { background: #fef9c3; color: #a16207; }
+    .badge-mid   { background: #fed7aa; color: #c2410c; }
+    .badge-low   { background: #f1f5f9; color: #64748b; }
+    .badge-done  { background: #dbeafe; color: #1d4ed8; }
+
+    /* ══════════════════════════════════════════
+       ARCHITECTURE BOX
+    ══════════════════════════════════════════ */
+    .arch-box {
+      background: var(--white); border: 1px solid var(--slate-200);
+      border-radius: var(--radius-lg); padding: 32px;
+      box-shadow: var(--shadow); margin-bottom: 24px;
+    }
+    .arch-layers {
+      display: flex; flex-direction: column; gap: 4px; align-items: center;
+    }
+    .arch-layer {
+      width: 100%; border-radius: var(--radius-sm); padding: 16px 24px;
+      border: 2px solid transparent; position: relative;
+    }
+    .arch-layer-title {
+      font-size: 13px; font-weight: 700; margin-bottom: 4px;
+    }
+    .arch-layer-sub { font-size: 12px; opacity: 0.75; }
+    .arch-arrow {
+      color: var(--slate-300); font-size: 20px; text-align: center;
+      line-height: 1; padding: 2px 0;
+    }
+    .layer-gateway  { background: var(--primary-light); border-color: var(--primary-mid); }
+    .layer-gateway .arch-layer-title { color: var(--primary); }
+    .layer-services { background: #eff6ff; border-color: #bfdbfe; }
+    .layer-services .arch-layer-title { color: var(--sky); }
+    .layer-db       { background: #f0fdf4; border-color: #bbf7d0; }
+    .layer-db .arch-layer-title { color: var(--teal); }
+    .layer-internet { background: var(--slate-100); border-color: var(--slate-200); }
+    .layer-internet .arch-layer-title { color: var(--slate-600); }
+
+    .arch-sub-layers { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+    .arch-sub-box {
+      flex: 1; min-width: 120px; background: rgba(255,255,255,0.7);
+      border: 1px solid rgba(124,58,237,0.2); border-radius: var(--radius-sm);
+      padding: 8px 12px; font-size: 12px; color: var(--primary);
+      font-weight: 600; text-align: center;
+    }
+
+    /* ══════════════════════════════════════════
+       PRINCIPLES LIST
+    ══════════════════════════════════════════ */
+    .principles { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+    .principle {
+      display: flex; gap: 12px; align-items: flex-start;
+      background: var(--white); border: 1px solid var(--slate-200);
+      border-radius: var(--radius-sm); padding: 14px 16px;
+      box-shadow: var(--shadow-sm);
+    }
+    .principle-num {
+      width: 24px; height: 24px; border-radius: 50%;
+      background: var(--primary); color: #fff;
+      font-size: 11px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .principle-text { font-size: 14px; color: var(--slate-600); line-height: 1.5; }
+    .principle-text strong { color: var(--slate-800); }
+
+    /* ══════════════════════════════════════════
+       PHASE CARDS
+    ══════════════════════════════════════════ */
+    .phase-card {
+      background: var(--white); border: 1px solid var(--slate-200);
+      border-radius: var(--radius-lg); overflow: hidden;
+      box-shadow: var(--shadow); margin-bottom: 24px;
+    }
+    .phase-header {
+      padding: 20px 28px; display: flex; align-items: center; gap: 16px;
+    }
+    .phase-num {
+      width: 44px; height: 44px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--primary), #a855f7);
+      color: #fff; font-size: 18px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .phase-title { font-size: 17px; font-weight: 700; color: var(--slate-800); }
+    .phase-duration {
+      margin-left: auto; background: var(--primary-light);
+      color: var(--primary); border-radius: 100px; padding: 4px 14px;
+      font-size: 12px; font-weight: 600; white-space: nowrap;
+    }
+    .phase-body { padding: 0 28px 24px; }
+    .phase-goal {
+      background: var(--slate-50); border-left: 3px solid var(--primary);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      padding: 12px 16px; margin-bottom: 20px;
+      font-size: 14px; color: var(--slate-600);
+    }
+
+    /* Steps list */
+    .steps { display: flex; flex-direction: column; gap: 8px; margin: 12px 0; }
+    .step {
+      display: flex; gap: 10px; align-items: flex-start;
+      font-size: 14px; color: var(--slate-600); line-height: 1.5;
+    }
+    .step-bullet {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--primary);
+      flex-shrink: 0; margin-top: 8px;
+    }
+
+    /* Checklist */
+    .checklist { display: flex; flex-direction: column; gap: 6px; margin-top: 16px; }
+    .check-item {
+      display: flex; gap: 10px; align-items: center;
+      font-size: 13px; color: var(--slate-600);
+    }
+    .check-box {
+      width: 18px; height: 18px; border: 2px solid var(--slate-300);
+      border-radius: 4px; flex-shrink: 0; background: var(--white);
+    }
+
+    /* ══════════════════════════════════════════
+       CODE BLOCKS
+    ══════════════════════════════════════════ */
+    .code-block {
+      background: var(--slate-800); border-radius: var(--radius-sm);
+      overflow: hidden; margin: 14px 0;
+    }
+    .code-header {
+      background: var(--slate-700); padding: 8px 16px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .code-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .code-lang {
+      font-size: 11px; color: var(--slate-400); font-family: 'JetBrains Mono', monospace;
+      margin-left: auto;
+    }
+    .code-block pre {
+      padding: 16px; overflow-x: auto;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 12.5px; line-height: 1.65; color: #e2e8f0;
+    }
+    .code-block pre .kw  { color: #a78bfa; }
+    .code-block pre .str { color: #86efac; }
+    .code-block pre .cmt { color: #64748b; font-style: italic; }
+    .code-block pre .num { color: #fbbf24; }
+
+    /* ══════════════════════════════════════════
+       ALERT BOXES
+    ══════════════════════════════════════════ */
+    .alert {
+      border-radius: var(--radius-sm); padding: 14px 16px;
+      margin: 16px 0; font-size: 13.5px; line-height: 1.6;
+      display: flex; gap: 12px; align-items: flex-start;
+    }
+    .alert-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+    .alert-important { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+    .alert-warning    { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; }
+    .alert-caution    { background: #fff1f2; border: 1px solid #fecdd3; color: #9f1239; }
+    .alert-note       { background: var(--primary-light); border: 1px solid var(--primary-mid); color: #5b21b6; }
+
+    /* ══════════════════════════════════════════
+       SECURITY SECTION
+    ══════════════════════════════════════════ */
+    .security-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;
+      margin-top: 16px;
+    }
+    .security-card {
+      background: var(--white); border: 1px solid var(--slate-200);
+      border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow-sm);
+    }
+    .security-card h4 { margin: 0 0 12px; font-size: 13px; color: var(--slate-700); text-transform: none; letter-spacing: 0; }
+    .security-item {
+      display: flex; gap: 8px; align-items: flex-start;
+      font-size: 13px; color: var(--slate-600); margin-bottom: 8px;
+      line-height: 1.5;
+    }
+    .security-item-num {
+      width: 18px; height: 18px; border-radius: 50%; background: var(--teal-light);
+      color: var(--teal); font-size: 10px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px;
+    }
+    .scope-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 0; border-bottom: 1px solid var(--slate-100); font-size: 13px;
+    }
+    .scope-row:last-child { border-bottom: none; }
+    .scope-name { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--primary); }
+    .scope-desc { color: var(--slate-500); font-size: 12px; }
+
+    /* ══════════════════════════════════════════
+       FILE TREE
+    ══════════════════════════════════════════ */
+    .file-tree {
+      background: var(--slate-800); border-radius: var(--radius);
+      padding: 20px 24px; margin: 16px 0;
+      font-family: 'JetBrains Mono', monospace; font-size: 13px;
+      line-height: 1.8; color: #94a3b8;
+    }
+    .ft-dir  { color: #7dd3fc; }
+    .ft-file { color: #e2e8f0; }
+    .ft-new  { color: #86efac; }
+    .ft-exist { color: #fbbf24; }
+    .ft-cmt  { color: #475569; font-style: italic; }
+
+    /* ══════════════════════════════════════════
+       OPEN QUESTIONS
+    ══════════════════════════════════════════ */
+    .questions-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-top: 16px;
+    }
+    .question-card {
+      background: var(--white); border-radius: var(--radius); padding: 20px;
+      border: 1px solid var(--slate-200); box-shadow: var(--shadow-sm);
+      position: relative; overflow: hidden;
+    }
+    .question-card::before {
+      content: ''; position: absolute; top: 0; left: 0;
+      width: 4px; height: 100%;
+    }
+    .q-important::before { background: var(--sky); }
+    .q-caution::before   { background: var(--rose); }
+    .question-label {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.8px; margin-bottom: 8px;
+    }
+    .q-important .question-label { color: var(--sky); }
+    .q-caution   .question-label { color: var(--rose); }
+    .question-num { font-size: 18px; font-weight: 800; color: var(--slate-200); float: right; line-height: 1; }
+    .question-text { font-size: 13.5px; color: var(--slate-700); line-height: 1.6; }
+    .question-text strong { color: var(--slate-900); }
+
+    /* ══════════════════════════════════════════
+       TIMELINE
+    ══════════════════════════════════════════ */
+    .timeline { margin-top: 16px; position: relative; }
+    .timeline::before {
+      content: ''; position: absolute; left: 18px; top: 0; bottom: 0;
+      width: 2px; background: var(--slate-200); border-radius: 2px;
+    }
+    .tl-item { display: flex; gap: 16px; margin-bottom: 20px; position: relative; }
+    .tl-dot {
+      width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--primary), #a855f7);
+      color: #fff; font-size: 12px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      position: relative; z-index: 1; border: 3px solid var(--white);
+      box-shadow: var(--shadow-sm);
+    }
+    .tl-content {
+      background: var(--white); border: 1px solid var(--slate-200);
+      border-radius: var(--radius-sm); padding: 14px 18px;
+      flex: 1; box-shadow: var(--shadow-sm);
+    }
+    .tl-title { font-size: 14px; font-weight: 700; color: var(--slate-800); margin-bottom: 4px; }
+    .tl-weeks { font-size: 11px; color: var(--primary); font-weight: 600; margin-bottom: 6px; }
+    .tl-desc { font-size: 13px; color: var(--slate-500); }
+
+    /* ══════════════════════════════════════════
+       POS SECTION
+    ══════════════════════════════════════════ */
+    .pos-banner {
+      background: linear-gradient(135deg, #064e3b 0%, #065f46 100%);
+      border-radius: var(--radius-lg); padding: 32px 36px; margin-bottom: 32px;
+      position: relative; overflow: hidden;
+    }
+    .pos-banner::after {
+      content: '🏭';
+      position: absolute; right: 36px; top: 50%; transform: translateY(-50%);
+      font-size: 72px; opacity: 0.12;
+    }
+    .pos-banner h2 { color: #fff; font-size: 20px; margin-bottom: 8px; }
+    .pos-banner p { color: rgba(255,255,255,0.8); font-size: 14px; max-width: 580px; margin: 0; }
+
+    .pos-vs-table {
+      width: 100%; border-collapse: collapse; margin-top: 16px;
+      background: var(--white); border-radius: var(--radius); overflow: hidden;
+      box-shadow: var(--shadow-sm); border: 1px solid var(--slate-200);
+    }
+    .pos-vs-table th {
+      padding: 12px 20px; background: var(--slate-50);
+      font-size: 12px; font-weight: 700; color: var(--slate-500);
+      text-transform: uppercase; letter-spacing: 0.6px;
+      border-bottom: 1px solid var(--slate-200); text-align: left;
+    }
+    .pos-vs-table td {
+      padding: 14px 20px; font-size: 13.5px; color: var(--slate-700);
+      border-bottom: 1px solid var(--slate-100); vertical-align: top;
+    }
+    .pos-vs-table tr:last-child td { border-bottom: none; }
+    .pos-vs-table td:first-child { color: var(--slate-500); font-size: 13px; }
+    .pos-vs-table td:last-child { color: #15803d; font-weight: 500; }
+
+    .pos-partners { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 20px; }
+    .pos-card {
+      background: var(--white); border: 1px solid var(--slate-200);
+      border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow-sm);
+    }
+    .pos-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+    .pos-card-name { font-size: 15px; font-weight: 700; color: var(--slate-800); }
+    .pos-level { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 100px; }
+    .level-mid { background: #fef3c7; color: #92400e; }
+    .level-good { background: #dcfce7; color: #15803d; }
+    .level-custom { background: #f1f5f9; color: #475569; }
+    .pos-can, .pos-cannot {
+      font-size: 12px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.5px; margin-bottom: 6px; margin-top: 10px;
+    }
+    .pos-can { color: var(--teal); }
+    .pos-cannot { color: var(--rose); }
+    .pos-item { font-size: 12.5px; color: var(--slate-600); margin-bottom: 4px; display: flex; gap: 6px; line-height: 1.4; }
+    .pos-item::before { content: '→'; flex-shrink: 0; }
+    .pos-conclusion {
+      margin-top: 12px; padding: 10px 12px;
+      background: var(--slate-50); border-radius: var(--radius-sm);
+      font-size: 12px; color: var(--slate-600); font-style: italic; line-height: 1.5;
+    }
+
+    .flow-box {
+      background: var(--slate-800); border-radius: var(--radius);
+      padding: 20px 24px; margin: 16px 0; counter-reset: step;
+    }
+    .flow-step {
+      display: flex; gap: 12px; margin-bottom: 12px;
+      font-family: 'JetBrains Mono', monospace; font-size: 12.5px;
+      color: #94a3b8; line-height: 1.6;
+    }
+    .flow-step-num {
+      color: #7c3aed; font-weight: 700; flex-shrink: 0; min-width: 20px;
+    }
+    .flow-step-content { color: #cbd5e1; }
+    .flow-step-sub { color: #475569; padding-left: 20px; font-size: 12px; }
+
+    .risk-table {
+      width: 100%; border-collapse: collapse; margin-top: 16px;
+      background: var(--white); border-radius: var(--radius); overflow: hidden;
+      box-shadow: var(--shadow-sm); border: 1px solid var(--slate-200);
+    }
+    .risk-table th {
+      padding: 10px 16px; background: var(--slate-50);
+      font-size: 11px; font-weight: 700; color: var(--slate-500);
+      text-transform: uppercase; letter-spacing: 0.6px;
+      border-bottom: 1px solid var(--slate-200); text-align: left;
+    }
+    .risk-table td {
+      padding: 12px 16px; font-size: 13px; color: var(--slate-600);
+      border-bottom: 1px solid var(--slate-100); vertical-align: top; line-height: 1.5;
+    }
+    .risk-table tr:last-child td { border-bottom: none; }
+    .risk-high   { color: var(--rose); font-weight: 600; }
+    .risk-mid    { color: var(--amber); font-weight: 600; }
+    .risk-low    { color: var(--teal); font-weight: 600; }
+
+    /* ══════════════════════════════════════════
+       RULES / CONSTRAINTS
+    ══════════════════════════════════════════ */
+    .rules-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 16px; }
+    .rule-card {
+      background: var(--white); border-radius: var(--radius-sm); padding: 16px;
+      border: 1px solid #fecdd3; background: #fff1f2;
+      display: flex; gap: 12px; align-items: flex-start;
+    }
+    .rule-icon { font-size: 18px; flex-shrink: 0; }
+    .rule-text { font-size: 13px; color: #9f1239; line-height: 1.5; }
+    .rule-text strong { color: #7f1d1d; }
+
+    /* ══════════════════════════════════════════
+       POS PHASE CARDS (A-D)
+    ══════════════════════════════════════════ */
+    .pos-phases { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-top: 16px; }
+    .pos-phase-card {
+      background: var(--white); border: 1px solid var(--slate-200);
+      border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow-sm);
+    }
+    .pos-phase-label {
+      display: inline-block; background: var(--teal-light); color: var(--teal);
+      font-size: 11px; font-weight: 700; border-radius: 100px;
+      padding: 3px 12px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .pos-phase-title { font-size: 14px; font-weight: 700; color: var(--slate-700); margin-bottom: 10px; }
+    .pos-phase-dur { font-size: 12px; color: var(--slate-400); margin-bottom: 10px; }
+    .pos-phase-item { font-size: 13px; color: var(--slate-600); margin-bottom: 6px; display: flex; gap: 8px; }
+    .pos-phase-item::before { content: '•'; color: var(--teal); flex-shrink: 0; }
+
+    /* ══════════════════════════════════════════
+       FOOTER
+    ══════════════════════════════════════════ */
+    footer {
+      background: var(--slate-800); color: var(--slate-400);
+      text-align: center; padding: 28px; font-size: 13px;
+      margin-top: 60px;
+    }
+    footer strong { color: var(--slate-300); }
+
+    /* ══════════════════════════════════════════
+       UTILITY
+    ══════════════════════════════════════════ */
+    code {
+      font-family: 'JetBrains Mono', monospace; font-size: 12.5px;
+      background: var(--primary-light); color: var(--primary);
+      padding: 1px 6px; border-radius: 4px;
+    }
+    .divider { border: none; border-top: 2px solid var(--slate-100); margin: 40px 0; }
+    .tag {
+      display: inline-block; font-size: 11px; font-weight: 600;
+      padding: 2px 8px; border-radius: 4px; font-family: 'JetBrains Mono', monospace;
+    }
+    .tag-new  { background: #dcfce7; color: #15803d; }
+    .tag-mod  { background: #fef3c7; color: #92400e; }
+    .tag-cur  { background: #dbeafe; color: #1e40af; }
+
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .main { padding: 24px 20px; }
+      .goal-cards, .security-grid, .questions-grid, .pos-partners, .rules-grid, .pos-phases { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══ HERO ══════════════════════════════════════════════ -->
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-badge">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+      Kế Hoạch Kiến Trúc
+    </div>
+    <h1>Bella Spa ERP<br/><span>Cổng API & Tích Hợp Thị Trường Việt Nam</span></h1>
+    <div class="hero-meta">
+      <div class="hero-meta-item">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        15/06/2026
+      </div>
+      <div class="hero-meta-item">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        5 Phases API Gateway + POS HR Platform
+      </div>
+      <div class="hero-meta-item">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Modular Monolith — Next.js + Supabase
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ LAYOUT ══════════════════════════════════════════════ -->
+<div class="layout">
+
+  <!-- SIDEBAR NAV -->
+  <aside class="sidebar">
+    <div class="nav-label">Tổng Quan</div>
+    <a class="nav-link" href="#goals"><span class="nav-dot" style="background:#7c3aed"></span>Mục Tiêu Chiến Lược</a>
+    <a class="nav-link" href="#map"><span class="nav-dot" style="background:#0284c7"></span>Bản Đồ Tích Hợp</a>
+    <a class="nav-link" href="#arch"><span class="nav-dot" style="background:#0d9488"></span>Kiến Trúc</a>
+
+    <div class="nav-label">API Gateway</div>
+    <a class="nav-link" href="#phase1"><span class="nav-dot" style="background:#7c3aed"></span>Phase 1 — Foundation</a>
+    <a class="nav-link" href="#phase2"><span class="nav-dot" style="background:#ec4899"></span>Phase 2 — Payment</a>
+    <a class="nav-link" href="#phase3"><span class="nav-dot" style="background:#f59e0b"></span>Phase 3 — Zalo</a>
+    <a class="nav-link" href="#phase4"><span class="nav-dot" style="background:#10b981"></span>Phase 4 — Hóa Đơn</a>
+    <a class="nav-link" href="#phase5"><span class="nav-dot" style="background:#3b82f6"></span>Phase 5 — Webhook</a>
+
+    <div class="nav-label">Bảo Mật & Cấu Trúc</div>
+    <a class="nav-link" href="#security">🔐 Bảo Mật</a>
+    <a class="nav-link" href="#files">📁 File Structure</a>
+    <a class="nav-link" href="#timeline">📊 Timeline</a>
+    <a class="nav-link" href="#rules">✅ Ràng Buộc</a>
+
+    <div class="nav-label">Chiến Lược POS</div>
+    <a class="nav-link" href="#pos-strategy">🏭 HR Platform</a>
+    <a class="nav-link" href="#pos-partners">Phân Tích POS</a>
+    <a class="nav-link" href="#pos-schema">Schema Chuẩn</a>
+    <a class="nav-link" href="#pos-flow">Luồng Xử Lý</a>
+    <a class="nav-link" href="#pos-risks">Rủi Ro</a>
+    <a class="nav-link" href="#pos-phases">Lộ Trình POS</a>
+
+    <div class="nav-label">Quyết Định</div>
+    <a class="nav-link" href="#questions">❓ Câu Hỏi Mở</a>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- ══ GOALS ═════════════════════════════ -->
+    <section id="goals">
+      <div class="section-header">
+        <div class="section-icon" style="background:#ede9fe;">🎯</div>
+        <h2>Mục Tiêu Chiến Lược</h2>
+      </div>
+      <p>Biến Bella Spa ERP từ <strong>hệ thống khép kín</strong> thành <strong>nền tảng mở có thể tích hợp</strong>, cho phép kết nối hai chiều với toàn bộ hệ sinh thái phần mềm tại Việt Nam.</p>
+      <div class="goal-cards">
+        <div class="goal-card">
+          <div class="goal-card-icon">📥</div>
+          <div class="goal-card-title">Nhận Dữ Liệu Vào</div>
+          <div class="goal-card-desc">Từ Zalo, thanh toán (MoMo/ZaloPay/VNPay), booking online, POS bán hàng.</div>
+        </div>
+        <div class="goal-card">
+          <div class="goal-card-icon">📤</div>
+          <div class="goal-card-title">Đẩy Dữ Liệu Ra</div>
+          <div class="goal-card-desc">Cho kế toán, hóa đơn điện tử, CRM, dashboard đối tác franchise.</div>
+        </div>
+        <div class="goal-card">
+          <div class="goal-card-icon">🔗</div>
+          <div class="goal-card-title">Mở API Cho Đối Tác</div>
+          <div class="goal-card-desc">Franchise, white-label, phần mềm POS bên thứ ba kết nối vào HR engine.</div>
+        </div>
+      </div>
+      <div class="alert alert-important">
+        <div class="alert-icon">💡</div>
+        <div><strong>Nguyên tắc cốt lõi:</strong> Modular Monolith là hướng đúng. Không tách microservices ở giai đoạn này. API Gateway chỉ là lớp <em>adapter</em> bên ngoài — không thay đổi business logic bên trong.</div>
+      </div>
+    </section>
+
+    <!-- ══ MAP ═════════════════════════════ -->
+    <section id="map">
+      <div class="section-header">
+        <div class="section-icon" style="background:#e0f2fe;">🗺️</div>
+        <h2>Bản Đồ Tích Hợp — Thị Trường Việt Nam</h2>
+      </div>
+
+      <div class="integration-group">
+        <div class="group-title">💳 Nhóm 1: Thanh Toán</div>
+        <table class="int-table">
+          <thead><tr><th>Hệ Thống</th><th>Loại</th><th>Ưu Tiên</th><th>Hiện Trạng</th></tr></thead>
+          <tbody>
+            <tr><td><span class="sys-name">VietQR / Casso</span></td><td>QR Banking NAPAS</td><td><span class="badge badge-live">🔴 Đã có</span></td><td><code>webhooks/payment/</code> hoạt động</td></tr>
+            <tr><td><span class="sys-name">MoMo</span></td><td>E-wallet</td><td><span class="badge badge-high">🟡 Cao</span></td><td>Chưa có</td></tr>
+            <tr><td><span class="sys-name">ZaloPay</span></td><td>E-wallet + QR</td><td><span class="badge badge-high">🟡 Cao</span></td><td>Chưa có</td></tr>
+            <tr><td><span class="sys-name">VNPay</span></td><td>Multi-method gateway</td><td><span class="badge badge-mid">🟠 Trung bình</span></td><td>Chưa có</td></tr>
+            <tr><td><span class="sys-name">AppotaPay / OnePay</span></td><td>Aggregator</td><td><span class="badge badge-low">🟢 Thấp</span></td><td>Chưa có</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="integration-group">
+        <div class="group-title">💬 Nhóm 2: Kênh Giao Tiếp Khách Hàng</div>
+        <table class="int-table">
+          <thead><tr><th>Hệ Thống</th><th>Loại</th><th>Ưu Tiên</th><th>Hiện Trạng</th></tr></thead>
+          <tbody>
+            <tr><td><span class="sys-name">Zalo ZNS</span></td><td>Thông báo OA</td><td><span class="badge badge-live">🔴 Đã có</span></td><td><code>crm/zalo-config.ts</code></td></tr>
+            <tr><td><span class="sys-name">Zalo Mini App</span></td><td>Booking + Portal</td><td><span class="badge badge-high">🟡 Cao</span></td><td>Chưa có Public API</td></tr>
+            <tr><td><span class="sys-name">Telegram Bot</span></td><td>Nội bộ / Admin</td><td><span class="badge badge-live">🔴 Đã có</span></td><td><code>v1/ai/telegram-webhook/</code></td></tr>
+            <tr><td><span class="sys-name">SMS (eSMS / BSMS)</span></td><td>Backup SMS</td><td><span class="badge badge-mid">🟠 Trung bình</span></td><td>Chưa có</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="integration-group">
+        <div class="group-title">🧾 Nhóm 3: Kế Toán & Hóa Đơn Điện Tử</div>
+        <table class="int-table">
+          <thead><tr><th>Hệ Thống</th><th>Loại</th><th>Ưu Tiên</th><th>Hiện Trạng</th></tr></thead>
+          <tbody>
+            <tr><td><span class="sys-name">MISA meInvoice</span></td><td>Hóa đơn điện tử</td><td><span class="badge badge-high">🟡 Cao</span></td><td>Chưa có</td></tr>
+            <tr><td><span class="sys-name">VATS Einvoice</span></td><td>Hóa đơn điện tử</td><td><span class="badge badge-mid">🟠 Trung bình</span></td><td>Chưa có</td></tr>
+            <tr><td><span class="sys-name">MISA SME / AMIS</span></td><td>Kế toán tổng hợp</td><td><span class="badge badge-mid">🟠 Trung bình</span></td><td>TT133 nội bộ</td></tr>
+            <tr><td><span class="sys-name">VNPT eTax</span></td><td>Cổng thuế điện tử</td><td><span class="badge badge-low">🟢 Thấp</span></td><td>Chưa có</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="integration-group">
+        <div class="group-title">🔗 Nhóm 4 & 5: POS / Marketplace / Franchise</div>
+        <table class="int-table">
+          <thead><tr><th>Hệ Thống</th><th>Loại</th><th>Ưu Tiên</th><th>Hiện Trạng</th></tr></thead>
+          <tbody>
+            <tr><td><span class="sys-name">KiotViet Salon</span></td><td>POS → HR Adapter</td><td><span class="badge badge-mid">🟠 Trung bình</span></td><td>Xem POS Strategy</td></tr>
+            <tr><td><span class="sys-name">Sapo</span></td><td>POS → HR Adapter</td><td><span class="badge badge-mid">🟠 Trung bình</span></td><td>Xem POS Strategy</td></tr>
+            <tr><td><span class="sys-name">Webhook Outbound</span></td><td>Partner notifications</td><td><span class="badge badge-high">🟡 Cao</span></td><td>Chưa có</td></tr>
+            <tr><td><span class="sys-name">Public REST API</span></td><td>Franchise / White-label</td><td><span class="badge badge-high">🟡 Cao</span></td><td><code>v1/ai/</code> nội bộ</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ══ ARCH ═════════════════════════════ -->
+    <section id="arch">
+      <div class="section-header">
+        <div class="section-icon" style="background:#ccfbf1;">🏗️</div>
+        <h2>Kiến Trúc Đề Xuất</h2>
+      </div>
+      <div class="arch-box">
+        <div class="arch-layers">
+          <div class="arch-layer layer-internet" style="text-align:center;">
+            <div class="arch-layer-title">🌐 Internet / Partners / POS Systems</div>
+          </div>
+          <div class="arch-arrow">↓</div>
+          <div class="arch-layer layer-gateway">
+            <div class="arch-layer-title">API Gateway Layer — <code>src/app/api/</code></div>
+            <div class="arch-sub-layers">
+              <div class="arch-sub-box">v1/ REST API</div>
+              <div class="arch-sub-box">webhooks/ Inbound</div>
+              <div class="arch-sub-box">public/ Zalo</div>
+              <div class="arch-sub-box">pos-events/</div>
+            </div>
+            <div class="arch-layer-sub" style="margin-top:10px;">Middleware: Auth · Rate-limit · HMAC Verify · Idempotency · Audit</div>
+          </div>
+          <div class="arch-arrow">↓</div>
+          <div class="arch-layer layer-services">
+            <div class="arch-layer-title">Core Business Services — <code>src/services/ + src/modules/</code></div>
+            <div class="arch-layer-sub">booking · payment · accounting · salary · CRM · audit · notification · HR Engine</div>
+          </div>
+          <div class="arch-arrow">↓</div>
+          <div class="arch-layer layer-db">
+            <div class="arch-layer-title">Supabase — PostgreSQL 15 + RLS</div>
+            <div class="arch-layer-sub">Multi-tenant isolation · Row Level Security · Realtime WebSocket</div>
+          </div>
+        </div>
+      </div>
+
+      <h3>Nguyên Tắc Thiết Kế API Gateway</h3>
+      <div class="principles">
+        <div class="principle"><div class="principle-num">1</div><div class="principle-text"><strong>Gateway là Adapter, không phải Business Logic</strong> — Tất cả nghiệp vụ vẫn qua <code>src/services/</code>. Gateway chỉ parse/validate request và format response.</div></div>
+        <div class="principle"><div class="principle-num">2</div><div class="principle-text"><strong>Tenant-scoped tuyệt đối</strong> — Mọi request vào phải xác định được <code>tenant_id</code> qua API Key hoặc JWT.</div></div>
+        <div class="principle"><div class="principle-num">3</div><div class="principle-text"><strong>Idempotency Key bắt buộc</strong> — Payment webhook và accounting outbox đã có pattern này, cần lan rộng ra toàn bộ inbound webhook.</div></div>
+        <div class="principle"><div class="principle-num">4</div><div class="principle-text"><strong>HMAC Signature Verify</strong> — Tất cả webhook từ bên ngoài (MoMo, ZaloPay, Zalo) phải verify signature trước khi xử lý.</div></div>
+        <div class="principle"><div class="principle-num">5</div><div class="principle-text"><strong>Audit tất cả API call</strong> — Kế thừa <code>audit-actions.ts</code> để log mọi inbound API call có mutation.</div></div>
+      </div>
+    </section>
+
+    <hr class="divider"/>
+
+    <!-- ══ PHASES ═════════════════════════════ -->
+    <section id="phase1">
+      <div class="section-header">
+        <div class="section-icon" style="background:#ede9fe; font-size:20px;">🔧</div>
+        <h2>Lộ Trình Triển Khai — API Gateway</h2>
+      </div>
+
+      <!-- P1 -->
+      <div class="phase-card">
+        <div class="phase-header" style="background: linear-gradient(135deg, #f5f3ff, #ede9fe);">
+          <div class="phase-num">1</div>
+          <div>
+            <div class="phase-title">API Gateway Foundation</div>
+            <div style="font-size:13px;color:#7c3aed;margin-top:2px;">Middleware · API Keys · Rate Limit · Chuẩn hóa REST</div>
+          </div>
+          <div class="phase-duration">2–3 tuần</div>
+        </div>
+        <div class="phase-body">
+          <div class="phase-goal">🎯 Chuẩn hóa lớp API hiện có, tạo middleware dùng chung, chuẩn bị nền tảng cho mọi tích hợp sau.</div>
+
+          <h4>File Cần Tạo / Sửa</h4>
+          <div class="file-tree">
+<span class="ft-dir">src/app/api/v1/</span><br/>
+<span style="color:#475569">├── </span><span class="ft-new">bookings/route.ts</span>  <span class="ft-cmt">[NEW] GET/POST booking</span><br/>
+<span style="color:#475569">├── </span><span class="ft-new">customers/route.ts</span> <span class="ft-cmt">[NEW] GET customer profile</span><br/>
+<span style="color:#475569">├── </span><span class="ft-new">services/route.ts</span>  <span class="ft-cmt">[NEW] GET service catalog</span><br/>
+<span style="color:#475569">└── </span><span class="ft-exist">ai/</span> <span class="ft-cmt">[hiện có]</span><br/>
+<br/>
+<span class="ft-dir">src/lib/api-gateway/</span> <span class="ft-cmt">[NEW module]</span><br/>
+<span style="color:#475569">├── </span><span class="ft-new">auth.ts</span>         <span class="ft-cmt">Verify API Key → tenant_id</span><br/>
+<span style="color:#475569">├── </span><span class="ft-new">rate-limit.ts</span>   <span class="ft-cmt">Per-API-key rate limiting</span><br/>
+<span style="color:#475569">├── </span><span class="ft-new">hmac.ts</span>         <span class="ft-cmt">Verify HMAC từ MoMo/ZaloPay/Zalo</span><br/>
+<span style="color:#475569">├── </span><span class="ft-new">response.ts</span>     <span class="ft-cmt">{ success, data, error, requestId }</span><br/>
+<span style="color:#475569">├── </span><span class="ft-new">idempotency.ts</span>  <span class="ft-cmt">Check + store idempotency key</span><br/>
+<span style="color:#475569">└── </span><span class="ft-new">scopes.ts</span>       <span class="ft-cmt">Permission scopes per API key</span>
+          </div>
+
+          <h4>Database Migration</h4>
+          <div class="code-block">
+            <div class="code-header"><div class="code-dot" style="background:#ef4444"></div><div class="code-dot" style="background:#f59e0b"></div><div class="code-dot" style="background:#22c55e"></div><span class="code-lang">SQL · 20260616000000_create_api_keys.sql</span></div>
+            <pre><span class="kw">CREATE TABLE</span> api_keys (
+  id          UUID <span class="kw">PRIMARY KEY DEFAULT</span> gen_random_uuid(),
+  tenant_id   UUID <span class="kw">NOT NULL REFERENCES</span> tenants(id),
+  key_hash    TEXT <span class="kw">NOT NULL UNIQUE</span>,   <span class="cmt">-- bcrypt hash, cost=12</span>
+  key_prefix  TEXT <span class="kw">NOT NULL</span>,            <span class="cmt">-- "bsa_live_xxxxx"</span>
+  name        TEXT <span class="kw">NOT NULL</span>,            <span class="cmt">-- "Zalo Mini App", "MoMo"</span>
+  scopes      TEXT[] <span class="kw">NOT NULL DEFAULT</span> <span class="str">'{}'</span>,
+  last_used_at TIMESTAMPTZ,
+  expires_at  TIMESTAMPTZ,
+  is_active   BOOLEAN <span class="kw">DEFAULT</span> <span class="kw">true</span>,
+  created_at  TIMESTAMPTZ <span class="kw">DEFAULT</span> now()
+);
+<span class="cmt">-- RLS: chỉ service-role mới đọc/ghi api_keys</span></pre>
+          </div>
+
+          <h4>Checklist Xác Nhận</h4>
+          <div class="checklist">
+            <div class="check-item"><div class="check-box"></div> <code>npx tsc --noEmit</code> pass</div>
+            <div class="check-item"><div class="check-box"></div> <code>npm run lint</code> pass</div>
+            <div class="check-item"><div class="check-box"></div> Unit test cho <code>hmac.ts</code>, <code>auth.ts</code>, <code>idempotency.ts</code></div>
+            <div class="check-item"><div class="check-box"></div> Không đổi hành vi <code>webhooks/payment/</code> hiện có</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- P2 -->
+      <div class="phase-card" id="phase2">
+        <div class="phase-header" style="background: linear-gradient(135deg, #fdf2f8, #fce7f3);">
+          <div class="phase-num" style="background: linear-gradient(135deg, #db2777, #ec4899);">2</div>
+          <div>
+            <div class="phase-title">Thanh Toán Mở Rộng</div>
+            <div style="font-size:13px;color:#db2777;margin-top:2px;">MoMo · ZaloPay · VNPay · Chuẩn hóa Payment Webhook</div>
+          </div>
+          <div class="phase-duration" style="background:#fce7f3;color:#db2777;">3–4 tuần</div>
+        </div>
+        <div class="phase-body">
+          <div class="phase-goal" style="border-color:#db2777;">🎯 Bổ sung MoMo, ZaloPay, VNPay. Chuẩn hóa webhook handler dùng chung.</div>
+
+          <h4>Endpoints Mới</h4>
+          <div class="steps">
+            <div class="step"><div class="step-bullet" style="background:#db2777"></div><code>POST /api/webhooks/momo/</code> — Verify HMAC_SHA256, idempotency, gọi <code>recordRemainingPayment()</code></div>
+            <div class="step"><div class="step-bullet" style="background:#db2777"></div><code>POST /api/webhooks/zalopay/</code> — MAC = HMAC_SHA256, <code>app_trans_id</code> làm idempotency key</div>
+            <div class="step"><div class="step-bullet" style="background:#db2777"></div><code>POST /api/webhooks/vnpay/</code> — <code>vnp_SecureHash</code> SHA512, map <code>vnp_TxnRef</code> → <code>booking_id</code></div>
+            <div class="step"><div class="step-bullet" style="background:#db2777"></div><code>MODIFY webhooks/payment/route.ts</code> — Refactor thành base handler, tách verify sang <code>hmac.ts</code></div>
+          </div>
+
+          <h4>Tích Hợp MoMo</h4>
+          <div class="steps">
+            <div class="step"><div class="step-bullet"></div>Đăng ký MoMo Business Account (yêu cầu ĐKKD)</div>
+            <div class="step"><div class="step-bullet"></div>Lấy <code>partnerCode</code>, <code>accessKey</code>, <code>secretKey</code> từ MoMo Developer Portal</div>
+            <div class="step"><div class="step-bullet"></div>Implement <code>createOrder</code> API: Bella tạo QR → MoMo trả <code>payUrl</code> / <code>deeplink</code></div>
+            <div class="step"><div class="step-bullet"></div>Nhận callback về <code>/api/webhooks/momo/</code></div>
+            <div class="step"><div class="step-bullet"></div>Lưu <code>webhook_transaction_id = momoOrderId</code> trong <code>revenue.accounting_metadata</code></div>
+          </div>
+
+          <div class="alert alert-warning">
+            <div class="alert-icon">⚠️</div>
+            <div>Mỗi provider cần bảng <code>payment_providers</code> để cấu hình per-tenant. <strong>Không hardcode credentials</strong>. Lưu vào <code>tenants.settings</code> hoặc Supabase Vault.</div>
+          </div>
+
+          <h4>Checklist Xác Nhận</h4>
+          <div class="checklist">
+            <div class="check-item"><div class="check-box"></div> Test idempotency: replay webhook 3 lần → chỉ 1 revenue record</div>
+            <div class="check-item"><div class="check-box"></div> Test HMAC reject: payload tampered → 401</div>
+            <div class="check-item"><div class="check-box"></div> <code>npm run test:critical</code> pass</div>
+            <div class="check-item"><div class="check-box"></div> Smoke test payment end-to-end</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- P3 -->
+      <div class="phase-card" id="phase3">
+        <div class="phase-header" style="background: linear-gradient(135deg, #fffbeb, #fef3c7);">
+          <div class="phase-num" style="background: linear-gradient(135deg, #d97706, #f59e0b);">3</div>
+          <div>
+            <div class="phase-title">Zalo Mini App Public API</div>
+            <div style="font-size:13px;color:#d97706;margin-top:2px;">Booking · Thẻ Liệu Trình · Zalo OAuth · Nghị Định 13</div>
+          </div>
+          <div class="phase-duration" style="background:#fef3c7;color:#d97706;">3–4 tuần</div>
+        </div>
+        <div class="phase-body">
+          <div class="phase-goal" style="border-color:#d97706;">🎯 Mở API cho Zalo Mini App — khách hàng đặt lịch, xem thẻ liệu trình mà không cần login app Bella.</div>
+
+          <h4>Endpoints</h4>
+          <div class="code-block">
+            <div class="code-header"><div class="code-dot" style="background:#ef4444"></div><div class="code-dot" style="background:#f59e0b"></div><div class="code-dot" style="background:#22c55e"></div><span class="code-lang">REST API</span></div>
+            <pre><span class="kw">GET</span>  /api/v1/public/services?tenant={slug}
+     <span class="cmt">→ Danh sách dịch vụ (public, không cần auth)</span>
+
+<span class="kw">POST</span> /api/v1/public/bookings
+     <span class="cmt">→ Tạo booking từ Zalo Mini App</span>
+     <span class="cmt">→ Auth: Zalo Access Token → map Zalo UID → customer_id</span>
+
+<span class="kw">GET</span>  /api/v1/public/bookings/{id}/status
+<span class="kw">GET</span>  /api/v1/public/customers/me/packages
+<span class="kw">POST</span> /api/v1/public/reviews
+<span class="kw">POST</span> /api/webhooks/zalo/  <span class="cmt">→ user consent revoke (Nghị định 13)</span></pre>
+          </div>
+
+          <h4>Migration</h4>
+          <div class="code-block">
+            <div class="code-header"><div class="code-dot" style="background:#ef4444"></div><div class="code-dot" style="background:#f59e0b"></div><div class="code-dot" style="background:#22c55e"></div><span class="code-lang">SQL</span></div>
+            <pre><span class="kw">ALTER TABLE</span> customers
+  <span class="kw">ADD COLUMN</span> zalo_user_id TEXT,
+  <span class="kw">ADD COLUMN</span> zalo_linked_at TIMESTAMPTZ;
+
+<span class="kw">CREATE UNIQUE INDEX</span> idx_customers_zalo_user_id
+  <span class="kw">ON</span> customers(tenant_id, zalo_user_id)
+  <span class="kw">WHERE</span> zalo_user_id <span class="kw">IS NOT NULL</span>;</pre>
+          </div>
+
+          <div class="alert alert-important">
+            <div class="alert-icon">📌</div>
+            <div>Zalo yêu cầu <strong>IP Whitelist</strong> trên Developer Console. Phải khai báo IP của Vercel hoặc dùng fixed IP qua proxy.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- P4 -->
+      <div class="phase-card" id="phase4">
+        <div class="phase-header" style="background: linear-gradient(135deg, #f0fdf4, #dcfce7);">
+          <div class="phase-num" style="background: linear-gradient(135deg, #059669, #10b981);">4</div>
+          <div>
+            <div class="phase-title">Hóa Đơn Điện Tử</div>
+            <div style="font-size:13px;color:#059669;margin-top:2px;">MISA meInvoice · Tự Động Phát Hành · Gửi Zalo ZNS</div>
+          </div>
+          <div class="phase-duration" style="background:#dcfce7;color:#059669;">2–3 tuần</div>
+        </div>
+        <div class="phase-body">
+          <div class="phase-goal" style="border-color:#059669;">🎯 Tự động phát hành hóa đơn điện tử khi booking thanh toán đủ. Gửi PDF qua Zalo ZNS.</div>
+
+          <h4>Luồng Tự Động</h4>
+          <div class="flow-box">
+            <div class="flow-step"><span class="flow-step-num">1.</span><span class="flow-step-content">Booking hoàn tất & thanh toán đủ</span></div>
+            <div class="flow-step"><span class="flow-step-num">2.</span><span class="flow-step-content">Accounting outbox EVENT: <code style="color:#a78bfa">PAYMENT_COMPLETED</code></span></div>
+            <div class="flow-step"><span class="flow-step-num">3.</span><span class="flow-step-content">[NEW] <code style="color:#a78bfa">invoice-worker</code> cron trigger</span></div>
+            <div class="flow-step"><span class="flow-step-num">4.</span><span class="flow-step-content">Gọi MISA meInvoice API: <code style="color:#86efac">POST /einvoices</code></span></div>
+            <div class="flow-step"><span class="flow-step-num">5.</span><span class="flow-step-content">Nhận <code style="color:#86efac">invoice_no</code> + PDF URL</span></div>
+            <div class="flow-step"><span class="flow-step-num">6.</span><span class="flow-step-content">Lưu vào bảng <code style="color:#86efac">invoices</code> (tenant_id, booking_id, invoice_no, pdf_url)</span></div>
+            <div class="flow-step"><span class="flow-step-num">7.</span><span class="flow-step-content">Gửi Zalo ZNS: "Hóa đơn điện tử của bạn: [link]"</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- P5 -->
+      <div class="phase-card" id="phase5">
+        <div class="phase-header" style="background: linear-gradient(135deg, #eff6ff, #dbeafe);">
+          <div class="phase-num" style="background: linear-gradient(135deg, #1d4ed8, #3b82f6);">5</div>
+          <div>
+            <div class="phase-title">Outbound Webhook & Partner API</div>
+            <div style="font-size:13px;color:#1d4ed8;margin-top:2px;">Real-time Events · Retry Queue · Dead-letter · Franchise API</div>
+          </div>
+          <div class="phase-duration" style="background:#dbeafe;color:#1d4ed8;">3–4 tuần</div>
+        </div>
+        <div class="phase-body">
+          <div class="phase-goal" style="border-color:#1d4ed8;">🎯 Bella chủ động đẩy event ra cho franchise/đối tác. Retry tự động, dead-letter alert.</div>
+
+          <h4>Events Outbound</h4>
+          <div class="code-block">
+            <div class="code-header"><div class="code-dot" style="background:#ef4444"></div><div class="code-dot" style="background:#f59e0b"></div><div class="code-dot" style="background:#22c55e"></div><span class="code-lang">TypeScript</span></div>
+            <pre><span class="kw">type</span> OutboundEvents = {
+  <span class="str">'booking.created'</span>:   BookingCreatedPayload;
+  <span class="str">'booking.updated'</span>:   BookingUpdatedPayload;
+  <span class="str">'payment.completed'</span>: PaymentCompletedPayload;
+  <span class="str">'session.completed'</span>: SessionCompletedPayload;
+  <span class="str">'customer.created'</span>:  CustomerCreatedPayload;
+}</pre>
+          </div>
+
+          <h4>Retry Strategy</h4>
+          <div class="steps">
+            <div class="step"><div class="step-bullet" style="background:#1d4ed8"></div>Exponential backoff: retry sau <strong>1m → 5m → 30m → 2h → 24h</strong></div>
+            <div class="step"><div class="step-bullet" style="background:#1d4ed8"></div>Sau 5 lần thất bại → trạng thái <code>dead</code>, notify admin qua Telegram bot</div>
+            <div class="step"><div class="step-bullet" style="background:#1d4ed8"></div>Outbound payload được HMAC sign để partner verify được</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SECURITY ═════════════════════════════ -->
+    <section id="security">
+      <div class="section-header">
+        <div class="section-icon" style="background:#fff1f2;">🔐</div>
+        <h2>Mô Hình Bảo Mật API Gateway</h2>
+      </div>
+      <div class="security-grid">
+        <div class="security-card">
+          <h4>🔑 API Key Format</h4>
+          <div class="code-block" style="margin-top:0;">
+            <div class="code-header"><div class="code-dot" style="background:#ef4444"></div><div class="code-dot" style="background:#f59e0b"></div><div class="code-dot" style="background:#22c55e"></div></div>
+            <pre style="padding:12px;font-size:12px;">bsa_live_&lt;prefix&gt;_&lt;32_random_chars&gt;
+bsa_test_&lt;prefix&gt;_&lt;32_random_chars&gt;
+
+<span class="cmt">Storage: bcrypt hash (cost=12)</span>
+<span class="cmt">Header:  Authorization: Bearer bsa_live_xxxxx</span></pre>
+          </div>
+        </div>
+        <div class="security-card">
+          <h4>🛡️ Webhook Inbound Security</h4>
+          <div class="security-item"><div class="security-item-num">1</div>Verify IP nguồn (whitelist per provider)</div>
+          <div class="security-item"><div class="security-item-num">2</div>Verify HMAC / Signature (provider-specific)</div>
+          <div class="security-item"><div class="security-item-num">3</div>Verify timestamp (reject nếu &gt; 5 phút)</div>
+          <div class="security-item"><div class="security-item-num">4</div>Idempotency key check (reject duplicate)</div>
+          <div class="security-item"><div class="security-item-num">5</div>Audit log mọi inbound webhook</div>
+        </div>
+        <div class="security-card">
+          <h4>📋 Scopes Phân Quyền</h4>
+          <div class="scope-row"><span class="scope-name">bookings:read</span><span class="scope-desc">Xem đặt lịch</span></div>
+          <div class="scope-row"><span class="scope-name">bookings:write</span><span class="scope-desc">Tạo/sửa đặt lịch</span></div>
+          <div class="scope-row"><span class="scope-name">customers:read</span><span class="scope-desc">Xem khách hàng</span></div>
+          <div class="scope-row"><span class="scope-name">payments:read</span><span class="scope-desc">Xem giao dịch</span></div>
+          <div class="scope-row"><span class="scope-name">payments:write</span><span class="scope-desc">Ghi nhận thanh toán</span></div>
+          <div class="scope-row"><span class="scope-name">webhooks:manage</span><span class="scope-desc">Quản lý endpoint</span></div>
+        </div>
+        <div class="security-card">
+          <h4>⏱️ Rate Limiting</h4>
+          <div class="security-item"><div class="security-item-num" style="background:#fef3c7;color:#92400e;">P</div>Public APIs (không auth): <strong>30 req/min per IP</strong></div>
+          <div class="security-item"><div class="security-item-num">A</div>Authenticated APIs: <strong>120 req/min per Key</strong></div>
+          <div class="security-item"><div class="security-item-num" style="background:#dcfce7;color:#15803d;">W</div>Payment webhooks: <strong>Unlimited</strong> (verify HMAC)</div>
+          <div class="security-item"><div class="security-item-num" style="background:#dbeafe;color:#1d4ed8;">C</div>Cron endpoints: Vercel Cron-Secret header</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ FILE TREE ═════════════════════════════ -->
+    <section id="files">
+      <div class="section-header">
+        <div class="section-icon" style="background:#f0fdf4;">📁</div>
+        <h2>Cấu Trúc File Đề Xuất (Phase 1–5)</h2>
+      </div>
+      <div class="file-tree">
+<span class="ft-dir">src/</span><br/>
+<span style="color:#475569">├── </span><span class="ft-dir">app/api/</span><br/>
+<span style="color:#475569">│   ├── </span><span class="ft-dir">v1/</span><br/>
+<span style="color:#475569">│   │   ├── </span><span class="ft-new">bookings/route.ts</span>         <span class="ft-cmt">[Phase 1]</span><br/>
+<span style="color:#475569">│   │   ├── </span><span class="ft-new">customers/route.ts</span>        <span class="ft-cmt">[Phase 1]</span><br/>
+<span style="color:#475569">│   │   ├── </span><span class="ft-new">services/route.ts</span>         <span class="ft-cmt">[Phase 1]</span><br/>
+<span style="color:#475569">│   │   └── </span><span class="ft-exist">ai/</span>                       <span class="ft-cmt">[hiện có]</span><br/>
+<span style="color:#475569">│   ├── </span><span class="ft-new">public/</span>                       <span class="ft-cmt">[Phase 3 - Zalo Mini App]</span><br/>
+<span style="color:#475569">│   │   ├── </span><span class="ft-new">bookings/route.ts</span><br/>
+<span style="color:#475569">│   │   └── </span><span class="ft-new">customers/me/packages/route.ts</span><br/>
+<span style="color:#475569">│   ├── </span><span class="ft-dir">webhooks/</span><br/>
+<span style="color:#475569">│   │   ├── </span><span class="ft-exist">payment/route.ts</span>          <span class="ft-cmt">[hiện có, refactor]</span><br/>
+<span style="color:#475569">│   │   ├── </span><span class="ft-new">momo/route.ts</span>             <span class="ft-cmt">[Phase 2]</span><br/>
+<span style="color:#475569">│   │   ├── </span><span class="ft-new">zalopay/route.ts</span>          <span class="ft-cmt">[Phase 2]</span><br/>
+<span style="color:#475569">│   │   ├── </span><span class="ft-new">vnpay/route.ts</span>            <span class="ft-cmt">[Phase 2]</span><br/>
+<span style="color:#475569">│   │   └── </span><span class="ft-new">zalo/route.ts</span>             <span class="ft-cmt">[Phase 3 - consent revoke]</span><br/>
+<span style="color:#475569">│   ├── </span><span class="ft-new">pos-events/</span>                   <span class="ft-cmt">[POS Strategy]</span><br/>
+<span style="color:#475569">│   │   ├── </span><span class="ft-new">sales/route.ts</span>            <span class="ft-cmt">POS → Bella HR</span><br/>
+<span style="color:#475569">│   │   └── </span><span class="ft-new">attendance/route.ts</span><br/>
+<span style="color:#475569">│   └── </span><span class="ft-dir">cron/</span><br/>
+<span style="color:#475569">│       ├── </span><span class="ft-exist">accounting-worker/</span>        <span class="ft-cmt">[hiện có]</span><br/>
+<span style="color:#475569">│       ├── </span><span class="ft-exist">ai-autopilot/</span>             <span class="ft-cmt">[hiện có]</span><br/>
+<span style="color:#475569">│       ├── </span><span class="ft-exist">zalo-reminders/</span>           <span class="ft-cmt">[hiện có]</span><br/>
+<span style="color:#475569">│       ├── </span><span class="ft-new">invoice-worker/route.ts</span>   <span class="ft-cmt">[Phase 4]</span><br/>
+<span style="color:#475569">│       └── </span><span class="ft-new">webhook-dispatcher/route.ts</span><span class="ft-cmt"> [Phase 5]</span><br/>
+<span style="color:#475569">└── </span><span class="ft-dir">lib/</span><br/>
+<span style="color:#475569">    └── </span><span class="ft-new">api-gateway/</span>                  <span class="ft-cmt">[Phase 1 — dùng chung]</span>
+      </div>
+    </section>
+
+    <!-- ══ TIMELINE ═════════════════════════════ -->
+    <section id="timeline">
+      <div class="section-header">
+        <div class="section-icon" style="background:#eff6ff;">📊</div>
+        <h2>Thứ Tự Ưu Tiên & Timeline</h2>
+      </div>
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-dot">1</div>
+          <div class="tl-content">
+            <div class="tl-title">Phase 1 — API Gateway Foundation</div>
+            <div class="tl-weeks">Tuần 1–3</div>
+            <div class="tl-desc">Middleware, API key, rate limit, chuẩn hóa REST endpoints</div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot">2</div>
+          <div class="tl-content">
+            <div class="tl-title">Phase 2 — Payment Mở Rộng</div>
+            <div class="tl-weeks">Tuần 4–7</div>
+            <div class="tl-desc">MoMo + ZaloPay + VNPay webhook handlers</div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot">3</div>
+          <div class="tl-content">
+            <div class="tl-title">Phase A–B — POS HR Foundation</div>
+            <div class="tl-weeks">Tuần 4–10 (song song)</div>
+            <div class="tl-desc">pos_staff_mappings, POS adapter layer, salary engine integration, bắt đầu với Sapo</div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot">4</div>
+          <div class="tl-content">
+            <div class="tl-title">Phase 3 — Zalo Mini App Public API</div>
+            <div class="tl-weeks">Tuần 8–11</div>
+            <div class="tl-desc">Zalo OAuth, public booking endpoints, Nghị định 13 compliance</div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot">5</div>
+          <div class="tl-content">
+            <div class="tl-title">Phase 4 — Hóa Đơn Điện Tử</div>
+            <div class="tl-weeks">Tuần 12–14</div>
+            <div class="tl-desc">MISA meInvoice, invoice-worker cron, Zalo ZNS gửi PDF</div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot">6</div>
+          <div class="tl-content">
+            <div class="tl-title">Phase 5 — Outbound Webhook & Partner API</div>
+            <div class="tl-weeks">Tuần 15–18</div>
+            <div class="tl-desc">webhook_endpoints, webhook_deliveries, retry queue, dead-letter</div>
+          </div>
+        </div>
+      </div>
+      <div class="alert alert-note" style="margin-top:20px;">
+        <div class="alert-icon">⏱️</div>
+        <div><strong>Tổng thời gian ước tính: 4–5 tháng</strong> cho API Gateway. Thêm 2–3 tháng cho POS HR Strategy (chạy song song từ Phase 2 trở đi).</div>
+      </div>
+    </section>
+
+    <!-- ══ RULES ═════════════════════════════ -->
+    <section id="rules">
+      <div class="section-header">
+        <div class="section-icon" style="background:#fff1f2;">✅</div>
+        <h2>Ràng Buộc Không Được Phá (Kế Thừa Từ AGENTS.md)</h2>
+      </div>
+      <div class="rules-grid">
+        <div class="rule-card"><div class="rule-icon">🔒</div><div class="rule-text"><strong>Không đổi RLS, tenant isolation</strong> — API Gateway phải enforce <code>tenant_id</code> ngay tại lớp middleware.</div></div>
+        <div class="rule-card"><div class="rule-icon">🚫</div><div class="rule-text"><strong>Không nuốt lỗi DB</strong> — Mọi route handler phải throw hoặc trả <code>&#123; success: false, error &#125;</code>.</div></div>
+        <div class="rule-card"><div class="rule-icon">🔑</div><div class="rule-text"><strong>Không hardcode credentials</strong> — API keys, HMAC secrets phải qua <code>env</code> hoặc Supabase Vault.</div></div>
+        <div class="rule-card"><div class="rule-icon">📋</div><div class="rule-text"><strong>Không bypass audit</strong> — Mọi inbound request có mutation phải ghi audit log.</div></div>
+        <div class="rule-card"><div class="rule-icon">💰</div><div class="rule-text"><strong>Không đổi salary/booking flow</strong> — Gateway chỉ gọi service functions có sẵn, không tự xử lý nghiệp vụ.</div></div>
+        <div class="rule-card"><div class="rule-icon">🏗️</div><div class="rule-text"><strong>Không tách microservices</strong> — Modular monolith là hướng đúng ở giai đoạn này.</div></div>
+      </div>
+    </section>
+
+    <hr class="divider"/>
+
+    <!-- ══ POS STRATEGY ═════════════════════════════ -->
+    <section id="pos-strategy">
+      <div class="pos-banner">
+        <h2>🏭 Chiến Lược Mở Rộng: Bella ERP Làm "HR Platform of Record"</h2>
+        <p>Để POS như KiotViet, Sapo làm tốt việc bán hàng — còn Bella ERP là <strong>nguồn sự thật duy nhất</strong> cho nhân sự: lương, hoa hồng, chấm công GPS, KPI, phân ca.</p>
+      </div>
+
+      <h3>Tại Sao Đây Là Cơ Hội Lớn?</h3>
+      <table class="pos-vs-table">
+        <thead><tr><th>Vấn Đề Hiện Tại Của Spa Dùng POS</th><th>✅ Giải Pháp Từ Bella ERP</th></tr></thead>
+        <tbody>
+          <tr><td>KiotViet/Sapo tính lương theo đơn giản, không có session multiplier, KPI bonus, pro-rata</td><td>Bella ERP tính lương đúng theo toàn bộ logic nghiệp vụ spa</td></tr>
+          <tr><td>Không có chấm công GPS, không phát hiện KTV check-in giả</td><td>GPS check-in, QR verification, audit log đầy đủ</td></tr>
+          <tr><td>Không tích hợp kế toán kép TT133, phải nhập tay vào MISA</td><td>Accounting outbox tự động ghi sổ theo TT133</td></tr>
+          <tr><td>Mỗi chi nhánh dùng POS khác nhau, không có dashboard tập trung</td><td>Bella HQ dashboard tổng hợp mọi chi nhánh bất kể POS</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ══ POS PARTNERS ═════════════════════════════ -->
+    <section id="pos-partners">
+      <h3>Phân Tích Từng POS Đối Tác</h3>
+      <div class="pos-partners">
+        <div class="pos-card">
+          <div class="pos-card-header">
+            <div class="pos-card-name">KiotViet Salon</div>
+            <div class="pos-level level-mid">Trung Bình</div>
+          </div>
+          <div class="pos-can">✅ Gửi được về Bella</div>
+          <div class="pos-item"><code>invoice.created/updated</code> webhook</div>
+          <div class="pos-item">employee_id, total_amount, discount, items</div>
+          <div class="pos-item">OAuth 2.0 REST: GET /invoices</div>
+          <div class="pos-cannot">❌ Không hỗ trợ</div>
+          <div class="pos-item">Chấm công API (chỉ máy vật lý)</div>
+          <div class="pos-item">Session multiplier / KPI bonus</div>
+          <div class="pos-item">GPS tracking</div>
+          <div class="pos-conclusion">→ KiotViet gửi sale event, Bella xử lý lương. Chấm công vẫn qua Bella KTV App.</div>
+        </div>
+        <div class="pos-card">
+          <div class="pos-card-header">
+            <div class="pos-card-name">Sapo (FnB Pro)</div>
+            <div class="pos-level level-good">Khá Tốt</div>
+          </div>
+          <div class="pos-can">✅ Gửi được về Bella</div>
+          <div class="pos-item"><code>orders/paid</code> webhook với staff_id</div>
+          <div class="pos-item"><code>orders/create</code>, <code>orders/cancelled</code></div>
+          <div class="pos-item">Private App: đọc nhân viên, ca làm</div>
+          <div class="pos-cannot">❌ Không có</div>
+          <div class="pos-item">Lương theo package/session</div>
+          <div class="pos-item">Kế toán kép TT133</div>
+          <div class="pos-item">GPS KTV verification</div>
+          <div class="pos-conclusion">→ Phù hợp nhất cho hybrid. Sapo làm POS bán lẻ, Bella làm HR backend.</div>
+        </div>
+        <div class="pos-card">
+          <div class="pos-card-header">
+            <div class="pos-card-name">Custom POS / Nhanh.vn</div>
+            <div class="pos-level level-custom">Tùy Chỉnh</div>
+          </div>
+          <div class="pos-can">✅ Schema Chuẩn Bella</div>
+          <div class="pos-item">POST <code>/api/v1/pos-events/sales</code></div>
+          <div class="pos-item">Đối tác tự map field theo tài liệu</div>
+          <div class="pos-item">Sandbox environment để test</div>
+          <div class="pos-cannot">ℹ️ Yêu Cầu</div>
+          <div class="pos-item">HMAC signature theo Bella format</div>
+          <div class="pos-item">Idempotency key bắt buộc</div>
+          <div class="pos-item">IP whitelist trước khi go-live</div>
+          <div class="pos-conclusion">→ Generic adapter cho mọi POS custom. Tài liệu API cung cấp cho đối tác.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ POS SCHEMA ═════════════════════════════ -->
+    <section id="pos-schema">
+      <h3>Schema Chuẩn: POS Sale Event</h3>
+      <div class="code-block">
+        <div class="code-header"><div class="code-dot" style="background:#ef4444"></div><div class="code-dot" style="background:#f59e0b"></div><div class="code-dot" style="background:#22c55e"></div><span class="code-lang">TypeScript · POST /api/v1/pos-events/sales</span></div>
+        <pre><span class="kw">interface</span> POSSaleEvent {
+  <span class="cmt">// Định danh</span>
+  idempotency_key: string;          <span class="cmt">// POS transaction ID</span>
+  pos_provider: <span class="str">'kiotviet'</span> | <span class="str">'sapo'</span> | <span class="str">'nhanh'</span> | <span class="str">'custom'</span>;
+  pos_branch_ref: string;           <span class="cmt">// Mã chi nhánh bên POS</span>
+
+  <span class="cmt">// Giao dịch</span>
+  sale_at: string;                  <span class="cmt">// ISO datetime</span>
+  total_amount: <span class="kw">number</span>;
+  discount_amount: <span class="kw">number</span>;
+  payment_method: <span class="str">'cash'</span> | <span class="str">'bank_transfer'</span> | <span class="str">'card'</span> | <span class="str">'ewallet'</span>;
+
+  <span class="cmt">// Nhân viên thực hiện</span>
+  staff_pos_id: string;             <span class="cmt">// ID nhân viên bên POS</span>
+  staff_bella_id?: string;          <span class="cmt">// Optional: nếu POS đã map sẵn</span>
+
+  <span class="cmt">// Dịch vụ</span>
+  line_items: Array&lt;{
+    service_name: string;
+    service_pos_sku: string;
+    service_bella_sku?: string;
+    quantity: <span class="kw">number</span>;
+    unit_price: <span class="kw">number</span>;
+  }&gt;;
+
+  raw_payload?: Record&lt;string, unknown&gt;; <span class="cmt">// Debug payload gốc</span>
+}</pre>
+      </div>
+
+      <h3>Schema: Bảng Mapping</h3>
+      <div class="code-block">
+        <div class="code-header"><div class="code-dot" style="background:#ef4444"></div><div class="code-dot" style="background:#f59e0b"></div><div class="code-dot" style="background:#22c55e"></div><span class="code-lang">SQL · 20260620000000_create_pos_staff_mappings.sql</span></div>
+        <pre><span class="kw">CREATE TABLE</span> pos_staff_mappings (
+  id              UUID <span class="kw">PRIMARY KEY DEFAULT</span> gen_random_uuid(),
+  tenant_id       UUID <span class="kw">NOT NULL</span>,
+  pos_provider    TEXT <span class="kw">NOT NULL</span>,   <span class="cmt">-- 'kiotviet', 'sapo'</span>
+  pos_staff_id    TEXT <span class="kw">NOT NULL</span>,   <span class="cmt">-- ID nhân viên bên POS</span>
+  bella_ktv_id    UUID <span class="kw">NOT NULL</span>,   <span class="cmt">-- user_id bên Bella</span>
+  is_active       BOOLEAN <span class="kw">DEFAULT</span> <span class="kw">true</span>,
+  <span class="kw">UNIQUE</span> (tenant_id, pos_provider, pos_staff_id)
+);
+
+<span class="kw">CREATE TABLE</span> pos_service_mappings (
+  id                  UUID <span class="kw">PRIMARY KEY DEFAULT</span> gen_random_uuid(),
+  tenant_id           UUID <span class="kw">NOT NULL</span>,
+  pos_provider        TEXT <span class="kw">NOT NULL</span>,
+  pos_sku             TEXT <span class="kw">NOT NULL</span>,
+  bella_service_id    UUID,          <span class="cmt">-- NULL nếu không map được</span>
+  commission_override NUMERIC(<span class="num">5</span>,<span class="num">2</span>), <span class="cmt">-- % override</span>
+  <span class="kw">UNIQUE</span> (tenant_id, pos_provider, pos_sku)
+);</pre>
+      </div>
+    </section>
+
+    <!-- ══ POS FLOW ═════════════════════════════ -->
+    <section id="pos-flow">
+      <h3>Luồng Xử Lý: POS Sale → Bella Salary</h3>
+      <div class="flow-box">
+        <div class="flow-step"><span class="flow-step-num">1.</span><span class="flow-step-content">KiotViet/Sapo gửi webhook <code style="color:#a78bfa">"invoice.paid"</code> / <code style="color:#a78bfa">"orders/paid"</code></span></div>
+        <div class="flow-step"><span class="flow-step-num">  </span><span class="flow-step-sub">└─ POST /api/v1/pos-events/sales</span></div>
+        <div class="flow-step"><span class="flow-step-num">2.</span><span class="flow-step-content">POS Adapter Layer xử lý:</span></div>
+        <div class="flow-step"><span class="flow-step-num">  </span><span class="flow-step-sub">a. Verify HMAC signature</span></div>
+        <div class="flow-step"><span class="flow-step-num">  </span><span class="flow-step-sub">b. Check idempotency key</span></div>
+        <div class="flow-step"><span class="flow-step-num">  </span><span class="flow-step-sub">c. Lookup pos_staff_mappings → bella_ktv_id</span></div>
+        <div class="flow-step"><span class="flow-step-num">  </span><span class="flow-step-sub">d. Lookup pos_service_mappings → commission_rate</span></div>
+        <div class="flow-step"><span class="flow-step-num">  </span><span class="flow-step-sub">e. Nếu không map được → pos_unmapped_events (admin review)</span></div>
+        <div class="flow-step"><span class="flow-step-num">3.</span><span class="flow-step-content">Enqueue vào <code style="color:#86efac">pos_commission_adjustments</code> (Option B — An toàn nhất)</span></div>
+        <div class="flow-step"><span class="flow-step-num">4.</span><span class="flow-step-content">Salary Engine: <code style="color:#86efac">recalculateAndSaveSalaryRecord()</code> tự động pickup</span></div>
+        <div class="flow-step"><span class="flow-step-num">5.</span><span class="flow-step-content">Accounting Outbox: enqueue <code style="color:#a78bfa">REVENUE_RECOGNIZED</code> với metadata pos_provider</span></div>
+        <div class="flow-step"><span class="flow-step-num">6.</span><span class="flow-step-content">Response về POS: <code style="color:#86efac">&#123; success: true, bella_session_ref: '...' &#125;</code></span></div>
+      </div>
+
+      <div class="alert alert-warning">
+        <div class="alert-icon">⚠️</div>
+        <div><strong>Option A vs Option B:</strong> Option A (virtual <code>session_log</code> với <code>source='pos'</code>) tái dùng pipeline nhưng rủi ro cao — cần audit toàn bộ query trong <code>session-completion-helpers.ts</code>. <strong>Khuyến nghị: bắt đầu bằng Option B</strong> với bảng <code>pos_commission_adjustments</code> riêng biệt.</div>
+      </div>
+
+      <h3>API Hai Chiều: Bella → POS (Query)</h3>
+      <div class="code-block">
+        <div class="code-header"><div class="code-dot" style="background:#ef4444"></div><div class="code-dot" style="background:#f59e0b"></div><div class="code-dot" style="background:#22c55e"></div><span class="code-lang">REST API</span></div>
+        <pre><span class="kw">GET</span> /api/v1/pos/staff/{bella_ktv_id}/commission
+    <span class="cmt">→ Tổng hoa hồng tháng, breakdown theo ngày (KTV xem lương)</span>
+
+<span class="kw">GET</span> /api/v1/pos/staff/{bella_ktv_id}/attendance
+    <span class="cmt">→ Lịch chấm công (POS không cần tự làm chấm công)</span>
+
+<span class="kw">GET</span> /api/v1/pos/branch/{tenant_id}/salary-summary?month=<span class="num">2026-06</span>
+    <span class="cmt">→ Tổng quỹ lương chi nhánh (quản lý xem trên POS)</span>
+
+<span class="kw">GET</span> /api/v1/pos/branch/{tenant_id}/staff-schedule?date=<span class="num">2026-06-15</span>
+    <span class="cmt">→ Ca làm việc hôm nay (POS biết nhân viên đang trực)</span></pre>
+      </div>
+    </section>
+
+    <!-- ══ POS RISKS ═════════════════════════════ -->
+    <section id="pos-risks">
+      <h3>Rủi Ro & Cách Xử Lý</h3>
+      <table class="risk-table">
+        <thead><tr><th>Rủi Ro</th><th>Mức Độ</th><th>Cách Xử Lý</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>KTV vừa có session Bella, vừa có POS sale → tính lương 2 lần</td>
+            <td><span class="risk-high">🔴 Cao</span></td>
+            <td>Dedup check theo <code>ktv_id + time_window ±30 phút</code>. Flag để admin review.</td>
+          </tr>
+          <tr>
+            <td>POS gửi staff_id không map được trong pos_staff_mappings</td>
+            <td><span class="risk-mid">🟠 Trung bình</span></td>
+            <td>Lưu <code>pos_unmapped_events</code>, notify admin qua Telegram bot.</td>
+          </tr>
+          <tr>
+            <td>POS webhook chậm / mất → salary tháng bị thiếu</td>
+            <td><span class="risk-mid">🟠 Trung bình</span></td>
+            <td>Hỗ trợ manual bulk import CSV từ POS cuối tháng làm fallback.</td>
+          </tr>
+          <tr>
+            <td>POS downtime → nghiệp vụ Bella bị ảnh hưởng</td>
+            <td><span class="risk-low">🟡 Thấp</span></td>
+            <td>Bella vẫn chạy native booking. POS là additive, không phụ thuộc.</td>
+          </tr>
+          <tr>
+            <td>Công thức lương spa phức tạp hơn những gì POS hiểu</td>
+            <td><span class="risk-low">🟡 Thấp</span></td>
+            <td>Bella là single source of truth. POS chỉ cung cấp raw sale data.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ══ POS PHASES ═════════════════════════════ -->
+    <section id="pos-phases">
+      <h3>Lộ Trình Triển Khai POS Integration</h3>
+      <div class="pos-phases">
+        <div class="pos-phase-card">
+          <div class="pos-phase-label">Phase A</div>
+          <div class="pos-phase-title">Schema & Adapter Foundation</div>
+          <div class="pos-phase-dur">2–3 tuần</div>
+          <div class="pos-phase-item">Tạo bảng <code>pos_staff_mappings</code>, <code>pos_service_mappings</code>, <code>pos_commission_adjustments</code></div>
+          <div class="pos-phase-item">Xây <code>POST /api/v1/pos-events/sales</code> với HMAC verify</div>
+          <div class="pos-phase-item">Admin UI: màn hình ghép nối nhân viên</div>
+          <div class="pos-phase-item">Bắt đầu với 1 POS: <strong>Sapo</strong> (webhook đơn giản nhất)</div>
+        </div>
+        <div class="pos-phase-card">
+          <div class="pos-phase-label">Phase B</div>
+          <div class="pos-phase-title">Salary Engine Integration</div>
+          <div class="pos-phase-dur">3–4 tuần</div>
+          <div class="pos-phase-item">Kết nối <code>pos_commission_adjustments</code> vào salary engine</div>
+          <div class="pos-phase-item">Dashboard POS Events với status mapped/unmapped</div>
+          <div class="pos-phase-item">Dedup logic: KTV session vs POS sale (±30 phút)</div>
+          <div class="pos-phase-item">Mở rộng sang <strong>KiotViet</strong></div>
+        </div>
+        <div class="pos-phase-card">
+          <div class="pos-phase-label">Phase C</div>
+          <div class="pos-phase-title">Query API & Reconciliation</div>
+          <div class="pos-phase-dur">2–3 tuần</div>
+          <div class="pos-phase-item"><code>GET /api/v1/pos/staff/{id}/commission</code></div>
+          <div class="pos-phase-item"><code>GET /api/v1/pos/branch/{id}/salary-summary</code></div>
+          <div class="pos-phase-item">Reconciliation report: POS vs native</div>
+          <div class="pos-phase-item">Manual CSV import fallback cuối tháng</div>
+        </div>
+        <div class="pos-phase-card">
+          <div class="pos-phase-label">Phase D</div>
+          <div class="pos-phase-title">Generic Adapter & Partner Docs</div>
+          <div class="pos-phase-dur">1–2 tuần</div>
+          <div class="pos-phase-item">Tài liệu API đầy đủ cho đối tác tự tích hợp</div>
+          <div class="pos-phase-item">Sandbox environment cho đối tác test</div>
+          <div class="pos-phase-item">Xem xét merge <code>pos_commission_adjustments</code> vào session pipeline</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ QUESTIONS ═════════════════════════════ -->
+    <section id="questions">
+      <div class="section-header">
+        <div class="section-icon" style="background:#fef3c7;">❓</div>
+        <h2>Câu Hỏi Cần Quyết Định</h2>
+      </div>
+      <div class="questions-grid">
+        <div class="question-card q-important">
+          <div class="question-num">Q1</div>
+          <div class="question-label">⚡ Important</div>
+          <div class="question-text"><strong>Thanh toán nào trước?</strong> MoMo hay ZaloPay? ZaloPay có lợi thế vì đã tích hợp Zalo OA, nhưng MoMo phổ biến hơn với khách lẻ tại TP.HCM.</div>
+        </div>
+        <div class="question-card q-important">
+          <div class="question-num">Q2</div>
+          <div class="question-label">⚡ Important</div>
+          <div class="question-text"><strong>Zalo Mini App: Must-have hay Nice-to-have?</strong> Full Mini App cần frontend riêng (Zalo Framework). Có muốn làm full hay deeplink đến <code>/portal/</code> hiện có?</div>
+        </div>
+        <div class="question-card q-important">
+          <div class="question-num">Q3</div>
+          <div class="question-label">⚡ Important</div>
+          <div class="question-text"><strong>Hóa đơn điện tử: MISA meInvoice hay VATS?</strong> MISA dễ tích hợp hơn với hệ sinh thái MISA SME. VATS phổ biến hơn tại TP.HCM. Bella đang dùng gì?</div>
+        </div>
+        <div class="question-card q-caution">
+          <div class="question-num">Q4</div>
+          <div class="question-label">⚠️ Caution</div>
+          <div class="question-text"><strong>API Key cho ai trước?</strong> Nội bộ franchise chi nhánh hay đối tác bên ngoài? Mô hình franchise đủ rõ để thiết kế scope chưa?</div>
+        </div>
+        <div class="question-card q-important">
+          <div class="question-num">Q5</div>
+          <div class="question-label">⚡ Important</div>
+          <div class="question-text"><strong>Mô hình doanh thu POS:</strong> Bella tính phí tích hợp POS theo giao dịch, theo tháng, hay miễn phí để tăng stickiness và lock-in?</div>
+        </div>
+        <div class="question-card q-important">
+          <div class="question-num">Q6</div>
+          <div class="question-label">⚡ Important</div>
+          <div class="question-text"><strong>POS nào làm trước?</strong> Sapo có webhook đơn giản hơn. KiotViet phổ biến hơn tại TP.HCM. Bella Spa hoặc khách hàng nào đang dùng POS nào?</div>
+        </div>
+        <div class="question-card q-caution">
+          <div class="question-num">Q7</div>
+          <div class="question-label">⚠️ Caution</div>
+          <div class="question-text"><strong>Option A hay B cho salary engine?</strong> Virtual <code>session_log</code> tái dùng pipeline nhưng rủi ro cao. Bảng riêng an toàn hơn. <strong>Rec: Option B trước.</strong></div>
+        </div>
+        <div class="question-card q-important">
+          <div class="question-num">Q8</div>
+          <div class="question-label">⚡ Important</div>
+          <div class="question-text"><strong>Chấm công KTV qua POS?</strong> Nếu POS có check-in, Bella nhận hay bỏ qua? <strong>Rec: Bỏ qua</strong> — Bella KTV App vẫn là nguồn sự thật (GPS + QR verify).</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer>
+  <strong>Bella Spa ERP</strong> — Kế Hoạch Cổng API & Tích Hợp Thị Trường Việt Nam &nbsp;·&nbsp; 15/06/2026 &nbsp;·&nbsp; Phiên bản nội bộ, dùng để nghiên cứu và phê duyệt kỹ thuật.
+</footer>
+
+<script>
+  // Smooth scroll + active nav highlight
+  const navLinks = document.querySelectorAll('.nav-link');
+  const sections = document.querySelectorAll('section[id], .phase-card[id]');
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        navLinks.forEach(l => l.classList.remove('active'));
+        const link = document.querySelector(`.nav-link[href="#${entry.target.id}"]`);
+        if (link) link.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+
+  sections.forEach(s => observer.observe(s));
+
+  navLinks.forEach(link => {
+    link.addEventListener('click', e => {
+      e.preventDefault();
+      const id = link.getAttribute('href').slice(1);
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+</script>
+</body>
+</html>

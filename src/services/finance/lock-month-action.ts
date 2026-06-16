@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import * as Sentry from '@sentry/nextjs';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { assertMonthClosePreflight } from '@/services/accounting/health';
+import { assertMonthClosePreflight } from '@/core/services/accounting/health';
 import type { Database } from '@/types/database.types';
 import {
   buildBranchAbbreviation,
