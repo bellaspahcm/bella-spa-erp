@@ -187,14 +187,15 @@ This implementation plan executes the physical extraction of core platform code 
     - Run audit test suite and ensure all tests pass
     - _Requirements: REQ-3.6.1_
 
-- [ ] 8. Extract finance services to core platform
-  - [ ] 8.1 Move finance services to core and refactor for TenantContext
+- [x] 8. Extract finance services to core platform
+  - [x] 8.1 Move finance services to core and refactor for TenantContext
     - Move existing finance services from `src/services/finance/` to `src/core/services/finance/`
     - Refactor all finance functions to accept `context: TenantContext` as first parameter
     - Ensure revenue recognition uses `CoreBookingOrder` for order-based revenue
     - Ensure expense tracking uses `PaymentIntent` for payment-based expenses
     - Ensure invoice generation uses `Invoice` contract from Phase 2
     - Ensure P&L reports aggregate across all modules via TenantContext
+    - **Commit**: 3391d065
     - _Requirements: REQ-3.1.7_
 
   - [ ]* 8.2 Update finance unit tests with TenantContext
