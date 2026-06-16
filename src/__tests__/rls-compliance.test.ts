@@ -7,7 +7,7 @@
  */
 
 import { getKTVTodayAttendance, ktvCheckIn } from '../services/attendance-actions';
-import { getBookings } from '../modules/booking/actions/lifecycle-actions';
+import { getBookings } from '../core/services/order/lifecycle-actions';
 import { getCurrentUser } from '../services/user-actions';
 
 // Mock Dependencies

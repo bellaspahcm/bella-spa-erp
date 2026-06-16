@@ -1,5 +1,14 @@
 'use client';
 
+/**
+ * Dashboard Core-SPA Boundary Refactor - Phase 1 Complete
+ * 
+ * Widget classification complete. Actual extraction to src/core/ and 
+ * src/modules/spa/ deferred to Phase 3 per roadmap.
+ * 
+ * @see docs/plans/core-platform-extraction-roadmap.md
+ */
+
 import { KtvPerformanceTable } from '@/components/features/dashboard/KtvPerformanceTable';
 import { RevenueChart } from '@/components/features/dashboard/RevenueChart';
 import { StatsGrid } from '@/components/features/dashboard/StatsGrid';
@@ -10,12 +19,19 @@ import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
 import { getTenantModulePresentationOrNeutral } from '@/lib/business-rules/tenant-module-presentation';
 import { createClient } from '@/lib/supabase-client';
 import { cn } from '@/lib/utils';
-import { completeSession,saveSessionNote } from '@/modules/booking/actions/session-actions';
+import { completeSession, saveSessionNote } from '@/core/services/order';
 import {
 getDashboardPrimaryData,
 getDashboardSecondaryData,
-getImportantAlerts,
-type DashboardAlert
+getImportantAlerts
+} from '@/services/dashboard-actions';
+import type { 
+  DashboardStatsViewModel, 
+  DashboardSessionViewModel, 
+  KtvPerformanceViewModel, 
+  PerformanceDataPointViewModel, 
+  InventorySummaryViewModel, 
+  DashboardAlert 
 } from '@/services/dashboard-actions';
 import { markNotificationAsRead } from '@/services/notification-actions';
 import { AnimatePresence,motion } from 'framer-motion';
@@ -44,54 +60,6 @@ import { useRouter } from 'next/navigation';
 import { useCallback,useEffect,useRef,useState } from 'react';
 import { toast } from 'sonner';
 
-type DashboardStat = {
-  label: string;
-  value: string;
-  trend: number;
-  iconName: 'Users' | 'Calendar' | 'DollarSign' | 'Star';
-  color: string;
-  bg: string;
-};
-
-type DashboardSessionBooking = {
-  id?: string | null;
-  package_name?: string | null;
-  preferred_time?: string | null;
-  completed_sessions?: number | null;
-  total_sessions?: number | null;
-  packages?: { name?: string | null } | null;
-  customers?: {
-    id?: string | null;
-    name_mother?: string | null;
-    name_baby?: string | null;
-  } | null;
-  assigned_ktv?: { full_name?: string | null } | null;
-};
-
-type DashboardSession = {
-  id: string;
-  booking_id: string;
-  status: string;
-  assigned_time?: string | null;
-  bookings?: DashboardSessionBooking | DashboardSessionBooking[] | null;
-};
-
-type KtvDashboardRow = {
-  name: string;
-  sessions: number;
-  rating: number;
-  status: string;
-  bonus: string;
-};
-
-type DashboardPerformancePoint = {
-  name: string;
-  customers: number;
-  revenue?: number;
-  expense?: number;
-  rating?: number;
-};
-
 // Heavy modals — lazy-loaded so they don't bloat the dashboard's initial JS bundle.
 // BookingModal (~715 LOC + form deps) only opens on user click.
 // OnboardingTour (~276 LOC) only shows for first-time users.
@@ -105,14 +73,14 @@ const OnboardingTour = dynamic(
 );
 export default function DashboardPage() {
   const router = useRouter();
-  const [stats, setStats] = useState<DashboardStat[]>([]);
-  const [sessions, setSessions] = useState<DashboardSession[]>([]);
-  const [topKTVs, setTopKTVs] = useState<KtvDashboardRow[]>([]);
+  const [stats, setStats] = useState<DashboardStatsViewModel[]>([]);
+  const [sessions, setSessions] = useState<DashboardSessionViewModel[]>([]);
+  const [topKTVs, setTopKTVs] = useState<KtvPerformanceViewModel[]>([]);
   const [alerts, setAlerts] = useState<DashboardAlert[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const [performanceData, setPerformanceData] = useState<DashboardPerformancePoint[]>([]);
-  const [inventorySummary, setInventorySummary] = useState({ totalItems: 0, lowStockCount: 0, totalValue: 0 });
+  const [performanceData, setPerformanceData] = useState<PerformanceDataPointViewModel[]>([]);
+  const [inventorySummary, setInventorySummary] = useState<InventorySummaryViewModel>({ totalItems: 0, lowStockCount: 0, totalValue: 0 });
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [isLoading, setIsLoading] = useState(true);
@@ -181,12 +149,26 @@ export default function DashboardPage() {
     return { startDate, endDate };
   };
 
-  const buildDashboardStats = useCallback((statsData: Awaited<ReturnType<typeof getDashboardPrimaryData>>['statsData']) => ([
-    { label: 'Tổng khách hàng', value: String(statsData.totalCustomers?.value || '0'), trend: Number(statsData.totalCustomers?.trend || 0), iconName: 'Users' as const, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Lịch hẹn hôm nay', value: String(statsData.todayBookings?.value || '0'), trend: Number(statsData.todayBookings?.trend || 0), iconName: 'Calendar' as const, color: 'text-rose-600', bg: 'bg-rose-50' },
-    ...(userRole === 'admin' ? [{ label: 'Doanh thu tháng', value: String(statsData.totalRevenue?.value || '0M'), trend: Number(statsData.totalRevenue?.trend || 0), iconName: 'DollarSign' as const, color: 'text-emerald-600', bg: 'bg-emerald-50' }] : []),
-    { label: 'Đánh giá KTV', value: String(statsData.avgRating?.value || '5.0'), trend: Number(statsData.avgRating?.trend || 0), iconName: 'Star' as const, color: 'text-amber-600', bg: 'bg-amber-50' },
-  ]), [userRole]);
+  const buildDashboardStats = useCallback((statsData: Awaited<ReturnType<typeof getDashboardPrimaryData>>['statsData']) => {
+    /**
+     * @widget-type core
+     * 
+     * Core business metrics: customer count, bookings count, revenue tracking.
+     * These KPIs are industry-neutral and reusable across different business types.
+     */
+    return [
+      { label: 'Tổng khách hàng', value: String(statsData.totalCustomers?.value || '0'), trend: Number(statsData.totalCustomers?.trend || 0), iconName: 'Users' as const, color: 'text-blue-600', bg: 'bg-blue-50' },
+      { label: 'Lịch hẹn hôm nay', value: String(statsData.todayBookings?.value || '0'), trend: Number(statsData.todayBookings?.trend || 0), iconName: 'Calendar' as const, color: 'text-rose-600', bg: 'bg-rose-50' },
+      ...(userRole === 'admin' ? [{ label: 'Doanh thu tháng', value: String(statsData.totalRevenue?.value || '0M'), trend: Number(statsData.totalRevenue?.trend || 0), iconName: 'DollarSign' as const, color: 'text-emerald-600', bg: 'bg-emerald-50' }] : []),
+      /**
+       * @widget-type spa
+       * 
+       * KTV composite rating (60% customer satisfaction + 40% discipline score).
+       * This metric is specific to spa/babycare KTV performance evaluation.
+       */
+      { label: 'Đánh giá KTV', value: String(statsData.avgRating?.value || '5.0'), trend: Number(statsData.avgRating?.trend || 0), iconName: 'Star' as const, color: 'text-amber-600', bg: 'bg-amber-50' },
+    ];
+  }, [userRole]);
 
   const fetchPrimaryData = useCallback(async () => {
     if (userRole === null) return; // Wait for role to be identified
@@ -202,7 +184,7 @@ export default function DashboardPage() {
         await getDashboardPrimaryData(startDate, endDate, localToday);
 
       setStats(buildDashboardStats(statsData));
-      setSessions((sessionsData || []) as unknown as DashboardSession[]);
+      setSessions(sessionsData || []);
       setInventorySummary(nextInventorySummary || { totalItems: 0, lowStockCount: 0, totalValue: 0 });
       setIsLoading(false);
     } catch (error) {
@@ -225,7 +207,7 @@ export default function DashboardPage() {
         ...ktv,
         rating: Number(ktv.rating) || 0,
       })));
-      setPerformanceData((perfData || []) as DashboardPerformancePoint[]);
+      setPerformanceData(perfData || []);
       setAlerts(alertsData || []);
     } catch (error) {
       console.error('Error fetching dashboard secondary data:', error);
@@ -358,7 +340,13 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center justify-center md:justify-end gap-4 w-full md:w-auto">
-          {/* Month Selector */}
+          {/**
+           * @widget-type core
+           * Month/Year Selector
+           * 
+           * Month/year selector là dashboard control trung lập ngành nghề.
+           * Time range filtering is an industry-neutral UX pattern for dashboard data.
+           */}
           <div className="flex items-center bg-white/80 border border-border p-1 rounded-2xl shadow-sm gap-2">
             <PremiumSelect 
               value={selectedMonth.toString()}
@@ -380,6 +368,13 @@ export default function DashboardPage() {
             />
           </div>
 
+          {/**
+           * @widget-type core
+           * Search Input
+           * 
+           * Quick search filtering là UX pattern trung lập ngành nghề.
+           * Instant search/filter is a common dashboard control pattern across all industries.
+           */}
           <div className="relative group hidden md:block">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors w-5 h-5" />
             <input 
@@ -391,6 +386,15 @@ export default function DashboardPage() {
             />
           </div>
           
+          {/**
+           * @widget-type mixed
+           * Alerts/Notifications Panel
+           * 
+           * Core: Bell icon, popover shell, read/unread state. 
+           * Mixed alert types - Core: Generic app_notifications, low inventory. 
+           * Spa: KTV checkout, session overdue, booking near end, leave requests. 
+           * Future: Core notification system với module-specific alert providers.
+           */}
           <div className="relative">
             <button 
               onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
@@ -484,6 +488,11 @@ export default function DashboardPage() {
             </AnimatePresence>
           </div>
           
+          {/**
+           * @widget-type spa
+           * "Tạo Booking" button - Opens spa-specific BookingModal.
+           * Core platform sẽ cung cấp generic 'Create Order' action mà spa module customizes thành 'Tạo Booking'.
+           */}
           <button 
             onClick={() => setIsBookingModalOpen(true)}
             className="flex items-center gap-3 bg-primary hover:bg-primary-hover text-white px-8 py-4 rounded-2xl font-black transition-all shadow-xl shadow-pink-200 dark:shadow-none active:scale-95 uppercase tracking-wider"
@@ -500,6 +509,18 @@ export default function DashboardPage() {
       {/* Bento Grid Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Schedule - Large Span */}
+        {/**
+         * @widget-type mixed
+         * 
+         * Today's Schedule Widget Classification:
+         * - Core: Scrollable list shell, loading states, search filter
+         * - Spa: Session card content với package progress, KTV assignment, session multipliers
+         * 
+         * Future extraction: Tách core scheduling shell khỏi spa session renderer.
+         * The shell (container, loading skeletons, search/filter) can be reused across industries.
+         * The session card content (package completion progress, KTV assignment, spa-specific actions
+         * like "Hoàn thành buổi" and "Lưu ghi chú nhanh") is spa/babycare-specific.
+         */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -752,11 +773,27 @@ export default function DashboardPage() {
         </motion.div>
         
         {/* Sidebar Analytics Stack */}
+        {/**
+         * @widget-type core
+         * 
+         * Monthly performance metrics (revenue, expense, customers) là KPIs trung lập ngành nghề.
+         * Note: Rating dimension dùng spa KTV metrics nhưng có thể thay bằng generic service quality cho industries khác.
+         */}
         <RevenueChart performanceData={performanceData} userRole={userRole} isLoading={isSecondaryLoading} />
       </div>
 
       {/* New Sections: Top KTV & Alerts */}
       <div className="grid grid-cols-1 lg:grid-cols-1 gap-8 mt-12">
+        {/**
+         * @widget-type spa
+         * 
+         * KTV Performance Table
+         * 
+         * KTV leaderboard với session multipliers, composite ratings, và KPI bonuses 
+         * là spa/babycare-specific. Industries khác cần different technician performance widgets.
+         * 
+         * Requirements: 6.1-6.5
+         */}
         {/* Top KTV Xuất Sắc */}
         <KtvPerformanceTable topKTVs={topKTVs} isLoading={isSecondaryLoading} />
 
@@ -837,6 +874,14 @@ export default function DashboardPage() {
       </div>
 
       {/* Inventory Quick Status */}
+      {/**
+       * @widget-type core
+       * 
+       * Inventory metrics (total items, low stock count, total value) là supply chain 
+       * KPIs trung lập ngành nghề. Note: Item categories và usage tracking là module-specific.
+       * 
+       * Requirements: 8.1-8.5
+       */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

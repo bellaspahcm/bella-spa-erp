@@ -5,13 +5,13 @@ import { getTenantModulePresentationOrNeutral } from '@/lib/business-rules/tenan
 import type { TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 import { createClient } from '@/lib/supabase-client';
 import { cn } from '@/lib/utils';
-import { reusePackage,syncBookingProgress } from '@/modules/booking/actions/lifecycle-actions';
+import { reusePackage,syncBookingProgress } from '@/core/services/order';
 import {
 addExtraSession,
 getSessionLogs,
 rescheduleSession,
 updateSessionLog
-} from '@/modules/booking/actions/session-actions';
+} from '@/core/services/order';
 import { motion } from 'framer-motion';
 import {
 AlertCircle,

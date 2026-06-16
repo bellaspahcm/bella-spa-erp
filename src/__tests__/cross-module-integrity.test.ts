@@ -8,8 +8,8 @@
  * 4. Month locking -> locks financial records, computes franchise royalty invoice, updates inter-branch clearing.
  */
 
-import { createBooking, recordRemainingPayment } from '../modules/booking/actions/lifecycle-actions';
-import { completeSession } from '../modules/booking/actions/session-actions';
+import { createBooking, recordRemainingPayment } from '../core/services/order/lifecycle-actions';
+import { completeSession } from '../core/services/order/session-actions';
 import { lockMonth } from '../services/finance-actions';
 import { autoConsumeForSession } from '../services/inventory-actions';
 import { recordAuditLog } from '../services/audit-actions';

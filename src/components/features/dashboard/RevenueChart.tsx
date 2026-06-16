@@ -16,17 +16,10 @@ import {
 } from 'recharts';
 
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
-
-interface PerformanceDataPoint {
-  name: string;
-  customers: number;
-  revenue?: number;
-  expense?: number;
-  rating?: number;
-}
+import type { PerformanceDataPointViewModel } from '@/services/dashboard-actions';
 
 interface RevenueChartProps {
-  performanceData: PerformanceDataPoint[];
+  performanceData: PerformanceDataPointViewModel[];
   userRole: 'admin' | 'ktv' | null;
   isLoading?: boolean;
 }

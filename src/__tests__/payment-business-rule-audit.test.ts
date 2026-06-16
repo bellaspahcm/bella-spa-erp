@@ -6,7 +6,7 @@ import {
   calculatePaymentRequest,
   type PaymentRevenueLike,
 } from '@/lib/business-rules/payment';
-import { validateRemainingPaymentAmount } from '@/modules/booking/actions/payment-helpers';
+import { validateRemainingPaymentAmount } from '@/core/services/order/payment-helpers';
 import {
   buildRevenueAccountingMetadata,
   inferBusinessEventType,

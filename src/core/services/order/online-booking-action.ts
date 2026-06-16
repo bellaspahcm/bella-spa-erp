@@ -3,7 +3,7 @@
 import { safeRevalidatePath } from '@/lib/revalidate';
 import type { Database } from '@/types/database.types';
 import type { OnlineBookingFormData } from './online-booking-types';
-import { validateBookingPackageScope } from './create-booking-helpers';
+import { validateBookingPackageScope } from '@/core/services/order/create-booking-helpers';
 import { resolvePublicBabycareTenantId } from './public-booking-tenant';
 
 type CustomerInsert = Database['public']['Tables']['customers']['Insert'];

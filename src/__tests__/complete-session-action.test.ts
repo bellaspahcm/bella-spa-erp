@@ -5,7 +5,7 @@ const mockSafeRevalidatePath = jest.fn();
 const mockGetCurrentUser = jest.fn();
 const mockRecalculateAndSaveSalaryRecord = jest.fn();
 
-jest.mock('@/modules/booking/actions/session-completion-engine', () => ({
+jest.mock('@/core/services/order/session-completion-engine', () => ({
   processSessionCompletion: (...args: unknown[]) => mockProcessSessionCompletion(...args),
 }));
 
@@ -21,7 +21,7 @@ jest.mock('@/modules/hr-salary/actions/admin-salary-actions', () => ({
   recalculateAndSaveSalaryRecord: (...args: unknown[]) => mockRecalculateAndSaveSalaryRecord(...args),
 }));
 
-import { completeSession } from '../modules/booking/actions/complete-session-action';
+import { completeSession } from '@/core/services/order';
 
 type UpdateCall = {
   table: string;

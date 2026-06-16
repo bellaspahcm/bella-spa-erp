@@ -15,7 +15,7 @@ import {
 } from '@/lib/business-rules/tenant-modules';
 import { createClient } from '@/lib/supabase-client';
 import { parseIntegerInput, parseMoneyInput } from '@/lib/utils';
-import { generateShareToken, getBookingsByCustomerId, recordRemainingPayment, reusePackage, updateBooking } from '@/modules/booking/actions/lifecycle-actions';
+import { generateShareToken, getBookingsByCustomerId, recordRemainingPayment, reusePackage, updateBooking } from '@/core/services/order';
 import { getCustomerById, updateCustomer } from '@/services/customer-actions';
 import { getTenantSettings } from '@/services/tenant-actions';
 import { getCurrentUser, getUsers } from '@/services/user-actions';

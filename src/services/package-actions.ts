@@ -14,7 +14,7 @@ import {
   type TenantEnabledModules,
   type TenantPrimaryBusinessModuleKey,
 } from '@/lib/business-rules/tenant-modules';
-import { getAuthorizedTenantUser } from './auth-guards';
+import { getAuthorizedTenantUser } from '@/core/services/auth';
 import type { Database, Json } from '@/types/database.types';
 
 type PackageRow = Database['public']['Tables']['packages']['Row'];

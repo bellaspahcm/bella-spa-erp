@@ -11,7 +11,7 @@
 
 import { bookingSchema } from '../lib/validations';
 import { publishSalaryRecord } from '../modules/hr-salary/actions/admin-salary-actions';
-import { completeSession } from '../modules/booking/actions/session-actions';
+import { completeSession } from '../core/services/order/session-actions';
 
 // Setup environment variables
 process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';

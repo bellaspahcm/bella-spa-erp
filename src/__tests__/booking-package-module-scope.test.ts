@@ -1,4 +1,4 @@
-import { validateBookingPackageScope } from '@/modules/booking/actions/create-booking-helpers';
+import { validateBookingPackageScope } from '@/core/services/order/create-booking-helpers';
 
 type MockRow = Record<string, unknown>;
 

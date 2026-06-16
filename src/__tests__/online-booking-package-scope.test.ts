@@ -1,4 +1,4 @@
-import { submitOnlineBooking } from '@/modules/booking/actions/online-booking-action';
+import { submitOnlineBooking } from '@/core/services/order';
 
 const mockFrom = jest.fn();
 

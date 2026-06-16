@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase-server';
-import { getAuthorizedTenantUser } from '@/services/auth-guards';
+import { getAuthorizedTenantUser } from '@/core/services/auth';
 import { recordAuditLog } from '@/services/audit-actions';
 import { getMonthStart } from '@/lib/utils';
 import { Database } from '@/types/database.types';

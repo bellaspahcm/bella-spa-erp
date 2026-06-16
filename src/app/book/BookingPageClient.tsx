@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
   submitOnlineBooking,
   type OnlineBookingFormData,
-} from '@/modules/booking/actions/lifecycle-actions';
+} from '@/core/services/order';
 
 /* =========================================================
    Types

@@ -2,7 +2,7 @@
 
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { formatMoneyInput, parseMoneyInput } from '@/lib/utils';
-import { getBookings } from '@/modules/booking/actions/lifecycle-actions';
+import { getBookings } from '@/core/services/order';
 import { recordTransaction } from '@/services/finance-actions';
 import { AnimatePresence,motion } from 'framer-motion';
 import {

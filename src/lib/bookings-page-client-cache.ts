@@ -1,6 +1,6 @@
 'use client';
 
-import { getBookings } from '@/modules/booking/actions/lifecycle-actions';
+import { getBookings } from '@/core/services/order';
 import { getBookingResources } from '@/services/booking-resource-actions';
 import { getUsers } from '@/services/user-actions';
 

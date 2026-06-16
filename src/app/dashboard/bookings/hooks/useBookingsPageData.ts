@@ -10,7 +10,7 @@ import {
   getCachedBookingsForPage,
 } from '@/lib/bookings-page-client-cache';
 import { createClient } from '@/lib/supabase-client';
-import { getCalendarSessions, getSessionLogs } from '@/modules/booking/actions/session-actions';
+import { getCalendarSessions, getSessionLogs } from '@/core/services/order';
 import type { Database } from '@/types/database.types';
 
 import type { BookingOption } from '../components/BookingCreateScheduleModal';

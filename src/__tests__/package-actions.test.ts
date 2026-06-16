@@ -23,7 +23,7 @@ const mockGetAuthorizedTenantUser = jest.fn(() => Promise.resolve({
   error: null,
   reason: null,
 }));
-jest.mock('../services/auth-guards', () => ({
+jest.mock('@/core/services/auth', () => ({
   getAuthorizedTenantUser: (options: unknown) => mockGetAuthorizedTenantUser(options),
 }));
 

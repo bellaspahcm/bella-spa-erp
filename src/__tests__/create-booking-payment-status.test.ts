@@ -2,7 +2,7 @@ jest.mock('../modules/booking/actions/commission-actions', () => ({
   resolveKtvCommission: jest.fn().mockResolvedValue(150000),
 }));
 
-import { buildBookingPayload } from '../modules/booking/actions/create-booking-helpers';
+import { buildBookingPayload } from '@/core/services/order/create-booking-helpers';
 
 type BuildBookingPayloadParams = Parameters<typeof buildBookingPayload>[0];
 

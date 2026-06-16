@@ -7,7 +7,7 @@ import {
   type SalaryReconciliationStatus,
 } from '@/lib/business-rules/salary';
 import { createClient } from '@/lib/supabase-server';
-import { getAuthorizedTenantUser } from './auth-guards';
+import { getAuthorizedTenantUser } from '@/core/services/auth';
 import { createAccountingDataClient } from './accounting/client';
 
 export interface SalaryReconRow {

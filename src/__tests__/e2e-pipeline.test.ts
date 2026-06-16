@@ -9,8 +9,8 @@
  * 5. Admin locks the month, protecting all financial records and salary records from further updates.
  */
 
-import { createBooking, recordRemainingPayment } from '../modules/booking/actions/lifecycle-actions';
-import { completeSession } from '../modules/booking/actions/session-actions';
+import { createBooking, recordRemainingPayment } from '../core/services/order/lifecycle-actions';
+import { completeSession } from '../core/services/order/session-actions';
 import { getMonthlyPnL, lockMonth } from '../services/finance-actions';
 import { autoConsumeForSession } from '../services/inventory-actions';
 import { recordAuditLog } from '../services/audit-actions';

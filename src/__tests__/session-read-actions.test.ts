@@ -2,7 +2,7 @@ import {
   getCalendarSessions,
   getSessionLogs,
   getSessionsWithDetails,
-} from '../modules/booking/actions/session-actions';
+} from '../core/services/order/session-actions';
 
 jest.mock('next/cache', () => ({
   revalidatePath: jest.fn(),

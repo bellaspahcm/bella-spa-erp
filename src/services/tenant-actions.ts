@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase-server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { getSupabaseAdminKey, getSupabaseAdminUrl } from '@/lib/supabase-admin-env';
-import { getAuthorizedTenantUser } from './auth-guards';
+import { getAuthorizedTenantUser } from '@/core/services/auth';
 import { getCurrentUser } from './user-actions';
 import { recordAuditLog } from './audit-actions';
 import { revalidatePath } from 'next/cache';

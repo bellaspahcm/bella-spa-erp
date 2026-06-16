@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase-server';
 import { getSupabaseAdminKey, getSupabaseAdminUrl } from '@/lib/supabase-admin-env';
 import type { Database, Json } from '@/types/database.types';
-import { getAuthorizedTenantUser } from '@/services/auth-guards';
+import { getAuthorizedTenantUser } from '@/core/services/auth';
 import { decrypt, encrypt } from '@/lib/crypto';
 import { assertOpenAccountingPeriod } from '@/services/accounting/period-guards';
 import { inferBusinessEventType } from '@/services/accounting/template-rules';
