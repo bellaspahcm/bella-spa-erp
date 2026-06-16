@@ -102,7 +102,7 @@ import {
   getUnreadNotifications,
   markAllNotificationsAsRead,
   markNotificationAsRead,
-} from '@/services/notification-actions';
+} from '@/core/services/notification/notification-actions';
 
 describe('notification actions', () => {
   beforeEach(() => {
