@@ -158,7 +158,7 @@ export async function unlockMonth(month: string) {
     const { createClient } = await import('@/lib/supabase-server');
     const supabase = await createClient();
     
-    const { getCurrentUser } = await import('../user-actions');
+    const { getCurrentUser } = await import('@/services/user-actions');
     const user = await getCurrentUser();
     
     if (!user) return { success: false, error: 'Chưa đăng nhập' };

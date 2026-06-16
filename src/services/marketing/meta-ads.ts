@@ -8,7 +8,7 @@ import { getAuthorizedTenantUser } from '@/core/services/auth';
 import { decrypt, encrypt } from '@/lib/crypto';
 import { assertOpenAccountingPeriod } from '@/core/services/accounting/period-guards';
 import { inferBusinessEventType } from '@/core/services/accounting/template-rules';
-import { resolveReviewStatus } from '@/services/finance/transaction-review';
+import { resolveReviewStatus } from '@/core/services/finance/transaction-review';
 import {
   assertOutboxEnqueued,
   buildExpenseRecordedOutboxEvent,

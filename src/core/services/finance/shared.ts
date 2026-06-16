@@ -5,7 +5,7 @@ export async function resolveTenantId(): Promise<string> {
   try {
     const { createClient } = await import('@/lib/supabase-server');
     const supabase = await createClient();
-    const { getCurrentUser } = await import('../user-actions');
+    const { getCurrentUser } = await import('@/services/user-actions');
     const currentUser = await getCurrentUser();
     if (currentUser?.tenant_id) return currentUser.tenant_id;
 

@@ -8,7 +8,7 @@ export async function getFinancialOverview() {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = await createClient();
 
-  const { getCurrentUser } = await import('../user-actions');
+  const { getCurrentUser } = await import('@/services/user-actions');
   const currentUser = await getCurrentUser();
 
   if (currentUser?.role?.toLowerCase() === 'ktv') {

@@ -112,7 +112,7 @@ function isRevenueRefundType(revenueType: string | null | undefined) {
 }
 
 export async function confirmTransaction(id: string, type: 'revenue' | 'expense') {
-  const { assertLegacyFinanceWriteAllowed } = await import('../accounting-actions');
+  const { assertLegacyFinanceWriteAllowed } = await import('@/services/accounting-actions');
   await assertLegacyFinanceWriteAllowed('Xác nhận giao dịch Finance legacy');
 
   const { createClient } = await import('@/lib/supabase-server');
@@ -394,7 +394,7 @@ export async function recordTransaction(data: {
   status?: string;
   booking_id?: string;
 }) {
-  const { assertLegacyFinanceWriteAllowed } = await import('../accounting-actions');
+  const { assertLegacyFinanceWriteAllowed } = await import('@/services/accounting-actions');
   await assertLegacyFinanceWriteAllowed('Ghi nhận giao dịch Finance legacy');
 
   const { createClient } = await import('@/lib/supabase-server');
