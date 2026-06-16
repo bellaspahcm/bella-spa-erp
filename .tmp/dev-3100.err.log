@@ -1,0 +1,152 @@
+⨯ Error: [checkSubscriptionLimit] tenants query failed: Cannot coerce the result to a single JSON object
+    at checkSubscriptionLimit (src\lib\subscription.ts:110:11)
+    at async getSubscriptionStatus (src\services\subscription-actions.ts:48:20)
+  108 |
+  109 |   if (tenantErr) {
+> 110 |     throw new Error(`[checkSubscriptionLimit] tenants query failed: ${tenantErr.message}`);
+      |           ^
+  111 |   }
+  112 |
+  113 |   if (!tenant) { {
+  digest: '1716602789'
+}
+[browser] Error loading subscription data: Error: [checkSubscriptionLimit] tenants query failed: Cannot coerce the result to a single JSON object
+    at checkSubscriptionLimit (src\lib\subscription.ts:110:11)
+    at  getSubscriptionStatus (src\services\subscription-actions.ts:48:20)
+    at resolveErrorDev (file://D:/Antigravity/Projects/BELLA SPA ERP/.next/dev/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_0p3wegg._.js:1919:105)
+    at processFullStringRow (file://D:/Antigravity/Projects/BELLA SPA ERP/.next/dev/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_0p3wegg._.js:2434:29)
+    at processFullBinaryRow (file://D:/Antigravity/Projects/BELLA SPA ERP/.next/dev/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_0p3wegg._.js:2393:9)
+    at processBinaryChunk (file://D:/Antigravity/Projects/BELLA SPA ERP/.next/dev/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_0p3wegg._.js:2502:221)
+    at progress (file://D:/Antigravity/Projects/BELLA SPA ERP/.next/dev/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_0p3wegg._.js:2689:13)
+  108 |
+  109 |   if (tenantErr) {
+> 110 |     throw new Error(`[checkSubscriptionLimit] tenants query failed: ${tenantErr.message}`);
+      |           ^
+  111 |   }
+  112 |
+  113 |   if (!tenant) { (file://D:/Antigravity/Projects/BELLA SPA ERP/.next/dev/static/chunks/src_0az7.fj._.js:5649:29)
+⨯ Error: [getSubscriptionInvoiceHistory] subscription_invoices query failed: permission denied for table subscription_invoices
+    at getSubscriptionInvoiceHistory (src\services\subscription-actions.ts:97:11)
+   95 |
+   96 |   if (error) {
+>  97 |     throw new Error(`[getSubscriptionInvoiceHistory] subscription_invoices query failed: ...
+      |           ^
+   98 |   }
+   99 |
+  100 |   return (data || []) as SubscriptionInvoice[]; {
+  digest: '3972213634'
+}
+⨯ Error: [checkSubscriptionLimit] tenants query failed: Cannot coerce the result to a single JSON object
+    at checkSubscriptionLimit (src\lib\subscription.ts:110:11)
+    at async getSubscriptionStatus (src\services\subscription-actions.ts:48:20)
+  108 |
+  109 |   if (tenantErr) {
+> 110 |     throw new Error(`[checkSubscriptionLimit] tenants query failed: ${tenantErr.message}`);
+      |           ^
+  111 |   }
+  112 |
+  113 |   if (!tenant) { {
+  digest: '1716602789'
+}
+[browser] Error loading subscription data: Error: [checkSubscriptionLimit] tenants query failed: Cannot coerce the result to a single JSON object
+    at checkSubscriptionLimit (src\lib\subscription.ts:110:11)
+    at  getSubscriptionStatus (src\services\subscription-actions.ts:48:20)
+    at resolveErrorDev (file://D:/Antigravity/Projects/BELLA SPA ERP/.next/dev/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_0p3wegg._.js:1919:105)
+    at processFullStringRow (file://D:/Antigravity/Projects/BELLA SPA ERP/.next/dev/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_0p3wegg._.js:2434:29)
+    at processFullBinaryRow (file://D:/Antigravity/Projects/BELLA SPA ERP/.next/dev/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_0p3wegg._.js:2393:9)
+    at processBinaryChunk (file://D:/Antigravity/Projects/BELLA SPA ERP/.next/dev/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_0p3wegg._.js:2502:221)
+    at progress (file://D:/Antigravity/Projects/BELLA SPA ERP/.next/dev/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_0p3wegg._.js:2689:13)
+  108 |
+  109 |   if (tenantErr) {
+> 110 |     throw new Error(`[checkSubscriptionLimit] tenants query failed: ${tenantErr.message}`);
+      |           ^
+  111 |   }
+  112 |
+  113 |   if (!tenant) { (file://D:/Antigravity/Projects/BELLA SPA ERP/.next/dev/static/chunks/src_0az7.fj._.js:5649:29)
+⨯ Error: [getSubscriptionInvoiceHistory] subscription_invoices query failed: permission denied for table subscription_invoices
+    at getSubscriptionInvoiceHistory (src\services\subscription-actions.ts:97:11)
+   95 |
+   96 |   if (error) {
+>  97 |     throw new Error(`[getSubscriptionInvoiceHistory] subscription_invoices query failed: ...
+      |           ^
+   98 |   }
+   99 |
+  100 |   return (data || []) as SubscriptionInvoice[]; {
+  digest: '3972213634'
+}
+⨯ Error: [checkSubscriptionLimit] tenants query failed: Cannot coerce the result to a single JSON object
+    at checkSubscriptionLimit (src\lib\subscription.ts:110:11)
+    at async getSubscriptionStatus (src\services\subscription-actions.ts:48:20)
+  108 |
+  109 |   if (tenantErr) {
+> 110 |     throw new Error(`[checkSubscriptionLimit] tenants query failed: ${tenantErr.message}`);
+      |           ^
+  111 |   }
+  112 |
+  113 |   if (!tenant) { {
+  digest: '1716602789'
+}
+[browser] Error loading subscription data: Error: [checkSubscriptionLimit] tenants query failed: Cannot coerce the result to a single JSON object
+    at checkSubscriptionLimit (src\lib\subscription.ts:110:11)
+    at  getSubscriptionStatus (src\services\subscription-actions.ts:48:20)
+    at resolveErrorDev (file://D:/Antigravity/Projects/BELLA SPA ERP/.next/dev/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_0p3wegg._.js:1919:105)
+    at processFullStringRow (file://D:/Antigravity/Projects/BELLA SPA ERP/.next/dev/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_0p3wegg._.js:2434:29)
+    at processFullBinaryRow (file://D:/Antigravity/Projects/BELLA SPA ERP/.next/dev/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_0p3wegg._.js:2393:9)
+    at processBinaryChunk (file://D:/Antigravity/Projects/BELLA SPA ERP/.next/dev/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_0p3wegg._.js:2502:221)
+    at progress (file://D:/Antigravity/Projects/BELLA SPA ERP/.next/dev/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_0p3wegg._.js:2689:13)
+  108 |
+  109 |   if (tenantErr) {
+> 110 |     throw new Error(`[checkSubscriptionLimit] tenants query failed: ${tenantErr.message}`);
+      |           ^
+  111 |   }
+  112 |
+  113 |   if (!tenant) { (file://D:/Antigravity/Projects/BELLA SPA ERP/.next/dev/static/chunks/src_0az7.fj._.js:5649:29)
+⨯ Error: [getSubscriptionInvoiceHistory] subscription_invoices query failed: permission denied for table subscription_invoices
+    at getSubscriptionInvoiceHistory (src\services\subscription-actions.ts:97:11)
+   95 |
+   96 |   if (error) {
+>  97 |     throw new Error(`[getSubscriptionInvoiceHistory] subscription_invoices query failed: ...
+      |           ^
+   98 |   }
+   99 |
+  100 |   return (data || []) as SubscriptionInvoice[]; {
+  digest: '3972213634'
+}
+⨯ Error: [checkSubscriptionLimit] tenants query failed: Cannot coerce the result to a single JSON object
+    at checkSubscriptionLimit (src\lib\subscription.ts:110:11)
+    at async getSubscriptionStatus (src\services\subscription-actions.ts:48:20)
+  108 |
+  109 |   if (tenantErr) {
+> 110 |     throw new Error(`[checkSubscriptionLimit] tenants query failed: ${tenantErr.message}`);
+      |           ^
+  111 |   }
+  112 |
+  113 |   if (!tenant) { {
+  digest: '1716602789'
+}
+[browser] Error loading subscription data: Error: [checkSubscriptionLimit] tenants query failed: Cannot coerce the result to a single JSON object
+    at checkSubscriptionLimit (src\lib\subscription.ts:110:11)
+    at  getSubscriptionStatus (src\services\subscription-actions.ts:48:20)
+    at resolveErrorDev (file://D:/Antigravity/Projects/BELLA SPA ERP/.next/dev/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_0p3wegg._.js:1919:105)
+    at processFullStringRow (file://D:/Antigravity/Projects/BELLA SPA ERP/.next/dev/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_0p3wegg._.js:2434:29)
+    at processFullBinaryRow (file://D:/Antigravity/Projects/BELLA SPA ERP/.next/dev/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_0p3wegg._.js:2393:9)
+    at processBinaryChunk (file://D:/Antigravity/Projects/BELLA SPA ERP/.next/dev/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_0p3wegg._.js:2502:221)
+    at progress (file://D:/Antigravity/Projects/BELLA SPA ERP/.next/dev/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_0p3wegg._.js:2689:13)
+  108 |
+  109 |   if (tenantErr) {
+> 110 |     throw new Error(`[checkSubscriptionLimit] tenants query failed: ${tenantErr.message}`);
+      |           ^
+  111 |   }
+  112 |
+  113 |   if (!tenant) { (file://D:/Antigravity/Projects/BELLA SPA ERP/.next/dev/static/chunks/src_0az7.fj._.js:5649:29)
+⨯ Error: [getSubscriptionInvoiceHistory] subscription_invoices query failed: permission denied for table subscription_invoices
+    at getSubscriptionInvoiceHistory (src\services\subscription-actions.ts:97:11)
+   95 |
+   96 |   if (error) {
+>  97 |     throw new Error(`[getSubscriptionInvoiceHistory] subscription_invoices query failed: ...
+      |           ^
+   98 |   }
+   99 |
+  100 |   return (data || []) as SubscriptionInvoice[]; {
+  digest: '3972213634'
+}

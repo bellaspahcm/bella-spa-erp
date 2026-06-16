@@ -17,7 +17,7 @@ import {
   syncLegacyToLedger,
   updateAccountingMode,
 } from "@/services/accounting-actions";
-import type { LegacyLedgerSyncPreview, ProfessionalModeReadinessGate } from "@/services/accounting/types";
+import type { LegacyLedgerSyncPreview, ProfessionalModeReadinessGate } from "@/core/services/accounting/types";
 import { getAccountingErrorMessage as getErrorMessage } from "@/lib/accounting-error-message";
 
 type AccountingMode = "SIMPLE" | "PROFESSIONAL";

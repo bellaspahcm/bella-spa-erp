@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kế hoạch mở rộng phân hệ Đào tạo Học viên - Bella & Beauty Spa ERP</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #0f172a;
+      --muted: #475569;
+      --soft-gray: #f8fafc;
+      --paper: #ffffff;
+      --line: #e2e8f0;
+      
+      /* Brand colors */
+      --bella-rose: #db2777;
+      --bella-rose-light: #fdf2f8;
+      --beauty-gold: #b45309;
+      --beauty-gold-light: #fef3c7;
+      --emerald: #0d9488;
+      --emerald-light: #f0fdfa;
+      
+      --gradient-main: linear-gradient(135deg, #db2777 0%, #b45309 100%);
+      --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.04);
+      --shadow-md: 0 10px 30px rgba(15, 23, 42, 0.06);
+      --shadow-lg: 0 20px 50px rgba(15, 23, 42, 0.1);
+      --radius-sm: 12px;
+      --radius-md: 20px;
+      --radius-lg: 30px;
+    }
+
+    * {
+      box-sizing: border-box;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      color: var(--ink);
+      background: 
+        radial-gradient(circle at top left, rgba(219, 39, 119, 0.08), transparent 45rem),
+        radial-gradient(circle at top right, rgba(180, 83, 9, 0.06), transparent 45rem),
+        #fafaf9;
+      font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      width: min(1200px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 40px 0 80px;
+    }
+
+    /* HEADER & HERO */
+    .hero {
+      position: relative;
+      overflow: hidden;
+      border-radius: var(--radius-lg);
+      padding: 60px;
+      background: linear-gradient(135deg, #1e1b4b 0%, #31102f 50%, #451a03 100%);
+      color: white;
+      box-shadow: var(--shadow-lg);
+      margin-bottom: 40px;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 80% 20%, rgba(219, 39, 119, 0.25), transparent 30rem);
+      pointer-events: none;
+    }
+
+    .hero-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(8px);
+      color: #fbcfe8;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    .hero h1 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(32px, 5vw, 54px);
+      font-weight: 700;
+      line-height: 1.15;
+      margin: 24px 0 16px;
+      letter-spacing: -0.01em;
+    }
+
+    .hero-desc {
+      font-size: clamp(16px, 2vw, 19px);
+      color: #e2e8f0;
+      max-width: 800px;
+      margin: 0 0 40px;
+      font-weight: 400;
+    }
+
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      padding-top: 30px;
+    }
+
+    .stat-card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius-sm);
+      padding: 20px;
+      backdrop-filter: blur(10px);
+      transition: transform 0.3s ease, border-color 0.3s ease;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(219, 39, 119, 0.4);
+    }
+
+    .stat-number {
+      font-size: 32px;
+      font-weight: 900;
+      color: #fff;
+      display: block;
+      line-height: 1;
+      margin-bottom: 8px;
+      background: linear-gradient(90deg, #fbcfe8, #fef3c7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .stat-label {
+      font-size: 13px;
+      color: #cbd5e1;
+      font-weight: 500;
+    }
+
+    /* CARD & SECTION */
+    .section {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      padding: 45px;
+      box-shadow: var(--shadow-md);
+      margin-bottom: 35px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .section-kicker {
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--bella-rose);
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .section h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(24px, 3.5vw, 36px);
+      margin: 0 0 30px;
+      letter-spacing: -0.01em;
+    }
+
+    .section-desc {
+      color: var(--muted);
+      font-size: 16px;
+      margin-top: -20px;
+      margin-bottom: 35px;
+      max-width: 850px;
+    }
+
+    /* GRID LAYOUTS */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 30px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    /* INNER CARDS */
+    .card {
+      background: var(--soft-gray);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      padding: 30px;
+      transition: all 0.3s ease;
+    }
+
+    .card:hover {
+      background: white;
+      box-shadow: var(--shadow-md);
+      border-color: rgba(219, 39, 119, 0.2);
+    }
+
+    .card-accent-rose {
+      border-left: 5px solid var(--bella-rose);
+      background: linear-gradient(180deg, var(--bella-rose-light) 0%, white 100%);
+    }
+
+    .card-accent-gold {
+      border-left: 5px solid var(--beauty-gold);
+      background: linear-gradient(180deg, var(--beauty-gold-light) 0%, white 100%);
+    }
+
+    .card-accent-emerald {
+      border-left: 5px solid var(--emerald);
+      background: linear-gradient(180deg, var(--emerald-light) 0%, white 100%);
+    }
+
+    .card h3 {
+      font-size: 18px;
+      font-weight: 700;
+      margin: 0 0 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card p {
+      color: var(--muted);
+      margin: 0 0 15px;
+      font-size: 14.5px;
+      line-height: 1.6;
+    }
+
+    /* CUSTOM LISTS */
+    ul.check-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    ul.check-list li {
+      position: relative;
+      padding-left: 28px;
+      margin-bottom: 12px;
+      font-size: 14.5px;
+      color: #334155;
+    }
+
+    ul.check-list li::before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      top: 0;
+      color: var(--emerald);
+      font-weight: 900;
+      font-size: 16px;
+    }
+
+    /* TABLES */
+    .table-responsive {
+      overflow-x: auto;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--line);
+      margin-top: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      text-align: left;
+    }
+
+    th {
+      background: var(--soft-gray);
+      color: var(--ink);
+      font-weight: 700;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    td {
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--line);
+      font-size: 14px;
+      color: #334155;
+      vertical-align: top;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background: rgba(248, 250, 252, 0.6);
+    }
+
+    /* BADGES */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .badge-rose { background: var(--bella-rose-light); color: var(--bella-rose); }
+    .badge-gold { background: var(--beauty-gold-light); color: var(--beauty-gold); }
+    .badge-emerald { background: var(--emerald-light); color: var(--emerald); }
+    .badge-gray { background: #f1f5f9; color: #475569; }
+
+    /* SQL BLOCK & CODE */
+    .code-container {
+      margin-top: 25px;
+      background: #0f172a;
+      border-radius: var(--radius-md);
+      padding: 24px;
+      position: relative;
+      box-shadow: inset 0 2px 8px rgba(0,0,0,0.8);
+    }
+
+    .code-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+    }
+
+    .code-lang {
+      color: #94a3b8;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    pre {
+      margin: 0;
+      overflow-x: auto;
+    }
+
+    pre code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 13.5px;
+      color: #e2e8f0;
+      line-height: 1.5;
+    }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 13px;
+      color: var(--bella-rose);
+      background: var(--bella-rose-light);
+      padding: 2px 6px;
+      border-radius: 6px;
+      font-weight: 600;
+      border: 1px solid rgba(219, 39, 119, 0.12);
+    }
+
+    /* TIMELINE FLOW */
+    .timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      position: relative;
+      padding-left: 30px;
+      margin-top: 30px;
+    }
+
+    .timeline::before {
+      content: "";
+      position: absolute;
+      left: 8px;
+      top: 5px;
+      bottom: 5px;
+      width: 2px;
+      background: var(--line);
+    }
+
+    .timeline-step {
+      position: relative;
+    }
+
+    .timeline-step::before {
+      content: "";
+      position: absolute;
+      left: -30px;
+      top: 6px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: white;
+      border: 4px solid var(--bella-rose);
+      z-index: 1;
+    }
+
+    .timeline-step:nth-child(2)::before { border-color: var(--beauty-gold); }
+    .timeline-step:nth-child(3)::before { border-color: var(--emerald); }
+
+    .timeline-content {
+      background: var(--soft-gray);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      padding: 24px;
+    }
+
+    .timeline-content h3 {
+      margin: 0 0 10px;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    /* VISUAL LOCK DIAGRAM */
+    .lock-diagram {
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      background: var(--soft-gray);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      padding: 30px;
+      margin: 30px 0;
+      gap: 15px;
+    }
+
+    .diagram-node {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      padding: 16px 20px;
+      text-align: center;
+      flex: 1;
+      max-width: 200px;
+      box-shadow: var(--shadow-sm);
+      position: relative;
+      transition: all 0.3s ease;
+    }
+
+    .diagram-node.completed {
+      border-color: var(--emerald);
+      background: var(--emerald-light);
+    }
+
+    .diagram-node.active {
+      border-color: var(--bella-rose);
+      box-shadow: 0 0 15px rgba(219, 39, 119, 0.15);
+      background: var(--bella-rose-light);
+    }
+
+    .diagram-node.locked {
+      border-color: var(--line);
+      background: #f1f5f9;
+      opacity: 0.6;
+    }
+
+    .diagram-node-status {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: block;
+      margin-top: 8px;
+    }
+
+    .completed .diagram-node-status { color: var(--emerald); }
+    .active .diagram-node-status { color: var(--bella-rose); }
+    .locked .diagram-node-status { color: #64748b; }
+
+    .diagram-arrow {
+      font-size: 24px;
+      color: #94a3b8;
+      font-weight: 300;
+    }
+
+    /* ALERTS / CALLOUTS */
+    .alert {
+      padding: 22px;
+      border-radius: var(--radius-md);
+      margin-bottom: 25px;
+      border: 1px solid transparent;
+      display: flex;
+      gap: 16px;
+    }
+
+    .alert-icon {
+      font-size: 22px;
+      line-height: 1;
+      margin-top: 2px;
+    }
+
+    .alert-content h4 {
+      margin: 0 0 6px;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .alert-content p {
+      margin: 0;
+      font-size: 14px;
+      color: #334155;
+    }
+
+    .alert-important {
+      background: #fef2f2;
+      border-color: #fecaca;
+      color: #991b1b;
+    }
+
+    .alert-important h4 { color: #991b1b; }
+
+    .alert-note {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+      color: #1e40af;
+    }
+
+    .alert-note h4 { color: #1e40af; }
+
+    /* FOOTER */
+    .footer-doc {
+      margin-top: 40px;
+      padding: 30px;
+      border-radius: var(--radius-md);
+      background: #1e293b;
+      color: #cbd5e1;
+      text-align: center;
+      font-size: 13.5px;
+    }
+
+    .footer-doc p {
+      margin: 0 0 10px;
+    }
+
+    .footer-doc strong {
+      color: white;
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 980px) {
+      .hero {
+        padding: 40px;
+      }
+      .section {
+        padding: 30px;
+      }
+      .grid-2, .grid-3, .lock-diagram {
+        grid-template-columns: 1fr;
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .diagram-node {
+        max-width: none;
+      }
+      .diagram-arrow {
+        text-align: center;
+        transform: rotate(90deg);
+        margin: 5px 0;
+      }
+    }
+
+    @media print {
+      body {
+        background: white;
+      }
+      .container {
+        width: 100%;
+        padding: 0;
+      }
+      .hero, .section, .code-container, .timeline-content {
+        box-shadow: none !important;
+        break-inside: avoid;
+        border: 1px solid #cbd5e1 !important;
+      }
+      .hero {
+        background: #f8fafc !important;
+        color: var(--ink) !important;
+      }
+      .hero h1, .hero-desc, .stat-number, .stat-label {
+        color: var(--ink) !important;
+        -webkit-text-fill-color: initial !important;
+        background: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    
+    <!-- HERO -->
+    <header class="hero">
+      <div class="hero-tag">Phân hệ mở rộng</div>
+      <h1>Kế hoạch mở rộng phân hệ Đào tạo Học viên</h1>
+      <p class="hero-desc">
+        Tích hợp hệ thống quản lý học viên, học phí, lịch học tập trung, và đào tạo trực tuyến tuần tự 
+        có kiểm soát thời lượng học tập dành cho Bella Spa & Beauty Spa.
+      </p>
+      
+      <div class="hero-stats">
+        <div class="stat-card">
+          <span class="stat-number">08 Bảng</span>
+          <span class="stat-label">Cơ sở dữ liệu mở rộng chuẩn hóa trên Supabase</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-number">100%</span>
+          <span class="stat-label">Cô lập dữ liệu Spa nhờ cơ chế bảo mật RLS</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-number">Tuần tự</span>
+          <span class="stat-label">Khóa trình tự học bắt buộc hoàn thành bài cũ</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-number">Real-time</span>
+          <span class="stat-label">Đo lường thời gian truy cập &amp; % xem bài học</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- SECTION 1: GOALS & SCOPE -->
+    <section class="section">
+      <span class="section-kicker">Tổng quan dự án</span>
+      <h2>1. Mục tiêu &amp; Phạm vi Nghiệp vụ</h2>
+      <p class="section-desc">Giải pháp số hóa toàn diện quy trình đào tạo kỹ thuật viên và học viên tại chuỗi spa, tối ưu quản trị tài chính học phí và tự động hóa học tập trực tuyến.</p>
+      
+      <div class="grid-2">
+        <div class="card card-accent-rose">
+          <h3>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--bella-rose)"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            Quản lý Học vụ &amp; Học phí
+          </h3>
+          <p>
+            Theo dõi xuyên suốt vòng đời học viên từ khi nhập học đến tốt nghiệp. Quản lý hạn mức học phí, 
+            số tiền đóng theo đợt và theo dõi nợ học phí để đối soát tài chính của từng spa/chi nhánh.
+          </p>
+          <ul class="check-list">
+            <li>Quản lý hồ sơ học viên, trạng thái (đang học, bảo lưu, tốt nghiệp).</li>
+            <li>Học phí thực đóng sau chiết khấu, miễn giảm.</li>
+            <li>Điểm danh các buổi học lý thuyết, thực hành tập trung.</li>
+          </ul>
+        </div>
+
+        <div class="card card-accent-gold">
+          <h3>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--beauty-gold)"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>
+            Cổng Học viên Biệt lập
+          </h3>
+          <p>
+            Cấp tài khoản đăng nhập riêng cho học viên với giao diện mobile-first tại cổng <code>/student</code>.
+            Tuyệt đối loại bỏ khả năng tiếp cận các thông tin vận hành kinh doanh nhạy cảm của spa.
+          </p>
+          <ul class="check-list">
+            <li>Chỉ truy cập kho tài liệu học tập và lịch học cá nhân.</li>
+            <li>Tự động chặn quyền đọc/ghi dữ liệu khách hàng, doanh thu spa.</li>
+            <li>Xem bảng kê học phí cá nhân minh bạch.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Thích ứng thương hiệu Bella Spa & Beauty Spa -->
+      <div class="card" style="margin-top: 30px; background: linear-gradient(135deg, var(--bella-rose-light), var(--beauty-gold-light)); border: 1px dashed rgba(180, 83, 9, 0.25);">
+        <h3 style="font-family: 'Playfair Display', Georgia, serif; font-size: 19px; color: var(--ink); margin-bottom: 15px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--bella-rose); vertical-align: middle; margin-right: 8px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Thích ứng Thương hiệu Động (Bella Spa vs. Beauty Spa)
+        </h3>
+        <p style="color: #475569; font-size: 14.5px; margin-bottom: 20px;">
+          Hệ thống đào tạo được thiết kế trên mô hình đa chi nhánh (multi-tenant) và đa thương hiệu. Khi học viên đăng nhập, toàn bộ giao diện và giáo trình bài giảng sẽ tự động tùy biến dựa theo chi nhánh đăng ký:
+        </p>
+        <div class="grid-2" style="gap: 20px;">
+          <div style="background: white; padding: 20px; border-radius: var(--radius-sm); border: 1px solid rgba(219, 39, 119, 0.15); box-shadow: var(--shadow-sm);">
+            <span class="badge badge-rose" style="margin-bottom: 12px;">Bella Spa (Babycare)</span>
+            <ul class="check-list" style="margin: 0; padding: 0;">
+              <li><strong>Giao diện:</strong> Tông màu hồng chủ đạo (Rose/Plum) theo bộ nhận diện của Bella Spa.</li>
+              <li><strong>Nội dung giáo trình:</strong> Tập trung vào chuyên môn massage bầu, tắm bé, chăm sóc mẹ sau sinh và các kỹ năng tương tác với mẹ bé.</li>
+            </ul>
+          </div>
+          <div style="background: white; padding: 20px; border-radius: var(--radius-sm); border: 1px solid rgba(180, 83, 9, 0.15); box-shadow: var(--shadow-sm);">
+            <span class="badge badge-gold" style="margin-bottom: 12px;">Beauty Spa (Beauty & Clinic)</span>
+            <ul class="check-list" style="margin: 0; padding: 0;">
+              <li><strong>Giao diện:</strong> Tông màu vàng kim và xanh ngọc (Gold/Emerald) sang trọng của Beauty Spa.</li>
+              <li><strong>Nội dung giáo trình:</strong> Tập trung vào kỹ thuật chăm sóc da chuyên sâu, liệu trình laser, massage body thư giãn/trị liệu và quy trình vận hành máy công nghệ cao.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2: ARCHITECTURE & SECURITY -->
+    <section class="section">
+      <span class="section-kicker">Security &amp; Isolation</span>
+      <h2>2. Bảo mật Row Level Security (RLS) &amp; Định tuyến</h2>
+      <p class="section-desc">Kiến trúc an toàn dữ liệu kép đảm bảo cô lập dữ liệu spa, phân tách vai trò của học viên ở cả tầng ứng dụng và cơ sở dữ liệu.</p>
+
+      <div class="alert alert-important">
+        <span class="alert-icon">⚠️</span>
+        <div class="alert-content">
+          <h4>Nguyên tắc Cô lập Dữ liệu Nghiêm ngặt</h4>
+          <p>
+            Tài khoản học viên (role <code>student</code>) được xếp vào lớp người dùng ngoài hệ thống vận hành. 
+            Mọi bảng dữ liệu liên quan đến khách hàng trị liệu, ca làm việc của KTV, tiền tệ doanh thu, chi phí, bảng lương... 
+            sẽ <strong>KHÔNG</strong> cấu hình bất kỳ quyền SELECT/INSERT/UPDATE nào cho vai trò <code>student</code>. 
+            Nhờ cơ chế Deny All mặc định của Supabase RLS, học viên sẽ bị chặn 100% khi cố truy vấn các bảng này.
+          </p>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h3>Phân quyền định tuyến tại Middleware</h3>
+          <p>
+            Hệ thống sử dụng tệp kiểm soát định tuyến <a href="file:///d:/Antigravity/Projects/BELLA SPA ERP/src/proxy.ts" style="color:var(--bella-rose); font-weight: 600;">src/proxy.ts</a> để quét vai trò người dùng trước khi tải trang:
+          </p>
+          <ul class="check-list">
+            <li>Tất cả các route học tập bắt đầu bằng <code>/student/*</code> sẽ được bảo vệ.</li>
+            <li>Học viên cố truy cập <code>/dashboard/*</code> sẽ tự động bị chuyển hướng (Redirect) về <code>/student/dashboard</code>.</li>
+            <li>Nhân sự spa (admin, accountant, KTV) truy cập <code>/student/*</code> sẽ được đưa về lại trang <code>/dashboard</code> thích hợp.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Chính sách RLS của Phân hệ Học tập</h3>
+          <p>
+            Các bảng dữ liệu phục vụ đào tạo sẽ cấp quyền SELECT/INSERT/UPDATE giới hạn cho học viên:
+          </p>
+          <ul class="check-list">
+            <li><code>courses</code>: Chỉ cho phép đọc nếu ID khóa học khớp với khóa học học viên đăng ký.</li>
+            <li><code>student_lesson_progress</code>: Chỉ cho phép học viên đọc và cập nhật (INSERT/UPDATE) bản ghi tiến độ của chính họ.</li>
+            <li><code>student_tuition_payments</code>: Học viên chỉ được phép xem các hóa đơn thanh toán học phí của bản thân.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 3: DATABASE SCHEMA -->
+    <section class="section">
+      <span class="section-kicker">Cấu trúc dữ liệu</span>
+      <h2>3. Thiết kế Schema Cơ sở Dữ liệu</h2>
+      <p class="section-desc">Cài đặt 8 bảng dữ liệu mới có quan hệ chặt chẽ nhằm lưu trữ thông tin học tập, tài liệu học và tiến trình thanh toán học phí.</p>
+      
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 25%;">Tên bảng</th>
+              <th style="width: 45%;">Mục đích lưu trữ</th>
+              <th style="width: 30%;">Các khóa ngoại chính</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong><code>courses</code></strong></td>
+              <td>Thông tin chung các khóa học, định mức học phí, thời gian học lý thuyết.</td>
+              <td><code>tenant_id</code></td>
+            </tr>
+            <tr>
+              <td><strong><code>course_modules</code></strong></td>
+              <td>Phân chia khóa học thành các chương/phần học tuần tự.</td>
+              <td><code>course_id</code></td>
+            </tr>
+            <tr>
+              <td><strong><code>lessons</code></strong></td>
+              <td>Bài học chi tiết, lưu trữ link video bài giảng, PDF, tài liệu văn bản, thời gian học tối thiểu.</td>
+              <td><code>module_id</code></td>
+            </tr>
+            <tr>
+              <td><strong><code>students</code></strong></td>
+              <td>Hồ sơ chi tiết học viên, tổng học phí thực tế cần đóng và số tiền đã thanh toán.</td>
+              <td><code>user_id</code>, <code>course_id</code>, <code>tenant_id</code></td>
+            </tr>
+            <tr>
+              <td><strong><code>student_tuition_payments</code></strong></td>
+              <td>Nhật ký các lần đóng học phí của học viên để thủ quỹ đối soát và xuất phiếu thu.</td>
+              <td><code>student_id</code>, <code>recorded_by</code></td>
+            </tr>
+            <tr>
+              <td><strong><code>student_lesson_progress</code></strong></td>
+              <td>Lưu giữ tiến độ đọc/xem bài học, tích lũy giây truy cập, % hoàn thành và cờ trạng thái xong bài.</td>
+              <td><code>student_id</code>, <code>lesson_id</code></td>
+            </tr>
+            <tr>
+              <td><strong><code>training_classes</code></strong></td>
+              <td>Lịch khai giảng các buổi học thực hành hoặc lý thuyết tập trung tại trung tâm đào tạo của chi nhánh.</td>
+              <td><code>tenant_id</code>, <code>course_id</code>, <code>trainer_id</code></td>
+            </tr>
+            <tr>
+              <td><strong><code>student_class_attendance</code></strong></td>
+              <td>Bảng điểm danh chi tiết từng buổi học tập trung (Có mặt, Vắng có phép, Vắng không phép).</td>
+              <td><code>student_id</code>, <code>class_id</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="code-container">
+        <div class="code-header">
+          <span class="code-lang">PostgreSQL DDL Migration</span>
+          <span style="color:#64748b; font-size:11px;">Schema Preview</span>
+        </div>
+        <pre><code>-- Bảng tiến trình học tập của học viên
+CREATE TABLE student_lesson_progress (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  student_id UUID NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  lesson_id UUID NOT NULL REFERENCES lessons(id) ON DELETE CASCADE,
+  time_spent_seconds INTEGER NOT NULL DEFAULT 0, -- Thời gian tích lũy học thực tế
+  view_percentage DECIMAL(5,2) NOT NULL DEFAULT 0.00, -- Phần trăm xem tài liệu/video
+  is_completed BOOLEAN NOT NULL DEFAULT FALSE, -- Cờ hoàn thành bài
+  completed_at TIMESTAMP WITH TIME ZONE,
+  last_accessed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(student_id, lesson_id)
+);</code></pre>
+      </div>
+    </section>
+
+    <!-- SECTION 4: SEQUENTIAL LEARNING LOCK -->
+    <section class="section">
+      <span class="section-kicker">Học tập tuần tự</span>
+      <h2>4. Cơ chế Khóa Trình tự &amp; Đo lường Học tập</h2>
+      <p class="section-desc">Cơ chế quản lý chặt chẽ đảm bảo học viên không thể "đốt cháy giai đoạn" và học tập đúng thời lượng quy định.</p>
+
+      <div class="lock-diagram">
+        <div class="diagram-node completed">
+          <strong>Bài 1: Khái quát Da</strong>
+          <span class="diagram-node-status">Đã xong ✓</span>
+        </div>
+        <div class="diagram-arrow">➔</div>
+        <div class="diagram-node active">
+          <strong>Bài 2: Cách vệ sinh</strong>
+          <span class="diagram-node-status">Đang học (45%)</span>
+        </div>
+        <div class="diagram-arrow">➔</div>
+        <div class="diagram-node locked">
+          <strong>Bài 3: Kỹ thuật Massage</strong>
+          <span class="diagram-node-status">🔒 Đang khóa</span>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h3>Thuật toán khóa trình tự (Sequential Lock)</h3>
+          <p>
+            Mỗi bài học được định hình theo một chuỗi tuyến tính dựa trên chỉ số sắp xếp <code>sequence_order</code>:
+          </p>
+          <ul class="check-list">
+            <li>Mặc định bài học đầu tiên của khóa học được mở khóa <code>is_unlocked = true</code>.</li>
+            <li>Bài học $K$ sẽ chỉ được mở khóa khi bài học liền trước $K-1$ có cờ <code>is_completed = true</code> trong bảng tiến độ của học viên.</li>
+            <li>Giao diện học viên sẽ làm mờ bài học bị khóa và chặn click truy cập.</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3>Đo lường thời gian &amp; % xem tài liệu</h3>
+          <p>
+            Sử dụng React Hook và API Heartbeat để ghi nhận chính xác quá trình tương tác:
+          </p>
+          <ul class="check-list">
+            <li><strong>Heartbeat định kỳ</strong>: Khi mở tài liệu, trình duyệt tự động gửi lệnh ping lên server mỗi 10-15 giây để tích lũy thời gian học thực tế.</li>
+            <li><strong>Đọc tài liệu</strong>: Đo lường độ dài cuộn trang (scroll depth), đạt trên 90% trang và đủ thời gian mới tính là hoàn tất.</li>
+            <li><strong>Xem video</strong>: Tích hợp sự kiện <code>onTimeUpdate</code> của video, chặn tua nhanh đến các đoạn chưa xem, tính % dựa trên thời lượng thực đã phát.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 5: UI/UX PAGES -->
+    <section class="section">
+      <span class="section-kicker">Giao diện người dùng</span>
+      <h2>5. Thiết kế Màn hình &amp; Trải nghiệm (UI/UX)</h2>
+      <p class="section-desc">Giao diện người dùng được phân tách rõ ràng cho cổng học viên di động và hệ thống quản trị của chủ spa.</p>
+      
+      <div class="grid-2">
+        <div class="card card-accent-rose">
+          <h3>Cổng Học viên (Mobile-first Portal)</h3>
+          <ul class="check-list">
+            <li><strong>Dashboard cá nhân (<code>/student/dashboard</code>)</strong>: Hiển thị tóm tắt tiến trình học bằng biểu đồ tròn, lịch học thực hành trong tuần và nút "Học tiếp bài trước" nhanh gọn.</li>
+            <li><strong>Màn hình Bài học (<code>/student/lessons/[id]</code>)</strong>: Tích hợp khung trình chiếu video hoặc tài liệu, hiển thị thanh tiến trình đếm ngược thời gian bắt buộc xem.</li>
+            <li><strong>Lịch học &amp; Điểm danh</strong>: Lịch biểu các ca học lý thuyết, thực hành nhóm tại spa, hiển thị rõ tình trạng điểm danh.</li>
+            <li><strong>Tra cứu Học phí</strong>: Thống kê số tiền đã nộp, dư nợ học phí và mã QR thanh toán chuyển khoản học phí nhanh.</li>
+          </ul>
+        </div>
+
+        <div class="card card-accent-gold">
+          <h3>Cổng Quản trị (Admin Dashboard)</h3>
+          <ul class="check-list">
+            <li><strong>Soạn thảo khóa học (<code>/dashboard/training/courses</code>)</strong>: Cho phép Admin tạo bài giảng, phân chia chương học, tải tài liệu học tập và thiết lập thời lượng xem bắt buộc.</li>
+            <li><strong>Quản lý Học viên (<code>/dashboard/training/students</code>)</strong>: Thống kê danh sách học viên, tiến độ học tập chi tiết của từng người (học được bao nhiêu phút, hoàn thành bao nhiêu bài).</li>
+            <li><strong>Lên lịch &amp; Điểm danh</strong>: Lên lịch học thực hành tập trung tại spa và điểm danh học viên nhanh chóng bằng bảng checklist.</li>
+            <li><strong>Thu học phí</strong>: Ghi nhận phiếu đóng tiền học phí và xuất phiếu thu tự động cho học viên.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 6: ROADMAP -->
+    <section class="section">
+      <span class="section-kicker">Lộ trình triển khai</span>
+      <h2>6. Kế hoạch Triển khai Cuốn chiếu</h2>
+      <p class="section-desc">Chia nhỏ quá trình phát triển thành các giai đoạn ngắn để kiểm soát rủi ro và đảm bảo tính ổn định tối đa cho hệ thống.</p>
+      
+      <div class="timeline">
+        <div class="timeline-step">
+          <div class="timeline-content">
+            <h3>Giai đoạn 1: Thiết lập Database &amp; Quản trị Admin (Sprint 1-2)</h3>
+            <p>Khởi chạy các tệp migration tạo các bảng dữ liệu mới trên Supabase. Thiết lập RLS ngăn vai trò học viên đọc dữ liệu Spa. Xây dựng các trang quản trị tạo khóa học, soạn giáo trình và tạo tài khoản học viên dành cho Admin.</p>
+          </div>
+        </div>
+        <div class="timeline-step">
+          <div class="timeline-content">
+            <h3>Giai đoạn 2: Phát triển Portal Học viên &amp; Khóa học trình tự (Sprint 3-4)</h3>
+            <p>Thiết kế các trang web dành riêng cho học viên. Hoàn thiện cơ chế khóa trình tự tuyến tính bài học. Tích hợp React Hook theo dõi thời gian đọc/xem tài liệu bài học thực tế của học viên cập nhật tự động.</p>
+          </div>
+        </div>
+        <div class="timeline-step">
+          <div class="timeline-content">
+            <h3>Giai đoạn 3: Điểm danh, Đối soát Học phí &amp; UAT (Sprint 5-6)</h3>
+            <p>Xây dựng phân hệ điểm danh buổi học tập trung và ghi nhận đóng học phí. Tổ chức kiểm thử UAT thực tế trên 5-10 học viên tại chi nhánh Bella Spa chính, sửa lỗi và phát hành bản nâng cấp chính thức.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 7: ADVANCED PROPOSALS -->
+    <section class="section">
+      <span class="section-kicker">Tính năng đề xuất nâng cao</span>
+      <h2>7. Đề xuất Tính năng Mở rộng</h2>
+      <p class="section-desc">Các tính năng bổ sung giúp nâng cao tính tương tác và chất lượng đào tạo nghiệp vụ của spa.</p>
+      
+      <div class="grid-3">
+        <div class="card card-accent-emerald">
+          <h3>Thi &amp; Cấp chứng chỉ</h3>
+          <p>Tích hợp bộ câu hỏi trắc nghiệm ở cuối mỗi chương học. Học viên bắt buộc phải thi đạt tối thiểu 80% điểm số mới được mở chương học kế tiếp.</p>
+        </div>
+        <div class="card">
+          <h3>Hỏi đáp với KTV Lead</h3>
+          <p>Học viên có thể đặt câu hỏi trao đổi trực tiếp ở phía dưới mỗi bài học. Giảng viên phụ trách nhận được thông báo để phản hồi và hỗ trợ giải đáp thắc mắc.</p>
+        </div>
+        <div class="card">
+          <h3>AI hỗ trợ học tập</h3>
+          <p>Tự động chuyển âm thanh video bài giảng thành văn bản tóm tắt hoặc tạo các bài tóm tắt bài học ngắn gọn bằng AI giúp học viên ôn tập nhanh chóng.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- FOOTER INFO -->
+    <footer class="footer-doc">
+      <p>Bản tài liệu kế hoạch mở rộng tính năng đào tạo học viên cho <strong>Bella Spa &amp; Beauty Spa</strong>.</p>
+      <p>Thiết kế &amp; Biên soạn bởi <strong>Antigravity (AI Partner)</strong> · Năm 2026</p>
+    </footer>
+
+  </div>
+</body>
+</html>

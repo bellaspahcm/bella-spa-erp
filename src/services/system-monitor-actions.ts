@@ -1,8 +1,8 @@
 'use server';
 
-import { createAccountingDataClient } from '@/services/accounting/client';
-import { getBusinessHealthSummary } from '@/services/accounting/business-health';
-import { getAccountingHealthSummary } from '@/services/accounting/health';
+import { createAccountingDataClient } from '@/core/services/accounting/client';
+import { getBusinessHealthSummary } from '@/core/services/accounting/business-health';
+import { getAccountingHealthSummary } from '@/core/services/accounting/health';
 import { getCurrentUser } from '@/services/user-actions';
 import type { Database, Json } from '@/types/database.types';
 

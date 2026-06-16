@@ -1,4 +1,4 @@
-jest.mock('../modules/booking/actions/commission-actions', () => ({
+jest.mock('@/core/services/order/commission-actions', () => ({
   resolveKtvCommission: jest.fn().mockResolvedValue(150000),
 }));
 

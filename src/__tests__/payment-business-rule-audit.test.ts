@@ -11,7 +11,7 @@ import {
   buildRevenueAccountingMetadata,
   inferBusinessEventType,
   resolveAccountingReviewStatus,
-} from '@/services/accounting/template-rules';
+} from '@/core/services/accounting/template-rules';
 
 function readSource(path: string) {
   return readFileSync(path, 'utf8');

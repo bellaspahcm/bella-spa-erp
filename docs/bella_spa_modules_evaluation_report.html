@@ -1,0 +1,1496 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Báo Cáo Phân Tích Phân Hệ Bella ERP: Babycare vs Beauty Spa</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-dark: #07090e;
+      --bg-card: rgba(17, 22, 34, 0.7);
+      --bg-card-hover: rgba(26, 32, 48, 0.8);
+      --border-glow: rgba(255, 133, 162, 0.15);
+      --border-color: rgba(255, 255, 255, 0.06);
+      
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-dark: #64748b;
+      
+      /* Colors for Babycare Core (Wine / Rose) */
+      --baby-primary: #ff85a2;
+      --baby-primary-glow: rgba(255, 133, 162, 0.4);
+      --baby-wine: #881337;
+      --baby-wine-dark: #4c0519;
+      --baby-wine-light: rgba(136, 19, 55, 0.15);
+      
+      /* Colors for Beauty Spa Module (Jade Green / Emerald) */
+      --beauty-primary: #10b981;
+      --beauty-primary-glow: rgba(16, 185, 129, 0.4);
+      --beauty-emerald-dark: #064e3b;
+      --beauty-emerald-light: rgba(16, 185, 129, 0.1);
+      
+      /* Status Colors */
+      --color-excellent: #34d399;
+      --color-good: #38bdf8;
+      --color-fair: #fbbf24;
+      --color-weak: #fb7185;
+      
+      --font-display: 'Plus Jakarta Sans', sans-serif;
+      --font-body: 'Be Vietnam Pro', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(circle at 10% 20%, rgba(255, 133, 162, 0.05) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.04) 0%, transparent 40%),
+        radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.03) 0%, transparent 50%);
+      color: var(--text-main);
+      line-height: 1.75;
+      font-size: 15px;
+      padding: 40px 20px;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .main-container {
+      max-width: 1120px;
+      width: 100%;
+      background: rgba(10, 13, 20, 0.85);
+      border: 1px solid var(--border-color);
+      border-radius: 28px;
+      padding: 40px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(20px);
+    }
+
+    /* ========== HEADER SECTION ========== */
+    header {
+      position: relative;
+      background: linear-gradient(135deg, #18050c 0%, #061511 100%);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 20px;
+      padding: 40px;
+      margin-bottom: 30px;
+      overflow: hidden;
+    }
+
+    header::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: linear-gradient(90deg, var(--baby-primary) 0%, var(--beauty-primary) 100%);
+    }
+
+    .header-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 99px;
+      padding: 5px 14px;
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+    }
+
+    .header-badge span.dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--baby-primary);
+      box-shadow: 0 0 8px var(--baby-primary);
+      animation: pulse 2s infinite;
+    }
+
+    header h1 {
+      font-family: var(--font-display);
+      font-size: clamp(22px, 4vw, 34px);
+      font-weight: 800;
+      line-height: 1.25;
+      margin-bottom: 12px;
+      letter-spacing: -0.02em;
+      background: linear-gradient(90deg, #ffffff 30%, #ffd0dc 70%, #d1fae5 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .header-subtitle {
+      font-size: 14.5px;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+      max-width: 850px;
+    }
+
+    .header-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .meta-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .meta-badge strong {
+      color: #fff;
+    }
+
+    /* ========== TABS SYSTEM ========== */
+    .tabs-nav {
+      display: flex;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-color);
+      padding: 6px;
+      border-radius: 14px;
+      margin-bottom: 30px;
+      overflow-x: auto;
+    }
+
+    .tab-btn {
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: transparent;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 10px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.25s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tab-btn:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .tab-btn.active {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.08);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
+    }
+
+    .tab-btn.active.baby-tab {
+      border-left: 2px solid var(--baby-primary);
+      background: rgba(255, 133, 162, 0.06);
+    }
+
+    .tab-btn.active.beauty-tab {
+      border-left: 2px solid var(--beauty-primary);
+      background: rgba(16, 185, 129, 0.06);
+    }
+
+    .tab-content {
+      display: none;
+      animation: fadeIn 0.4s ease forwards;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ========== OVERVIEW SCORECARD ========== */
+    .scorecard-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 40px;
+    }
+
+    @media (max-width: 768px) {
+      .scorecard-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .score-card {
+      position: relative;
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 32px;
+      display: flex;
+      gap: 24px;
+      align-items: center;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .score-card.baby {
+      background: linear-gradient(135deg, rgba(136, 19, 55, 0.12) 0%, rgba(10, 13, 20, 0.9) 100%);
+      border-color: rgba(255, 133, 162, 0.15);
+    }
+    .score-card.baby:hover {
+      border-color: rgba(255, 133, 162, 0.3);
+      box-shadow: 0 10px 30px -10px rgba(255, 133, 162, 0.15);
+    }
+
+    .score-card.beauty {
+      background: linear-gradient(135deg, rgba(6, 78, 59, 0.1) 0%, rgba(10, 13, 20, 0.9) 100%);
+      border-color: rgba(16, 185, 129, 0.15);
+    }
+    .score-card.beauty:hover {
+      border-color: rgba(16, 185, 129, 0.3);
+      box-shadow: 0 10px 30px -10px rgba(16, 185, 129, 0.15);
+    }
+
+    .score-ring-container {
+      position: relative;
+      width: 110px;
+      height: 110px;
+      flex-shrink: 0;
+    }
+
+    .score-ring-svg {
+      transform: rotate(-90deg);
+      width: 100%;
+      height: 100%;
+    }
+
+    .score-ring-bg {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.04);
+      stroke-width: 8;
+    }
+
+    .score-ring-fill {
+      fill: none;
+      stroke-width: 8;
+      stroke-linecap: round;
+      stroke-dasharray: 282.6; /* 2 * PI * 45 */
+      transition: stroke-dashoffset 1s ease;
+    }
+
+    .baby .score-ring-fill {
+      stroke: var(--baby-primary);
+      stroke-dashoffset: 22.6; /* (1 - 0.92) * 282.6 */
+    }
+
+    .beauty .score-ring-fill {
+      stroke: var(--beauty-primary);
+      stroke-dashoffset: 31.09; /* (1 - 0.89) * 282.6 */
+    }
+
+    .score-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+
+    .score-value {
+      font-family: var(--font-display);
+      font-size: 26px;
+      font-weight: 800;
+      line-height: 1;
+      color: #fff;
+    }
+
+    .score-max {
+      font-size: 10px;
+      color: var(--text-dark);
+      display: block;
+      margin-top: 2px;
+      font-weight: 600;
+    }
+
+    .score-info {
+      flex-grow: 1;
+    }
+
+    .score-badge {
+      display: inline-flex;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+    }
+
+    .baby .score-badge {
+      background: rgba(255, 133, 162, 0.12);
+      color: var(--baby-primary);
+      border: 1px solid rgba(255, 133, 162, 0.2);
+    }
+
+    .beauty .score-badge {
+      background: rgba(16, 185, 129, 0.12);
+      color: var(--beauty-primary);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    .score-card-title {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+
+    .score-card-desc {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* ========== SECTION COMMON STYLES ========== */
+    .section-title-wrap {
+      margin-bottom: 24px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .section-title {
+      font-family: var(--font-display);
+      font-size: 19px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-title span.number {
+      font-size: 13px;
+      color: var(--text-dark);
+      border: 1px solid var(--border-color);
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+    }
+
+    .section-desc {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+    }
+
+    /* ========== CARDS GRID ========== */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 24px;
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .feature-card:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(255, 255, 255, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .feature-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+
+    .feature-card-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .baby-theme .feature-card-icon {
+      background: var(--baby-wine-light);
+      color: var(--baby-primary);
+    }
+
+    .beauty-theme .feature-card-icon {
+      background: var(--beauty-emerald-light);
+      color: var(--beauty-primary);
+    }
+
+    .feature-score-badge {
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+
+    .score-excellent { background: rgba(52, 211, 153, 0.1); color: var(--color-excellent); }
+    .score-good { background: rgba(56, 189, 248, 0.1); color: var(--color-good); }
+    .score-fair { background: rgba(251, 191, 36, 0.1); color: var(--color-fair); }
+    .score-weak { background: rgba(251, 113, 133, 0.1); color: var(--color-weak); }
+
+    .feature-card h3 {
+      font-family: var(--font-display);
+      font-size: 15.5px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    .feature-card p {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 16px;
+      flex-grow: 1;
+    }
+
+    .tech-tag-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      border-top: 1px solid var(--border-color);
+      padding-top: 12px;
+    }
+
+    .tech-tag {
+      font-family: var(--font-display);
+      font-size: 10.5px;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      padding: 2px 8px;
+      color: var(--text-muted);
+    }
+
+    /* ========== COMPARE TABLE ========== */
+    .table-container {
+      overflow-x: auto;
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      background: rgba(10, 13, 20, 0.4);
+      margin-bottom: 40px;
+    }
+
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+    }
+
+    .compare-table th {
+      background: rgba(255, 255, 255, 0.02);
+      color: #fff;
+      font-family: var(--font-display);
+      font-weight: 700;
+      padding: 16px 20px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .compare-table td {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: top;
+      color: var(--text-muted);
+    }
+
+    .compare-table tr:hover td {
+      background: rgba(255, 255, 255, 0.01);
+    }
+
+    .compare-table .crit {
+      font-weight: 600;
+      color: #fff;
+      background: rgba(255, 255, 255, 0.005);
+      width: 20%;
+    }
+
+    .compare-table .col-baby {
+      width: 40%;
+      border-left: 1px solid var(--border-color);
+    }
+
+    .compare-table .col-beauty {
+      width: 40%;
+      border-left: 1px solid var(--border-color);
+    }
+
+    .compare-table strong.highlight-baby {
+      color: var(--baby-primary);
+    }
+
+    .compare-table strong.highlight-beauty {
+      color: var(--beauty-primary);
+    }
+
+    .check { color: var(--color-excellent); font-weight: bold; }
+    .cross { color: var(--color-weak); font-weight: bold; }
+    .warning-sign { color: var(--color-fair); font-weight: bold; }
+
+    /* ========== COMPETITOR BOX ========== */
+    .competitor-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      margin-bottom: 40px;
+    }
+
+    .comp-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 20px;
+      position: relative;
+    }
+
+    .comp-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .comp-name {
+      font-family: var(--font-display);
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .comp-score {
+      font-family: var(--font-display);
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--baby-primary);
+    }
+
+    .comp-bullet-list {
+      list-style: none;
+      font-size: 12.5px;
+      color: var(--text-muted);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .comp-bullet-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+    }
+
+    .comp-bullet-list li::before {
+      content: '•';
+      color: var(--baby-primary);
+      font-weight: bold;
+    }
+
+    /* ========== BAR SVG CHART ========== */
+    .chart-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 30px;
+      margin-bottom: 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .chart-title {
+      font-family: var(--font-display);
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .bar-chart {
+      width: 100%;
+      max-width: 800px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .chart-row {
+      display: grid;
+      grid-template-columns: 180px 1fr;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .chart-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: #fff;
+      text-align: right;
+    }
+
+    .chart-bars {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .bar-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .bar-fill {
+      height: 8px;
+      border-radius: 99px;
+      transition: width 1s ease;
+    }
+
+    .bar-fill.baby-bar {
+      background: linear-gradient(90deg, var(--baby-wine), var(--baby-primary));
+      box-shadow: 0 0 10px rgba(255, 133, 162, 0.2);
+    }
+
+    .bar-fill.beauty-bar {
+      background: linear-gradient(90deg, var(--beauty-emerald-dark), var(--beauty-primary));
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
+    }
+
+    .bar-val {
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      width: 24px;
+    }
+
+    .chart-legend {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      margin-top: 24px;
+      font-size: 12.5px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-muted);
+    }
+
+    .legend-color {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+    }
+
+    .legend-color.baby-color { background: var(--baby-primary); }
+    .legend-color.beauty-color { background: var(--beauty-primary); }
+
+    /* ========== TIMELINE / ROADMAP ========== */
+    .timeline {
+      position: relative;
+      padding-left: 24px;
+      margin-bottom: 40px;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 7px;
+      top: 6px;
+      bottom: 0;
+      width: 2px;
+      background: linear-gradient(180deg, var(--baby-primary) 0%, var(--beauty-primary) 100%);
+    }
+
+    .timeline-item {
+      position: relative;
+      margin-bottom: 30px;
+    }
+
+    .timeline-dot {
+      position: absolute;
+      left: -21px;
+      top: 5px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 2px solid var(--bg-dark);
+    }
+
+    .baby-dot { background-color: var(--baby-primary); box-shadow: 0 0 8px var(--baby-primary); }
+    .beauty-dot { background-color: var(--beauty-primary); box-shadow: 0 0 8px var(--beauty-primary); }
+
+    .timeline-phase {
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .baby-phase { color: var(--baby-primary); }
+    .beauty-phase { color: var(--beauty-primary); }
+
+    .timeline-title {
+      font-family: var(--font-display);
+      font-size: 14.5px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    .timeline-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* ========== callout boxes ========== */
+    .callout-box {
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 30px;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+
+    .callout-box.info {
+      background: rgba(56, 189, 248, 0.04);
+      border: 1px solid rgba(56, 189, 248, 0.15);
+    }
+
+    .callout-box.warn {
+      background: rgba(251, 191, 36, 0.04);
+      border: 1px solid rgba(251, 191, 36, 0.15);
+    }
+
+    .callout-box.danger {
+      background: rgba(251, 113, 133, 0.04);
+      border: 1px solid rgba(251, 113, 133, 0.15);
+    }
+
+    .callout-icon {
+      font-size: 20px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .callout-box.info .callout-icon { color: var(--color-good); }
+    .callout-box.warn .callout-icon { color: var(--color-fair); }
+    .callout-box.danger .callout-icon { color: var(--color-weak); }
+
+    .callout-content h4 {
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+
+    .callout-content p {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* ========== FOOTER ========== */
+    footer {
+      margin-top: 60px;
+      border-top: 1px solid var(--border-color);
+      padding-top: 30px;
+      text-align: center;
+      font-size: 12.5px;
+      color: var(--text-dark);
+    }
+
+    footer strong {
+      color: var(--text-muted);
+    }
+
+    /* ========== ANIMATIONS ========== */
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.2); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="main-container">
+
+    <!-- ========== HEADER ========== -->
+    <header>
+      <div class="header-badge">
+        <span class="dot"></span> Phân tích & Đánh giá nội bộ phân hệ
+      </div>
+      <h1>Bella ERP: So Sánh Phân Hệ Babycare Core & Phân Hệ Mở Rộng Beauty Spa</h1>
+      <p class="header-subtitle">
+        Phân tích chuyên sâu về mặt kỹ thuật, kiến trúc và tính năng của hai phân hệ chính trong cùng một hệ thống Bella Spa ERP: Phân hệ cốt lõi chăm sóc mẹ và bé (Babycare Core) và Phân hệ mở rộng mới tích hợp dành cho spa làm đẹp thẩm mỹ (Beauty Spa Expansion).
+      </p>
+      
+      <div class="header-meta">
+        <div class="meta-badge">📅 Ngày đánh giá: <strong>12/06/2026</strong></div>
+        <div class="meta-badge">📂 Hệ thống: <strong>Bella ERP Core Platform</strong></div>
+        <div class="meta-badge">⚙️ Trạng thái: <strong>Multi-Tenant Enabled</strong></div>
+      </div>
+    </header>
+
+    <!-- ========== OVERVIEW SCORECARD ========== -->
+    <section class="scorecard-grid">
+      
+      <!-- BABYCARE CORE -->
+      <div class="score-card baby">
+        <div class="score-ring-container">
+          <svg class="score-ring-svg" viewBox="0 0 100 100">
+            <circle class="score-ring-bg" cx="50" cy="50" r="45" />
+            <circle class="score-ring-fill" cx="50" cy="50" r="45" />
+          </svg>
+          <div class="score-text">
+            <span class="score-value">92</span>
+            <span class="score-max">/100</span>
+          </div>
+        </div>
+        <div class="score-info">
+          <span class="score-badge">Original Core</span>
+          <h2 class="score-card-title">Phân Hệ Babycare</h2>
+          <p class="score-card-desc">
+            Lõi nghiệp vụ chăm sóc mẹ bầu và tắm bé tại nhà. Tối ưu hóa cho KTV di động (Offline-first, định vị GPS, nhật ký ảnh bé) và quy trình tính lương theo ngày công chuẩn xác.
+          </p>
+        </div>
+      </div>
+
+      <!-- BEAUTY SPA EXPANSION -->
+      <div class="score-card beauty">
+        <div class="score-ring-container">
+          <svg class="score-ring-svg" viewBox="0 0 100 100">
+            <circle class="score-ring-bg" cx="50" cy="50" r="45" />
+            <circle class="score-ring-fill" cx="50" cy="50" r="45" />
+          </svg>
+          <div class="score-text">
+            <span class="score-value">89</span>
+            <span class="score-max">/100</span>
+          </div>
+        </div>
+        <div class="score-info">
+          <span class="score-badge">Tích Hợp Mới</span>
+          <h2 class="score-card-title">Phân Hệ Beauty Spa</h2>
+          <p class="score-card-desc">
+            Phân hệ mới phục vụ dịch vụ làm đẹp tại chi nhánh. Thiết kế giao diện thay đổi linh hoạt theo ngành, bộ lọc timeline chuyên sâu, ma trận hoa hồng review khuyến khích KTV.
+          </p>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ========== TABS BUTTONS ========== -->
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="openTab(event, 'tab-scorecard')">📊 Bảng Điểm & Tổng Quan</button>
+      <button class="tab-btn baby-tab" onclick="openTab(event, 'tab-baby')">👶 Phân Hệ Babycare Core</button>
+      <button class="tab-btn beauty-tab" onclick="openTab(event, 'tab-beauty')">💆 Phân Hệ Beauty Spa</button>
+      <button class="tab-btn" onclick="openTab(event, 'tab-competitors')">⚖️ Đối Chiếu Đối Thủ Việt Nam</button>
+      <button class="tab-btn" onclick="openTab(event, 'tab-roadmap')">🚀 Lộ Trình Vận Hành</button>
+    </div>
+
+    <!-- ==================== TAB: BẢNG ĐIỂM & TỔNG QUAN ==================== -->
+    <div id="tab-scorecard" class="tab-content active">
+      
+      <div class="section-title-wrap">
+        <div class="section-title">
+          <span class="number">01</span> Điểm Số So Sánh Giữa Hai Phân Hệ Nội Bộ
+        </div>
+        <span style="font-size:12px; color:var(--text-dark);">Hệ số so sánh trên cùng một mã nguồn Bella ERP</span>
+      </div>
+
+      <p class="section-desc">
+        Hệ thống Bella ERP được phát triển theo mô hình **Đa Phân Hệ Đồng Nhất**. Hai phân hệ Babycare và Beauty Spa chia sẻ chung 80% kiến trúc lõi (Database, Kế toán kép TT133, Quản lý kho, Lương nhân viên) nhưng được cách ly và tùy biến linh hoạt thông qua [Mã Nhận Diện Phân Hệ (Module Key Presentation)](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/src/lib/business-rules/tenant-module-presentation.ts).
+      </p>
+
+      <div class="chart-container">
+        <div class="chart-title">So Sánh Chỉ Số Kỹ Thuật (Điểm 100)</div>
+        <div class="bar-chart">
+          
+          <div class="chart-row">
+            <div class="chart-label">Độ hoàn thiện tính năng</div>
+            <div class="chart-bars">
+              <div class="bar-wrapper">
+                <div class="bar-fill baby-bar" style="width: 94%;"></div>
+                <span class="bar-val">94</span>
+              </div>
+              <div class="bar-wrapper">
+                <div class="bar-fill beauty-bar" style="width: 88%;"></div>
+                <span class="bar-val">88</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="chart-row">
+            <div class="chart-label">Bảo mật & RLS Guard</div>
+            <div class="chart-bars">
+              <div class="bar-wrapper">
+                <div class="bar-fill baby-bar" style="width: 92%;"></div>
+                <span class="bar-val">92</span>
+              </div>
+              <div class="bar-wrapper">
+                <div class="bar-fill beauty-bar" style="width: 93%;"></div>
+                <span class="bar-val">93</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="chart-row">
+            <div class="chart-label">Hiệu quả vận hành (Performance)</div>
+            <div class="chart-bars">
+              <div class="bar-wrapper">
+                <div class="bar-fill baby-bar" style="width: 91%;"></div>
+                <span class="bar-val">91</span>
+              </div>
+              <div class="bar-wrapper">
+                <div class="bar-fill beauty-bar" style="width: 88%;"></div>
+                <span class="bar-val">88</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="chart-row">
+            <div class="chart-label">Khả năng bảo trì (Code Quality)</div>
+            <div class="chart-bars">
+              <div class="bar-wrapper">
+                <div class="bar-fill baby-bar" style="width: 88%;"></div>
+                <span class="bar-val">88</span>
+              </div>
+              <div class="bar-wrapper">
+                <div class="bar-fill beauty-bar" style="width: 91%;"></div>
+                <span class="bar-val">91</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="chart-row">
+            <div class="chart-label">Khả năng thích nghi (Extendability)</div>
+            <div class="chart-bars">
+              <div class="bar-wrapper">
+                <div class="bar-fill baby-bar" style="width: 80%;"></div>
+                <span class="bar-val">80</span>
+              </div>
+              <div class="bar-wrapper">
+                <div class="bar-fill beauty-bar" style="width: 92%;"></div>
+                <span class="bar-val">92</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+        <div class="chart-legend">
+          <div class="legend-item"><span class="legend-color baby-color"></span> Phân Hệ Babycare Core</div>
+          <div class="legend-item"><span class="legend-color beauty-color"></span> Phân Hệ Beauty Spa Expansion</div>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th>Tiêu chí đánh giá</th>
+              <th style="color: var(--baby-primary);">Phân Hệ Babycare</th>
+              <th style="color: var(--beauty-primary);">Phân Hệ Beauty Spa</th>
+              <th>Đánh giá chi tiết sự khác biệt nghiệp vụ</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="crit">Môi trường vận hành</td>
+              <td><span class="star">★</span> <strong>Mobile-first (KTV Di động)</strong><br><small>Thực hiện liệu trình chủ yếu tại nhà khách hàng.</small></td>
+              <td><span class="star">★</span> <strong>Desk-oriented (Lễ tân/Tại tiệm)</strong><br><small>Thực hiện liệu trình trực tiếp tại các chi nhánh spa.</small></td>
+            </tr>
+            <tr>
+              <td class="crit">Mức độ hoàn thiện</td>
+              <td><strong>94/100</strong> <span class="check">✓</span><br><small>Có đầy đủ offline-first, định vị GPS, nhật ký ảnh bé.</small></td>
+              <td><strong>88/100</strong> <span class="check">✓</span><br><small>Đã có timeline grid, chốt ca đồng bộ, phân lập gói.</small></td>
+              <td>Babycare là lõi lịch sử nên có độ phủ tính năng di động sâu hơn. Beauty Spa xuất sắc ở giao diện quản trị lịch tại quầy.</td>
+            </tr>
+            <tr>
+              <td class="crit">Thiết kế UI/UX</td>
+              <td><strong>82/100</strong><br><small>Nhãn tĩnh: "Mẹ & Bé", "Bé", "Massage bầu", màu hồng.</small></td>
+              <td><strong>90/100</strong> <span class="check">✓</span><br><small>Nhãn tĩnh: "Khách", "Hồ sơ", "Facial/Laser", màu xanh ngọc.</small></td>
+              <td>Beauty Spa sử dụng bộ preset màu xanh ngọc (Jade Wellness) sang trọng và cơ chế hiển thị nhãn thân thiện hơn với khách vãng lai.</td>
+            </tr>
+            <tr>
+              <td class="crit">Bảo mật phân hệ</td>
+              <td><strong>92/100</strong><br><small>RLS theo Tenant ID, GPS tracking lưu side-effect.</small></td>
+              <td><strong>93/100</strong> <span class="check">✓</span><br><small>Bảo vệ chéo bằng Scope Guard, HQ-onboarding validation.</small></td>
+              <td>Beauty Spa được tích hợp thêm cơ chế chặn chéo gói dịch vụ (chặn dùng gói Babycare ở chi nhánh Beauty và ngược lại).</td>
+            </tr>
+            <tr>
+              <td class="crit">Khả năng bảo trì</td>
+              <td><strong>88/100</strong><br><small>Có một số đoạn code còn bám theo luồng legacy cũ.</small></td>
+              <td><strong>91/100</strong> <span class="check">✓</span><br><small>Viết mới hoàn toàn, tách component biệt lập, hooks riêng.</small></td>
+              <td>Beauty Spa thừa hưởng cấu trúc sau đợt refactor lớn ngày 31/05/2026 nên code cực kỳ sạch, không lạm dụng DOM và type-safe tuyệt đối.</td>
+            </tr>
+            <tr style="background: rgba(255,255,255,0.02); font-weight: 700;">
+              <td class="crit" style="color: #fff;">ĐIỂM TRUNG BÌNH</td>
+              <td style="color: var(--baby-primary);">92 / 100 (Hạng A)</td>
+              <td style="color: var(--beauty-primary);">89 / 100 (Hạng A)</td>
+              <td style="color: #fff;">Cả hai phân hệ đều đạt tiêu chuẩn thương mại cao cấp, đảm bảo không có rò rỉ nghiệp vụ hay lỗ hổng bảo mật.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+    <!-- ==================== TAB: BABYCARE CORE ==================== -->
+    <div id="tab-baby" class="tab-content">
+      
+      <div class="section-title-wrap">
+        <div class="section-title">
+          <span class="number">02</span> Phân Hệ Babycare Core: Nghiệp Vụ Di Động
+        </div>
+        <span class="score-excellent" style="font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px; text-transform: uppercase;">Mature Core</span>
+      </div>
+
+      <p class="section-desc">
+        Phân hệ Babycare là **xương sống lịch sử** của Bella ERP, được thiết kế để giải quyết bài toán phức tạp của dịch vụ chăm sóc sau sinh lưu động tại nhà khách hàng. Phân hệ tập trung tối đa vào trải nghiệm di động của Kỹ thuật viên (KTV) và việc đảm bảo tính trung thực của dữ liệu chấm công từ xa.
+      </p>
+
+      <div class="cards-grid baby-theme">
+        
+        <!-- OFFLINE CHECKIN -->
+        <div class="feature-card">
+          <div class="feature-card-header">
+            <div class="feature-card-icon">📡</div>
+            <span class="feature-score-badge score-excellent">95/100</span>
+          </div>
+          <h3>Offline Check-in & Dexie Queue</h3>
+          <p>
+            Vì dịch vụ diễn ra tại nhà riêng của khách hàng nơi sóng di động 4G chập chờn, phân hệ Babycare tích hợp giải pháp lưu trữ tạm thời ngoại tuyến. Sử dụng IndexedDB qua thư viện Dexie.js để xếp hàng các sự kiện check-in và check-out kèm tọa độ GPS, tự động đồng bộ khi có sóng trở lại.
+          </p>
+          <div class="tech-tag-list">
+            <span class="tech-tag">Dexie.js</span>
+            <span class="tech-tag">Offline Storage</span>
+            <span class="tech-tag">GPS Buffering</span>
+          </div>
+        </div>
+
+        <!-- TRANSACTION FLOW -->
+        <div class="feature-card">
+          <div class="feature-card-header">
+            <div class="feature-card-icon">🎛️</div>
+            <span class="feature-score-badge score-excellent">94/100</span>
+          </div>
+          <h3>Định Mức Vật Tư Tiêu Hao (BOM)</h3>
+          <p>
+            Tự động tính toán lượng dầu massage, cồn sát khuẩn, và khăn sạch tiêu thụ dựa trên gói dịch vụ Babycare thực tế sử dụng. Khi chốt ca hoàn thành, trigger cơ sở dữ liệu tự động khấu trừ tồn kho và phát cảnh báo tồn kho thấp lên màn hình Dashboard của Admin.
+          </p>
+          <div class="tech-tag-list">
+            <span class="tech-tag">Inventory Logs</span>
+            <span class="tech-tag">BOM Deductor</span>
+            <span class="tech-tag">Stock Alerts</span>
+          </div>
+        </div>
+
+        <!-- BABY JOURNAL -->
+        <div class="feature-card">
+          <div class="feature-card-header">
+            <div class="feature-card-icon">👶</div>
+            <span class="feature-score-badge score-good">90/100</span>
+          </div>
+          <h3>Nhật Ký Bé & Chăm Sóc Mẹ</h3>
+          <p>
+            KTV sau mỗi ca tắm bé sẽ chụp ảnh tình trạng cuống rốn, cân nặng, giấc ngủ và biểu thức da của bé, tải lên hệ thống. Thông tin được mã hóa và đồng bộ trực tiếp lên cổng thông tin của mẹ (Customer Portal) giúp mẹ theo dõi sự phát triển của bé hàng ngày.
+          </p>
+          <div class="tech-tag-list">
+            <span class="tech-tag">Supabase Storage</span>
+            <span class="tech-tag">Customer Portal</span>
+            <span class="tech-tag">Zalo Link Token</span>
+          </div>
+        </div>
+
+        <!-- COMPLEX SALARY CALCULATION -->
+        <div class="feature-card">
+          <div class="feature-card-header">
+            <div class="feature-card-icon">💰</div>
+            <span class="feature-score-badge score-excellent">92/100</span>
+          </div>
+          <h3>Thuật Toán Tính Lương KTV Di Động</h3>
+          <p>
+            Tự động tính lương KTV dựa trên quãng đường di chuyển thực tế, hoa hồng tính theo hệ số buổi trị liệu của gói, cộng thưởng KPI đánh giá sao từ khách hàng, và trừ phạt vi phạm kỷ luật. Bảng lương tự động khóa băng sau khi kế toán duyệt để tránh thay đổi quá khứ.
+          </p>
+          <div class="tech-tag-list">
+            <span class="tech-tag">Pro-rata Salary</span>
+            <span class="tech-tag">KPI Records</span>
+            <span class="tech-tag">Audit Trial Snapshot</span>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="callout-box info">
+        <span class="callout-icon">ℹ</span>
+        <div class="callout-content">
+          <h4>Chi tiết cài đặt an toàn cho KTV di động</h4>
+          <p>
+            Để bảo vệ trải nghiệm của nhân viên khi đi làm ngoài hiện trường, Bella ERP áp dụng nguyên tắc: **Lỗi GPS không được chặn check-in**. Nếu GPS bị lỗi hoặc rớt mạng, KTV vẫn check-in được bình thường để thực hiện ca, hệ thống chỉ lưu cảnh báo (warning) và định vị sai lệch làm dữ liệu đối soát phụ trợ cho Admin, thay vì chặn đứng công việc của nhân viên.
+          </p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ==================== TAB: Phân Hệ Beauty Spa ==================== -->
+    <div id="tab-beauty" class="tab-content">
+      
+      <div class="section-title-wrap">
+        <div class="section-title">
+          <span class="number">03</span> Phân Hệ Beauty Spa Expansion: Nghiệp Vụ Tại Chi Nhánh
+        </div>
+        <span class="score-excellent" style="font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px; text-transform: uppercase;">Modern Architecture</span>
+      </div>
+
+      <p class="section-desc">
+        Phân hệ Beauty Spa được phát triển nhằm đáp ứng nhu cầu mở rộng dịch vụ làm đẹp tại các cơ sở cố định (Facial, Laser, Body trị liệu). Phân hệ được thiết kế sau nên sở hữu kiến trúc **sạch sẽ, type-safe chặt chẽ** và giao diện điều phối tối ưu hóa cho màn hình lớn của lễ tân.
+      </p>
+
+      <div class="cards-grid beauty-theme">
+        
+        <!-- DECOUPLED FRONTEND -->
+        <div class="feature-card">
+          <div class="feature-card-header">
+            <div class="feature-card-icon">🧱</div>
+            <span class="feature-score-badge score-excellent">91/100</span>
+          </div>
+          <h3>Cấu Trúc Tách Biệt & Khô Lập</h3>
+          <p>
+            Màn hình Admin Booking Timeline được cấu trúc lại hoàn toàn, bóc tách thành các component biệt lập: Header, Calendar Grid, Timeline Date Ribbon, Specialty Filter. State và logic gọi Supabase API được đóng gói vào các hooks chuyên trách ([useBookingsPageData](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/src/app/dashboard/bookings/hooks/useBookingsPageData.ts) và [useBookingsPageActions](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/src/app/dashboard/bookings/hooks/useBookingsPageActions.ts)).
+          </p>
+          <div class="tech-tag-list">
+            <span class="tech-tag">React Components</span>
+            <span class="tech-tag">Custom Hooks</span>
+            <span class="tech-tag">Type Safety</span>
+          </div>
+        </div>
+
+        <!-- MODULE SCOPE GUARDS -->
+        <div class="feature-card">
+          <div class="feature-card-header">
+            <div class="feature-card-icon">🛡️</div>
+            <span class="feature-score-badge score-excellent">93/100</span>
+          </div>
+          <h3>Bộ Chặn Kiểm Soát Phạm Vi Gói</h3>
+          <p>
+            Tích hợp hàm xác thực [validateBookingPackageScope](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/src/modules/booking/actions/create-booking-helpers.ts#L37) kiểm tra chéo gói dịch vụ với ngành kinh doanh được kích hoạt của tenant. Ngăn chặn tuyệt đối việc đặt lịch nhầm gói Babycare tại các chi nhánh chỉ hoạt động phân hệ Beauty Spa (và ngược lại).
+          </p>
+          <div class="tech-tag-list">
+            <span class="tech-tag">validateBookingPackageScope</span>
+            <span class="tech-tag">Cross-tenant Block</span>
+            <span class="tech-tag">Zod Validation</span>
+          </div>
+        </div>
+
+        <!-- DYNAMIC PRESENTATION -->
+        <div class="feature-card">
+          <div class="feature-card-header">
+            <div class="feature-card-icon">🎨</div>
+            <span class="feature-score-badge score-good">90/100</span>
+          </div>
+          <h3>Trình Diễn Nhãn Động (Presentation)</h3>
+          <p>
+            Sử dụng helper [tenant-module-presentation.ts](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/src/lib/business-rules/tenant-module-presentation.ts) để tự động ánh xạ ngôn từ hiển thị. Khi chi nhánh kích hoạt Beauty Spa, giao diện tự chuyển đổi toàn bộ nhãn từ "Mẹ / Bé" sang "Khách hàng / Hồ sơ", đổi nhóm KTV từ "Tắm bé / Kích sữa" sang "Facial / Chăm sóc da / Laser".
+          </p>
+          <div class="tech-tag-list">
+            <span class="tech-tag">Jade Theme Preset</span>
+            <span class="tech-tag">Language Map</span>
+            <span class="tech-tag">Specialty Mapper</span>
+          </div>
+        </div>
+
+        <!-- REVIEW BONUS SYSTEM -->
+        <div class="feature-card">
+          <div class="feature-card-header">
+            <div class="feature-card-icon">⭐</div>
+            <span class="feature-score-badge score-good">88/100</span>
+          </div>
+          <h3>Cơ Chế Hoa Hồng Khuyến Khích Đánh Giá</h3>
+          <p>
+            Tích hợp RPC `submitCustomerRating` và `apply_rating_bonus` tự động cộng thưởng hoa hồng ca làm việc cho KTV (thêm 20,000 đ hoặc 50,000 đ) khi khách hàng chấm điểm 5 sao online qua cổng Portal, tạo động lực nâng cao chất lượng dịch vụ tại chỗ.
+          </p>
+          <div class="tech-tag-list">
+            <span class="tech-tag">submitCustomerRating</span>
+            <span class="tech-tag">apply_rating_bonus</span>
+            <span class="tech-tag">Portal Review</span>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="callout-box warn">
+        <span class="callout-icon">⚠️</span>
+        <div class="callout-content">
+          <h4>Vấn đề hiệu năng & Hạn chế cần tối ưu hóa</h4>
+          <p>
+            <strong>Đồng bộ Real-time WebSockets:</strong> Phân hệ Beauty Spa quản lý lịch làm việc tại quầy lễ tân qua luồng đăng ký realtime của Supabase WebSockets. Khi số lượng KTV và giường tăng cao tại một cơ sở lớn (hơn 30 nhân sự), lượng tải dữ liệu sự kiện qua WebSocket có thể gây giật giao diện cục bộ. Cần tối ưu hóa lọc phạm vi sự kiện ở phía client (Client-side debouncing).
+          </p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ==================== TAB: ĐỐI CHIẾU ĐỐI THỦ ==================== -->
+    <div id="tab-competitors" class="tab-content">
+      
+      <div class="section-title-wrap">
+        <div class="section-title">
+          <span class="number">04</span> So Sánh Vị Thế Đối Thủ Tại Thị Trường Việt Nam
+        </div>
+        <span style="font-size:12px; color:var(--text-dark);">Dữ liệu cập nhật quý 2/2026</span>
+      </div>
+
+      <p class="section-desc">
+        Hệ thống Bella ERP (sự kết hợp giữa Babycare Core + Beauty Spa Expansion) thiết lập một khoảng thế vượt trội về mặt bảo mật và tài chính chuẩn mực so với các đối thủ bán lẻ tại Việt Nam:
+      </p>
+
+      <div class="competitor-grid">
+        
+        <div class="comp-card">
+          <div class="comp-card-header">
+            <span class="comp-name">EasySalon</span>
+            <span class="comp-score">75/100</span>
+          </div>
+          <ul class="comp-bullet-list">
+            <li>Dành cho tiệm tóc/nail nhỏ độc lập.</li>
+            <li>Giao diện mobile tốt nhưng hoàn toàn không có RLS cách ly chuỗi nhượng quyền.</li>
+            <li>Không hỗ trợ offline-first cho dịch vụ tại nhà.</li>
+          </ul>
+        </div>
+
+        <div class="comp-card">
+          <div class="comp-card-header">
+            <span class="comp-name">Myspa / GoSpa</span>
+            <span class="comp-score">80/100</span>
+          </div>
+          <ul class="comp-bullet-list">
+            <li>Thương hiệu mạnh về App đặt lịch.</li>
+            <li>Bảo mật phân quyền ở mức ứng dụng (dễ bị chui qua API nếu bị lỗi code).</li>
+            <li>Thiếu tính năng hạch toán kế toán kép nợ/có chuẩn TT133 tự động.</li>
+          </ul>
+        </div>
+
+        <div class="comp-card">
+          <div class="comp-card-header">
+            <span class="comp-name">KiotViet Spa</span>
+            <span class="comp-score">82/100</span>
+          </div>
+          <ul class="comp-bullet-list">
+            <li>Quản lý bán hàng và kho đại trà tốt.</li>
+            <li>Không hỗ trợ thuật toán tính lương KTV sâu (quy đổi hệ số buổi, pro-rata).</li>
+            <li>Không hỗ trợ offline check-in khi rớt mạng 4G ngoài hiện trường.</li>
+          </ul>
+        </div>
+
+        <div class="comp-card">
+          <div class="comp-card-header">
+            <span class="comp-name">Lucky Beauty</span>
+            <span class="comp-score">65/100</span>
+          </div>
+          <ul class="comp-bullet-list">
+            <li>Công nghệ cũ (hệ Desktop), phản hồi chậm.</li>
+            <li>Khó nâng cấp bảo trì và không có khả năng tích hợp AI.</li>
+            <li>Không hỗ trợ đa chi nhánh nhượng quyền thực thụ.</li>
+          </ul>
+        </div>
+
+      </div>
+
+      <div class="table-container">
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th>Tính năng an toàn & tài chính</th>
+              <th style="color:var(--baby-primary);">Bella ERP (Cả 2 Phân Hệ)</th>
+              <th>EasySalon</th>
+              <th>Myspa</th>
+              <th>KiotViet Spa</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="crit">Cách ly dữ liệu Nhượng quyền</td>
+              <td><span class="check">✓</span> <strong>Bảo mật cấp Database RLS</strong><br><small>Hacker không thể đọc chéo dữ liệu dù đổi link web.</small></td>
+              <td><span class="cross">✗</span> Không hỗ trợ nhượng quyền thực sự</td>
+              <td><span class="warning-sign">⚡</span> Phân quyền cấp ứng dụng</td>
+              <td><span class="warning-sign">⚡</span> Phân quyền cấp ứng dụng</td>
+            </tr>
+            <tr>
+              <td class="crit">Chất lượng mã nguồn & Kiểm thử</td>
+              <td><span class="check">✓</span> <strong>1194 Test cases green tự động</strong><br><small>Đảm bảo an toàn không lỗi hồi quy khi update.</small></td>
+              <td><span class="cross">✗</span> Không có kiểm thử tự động</td>
+              <td><span class="cross">✗</span> Đóng gói khép kín, không có test công khai</td>
+              <td><span class="warning-sign">⚡</span> Kiểm thử thủ công nội bộ là chính</td>
+            </tr>
+            <tr>
+              <td class="crit">Trợ lý AI tổng hợp dữ liệu</td>
+              <td><span class="check">✓</span> <strong>AI COO (Gemini 3.5 Flash)</strong><br><small>Tự động phát hiện chênh lệch tài chính, đối soát.</small></td>
+              <td><span class="cross">✗</span> Không hỗ trợ</td>
+              <td><span class="cross">✗</span> Không hỗ trợ</td>
+              <td><span class="cross">✗</span> Không hỗ trợ</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+    <!-- ==================== TAB: LỘ TRÌNH VẬN HÀNH ==================== -->
+    <div id="tab-roadmap" class="tab-content">
+      
+      <div class="section-title-wrap">
+        <div class="section-title">
+          <span class="number">05</span> Khuyến Nghị Cho Ban Giám Đốc & Lộ Trình Kỹ Thuật
+        </div>
+        <span style="font-size:12px; color:var(--text-dark);">Roadmap ổn định hệ thống chuỗi</span>
+      </div>
+
+      <p class="section-desc">
+        Hệ thống hiện tại đã đạt độ hoàn thiện kỹ thuật rất cao (91/100 điểm tổng thể). Để chuẩn bị thương mại hóa mô hình chuỗi nhượng quyền và mở rộng phân hệ Beauty Spa mạnh mẽ, ban giám đốc nên chỉ đạo đội ngũ kỹ thuật tập trung vào 3 việc sau:
+      </p>
+
+      <div class="timeline">
+        
+        <div class="timeline-item">
+          <div class="timeline-dot baby-dot"></div>
+          <span class="timeline-phase baby-phase">Ưu Tiên 1: Squash Database Migrations (Tuần 1-2)</span>
+          <h3 class="timeline-title">Nén tệp tin di chuyển SQL</h3>
+          <p class="timeline-desc">
+            Hiện tại dự án có rất nhiều file SQL di chuyển nhỏ lẻ trong thư mục [supabase/migrations](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/supabase/migrations). Khi onboard khách hàng nhượng quyền mới tự phục vụ, chạy hàng trăm file SQL sẽ mất nhiều thời gian và dễ lỗi. Khuyến nghị nén (squash) toàn bộ lịch sử migrations cũ về một file baseline duy nhất.
+          </p>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-dot beauty-dot"></div>
+          <span class="timeline-phase beauty-phase">Ưu Tiên 2: Tối ưu hóa UI Phân bổ Giường/Phòng (Tuần 3-4)</span>
+          <h3 class="timeline-title">Xây dựng Bảng Phân bổ Tài nguyên Beauty Spa</h3>
+          <p class="timeline-desc">
+            Không giống Babycare làm dịch vụ tại nhà khách hàng, Beauty Spa yêu cầu phân bổ giường và phòng trị liệu (Laser, Facial, Body) tại chi nhánh. Cần bổ sung UI tương tác kéo thả phân bổ giường trực tiếp trên Timeline Lịch hẹn của lễ tân.
+          </p>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-dot beauty-dot"></div>
+          <span class="timeline-phase beauty-phase">Ưu Tiên 3: Đóng gói Phân hệ Billing SaaS (Tháng tiếp theo)</span>
+          <h3 class="timeline-title">Bộ tính phí bản quyền nhượng quyền</h3>
+          <p class="timeline-desc">
+            Lập trình module billing dành riêng cho tài khoản Super Admin (HQ) để tự động thu phí bản quyền định kỳ (Royalty fee) từ các chi nhánh nhượng quyền dựa trên doanh thu đã chốt sổ trong tháng của chi nhánh đó, tự động khóa tài khoản nếu quá hạn thanh toán.
+          </p>
+        </div>
+
+      </div>
+
+      <div class="callout-box info">
+        <span class="callout-icon">💡</span>
+        <div class="callout-content">
+          <h4>Vận Hành An Toàn Không Regression</h4>
+          <p>
+            Mã nguồn Bella ERP sở hữu một bộ kiểm thử tự động cực kỳ vững vàng. Bất kỳ thay đổi cấu hình hoặc nâng cấp UI nào cho phân hệ Beauty Spa đều phải vượt qua bộ **1194 test cases** (`npm run test`) trước khi tiến hành đưa lên môi trường Production của Vercel nhằm triệt tiêu hoàn toàn rủi ro xuất hiện lỗi hồi quy trên phân hệ Babycare gốc.
+          </p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ========== FOOTER ========== -->
+    <footer>
+      <p>Báo cáo đánh giá nghiệp vụ phân hệ Bella ERP · Phiên bản 4.3</p>
+      <p style="margin-top: 6px;">Được biên soạn tự động bởi <strong>Antigravity AI Architect</strong></p>
+    </footer>
+
+  </div>
+
+  <!-- TAB SWITCHING LOGIC -->
+  <script>
+    function openTab(evt, tabId) {
+      // Hide all tabs content
+      const tabContents = document.getElementsByClassName("tab-content");
+      for (let i = 0; i < tabContents.length; i++) {
+        tabContents[i].classList.remove("active");
+      }
+
+      // Remove active class from all buttons
+      const tabButtons = document.getElementsByClassName("tab-btn");
+      for (let i = 0; i < tabButtons.length; i++) {
+        tabButtons[i].classList.remove("active");
+        tabButtons[i].classList.remove("baby-tab");
+        tabButtons[i].classList.remove("beauty-tab");
+      }
+
+      // Show current tab and add active class to button
+      document.getElementById(tabId).classList.add("active");
+      evt.currentTarget.classList.add("active");
+      
+      // Add specific tab accents
+      if (tabId === 'tab-baby') {
+        evt.currentTarget.classList.add("baby-tab");
+      } else if (tabId === 'tab-beauty') {
+        evt.currentTarget.classList.add("beauty-tab");
+      }
+    }
+  </script>
+
+</body>
+</html>

@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase-server';
-import { createAccountingDataClient } from '@/services/accounting/client';
+import { createAccountingDataClient } from '@/core/services/accounting/client';
 import { getKtvSalaryForConfirmation } from '@/modules/hr-salary/actions/base-salary-actions';
 
 jest.mock('@/lib/supabase-server', () => ({

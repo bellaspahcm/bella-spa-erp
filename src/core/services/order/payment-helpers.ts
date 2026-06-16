@@ -4,7 +4,7 @@ import {
   validatePaymentAmountAgainstState,
   type PaymentRevenueLike,
 } from '@/lib/business-rules/payment';
-import { buildRevenueAccountingMetadata, inferBusinessEventType } from '@/services/accounting/template-rules';
+import { buildRevenueAccountingMetadata, inferBusinessEventType } from '@/core/services/accounting/template-rules';
 import { resolveAccountingReviewStatus } from './accounting-review';
 import type { createClient } from '@/lib/supabase-server';
 import type { Database } from '@/types/database.types';

@@ -1,0 +1,1391 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cẩm Nang Onboarding & Hướng Dẫn Sử Dụng Hệ Thống Multi-Service ERP</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      /* Palette based on Multi-Service ERP theme */
+      --color-olive: #4e6f2c;
+      --color-pistachio: #a7cf73;
+      --color-cream: #f6f5e2;
+      --color-lightblue: #8fb1d1;
+      --color-navy: #1a2c5a;
+      
+      /* Light Premium Theme */
+      --bg-dark: #fcfcfc;
+      --bg-card: rgba(255, 255, 255, 0.95);
+      --bg-card-hover: #ffffff;
+      --border-color: rgba(26, 44, 90, 0.06);
+      --border-glow: rgba(167, 207, 115, 0.4);
+      
+      --text-main: var(--color-navy);
+      --text-muted: #334155;
+      --text-dark: #64748b;
+      
+      --color-excellent: #15803d;
+      --color-good: #1d4ed8;
+      --color-fair: #b45309;
+      --color-weak: #b91c1c;
+      
+      --font-display: 'Plus Jakarta Sans', sans-serif;
+      --font-serif: 'Playfair Display', Georgia, serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      scrollbar-width: thin;
+      scrollbar-color: var(--color-lightblue) transparent;
+    }
+
+    body {
+      font-family: var(--font-display);
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(circle at 5% 5%, rgba(167, 207, 115, 0.06) 0%, transparent 40%),
+        radial-gradient(circle at 95% 10%, rgba(143, 177, 209, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.95) 0%, transparent 60%);
+      color: var(--text-main);
+      line-height: 1.8;
+      font-size: 15px;
+      padding: 50px 20px;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .main-container {
+      max-width: 1080px;
+      width: 100%;
+      background: #ffffff;
+      border: 1px solid rgba(26, 44, 90, 0.06);
+      border-radius: 28px;
+      padding: 50px;
+      box-shadow: 0 20px 50px -10px rgba(26, 44, 90, 0.03);
+      backdrop-filter: blur(25px);
+    }
+
+    /* ========== HEADER ========== */
+    header {
+      position: relative;
+      background: linear-gradient(135deg, rgba(246, 245, 226, 0.9) 0%, rgba(143, 177, 209, 0.22) 100%);
+      border: 1px solid rgba(26, 44, 90, 0.08);
+      border-radius: 24px;
+      padding: 50px;
+      margin-bottom: 35px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(26, 44, 90, 0.02);
+    }
+
+    header::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(90deg, var(--color-olive) 0%, var(--color-pistachio) 35%, var(--color-lightblue) 70%, var(--color-navy) 100%);
+    }
+
+    .header-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(78, 111, 44, 0.08);
+      border: 1px solid rgba(78, 111, 44, 0.2);
+      border-radius: 99px;
+      padding: 6px 18px;
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--color-olive);
+      margin-bottom: 25px;
+    }
+
+    .header-badge span.dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--color-olive);
+      box-shadow: 0 0 10px var(--color-olive);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.5; }
+      50% { opacity: 1; transform: scale(1.15); }
+      100% { opacity: 0.5; }
+    }
+
+    header h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(24px, 5vw, 36px);
+      font-weight: 600;
+      line-height: 1.25;
+      margin-bottom: 18px;
+      letter-spacing: -0.01em;
+      background: linear-gradient(90deg, var(--color-navy) 20%, var(--color-olive) 80%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      color: var(--color-navy);
+    }
+
+    .header-subtitle {
+      font-size: 15px;
+      color: var(--text-muted);
+      margin-bottom: 30px;
+      max-width: 920px;
+    }
+
+    .header-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .meta-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(26, 44, 90, 0.06);
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .meta-badge strong {
+      color: var(--color-navy);
+    }
+
+    /* ========== TABS SYSTEM (PRIMARY) ========== */
+    .tabs-wrapper {
+      background: rgba(246, 245, 226, 0.4);
+      border: 1px solid rgba(26, 44, 90, 0.08);
+      border-radius: 20px;
+      padding: 8px;
+      margin-bottom: 35px;
+      box-shadow: 0 4px 15px rgba(26, 44, 90, 0.01);
+    }
+
+    .tabs-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      list-style: none;
+    }
+
+    .tab-btn {
+      flex: 1;
+      min-width: 160px;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 14px 16px;
+      font-family: var(--font-display);
+      font-size: 13.5px;
+      font-weight: 700;
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .tab-btn:hover {
+      color: var(--color-navy);
+      background: rgba(26, 44, 90, 0.03);
+    }
+
+    .tab-btn.active {
+      color: #ffffff;
+      background: linear-gradient(135deg, var(--color-olive), var(--color-pistachio));
+      box-shadow: 0 8px 20px rgba(78, 111, 44, 0.25);
+      border: 1px solid rgba(167, 207, 115, 0.2);
+    }
+
+    .tab-panel {
+      display: none;
+      animation: fadeIn 0.4s ease forwards;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
+    /* ========== NESTED SUB-TABS (ROLE DEPARTMENTS) ========== */
+    .sub-tabs-wrapper {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 30px;
+      background: rgba(26, 44, 90, 0.02);
+      padding: 6px;
+      border-radius: 12px;
+      border: 1px solid rgba(26, 44, 90, 0.04);
+    }
+
+    .sub-tab-btn {
+      flex: 1;
+      min-width: 140px;
+      background: none;
+      border: none;
+      padding: 10px 16px;
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-dark);
+      cursor: pointer;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .sub-tab-btn:hover {
+      color: var(--color-olive);
+      background: rgba(78, 111, 44, 0.04);
+    }
+
+    .sub-tab-btn.active {
+      color: var(--color-olive);
+      background: #ffffff;
+      font-weight: 700;
+      box-shadow: 0 4px 12px rgba(26, 44, 90, 0.04);
+    }
+
+    .sub-tab-panel {
+      display: none;
+      animation: fadeIn 0.3s ease forwards;
+    }
+
+    .sub-tab-panel.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ========== CONTENT SECTIONS & BOXES ========== */
+    section {
+      margin-bottom: 20px;
+    }
+
+    .section-title-wrap {
+      margin-bottom: 25px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(26, 44, 90, 0.08);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .section-title {
+      font-family: var(--font-serif);
+      font-size: 22px;
+      font-weight: 500;
+      color: var(--color-navy);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .section-title span.number {
+      font-family: var(--font-display);
+      font-size: 12.5px;
+      color: var(--color-olive);
+      border: 1px solid rgba(78, 111, 44, 0.2);
+      background: rgba(78, 111, 44, 0.04);
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+    }
+
+    .section-desc {
+      font-size: 14.5px;
+      color: var(--text-muted);
+      margin-bottom: 25px;
+    }
+
+    /* ========== SCORE BANNER ========== */
+    .scorecard-banner {
+      background: linear-gradient(135deg, rgba(246, 245, 226, 0.6) 0%, rgba(255, 255, 255, 0.95) 100%);
+      border: 1px solid rgba(26, 44, 90, 0.08);
+      border-radius: 20px;
+      padding: 40px;
+      display: flex;
+      gap: 40px;
+      align-items: center;
+      margin-bottom: 35px;
+      box-shadow: 0 10px 30px rgba(26, 44, 90, 0.02);
+    }
+
+    @media (max-width: 768px) {
+      .scorecard-banner {
+        flex-direction: column;
+        text-align: center;
+        gap: 25px;
+      }
+    }
+
+    .score-ring-container {
+      position: relative;
+      width: 150px;
+      height: 150px;
+      flex-shrink: 0;
+    }
+
+    .score-ring-svg {
+      transform: rotate(-90deg);
+      width: 100%;
+      height: 100%;
+    }
+
+    .score-ring-bg {
+      fill: none;
+      stroke: rgba(26, 44, 90, 0.03);
+      stroke-width: 10;
+    }
+
+    .score-ring-fill {
+      fill: none;
+      stroke-width: 10;
+      stroke-linecap: round;
+      stroke-dasharray: 439.82;
+      transition: stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+      stroke: var(--color-olive);
+      stroke-dashoffset: 0;
+    }
+
+    .score-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+
+    .score-value {
+      font-family: var(--font-display);
+      font-size: 32px;
+      font-weight: 800;
+      line-height: 1;
+      color: var(--color-navy);
+    }
+
+    .score-max {
+      font-size: 10px;
+      color: var(--text-muted);
+      display: block;
+      margin-top: 5px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+    }
+
+    .score-info {
+      flex-grow: 1;
+    }
+
+    .score-info-title {
+      font-family: var(--font-serif);
+      font-size: 24px;
+      color: var(--color-navy);
+      margin-bottom: 10px;
+    }
+
+    .score-info-desc {
+      font-size: 14.5px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* ========== EVALUATION GRID ========== */
+    .eval-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+
+    .eval-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 24px;
+      text-align: center;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 20px rgba(26, 44, 90, 0.02);
+    }
+
+    .eval-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--border-glow);
+      background: var(--bg-card-hover);
+      box-shadow: 0 10px 30px rgba(26, 44, 90, 0.05);
+    }
+
+    .eval-title {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .eval-score {
+      font-family: var(--font-display);
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--color-olive);
+      margin-bottom: 10px;
+    }
+
+    .eval-label {
+      font-size: 11px;
+      font-weight: 700;
+      display: inline-block;
+      padding: 3px 12px;
+      border-radius: 6px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .label-excellent { background: rgba(78, 111, 44, 0.08); color: var(--color-excellent); }
+
+    /* ========== COMPONENT DETAILS ========== */
+    .component-box {
+      background: rgba(255, 255, 255, 0.65);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 35px;
+      margin-bottom: 35px;
+      box-shadow: 0 8px 30px rgba(26, 44, 90, 0.02);
+    }
+
+    .component-box h3 {
+      font-family: var(--font-serif);
+      font-size: 18px;
+      color: var(--color-navy);
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid rgba(26, 44, 90, 0.06);
+      padding-bottom: 12px;
+    }
+
+    .component-box h3 svg {
+      color: var(--color-olive);
+      flex-shrink: 0;
+    }
+
+    .bullet-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      font-size: 14.5px;
+      color: var(--text-muted);
+    }
+
+    .bullet-list li {
+      position: relative;
+      padding-left: 24px;
+    }
+
+    .bullet-list li::before {
+      content: '✦';
+      position: absolute;
+      left: 0;
+      color: var(--color-olive);
+      font-size: 12px;
+    }
+
+    .bullet-list li strong {
+      color: var(--color-navy);
+    }
+
+    .bullet-list ul {
+      margin-top: 8px;
+      margin-left: 10px;
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .bullet-list ul li::before {
+      content: '▪';
+      color: var(--color-lightblue);
+      position: absolute;
+      left: 0;
+    }
+
+    /* ========== TABLES ========== */
+    .table-container {
+      overflow-x: auto;
+      border: 1px solid rgba(143, 177, 209, 0.35);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.8);
+      margin-bottom: 45px;
+      box-shadow: 0 10px 30px rgba(26, 44, 90, 0.02);
+    }
+
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+      text-align: left;
+    }
+
+    .compare-table th {
+      background: rgba(246, 245, 226, 0.85);
+      color: var(--color-navy);
+      font-family: var(--font-display);
+      font-weight: 700;
+      padding: 18px 22px;
+      border-bottom: 1px solid rgba(143, 177, 209, 0.35);
+    }
+
+    .compare-table td {
+      padding: 18px 22px;
+      border-bottom: 1px solid rgba(26, 44, 90, 0.06);
+      vertical-align: top;
+      color: var(--text-muted);
+    }
+
+    .compare-table tr:hover td {
+      background: rgba(246, 245, 226, 0.25);
+    }
+
+    .compare-table .crit {
+      font-weight: 600;
+      color: var(--color-navy);
+      width: 20%;
+    }
+
+    .compare-table .col-simple {
+      width: 40%;
+      border-left: 1px solid rgba(143, 177, 209, 0.15);
+    }
+
+    .compare-table .col-professional {
+      width: 40%;
+      border-left: 1px solid rgba(143, 177, 209, 0.15);
+    }
+
+    .account-code {
+      font-family: 'Courier New', Courier, monospace;
+      font-weight: 700;
+      color: var(--color-olive);
+      background: rgba(78, 111, 44, 0.08);
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid rgba(78, 111, 44, 0.2);
+    }
+
+    /* ========== TIMELINE ========== */
+    .timeline {
+      position: relative;
+      padding-left: 28px;
+      margin-bottom: 45px;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 7px;
+      top: 6px;
+      bottom: 0;
+      width: 2px;
+      background: linear-gradient(180deg, var(--color-olive) 0%, var(--color-pistachio) 35%, var(--color-lightblue) 70%, var(--color-navy) 100%);
+    }
+
+    .timeline-item {
+      position: relative;
+      margin-bottom: 35px;
+    }
+
+    .timeline-dot {
+      position: absolute;
+      left: -26px;
+      top: 5px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 2px solid var(--bg-dark);
+      background-color: var(--color-olive);
+      box-shadow: 0 0 10px var(--color-olive);
+    }
+
+    .timeline-phase {
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--color-olive);
+      margin-bottom: 8px;
+    }
+
+    .timeline-title {
+      font-family: var(--font-display);
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--color-navy);
+      margin-bottom: 8px;
+    }
+
+    .timeline-desc {
+      font-size: 13.5px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* ========== BENTO GRID WORKFLOW ========== */
+    .bento-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+      margin-bottom: 40px;
+    }
+
+    .bento-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 30px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 20px rgba(26, 44, 90, 0.01);
+    }
+
+    .bento-card:hover {
+      border-color: var(--border-glow);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 35px rgba(26, 44, 90, 0.04);
+    }
+
+    .bento-card-title {
+      font-family: var(--font-serif);
+      font-size: 18px;
+      color: var(--color-navy);
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .bento-card-title i {
+      color: var(--color-olive);
+    }
+
+    /* ========== CHECKLIST SYSTEM ========== */
+    .checklist-container {
+      background: rgba(246, 245, 226, 0.3);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 30px;
+      margin-top: 24px;
+    }
+
+    .checklist-progress-bar-wrapper {
+      margin-bottom: 24px;
+    }
+
+    .c-pb-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--text-muted);
+    }
+
+    .c-pb-info span:last-child {
+      color: var(--color-olive);
+    }
+
+    .c-pb-track {
+      height: 6px;
+      background: rgba(26, 44, 90, 0.04);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .c-pb-thumb {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--color-olive), var(--color-pistachio));
+      border-radius: 99px;
+      transition: width 0.4s ease;
+    }
+
+    .checklist-items {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .checklist-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(26, 44, 90, 0.04);
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.2s ease;
+    }
+
+    .checklist-item:hover {
+      background: #ffffff;
+      border-color: var(--color-pistachio);
+      transform: translateX(4px);
+    }
+
+    .checklist-item input {
+      display: none;
+    }
+
+    .custom-checkbox {
+      width: 20px;
+      height: 20px;
+      border-radius: 6px;
+      border: 2px solid rgba(26, 44, 90, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: transparent;
+      font-size: 11px;
+      flex-shrink: 0;
+      margin-top: 1px;
+      transition: all 0.2s ease;
+    }
+
+    .checklist-item input:checked + .custom-checkbox {
+      border-color: var(--color-olive);
+      background: var(--color-olive);
+      color: #fff;
+    }
+
+    .checklist-item-text {
+      font-size: 13.5px;
+      font-weight: 500;
+      color: var(--text-muted);
+      transition: all 0.2s ease;
+    }
+
+    .checklist-item input:checked ~ .checklist-item-text {
+      color: rgba(26, 44, 90, 0.4);
+      text-decoration: line-through;
+    }
+
+    /* ========== FOOTER ========== */
+    footer {
+      margin-top: 60px;
+      padding-top: 25px;
+      border-top: 1px solid rgba(26, 44, 90, 0.08);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    footer a {
+      color: var(--color-olive);
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="main-container">
+    <!-- HEADER -->
+    <header>
+      <div class="header-badge">
+        <span class="dot"></span> CẨM NANG ONBOARDING & HƯỚNG DẪN VẬN HÀNH CHUYÊN NGHIỆP
+      </div>
+      <h1>Multi-Service ERP: Hướng Dẫn Sử Dụng<br>& Quy Trình Vận Hành Đa Dịch Vụ</h1>
+      <p class="header-subtitle">
+        Tài liệu chuẩn hóa toàn diện dành cho nhân sự thuộc hệ thống vận hành đa chi nhánh nhượng quyền <strong>Multi-Service ERP</strong>. Hướng dẫn chi tiết quy trình nghiệp vụ kết hợp giữa hai mảng dịch vụ: Chăm sóc Mẹ & Bé (tại nhà - Homecare) và Beauty Spa (tại chi nhánh - Salon).
+      </p>
+      <div class="header-meta">
+        <div class="meta-badge">Cập nhật: <strong>12/06/2026</strong></div>
+        <div class="meta-badge">Môi trường: <strong>Hệ thống Production</strong></div>
+        <div class="meta-badge">Mô hình: <strong>Đa chi nhánh (Multi-tenant)</strong></div>
+      </div>
+    </header>
+
+    <!-- TABS CONTROLLER (PRIMARY) -->
+    <div class="tabs-wrapper">
+      <ul class="tabs-nav">
+        <li><button class="tab-btn active" onclick="switchTab(event, 'tab-overview')">1. Tổng Quan Quy Trình</button></li>
+        <li><button class="tab-btn" onclick="switchTab(event, 'tab-roles')">2. Quy Trình Bộ Phận</button></li>
+        <li><button class="tab-btn" onclick="switchTab(event, 'tab-accounting')">3. Kế Toán & Đối Soát</button></li>
+        <li><button class="tab-btn" onclick="switchTab(event, 'tab-settings')">4. Cấu Hình Vận Hành</button></li>
+        <li><button class="tab-btn" onclick="switchTab(event, 'tab-checklist')">5. Checklist Hàng Ngày</button></li>
+      </ul>
+    </div>
+
+    <!-- TAB 1: OVERVIEW -->
+    <div id="tab-overview" class="tab-panel active">
+      <section>
+        <div class="scorecard-banner">
+          <div class="score-ring-container">
+            <svg class="score-ring-svg" viewBox="0 0 160 160">
+              <circle class="score-ring-bg" cx="80" cy="80" r="70" />
+              <circle class="score-ring-fill" cx="80" cy="80" r="70" />
+            </svg>
+            <div class="score-text">
+              <span class="score-value">100%</span>
+              <span class="score-max">SẴN SÀNG VẬN HÀNH</span>
+            </div>
+          </div>
+          <div class="score-info">
+            <h2 class="score-info-title">Định Hướng Vận Hành Đa Dịch Vụ (Multi-Service Focus)</h2>
+            <p class="score-info-desc">
+              Phần mềm <strong>Multi-Service ERP System</strong> hỗ trợ tích hợp song song cả hoạt động trị liệu làm đẹp tại cửa hàng (Beauty Spa) lẫn các dịch vụ chăm sóc bầu, sau sinh, tắm bé di động tại nhà (Mẹ & Bé - Homecare). Dữ liệu được quản lý tập trung, đảm bảo tính liên kết thông tin tuyệt đối giữa đặt ca, kho bãi, nhân sự và kế toán.
+            </p>
+          </div>
+        </div>
+
+        <div class="eval-grid">
+          <div class="eval-card">
+            <div class="eval-title">Lễ tân & CSKH</div>
+            <div class="eval-score">Đặt Lịch POS</div>
+            <span class="eval-label label-excellent">Bàn & Giường</span>
+          </div>
+          <div class="eval-card">
+            <div class="eval-title">Kỹ thuật viên</div>
+            <div class="eval-score">GPS & QR</div>
+            <span class="eval-label label-excellent">Check-in ca</span>
+          </div>
+          <div class="eval-card">
+            <div class="eval-title">Kế toán chi nhánh</div>
+            <div class="eval-score">Hạch toán kép</div>
+            <span class="eval-label label-excellent">Đối soát 1-click</span>
+          </div>
+          <div class="eval-card">
+            <div class="eval-title">Quản trị & Chuỗi</div>
+            <div class="eval-score">Multi-Tenant</div>
+            <span class="eval-label label-excellent">Bảo mật RLS</span>
+          </div>
+        </div>
+
+        <div class="timeline">
+          <div class="timeline-item">
+            <span class="timeline-dot"></span>
+            <div class="timeline-phase">Bước 1</div>
+            <h3 class="timeline-title">Tư vấn khách hàng & Ký hợp đồng dịch vụ (CRM / Booking)</h3>
+            <p class="timeline-desc">
+              Lễ tân nhập thông tin khách hàng. Với mảng <strong>Mẹ & Bé</strong>, ghi nhận các trường đặc thù của thai kỳ (dob_expected, dob_baby). Với mảng <strong>Beauty Spa</strong>, tiếp nhận nhu cầu trị liệu da, triệt lông, massage body. Hệ thống tạo Booking, thu tiền đặt cọc và gán KTV phụ trách chính.
+            </p>
+          </div>
+          <div class="timeline-item">
+            <span class="timeline-dot"></span>
+            <div class="timeline-phase">Bước 2</div>
+            <h3 class="timeline-title">Điều phối lịch ca (Scheduling)</h3>
+            <p class="timeline-desc">
+              Lễ tân lên lịch ca làm. Với dịch vụ Beauty Spa, hệ thống hỗ trợ xếp lịch gán <strong>Mã giường/phòng trị liệu</strong>. Với mảng Mẹ & Bé, hệ thống tối ưu hóa điều phối KTV di chuyển dựa trên định vị địa lý. KTV nhận thông báo lịch làm trên di động.
+            </p>
+          </div>
+          <div class="timeline-item">
+            <span class="timeline-dot"></span>
+            <div class="timeline-phase">Bước 3</div>
+            <h3 class="timeline-title">Thực hiện trị liệu & Check-in</h3>
+            <p class="timeline-desc">
+              KTV thực hiện check-in để bắt đầu ca trị liệu: quét mã QR của phòng trị liệu (tại chi nhánh) hoặc GPS Check-in (tại nhà khách). Khi kết thúc, KTV nhập nhật ký trị liệu chi tiết và bấm Check-out.
+            </p>
+          </div>
+          <div class="timeline-item">
+            <span class="timeline-dot"></span>
+            <div class="timeline-phase">Bước 4</div>
+            <h3 class="timeline-title">Tự động trừ kho vật tư tiêu hao (Auto-Inventory)</h3>
+            <p class="timeline-desc">
+              Hệ thống tự động trừ kho nguyên vật liệu tương ứng của buổi làm: dầu massage, tăm bông (mảng Mẹ & Bé) hoặc kem dưỡng, serum tinh chất, khăn trải giường (mảng Beauty Spa) theo định mức cài đặt sẵn.
+            </p>
+          </div>
+          <div class="timeline-item">
+            <span class="timeline-dot"></span>
+            <div class="timeline-phase">Bước 5</div>
+            <h3 class="timeline-title">Tính điểm Loyalty & Cộng dồn lương KTV</h3>
+            <p class="timeline-desc">
+              Khách hàng tự động được tích điểm Loyalty và nhận link gửi đánh giá bảo mật 5 sao qua Customer Portal. Số ca làm quy đổi (đã nhân hệ số gói dịch vụ) được cộng dồn thời gian thực vào bảng lương tạm tính của KTV.
+            </p>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- TAB 2: ROLES GUIDE (WITH NESTED SUB-TABS) -->
+    <div id="tab-roles" class="tab-panel">
+      <section>
+        <div class="section-title-wrap">
+          <h2 class="section-title"><span class="number">2</span> Quy Trình Thao Tác Chi Tiết Cho Từng Bộ Phận</h2>
+        </div>
+        <p class="section-desc">
+          Chọn bộ phận tương ứng bên dưới để xem hướng dẫn sử dụng và quy tắc nhập liệu chi tiết:
+        </p>
+
+        <!-- SUB-TABS NAV -->
+        <div class="sub-tabs-wrapper">
+          <button class="sub-tab-btn active" onclick="switchSubTab(event, 'role-receptionist')">Lễ Tân & CSKH</button>
+          <button class="sub-tab-btn" onclick="switchSubTab(event, 'role-ktv')">Kỹ Thuật Viên (KTV)</button>
+          <button class="sub-tab-btn" onclick="switchSubTab(event, 'role-customer')">Khách Hàng (Portal)</button>
+          <button class="sub-tab-btn" onclick="switchSubTab(event, 'role-owner')">Chủ Chi Nhánh / Admin</button>
+        </div>
+
+        <!-- SUB-TAB CONTENT: RECEPTIONIST -->
+        <div id="role-receptionist" class="sub-tab-panel active">
+          <div class="component-box">
+            <h3>
+              <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+              Hướng dẫn dành cho Lễ tân & CSKH
+            </h3>
+            <ul class="bullet-list">
+              <li><strong>Tạo hồ sơ khách hàng:</strong>
+                <ul>
+                  <li><i>Mảng Mẹ & Bé:</i> Nhập SĐT, Họ tên Mẹ, Họ tên Bé, Địa chỉ giao hàng. Bắt buộc điền <code>dob_baby</code> hoặc dự sinh <code>dob_expected</code> để theo dõi tiến độ tiêm chủng và phục hồi sau sinh.</li>
+                  <li><i>Mảng Beauty Spa:</i> Nhập thông tin liên hệ, ghi nhận các tình trạng đặc biệt (ví dụ: <i>da nhạy cảm, chống chỉ định một số loại mỹ phẩm</i>) để đưa vào ghi chú dịch vụ.</li>
+                </ul>
+              </li>
+              <li><strong>Khởi tạo Booking gói dịch vụ:</strong>
+                <ul>
+                  <li>Click chọn <code>Tạo gói dịch vụ</code>. Điền giá trị gói thực tế khách phải thanh toán (sau chiết khấu), số tiền cọc thu ngân thực nhận.</li>
+                  <li><i>Mảng Beauty Spa:</i> Nếu khách mua các liệu trình làm tại spa, gán phòng trị liệu và gán giường mặc định nếu khách yêu cầu KTV riêng.</li>
+                </ul>
+              </li>
+              <li><strong>Sắp xếp & Điều phối lịch ca:</strong>
+                <ul>
+                  <li><i>Trường hợp làm tại nhà (Homecare):</i> Hệ thống tự động quét vị trí của khách hàng và đề xuất KTV có vị trí gần nhất trong khung giờ trống để giảm thời gian đi lại.</li>
+                  <li><i>Trường hợp làm tại Spa (Salon):</i> Chọn ca trị liệu, gán <strong>Giường/Phòng</strong> trống. Hệ thống sẽ tự động chặn việc đặt trùng giường trong cùng một khung giờ.</li>
+                </ul>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- SUB-TAB CONTENT: KTV -->
+        <div id="role-ktv" class="sub-tab-panel">
+          <div class="component-box">
+            <h3>
+              <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/></svg>
+              Hướng dẫn dành cho Kỹ thuật viên (KTV) trên Mobile Portal
+            </h3>
+            <ul class="bullet-list">
+              <li><strong>Kiểm tra Lịch ca hàng ngày:</strong> Xem danh sách ca làm việc được giao. Chi tiết ca ghi rõ: <i>Thời gian, Địa chỉ (khách tại nhà) hoặc Số giường/Số phòng (khách tại spa), gói trị liệu cần thực hiện</i>.</li>
+              <li><strong>Quy trình Check-in bắt đầu ca:</strong>
+                <ul>
+                  <li><i>Khách làm tại nhà (Homecare):</i> Click <code>Bắt đầu ca</code>. Hệ thống sẽ định vị GPS để xác nhận bạn có mặt tại nhà khách đúng giờ.</li>
+                  <li><i>Khách làm tại Spa:</i> Click <code>Check-in tại Spa</code> (hoặc quét mã QR dán tại phòng trị liệu) để kích hoạt trạng thái ca làm.</li>
+                </ul>
+              </li>
+              <li><strong>Nhập nhật ký trị liệu & Check-out:</strong>
+                <ul>
+                  <li><i>Mẹ & Bé:</i> Nhập các chỉ số như: bé bú ngoan, cân nặng, tình trạng rốn, mức độ phục hồi vết mổ của mẹ.</li>
+                  <li><i>Beauty Spa:</i> Nhập tình trạng da của khách sau điều trị (đỏ da, bong tróc nhẹ, dưỡng chất hấp thụ tốt...).</li>
+                  <li>Nhấn <code>Kết thúc ca</code> để Check-out. Hệ thống sẽ tự thực hiện khấu trừ kho nguyên vật liệu tiêu hao (kem dưỡng, serum, khăn xô...).</li>
+                </ul>
+              </li>
+              <li><strong>Tự đối soát ca làm:</strong> Tab <code>Thu Nhập</code> hiển thị tổng số ca quy đổi thực tế. Bento-card giúp KTV xem chi tiết số ca đã hoàn thành của từng loại gói riêng biệt.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- SUB-TAB CONTENT: CUSTOMER -->
+        <div id="role-customer" class="sub-tab-panel">
+          <div class="component-box">
+            <h3>
+              <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+              Giao diện dành cho Khách hàng (Customer Portal)
+            </h3>
+            <ul class="bullet-list">
+              <li><strong>Theo dõi trạng thái:</strong> Khách hàng nhận được tin nhắn Zalo kèm liên kết truy cập nhanh. Khách có thể xem: <i>Số buổi liệu trình đã hoàn thành, số buổi còn lại, KTV phụ trách và lịch hẹn ca làm tiếp theo</i>.</li>
+              <li><strong>Hotline Hỗ Trợ Toàn Hệ Thống:</strong> Màn hình Portal ghim nổi bật hotline hỗ trợ kỹ thuật và chăm sóc khách hàng: <code>0865 679 054</code>. Khách hàng chỉ cần 1-click là có thể gọi trực tiếp khi cần điều chỉnh lịch.</li>
+              <li><strong>Gửi đánh giá bảo mật 5 sao:</strong>
+                <ul>
+                  <li>Sau khi KTV check-out ca, một popup đánh giá sẽ tự động hiển thị trên Portal của khách hàng.</li>
+                  <li>Khách hàng chấm điểm từ 1 đến 5 sao và viết ghi chú góp ý.</li>
+                  <li><i>Cơ chế bảo mật:</i> Ý kiến góp ý chi tiết được mã hóa và gửi thẳng về cho Quản lý chi nhánh. KTV chỉ được thấy điểm sao trung bình mà không thể xem chi tiết bình luận, đảm bảo sự riêng tư cho khách hàng thoải mái phản hồi.</li>
+                </ul>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- SUB-TAB CONTENT: OWNER -->
+        <div id="role-owner" class="sub-tab-panel">
+          <div class="component-box">
+            <h3>
+              <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+              Hướng dẫn dành cho Chủ Chi Nhánh & Admin Hệ Thống
+            </h3>
+            <ul class="bullet-list">
+              <li><strong>Chỉnh sửa gói linh hoạt (Edit Booking):</strong>
+                <ul>
+                  <li>Khi nhân sự tư vấn nhập sai thông số, Admin vào trang chi tiết khách hàng, click nút <code>Sửa gói dịch vụ</code> màu Gold.</li>
+                  <li>Cho phép thay đổi: Tên gói, Tổng số buổi, Số tiền thực thu, Tỷ lệ giảm giá mà không gây ảnh hưởng đến danh mục gói dịch vụ gốc và bảo toàn hoa hồng tích lũy trước đó của KTV.</li>
+                </ul>
+              </li>
+              <li><strong>Quản lý bảo mật phân tách dữ liệu (Multi-Tenant isolation):</strong> Dữ liệu khách hàng, doanh số, thông tin chi phí của mỗi đại lý nhượng quyền hoàn toàn tách biệt. Admin tổng chuỗi quản lý phí nhượng quyền (Royalty rate) định kỳ thu về tài khoản trung tâm.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- TAB 3: ACCOUNTING & RECONCILIATION -->
+    <div id="tab-accounting" class="tab-panel">
+      <section>
+        <div class="section-title-wrap">
+          <h2 class="section-title"><span class="number">3</span> Quy Trình Tài Chính, Kế Toán & Đối Soát</h2>
+        </div>
+        <p class="section-desc">
+          Hệ thống Multi-Service ERP hỗ trợ mô hình vận hành song song hai chế độ kế toán, tự động hóa hạch toán kép và phát hiện lệch thanh toán tức thì.
+        </p>
+
+        <div class="table-container">
+          <table class="compare-table">
+            <thead>
+              <tr>
+                <th class="crit">Tiêu chí</th>
+                <th class="col-simple">SIMPLE Mode (Chế độ Đơn Giản)</th>
+                <th class="col-professional">PROFESSIONAL Mode (Chế độ Chuyên Nghiệp)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="crit">Mục đích sử dụng</td>
+                <td>Dành cho các chi nhánh nhượng quyền nhỏ, các chi nhánh mới vận hành thử nghiệm, chỉ theo dõi dòng tiền thu chi thực tế.</td>
+                <td>Dành cho tổng công ty, hoặc các chi nhánh lớn cần báo cáo tài chính chuẩn mực, hạch toán nợ/có tự động.</td>
+              </tr>
+              <tr>
+                <td class="crit">Ghi nhận Doanh thu</td>
+                <td>Ghi nhận trực tiếp khi khách nộp cọc hoặc trả tiền mặt/chuyển khoản (Cash Basis).</td>
+                <td>Doanh thu dồn tích (Accrual Basis). Nhận cọc ghi vào tài khoản doanh thu chưa thực hiện. Chỉ ghi nhận doanh thu thực tế lũy tiến theo số ca KTV check-out thành công.</td>
+              </tr>
+              <tr>
+                <td class="crit">Xuất kho & Vật tư</td>
+                <td>Kế toán hoặc nhân viên kho nhập phiếu xuất kho thủ công định kỳ.</td>
+                <td>Hệ thống tự động trừ kho nguyên vật liệu dựa trên định mức tiêu hao của gói ngay khi ca trị liệu hoàn thành.</td>
+              </tr>
+              <tr>
+                <td class="crit">Chi phí lương KTV</td>
+                <td>Chi phí lương được tổng hợp thủ công từ tin nhắn Zalo/vở ghi và ghi nhận một lần vào cuối tháng.</td>
+                <td>Hệ thống tự động trích trước chi phí hoa hồng ca làm của KTV hàng ngày (Accrued Payroll) đưa vào báo cáo P&L thời gian thực.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="component-box">
+          <h3>
+            <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
+            Hệ Thống Bút Toán Tự Động Trong Chế Độ Chuyên Nghiệp (Professional Mode)
+          </h3>
+          <ul class="bullet-list">
+            <li><strong>Khách hàng đóng cọc/Thanh toán gói dịch vụ:</strong>
+              <ul>
+                <li><span class="account-code">Nợ TK 112</span> (Tiền gửi ngân hàng) hoặc <span class="account-code">Nợ TK 111</span> (Tiền mặt)</li>
+                <li><span class="account-code">Có TK 131</span> (Phải thu khách hàng - Khoản khách hàng trả trước)</li>
+              </ul>
+            </li>
+            <li><strong>Ghi nhận doanh thu sau mỗi ca trị liệu hoàn thành:</strong>
+              <ul>
+                <li><span class="account-code">Nợ TK 131</span> (Phải thu khách hàng)</li>
+                <li><span class="account-code">Có TK 511</span> (Doanh thu bán hàng và cung cấp dịch vụ)</li>
+              </ul>
+            </li>
+            <li><strong>Khấu trừ kho vật tư tiêu hao tự động theo ca:</strong>
+              <ul>
+                <li><span class="account-code">Nợ TK 632</span> (Giá vốn hàng bán)</li>
+                <li><span class="account-code">Có TK 152</span> (Nguyên liệu, vật liệu: dầu massage, serum, mỹ phẩm điều trị...)</li>
+              </ul>
+            </li>
+            <li><strong>Trích trước hoa hồng KTV theo ngày:</strong>
+              <ul>
+                <li><span class="account-code">Nợ TK 6421</span> (Chi phí nhân sự doanh nghiệp)</li>
+                <li><span class="account-code">Có TK 334</span> (Phải trả người lao động)</li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+
+        <div class="component-box">
+          <h3>
+            <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+            Quy Trình Đối Soát Tiền Thu Thực Tế & Xử Lý Tiền Âm (Refund)
+          </h3>
+          <p class="section-desc">
+            Màn hình <code>Đối Soát Tài Chính</code> tự động phát hiện lệch dòng tiền giữa <i>Giá gói thực tế</i> và <i>Tổng tiền thực thu lũy kế</i>. Quy trình điều tra xử lý bao gồm:
+          </p>
+          <div class="timeline">
+            <div class="timeline-item">
+              <span class="timeline-dot"></span>
+              <div class="timeline-phase">Bước 1</div>
+              <h4 class="timeline-title">Phát hiện lệch & Trình điều tra</h4>
+              <p class="timeline-desc">Tại màn hình Đối soát, kế toán click nút <code>Điều Tra</code> bên cạnh hợp đồng báo lệch. Hệ thống tự động chuyển hướng về trang Chi tiết khách hàng.</p>
+            </div>
+            <div class="timeline-item">
+              <span class="timeline-dot"></span>
+              <div class="timeline-phase">Bước 2</div>
+              <h4 class="timeline-title">Kiểm tra nhật ký dòng tiền (Audit Trail)</h4>
+              <p class="timeline-desc">Đối chiếu các giao dịch đã nhập trên hệ thống với lịch sử sao kê ngân hàng thực tế để phát hiện giao dịch bị nhập trùng lặp hoặc thiếu sót.</p>
+            </div>
+            <div class="timeline-item">
+              <span class="timeline-dot"></span>
+              <div class="timeline-phase">Bước 3</div>
+              <h4 class="timeline-title">Xử lý bù trừ bằng giao dịch âm (Refund)</h4>
+              <p class="timeline-desc">
+                - Trường hợp khách đóng thừa hoặc kế toán nhập nhầm giao dịch trùng lặp: Click <code>Ghi nhận thanh toán</code>, **nhập số tiền âm** (Ví dụ: <code>-200,000</code>), điền ghi chú rõ ràng <i>"Hoàn tiền đối soát thừa"</i>.<br>
+                - Hệ thống tự động trừ đi số tiền thừa này, khôi phục cân bằng sổ đối soát và cảnh báo lệch đỏ sẽ **biến mất ngay lập tức**.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- TAB 4: SETTINGS & CONFIG -->
+    <div id="tab-settings" class="tab-panel">
+      <section>
+        <div class="section-title-wrap">
+          <h2 class="section-title"><span class="number">4</span> Cài Đặt Hệ Thống & Cấu Hình Vận Hành</h2>
+        </div>
+        <p class="section-desc">
+          Các tham số cấu hình cốt lõi đảm bảo hệ thống vận hành đúng quy chuẩn và hạn chế sai lệch bảng lương kế toán.
+        </p>
+
+        <div class="bento-grid">
+          <!-- TENANT MULTI FRANCHISE -->
+          <div class="bento-card">
+            <h3 class="bento-card-title">
+              <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+              1. Cấu hình chi nhánh & Phí bản quyền (Royalty rate)
+            </h3>
+            <ul class="bullet-list">
+              <li>Hệ thống <strong>Multi-tenant</strong> đảm bảo các chi nhánh nhượng quyền không thể xem chéo dữ liệu của nhau, bảo mật tuyệt đối thông tin khách hàng và bí mật kinh doanh.</li>
+              <li><strong>Tỷ lệ Royalty fee:</strong> Thiết lập tỷ lệ nộp về tổng chuỗi tại trường <code>tenants.royalty_rate</code> (Ví dụ: 10% doanh thu). Hệ thống sẽ tự động tổng hợp số tiền cần trích nộp dựa trên doanh thu thực thu hàng tháng của chi nhánh.</li>
+            </ul>
+          </div>
+
+          <!-- INVENTORY CONFIG -->
+          <div class="bento-card">
+            <h3 class="bento-card-title">
+              <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zM9 17H7v-2h2v2zm0-4H7v-2h2v2zm0-4H7V7h2v2zm10 8h-8v-2h8v2zm0-4h-8v-2h8v2zm0-4h-8V7h8v2z"/></svg>
+              2. Định mức hao phí kho nguyên vật liệu
+            </h3>
+            <ul class="bullet-list">
+              <li>Vào menu <code>Cấu Hình Kho</code> -> <code>Thiết lập hao phí</code>.</li>
+              <li>Gán định mức hao phí cho từng buổi của gói dịch vụ:
+                <ul>
+                  <li><i>Gói tắm bé (Mẹ & Bé):</i> 50ml cồn sát trùng, 2 tăm bông, 1 khăn xô.</li>
+                  <li><i>Gói chăm sóc da (Beauty Spa):</i> 10ml sữa rửa mặt, 2ml serum tinh chất dưỡng da, 1 mặt nạ collagen, 1 khăn trải dùng 1 lần.</li>
+                </ul>
+              </li>
+              <li><i>Hoạt động:</i> Hệ thống tự động trừ kho nguyên liệu của chi nhánh ngay khi ca trị liệu được check-out hoàn thành.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="component-box">
+          <h3>
+            <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 17c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6-9h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+            3. Cấu hình hệ số ca làm (Session Multiplier) & Tính lương KTV
+          </h3>
+          <p class="section-desc">
+            Để ghi nhận công bằng công sức KTV khi thực hiện các ca khó/dài, hệ thống hỗ trợ cấu hình hệ số ca làm việc:
+          </p>
+          <ul class="bullet-list">
+            <li><strong>Hệ số quy đổi trong danh mục gói dịch vụ:</strong>
+              <ul>
+                <li><i>Gói VIP / Trị liệu da chuyên sâu:</i> Hệ số <code>2.00</code> ca.</li>
+                <li><i>Gói Hạnh Phúc / Trị liệu body:</i> Hệ số <code>1.50</code> ca.</li>
+                <li><i>Gói Cơ bản / Chăm sóc da cơ bản / Tắm bé:</i> Hệ số <code>1.00</code> ca.</li>
+              </ul>
+            </li>
+            <li><strong>Cơ chế tính số ca lũy kế:</strong>
+              <ul>
+                <li>Khi KTV hoàn thành ca trị liệu, hệ thống tự động nhân hệ số quy đổi của gói và cộng dồn vào bảng lương KTV dưới dạng số thập phân.</li>
+                <li><i>Ví dụ:</i> Trong tháng KTV làm 10 ca trị liệu da chuyên sâu (10 ca × 2.0 = 20 ca quy đổi) + 3 ca trị liệu body (3 ca × 1.5 = 4.5 ca quy đổi). Tổng số ca làm quy đổi hiển thị trên bảng lương là <strong>24.5 ca</strong>.</li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+
+        <div class="component-box">
+          <h3>
+            <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
+            4. Cấu hình phòng & Giường trị liệu (Chỉ áp dụng tại chi nhánh)
+          </h3>
+          <ul class="bullet-list">
+            <li>Vào mục <code>Cấu Hình Chi Nhánh</code> -> <code>Quản Lý Phòng / Giường</code>.</li>
+            <li>Thiết lập số lượng phòng trị liệu (Ví dụ: <i>Phòng VIP 1, Phòng Chăm sóc da 2...</i>) và số giường hoạt động trong mỗi phòng.</li>
+            <li>Hệ thống tự động liên kết trạng thái giường trị liệu thời gian thực khi Lễ tân xếp lịch hoặc khi KTV check-in.</li>
+          </ul>
+        </div>
+      </section>
+    </div>
+
+    <!-- TAB 5: CHECKLIST -->
+    <div id="tab-checklist" class="tab-panel">
+      <section>
+        <div class="section-title-wrap">
+          <h2 class="section-title"><span class="number">5</span> Bảng Kiểm Tra Vận Hành Hàng Ngày (Staff Daily Checklist)</h2>
+        </div>
+        <p class="section-desc">
+          Sử dụng bảng checklist dưới đây để tự kiểm tra công việc hàng ngày của từng bộ phận nhằm đảm bảo tính ổn định của hệ thống dữ liệu:
+        </p>
+
+        <div class="checklist-container">
+          <div class="checklist-progress-bar-wrapper">
+            <div class="c-pb-info">
+              <span>Tiến độ hoàn thành công việc hôm nay</span>
+              <span id="checklist-progress-text">0%</span>
+            </div>
+            <div class="c-pb-track">
+              <div class="c-pb-thumb" id="checklist-progress-thumb"></div>
+            </div>
+          </div>
+
+          <div class="checklist-items">
+            <label class="checklist-item">
+              <input type="checkbox" class="task-checkbox" onchange="updateChecklistProgress()" />
+              <span class="custom-checkbox">✓</span>
+              <span class="checklist-item-text">[Lễ tân] Kiểm tra màn hình đặt lịch và duyệt toàn bộ các ca hẹn mới từ Customer Portal.</span>
+            </label>
+            <label class="checklist-item">
+              <input type="checkbox" class="task-checkbox" onchange="updateChecklistProgress()" />
+              <span class="custom-checkbox">✓</span>
+              <span class="checklist-item-text">[Lễ tân] Phân bổ KTV cho các ca làm ngày mai dựa trên định vị khoảng cách địa lý (Homecare) hoặc số giường trống (Beauty Spa).</span>
+            </label>
+            <label class="checklist-item">
+              <input type="checkbox" class="task-checkbox" onchange="updateChecklistProgress()" />
+              <span class="custom-checkbox">✓</span>
+              <span class="checklist-item-text">[KTV] Kiểm tra lịch hẹn ngày hôm nay trên điện thoại trước 8h00 sáng để chuẩn bị vật tư/thiết bị tương ứng.</span>
+            </label>
+            <label class="checklist-item">
+              <input type="checkbox" class="task-checkbox" onchange="updateChecklistProgress()" />
+              <span class="custom-checkbox">✓</span>
+              <span class="checklist-item-text">[KTV] Thực hiện Check-in và Check-out GPS (Homecare) hoặc quét mã QR (tại Spa) đầy đủ khi phục vụ khách hàng.</span>
+            </label>
+            <label class="checklist-item">
+              <input type="checkbox" class="task-checkbox" onchange="updateChecklistProgress()" />
+              <span class="custom-checkbox">✓</span>
+              <span class="checklist-item-text">[KTV] Nhập đầy đủ nhật ký trị liệu tình trạng da hoặc thông tin Mẹ & Bé và hướng dẫn khách gửi đánh giá sao.</span>
+            </label>
+            <label class="checklist-item">
+              <input type="checkbox" class="task-checkbox" onchange="updateChecklistProgress()" />
+              <span class="custom-checkbox">✓</span>
+              <span class="checklist-item-text">[Kế toán] Kiểm tra màn hình đối soát tài chính, xử lý các booking báo lệch bằng giao dịch bù trừ hoặc hoàn tiền âm.</span>
+            </label>
+            <label class="checklist-item">
+              <input type="checkbox" class="task-checkbox" onchange="updateChecklistProgress()" />
+              <span class="custom-checkbox">✓</span>
+              <span class="checklist-item-text">[Kế toán] Phê duyệt các khoản chi phí phát sinh trong ngày để hệ thống cập nhật vào báo cáo P&L thời gian thực.</span>
+            </label>
+            <label class="checklist-item">
+              <input type="checkbox" class="task-checkbox" onchange="updateChecklistProgress()" />
+              <span class="custom-checkbox">✓</span>
+              <span class="checklist-item-text">[Quản trị/Chủ Spa] Kiểm tra Báo cáo Lãi Lỗ (P&L) và điểm Sẵn sàng Dữ liệu Kế toán để cân nhắc nâng cấp sang Professional Mode.</span>
+            </label>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- FOOTER -->
+    <footer>
+      <div>Hệ thống Multi-Service ERP - Vận hành chuỗi nhượng quyền làm đẹp & chăm sóc mẹ và bé cao cấp</div>
+      <div>Hotline hỗ trợ kỹ thuật: <a href="tel:0865679054">0865 679 054</a></div>
+    </footer>
+  </div>
+
+  <script>
+    // Tab switching logic (Primary Tabs)
+    function switchTab(evt, tabId) {
+      // Hide all panels
+      const panels = document.querySelectorAll('.tab-panel');
+      panels.forEach(panel => {
+        panel.classList.remove('active');
+      });
+
+      // Deactivate all buttons
+      const tabBtns = document.querySelectorAll('.tab-btn');
+      tabBtns.forEach(btn => {
+        btn.classList.remove('active');
+      });
+
+      // Show current panel and mark button active
+      document.getElementById(tabId).classList.add('active');
+      evt.currentTarget.classList.add('active');
+      
+      // Auto-trigger checklist progress check if switching to checklist tab
+      if (tabId === 'tab-checklist') {
+        updateChecklistProgress();
+      }
+    }
+
+    // Sub-tab switching logic (Nested Role Tabs)
+    function switchSubTab(evt, subTabId) {
+      // Hide all sub-panels
+      const subPanels = document.querySelectorAll('.sub-tab-panel');
+      subPanels.forEach(panel => {
+        panel.classList.remove('active');
+      });
+
+      // Deactivate all sub-buttons
+      const subBtns = document.querySelectorAll('.sub-tab-btn');
+      subBtns.forEach(btn => {
+        btn.classList.remove('active');
+      });
+
+      // Show current sub-panel and mark sub-button active
+      document.getElementById(subTabId).classList.add('active');
+      evt.currentTarget.classList.add('active');
+    }
+
+    // Daily Checklist progress calculation
+    function updateChecklistProgress() {
+      const checkboxes = document.querySelectorAll('.task-checkbox');
+      const checked = document.querySelectorAll('.task-checkbox:checked');
+      const progressPercent = Math.round((checked.length / checkboxes.length) * 100);
+      
+      const thumb = document.getElementById('checklist-progress-thumb');
+      const text = document.getElementById('checklist-progress-text');
+      
+      if (thumb && text) {
+        thumb.style.width = progressPercent + '%';
+        text.innerText = progressPercent + '%';
+      }
+    }
+    
+    // Initial runs
+    window.onload = function() {
+      updateChecklistProgress();
+    };
+  </script>
+</body>
+</html>

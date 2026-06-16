@@ -2,7 +2,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database.types';
 import { AccountingEngineService, type JournalEntryInput } from './accounting-engine';
 import { requireSupabaseAdminEnv } from '@/lib/supabase-admin-env';
-import { resolvePaymentAccountCode } from './accounting/ledger-rules';
+import { resolvePaymentAccountCode } from '@/core/services/accounting/ledger-rules';
 
 type AdminClient = SupabaseClient<Database>;
 type InterBranchClearingRole = 'debtor' | 'creditor';

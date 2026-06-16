@@ -10,7 +10,7 @@ jest.mock('@/lib/accounting-outbox', () => ({
   enqueueWithAutoClient: (...args: unknown[]) => mockEnqueueWithAutoClient(...args),
 }));
 
-jest.mock('@/services/accounting/period-guards', () => ({
+jest.mock('@/core/services/accounting/period-guards', () => ({
   assertOpenAccountingPeriod: (...args: unknown[]) => mockAssertOpenAccountingPeriod(...args),
 }));
 

@@ -8,7 +8,7 @@ import {
 } from '@/lib/business-rules/salary';
 import { createClient } from '@/lib/supabase-server';
 import { getAuthorizedTenantUser } from '@/core/services/auth';
-import { createAccountingDataClient } from './accounting/client';
+import { createAccountingDataClient } from '@/core/services/accounting/client';
 
 export interface SalaryReconRow {
   ktv_id: string;

@@ -3,8 +3,8 @@
 import { revalidatePath } from 'next/cache';
 import { getLocalDateString } from '@/lib/utils';
 import { resolveTenantId } from './shared';
-import { assertOpenAccountingPeriod } from '@/services/accounting/period-guards';
-import { buildRevenueAccountingMetadata, inferBusinessEventType } from '@/services/accounting/template-rules';
+import { assertOpenAccountingPeriod } from '@/core/services/accounting/period-guards';
+import { buildRevenueAccountingMetadata, inferBusinessEventType } from '@/core/services/accounting/template-rules';
 import {
   assertOutboxEnqueued,
   buildExpenseRecordedOutboxEvent,

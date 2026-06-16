@@ -14,12 +14,12 @@ import {
   buildPackageSaleOutboxEvent,
   buildSessionDoneOutboxEvent,
 } from '@/lib/business-rules/accounting-outbox';
-import { assertOpenAccountingPeriod } from '@/services/accounting/period-guards';
+import { assertOpenAccountingPeriod } from '@/core/services/accounting/period-guards';
 import {
   buildRevenueAccountingMetadata,
   inferBusinessEventType,
   resolveAccountingReviewStatus,
-} from '@/services/accounting/template-rules';
+} from '@/core/services/accounting/template-rules';
 import type { Database, Json } from '@/types/database.types';
 import type { createClient } from '@/lib/supabase-server';
 
