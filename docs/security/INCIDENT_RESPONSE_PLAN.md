@@ -1,31 +1,43 @@
-# Incident Response Plan - Bella ERP API Gateway
+# Bella ERP API Gateway - Incident Response Plan
 
-**Document Version**: 1.0  
-**Last Updated**: 2026-06-17  
+**Version**: 1.0  
+**Date**: 2026-06-17  
 **Status**: Active  
-**Classification**: Internal - Confidential
+**Review Cycle**: Quarterly  
+**Scope**: API Gateway (all phases)
 
 ---
 
 ## Executive Summary
 
-This document defines the incident response procedures for security incidents related to the Bella ERP API Gateway. It provides clear escalation paths, response timelines, and communication protocols.
+This Incident Response Plan (IRP) defines procedures for detecting, responding to, and recovering from security incidents affecting Bella ERP's API Gateway. The plan covers incident classification, response team roles, communication protocols, and post-incident activities.
 
-**Key Principles**:
-1. **Speed**: Respond within defined SLAs
-2. **Containment**: Prevent further damage immediately
-3. **Communication**: Keep stakeholders informed
-4. **Learning**: Document and improve after each incident
+### Key Objectives
+1. **Minimize Impact**: Contain incidents within 15 minutes (CRITICAL), 1 hour (HIGH)
+2. **Preserve Evidence**: Maintain audit trails for forensics and legal requirements
+3. **Maintain Transparency**: Notify affected parties per GDPR (within 72 hours for breaches)
+4. **Continuous Improvement**: Learn from incidents to prevent recurrence
+
+### Response Metrics (SLAs)
+
+| Severity | Detection Time | Response Time | Containment Time | Recovery Time |
+|----------|---------------|---------------|------------------|---------------|
+| **CRITICAL** | < 5 min | < 15 min | < 30 min | < 4 hours |
+| **HIGH** | < 15 min | < 1 hour | < 2 hours | < 24 hours |
+| **MEDIUM** | < 1 hour | < 4 hours | < 8 hours | < 48 hours |
+| **LOW** | < 4 hours | < 24 hours | < 48 hours | < 1 week |
 
 ---
 
 ## Table of Contents
 
-1. [Incident Classification](#incident-classification)
-2. [Response Team](#response-team)
-3. [Response Procedures](#response-procedures)
-4. [Communication Plan](#communication-plan)
-5. [Post-Incident Activities](#post-incident-activities)
+1. [Incident Classification](#1-incident-classification)
+2. [Response Team](#2-response-team)
+3. [Response Procedures](#3-response-procedures)
+4. [Communication Plan](#4-communication-plan)
+5. [Post-Incident Activities](#5-post-incident-activities)
+6. [Training & Exercises](#6-training--exercises)
+7. [Appendix](#7-appendix)
 
 ---
 
@@ -33,341 +45,583 @@ This document defines the incident response procedures for security incidents re
 
 ### 1.1 Severity Levels
 
-| Severity | Definition | Examples | Response Time |
-|----------|------------|----------|---------------|
-| **🔴 CRITICAL** | Cross-tenant data breach, service down | Partner A accessed Partner B data | < 15 minutes |
-| **🟠 HIGH** | Security vulnerability exploited, major data loss risk | Tenant injection attempt detected | < 1 hour |
-| **🟡 MEDIUM** | Minor security issue, service degradation | Repeated invalid API key attempts | < 4 hours |
-| **🟢 LOW** | Informational, no immediate risk | Partner exceeded rate limit | < 24 hours |
+#### CRITICAL
+**Definition**: Active data breach, tenant isolation failure, system-wide outage
+
+**Examples**:
+- Cross-tenant data leak confirmed
+- API keys compromised and actively exploited
+- Database breach (unauthorized access to production data)
+- Complete API Gateway outage (>99% of requests failing)
+
+**Impact**:
+- Customer data at risk
+- Regulatory reporting required (GDPR Article 33)
+- Legal liability
+- Brand damage
+
+**Response SLA**: 15 minutes
+
+---
+
+#### HIGH
+**Definition**: Significant security vulnerability, localized outage, attempted breach
+
+**Examples**:
+- API key leaked in public repository
+- Failed tenant injection attempts (repeated)
+- Privilege escalation attempt
+- Partial service degradation (10-50% requests failing)
+
+**Impact**:
+- Limited customer impact
+- Potential data exposure
+- Service degradation
+
+**Response SLA**: 1 hour
+
+---
+
+#### MEDIUM
+**Definition**: Policy violations, low-risk vulnerabilities, anomalies
+
+**Examples**:
+- Unusually high 403 rate for single partner
+- Invalid API key brute force attempts
+- Deprecated API endpoint usage
+- Configuration drift
+
+**Impact**:
+- No immediate customer impact
+- Potential future risk
+
+**Response SLA**: 4 hours
+
+---
+
+#### LOW
+**Definition**: Routine security events, minor issues
+
+**Examples**:
+- Occasional invalid API key attempts
+- Partner request for API key rotation
+- Documentation gaps
+- Non-security bugs
+
+**Impact**:
+- Minimal risk
+
+**Response SLA**: 24 hours
+
 
 ### 1.2 Incident Types
 
-#### Type 1: Data Breach
-**Definition**: Unauthorized access to tenant data  
-**Examples**:
-- Cross-tenant data access
-- API key compromise
-- Database credential leak
-
-**Initial Response**:
-1. Block affected API keys immediately
-2. Isolate affected tenants
-3. Preserve audit logs
-4. Notify legal team
-
----
-
-#### Type 2: Denial of Service
-**Definition**: Service unavailable or degraded  
-**Examples**:
-- API rate limit exhaustion
-- Database connection pool exhaustion
-- DDoS attack
-
-**Initial Response**:
-1. Enable aggressive rate limiting
-2. Block attacking IPs
-3. Scale infrastructure
-4. Monitor recovery
-
----
-
-#### Type 3: Authentication Bypass
-**Definition**: Unauthorized access without valid credentials  
-**Examples**:
-- API key brute force
-- Session hijacking
-- JWT manipulation
-
-**Initial Response**:
-1. Invalidate suspicious sessions
-2. Enable additional authentication factors
-3. Review auth logs
-4. Patch vulnerability
-
----
-
-#### Type 4: Privilege Escalation
-**Definition**: Partner gains unauthorized permissions  
-**Examples**:
-- Scope escalation
-- Admin access gained
-- RLS bypass
-
-**Initial Response**:
-1. Revoke escalated permissions
-2. Review scope assignments
-3. Audit affected partner's actions
-4. Fix authorization logic
+| Type | Description | Severity Range | Examples |
+|------|-------------|----------------|----------|
+| **Data Breach** | Unauthorized access to customer data | HIGH - CRITICAL | Cross-tenant leak, database dump |
+| **Authentication Bypass** | Circumventing API key validation | HIGH - CRITICAL | Stolen keys, auth logic bug |
+| **Denial of Service** | System unavailable or degraded | MEDIUM - CRITICAL | DDoS, resource exhaustion |
+| **Injection Attack** | Malicious input execution | HIGH - CRITICAL | SQL injection, tenant injection |
 
 ---
 
 ## 2. Response Team
 
-### 2.1 Team Structure
+### 2.1 Roles & Responsibilities
 
-```
-┌────────────────────────────────────┐
-│   Incident Commander (CTO)         │
-│   • Overall decision authority      │
-│   • Escalation to executive team   │
-└────────────────────────────────────┘
-                 ↓
-    ┌────────────┴────────────┐
-    ↓                         ↓
-┌─────────────────┐   ┌─────────────────┐
-│ Technical Lead  │   │ Communications  │
-│ (API Team Lead) │   │ (CS Manager)    │
-│ • Investigation │   │ • Stakeholder   │
-│ • Mitigation    │   │   updates       │
-└─────────────────┘   └─────────────────┘
-         ↓
-┌─────────────────────────────────────┐
-│  Support Team                       │
-│  • Security Engineer                │
-│  • Database Admin                   │
-│  • DevOps Engineer                  │
-│  • Legal Counsel (if data breach)   │
-└─────────────────────────────────────┘
-```
+#### Incident Commander (IC)
+**Who**: On-call engineer or Security Lead  
+**Responsibilities**:
+- Coordinate response across teams
+- Make containment decisions
+- Authorize emergency changes
+- Communicate with stakeholders
+- Declare incident resolved
 
-### 2.2 Roles & Responsibilities
+**Authority**: Can override normal approval processes during active incident
 
-#### Incident Commander (CTO)
-- Declare incident severity
-- Authorize service disruption if needed
-- Escalate to CEO for CRITICAL incidents
-- Approve external communications
+---
 
-#### Technical Lead (API Team Lead)
-- Lead technical investigation
-- Coordinate mitigation efforts
-- Make technical decisions
-- Update incident commander
+#### Technical Lead (TL)
+**Who**: Senior Backend Engineer or DevOps Lead  
+**Responsibilities**:
+- Technical investigation (root cause analysis)
+- Execute containment actions (block IPs, revoke keys)
+- Deploy hotfixes
+- Restore services
 
-#### Communications Lead (Customer Success Manager)
-- Notify affected customers
+**Tools**: Database access, production deployment, monitoring dashboards
+
+---
+
+#### Communications Lead (CL)
+**Who**: Product Manager or Customer Success Lead  
+**Responsibilities**:
+- Draft customer notifications
 - Update status page
-- Coordinate with legal for breach notifications
-- Draft post-mortem
+- Coordinate with Legal/PR
+- Handle customer inquiries
 
-#### Security Engineer
-- Analyze attack vectors
-- Implement security patches
-- Review audit logs
-- Provide security recommendations
+**Channels**: Email, Slack, Status page (status.bella.vn)
 
-#### Database Admin
-- Query audit logs
-- Restore backups if needed
-- Monitor database health
-- Implement RLS fixes
+---
 
-#### DevOps Engineer
-- Deploy emergency patches
-- Scale infrastructure
-- Monitor system health
-- Implement rate limiting
+#### Security Engineer (SE)
+**Who**: Security Team Member  
+**Responsibilities**:
+- Forensic analysis
+- Evidence preservation
+- Security recommendations
+- Threat intelligence
 
-#### Legal Counsel
-- Assess legal obligations (GDPR, etc.)
-- Review breach notification requirements
-- Advise on liability
-- Coordinate with regulators
+**Tools**: SIEM, audit logs, intrusion detection systems
+
+---
+
+#### Database Administrator (DBA)
+**Who**: DevOps Engineer with DB access  
+**Responsibilities**:
+- Database forensics
+- Query optimization (if DOS)
+- Backup restoration
+- RLS policy verification
+
+**Access**: Production database (service role)
+
+---
+
+#### DevOps Engineer (DevOps)
+**Who**: Infrastructure Team  
+**Responsibilities**:
+- Infrastructure changes (WAF rules, rate limits)
+- Monitoring and alerting
+- CDN configuration
+- Scaling resources
+
+**Tools**: Vercel, Supabase dashboard, CloudWatch
+
+---
+
+#### Legal Counsel (Legal)
+**Who**: General Counsel or external attorney  
+**Responsibilities**:
+- GDPR compliance guidance
+- Regulatory notification
+- Customer communication review
+- Liability assessment
+
+**Involvement**: CRITICAL/HIGH incidents only
+
+
+### 2.2 Escalation Path
+
+```
+CRITICAL Incident:
+  1. On-Call Engineer (immediate)
+  2. Security Lead (within 5 min)
+  3. CTO (within 15 min)
+  4. CEO (within 30 min, if customer-facing)
+  5. Legal Counsel (within 1 hour, if breach)
+
+HIGH Incident:
+  1. On-Call Engineer (within 15 min)
+  2. Security Lead (within 30 min)
+  3. CTO (within 1 hour)
+
+MEDIUM/LOW Incident:
+  1. On-Call Engineer
+  2. Security Lead (as needed)
+```
+
+### 2.3 Contact Information
+
+| Role | Primary Contact | Backup | Method |
+|------|----------------|--------|--------|
+| **On-Call Engineer** | PagerDuty rotation | Slack #engineering | PagerDuty + SMS |
+| **Security Lead** | security@bella.vn | CTO | Email + Slack |
+| **CTO** | cto@bella.vn | CEO | Email + Phone |
+| **Legal** | legal@bella.vn | External counsel | Email |
+
+**Emergency Slack Channel**: `#security-incidents` (alerts all above roles)
 
 ---
 
 ## 3. Response Procedures
 
-### 3.1 Detection Phase
+### 3.1 Phase 1: Detection (0-5 minutes)
 
-**Detection Methods**:
-1. **Automated Alerts**:
-   - Monitoring system (Datadog, New Relic)
-   - Security alerts (tenant injection attempts)
-   - Error rate spikes
+#### Automated Detection
+- **Monitoring alerts** (PagerDuty)
+  - Tenant injection attempts
+  - High 403 rate (>10/min per partner)
+  - API Gateway errors (>5% error rate)
+  - Database connection failures
+  
+- **SIEM alerts** (security events)
+  - Invalid API key attempts (>5/min)
+  - Cross-tenant access attempts
+  - Privilege escalation attempts
 
-2. **Manual Reports**:
-   - Customer reports
-   - Partner reports
-   - Internal team discovery
+#### Manual Detection
+- **Partner reports** (support ticket, email)
+- **Customer complaints** (data access issues)
+- **Security researcher disclosure** (bug bounty, responsible disclosure)
 
-**Alert Channels**:
-- Slack: `#security-alerts` (24/7 monitored)
-- PagerDuty: On-call rotation
-- Email: `security@bella.vn`
+#### Detection Actions
+```
+1. Acknowledge alert (PagerDuty or Slack)
+2. Verify it's a real incident (not false positive)
+3. Classify severity (CRITICAL/HIGH/MEDIUM/LOW)
+4. Notify Incident Commander
+5. Create incident ticket (Jira: SECURITY-XXX)
+```
 
 ---
 
-### 3.2 Triage Phase (< 15 minutes)
+### 3.2 Phase 2: Triage (5-15 minutes)
 
-**Checklist**:
+#### Incident Commander Actions
 ```
-[ ] Confirm incident is real (not false positive)
-[ ] Classify severity (CRITICAL/HIGH/MEDIUM/LOW)
-[ ] Identify incident type (Breach/DoS/Auth/Privilege)
-[ ] Alert incident commander
-[ ] Assemble response team
-[ ] Create incident ticket (Jira: SEC-XXX)
+1. Assemble response team (page relevant members)
+2. Create Slack war room (#incident-<timestamp>)
+3. Set incident severity (can upgrade later)
+4. Assign Technical Lead
+5. Brief team on known information
 ```
 
-**Triage Questions**:
-1. What happened?
-2. When did it start?
-3. How many tenants affected?
-4. Is data compromised?
-5. Is service still available?
+#### Initial Assessment Questions
+- What happened? (symptoms, error messages)
+- Which partners/tenants affected?
+- When did it start? (timeline)
+- Is it ongoing? (active attack or past breach)
+- What data is at risk?
+
+#### Triage Decision Tree
+```
+Is data breached? → YES → CRITICAL
+  ↓ NO
+Is tenant isolation compromised? → YES → CRITICAL
+  ↓ NO
+Is service unavailable? → YES → HIGH
+  ↓ NO
+Is attack active? → YES → HIGH
+  ↓ NO
+Anomaly detected? → YES → MEDIUM
+  ↓ NO
+Policy violation? → YES → LOW
+```
+
 
 ---
 
-### 3.3 Containment Phase
+### 3.3 Phase 3: Containment (15-30 minutes for CRITICAL)
 
-#### CRITICAL: Cross-Tenant Data Breach
+#### Goal
+Stop the incident from spreading, minimize damage
 
-**Immediate Actions** (< 15 minutes):
+#### Containment Actions by Incident Type
+
+**Data Breach / Tenant Isolation Failure**:
+```sql
+-- 1. Disable affected partner API key
+UPDATE api_partners 
+SET is_active = false 
+WHERE id = '<partner_id>';
+
+-- 2. Block IP at WAF (Vercel dashboard)
+-- Add IP to block list
+
+-- 3. Take database snapshot for forensics
+pg_dump bella_production > incident_snapshot_2026-06-17.sql
+
+-- 4. Verify RLS policies are enabled
+SELECT schemaname, tablename, policyname 
+FROM pg_policies 
+WHERE tablename IN ('orders', 'customers', 'payments');
+```
+
+**API Key Compromise**:
 ```typescript
-// 1. Block affected API key
-await supabase
-  .from('api_partners')
-  .update({ is_active: false, blocked_reason: 'Security incident SEC-XXX' })
-  .eq('api_key', compromisedApiKey);
-
-// 2. Revoke all sessions for affected partner
-await supabase.auth.admin.deleteUser(partnerUserId);
-
-// 3. Enable incident mode (extra logging)
-await supabase.rpc('enable_incident_mode', { incident_id: 'SEC-XXX' });
-
-// 4. Preserve audit logs
-await backupAuditLogs({
-  partner_id: affectedPartnerId,
-  date_range: [incidentStart, now()],
-  destination: 's3://bella-security/incidents/SEC-XXX/',
+// 1. Immediately invalidate compromised key
+await partnerService.updatePartner(partnerId, { 
+  is_active: false 
 });
+
+// 2. Generate new key
+const newKey = await partnerService.regenerateApiKey(partnerId);
+
+// 3. Email partner with new key
+await sendEmail({
+  to: partner.contact_email,
+  subject: 'URGENT: API Key Rotated Due to Security Incident',
+  body: `New key: ${newKey.substring(0, 15)}...`
+});
+
+// 4. Review audit logs for unauthorized access
+const logs = await supabase
+  .from('api_request_logs')
+  .select('*')
+  .eq('partner_id', partnerId)
+  .gte('created_at', incidentStartTime);
 ```
 
-**Containment Checklist**:
+**Denial of Service**:
+```typescript
+// 1. Identify attacking IP/partner
+const topRequesters = await getTopRequestVolume();
+
+// 2. Apply aggressive rate limit
+await redis.set(`rate_limit:${partnerId}`, 10);  // Reduce to 10 req/min
+
+// 3. Scale infrastructure if needed
+// (Vercel auto-scales, but monitor costs)
+
+// 4. Block IPs at edge if distributed attack
+// Vercel dashboard → WAF → Add block rule
 ```
-[ ] Affected API keys blocked
-[ ] Affected tenants notified (internal)
-[ ] Audit logs preserved
-[ ] Incident mode enabled
-[ ] Additional monitoring enabled
-[ ] Vulnerability patched (if known)
+
+**Injection Attack**:
+```typescript
+// 1. Already blocked by middleware (no containment needed)
+
+// 2. Verify middleware is active
+await testMiddleware();
+
+// 3. Review similar attempts
+const injectionAttempts = await supabase
+  .from('api_request_logs')
+  .select('*')
+  .eq('error_code', 'TENANT_INJECTION_ATTEMPT')
+  .gte('created_at', last_24_hours);
 ```
+
+#### Containment Checklist
+- [ ] Threat contained (attacker blocked)
+- [ ] No further data loss
+- [ ] System stability restored
+- [ ] Evidence preserved (logs, snapshots)
+- [ ] Incident Commander notified of containment
+
 
 ---
 
-#### HIGH: Tenant Injection Attempt
+### 3.4 Phase 4: Investigation (30 minutes - 2 hours)
 
-**Immediate Actions** (< 1 hour):
+#### Goal
+Understand root cause, determine scope of impact
+
+#### Investigation Steps
+
+**1. Timeline Reconstruction**
+```
+When did it start?
+  → Query audit logs for first anomaly
+  
+When was it detected?
+  → Check monitoring alert timestamp
+  
+When was it contained?
+  → Note containment action timestamp
+  
+Total exposure window = Detection - Start
+```
+
+**2. Attack Vector Analysis**
+```
+How did attacker gain access?
+  - Stolen API key? → Check GitHub, logs, partner reports
+  - Middleware bypass? → Review code changes
+  - RLS policy bug? → Test RLS policies
+  - Social engineering? → Interview admins
+```
+
+**3. Scope Assessment**
+```sql
+-- Which tenants were affected?
+SELECT DISTINCT tenant_id 
+FROM api_request_logs 
+WHERE partner_id = '<attacker_partner_id>' 
+  AND created_at BETWEEN '<start>' AND '<end>';
+
+-- What data was accessed?
+SELECT method, path, status_code, COUNT(*) as count
+FROM api_request_logs
+WHERE partner_id = '<attacker_partner_id>'
+  AND created_at BETWEEN '<start>' AND '<end>'
+GROUP BY method, path, status_code;
+
+-- Did attacker modify data? (look for POST/PATCH/DELETE)
+SELECT * FROM api_request_logs
+WHERE partner_id = '<attacker_partner_id>'
+  AND method IN ('POST', 'PATCH', 'DELETE')
+  AND status_code IN (200, 201);
+```
+
+**4. Evidence Collection**
+```bash
+# Collect audit logs
+pg_dump -t api_request_logs > incident_logs.sql
+
+# Collect system logs
+heroku logs --app bella-api --num 10000 > system_logs.txt
+
+# Collect monitoring data
+# Export Vercel analytics for incident window
+
+# Collect affected database records
+# Export affected orders/customers/payments
+```
+
+**5. Root Cause Determination**
+```
+Possible root causes:
+  - Code bug (middleware bypass)
+  - Configuration error (RLS disabled)
+  - Partner mistake (leaked key)
+  - Social engineering (fake partner account)
+  - Zero-day vulnerability
+
+Action: Document root cause in incident ticket
+```
+
+#### Investigation Checklist
+- [ ] Timeline documented
+- [ ] Attack vector identified
+- [ ] Scope quantified (X tenants, Y records)
+- [ ] Evidence collected and preserved
+- [ ] Root cause determined
+
+
+---
+
+### 3.5 Phase 5: Eradication (2-4 hours)
+
+#### Goal
+Remove vulnerability, prevent recurrence
+
+#### Eradication Actions
+
+**Code Fixes**
 ```typescript
-// 1. Log security incident
-await logSecurityIncident({
-  type: 'TENANT_INJECTION_ATTEMPT',
-  partner_id: req.partner.partner_id,
-  attempted_tenant: req.body.tenant_id,
-  actual_tenant: req.partner.tenant_id,
-  ip_address: req.ip,
-  user_agent: req.headers['user-agent'],
-});
+// Example: Fix middleware bypass bug
+// src/lib/middleware/api-key.middleware.ts
 
-// 2. Increase monitoring for this partner
-await setPartnerMonitoringLevel(partnerId, 'HIGH');
-
-// 3. Review partner's recent activity
-const recentActivity = await getPartnerActivity({
-  partner_id: partnerId,
-  time_range: '24h',
-});
-
-// 4. Block partner if multiple attempts detected
-if (injectionAttempts > 3) {
-  await blockPartner(partnerId, 'Multiple tenant injection attempts');
+export async function withAPIKey(req: NextRequest) {
+  const apiKey = req.headers.get('x-api-key');
+  
+  // Bug: Didn't validate API key format first
+  // Fix: Add format validation
+  if (!apiKey || !apiKey.match(/^pk_(live|test)_[a-zA-Z0-9]{32}$/)) {
+    throw new APIError('INVALID_API_KEY_FORMAT');
+  }
+  
+  // ... rest of validation
 }
 ```
 
----
+**Configuration Changes**
+```sql
+-- Example: Re-enable RLS on table
+ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
 
-### 3.4 Investigation Phase
+-- Verify all tables have RLS
+SELECT schemaname, tablename, rowsecurity
+FROM pg_tables
+WHERE schemaname = 'public'
+  AND tablename IN ('orders', 'customers', 'payments', 'employees');
+```
 
-**Evidence Collection**:
-1. **Audit Logs**:
-   ```sql
-   SELECT * FROM api_request_logs
-   WHERE partner_id = 'affected-partner'
-     AND created_at BETWEEN 'incident-start' AND 'incident-end'
-   ORDER BY created_at ASC;
-   ```
+**Deployment**
+```bash
+# 1. Test fix locally
+npm run test:security
 
-2. **Database Queries**:
-   ```sql
-   -- Check if cross-tenant access occurred
-   SELECT 
-     partner_id,
-     tenant_id,
-     endpoint,
-     response_status,
-     COUNT(*) as request_count
-   FROM api_request_logs
-   WHERE created_at > 'incident-start'
-   GROUP BY partner_id, tenant_id, endpoint, response_status
-   HAVING tenant_id != (
-     SELECT tenant_id FROM api_partners WHERE id = partner_id
-   );
-   ```
+# 2. Deploy to staging
+vercel --prod=false
 
-3. **System Logs**:
-   - Application logs (errors, warnings)
-   - Database slow query logs
-   - Web server access logs
+# 3. Verify fix in staging
+curl https://staging.bella.vn/api/v1/orders \
+  -H "X-API-Key: test_key"
 
-**Analysis Questions**:
-- What was the attack vector?
-- How did attacker bypass security?
-- What data was accessed?
-- How long was the vulnerability exploited?
-- Are there other affected partners?
+# 4. Deploy to production
+vercel --prod
 
----
+# 5. Verify fix in production
+npm run test:smoke
+```
 
-### 3.5 Eradication Phase
+**Partner Actions**
+```
+If partner key was compromised:
+  1. Partner rotates key (done in Containment)
+  2. Partner audits their systems (where was key leaked?)
+  3. Partner updates key in their integration
+  4. Partner confirms new key works
+```
 
-**Steps**:
-1. **Fix Vulnerability**:
-   - Deploy security patch
-   - Update RLS policies
-   - Enhance validation logic
-
-2. **Remove Backdoors**:
-   - Check for unauthorized API keys
-   - Review scope assignments
-   - Audit admin accounts
-
-3. **Update Security Controls**:
-   - Add detection rules
-   - Enhance monitoring
-   - Update firewall rules
+#### Eradication Checklist
+- [ ] Vulnerability patched
+- [ ] Fix deployed to production
+- [ ] Fix verified (automated tests passing)
+- [ ] No regression (smoke tests passing)
+- [ ] Partner remediation complete (if applicable)
 
 ---
 
-### 3.6 Recovery Phase
+### 3.6 Phase 6: Recovery (4-24 hours)
 
-**Steps**:
-1. **Restore Service**:
-   - Re-enable affected partners (if safe)
-   - Verify functionality
-   - Monitor closely
+#### Goal
+Restore normal operations, verify system integrity
 
-2. **Verify Security**:
-   - Run security tests
-   - Verify logs are clean
-   - Confirm vulnerability fixed
+#### Recovery Actions
 
-3. **Gradual Rollout**:
-   - Start with sandbox tenants
-   - Monitor for 24 hours
-   - Gradually enable production
+**1. Re-enable Partner (if applicable)**
+```sql
+-- After partner confirms new key works and systems secure
+UPDATE api_partners 
+SET is_active = true 
+WHERE id = '<partner_id>';
+```
+
+**2. Verify System Health**
+```bash
+# Run full test suite
+npm run test
+
+# Check monitoring dashboards
+# - Error rate < 1%
+# - Latency < 500ms p95
+# - No security alerts
+
+# Verify RLS policies
+npm run test:rls
+```
+
+**3. Monitor for 24 Hours**
+```
+Watch for:
+  - Unusual request patterns
+  - High error rates
+  - Similar attack attempts
+  - Customer reports
+```
+
+**4. Update Documentation**
+```
+Update:
+  - Incident response plan (lessons learned)
+  - Runbooks (new procedures)
+  - Security documentation
+  - Partner onboarding guide (if needed)
+```
+
+#### Recovery Checklist
+- [ ] System fully operational
+- [ ] All tests passing
+- [ ] Monitoring normal
+- [ ] Partner service restored
+- [ ] 24-hour observation complete
+
 
 ---
 
@@ -375,300 +629,731 @@ if (injectionAttempts > 3) {
 
 ### 4.1 Internal Communication
 
-**Incident Declared** (Immediately):
+#### During Active Incident
+
+**Slack Channel**: `#incident-<timestamp>`
+- Real-time updates every **15 minutes** (CRITICAL), **30 minutes** (HIGH)
+- Status format:
+  ```
+  [HH:MM] UPDATE: <what changed>
+  Current status: <investigating | contained | resolved>
+  Next action: <what we're doing next>
+  ETA: <when next update>
+  ```
+
+**Email Updates**:
+- Leadership team (CTO, CEO): Every **30 minutes** (CRITICAL), **2 hours** (HIGH)
+- All engineering: Every **2 hours** or at major milestones
+
+#### Example Update
 ```
-TO: incident-response-team@bella.vn
-SUBJECT: [CRITICAL] Security Incident SEC-XXX Declared
+[14:30] CRITICAL INCIDENT UPDATE
+Incident: SECURITY-123 - Tenant Isolation Breach
+Status: CONTAINED
 
-Incident: Cross-tenant data access detected
-Severity: CRITICAL
-Commander: [Name]
-Status: Containment in progress
+What happened:
+- Partner A accessed Partner B's orders via API
+- Attack vector: Middleware bypass bug
+- Exposure: 2026-06-17 12:00-14:15 (2h 15m)
 
-Affected:
-- Partner: [Partner Name]
-- Tenants: [Count]
+Actions taken:
+- Disabled Partner A API key (14:15)
+- Deployed middleware fix (14:25)
+- Verified fix with automated tests (14:28)
 
-Next Update: 30 minutes
+Impact:
+- 3 tenants affected
+- 47 orders accessed (read-only, no modifications)
+- No PII exposed (orders contain only IDs)
+
+Next steps:
+- Complete forensic analysis (ETA: 16:00)
+- Notify affected tenants (ETA: 17:00)
+- Post-mortem scheduled for 2026-06-18 10:00
+
+Next update: 15:00
 ```
-
-**Status Updates** (Every 30 minutes for CRITICAL, every 2 hours for HIGH):
-```
-SUBJECT: [SEC-XXX] Update #2
-
-Current Status: Investigation
-Actions Taken:
-- API key blocked
-- Audit logs preserved
-- Vulnerability identified
-
-Next Steps:
-- Deploy security patch
-- Verify no other partners affected
-
-Next Update: 30 minutes
-```
-
----
 
 ### 4.2 External Communication
 
-#### To Affected Customers (Within 24 hours)
+#### Customer Notification
 
+**Timeline**:
+- **CRITICAL (data breach)**: Within **24 hours** of confirmation
+- **HIGH (attempted breach)**: Within **48 hours** if customer data at risk
+- **MEDIUM/LOW**: No notification unless customer impacted
+
+**Approval Process**:
+1. Communications Lead drafts message
+2. Legal reviews (GDPR compliance)
+3. CTO approves
+4. Send via email + status page
+
+**Template**:
 ```
-SUBJECT: Security Notice - Action Required
+Subject: Security Incident Notification - Bella API Gateway
 
 Dear [Customer Name],
 
-We are writing to inform you of a security incident that may have 
-affected your Bella ERP account.
+We are writing to inform you of a security incident that may have affected 
+your data in Bella ERP's API Gateway.
 
-WHAT HAPPENED:
-On [Date], we detected unauthorized access to [describe data].
+What happened:
+[Brief description without technical jargon]
 
-WHAT DATA WAS AFFECTED:
-[List specific data: orders, customers, etc.]
+When:
+Start: [Date/Time]
+Detected: [Date/Time]
+Contained: [Date/Time]
 
-WHAT WE'RE DOING:
-- Blocked unauthorized access immediately
-- Conducted thorough security review
-- Implemented additional security measures
+Impact to your account:
+[Specific: "47 orders were accessed" not "some data may have been accessed"]
 
-WHAT YOU SHOULD DO:
-- Review your recent activity for anomalies
-- Rotate your API keys (instructions attached)
-- Contact us if you have questions: security@bella.vn
+What we've done:
+1. [Containment action]
+2. [Fix deployed]
+3. [Verification completed]
 
-We sincerely apologize for this incident and are committed to 
-protecting your data.
+What you should do:
+[Specific actions, if any: "Review orders X, Y, Z for accuracy"]
+
+Our commitment:
+We take security seriously. We have [new safeguard] to prevent this in the future.
+
+Questions?
+Contact: security@bella.vn
+Reference: SECURITY-123
 
 Sincerely,
-Bella ERP Security Team
+Bella Security Team
 ```
 
----
 
-#### Public Status Page (If service affected)
+#### Regulatory Notification (GDPR)
 
+**Requirement**: Notify authorities within **72 hours** if personal data breach
+
+**Trigger**: Any of:
+- Customer PII accessed without authorization
+- Customer data modified or deleted
+- Customer data exfiltrated
+
+**Process**:
+1. Legal determines if notification required
+2. Draft notification with:
+   - Nature of breach
+   - Categories of data affected
+   - Number of data subjects
+   - Likely consequences
+   - Measures taken
+3. Submit to Data Protection Authority
+4. Keep copy for records (7 years)
+
+**Contact**: Vietnam Data Protection Authority (or relevant EU authority if applicable)
+
+#### Public Disclosure
+
+**When**:
+- If incident is public knowledge (media, social media)
+- If large-scale breach (>1000 customers)
+- If requested by authorities
+
+**Where**:
+- Company blog (blog.bella.vn)
+- Status page (status.bella.vn)
+- Social media (Twitter, LinkedIn)
+
+**Tone**:
+- Transparent (what happened)
+- Accountable (we made a mistake)
+- Reassuring (we fixed it)
+- Forward-looking (prevention)
+
+### 4.3 Status Page Updates
+
+**URL**: https://status.bella.vn
+
+**During Incident**:
 ```
-⚠️ Investigating - API Gateway Performance Issues
+[2026-06-17 14:30 UTC+7] CRITICAL - API Gateway Security Incident
+We are investigating a security incident affecting the API Gateway.
+API requests may be temporarily blocked while we investigate.
+Updates every 30 minutes.
 
-[2026-06-17 10:30 UTC] We are investigating reports of slow API 
-response times. Our team is working to identify the root cause.
+[2026-06-17 15:00 UTC+7] UPDATE - Incident Contained
+The security vulnerability has been patched and service is being restored.
+We are monitoring for any further issues.
 
-[2026-06-17 11:00 UTC] We have identified the issue and are 
-implementing a fix. Service should be restored within 30 minutes.
-
-[2026-06-17 11:30 UTC] Service has been restored. We will continue 
-to monitor closely.
+[2026-06-17 16:00 UTC+7] RESOLVED - Service Fully Restored
+All systems are operational. We will publish a detailed post-mortem within 48 hours.
 ```
 
----
-
-### 4.3 Regulatory Notification (GDPR)
-
-**Timeline**: Within 72 hours of discovery
-
-**Notification Template** (to Data Protection Authority):
+**After Resolution**:
 ```
-Notification of Personal Data Breach
+[2026-06-19 10:00 UTC+7] Post-Mortem: API Gateway Security Incident (2026-06-17)
 
-1. Nature of Breach:
-   [Description of what happened]
+Summary: [Brief description]
+Timeline: [Key events]
+Root Cause: [Technical explanation]
+Impact: [Quantified impact]
+Prevention: [What we're doing to prevent recurrence]
 
-2. Categories and Number of Data Subjects:
-   [e.g., 50 customers, 5 employees]
-
-3. Data Categories Affected:
-   [e.g., Names, email addresses, order history]
-
-4. Likely Consequences:
-   [Risk assessment]
-
-5. Measures Taken:
-   [Containment and mitigation actions]
-
-6. Contact:
-   Data Protection Officer: dpo@bella.vn
+Full report: [Link to blog post]
 ```
 
 ---
 
 ## 5. Post-Incident Activities
 
-### 5.1 Post-Mortem (Within 5 business days)
+### 5.1 Post-Mortem Meeting
 
-**Template**:
+**When**: Within **48 hours** of resolution
+
+**Attendees**:
+- Incident Commander
+- Response team members
+- CTO
+- Product Manager
+- Anyone who wants to learn (open invitation)
+
+**Agenda** (1 hour):
+1. **Timeline Review** (10 min): What happened when
+2. **Root Cause Analysis** (20 min): Why it happened
+3. **What Went Well** (10 min): Celebrate successes
+4. **What Went Wrong** (10 min): Identify gaps
+5. **Action Items** (10 min): Concrete next steps
+
+**Rules**:
+- ✅ Blameless (focus on systems, not people)
+- ✅ Action-oriented (every problem → action item)
+- ✅ Documented (notes published to team)
+
+
+### 5.2 Post-Mortem Report Template
 
 ```markdown
-# Post-Mortem: SEC-XXX
+# Incident Post-Mortem: <Title>
 
-## Incident Summary
+**Incident ID**: SECURITY-XXX  
 **Date**: 2026-06-17  
 **Severity**: CRITICAL  
-**Duration**: 2 hours  
-**Impact**: 5 tenants affected
+**Duration**: 2h 15m (12:00-14:15)  
+**Impact**: 3 tenants, 47 orders accessed  
 
-## Timeline
-- 10:30 - Incident detected (automated alert)
-- 10:35 - Incident commander notified
-- 10:40 - API key blocked
-- 11:00 - Vulnerability identified
-- 11:30 - Patch deployed
-- 12:00 - Service verified
-- 12:30 - Incident resolved
+## Summary
+[2-3 sentence summary for executives]
+
+## Timeline (all times UTC+7)
+| Time | Event |
+|------|-------|
+| 12:00 | Incident begins (undetected) |
+| 14:10 | Monitoring alert: High 404 rate |
+| 14:12 | Engineer investigates logs |
+| 14:15 | Incident confirmed, partner disabled |
+| 14:20 | Fix identified (middleware bug) |
+| 14:25 | Fix deployed to production |
+| 14:28 | Fix verified with tests |
+| 14:30 | Incident contained |
+| 16:00 | Forensic analysis complete |
+| 17:00 | Customer notifications sent |
+| 18:00 | Incident resolved |
 
 ## Root Cause
-[Detailed technical explanation]
+[Technical explanation with code examples]
 
-## What Went Well
-- Fast detection (5 minutes)
-- Immediate containment
-- Clear communication
+## Impact
+- **Customers affected**: 3 tenants (Bella Spa HCM, Bella Spa Hanoi, Bella Spa Da Nang)
+- **Data accessed**: 47 orders (read-only, no modifications)
+- **PII exposed**: None (orders contain only UUIDs)
+- **Financial loss**: $0 (no refunds/credits)
+- **Reputation**: Low (proactive disclosure)
 
-## What Went Wrong
-- Vulnerability existed in production for 3 days
-- No automated tests caught this case
-- Audit logs delayed by 15 minutes
+## Detection
+- **Method**: Automated monitoring (high 404 rate)
+- **Time to detect**: 2h 10m (not acceptable for CRITICAL)
+- **Why delayed**: Alert threshold too high (should be 10 404s/min, was 50)
 
-## Action Items
-1. [JIRA-123] Add test case for this scenario - **P0**
-2. [JIRA-124] Improve log streaming latency - **P1**
-3. [JIRA-125] Enhance pre-production security scanning - **P1**
+## Response
+### What Went Well
+- ✅ Containment within 15 minutes of detection (met SLA)
+- ✅ Fix deployed in 10 minutes (excellent)
+- ✅ Zero false moves (every action was correct)
+- ✅ Clear communication (Slack updates every 15 min)
+
+### What Went Wrong
+- ❌ Detection took too long (2h 10m)
+- ❌ No security tests for this scenario
+- ❌ Post-deployment verification missed the bug
+
+## Prevention
+### Immediate Actions (completed)
+- [x] Deploy middleware fix
+- [x] Add 15 new security tests for similar scenarios
+- [x] Lower alert threshold (50 → 10 404s/min)
+
+### Short-term Actions (next 2 weeks)
+- [ ] Add pre-deployment security checklist
+- [ ] Require 2 reviewers for middleware changes
+- [ ] Add canary deployment (5% traffic → 100%)
+
+### Long-term Actions (next quarter)
+- [ ] Implement request signing (HMAC) for integrity
+- [ ] Add anomaly detection (ML-based)
+- [ ] Quarterly security exercises
 
 ## Lessons Learned
-- Need better input validation at multiple layers
-- Automated security tests prevented worse outcome
-- Incident response plan worked well
+1. **Detection is as important as prevention**: We had good prevention, but detection was slow
+2. **Automated tests are not enough**: Need manual security review for critical code
+3. **Alert fatigue is real**: High thresholds make us miss incidents
+
+## Action Items
+| ID | Owner | Description | Due Date | Status |
+|----|-------|-------------|----------|--------|
+| A1 | @engineer | Lower 404 alert threshold | 2026-06-18 | ✅ Done |
+| A2 | @security | Add 15 new security tests | 2026-06-20 | 🟡 In Progress |
+| A3 | @devops | Implement canary deployments | 2026-07-01 | ⬜ Planned |
+| A4 | @cto | Quarterly security exercises | 2026-09-01 | ⬜ Planned |
+
+## Appendix
+- Incident ticket: SECURITY-123
+- Code fix: PR #456
+- Customer communications: [Link]
+- Monitoring dashboards: [Link]
 ```
 
----
-
-### 5.2 Security Enhancements
-
-**Mandatory Actions**:
-```
-[ ] Add test case to prevent regression
-[ ] Update threat model
-[ ] Update security documentation
-[ ] Brief team on lessons learned
-[ ] Schedule follow-up review in 30 days
-```
-
-**Optional Actions**:
-- Conduct tabletop exercise for similar scenario
-- Update monitoring thresholds
-- Enhance automated alerts
-
----
 
 ### 5.3 Metrics & Reporting
 
-**Key Metrics**:
-- **MTTD** (Mean Time To Detect): Target < 5 minutes
-- **MTTR** (Mean Time To Resolve): Target < 2 hours for CRITICAL
-- **False Positive Rate**: Target < 5%
-- **Incidents per Month**: Track trend
+#### Incident Metrics (tracked monthly)
 
-**Monthly Report**:
+| Metric | Definition | Target | Current |
+|--------|------------|--------|---------|
+| **MTTD** | Mean Time To Detect | < 15 min | TBD |
+| **MTTR** | Mean Time To Respond | < 30 min | TBD |
+| **MTTC** | Mean Time To Contain | < 1 hour | TBD |
+| **MTTR** | Mean Time To Resolve | < 4 hours (CRITICAL) | TBD |
+| **Incident Count** | Total incidents per month | Trend down | TBD |
+| **False Positive Rate** | Alerts that weren't real incidents | < 20% | TBD |
+
+#### Monthly Security Report
+
+**Recipients**: CTO, Security Team, Engineering Leads
+
+**Contents**:
+- Total incidents by severity
+- Response time metrics
+- Top attack vectors
+- Partner security issues
+- Action items from post-mortems
+- Security testing coverage
+
+**Example**:
 ```
-Security Incident Report - June 2026
+Bella ERP Security Report - June 2026
 
-Total Incidents: 3
-- CRITICAL: 0
-- HIGH: 1 (Tenant injection attempt - blocked)
-- MEDIUM: 2 (Rate limit exceeded)
-- LOW: 0
+Incidents:
+  CRITICAL: 1 (tenant isolation breach - resolved)
+  HIGH: 2 (API key leaks - keys rotated)
+  MEDIUM: 5 (anomalous traffic - investigated)
+  LOW: 12 (invalid API key attempts - routine)
 
-MTTD: 3.5 minutes (Target: < 5 min) ✅
-MTTR: 45 minutes (Target: < 2 hours) ✅
+Metrics:
+  MTTD: 22 minutes (target: 15 min) ⚠️
+  MTTR: 18 minutes (target: 30 min) ✅
+  MTTC: 45 minutes (target: 60 min) ✅
 
 Top Threats:
-1. Invalid API key attempts (50 occurrences)
-2. Rate limit exceeded (20 occurrences)
-3. Tenant injection attempts (1 occurrence)
+  1. Tenant injection attempts: 47 (all blocked)
+  2. Invalid API keys: 234 (rate limited)
+  3. High 404 rate: 12 partners (investigated, normal)
 
-Actions Taken:
-- Enhanced monitoring for tenant injection
-- Blocked 2 abusive API keys
-- Updated security documentation
+Actions Completed:
+  - Lowered 404 alert threshold (A1)
+  - Added 15 new security tests (A2)
+  - Updated incident response plan (A5)
+
+Actions In Progress:
+  - Canary deployments (A3 - 70% complete)
+  - Quarterly security exercises (A4 - planning)
 ```
 
 ---
 
 ## 6. Training & Exercises
 
-### 6.1 Tabletop Exercises
+### 6.1 Training Requirements
+
+#### New Engineers (Onboarding)
+- **Week 1**: Read incident response plan
+- **Week 2**: Shadow on-call engineer
+- **Week 3**: Participate in tabletop exercise
+- **Week 4**: Join on-call rotation
+
+#### All Engineers (Annual)
+- **Security awareness training**: 2 hours/year
+- **Incident response refresher**: 1 hour/year
+- **Table-top exercise**: 2/year (see below)
+
+### 6.2 Tabletop Exercises
 
 **Frequency**: Quarterly
 
-**Scenario Examples**:
-1. **Cross-Tenant Data Breach**: Partner A accesses Partner B data
-2. **API Key Compromise**: Leaked API key on GitHub
-3. **DDoS Attack**: API unavailable due to traffic flood
-4. **Insider Threat**: Rogue employee steals data
+**Duration**: 2 hours
 
-**Exercise Format**:
-- 90 minutes
-- All response team members
-- Walk through scenario step-by-step
-- Identify gaps in procedures
-- Update documentation
+**Attendees**: Response team + volunteers
 
----
+**Format**:
+1. Facilitator presents scenario (30 min)
+2. Team discusses response (60 min)
+3. Debrief and lessons learned (30 min)
 
-### 6.2 Security Training
-
-**Annual Training** (All Engineers):
-- OWASP API Security Top 10
-- Secure coding practices
-- Incident response procedures
-- Data protection regulations (GDPR)
-
-**Quarterly Refreshers**:
-- Recent incidents (anonymized)
-- New threats
-- Updated procedures
-
----
-
-## 7. Appendices
-
-### Appendix A: Contact List
-
-| Role | Name | Phone | Email |
-|------|------|-------|-------|
-| Incident Commander | [CTO Name] | +84-XXX-XXX-XXX | cto@bella.vn |
-| Technical Lead | [Team Lead] | +84-XXX-XXX-XXX | api-team@bella.vn |
-| Security Engineer | [Engineer] | +84-XXX-XXX-XXX | security@bella.vn |
-| Legal Counsel | [Lawyer] | +84-XXX-XXX-XXX | legal@bella.vn |
-
-### Appendix B: Tool Access
-
-| Tool | URL | Purpose |
-|------|-----|---------|
-| Monitoring | https://bella.datadog.com | System metrics |
-| Logs | https://bella.supabase.com/logs | Audit logs |
-| PagerDuty | https://bella.pagerduty.com | On-call alerts |
-| Status Page | https://status.bella.vn | Public updates |
-
-### Appendix C: Escalation Matrix
-
+#### Example Scenario 1: Tenant Isolation Breach
 ```
-Severity: LOW
-↓ (24 hours no resolution)
-Severity: MEDIUM
-↓ (4 hours no resolution)
-Severity: HIGH
-↓ (1 hour no resolution)
-Severity: CRITICAL
-↓ (Immediate)
-Executive Team + Board
+Scenario:
+It's Monday 2:00 PM. A customer (Bella Spa Hanoi) emails support:
+"We just saw orders from another business in our dashboard. 
+This is a serious privacy issue!"
+
+Your task:
+1. How do you verify this is real?
+2. What containment actions do you take?
+3. Who do you notify and when?
+4. How do you determine scope of breach?
+5. What communication do you send to customers?
+
+Twist (revealed at 30 min):
+The "other business" orders are actually from a franchise location
+that was misconfigured with wrong tenant_id. It's NOT a security breach,
+but a data migration error.
+
+Questions:
+- How does this change your response?
+- Should you still notify customers?
+- What could have prevented this confusion?
 ```
 
+
+#### Example Scenario 2: API Key Leak
+```
+Scenario:
+It's Friday 5:00 PM. GitHub sends automated alert:
+"API key detected in public repository: partner-integration-demo"
+The repository belongs to one of your partners.
+
+Your task:
+1. What is the severity? (CRITICAL/HIGH/MEDIUM/LOW)
+2. What immediate actions do you take?
+3. The partner is on vacation and unreachable. Now what?
+4. How do you verify if the key was used maliciously?
+5. When can you re-enable the partner?
+
+Discussion points:
+- Should we automatically rotate keys when detected in GitHub?
+- Should we require partner key rotation every 90 days?
+- How can we help partners keep keys secure?
+```
+
+#### Example Scenario 3: DDoS Attack
+```
+Scenario:
+It's Wednesday 10:00 AM. PagerDuty alerts:
+"API Gateway error rate: 45% (threshold: 5%)"
+"API Gateway latency: 8000ms p95 (threshold: 500ms)"
+
+You check logs and see:
+- 50,000 requests/minute from 1,000 different IPs
+- All requests to /api/v1/orders endpoint
+- Valid API keys from 3 different partners
+- Requests are simple (no complex queries)
+
+Your task:
+1. Is this malicious or legitimate traffic spike?
+2. What containment actions do you take?
+3. How do you determine which partners are affected?
+4. When do you scale vs. rate limit vs. block?
+5. How do you communicate with partners?
+
+Twist (revealed at 45 min):
+One of the partners is running a "flash sale" and legitimately
+has 50x traffic. Their integration has a bug causing retries.
+
+Questions:
+- How could we have prevented this?
+- Should we require partners to notify us before major events?
+- What rate limit tier should this partner have?
+```
+
+### 6.3 Continuous Improvement
+
+#### After Each Exercise
+- Document lessons learned
+- Update runbooks with new procedures
+- Add test scenarios to automated suite
+- Update this IRP if gaps found
+
+#### After Each Real Incident
+- Mandatory post-mortem within 48 hours
+- Share learnings with entire team
+- Update relevant documentation
+- Add regression tests
+- Consider if new monitoring needed
+
+#### Quarterly Review
+- Review all incidents from past quarter
+- Identify trends (common attack vectors)
+- Assess if SLAs are realistic
+- Update threat model
+- Adjust alert thresholds based on data
+
 ---
 
-**Document Owner**: Security Team  
-**Approved By**: CTO  
-**Last Tested**: [Pending first tabletop exercise]  
-**Next Review**: 2026-09-17
+## 7. Appendix
+
+### 7.1 Quick Reference - Incident Severity
+
+```
+CRITICAL = Data breach OR Tenant isolation failure OR Total outage
+  → Response: 15 minutes
+  → Notify: CTO + CEO + Legal
+  → Customer: Notify within 24 hours
+
+HIGH = API key compromise OR Partial outage OR Active attack
+  → Response: 1 hour
+  → Notify: CTO
+  → Customer: Notify if data at risk
+
+MEDIUM = Failed attacks OR Anomalies OR Policy violations
+  → Response: 4 hours
+  → Notify: Security Lead
+  → Customer: No notification
+
+LOW = Routine events OR Minor bugs
+  → Response: 24 hours
+  → Notify: On-call engineer
+  → Customer: No notification
+```
+
+### 7.2 Quick Reference - Containment Actions
+
+```
+Tenant Isolation Breach:
+  1. Disable partner API key
+  2. Block IP at WAF
+  3. Take DB snapshot
+  4. Verify RLS enabled
+
+API Key Compromise:
+  1. Invalidate key
+  2. Generate new key
+  3. Email partner
+  4. Review audit logs
+
+Denial of Service:
+  1. Identify attacker
+  2. Apply rate limit
+  3. Scale if needed
+  4. Block IPs at edge
+
+Injection Attack:
+  1. Already blocked by middleware
+  2. Verify middleware active
+  3. Review similar attempts
+  4. No further action needed
+```
+
+
+### 7.3 Communication Templates
+
+#### Internal Alert (Slack)
+```
+🚨 CRITICAL INCIDENT 🚨
+Incident: SECURITY-123
+Type: Tenant Isolation Breach
+Status: INVESTIGATING
+Started: 2026-06-17 14:15
+
+Summary: Partner A accessed Partner B's orders
+
+Impact:
+- 3 tenants affected
+- 47 orders accessed
+- No modifications detected
+
+Incident Commander: @jane
+War room: #incident-20260617-1415
+
+Action: Join war room if you can help
+Next update: 14:30 (15 minutes)
+```
+
+#### Customer Email (Data Breach)
+```
+Subject: Security Notification - Bella ERP API Gateway
+
+Dear [Customer],
+
+We are writing to inform you of a security incident that affected your 
+Bella ERP account.
+
+WHAT HAPPENED
+On June 17, 2026 between 12:00-14:15 (2h 15m), a partner integration 
+accessed data from your account due to a software bug in our API Gateway.
+
+WHAT DATA WAS AFFECTED
+- 47 orders (order ID, date, status, total amount)
+- No customer names, phone numbers, or addresses were accessed
+- No payment information was accessed
+
+WHAT WE'VE DONE
+- We detected and fixed the issue within 15 minutes
+- We disabled the partner's access immediately
+- We verified no data was modified or deleted
+- We added additional security safeguards
+
+WHAT YOU SHOULD DO
+- No action required from you
+- Your data is secure and services are operating normally
+- If you notice any discrepancies, please contact us
+
+We sincerely apologize for this incident. Security is our top priority, 
+and we are taking additional measures to prevent this from happening again.
+
+Questions? Reply to this email or contact security@bella.vn
+Reference: SECURITY-123
+
+Bella Security Team
+```
+
+#### Partner Email (API Key Compromised)
+```
+Subject: URGENT - Your Bella API Key Has Been Rotated
+
+Dear Partner,
+
+We detected that your Bella API key may have been exposed in a public 
+GitHub repository. As a precaution, we have immediately rotated your 
+key to protect your account.
+
+OLD KEY (INVALIDATED):
+pk_live_abc***************************
+
+NEW KEY:
+pk_live_xyz123...456 (see secure portal for full key)
+
+ACTION REQUIRED:
+1. Log in to https://admin.bella.vn/partners/api-keys
+2. Copy your new API key
+3. Update your integration
+4. Test your integration
+5. Confirm working by replying to this email
+
+Your old key will stop working in 1 hour. Please update immediately 
+to avoid service interruption.
+
+SECURITY RECOMMENDATIONS:
+- Never commit API keys to git repositories
+- Use environment variables (.env files)
+- Add .env to .gitignore
+- Consider using a secrets manager (AWS Secrets Manager, HashiCorp Vault)
+
+Questions? Contact support@bella.vn
+Reference: SECURITY-125
+
+Bella API Team
+```
+
+### 7.4 Tool Access
+
+| Tool | Purpose | Access |
+|------|---------|--------|
+| **PagerDuty** | Alerts & on-call | All engineers |
+| **Slack #security-incidents** | Coordination | All staff |
+| **Jira (SECURITY-* tickets)** | Tracking | Security team + leads |
+| **Supabase Dashboard** | Database access | DevOps + on-call |
+| **Vercel Dashboard** | Deployment + WAF | DevOps + on-call |
+| **CloudWatch** | Logs & monitoring | DevOps + on-call |
+| **GitHub** | Code repository | All engineers |
+| **Status Page Admin** | Public updates | Communications lead |
+
+### 7.5 Runbook Links
+
+- **API Key Rotation**: [Link to runbook]
+- **RLS Policy Verification**: [Link to runbook]
+- **Database Snapshot**: [Link to runbook]
+- **WAF Configuration**: [Link to runbook]
+- **Emergency Deployment**: [Link to runbook]
+- **Customer Notification**: [Link to template]
+
+---
+
+## Document Control
+
+**Version**: 1.0  
+**Effective Date**: 2026-06-17  
+**Next Review**: 2026-09-17 (Quarterly)  
+**Owner**: Security Team  
+**Approvers**: CTO, Legal Counsel  
+
+**Revision History**:
+
+| Version | Date | Author | Changes |
+|---------|------|--------|---------|
+| 1.0 | 2026-06-17 | Security Team | Initial version - Phase 1 launch |
+
+**Distribution**:
+- All engineering team members
+- On-call engineers
+- CTO, CEO
+- Legal counsel
+- Customer success team
+
+**Classification**: Internal - Security Team
+
+**Acknowledgment**:
+All engineers must acknowledge reading this plan during onboarding.
+
+---
+
+## Emergency Contact Card
+
+**Print and keep at desk or save to phone**
+
+```
+┌─────────────────────────────────────────────────┐
+│        BELLA ERP SECURITY INCIDENT              │
+│           EMERGENCY CONTACTS                    │
+├─────────────────────────────────────────────────┤
+│ ON-CALL ENGINEER                                │
+│   PagerDuty: +84-xxx-xxx-xxxx                  │
+│   Slack: #security-incidents                    │
+│                                                 │
+│ SECURITY LEAD                                   │
+│   Email: security@bella.vn                      │
+│   Phone: +84-xxx-xxx-xxxx                      │
+│                                                 │
+│ CTO                                             │
+│   Email: cto@bella.vn                          │
+│   Phone: +84-xxx-xxx-xxxx                      │
+│                                                 │
+│ INCIDENT SEVERITY:                              │
+│   🔴 CRITICAL: Data breach, isolation failure   │
+│   🟠 HIGH: Key compromise, active attack        │
+│   🟡 MEDIUM: Failed attacks, anomalies          │
+│   🟢 LOW: Routine events                        │
+│                                                 │
+│ FIRST STEPS:                                    │
+│   1. Don't panic                                │
+│   2. Alert on-call engineer                     │
+│   3. Create incident ticket                     │
+│   4. Join #security-incidents                   │
+│   5. Follow IRP procedures                      │
+│                                                 │
+│ INCIDENT RESPONSE PLAN:                         │
+│   docs/security/INCIDENT_RESPONSE_PLAN.md       │
+└─────────────────────────────────────────────────┘
+```
+
+---
+
+**END OF INCIDENT RESPONSE PLAN**
+
