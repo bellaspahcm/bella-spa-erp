@@ -14,6 +14,7 @@ import {
   normalizePackageMaterialRows,
 } from '@/lib/business-rules/inventory';
 import { buildInventoryConsumedOutboxEvent } from '@/lib/business-rules/accounting-outbox';
+import { InventoryError } from '@/core/lib/errors';
 import type { Database } from '@/types/database.types';
 
 type InventoryItemInsert = Database['public']['Tables']['inventory_items']['Insert'];
@@ -174,7 +175,7 @@ async function deleteInventoryItemById(
 
 export async function getInventoryItems() {
   const { supabase, tenantId } = await getSupabaseWithTenant();
-  if (!tenantId) throw new Error(INVENTORY_TENANT_ACCESS_ERROR);
+  if (!tenantId) throw new InventoryError(INVENTORY_TENANT_ACCESS_ERROR, 'INVENTORY_TENANT_ACCESS_ERROR');
 
   const { data, error } = await supabase
     .from('inventory_items')
@@ -182,14 +183,14 @@ export async function getInventoryItems() {
     .eq('tenant_id', tenantId)
     .order('name');
   if (error) {
-    throw new Error(`Failed to fetch inventory items: ${error.message}`);
+    throw new InventoryError(`Failed to fetch inventory items: ${error.message}`, 'INVENTORY_FETCH_FAILED', { operation: 'getInventoryItems' });
   }
   return data || [];
 }
 
 export async function getInventoryLogs(limit = 50) {
   const { supabase, tenantId } = await getSupabaseWithTenant();
-  if (!tenantId) throw new Error(INVENTORY_TENANT_ACCESS_ERROR);
+  if (!tenantId) throw new InventoryError(INVENTORY_TENANT_ACCESS_ERROR, 'INVENTORY_TENANT_ACCESS_ERROR');
 
   const { data, error } = await supabase
     .from('inventory_logs')
@@ -201,14 +202,14 @@ export async function getInventoryLogs(limit = 50) {
     .order('created_at', { ascending: false })
     .limit(limit);
   if (error) {
-    throw new Error(`Failed to fetch inventory logs: ${error.message}`);
+    throw new InventoryError(`Failed to fetch inventory logs: ${error.message}`, 'INVENTORY_FETCH_FAILED', { operation: 'getInventoryLogs', limit });
   }
   return data || [];
 }
 
 export async function getInventoryLogsByDateRange(dateFrom: string, dateTo: string) {
   const { supabase, tenantId } = await getSupabaseWithTenant();
-  if (!tenantId) throw new Error(INVENTORY_TENANT_ACCESS_ERROR);
+  if (!tenantId) throw new InventoryError(INVENTORY_TENANT_ACCESS_ERROR, 'INVENTORY_TENANT_ACCESS_ERROR');
 
   // dateTo: extend to end of day
   const dateToEnd = dateTo + 'T23:59:59';
@@ -224,28 +225,28 @@ export async function getInventoryLogsByDateRange(dateFrom: string, dateTo: stri
     .lte('created_at', dateToEnd)
     .order('created_at', { ascending: false });
   if (error) {
-    throw new Error(`Failed to fetch inventory logs by date range: ${error.message}`);
+    throw new InventoryError(`Failed to fetch inventory logs by date range: ${error.message}`, 'INVENTORY_FETCH_FAILED', { operation: 'getInventoryLogsByDateRange', dateFrom, dateTo });
   }
   return data || [];
 }
 
 export async function getInventorySummary() {
   const { supabase, tenantId } = await getSupabaseWithTenant();
-  if (!tenantId) throw new Error(INVENTORY_TENANT_ACCESS_ERROR);
+  if (!tenantId) throw new InventoryError(INVENTORY_TENANT_ACCESS_ERROR, 'INVENTORY_TENANT_ACCESS_ERROR');
 
   const { data, error } = await supabase
     .from('inventory_items')
     .select('stock_level, min_stock_level, price_per_unit')
     .eq('tenant_id', tenantId);
   if (error) {
-    throw new Error(`Failed to fetch inventory summary: ${error.message}`);
+    throw new InventoryError(`Failed to fetch inventory summary: ${error.message}`, 'INVENTORY_FETCH_FAILED', { operation: 'getInventorySummary' });
   }
   return calculateInventorySummary(data);
 }
 
 export async function getPackageMaterials(packageId: string) {
   const { supabase, tenantId } = await getSupabaseWithTenant();
-  if (!tenantId) throw new Error(INVENTORY_TENANT_ACCESS_ERROR);
+  if (!tenantId) throw new InventoryError(INVENTORY_TENANT_ACCESS_ERROR, 'INVENTORY_TENANT_ACCESS_ERROR');
 
   const { data, error } = await supabase
     .from('package_materials')
@@ -256,7 +257,7 @@ export async function getPackageMaterials(packageId: string) {
     .eq('package_id', packageId)
     .eq('tenant_id', tenantId);
   if (error) {
-    throw new Error(`Failed to fetch package materials for package ${packageId}: ${error.message}`);
+    throw new InventoryError(`Failed to fetch package materials for package ${packageId}: ${error.message}`, 'INVENTORY_FETCH_FAILED', { operation: 'getPackageMaterials', packageId });
   }
   return data || [];
 }
@@ -1061,7 +1062,7 @@ export async function autoConsumeForSession(
         '[autoConsumeForSession]'
       );
       if (!outboxEnqueued) {
-        throw new Error('Failed to enqueue INVENTORY_CONSUMED accounting event');
+        throw new InventoryError('Failed to enqueue INVENTORY_CONSUMED accounting event', 'INVENTORY_OUTBOX_ENQUEUE_FAILED', { sessionLogId, totalCost: consumptionPlan.totalCost });
       }
     }
 
