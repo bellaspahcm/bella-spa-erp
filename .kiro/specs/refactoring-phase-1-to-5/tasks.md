@@ -188,7 +188,7 @@
   - _Duration: 1.5 days_
   - _Dependencies: Tasks 1-18_
 
-- [ ] 23. Add JSDoc to spa module services
+- [x] 23. Add JSDoc to spa module services
   - Add JSDoc to `src/modules/spa/services/`
   - ~10 functions to document
   - _Requirements: REQ-5.1_
