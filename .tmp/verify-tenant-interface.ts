@@ -7,7 +7,7 @@ import type { TenantContext, SubscriptionPlan } from '../src/core/types/tenant';
 import { isTenantContext } from '../src/core/types/tenant';
 
 // Test 1: SubscriptionPlan type includes all required values
-const plans: SubscriptionPlan[] = ['free', 'basic', 'professional', 'enterprise'];
+const _plans: SubscriptionPlan[] = ['free', 'basic', 'professional', 'enterprise'];
 console.log('✓ SubscriptionPlan type defined with correct values');
 
 // Test 2: TenantContext interface includes all required fields
