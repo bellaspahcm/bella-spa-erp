@@ -167,7 +167,7 @@
   - _Duration: 1 day_
   - _Dependencies: Tasks 1-18_
 
-- [ ] 20. Add JSDoc to accounting services
+- [x] 20. Add JSDoc to accounting services
   - Add JSDoc to `src/core/services/accounting/`
   - ~20 functions to document
   - _Requirements: REQ-5.1_
