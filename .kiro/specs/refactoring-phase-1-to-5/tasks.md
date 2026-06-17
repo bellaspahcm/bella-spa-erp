@@ -174,14 +174,14 @@
   - _Duration: 1.5 days_
   - _Dependencies: Tasks 1-18_
 
-- [ ] 21. Add JSDoc to finance services
+- [x] 21. Add JSDoc to finance services
   - Add JSDoc to `src/core/services/finance/`
   - ~12 functions to document
   - _Requirements: REQ-5.1_
   - _Duration: 1 day_
   - _Dependencies: Tasks 1-18_
 
-- [ ] 22. Add JSDoc to order services
+- [x] 22. Add JSDoc to order services
   - Add JSDoc to `src/core/services/order/`
   - ~25 functions to document
   - _Requirements: REQ-5.1_
