@@ -18,11 +18,24 @@
 process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
 process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key';
 
+import type { Database } from '@/types/database.types';
+import {
+  MockQueryBuilder,
+  createMockQueryBuilder,
+  mockSuccess,
+  mockError,
+} from './helpers/mock-query-builder';
+
+// Type aliases for accounting entities
+type JournalLineInsert = Database['public']['Tables']['journal_lines']['Insert'];
+type JournalEntryRow = Database['public']['Tables']['journal_entries']['Row'];
+type AccountingAccountRow = Database['public']['Tables']['accounting_accounts']['Row'];
+
 // ── Mock @supabase/supabase-js ──
 const mockSingle = jest.fn();
 const mockSelect = jest.fn(() => ({ single: mockSingle }));
 const mockEqFinal = jest.fn(); // final eq in chain returns the result
-const mockEqChain: any = jest.fn();
+const mockEqChain = jest.fn();
 mockEqChain.mockImplementation(() => ({ eq: mockEqChain, single: mockSingle }));
 const mockInsert = jest.fn(() => ({ select: mockSelect }));
 const mockInsertLines = jest.fn();
@@ -98,7 +111,8 @@ beforeEach(() => {
         })),
       };
     }
-    return {} as any;
+    // Return empty object with explicit unknown type (not any)
+    return {} as Record<string, unknown>;
   });
 });
 
@@ -285,8 +299,8 @@ describe('RevenueRecognitionService.handlePackageSale', () => {
     expect(linesCall).toHaveLength(3);
 
     // Sum debit phải bằng sum credit
-    const totalDebit = linesCall.reduce((s: number, l: any) => s + l.debit_amount, 0);
-    const totalCredit = linesCall.reduce((s: number, l: any) => s + l.credit_amount, 0);
+    const totalDebit = linesCall.reduce((s: number, l: JournalLineInsert) => s + (l.debit_amount || 0), 0);
+    const totalCredit = linesCall.reduce((s: number, l: JournalLineInsert) => s + (l.credit_amount || 0), 0);
     expect(totalDebit).toBe(1080000);
     expect(totalCredit).toBeCloseTo(1080000, 2);
   });
@@ -353,13 +367,13 @@ describe('RevenueRecognitionService.handleSessionDone', () => {
     const linesCall = mockInsertLines.mock.calls[0][0];
     expect(linesCall).toHaveLength(4);
 
-    const totalDebit = linesCall.reduce((s: number, l: any) => s + l.debit_amount, 0);
-    const totalCredit = linesCall.reduce((s: number, l: any) => s + l.credit_amount, 0);
+    const totalDebit = linesCall.reduce((s: number, l: JournalLineInsert) => s + (l.debit_amount || 0), 0);
+    const totalCredit = linesCall.reduce((s: number, l: JournalLineInsert) => s + (l.credit_amount || 0), 0);
     expect(totalDebit).toBe(130000);
     expect(totalCredit).toBe(130000);
 
     // KTV ID phải nằm trên 2 lines hoa hồng (6421 + 334)
-    const ktvLines = linesCall.filter((l: any) => l.ktv_id === 'ktv-uuid-1');
+    const ktvLines = linesCall.filter((l: JournalLineInsert) => l.ktv_id === 'ktv-uuid-1');
     expect(ktvLines).toHaveLength(2);
   });
 
@@ -556,8 +570,8 @@ describe('RevenueRecognitionService.handleRefundIssued', () => {
       expect.objectContaining({ account_id: BANK_ID, debit_amount: 0, credit_amount: 300000 }),
     ]));
 
-    const totalDebit = linesCall.reduce((s: number, l: any) => s + l.debit_amount, 0);
-    const totalCredit = linesCall.reduce((s: number, l: any) => s + l.credit_amount, 0);
+    const totalDebit = linesCall.reduce((s: number, l: JournalLineInsert) => s + (l.debit_amount || 0), 0);
+    const totalCredit = linesCall.reduce((s: number, l: JournalLineInsert) => s + (l.credit_amount || 0), 0);
     expect(totalDebit).toBe(300000);
     expect(totalCredit).toBe(300000);
   });

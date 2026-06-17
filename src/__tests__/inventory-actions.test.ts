@@ -13,6 +13,7 @@ import {
   saveMonthlyReconciliation,
   upsertPackageMaterials,
 } from '../services/inventory-actions';
+import { InventoryError } from '../core/lib/errors';
 import type { Database } from '../types/database.types';
 
 jest.mock('next/cache', () => ({
@@ -132,18 +133,21 @@ describe('inventory read actions', () => {
   it('propagates inventory item query failures', async () => {
     mockFrom.mockReturnValue(new MockQueryBuilder(null, { message: 'items query failed' }));
 
+    await expect(getInventoryItems()).rejects.toThrow(InventoryError);
     await expect(getInventoryItems()).rejects.toThrow('Failed to fetch inventory items: items query failed');
   });
 
   it('propagates inventory log query failures', async () => {
     mockFrom.mockReturnValue(new MockQueryBuilder(null, { message: 'logs query failed' }));
 
+    await expect(getInventoryLogs()).rejects.toThrow(InventoryError);
     await expect(getInventoryLogs()).rejects.toThrow('Failed to fetch inventory logs: logs query failed');
   });
 
   it('propagates date-range inventory log query failures', async () => {
     mockFrom.mockReturnValue(new MockQueryBuilder(null, { message: 'date logs query failed' }));
 
+    await expect(getInventoryLogsByDateRange('2026-05-01', '2026-05-30')).rejects.toThrow(InventoryError);
     await expect(getInventoryLogsByDateRange('2026-05-01', '2026-05-30')).rejects.toThrow(
       'Failed to fetch inventory logs by date range: date logs query failed'
     );
@@ -152,12 +156,14 @@ describe('inventory read actions', () => {
   it('propagates inventory summary query failures', async () => {
     mockFrom.mockReturnValue(new MockQueryBuilder(null, { message: 'summary query failed' }));
 
+    await expect(getInventorySummary()).rejects.toThrow(InventoryError);
     await expect(getInventorySummary()).rejects.toThrow('Failed to fetch inventory summary: summary query failed');
   });
 
   it('propagates package material query failures', async () => {
     mockFrom.mockReturnValue(new MockQueryBuilder(null, { message: 'materials query failed' }));
 
+    await expect(getPackageMaterials('pkg-1')).rejects.toThrow(InventoryError);
     await expect(getPackageMaterials('pkg-1')).rejects.toThrow(
       'Failed to fetch package materials for package pkg-1: materials query failed'
     );

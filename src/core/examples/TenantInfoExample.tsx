@@ -193,7 +193,7 @@ export function MultiModuleDashboardExample() {
         {hasSpa && (
           <div className="p-4 border rounded-lg bg-blue-50">
             <h3 className="font-bold">Spa Module</h3>
-            <p className="text-sm">Today's bookings: 15</p>
+            <p className="text-sm">Today&apos;s bookings: 15</p>
           </div>
         )}
         

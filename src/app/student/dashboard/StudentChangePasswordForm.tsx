@@ -37,7 +37,7 @@ export function StudentChangePasswordForm() {
       } else {
         setMessage({ type: 'error', text: res.error || 'Đã xảy ra lỗi khi đổi mật khẩu.' });
       }
-    } catch (err) {
+    } catch (_err) {
       setMessage({ type: 'error', text: 'Lỗi kết nối hệ thống.' });
     } finally {
       setIsLoading(false);

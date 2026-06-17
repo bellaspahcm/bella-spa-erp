@@ -83,7 +83,43 @@ async function getCentralSalarySheetRecordForKtv(params: {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-/** Calculate pro-rata base salary for resigned KTVs */
+/**
+ * Calculates pro-rata base salary for resigned KTVs based on their last working day.
+ * 
+ * Computes the proportional salary amount when a KTV resigns mid-month. Uses the formula:
+ * `baseSalary * (daysWorked / totalDaysInMonth)`
+ * 
+ * @param baseSalary - Monthly base salary amount in VND
+ * @param resignationDate - Last working day of the KTV
+ * @param monthYear - Salary period for calculation
+ * 
+ * @returns Promise resolving to pro-rated salary amount (rounded to nearest integer)
+ * 
+ * @remarks
+ * **Calculation Method:**
+ * - Counts days from month start (inclusive) to resignation date (inclusive)
+ * - Uses calendar days, not working days
+ * - Handles negative results (resignation before month start) by returning 0
+ * - Rounds to nearest VND (no decimal cents)
+ * 
+ * **Edge Cases:**
+ * - Resignation on 1st of month: Returns `(baseSalary / daysInMonth) * 1`
+ * - Resignation on last day: Returns full `baseSalary`
+ * - Resignation before month start: Returns `0`
+ * 
+ * @example
+ * ```typescript
+ * // KTV resigns on June 15, 2026 (base salary: 6,000,000 VND)
+ * const proRata = await calcProRataBaseSalary(
+ *   6000000,
+ *   new Date('2026-06-15'),
+ *   new Date('2026-06-01')
+ * );
+ * // Result: 3,000,000 VND (15 days out of 30 days in June)
+ * ```
+ * 
+ * @see {@link recalculateAndSaveSalaryRecordEngine} for automatic pro-rata application
+ */
 export async function calcProRataBaseSalary(baseSalary: number, resignationDate: Date, monthYear: Date): Promise<number> {
   const monthStart = new Date(monthYear.getFullYear(), monthYear.getMonth(), 1);
   const daysInMonth = new Date(monthYear.getFullYear(), monthYear.getMonth() + 1, 0).getDate();
@@ -91,7 +127,56 @@ export async function calcProRataBaseSalary(baseSalary: number, resignationDate:
   return Math.round(baseSalary * (daysWorked / daysInMonth));
 }
 
-/** KTV: Confirm their own salary record */
+/**
+ * KTV confirms their own salary record (self-service confirmation).
+ * 
+ * Allows a KTV employee to review and confirm their published salary through the mobile app
+ * or web portal. Transitions the record from 'published', 'pending_approval', or 'disputed'
+ * status to 'confirmed' status.
+ * 
+ * **Authorization**: Requires authenticated KTV user (role: 'ktv')
+ * 
+ * @param salaryRecordId - Unique identifier of the salary record to confirm
+ * 
+ * @returns Promise resolving to:
+ * - `{ success: true }` if confirmation successful
+ * - `{ success: false, error: string }` if operation failed (not logged in, wrong KTV, etc.)
+ * 
+ * @throws {Error} Never throws - all errors are caught and returned in result object
+ * 
+ * @remarks
+ * **Business Rules:**
+ * - Only the owner KTV can confirm their own salary (enforced by `.eq('ktv_id', currentUser.id)`)
+ * - Record must be in 'published', 'pending_approval', or 'disputed' status
+ * - Sets `ktv_confirmed_at` timestamp to current time
+ * - Does NOT set `confirmed_by_admin` flag (distinguishes from admin confirmation)
+ * 
+ * **Status Lifecycle:**
+ * - Before: `published`, `pending_approval`, or `disputed`
+ * - After: `confirmed` (ready for finalization)
+ * 
+ * **Audit Trail:**
+ * - Records confirmation action in audit log
+ * - Maintains compliance for labor law documentation
+ * 
+ * **Cache Invalidation:**
+ * - Revalidates `/ktv/earnings` (KTV mobile app page)
+ * - Revalidates `/dashboard/salary` (admin dashboard)
+ * 
+ * @example
+ * ```typescript
+ * // KTV confirms salary from mobile app
+ * const result = await ktvConfirmSalary('salary-record-uuid');
+ * if (result.success) {
+ *   console.log('Salary confirmed. Thank you!');
+ * } else {
+ *   console.error(`Confirmation failed: ${result.error}`);
+ * }
+ * ```
+ * 
+ * @see {@link adminConfirmOnBehalf} for admin-assisted confirmation
+ * @see {@link getKtvSalaryForConfirmation} to fetch salary details for confirmation UI
+ */
 export async function ktvConfirmSalary(salaryRecordId: string) {
   const supabase = await createClient();
   const currentUser = await getCurrentUser();
@@ -112,7 +197,62 @@ export async function ktvConfirmSalary(salaryRecordId: string) {
   return { success: true };
 }
 
-/** KTV: Dispute their salary with a reason */
+/**
+ * KTV disputes their salary record with a written reason (self-service dispute).
+ * 
+ * Allows a KTV employee to challenge their published salary if they believe it's incorrect.
+ * Transitions the record to 'disputed' status and creates a formal dispute ticket in the
+ * `salary_disputes` table for admin review.
+ * 
+ * **Authorization**: Requires authenticated KTV user (role: 'ktv')
+ * 
+ * @param salaryRecordId - Unique identifier of the salary record to dispute
+ * @param reason - Written explanation of the dispute (required, user-provided text)
+ * 
+ * @returns Promise resolving to:
+ * - `{ success: true }` if dispute created successfully
+ * - `{ success: false, error: string }` if operation failed
+ * 
+ * @throws {Error} Never throws - all errors are caught and returned in result object
+ * 
+ * @remarks
+ * **Business Rules:**
+ * - Only the owner KTV can dispute their own salary (enforced by `.eq('ktv_id', currentUser.id)`)
+ * - Record must be in 'published' or 'pending_approval' status
+ * - **Rollback Strategy**: If dispute ticket creation fails, restores previous salary record state
+ * - Dispute ticket status: 'open' (awaiting admin resolution)
+ * 
+ * **Status Lifecycle:**
+ * - Before: `published` or `pending_approval`
+ * - After: `disputed` (blocked from confirmation until resolved)
+ * 
+ * **Dispute Workflow:**
+ * 1. KTV submits dispute with reason
+ * 2. Admin reviews dispute in `/dashboard/salary/disputes`
+ * 3. Admin adjusts salary or rejects dispute
+ * 4. Admin resolves dispute → status returns to 'published' or 'pending_approval'
+ * 
+ * **Cache Invalidation:**
+ * - Revalidates `/ktv/earnings` (KTV mobile app page)
+ * - Revalidates `/dashboard/salary` (admin dashboard shows disputed records)
+ * 
+ * @example
+ * ```typescript
+ * // KTV disputes missing sessions in salary calculation
+ * const result = await ktvDisputeSalary(
+ *   'salary-record-uuid',
+ *   'Thiếu 3 ca ngày 15/06. Tổng ca phải là 28 chứ không phải 25.'
+ * );
+ * 
+ * if (result.success) {
+ *   console.log('Dispute submitted. Admin will review.');
+ * } else {
+ *   console.error(`Dispute failed: ${result.error}`);
+ * }
+ * ```
+ * 
+ * @see {@link ktvConfirmSalary} for salary confirmation after dispute resolution
+ */
 export async function ktvDisputeSalary(salaryRecordId: string, reason: string) {
   const supabase = await createClient();
   const currentUser = await getCurrentUser();
@@ -178,7 +318,66 @@ export async function ktvDisputeSalary(salaryRecordId: string, reason: string) {
   return { success: true };
 }
 
-/** KTV: Get their own salary record for the confirmation screen */
+/**
+ * Fetches KTV salary record and session details for the confirmation screen.
+ * 
+ * Retrieves the salary breakdown (base salary, bonuses, deductions) and the list of completed
+ * sessions for a KTV to review before confirming. Used to populate the KTV mobile app confirmation UI.
+ * 
+ * **Authorization**: Requires authenticated KTV user (role: 'ktv')
+ * 
+ * @param month - Optional salary period in YYYY-MM-01 format (defaults to current month)
+ * 
+ * @returns Promise resolving to:
+ * - `KtvSalaryConfirmation` object with salary record and session list
+ * - `null` if user not authenticated
+ * 
+ * @throws {Error} If database queries fail or tenant context missing
+ * 
+ * @remarks
+ * **Data Sources:**
+ * - Salary record from `salary_records` table
+ * - Dynamic recalculation from `calculate_ktv_salary_sheet` RPC if record exists
+ * - Session details from `session_logs` with booking and customer information
+ * 
+ * **Central KTV Salary Sheet Integration:**
+ * - If a salary record exists, it's merged with the central salary sheet calculation
+ * - Central sheet provides the authoritative source for dynamic components
+ * - Ensures consistency between what KTV sees and what admin calculates
+ * 
+ * **Session Details Include:**
+ * - Session ID, completion date, session number
+ * - Package name and commission amount
+ * - Customer name (mother's name for spa bookings)
+ * 
+ * **Authorization Logic:**
+ * - KTV users can only see their own salary (enforced by `.eq('ktv_id', currentUser.id)`)
+ * - Admin users should use {@link getSalaryData} instead for full access
+ * 
+ * @example
+ * ```typescript
+ * // Fetch current month salary for confirmation UI
+ * const confirmation = await getKtvSalaryForConfirmation();
+ * 
+ * if (confirmation) {
+ *   console.log(`Total Salary: ${confirmation.record.total_salary?.toLocaleString('vi-VN')}đ`);
+ *   console.log(`Completed Sessions: ${confirmation.sessions.length}`);
+ *   
+ *   confirmation.sessions.forEach(session => {
+ *     console.log(`- ${session.completed_date}: ${session.bookings?.package_name}`);
+ *   });
+ * }
+ * ```
+ * 
+ * @example
+ * ```typescript
+ * // Fetch salary for a specific historical month
+ * const june2026 = await getKtvSalaryForConfirmation('2026-06-01');
+ * ```
+ * 
+ * @see {@link ktvConfirmSalary} to confirm salary after review
+ * @see {@link ktvDisputeSalary} to dispute salary if incorrect
+ */
 export async function getKtvSalaryForConfirmation(month?: string): Promise<KtvSalaryConfirmation | null> {
   const supabase = await createClient();
   const currentUser = await getCurrentUser();

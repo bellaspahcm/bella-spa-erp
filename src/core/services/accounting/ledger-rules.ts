@@ -44,6 +44,28 @@ function normalize(value: unknown) {
   return String(value ?? '').trim().toLowerCase();
 }
 
+/**
+ * Resolve the payment account code based on payment method.
+ * 
+ * @param paymentMethod - Payment method string (e.g., 'cash', 'bank_transfer')
+ * @returns Account code '111' for cash, '112' for bank transfers
+ * 
+ * @remarks
+ * Maps payment methods to TT133 standard cash/bank accounts:
+ * - 111: Tiền mặt (Cash)
+ * - 112: Tiền gửi ngân hàng (Bank deposits)
+ * 
+ * Case-insensitive matching. Defaults to bank account if method is not 'cash'.
+ * 
+ * @example
+ * ```typescript
+ * resolvePaymentAccountCode('cash'); // Returns '111'
+ * resolvePaymentAccountCode('CASH'); // Returns '111'
+ * resolvePaymentAccountCode('bank_transfer'); // Returns '112'
+ * resolvePaymentAccountCode('momo'); // Returns '112'
+ * resolvePaymentAccountCode(null); // Returns '112'
+ * ```
+ */
 export function resolvePaymentAccountCode(paymentMethod?: string | null) {
   return normalize(paymentMethod) === 'cash' ? '111' : '112';
 }
@@ -53,6 +75,43 @@ function asFiniteNumber(value: number | string | null | undefined, fallback = 0)
   return Number.isFinite(numeric) ? numeric : fallback;
 }
 
+/**
+ * Resolve accounting review status based on business event classification.
+ * 
+ * @param businessEventType - Classified business event type (e.g., 'CUSTOMER_DEPOSIT')
+ * @param payload - Transaction payload containing required fields
+ * @returns Review status: 'UNREVIEWED' if valid, 'NEEDS_REVIEW' if missing fields or unclassified
+ * 
+ * @remarks
+ * Determines if a business transaction is ready for automated posting or needs
+ * manual accountant review. Checks if all required fields for the event type are present.
+ * 
+ * Status meanings:
+ * - `UNREVIEWED`: Has business_event_type and all required fields, ready for automated posting
+ * - `NEEDS_REVIEW`: Missing business_event_type or required fields, needs accountant attention
+ * 
+ * Used during metadata backfill and readiness scoring. See {@link findMissingRequiredFields}
+ * for validation logic.
+ * 
+ * @example
+ * ```typescript
+ * // Complete deposit transaction - ready for automation
+ * resolveAccountingReviewStatus('CUSTOMER_DEPOSIT', {
+ *   amount: 1000000,
+ *   payment_method: 'cash',
+ *   booking_id: 'uuid-123',
+ * }); // Returns 'UNREVIEWED'
+ * 
+ * // Missing required field - needs review
+ * resolveAccountingReviewStatus('CUSTOMER_DEPOSIT', {
+ *   amount: 1000000,
+ *   // Missing payment_method and booking_id
+ * }); // Returns 'NEEDS_REVIEW'
+ * 
+ * // Unclassified transaction - needs review
+ * resolveAccountingReviewStatus(null, {}); // Returns 'NEEDS_REVIEW'
+ * ```
+ */
 export function resolveAccountingReviewStatus(
   businessEventType: BusinessEventType | null,
   payload: Record<string, unknown>,
@@ -76,6 +135,54 @@ export type RevenueAccountingMetadata = {
   [key: string]: AccountingMetadataValue;
 };
 
+/**
+ * Build accounting metadata for revenue transactions with refund support.
+ * 
+ * @param input - Revenue transaction details including type, amount, payment method, and booking
+ * @returns Structured accounting metadata with normalized amounts and refund tracking
+ * 
+ * @remarks
+ * Constructs standardized accounting metadata for revenue transactions (deposits, payments, refunds).
+ * Handles special refund accounting by tracking both deferred amount and revenue reduction.
+ * 
+ * For refunds specifically:
+ * - `deferredRefundAmount`: Amount returned from unearned revenue (liability reduction)
+ * - `revenueReductionAmount`: Amount returned from earned revenue (revenue reversal)
+ * 
+ * This distinction is critical for TT133 compliance where unearned revenue sits in
+ * liability account 3387 (Doanh thu chưa thực hiện) until sessions are completed.
+ * 
+ * @example
+ * ```typescript
+ * // Regular deposit
+ * buildRevenueAccountingMetadata({
+ *   revenueType: 'deposit',
+ *   amount: 5000000,
+ *   paymentMethod: 'bank_transfer',
+ *   bookingId: 'booking-uuid',
+ * });
+ * // Returns: { amount: 5000000, payment_method: 'bank_transfer', booking_id: 'booking-uuid', reason: null }
+ * 
+ * // Refund with liability reduction
+ * buildRevenueAccountingMetadata({
+ *   revenueType: 'refund',
+ *   amount: -3000000,
+ *   paymentMethod: 'bank_transfer',
+ *   bookingId: 'booking-uuid',
+ *   reason: 'Khach huy goi',
+ *   deferredRefundAmount: 2000000, // Unearned portion
+ *   revenueReductionAmount: 1000000, // Earned portion
+ * });
+ * // Returns: {
+ * //   amount: 3000000,
+ * //   payment_method: 'bank_transfer',
+ * //   booking_id: 'booking-uuid',
+ * //   reason: 'Khach huy goi',
+ * //   deferredRefundAmount: 2000000,
+ * //   revenueReductionAmount: 1000000,
+ * // }
+ * ```
+ */
 export function buildRevenueAccountingMetadata(input: {
   revenueType?: string | null;
   amount: number | string | null | undefined;
@@ -113,6 +220,58 @@ export function buildRevenueAccountingMetadata(input: {
   return metadata;
 }
 
+/**
+ * Infer business event type from source table and transaction attributes.
+ * 
+ * @param input - Source table name and transaction attributes (category, type, reason, status)
+ * @returns Inferred business event type or null if cannot be classified
+ * 
+ * @remarks
+ * Automatically classifies business transactions into standardized event types
+ * for accounting template selection and journal entry generation.
+ * 
+ * Classification logic by source:
+ * - **revenue**: Maps revenueType to deposit/payment/refund events
+ * - **expenses**: Maps category to expense type events
+ * - **salary_records**: Maps status (paid vs draft) to salary events
+ * - **session_logs**: Maps completed status to revenue recognition
+ * - **inventory_logs**: Maps reason to consumption/purchase events
+ * 
+ * Returns null for unclassifiable transactions which will be flagged for
+ * manual accountant review.
+ * 
+ * @example
+ * ```typescript
+ * // Revenue classification
+ * inferBusinessEventType({
+ *   sourceTable: 'revenue',
+ *   revenueType: 'deposit',
+ * }); // Returns 'CUSTOMER_DEPOSIT'
+ * 
+ * // Expense classification
+ * inferBusinessEventType({
+ *   sourceTable: 'expenses',
+ *   category: 'rent',
+ * }); // Returns 'EXPENSE_RENT'
+ * 
+ * // Salary classification
+ * inferBusinessEventType({
+ *   sourceTable: 'salary_records',
+ *   status: 'paid',
+ * }); // Returns 'SALARY_PAYMENT'
+ * 
+ * // Inventory classification
+ * inferBusinessEventType({
+ *   sourceTable: 'inventory_logs',
+ *   reason: 'session_consumed',
+ * }); // Returns 'INVENTORY_CONSUMED'
+ * 
+ * // Unclassifiable transaction
+ * inferBusinessEventType({
+ *   sourceTable: 'unknown_table',
+ * }); // Returns null
+ * ```
+ */
 export function inferBusinessEventType(input: {
   sourceTable: string;
   category?: string | null;

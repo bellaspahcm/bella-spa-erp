@@ -2,6 +2,7 @@
 
 import { getLocalDateString, resolvePackageName } from '@/lib/utils';
 import { createDevelopmentBypassClient } from '@/lib/supabase-dev-bypass-server';
+import { BookingError } from '@/core/lib/errors';
 import type { Database } from '@/types/database.types';
 
 type BookingRow = Database['public']['Tables']['bookings']['Row'];
@@ -82,7 +83,7 @@ export async function getSessionLogs(bookingId: string) {
   const currentUser = await getCurrentUser();
   const tenantId = currentUser?.tenant_id;
   if (!tenantId) {
-    throw new Error('Failed to fetch session logs: missing tenant scope');
+    throw new BookingError('Failed to fetch session logs: missing tenant scope', 'BOOKING_MISSING_TENANT_SCOPE');
   }
 
   const { data, error } = await supabase
@@ -93,7 +94,7 @@ export async function getSessionLogs(bookingId: string) {
     .order('session_number', { ascending: true });
 
   if (error) {
-    throw new Error(`Failed to fetch session logs for booking ${bookingId}: ${error.message}`);
+    throw new BookingError(`Failed to fetch session logs for booking ${bookingId}: ${error.message}`, 'BOOKING_SESSION_LOGS_FETCH_ERROR', { bookingId });
   }
 
   if (!data || data.length === 0) {
@@ -109,7 +110,7 @@ export async function getSessionsWithDetails(options: GetSessionsWithDetailsOpti
   const currentUser = await getCurrentUser();
   const tenantId = currentUser?.tenant_id;
   if (!tenantId) {
-    throw new Error('Failed to fetch sessions with details: missing tenant scope');
+    throw new BookingError('Failed to fetch sessions with details: missing tenant scope', 'BOOKING_MISSING_TENANT_SCOPE');
   }
 
   let query = supabase
@@ -137,7 +138,7 @@ export async function getSessionsWithDetails(options: GetSessionsWithDetailsOpti
   const { data, error } = await query;
 
   if (error) {
-    throw new Error(`Failed to fetch sessions with details: ${error.message}`);
+    throw new BookingError(`Failed to fetch sessions with details: ${error.message}`, 'BOOKING_SESSIONS_FETCH_ERROR');
   }
   
   if (!data || data.length === 0) {
@@ -200,7 +201,7 @@ export async function getCalendarSessions(options: GetCalendarSessionsOptions = 
   const currentUser = await getCurrentUser();
   const tenantId = currentUser?.tenant_id;
   if (!tenantId) {
-    throw new Error('Failed to fetch calendar sessions: missing tenant scope');
+    throw new BookingError('Failed to fetch calendar sessions: missing tenant scope', 'BOOKING_MISSING_TENANT_SCOPE');
   }
 
   let query = supabase
@@ -250,7 +251,7 @@ export async function getCalendarSessions(options: GetCalendarSessionsOptions = 
   const { data, error } = await query;
 
   if (error) {
-    throw new Error(`Failed to fetch calendar sessions: ${error.message}`);
+    throw new BookingError(`Failed to fetch calendar sessions: ${error.message}`, 'BOOKING_CALENDAR_SESSIONS_FETCH_ERROR');
   }
   
   const sessionsByBooking: Record<string, CalendarSession[]> = {};

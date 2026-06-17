@@ -80,6 +80,8 @@ function verify() {
     ];
 
     for (const method of requiredMethods) {
+      // Runtime method checking requires 'as any' cast since method names are dynamic strings
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if (typeof (adapter2 as any)[method] !== 'function') {
         throw new Error(`Method ${method} is not a function`);
       }
@@ -92,8 +94,8 @@ function verify() {
     try {
       registerSpaModule();
       throw new Error('Should have thrown DuplicateModuleError');
-    } catch (error: any) {
-      if (error.name === 'DuplicateModuleError') {
+    } catch (error: unknown) {
+      if (error instanceof Error && error.name === 'DuplicateModuleError') {
         console.log('✓ Duplicate registration correctly prevented\n');
       } else {
         throw error;

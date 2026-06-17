@@ -34,7 +34,7 @@ type TenantRow = Database['public']['Tables']['tenants']['Row'];
  * @param request - Next.js request object
  * @returns JSON response with TenantContext or error
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const supabase = await createClient();
 

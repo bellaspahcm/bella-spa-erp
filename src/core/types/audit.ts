@@ -15,8 +15,16 @@ export type ActorType = 'user' | 'system' | 'api';
  * Field-level change tracking for audit logging.
  * 
  * @remarks
- * Use this to track what changed during an update operation.
- * Stores the value before and after the change for compliance and debugging.
+ * Uses `any` type for before/after values because audit logs must track
+ * changes to fields of any type (primitives, objects, arrays, null, undefined).
+ * Using `unknown` would require type assertions at every usage site, which
+ * would defeat the purpose of having a flexible audit trail.
+ * 
+ * This is a **justified exception** to the no-any rule for the following reasons:
+ * - Audit logs need to capture changes to database columns of varying types
+ * - Values are serialized to JSON for storage, so type safety at runtime is not critical
+ * - The alternative (union of all possible types) would be impractical and unmaintainable
+ * - Type guards would add unnecessary complexity to audit logging code
  * 
  * @example
  * ```typescript
@@ -29,14 +37,19 @@ export type ActorType = 'user' | 'system' | 'api';
  *   before: 5000000,
  *   after: 5500000,
  * };
+ * 
+ * const objectChange: FieldChange = {
+ *   before: { enabled: false },
+ *   after: { enabled: true, threshold: 10 },
+ * };
  * ```
  */
 export interface FieldChange {
-  /** Value before the change */
+  /** Value before the change. Can be any type (string, number, boolean, object, array, null, undefined) */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   before: any;
   
-  /** Value after the change */
+  /** Value after the change. Can be any type (string, number, boolean, object, array, null, undefined) */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   after: any;
 }
@@ -107,7 +120,35 @@ export interface AuditEvent {
   /** Field-level change tracking (optional) */
   changes?: Record<string, FieldChange>;
   
-  /** Additional context (IP address, user agent, reason, etc.) */
+  /**
+   * Additional context for audit forensics and troubleshooting.
+   * 
+   * @remarks
+   * Uses `any` type for metadata values to allow flexible contextual information.
+   * Common fields include:
+   * - `ipAddress`: Client IP address (string)
+   * - `userAgent`: Browser/client identifier (string)
+   * - `reason`: User-provided reason for action (string)
+   * - `approverRole`: Role of approving user (string)
+   * - `originalValue`: Full object before change (object)
+   * - `relatedResourceIds`: Array of related resource IDs (string[])
+   * 
+   * This is a **justified exception** to the no-any rule because:
+   * - Metadata structure varies per action type and module
+   * - New metadata fields may be added without schema changes
+   * - Values are JSON-serializable and used for display/debugging only
+   * - Strong typing would require complex discriminated unions per action type
+   * 
+   * @example
+   * ```typescript
+   * metadata: {
+   *   ipAddress: '192.168.1.1',
+   *   userAgent: 'Mozilla/5.0...',
+   *   approverRole: 'admin',
+   *   reason: 'Approved by manager for overtime work',
+   * }
+   * ```
+   */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   metadata: Record<string, any>;
 }
@@ -154,6 +195,11 @@ export function createAuditEvent(params: {
   resourceType: string;
   resourceId: string;
   changes?: Record<string, FieldChange>;
+  /**
+   * Additional context for audit forensics.
+   * Can include IP address, user agent, reason, role, etc.
+   * See {@link AuditEvent.metadata} for details.
+   */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   metadata?: Record<string, any>;
 }): AuditEvent {
