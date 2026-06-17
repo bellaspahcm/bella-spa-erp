@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase-server';
 import { getCurrentUser } from '@/services/user-actions';
+import { BookingError } from '@/core/lib/errors';
 import type { Database } from '@/types/database.types';
 
 type InvoicePrintLogInsert = Database['public']['Tables']['invoice_print_logs']['Insert'];
@@ -36,7 +37,7 @@ const BOOKING_TENANT_ACCESS_ERROR = 'Khong xac dinh duoc don vi kinh doanh cua n
 
 function requireCurrentUserTenant(currentUser: Awaited<ReturnType<typeof getCurrentUser>>) {
   if (!currentUser?.tenant_id) {
-    throw new Error(BOOKING_TENANT_ACCESS_ERROR);
+    throw new BookingError(BOOKING_TENANT_ACCESS_ERROR, 'BOOKING_TENANT_ACCESS_ERROR');
   }
   return currentUser.tenant_id;
 }
