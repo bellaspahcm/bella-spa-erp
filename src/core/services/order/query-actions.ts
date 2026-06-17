@@ -3,6 +3,7 @@
 import { resolvePackageName } from '@/lib/utils';
 import { createDevelopmentBypassClient } from '@/lib/supabase-dev-bypass-server';
 import { getPackages as getTenantPackages } from '@/services/package-actions';
+import { BookingError } from '@/core/lib/errors';
 import type { Database } from '@/types/database.types';
 
 type BookingRow = Database['public']['Tables']['bookings']['Row'];
@@ -34,7 +35,7 @@ async function requireCurrentTenantId() {
   const { getCurrentUser } = await import('@/services/user-actions');
   const currentUser = await getCurrentUser();
   if (!currentUser?.tenant_id) {
-    throw new Error(BOOKING_TENANT_ACCESS_ERROR);
+    throw new BookingError(BOOKING_TENANT_ACCESS_ERROR, 'BOOKING_TENANT_ACCESS_ERROR');
   }
   return currentUser.tenant_id;
 }
@@ -54,7 +55,7 @@ export async function getBookings() {
     .order('created_at', { ascending: false });
 
   if (error) {
-    throw new Error(`Failed to fetch bookings: ${error.message}`);
+    throw new BookingError(`Failed to fetch bookings: ${error.message}`, 'BOOKING_FETCH_ERROR');
   }
   
   if (!data || data.length === 0) return [];
@@ -92,7 +93,7 @@ export async function getBookingsByCustomerId(customerId: string) {
     .order('created_at', { ascending: false });
 
   if (error) {
-    throw new Error(`Failed to fetch bookings for customer ${customerId}: ${error.message}`);
+    throw new BookingError(`Failed to fetch bookings for customer ${customerId}: ${error.message}`, 'BOOKING_CUSTOMER_FETCH_ERROR', { customerId });
   }
   
   if (!data || data.length === 0) return [];
@@ -119,7 +120,7 @@ export async function getDraftBooking(customerId: string) {
     .limit(1);
 
   if (error) {
-    throw new Error(`Failed to fetch draft booking for customer ${customerId}: ${error.message}`);
+    throw new BookingError(`Failed to fetch draft booking for customer ${customerId}: ${error.message}`, 'BOOKING_DRAFT_FETCH_ERROR', { customerId });
   }
 
   if (!data || data.length === 0) return null;

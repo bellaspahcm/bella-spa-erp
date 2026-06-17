@@ -1,6 +1,7 @@
 'use server';
 
 import { safeRevalidatePath } from '@/lib/revalidate';
+import { BookingError } from '@/core/lib/errors';
 import {
   assertPaymentAccountingPeriod,
   fetchBookingDetailsWithPayment,
@@ -19,7 +20,7 @@ function getErrorMessage(error: unknown) {
 
 function requireTenantId(currentUser: { tenant_id?: string | null } | null | undefined) {
   if (!currentUser?.tenant_id) {
-    throw new Error(BOOKING_TENANT_ACCESS_ERROR);
+    throw new BookingError(BOOKING_TENANT_ACCESS_ERROR, 'BOOKING_TENANT_ACCESS_ERROR');
   }
   return currentUser.tenant_id;
 }
@@ -34,17 +35,17 @@ export async function recordRemainingPayment(params: RecordRemainingPaymentParam
     const tenantId = requireTenantId(currentUser);
     const bookingResult = await getBookingPaymentSnapshot(supabase, params.booking_id, tenantId);
     if ('error' in bookingResult) {
-      throw new Error(bookingResult.error);
+      throw new BookingError(bookingResult.error || 'Unknown booking payment snapshot error', 'BOOKING_PAYMENT_SNAPSHOT_ERROR', { bookingId: params.booking_id });
     }
 
     const amountValidation = validateRemainingPaymentAmount(bookingResult.booking, params.amount);
     if ('error' in amountValidation) {
-      throw new Error(amountValidation.error);
+      throw new BookingError(amountValidation.error || 'Invalid payment amount', 'BOOKING_PAYMENT_AMOUNT_INVALID', { bookingId: params.booking_id, amount: params.amount });
     }
 
     const periodResult = await assertPaymentAccountingPeriod();
     if ('error' in periodResult) {
-      throw new Error(periodResult.error);
+      throw new BookingError(periodResult.error || 'Accounting period is closed', 'BOOKING_ACCOUNTING_PERIOD_CLOSED');
     }
 
     const rpcResult = await recordBookingPaymentRpc({
@@ -55,7 +56,7 @@ export async function recordRemainingPayment(params: RecordRemainingPaymentParam
     });
 
     if ('error' in rpcResult) {
-      throw new Error(rpcResult.error);
+      throw new BookingError(rpcResult.error || 'Failed to record payment', 'BOOKING_PAYMENT_RECORD_ERROR', { bookingId: params.booking_id });
     }
 
     await Promise.all([

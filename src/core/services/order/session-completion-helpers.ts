@@ -1,4 +1,5 @@
 import { FINANCE_CONSTANTS } from '@/constants/finance';
+import { BookingError } from '@/core/lib/errors';
 import {
   calculateConfirmedPaidAmount,
   calculateSessionRevenueRecognition,
@@ -540,7 +541,7 @@ export async function enqueueSessionDoneAccountingOutbox(params: {
       .eq('tenant_id', tenantId);
 
     if (revenueRowsError) {
-      throw new Error(`Failed to fetch confirmed booking payments: ${revenueRowsError.message}`);
+      throw new BookingError(`Failed to fetch confirmed booking payments: ${revenueRowsError.message}`, 'BOOKING_PAYMENT_FETCH_ERROR', { bookingId });
     }
 
     const totalPaid = calculateConfirmedPaidAmount((revenueRows || []) as PaymentRevenueLike[]);
@@ -574,7 +575,7 @@ export async function enqueueSessionDoneAccountingOutbox(params: {
       '[processSessionCompletion]'
     );
     if (!outboxEnqueued) {
-      throw new Error('Failed to enqueue SESSION_DONE accounting event');
+      throw new BookingError('Failed to enqueue SESSION_DONE accounting event', 'BOOKING_ACCOUNTING_ENQUEUE_ERROR', { sessionLogId: sessionId, bookingId });
     }
 
     return { success: true };

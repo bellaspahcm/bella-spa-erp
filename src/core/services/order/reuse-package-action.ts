@@ -3,6 +3,7 @@
 import { getLocalDateString } from '@/lib/utils';
 import { safeRevalidatePath } from '@/lib/revalidate';
 import { validateBookingPackageScope } from './create-booking-helpers';
+import { BookingError } from '@/core/lib/errors';
 import type { createClient } from '@/lib/supabase-server';
 import type { Database } from '@/types/database.types';
 
@@ -17,7 +18,7 @@ async function requireCurrentTenantId() {
   const { getCurrentUser } = await import('@/services/user-actions');
   const currentUser = await getCurrentUser();
   if (!currentUser?.tenant_id) {
-    throw new Error(BOOKING_TENANT_ACCESS_ERROR);
+    throw new BookingError(BOOKING_TENANT_ACCESS_ERROR, 'BOOKING_TENANT_ACCESS_ERROR');
   }
   return currentUser.tenant_id;
 }
