@@ -7,8 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { extractTenantContext, withTenantContext, type NextRequestWithContext } from './tenantContext';
-import type { TenantContext } from '@/core/types/tenant';
+import { extractTenantContext, withTenantContext } from './tenantContext';
 
 // Mock Supabase client
 jest.mock('@/lib/supabase-server', () => ({
