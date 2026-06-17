@@ -72,6 +72,14 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+          
+          // If 401 Unauthorized, redirect to login page
+          if (response.status === 401) {
+            console.warn('[TenantContextProvider] User not authenticated, redirecting to login');
+            window.location.href = '/login';
+            return; // Stop execution to prevent error state
+          }
+          
           throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
         }
 
