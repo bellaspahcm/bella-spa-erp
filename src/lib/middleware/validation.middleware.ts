@@ -17,7 +17,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z, ZodError, ZodSchema } from 'zod';
-import { APIError } from '@/lib/errors/api-error';
+import { APIError } from '@/types/api-gateway';
 
 // ============================================================================
 // CONFIGURATION
@@ -55,10 +55,12 @@ export async function validateBody<T extends ZodSchema>(
   // Check Content-Type
   const contentType = req.headers.get('content-type');
   if (!contentType || !ALLOWED_CONTENT_TYPES.some(ct => contentType.toLowerCase().startsWith(ct))) {
-    throw new APIError('INVALID_INPUT', {
-      message: 'Invalid Content-Type. Expected application/json',
-      received: contentType,
-    }, 415);
+    throw new APIError(
+      'INVALID_INPUT',
+      'Invalid Content-Type. Expected application/json',
+      { received: contentType },
+      415
+    );
   }
 
   // Parse JSON body
@@ -67,21 +69,24 @@ export async function validateBody<T extends ZodSchema>(
     // Check body size (approximate, actual check happens during parsing)
     const contentLength = req.headers.get('content-length');
     if (contentLength && parseInt(contentLength) > MAX_BODY_SIZE) {
-      throw new APIError('INVALID_INPUT', {
-        message: `Request body too large. Maximum ${MAX_BODY_SIZE / 1024 / 1024}MB`,
-        size: parseInt(contentLength),
-        max_size: MAX_BODY_SIZE,
-      }, 413);
+      throw new APIError(
+        'INVALID_INPUT',
+        `Request body too large. Maximum ${MAX_BODY_SIZE / 1024 / 1024}MB`,
+        { size: parseInt(contentLength), max_size: MAX_BODY_SIZE },
+        413
+      );
     }
 
     body = await req.json();
   } catch (error) {
     if (error instanceof APIError) throw error;
     
-    throw new APIError('INVALID_INPUT', {
-      message: 'Invalid JSON in request body',
-      details: error instanceof Error ? error.message : 'Unknown error',
-    }, 400);
+    throw new APIError(
+      'INVALID_INPUT',
+      'Invalid JSON in request body',
+      { details: error instanceof Error ? error.message : 'Unknown error' },
+      400
+    );
   }
 
   // Validate against schema
@@ -89,10 +94,12 @@ export async function validateBody<T extends ZodSchema>(
     return schema.parse(body);
   } catch (error) {
     if (error instanceof ZodError) {
-      throw new APIError('INVALID_INPUT', {
-        message: 'Validation failed',
-        errors: formatZodErrors(error),
-      }, 400);
+      throw new APIError(
+        'INVALID_INPUT',
+        'Validation failed',
+        { errors: formatZodErrors(error) },
+        400
+      );
     }
     throw error;
   }
@@ -132,10 +139,12 @@ export function validateQuery<T extends ZodSchema>(
     return schema.parse(params);
   } catch (error) {
     if (error instanceof ZodError) {
-      throw new APIError('INVALID_INPUT', {
-        message: 'Invalid query parameters',
-        errors: formatZodErrors(error),
-      }, 400);
+      throw new APIError(
+        'INVALID_INPUT',
+        'Invalid query parameters',
+        { errors: formatZodErrors(error) },
+        400
+      );
     }
     throw error;
   }
@@ -157,10 +166,12 @@ export function validateParams<T extends ZodSchema>(
     return schema.parse(params);
   } catch (error) {
     if (error instanceof ZodError) {
-      throw new APIError('INVALID_INPUT', {
-        message: 'Invalid path parameters',
-        errors: formatZodErrors(error),
-      }, 400);
+      throw new APIError(
+        'INVALID_INPUT',
+        'Invalid path parameters',
+        { errors: formatZodErrors(error) },
+        400
+      );
     }
     throw error;
   }
@@ -198,11 +209,12 @@ export function blockTenantInjection(body: unknown): void {
     
     for (const key of keys) {
       if (suspiciousKeys.includes(key)) {
-        throw new APIError('TENANT_INJECTION_ATTEMPT', {
-          message: 'tenant_id cannot be provided by client',
-          provided_field: key,
-          provided_value: (body as any)[key],
-        }, 403);
+        throw new APIError(
+          'TENANT_INJECTION_ATTEMPT',
+          'tenant_id cannot be provided by client',
+          { provided_field: key, provided_value: (body as any)[key] },
+          403
+        );
       }
     }
   }
