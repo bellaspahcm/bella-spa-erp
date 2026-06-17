@@ -192,6 +192,23 @@ export interface APIRateLimitCounter {
 }
 
 /**
+ * Sandbox Metadata Record (from sandbox.sandbox_metadata table)
+ * Tracks sandbox reset history per partner
+ */
+export interface SandboxMetadata {
+  id: string;
+  partner_id: string;
+  
+  // Reset tracking
+  last_reset_at?: string;  // ISO timestamp of last sandbox reset
+  reset_count: number;     // Number of times sandbox has been reset
+  
+  // Audit
+  created_at: string;
+  updated_at: string;
+}
+
+/**
  * API Partner Usage Summary (from api_partner_usage_summary view)
  */
 export interface APIPartnerUsageSummary {

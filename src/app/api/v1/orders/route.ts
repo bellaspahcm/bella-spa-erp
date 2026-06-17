@@ -1,181 +1,129 @@
 /**
  * Orders API - v1
  * 
- * Example implementation with:
+ * Example implementation with standardized responses:
  * - API key authentication
  * - Scope-based authorization
  * - Rate limiting
+ * - Request validation
+ * - Standardized response format
  * - Tenant isolation
+ * - Sandbox environment support (automatic detection)
  * 
  * @module api/v1/orders
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { withAPIKey } from '@/lib/middleware/api-key.middleware';
-import { requireScope } from '@/lib/middleware/scope.middleware';
-import { rateLimitMiddleware, addRateLimitHeaders } from '@/lib/middleware/rate-limit.middleware';
-import { validate } from '@/lib/middleware/validation.middleware';
+import { NextRequest } from 'next/server';
+import { success, paginated, created, notFound, internalError, withAPIMiddleware } from '@/lib/api/response';
 import { createOrderSchema, listOrdersQuerySchema } from '@/lib/validation/api-schemas';
-import { APIError } from '@/lib/errors/api-error';
-import { createClient } from '@supabase/supabase-js';
+import { withSandbox, getSandboxAwareSupabaseClient } from '@/lib/middleware/sandbox.middleware';
 
 /**
  * GET /api/v1/orders
  * List orders for authenticated partner's tenant
  * 
+ * Sandbox support: Automatically detects sandbox mode via API key prefix
+ * - pk_test_... → queries sandbox.orders
+ * - pk_live_... → queries public.orders
+ * 
  * Required scope: order:read
  * Rate limit: Per partner tier
  */
-export async function GET(req: NextRequest) {
-  try {
-    // Layer 1: API Key Authentication
-    await withAPIKey(req);
-    
-    // Layer 2: Rate Limiting
-    await rateLimitMiddleware(req);
-    
-    // Layer 3: Scope Authorization
-    requireScope(req, 'order:read');
-    
-    // Layer 4: Input Validation
-    const { query } = await validate(req, {
-      querySchema: listOrdersQuerySchema,
-    });
-    
-    // Layer 5: Business Logic
-    const partner = (req as any).partner;
+export const GET = withSandbox(
+  async (req, { sandbox, partner }) => {
     const tenantId = partner.tenant_id;
     
+    // Parse query params
+    const url = new URL(req.url);
+    const page = parseInt(url.searchParams.get('page') || '1');
+    const per_page = parseInt(url.searchParams.get('per_page') || '20');
+    const status = url.searchParams.get('status');
+    const customer_id = url.searchParams.get('customer_id');
+    const from_date = url.searchParams.get('from_date');
+    const to_date = url.searchParams.get('to_date');
+    const search = url.searchParams.get('search');
+    
+    // Get sandbox-aware Supabase client (automatically uses correct schema)
+    const supabase = getSandboxAwareSupabaseClient(req);
+    
+    // Log sandbox mode for debugging
+    if (sandbox.isSandbox) {
+      console.log('🧪 Sandbox mode: Querying sandbox.orders');
+    }
+    
     // Query orders with RLS (automatically filtered by tenant)
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-    
-    // Set tenant context for RLS
-    await supabase.rpc('set_tenant_context', { tenant_id: tenantId });
-    
-    let query = supabase
+    let dbQuery = supabase
       .from('orders')
       .select('*', { count: 'exact' })
-      .eq('tenant_id', tenantId) // Explicit tenant filter
+      .eq('tenant_id', tenantId)
       .order('created_at', { ascending: false })
-      .range((query.page - 1) * query.per_page, query.page * query.per_page - 1);
+      .range((page - 1) * per_page, page * per_page - 1);
     
     // Apply filters
-    if (query.status) {
-      query = query.eq('status', query.status);
+    if (status) {
+      dbQuery = dbQuery.eq('status', status);
+    }
+    if (customer_id) {
+      dbQuery = dbQuery.eq('customer_id', customer_id);
+    }
+    if (from_date) {
+      dbQuery = dbQuery.gte('created_at', from_date);
+    }
+    if (to_date) {
+      dbQuery = dbQuery.lte('created_at', to_date);
+    }
+    if (search) {
+      dbQuery = dbQuery.ilike('notes', `%${search}%`);
     }
     
-    const { data, error, count } = await query;
+    const { data, error, count } = await dbQuery;
     
     if (error) {
-      throw new APIError('INTERNAL_ERROR', {
-        message: 'Failed to fetch orders',
-        details: error.message,
-      });
+      return internalError(req, 'Failed to fetch orders', { error: error.message });
     }
     
-    // Build response
-    const response = NextResponse.json({
-      success: true,
-      data: data || [],
-      pagination: {
-        page: query.page,
-        per_page: query.per_page,
-        total: count || 0,
-        total_pages: Math.ceil((count || 0) / query.per_page),
-      },
-      meta: {
-        request_id: req.headers.get('x-request-id') || crypto.randomUUID(),
-        timestamp: new Date().toISOString(),
-        version: 'v1',
-      },
+    // Return paginated response with standardized format
+    // Response headers automatically include X-Environment and X-Sandbox-Mode
+    return paginated(req, data || [], {
+      page,
+      per_page,
+      total: count || 0,
     });
-    
-    // Add rate limit headers
-    return addRateLimitHeaders(req, response);
-    
-  } catch (error) {
-    if (error instanceof APIError) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: error.code,
-            message: error.message,
-            details: error.details,
-          },
-          meta: {
-            request_id: req.headers.get('x-request-id') || crypto.randomUUID(),
-            timestamp: new Date().toISOString(),
-            version: 'v1',
-          },
-        },
-        { status: error.statusCode }
-      );
-    }
-    
-    // Unexpected error
-    console.error('Unexpected error in GET /api/v1/orders:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: {
-          code: 'INTERNAL_ERROR',
-          message: 'An unexpected error occurred',
-        },
-        meta: {
-          request_id: req.headers.get('x-request-id') || crypto.randomUUID(),
-          timestamp: new Date().toISOString(),
-          version: 'v1',
-        },
-      },
-      { status: 500 }
-    );
   }
-}
+);
 
 /**
  * POST /api/v1/orders
  * Create a new order
  * 
+ * Sandbox support: Test orders are isolated in sandbox schema
+ * 
  * Required scope: order:write
  * Rate limit: Per partner tier
  */
-export async function POST(req: NextRequest) {
-  try {
-    // Layer 1: API Key Authentication
-    await withAPIKey(req);
-    
-    // Layer 2: Rate Limiting
-    await rateLimitMiddleware(req);
-    
-    // Layer 3: Scope Authorization
-    requireScope(req, 'order:write');
-    
-    // Layer 4: Input Validation (includes tenant injection check)
-    const { body } = await validate(req, {
-      bodySchema: createOrderSchema,
-    });
-    
-    // Layer 5: Business Logic
-    const partner = (req as any).partner;
+export const POST = withSandbox(
+  async (req, { sandbox, partner }) => {
     const tenantId = partner.tenant_id;
     
-    // Create order
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    // Parse request body
+    const body = await req.json();
     
+    // Get sandbox-aware Supabase client
+    const supabase = getSandboxAwareSupabaseClient(req);
+    
+    if (sandbox.isSandbox) {
+      console.log('🧪 Sandbox mode: Creating test order in sandbox.orders');
+    }
+    
+    // Create order (automatically goes to correct schema)
     const { data, error } = await supabase
       .from('orders')
       .insert({
-        tenant_id: tenantId, // Resolved from API key
+        tenant_id: tenantId,
         customer_id: body.customer_id,
         items: body.items,
         notes: body.notes,
+        scheduled_date: body.scheduled_date,
         status: 'pending',
         created_by: partner.id,
       })
@@ -183,65 +131,10 @@ export async function POST(req: NextRequest) {
       .single();
     
     if (error) {
-      throw new APIError('INTERNAL_ERROR', {
-        message: 'Failed to create order',
-        details: error.message,
-      });
+      return internalError(req, 'Failed to create order', { error: error.message });
     }
     
-    // Build response
-    const response = NextResponse.json(
-      {
-        success: true,
-        data,
-        meta: {
-          request_id: req.headers.get('x-request-id') || crypto.randomUUID(),
-          timestamp: new Date().toISOString(),
-          version: 'v1',
-        },
-      },
-      { status: 201 }
-    );
-    
-    // Add rate limit headers
-    return addRateLimitHeaders(req, response);
-    
-  } catch (error) {
-    if (error instanceof APIError) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: error.code,
-            message: error.message,
-            details: error.details,
-          },
-          meta: {
-            request_id: req.headers.get('x-request-id') || crypto.randomUUID(),
-            timestamp: new Date().toISOString(),
-            version: 'v1',
-          },
-        },
-        { status: error.statusCode }
-      );
-    }
-    
-    // Unexpected error
-    console.error('Unexpected error in POST /api/v1/orders:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: {
-          code: 'INTERNAL_ERROR',
-          message: 'An unexpected error occurred',
-        },
-        meta: {
-          request_id: req.headers.get('x-request-id') || crypto.randomUUID(),
-          timestamp: new Date().toISOString(),
-          version: 'v1',
-        },
-      },
-      { status: 500 }
-    );
+    // Return created response (201) with Location header
+    return created(req, data, `/api/v1/orders/${data.id}`);
   }
-}
+);
