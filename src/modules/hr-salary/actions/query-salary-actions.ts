@@ -99,6 +99,66 @@ interface MatrixKtvUser {
   full_name: string | null;
 }
 
+/**
+ * Fetches comprehensive salary data for all KTVs in the current tenant.
+ * 
+ * This is the **primary salary data provider** for the admin salary dashboard and KTV mobile app.
+ * Calculates real-time salary breakdowns including base salary, session bonuses, rating bonuses,
+ * KPI bonuses, and attendance deductions for all KTV employees.
+ * 
+ * **Authorization**:
+ * - Admin users: See all KTVs in the tenant
+ * - KTV users: See only their own salary data
+ * 
+ * @returns Promise resolving to array of {@link KtvSalaryRecord} objects with full salary breakdown
+ * 
+ * @throws {Error} If tenant context missing or database queries fail
+ * 
+ * @remarks
+ * **Data Sources & Business Logic:**
+ * - Tenant salary config from `tenants.salary_config` (bonus thresholds, penalty rates)
+ * - KTV base salaries from `users` table
+ * - Salary records from `salary_records` table (saved state)
+ * - Live session data from `session_logs` with package multipliers
+ * - Composite ratings from `get_ktv_leaderboard` RPC (60% customer + 40% discipline)
+ * - Attendance data from `attendance` table (late/absent penalties)
+ * - KPI bonuses from `kpi_records` table (synced with leaderboard)
+ * 
+ * **Calculation Rules:**
+ * - **Draft Records**: Dynamically recalculated from live data on every query
+ * - **Non-Draft Records**: Uses saved values from `salary_records` table
+ * - **Pro-Rata Salary**: Automatically applied for KTVs with `resignation_date` in current month
+ * - **Session Multipliers**: Package coefficients applied (Basic: 1.0, Happy: 1.5, VIP: 2.0)
+ * - **Rating Bonuses**: Based on composite rating thresholds (5★: 50k, 4.5★: 30k, 4★: 10k per session)
+ * - **Attendance Penalties**: Auto-calculated using tenant config (late: 50k/day, absent: 200k/day)
+ * 
+ * **Performance Considerations:**
+ * - Marked with `'use server'` - runs on server only
+ * - Multiple database queries executed sequentially
+ * - Large tenants (50+ KTVs) may take 1-2 seconds
+ * - Consider caching for high-traffic dashboards
+ * 
+ * **Status Filtering:**
+ * - Includes all salary statuses: draft, pending_approval, published, confirmed, finalized
+ * - `isConfirmed` flag set to true only for 'confirmed' and 'finalized' statuses
+ * 
+ * @example
+ * ```typescript
+ * // Fetch all salary data for admin dashboard
+ * const salaries = await getSalaryData();
+ * 
+ * salaries.forEach(ktv => {
+ *   console.log(`${ktv.name}: ${ktv.totalSalary.toLocaleString('vi-VN')}đ`);
+ *   console.log(`  Base: ${ktv.baseSalary.toLocaleString('vi-VN')}đ`);
+ *   console.log(`  Sessions: ${ktv.sessions} ca`);
+ *   console.log(`  Bonus: ${ktv.sessionBonus.toLocaleString('vi-VN')}đ`);
+ *   console.log(`  Status: ${ktv.status}`);
+ * });
+ * ```
+ * 
+ * @see {@link getKtvSessionMatrix} for session distribution by package type
+ * @see {@link BUSINESS_RULES.PAYROLL} for calculation constants
+ */
 export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
   try {
     const now = new Date();
@@ -317,6 +377,77 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
   }
 }
 
+/**
+ * Fetches KTV session distribution matrix grouped by package type.
+ * 
+ * Provides a tabular view of how many sessions each KTV completed for each package type
+ * (Basic, Happy, VIP, etc.) in the current month. Used for the session matrix dashboard widget.
+ * 
+ * **Authorization**:
+ * - Admin users: See all KTVs in the tenant
+ * - KTV users: See only their own session data
+ * 
+ * @returns Promise resolving to {@link KtvSessionMatrix} with package columns and KTV rows
+ * 
+ * @throws {Error} If tenant context missing or database queries fail
+ * 
+ * @remarks
+ * **Data Structure:**
+ * ```typescript
+ * {
+ *   packageNames: ['Combo Mẹ & Bé Tiết Kiệm', 'Combo VIP', 'Dịch vụ lẻ'],
+ *   ktvs: [
+ *     {
+ *       id: 'ktv-1',
+ *       name: 'Nguyễn Văn A',
+ *       isConfirmed: false,
+ *       'Combo Mẹ & Bé Tiết Kiệm': 15.0,
+ *       'Combo VIP': 8.0,
+ *       'Dịch vụ lẻ': 2.0
+ *     }
+ *   ]
+ * }
+ * ```
+ * 
+ * **Session Counting Rules:**
+ * - Uses package multipliers (Basic: 1.0, Happy: 1.5, VIP: 2.0)
+ * - Weighted session counts shown (e.g., 10 VIP sessions = 20.0 displayed)
+ * - Only 'completed' sessions included (excludes pending, cancelled)
+ * - Confirmed status from `salary_records.status` ('pending_approval' or 'approved')
+ * 
+ * **Package Column Logic:**
+ * - Dynamically discovered from completed sessions in current month
+ * - Includes all packages defined in `packages` table (even with 0 sessions)
+ * - Always includes 'Dịch vụ lẻ' (single-service sessions without package)
+ * - Columns sorted alphabetically for consistency
+ * 
+ * **Zero-Session Handling:**
+ * - KTVs with no sessions show 0 for all package columns
+ * - Empty matrix (no sessions for any KTV) shows all 0s
+ * - Prevents "no data" errors in dashboard UI
+ * 
+ * **Performance:**
+ * - Uses `unstable_noStore()` from Next.js to disable caching
+ * - Always fetches fresh data (important for real-time dashboards)
+ * - Multiple database joins (sessions → bookings → packages)
+ * 
+ * @example
+ * ```typescript
+ * // Fetch session matrix for dashboard widget
+ * const matrix = await getKtvSessionMatrix();
+ * 
+ * console.log('Package Types:', matrix.packageNames);
+ * matrix.ktvs.forEach(ktv => {
+ *   console.log(`${ktv.name}:`);
+ *   matrix.packageNames.forEach(pkg => {
+ *     console.log(`  ${pkg}: ${ktv[pkg]} sessions`);
+ *   });
+ * });
+ * ```
+ * 
+ * @see {@link getSalaryData} for full salary breakdown including totals
+ * @see {@link calculateWeightedSessionCount} for session multiplier logic
+ */
 export async function getKtvSessionMatrix(): Promise<KtvSessionMatrix> {
   const { unstable_noStore: noStore } = await import('next/cache');
   noStore();

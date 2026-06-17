@@ -638,7 +638,7 @@ export async function invokeAdapterOnCompletion(params: {
 
   // Import module registry
   const { moduleRegistry } = await import('@/core/adapters/registry');
-  const adapter = moduleRegistry.get(moduleId as any);
+  const adapter = moduleRegistry.get(moduleId as ModuleId);
 
   // If no adapter registered, skip gracefully
   if (!adapter) {
