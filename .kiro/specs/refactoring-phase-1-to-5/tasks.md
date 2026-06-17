@@ -230,13 +230,14 @@
   - _Dependencies: Task 26_
   - _Result: SKIPPED - No circular dependencies found_
 
-- [ ] 28. Fix cross-boundary import violations
+- [x] 28. Fix cross-boundary import violations
   - Ensure core doesn't import from modules
   - Ensure modules only import from core through adapters
   - Run `npm run lint:strict` to verify
   - _Requirements: REQ-6.1_
   - _Duration: 1 day_
   - _Dependencies: Task 26_
+  - _Result: COMPLIANT - No violations found_
 
 - [ ] 29. Identify duplicate code patterns
   - Use jscpd or similar tool to find duplicates
