@@ -2,6 +2,7 @@ import type { Dispatch, SetStateAction } from 'react';
 
 import { AnimatePresence, motion } from 'framer-motion';
 import { PlusCircle, RefreshCw, X } from 'lucide-react';
+import { BUSINESS_RULES } from '@/constants/business-rules';
 
 import type { NewInventoryItem } from '../types';
 
@@ -24,7 +25,7 @@ const ITEM_FIELDS: Array<{
   { label: 'Mã SKU', key: 'sku', type: 'text', placeholder: 'VD: OIL-LAV-001' },
   { label: 'Đơn vị *', key: 'unit', type: 'text', placeholder: 'ml, g, cái, chai...' },
   { label: 'Tồn kho ban đầu', key: 'stock_level', type: 'number', placeholder: '0' },
-  { label: 'Ngưỡng sắp hết', key: 'min_stock_level', type: 'number', placeholder: '10' },
+  { label: 'Ngưỡng sắp hết', key: 'min_stock_level', type: 'number', placeholder: String(BUSINESS_RULES.INVENTORY.LOW_STOCK_THRESHOLD) },
   { label: 'Đơn giá (VND)', key: 'price_per_unit', type: 'number', placeholder: '0' },
 ];
 

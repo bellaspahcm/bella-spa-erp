@@ -5,6 +5,7 @@ import { getCurrentUser } from './user-actions';
 import { checkHqAuth } from './hq-actions';
 import { revalidatePath } from 'next/cache';
 import { safeRevalidatePath } from '@/lib/revalidate';
+import { BUSINESS_RULES } from '@/constants/business-rules';
 import type { Database, Json } from '@/types/database.types';
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
@@ -658,7 +659,7 @@ export async function confirmTransferReceipt(transferId: string) {
             sku: item.sku || null,
             unit: item.unit || 'cái',
             stock_level: item.qty,
-            min_stock_level: 10,
+            min_stock_level: BUSINESS_RULES.INVENTORY.LOW_STOCK_THRESHOLD,
             price_per_unit: 0,
             category: 'Cấp từ HQ',
             tenant_id: branchTenantId

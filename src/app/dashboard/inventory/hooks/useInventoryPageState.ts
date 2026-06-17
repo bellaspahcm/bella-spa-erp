@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
+import { BUSINESS_RULES } from '@/constants/business-rules';
 
 import {
   getCachedInventoryItemsForPage,
@@ -37,7 +38,7 @@ const createBlankInventoryItem = (): NewInventoryItem => ({
   sku: '',
   unit: 'cái',
   stock_level: 0,
-  min_stock_level: 10,
+  min_stock_level: BUSINESS_RULES.INVENTORY.LOW_STOCK_THRESHOLD,
   price_per_unit: 0,
   category: '',
 });
