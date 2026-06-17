@@ -213,7 +213,7 @@
 
 ## Wave 4: Architecture Cleanup (Week 6)
 
-- [ ] 26. Run madge to detect circular dependencies
+- [x] 26. Run madge to detect circular dependencies
   - Install madge: `npm install -g madge`
   - Run: `npx madge --circular src/`
   - Document all circular dependencies found
@@ -221,13 +221,14 @@
   - _Duration: 1 hour_
   - _Dependencies: Tasks 1-25_
 
-- [ ] 27. Fix circular dependencies
+- [x] 27. Fix circular dependencies
   - Break circular dependencies by extracting shared types
   - Move shared interfaces to separate files
   - Verify no circulars remain
   - _Requirements: REQ-6.1_
   - _Duration: 1 day_
   - _Dependencies: Task 26_
+  - _Result: SKIPPED - No circular dependencies found_
 
 - [ ] 28. Fix cross-boundary import violations
   - Ensure core doesn't import from modules
