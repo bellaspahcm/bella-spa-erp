@@ -1,101 +1,133 @@
 /**
- * API v1: Orders Endpoint
+ * Orders API - v1
  * 
- * Example implementation using API Key + Scope middleware
+ * Example implementation with:
+ * - API key authentication
+ * - Scope-based authorization
+ * - Rate limiting
+ * - Tenant isolation
  * 
- * Security:
- * - Requires valid API key
- * - Requires 'order:read' scope for GET
- * - Requires 'order:write' scope for POST
- * - Tenant is resolved from API key (not from request body)
- * 
- * @endpoint GET /api/v1/orders - List orders
- * @endpoint POST /api/v1/orders - Create order
+ * @module api/v1/orders
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { withAPIKeyAndScope } from '@/lib/middleware/scope.middleware';
-import { RequestWithPartner } from '@/lib/middleware/api-key.middleware';
-import { createClient } from '@/lib/supabase/server';
+import { withAPIKey } from '@/lib/middleware/api-key.middleware';
+import { requireScope } from '@/lib/middleware/scope.middleware';
+import { rateLimitMiddleware, addRateLimitHeaders } from '@/lib/middleware/rate-limit.middleware';
+import { APIError } from '@/lib/errors/api-error';
+import { createClient } from '@supabase/supabase-js';
 
 /**
  * GET /api/v1/orders
+ * List orders for authenticated partner's tenant
  * 
- * List orders for the authenticated partner's tenant
- * 
- * Required scope: 'order:read'
+ * Required scope: order:read
+ * Rate limit: Per partner tier
  */
 export async function GET(req: NextRequest) {
-  // Authenticate and validate scope
-  const { partner, error } = await withAPIKeyAndScope(
-    req as RequestWithPartner,
-    'order:read'
-  );
-  
-  if (error) return error;
-  
-  // ✅ Partner authenticated and has 'order:read' scope
-  // ✅ Tenant is resolved from API key (cannot be injected by client)
-  const tenantId = partner!.tenant_id;
-  const isSandbox = partner!.is_sandbox;
-  
   try {
-    const supabase = createClient();
+    // Layer 1: API Key Authentication
+    await withAPIKey(req);
+    
+    // Layer 2: Rate Limiting
+    await rateLimitMiddleware(req);
+    
+    // Layer 3: Scope Authorization
+    requireScope(req, 'order:read');
+    
+    // Layer 4: Business Logic
+    const partner = (req as any).partner;
+    const tenantId = partner.tenant_id;
     
     // Parse query parameters
-    const { searchParams } = new URL(req.url);
-    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100);
-    const offset = parseInt(searchParams.get('offset') || '0');
-    const status = searchParams.get('status');
+    const url = new URL(req.url);
+    const page = parseInt(url.searchParams.get('page') || '1');
+    const perPage = Math.min(parseInt(url.searchParams.get('per_page') || '20'), 100);
+    const status = url.searchParams.get('status');
     
-    // Query orders - automatically filtered by tenant_id via RLS
+    // Query orders with RLS (automatically filtered by tenant)
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    
+    // Set tenant context for RLS
+    await supabase.rpc('set_tenant_context', { tenant_id: tenantId });
+    
     let query = supabase
-      .from('bookings')
+      .from('orders')
       .select('*', { count: 'exact' })
-      .eq('tenant_id', tenantId) // Explicit tenant filter (redundant with RLS, but safe)
+      .eq('tenant_id', tenantId) // Explicit tenant filter
       .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1);
+      .range((page - 1) * perPage, page * perPage - 1);
     
-    // Filter by status if provided
+    // Apply filters
     if (status) {
       query = query.eq('status', status);
     }
     
-    const { data: orders, count, error: dbError } = await query;
+    const { data, error, count } = await query;
     
-    if (dbError) {
-      throw dbError;
+    if (error) {
+      throw new APIError('INTERNAL_ERROR', {
+        message: 'Failed to fetch orders',
+        details: error.message,
+      });
     }
     
-    return NextResponse.json({
+    // Build response
+    const response = NextResponse.json({
       success: true,
-      data: orders,
+      data: data || [],
       pagination: {
+        page,
+        per_page: perPage,
         total: count || 0,
-        limit,
-        offset,
-        has_more: (count || 0) > offset + limit,
+        total_pages: Math.ceil((count || 0) / perPage),
       },
       meta: {
+        request_id: req.headers.get('x-request-id') || crypto.randomUUID(),
         timestamp: new Date().toISOString(),
-        tenant_id: tenantId,
-        is_sandbox: isSandbox,
-        request_id: (req as RequestWithPartner).request_id,
+        version: 'v1',
       },
     });
-  } catch (error) {
-    console.error('[GET /api/v1/orders] Error:', error);
     
+    // Add rate limit headers
+    return addRateLimitHeaders(req, response);
+    
+  } catch (error) {
+    if (error instanceof APIError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: error.code,
+            message: error.message,
+            details: error.details,
+          },
+          meta: {
+            request_id: req.headers.get('x-request-id') || crypto.randomUUID(),
+            timestamp: new Date().toISOString(),
+            version: 'v1',
+          },
+        },
+        { status: error.statusCode }
+      );
+    }
+    
+    // Unexpected error
+    console.error('Unexpected error in GET /api/v1/orders:', error);
     return NextResponse.json(
       {
         success: false,
         error: {
-          code: 'SERVER_002',
-          message: 'Failed to fetch orders',
-          details: error instanceof Error ? error.message : 'Unknown error',
+          code: 'INTERNAL_ERROR',
+          message: 'An unexpected error occurred',
         },
         meta: {
+          request_id: req.headers.get('x-request-id') || crypto.randomUUID(),
           timestamp: new Date().toISOString(),
+          version: 'v1',
         },
       },
       { status: 500 }
@@ -105,122 +137,123 @@ export async function GET(req: NextRequest) {
 
 /**
  * POST /api/v1/orders
- * 
  * Create a new order
  * 
- * Required scope: 'order:write'
- * 
- * **CRITICAL SECURITY:**
- * - tenant_id is resolved from API key
- * - Client CANNOT provide tenant_id in body
- * - If client tries to inject tenant_id, request is rejected by middleware
+ * Required scope: order:write
+ * Rate limit: Per partner tier
  */
 export async function POST(req: NextRequest) {
-  // Authenticate and validate scope
-  const { partner, error } = await withAPIKeyAndScope(
-    req as RequestWithPartner,
-    'order:write'
-  );
-  
-  if (error) return error;
-  
-  // ✅ Partner authenticated and has 'order:write' scope
-  const tenantId = partner!.tenant_id;
-  const partnerId = partner!.partner_id;
-  const isSandbox = partner!.is_sandbox;
-  
   try {
+    // Layer 1: API Key Authentication
+    await withAPIKey(req);
+    
+    // Layer 2: Rate Limiting
+    await rateLimitMiddleware(req);
+    
+    // Layer 3: Scope Authorization
+    requireScope(req, 'order:write');
+    
+    // Layer 4: Business Logic
+    const partner = (req as any).partner;
+    const tenantId = partner.tenant_id;
+    
+    // Parse request body
     const body = await req.json();
     
     // Validate required fields
-    if (!body.customer_id) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: 'VAL_002',
-            message: 'Missing required field: customer_id',
-          },
-        },
-        { status: 400 }
-      );
+    if (!body.customer_id || !body.items || !Array.isArray(body.items)) {
+      throw new APIError('INVALID_INPUT', {
+        message: 'Missing required fields: customer_id, items',
+      });
     }
     
-    if (!body.service_items || !Array.isArray(body.service_items)) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: 'VAL_002',
-            message: 'Missing required field: service_items (array)',
-          },
-        },
-        { status: 400 }
-      );
+    // Block tenant injection attempts
+    if ('tenant_id' in body || 'tenantId' in body) {
+      throw new APIError('TENANT_INJECTION_ATTEMPT', {
+        message: 'tenant_id cannot be provided by client',
+        provided: body.tenant_id || body.tenantId,
+      });
     }
-    
-    // ============================================================
-    // CRITICAL: Inject tenant_id from API key (not from body)
-    // ============================================================
-    const orderData = {
-      ...body,
-      tenant_id: tenantId, // ← Resolved from API key, NOT from body
-      metadata: {
-        ...(body.metadata || {}),
-        created_via_api: true,
-        api_partner_id: partnerId,
-        is_sandbox: isSandbox,
-      },
-    };
-    
-    // If sandbox mode, add sandbox indicator
-    if (isSandbox) {
-      orderData.notes = `[SANDBOX] ${orderData.notes || ''}`;
-    }
-    
-    const supabase = createClient();
     
     // Create order
-    const { data: order, error: dbError } = await supabase
-      .from('bookings')
-      .insert(orderData)
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    
+    const { data, error } = await supabase
+      .from('orders')
+      .insert({
+        tenant_id: tenantId, // Resolved from API key
+        customer_id: body.customer_id,
+        items: body.items,
+        notes: body.notes,
+        status: 'pending',
+        created_by: partner.id,
+      })
       .select()
       .single();
     
-    if (dbError) {
-      throw dbError;
+    if (error) {
+      throw new APIError('INTERNAL_ERROR', {
+        message: 'Failed to create order',
+        details: error.message,
+      });
     }
     
-    return NextResponse.json(
+    // Build response
+    const response = NextResponse.json(
       {
         success: true,
-        data: order,
+        data,
         meta: {
+          request_id: req.headers.get('x-request-id') || crypto.randomUUID(),
           timestamp: new Date().toISOString(),
-          tenant_id: tenantId,
-          is_sandbox: isSandbox,
-          request_id: (req as RequestWithPartner).request_id,
+          version: 'v1',
         },
       },
       { status: 201 }
     );
-  } catch (error) {
-    console.error('[POST /api/v1/orders] Error:', error);
     
+    // Add rate limit headers
+    return addRateLimitHeaders(req, response);
+    
+  } catch (error) {
+    if (error instanceof APIError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: error.code,
+            message: error.message,
+            details: error.details,
+          },
+          meta: {
+            request_id: req.headers.get('x-request-id') || crypto.randomUUID(),
+            timestamp: new Date().toISOString(),
+            version: 'v1',
+          },
+        },
+        { status: error.statusCode }
+      );
+    }
+    
+    // Unexpected error
+    console.error('Unexpected error in POST /api/v1/orders:', error);
     return NextResponse.json(
       {
         success: false,
         error: {
-          code: 'SERVER_002',
-          message: 'Failed to create order',
-          details: error instanceof Error ? error.message : 'Unknown error',
+          code: 'INTERNAL_ERROR',
+          message: 'An unexpected error occurred',
         },
         meta: {
+          request_id: req.headers.get('x-request-id') || crypto.randomUUID(),
           timestamp: new Date().toISOString(),
+          version: 'v1',
         },
       },
       { status: 500 }
     );
   }
 }
-

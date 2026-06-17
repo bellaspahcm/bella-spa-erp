@@ -46,9 +46,12 @@ CREATE TABLE IF NOT EXISTS public.api_partners (
   is_sandbox BOOLEAN NOT NULL DEFAULT FALSE, -- Sandbox mode for testing
   
   -- Rate Limiting Configuration
+  rate_limit_tier VARCHAR(20) NOT NULL DEFAULT 'free' CHECK (
+    rate_limit_tier IN ('free', 'basic', 'pro', 'enterprise', 'unlimited')
+  ),
   rate_limit_per_minute INTEGER NOT NULL DEFAULT 100,
   rate_limit_per_day INTEGER NOT NULL DEFAULT 5000,
-  rate_limit_burst INTEGER NOT NULL DEFAULT 200, -- Burst allowance
+  rate_limit_burst INTEGER NOT NULL DEFAULT 200, -- Burst allowance (legacy, use tier instead)
   
   -- Usage Statistics
   last_request_at TIMESTAMP WITH TIME ZONE,
