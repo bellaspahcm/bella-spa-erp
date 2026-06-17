@@ -7,6 +7,7 @@ import {
   calculateSalaryTotal,
 } from '@/lib/business-rules/salary';
 import { calculateAttendanceWorkDays } from '@/lib/business-rules/attendance';
+import { BUSINESS_RULES } from '@/constants/business-rules';
 
 export async function getMonthlyPnL(month?: string) {
   const { createClient } = await import('@/lib/supabase-server');
@@ -146,9 +147,9 @@ export async function getMonthlyPnL(month?: string) {
           return;
         }
 
-        // Pro-rata base salary: (base_salary / 26) × actual working days
+        // Pro-rata base salary: (base_salary / WORKING_DAYS_PER_MONTH) × actual working days
         const baseSalary = Number(ktv.base_salary || 6000000);
-        const proRataBase = Math.round((baseSalary / 26) * actualDays);
+        const proRataBase = Math.round((baseSalary / BUSINESS_RULES.PAYROLL.WORKING_DAYS_PER_MONTH) * actualDays);
 
         // Session commissions for this KTV
         const ktvSessions = sessions.filter((s) => s.completed_by_ktv_id === ktv.id);

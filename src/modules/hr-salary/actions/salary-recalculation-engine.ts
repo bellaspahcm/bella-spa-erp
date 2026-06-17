@@ -80,9 +80,80 @@ export interface SalaryRecalculationOverrides {
 }
 
 /**
- * Recalculate and save a KTV salary record.
- * Keeps pro-rata base salary, session multipliers, KPI, rating bonus, deductions,
- * and non-draft preservation rules in one central engine.
+ * Recalculates and saves a KTV salary record with full business logic enforcement.
+ * 
+ * This is the **central salary calculation engine** for the Bella Spa ERP system.
+ * It handles pro-rata base salary calculations, package-based session multipliers,
+ * KPI bonuses, rating bonuses, attendance deductions, and status-based recalculation rules.
+ * 
+ * @param supabase - Authenticated Supabase client with database access
+ * @param ktvId - Unique identifier of the KTV employee
+ * @param monthYear - Salary period in YYYY-MM-01 format (e.g., "2026-06-01")
+ * @param tenantId - Tenant identifier for multi-tenancy isolation
+ * @param overrides - Optional manual adjustments from admin (base salary, KPI, deductions, status, etc.)
+ * 
+ * @returns Promise resolving to success status and calculated total salary
+ * 
+ * @throws {Error} If database queries fail (KTV not found, tenant config missing, etc.)
+ * @throws {Error} If salary record is locked or finalized (via {@link assertSalaryRecalculationLifecycle})
+ * 
+ * @remarks
+ * **Business Logic Rules:**
+ * - **Draft Records**: Recalculates all components dynamically from live attendance and session data
+ * - **Non-Draft Records**: Preserves saved values unless explicit overrides are provided
+ * - **Pro-Rata Salary**: Automatically calculates `(base_salary / 26) * actualDays` for partial months
+ * - **Session Multipliers**: Uses package coefficients (Basic: 1.0, Happy: 1.5, VIP: 2.0) from {@link BUSINESS_RULES}
+ * - **KPI Bonus Sync**: Fetches from `kpi_records` table to maintain consistency with leaderboard
+ * - **Attendance Deductions**: Auto-calculates penalties for late/absent days using tenant salary config
+ * - **Resignation Handling**: Caps base salary at resignation date for departing KTVs
+ * 
+ * **Status Lifecycle:**
+ * - `draft` → Dynamic recalculation on every call
+ * - `pending_approval` → Preserves saved values, only updates if overrides provided
+ * - `published` → Locked for KTV confirmation
+ * - `confirmed` → Locked for admin finalization
+ * - `finalized` → Fully locked, expense entry created
+ * 
+ * **Critical for Financial Integrity:**
+ * This function must be called whenever:
+ * - Admin adjusts salary configuration (base salary, KPI, deductions)
+ * - New sessions are completed and need to be reflected in salary
+ * - Attendance logs are submitted/modified
+ * - Admin publishes salary for KTV confirmation
+ * - Salary status transitions occur
+ * 
+ * @example
+ * ```typescript
+ * // Admin publishes salary for KTV confirmation
+ * const result = await recalculateAndSaveSalaryRecordEngine(
+ *   supabase,
+ *   'ktv-uuid',
+ *   '2026-06-01',
+ *   'tenant-uuid',
+ *   { status: 'published' }
+ * );
+ * console.log(`Published salary: ${result.totalSalary.toLocaleString('vi-VN')}đ`);
+ * ```
+ * 
+ * @example
+ * ```typescript
+ * // Admin manually adjusts KTV salary components
+ * await recalculateAndSaveSalaryRecordEngine(
+ *   supabase,
+ *   'ktv-uuid',
+ *   '2026-06-01',
+ *   'tenant-uuid',
+ *   {
+ *     base_salary: 7000000,
+ *     kpi_bonus: 500000,
+ *     violations_deduction: 100000,
+ *     status: 'pending_approval'
+ *   }
+ * );
+ * ```
+ * 
+ * @see {@link BUSINESS_RULES} for salary calculation constants
+ * @see {@link SalaryError} for salary-specific error handling
  */
 export async function recalculateAndSaveSalaryRecordEngine(
   supabase: SupabaseClient<Database>,
