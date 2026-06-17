@@ -13,7 +13,7 @@
  * @since 2026-06-17
  */
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase-server';
 import {
   APIPartner,
   CreateAPIPartnerInput,
