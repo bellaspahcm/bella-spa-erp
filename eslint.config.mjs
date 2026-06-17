@@ -105,6 +105,7 @@ const eslintConfig = defineConfig([
     "load-tests/**",
     "coverage/**",
     "playwright-report/**",
+    ".tmp/**",
     "*.js",
     "*.mjs",
     "docs/**/*.js",
@@ -116,6 +117,15 @@ const eslintConfig = defineConfig([
     files: ["src/**/*.{ts,tsx}"],
     rules: {
       "@typescript-eslint/no-explicit-any": "error",
+      // Allow unused vars prefixed with underscore (for interface compliance)
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          "argsIgnorePattern": "^_",
+          "varsIgnorePattern": "^_",
+          "caughtErrorsIgnorePattern": "^_"
+        }
+      ],
       // Data-fetch-on-mount screens intentionally set loading/result state from effects.
       // Keep exhaustive-deps on for stale-closure bugs; avoid noisy false positives here.
       "react-hooks/set-state-in-effect": "off",
