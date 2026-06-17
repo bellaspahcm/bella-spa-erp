@@ -6,6 +6,27 @@ import { getCurrentUser } from '@/services/user-actions';
 import { createAccountingDataClient } from './client';
 import type { CreateAccountInput } from './types';
 
+/**
+ * Retrieve all accounting accounts for the current tenant.
+ * 
+ * @returns Array of accounting accounts ordered by account code
+ * @throws Error if user is unauthorized or tenant session is missing
+ * 
+ * @remarks
+ * Returns the complete Chart of Accounts (COA) for the current tenant.
+ * Accounts are automatically filtered by tenant_id through RLS policies.
+ * 
+ * @example
+ * ```typescript
+ * const accounts = await getAccounts();
+ * // Returns accounts like:
+ * // [
+ * //   { account_code: '111', account_name: 'Tiền mặt', account_type: 'ASSET', ... },
+ * //   { account_code: '112', account_name: 'Tiền gửi ngân hàng', account_type: 'ASSET', ... },
+ * //   ...
+ * // ]
+ * ```
+ */
 export async function getAccounts() {
   const user = await getCurrentUser();
   if (!user?.tenant_id) throw new Error('Unauthorized or missing tenant session.');
@@ -21,6 +42,35 @@ export async function getAccounts() {
   return data;
 }
 
+/**
+ * Create a new accounting account in the Chart of Accounts.
+ * 
+ * @param input - Account creation parameters including code, name, type, and optional parent
+ * @returns Success result with created account data
+ * @throws Error if user is not admin/super_admin or if account code already exists
+ * 
+ * @remarks
+ * Only branch admins can create accounts. The account code must be unique within the tenant.
+ * If a parent_id is provided, it must belong to the same tenant.
+ * 
+ * Uses Vietnamese TT133 accounting standard conventions:
+ * - Class 1: Assets (1xx)
+ * - Class 2: Liabilities (2xx)
+ * - Class 3: Equity (3xx)
+ * - Class 5: Expenses (5xx)
+ * - Class 7: Revenue (7xx)
+ * 
+ * @example
+ * ```typescript
+ * // Create a new asset account
+ * const result = await createAccount({
+ *   account_code: '1131',
+ *   account_name: 'Tạm ứng nhân viên',
+ *   account_type: 'ASSET',
+ *   parent_id: parentAccountId, // optional
+ * });
+ * ```
+ */
 export async function createAccount(input: CreateAccountInput) {
   const user = await getCurrentUser();
   if (!user?.tenant_id || !['admin', 'super_admin'].includes(user.role || '')) {
@@ -73,6 +123,31 @@ export async function createAccount(input: CreateAccountInput) {
   return { success: true, data };
 }
 
+/**
+ * Update an existing accounting account.
+ * 
+ * @param id - UUID of the account to update
+ * @param input - Partial account update including name and/or active status
+ * @returns Success result with updated account data
+ * @throws Error if user is not admin/super_admin or account doesn't exist
+ * 
+ * @remarks
+ * Only branch admins can update accounts. Account code cannot be changed after creation.
+ * Use is_active flag to deactivate accounts instead of deleting them to preserve audit trail.
+ * 
+ * @example
+ * ```typescript
+ * // Rename an account
+ * await updateAccount(accountId, {
+ *   account_name: 'Tạm ứng nhân viên KTV',
+ * });
+ * 
+ * // Deactivate an account
+ * await updateAccount(accountId, {
+ *   is_active: false,
+ * });
+ * ```
+ */
 export async function updateAccount(id: string, input: Partial<CreateAccountInput> & { is_active?: boolean }) {
   const user = await getCurrentUser();
   if (!user?.tenant_id || !['admin', 'super_admin'].includes(user.role || '')) {

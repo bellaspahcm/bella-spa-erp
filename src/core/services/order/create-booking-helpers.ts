@@ -597,17 +597,22 @@ export async function constructTenantContextForBooking(
   }
 
   // Extract settings
-  const settings: Record<string, any> = {
+  const settings: Record<string, unknown> = {
     currency: 'VND',
     timezone: 'Asia/Ho_Chi_Minh',
     locale: 'vi-VN',
     companyName: tenant.name,
   };
 
-  if (tenant.brand_theme && typeof tenant.brand_theme === 'object') {
+  // Type guard for brand theme JSON
+  function isBrandThemeObject(obj: unknown): obj is { logoUrl?: string; primaryColor?: string } {
+    return typeof obj === 'object' && obj !== null;
+  }
+
+  if (tenant.brand_theme && isBrandThemeObject(tenant.brand_theme)) {
     Object.assign(settings, {
-      logoUrl: (tenant.brand_theme as any).logoUrl || tenant.logo_url,
-      primaryColor: (tenant.brand_theme as any).primaryColor,
+      logoUrl: tenant.brand_theme.logoUrl || tenant.logo_url,
+      primaryColor: tenant.brand_theme.primaryColor,
     });
   } else if (tenant.logo_url) {
     settings.logoUrl = tenant.logo_url;
@@ -620,7 +625,7 @@ export async function constructTenantContextForBooking(
   const context: TenantContext = {
     tenantId: tenant.id,
     tenantName: tenant.name || 'Unnamed Tenant',
-    enabledModules: enabledModules as any,
+    enabledModules: enabledModules as readonly ModuleId[],
     subscriptionPlan,
     featureFlags,
     settings,
@@ -649,7 +654,7 @@ export async function invokeAdapterValidation(
     : 'spa';
 
   // Lookup adapter from registry
-  const adapter = moduleRegistry.get(moduleId as any);
+  const adapter = moduleRegistry.get(moduleId as ModuleId);
 
   // If no adapter registered, use default validation (allow)
   if (!adapter) {

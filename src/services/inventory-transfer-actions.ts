@@ -5,6 +5,8 @@ import { getCurrentUser } from './user-actions';
 import { checkHqAuth } from './hq-actions';
 import { revalidatePath } from 'next/cache';
 import { safeRevalidatePath } from '@/lib/revalidate';
+import { BUSINESS_RULES } from '@/constants/business-rules';
+import { InventoryError } from '@/core/lib/errors';
 import type { Database, Json } from '@/types/database.types';
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
@@ -172,7 +174,7 @@ function normalizeTransferStatus(status: string): InventoryTransferOrder['status
     return status as InventoryTransferOrder['status'];
   }
 
-  throw new Error(`Trạng thái chuyển kho không hợp lệ: ${status}`);
+  throw new InventoryError(`Trạng thái chuyển kho không hợp lệ: ${status}`, 'INVENTORY_TRANSFER_INVALID_STATUS', { status });
 }
 
 function normalizeTransferItems(items: Json): TransferOrderItem[] {
@@ -339,7 +341,7 @@ export async function getInventoryTransferOrders(tenantId?: string): Promise<Inv
   const result = await getInventoryTransferOrdersResult(tenantId);
 
   if (!result.success) {
-    throw new Error(result.error);
+    throw new InventoryError(result.error, 'INVENTORY_TRANSFER_FETCH_FAILED', { tenantId });
   }
 
   return result.data;
@@ -658,7 +660,7 @@ export async function confirmTransferReceipt(transferId: string) {
             sku: item.sku || null,
             unit: item.unit || 'cái',
             stock_level: item.qty,
-            min_stock_level: 10,
+            min_stock_level: BUSINESS_RULES.INVENTORY.LOW_STOCK_THRESHOLD,
             price_per_unit: 0,
             category: 'Cấp từ HQ',
             tenant_id: branchTenantId

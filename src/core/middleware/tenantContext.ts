@@ -144,7 +144,7 @@ type ExtractionResult =
  * @returns Extraction result with context or error details
  */
 export async function extractTenantContext(
-  request: NextRequest
+  _request: NextRequest
 ): Promise<ExtractionResult> {
   try {
     const supabase = await createClient();

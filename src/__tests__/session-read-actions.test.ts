@@ -3,6 +3,7 @@ import {
   getSessionLogs,
   getSessionsWithDetails,
 } from '../core/services/order/session-actions';
+import { BookingError } from '../core/lib/errors';
 
 jest.mock('next/cache', () => ({
   revalidatePath: jest.fn(),
@@ -132,8 +133,11 @@ describe('session read actions', () => {
   it('requires a tenant before reading session data', async () => {
     mockGetCurrentUser.mockResolvedValue({ id: 'admin-1', role: 'admin', tenant_id: null });
 
+    await expect(getSessionLogs('booking-1')).rejects.toThrow(BookingError);
     await expect(getSessionLogs('booking-1')).rejects.toThrow('Failed to fetch session logs: missing tenant scope');
+    await expect(getSessionsWithDetails()).rejects.toThrow(BookingError);
     await expect(getSessionsWithDetails()).rejects.toThrow('Failed to fetch sessions with details: missing tenant scope');
+    await expect(getCalendarSessions()).rejects.toThrow(BookingError);
     await expect(getCalendarSessions()).rejects.toThrow('Failed to fetch calendar sessions: missing tenant scope');
 
     expect(mockFrom).not.toHaveBeenCalled();
@@ -143,6 +147,7 @@ describe('session read actions', () => {
   it('propagates session log query failures', async () => {
     mockFrom.mockReturnValue(new MockQueryBuilder(null, { message: 'session logs failed' }));
 
+    await expect(getSessionLogs('booking-1')).rejects.toThrow(BookingError);
     await expect(getSessionLogs('booking-1')).rejects.toThrow(
       'Failed to fetch session logs for booking booking-1: session logs failed'
     );
@@ -151,6 +156,7 @@ describe('session read actions', () => {
   it('propagates session details query failures', async () => {
     mockFrom.mockReturnValue(new MockQueryBuilder(null, { message: 'session details failed' }));
 
+    await expect(getSessionsWithDetails()).rejects.toThrow(BookingError);
     await expect(getSessionsWithDetails()).rejects.toThrow(
       'Failed to fetch sessions with details: session details failed'
     );
@@ -159,6 +165,7 @@ describe('session read actions', () => {
   it('propagates calendar session query failures', async () => {
     mockFrom.mockReturnValue(new MockQueryBuilder(null, { message: 'calendar sessions failed' }));
 
+    await expect(getCalendarSessions()).rejects.toThrow(BookingError);
     await expect(getCalendarSessions()).rejects.toThrow(
       'Failed to fetch calendar sessions: calendar sessions failed'
     );

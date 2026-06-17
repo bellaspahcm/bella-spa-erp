@@ -9,6 +9,7 @@
 import { getKTVTodayAttendance, ktvCheckIn } from '../services/attendance-actions';
 import { getBookings } from '../core/services/order/lifecycle-actions';
 import { getCurrentUser } from '../services/user-actions';
+import { BookingError } from '../core/lib/errors';
 
 // Mock Dependencies
 jest.mock('next/cache', () => ({ revalidatePath: jest.fn() }));
@@ -155,6 +156,7 @@ describe('Row-Level Security (RLS) & Tenant Isolation Compliance Suite', () => {
         }),
       });
 
+      await expect(getBookings()).rejects.toThrow(BookingError);
       await expect(getBookings()).rejects.toThrow('Failed to fetch bookings: RLS policy lookup failed');
     });
   });

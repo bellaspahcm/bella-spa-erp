@@ -3,6 +3,7 @@
 import { sanitizeTime } from '@/lib/utils';
 import { safeRevalidatePath } from '@/lib/revalidate';
 import { validateBookingPackageScope } from './create-booking-helpers';
+import { BookingError } from '@/core/lib/errors';
 import type { Database } from '@/types/database.types';
 
 type BookingRow = Database['public']['Tables']['bookings']['Row'];
@@ -19,7 +20,7 @@ async function requireCurrentTenantId() {
   const { getCurrentUser } = await import('@/services/user-actions');
   const currentUser = await getCurrentUser();
   if (!currentUser?.tenant_id) {
-    throw new Error(BOOKING_TENANT_ACCESS_ERROR);
+    throw new BookingError(BOOKING_TENANT_ACCESS_ERROR, 'BOOKING_TENANT_ACCESS_ERROR');
   }
   return currentUser.tenant_id;
 }
@@ -157,7 +158,7 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
         .order('session_number', { ascending: true });
 
       if (existingLogsError) {
-        throw new Error(existingLogsError.message);
+        throw new BookingError(existingLogsError.message, 'BOOKING_SESSION_LOGS_FETCH_ERROR', { bookingId: id });
       }
 
       const logs = (existingLogs || []) as SessionLogSchedulePick[];
@@ -172,7 +173,7 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
           .gt('session_number', newTotal)
           .eq('status', 'scheduled');
         if (deleteLogsError) {
-          throw new Error(deleteLogsError.message);
+          throw new BookingError(deleteLogsError.message, 'BOOKING_SESSION_LOGS_DELETE_ERROR', { bookingId: id });
         }
       } else if (newTotal > maxSessionNumber) {
         const newLogs: SessionLogInsert[] = [];
@@ -192,7 +193,7 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
         const tenantIdForNewLogs = data?.[0]?.tenant_id || oldBooking?.tenant_id || tenantId;
 
         if (!tenantIdForNewLogs) {
-          throw new Error('Missing tenant_id for new session logs inside updateBooking');
+          throw new BookingError('Missing tenant_id for new session logs inside updateBooking', 'BOOKING_MISSING_TENANT_ID', { bookingId: id });
         }
 
         if (!lastAssignedDate) {
@@ -222,14 +223,14 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
         if (newLogs.length > 0) {
           const { error: insertLogsError } = await supabase.from('session_logs').insert(newLogs);
           if (insertLogsError) {
-            throw new Error(insertLogsError.message);
+            throw new BookingError(insertLogsError.message, 'BOOKING_SESSION_LOGS_INSERT_ERROR', { bookingId: id });
           }
         }
       }
 
       const syncResult = await syncBookingProgress(id, tenantId);
       if (syncResult.error) {
-        throw new Error(syncResult.error);
+        throw new BookingError(syncResult.error, 'BOOKING_PROGRESS_SYNC_ERROR', { bookingId: id });
       }
     } catch (syncErr) {
       if (oldBooking) {

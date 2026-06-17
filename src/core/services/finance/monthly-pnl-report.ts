@@ -7,7 +7,120 @@ import {
   calculateSalaryTotal,
 } from '@/lib/business-rules/salary';
 import { calculateAttendanceWorkDays } from '@/lib/business-rules/attendance';
+import { BUSINESS_RULES } from '@/constants/business-rules';
 
+/**
+ * Fetches the monthly profit & loss (P&L) report with dynamic KTV salary calculation.
+ * 
+ * Returns revenue, operating expenses, KTV salaries, and net profit for a specified month.
+ * Calculates KTV salaries dynamically if no expense records exist yet, ensuring real-time
+ * accuracy for financial reporting.
+ * 
+ * @param month - Target month in YYYY-MM-01 format (e.g., "2026-06-01"), defaults to current month
+ * @returns Monthly P&L data object with revenue, expenses, and profit
+ * 
+ * @throws {Error} If database queries fail
+ * @throws {Error} If tenant ID cannot be resolved
+ * 
+ * @remarks
+ * **P&L Formula:**
+ * ```
+ * Net Profit = Total Revenue - (Operating Expenses + KTV Salaries)
+ * ```
+ * 
+ * **Report Structure:**
+ * ```typescript
+ * {
+ *   month_year: string,                // Period (YYYY-MM-01)
+ *   total_revenue: number,             // Confirmed revenue only
+ *   total_operating_expenses: number,  // Approved/paid non-salary expenses
+ *   total_ktv_salaries: number,        // KTV salary fund
+ *   net_profit: number,                // Revenue - all expenses
+ *   total_bookings: number,            // Count of active bookings
+ *   total_sessions_completed: number,  // Count of completed sessions
+ *   is_locked: boolean                 // Whether month is locked
+ * }
+ * ```
+ * 
+ * **Critical Business Rules:**
+ * 
+ * **1. Revenue Recognition (Status Filter):**
+ * - Only `status === 'confirmed'` revenue is counted
+ * - Pending or unconfirmed deposits are excluded
+ * - Prevents recognizing unearned/unreceived income
+ * 
+ * **2. Operating Expenses (Status & Category Filter):**
+ * - Only `status === 'approved' || status === 'paid'` expenses counted
+ * - Excludes `category === 'salary'` (handled separately)
+ * - Submitted, draft, or rejected expenses are excluded
+ * - Prevents artificially inflating business costs
+ * 
+ * **3. KTV Salary Fund (Dynamic Calculation):**
+ * 
+ * **3a. Static Mode (Preferred):**
+ * If salary expenses exist in `expenses` table with `category === 'salary'`:
+ * - Uses posted expense entries directly
+ * - Salary fund = sum of approved/paid salary expenses
+ * 
+ * **3b. Dynamic Mode (Real-time Accrual):**
+ * If NO salary expenses exist yet (draft salaries or mid-month report):
+ * - For each KTV with saved `salary_records` row:
+ *   - Uses `total_salary` from saved record (respects all calculations)
+ * - For each KTV WITHOUT saved `salary_records` row:
+ *   - Calculates pro-rata base salary: `(base_salary / 26) × actualDays`
+ *   - `actualDays` from `attendance` table (status !== 'absent')
+ *   - If 0 working days → base salary = 0
+ *   - Adds session commissions for completed sessions
+ * - Never uses full monthly base salary if KTV didn't work
+ * 
+ * **4. Pro-Rata Base Salary Rules:**
+ * - Uses {@link BUSINESS_RULES.PAYROLL.WORKING_DAYS_PER_MONTH} (26 days)
+ * - Formula: `Math.round((base_salary / 26) × actualDays)`
+ * - `actualDays` = attendance records with `status !== 'absent'`
+ * - If KTV has no attendance logs → pro-rata base = 0
+ * - Still adds session commissions even with 0 attendance (edge case)
+ * 
+ * **5. Session Commissions:**
+ * - Uses `bookings.ktv_commission` if available
+ * - Falls back to {@link DEFAULT_KTV_SESSION_COMMISSION} (150,000đ)
+ * - Only counts completed sessions (`status === 'completed'`)
+ * 
+ * **Data Integrity:**
+ * This function must strictly enforce status filters to maintain accurate
+ * financial reporting. Silent failures or incorrect filters can cause
+ * discrepancies in profit/loss calculations.
+ * 
+ * @example
+ * ```typescript
+ * // Get current month P&L
+ * const pnl = await getMonthlyPnL();
+ * 
+ * console.log(`Period: ${pnl.month_year}`);
+ * console.log(`Revenue: ${pnl.total_revenue.toLocaleString('vi-VN')}đ`);
+ * console.log(`Operating Expenses: ${pnl.total_operating_expenses.toLocaleString('vi-VN')}đ`);
+ * console.log(`KTV Salaries: ${pnl.total_ktv_salaries.toLocaleString('vi-VN')}đ`);
+ * console.log(`Net Profit: ${pnl.net_profit.toLocaleString('vi-VN')}đ`);
+ * console.log(`Profit Margin: ${((pnl.net_profit / pnl.total_revenue) * 100).toFixed(2)}%`);
+ * ```
+ * 
+ * @example
+ * ```typescript
+ * // Get P&L for specific month (June 2026)
+ * const junePnl = await getMonthlyPnL('2026-06-01');
+ * 
+ * // Compare with previous month
+ * const mayPnl = await getMonthlyPnL('2026-05-01');
+ * 
+ * const revenueGrowth = 
+ *   ((junePnl.total_revenue - mayPnl.total_revenue) / mayPnl.total_revenue) * 100;
+ * 
+ * console.log(`Revenue growth: ${revenueGrowth.toFixed(2)}%`);
+ * ```
+ * 
+ * @see {@link calculateSalaryTotal} for salary calculation formula
+ * @see {@link calculateAttendanceWorkDays} for working days calculation
+ * @see {@link BUSINESS_RULES.PAYROLL.WORKING_DAYS_PER_MONTH} for pro-rata constant
+ */
 export async function getMonthlyPnL(month?: string) {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = await createClient();
@@ -146,9 +259,9 @@ export async function getMonthlyPnL(month?: string) {
           return;
         }
 
-        // Pro-rata base salary: (base_salary / 26) × actual working days
+        // Pro-rata base salary: (base_salary / WORKING_DAYS_PER_MONTH) × actual working days
         const baseSalary = Number(ktv.base_salary || 6000000);
-        const proRataBase = Math.round((baseSalary / 26) * actualDays);
+        const proRataBase = Math.round((baseSalary / BUSINESS_RULES.PAYROLL.WORKING_DAYS_PER_MONTH) * actualDays);
 
         // Session commissions for this KTV
         const ktvSessions = sessions.filter((s) => s.completed_by_ktv_id === ktv.id);

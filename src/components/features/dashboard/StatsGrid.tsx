@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Users, Calendar, DollarSign, Star, TrendingUp, TrendingDown } from 'lucide-react';
 
@@ -34,6 +35,9 @@ const item = {
 };
 
 export function StatsGrid({ stats, isLoading }: StatsGridProps) {
+  // Memoize stats card data to prevent unnecessary re-renders when parent re-renders
+  const memoizedStats = useMemo(() => stats, [stats]);
+
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
@@ -62,7 +66,7 @@ export function StatsGrid({ stats, isLoading }: StatsGridProps) {
       animate="show"
       className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12"
     >
-      {stats.map((stat, idx) => {
+      {memoizedStats.map((stat, idx) => {
         const IconComponent = ICON_MAP[stat.iconName] || Users;
         
         return (

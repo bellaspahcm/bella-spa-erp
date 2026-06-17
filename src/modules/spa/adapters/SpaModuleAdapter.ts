@@ -223,7 +223,7 @@ export class SpaModuleAdapter implements ModuleAdapter {
    */
   async validateBookingRules(
     order: CoreBookingOrder,
-    context: TenantContext
+    _context: TenantContext
   ): Promise<boolean> {
     console.log(`[SpaAdapter] Validating booking rules for order ${order.id}`);
 
@@ -496,7 +496,7 @@ export class SpaModuleAdapter implements ModuleAdapter {
    */
   private async updateKtvSalary(
     order: CoreBookingOrder,
-    context: TenantContext
+    _context: TenantContext
   ): Promise<void> {
     try {
       const ktvId = order.metadata.assigned_ktv_id as string;
@@ -543,7 +543,7 @@ export class SpaModuleAdapter implements ModuleAdapter {
    */
   private async deductInventory(
     order: CoreBookingOrder,
-    context: TenantContext
+    _context: TenantContext
   ): Promise<void> {
     try {
       const productsUsed = order.metadata.products_used as
@@ -590,7 +590,7 @@ export class SpaModuleAdapter implements ModuleAdapter {
    */
   private async awardLoyaltyPoints(
     order: CoreBookingOrder,
-    context: TenantContext
+    _context: TenantContext
   ): Promise<void> {
     try {
       console.log(

@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Users, Clock, Star, Trophy, Diamond } from 'lucide-react';
 
@@ -12,6 +13,9 @@ interface KtvPerformanceTableProps {
 }
 
 export function KtvPerformanceTable({ topKTVs, isLoading }: KtvPerformanceTableProps) {
+  // Memoize KTV data to prevent unnecessary table re-renders
+  const memoizedKTVs = useMemo(() => topKTVs, [topKTVs]);
+
   if (isLoading) {
     return (
       <motion.div 
@@ -105,7 +109,7 @@ export function KtvPerformanceTable({ topKTVs, isLoading }: KtvPerformanceTableP
             </tr>
           </thead>
           <tbody className="divide-y divide-pink-50">
-            {topKTVs.map((ktv, idx) => (
+            {memoizedKTVs.map((ktv, idx) => (
               <tr key={idx} className="beauty-top-ktv-row group hover:bg-white/40 transition-colors">
                 <td className="px-5 py-6 font-bold text-foreground whitespace-nowrap">{ktv.name}</td>
                 <td className="px-5 py-6 font-bold text-muted-foreground whitespace-nowrap">{ktv.sessions} buổi</td>

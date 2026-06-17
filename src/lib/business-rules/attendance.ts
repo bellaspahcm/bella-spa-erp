@@ -12,7 +12,9 @@ export type AttendancePenaltyConfig = {
   penaltyAbsentPerDay?: number | string | null;
 };
 
-export const STANDARD_SALARY_WORK_DAYS = 26;
+import { BUSINESS_RULES } from '@/constants/business-rules';
+
+export const STANDARD_SALARY_WORK_DAYS = BUSINESS_RULES.PAYROLL.WORKING_DAYS_PER_MONTH;
 export const DEFAULT_PENALTY_LATE_PER_DAY = 50000;
 export const DEFAULT_PENALTY_ABSENT_PER_DAY = 200000;
 export const DEFAULT_LATE_CHECKIN_CUTOFF = '08:30:00';
