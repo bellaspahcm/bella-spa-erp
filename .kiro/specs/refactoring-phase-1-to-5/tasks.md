@@ -159,7 +159,7 @@
 
 ## Wave 3: Documentation (Week 5)
 
-- [~] 19. Add JSDoc to payroll services
+- [x] 19. Add JSDoc to payroll services
   - Add JSDoc to all exported functions in `src/core/services/payroll/`
   - Include: @param, @returns, @throws, @example, @remarks for complex logic
   - ~15 functions to document
@@ -167,28 +167,28 @@
   - _Duration: 1 day_
   - _Dependencies: Tasks 1-18_
 
-- [~] 20. Add JSDoc to accounting services
+- [ ] 20. Add JSDoc to accounting services
   - Add JSDoc to `src/core/services/accounting/`
   - ~20 functions to document
   - _Requirements: REQ-5.1_
   - _Duration: 1.5 days_
   - _Dependencies: Tasks 1-18_
 
-- [~] 21. Add JSDoc to finance services
+- [ ] 21. Add JSDoc to finance services
   - Add JSDoc to `src/core/services/finance/`
   - ~12 functions to document
   - _Requirements: REQ-5.1_
   - _Duration: 1 day_
   - _Dependencies: Tasks 1-18_
 
-- [~] 22. Add JSDoc to order services
+- [ ] 22. Add JSDoc to order services
   - Add JSDoc to `src/core/services/order/`
   - ~25 functions to document
   - _Requirements: REQ-5.1_
   - _Duration: 1.5 days_
   - _Dependencies: Tasks 1-18_
 
-- [~] 23. Add JSDoc to spa module services
+- [ ] 23. Add JSDoc to spa module services
   - Add JSDoc to `src/modules/spa/services/`
   - ~10 functions to document
   - _Requirements: REQ-5.1_
@@ -203,7 +203,7 @@
   - _Duration: 1 day_
   - _Dependencies: Tasks 19-23_
 
-- [~] 25. Review and validate all JSDoc
+- [ ] 25. Review and validate all JSDoc
   - Verify all JSDoc is accurate and helpful
   - Check examples actually work
   - Ensure consistent format across all files
@@ -213,7 +213,7 @@
 
 ## Wave 4: Architecture Cleanup (Week 6)
 
-- [~] 26. Run madge to detect circular dependencies
+- [ ] 26. Run madge to detect circular dependencies
   - Install madge: `npm install -g madge`
   - Run: `npx madge --circular src/`
   - Document all circular dependencies found
@@ -221,7 +221,7 @@
   - _Duration: 1 hour_
   - _Dependencies: Tasks 1-25_
 
-- [~] 27. Fix circular dependencies
+- [ ] 27. Fix circular dependencies
   - Break circular dependencies by extracting shared types
   - Move shared interfaces to separate files
   - Verify no circulars remain
@@ -229,7 +229,7 @@
   - _Duration: 1 day_
   - _Dependencies: Task 26_
 
-- [~] 28. Fix cross-boundary import violations
+- [ ] 28. Fix cross-boundary import violations
   - Ensure core doesn't import from modules
   - Ensure modules only import from core through adapters
   - Run `npm run lint:strict` to verify
@@ -237,7 +237,7 @@
   - _Duration: 1 day_
   - _Dependencies: Task 26_
 
-- [~] 29. Identify duplicate code patterns
+- [ ] 29. Identify duplicate code patterns
   - Use jscpd or similar tool to find duplicates
   - Create list of duplicate patterns (>3 occurrences)
   - Prioritize by impact
@@ -245,7 +245,7 @@
   - _Duration: 2 hours_
   - _Dependencies: Tasks 1-25_
 
-- [~] 30. Extract common query patterns
+- [ ] 30. Extract common query patterns
   - Create `src/core/lib/query-helpers.ts`
   - Extract patterns like `queryWithErrorHandling<T>`
   - Replace duplicates with helper calls
@@ -253,7 +253,7 @@
   - _Duration: 1 day_
   - _Dependencies: Task 29_
 
-- [~] 31. Extract duplicate error handling
+- [ ] 31. Extract duplicate error handling
   - Extract common try-catch patterns
   - Create higher-order functions for error handling
   - Reduce duplication from 3% to <1.5%
@@ -263,7 +263,7 @@
 
 ## Wave 5: Testing & Performance (Week 7-8)
 
-- [~] 32. Add tests for validations.ts
+- [ ] 32. Add tests for validations.ts
   - Write tests for 8 validation functions
   - Cover edge cases and error paths
   - Achieve 100% coverage for this file
@@ -271,7 +271,7 @@
   - _Duration: 1 day_
   - _Dependencies: Tasks 1-31_
 
-- [~] 33. Add tests for form-validators, promotions, geo utils
+- [ ] 33. Add tests for form-validators, promotions, geo utils
   - `form-validators.ts`: 7 more tests (3 exist, need 7 more)
   - `promotions.ts`: 3 more tests (2 exist, need 3 more)
   - `geo.ts`: 4 tests (0 exist, need 4)
@@ -279,7 +279,7 @@
   - _Duration: 2 days_
   - _Dependencies: Tasks 1-31_
 
-- [~] 34. Add memoization to dashboard components
+- [ ] 34. Add memoization to dashboard components
   - Add `useMemo` to `StatsGrid.tsx`, `RevenueChart.tsx`, `KtvPerformanceTable.tsx`
   - Identify expensive computations (data processing, filtering, sorting)
   - Benchmark before/after to verify 30% improvement
@@ -287,7 +287,7 @@
   - _Duration: 1 day_
   - _Dependencies: Tasks 1-31_
 
-- [~] 35. Final QA and metrics validation
+- [ ] 35. Final QA and metrics validation
   - Run full test suite: `npm test`
   - Run linting: `npm run lint`
   - Check coverage: `npm run test:coverage`
