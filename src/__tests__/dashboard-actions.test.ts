@@ -4,7 +4,7 @@ import {
   getImportantAlerts,
   getMonthlyPerformance,
   getUpcomingSessions,
-} from '../services/dashboard-actions';
+} from '../core/services/analytics/dashboard-actions';
 
 jest.mock('server-only', () => ({}), { virtual: true });
 

@@ -22,7 +22,7 @@ import {
   finalizeAllSalaryRecords, 
   checkAndAutoConfirm 
 } from '@/modules/hr-salary/actions/admin-salary-actions';
-import { exportSalaryToExcelResult, exportSessionMatrixToExcelResult } from '@/services/export-actions';
+import { exportSalaryToExcelResult, exportSessionMatrixToExcelResult } from '@/core/services/analytics/export-actions';
 import { toast } from 'sonner';
 import { getCachedCurrentUser } from '@/lib/dashboard-client-context';
 import {

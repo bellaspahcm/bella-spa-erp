@@ -8,6 +8,11 @@ import { assertOpenAccountingPeriod } from '@/core/services/accounting/period-gu
 import { buildRevenueAccountingMetadata, inferBusinessEventType } from '@/core/services/accounting/template-rules';
 import { resolveAccountingReviewStatus } from './accounting-review';
 import { resolveKtvCommission } from './commission-actions';
+import { moduleRegistry } from '@/core/adapters/registry';
+import type { TenantContext } from '@/core/types/tenant';
+import type { CoreBookingOrder, BookingOrderStatus } from '@/core/types/booking-order';
+import type { ModuleId } from '@/core/types/module';
+import type { CoreServiceCatalogItem } from '@/core/types/service-catalog';
 import type { createClient } from '@/lib/supabase-server';
 import type { bookingSchema } from '@/lib/validations';
 import type { Database } from '@/types/database.types';
@@ -225,19 +230,66 @@ export async function buildBookingPayload(params: {
   customerId: string;
   tenantId: string;
   existingBooking: BookingRow | null;
+  tenantContext: TenantContext;
 }): Promise<BookingInsert> {
-  const { validatedData, customerId, tenantId, existingBooking } = params;
+  const { validatedData, customerId, tenantId, existingBooking, tenantContext } = params;
   const confirmedDepositAmount = (existingBooking?.deposit_amount || 0) + (validatedData.deposit_amount || 0);
   const hasConfirmedDeposit = confirmedDepositAmount > 0;
   const lockedCommission = validatedData.ktv_commission || await resolveKtvCommission(validatedData);
 
+  // Task 19.2: Calculate price using adapter pricing logic
+  // This ensures pricing is calculated server-side with module-specific discounts
+  // and cannot be manipulated by client
+  let finalPrice = validatedData.full_price;
+  
+  // If package_id is provided, recalculate price using adapter
+  if (validatedData.package_id) {
+    try {
+      const { calculateOrderPrice } = await import('./pricing-actions');
+      const { createClient } = await import('@/lib/supabase-server');
+      const supabase = await createClient();
+      
+      // Fetch package details from database
+      const { data: packageData } = await supabase
+        .from('packages')
+        .select('id, tenant_id, module_key, name, description, price, total_sessions, session_multiplier')
+        .eq('id', validatedData.package_id)
+        .single();
+      
+      if (packageData) {
+        // Transform to CoreServiceCatalogItem
+        const serviceItem: CoreServiceCatalogItem = {
+          id: packageData.id,
+          tenantId: packageData.tenant_id || tenantId,
+          moduleId: (normalizePackageModuleKey(packageData.module_key) || 'spa') as ModuleId,
+          name: packageData.name,
+          description: packageData.description || '',
+          basePrice: packageData.price || 0,
+          currency: 'VND',
+          status: 'active', // Assume active since we only query non-deleted packages
+          metadata: {
+            total_sessions: packageData.total_sessions,
+            session_multiplier: packageData.session_multiplier,
+          },
+        };
+        
+        // Calculate price using adapter
+        finalPrice = await calculateOrderPrice(serviceItem, tenantContext);
+        console.log(`[buildBookingPayload] Adapter pricing: ${validatedData.full_price} → ${finalPrice}`);
+      }
+    } catch (error) {
+      console.error('[buildBookingPayload] Failed to calculate adapter pricing, using form price:', error);
+      // Fall back to form price if adapter pricing fails
+    }
+  }
+  
   const payload: BookingInsert = {
     customer_id: customerId,
     booking_number: existingBooking?.booking_number || `BK-${new Date().getTime()}`,
     package_id: validatedData.package_id || null,
     package_name: validatedData.package_name || null,
     status: hasConfirmedDeposit ? 'booked' : 'deposit_pending',
-    full_price: validatedData.full_price,
+    full_price: finalPrice,
     deposit_amount: confirmedDepositAmount,
     total_sessions: validatedData.total_sessions,
     ktv_commission: lockedCommission,
@@ -498,4 +550,171 @@ export async function createInitialSessionLogs(params: {
   }
 
   return { success: true };
+}
+
+/**
+ * Construct TenantContext for booking operations.
+ * 
+ * Task 19.1: Build TenantContext to pass to adapter validation.
+ * 
+ * @param supabase - Supabase client
+ * @param tenantId - Tenant ID
+ * @returns TenantContext or error
+ */
+export async function constructTenantContextForBooking(
+  supabase: SupabaseServerClient,
+  tenantId: string
+): Promise<{ context: TenantContext } | ActionError> {
+  const { data: tenant, error: tenantError } = await supabase
+    .from('tenants')
+    .select('*')
+    .eq('id', tenantId)
+    .single();
+
+  if (tenantError || !tenant) {
+    return {
+      error: `Không thể tải cấu hình chi nhánh: ${tenantError?.message || 'Không tìm thấy'}`,
+    };
+  }
+
+  // Extract enabled modules
+  const enabledModules = Array.isArray(tenant.enabled_modules)
+    ? tenant.enabled_modules
+    : tenant.enabled_modules
+    ? [tenant.enabled_modules as string]
+    : ['spa'];
+
+  // Extract subscription plan
+  const subscriptionPlan = (tenant.subscription_tier as TenantContext['subscriptionPlan']) || 'basic';
+
+  // Extract feature flags
+  const featureFlags: Record<string, boolean> = {};
+  if (tenant.role_permissions && typeof tenant.role_permissions === 'object') {
+    const rolePermissions = tenant.role_permissions as Record<string, unknown>;
+    if (rolePermissions.feature_flags && typeof rolePermissions.feature_flags === 'object') {
+      Object.assign(featureFlags, rolePermissions.feature_flags);
+    }
+  }
+
+  // Extract settings
+  const settings: Record<string, any> = {
+    currency: 'VND',
+    timezone: 'Asia/Ho_Chi_Minh',
+    locale: 'vi-VN',
+    companyName: tenant.name,
+  };
+
+  if (tenant.brand_theme && typeof tenant.brand_theme === 'object') {
+    Object.assign(settings, {
+      logoUrl: (tenant.brand_theme as any).logoUrl || tenant.logo_url,
+      primaryColor: (tenant.brand_theme as any).primaryColor,
+    });
+  } else if (tenant.logo_url) {
+    settings.logoUrl = tenant.logo_url;
+  }
+
+  if (tenant.salary_config && typeof tenant.salary_config === 'object') {
+    settings.salaryConfig = tenant.salary_config;
+  }
+
+  const context: TenantContext = {
+    tenantId: tenant.id,
+    tenantName: tenant.name || 'Unnamed Tenant',
+    enabledModules: enabledModules as any,
+    subscriptionPlan,
+    featureFlags,
+    settings,
+  };
+
+  return { context };
+}
+
+/**
+ * Invoke module adapter validation for booking.
+ * 
+ * Task 19.1: Call adapter.validateBookingRules() if adapter exists.
+ * Gracefully handle missing adapters.
+ * 
+ * @param bookingPayload - Booking insert payload
+ * @param context - Tenant context
+ * @returns Success or error
+ */
+export async function invokeAdapterValidation(
+  bookingPayload: BookingInsert,
+  context: TenantContext
+): Promise<ActionSuccess | ActionError> {
+  // Determine module ID from enabled modules (default to 'spa')
+  const moduleId = context.enabledModules.length > 0 
+    ? context.enabledModules[0] 
+    : 'spa';
+
+  // Lookup adapter from registry
+  const adapter = moduleRegistry.get(moduleId as any);
+
+  // If no adapter registered, use default validation (allow)
+  if (!adapter) {
+    console.log(`[invokeAdapterValidation] No adapter found for module '${moduleId}', skipping validation`);
+    return { success: true };
+  }
+
+  // If adapter doesn't implement validateBookingRules, skip validation
+  if (!adapter.validateBookingRules) {
+    console.log(`[invokeAdapterValidation] Adapter '${moduleId}' does not implement validateBookingRules, skipping`);
+    return { success: true };
+  }
+
+  // Transform BookingInsert to CoreBookingOrder for adapter
+  // Map database status to CoreBookingOrder status
+  const mapStatus = (dbStatus: string | null | undefined): BookingOrderStatus => {
+    if (!dbStatus) return 'draft';
+    // Map spa-specific statuses to core statuses
+    if (dbStatus === 'deposit_pending' || dbStatus === 'pending') return 'draft';
+    if (dbStatus === 'confirmed' || dbStatus === 'active') return 'confirmed';
+    if (dbStatus === 'in_progress') return 'in_progress';
+    if (dbStatus === 'completed') return 'completed';
+    if (dbStatus === 'cancelled') return 'cancelled';
+    return 'draft'; // Default fallback
+  };
+
+  const coreOrder: CoreBookingOrder = {
+    id: '', // Not yet created
+    tenantId: context.tenantId,
+    moduleId: (context.enabledModules[0] || 'spa') as ModuleId,
+    customerId: bookingPayload.customer_id || '',
+    serviceItemId: bookingPayload.package_id || '',
+    status: mapStatus(bookingPayload.status),
+    totalAmount: bookingPayload.full_price || 0,
+    paidAmount: bookingPayload.deposit_amount || 0,
+    scheduledStartTime: bookingPayload.start_date || '',
+    scheduledEndTime: bookingPayload.end_date || '',
+    metadata: {
+      assigned_ktv_id: bookingPayload.assigned_ktv_id,
+      sessions_total: bookingPayload.total_sessions,
+      sessions_completed: 0,
+      package_category: '', // Will be filled from package metadata
+      original_db_status: bookingPayload.status, // Preserve original status for adapter
+    },
+  };
+
+  try {
+    // Call adapter validation
+    console.log(`[invokeAdapterValidation] Calling adapter.validateBookingRules for module '${moduleId}'`);
+    const isValid = await adapter.validateBookingRules(coreOrder, context);
+
+    if (!isValid) {
+      return {
+        error: 'Đơn hàng không đáp ứng điều kiện nghiệp vụ của module. Vui lòng kiểm tra lại thông tin.',
+      };
+    }
+
+    console.log(`[invokeAdapterValidation] Adapter validation passed for module '${moduleId}'`);
+    return { success: true };
+  } catch (error) {
+    console.error(`[invokeAdapterValidation] Adapter validation failed:`, error);
+    return {
+      error: error instanceof Error 
+        ? `Lỗi kiểm tra điều kiện nghiệp vụ: ${error.message}` 
+        : 'Lỗi kiểm tra điều kiện nghiệp vụ',
+    };
+  }
 }

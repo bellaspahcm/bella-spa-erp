@@ -1,8 +1,8 @@
 import * as XLSX from 'xlsx';
 import { getKtvSalaryForConfirmation } from '@/modules/hr-salary/actions/base-salary-actions';
 import { getSalaryData } from '@/modules/hr-salary/actions/query-salary-actions';
-import { exportSalaryToExcel } from '@/services/export-actions';
-import { getMonthlyPnL } from '@/services/finance/monthly-pnl-report';
+import { exportSalaryToExcel } from '@/core/services/analytics/export-actions';
+import { getMonthlyPnL } from '@/core/services/finance/monthly-pnl-report';
 import { getSalaryReconciliationReport } from '@/core/services/accounting/reports';
 import { createClient } from '@/lib/supabase-server';
 import { createAccountingDataClient } from '@/core/services/accounting/client';
@@ -11,7 +11,7 @@ jest.mock('@/lib/supabase-server', () => ({
   createClient: jest.fn(),
 }));
 
-jest.mock('@/services/accounting/client', () => ({
+jest.mock('@/core/services/accounting/client', () => ({
   createAccountingDataClient: jest.fn(),
 }));
 

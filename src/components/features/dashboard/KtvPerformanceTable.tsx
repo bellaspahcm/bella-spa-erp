@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { Users, Clock, Star, Trophy, Diamond } from 'lucide-react';
 
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
-import type { KtvPerformanceViewModel } from '@/services/dashboard-actions';
+import type { KtvPerformanceViewModel } from '@/core/services/analytics/dashboard-actions';
 
 interface KtvPerformanceTableProps {
   topKTVs: KtvPerformanceViewModel[];

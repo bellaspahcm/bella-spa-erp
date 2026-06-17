@@ -15,11 +15,11 @@ jest.mock('@/services/user-actions', () => ({
   getCurrentUser: () => mockGetCurrentUser(),
 }));
 
-jest.mock('@/services/accounting/period-guards', () => ({
+jest.mock('@/core/services/accounting/period-guards', () => ({
   assertOpenAccountingPeriod: (...args: unknown[]) => mockAssertOpenAccountingPeriod(...args),
 }));
 
-jest.mock('@/services/accounting/mode', () => ({
+jest.mock('@/core/services/accounting/mode', () => ({
   assertLegacyFinanceWriteAllowed: (...args: unknown[]) => mockAssertLegacyFinanceWriteAllowed(...args),
 }));
 

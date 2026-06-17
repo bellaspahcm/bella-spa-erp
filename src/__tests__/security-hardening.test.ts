@@ -16,7 +16,7 @@ import {
   adminUpdateKtvHrProfile,
   submitKTVLeaveRequest
 } from '../services/attendance-actions';
-import { lockMonth } from '../services/finance/lock-month';
+import { lockMonth } from '../core/services/finance/lock-month';
 import { rateLimit } from '../lib/rate-limit';
 
 // Setup environment variables

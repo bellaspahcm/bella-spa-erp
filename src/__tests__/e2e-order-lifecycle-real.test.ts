@@ -22,6 +22,10 @@
 
 jest.mock('server-only', () => ({}), { virtual: true });
 
+// Mock Supabase environment variables for test
+process.env.NEXT_PUBLIC_SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://test.supabase.co';
+process.env.SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || 'test-service-role-key';
+
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { requireSupabaseAdminEnv } from '@/lib/supabase-admin-env';
 import { createBooking } from '@/core/services/order';

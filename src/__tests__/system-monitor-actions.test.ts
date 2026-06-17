@@ -5,7 +5,7 @@ const mockGetCurrentUser = jest.fn();
 const mockGetAccountingHealthSummary = jest.fn();
 const mockGetBusinessHealthSummary = jest.fn();
 
-jest.mock('@/services/accounting/client', () => ({
+jest.mock('@/core/services/accounting/client', () => ({
   createAccountingDataClient: jest.fn(() => Promise.resolve({ from: mockFrom })),
 }));
 
@@ -13,11 +13,11 @@ jest.mock('@/services/user-actions', () => ({
   getCurrentUser: (...args: unknown[]) => mockGetCurrentUser(...args),
 }));
 
-jest.mock('@/services/accounting/health', () => ({
+jest.mock('@/core/services/accounting/health', () => ({
   getAccountingHealthSummary: (...args: unknown[]) => mockGetAccountingHealthSummary(...args),
 }));
 
-jest.mock('@/services/accounting/business-health', () => ({
+jest.mock('@/core/services/accounting/business-health', () => ({
   getBusinessHealthSummary: (...args: unknown[]) => mockGetBusinessHealthSummary(...args),
 }));
 

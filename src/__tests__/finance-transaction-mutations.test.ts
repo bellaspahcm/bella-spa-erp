@@ -18,15 +18,15 @@ jest.mock('../services/accounting-actions', () => ({
   assertLegacyFinanceWriteAllowed: (...args: unknown[]) => mockAssertLegacyFinanceWriteAllowed(...args),
 }));
 
-jest.mock('../services/finance/shared', () => ({
+jest.mock('../core/services/finance/shared', () => ({
   resolveTenantId: () => mockResolveTenantId(),
 }));
 
-jest.mock('../services/accounting/period-guards', () => ({
+jest.mock('../core/services/accounting/period-guards', () => ({
   assertOpenAccountingPeriod: (...args: unknown[]) => mockAssertOpenAccountingPeriod(...args),
 }));
 
-jest.mock('../services/accounting/template-rules', () => ({
+jest.mock('../core/services/accounting/template-rules', () => ({
   inferBusinessEventType: jest.fn((input: { sourceTable?: string; revenueType?: string | null }) => {
     if (input.sourceTable === 'revenue' && input.revenueType === 'refund') {
       return 'REFUND_TO_CUSTOMER';
@@ -67,7 +67,7 @@ jest.mock('../services/accounting/template-rules', () => ({
   }),
 }));
 
-jest.mock('../services/finance/transaction-review', () => ({
+jest.mock('@/core/services/finance/transaction-review', () => ({
   resolveReviewStatus: jest.fn(() => 'ready'),
 }));
 

@@ -196,6 +196,24 @@ describe('Idempotency & Repeat Operations Integrity Tests', () => {
 
     mockSupabase.from.mockImplementation((table: string) => {
       if (table === 'bookings') return bookingQueryBuilder;
+      if (table === 'tenants') {
+        return {
+          select: () => ({
+            eq: () => ({
+              single: () => Promise.resolve({
+                data: {
+                  id: 'tenant-a',
+                  name: 'Bella Spa Test',
+                  status: 'active',
+                  module_id: 'spa',
+                  subscription_tier: 'premium'
+                },
+                error: null
+              })
+            })
+          })
+        };
+      }
       return new MockQueryBuilder(table);
     });
 

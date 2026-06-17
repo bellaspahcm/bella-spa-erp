@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tài Liệu Kiến Trúc Bella ERP</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        
+        .container {
+            max-width: 900px;
+            width: 100%;
+        }
+        
+        .header {
+            background: white;
+            padding: 3rem;
+            border-radius: 16px 16px 0 0;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            color: #4F46E5;
+            margin-bottom: 0.5rem;
+        }
+        
+        .header p {
+            color: #6B7280;
+            font-size: 1.1rem;
+        }
+        
+        .language-toggle {
+            margin-top: 1rem;
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .language-toggle a {
+            padding: 0.5rem 1rem;
+            background: #F3F4F6;
+            border-radius: 8px;
+            text-decoration: none;
+            color: #6B7280;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        
+        .language-toggle a:hover {
+            background: #4F46E5;
+            color: white;
+        }
+        
+        .language-toggle a.active {
+            background: #4F46E5;
+            color: white;
+        }
+        
+        .docs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            padding: 2rem 3rem;
+            background: #F9FAFB;
+            border-radius: 0 0 16px 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        .doc-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .doc-card:hover {
+            transform: translateY(-4px);
+            border-color: #4F46E5;
+            box-shadow: 0 12px 24px rgba(79, 70, 229, 0.3);
+        }
+        
+        .doc-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .doc-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 0.5rem;
+        }
+        
+        .doc-desc {
+            color: #6B7280;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+        }
+        
+        .badge-new {
+            background: #D1FAE5;
+            color: #065F46;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 2rem;
+            color: white;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏗️ Tài Liệu Kiến Trúc</h1>
+            <p>Giai Đoạn 3: Trích Xuất & Di Chuyển Nền Tảng Lõi</p>
+            <div class="language-toggle">
+                <a href="trang-chu.html" class="active">🇻🇳 Tiếng Việt</a>
+                <a href="index.html">🇬🇧 English</a>
+            </div>
+        </div>
+        
+        <div class="docs-grid">
+            <a href="core-platform.html" class="doc-card">
+                <div class="doc-icon">🎯</div>
+                <div class="doc-title">Nền Tảng Lõi</div>
+                <div class="doc-desc">Nền tảng trung lập ngành nghề với 8 dịch vụ cốt lõi, hệ thống ngữ cảnh khách hàng và mô hình adapter module.</div>
+                <span class="badge badge-new">MỚI</span>
+            </a>
+            
+            <a href="module-system.html" class="doc-card">
+                <div class="doc-icon">🧩</div>
+                <div class="doc-title">Hệ Thống Module</div>
+                <div class="doc-desc">Giao diện module adapter, hệ thống đăng ký và cách tạo các module đặc thù ngành nghề.</div>
+            </a>
+            
+            <a href="tenant-context.html" class="doc-card">
+                <div class="doc-icon">🏢</div>
+                <div class="doc-title">Ngữ Cảnh Khách Hàng</div>
+                <div class="doc-desc">Kiến trúc đa khách hàng, cô lập dữ liệu, feature flags và bảo mật.</div>
+            </a>
+            
+            <a href="../migration/phase-3-migration-guide.html" class="doc-card">
+                <div class="doc-icon">📚</div>
+                <div class="doc-title">Hướng Dẫn Di Chuyển</div>
+                <div class="doc-desc">Hướng dẫn từng bước cho lập trình viên để di chuyển mã nguồn sang kiến trúc Giai Đoạn 3.</div>
+                <span class="badge badge-new">MỚI</span>
+            </a>
+            
+            <a href="../api/phase-3-api-reference.md" class="doc-card">
+                <div class="doc-icon">🔌</div>
+                <div class="doc-title">Tài Liệu API</div>
+                <div class="doc-desc">Tài liệu API đầy đủ với tích hợp TenantContext, contract types và xác thực.</div>
+                <span class="badge badge-new">MỚI</span>
+            </a>
+        </div>
+        
+        <div class="footer">
+            <p>© 2025 Bella ERP · Tài Liệu Giai Đoạn 3</p>
+        </div>
+    </div>
+</body>
+</html>

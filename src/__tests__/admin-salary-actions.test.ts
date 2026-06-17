@@ -40,11 +40,11 @@ jest.mock('@/services/audit-actions', () => ({
   checkMonthLock: (month?: string) => mockCheckMonthLock(month),
 }));
 
-jest.mock('@/services/accounting/period-guards', () => ({
+jest.mock('@/core/services/accounting/period-guards', () => ({
   assertOpenAccountingPeriod: jest.fn(),
 }));
 
-jest.mock('@/services/accounting/template-rules', () => ({
+jest.mock('@/core/services/accounting/template-rules', () => ({
   findMissingRequiredFields: jest.fn(() => []),
   inferBusinessEventType: jest.fn(() => 'salary_payment'),
   resolveAccountingReviewStatus: jest.fn(() => 'READY'),

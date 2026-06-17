@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Core Platform Architecture - Bella ERP</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+    <style>
+        
+        :root {
+            --primary-color: #4F46E5;
+            --secondary-color: #06B6D4;
+            --bg-color: #F9FAFB;
+            --card-bg: #FFFFFF;
+            --text-primary: #111827;
+            --text-secondary: #6B7280;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: var(--text-primary);
+            background: var(--bg-color);
+            margin: 0;
+            padding: 0;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            padding: 3rem 2rem;
+            margin-bottom: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(79, 70, 229, 0.3);
+        }
+        
+        .content {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        h2 {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 0.5rem;
+            margin-top: 2rem;
+        }
+        
+        code {
+            background: #F3F4F6;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        pre {
+            background: #1F2937;
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-right: 0.5rem;
+        }
+        
+        .badge-success {
+            background: #D1FAE5;
+            color: #065F46;
+        }
+        
+        .badge-info {
+            background: #DBEAFE;
+            color: #1E40AF;
+        }
+    
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Core Platform Architecture</h1>
+            <div class="metadata">
+                <span class="badge badge-info">Version 1.0</span>
+                <span class="badge badge-success">Active</span>
+                <span>Last Updated: 2025-06-01</span>
+            </div>
+        </header>
+        
+        <div class="content">
+            <p><h1>Core Platform Architecture</h1></p><p><strong>Version</strong>: 1.0  
+<strong>Last Updated</strong>: 2025-06-01  
+<strong>Status</strong>: Active</p><p>---</p><p><h2 id="Table of Contents">Table of Contents</h2></p><p><ul><li><a href="#overview">Overview</a></li>
+<li><a href="#architecture-principles">Architecture Principles</a></li>
+<li><a href="#directory-structure">Directory Structure</a></li>
+<li><a href="#core-services">Core Services</a></li>
+<li><a href="#tenantcontext-system">TenantContext System</a></li>
+<li><a href="#module-adapter-pattern">Module Adapter Pattern</a></li>
+<li><a href="#data-flow">Data Flow</a></li>
+<li><a href="#service-layer-design">Service Layer Design</a></li>
+<li><a href="#type-system">Type System</a></li>
+<li><a href="#security-architecture">Security Architecture</a></li>
+<li><a href="#performance--scalability">Performance & Scalability</a></li>
+<li><a href="#best-practices">Best Practices</a></li>
+</ul>
+---</p><p><h2 id="Overview">Overview</h2></p><p>The Bella ERP Core Platform is an industry-neutral foundation that powers multi-industry business management applications. It provides reusable services for authentication, order management, payments, notifications, audit logging, finance, payroll, and analytics.</p><p><h3>Key Characteristics</h3></p><p><ul><li><strong>Industry-Neutral</strong>: Core services work across spa, cleaning, home service, and other verticals</li>
+<li><strong>Multi-Tenant</strong>: Built-in tenant isolation and configuration management</li>
+<li><strong>Extensible</strong>: Module adapter pattern allows industry-specific customization</li>
+<li><strong>Type-Safe</strong>: Strong TypeScript typing with core contract types</li>
+<li><strong>Secure</strong>: Row-level security, tenant isolation, audit logging</li>
+<li><strong>Scalable</strong>: Stateless services, caching, horizontal scaling support</li>
+</ul>
+<h3>Platform Evolution</h3></p><p><strong>Phase 1</strong>: Monolithic Bella Spa application (spa-specific logic mixed with core logic)  
+<strong>Phase 2</strong>: Contract type definitions added (compile-time only, no runtime changes)  
+<strong>Phase 3</strong>: Physical extraction of core platform (current phase)  
+<strong>Phase 4+</strong>: Additional industry modules (cleaning, home service, etc.)</p><p>---</p><p><h2 id="Architecture Principles">Architecture Principles</h2></p><p><h3>1. Separation of Concerns</h3></p><p><pre><code class="language-">┌─────────────────────────────────────────────────────────┐
+│                   Application Layer                     │
+│  (Next.js pages, API routes, React components)         │
+└─────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────┐
+│                Core Platform Services                    │
+│  (Industry-neutral business logic)                      │
+│  • Authentication  • Order Management  • Payments       │
+│  • Notifications   • Audit           • Finance         │
+│  • Payroll        • Analytics                          │
+└─────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────┐
+│              Module Adapters (Optional)                  │
+│  (Industry-specific customization)                      │
+│  • Spa Module  • Cleaning Module  • Home Service       │
+└─────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────┐
+│                   Data Layer                            │
+│  (Supabase PostgreSQL + RLS)                           │
+└─────────────────────────────────────────────────────────┘
+</code></pre></p><p><h3>2. Dependency Inversion</h3></p><p><ul><li><strong>Core Platform</strong>: Never imports from <code>src/modules/</code> (zero dependencies on modules)</li>
+<li><strong>Modules</strong>: Can import from <code>src/core/</code> (depend on core platform)</li>
+<li><strong>Module Adapters</strong>: Registered at runtime via module registry (dependency injection)</li>
+</ul>
+<h3>3. Contract-Based Integration</h3></p><p><ul><li>All cross-layer communication uses <strong>core contract types</strong></li>
+<li>Database rows mapped to contract types (e.g., <code>CoreBookingOrder</code>, <code>PaymentIntent</code>)</li>
+<li>Module-specific metadata stored in flexible <code>metadata</code> fields</li>
+</ul>
+<h3>4. Tenant Isolation</h3></p><p><ul><li>Every service function accepts <code>TenantContext</code> as first parameter</li>
+<li>All database queries filter by <code>tenant_id</code></li>
+<li>Row-Level Security (RLS) policies enforce isolation at database level</li>
+</ul>
+---</p><p><h2 id="Directory Structure">Directory Structure</h2></p><p>The core platform resides in <code>src/core/</code> with the following organization:</p><p><pre><code class="language-">src/core/
+├── types/                  # Contract type definitions
+│   ├── tenant.ts           # TenantContext, SubscriptionPlan
+│   ├── module.ts           # ModuleAdapter, ModuleId
+│   ├── booking-order.ts    # CoreBookingOrder
+│   ├── payment.ts          # PaymentIntent, PaymentStatus
+│   ├── notification.ts     # NotificationEvent, NotificationChannel
+│   ├── audit.ts            # AuditEvent, AuditAction
+│   ├── service-catalog.ts  # CoreServiceCatalogItem
+│   ├── customer.ts         # CustomerProfile
+│   ├── employee.ts         # EmployeeProfile
+│   └── index.ts            # Barrel exports
+│
+├── services/               # Business logic services
+│   ├── auth/              # Authentication & authorization
+│   │   ├── authenticate.ts
+│   │   ├── authorize.ts
+│   │   └── index.ts
+│   │
+│   ├── order/             # Customer order management
+│   │   ├── create.ts
+│   │   ├── update.ts
+│   │   ├── complete.ts
+│   │   ├── cancel.ts
+│   │   ├── query.ts
+│   │   └── index.ts
+│   │
+│   ├── payment/           # Payment processing
+│   │   ├── process.ts
+│   │   ├── refund.ts
+│   │   ├── query.ts
+│   │   └── index.ts
+│   │
+│   ├── notification/      # Multi-channel notifications
+│   │   ├── send.ts
+│   │   ├── query.ts
+│   │   └── index.ts
+│   │
+│   ├── audit/             # Audit logging
+│   │   ├── log.ts
+│   │   ├── query.ts
+│   │   └── index.ts
+│   │
+│   ├── finance/           # Revenue, expenses, P&L, invoicing
+│   │   ├── revenue.ts
+│   │   ├── expense.ts
+│   │   ├── invoice.ts
+│   │   ├── reports.ts
+│   │   └── index.ts
+│   │
+│   ├── payroll/           # Employee compensation
+│   │   ├── calculate.ts
+│   │   ├── approve.ts
+│   │   ├── reports.ts
+│   │   └── index.ts
+│   │
+│   └── analytics/         # Business intelligence
+│       ├── dashboard.ts
+│       ├── reports.ts
+│       ├── export.ts
+│       └── index.ts
+│
+├── adapters/              # Module adapter system
+│   ├── registry.ts        # Module registry singleton
+│   ├── types.ts           # Adapter utility types
+│   └── index.ts
+│
+├── providers/             # React context providers
+│   ├── TenantContextProvider.tsx
+│   └── index.ts
+│
+├── hooks/                 # React hooks
+│   ├── useTenantContext.ts
+│   ├── useModuleAdapter.ts
+│   └── index.ts
+│
+├── middleware/            # API middleware
+│   ├── tenantContext.ts   # Extract and attach TenantContext
+│   ├── auth.ts            # Authentication middleware
+│   └── index.ts
+│
+└── lib/                   # Utility functions
+    ├── database.ts        # Database utilities and mappers
+    ├── validation.ts      # Input validation helpers
+    ├── date.ts            # Date/time utilities
+    └── index.ts
+</code></pre></p><p><h3>Naming Conventions</h3></p><p><ul><li><strong>Services</strong>: Verb-based filenames (<code>create.ts</code>, <code>update.ts</code>, <code>query.ts</code>)</li>
+<li><strong>Types</strong>: Noun-based filenames (<code>tenant.ts</code>, <code>payment.ts</code>)</li>
+<li><strong>Barrel Exports</strong>: Every directory has <code>index.ts</code> for clean imports</li>
+<li><strong>Function Names</strong>: <code>camelCase</code> for functions, <code>PascalCase</code> for types</li>
+</ul>
+---</p><p><h2 id="Core Services">Core Services</h2></p><p><h3>1. Authentication Service (<code>src/core/services/auth/</code>)</h3></p><p><strong>Purpose</strong>: User authentication, authorization, and session management.</p><p><strong>Key Functions</strong>:
+<pre><code class="language-typescript">// Authenticate user with credentials
+export async function authenticateUser(
+  context: TenantContext,
+  email: string,
+  password: string
+): Promise<User></p><p>// Check if user has permission
+export async function authorize(
+  context: TenantContext,
+  userId: string,
+  permission: string
+): Promise<boolean></p><p>// Get current user session
+export async function getCurrentUser(
+  context: TenantContext
+): Promise<User | null>
+</code></pre></p><p><strong>Features</strong>:
+<ul><li>Email/password authentication</li>
+<li>Session management</li>
+<li>Role-based access control (RBAC)</li>
+<li>Multi-factor authentication support</li>
+<li>Tenant-specific user management</li>
+</ul>
+---</p><p><h3>2. Order Service (<code>src/core/services/order/</code>)</h3></p><p><strong>Purpose</strong>: Manage customer orders across all industries (spa bookings, cleaning jobs, home service appointments).</p><p><strong>Key Functions</strong>:
+<pre><code class="language-typescript">// Create a new order
+export async function createOrder(
+  context: TenantContext,
+  orderData: Partial<CoreBookingOrder>
+): Promise<CoreBookingOrder></p><p>// Update existing order
+export async function updateOrder(
+  context: TenantContext,
+  orderId: string,
+  updates: Partial<CoreBookingOrder>
+): Promise<CoreBookingOrder></p><p>// Mark order as completed
+export async function completeOrder(
+  context: TenantContext,
+  orderId: string
+): Promise<CoreBookingOrder></p><p>// Query orders with filters
+export async function queryOrders(
+  context: TenantContext,
+  filters: OrderFilters
+): Promise<CoreBookingOrder[]>
+</code></pre></p><p><strong>Features</strong>:
+<ul><li>Order lifecycle management (pending → confirmed → in-progress → completed)</li>
+<li>Customer assignment and tracking</li>
+<li>Service item association</li>
+<li>Scheduled start/end time management</li>
+<li>Module adapter invocation for industry-specific logic</li>
+</ul>
+<strong>Note</strong>: Service renamed from "booking" to "order" for industry neutrality, but contract type remains <code>CoreBookingOrder</code> from Phase 2.</p><p>---</p><p><h3>3. Payment Service (<code>src/core/services/payment/</code>)</h3></p><p><strong>Purpose</strong>: Process payments, refunds, and payment tracking.</p><p><strong>Key Functions</strong>:
+<pre><code class="language-typescript">// Process a payment
+export async function processPayment(
+  context: TenantContext,
+  paymentData: Partial<PaymentIntent>
+): Promise<PaymentIntent></p><p>// Issue a refund
+export async function refundPayment(
+  context: TenantContext,
+  paymentId: string,
+  amount: number
+): Promise<PaymentIntent></p><p>// Query payment history
+export async function queryPayments(
+  context: TenantContext,
+  filters: PaymentFilters
+): Promise<PaymentIntent[]>
+</code></pre></p><p><strong>Features</strong>:
+<ul><li>Multiple payment methods (cash, bank transfer, e-wallet, credit card)</li>
+<li>Payment status tracking (pending, completed, failed, refunded)</li>
+<li>Partial payments and deposits</li>
+<li>Payment method-specific metadata</li>
+<li>Integration with payment gateways</li>
+</ul>
+---</p><p><h3>4. Notification Service (<code>src/core/services/notification/</code>)</h3></p><p><strong>Purpose</strong>: Multi-channel notification delivery (in-app, email, SMS, webhook).</p><p><strong>Key Functions</strong>:
+<pre><code class="language-typescript">// Send a notification
+export async function sendNotification(
+  context: TenantContext,
+  notificationData: Partial<NotificationEvent>
+): Promise<NotificationEvent></p><p>// Query notification history
+export async function queryNotifications(
+  context: TenantContext,
+  filters: NotificationFilters
+): Promise<NotificationEvent[]></p><p>// Mark notification as read
+export async function markAsRead(
+  context: TenantContext,
+  notificationId: string
+): Promise<void>
+</code></pre></p><p><strong>Features</strong>:
+<ul><li>Multi-channel delivery (in-app, email, SMS, webhook)</li>
+<li>Template-based messaging</li>
+<li>Delivery status tracking</li>
+<li>Read/unread status management</li>
+<li>Tenant-specific notification preferences</li>
+</ul>
+---</p><p><h3>5. Audit Service (<code>src/core/services/audit/</code>)</h3></p><p><strong>Purpose</strong>: Log all system actions for compliance and debugging.</p><p><strong>Key Functions</strong>:
+<pre><code class="language-typescript">// Log an audit event
+export async function logAuditEvent(
+  context: TenantContext,
+  eventData: Partial<AuditEvent>
+): Promise<AuditEvent></p><p>// Query audit logs
+export async function queryAuditLogs(
+  context: TenantContext,
+  filters: AuditFilters
+): Promise<AuditEvent[]>
+</code></pre></p><p><strong>Features</strong>:
+<ul><li>Action logging (create, update, delete, etc.)</li>
+<li>User attribution (who performed the action)</li>
+<li>Timestamp tracking (when the action occurred)</li>
+<li>Field-level change tracking (what changed)</li>
+<li>Tenant-isolated audit logs</li>
+</ul>
+---</p><p><h3>6. Finance Service (<code>src/core/services/finance/</code>)</h3></p><p><strong>Purpose</strong>: Revenue recognition, expense tracking, invoicing, and financial reporting.</p><p><strong>Key Functions</strong>:
+<pre><code class="language-typescript">// Record revenue
+export async function recordRevenue(
+  context: TenantContext,
+  revenueData: RevenueRecord
+): Promise<void></p><p>// Record expense
+export async function recordExpense(
+  context: TenantContext,
+  expenseData: ExpenseRecord
+): Promise<void></p><p>// Generate invoice
+export async function generateInvoice(
+  context: TenantContext,
+  invoiceData: Partial<Invoice>
+): Promise<Invoice></p><p>// Get P&L report
+export async function getProfitAndLoss(
+  context: TenantContext,
+  startDate: Date,
+  endDate: Date
+): Promise<ProfitAndLossReport>
+</code></pre></p><p><strong>Features</strong>:
+<ul><li>Revenue recognition from orders</li>
+<li>Expense tracking from payments</li>
+<li>Invoice generation (PDF export)</li>
+<li>P&L report generation</li>
+<li>Cash flow analysis</li>
+<li>Module-agnostic financial data aggregation</li>
+</ul>
+---</p><p><h3>7. Payroll Service (<code>src/core/services/payroll/</code>)</h3></p><p><strong>Purpose</strong>: Employee compensation calculation and management.</p><p><strong>Key Functions</strong>:
+<pre><code class="language-typescript">// Calculate employee salary
+export async function calculateSalary(
+  context: TenantContext,
+  employeeId: string,
+  period: PayrollPeriod
+): Promise<SalaryCalculation></p><p>// Approve salary
+export async function approveSalary(
+  context: TenantContext,
+  salaryRecordId: string
+): Promise<void></p><p>// Get payroll report
+export async function getPayrollReport(
+  context: TenantContext,
+  period: PayrollPeriod
+): Promise<PayrollReport>
+</code></pre></p><p><strong>Features</strong>:
+<ul><li>Base salary calculation</li>
+<li>Payroll cycle management</li>
+<li>Salary approval workflow</li>
+<li>Payroll reports and exports</li>
+<li>Module adapters for industry-specific commissions</li>
+</ul>
+<strong>Note</strong>: Module-specific salary calculations (e.g., spa KTV commissions) handled by module adapters.</p><p>---</p><p><h3>8. Analytics Service (<code>src/core/services/analytics/</code>)</h3></p><p><strong>Purpose</strong>: Business intelligence, dashboard data aggregation, and report generation.</p><p><strong>Key Functions</strong>:
+<pre><code class="language-typescript">// Get dashboard data
+export async function getDashboardData(
+  context: TenantContext,
+  dashboardId: string
+): Promise<DashboardData></p><p>// Generate report
+export async function generateReport(
+  context: TenantContext,
+  reportType: string,
+  filters: ReportFilters
+): Promise<ReportData></p><p>// Export report to Excel
+export async function exportToExcel(
+  context: TenantContext,
+  reportData: ReportData
+): Promise<Buffer>
+</code></pre></p><p><strong>Features</strong>:
+<ul><li>Dashboard widget data aggregation</li>
+<li>Custom report generation</li>
+<li>Export to Excel/PDF</li>
+<li>Cross-module data querying</li>
+<li>Performance metrics and KPIs</li>
+</ul>
+---</p><p><h2 id="TenantContext System">TenantContext System</h2></p><p><h3>TenantContext Structure</h3></p><p><pre><code class="language-typescript">export interface TenantContext {
+  readonly tenantId: string;
+  readonly tenantName: string;
+  readonly enabledModules: readonly ModuleId[];
+  readonly subscriptionPlan: SubscriptionPlan;
+  readonly featureFlags: Readonly<Record<string, boolean>>;
+  readonly settings: Readonly<Record<string, any>>;
+}
+</code></pre></p><p><h3>TenantContext Lifecycle</h3></p><p><strong>Server-Side (API Routes)</strong>:
+<pre><code class="language-">1. User makes request → API route handler
+2. Middleware extracts tenant ID from session
+3. Middleware fetches tenant config from database
+4. Middleware constructs TenantContext
+5. Middleware attaches context to request object
+6. Handler extracts context and passes to services
+</code></pre></p><p><strong>Client-Side (React Components)</strong>:
+<pre><code class="language-">1. TenantContextProvider mounts
+2. Provider fetches tenant config from /api/tenant/context
+3. Provider stores context in React Context
+4. Child components access context via useTenantContext() hook
+</code></pre></p><p><h3>Why TenantContext?</h3></p><p>1. <strong>Single Source of Truth</strong>: Tenant configuration loaded once, passed everywhere
+2. <strong>Type Safety</strong>: Strong typing prevents invalid configuration access
+3. <strong>Performance</strong>: Avoids repeated database queries for tenant config
+4. <strong>Security</strong>: Enforces tenant isolation at service function level
+5. <strong>Flexibility</strong>: Supports per-tenant feature flags, settings, and module enablement</p><p>For more details, see <a href="./tenant-context.md">Tenant Context Architecture</a>.</p><p>---</p><p><h2 id="Module Adapter Pattern">Module Adapter Pattern</h2></p><p><h3>Purpose</h3></p><p>Module adapters allow industry-specific customization without modifying core platform code.</p><p><h3>ModuleAdapter Interface</h3></p><p><pre><code class="language-typescript">export interface ModuleAdapter {
+  moduleId: ModuleId;
+  moduleName: string;
+  
+  transformServiceItem?: (item: CoreServiceCatalogItem) => unknown;
+  transformBookingOrder?: (order: CoreBookingOrder) => unknown;
+  validateBookingRules?: (order: CoreBookingOrder, context: TenantContext) => Promise<boolean>;
+  calculatePricing?: (item: CoreServiceCatalogItem, context: TenantContext) => Promise<number>;
+  onBookingCompleted?: (order: CoreBookingOrder, context: TenantContext) => Promise<void>;
+  getModuleWidgets?: () => unknown[];
+}
+</code></pre></p><p><h3>Adapter Invocation Flow</h3></p><p><pre><code class="language-">Core Service → Module Registry → Module Adapter
+     ↓              ↓                   ↓
+createOrder()   .get('spa')    SpaModuleAdapter.validateBookingRules()
+</code></pre></p><p><h3>Benefits</h3></p><p><ul><li><strong>Zero Core Dependencies</strong>: Core platform never imports module code</li>
+<li><strong>Dynamic Loading</strong>: Adapters registered at runtime</li>
+<li><strong>Graceful Degradation</strong>: Core services work without adapters</li>
+<li><strong>Easy Extension</strong>: New modules added without modifying core</li>
+</ul>
+For more details, see <a href="./module-system.md">Module System Architecture</a>.</p><p>---</p><p><h2 id="Data Flow">Data Flow</h2></p><p><h3>Request Flow (API Route)</h3></p><p><pre><code class="language-">1. Client Request
+   ↓
+2. Authentication Middleware (verify session)
+   ↓
+3. TenantContext Middleware (extract tenant config)
+   ↓
+4. API Route Handler (extract context from request)
+   ↓
+5. Core Service (business logic with TenantContext)
+   ↓
+6. Module Adapter (optional industry-specific logic)
+   ↓
+7. Database Query (with tenant_id filter)
+   ↓
+8. RLS Policy Enforcement (database-level isolation)
+   ↓
+9. Response (core contract type returned)
+</code></pre></p><p><h3>Service Call Pattern</h3></p><p><pre><code class="language-typescript">// API Route Handler
+export const POST = withTenantContext(async (request: NextRequestWithContext) => {
+  const context = request.tenantContext; // Step 4
+  const orderData = await request.json();
+  
+  const order = await createOrder(context, orderData); // Step 5
+  
+  return Response.json(order); // Step 9
+});</p><p>// Core Service
+export async function createOrder(
+  context: TenantContext, // Step 5
+  orderData: Partial<CoreBookingOrder>
+): Promise<CoreBookingOrder> {
+  // Step 6: Optional adapter validation
+  const adapter = moduleRegistry.get(context.moduleId);
+  if (adapter?.validateBookingRules) {
+    const isValid = await adapter.validateBookingRules(orderData as CoreBookingOrder, context);
+    if (!isValid) throw new Error('Validation failed');
+  }
+  
+  // Step 7: Database query with tenant filter
+  const { data, error } = await supabase
+    .from('bookings')
+    .insert({
+      ...orderData,
+      tenant_id: context.tenantId, // Tenant isolation
+    })
+    .select()
+    .single();
+  
+  if (error) throw error;
+  
+  return data as CoreBookingOrder; // Step 9
+}
+</code></pre></p><p>---</p><p><h2 id="Service Layer Design">Service Layer Design</h2></p><p><h3>Service Function Signature Pattern</h3></p><p><strong>All core service functions follow this signature pattern</strong>:</p><p><pre><code class="language-typescript">export async function serviceFunctionName(
+  context: TenantContext,     // ALWAYS first parameter
+  ...otherParameters          // Function-specific parameters
+): Promise<ReturnType> {
+  // Implementation
+}
+</code></pre></p><p><h3>Example Services</h3></p><p><pre><code class="language-typescript">// Create operation
+export async function createResource(
+  context: TenantContext,
+  data: Partial<Resource>
+): Promise<Resource></p><p>// Read operation
+export async function getResourceById(
+  context: TenantContext,
+  id: string
+): Promise<Resource | null></p><p>// Update operation
+export async function updateResource(
+  context: TenantContext,
+  id: string,
+  updates: Partial<Resource>
+): Promise<Resource></p><p>// Delete operation
+export async function deleteResource(
+  context: TenantContext,
+  id: string
+): Promise<void></p><p>// Query operation
+export async function queryResources(
+  context: TenantContext,
+  filters: ResourceFilters
+): Promise<Resource[]>
+</code></pre></p><p><h3>Service Design Principles</h3></p><p>1. <strong>Stateless</strong>: Services do not store state (pure functions)
+2. <strong>Single Responsibility</strong>: Each service function does one thing well
+3. <strong>Tenant-Aware</strong>: All functions receive and use TenantContext
+4. <strong>Type-Safe</strong>: Strong TypeScript typing for inputs and outputs
+5. <strong>Error Handling</strong>: Explicit error throwing, no silent failures
+6. <strong>Testable</strong>: Easy to unit test with mock TenantContext</p><p>---</p><p><h2 id="Type System">Type System</h2></p><p><h3>Core Contract Types</h3></p><p>All cross-layer communication uses core contract types from <code>src/core/types/</code>.</p><p><strong>Key Contract Types</strong>:</p><p>| Type | Purpose | Key Fields |
+|------|---------|------------|
+| <code>CoreBookingOrder</code> | Customer orders | <code>id</code>, <code>customerId</code>, <code>totalAmount</code>, <code>status</code>, <code>scheduledStartTime</code>, <code>metadata</code> |
+| <code>PaymentIntent</code> | Payment transactions | <code>id</code>, <code>amount</code>, <code>method</code>, <code>status</code>, <code>metadata</code> |
+| <code>NotificationEvent</code> | Notifications | <code>id</code>, <code>type</code>, <code>channel</code>, <code>recipient</code>, <code>content</code> |
+| <code>AuditEvent</code> | Audit logs | <code>id</code>, <code>action</code>, <code>userId</code>, <code>resourceType</code>, <code>changes</code> |
+| <code>CoreServiceCatalogItem</code> | Service catalog | <code>id</code>, <code>name</code>, <code>basePrice</code>, <code>category</code>, <code>metadata</code> |
+| <code>CustomerProfile</code> | Customer data | <code>id</code>, <code>name</code>, <code>email</code>, <code>phone</code>, <code>metadata</code> |
+| <code>EmployeeProfile</code> | Employee data | <code>id</code>, <code>name</code>, <code>role</code>, <code>baseSalary</code>, <code>metadata</code> |</p><p><h3>Metadata Pattern</h3></p><p>Contract types use flexible <code>metadata</code> fields for module-specific data:</p><p><pre><code class="language-typescript">export interface CoreBookingOrder {
+  id: string;
+  customerId: string;
+  totalAmount: number;
+  status: BookingStatus;
+  metadata: Record<string, any>; // Module-specific fields
+}</p><p>// Spa module extracts spa-specific fields from metadata
+export interface SpaBooking extends CoreBookingOrder {
+  assignedKtvId: string;              // From metadata.assigned_ktv_id
+  sessionsTotal: number;              // From metadata.sessions_total
+  sessionsCompleted: number;          // From metadata.sessions_completed
+  packageCategory: 'basic' | 'vip';  // From metadata.package_category
+}
+</code></pre></p><p><h3>Type Mapping</h3></p><p>Database rows are mapped to contract types using mapper functions:</p><p><pre><code class="language-typescript">// src/core/lib/database.ts
+export function mapDbRowToBooking(row: BookingsTable): CoreBookingOrder {
+  return {
+    id: row.id,
+    customerId: row.customer_id,
+    totalAmount: row.total_amount,
+    status: row.status as BookingStatus,
+    scheduledStartTime: new Date(row.scheduled_start_time),
+    scheduledEndTime: row.scheduled_end_time ? new Date(row.scheduled_end_time) : undefined,
+    metadata: row.metadata || {},
+    createdAt: new Date(row.created_at),
+    updatedAt: new Date(row.updated_at),
+  };
+}
+</code></pre></p><p>---</p><p><h2 id="Security Architecture">Security Architecture</h2></p><p><h3>Defense-in-Depth Layers</h3></p><p><strong>Layer 1: Authentication</strong>
+<ul><li>Supabase Auth validates user sessions</li>
+<li>JWT token validation</li>
+<li>Session expiration enforcement</li>
+</ul>
+<strong>Layer 2: Tenant Assignment Validation</strong>
+<ul><li>Verify user has valid <code>tenant_id</code></li>
+<li>Reject requests from users without tenant assignment</li>
+</ul>
+<strong>Layer 3: Application-Level Filtering</strong>
+<ul><li>All service functions filter by <code>context.tenantId</code></li>
+<li>TypeScript enforces TenantContext parameter</li>
+</ul>
+<strong>Layer 4: Row-Level Security (RLS)</strong>
+<ul><li>PostgreSQL policies enforce tenant isolation</li>
+<li>Even if application has bugs, database prevents cross-tenant access</li>
+</ul>
+<strong>Layer 5: Audit Logging</strong>
+<ul><li>All actions logged with user attribution</li>
+<li>Audit trail for compliance and forensics</li>
+</ul>
+<h3>Tenant Isolation Example</h3></p><p><pre><code class="language-typescript">// Service function (Layer 3)
+export async function getOrders(
+  context: TenantContext
+): Promise<CoreBookingOrder[]> {
+  // Set session tenant for RLS (Layer 4)
+  await supabase.rpc('set_session_tenant', {
+    p_tenant_id: context.tenantId,
+  });
+  
+  // Query with explicit tenant filter (Layer 3)
+  const { data, error } = await supabase
+    .from('bookings')
+    .select('*')
+    .eq('tenant_id', context.tenantId); // Explicit filter
+  
+  if (error) throw error;
+  
+  // Log audit event (Layer 5)
+  await logAuditEvent(context, {
+    action: 'query_orders',
+    userId: context.userId,
+    resourceType: 'booking',
+  });
+  
+  return data.map(mapDbRowToBooking);
+}
+</code></pre></p><p><pre><code class="language-sql">-- RLS Policy (Layer 4)
+CREATE POLICY "Users can view own tenant bookings"
+ON bookings
+FOR SELECT
+USING (tenant_id = current_setting('app.current_tenant_id')::uuid);
+</code></pre></p><p><h3>Security Best Practices</h3></p><p>1. <strong>Never Trust Client Input</strong>: Always validate and sanitize
+2. <strong>Always Filter by tenantId</strong>: Required in all database queries
+3. <strong>Use Parameterized Queries</strong>: Prevent SQL injection
+4. <strong>Log Sensitive Actions</strong>: Audit all create/update/delete operations
+5. <strong>Validate Permissions</strong>: Check user roles before sensitive operations
+6. <strong>Rate Limiting</strong>: Prevent abuse (implement per-tenant rate limits)</p><p>---</p><p><h2 id="Performance & Scalability">Performance & Scalability</h2></p><p><h3>Caching Strategy</h3></p><p><strong>TenantContext Caching</strong>:
+<pre><code class="language-typescript">// Redis cache with 5-minute TTL
+const TENANT_CONTEXT_CACHE_TTL = 300; // seconds</p><p>async function getTenantContext(tenantId: string): Promise<TenantContext> {
+  const cacheKey = <code>tenant:${tenantId}:context</code>;
+  
+  // Check cache first
+  const cached = await redis.get(cacheKey);
+  if (cached) return JSON.parse(cached);
+  
+  // Fetch from database
+  const context = await constructTenantContext(tenantId);
+  
+  // Cache for 5 minutes
+  await redis.setex(cacheKey, TENANT_CONTEXT_CACHE_TTL, JSON.stringify(context));
+  
+  return context;
+}
+</code></pre></p><p><strong>Module Registry Caching</strong>:
+<ul><li>Module adapters instantiated once at application startup</li>
+<li>Stored in in-memory Map for O(1) lookup</li>
+<li>No database queries needed</li>
+</ul>
+<h3>Stateless Services</h3></p><p><ul><li>Core services are pure functions (no instance state)</li>
+<li>Easy to scale horizontally (add more servers)</li>
+<li>Session state stored in Supabase (shared across servers)</li>
+</ul>
+<h3>Database Optimization</h3></p><p><ul><li>Indexes on <code>tenant_id</code> for all tenant-scoped tables</li>
+<li>Composite indexes for common query patterns (e.g., <code>tenant_id, customer_id</code>)</li>
+<li>RLS policies compiled once and cached by PostgreSQL</li>
+</ul>
+<h3>Performance Targets</h3></p><p>| Metric | Target | Notes |
+|--------|--------|-------|
+| API Response Time | <200ms (p95) | Excluding external service calls |
+| TenantContext Construction | <10ms | Cached after first request |
+| Module Adapter Lookup | <1ms | In-memory Map lookup |
+| Database Query | <50ms (p95) | With proper indexes |</p><p>---</p><p><h2 id="Best Practices">Best Practices</h2></p><p><h3>1. Always Pass TenantContext First</h3></p><p><pre><code class="language-typescript">// ✅ GOOD
+export async function createOrder(
+  context: TenantContext,
+  orderData: Partial<CoreBookingOrder>
+): Promise<CoreBookingOrder></p><p>// ❌ BAD
+export async function createOrder(
+  orderData: Partial<CoreBookingOrder>,
+  context: TenantContext
+): Promise<CoreBookingOrder>
+</code></pre></p><p><h3>2. Always Filter by tenantId</h3></p><p><pre><code class="language-typescript">// ✅ GOOD
+const { data } = await supabase
+  .from('bookings')
+  .select('*')
+  .eq('tenant_id', context.tenantId);</p><p>// ❌ BAD (security vulnerability!)
+const { data } = await supabase
+  .from('bookings')
+  .select('*');
+</code></pre></p><p><h3>3. Use Core Contract Types</h3></p><p><pre><code class="language-typescript">// ✅ GOOD
+export async function getOrderById(
+  context: TenantContext,
+  id: string
+): Promise<CoreBookingOrder | null></p><p>// ❌ BAD
+export async function getOrderById(
+  context: TenantContext,
+  id: string
+): Promise<any>
+</code></pre></p><p><h3>4. Handle Errors Explicitly</h3></p><p><pre><code class="language-typescript">// ✅ GOOD
+const { data, error } = await supabase
+  .from('bookings')
+  .select('*');</p><p>if (error) {
+  console.error('[OrderService] Query failed:', error);
+  throw new Error(<code>Failed to fetch orders: ${error.message}</code>);
+}</p><p>// ❌ BAD (silent failure!)
+const { data, error } = await supabase
+  .from('bookings')
+  .select('*');</p><p>if (error) {
+  console.error(error);
+  return []; // Silent failure!
+}
+</code></pre></p><p><h3>5. Invoke Module Adapters Gracefully</h3></p><p><pre><code class="language-typescript">// ✅ GOOD (graceful - adapter is optional)
+const adapter = moduleRegistry.get(context.moduleId);
+if (adapter?.validateBookingRules) {
+  const isValid = await adapter.validateBookingRules(order, context);
+  if (!isValid) throw new Error('Validation failed');
+}</p><p>// ❌ BAD (assumes adapter exists)
+const adapter = moduleRegistry.getRequired(context.moduleId);
+const isValid = await adapter.validateBookingRules(order, context);
+</code></pre></p><p><h3>6. Log Important Actions</h3></p><p><pre><code class="language-typescript">// ✅ GOOD
+export async function deleteOrder(
+  context: TenantContext,
+  orderId: string
+): Promise<void> {
+  console.log(<code>[OrderService] Deleting order ${orderId} for tenant ${context.tenantId}</code>);
+  
+  await supabase
+    .from('bookings')
+    .delete()
+    .eq('id', orderId)
+    .eq('tenant_id', context.tenantId);
+  
+  await logAuditEvent(context, {
+    action: 'delete_order',
+    resourceId: orderId,
+    resourceType: 'booking',
+  });
+}
+</code></pre></p><p>---</p><p><h2 id="Additional Resources">Additional Resources</h2></p><p><h3>Related Documentation</h3></p><p><ul><li><a href="./module-system.md">Module System Architecture</a></li>
+<li><a href="./tenant-context.md">Tenant Context Architecture</a></li>
+<li><a href="../migration/phase-3-migration-guide.md">Phase 3 Migration Guide</a></li>
+</ul>
+<h3>Code Examples</h3></p><p><ul><li><strong>Core Services</strong>: <code>src/core/services/</code></li>
+<li><strong>Module Adapters</strong>: <code>src/modules/spa/adapters/</code></li>
+<li><strong>API Routes</strong>: <code>src/app/api/</code></li>
+<li><strong>React Components</strong>: <code>src/app/</code> (pages and layouts)</li>
+</ul>
+<h3>Getting Help</h3></p><p><ul><li><strong>Slack Channel</strong>: <code>#core-platform-support</code></li>
+<li><strong>Technical Lead</strong>: Contact the architecture team for questions</li>
+<li><strong>Documentation</strong>: Refer to this guide and related docs</li>
+</ul>
+---</p><p><strong>Document Version</strong>: 1.0  
+<strong>Last Updated</strong>: 2025-06-01  
+<strong>Status</strong>: Active
+</p>
+        </div>
+        
+        <footer>
+            <p>© 2025 Bella ERP. All rights reserved.</p>
+        </footer>
+    </div>
+</body>
+</html>

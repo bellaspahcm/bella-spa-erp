@@ -1,0 +1,1521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tenant Context Architecture</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        
+:root {
+    --primary: #4F46E5;
+    --secondary: #06B6D4;
+    --success: #10B981;
+    --warning: #F59E0B;
+    --danger: #EF4444;
+    --bg: #F9FAFB;
+    --card-bg: #FFFFFF;
+    --text: #111827;
+    --text-muted: #6B7280;
+    --border: #E5E7EB;
+    --code-bg: #F3F4F6;
+    --sidebar-width: 280px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.6;
+    color: var(--text);
+    background: var(--bg);
+    display: flex;
+    min-height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+    width: var(--sidebar-width);
+    background: var(--card-bg);
+    border-right: 1px solid var(--border);
+    position: fixed;
+    height: 100vh;
+    overflow-y: auto;
+    padding: 2rem 0;
+}
+
+.sidebar-header {
+    padding: 0 1.5rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1rem;
+}
+
+.sidebar-header h3 {
+    color: var(--primary);
+    font-size: 1.2rem;
+}
+
+.sidebar-nav {
+    padding: 0 1rem;
+}
+
+.nav-section {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin: 1.5rem 0 0.5rem 0.5rem;
+    letter-spacing: 0.05em;
+}
+
+.nav-item {
+    display: block;
+    padding: 0.75rem 1rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    border-radius: 8px;
+    margin-bottom: 0.25rem;
+    transition: all 0.2s;
+}
+
+.nav-item:hover {
+    background: var(--bg);
+    color: var(--primary);
+}
+
+.nav-item.active {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    font-weight: 500;
+}
+
+/* Main Content */
+.main-content {
+    margin-left: var(--sidebar-width);
+    flex: 1;
+    padding: 2rem 4rem;
+    max-width: 1400px;
+}
+
+.page-header {
+    margin-bottom: 2rem;
+}
+
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+}
+
+.breadcrumb a {
+    color: var(--primary);
+    text-decoration: none;
+}
+
+.breadcrumb a:hover {
+    text-decoration: underline;
+}
+
+h1 {
+    font-size: 2.5rem;
+    color: var(--text);
+    margin-bottom: 1rem;
+}
+
+.metadata {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.badge-success {
+    background: #D1FAE5;
+    color: #065F46;
+}
+
+.badge-info {
+    background: #DBEAFE;
+    color: #1E40AF;
+}
+
+.badge-warning {
+    background: #FEF3C7;
+    color: #92400E;
+}
+
+/* Content */
+.content {
+    background: var(--card-bg);
+    padding: 3rem;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+h2 {
+    font-size: 2rem;
+    color: var(--primary);
+    border-bottom: 2px solid var(--primary);
+    padding-bottom: 0.5rem;
+    margin: 2.5rem 0 1rem;
+}
+
+h2:first-child {
+    margin-top: 0;
+}
+
+h3 {
+    font-size: 1.5rem;
+    color: var(--text);
+    margin: 2rem 0 1rem;
+}
+
+h4 {
+    font-size: 1.2rem;
+    color: var(--text);
+    margin: 1.5rem 0 0.75rem;
+}
+
+p {
+    margin-bottom: 1rem;
+    color: var(--text-muted);
+    line-height: 1.7;
+}
+
+ul, ol {
+    margin-left: 2rem;
+    margin-bottom: 1rem;
+}
+
+li {
+    margin-bottom: 0.5rem;
+    color: var(--text-muted);
+}
+
+code {
+    background: var(--code-bg);
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.9em;
+    color: var(--danger);
+}
+
+pre {
+    background: #282c34;
+    color: #abb2bf;
+    padding: 1.5rem;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 1.5rem 0;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+pre code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+th, td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+
+th {
+    background: var(--primary);
+    color: white;
+    font-weight: 600;
+}
+
+tbody tr:hover {
+    background: var(--bg);
+}
+
+a {
+    color: var(--primary);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+blockquote {
+    border-left: 4px solid var(--primary);
+    padding-left: 1.5rem;
+    margin: 1.5rem 0;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.note {
+    background: #EFF6FF;
+    border-left: 4px solid var(--secondary);
+    padding: 1rem 1.5rem;
+    border-radius: 4px;
+    margin: 1.5rem 0;
+}
+
+.warning {
+    background: #FEF3C7;
+    border-left: 4px solid var(--warning);
+    padding: 1rem 1.5rem;
+    border-radius: 4px;
+    margin: 1.5rem 0;
+}
+
+/* Footer */
+.page-footer {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border);
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+/* Responsive */
+@media (max-width: 968px) {
+    .sidebar {
+        transform: translateX(-100%);
+    }
+    
+    .main-content {
+        margin-left: 0;
+        padding: 2rem;
+    }
+}
+
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h3>📚 Documentation</h3>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="index.html" class="nav-item">🏠 Home</a>
+            <div class="nav-section">Architecture</div>
+            <a href="core-platform.html" class="nav-item">🎯 Core Platform</a>
+            <a href="module-system.html" class="nav-item">🧩 Module System</a>
+            <a href="tenant-context.html" class="nav-item">🏢 Tenant Context</a>
+            <div class="nav-section">Migration</div>
+            <a href="../migration/phase-3-migration-guide.html" class="nav-item">📖 Migration Guide</a>
+        </nav>
+    </div>
+    
+    <div class="main-content">
+        <header class="page-header">
+            <div class="breadcrumb">
+                <a href="index.html">Documentation</a>
+                <span>›</span>
+                <span>Architecture</span>
+            </div>
+            <h1>Tenant Context Architecture</h1>
+            <div class="metadata">
+                <span class="badge badge-info">Version 1.0</span> <span class="badge badge-success">Active</span> <span>📅 2025-06-01</span>
+            </div>
+        </header>
+        
+        <div class="content">
+            <h1 id="tenant-context-architecture">Tenant Context Architecture</h1><p><strong>Version</strong>: 1.0  
+<strong>Last Updated</strong>: 2025-06-01  
+<strong>Status</strong>: Active</p><p>---</p><h2 id="table-of-contents">Table of Contents</h2><ul><li><a href="#overview">Overview</a></li>
+<li><a href="#tenantcontext-interface">TenantContext Interface</a></li>
+<li><a href="#how-tenant-configuration-is-loaded">How Tenant Configuration is Loaded</a></li>
+<li><a href="#tenant-configuration-caching">Tenant Configuration Caching</a></li>
+<li><a href="#tenant-isolation--security">Tenant Isolation & Security</a></li>
+<li><a href="#using-tenantcontext-in-code">Using TenantContext in Code</a></li>
+<li><a href="#tenant-specific-feature-flags">Tenant-Specific Feature Flags</a></li>
+<li><a href="#best-practices">Best Practices</a></li>
+<li><a href="#common-patterns">Common Patterns</a></li>
+<li><a href="#troubleshooting">Troubleshooting</a></li>
+</ul>
+---</p><h2 id="overview">Overview</h2><p>The Bella ERP platform is designed as a <strong>multi-tenant SaaS application</strong> where each tenant (spa branch, cleaning company, home service provider) operates in isolation with their own configuration, data, and feature entitlements.</p><p><strong>TenantContext</strong> is the core abstraction that encapsulates tenant-specific configuration and makes it available throughout the application without requiring repeated database queries.</p><h3 id="key-benefits">Key Benefits</h3><ul><li><strong>Single Source of Truth</strong>: Tenant configuration loaded once per request and passed to all services</li>
+<li><strong>Type Safety</strong>: Strong TypeScript typing prevents invalid configuration access</li>
+<li><strong>Performance</strong>: Configuration cached in memory and Redis to minimize database queries</li>
+<li><strong>Security</strong>: Enforces tenant isolation at the data access layer</li>
+<li><strong>Flexibility</strong>: Supports per-tenant feature flags, settings, and module enablement</li>
+<li><strong>Immutability</strong>: Read-only after construction to prevent accidental mutations</li>
+</ul>
+<h3 id="architecture-overview">Architecture Overview</h3><pre><code class="language-">┌─────────────────────────────────────────────────────────────┐
+│                    Client Request                           │
+└─────────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────────┐
+│              Authentication Middleware                       │
+│  • Validates user session (Supabase Auth)                   │
+│  • Extracts user ID from session                            │
+└─────────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────────┐
+│           Tenant Context Middleware                          │
+│  • Queries user's tenant_id from users table                │
+│  • Fetches tenant configuration from tenants table          │
+│  • Constructs TenantContext object                          │
+│  • Attaches context to request object                       │
+└─────────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────────┐
+│                 API Route Handler                            │
+│  • Receives request with TenantContext                      │
+│  • Passes context to core services                          │
+└─────────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────────┐
+│                  Core Services                               │
+│  • Accept TenantContext as first parameter                  │
+│  • Use tenantId for data filtering                          │
+│  • Check feature flags before executing features            │
+│  • Use settings for tenant-specific business logic          │
+└─────────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────────┐
+│                   Database Query                             │
+│  • All queries filter by tenantId                           │
+│  • RLS policies enforce tenant isolation                    │
+└─────────────────────────────────────────────────────────────┘
+</code></pre><p>---</p><h2 id="tenantcontext-interface">TenantContext Interface</h2><p>The <code>TenantContext</code> interface is defined in <code>src/core/types/tenant.ts</code> and represents the complete configuration for a single tenant.</p><h3 id="type-definition">Type Definition</h3><pre><code class="language-typescript">import type { ModuleId } from './module';</p><table>
+<thead><tr>
+<th>'basic'</th>
+<th>'professional'</th>
+</tr></thead>
+<tbody>
+</tbody></table></p><p>export interface TenantContext {
+  /<em></em> Unique tenant identifier (UUID from tenants table) */
+  readonly tenantId: string;
+  
+  /<em></em> Human-readable tenant name for display purposes */
+  readonly tenantName: string;
+  
+  /<em></em> List of enabled industry modules for this tenant */
+  readonly enabledModules: readonly ModuleId[];
+  
+  /<em></em> Current subscription plan tier */
+  readonly subscriptionPlan: SubscriptionPlan;
+  
+  /<em></em> Feature flags controlling optional functionality */
+  readonly featureFlags: Readonly<Record<string, boolean>>;
+  
+  /<em></em> Tenant-specific configuration settings */
+  readonly settings: Readonly<Record<string, any>>;
+}
+</code></pre><h3 id="field-descriptions">Field Descriptions</h3><h4 id="<code>tenantid:-string</code>"><code>tenantId: string</code></h4><p>Unique identifier for the tenant (UUID). This is the primary key from the <code>tenants</code> table and is used for:
+<ul><li>Filtering all database queries to ensure tenant isolation</li>
+<li>Constructing cache keys for tenant-specific data</li>
+<li>Audit logging and tracking</li>
+</ul>
+<strong>Example</strong>: <code>"550e8400-e29b-41d4-a716-446655440000"</code></p><h4 id="<code>tenantname:-string</code>"><code>tenantName: string</code></h4><p>Human-readable name for the tenant, used for display in UI components.</p><p><strong>Examples</strong>:
+<ul><li><code>"Bella Spa Hà Nội"</code></li>
+<li><code>"Clean & Shine Services"</code></li>
+<li><code>"HomeCare Pro Đà Nẵng"</code></li>
+</ul>
+<h4 id="<code>enabledmodules:-readonly-moduleid[]</code>"><code>enabledModules: readonly ModuleId[]</code></h4><p>Array of enabled industry modules for this tenant. Modules are enabled/disabled based on the tenant's subscription plan and purchased add-ons.</p><p><strong>Common Module IDs</strong>:
+<ul><li><code>'spa'</code> - Spa & babycare management module</li>
+<li><code>'cleaning'</code> - Cleaning services module (Phase 4+)</li>
+<li><code>'homecare'</code> - Home service module (Phase 4+)</li>
+</ul>
+<strong>Example</strong>:
+<pre><code class="language-typescript">enabledModules: ['spa']  // Single-module tenant
+enabledModules: ['spa', 'cleaning']  // Multi-module tenant
+</code></pre><h4 id="<code>subscriptionplan:-subscriptionplan</code>"><code>subscriptionPlan: SubscriptionPlan</code></h4><p>Current subscription tier that determines feature access and quotas.</p><p><strong>Plan Tiers</strong>:
+<ul><li><code>'free'</code> - Limited features, single user, demo data, suitable for trial</li>
+<li><code>'basic'</code> - Core features, up to 5 users, single branch</li>
+<li><code>'professional'</code> - Advanced features, up to 20 users, API access, multi-branch</li>
+<li><code>'enterprise'</code> - All features, unlimited users, dedicated support, custom integrations</li>
+</ul>
+<strong>Example</strong>:
+<pre><code class="language-typescript">subscriptionPlan: 'professional'
+</code></pre><h4 id="<code>featureflags:-record<string,-boolean></code>"><code>featureFlags: Record<string, boolean></code></h4><p>Feature flags control optional functionality that can be enabled/disabled per tenant. This allows gradual rollout of features, A/B testing, and premium feature gating.</p><p><strong>Common Feature Flags</strong>:
+<ul><li><code>ai_salary_reconciliation</code> - AI-powered salary calculation validation</li>
+<li><code>inventory_transfer</code> - Multi-branch inventory transfer</li>
+<li><code>meta_ads_integration</code> - Facebook/Instagram ads integration</li>
+<li><code>advanced_analytics</code> - Business intelligence dashboards</li>
+<li><code>api_access</code> - RESTful API access for integrations</li>
+</ul>
+<strong>Example</strong>:
+<pre><code class="language-typescript">featureFlags: {
+  'ai_salary_reconciliation': true,
+  'inventory_transfer': true,
+  'meta_ads_integration': false,
+  'advanced_analytics': true,
+}
+</code></pre><h4 id="<code>settings:-record<string,-any></code>"><code>settings: Record<string, any></code></h4><p>Tenant-specific configuration that doesn't fit in other fields. Settings are stored as flexible key-value pairs to accommodate diverse tenant needs.</p><p><strong>Common Settings Categories</strong>:</p><ul><li><strong>Localization</strong>:</li>
+</ul>   - <code>currency: string</code> - ISO 4217 code (e.g., <code>'VND'</code>, <code>'USD'</code>)
+   - <code>timezone: string</code> - IANA timezone (e.g., <code>'Asia/Ho_Chi_Minh'</code>)
+   - <code>locale: string</code> - Language code (e.g., <code>'vi-VN'</code>, <code>'en-US'</code>)
+   - <code>dateFormat: string</code> - Date format (e.g., <code>'DD/MM/YYYY'</code>)</p><ul><li><strong>Branding</strong>:</li>
+</ul>   - <code>logoUrl: string</code> - Tenant logo URL
+   - <code>primaryColor: string</code> - Brand primary color
+   - <code>companyName: string</code> - Legal company name</p><ul><li><strong>Operational</strong>:</li>
+</ul>   - <code>autoApprovalThreshold: number</code> - Auto-approve payments below this amount
+   - <code>inventoryAlertThreshold: number</code> - Stock level to trigger alerts
+   - <code>defaultTaxRate: number</code> - Default tax rate for invoices
+   - <code>businessHours: object</code> - Operating hours configuration</p><ul><li><strong>Payment & Banking</strong>:</li>
+</ul>   - <code>qrPayment: object</code> - QR code payment configuration
+   - <code>bankAccounts: array</code> - Bank account details</p><ul><li><strong>Module-Specific</strong>:</li>
+</ul>   - <code>salaryConfig: object</code> - Salary calculation parameters (spa module)
+   - <code>sessionDuration: number</code> - Default session duration in minutes (spa module)
+   - <code>cleaningRates: object</code> - Pricing per square meter (cleaning module)</p><p><strong>Example</strong>:
+<pre><code class="language-typescript">settings: {
+  currency: 'VND',
+  timezone: 'Asia/Ho_Chi_Minh',
+  locale: 'vi-VN',
+  companyName: 'Công ty TNHH Bella Spa',
+  logoUrl: 'https://cdn.example.com/logos/bella-spa.png',
+  primaryColor: '#4F46E5',
+  autoApprovalThreshold: 500000,
+  qrPayment: {
+    bankCode: 'VCB',
+    accountNumber: '1234567890',
+    accountName: 'CONG TY BELLA SPA',
+  },
+}
+</code></pre><h3 id="type-guard">Type Guard</h3><p>Use <code>isTenantContext()</code> to validate TenantContext structure at runtime:</p><pre><code class="language-typescript">import { isTenantContext } from '@/core/types/tenant';</p><p>if (isTenantContext(req.context)) {
+  // TypeScript now knows req.context is TenantContext
+  console.log(req.context.tenantId);
+}
+</code></pre><p>---</p><h2 id="how-tenant-configuration-is-loaded">How Tenant Configuration is Loaded</h2><p>Tenant configuration is loaded differently depending on the execution context (server-side API routes vs. client-side React components).</p><h3 id="server-side-loading-(api-routes)">Server-Side Loading (API Routes)</h3><p>API routes use the <code>withTenantContext</code> middleware from <code>@/core/middleware/tenantContext</code> to automatically extract and attach tenant context to requests.</p><p><strong>Implementation Flow</strong>:</p><ul><li><strong>User Authentication</strong>: Supabase Auth validates the user session</li>
+<li><strong>User Profile Lookup</strong>: Query <code>users</code> table to get <code>tenant_id</code> for authenticated user</li>
+<li><strong>Tenant Configuration Fetch</strong>: Query <code>tenants</code> table with the <code>tenant_id</code></li>
+<li><strong>Context Construction</strong>: Transform database row to <code>TenantContext</code> object</li>
+<li><strong>Attachment</strong>: Attach context to <code>request.tenantContext</code></li>
+</ul>
+<strong>Example Usage</strong>:</p><pre><code class="language-typescript">// src/app/api/bookings/route.ts
+import { withTenantContext, type NextRequestWithContext } from '@/core/middleware';
+import { createOrder } from '@/core/services/order';</p><p>export const POST = withTenantContext(async (request: NextRequestWithContext) => {
+  const context = request.tenantContext;
+  const orderData = await request.json();
+  
+  // Pass context to service
+  const order = await createOrder(context, orderData);
+  
+  return Response.json(order);
+});
+</code></pre><p><strong>Error Handling</strong>:</p><p>The middleware returns appropriate HTTP status codes:
+<ul><li><code>401 Unauthorized</code> - User not authenticated</li>
+<li><code>403 Forbidden</code> - User has no tenant assigned</li>
+<li><code>404 Not Found</code> - Tenant not found in database</li>
+<li><code>500 Internal Server Error</code> - Database query failed</li>
+</ul>
+<h3 id="client-side-loading-(react-components)">Client-Side Loading (React Components)</h3><p>React components use the <code>TenantContextProvider</code> and <code>useTenantContext</code> hook to access tenant configuration.</p><p><strong>Implementation Flow</strong>:</p><ul><li><strong>Provider Mount</strong>: <code>TenantContextProvider</code> mounts in root layout</li>
+<li><strong>API Call</strong>: Provider calls <code>/api/tenant/context</code> endpoint</li>
+<li><strong>Loading State</strong>: Displays loading spinner while fetching</li>
+<li><strong>Context Storage</strong>: Stores context in React Context</li>
+<li><strong>Hook Access</strong>: Child components use <code>useTenantContext()</code> hook</li>
+</ul><p><strong>Example Usage</strong>:</p><pre><code class="language-typescript">// src/app/layout.tsx
+import { TenantContextProvider } from '@/core/providers';</p><p>export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="vi">
+      <body>
+        <TenantContextProvider>
+          {children}
+        </TenantContextProvider>
+      </body>
+    </html>
+  );
+}
+</code></pre><pre><code class="language-typescript">// src/components/Dashboard.tsx
+'use client';</p><p>import { useTenantContext } from '@/core/hooks';</p><p>export function Dashboard() {
+  const context = useTenantContext();
+  
+  return (
+    <div>
+      <h1>Welcome to {context.tenantName}</h1>
+      <p>Plan: {context.subscriptionPlan}</p>
+      <p>Modules: {context.enabledModules.join(', ')}</p>
+    </div>
+  );
+}
+</code></pre><p><strong>Error Handling</strong>:</p><p>The provider displays user-friendly error screens:
+<ul><li><strong>Loading State</strong>: Shows spinner with "Đang tải cấu hình chi nhánh..."</li>
+<li><strong>Error State</strong>: Shows error message with retry button</li>
+<li><strong>Success State</strong>: Renders children with context available</li>
+</ul>
+---</p><h2 id="tenant-configuration-caching">Tenant Configuration Caching</h2><p>To minimize database queries and improve performance, tenant configuration is cached at multiple levels.</p><h3 id="memory-cache-(module-registry)">Memory Cache (Module Registry)</h3><p>Module adapters are registered once at application startup and cached in memory. No repeated database queries required.</p><p><strong>Scope</strong>: Per-application (shared across all requests)  
+<strong>Lifetime</strong>: Until application restart  
+<strong>Invalidation</strong>: Not needed (configuration changes require redeployment)</p><h3 id="redis-cache-(recommended-for-production)">Redis Cache (Recommended for Production)</h3><p>Tenant configuration can be cached in Redis to reduce database load.</p><p><strong>Implementation Example</strong>:</p><pre><code class="language-typescript">// src/core/lib/tenant-cache.ts
+import { Redis } from 'ioredis';
+import type { TenantContext } from '@/core/types/tenant';</p><p>const redis = new Redis(process.env.REDIS_URL);
+const CACHE_TTL = 300; // 5 minutes</p><table>
+<thead><tr>
+</tr></thead>
+<tbody>
+</tbody></table>
+  const cacheKey = <code>tenant:${tenantId}:context</code>;
+  const cached = await redis.get(cacheKey);
+  
+  if (cached) {
+    return JSON.parse(cached) as TenantContext;
+  }
+  
+  return null;
+}</p><p>export async function setCachedTenantContext(context: TenantContext): Promise<void> {
+  const cacheKey = <code>tenant:${context.tenantId}:context</code>;
+  await redis.setex(cacheKey, CACHE_TTL, JSON.stringify(context));
+}</p><p>export async function invalidateTenantCache(tenantId: string): Promise<void> {
+  const cacheKey = <code>tenant:${tenantId}:context</code>;
+  await redis.del(cacheKey);
+}
+</code></pre><p><strong>Scope</strong>: Per-tenant (isolated by tenantId)  
+<strong>Lifetime</strong>: 5 minutes (configurable)  
+<strong>Invalidation</strong>: On tenant configuration update</p><h3 id="client-side-cache-(react-context)">Client-Side Cache (React Context)</h3><p>Once loaded, tenant context is stored in React Context and available to all child components without re-fetching.</p><p><strong>Scope</strong>: Per-user session (browser tab)  
+<strong>Lifetime</strong>: Until page reload  
+<strong>Invalidation</strong>: Page refresh or logout</p><h3 id="cache-strategy-recommendations">Cache Strategy Recommendations</h3><p><strong>Development</strong>:
+<ul><li>Use memory cache only</li>
+<li>No Redis required</li>
+<li>Fast configuration changes</li>
+</ul>
+<strong>Production</strong>:
+<ul><li>Use Redis cache with 5-minute TTL</li>
+<li>Memory cache for module registry</li>
+<li>Automatic invalidation on tenant config updates</li>
+</ul>
+---</p><h2 id="tenant-isolation-&-security">Tenant Isolation & Security</h2><p>Tenant isolation is critical for multi-tenant SaaS applications. Bella ERP enforces isolation at multiple layers.</p><h3 id="layer-1:-authentication">Layer 1: Authentication</h3><p><strong>Mechanism</strong>: Supabase Auth validates user sessions before any tenant context extraction.</p><p><strong>Security Controls</strong>:
+<ul><li>JWT token validation</li>
+<li>Session expiration enforcement</li>
+<li>Refresh token rotation</li>
+<li>Multi-factor authentication support</li>
+</ul>
+<strong>Code Example</strong>:</p><pre><code class="language-typescript">const { data: { user }, error } = await supabase.auth.getUser();</p><table>
+<thead><tr>
+<th></th>
+</tr></thead>
+<tbody>
+</tbody></table>
+  return Response.json({ error: 'Unauthorized' }, { status: 401 });
+}
+</code></pre><h3 id="layer-2:-tenant-assignment-validation">Layer 2: Tenant Assignment Validation</h3><p><strong>Mechanism</strong>: Verify that the authenticated user has a valid tenant assignment.</p><p><strong>Security Controls</strong>:
+<ul><li>Query <code>users.tenant_id</code> to confirm assignment</li>
+<li>Reject requests from users without tenant</li>
+<li>Audit log all tenant access attempts</li>
+</ul>
+<strong>Code Example</strong>:</p><pre><code class="language-typescript">const { data: userProfile } = await supabase
+  .from('users')
+  .select('tenant_id')
+  .eq('id', user.id)
+  .single();</p><p>if (!userProfile?.tenant_id) {
+  return Response.json({ error: 'Forbidden: No tenant assigned' }, { status: 403 });
+}
+</code></pre><h3 id="layer-3:-database-query-filtering">Layer 3: Database Query Filtering</h3><p><strong>Mechanism</strong>: All database queries MUST include <code>tenantId</code> filter.</p><p><strong>Security Controls</strong>:
+<ul><li>Mandatory <code>tenantId</code> parameter in service functions</li>
+<li>TypeScript enforces <code>TenantContext</code> as first parameter</li>
+<li>Code reviews verify tenant filtering</li>
+</ul>
+<strong>Code Example</strong>:</p><pre><code class="language-typescript">// ✅ GOOD: Tenant filtering enforced
+export async function getOrderById(
+  context: TenantContext,
+  orderId: string
+<table>
+<thead><tr>
+</tr></thead>
+<tbody>
+</tbody></table>
+  const { data } = await supabase
+    .from('bookings')
+    .select('*')
+    .eq('id', orderId)
+    .eq('tenant_id', context.tenantId)  // CRITICAL: Tenant filter
+    .single();
+  
+  return data;
+}</p><p>// ❌ BAD: No tenant filtering - security vulnerability!
+export async function getOrderById(orderId: string) {
+  const { data } = await supabase
+    .from('bookings')
+    .select('*')
+    .eq('id', orderId)
+    .single();
+  
+  return data;
+}
+</code></pre><h3 id="layer-4:-row-level-security-(rls)">Layer 4: Row-Level Security (RLS)</h3><p><strong>Mechanism</strong>: PostgreSQL Row-Level Security policies enforce tenant isolation at the database level.</p><p><strong>Security Controls</strong>:
+<ul><li>RLS policies enabled on all tenant-scoped tables</li>
+<li>Policies verify <code>tenant_id</code> matches session variable</li>
+<li>Automatic enforcement even if application code has bugs</li>
+</ul>
+<strong>Example RLS Policy</strong>:</p><pre><code class="language-sql">-- Enable RLS on bookings table
+ALTER TABLE bookings ENABLE ROW LEVEL SECURITY;</p><p>-- Policy: Users can only see bookings from their tenant
+CREATE POLICY "Users can view own tenant bookings"
+ON bookings
+FOR SELECT
+USING (tenant_id = current_setting('app.current_tenant_id')::uuid);</p><p>-- Policy: Users can only insert bookings for their tenant
+CREATE POLICY "Users can insert own tenant bookings"
+ON bookings
+FOR INSERT
+WITH CHECK (tenant_id = current_setting('app.current_tenant_id')::uuid);
+</code></pre><p><strong>Setting Session Variable</strong>:</p><pre><code class="language-typescript">// Before querying, set session tenant context
+await supabase.rpc('set_session_tenant', {
+  p_tenant_id: context.tenantId,
+});</p><p>// Now all queries automatically filter by tenant_id
+const { data } = await supabase.from('bookings').select('*');
+// RLS ensures only current tenant's bookings are returned
+</code></pre><h3 id="layer-5:-api-rate-limiting">Layer 5: API Rate Limiting</h3><p><strong>Mechanism</strong>: Rate limiting per tenant to prevent abuse and ensure fair resource allocation.</p><p><strong>Security Controls</strong>:
+<ul><li>Rate limits based on subscription plan</li>
+<li>Separate limits for read vs. write operations</li>
+<li>Automatic throttling when limits exceeded</li>
+</ul>
+<strong>Implementation Example</strong>:</p><pre><code class="language-typescript">const rateLimits = {
+  free: { requests: 100, window: 60 }, // 100 requests/minute
+  basic: { requests: 500, window: 60 },
+  professional: { requests: 2000, window: 60 },
+  enterprise: { requests: 10000, window: 60 },
+};</p><p>const limit = rateLimits[context.subscriptionPlan];
+const isAllowed = await checkRateLimit(context.tenantId, limit);</p><p>if (!isAllowed) {
+  return Response.json({ error: 'Rate limit exceeded' }, { status: 429 });
+}
+</code></pre><h3 id="security-best-practices">Security Best Practices</h3><ul><li><strong>Never Trust Client Input for Tenant ID</strong>: Always extract tenant ID from authenticated session, never from request body or query parameters.</li>
+</ul>
+<ul><li><strong>Immutable Context</strong>: TenantContext is read-only. Services must not mutate it.</li>
+</ul>
+<ul><li><strong>Audit Logging</strong>: Log all tenant context extraction failures for security monitoring.</li>
+</ul>
+<ul><li><strong>Regular Security Audits</strong>: Review all service functions to verify tenant filtering.</li>
+</ul>
+<ul><li><strong>Principle of Least Privilege</strong>: Grant database permissions only for tenant-scoped operations.</li>
+</ul>
+---</p><h2 id="using-tenantcontext-in-code">Using TenantContext in Code</h2><h3 id="server-side-(api-routes)">Server-Side (API Routes)</h3><p>Always use the <code>withTenantContext</code> middleware for API routes:</p><pre><code class="language-typescript">// src/app/api/orders/create/route.ts
+import { withTenantContext, type NextRequestWithContext } from '@/core/middleware';
+import { createOrder } from '@/core/services/order';</p><p>export const POST = withTenantContext(async (request: NextRequestWithContext) => {
+  // Context automatically extracted and attached
+  const context = request.tenantContext;
+  
+  // Parse request body
+  const orderData = await request.json();
+  
+  // Pass context to service (tenant filtering enforced)
+  const order = await createOrder(context, orderData);
+  
+  return Response.json(order, { status: 201 });
+});
+</code></pre><h3 id="server-actions">Server Actions</h3><p>For Next.js Server Actions, manually extract tenant context:</p><pre><code class="language-typescript">'use server';</p><p>import { extractTenantContext } from '@/core/middleware';
+import { createOrder } from '@/core/services/order';
+import { cookies } from 'next/headers';</p><p>export async function createOrderAction(orderData: unknown) {
+  // Construct mock request with cookies for auth
+  const mockRequest = {
+    headers: new Headers(),
+    cookies: await cookies(),
+  } as any;
+  
+  // Extract tenant context
+  const result = await extractTenantContext(mockRequest);
+  
+  if (!result.success) {
+    throw new Error(result.error);
+  }
+  
+  // Pass context to service
+  const order = await createOrder(result.context, orderData);
+  
+  return order;
+}
+</code></pre><h3 id="client-side-(react-components)">Client-Side (React Components)</h3><p>Use the <code>useTenantContext</code> hook in client components:</p><pre><code class="language-typescript">'use client';</p><p>import { useTenantContext } from '@/core/hooks';</p><p>export function FeatureToggle({ featureFlag, children }: { 
+  featureFlag: string; 
+  children: React.ReactNode;
+}) {
+  const context = useTenantContext();
+  
+  // Check if feature is enabled for this tenant
+  const isEnabled = context.featureFlags[featureFlag] === true;
+  
+  if (!isEnabled) {
+    return null; // Hide feature
+  }
+  
+  return <>{children}</>;
+}</p><p>// Usage
+<FeatureToggle featureFlag="ai_salary_reconciliation">
+  <AISalaryReconciliationPanel />
+</FeatureToggle>
+</code></pre><h3 id="service-functions">Service Functions</h3><p>All core service functions MUST accept <code>TenantContext</code> as the first parameter:</p><pre><code class="language-typescript">// src/core/services/order/create.ts
+import type { TenantContext, CoreBookingOrder } from '@/core/types';
+import { createClient } from '@/lib/supabase-server';</p><p>export async function createOrder(
+  context: TenantContext,
+  orderData: Partial<CoreBookingOrder>
+): Promise<CoreBookingOrder> {
+  const supabase = await createClient();
+  
+  // Set session tenant for RLS
+  await supabase.rpc('set_session_tenant', {
+    p_tenant_id: context.tenantId,
+  });
+  
+  // Insert order (tenant_id automatically set by RLS or explicitly)
+  const { data, error } = await supabase
+    .from('bookings')
+    .insert({
+      ...orderData,
+      tenant_id: context.tenantId, // Explicit tenant filter
+    })
+    .select()
+    .single();
+  
+  if (error) {
+    throw new Error(<code>Failed to create order: ${error.message}</code>);
+  }
+  
+  return data as CoreBookingOrder;
+}
+</code></pre><h3 id="testing-with-mock-context">Testing with Mock Context</h3><p>Create mock TenantContext for unit tests:</p><pre><code class="language-typescript">// src/__tests__/utils/mock-tenant-context.ts
+import type { TenantContext } from '@/core/types/tenant';</p><p>export function createMockTenantContext(
+  overrides?: Partial<TenantContext>
+): TenantContext {
+  return {
+    tenantId: 'test-tenant-id',
+    tenantName: 'Test Tenant',
+    enabledModules: ['spa'],
+    subscriptionPlan: 'professional',
+    featureFlags: {},
+    settings: {
+      currency: 'VND',
+      timezone: 'Asia/Ho_Chi_Minh',
+      locale: 'vi-VN',
+    },
+    ...overrides,
+  };
+}
+</code></pre><p><strong>Test Example</strong>:</p><pre><code class="language-typescript">// src/__tests__/services/order.test.ts
+import { createOrder } from '@/core/services/order';
+import { createMockTenantContext } from '@/tests/utils/mock-tenant-context';</p><p>describe('createOrder', () => {
+  it('creates order with tenant isolation', async () => {
+    const context = createMockTenantContext({
+      tenantId: 'tenant-123',
+    });
+    
+    const orderData = {
+      customerId: 'customer-456',
+      totalAmount: 500000,
+    };
+    
+    const order = await createOrder(context, orderData);
+    
+    expect(order.tenant_id).toBe('tenant-123');
+    expect(order.totalAmount).toBe(500000);
+  });
+});
+</code></pre><p>---</p><h2 id="tenant-specific-feature-flags">Tenant-Specific Feature Flags</h2><p>Feature flags enable gradual feature rollout, A/B testing, and premium feature gating on a per-tenant basis.</p><h3 id="defining-feature-flags">Defining Feature Flags</h3><p>Feature flags are stored in the <code>tenants</code> table (typically in a JSON column like <code>role_permissions.feature_flags</code>) and loaded into <code>TenantContext.featureFlags</code>.</p><p><strong>Database Schema Example</strong>:</p><pre><code class="language-sql">-- Add feature_flags column to tenants table
+ALTER TABLE tenants 
+ADD COLUMN feature_flags JSONB DEFAULT '{}'::jsonb;</p><p>-- Example data
+UPDATE tenants 
+SET feature_flags = '{
+  "ai_salary_reconciliation": true,
+  "inventory_transfer": true,
+  "meta_ads_integration": false,
+  "advanced_analytics": true,
+  "api_access": false
+}'::jsonb
+WHERE id = 'tenant-123';
+</code></pre><h3 id="checking-feature-flags">Checking Feature Flags</h3><h4 id="in-server-side-code">In Server-Side Code</h4><pre><code class="language-typescript">export async function reconcileSalary(context: TenantContext, month: string) {
+  // Check if AI reconciliation is enabled
+  const useAI = context.featureFlags['ai_salary_reconciliation'] === true;
+  
+  if (useAI) {
+    return await reconcileSalaryWithAI(context, month);
+  } else {
+    return await reconcileSalaryManually(context, month);
+  }
+}
+</code></pre><h4 id="in-client-side-components">In Client-Side Components</h4><pre><code class="language-typescript">'use client';</p><p>import { useTenantContext } from '@/core/hooks';</p><p>export function SalaryReconciliation() {
+  const context = useTenantContext();
+  const aiEnabled = context.featureFlags['ai_salary_reconciliation'] === true;
+  
+  return (
+    <div>
+      <h2>Salary Reconciliation</h2>
+      
+      {aiEnabled ? (
+        <AISalaryPanel />
+      ) : (
+        <ManualSalaryPanel />
+      )}
+      
+      {!aiEnabled && (
+        <UpgradePrompt feature="AI Salary Reconciliation" />
+      )}
+    </div>
+  );
+}
+</code></pre><h4 id="using-helper-function">Using Helper Function</h4><p>Use the <code>isFeatureEnabled</code> helper for cleaner code:</p><pre><code class="language-typescript">import { isFeatureEnabled } from '@/core/types/feature-flag';
+import type { TenantContext } from '@/core/types/tenant';</p><p>const aiSalaryFlag = {
+  key: 'ai_salary_reconciliation',
+  name: 'AI Salary Reconciliation',
+  enabled: true,
+  requiredPlan: 'professional',
+};</p><p>export function reconcileSalary(context: TenantContext, month: string) {
+  if (isFeatureEnabled(aiSalaryFlag, context)) {
+    return reconcileSalaryWithAI(context, month);
+  } else {
+    return reconcileSalaryManually(context, month);
+  }
+}
+</code></pre><h3 id="common-feature-flag-patterns">Common Feature Flag Patterns</h3><h4 id="pattern-1:-premium-feature-gating">Pattern 1: Premium Feature Gating</h4><pre><code class="language-typescript">export function shouldShowPremiumFeature(
+  context: TenantContext,
+  featureKey: string,
+  requiredPlan: SubscriptionPlan
+): boolean {
+  // Check feature flag
+  if (!context.featureFlags[featureKey]) {
+    return false;
+  }
+  
+  // Check subscription plan
+  const planTiers = ['free', 'basic', 'professional', 'enterprise'];
+  const currentTier = planTiers.indexOf(context.subscriptionPlan);
+  const requiredTier = planTiers.indexOf(requiredPlan);
+  
+  return currentTier >= requiredTier;
+}</p><p>// Usage
+if (shouldShowPremiumFeature(context, 'advanced_analytics', 'professional')) {
+  // Show advanced analytics dashboard
+}
+</code></pre><h4 id="pattern-2:-gradual-rollout">Pattern 2: Gradual Rollout</h4><pre><code class="language-typescript">// Enable feature for 10% of tenants
+export function isInRolloutGroup(
+  context: TenantContext,
+  featureKey: string,
+  rolloutPercentage: number
+): boolean {
+  // Check if feature flag is enabled
+  if (!context.featureFlags[featureKey]) {
+    return false;
+  }
+  
+  // Hash tenant ID to determine rollout group
+  const hash = hashString(context.tenantId);
+  const group = hash % 100;
+  
+  return group < rolloutPercentage;
+}</p><p>// Usage: Enable for 10% of tenants
+if (isInRolloutGroup(context, 'new_dashboard_ui', 10)) {
+  return <NewDashboard />;
+} else {
+  return <OldDashboard />;
+}
+</code></pre><h4 id="pattern-3:-module-specific-features">Pattern 3: Module-Specific Features</h4><pre><code class="language-typescript">export function isModuleFeatureEnabled(
+  context: TenantContext,
+  moduleId: ModuleId,
+  featureKey: string
+): boolean {
+  // Check if module is enabled
+  if (!context.enabledModules.includes(moduleId)) {
+    return false;
+  }
+  
+  // Check if feature is enabled
+  return context.featureFlags[<code>${moduleId}_${featureKey}</code>] === true;
+}</p><p>// Usage
+if (isModuleFeatureEnabled(context, 'spa', 'session_reminder_sms')) {
+  await sendSessionReminderSMS(booking);
+}
+</code></pre><h3 id="example-feature-flags-by-subscription-plan">Example Feature Flags by Subscription Plan</h3><pre><code class="language-typescript">const featureFlagsByPlan: Record<SubscriptionPlan, Record<string, boolean>> = {
+  free: {
+    ai_salary_reconciliation: false,
+    inventory_transfer: false,
+    meta_ads_integration: false,
+    advanced_analytics: false,
+    api_access: false,
+    multi_branch: false,
+  },
+  basic: {
+    ai_salary_reconciliation: false,
+    inventory_transfer: false,
+    meta_ads_integration: false,
+    advanced_analytics: false,
+    api_access: false,
+    multi_branch: false,
+  },
+  professional: {
+    ai_salary_reconciliation: true,
+    inventory_transfer: true,
+    meta_ads_integration: true,
+    advanced_analytics: true,
+    api_access: true,
+    multi_branch: true,
+  },
+  enterprise: {
+    ai_salary_reconciliation: true,
+    inventory_transfer: true,
+    meta_ads_integration: true,
+    advanced_analytics: true,
+    api_access: true,
+    multi_branch: true,
+  },
+};
+</code></pre><p>---</p><h2 id="best-practices">Best Practices</h2><h3 id="1.-always-pass-tenantcontext-as-first-parameter">1. Always Pass TenantContext as First Parameter</h3><p>Service functions should consistently accept <code>TenantContext</code> as the first parameter:</p><pre><code class="language-typescript">// ✅ GOOD: Consistent signature
+export async function createOrder(
+  context: TenantContext,
+  orderData: Partial<CoreBookingOrder>
+): Promise<CoreBookingOrder> { }</p><p>export async function updateOrder(
+  context: TenantContext,
+  orderId: string,
+  updates: Partial<CoreBookingOrder>
+): Promise<CoreBookingOrder> { }</p><p>// ❌ BAD: Inconsistent signature
+export async function createOrder(
+  orderData: Partial<CoreBookingOrder>,
+  context: TenantContext  // Context should be first
+): Promise<CoreBookingOrder> { }
+</code></pre><h3 id="2.-never-mutate-tenantcontext">2. Never Mutate TenantContext</h3><p>TenantContext is read-only. Do not attempt to modify it:</p><pre><code class="language-typescript">// ❌ BAD: Attempting to mutate context
+export async function enableFeature(context: TenantContext, feature: string) {
+  context.featureFlags[feature] = true; // TypeScript error: readonly
+}</p><p>// ✅ GOOD: Return new context or update database
+export async function enableFeature(
+  context: TenantContext,
+  feature: string
+): Promise<TenantContext> {
+  // Update database
+  await updateTenantFeatureFlag(context.tenantId, feature, true);
+  
+  // Return new context
+  return {
+    ...context,
+    featureFlags: {
+      ...context.featureFlags,
+      [feature]: true,
+    },
+  };
+}
+</code></pre><h3 id="3.-validate-tenant-id-in-all-database-queries">3. Validate Tenant ID in All Database Queries</h3><p>Never trust request parameters for tenant ID. Always use <code>context.tenantId</code>:</p><pre><code class="language-typescript">// ❌ BAD: Using tenant ID from request body
+export async function getOrders(context: TenantContext, requestData: any) {
+  const tenantId = requestData.tenantId; // User could fake this!
+  
+  const { data } = await supabase
+    .from('bookings')
+    .select('*')
+    .eq('tenant_id', tenantId);
+  
+  return data;
+}</p><p>// ✅ GOOD: Using tenant ID from context
+export async function getOrders(context: TenantContext) {
+  const { data } = await supabase
+    .from('bookings')
+    .select('*')
+    .eq('tenant_id', context.tenantId); // From authenticated context
+  
+  return data;
+}
+</code></pre><h3 id="4.-use-type-guards-for-settings-access">4. Use Type Guards for Settings Access</h3><p>Settings are untyped. Use type guards when extracting values:</p><pre><code class="language-typescript">// ✅ GOOD: Type-safe settings access
+export function getTenantCurrency(context: TenantContext): string {
+  const currency = context.settings.currency;
+  
+  if (typeof currency === 'string' && currency.length === 3) {
+    return currency;
+  }
+  
+  return 'VND'; // Fallback default
+}</p><p>// ❌ BAD: Assuming settings structure
+export function getTenantCurrency(context: TenantContext): string {
+  return context.settings.currency; // Could be undefined or wrong type
+}
+</code></pre><h3 id="5.-cache-context-at-request-scope,-not-component-scope">5. Cache Context at Request Scope, Not Component Scope</h3><p>Do not fetch tenant context in individual components. Use the provider:</p><pre><code class="language-typescript">// ❌ BAD: Fetching context in component
+export function MyComponent() {
+<table>
+<thead><tr>
+</tr></thead>
+<tbody>
+</tbody></table>
+  
+  useEffect(() => {
+    fetch('/api/tenant/context')
+      .then(r => r.json())
+      .then(setContext);
+  }, []);
+  
+  if (!context) return <div>Loading...</div>;
+  
+  return <div>{context.tenantName}</div>;
+}</p><p>// ✅ GOOD: Using provider and hook
+export function MyComponent() {
+  const context = useTenantContext(); // From provider
+  
+  return <div>{context.tenantName}</div>;
+}
+</code></pre><h3 id="6.-document-feature-flags-in-code">6. Document Feature Flags in Code</h3><p>Document what each feature flag controls:</p><pre><code class="language-typescript">/<em></em>
+ * Feature flag: ai_salary_reconciliation
+ * 
+ * <strong>Description</strong>: Enables AI-powered salary reconciliation that compares
+ * manual salary records with AI-calculated totals and highlights discrepancies.
+ * 
+ * <strong>Required Plan</strong>: professional or higher
+ * 
+ * <strong>Behavior When Disabled</strong>:
+ * - Manual salary reconciliation only
+ * - No AI comparison or discrepancy detection
+ * - Users see "Upgrade to Professional" prompt
+ */
+const AI_SALARY_FLAG = 'ai_salary_reconciliation';</p><p>if (context.featureFlags[AI_SALARY_FLAG]) {
+  // Show AI reconciliation panel
+}
+</code></pre><h3 id="7.-fail-gracefully-on-feature-flag-checks">7. Fail Gracefully on Feature Flag Checks</h3><p>Provide fallback behavior when feature flags are missing or false:</p><pre><code class="language-typescript">export async function sendNotification(
+  context: TenantContext,
+  notification: NotificationEvent
+) {
+  // Check if SMS notifications are enabled
+  const smsEnabled = context.featureFlags['sms_notifications'] === true;
+  
+  // Send in-app notification (always)
+  await sendInAppNotification(notification);
+  
+  // Send SMS only if enabled
+  if (smsEnabled) {
+    try {
+      await sendSMS(notification);
+    } catch (error) {
+      console.error('SMS failed, but in-app notification sent:', error);
+      // Don't throw - notification was still delivered via in-app
+    }
+  }
+}
+</code></pre><p>---</p><h2 id="common-patterns">Common Patterns</h2><h3 id="pattern-1:-conditional-feature-rendering">Pattern 1: Conditional Feature Rendering</h3><pre><code class="language-typescript">'use client';</p><p>import { useTenantContext } from '@/core/hooks';</p><p>export function FeatureGate({ 
+  feature, 
+  children,
+  fallback = null 
+}: { 
+  feature: string; 
+  children: React.ReactNode;
+  fallback?: React.ReactNode;
+}) {
+  const context = useTenantContext();
+  const isEnabled = context.featureFlags[feature] === true;
+  
+  return isEnabled ? <>{children}</> : <>{fallback}</>;
+}</p><p>// Usage
+<FeatureGate 
+  feature="advanced_analytics"
+  fallback={<UpgradePremiumBanner />}
+>
+  <AdvancedAnalyticsDashboard />
+</FeatureGate>
+</code></pre><h3 id="pattern-2:-multi-module-tenant">Pattern 2: Multi-Module Tenant</h3><pre><code class="language-typescript">export function DashboardWidgets() {
+  const context = useTenantContext();
+  
+  return (
+    <div className="grid gap-4">
+      {/<em> Show spa widgets if spa module enabled </em>/}
+      {context.enabledModules.includes('spa') && (
+        <>
+          <SpaRevenueWidget />
+          <KtvPerformanceWidget />
+          <SessionCompletionWidget />
+        </>
+      )}
+      
+      {/<em> Show cleaning widgets if cleaning module enabled </em>/}
+      {context.enabledModules.includes('cleaning') && (
+        <>
+          <CleaningJobsWidget />
+          <TeamPerformanceWidget />
+          <SuppliesInventoryWidget />
+        </>
+      )}
+      
+      {/<em> Show home service widgets if homecare module enabled </em>/}
+      {context.enabledModules.includes('homecare') && (
+        <>
+          <HomeCareVisitsWidget />
+          <CaregiverAvailabilityWidget />
+          <ClientSatisfactionWidget />
+        </>
+      )}
+    </div>
+  );
+}
+</code></pre><h3 id="pattern-3:-tenant-specific-pricing">Pattern 3: Tenant-Specific Pricing</h3><pre><code class="language-typescript">export async function calculateOrderPrice(
+  context: TenantContext,
+  item: CoreServiceCatalogItem
+): Promise<number> {
+  let price = item.basePrice;
+  
+  // Apply subscription-tier discount
+  switch (context.subscriptionPlan) {
+    case 'enterprise':
+      price *= 0.85; // 15% discount
+      break;
+    case 'professional':
+      price *= 0.9; // 10% discount
+      break;
+    case 'basic':
+      price *= 0.95; // 5% discount
+      break;
+    case 'free':
+      // No discount
+      break;
+  }
+  
+  // Apply tenant-specific discount from settings
+  const customDiscount = context.settings.customDiscountRate as number;
+  if (customDiscount && customDiscount > 0) {
+    price *= (1 - customDiscount);
+  }
+  
+  // Apply tax based on tenant location
+<table>
+<thead><tr>
+<th></th>
+</tr></thead>
+<tbody>
+</tbody></table>
+  const finalPrice = price * (1 + taxRate);
+  
+  return Math.round(finalPrice);
+}
+</code></pre><h3 id="pattern-4:-localization-using-tenant-settings">Pattern 4: Localization Using Tenant Settings</h3><pre><code class="language-typescript">export function formatCurrency(
+  context: TenantContext,
+  amount: number
+): string {
+<table>
+<thead><tr>
+<th></th>
+</tr></thead>
+<tbody>
+<tr>
+<td></td>
+</tr>
+</tbody></table>
+  
+  return new Intl.NumberFormat(locale, {
+    style: 'currency',
+    currency,
+  }).format(amount);
+}</p><p>export function formatDate(
+  context: TenantContext,
+  date: Date
+): string {
+<table>
+<thead><tr>
+<th></th>
+</tr></thead>
+<tbody>
+</tbody></table>
+  const dateFormat = context.settings.dateFormat as string;
+  
+  if (dateFormat === 'MM/DD/YYYY') {
+    return date.toLocaleDateString('en-US');
+  } else {
+    return date.toLocaleDateString(locale);
+  }
+}</p><p>// Usage
+const price = formatCurrency(context, 500000); // "500.000 ₫"
+const date = formatDate(context, new Date()); // "06/01/2025"
+</code></pre><h3 id="pattern-5:-dynamic-module-adapter-loading">Pattern 5: Dynamic Module Adapter Loading</h3><pre><code class="language-typescript">import { moduleRegistry } from '@/core/adapters';</p><p>export async function processOrder(
+  context: TenantContext,
+  order: CoreBookingOrder
+) {
+  // Get module ID from first enabled module
+  const moduleId = context.enabledModules[0];
+  
+  if (!moduleId) {
+    throw new Error('No modules enabled for tenant');
+  }
+  
+  // Get module adapter (if registered)
+  const adapter = moduleRegistry.get(moduleId);
+  
+  // Validate order using module-specific rules (if available)
+  if (adapter?.validateBookingRules) {
+    const isValid = await adapter.validateBookingRules(order, context);
+    if (!isValid) {
+      throw new Error('Order validation failed');
+    }
+  }
+  
+  // Process order
+  const result = await createOrder(context, order);
+  
+  // Execute module-specific side effects (if available)
+  if (adapter?.onBookingCompleted) {
+    await adapter.onBookingCompleted(result, context);
+  }
+  
+  return result;
+}
+</code></pre><h3 id="pattern-6:-tenant-branding">Pattern 6: Tenant Branding</h3><pre><code class="language-typescript">'use client';</p><p>import { useTenantContext } from '@/core/hooks';</p><p>export function AppHeader() {
+  const context = useTenantContext();
+  
+  const logoUrl = context.settings.logoUrl as string;
+<table>
+<thead><tr>
+<th></th>
+</tr></thead>
+<tbody>
+<tr>
+<td></td>
+</tr>
+</tbody></table>
+  
+  return (
+    <header style={{ backgroundColor: primaryColor }}>
+      {logoUrl && (
+        <img src={logoUrl} alt={companyName} className="h-10" />
+      )}
+      <h1 className="text-white text-xl font-bold">{companyName}</h1>
+    </header>
+  );
+}
+</code></pre><p>---</p><h2 id="troubleshooting">Troubleshooting</h2><h3 id="problem:-"usetenantcontext-must-be-used-within-tenantcontextprovider"">Problem: "useTenantContext must be used within TenantContextProvider"</h3><p><strong>Error Message</strong>:
+<pre><code class="language-">Error: useTenantContext must be used within TenantContextProvider. 
+Ensure your component tree is wrapped with <TenantContextProvider> in the root layout.
+</code></pre><p><strong>Cause</strong>: Component using <code>useTenantContext()</code> hook is not wrapped by <code>TenantContextProvider</code>.</p><p><strong>Solution</strong>:</p><ul><li>Verify provider is added in root layout:</li>
+</ul>
+<pre><code class="language-typescript">// src/app/layout.tsx
+import { TenantContextProvider } from '@/core/providers';</p><p>export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html>
+      <body>
+        <TenantContextProvider>
+          {children}
+        </TenantContextProvider>
+      </body>
+    </html>
+  );
+}
+</code></pre><ul><li>If using Pages Router, add to <code>_app.tsx</code>:</li>
+</ul>
+<pre><code class="language-typescript">// src/pages/_app.tsx
+import { TenantContextProvider } from '@/core/providers';</p><p>export default function MyApp({ Component, pageProps }: AppProps) {
+  return (
+    <TenantContextProvider>
+      <Component {...pageProps} />
+    </TenantContextProvider>
+  );
+}
+</code></pre><h3 id="problem:-"unauthorized:-please-log-in-to-access-this-resource"">Problem: "Unauthorized: Please log in to access this resource"</h3><p><strong>Error Message</strong>:
+<pre><code class="language-">401 Unauthorized: Please log in to access this resource
+</code></pre><p><strong>Cause</strong>: User session is invalid or expired.</p><p><strong>Solution</strong>:</p><ul><li>Check if user is logged in:</li>
+</ul>
+<pre><code class="language-typescript">import { createClient } from '@/lib/supabase-server';</p><p>const supabase = await createClient();
+const { data: { user } } = await supabase.auth.getUser();</p><p>if (!user) {
+  // Redirect to login page
+  redirect('/login');
+}
+</code></pre><ul><li>Verify session cookies are being sent:</li>
+</ul>
+<pre><code class="language-typescript">// Ensure credentials are included in fetch
+const response = await fetch('/api/tenant/context', {
+  credentials: 'same-origin',
+});
+</code></pre><ul><li>Check Supabase Auth configuration in <code>.env.local</code>:</li>
+</ul>
+<pre><code class="language-env">NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+</code></pre><h3 id="problem:-"forbidden:-user-has-no-tenant-assigned"">Problem: "Forbidden: User has no tenant assigned"</h3><p><strong>Error Message</strong>:
+<pre><code class="language-">403 Forbidden: User has no tenant assigned
+</code></pre><p><strong>Cause</strong>: Authenticated user exists but has no <code>tenant_id</code> in <code>users</code> table.</p><p><strong>Solution</strong>:</p><ul><li>Verify user has tenant assigned in database:</li>
+</ul>
+<pre><code class="language-sql">SELECT id, email, tenant_id 
+FROM users 
+WHERE id = 'user-uuid';
+</code></pre><ul><li>If <code>tenant_id</code> is NULL, assign a tenant:</li>
+</ul>
+<pre><code class="language-sql">UPDATE users 
+SET tenant_id = 'tenant-uuid' 
+WHERE id = 'user-uuid';
+</code></pre><ul><li>For new user registration, ensure tenant is assigned during signup:</li>
+</ul>
+<pre><code class="language-typescript">// During user registration
+const { data: user } = await supabase.auth.signUp({
+  email,
+  password,
+});</p><p>if (user) {
+  // Assign user to tenant
+  await supabase
+    .from('users')
+    .update({ tenant_id: selectedTenantId })
+    .eq('id', user.id);
+}
+</code></pre><h3 id="problem:-"not-found:-tenant-configuration-not-found"">Problem: "Not Found: Tenant configuration not found"</h3><p><strong>Error Message</strong>:
+<pre><code class="language-">404 Not Found: Tenant configuration not found
+</code></pre><p><strong>Cause</strong>: User has a <code>tenant_id</code> but no matching record exists in <code>tenants</code> table.</p><p><strong>Solution</strong>:</p><ul><li>Verify tenant exists:</li>
+</ul>
+<pre><code class="language-sql">SELECT id, name, subscription_tier 
+FROM tenants 
+WHERE id = 'tenant-uuid';
+</code></pre><ul><li>If tenant doesn't exist, create it:</li>
+</ul>
+<pre><code class="language-sql">INSERT INTO tenants (id, name, subscription_tier, enabled_modules)
+VALUES (
+  'tenant-uuid',
+  'Tenant Name',
+  'basic',
+  ARRAY['spa']
+);
+</code></pre><ul><li>Check for data integrity issues:</li>
+</ul>
+<pre><code class="language-sql">-- Find users with invalid tenant_id
+SELECT u.id, u.email, u.tenant_id
+FROM users u
+LEFT JOIN tenants t ON u.tenant_id = t.id
+WHERE u.tenant_id IS NOT NULL AND t.id IS NULL;
+</code></pre><h3 id="problem:-feature-flag-not-working">Problem: Feature Flag Not Working</h3><p><strong>Symptom</strong>: Feature flag is enabled in database but not working in code.</p><p><strong>Solution</strong>:</p><ul><li>Check feature flag value in database:</li>
+</ul>
+<pre><code class="language-sql">SELECT id, name, feature_flags
+FROM tenants
+WHERE id = 'tenant-uuid';
+</code></pre><ul><li>Verify feature flag structure in TenantContext:</li>
+</ul>
+<pre><code class="language-typescript">// Add logging in component
+const context = useTenantContext();
+console.log('Feature flags:', context.featureFlags);
+console.log('AI Salary flag:', context.featureFlags['ai_salary_reconciliation']);
+</code></pre><ul><li>Check if feature flag is being loaded correctly in middleware:</li>
+</ul>
+<pre><code class="language-typescript">// In src/core/middleware/tenantContext.ts
+// Ensure feature flags are extracted from database row
+<table>
+<thead><tr>
+<th></th>
+</tr></thead>
+<tbody>
+</tbody></table>
+</code></pre><ul><li>Clear cache if using Redis:</li>
+</ul>
+<pre><code class="language-bash"># Clear Redis cache for tenant
+redis-cli DEL tenant:tenant-uuid:context
+</code></pre><h3 id="problem:-tenant-context-not-updating-after-changes">Problem: Tenant Context Not Updating After Changes</h3><p><strong>Symptom</strong>: Changes to tenant configuration in database don't reflect in application.</p><p><strong>Solution</strong>:</p><ul><li><strong>For Client-Side</strong>: Refresh the page to reload tenant context from provider.</li>
+</ul>
+<ul><li><strong>For Server-Side with Redis Cache</strong>: Invalidate cache after updating tenant:</li>
+</ul>
+<pre><code class="language-typescript">import { invalidateTenantCache } from '@/core/lib/tenant-cache';</p><p>// After updating tenant in database
+await supabase
+  .from('tenants')
+  .update({ subscription_tier: 'professional' })
+  .eq('id', tenantId);</p><p>// Invalidate cache
+await invalidateTenantCache(tenantId);
+</code></pre><ul><li><strong>For Production</strong>: Implement automatic cache invalidation on tenant updates:</li>
+</ul>
+<pre><code class="language-typescript">// Database trigger or application hook
+export async function onTenantUpdate(tenantId: string) {
+  // Invalidate Redis cache
+  await invalidateTenantCache(tenantId);
+  
+  // Optionally: Send webhook to refresh connected clients
+  await sendWebhookNotification(tenantId, 'tenant_config_updated');
+}
+</code></pre><h3 id="problem:-cross-tenant-data-leakage">Problem: Cross-Tenant Data Leakage</h3><p><strong>Symptom</strong>: User can see data from other tenants.</p><p><strong>Critical Security Issue</strong>: This is a serious vulnerability that must be addressed immediately.</p><p><strong>Solution</strong>:</p><ul><li><strong>Verify All Queries Filter by Tenant</strong>:</li>
+</ul>
+<pre><code class="language-typescript">// Audit all database queries to ensure tenant filtering
+// ❌ BAD: No tenant filter
+const { data } = await supabase.from('bookings').select('*');</p><p>// ✅ GOOD: Tenant filter applied
+const { data } = await supabase
+  .from('bookings')
+  .select('*')
+  .eq('tenant_id', context.tenantId);
+</code></pre><ul><li><strong>Enable and Verify RLS Policies</strong>:</li>
+</ul>
+<pre><code class="language-sql">-- Check if RLS is enabled
+SELECT tablename, rowsecurity
+FROM pg_tables
+WHERE schemaname = 'public';</p><p>-- Enable RLS if not already enabled
+ALTER TABLE bookings ENABLE ROW LEVEL SECURITY;</p><p>-- Verify policies exist
+SELECT tablename, policyname, cmd, qual
+FROM pg_policies
+WHERE schemaname = 'public' AND tablename = 'bookings';
+</code></pre><ul><li><strong>Test Tenant Isolation</strong>:</li>
+</ul>
+<pre><code class="language-typescript">// Create test script to verify isolation
+async function testTenantIsolation() {
+  const tenant1Context = { tenantId: 'tenant-1', ... };
+  const tenant2Context = { tenantId: 'tenant-2', ... };
+  
+  // Create order for tenant 1
+  const order1 = await createOrder(tenant1Context, orderData);
+  
+  // Try to fetch order using tenant 2 context (should fail)
+  const order2 = await getOrderById(tenant2Context, order1.id);
+  
+  if (order2) {
+    throw new Error('SECURITY VIOLATION: Cross-tenant data access detected!');
+  }
+  
+  console.log('✅ Tenant isolation verified');
+}
+</code></pre><ul><li><strong>Audit Logs</strong>:</li>
+</ul>
+<pre><code class="language-typescript">// Log all tenant context extractions
+console.log('[TenantContext] User:', user.id, 'Tenant:', tenantId);</p><p>// Monitor for suspicious patterns:
+// - User accessing multiple tenants
+// - Tenant ID mismatches
+// - Unauthorized tenant access attempts
+</code></pre><p>---</p><h2 id="related-documentation">Related Documentation</h2><ul><li><a href="./module-system.md">Module System Architecture</a> - Learn about module adapters and how they integrate with TenantContext</li>
+<li><a href="./core-platform.md">Core Platform Design</a> - Overview of core platform services and architecture</li>
+<li><a href="../api-reference.md">API Documentation</a> - API endpoints and authentication</li>
+<li><a href="../../.kiro/specs/phase-3-physical-extraction/requirements.md">Phase 3 Requirements</a> - Phase 3 implementation requirements</li>
+<li><a href="../../.kiro/specs/phase-3-physical-extraction/design.md">Phase 3 Design</a> - Detailed Phase 3 architecture design</li>
+</ul>
+---</p><h2 id="summary">Summary</h2><p>TenantContext is the foundation of Bella ERP's multi-tenant architecture, providing:</p><ul><li><strong>Single Source of Truth</strong>: Load tenant configuration once per request and pass to all services</li>
+<li><strong>Type Safety</strong>: Strong TypeScript typing prevents configuration errors</li>
+<li><strong>Security</strong>: Enforces tenant isolation at multiple layers (auth, query filtering, RLS)</li>
+<li><strong>Flexibility</strong>: Supports per-tenant feature flags, settings, and module enablement</li>
+<li><strong>Performance</strong>: Configuration cached in memory and Redis to minimize database queries</li>
+</ul>
+<strong>Key Takeaways</strong>:</p><ul><li>Always use <code>withTenantContext</code> middleware for API routes</li>
+<li>Always pass <code>TenantContext</code> as first parameter to service functions</li>
+<li>Always filter database queries by <code>context.tenantId</code></li>
+<li>Never trust client input for tenant ID</li>
+<li>Use feature flags to control optional functionality per tenant</li>
+<li>Test tenant isolation thoroughly to prevent data leakage</li>
+</ul>
+---</p><p><strong>Document Version</strong>: 1.0  
+<strong>Last Updated</strong>: 2025-06-01  
+<strong>Status</strong>: Active  
+<strong>Maintainer</strong>: Platform Team
+</p>
+        </div>
+        
+        <footer class="page-footer">
+            <p>© 2025 Bella ERP · Phase 3 Documentation</p>
+        </footer>
+    </div>
+    
+    <script>
+        // Syntax highlighting
+        hljs.highlightAll();
+        
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+        
+        // Active nav item
+        const currentPage = window.location.pathname.split('/').pop();
+        document.querySelectorAll('.nav-item').forEach(item => {
+            if (item.getAttribute('href') === currentPage) {
+                item.classList.add('active');
+            }
+        });
+    </script>
+</body>
+</html>

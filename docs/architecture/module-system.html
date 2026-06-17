@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module System Architecture</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        
+:root {
+    --primary: #4F46E5;
+    --secondary: #06B6D4;
+    --success: #10B981;
+    --warning: #F59E0B;
+    --danger: #EF4444;
+    --bg: #F9FAFB;
+    --card-bg: #FFFFFF;
+    --text: #111827;
+    --text-muted: #6B7280;
+    --border: #E5E7EB;
+    --code-bg: #F3F4F6;
+    --sidebar-width: 280px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.6;
+    color: var(--text);
+    background: var(--bg);
+    display: flex;
+    min-height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+    width: var(--sidebar-width);
+    background: var(--card-bg);
+    border-right: 1px solid var(--border);
+    position: fixed;
+    height: 100vh;
+    overflow-y: auto;
+    padding: 2rem 0;
+}
+
+.sidebar-header {
+    padding: 0 1.5rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1rem;
+}
+
+.sidebar-header h3 {
+    color: var(--primary);
+    font-size: 1.2rem;
+}
+
+.sidebar-nav {
+    padding: 0 1rem;
+}
+
+.nav-section {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin: 1.5rem 0 0.5rem 0.5rem;
+    letter-spacing: 0.05em;
+}
+
+.nav-item {
+    display: block;
+    padding: 0.75rem 1rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    border-radius: 8px;
+    margin-bottom: 0.25rem;
+    transition: all 0.2s;
+}
+
+.nav-item:hover {
+    background: var(--bg);
+    color: var(--primary);
+}
+
+.nav-item.active {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    font-weight: 500;
+}
+
+/* Main Content */
+.main-content {
+    margin-left: var(--sidebar-width);
+    flex: 1;
+    padding: 2rem 4rem;
+    max-width: 1400px;
+}
+
+.page-header {
+    margin-bottom: 2rem;
+}
+
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+}
+
+.breadcrumb a {
+    color: var(--primary);
+    text-decoration: none;
+}
+
+.breadcrumb a:hover {
+    text-decoration: underline;
+}
+
+h1 {
+    font-size: 2.5rem;
+    color: var(--text);
+    margin-bottom: 1rem;
+}
+
+.metadata {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.badge-success {
+    background: #D1FAE5;
+    color: #065F46;
+}
+
+.badge-info {
+    background: #DBEAFE;
+    color: #1E40AF;
+}
+
+.badge-warning {
+    background: #FEF3C7;
+    color: #92400E;
+}
+
+/* Content */
+.content {
+    background: var(--card-bg);
+    padding: 3rem;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+h2 {
+    font-size: 2rem;
+    color: var(--primary);
+    border-bottom: 2px solid var(--primary);
+    padding-bottom: 0.5rem;
+    margin: 2.5rem 0 1rem;
+}
+
+h2:first-child {
+    margin-top: 0;
+}
+
+h3 {
+    font-size: 1.5rem;
+    color: var(--text);
+    margin: 2rem 0 1rem;
+}
+
+h4 {
+    font-size: 1.2rem;
+    color: var(--text);
+    margin: 1.5rem 0 0.75rem;
+}
+
+p {
+    margin-bottom: 1rem;
+    color: var(--text-muted);
+    line-height: 1.7;
+}
+
+ul, ol {
+    margin-left: 2rem;
+    margin-bottom: 1rem;
+}
+
+li {
+    margin-bottom: 0.5rem;
+    color: var(--text-muted);
+}
+
+code {
+    background: var(--code-bg);
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.9em;
+    color: var(--danger);
+}
+
+pre {
+    background: #282c34;
+    color: #abb2bf;
+    padding: 1.5rem;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 1.5rem 0;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+pre code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+th, td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+
+th {
+    background: var(--primary);
+    color: white;
+    font-weight: 600;
+}
+
+tbody tr:hover {
+    background: var(--bg);
+}
+
+a {
+    color: var(--primary);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+blockquote {
+    border-left: 4px solid var(--primary);
+    padding-left: 1.5rem;
+    margin: 1.5rem 0;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.note {
+    background: #EFF6FF;
+    border-left: 4px solid var(--secondary);
+    padding: 1rem 1.5rem;
+    border-radius: 4px;
+    margin: 1.5rem 0;
+}
+
+.warning {
+    background: #FEF3C7;
+    border-left: 4px solid var(--warning);
+    padding: 1rem 1.5rem;
+    border-radius: 4px;
+    margin: 1.5rem 0;
+}
+
+/* Footer */
+.page-footer {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border);
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+/* Responsive */
+@media (max-width: 968px) {
+    .sidebar {
+        transform: translateX(-100%);
+    }
+    
+    .main-content {
+        margin-left: 0;
+        padding: 2rem;
+    }
+}
+
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h3>📚 Documentation</h3>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="index.html" class="nav-item">🏠 Home</a>
+            <div class="nav-section">Architecture</div>
+            <a href="core-platform.html" class="nav-item">🎯 Core Platform</a>
+            <a href="module-system.html" class="nav-item">🧩 Module System</a>
+            <a href="tenant-context.html" class="nav-item">🏢 Tenant Context</a>
+            <div class="nav-section">Migration</div>
+            <a href="../migration/phase-3-migration-guide.html" class="nav-item">📖 Migration Guide</a>
+        </nav>
+    </div>
+    
+    <div class="main-content">
+        <header class="page-header">
+            <div class="breadcrumb">
+                <a href="index.html">Documentation</a>
+                <span>›</span>
+                <span>Architecture</span>
+            </div>
+            <h1>Module System Architecture</h1>
+            <div class="metadata">
+                <span class="badge badge-info">Version 1.0</span> <span class="badge badge-success">Active</span> <span>📅 2025-06-01</span>
+            </div>
+        </header>
+        
+        <div class="content">
+            <h1 id="module-system-architecture">Module System Architecture</h1><p><strong>Version</strong>: 1.0  
+<strong>Last Updated</strong>: 2025-06-01  
+<strong>Status</strong>: Active</p><p>---</p><h2 id="table-of-contents">Table of Contents</h2><ul><li><a href="#overview">Overview</a></li>
+<li><a href="#architecture-pattern">Architecture Pattern</a></li>
+<li><a href="#module-adapter-interface">Module Adapter Interface</a></li>
+<li><a href="#module-registry">Module Registry</a></li>
+<li><a href="#creating-a-module-adapter">Creating a Module Adapter</a></li>
+<li><a href="#registering-an-adapter">Registering an Adapter</a></li>
+<li><a href="#using-adapters-in-core-services">Using Adapters in Core Services</a></li>
+<li><a href="#best-practices">Best Practices</a></li>
+<li><a href="#common-patterns">Common Patterns</a></li>
+<li><a href="#troubleshooting">Troubleshooting</a></li>
+</ul>
+---</p><h2 id="overview">Overview</h2><p>The Bella ERP module system enables industry-specific behavior through the <strong>adapter pattern</strong>, allowing the core platform to remain industry-neutral while supporting multiple verticals (spa, cleaning, home-service, etc.).</p><h3 id="key-benefits">Key Benefits</h3><ul><li><strong>Zero Core Dependencies</strong>: Core platform code never imports module-specific code</li>
+<li><strong>Dynamic Module Loading</strong>: Modules register adapters at runtime via the module registry</li>
+<li><strong>Type Safety</strong>: All adapter methods use core contract types (CoreBookingOrder, CoreServiceCatalogItem)</li>
+<li><strong>Graceful Degradation</strong>: Core services work without adapters (default behavior)</li>
+<li><strong>Easy Extension</strong>: New modules can be added without modifying core platform code</li>
+</ul>
+<h3 id="when-to-use-module-adapters">When to Use Module Adapters</h3><p>Use module adapters when you need to:</p><ul><li>Validate module-specific business rules (e.g., KTV availability in spa module)</li>
+<li>Apply dynamic pricing (e.g., member discounts, package promotions)</li>
+<li>Transform generic core types to module-specific types with strongly-typed metadata</li>
+<li>Execute side effects after order completion (e.g., update salary, deduct inventory)</li>
+<li>Provide module-specific dashboard widgets</li>
+</ul>
+---</p><h2 id="architecture-pattern">Architecture Pattern</h2><pre><code class="language-">┌─────────────────────────────────────────────────────────┐
+│                   Core Platform                         │
+│  (src/core/)                                            │
+│                                                         │
+│  ┌──────────────┐         ┌──────────────┐            │
+│  │  Services    │────────>│   Registry   │            │
+│  │              │         │              │            │
+│  │ • createOrder│         │ get(moduleId)│            │
+│  │ • payment    │         │ register()   │            │
+│  └──────────────┘         └──────────────┘            │
+│                                  │                      │
+└──────────────────────────────────│──────────────────────┘
+                                   │
+                     ModuleAdapter interface
+                                   │
+                                   ▼
+┌──────────────────────────────────────────────────────────┐
+│              Industry Modules (src/modules/)             │
+│                                                          │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐    │
+│  │ Spa Module  │  │  Cleaning   │  │ Home Service│    │
+│  │             │  │   Module    │  │   Module    │    │
+│  │ • Adapter   │  │ • Adapter   │  │ • Adapter   │    │
+│  │ • Services  │  │ • Services  │  │ • Services  │    │
+│  │ • Types     │  │ • Types     │  │ • Types     │    │
+│  └─────────────┘  └─────────────┘  └─────────────┘    │
+│                                                          │
+└──────────────────────────────────────────────────────────┘
+</code></pre><h3 id="flow:-core-service-invokes-module-adapter">Flow: Core Service Invokes Module Adapter</h3><ul><li><strong>User Action</strong>: User submits an order for a spa package</li>
+<li><strong>API Route</strong>: Middleware constructs <code>TenantContext</code> with <code>moduleId: 'spa'</code></li>
+<li><strong>Core Service</strong>: <code>createOrder()</code> receives <code>context</code> and <code>orderData</code></li>
+<li><strong>Registry Lookup</strong>: Service calls <code>moduleRegistry.get(context.moduleId)</code></li>
+<li><strong>Adapter Invocation</strong>: Service calls <code>adapter.validateBookingRules(order, context)</code></li>
+<li><strong>Validation</strong>: Adapter checks KTV availability, session limits, etc.</li>
+<li><strong>Database Write</strong>: If valid, core service creates order in database</li>
+<li><strong>Side Effects</strong>: Service calls <code>adapter.onBookingCompleted(order, context)</code></li>
+<li><strong>Response</strong>: Core service returns <code>CoreBookingOrder</code> to client</li>
+</ul>
+---</p><h2 id="module-adapter-interface">Module Adapter Interface</h2><p>All module adapters implement the <code>ModuleAdapter</code> interface from <code>@/core/types/module-adapter</code>.</p><pre><code class="language-typescript">export interface ModuleAdapter {
+  /<em></em> Module identifier (e.g., 'spa', 'cleaning') */
+  moduleId: ModuleId;
+  
+  /<em></em> Human-readable module name */
+  moduleName: string;
+  
+  /<em></em> Transform core service item to module-specific type */
+  transformServiceItem?: (item: CoreServiceCatalogItem) => unknown;
+  
+  /<em></em> Transform core booking order to module-specific type */
+  transformBookingOrder?: (order: CoreBookingOrder) => unknown;
+  
+  /<em></em> Validate module-specific booking constraints */
+  validateBookingRules?: (order: CoreBookingOrder, context: TenantContext) => Promise<boolean>;
+  
+  /<em></em> Calculate module-specific pricing rules */
+  calculatePricing?: (item: CoreServiceCatalogItem, context: TenantContext) => Promise<number>;
+  
+  /<em></em> Execute module-specific side effects when booking completes */
+  onBookingCompleted?: (order: CoreBookingOrder, context: TenantContext) => Promise<void>;
+  
+  /<em></em> Return dashboard widget components for this module */
+  getModuleWidgets?: () => unknown[];
+}
+</code></pre><p><strong>All methods are optional.</strong> Core services handle missing methods gracefully with default behavior.</p><p>---</p><h2 id="module-registry">Module Registry</h2><p>The module registry (<code>moduleRegistry</code>) is a singleton that manages adapter registration and lookup.</p><h3 id="import-path">Import Path</h3><pre><code class="language-typescript">import { moduleRegistry } from '@/core/adapters';
+</code></pre><h3 id="registry-api">Registry API</h3><h4 id="<code>register(adapter:-moduleadapter):-void</code>"><code>register(adapter: ModuleAdapter): void</code></h4><p>Register a module adapter. Throws <code>DuplicateModuleError</code> if adapter with same <code>moduleId</code> already registered.</p><p><strong>Example:</strong></p><pre><code class="language-typescript">import { moduleRegistry } from '@/core/adapters';
+import { SpaModuleAdapter } from '@/modules/spa/adapters/SpaModuleAdapter';</p><p>const spaAdapter = new SpaModuleAdapter();
+moduleRegistry.register(spaAdapter);
+// Console: [ModuleRegistry] Registered adapter: Bella Spa & Babycare (spa)
+</code></pre><table>
+<thead><tr>
+<th>-undefined</code>"><code>get(moduleId: ModuleId): ModuleAdapter</th>
+</tr></thead>
+<tbody>
+</tbody></table></p><p>Retrieve an adapter by ID (graceful). Returns <code>undefined</code> if not found.</p><p><strong>Use this when the adapter is optional.</strong></p><p><strong>Example:</strong></p><pre><code class="language-typescript">const adapter = moduleRegistry.get('spa');
+if (adapter?.validateBookingRules) {
+  const isValid = await adapter.validateBookingRules(order, context);
+}
+</code></pre><h4 id="<code>getrequired(moduleid:-moduleid):-moduleadapter</code>"><code>getRequired(moduleId: ModuleId): ModuleAdapter</code></h4><p>Retrieve an adapter by ID (strict). Throws <code>AdapterNotFoundError</code> if not found.</p><p><strong>Use this when the adapter MUST exist.</strong></p><p><strong>Example:</strong></p><pre><code class="language-typescript">// In module-specific API route
+const adapter = moduleRegistry.getRequired('spa');
+const pricing = await adapter.calculatePricing(item, context);
+</code></pre><h4 id="<code>has(moduleid:-moduleid):-boolean</code>"><code>has(moduleId: ModuleId): boolean</code></h4><p>Check if an adapter is registered.</p><p><strong>Example:</strong></p><pre><code class="language-typescript">if (moduleRegistry.has('spa')) {
+  // Show spa-specific UI features
+}
+</code></pre><h4 id="<code>getallmoduleids():-moduleid[]</code>"><code>getAllModuleIds(): ModuleId[]</code></h4><p>Get all registered module IDs.</p><p><strong>Example:</strong></p><pre><code class="language-typescript">const modules = moduleRegistry.getAllModuleIds();
+console.log('Available modules:', modules);
+// Output: ['spa', 'cleaning']
+</code></pre><p>---</p><h2 id="creating-a-module-adapter">Creating a Module Adapter</h2><p>Follow these steps to create a new module adapter for your industry vertical.</p><h3 id="step-1:-create-module-directory-structure">Step 1: Create Module Directory Structure</h3><pre><code class="language-">src/modules/your-module/
+├── adapters/
+│   └── YourModuleAdapter.ts
+├── types/
+│   ├── index.ts
+│   ├── booking.ts
+│   └── package.ts
+├── services/
+│   └── yourService.ts
+├── components/
+│   └── YourComponent.tsx
+└── README.md
+</code></pre><h3 id="step-2:-define-module-specific-types">Step 2: Define Module-Specific Types</h3><p>Create types that extend core contracts with module-specific metadata.</p><p><strong>Example: <code>src/modules/cleaning/types/booking.ts</code></strong></p><pre><code class="language-typescript">import type { CoreBookingOrder } from '@/core/types';</p><p>/<em></em>
+ * Cleaning module booking with cleaning-specific fields.
+ */
+export interface CleaningBooking extends CoreBookingOrder {
+  // Extract metadata to strongly-typed fields
+  squareMeters: number;
+<table>
+<thead><tr>
+<th>'deep'</th>
+</tr></thead>
+<tbody>
+</tbody></table>
+  teamSize: number;
+  estimatedHours: number;
+  assignedTeamLeaderId: string;
+}
+</code></pre><h3 id="step-3:-implement-moduleadapter-interface">Step 3: Implement ModuleAdapter Interface</h3><p>Create your adapter class implementing the <code>ModuleAdapter</code> interface.</p><p><strong>Example: <code>src/modules/cleaning/adapters/CleaningModuleAdapter.ts</code></strong></p><pre><code class="language-typescript">import type {
+  ModuleAdapter,
+  CoreServiceCatalogItem,
+  CoreBookingOrder,
+  TenantContext,
+} from '@/core/types';
+import type { CleaningBooking, CleaningPackage } from '../types';</p><p>export class CleaningModuleAdapter implements ModuleAdapter {
+  readonly moduleId = 'cleaning' as const;
+  readonly moduleName = 'Cleaning Services';</p><p>  /<em></em>
+   * Transform core service item to cleaning package type.
+   */
+  transformServiceItem(item: CoreServiceCatalogItem): CleaningPackage {
+    return {
+      id: item.id,
+      name: item.name,
+      basePrice: item.basePrice,
+<table>
+<thead><tr>
+<th>'deep'</th>
+</tr></thead>
+<tbody>
+</tbody></table>
+      pricePerSquareMeter: item.metadata.price_per_sqm as number,
+      estimatedHours: item.metadata.estimated_hours as number,
+    };
+  }</p><p>  /<em></em>
+   * Transform core booking order to cleaning booking type.
+   */
+  transformBookingOrder(order: CoreBookingOrder): CleaningBooking {
+    return {
+      ...order,
+      squareMeters: order.metadata.square_meters as number,
+<table>
+<thead><tr>
+<th>'deep'</th>
+</tr></thead>
+<tbody>
+</tbody></table>
+      teamSize: order.metadata.team_size as number,
+      estimatedHours: order.metadata.estimated_hours as number,
+      assignedTeamLeaderId: order.metadata.assigned_team_leader_id as string,
+    };
+  }</p><p>  /<em></em>
+   * Validate cleaning-specific booking rules.
+   */
+  async validateBookingRules(
+    order: CoreBookingOrder,
+    context: TenantContext
+  ): Promise<boolean> {
+    // Check team leader availability
+    const teamLeaderId = order.metadata.assigned_team_leader_id as string;
+    if (!teamLeaderId) {
+      console.error('[CleaningAdapter] Team leader not assigned');
+      return false;
+    }</p><p>    // Check team capacity for scheduled date
+    const scheduledDate = new Date(order.scheduledStartTime);
+    const teamCapacity = await this.checkTeamCapacity(scheduledDate, context.tenantId);
+    if (teamCapacity === 0) {
+      console.error('[CleaningAdapter] No team capacity available');
+      return false;
+    }</p><p>    // Validate square meters
+    const squareMeters = order.metadata.square_meters as number;
+<table>
+<thead><tr>
+<th></th>
+</tr></thead>
+<tbody>
+</tbody></table>
+      console.error('[CleaningAdapter] Invalid square meters');
+      return false;
+    }</p><p>    return true;
+  }</p><p>  /<em></em>
+   * Calculate cleaning-specific pricing based on square meters.
+   */
+  async calculatePricing(
+    item: CoreServiceCatalogItem,
+    context: TenantContext
+  ): Promise<number> {
+    const pricePerSqm = item.metadata.price_per_sqm as number;
+<table>
+<thead><tr>
+<th></th>
+</tr></thead>
+<tbody>
+</tbody></table>
+    
+    let totalPrice = item.basePrice + (pricePerSqm * squareMeters);</p><p>    // Apply member discount if applicable
+    if (context.settings.membershipLevel === 'premium') {
+      totalPrice *= 0.9; // 10% discount
+    }</p><p>    return Math.round(totalPrice);
+  }</p><p>  /<em></em>
+   * Execute side effects when cleaning job completes.
+   */
+  async onBookingCompleted(
+    order: CoreBookingOrder,
+    context: TenantContext
+  ): Promise<void> {
+    console.log(<code>[CleaningAdapter] Booking ${order.id} completed</code>);</p><p>    // Credit team member salaries
+    const teamLeaderId = order.metadata.assigned_team_leader_id as string;
+    const teamSize = order.metadata.team_size as number;
+    await this.creditTeamSalary(teamLeaderId, teamSize, order.totalAmount);</p><p>    // Update inventory (cleaning supplies used)
+    const suppliesUsed = order.metadata.supplies_used as Record<string, number>;
+    if (suppliesUsed) {
+      await this.deductSupplies(suppliesUsed, context.tenantId);
+    }</p><p>    // Send completion notification to customer
+    // (handled by core notification service)
+  }</p><p>  /<em></em>
+   * Return cleaning-specific dashboard widgets.
+   */
+  getModuleWidgets() {
+    return [
+      { id: 'cleaning-jobs-today', component: 'CleaningJobsWidget' },
+      { id: 'team-performance', component: 'TeamPerformanceWidget' },
+      { id: 'revenue-by-type', component: 'RevenueByTypeWidget' },
+    ];
+  }</p><p>  // Private helper methods
+  private async checkTeamCapacity(date: Date, tenantId: string): Promise<number> {
+    // Implementation: Query team availability
+    return 5; // Example: 5 teams available
+  }</p><p>  private async creditTeamSalary(leaderId: string, teamSize: number, amount: number): Promise<void> {
+    // Implementation: Credit salary to team members
+  }</p><p>  private async deductSupplies(supplies: Record<string, number>, tenantId: string): Promise<void> {
+    // Implementation: Deduct inventory
+  }
+}
+</code></pre><h3 id="step-4:-export-adapter">Step 4: Export Adapter</h3><p><strong>Example: <code>src/modules/cleaning/adapters/index.ts</code></strong></p><pre><code class="language-typescript">export { CleaningModuleAdapter } from './CleaningModuleAdapter';
+</code></pre><p>---</p><h2 id="registering-an-adapter">Registering an Adapter</h2><p>Module adapters must be registered during application startup.</p><h3 id="step-1:-create-module-registration-file">Step 1: Create Module Registration File</h3><p><strong>Example: <code>src/modules/cleaning/register.ts</code></strong></p><pre><code class="language-typescript">import { moduleRegistry } from '@/core/adapters';
+import { CleaningModuleAdapter } from './adapters';</p><p>/<em></em>
+ * Register the cleaning module adapter on app startup.
+ * 
+ * @remarks
+ * This function should be called once during application initialization,
+ * typically in the root layout or app entry point.
+ */
+export function registerCleaningModule(): void {
+  const adapter = new CleaningModuleAdapter();
+  moduleRegistry.register(adapter);
+}
+</code></pre><h3 id="step-2:-call-registration-in-app-entry-point">Step 2: Call Registration in App Entry Point</h3><p><strong>Example: <code>src/app/layout.tsx</code> (Next.js App Router)</strong></p><pre><code class="language-typescript">import { registerCleaningModule } from '@/modules/cleaning/register';
+import { registerSpaModule } from '@/modules/spa/register';</p><p>// Register all enabled modules on app startup
+registerSpaModule();
+registerCleaningModule();</p><p>export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  );
+}
+</code></pre><p><strong>Alternative: <code>src/pages/_app.tsx</code> (Next.js Pages Router)</strong></p><pre><code class="language-typescript">import { AppProps } from 'next/app';
+import { registerCleaningModule } from '@/modules/cleaning/register';
+import { registerSpaModule } from '@/modules/spa/register';</p><p>// Register modules once
+registerSpaModule();
+registerCleaningModule();</p><p>export default function MyApp({ Component, pageProps }: AppProps) {
+  return <Component {...pageProps} />;
+}
+</code></pre><h3 id="verification">Verification</h3><p>After registration, you should see console logs:</p><pre><code class="language-">[ModuleRegistry] Registered adapter: Bella Spa & Babycare (spa)
+[ModuleRegistry] Registered adapter: Cleaning Services (cleaning)
+</code></pre><p>---</p><h2 id="using-adapters-in-core-services">Using Adapters in Core Services</h2><p>Core services invoke adapters via the module registry. All adapter methods are optional.</p><h3 id="pattern-1:-graceful-invocation-(preferred)">Pattern 1: Graceful Invocation (Preferred)</h3><p>Use <code>get()</code> when the adapter is optional. Provide fallback behavior.</p><p><strong>Example: Core Order Service</strong></p><pre><code class="language-typescript">import { moduleRegistry } from '@/core/adapters';
+import type { TenantContext, CoreBookingOrder } from '@/core/types';</p><p>export async function createOrder(
+  context: TenantContext,
+  orderData: Partial<CoreBookingOrder>
+): Promise<CoreBookingOrder> {
+  // Invoke adapter for validation (optional)
+  const adapter = moduleRegistry.get(context.moduleId);
+  if (adapter?.validateBookingRules) {
+    const isValid = await adapter.validateBookingRules(
+      orderData as CoreBookingOrder,
+      context
+    );
+    if (!isValid) {
+      throw new Error('Booking validation failed');
+    }
+  }</p><p>  // Create order in database
+  const order = await db.insert('bookings').values(orderData).returning();</p><p>  return order;
+}
+</code></pre><h3 id="pattern-2:-strict-invocation">Pattern 2: Strict Invocation</h3><p>Use <code>getRequired()</code> when the adapter MUST exist.</p><p><strong>Example: Module-Specific API Route</strong></p><pre><code class="language-typescript">import { moduleRegistry } from '@/core/adapters';
+import type { TenantContext } from '@/core/types';</p><p>export async function POST(request: Request) {
+  const context: TenantContext = extractTenantContext(request);
+  
+  // This route requires the spa module adapter
+  const adapter = moduleRegistry.getRequired('spa');
+  
+  const packageData = await request.json();
+  const pricing = await adapter.calculatePricing(packageData, context);
+  
+  return Response.json({ pricing });
+}
+</code></pre><h3 id="pattern-3:-conditional-feature-rendering">Pattern 3: Conditional Feature Rendering</h3><p>Use <code>has()</code> to check if a module is available before rendering UI.</p><p><strong>Example: Dashboard Component</strong></p><pre><code class="language-typescript">'use client';</p><p>import { moduleRegistry } from '@/core/adapters';
+import { useTenantContext } from '@/core/hooks';</p><p>export function Dashboard() {
+  const context = useTenantContext();
+  const hasSpaModule = moduleRegistry.has('spa');
+  const hasCleaningModule = moduleRegistry.has('cleaning');
+  
+  return (
+    <div>
+      <h1>Dashboard</h1>
+      {hasSpaModule && <SpaWidgets />}
+      {hasCleaningModule && <CleaningWidgets />}
+    </div>
+  );
+}
+</code></pre><h3 id="pattern-4:-side-effects-after-order-completion">Pattern 4: Side Effects After Order Completion</h3><p><strong>Example: Core Order Completion Service</strong></p><pre><code class="language-typescript">export async function completeOrder(
+  context: TenantContext,
+  orderId: string
+): Promise<CoreBookingOrder> {
+  // Update order status
+  const order = await db
+    .update('bookings')
+    .set({ status: 'completed', completedAt: new Date() })
+    .where({ id: orderId })
+    .returning();</p><p>  // Invoke module adapter for side effects (optional)
+  const adapter = moduleRegistry.get(context.moduleId);
+  if (adapter?.onBookingCompleted) {
+    await adapter.onBookingCompleted(order, context);
+  }</p><p>  // Send completion notification (core service)
+  await sendNotification({
+    type: 'booking_completed',
+    recipientId: order.customerId,
+    data: { orderId: order.id },
+  });</p><p>  return order;
+}
+</code></pre><p>---</p><h2 id="best-practices">Best Practices</h2><h3 id="1.-keep-adapters-stateless">1. Keep Adapters Stateless</h3><p>Module adapters should NOT store state. They are instantiated once and reused across requests.</p><p><strong>❌ Bad:</strong></p><pre><code class="language-typescript">export class SpaModuleAdapter implements ModuleAdapter {
+<table>
+<thead><tr>
+</tr></thead>
+<tbody>
+</tbody></table>
+  
+  async validateBookingRules(order: CoreBookingOrder) {
+    this.currentBooking = order; // State mutation across requests!
+    // ...
+  }
+}
+</code></pre><p><strong>✅ Good:</strong></p><pre><code class="language-typescript">export class SpaModuleAdapter implements ModuleAdapter {
+  async validateBookingRules(order: CoreBookingOrder, context: TenantContext) {
+    // Use parameters, not instance state
+    const ktvId = order.metadata.assigned_ktv_id;
+    // ...
+  }
+}
+</code></pre><h3 id="2.-use-core-services-for-data-access">2. Use Core Services for Data Access</h3><p>Adapters should NOT directly query the database. Use core services instead.</p><p><strong>❌ Bad:</strong></p><pre><code class="language-typescript">export class SpaModuleAdapter implements ModuleAdapter {
+  async validateBookingRules(order: CoreBookingOrder) {
+    // Don't query database directly!
+    const { data } = await supabase
+      .from('employees')
+      .select('*')
+      .eq('id', ktvId);
+    // ...
+  }
+}
+</code></pre><p><strong>✅ Good:</strong></p><pre><code class="language-typescript">export class SpaModuleAdapter implements ModuleAdapter {
+  async validateBookingRules(order: CoreBookingOrder, context: TenantContext) {
+    // Use core service or module service
+    const ktv = await getEmployeeById(ktvId, context);
+    // ...
+  }
+}
+</code></pre><h3 id="3.-validate-input-parameters">3. Validate Input Parameters</h3><p>Always validate adapter method inputs before processing.</p><pre><code class="language-typescript">export class SpaModuleAdapter implements ModuleAdapter {
+  async validateBookingRules(order: CoreBookingOrder, context: TenantContext): Promise<boolean> {
+    // Validate required metadata exists
+    if (!order.metadata?.assigned_ktv_id) {
+      console.error('[SpaAdapter] Missing required field: assigned_ktv_id');
+      return false;
+    }
+    
+    if (!order.metadata?.sessions_total) {
+      console.error('[SpaAdapter] Missing required field: sessions_total');
+      return false;
+    }
+    
+    // Proceed with validation
+    // ...
+  }
+}
+</code></pre><h3 id="4.-use-descriptive-console-logs">4. Use Descriptive Console Logs</h3><p>Prefix adapter logs with module ID for easier debugging.</p><pre><code class="language-typescript">export class SpaModuleAdapter implements ModuleAdapter {
+  async onBookingCompleted(order: CoreBookingOrder, context: TenantContext): Promise<void> {
+    console.log(<code>[SpaAdapter] Processing completion for order ${order.id}</code>);
+    
+    try {
+      await this.creditKtvSalary(order);
+      console.log(<code>[SpaAdapter] KTV salary credited for order ${order.id}</code>);
+    } catch (error) {
+      console.error(<code>[SpaAdapter] Failed to credit salary:</code>, error);
+      // Don't throw - log and continue
+    }
+  }
+}
+</code></pre><h3 id="5.-handle-errors-gracefully">5. Handle Errors Gracefully</h3><p>Adapter methods should catch and log errors, not throw them (except for critical failures).</p><p><strong>❌ Bad:</strong></p><pre><code class="language-typescript">async onBookingCompleted(order: CoreBookingOrder) {
+  await this.creditSalary(order); // Throws on error - breaks order completion!
+}
+</code></pre><p><strong>✅ Good:</strong></p><pre><code class="language-typescript">async onBookingCompleted(order: CoreBookingOrder, context: TenantContext) {
+  try {
+    await this.creditSalary(order);
+  } catch (error) {
+    console.error('[SpaAdapter] Salary credit failed, will retry later:', error);
+    // Queue for retry or send alert
+  }
+}
+</code></pre><h3 id="6.-type-metadata-safely">6. Type Metadata Safely</h3><p>Use type guards when extracting metadata fields.</p><pre><code class="language-typescript">function isValidKtvId(value: unknown): value is string {
+  return typeof value === 'string' && value.length > 0;
+}</p><p>export class SpaModuleAdapter implements ModuleAdapter {
+  transformBookingOrder(order: CoreBookingOrder): SpaBooking {
+    const ktvId = order.metadata.assigned_ktv_id;
+    
+    if (!isValidKtvId(ktvId)) {
+      throw new Error('Invalid KTV ID in order metadata');
+    }
+    
+    return {
+      ...order,
+      assignedKtvId: ktvId, // Now safely typed as string
+    };
+  }
+}
+</code></pre><h3 id="7.-document-module-specific-metadata-schema">7. Document Module-Specific Metadata Schema</h3><p>Document the expected metadata schema for your module.</p><pre><code class="language-typescript">/<em></em>
+ * Spa Module Adapter
+ * 
+ * <strong>Required Metadata Fields:</strong>
+ * - <code>assigned_ktv_id</code> (string): ID of assigned KTV employee
+ * - <code>sessions_total</code> (number): Total sessions in package
+ * - <code>sessions_completed</code> (number): Number of sessions completed
+<table>
+<thead><tr>
+<th>'premium'</th>
+</tr></thead>
+<tbody>
+</tbody></table>
+ * 
+ * <strong>Optional Metadata Fields:</strong>
+ * - <code>session_multiplier</code> (number): Session coefficient (default: 1.0)
+ * - <code>products_used</code> (Record<string, number>): Products consumed during session
+ */
+export class SpaModuleAdapter implements ModuleAdapter {
+  // ...
+}
+</code></pre><p>---</p><h2 id="common-patterns">Common Patterns</h2><h3 id="pattern:-dynamic-pricing-with-tiered-discounts">Pattern: Dynamic Pricing with Tiered Discounts</h3><pre><code class="language-typescript">export class SpaModuleAdapter implements ModuleAdapter {
+  async calculatePricing(
+    item: CoreServiceCatalogItem,
+    context: TenantContext
+  ): Promise<number> {
+    let price = item.basePrice;
+    
+    // Apply subscription-tier discount
+    const discountRate = this.getDiscountRate(context.subscriptionPlan);
+    price *= (1 - discountRate);
+    
+    // Apply membership-level discount
+    const memberLevel = context.settings.membershipLevel as string;
+    if (memberLevel === 'gold') {
+      price *= 0.9; // 10% discount
+    } else if (memberLevel === 'platinum') {
+      price *= 0.85; // 15% discount
+    }
+    
+    // Apply package category discount
+    const category = item.metadata.category as string;
+    if (category === 'vip') {
+      price *= 0.9; // Additional 10% for VIP packages
+    }
+    
+    return Math.round(price);
+  }
+  
+  private getDiscountRate(plan: string): number {
+    switch (plan) {
+      case 'enterprise': return 0.15;
+      case 'professional': return 0.10;
+      case 'starter': return 0.05;
+      default: return 0;
+    }
+  }
+}
+</code></pre><h3 id="pattern:-multi-step-validation">Pattern: Multi-Step Validation</h3><pre><code class="language-typescript">export class SpaModuleAdapter implements ModuleAdapter {
+  async validateBookingRules(
+    order: CoreBookingOrder,
+    context: TenantContext
+  ): Promise<boolean> {
+    // Step 1: Validate required fields
+    if (!this.validateRequiredFields(order)) {
+      return false;
+    }
+    
+    // Step 2: Check resource availability
+    if (!await this.checkResourceAvailability(order, context)) {
+      return false;
+    }
+    
+    // Step 3: Validate business constraints
+    if (!await this.validateBusinessConstraints(order, context)) {
+      return false;
+    }
+    
+    return true;
+  }
+  
+  private validateRequiredFields(order: CoreBookingOrder): boolean {
+    const required = ['assigned_ktv_id', 'sessions_total', 'package_category'];
+    for (const field of required) {
+      if (!order.metadata[field]) {
+        console.error(<code>[SpaAdapter] Missing required field: ${field}</code>);
+        return false;
+      }
+    }
+    return true;
+  }
+  
+  private async checkResourceAvailability(
+    order: CoreBookingOrder,
+    context: TenantContext
+  ): Promise<boolean> {
+    const ktvId = order.metadata.assigned_ktv_id as string;
+    const scheduledTime = new Date(order.scheduledStartTime);
+    
+    // Check if KTV is available at scheduled time
+    const isAvailable = await checkKtvAvailability(ktvId, scheduledTime, context.tenantId);
+    if (!isAvailable) {
+      console.error('[SpaAdapter] KTV not available at scheduled time');
+      return false;
+    }
+    
+    return true;
+  }
+  
+  private async validateBusinessConstraints(
+    order: CoreBookingOrder,
+    context: TenantContext
+  ): Promise<boolean> {
+    // Check session limits
+<table>
+<thead><tr>
+<th></th>
+</tr></thead>
+<tbody>
+</tbody></table>
+    const total = order.metadata.sessions_total as number;
+    
+    if (completed >= total) {
+      console.error('[SpaAdapter] All sessions already completed');
+      return false;
+    }
+    
+    return true;
+  }
+}
+</code></pre><h3 id="pattern:-batch-side-effects">Pattern: Batch Side Effects</h3><pre><code class="language-typescript">export class SpaModuleAdapter implements ModuleAdapter {
+  async onBookingCompleted(
+    order: CoreBookingOrder,
+    context: TenantContext
+  ): Promise<void> {
+    console.log(<code>[SpaAdapter] Processing completion for order ${order.id}</code>);
+    
+    // Execute side effects in parallel
+    const results = await Promise.allSettled([
+      this.creditKtvSalary(order, context),
+      this.deductInventory(order, context),
+      this.updateKtvPerformance(order, context),
+      this.awardLoyaltyPoints(order, context),
+    ]);
+    
+    // Log any failures (don't throw - order is already completed)
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        const operations = ['salary', 'inventory', 'performance', 'loyalty'];
+        console.error(<code>[SpaAdapter] ${operations[index]} operation failed:</code>, result.reason);
+      }
+    });
+  }
+  
+  private async creditKtvSalary(order: CoreBookingOrder, context: TenantContext): Promise<void> {
+    // Implementation
+  }
+  
+  private async deductInventory(order: CoreBookingOrder, context: TenantContext): Promise<void> {
+    // Implementation
+  }
+  
+  private async updateKtvPerformance(order: CoreBookingOrder, context: TenantContext): Promise<void> {
+    // Implementation
+  }
+  
+  private async awardLoyaltyPoints(order: CoreBookingOrder, context: TenantContext): Promise<void> {
+    // Implementation
+  }
+}
+</code></pre><h3 id="pattern:-module-specific-dashboard-widgets">Pattern: Module-Specific Dashboard Widgets</h3><pre><code class="language-typescript">export class SpaModuleAdapter implements ModuleAdapter {
+  getModuleWidgets() {
+    return [
+      {
+        id: 'spa-revenue-chart',
+        component: 'SpaRevenueChart',
+        title: 'Spa Revenue Trends',
+        description: 'Monthly revenue breakdown by package category',
+        size: 'large',
+        refreshInterval: 300, // seconds
+      },
+      {
+        id: 'ktv-leaderboard',
+        component: 'KtvLeaderboard',
+        title: 'Top Performing KTVs',
+        description: 'KTV performance ranking for current month',
+        size: 'medium',
+        refreshInterval: 60,
+      },
+      {
+        id: 'session-completion-rate',
+        component: 'SessionCompletionWidget',
+        title: 'Session Completion Rate',
+        description: 'Percentage of scheduled sessions completed on time',
+        size: 'small',
+        refreshInterval: 120,
+      },
+    ];
+  }
+}
+</code></pre><p>---</p><h2 id="troubleshooting">Troubleshooting</h2><h3 id="problem:-adapter-not-found-error">Problem: Adapter Not Found Error</h3><p><strong>Error Message:</strong></p><pre><code class="language-">Error: Module adapter not found: spa
+</code></pre><p><strong>Cause:</strong> Adapter not registered or registration failed.</p><p><strong>Solution:</strong></p><ul><li>Check that registration function is called in app entry point:</li>
+</ul>
+<pre><code class="language-typescript">// src/app/layout.tsx or src/pages/_app.tsx
+import { registerSpaModule } from '@/modules/spa/register';</p><p>registerSpaModule(); // Must be called before rendering
+</code></pre><ul><li>Check console for registration logs:</li>
+</ul>
+<pre><code class="language-">[ModuleRegistry] Registered adapter: Bella Spa & Babycare (spa)
+</code></pre><ul><li>If no log appears, check for registration errors:</li>
+</ul>
+<pre><code class="language-typescript">export function registerSpaModule(): void {
+  try {
+    const adapter = new SpaModuleAdapter();
+    moduleRegistry.register(adapter);
+  } catch (error) {
+    console.error('[SpaModule] Registration failed:', error);
+    throw error;
+  }
+}
+</code></pre><h3 id="problem:-duplicate-module-error">Problem: Duplicate Module Error</h3><p><strong>Error Message:</strong></p><pre><code class="language-">Error: Module adapter already registered: spa
+</code></pre><p><strong>Cause:</strong> Registration function called multiple times.</p><p><strong>Solution:</strong></p><p>Use a guard to prevent duplicate registration:</p><pre><code class="language-typescript">let registered = false;</p><p>export function registerSpaModule(): void {
+  if (registered) {
+    console.warn('[SpaModule] Already registered, skipping');
+    return;
+  }
+  
+  const adapter = new SpaModuleAdapter();
+  moduleRegistry.register(adapter);
+  registered = true;
+}
+</code></pre><h3 id="problem:-metadata-fields-undefined">Problem: Metadata Fields Undefined</h3><p><strong>Symptom:</strong> <code>order.metadata.assigned_ktv_id</code> returns <code>undefined</code> even though data exists in database.</p><p><strong>Cause:</strong> Metadata not loaded from database query.</p><p><strong>Solution:</strong></p><p>Ensure database queries select the <code>metadata</code> field:</p><pre><code class="language-typescript">// ❌ Bad: metadata not selected
+const order = await db
+  .select('id', 'customer_id', 'status')
+  .from('bookings')
+  .where({ id: orderId })
+  .single();</p><p>// ✅ Good: metadata included
+const order = await db
+  .select('*') // or explicitly list 'metadata'
+  .from('bookings')
+  .where({ id: orderId })
+  .single();
+</code></pre><h3 id="problem:-type-errors-with-metadata">Problem: Type Errors with Metadata</h3><p><strong>Error Message:</strong></p><pre><code class="language-">Property 'assigned_ktv_id' does not exist on type 'Record<string, unknown>'
+</code></pre><p><strong>Cause:</strong> Metadata is typed as generic <code>Record<string, unknown></code>.</p><p><strong>Solution:</strong></p><p>Use type assertions or type guards:</p><pre><code class="language-typescript">// Option 1: Type assertion
+const ktvId = order.metadata.assigned_ktv_id as string;</p><p>// Option 2: Type guard (safer)
+function hasKtvId(metadata: Record<string, unknown>): metadata is { assigned_ktv_id: string } {
+  return typeof metadata.assigned_ktv_id === 'string';
+}</p><p>if (hasKtvId(order.metadata)) {
+  const ktvId = order.metadata.assigned_ktv_id; // Type: string
+}
+</code></pre><h3 id="problem:-adapter-methods-not-called">Problem: Adapter Methods Not Called</h3><p><strong>Symptom:</strong> Adapter registered successfully but methods never execute.</p><p><strong>Cause:</strong> Core service not invoking adapter methods.</p><p><strong>Solution:</strong></p><ul><li>Check that core service looks up adapter:</li>
+</ul>
+<pre><code class="language-typescript">const adapter = moduleRegistry.get(context.moduleId);
+</code></pre><ul><li>Check that adapter method exists:</li>
+</ul>
+<pre><code class="language-typescript">if (adapter?.validateBookingRules) {
+  await adapter.validateBookingRules(order, context);
+}
+</code></pre><ul><li>Add debug logging:</li>
+</ul>
+<pre><code class="language-typescript">const adapter = moduleRegistry.get(context.moduleId);
+console.log('[CoreService] Adapter found:', !!adapter);
+console.log('[CoreService] Has validateBookingRules:', !!adapter?.validateBookingRules);
+</code></pre><h3 id="problem:-performance-degradation">Problem: Performance Degradation</h3><p><strong>Symptom:</strong> API requests slow after adding adapter.</p><p><strong>Cause:</strong> Adapter performing expensive operations synchronously.</p><p><strong>Solution:</strong></p><ul><li>Profile adapter methods to identify bottlenecks:</li>
+</ul>
+<pre><code class="language-typescript">async validateBookingRules(order: CoreBookingOrder, context: TenantContext): Promise<boolean> {
+  const startTime = Date.now();
+  
+  // Your validation logic
+  const result = await this.performValidation(order, context);
+  
+  const duration = Date.now() - startTime;
+  if (duration > 100) {
+    console.warn(<code>[SpaAdapter] Validation took ${duration}ms (threshold: 100ms)</code>);
+  }
+  
+  return result;
+}
+</code></pre><ul><li>Optimize database queries (use indexes, reduce joins).</li>
+</ul>
+<ul><li>Cache frequently accessed data (use Redis or in-memory cache).</li>
+</ul>
+<ul><li>Make adapter methods async and parallel where possible.</li>
+</ul>
+<h3 id="problem:-adapter-side-effects-not-executing">Problem: Adapter Side Effects Not Executing</h3><p><strong>Symptom:</strong> <code>onBookingCompleted</code> called but side effects not happening.</p><p><strong>Cause:</strong> Errors swallowed silently or promises not awaited.</p><p><strong>Solution:</strong></p><p>Add proper error handling and logging:</p><pre><code class="language-typescript">async onBookingCompleted(order: CoreBookingOrder, context: TenantContext): Promise<void> {
+  console.log(<code>[SpaAdapter] Starting side effects for order ${order.id}</code>);
+  
+  try {
+    await this.creditKtvSalary(order);
+    console.log(<code>[SpaAdapter] ✓ Salary credited</code>);
+  } catch (error) {
+    console.error(<code>[SpaAdapter] ✗ Salary credit failed:</code>, error);
+  }
+  
+  try {
+    await this.deductInventory(order);
+    console.log(<code>[SpaAdapter] ✓ Inventory deducted</code>);
+  } catch (error) {
+    console.error(<code>[SpaAdapter] ✗ Inventory deduction failed:</code>, error);
+  }
+  
+  console.log(<code>[SpaAdapter] Finished side effects for order ${order.id}</code>);
+}
+</code></pre><p>---</p><h2 id="related-documentation">Related Documentation</h2><ul><li><a href="./core-platform.md">Core Platform Architecture</a></li>
+<li><a href="./tenant-context.md">Tenant Context System</a></li>
+<li><a href="../migration/phase-3-migration-guide.md">Phase 3 Migration Guide</a></li>
+<li><a href="../api-reference.md">API Reference</a></li>
+</ul>
+---</p><p><strong>Document Version</strong>: 1.1  
+<strong>Last Updated</strong>: 2025-06-01  
+<strong>Status</strong>: Complete</p>
+        </div>
+        
+        <footer class="page-footer">
+            <p>© 2025 Bella ERP · Phase 3 Documentation</p>
+        </footer>
+    </div>
+    
+    <script>
+        // Syntax highlighting
+        hljs.highlightAll();
+        
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+        
+        // Active nav item
+        const currentPage = window.location.pathname.split('/').pop();
+        document.querySelectorAll('.nav-item').forEach(item => {
+            if (item.getAttribute('href') === currentPage) {
+                item.classList.add('active');
+            }
+        });
+    </script>
+</body>
+</html>

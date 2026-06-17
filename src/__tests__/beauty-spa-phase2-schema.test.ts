@@ -24,11 +24,11 @@ const createSessionActionSource = readFileSync(
   'utf8',
 );
 const updateSessionActionSource = readFileSync(
-  path.join(process.cwd(), 'src/modules/booking/actions/update-session-log-action.ts'),
+  path.join(process.cwd(), 'src/core/services/order/update-session-log-action.ts'),
   'utf8',
 );
 const rescheduleSessionActionSource = readFileSync(
-  path.join(process.cwd(), 'src/modules/booking/actions/reschedule-session-action.ts'),
+  path.join(process.cwd(), 'src/core/services/order/reschedule-session-action.ts'),
   'utf8',
 );
 

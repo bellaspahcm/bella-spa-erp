@@ -16,7 +16,7 @@ import {
 } from 'recharts';
 
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
-import type { PerformanceDataPointViewModel } from '@/services/dashboard-actions';
+import type { PerformanceDataPointViewModel } from '@/core/services/analytics/dashboard-actions';
 
 interface RevenueChartProps {
   performanceData: PerformanceDataPointViewModel[];
