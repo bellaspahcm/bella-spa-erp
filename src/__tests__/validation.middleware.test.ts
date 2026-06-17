@@ -16,7 +16,7 @@ import {
   sanitizeObject,
   validate,
 } from '@/lib/middleware/validation.middleware';
-import { APIError } from '@/lib/errors/api-error';
+import { APIError } from '@/types/api-gateway';
 
 describe('Validation Middleware', () => {
   describe('validateBody', () => {
