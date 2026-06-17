@@ -8,18 +8,30 @@
 
 import { createBooking, recordRemainingPayment } from '../core/services/order/lifecycle-actions';
 import { completeSession } from '../core/services/order/session-actions';
+import type { Database } from '@/types/database.types';
+
+// --- Type Aliases for Database Tables ---
+type Booking = Database['public']['Tables']['bookings']['Row'];
+type SessionLog = Database['public']['Tables']['session_logs']['Row'];
+type Revenue = Database['public']['Tables']['revenue']['Row'];
+type Expense = Database['public']['Tables']['expenses']['Row'];
+type User = Database['public']['Tables']['users']['Row'];
+type SalaryRecord = Database['public']['Tables']['salary_records']['Row'];
+type SessionReview = Database['public']['Tables']['session_reviews']['Row'];
+type Tenant = Database['public']['Tables']['tenants']['Row'];
+type Package = Database['public']['Tables']['packages']['Row'];
 
 // --- Global Mock Store ---
 interface MockStore {
-  bookings: any[];
-  session_logs: any[];
-  revenue: any[];
-  expenses: any[];
-  users: any[];
-  salary_records: any[];
-  session_reviews: any[];
-  tenants: any[];
-  packages: any[];
+  bookings: Partial<Booking>[];
+  session_logs: Partial<SessionLog>[];
+  revenue: Partial<Revenue>[];
+  expenses: Partial<Expense>[];
+  users: Partial<User>[];
+  salary_records: Partial<SalaryRecord>[];
+  session_reviews: Partial<SessionReview>[];
+  tenants: Partial<Tenant>[];
+  packages: Partial<Package>[];
 }
 
 let mockStore: MockStore = {
@@ -43,40 +55,78 @@ function resetMockStore() {
   };
 }
 
-class MockQueryBuilder {
+class MockQueryBuilder<T = Record<string, unknown>> {
   private table: string;
-  private filters: ((item: any) => boolean)[] = [];
+  private filters: ((item: T) => boolean)[] = [];
   private orderField: string | null = null;
   private limitCount: number | null = null;
-  private countOptions: any = null;
-  private updatePayload: any = null;
+  private countOptions: { count: 'exact' | 'planned' | 'estimated' } | null = null;
+  private updatePayload: Partial<T> | null = null;
   private isDelete: boolean = false;
 
-  constructor(table: string, countOptions: any = null) {
+  constructor(table: string, countOptions: { count: 'exact' | 'planned' | 'estimated' } | null = null) {
     this.table = table;
     this.countOptions = countOptions;
   }
 
-  eq(field: string, value: any) { this.filters.push((item) => item[field] === value); return this; }
-  in(field: string, values: any[]) { this.filters.push((item) => values.includes(item[field])); return this; }
-  order(field: string) { this.orderField = field; return this; }
-  limit(count: number) { this.limitCount = count; return this; }
-  select(fields?: string, options?: any) { if (options) { this.countOptions = options; } return this; }
+  eq(field: string, value: unknown): this { 
+    this.filters.push((item) => {
+      const typedItem = item as Record<string, unknown>;
+      return typedItem[field] === value;
+    }); 
+    return this; 
+  }
+  
+  in(field: string, values: unknown[]): this { 
+    this.filters.push((item) => {
+      const typedItem = item as Record<string, unknown>;
+      return values.includes(typedItem[field]);
+    }); 
+    return this; 
+  }
+  
+  order(field: string): this { this.orderField = field; return this; }
+  limit(count: number): this { this.limitCount = count; return this; }
+  select(fields?: string, options?: { count: 'exact' | 'planned' | 'estimated' }): this { 
+    if (options) { 
+      this.countOptions = options; 
+    } 
+    return this; 
+  }
 
-  private execute() {
-    let list = (mockStore as any)[this.table] || [];
+  private execute(): T[] {
+    const storeTable = (mockStore as unknown as Record<string, T[]>)[this.table] || [];
+    let list = storeTable;
     for (const filter of this.filters) { list = list.filter(filter); }
-    if (this.orderField) { list = [...list].sort((a, b) => (a[this.orderField!] || 0) - (b[this.orderField!] || 0)); }
+    if (this.orderField) { 
+      list = [...list].sort((a, b) => {
+        const aVal = (a as Record<string, unknown>)[this.orderField!];
+        const bVal = (b as Record<string, unknown>)[this.orderField!];
+        return ((aVal as number) || 0) - ((bVal as number) || 0);
+      }); 
+    }
     if (this.limitCount !== null) { list = list.slice(0, this.limitCount); }
     return list;
   }
 
-  insert(data: any | any[]) {
+  insert(data: T | T[]): {
+    select: () => {
+      single: () => Promise<{ data: T; error: null }>;
+      maybeSingle: () => Promise<{ data: T; error: null }>;
+    };
+    single: () => Promise<{ data: T; error: null }>;
+    then: (cb: (result: { data: T | T[]; error: null }) => unknown) => Promise<unknown>;
+  } {
     const list = Array.isArray(data) ? data : [data];
-    const inserted: any[] = [];
+    const inserted: T[] = [];
     for (const item of list) {
-      const newItem = { id: item.id || `mock-id-${Math.random().toString(36).substr(2, 9)}`, ...item };
-      ((mockStore as any)[this.table]).push(newItem);
+      const typedItem = item as Record<string, unknown>;
+      const newItem = { 
+        id: typedItem.id || `mock-id-${Math.random().toString(36).substring(2, 11)}`, 
+        ...item 
+      } as T;
+      const storeTable = (mockStore as unknown as Record<string, T[]>)[this.table];
+      storeTable.push(newItem);
       inserted.push(newItem);
     }
     const result = { data: Array.isArray(data) ? inserted : inserted[0], error: null };
@@ -87,35 +137,44 @@ class MockQueryBuilder {
         maybeSingle: () => Promise.resolve(singleResult)
       }),
       single: () => Promise.resolve(singleResult),
-      then: (cb: any) => Promise.resolve(result).then(cb),
+      then: (cb: (result: { data: T | T[]; error: null }) => unknown) => Promise.resolve(result).then(cb),
     };
   }
 
-  update(payload: any) { this.updatePayload = payload; return this; }
-  delete() { this.isDelete = true; return this; }
+  update(payload: Partial<T>): this { this.updatePayload = payload; return this; }
+  delete(): this { this.isDelete = true; return this; }
 
-  private applyPendingMutation() {
+  private applyPendingMutation(): void {
     if (this.updatePayload) {
       const list = this.execute();
-      for (const item of list) { Object.assign(item, this.updatePayload); }
+      for (const item of list) { 
+        Object.assign(item as object, this.updatePayload); 
+      }
       this.updatePayload = null;
     } else if (this.isDelete) {
       const list = this.execute();
-      const matchedIds = list.map((m: any) => m.id);
-      (mockStore as any)[this.table] = ((mockStore as any)[this.table]).filter((item: any) => !matchedIds.includes(item.id));
+      const matchedIds = list.map((m) => (m as Record<string, unknown>).id);
+      const storeTable = (mockStore as unknown as Record<string, T[]>)[this.table];
+      (mockStore as unknown as Record<string, T[]>)[this.table] = storeTable.filter((item) => {
+        const typedItem = item as Record<string, unknown>;
+        return !matchedIds.includes(typedItem.id);
+      });
       this.isDelete = false;
     }
   }
 
-  then(onfulfilled?: (value: any) => any, onrejected?: (reason: any) => any) {
+  then(
+    onfulfilled?: ((value: { data: T[]; error: null; count?: number | null }) => unknown) | null,
+    onrejected?: ((reason: unknown) => unknown) | null
+  ): Promise<unknown> {
     this.applyPendingMutation();
     const list = this.execute();
-    const res: any = { data: list, error: null };
+    const res: { data: T[]; error: null; count?: number | null } = { data: list, error: null };
     if (this.countOptions) { res.count = list.length; }
     return Promise.resolve(res).then(onfulfilled, onrejected);
   }
 
-  async single() {
+  async single(): Promise<{ data: T | null; error: { message: string } | null }> {
     this.applyPendingMutation();
     const list = this.execute();
     if (list.length === 0) return { data: null, error: { message: 'No rows found' } };
@@ -199,11 +258,11 @@ describe('E2E Negative Business Pipeline Suite', () => {
     mockStore.session_logs.push({ id: 'ss-1', booking_id: booking?.id || 'bk-1', status: 'scheduled', tenant_id: 'tenant-a' });
     const session1 = mockStore.session_logs[0];
 
-    let completeResult: any = {};
+    let completeResult: { success?: boolean; error?: string } = {};
     try {
-      completeResult = await completeSession(session1.id, session1.booking_id, 'Cố tình hoàn thành');
-    } catch (e: any) {
-      completeResult = { success: false, error: e.message };
+      completeResult = await completeSession(session1.id!, session1.booking_id!, 'Cố tình hoàn thành');
+    } catch (e: unknown) {
+      completeResult = { success: false, error: (e as Error).message };
     }
     
     // 4. KIỂM CHỨNG: Hệ thống bắt buộc phải trả về lỗi, luồng bị chặn đứng
@@ -223,13 +282,13 @@ describe('E2E Negative Business Pipeline Suite', () => {
 
     const paymentAmount = 10000000;
 
-    let paymentResult: any = {};
+    let paymentResult: { success?: boolean; error?: string } = {};
     try {
       paymentResult = await recordRemainingPayment({
         booking_id: booking.id, customer_id: 'cust-456', amount: paymentAmount, payment_method: 'cash'
       });
-    } catch (e: any) {
-      paymentResult = { error: e.message };
+    } catch (e: unknown) {
+      paymentResult = { error: (e as Error).message };
     }
 
     expect(paymentResult.error).toBeDefined();
@@ -257,11 +316,11 @@ describe('E2E Negative Business Pipeline Suite', () => {
 
     mockGetCurrentUser.mockResolvedValue({ id: 'ktv-1', role: 'ktv', tenant_id: 'tenant-a' });
     
-    let completeResult: any = {};
+    let completeResult: { success?: boolean; error?: string } = {};
     try {
-      completeResult = await completeSession(session.id, session.booking_id, 'Khách hàng hài lòng');
-    } catch (e: any) {
-      completeResult = { success: false, error: e.message };
+      completeResult = await completeSession(session.id!, session.booking_id!, 'Khách hàng hài lòng');
+    } catch (e: unknown) {
+      completeResult = { success: false, error: (e as Error).message };
     }
 
     expect(completeResult.error).toBeDefined();
@@ -281,11 +340,11 @@ describe('E2E Negative Business Pipeline Suite', () => {
     });
     mockGetCurrentUser.mockResolvedValue({ id: 'ktv-1', role: 'ktv' }); // cho các chỗ dùng mockGetCurrentUser
     
-    let updateResult: any = {};
+    let updateResult: { success?: boolean; error?: string } = {};
     try {
       updateResult = await userActions.updateBaseSalary('staff-9', 10000000);
-    } catch (e: any) {
-      updateResult = { error: e.message };
+    } catch (e: unknown) {
+      updateResult = { error: (e as Error).message };
     }
 
     // 3. KIỂM CHỨNG: Hệ thống từ chối cập nhật
@@ -300,13 +359,13 @@ describe('E2E Negative Business Pipeline Suite', () => {
     // Mocking the checkMonthLock logic that should exist in backend
     jest.spyOn(require('@/services/audit-actions'), 'checkMonthLock').mockResolvedValueOnce({ isLocked: true });
 
-    let paymentResult: any = {};
+    let paymentResult: { success?: boolean; error?: string } = {};
     try {
       paymentResult = await recordRemainingPayment({
         booking_id: bookingId, customer_id: 'cust-999', amount: 4000000, payment_method: 'card'
       });
-    } catch (e: any) {
-      paymentResult = { error: e.message };
+    } catch (e: unknown) {
+      paymentResult = { error: (e as Error).message };
     }
 
     expect(paymentResult.error).toBeDefined();
@@ -319,7 +378,7 @@ describe('E2E Negative Business Pipeline Suite', () => {
     const ktvData = mockStore.users.find(u => u.id === 'ktv-1');
     const realBaseSalary = ktvData?.base_salary || 6000000;
 
-    let salaryRecordResult: any = {};
+    let salaryRecordResult: { success?: boolean; error?: string } = {};
     
     // Giả lập logic backend check audit validation
     if (maliciousBaseSalary !== realBaseSalary) {
@@ -337,13 +396,13 @@ describe('E2E Negative Business Pipeline Suite', () => {
     const bookingId = 'bk-5';
     mockStore.bookings.push({ id: bookingId, full_price: 5000000, deposit_amount: 1000000, tenant_id: 'tenant-a' });
 
-    let paymentResult: any = {};
+    let paymentResult: { success?: boolean; error?: string } = {};
     try {
       paymentResult = await recordRemainingPayment({
         booking_id: bookingId, customer_id: 'cust-999', amount: 0, payment_method: 'card'
       });
-    } catch (e: any) {
-      paymentResult = { error: e.message };
+    } catch (e: unknown) {
+      paymentResult = { error: (e as Error).message };
     }
 
     expect(paymentResult.error).toBeDefined();
@@ -356,9 +415,10 @@ describe('E2E Negative Business Pipeline Suite', () => {
       package_name: 'Gói VIP',
       full_price: 5000000,
       deposit_amount: 1000000,
-    } as any;
+    };
 
-    const result = await createBooking(bookingFormData);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result = await createBooking(bookingFormData as any);
     expect(result.error).toBeDefined();
     expect(result.error).toContain('Dữ liệu booking không hợp lệ');
   });
