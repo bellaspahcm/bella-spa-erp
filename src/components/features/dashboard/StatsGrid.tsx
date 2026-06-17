@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { Users, Calendar, DollarSign, Star, TrendingUp, TrendingDown } from 'lucide-react';
 
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
-import type { DashboardStatsViewModel } from '@/services/dashboard-actions';
+import type { DashboardStatsViewModel } from '@/core/services/analytics/dashboard-actions';
 
 const ICON_MAP = {
   Users,

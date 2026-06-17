@@ -128,7 +128,7 @@ describe('payment business rule audit', () => {
   it('keeps production discount pricing routed through the shared payment engine', () => {
     const bookingModalSource = readSource('src/components/features/BookingModal.tsx');
     const activeBookingPanelSource = readSource('src/app/dashboard/customers/[id]/components/ActiveBookingPanel.tsx');
-    const servicePerformanceSource = readSource('src/services/finance/service-performance-report.ts');
+    const servicePerformanceSource = readSource('src/core/services/finance/service-performance-report.ts');
     const auditedProductionSources = [
       bookingModalSource,
       activeBookingPanelSource,

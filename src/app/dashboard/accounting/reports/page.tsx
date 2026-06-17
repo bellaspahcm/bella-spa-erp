@@ -19,7 +19,7 @@ import {
   type AccountingReportData,
   type AccountingReportRecord,
   type TrialBalanceExportRow,
-} from '@/services/export-actions';
+} from '@/core/services/analytics/export-actions';
 import { SkeletonTable } from '@/components/ui/SkeletonLoader';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { toast } from 'sonner';

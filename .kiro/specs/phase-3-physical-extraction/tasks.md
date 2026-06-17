@@ -101,7 +101,7 @@ This implementation plan executes the physical extraction of core platform code 
     - _Requirements: REQ-3.6.1_
 
 
-- [ ] 5. Extract payment processing services to core platform
+- [x] 5. Extract payment processing services to core platform
   - [x] 5.1 Move payment services to core and refactor for PaymentIntent contract
     - **SKIPPED**: Payment services already extracted with order services (Task 4.1)
     - Payment logic resides in `src/core/services/order/payment-actions.ts` and `payment-helpers.ts`
@@ -138,55 +138,6 @@ This implementation plan executes the physical extraction of core platform code 
     - _Requirements: REQ-3.6.1_
 
 
-- [ ] 5. Extract payment processing services to core platform
-  - [ ] 5.1 Move payment services to core and refactor for PaymentIntent contract
-    - Move existing payment services from `src/services/payments/` to `src/core/services/payment/`
-    - Refactor all payment functions to accept `context: TenantContext` as first parameter
-    - Update function signatures to use `PaymentIntent` type instead of ad-hoc payment types
-    - Create database mapper helper `mapDbRowToPayment()` in `src/core/lib/database.ts`
-    - Ensure payment method-specific details are stored in `metadata` field
-    - _Requirements: REQ-3.1.4, REQ-3.5.4_
-
-  - [ ]* 5.2 Update payment unit tests with TenantContext and PaymentIntent types
-    - Update all payment unit tests to use mock TenantContext
-    - Verify tests use `PaymentIntent` type for assertions
-    - Test multi-tenant payment isolation
-    - Run payment test suite and ensure all tests pass
-    - _Requirements: REQ-3.6.1_
-
-- [ ] 6. Extract notification services to core platform
-  - [ ] 6.1 Move notification services to core and refactor for NotificationEvent contract
-    - Move existing notification services from `src/services/notifications/` to `src/core/services/notification/`
-    - Refactor all notification functions to accept `context: TenantContext` as first parameter
-    - Update function signatures to use `NotificationEvent` type
-    - Create database mapper helper `mapDbRowToNotification()` in `src/core/lib/database.ts`
-    - Ensure multi-channel delivery (in-app, email, SMS, webhook) works across modules
-    - _Requirements: REQ-3.1.5_
-
-  - [ ]* 6.2 Update notification unit tests with TenantContext and NotificationEvent types
-    - Update all notification unit tests to use mock TenantContext
-    - Verify tests use `NotificationEvent` type for assertions
-    - Test tenant-specific notification preferences
-    - Run notification test suite and ensure all tests pass
-    - _Requirements: REQ-3.6.1_
-
-
-- [ ] 7. Extract audit logging services to core platform
-  - [ ] 7.1 Move audit services to core and refactor for AuditEvent contract
-    - Move existing audit services from `src/services/audit/` to `src/core/services/audit/`
-    - Refactor all audit functions to accept `context: TenantContext` as first parameter
-    - Update function signatures to use `AuditEvent` type
-    - Create database mapper helper `mapDbRowToAuditEvent()` in `src/core/lib/database.ts`
-    - Ensure field-level change tracking works for all resource types
-    - _Requirements: REQ-3.1.6_
-
-  - [ ]* 7.2 Update audit unit tests with TenantContext and AuditEvent types
-    - Update all audit unit tests to use mock TenantContext
-    - Verify tests use `AuditEvent` type for assertions
-    - Test tenant-specific audit log isolation
-    - Run audit test suite and ensure all tests pass
-    - _Requirements: REQ-3.6.1_
-
 - [x] 8. Extract finance services to core platform
   - [x] 8.1 Move finance services to core and refactor for TenantContext
     - Move existing finance services from `src/services/finance/` to `src/core/services/finance/`
@@ -205,8 +156,8 @@ This implementation plan executes the physical extraction of core platform code 
     - Run finance test suite and ensure all tests pass
     - _Requirements: REQ-3.6.1_
 
-- [ ] 9. Extract payroll services to core platform
-  - [ ] 9.1 Move payroll services to core and refactor for TenantContext
+- [x] 9. Extract payroll services to core platform
+  - [x] 9.1 Move payroll services to core and refactor for TenantContext
     - Create `src/core/services/payroll/` for employee compensation
     - Move base salary calculation logic from `src/services/finance/salary.ts` to core payroll
     - Refactor payroll functions to accept `context: TenantContext` as first parameter
@@ -221,8 +172,8 @@ This implementation plan executes the physical extraction of core platform code 
     - Run payroll test suite and ensure all tests pass
     - _Requirements: REQ-3.6.1_
 
-- [ ] 10. Extract analytics services to core platform
-  - [ ] 10.1 Move analytics services to core and refactor for TenantContext
+- [x] 10. Extract analytics services to core platform
+  - [x] 10.1 Move analytics services to core and refactor for TenantContext
     - Create `src/core/services/analytics/` for business intelligence
     - Move dashboard aggregation logic from various services to analytics
     - Move report generation logic to analytics service
@@ -238,8 +189,8 @@ This implementation plan executes the physical extraction of core platform code 
     - Run analytics test suite and ensure all tests pass
     - _Requirements: REQ-3.6.1_
 
-- [ ] 11. Update all API routes to use TenantContext middleware
-  - [ ] 11.1 Refactor API routes to accept TenantContext from middleware
+- [x] 11. Update all API routes to use TenantContext middleware
+  - [x] 11.1 Refactor API routes to accept TenantContext from middleware
     - Update API route handlers to extract `context: TenantContext` from request object
     - Update route handlers to pass TenantContext to core service functions
     - Add error responses for missing/invalid tenant ID
@@ -252,28 +203,21 @@ This implementation plan executes the physical extraction of core platform code 
     - Run API route test suite and ensure all tests pass
     - _Requirements: REQ-3.6.1_
 
-- [ ] 12. Checkpoint - Verify Wave 2 core services are stable
+- [x] 12. Checkpoint - Verify Wave 2 core services are stable
   - Run `npm run build` and ensure TypeScript compilation succeeds
   - Run full test suite and verify all 1304+ tests pass
   - Manually test key user flows (login, create booking, process payment)
   - Review git diff to ensure no unintended changes
-- [ ] 12. Checkpoint - Verify Wave 2 core services are stable
-  - Run `npm run build` and ensure TypeScript compilation succeeds
-  - Run full test suite and verify all 1304+ tests pass
-  - Manually test key user flows (login, create order, process payment)
-  - Review git diff to ensure no unintended changes
-  - Ask the user if questions arise before proceeding to Wave 3
-
 
 ### Wave 3: Spa Module (Week 5-6)
 
-- [ ] 13. Create spa module directory structure and extract spa-specific types
-  - [ ] 13.1 Create spa module directory hierarchy
+- [x] 13. Create spa module directory structure and extract spa-specific types
+  - [x] 13.1 Create spa module directory hierarchy
     - Create `src/modules/spa/` with subdirectories: `types/`, `adapters/`, `services/`, `components/`, `hooks/`, `lib/`
     - Create README.md in each subdirectory explaining spa module organization
     - _Requirements: REQ-3.4.1_
 
-  - [ ] 13.2 Extract spa-specific types to spa module
+  - [x] 13.2 Extract spa-specific types to spa module
     - Move spa package types to `src/modules/spa/types/package.ts`
     - Move spa booking types to `src/modules/spa/types/booking.ts`
     - Move KTV/employee types to `src/modules/spa/types/employee.ts`
@@ -282,60 +226,56 @@ This implementation plan executes the physical extraction of core platform code 
     - Create barrel export `src/modules/spa/types/index.ts`
     - _Requirements: REQ-3.4.2_
 
-- [ ] 14. Implement SpaModuleAdapter with all spa-specific business logic
-  - [ ] 14.1 Create SpaModuleAdapter class implementing ModuleAdapter interface
-    - Create `src/modules/spa/adapters/SpaModuleAdapter.ts`
-    - Implement `moduleId` and `moduleName` properties
-- [ ] 14. Implement SpaModuleAdapter with all spa-specific business logic
-  - [ ] 14.1 Create SpaModuleAdapter class implementing ModuleAdapter interface
+- [x] 14. Implement SpaModuleAdapter with all spa-specific business logic
+  - [x] 14.1 Create SpaModuleAdapter class implementing ModuleAdapter interface
     - Create `src/modules/spa/adapters/SpaModuleAdapter.ts`
     - Implement `moduleId` and `moduleName` properties
     - Implement `transformServiceItem()` to transform `CoreServiceCatalogItem` to spa package type
     - Implement `transformBookingOrder()` to transform `CoreBookingOrder` to spa booking type
     - _Requirements: REQ-3.3.2_
 
-  - [ ] 14.2 Implement spa-specific validation and pricing logic in adapter
+  - [x] 14.2 Implement spa-specific validation and pricing logic in adapter
     - Implement `validateBookingRules()` to check KTV availability and session limits
     - Implement `calculatePricing()` to apply spa-specific discounts (subscription tiers, package rates)
     - Ensure adapter respects package session multipliers (1.0x, 1.5x, 2.0x)
     - _Requirements: REQ-3.3.2_
 
 
-  - [ ] 14.3 Implement spa-specific side effects and widget registry in adapter
+  - [x] 14.3 Implement spa-specific side effects and widget registry in adapter
     - Implement `onBookingCompleted()` to handle spa side effects (salary updates, inventory deductions)
     - Implement `getModuleWidgets()` to return spa dashboard widget definitions
     - Ensure adapter methods use core services for data operations (no direct database access)
     - _Requirements: REQ-3.3.2_
 
-  - [ ] 14.4 Register SpaModuleAdapter on application startup
+  - [x] 14.4 Register SpaModuleAdapter on application startup
     - Create `src/modules/spa/register.ts` with adapter registration logic
     - Import and call registration in `src/app/layout.tsx` or `src/pages/_app.tsx`
     - Add console log to confirm successful registration
     - Verify adapter is accessible via `moduleRegistry.get('spa')`
     - _Requirements: REQ-3.3.3_
 
-- [ ] 15. Extract spa-specific services to spa module
-  - [ ] 15.1 Move spa session management services
+- [x] 15. Extract spa-specific services to spa module
+  - [x] 15.1 Move spa session management services
     - Create `src/modules/spa/services/session.ts` with session tracking logic
     - Move session completion, session counting, and session multiplier logic
     - Ensure services use `CoreBookingOrder` as base type and extend with spa-specific fields
     - Update imports in components to reference new spa module paths
     - _Requirements: REQ-3.4.4_
 
-  - [ ] 15.2 Move spa salary calculation services
+  - [x] 15.2 Move spa salary calculation services
     - Create `src/modules/spa/services/salary.ts` with salary calculation logic
     - Move KTV salary pro-rata, session bonus, KPI bonus, and violation deduction logic
     - Implement `recalculateAndSaveSalaryRecord()` respecting draft vs. finalized status
     - Ensure decimal session counts (NUMERIC(5,2)) are handled correctly
     - _Requirements: REQ-3.4.4_
 
-  - [ ] 15.3 Move spa KTV performance tracking services
+  - [x] 15.3 Move spa KTV performance tracking services
     - Create `src/modules/spa/services/ktvPerformance.ts` with performance tracking logic
     - Move KTV rating, customer feedback, and leaderboard calculation logic
     - Ensure services use core contract types for audit and notification events
     - _Requirements: REQ-3.4.4_
 
-  - [ ] 15.4 Move spa package management services
+  - [x] 15.4 Move spa package management services
     - Create `src/modules/spa/services/package.ts` with package-specific logic
     - Move package session multiplier handling (1.0x, 1.5x, 2.0x)
     - Move package category logic (basic, premium, VIP)
@@ -343,60 +283,52 @@ This implementation plan executes the physical extraction of core platform code 
     - _Requirements: REQ-3.4.4, REQ-3.5.3_
 
 
-- [ ] 16. Extract spa-specific UI components to spa module
-  - [ ] 16.1 Move spa dashboard widgets to spa module
-    - Move spa dashboard widgets to `src/modules/spa/components/dashboard/`
-- [ ] 16. Extract spa-specific UI components to spa module
-  - [ ] 16.1 Move spa dashboard widgets to spa module
+- [x] 16. Extract spa-specific UI components to spa module
+  - [x] 16.1 Move spa dashboard widgets to spa module
     - Move spa dashboard widgets to `src/modules/spa/components/dashboard/`
     - Update widget imports in dashboard pages
     - Ensure widgets use `useTenantContext()` hook for tenant-specific data
     - _Requirements: REQ-3.4.3_
 
-  - [ ] 16.2 Move spa order components to spa module
+  - [x] 16.2 Move spa order components to spa module
     - Move spa order forms to `src/modules/spa/components/order/`
     - Move spa order list and detail views
     - Update component imports in order pages
     - Ensure components use spa types from `src/modules/spa/types/`
     - _Requirements: REQ-3.4.3_
 
-  - [ ] 16.3 Move spa employee management components to spa module
+  - [x] 16.3 Move spa employee management components to spa module
     - Move KTV management components to `src/modules/spa/components/employees/`
-    - Move KTV performance dashboards and leaderboards
+    - Move KTV performance dashboards and leaderboardties
     - Update component imports in employee pages
     - _Requirements: REQ-3.4.3_
 
-  - [ ] 16.4 Move spa package management components to spa module
+  - [x] 16.4 Move spa package management components to spa module
     - Move package list and detail components to `src/modules/spa/components/packages/`
     - Move package creation and editing forms
     - Update component imports in package pages
     - _Requirements: REQ-3.4.3_
 
-  - [ ] 16.5 Move spa salary management components to spa module
+  - [x] 16.5 Move spa salary management components to spa module
     - Move salary calculation dashboards to `src/modules/spa/components/salary/`
     - Move salary reconciliation reports and approval workflows
     - Update component imports in salary pages
     - _Requirements: REQ-3.4.3_
 
-- [ ] 17. Create spa-specific React hooks
-  - [ ] 17.1 Create spa order hook
+- [x] 17. Create spa-specific React hooks
+  - [x] 17.1 Create spa order hook
     - Create `src/modules/spa/hooks/useSpaOrder.ts` wrapping core order services
     - Add spa-specific order state management and validation
     - Export hook from `src/modules/spa/hooks/index.ts`
     - _Requirements: REQ-3.4.1_
 
-  - [ ] 17.2 Create spa session hook
+  - [x] 17.2 Create spa session hook
     - Create `src/modules/spa/hooks/useSpaSession.ts` for session tracking
     - Add session completion and session counting logic
     - Export hook from barrel file
     - _Requirements: REQ-3.4.1_
 
-- [ ] 18. Checkpoint - Verify Wave 3 spa module extraction is complete
-  - Run `npm run build` and ensure TypeScript compilation succeeds
-  - Run full test suite and verify all tests pass
-  - Manually test spa-specific features (package booking, session completion, salary calculation)
-  - Review git diff to ensure all spa-specific code moved to `src/modules/spa/`
-- [ ] 18. Checkpoint - Verify Wave 3 spa module extraction is complete
+- [x] 18. Checkpoint - Verify Wave 3 spa module extraction is complete
   - Run `npm run build` and ensure TypeScript compilation succeeds
   - Run full test suite and verify all tests pass
   - Manually test spa-specific features (package order, session completion, salary calculation)
@@ -406,21 +338,21 @@ This implementation plan executes the physical extraction of core platform code 
 
 ### Wave 4: Integration (Week 7-8)
 
-- [ ] 19. Update core services to invoke module adapters for module-specific behavior
-  - [ ] 19.1 Integrate adapter validation in order creation flow
+- [x] 19. Update core services to invoke module adapters for module-specific behavior
+  - [x] 19.1 Integrate adapter validation in order creation flow
     - Update `createOrder()` in `src/core/services/order/` to invoke `adapter.validateBookingRules()`
     - Look up adapter from `moduleRegistry.get(context.moduleId)`
     - Handle case where adapter is not found (use default validation or throw error)
     - Ensure validation errors are properly propagated to API routes
     - _Requirements: REQ-3.3.4_
 
-  - [ ] 19.2 Integrate adapter pricing in order flow
+  - [x] 19.2 Integrate adapter pricing in order flow
     - Update `calculateOrderPrice()` to invoke `adapter.calculatePricing()`
     - Ensure pricing calculation respects tenant subscription tiers
     - Fall back to base price if adapter is not found
     - _Requirements: REQ-3.3.4_
 
-  - [ ] 19.3 Integrate adapter side effects in order completion flow
+  - [x] 19.3 Integrate adapter side effects in order completion flow
     - Update `completeOrder()` to invoke `adapter.onBookingCompleted()`
     - Ensure side effects (salary updates, inventory deductions) execute after order marked complete
     - Handle adapter errors gracefully and log for debugging
@@ -433,8 +365,8 @@ This implementation plan executes the physical extraction of core platform code 
     - Test graceful handling when adapter is not registered
     - _Requirements: REQ-3.6.2_
 
-- [ ] 20. Migrate all database queries to use core contract types
-  - [ ] 20.1 Update order database queries to return CoreBookingOrder
+- [x] 20. Migrate all database queries to use core contract types
+  - [x] 20.1 Update order database queries to return CoreBookingOrder
     - Update `getOrderById()` to return `CoreBookingOrder | null`
     - Update `getOrdersByCustomer()` to return `CoreBookingOrder[]`
     - Update `createOrder()` to accept `Partial<CoreBookingOrder>` and return `CoreBookingOrder`
@@ -443,7 +375,7 @@ This implementation plan executes the physical extraction of core platform code 
     - Use strict Supabase types: `Database['public']['Tables']['bookings']['Insert']`
     - _Requirements: REQ-3.5.2_
 
-  - [ ] 20.2 Update service catalog queries to return CoreServiceCatalogItem
+  - [x] 20.2 Update service catalog queries to return CoreServiceCatalogItem
     - Update `getServiceItemById()` to return `CoreServiceCatalogItem | null`
     - Update `getServiceItemsByModule()` to return `CoreServiceCatalogItem[]`
     - Update `createServiceItem()` to accept `Partial<CoreServiceCatalogItem>` and return `CoreServiceCatalogItem`
@@ -452,7 +384,7 @@ This implementation plan executes the physical extraction of core platform code 
     - Use strict Supabase types: `Database['public']['Tables']['packages']['Insert']`
     - _Requirements: REQ-3.5.3_
 
-  - [ ] 20.3 Update payment queries to return PaymentIntent
+  - [x] 20.3 Update payment queries to return PaymentIntent
     - Update `getPaymentById()` to return `PaymentIntent | null`
     - Update `getPaymentsByBooking()` to return `PaymentIntent[]`
     - Update `createPayment()` to accept `Partial<PaymentIntent>` and return `PaymentIntent`
@@ -461,38 +393,38 @@ This implementation plan executes the physical extraction of core platform code 
     - Use strict Supabase types: `Database['public']['Tables']['payment_intents']['Insert']`
     - _Requirements: REQ-3.5.4_
 
-  - [ ] 20.4 Update notification queries to return NotificationEvent
+  - [x] 20.4 Update notification queries to return NotificationEvent
     - Update notification database queries to return `NotificationEvent` type
     - Ensure multi-channel delivery metadata stored correctly
     - Use strict Supabase types for notification tables
     - _Requirements: REQ-3.1.5_
 
-  - [ ] 20.5 Update audit log queries to return AuditEvent
+  - [x] 20.5 Update audit log queries to return AuditEvent
     - Update audit log database queries to return `AuditEvent` type
     - Ensure field-level change tracking metadata stored correctly
     - Use strict Supabase types for audit log tables
     - _Requirements: REQ-3.1.6_
 
-- [ ] 21. Update all import statements across the codebase
-  - [ ] 21.1 Update imports in app pages to use core and spa module paths
+- [x] 21. Update all import statements across the codebase
+  - [x] 21.1 Update imports in app pages to use core and spa module paths
     - Update all page imports to reference `src/core/` for core functionality
     - Update all page imports to reference `src/modules/spa/` for spa-specific features
     - Verify no broken imports remain (TypeScript compilation will catch these)
     - _Requirements: REQ-3.1.1, REQ-3.4.1_
 
-  - [ ] 21.2 Update imports in API routes to use core paths
+  - [x] 21.2 Update imports in API routes to use core paths
     - Update all API route imports to reference `src/core/services/`
     - Update all API route imports to use TenantContext from `src/core/providers/`
     - Verify no broken imports remain
     - _Requirements: REQ-3.1.1_
 
-  - [ ] 21.3 Update imports in shared utilities and libraries
+  - [x] 21.3 Update imports in shared utilities and libraries
     - Update utility function imports to use core or spa module paths as appropriate
     - Update type imports to use contract types from `src/core/types/`
     - Verify no circular dependencies introduced
     - _Requirements: REQ-3.1.1, REQ-3.4.1_
 
-- [ ] 22. Checkpoint - Verify Wave 4 integration is complete
+- [x] 22. Checkpoint - Verify Wave 4 integration is complete
   - Run `npm run build` and ensure TypeScript compilation succeeds
   - Run full test suite and verify all 1304+ tests pass
   - Manually test end-to-end user flows (create order → process payment → complete session → calculate salary)
@@ -502,7 +434,7 @@ This implementation plan executes the physical extraction of core platform code 
 
 ### Wave 5: Validation (Week 9-10)
 
-- [ ] 23. Comprehensive testing and validation
+- [x] 23. Comprehensive testing and validation
   - [ ]* 23.1 Run full unit test suite with coverage analysis
     - Run `npm run test` and ensure all 1304+ tests pass
     - Generate test coverage report
@@ -527,7 +459,7 @@ This implementation plan executes the physical extraction of core platform code 
     - Document performance metrics in test results
     - _Requirements: NFR-3.1, NFR-3.2, NFR-3.3_
 
-  - [ ] 23.4 Validate database schema unchanged
+  - [x] 23.4 Validate database schema unchanged
     - Run schema diff against production database
     - Confirm zero new tables added
     - Confirm zero tables dropped or renamed
@@ -545,31 +477,29 @@ This implementation plan executes the physical extraction of core platform code 
     - _Requirements: NFR-3.10, NFR-3.11, NFR-3.12_
 
 
-- [ ] 24. Documentation updates
-  - [ ] 24.1 Create core platform architecture documentation
-- [ ] 24. Documentation updates
-  - [ ] 24.1 Create core platform architecture documentation
+- [x] 24. Documentation updates
+  - [x] 24.1 Create core platform architecture documentation
     - Create `docs/architecture/core-platform.md` explaining core platform design
     - Document directory structure and module organization
     - Include architecture diagrams showing core ↔ module boundaries
     - Explain TenantContext lifecycle and usage patterns
     - _Requirements: REQ-3.7.1_
 
-  - [ ] 24.2 Create module system documentation
+  - [x] 24.2 Create module system documentation
     - Create `docs/architecture/module-system.md` explaining module adapter pattern
     - Document how to create a new module adapter
     - Provide code examples for common adapter methods
     - Explain module registry and adapter registration
     - _Requirements: REQ-3.7.1_
 
-  - [ ] 24.3 Create multi-tenancy documentation
+  - [x] 24.3 Create multi-tenancy documentation
     - Create `docs/architecture/tenant-context.md` explaining multi-tenancy design
     - Document how tenant configuration is loaded and cached
     - Explain tenant isolation and security considerations
     - Provide examples of tenant-specific feature flags
     - _Requirements: REQ-3.7.1_
 
-  - [ ] 24.4 Create Phase 3 migration guide for developers
+  - [x] 24.4 Create Phase 3 migration guide for developers
     - Create `docs/migration/phase-3-migration-guide.md`
     - Explain how to update service function signatures for TenantContext
     - Provide examples of using TenantContext in React components
@@ -577,7 +507,7 @@ This implementation plan executes the physical extraction of core platform code 
     - Include code migration patterns and FAQ section
     - _Requirements: REQ-3.7.2_
 
-  - [ ] 24.5 Update API documentation with TenantContext and contract types
+  - [x] 24.5 Update API documentation with TenantContext and contract types
     - Update API route documentation with TenantContext parameter
     - Update request/response examples to use core contract types (CoreBookingOrder, PaymentIntent, etc.)
     - Document authentication and tenant ID extraction
@@ -585,7 +515,7 @@ This implementation plan executes the physical extraction of core platform code 
     - Update Postman collection with tenant headers
     - _Requirements: REQ-3.7.3_
 
-- [ ] 25. Final checkpoint and production readiness review
+- [x] 25. Final checkpoint and production readiness review
   - Run full test suite one final time and ensure all tests pass
   - Review all git commits and ensure clean migration history
   - Conduct code review with development team

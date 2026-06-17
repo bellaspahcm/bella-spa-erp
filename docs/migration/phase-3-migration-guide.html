@@ -1,0 +1,1521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 3 Migration Guide</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        
+:root {
+    --primary: #4F46E5;
+    --secondary: #06B6D4;
+    --success: #10B981;
+    --warning: #F59E0B;
+    --danger: #EF4444;
+    --bg: #F9FAFB;
+    --card-bg: #FFFFFF;
+    --text: #111827;
+    --text-muted: #6B7280;
+    --border: #E5E7EB;
+    --code-bg: #F3F4F6;
+    --sidebar-width: 280px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.6;
+    color: var(--text);
+    background: var(--bg);
+    display: flex;
+    min-height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+    width: var(--sidebar-width);
+    background: var(--card-bg);
+    border-right: 1px solid var(--border);
+    position: fixed;
+    height: 100vh;
+    overflow-y: auto;
+    padding: 2rem 0;
+}
+
+.sidebar-header {
+    padding: 0 1.5rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1rem;
+}
+
+.sidebar-header h3 {
+    color: var(--primary);
+    font-size: 1.2rem;
+}
+
+.sidebar-nav {
+    padding: 0 1rem;
+}
+
+.nav-section {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin: 1.5rem 0 0.5rem 0.5rem;
+    letter-spacing: 0.05em;
+}
+
+.nav-item {
+    display: block;
+    padding: 0.75rem 1rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    border-radius: 8px;
+    margin-bottom: 0.25rem;
+    transition: all 0.2s;
+}
+
+.nav-item:hover {
+    background: var(--bg);
+    color: var(--primary);
+}
+
+.nav-item.active {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    font-weight: 500;
+}
+
+/* Main Content */
+.main-content {
+    margin-left: var(--sidebar-width);
+    flex: 1;
+    padding: 2rem 4rem;
+    max-width: 1400px;
+}
+
+.page-header {
+    margin-bottom: 2rem;
+}
+
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+}
+
+.breadcrumb a {
+    color: var(--primary);
+    text-decoration: none;
+}
+
+.breadcrumb a:hover {
+    text-decoration: underline;
+}
+
+h1 {
+    font-size: 2.5rem;
+    color: var(--text);
+    margin-bottom: 1rem;
+}
+
+.metadata {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.badge-success {
+    background: #D1FAE5;
+    color: #065F46;
+}
+
+.badge-info {
+    background: #DBEAFE;
+    color: #1E40AF;
+}
+
+.badge-warning {
+    background: #FEF3C7;
+    color: #92400E;
+}
+
+/* Content */
+.content {
+    background: var(--card-bg);
+    padding: 3rem;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+h2 {
+    font-size: 2rem;
+    color: var(--primary);
+    border-bottom: 2px solid var(--primary);
+    padding-bottom: 0.5rem;
+    margin: 2.5rem 0 1rem;
+}
+
+h2:first-child {
+    margin-top: 0;
+}
+
+h3 {
+    font-size: 1.5rem;
+    color: var(--text);
+    margin: 2rem 0 1rem;
+}
+
+h4 {
+    font-size: 1.2rem;
+    color: var(--text);
+    margin: 1.5rem 0 0.75rem;
+}
+
+p {
+    margin-bottom: 1rem;
+    color: var(--text-muted);
+    line-height: 1.7;
+}
+
+ul, ol {
+    margin-left: 2rem;
+    margin-bottom: 1rem;
+}
+
+li {
+    margin-bottom: 0.5rem;
+    color: var(--text-muted);
+}
+
+code {
+    background: var(--code-bg);
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.9em;
+    color: var(--danger);
+}
+
+pre {
+    background: #282c34;
+    color: #abb2bf;
+    padding: 1.5rem;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 1.5rem 0;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+pre code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+th, td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+
+th {
+    background: var(--primary);
+    color: white;
+    font-weight: 600;
+}
+
+tbody tr:hover {
+    background: var(--bg);
+}
+
+a {
+    color: var(--primary);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+blockquote {
+    border-left: 4px solid var(--primary);
+    padding-left: 1.5rem;
+    margin: 1.5rem 0;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.note {
+    background: #EFF6FF;
+    border-left: 4px solid var(--secondary);
+    padding: 1rem 1.5rem;
+    border-radius: 4px;
+    margin: 1.5rem 0;
+}
+
+.warning {
+    background: #FEF3C7;
+    border-left: 4px solid var(--warning);
+    padding: 1rem 1.5rem;
+    border-radius: 4px;
+    margin: 1.5rem 0;
+}
+
+/* Footer */
+.page-footer {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border);
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+/* Responsive */
+@media (max-width: 968px) {
+    .sidebar {
+        transform: translateX(-100%);
+    }
+    
+    .main-content {
+        margin-left: 0;
+        padding: 2rem;
+    }
+}
+
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h3>📚 Documentation</h3>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="index.html" class="nav-item">🏠 Home</a>
+            <div class="nav-section">Architecture</div>
+            <a href="core-platform.html" class="nav-item">🎯 Core Platform</a>
+            <a href="module-system.html" class="nav-item">🧩 Module System</a>
+            <a href="tenant-context.html" class="nav-item">🏢 Tenant Context</a>
+            <div class="nav-section">Migration</div>
+            <a href="../migration/phase-3-migration-guide.html" class="nav-item">📖 Migration Guide</a>
+        </nav>
+    </div>
+    
+    <div class="main-content">
+        <header class="page-header">
+            <div class="breadcrumb">
+                <a href="index.html">Documentation</a>
+                <span>›</span>
+                <span>Migration</span>
+            </div>
+            <h1>Phase 3 Migration Guide</h1>
+            <div class="metadata">
+                <span class="badge badge-info">Version 1.0</span> <span>📅 2025-06-01</span>
+            </div>
+        </header>
+        
+        <div class="content">
+            <h1 id="phase-3-migration-guide-for-developers">Phase 3 Migration Guide for Developers</h1><p><strong>Version</strong>: 1.0  
+<strong>Last Updated</strong>: 2025-06-01  
+<strong>Audience</strong>: Bella ERP Developers  
+<strong>Prerequisites</strong>: Familiarity with TypeScript, React, Next.js, and Bella ERP codebase</p><p>---</p><h2 id="table-of-contents">Table of Contents</h2><ul><li><a href="#overview">Overview</a></li>
+<li><a href="#what-changed-in-phase-3">What Changed in Phase 3</a></li>
+<li><a href="#migration-checklist">Migration Checklist</a></li>
+<li><a href="#updating-service-function-signatures">Updating Service Function Signatures</a></li>
+<li><a href="#using-tenantcontext-in-react-components">Using TenantContext in React Components</a></li>
+<li><a href="#using-tenantcontext-in-api-routes">Using TenantContext in API Routes</a></li>
+<li><a href="#adding-module-specific-logic-to-adapters">Adding Module-Specific Logic to Adapters</a></li>
+<li><a href="#updating-database-queries">Updating Database Queries</a></li>
+<li><a href="#updating-tests">Updating Tests</a></li>
+<li><a href="#code-migration-patterns">Code Migration Patterns</a></li>
+<li><a href="#common-migration-issues">Common Migration Issues</a></li>
+<li><a href="#faq">FAQ</a></li>
+</ul>
+---</p><h2 id="overview">Overview</h2><p>Phase 3 physically extracts core platform services from the monolithic Bella Spa codebase and introduces:</p><ul><li><strong>Core Platform</strong>: Industry-neutral services in <code>src/core/</code></li>
+<li><strong>Module System</strong>: Industry-specific logic in <code>src/modules/spa/</code></li>
+<li><strong>TenantContext</strong>: Multi-tenant configuration passed to all services</li>
+<li><strong>Module Adapters</strong>: Plugin pattern for industry-specific behavior</li>
+</ul>
+<strong>Goal</strong>: Transform the monolithic spa-specific codebase into a modular, multi-industry platform while maintaining 100% backward compatibility.</p><p><strong>Impact</strong>: All developers must update their code to use the new architecture.</p><p>---</p><h2 id="what-changed-in-phase-3">What Changed in Phase 3</h2><h3 id="directory-structure-changes">Directory Structure Changes</h3><p><strong>Before Phase 3</strong>:
+<pre><code class="language-">src/
+├── services/           # Mixed core + spa logic
+│   ├── auth/
+│   ├── bookings/      # Spa-specific booking logic
+│   ├── payments/
+│   └── finance/
+├── components/         # Mixed core + spa components
+└── types/              # Mixed type definitions
+</code></pre><p><strong>After Phase 3</strong>:
+<pre><code class="language-">src/
+├── core/               # NEW: Core platform (industry-neutral)
+│   ├── types/
+│   ├── services/
+│   │   ├── auth/
+│   │   ├── order/     # RENAMED: bookings → order
+│   │   ├── payment/
+│   │   ├── audit/
+│   │   ├── notification/
+│   │   ├── finance/
+│   │   ├── payroll/   # NEW: Extracted from finance
+│   │   └── analytics/ # NEW: Extracted from various services
+│   ├── adapters/      # NEW: Module registry
+│   ├── providers/     # NEW: TenantContextProvider
+│   ├── hooks/         # NEW: useTenantContext
+│   └── middleware/    # NEW: withTenantContext
+│
+└── modules/            # NEW: Industry-specific modules
+    └── spa/
+        ├── types/      # Spa-specific types
+        ├── adapters/   # SpaModuleAdapter
+        ├── services/   # Spa business logic
+        └── components/ # Spa UI components
+</code></pre><h3 id="key-architecture-changes">Key Architecture Changes</h3><ul><li><strong>Service Function Signatures</strong>: All service functions now accept <code>TenantContext</code> as first parameter</li>
+<li><strong>Terminology</strong>: "Booking" → "Order" for industry neutrality (but contract type remains <code>CoreBookingOrder</code>)</li>
+<li><strong>Module Adapters</strong>: Spa-specific logic moved to <code>SpaModuleAdapter</code></li>
+<li><strong>Import Paths</strong>: Changed from <code>@/services/</code> to <code>@/core/services/</code> or <code>@/modules/spa/</code></li>
+<li><strong>React Context</strong>: New <code>TenantContextProvider</code> for client-side tenant configuration</li>
+</ul>
+---</p><h2 id="migration-checklist">Migration Checklist</h2><p>Use this checklist to migrate your feature branch to Phase 3 architecture:</p><h3 id="step-1:-update-dependencies">Step 1: Update Dependencies</h3>
+<ul><li>[ ] Pull latest <code>main</code> branch with Phase 3 changes</li>
+<li>[ ] Run <code>npm install</code> to ensure dependencies are up to date</li>
+<li>[ ] Run <code>npm run build</code> to verify TypeScript compilation</li>
+</ul>
+<h3 id="step-2:-update-imports">Step 2: Update Imports</h3>
+<ul><li>[ ] Replace <code>@/services/auth/</code> with <code>@/core/services/auth/</code></li>
+<li>[ ] Replace <code>@/services/bookings/</code> with <code>@/core/services/order/</code></li>
+<li>[ ] Replace <code>@/services/payments/</code> with <code>@/core/services/payment/</code></li>
+<li>[ ] Replace <code>@/services/notifications/</code> with <code>@/core/services/notification/</code></li>
+<li>[ ] Replace <code>@/services/audit/</code> with <code>@/core/services/audit/</code></li>
+<li>[ ] Replace <code>@/services/finance/</code> with <code>@/core/services/finance/</code></li>
+<li>[ ] Replace spa-specific imports with <code>@/modules/spa/</code></li>
+</ul>
+<h3 id="step-3:-update-service-function-calls">Step 3: Update Service Function Calls</h3>
+<ul><li>[ ] Add <code>TenantContext</code> as first parameter to all service function calls</li>
+<li>[ ] Extract tenant context using middleware or hooks</li>
+</ul>
+<h3 id="step-4:-update-react-components">Step 4: Update React Components</h3>
+<ul><li>[ ] Wrap app with <code>TenantContextProvider</code> (if not already done)</li>
+<li>[ ] Use <code>useTenantContext()</code> hook to access tenant configuration</li>
+<li>[ ] Update spa-specific components to use <code>@/modules/spa/components/</code></li>
+</ul>
+<h3 id="step-5:-update-api-routes">Step 5: Update API Routes</h3>
+<ul><li>[ ] Wrap API routes with <code>withTenantContext</code> middleware</li>
+<li>[ ] Extract <code>context</code> from <code>request.tenantContext</code></li>
+<li>[ ] Pass context to service functions</li>
+</ul>
+<h3 id="step-6:-update-tests">Step 6: Update Tests</h3>
+<ul><li>[ ] Create mock <code>TenantContext</code> in test setup</li>
+<li>[ ] Update service function calls to pass mock context</li>
+<li>[ ] Run test suite: <code>npm run test</code></li>
+</ul>
+<h3 id="step-7:-verify">Step 7: Verify</h3>
+<ul><li>[ ] Run <code>npm run build</code> — no TypeScript errors</li>
+<li>[ ] Run <code>npm run test</code> — all tests pass</li>
+<li>[ ] Test manually in browser — features work unchanged</li>
+<li>[ ] Review git diff — only necessary changes</li>
+</ul>
+---</p><h2 id="updating-service-function-signatures">Updating Service Function Signatures</h2><h3 id="pattern:-service-functions-accept-tenantcontext-first">Pattern: Service Functions Accept TenantContext First</h3><p>All service functions in <code>src/core/services/</code> now accept <code>TenantContext</code> as the first parameter.</p><p><strong>Before Phase 3</strong>:
+<pre><code class="language-typescript">// src/services/bookings/create.ts
+export async function createBooking(orderData: BookingData): Promise<Booking> {
+  const { data, error } = await supabase
+    .from('bookings')
+    .insert(orderData)
+    .select()
+    .single();
+  
+  if (error) throw error;
+  return data;
+}
+</code></pre><p><strong>After Phase 3</strong>:
+<pre><code class="language-typescript">// src/core/services/order/create.ts
+import type { TenantContext, CoreBookingOrder } from '@/core/types';</p><p>export async function createOrder(
+  context: TenantContext,
+  orderData: Partial<CoreBookingOrder>
+): Promise<CoreBookingOrder> {
+  const { data, error } = await supabase
+    .from('bookings')
+    .insert({
+      ...orderData,
+      tenant_id: context.tenantId, // CRITICAL: Tenant isolation
+    })
+    .select()
+    .single();
+  
+  if (error) throw error;
+  return data as CoreBookingOrder;
+}
+</code></pre><h3 id="key-changes">Key Changes</h3><ul><li><strong>First Parameter</strong>: <code>context: TenantContext</code> is now first parameter</li>
+<li><strong>Tenant Filtering</strong>: Use <code>context.tenantId</code> to filter database queries</li>
+<li><strong>Return Type</strong>: Use core contract types (<code>CoreBookingOrder</code>, <code>PaymentIntent</code>)</li>
+<li><strong>Function Name</strong>: "Booking" functions renamed to "Order" for neutrality</li>
+</ul>
+---</p><h3 id="migration-example:-authentication-service">Migration Example: Authentication Service</h3><p><strong>Before Phase 3</strong>:
+<pre><code class="language-typescript">// src/services/auth/authenticate.ts
+export async function authenticateUser(email: string, password: string) {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+  
+  if (error) throw error;
+  return data.user;
+}
+</code></pre><p><strong>After Phase 3</strong>:
+<pre><code class="language-typescript">// src/core/services/auth/authenticate.ts
+import type { TenantContext } from '@/core/types';</p><p>export async function authenticateUser(
+  context: TenantContext,
+  email: string,
+  password: string
+) {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+  
+  if (error) throw error;
+  
+  // Verify user belongs to current tenant
+  if (data.user.user_metadata.tenant_id !== context.tenantId) {
+    throw new Error('User does not belong to this tenant');
+  }
+  
+  return data.user;
+}
+</code></pre><h3 id="migration-example:-order-service">Migration Example: Order Service</h3><p><strong>Before Phase 3</strong>:
+<pre><code class="language-typescript">// src/services/bookings/getBookingsByCustomer.ts
+export async function getBookingsByCustomer(customerId: string): Promise<Booking[]> {
+  const { data, error } = await supabase
+    .from('bookings')
+    .select('*')
+    .eq('customer_id', customerId);
+  
+  if (error) throw error;
+  return data;
+}
+</code></pre><p><strong>After Phase 3</strong>:
+<pre><code class="language-typescript">// src/core/services/order/getOrdersByCustomer.ts
+import type { TenantContext, CoreBookingOrder } from '@/core/types';</p><p>export async function getOrdersByCustomer(
+  context: TenantContext,
+  customerId: string
+): Promise<CoreBookingOrder[]> {
+  const { data, error } = await supabase
+    .from('bookings')
+    .select('*')
+    .eq('customer_id', customerId)
+    .eq('tenant_id', context.tenantId); // CRITICAL: Tenant filter
+  
+  if (error) throw error;
+  return data as CoreBookingOrder[];
+}
+</code></pre><p>---</p><h2 id="using-tenantcontext-in-react-components">Using TenantContext in React Components</h2><h3 id="step-1:-wrap-app-with-tenantcontextprovider">Step 1: Wrap App with TenantContextProvider</h3><p><strong>File</strong>: <code>src/app/layout.tsx</code> (Next.js App Router)</p><pre><code class="language-typescript">import { TenantContextProvider } from '@/core/providers';</p><p>export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="vi">
+      <body>
+        <TenantContextProvider>
+          {children}
+        </TenantContextProvider>
+      </body>
+    </html>
+  );
+}
+</code></pre><p><strong>Alternative</strong>: <code>src/pages/_app.tsx</code> (Next.js Pages Router)</p><pre><code class="language-typescript">import { AppProps } from 'next/app';
+import { TenantContextProvider } from '@/core/providers';</p><p>export default function MyApp({ Component, pageProps }: AppProps) {
+  return (
+    <TenantContextProvider>
+      <Component {...pageProps} />
+    </TenantContextProvider>
+  );
+}
+</code></pre><h3 id="step-2:-use-usetenantcontext-hook">Step 2: Use useTenantContext Hook</h3><p><strong>Before Phase 3</strong>:
+<pre><code class="language-typescript">'use client';</p><p>export function Dashboard() {
+  const [tenantName, setTenantName] = useState('');
+  
+  useEffect(() => {
+    // Fetch tenant data manually
+    fetch('/api/tenant').then(res => res.json()).then(data => {
+      setTenantName(data.name);
+    });
+  }, []);
+  
+  return <h1>Welcome to {tenantName}</h1>;
+}
+</code></pre><p><strong>After Phase 3</strong>:
+<pre><code class="language-typescript">'use client';</p><p>import { useTenantContext } from '@/core/hooks';</p><p>export function Dashboard() {
+  const context = useTenantContext();
+  
+  return <h1>Welcome to {context.tenantName}</h1>;
+}
+</code></pre><h3 id="example:-feature-flag-gating">Example: Feature Flag Gating</h3><pre><code class="language-typescript">'use client';</p><p>import { useTenantContext } from '@/core/hooks';
+import { AISalaryReconciliation } from '@/modules/spa/components/salary/AISalaryReconciliation';
+import { ManualSalaryReconciliation } from '@/modules/spa/components/salary/ManualSalaryReconciliation';</p><p>export function SalaryReconciliationPage() {
+  const context = useTenantContext();
+  
+  // Check if AI reconciliation feature is enabled
+  const aiEnabled = context.featureFlags['ai_salary_reconciliation'] === true;
+  
+  return (
+    <div>
+      <h1>Salary Reconciliation</h1>
+      {aiEnabled ? (
+        <AISalaryReconciliation />
+      ) : (
+        <ManualSalaryReconciliation />
+      )}
+    </div>
+  );
+}
+</code></pre><p>---</p><h3 id="example:-module-specific-components">Example: Module-Specific Components</h3><pre><code class="language-typescript">'use client';</p><p>import { useTenantContext } from '@/core/hooks';
+import { SpaOrderList } from '@/modules/spa/components/order/SpaOrderList';</p><p>export function OrdersPage() {
+  const context = useTenantContext();
+  
+  // Only show spa module components if spa module is enabled
+  if (!context.enabledModules.includes('spa')) {
+    return <div>Spa module not enabled for your account.</div>;
+  }
+  
+  return (
+    <div>
+      <h1>Orders</h1>
+      <SpaOrderList />
+    </div>
+  );
+}
+</code></pre><h3 id="example:-subscription-plan-gating">Example: Subscription Plan Gating</h3><pre><code class="language-typescript">'use client';</p><p>import { useTenantContext } from '@/core/hooks';</p><p>export function AdvancedAnalytics() {
+  const context = useTenantContext();
+  
+  // Check subscription plan
+  const planTiers = ['free', 'basic', 'professional', 'enterprise'];
+  const currentTier = planTiers.indexOf(context.subscriptionPlan);
+  const requiredTier = planTiers.indexOf('professional');
+  
+  if (currentTier < requiredTier) {
+    return (
+      <div>
+        <h2>Advanced Analytics</h2>
+        <p>This feature requires a Professional or Enterprise plan.</p>
+        <button>Upgrade Now</button>
+      </div>
+    );
+  }
+  
+  return <AdvancedAnalyticsDashboard />;
+}
+</code></pre><p>---</p><h2 id="using-tenantcontext-in-api-routes">Using TenantContext in API Routes</h2><h3 id="pattern:-withtenantcontext-middleware">Pattern: withTenantContext Middleware</h3><p>Use the <code>withTenantContext</code> middleware to automatically extract and attach tenant context to API requests.</p><p><strong>Before Phase 3</strong>:
+<pre><code class="language-typescript">// src/app/api/bookings/route.ts
+export async function POST(request: Request) {
+  const orderData = await request.json();
+  
+  // Create booking without tenant context
+  const booking = await createBooking(orderData);
+  
+  return Response.json(booking);
+}
+</code></pre><p><strong>After Phase 3</strong>:
+<pre><code class="language-typescript">// src/app/api/orders/route.ts
+import { withTenantContext, type NextRequestWithContext } from '@/core/middleware';
+import { createOrder } from '@/core/services/order';</p><p>export const POST = withTenantContext(async (request: NextRequestWithContext) => {
+  // Context automatically extracted and attached
+  const context = request.tenantContext;
+  
+  const orderData = await request.json();
+  
+  // Pass context to service
+  const order = await createOrder(context, orderData);
+  
+  return Response.json(order, { status: 201 });
+});
+</code></pre><h3 id="error-handling">Error Handling</h3><p>The <code>withTenantContext</code> middleware automatically handles auth and tenant errors:</p><ul><li><strong>401 Unauthorized</strong>: User not authenticated</li>
+<li><strong>403 Forbidden</strong>: User has no tenant assigned</li>
+<li><strong>404 Not Found</strong>: Tenant not found in database</li>
+<li><strong>500 Internal Server Error</strong>: Database query failed</li>
+</ul>
+<strong>Example with custom error handling</strong>:</p><pre><code class="language-typescript">export const POST = withTenantContext(async (request: NextRequestWithContext) => {
+  const context = request.tenantContext;
+  
+  try {
+    const orderData = await request.json();
+    const order = await createOrder(context, orderData);
+    return Response.json(order, { status: 201 });
+  } catch (error) {
+    console.error('[API] Order creation failed:', error);
+    return Response.json(
+      { error: 'Failed to create order' },
+      { status: 500 }
+    );
+  }
+});
+</code></pre><p>---</p><h3 id="multiple-endpoints-in-one-file">Multiple Endpoints in One File</h3><pre><code class="language-typescript">// src/app/api/orders/[id]/route.ts
+import { withTenantContext, type NextRequestWithContext } from '@/core/middleware';
+import { getOrderById, updateOrder, deleteOrder } from '@/core/services/order';</p><p>// GET /api/orders/:id
+export const GET = withTenantContext(async (
+  request: NextRequestWithContext,
+  { params }: { params: { id: string } }
+) => {
+  const context = request.tenantContext;
+  const order = await getOrderById(context, params.id);
+  
+  if (!order) {
+    return Response.json({ error: 'Order not found' }, { status: 404 });
+  }
+  
+  return Response.json(order);
+});</p><p>// PATCH /api/orders/:id
+export const PATCH = withTenantContext(async (
+  request: NextRequestWithContext,
+  { params }: { params: { id: string } }
+) => {
+  const context = request.tenantContext;
+  const updates = await request.json();
+  
+  const order = await updateOrder(context, params.id, updates);
+  return Response.json(order);
+});</p><p>// DELETE /api/orders/:id
+export const DELETE = withTenantContext(async (
+  request: NextRequestWithContext,
+  { params }: { params: { id: string } }
+) => {
+  const context = request.tenantContext;
+  
+  await deleteOrder(context, params.id);
+  return Response.json({ success: true }, { status: 200 });
+});
+</code></pre><p>---</p><h2 id="adding-module-specific-logic-to-adapters">Adding Module-Specific Logic to Adapters</h2><h3 id="when-to-use-module-adapters">When to Use Module Adapters</h3><p>Use module adapters when you need to:</p><ul><li><strong>Validate module-specific business rules</strong> (e.g., KTV availability in spa module)</li>
+<li><strong>Apply dynamic pricing</strong> (e.g., member discounts, package promotions)</li>
+<li><strong>Transform core types to module-specific types</strong> with strongly-typed metadata</li>
+<li><strong>Execute side effects</strong> after order completion (e.g., update salary, deduct inventory)</li>
+<li><strong>Provide module-specific dashboard widgets</strong></li>
+</ul>
+<h3 id="pattern:-extending-spamoduleadapter">Pattern: Extending SpaModuleAdapter</h3><p><strong>File</strong>: <code>src/modules/spa/adapters/SpaModuleAdapter.ts</code></p><pre><code class="language-typescript">import type {
+  ModuleAdapter,
+  CoreServiceCatalogItem,
+  CoreBookingOrder,
+  TenantContext,
+} from '@/core/types';
+import type { SpaPackage, SpaBooking } from '../types';</p><p>export class SpaModuleAdapter implements ModuleAdapter {
+  readonly moduleId = 'spa' as const;
+  readonly moduleName = 'Bella Spa & Babycare';</p><p>  /<em></em>
+   * Validate spa-specific booking rules.
+   */
+  async validateBookingRules(
+    order: CoreBookingOrder,
+    context: TenantContext
+  ): Promise<boolean> {
+    // Check KTV availability
+    const ktvId = order.metadata.assigned_ktv_id as string;
+    if (!ktvId) {
+      console.error('[SpaAdapter] Missing KTV assignment');
+      return false;
+    }</p><p>    // Check session limits
+<table>
+<thead><tr>
+<th></th>
+</tr></thead>
+<tbody>
+</tbody></table>
+    const total = order.metadata.sessions_total as number;
+    if (completed >= total) {
+      console.error('[SpaAdapter] All sessions already completed');
+      return false;
+    }</p><p>    return true;
+  }</p><p>  /<em></em>
+   * Calculate spa-specific pricing.
+   */
+  async calculatePricing(
+    item: CoreServiceCatalogItem,
+    context: TenantContext
+  ): Promise<number> {
+    let price = item.basePrice;
+    
+    // Apply subscription-based discount
+    if (context.subscriptionPlan === 'enterprise') {
+      price *= 0.9; // 10% discount
+    }
+    
+    // Apply package category discount
+    const category = item.metadata.category as string;
+    if (category === 'vip') {
+      price *= 0.95; // 5% discount for VIP packages
+    }
+    
+    return Math.round(price);
+  }</p><p>  /<em></em>
+   * Execute side effects when session completes.
+   */
+  async onBookingCompleted(
+    order: CoreBookingOrder,
+    context: TenantContext
+  ): Promise<void> {
+    console.log(<code>[SpaAdapter] Processing completion for order ${order.id}</code>);
+    
+    try {
+      // Update KTV salary
+      await this.creditKtvSalary(order, context);
+      
+      // Deduct product inventory
+      const products = order.metadata.products_used as Record<string, number>;
+      if (products) {
+        await this.deductInventory(products, context);
+      }
+      
+      // Update KTV performance metrics
+      await this.updateKtvPerformance(order, context);
+    } catch (error) {
+      console.error('[SpaAdapter] Side effect failed:', error);
+      // Don't throw - log and continue
+    }
+  }</p><p>  private async creditKtvSalary(order: CoreBookingOrder, context: TenantContext) {
+    // Implementation: Update salary_records table
+  }</p><p>  private async deductInventory(products: Record<string, number>, context: TenantContext) {
+    // Implementation: Update inventory_items table
+  }</p><p>  private async updateKtvPerformance(order: CoreBookingOrder, context: TenantContext) {
+    // Implementation: Update kpi_records table
+  }
+}
+</code></pre><p>---</p><h3 id="how-core-services-invoke-adapters">How Core Services Invoke Adapters</h3><p>Core services use the module registry to look up and invoke adapters.</p><p><strong>File</strong>: <code>src/core/services/order/create.ts</code></p><pre><code class="language-typescript">import { moduleRegistry } from '@/core/adapters';
+import type { TenantContext, CoreBookingOrder } from '@/core/types';</p><p>export async function createOrder(
+  context: TenantContext,
+  orderData: Partial<CoreBookingOrder>
+): Promise<CoreBookingOrder> {
+  // Look up module adapter (graceful - returns undefined if not found)
+  const adapter = moduleRegistry.get(context.moduleId);
+  
+  // Invoke adapter validation (optional)
+  if (adapter?.validateBookingRules) {
+    const isValid = await adapter.validateBookingRules(
+      orderData as CoreBookingOrder,
+      context
+    );
+    if (!isValid) {
+      throw new Error('Booking validation failed');
+    }
+  }
+  
+  // Create order in database
+  const { data, error } = await supabase
+    .from('bookings')
+    .insert({
+      ...orderData,
+      tenant_id: context.tenantId,
+    })
+    .select()
+    .single();
+  
+  if (error) throw error;
+  
+  return data as CoreBookingOrder;
+}
+</code></pre><h3 id="best-practices-for-adapters">Best Practices for Adapters</h3><ul><li><strong>Keep Adapters Stateless</strong>: Don't store instance state (reused across requests)</li>
+<li><strong>Use Core Services for Data Access</strong>: Don't query database directly</li>
+<li><strong>Validate Input Parameters</strong>: Check metadata fields exist before accessing</li>
+<li><strong>Handle Errors Gracefully</strong>: Log errors, don't throw (except critical failures)</li>
+<li><strong>Use Descriptive Console Logs</strong>: Prefix with <code>[ModuleName]</code> for debugging</li>
+</ul>
+---</p><h2 id="updating-database-queries">Updating Database Queries</h2><h3 id="pattern:-always-filter-by-tenantid">Pattern: Always Filter by tenantId</h3><p>All database queries MUST include <code>tenant_id</code> filter to ensure tenant isolation.</p><p><strong>Before Phase 3</strong>:
+<pre><code class="language-typescript">export async function getBookings() {
+  const { data } = await supabase
+    .from('bookings')
+    .select('*');
+  
+  return data;
+}
+</code></pre><p><strong>After Phase 3</strong>:
+<pre><code class="language-typescript">import type { TenantContext, CoreBookingOrder } from '@/core/types';</p><p>export async function getOrders(context: TenantContext): Promise<CoreBookingOrder[]> {
+  const { data } = await supabase
+    .from('bookings')
+    .select('*')
+    .eq('tenant_id', context.tenantId); // CRITICAL: Tenant filter
+  
+  return data as CoreBookingOrder[];
+}
+</code></pre><h3 id="pattern:-use-core-contract-types">Pattern: Use Core Contract Types</h3><p>Database queries should return core contract types for type safety.</p><p><strong>Before Phase 3</strong>:
+<pre><code class="language-typescript">export async function getBookingById(id: string) {
+  const { data } = await supabase
+    .from('bookings')
+    .select('*')
+    .eq('id', id)
+    .single();
+  
+  return data; // Type: any
+}
+</code></pre><p><strong>After Phase 3</strong>:
+<pre><code class="language-typescript">import type { TenantContext, CoreBookingOrder } from '@/core/types';</p><p>export async function getOrderById(
+  context: TenantContext,
+  id: string
+<table>
+<thead><tr>
+</tr></thead>
+<tbody>
+</tbody></table>
+  const { data } = await supabase
+    .from('bookings')
+    .select('*')
+    .eq('id', id)
+    .eq('tenant_id', context.tenantId)
+    .single();
+  
+<table>
+<thead><tr>
+</tr></thead>
+<tbody>
+</tbody></table>
+}
+</code></pre><p>---</p><h3 id="pattern:-use-strict-supabase-types">Pattern: Use Strict Supabase Types</h3><p>Use Supabase auto-generated types for insert/update operations.</p><p><strong>Before Phase 3</strong>:
+<pre><code class="language-typescript">export async function createBooking(orderData: any) {
+  const { data } = await supabase
+    .from('bookings')
+    .insert(orderData) // No type checking!
+    .select()
+    .single();
+  
+  return data;
+}
+</code></pre><p><strong>After Phase 3</strong>:
+<pre><code class="language-typescript">import type { TenantContext, CoreBookingOrder } from '@/core/types';
+import type { Database } from '@/types/supabase';</p><p>type BookingInsert = Database['public']['Tables']['bookings']['Insert'];</p><p>export async function createOrder(
+  context: TenantContext,
+  orderData: Partial<CoreBookingOrder>
+): Promise<CoreBookingOrder> {
+  // Type-checked insert payload
+  const insertPayload: BookingInsert = {
+    customer_id: orderData.customerId,
+    total_amount: orderData.totalAmount,
+<table>
+<thead><tr>
+<th></th>
+</tr></thead>
+<tbody>
+</tbody></table>
+    tenant_id: context.tenantId,
+    // TypeScript catches missing or invalid fields!
+  };
+  
+  const { data, error } = await supabase
+    .from('bookings')
+    .insert(insertPayload)
+    .select()
+    .single();
+  
+  if (error) throw error;
+  
+  return data as CoreBookingOrder;
+}
+</code></pre><h3 id="pattern:-row-level-security-(rls)">Pattern: Row-Level Security (RLS)</h3><p>Use RLS to enforce tenant isolation at the database level.</p><pre><code class="language-sql">-- Enable RLS on bookings table
+ALTER TABLE bookings ENABLE ROW LEVEL SECURITY;</p><p>-- Policy: Users can only see bookings from their tenant
+CREATE POLICY "Users can view own tenant bookings"
+ON bookings
+FOR SELECT
+USING (tenant_id = current_setting('app.current_tenant_id')::uuid);
+</code></pre><p><strong>Set session tenant in queries</strong>:</p><pre><code class="language-typescript">export async function getOrders(context: TenantContext): Promise<CoreBookingOrder[]> {
+  // Set session tenant for RLS
+  await supabase.rpc('set_session_tenant', {
+    p_tenant_id: context.tenantId,
+  });
+  
+  // RLS automatically filters by tenant_id
+  const { data } = await supabase
+    .from('bookings')
+    .select('*');
+  
+  return data as CoreBookingOrder[];
+}
+</code></pre><p>---</p><h2 id="updating-tests">Updating Tests</h2><h3 id="pattern:-create-mock-tenantcontext">Pattern: Create Mock TenantContext</h3><p><strong>File</strong>: <code>src/__tests__/utils/mock-tenant-context.ts</code></p><pre><code class="language-typescript">import type { TenantContext } from '@/core/types/tenant';</p><p>export function createMockTenantContext(
+  overrides?: Partial<TenantContext>
+): TenantContext {
+  return {
+    tenantId: 'test-tenant-id',
+    tenantName: 'Test Tenant',
+    enabledModules: ['spa'],
+    subscriptionPlan: 'professional',
+    featureFlags: {},
+    settings: {
+      currency: 'VND',
+      timezone: 'Asia/Ho_Chi_Minh',
+      locale: 'vi-VN',
+    },
+    ...overrides,
+  };
+}
+</code></pre><h3 id="pattern:-update-unit-tests">Pattern: Update Unit Tests</h3><p><strong>Before Phase 3</strong>:
+<pre><code class="language-typescript">import { createBooking } from '@/services/bookings/create';</p><p>describe('createBooking', () => {
+  it('creates a booking', async () => {
+    const orderData = {
+      customerId: 'customer-123',
+      totalAmount: 500000,
+    };
+    
+    const booking = await createBooking(orderData);
+    
+    expect(booking.totalAmount).toBe(500000);
+  });
+});
+</code></pre><p><strong>After Phase 3</strong>:
+<pre><code class="language-typescript">import { createOrder } from '@/core/services/order/create';
+import { createMockTenantContext } from '@/__tests__/utils/mock-tenant-context';</p><p>describe('createOrder', () => {
+  it('creates an order with tenant isolation', async () => {
+    const context = createMockTenantContext({
+      tenantId: 'tenant-123',
+    });
+    
+    const orderData = {
+      customerId: 'customer-456',
+      totalAmount: 500000,
+    };
+    
+    const order = await createOrder(context, orderData);
+    
+    expect(order.tenant_id).toBe('tenant-123');
+    expect(order.totalAmount).toBe(500000);
+  });
+});
+</code></pre><p>---</p><h3 id="pattern:-test-feature-flags">Pattern: Test Feature Flags</h3><pre><code class="language-typescript">import { createMockTenantContext } from '@/__tests__/utils/mock-tenant-context';
+import { reconcileSalary } from '@/core/services/payroll/reconcile';</p><p>describe('reconcileSalary', () => {
+  it('uses AI when feature flag is enabled', async () => {
+    const context = createMockTenantContext({
+      featureFlags: {
+        'ai_salary_reconciliation': true,
+      },
+    });
+    
+    const result = await reconcileSalary(context, '2025-01');
+    
+    expect(result.method).toBe('ai');
+  });
+  
+  it('uses manual calculation when feature flag is disabled', async () => {
+    const context = createMockTenantContext({
+      featureFlags: {
+        'ai_salary_reconciliation': false,
+      },
+    });
+    
+    const result = await reconcileSalary(context, '2025-01');
+    
+    expect(result.method).toBe('manual');
+  });
+});
+</code></pre><h3 id="pattern:-test-module-adapters">Pattern: Test Module Adapters</h3><pre><code class="language-typescript">import { SpaModuleAdapter } from '@/modules/spa/adapters/SpaModuleAdapter';
+import { createMockTenantContext } from '@/__tests__/utils/mock-tenant-context';
+import type { CoreBookingOrder } from '@/core/types';</p><p>describe('SpaModuleAdapter', () => {
+  const adapter = new SpaModuleAdapter();
+  const context = createMockTenantContext();
+  
+  it('validates booking rules correctly', async () => {
+    const order: CoreBookingOrder = {
+      id: 'order-123',
+      customerId: 'customer-456',
+      totalAmount: 500000,
+      status: 'pending',
+      metadata: {
+        assigned_ktv_id: 'ktv-789',
+        sessions_completed: 0,
+        sessions_total: 10,
+      },
+    } as CoreBookingOrder;
+    
+    const isValid = await adapter.validateBookingRules!(order, context);
+    
+    expect(isValid).toBe(true);
+  });
+  
+  it('rejects booking when sessions exhausted', async () => {
+    const order: CoreBookingOrder = {
+      id: 'order-123',
+      metadata: {
+        assigned_ktv_id: 'ktv-789',
+        sessions_completed: 10,
+        sessions_total: 10, // All sessions used
+      },
+    } as CoreBookingOrder;
+    
+    const isValid = await adapter.validateBookingRules!(order, context);
+    
+    expect(isValid).toBe(false);
+  });
+});
+</code></pre><p>---</p><h2 id="code-migration-patterns">Code Migration Patterns</h2><h3 id="pattern-1:-update-import-paths">Pattern 1: Update Import Paths</h3><p><strong>Find and Replace Strategy</strong>:</p><pre><code class="language-bash"># Replace auth service imports
+<table>
+<thead><tr>
+</tr></thead>
+<tbody>
+</tbody></table></p><h1 id="replace-booking-service-imports">Replace booking service imports</h1>
+<table>
+<thead><tr>
+</tr></thead>
+<tbody>
+</tbody></table></p><h1 id="replace-payment-service-imports">Replace payment service imports</h1>
+<table>
+<thead><tr>
+</tr></thead>
+<tbody>
+</tbody></table>
+</code></pre><p><strong>Manual Review Required</strong>:
+<ul><li>Check if spa-specific logic should move to <code>@/modules/spa/</code></li>
+<li>Verify contract type imports use <code>@/core/types/</code></li>
+</ul>
+<h3 id="pattern-2:-add-tenantcontext-parameter">Pattern 2: Add TenantContext Parameter</h3><p><strong>Before</strong>:
+<pre><code class="language-typescript">const booking = await getBookingById(bookingId);
+</code></pre><p><strong>After</strong>:
+<pre><code class="language-typescript">const context = request.tenantContext; // API route
+// OR
+const context = useTenantContext(); // React component</p><p>const order = await getOrderById(context, bookingId);
+</code></pre><h3 id="pattern-3:-rename-"booking"-to-"order"">Pattern 3: Rename "Booking" to "Order"</h3><p><strong>Function Names</strong>:
+<ul><li><code>createBooking</code> → <code>createOrder</code></li>
+<li><code>getBookingById</code> → <code>getOrderById</code></li>
+<li><code>updateBooking</code> → <code>updateOrder</code></li>
+<li><code>deleteBooking</code> → <code>deleteOrder</code></li>
+</ul>
+<strong>Note</strong>: Contract type remains <code>CoreBookingOrder</code> (unchanged from Phase 2)</p><p><strong>Example</strong>:
+<pre><code class="language-typescript">// Before
+import { createBooking, getBookingById } from '@/services/bookings';</p><p>const booking = await getBookingById(id);
+const newBooking = await createBooking(data);</p><p>// After
+import { createOrder, getOrderById } from '@/core/services/order';</p><p>const order = await getOrderById(context, id);
+const newOrder = await createOrder(context, data);
+</code></pre><p>---</p><h3 id="pattern-4:-move-spa-specific-logic-to-module">Pattern 4: Move Spa-Specific Logic to Module</h3><p><strong>Before Phase 3</strong>: Spa-specific logic mixed with core logic</p><pre><code class="language-typescript">// src/services/bookings/complete.ts
+export async function completeBooking(bookingId: string) {
+  // Update booking status (core logic)
+  await supabase
+    .from('bookings')
+    .update({ status: 'completed' })
+    .eq('id', bookingId);
+  
+  // Credit KTV salary (spa-specific logic)
+  const booking = await getBookingById(bookingId);
+  const ktvId = booking.metadata.assigned_ktv_id;
+  await creditKtvSalary(ktvId, booking.totalAmount);
+  
+  // Deduct inventory (spa-specific logic)
+  await deductInventory(booking.metadata.products_used);
+}
+</code></pre><p><strong>After Phase 3</strong>: Core logic separated from module logic</p><pre><code class="language-typescript">// src/core/services/order/complete.ts
+import { moduleRegistry } from '@/core/adapters';</p><p>export async function completeOrder(
+  context: TenantContext,
+  orderId: string
+): Promise<CoreBookingOrder> {
+  // Update order status (core logic)
+  const { data } = await supabase
+    .from('bookings')
+    .update({ status: 'completed', completedAt: new Date() })
+    .eq('id', orderId)
+    .eq('tenant_id', context.tenantId)
+    .select()
+    .single();
+  
+  // Invoke module adapter for side effects (spa-specific logic)
+  const adapter = moduleRegistry.get(context.moduleId);
+  if (adapter?.onBookingCompleted) {
+    await adapter.onBookingCompleted(data, context);
+  }
+  
+  return data as CoreBookingOrder;
+}
+</code></pre><pre><code class="language-typescript">// src/modules/spa/adapters/SpaModuleAdapter.ts
+export class SpaModuleAdapter implements ModuleAdapter {
+  async onBookingCompleted(order: CoreBookingOrder, context: TenantContext) {
+    // Credit KTV salary (spa-specific)
+    const ktvId = order.metadata.assigned_ktv_id as string;
+    await creditKtvSalary(ktvId, order.totalAmount, context);
+    
+    // Deduct inventory (spa-specific)
+    const products = order.metadata.products_used as Record<string, number>;
+    if (products) {
+      await deductInventory(products, context);
+    }
+  }
+}
+</code></pre><p>---</p><h3 id="pattern-5:-extract-tenant-context-in-server-actions">Pattern 5: Extract Tenant Context in Server Actions</h3><p><strong>Server Actions</strong> don't have <code>request</code> objects, so you need to manually extract tenant context.</p><p><strong>Before Phase 3</strong>:
+<pre><code class="language-typescript">'use server';</p><p>import { createBooking } from '@/services/bookings';</p><p>export async function createBookingAction(orderData: unknown) {
+  const booking = await createBooking(orderData);
+  return booking;
+}
+</code></pre><p><strong>After Phase 3</strong>:
+<pre><code class="language-typescript">'use server';</p><p>import { cookies } from 'next/headers';
+import { extractTenantContext } from '@/core/middleware';
+import { createOrder } from '@/core/services/order';</p><p>export async function createOrderAction(orderData: unknown) {
+  // Construct mock request for auth extraction
+  const mockRequest = {
+    headers: new Headers(),
+    cookies: await cookies(),
+  } as any;
+  
+  // Extract tenant context
+  const result = await extractTenantContext(mockRequest);
+  
+  if (!result.success) {
+    throw new Error(result.error);
+  }
+  
+  // Pass context to service
+  const order = await createOrder(result.context, orderData);
+  return order;
+}
+</code></pre><h3 id="pattern-6:-update-component-data-fetching">Pattern 6: Update Component Data Fetching</h3><p><strong>Before Phase 3</strong>:
+<pre><code class="language-typescript">'use client';</p><p>import { useEffect, useState } from 'react';</p><p>export function OrderList() {
+  const [orders, setOrders] = useState([]);
+  
+  useEffect(() => {
+    fetch('/api/bookings')
+      .then(res => res.json())
+      .then(data => setOrders(data));
+  }, []);
+  
+  return <div>{/<em> Render orders </em>/}</div>;
+}
+</code></pre><p><strong>After Phase 3</strong>:
+<pre><code class="language-typescript">'use client';</p><p>import { useEffect, useState } from 'react';
+import { useTenantContext } from '@/core/hooks';</p><p>export function OrderList() {
+  const context = useTenantContext();
+  const [orders, setOrders] = useState([]);
+  
+  useEffect(() => {
+    // API route automatically uses tenant context via middleware
+    fetch('/api/orders')
+      .then(res => res.json())
+      .then(data => setOrders(data));
+  }, []);
+  
+  return (
+    <div>
+      <h2>Orders for {context.tenantName}</h2>
+      {/<em> Render orders </em>/}
+    </div>
+  );
+}
+</code></pre><p>---</p><h2 id="common-migration-issues">Common Migration Issues</h2><h3 id="issue-1:-typescript-error---missing-tenantcontext-parameter">Issue 1: TypeScript Error - Missing TenantContext Parameter</h3><p><strong>Error</strong>:
+<pre><code class="language-">Expected 2 arguments, but got 1.
+</code></pre><p><strong>Cause</strong>: Service function now requires <code>TenantContext</code> as first parameter.</p><p><strong>Solution</strong>:
+<pre><code class="language-typescript">// Before (incorrect)
+const order = await createOrder(orderData);</p><p>// After (correct)
+const context = request.tenantContext; // or useTenantContext()
+const order = await createOrder(context, orderData);
+</code></pre><h3 id="issue-2:-import-not-found">Issue 2: Import Not Found</h3><p><strong>Error</strong>:
+<pre><code class="language-">Cannot find module '@/services/bookings'
+</code></pre><p><strong>Cause</strong>: Service moved to new location.</p><p><strong>Solution</strong>:
+<pre><code class="language-typescript">// Before (incorrect)
+import { createBooking } from '@/services/bookings';</p><p>// After (correct)
+import { createOrder } from '@/core/services/order';
+</code></pre><h3 id="issue-3:-tenantcontext-hook-error">Issue 3: TenantContext Hook Error</h3><p><strong>Error</strong>:
+<pre><code class="language-">Error: useTenantContext must be used within TenantContextProvider
+</code></pre><p><strong>Cause</strong>: Component not wrapped in <code>TenantContextProvider</code>.</p><p><strong>Solution</strong>: Wrap app with provider in <code>src/app/layout.tsx</code>:</p><pre><code class="language-typescript">import { TenantContextProvider } from '@/core/providers';</p><p>export default function RootLayout({ children }) {
+  return (
+    <html>
+      <body>
+        <TenantContextProvider>
+          {children}
+        </TenantContextProvider>
+      </body>
+    </html>
+  );
+}
+</code></pre><p>---</p><h3 id="issue-4:-database-query-not-filtering-by-tenant">Issue 4: Database Query Not Filtering by Tenant</h3><p><strong>Error</strong>: User can see data from other tenants.</p><p><strong>Cause</strong>: Missing <code>tenant_id</code> filter in query.</p><p><strong>Solution</strong>:
+<pre><code class="language-typescript">// Before (SECURITY VULNERABILITY!)
+const { data } = await supabase
+  .from('bookings')
+  .select('*')
+  .eq('id', bookingId);</p><p>// After (SECURE)
+const { data } = await supabase
+  .from('bookings')
+  .select('*')
+  .eq('id', bookingId)
+  .eq('tenant_id', context.tenantId); // CRITICAL
+</code></pre><h3 id="issue-5:-adapter-method-not-found">Issue 5: Adapter Method Not Found</h3><p><strong>Error</strong>:
+<pre><code class="language-">TypeError: adapter.validateBookingRules is not a function
+</code></pre><p><strong>Cause</strong>: Adapter method is optional. Core service must check if method exists.</p><p><strong>Solution</strong>:
+<pre><code class="language-typescript">// Before (incorrect)
+const isValid = await adapter.validateBookingRules(order, context);</p><p>// After (correct)
+const adapter = moduleRegistry.get(context.moduleId);
+if (adapter?.validateBookingRules) {
+  const isValid = await adapter.validateBookingRules(order, context);
+  if (!isValid) {
+    throw new Error('Validation failed');
+  }
+}
+</code></pre><h3 id="issue-6:-tests-failing-after-migration">Issue 6: Tests Failing After Migration</h3><p><strong>Error</strong>:
+<pre><code class="language-">TypeError: Cannot read property 'tenantId' of undefined
+</code></pre><p><strong>Cause</strong>: Tests not providing mock <code>TenantContext</code>.</p><p><strong>Solution</strong>: Update tests to pass mock context:</p><pre><code class="language-typescript">import { createMockTenantContext } from '@/__tests__/utils/mock-tenant-context';</p><p>it('should create order', async () => {
+  const context = createMockTenantContext();
+  const order = await createOrder(context, orderData);
+  expect(order).toBeDefined();
+});
+</code></pre><p>---</p><h2 id="faq">FAQ</h2><h3 id="q1:-why-did-"booking"-terminology-change-to-"order"?">Q1: Why did "booking" terminology change to "order"?</h3><p><strong>A</strong>: To make the core platform industry-neutral. "Booking" is spa-specific terminology. "Order" works for spa (service orders), cleaning (job orders), and home service (appointment orders). The contract type remains <code>CoreBookingOrder</code> to avoid breaking changes from Phase 2.</p><h3 id="q2:-do-i-need-to-update-all-my-code-at-once?">Q2: Do I need to update all my code at once?</h3><p><strong>A</strong>: No. You can migrate incrementally:
+<ul><li>Update imports first (TypeScript will catch errors)</li>
+<li>Add TenantContext parameters to service calls</li>
+<li>Update tests last</li>
+</ul>
+<h3 id="q3:-what-if-i-forget-to-filter-by-tenantid?">Q3: What if I forget to filter by tenantId?</h3><p><strong>A</strong>: Row-Level Security (RLS) policies provide defense-in-depth. Even if application code has bugs, RLS ensures tenant isolation at the database level. However, you should still explicitly filter by <code>tenantId</code> in application code.</p><h3 id="q4:-can-i-use-the-old-service-paths-temporarily?">Q4: Can I use the old service paths temporarily?</h3><p><strong>A</strong>: No. The old service paths no longer exist after Phase 3. You must update all imports to the new paths.</p><h3 id="q5:-how-do-i-test-tenant-specific-features?">Q5: How do I test tenant-specific features?</h3><p><strong>A</strong>: Use <code>createMockTenantContext()</code> with custom overrides:</p><pre><code class="language-typescript">const context = createMockTenantContext({
+  featureFlags: {
+    'ai_salary_reconciliation': true,
+  },
+  subscriptionPlan: 'enterprise',
+});
+</code></pre><h3 id="q6:-what-happens-if-a-module-adapter-is-not-registered?">Q6: What happens if a module adapter is not registered?</h3><p><strong>A</strong>: Core services gracefully handle missing adapters. If <code>moduleRegistry.get()</code> returns <code>undefined</code>, adapter methods are skipped and default behavior is used.</p><h3 id="q7:-can-i-add-spa-specific-logic-to-core-services?">Q7: Can I add spa-specific logic to core services?</h3><p><strong>A</strong>: No. Spa-specific logic must be in <code>src/modules/spa/</code>. Core services must remain industry-neutral. Use module adapters for spa-specific behavior.</p><p>---</p><h3 id="q8:-how-do-i-migrate-custom-hooks?">Q8: How do I migrate custom hooks?</h3><p><strong>A</strong>: Update custom hooks to accept or use TenantContext:</p><p><strong>Before</strong>:
+<pre><code class="language-typescript">export function useBookings() {
+  const [bookings, setBookings] = useState([]);
+  
+  useEffect(() => {
+    fetch('/api/bookings')
+      .then(res => res.json())
+      .then(data => setBookings(data));
+  }, []);
+  
+  return bookings;
+}
+</code></pre><p><strong>After</strong>:
+<pre><code class="language-typescript">import { useTenantContext } from '@/core/hooks';</p><p>export function useOrders() {
+  const context = useTenantContext();
+  const [orders, setOrders] = useState([]);
+  
+  useEffect(() => {
+    // API automatically uses tenant context
+    fetch('/api/orders')
+      .then(res => res.json())
+      .then(data => setOrders(data));
+  }, []);
+  
+  return orders;
+}
+</code></pre><h3 id="q9:-what-if-i-need-to-query-multiple-tenants-(admin-view)?">Q9: What if I need to query multiple tenants (admin view)?</h3><p><strong>A</strong>: Admin features require special handling:</p><ul><li><strong>Backend</strong>: Create dedicated admin API routes that don't use <code>withTenantContext</code> middleware</li>
+<li><strong>Authorization</strong>: Verify user has admin role before allowing cross-tenant queries</li>
+<li><strong>Explicit Filtering</strong>: Pass specific <code>tenantId</code> to queries instead of using context</li>
+</ul>
+<pre><code class="language-typescript">// Admin API route (no tenant middleware)
+export async function GET(request: Request) {
+  const user = await verifyAdmin(request);
+  const tenantId = request.url.searchParams.get('tenantId');
+  
+  // Query specific tenant
+  const { data } = await supabase
+    .from('bookings')
+    .select('*')
+    .eq('tenant_id', tenantId);
+  
+  return Response.json(data);
+}
+</code></pre><h3 id="q10:-how-do-i-handle-module-specific-ui-components?">Q10: How do I handle module-specific UI components?</h3><p><strong>A</strong>: Move components to module directory and use conditional rendering:</p><pre><code class="language-typescript">import { useTenantContext } from '@/core/hooks';
+import { SpaOrderForm } from '@/modules/spa/components/order/SpaOrderForm';</p><p>export function OrderPage() {
+  const context = useTenantContext();
+  
+  // Check if spa module is enabled
+  if (!context.enabledModules.includes('spa')) {
+    return <div>Spa module not available</div>;
+  }
+  
+  return <SpaOrderForm />;
+}
+</code></pre><p>---</p><h3 id="q11:-what-about-background-jobs-and-cron-tasks?">Q11: What about background jobs and cron tasks?</h3><p><strong>A</strong>: Background jobs need to construct TenantContext manually:</p><pre><code class="language-typescript">// Before
+export async function processPayments() {
+  const pendingPayments = await getAllPendingPayments();
+  for (const payment of pendingPayments) {
+    await processPayment(payment.id);
+  }
+}</p><p>// After
+import { constructTenantContext } from '@/core/lib/tenant-context';</p><p>export async function processPayments() {
+  const pendingPayments = await getAllPendingPayments();
+  
+  for (const payment of pendingPayments) {
+    // Construct context for each payment's tenant
+    const context = await constructTenantContext(payment.tenant_id);
+    await processPayment(context, payment.id);
+  }
+}
+</code></pre><h3 id="q12:-how-do-i-debug-tenant-context-issues?">Q12: How do I debug tenant context issues?</h3><p><strong>A</strong>: Add logging to see tenant context values:</p><pre><code class="language-typescript">export const POST = withTenantContext(async (request: NextRequestWithContext) => {
+  const context = request.tenantContext;
+  
+  // Debug log
+  console.log('[API] Tenant Context:', {
+    tenantId: context.tenantId,
+    tenantName: context.tenantName,
+    enabledModules: context.enabledModules,
+    subscriptionPlan: context.subscriptionPlan,
+  });
+  
+  // ... rest of handler
+});
+</code></pre><h3 id="q13:-can-i-cache-tenantcontext-in-react-state?">Q13: Can I cache TenantContext in React state?</h3><p><strong>A</strong>: No need. <code>TenantContextProvider</code> already caches context in React Context. Just use the <code>useTenantContext()</code> hook wherever needed.</p><h3 id="q14:-what-if-phase-3-breaks-my-feature?">Q14: What if Phase 3 breaks my feature?</h3><p><strong>A</strong>: Follow this debugging checklist:</p><ul><li><strong>Check TypeScript errors</strong>: Run <code>npm run build</code></li>
+<li><strong>Check test failures</strong>: Run <code>npm run test</code></li>
+<li><strong>Check console errors</strong>: Look for runtime errors in browser console</li>
+<li><strong>Verify imports</strong>: Ensure all imports use new paths</li>
+<li><strong>Verify TenantContext</strong>: Check all service calls pass context</li>
+<li><strong>Verify tenant filtering</strong>: Check all queries filter by <code>tenantId</code></li>
+<li><strong>Ask for help</strong>: Ping team in Slack with error details</li>
+</ul>
+---</p><h2 id="quick-reference">Quick Reference</h2><h3 id="import-path-changes">Import Path Changes</h3><table>
+<thead><tr>
+<th>Before Phase 3</th>
+<th>After Phase 3</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code>@/services/auth/</code></td>
+<td><code>@/core/services/auth/</code></td>
+</tr>
+<tr>
+<td><code>@/services/bookings/</code></td>
+<td><code>@/core/services/order/</code></td>
+</tr>
+<tr>
+<td><code>@/services/payments/</code></td>
+<td><code>@/core/services/payment/</code></td>
+</tr>
+<tr>
+<td><code>@/services/notifications/</code></td>
+<td><code>@/core/services/notification/</code></td>
+</tr>
+<tr>
+<td><code>@/services/audit/</code></td>
+<td><code>@/core/services/audit/</code></td>
+</tr>
+<tr>
+<td><code>@/services/finance/</code></td>
+<td><code>@/core/services/finance/</code></td>
+</tr>
+<tr>
+<td>N/A</td>
+<td><code>@/core/services/payroll/</code> (new)</td>
+</tr>
+<tr>
+<td>N/A</td>
+<td><code>@/core/services/analytics/</code> (new)</td>
+</tr>
+<tr>
+<td>Spa-specific code</td>
+<td><code>@/modules/spa/</code></td>
+</tr>
+</tbody></table></p><h3 id="function-name-changes">Function Name Changes</h3><table>
+<thead><tr>
+<th>Before Phase 3</th>
+<th>After Phase 3</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code>createBooking()</code></td>
+<td><code>createOrder()</code></td>
+</tr>
+<tr>
+<td><code>getBookingById()</code></td>
+<td><code>getOrderById()</code></td>
+</tr>
+<tr>
+<td><code>getBookingsByCustomer()</code></td>
+<td><code>getOrdersByCustomer()</code></td>
+</tr>
+<tr>
+<td><code>updateBooking()</code></td>
+<td><code>updateOrder()</code></td>
+</tr>
+<tr>
+<td><code>deleteBooking()</code></td>
+<td><code>deleteOrder()</code></td>
+</tr>
+<tr>
+<td><code>completeBooking()</code></td>
+<td><code>completeOrder()</code></td>
+</tr>
+</tbody></table></p><h3 id="key-files-to-review">Key Files to Review</h3><ul><li><strong>TenantContext Provider</strong>: <code>src/core/providers/TenantContextProvider.tsx</code></li>
+<li><strong>Module Registry</strong>: <code>src/core/adapters/registry.ts</code></li>
+<li><strong>Spa Adapter</strong>: <code>src/modules/spa/adapters/SpaModuleAdapter.ts</code></li>
+<li><strong>Middleware</strong>: <code>src/core/middleware/tenantContext.ts</code></li>
+<li><strong>Core Types</strong>: <code>src/core/types/</code></li>
+<li><strong>Test Utilities</strong>: <code>src/__tests__/utils/mock-tenant-context.ts</code></li>
+</ul>
+<h3 id="helpful-commands">Helpful Commands</h3><pre><code class="language-bash"># Build and check TypeScript errors
+npm run build</p><h1 id="run-test-suite">Run test suite</h1>
+npm run test</p><h1 id="run-specific-test-file">Run specific test file</h1>
+npm run test -- path/to/test.test.ts</p><h1 id="check-for-security-issues">Check for security issues</h1>
+npm run security:audit</p><h1 id="format-code">Format code</h1>
+npm run format
+</code></pre><p>---</p><h2 id="additional-resources">Additional Resources</h2><h3 id="architecture-documentation">Architecture Documentation</h3><ul><li><strong>Core Platform Architecture</strong>: <code>docs/architecture/core-platform.md</code></li>
+<li><strong>Module System Architecture</strong>: <code>docs/architecture/module-system.md</code></li>
+<li><strong>Tenant Context Architecture</strong>: <code>docs/architecture/tenant-context.md</code></li>
+</ul>
+<h3 id="phase-documentation">Phase Documentation</h3><ul><li><strong>Phase 2 Requirements</strong>: <code>.kiro/specs/phase-2-core-contracts/requirements.md</code></li>
+<li><strong>Phase 3 Requirements</strong>: <code>.kiro/specs/phase-3-physical-extraction/requirements.md</code></li>
+<li><strong>Phase 3 Design</strong>: <code>.kiro/specs/phase-3-physical-extraction/design.md</code></li>
+<li><strong>Phase 3 Tasks</strong>: <code>.kiro/specs/phase-3-physical-extraction/tasks.md</code></li>
+</ul>
+<h3 id="code-examples">Code Examples</h3><p>Look at these completed migrations for reference:</p><ul><li><strong>Auth Service</strong>: <code>src/core/services/auth/</code></li>
+<li><strong>Order Service</strong>: <code>src/core/services/order/</code></li>
+<li><strong>Spa Module Adapter</strong>: <code>src/modules/spa/adapters/SpaModuleAdapter.ts</code></li>
+<li><strong>API Routes</strong>: <code>src/app/api/orders/route.ts</code></li>
+<li><strong>React Components</strong>: <code>src/modules/spa/components/</code></li>
+</ul>
+<h3 id="getting-help">Getting Help</h3><ul><li><strong>Slack Channel</strong>: <code>#phase-3-migration</code></li>
+<li><strong>Migration Support</strong>: Tag <code>@dev-team</code> in Slack</li>
+<li><strong>Technical Lead</strong>: Contact the Phase 3 technical lead for guidance</li>
+</ul>
+---</p><h2 id="conclusion">Conclusion</h2><p>Phase 3 migration transforms Bella ERP from a monolithic spa application to a modular, multi-industry platform. While the changes are extensive, they follow clear patterns and maintain backward compatibility.</p><p><strong>Key Takeaways</strong>:</p><ul><li><strong>TenantContext is mandatory</strong>: All service functions now require <code>TenantContext</code> as first parameter</li>
+<li><strong>Tenant isolation is critical</strong>: Always filter database queries by <code>tenant_id</code></li>
+<li><strong>Module adapters enable extensibility</strong>: Spa-specific logic moves to <code>SpaModuleAdapter</code></li>
+<li><strong>Import paths changed</strong>: Update all imports to use <code>@/core/</code> or <code>@/modules/spa/</code></li>
+<li><strong>Tests need mock context</strong>: Use <code>createMockTenantContext()</code> in all tests</li>
+</ul>
+<strong>Migration Timeline</strong>:</p><ul><li><strong>Week 1</strong>: Update imports and service function signatures</li>
+<li><strong>Week 2</strong>: Update React components and API routes</li>
+<li><strong>Week 3</strong>: Update tests and verify functionality</li>
+<li><strong>Week 4</strong>: Code review and production deployment</li>
+</ul>
+<strong>Success Criteria</strong>:</p><p>✅ All TypeScript compilation errors resolved  
+✅ All 1304+ tests passing  
+✅ Manual testing confirms zero regression  
+✅ Code review approved by technical lead  </p><p>Good luck with your migration! 🚀</p><p>---</p><p><strong>Document Version</strong>: 1.0  
+<strong>Last Updated</strong>: 2025-06-01  
+<strong>Status</strong>: Active
+</p>
+        </div>
+        
+        <footer class="page-footer">
+            <p>© 2025 Bella ERP · Phase 3 Documentation</p>
+        </footer>
+    </div>
+    
+    <script>
+        // Syntax highlighting
+        hljs.highlightAll();
+        
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+        
+        // Active nav item
+        const currentPage = window.location.pathname.split('/').pop();
+        document.querySelectorAll('.nav-item').forEach(item => {
+            if (item.getAttribute('href') === currentPage) {
+                item.classList.add('active');
+            }
+        });
+    </script>
+</body>
+</html>

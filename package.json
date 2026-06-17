@@ -76,6 +76,7 @@
     "eslint-config-next": "16.2.6",
     "jest": "^30.4.2",
     "jest-environment-jsdom": "^30.4.1",
+    "marked": "^18.0.5",
     "md-to-pdf": "^5.2.5",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",

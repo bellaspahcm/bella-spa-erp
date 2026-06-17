@@ -2,9 +2,25 @@ jest.mock('@/core/services/order/commission-actions', () => ({
   resolveKtvCommission: jest.fn().mockResolvedValue(150000),
 }));
 
+// Mock pricing-actions to avoid adapter lookup in tests
+jest.mock('@/core/services/order/pricing-actions', () => ({
+  calculateOrderPrice: jest.fn().mockResolvedValue(6000000),
+}));
+
 import { buildBookingPayload } from '@/core/services/order/create-booking-helpers';
+import type { TenantContext } from '@/core/types/tenant';
 
 type BuildBookingPayloadParams = Parameters<typeof buildBookingPayload>[0];
+
+// Mock tenant context for tests
+const mockTenantContext: TenantContext = {
+  tenantId: 'tenant-1',
+  tenantName: 'Test Tenant',
+  enabledModules: ['spa'],
+  subscriptionPlan: 'professional',
+  featureFlags: {},
+  settings: {},
+};
 
 describe('create booking payment status', () => {
   const baseValidatedData: BuildBookingPayloadParams['validatedData'] = {
@@ -30,6 +46,7 @@ describe('create booking payment status', () => {
       customerId: 'customer-1',
       tenantId: 'tenant-1',
       existingBooking: null,
+      tenantContext: mockTenantContext,
     });
 
     expect(payload.status).toBe('booked');
@@ -42,6 +59,7 @@ describe('create booking payment status', () => {
       customerId: 'customer-1',
       tenantId: 'tenant-1',
       existingBooking: null,
+      tenantContext: mockTenantContext,
     });
 
     expect(payload.status).toBe('deposit_pending');
@@ -57,6 +75,7 @@ describe('create booking payment status', () => {
       customerId: 'customer-1',
       tenantId: 'tenant-1',
       existingBooking: null,
+      tenantContext: mockTenantContext,
     });
     const negativeDiscountPayload = await buildBookingPayload({
       validatedData: {
@@ -66,6 +85,7 @@ describe('create booking payment status', () => {
       customerId: 'customer-1',
       tenantId: 'tenant-1',
       existingBooking: null,
+      tenantContext: mockTenantContext,
     });
 
     expect(overDiscountPayload.discount_percent).toBe(100);

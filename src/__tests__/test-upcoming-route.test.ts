@@ -1,5 +1,11 @@
 const mockGetKTVUpcomingSessions = jest.fn();
 
+jest.mock('next/headers', () => ({
+  cookies: jest.fn(() => ({
+    get: jest.fn(),
+  })),
+}));
+
 jest.mock('@/services/ktv-actions', () => ({
   getKTVUpcomingSessions: (...args: unknown[]) => mockGetKTVUpcomingSessions(...args),
 }));

@@ -20,6 +20,8 @@ import {
   inferBusinessEventType,
   resolveAccountingReviewStatus,
 } from '@/core/services/accounting/template-rules';
+import type { CoreBookingOrder, BookingOrderStatus } from '@/core/types/booking-order';
+import type { ModuleId } from '@/core/types/module';
 import type { Database, Json } from '@/types/database.types';
 import type { createClient } from '@/lib/supabase-server';
 
@@ -36,6 +38,9 @@ type CompletionBooking = Pick<
   | 'completed_sessions'
   | 'status'
   | 'package_name'
+  | 'package_id'
+  | 'start_date'
+  | 'end_date'
   | 'ktv_commission'
   | 'assigned_ktv_id'
   | 'customer_id'
@@ -589,5 +594,109 @@ export async function enqueueSessionDoneAccountingOutbox(params: {
 
     const rollbackMessage = formatRollbackAppend(rollbackResult);
     return { error: 'Không thể ghi nhận hàng đợi kế toán. Đã hoàn tác ca làm: ' + error.message + rollbackMessage };
+  }
+}
+
+/**
+ * Invoke module adapter onBookingCompleted for side effects after order completion.
+ * 
+ * Task 19.3: Call adapter.onBookingCompleted() to handle module-specific side effects
+ * such as salary updates, inventory deductions, and loyalty points.
+ * 
+ * @param params - Parameters including supabase, bookingId, tenantId, and current booking
+ * @returns Success or error
+ */
+export async function invokeAdapterOnCompletion(params: {
+  supabase: SupabaseServerClient;
+  bookingId: string;
+  tenantId: string;
+  currentBooking: CompletionBooking | null;
+}): Promise<{ success: true } | { error: string }> {
+  const { supabase, bookingId, tenantId, currentBooking } = params;
+
+  if (!currentBooking) {
+    console.warn('[invokeAdapterOnCompletion] No booking found, skipping adapter call');
+    return { success: true };
+  }
+
+  // Import tenant context construction helper
+  const { constructTenantContextForBooking } = await import('./create-booking-helpers');
+  const contextResult = await constructTenantContextForBooking(supabase, tenantId);
+
+  if ('error' in contextResult) {
+    console.error('[invokeAdapterOnCompletion] Failed to construct tenant context:', contextResult.error);
+    return { error: contextResult.error };
+  }
+
+  const context = contextResult.context;
+
+  // Determine module ID from enabled modules (default to 'spa')
+  const moduleId = context.enabledModules.length > 0 
+    ? context.enabledModules[0] 
+    : 'spa';
+
+  // Import module registry
+  const { moduleRegistry } = await import('@/core/adapters/registry');
+  const adapter = moduleRegistry.get(moduleId as any);
+
+  // If no adapter registered, skip gracefully
+  if (!adapter) {
+    console.log(`[invokeAdapterOnCompletion] No adapter found for module '${moduleId}', skipping completion callback`);
+    return { success: true };
+  }
+
+  // If adapter doesn't implement onBookingCompleted, skip
+  if (!adapter.onBookingCompleted) {
+    console.log(`[invokeAdapterOnCompletion] Adapter '${moduleId}' does not implement onBookingCompleted, skipping`);
+    return { success: true };
+  }
+
+  // Transform booking to CoreBookingOrder for adapter
+  // Map database status to CoreBookingOrder status
+  const mapStatus = (dbStatus: string | null | undefined): BookingOrderStatus => {
+    if (!dbStatus) return 'completed';
+    if (dbStatus === 'deposit_pending' || dbStatus === 'pending') return 'draft';
+    if (dbStatus === 'confirmed' || dbStatus === 'active' || dbStatus === 'booked') return 'confirmed';
+    if (dbStatus === 'in_progress') return 'in_progress';
+    if (dbStatus === 'completed') return 'completed';
+    if (dbStatus === 'cancelled') return 'cancelled';
+    return 'completed'; // Default fallback for completion context
+  };
+
+  const coreOrder: CoreBookingOrder = {
+    id: bookingId,
+    tenantId,
+    moduleId: (context.enabledModules[0] || 'spa') as ModuleId,
+    customerId: currentBooking.customer_id || '',
+    serviceItemId: currentBooking.package_id || '',
+    status: mapStatus(currentBooking.status),
+    totalAmount: asFiniteNumber(currentBooking.full_price),
+    paidAmount: asFiniteNumber(currentBooking.deposit_amount),
+    scheduledStartTime: currentBooking.start_date || '',
+    scheduledEndTime: currentBooking.end_date || '',
+    metadata: {
+      assigned_ktv_id: currentBooking.assigned_ktv_id,
+      sessions_total: currentBooking.total_sessions,
+      sessions_completed: currentBooking.completed_sessions,
+      package_name: currentBooking.package_name,
+      ktv_commission: currentBooking.ktv_commission,
+      original_db_status: currentBooking.status,
+    },
+  };
+
+  try {
+    console.log(`[invokeAdapterOnCompletion] Calling adapter.onBookingCompleted for module '${moduleId}'`);
+    await adapter.onBookingCompleted(coreOrder, context);
+    console.log(`[invokeAdapterOnCompletion] Adapter completion callback successful for module '${moduleId}'`);
+    return { success: true };
+  } catch (error) {
+    console.error(`[invokeAdapterOnCompletion] Adapter completion callback failed:`, error);
+    // Don't fail the completion - log error and continue
+    // The booking is already completed, adapter side effects are non-critical
+    return {
+      error: error instanceof Error 
+        ? `Lỗi xử lý hậu quả module: ${error.message}` 
+        : 'Lỗi xử lý hậu quả module',
+    };
   }
 }

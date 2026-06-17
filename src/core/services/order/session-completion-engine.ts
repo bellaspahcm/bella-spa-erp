@@ -7,6 +7,7 @@ import {
   syncBookingCompletionProgress,
   syncKtvSalaryAfterCompletion,
   validateCompletionAccountingPeriod,
+  invokeAdapterOnCompletion,
 } from './session-completion-helpers';
 import type { createClient } from '@/lib/supabase-server';
 
@@ -15,6 +16,8 @@ type ExistingSessionLog = { session_number?: number | null } | null;
 
 /**
  * Logic dùng chung để chốt ca làm việc, xử lý trừ kho, tính lương KTV và rollback toàn diện khi lỗi.
+ * 
+ * Task 19.3: After successful completion, invoke adapter.onBookingCompleted() for module-specific side effects.
  */
 export async function processSessionCompletion(
   supabase: SupabaseServerClient,
@@ -124,6 +127,18 @@ export async function processSessionCompletion(
   });
   if ('error' in outboxResult) {
     return { error: outboxResult.error };
+  }
+
+  // Task 19.3: Invoke module adapter onBookingCompleted for side effects
+  const adapterResult = await invokeAdapterOnCompletion({
+    supabase,
+    bookingId,
+    tenantId,
+    currentBooking,
+  });
+  if ('error' in adapterResult) {
+    // Log error but don't fail the completion (adapter side effects are non-critical)
+    console.error('[processSessionCompletion] Adapter onBookingCompleted failed:', adapterResult.error);
   }
 
   return { success: true };

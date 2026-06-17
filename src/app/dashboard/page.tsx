@@ -24,7 +24,7 @@ import {
 getDashboardPrimaryData,
 getDashboardSecondaryData,
 getImportantAlerts
-} from '@/services/dashboard-actions';
+} from '@/core/services/analytics/dashboard-actions';
 import type { 
   DashboardStatsViewModel, 
   DashboardSessionViewModel, 
@@ -32,7 +32,7 @@ import type {
   PerformanceDataPointViewModel, 
   InventorySummaryViewModel, 
   DashboardAlert 
-} from '@/services/dashboard-actions';
+} from '@/core/services/analytics/dashboard-actions';
 import { markNotificationAsRead } from '@/core/services/notification/notification-actions';
 import { AnimatePresence,motion } from 'framer-motion';
 import {

@@ -32,6 +32,10 @@ import PwaRegister from "@/components/common/PwaRegister";
 import { TenantContextProvider } from "@/core/providers/TenantContextProvider";
 import { cookies } from "next/headers";
 
+// Register module adapters on app startup
+import { registerSpaModule } from "@/modules/spa/register";
+registerSpaModule();
+
 const tenantThemeBootstrapScript = `
 (() => {
   try {

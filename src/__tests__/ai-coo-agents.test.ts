@@ -131,6 +131,22 @@ describe("AI CPO Sub-Agent (Warehouse & Inventory)", () => {
           single: jest.fn().mockResolvedValue({ data: ADMIN_USER, error: null })
         } as any;
       }
+      if (table === "tenants") {
+        return {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          single: jest.fn().mockResolvedValue({ 
+            data: { 
+              id: TENANT_ID, 
+              name: "Test Tenant", 
+              status: "active",
+              module_id: "spa",
+              subscription_tier: "premium"
+            }, 
+            error: null 
+          })
+        } as any;
+      }
       if (table === "ai_agent_configs") {
         return {
           select: jest.fn().mockReturnThis(),
@@ -210,6 +226,22 @@ describe("AI CPO Sub-Agent (Warehouse & Inventory)", () => {
           single: jest.fn().mockResolvedValue({ data: ADMIN_USER, error: null })
         } as any;
       }
+      if (table === "tenants") {
+        return {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          single: jest.fn().mockResolvedValue({ 
+            data: { 
+              id: TENANT_ID, 
+              name: "Test Tenant", 
+              status: "active",
+              module_id: "spa",
+              subscription_tier: "premium"
+            }, 
+            error: null 
+          })
+        } as any;
+      }
       if (table === "inventory_items") {
         return {
           select: jest.fn().mockReturnThis(),
@@ -249,6 +281,22 @@ describe("AI CMO Sub-Agent (Customer & Marketing)", () => {
           select: jest.fn().mockReturnThis(),
           eq: jest.fn().mockReturnThis(),
           single: jest.fn().mockResolvedValue({ data: ADMIN_USER, error: null })
+        } as any;
+      }
+      if (table === "tenants") {
+        return {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          single: jest.fn().mockResolvedValue({ 
+            data: { 
+              id: TENANT_ID, 
+              name: "Test Tenant", 
+              status: "active",
+              module_id: "spa",
+              subscription_tier: "premium"
+            }, 
+            error: null 
+          })
         } as any;
       }
       if (table === "ai_agent_configs") {
@@ -379,6 +427,22 @@ describe("AI CMO Sub-Agent (Customer & Marketing)", () => {
           select: jest.fn().mockReturnThis(),
           eq: jest.fn().mockReturnThis(),
           single: jest.fn().mockResolvedValue({ data: ADMIN_USER, error: null })
+        } as any;
+      }
+      if (table === "tenants") {
+        return {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          single: jest.fn().mockResolvedValue({ 
+            data: { 
+              id: TENANT_ID, 
+              name: "Test Tenant", 
+              status: "active",
+              module_id: "spa",
+              subscription_tier: "premium"
+            }, 
+            error: null 
+          })
         } as any;
       }
       if (table === "bookings") {
@@ -530,7 +594,7 @@ describe("AI Franchise Sub-Agent (Franchise Operations)", () => {
     const res = await POST(req as NextRequest);
     expect(res.status).toBe(500);
     const body = await res.json();
-    expect(body.error).toContain("lỗi nghiêm trọng");
-    expect(body.details).toContain("Tenant data fetch failed");
+    expect(body.error).toContain("Failed to fetch tenant configuration");
+    expect(body.details || body.error).toContain("Tenant data fetch failed");
   });
 });

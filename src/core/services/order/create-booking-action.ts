@@ -15,6 +15,8 @@ import {
   resolveBookingTenant,
   upsertBookingRecord,
   validateBookingPackageScope,
+  constructTenantContextForBooking,
+  invokeAdapterValidation,
 } from './create-booking-helpers';
 
 type CreateBookingInput = z.input<typeof bookingSchema> & {
@@ -67,12 +69,30 @@ export async function createBooking(formData: CreateBookingInput): Promise<Creat
 
   const existingBooking = await findPendingBookingForCustomer(supabase, customerId, tenantId);
 
+  // Task 19.1 & 19.2: Construct tenant context for adapter integration
+  const tenantContext = await constructTenantContextForBooking(supabase, tenantId);
+  if ('error' in tenantContext) {
+    return { error: tenantContext.error };
+  }
+  
+  // Task 19.2: Build booking payload with adapter pricing
   const bookingPayload = await buildBookingPayload({
     validatedData,
     customerId,
     tenantId,
     existingBooking,
+    tenantContext: tenantContext.context,
   });
+  
+  // Task 19.1: Integrate adapter validation
+  const adapterValidationResult = await invokeAdapterValidation(
+    bookingPayload,
+    tenantContext.context
+  );
+  if ('error' in adapterValidationResult) {
+    return { error: adapterValidationResult.error };
+  }
+  
   const bookingResult = await upsertBookingRecord({
     supabase,
     existingBooking,

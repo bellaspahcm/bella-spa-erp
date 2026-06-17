@@ -8,7 +8,7 @@ import {
   exportSessionMatrixToExcelResult,
   type AccountingReportRecord,
   type TrialBalanceExportRow,
-} from "@/services/export-actions";
+} from "@/core/services/analytics/export-actions";
 
 jest.mock("@/lib/supabase-server", () => ({
   createClient: jest.fn(),

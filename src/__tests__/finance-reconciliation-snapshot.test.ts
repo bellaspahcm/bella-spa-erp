@@ -3,10 +3,10 @@ jest.mock('next/cache', () => ({ revalidatePath: jest.fn() }));
 jest.mock('@/lib/revalidate', () => ({
   safeRevalidatePath: jest.fn().mockResolvedValue(undefined),
 }));
-jest.mock('@/services/accounting/period-guards', () => ({
+jest.mock('@/core/services/accounting/period-guards', () => ({
   assertOpenAccountingPeriod: jest.fn().mockResolvedValue(undefined),
 }));
-jest.mock('@/services/accounting/mode', () => ({
+jest.mock('@/core/services/accounting/mode', () => ({
   assertLegacyFinanceWriteAllowed: jest.fn().mockResolvedValue(undefined),
 }));
 

@@ -62,7 +62,7 @@ describe('dashboard tenant isolation source guards', () => {
   });
 
   it('keeps public online booking off first-tenant fallback and tenant-scopes rollbacks', () => {
-    const source = readSource('src/modules/booking/actions/online-booking-action.ts');
+    const source = readSource('src/core/services/order/online-booking-action.ts');
 
     expect(source).toContain('resolvePublicBabycareTenantId');
     expect(source).not.toMatch(/\.from\('tenants'\)[\s\S]{0,120}\.limit\(1\)[\s\S]{0,80}\.single\(/);

@@ -1,7 +1,8 @@
-import { NextResponse, NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase-server";
 import { runCOOOrchestrator } from "@/services/ai-coo-service";
 import { canUseAiCopilotRole } from "@/lib/business-rules/permissions";
+import { withTenantContext, type NextRequestWithContext } from "@/core/middleware/tenantContext";
 
 // Cấu trúc yêu cầu của CEO
 interface COORequest {
@@ -19,11 +20,15 @@ function getErrorMessage(error: unknown) {
   return "Lỗi hệ thống.";
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withTenantContext(async (request: NextRequestWithContext) => {
   console.log("[AI COO Orchestrator] Nhận yêu cầu phân tích tại:", new Date().toISOString());
 
   try {
-    // 1. Xác thực người dùng đang đăng nhập thông qua cookies (Đảm bảo RLS được kích hoạt tự động)
+    // 1. Extract tenant context from middleware (already validated)
+    const context = request.tenantContext;
+    const tenantId = context.tenantId;
+
+    // 2. Get authenticated user from Supabase session
     const supabase = await createClient();
     const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
 
@@ -32,10 +37,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Yêu cầu đăng nhập để truy cập hệ thống AI." }, { status: 401 });
     }
 
-    // 2. Tra cứu vai trò và tenant của người gọi để thực thi phân quyền bảo mật cấp cao (RBAC)
+    // 3. Fetch user profile for role and full_name (tenant_id already validated by middleware)
     const { data: userData, error: userError } = await supabase
       .from("users")
-      .select("id, role, tenant_id, full_name")
+      .select("id, role, full_name")
       .eq("id", authUser.id)
       .single();
 
@@ -44,18 +49,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Tài khoản của bạn không tồn tại trong hệ thống Bella ERP." }, { status: 403 });
     }
 
-    if (!userData.tenant_id) {
-      console.error("[AI COO Orchestrator] Không tìm thấy chi nhánh hoạt động của người dùng.");
-      return NextResponse.json({ error: "Tài khoản của bạn không được gán cho một chi nhánh hợp lệ." }, { status: 403 });
-    }
-
-    // Chỉ cho phép admin hoặc accountant chi nhánh/HQ gọi bộ điều phối AI COO
+    // 4. Validate user has permission to use AI COO
     if (!canUseAiCopilotRole(userData.role)) {
       console.warn(`[AI COO Orchestrator] Người dùng ${userData.full_name} với vai trò ${userData.role} bị từ chối truy cập.`);
       return NextResponse.json({ error: "Quyền hạn không hợp lệ. Chỉ có Tổng giám đốc (Admin) và Kế toán trưởng mới có quyền điều phối AI COO." }, { status: 403 });
     }
 
-    // 3. Đọc dữ liệu từ request body
+    // 5. Parse request body
     const body: COORequest = await request.json();
     const { command, monthYear } = body;
 
@@ -65,11 +65,11 @@ export async function POST(request: NextRequest) {
 
     console.log(`[AI COO Orchestrator] CEO ${userData.full_name} gửi lệnh: "${command}"`);
 
-    // 4. Gọi lõi điều phối Multi-Agent dịch vụ chuyên sâu
+    // 6. Call COO orchestrator with tenantId from context
     const executiveReport = await runCOOOrchestrator(
       supabase,
       command,
-      userData.tenant_id,
+      tenantId,
       {
         id: userData.id,
         full_name: userData.full_name || "Admin",
@@ -88,4 +88,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

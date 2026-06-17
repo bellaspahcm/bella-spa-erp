@@ -1,7 +1,8 @@
-import { NextResponse, NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase-server";
 import type { Database } from "@/types/database.types";
 import { canUseAiCopilotRole } from "@/lib/business-rules/permissions";
+import { withTenantContext, type NextRequestWithContext } from "@/core/middleware/tenantContext";
 
 type AppNotificationInsert = Database["public"]["Tables"]["app_notifications"]["Insert"];
 type AIAgentLogInsert = Database["public"]["Tables"]["ai_agent_logs"]["Insert"];
@@ -26,11 +27,15 @@ function appendRollbackError(message: string, rollbackError?: string) {
   return rollbackError ? `${message}; rollback failed: ${rollbackError}` : message;
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withTenantContext(async (request: NextRequestWithContext) => {
   console.log("[AI Action Approval] Nhận yêu cầu duyệt hành động nháp...");
 
   try {
-    // 1. Xác thực người dùng đang đăng nhập thông qua cookies
+    // 1. Extract tenant context from middleware (already validated)
+    const context = request.tenantContext;
+    const tenantId = context.tenantId;
+
+    // 2. Get authenticated user from Supabase session
     const supabase = await createClient();
     const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
 
@@ -39,10 +44,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Yêu cầu đăng nhập để truy cập tính năng phê duyệt." }, { status: 401 });
     }
 
-    // 2. Tra cứu vai trò và tenant của người gọi (Chỉ Admin và Accountant được phê duyệt)
+    // 3. Fetch user profile for role and full_name (tenant_id already validated by middleware)
     const { data: userData, error: userError } = await supabase
       .from("users")
-      .select("id, role, tenant_id, full_name")
+      .select("id, role, full_name")
       .eq("id", authUser.id)
       .single();
 
@@ -51,16 +56,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Tài khoản của bạn không tồn tại trên hệ thống." }, { status: 403 });
     }
 
-    if (!userData.tenant_id) {
-      return NextResponse.json({ error: "Tài khoản của bạn không được liên kết với chi nhánh hợp lệ." }, { status: 403 });
-    }
-
+    // 4. Validate user has permission to approve AI actions
     if (!canUseAiCopilotRole(userData.role)) {
       console.warn(`[AI Action Approval] Người dùng ${userData.full_name} với vai trò ${userData.role} cố gắng phê duyệt.`);
       return NextResponse.json({ error: "Quyền hạn không hợp lệ. Chỉ có Admin/Super Admin/Kế toán trưởng mới có quyền phê duyệt hành động của AI." }, { status: 403 });
     }
 
-    // 3. Đọc dữ liệu từ request body
+    // 5. Parse request body
     const body: ApprovalRequest = await request.json();
     const { type, recipient, reason, draftMessage } = body;
 
@@ -70,9 +72,9 @@ export async function POST(request: NextRequest) {
 
     console.log(`[AI Action Approval] CEO ${userData.full_name} phê duyệt hành động: "${type}" cho "${recipient}"`);
 
-    // 4. Tạo thông báo hệ thống chính thức (Side-effect 1)
+    // 6. Insert notification using tenantId from context
     const notificationPayload: AppNotificationInsert = {
-      tenant_id: userData.tenant_id,
+      tenant_id: tenantId,
       type: type,
       title: `Phê duyệt từ CEO: Giải trình ${type === "attendance_warning" ? "chấm công KTV" : "đối soát quỹ"}`,
       message: draftMessage,
@@ -95,9 +97,9 @@ export async function POST(request: NextRequest) {
       throw notifError; // Zero Silent DB Failures
     }
 
-    // 5. Ghi nhật ký audit logs (Side-effect 2)
+    // 7. Insert audit log using tenantId from context
     const logPayload: AIAgentLogInsert = {
-      tenant_id: userData.tenant_id,
+      tenant_id: tenantId,
       user_id: userData.id,
       sender: "ceo",
       message: `CEO ${userData.full_name} chính thức phê duyệt hành động nháp "${type}" cho "${recipient}". Lý do: ${reason}`,
@@ -119,7 +121,7 @@ export async function POST(request: NextRequest) {
         .from("app_notifications")
         .delete()
         .eq("id", notif.id)
-        .eq("tenant_id", userData.tenant_id);
+        .eq("tenant_id", tenantId);
 
       throw new Error(appendRollbackError(logError.message, rollbackError?.message));
     }
@@ -137,4 +139,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

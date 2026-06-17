@@ -64,3 +64,6 @@ export {
 export { getPublicBabycareBookingPackages } from './public-booking-packages';
 
 export { resolvePublicBabycareTenantId } from './public-booking-tenant';
+
+// Task 19.2: Pricing with adapter integration
+export { calculateOrderPrice, calculateOrderPriceBatch } from './pricing-actions';

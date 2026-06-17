@@ -6,7 +6,7 @@ jest.mock('@/lib/supabase-server', () => ({
   createClient: jest.fn(),
 }));
 
-jest.mock('@/services/accounting/client', () => ({
+jest.mock('@/core/services/accounting/client', () => ({
   createAccountingDataClient: jest.fn(),
 }));
 

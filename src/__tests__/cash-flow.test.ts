@@ -37,7 +37,7 @@ jest.mock('../services/user-actions', () => ({
 }));
 
 import { getCashFlowStatementReport } from '../services/accounting-actions';
-import { exportAccountingReportToExcel } from '../services/export-actions';
+import { exportAccountingReportToExcel } from '../core/services/analytics/export-actions';
 
 const TENANT_ID = 'tenant-uuid-1';
 const ADMIN_USER = { id: 'user-admin', tenant_id: TENANT_ID, role: 'admin' };
