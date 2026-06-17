@@ -14,6 +14,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAPIKey } from '@/lib/middleware/api-key.middleware';
 import { requireScope } from '@/lib/middleware/scope.middleware';
 import { rateLimitMiddleware, addRateLimitHeaders } from '@/lib/middleware/rate-limit.middleware';
+import { validate } from '@/lib/middleware/validation.middleware';
+import { createOrderSchema, listOrdersQuerySchema } from '@/lib/validation/api-schemas';
 import { APIError } from '@/lib/errors/api-error';
 import { createClient } from '@supabase/supabase-js';
 
@@ -35,15 +37,14 @@ export async function GET(req: NextRequest) {
     // Layer 3: Scope Authorization
     requireScope(req, 'order:read');
     
-    // Layer 4: Business Logic
+    // Layer 4: Input Validation
+    const { query } = await validate(req, {
+      querySchema: listOrdersQuerySchema,
+    });
+    
+    // Layer 5: Business Logic
     const partner = (req as any).partner;
     const tenantId = partner.tenant_id;
-    
-    // Parse query parameters
-    const url = new URL(req.url);
-    const page = parseInt(url.searchParams.get('page') || '1');
-    const perPage = Math.min(parseInt(url.searchParams.get('per_page') || '20'), 100);
-    const status = url.searchParams.get('status');
     
     // Query orders with RLS (automatically filtered by tenant)
     const supabase = createClient(
@@ -59,11 +60,11 @@ export async function GET(req: NextRequest) {
       .select('*', { count: 'exact' })
       .eq('tenant_id', tenantId) // Explicit tenant filter
       .order('created_at', { ascending: false })
-      .range((page - 1) * perPage, page * perPage - 1);
+      .range((query.page - 1) * query.per_page, query.page * query.per_page - 1);
     
     // Apply filters
-    if (status) {
-      query = query.eq('status', status);
+    if (query.status) {
+      query = query.eq('status', query.status);
     }
     
     const { data, error, count } = await query;
@@ -80,10 +81,10 @@ export async function GET(req: NextRequest) {
       success: true,
       data: data || [],
       pagination: {
-        page,
-        per_page: perPage,
+        page: query.page,
+        per_page: query.per_page,
         total: count || 0,
-        total_pages: Math.ceil((count || 0) / perPage),
+        total_pages: Math.ceil((count || 0) / query.per_page),
       },
       meta: {
         request_id: req.headers.get('x-request-id') || crypto.randomUUID(),
@@ -153,27 +154,14 @@ export async function POST(req: NextRequest) {
     // Layer 3: Scope Authorization
     requireScope(req, 'order:write');
     
-    // Layer 4: Business Logic
+    // Layer 4: Input Validation (includes tenant injection check)
+    const { body } = await validate(req, {
+      bodySchema: createOrderSchema,
+    });
+    
+    // Layer 5: Business Logic
     const partner = (req as any).partner;
     const tenantId = partner.tenant_id;
-    
-    // Parse request body
-    const body = await req.json();
-    
-    // Validate required fields
-    if (!body.customer_id || !body.items || !Array.isArray(body.items)) {
-      throw new APIError('INVALID_INPUT', {
-        message: 'Missing required fields: customer_id, items',
-      });
-    }
-    
-    // Block tenant injection attempts
-    if ('tenant_id' in body || 'tenantId' in body) {
-      throw new APIError('TENANT_INJECTION_ATTEMPT', {
-        message: 'tenant_id cannot be provided by client',
-        provided: body.tenant_id || body.tenantId,
-      });
-    }
     
     // Create order
     const supabase = createClient(
