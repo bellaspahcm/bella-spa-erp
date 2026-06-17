@@ -106,9 +106,10 @@ export interface APIPartner {
   is_sandbox: boolean;
   
   // Rate Limiting
-  rate_limit_per_minute: number;
-  rate_limit_per_day: number;
-  rate_limit_burst: number;
+  rate_limit_tier: 'free' | 'basic' | 'pro' | 'enterprise' | 'unlimited';
+  rate_limit_per_minute: number; // Legacy, prefer rate_limit_tier
+  rate_limit_per_day: number; // Legacy, prefer rate_limit_tier
+  rate_limit_burst: number; // Legacy
   
   // Usage Statistics
   last_request_at?: string;  // ISO timestamp
@@ -209,6 +210,7 @@ export interface APIPartnerUsageSummary {
   last_request_at?: string;
   
   // Rate Limits
+  rate_limit_tier: 'free' | 'basic' | 'pro' | 'enterprise' | 'unlimited';
   rate_limit_per_minute: number;
   rate_limit_per_day: number;
 }
@@ -243,9 +245,10 @@ export interface CreateAPIPartnerInput {
   is_sandbox?: boolean;
   
   // Rate limiting (defaults applied if not provided)
-  rate_limit_per_minute?: number;
-  rate_limit_per_day?: number;
-  rate_limit_burst?: number;
+  rate_limit_tier?: 'free' | 'basic' | 'pro' | 'enterprise' | 'unlimited';
+  rate_limit_per_minute?: number; // Legacy, prefer rate_limit_tier
+  rate_limit_per_day?: number; // Legacy, prefer rate_limit_tier
+  rate_limit_burst?: number; // Legacy
   
   // Metadata
   metadata?: Record<string, any>;
@@ -271,9 +274,10 @@ export interface UpdateAPIPartnerInput {
   is_active?: boolean;
   
   // Rate limiting
-  rate_limit_per_minute?: number;
-  rate_limit_per_day?: number;
-  rate_limit_burst?: number;
+  rate_limit_tier?: 'free' | 'basic' | 'pro' | 'enterprise' | 'unlimited';
+  rate_limit_per_minute?: number; // Legacy
+  rate_limit_per_day?: number; // Legacy
+  rate_limit_burst?: number; // Legacy
   
   // Metadata
   metadata?: Record<string, any>;
@@ -401,6 +405,7 @@ export const API_ERROR_CODES = {
   RATE_001: 'Rate limit exceeded (per minute)',
   RATE_002: 'Rate limit exceeded (per day)',
   RATE_003: 'Burst limit exceeded',
+  RATE_LIMIT_EXCEEDED: 'Rate limit exceeded',
   
   // Validation
   VAL_001: 'Invalid request body',
