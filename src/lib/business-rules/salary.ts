@@ -4,6 +4,7 @@ import {
   calculateProRataBaseSalaryFromActualDays,
   type AttendanceLike,
 } from '@/lib/business-rules/attendance';
+import { BUSINESS_RULES } from '@/constants/business-rules';
 
 export type SalaryConfigLike = {
   bonus_5_star: number;
@@ -201,7 +202,7 @@ export function calculateLiveAttendanceSalaryComponents(input: {
     attendancePenalty,
     deductions: attendancePenalty.totalPenalty,
     hasAutoPenalty: attendancePenalty.lateDays > 0 || attendancePenalty.absentDays > 0,
-    proRataNote: `Cong thuc te: ${actualDays}/26 ngay. `,
+    proRataNote: `Cong thuc te: ${actualDays}/${BUSINESS_RULES.PAYROLL.WORKING_DAYS_PER_MONTH} ngay. `,
   };
 }
 
@@ -256,7 +257,7 @@ export function calculateRatingBonusPerSession(
 ) {
   if (averageRating === null) return 0;
   if (averageRating === 5.0) return salaryConfig.bonus_5_star;
-  if (averageRating >= 4.5) return salaryConfig.bonus_4_5_star;
+  if (averageRating >= BUSINESS_RULES.SESSIONS.MIN_RATING_FOR_BONUS) return salaryConfig.bonus_4_5_star;
   if (averageRating >= 4.0) return salaryConfig.bonus_4_star;
   return 0;
 }

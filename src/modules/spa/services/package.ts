@@ -19,6 +19,7 @@ export {
 } from '@/services/package-actions';
 
 import type { CoreServiceCatalogItem } from '@/core/types';
+import { BUSINESS_RULES } from '@/constants/business-rules';
 
 /**
  * Package session multipliers based on tier.
@@ -28,9 +29,9 @@ import type { CoreServiceCatalogItem } from '@/core/types';
  * - VIP (Toàn Diện): 2.0x
  */
 export const PACKAGE_SESSION_MULTIPLIERS = {
-  basic: 1.0,
-  premium: 1.5,
-  vip: 2.0,
+  basic: BUSINESS_RULES.SESSIONS.MULTIPLIERS.BASIC,
+  premium: BUSINESS_RULES.SESSIONS.MULTIPLIERS.HAPPY,
+  vip: BUSINESS_RULES.SESSIONS.MULTIPLIERS.VIP,
 } as const;
 
 export type PackageCategory = keyof typeof PACKAGE_SESSION_MULTIPLIERS;

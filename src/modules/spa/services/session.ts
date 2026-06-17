@@ -9,6 +9,7 @@
  */
 
 import type { CoreBookingOrder } from '@/core/types';
+import { BUSINESS_RULES } from '@/constants/business-rules';
 
 /**
  * Session tracking and multiplier logic will be integrated here.
@@ -41,15 +42,15 @@ export function calculateWeightedSessions(
   const normalizedName = packageName.toLowerCase();
   
   if (normalizedName.includes('vip') || normalizedName.includes('toàn diện')) {
-    return sessionCount * 2.0;
+    return sessionCount * BUSINESS_RULES.SESSIONS.MULTIPLIERS.VIP;
   }
   
   if (normalizedName.includes('hạnh phúc') || normalizedName.includes('premium')) {
-    return sessionCount * 1.5;
+    return sessionCount * BUSINESS_RULES.SESSIONS.MULTIPLIERS.HAPPY;
   }
   
   // Default: basic package multiplier
-  return sessionCount * 1.0;
+  return sessionCount * BUSINESS_RULES.SESSIONS.MULTIPLIERS.BASIC;
 }
 
 /**
