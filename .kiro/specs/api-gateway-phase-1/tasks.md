@@ -664,7 +664,7 @@ const CreateOrderSchema = z.object({
 - ✅ Example integration: `src/app/api/v1/orders/route.ts` using `withSandbox()`
 - ✅ TypeScript types: Added `SandboxMetadata` interface to `src/types/api-gateway.ts`
 
-**Commit**: (pending)
+**Commit**: 430590fd
 
 **Architecture**:
 ```
