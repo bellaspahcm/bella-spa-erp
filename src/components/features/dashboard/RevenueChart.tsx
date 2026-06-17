@@ -1,6 +1,6 @@
 'use client';
 
-import { cloneElement, useEffect, useRef, useState, type ReactElement } from 'react';
+import { cloneElement, useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { TrendingUp, ChevronRight, DollarSign, Star } from 'lucide-react';
@@ -89,6 +89,21 @@ function MeasuredChartFrame({
 }
 
 export function RevenueChart({ performanceData, userRole, isLoading }: RevenueChartProps) {
+  // Memoize performance trend calculation to avoid recalculating on every render
+  const performanceTrend = useMemo(() => {
+    if (performanceData.length < 2) return '+0%';
+    const current = performanceData[performanceData.length - 1].customers;
+    const previous = performanceData[performanceData.length - 2].customers;
+    if (previous === 0) return current > 0 ? '+100%' : '0%';
+    const trend = ((current - previous) / previous) * 100;
+    return (trend >= 0 ? '+' : '') + trend.toFixed(1) + '%';
+  }, [performanceData]);
+
+  // Memoize latest rating to avoid recalculating on every render
+  const latestRating = useMemo(() => {
+    return performanceData[performanceData.length - 1]?.rating ?? null;
+  }, [performanceData]);
+
   if (isLoading) {
     return (
       <div className="lg:col-span-1 space-y-8">
@@ -168,14 +183,7 @@ export function RevenueChart({ performanceData, userRole, isLoading }: RevenueCh
           <h2 className="text-xs font-semibold mb-1 text-white/70 uppercase tracking-[0.2em]">Hiệu suất tháng</h2>
           <div className="flex items-center gap-3 mb-8">
             <p className="text-4xl font-bold text-white tracking-tighter">
-              {(() => {
-                if (performanceData.length < 2) return '+0%';
-                const current = performanceData[performanceData.length - 1].customers;
-                const previous = performanceData[performanceData.length - 2].customers;
-                if (previous === 0) return current > 0 ? '+100%' : '0%';
-                const trend = ((current - previous) / previous) * 100;
-                return (trend >= 0 ? '+' : '') + trend.toFixed(1) + '%';
-              })()}
+              {performanceTrend}
             </p>
             <div className="p-1.5 bg-white/20 rounded-lg backdrop-blur-md">
               <TrendingUp className="text-white w-4 h-4" />
@@ -302,28 +310,21 @@ export function RevenueChart({ performanceData, userRole, isLoading }: RevenueCh
         
         <div className="flex-1 flex flex-col justify-between">
           <div className="mb-4">
-            {(() => {
-              const latestRating = performanceData[performanceData.length - 1]?.rating ?? null;
-              return (
-                <>
-                  <p className="text-4xl font-black text-foreground tracking-tighter">
-                    {latestRating !== null ? Number(latestRating).toFixed(2) : '—'}
-                  </p>
-                  <div className="flex items-center gap-1 mt-1">
-                    {[1, 2, 3, 4, 5].map((s) => (
-                      <Star
-                        key={s}
-                        className={`w-3 h-3 ${
-                          latestRating !== null && s <= Math.round(latestRating)
-                            ? 'text-amber-400 fill-amber-400'
-                            : 'text-gray-200'
-                        }`}
-                      />
-                    ))}
-                  </div>
-                </>
-              );
-            })()}
+            <p className="text-4xl font-black text-foreground tracking-tighter">
+              {latestRating !== null ? Number(latestRating).toFixed(2) : '—'}
+            </p>
+            <div className="flex items-center gap-1 mt-1">
+              {[1, 2, 3, 4, 5].map((s) => (
+                <Star
+                  key={s}
+                  className={`w-3 h-3 ${
+                    latestRating !== null && s <= Math.round(latestRating)
+                      ? 'text-amber-400 fill-amber-400'
+                      : 'text-gray-200'
+                  }`}
+                />
+              ))}
+            </div>
           </div>
 
           <MeasuredChartFrame className="h-28 w-full">
