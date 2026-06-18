@@ -1,12 +1,9 @@
 /**
- * Admin API: Regenerate Partner API Key
+ * API Route: /api/admin/partners/[id]/regenerate-key
  * 
- * **CRITICAL:** Old API key will be invalidated immediately
+ * POST: Regenerate API key for a partner
  * 
- * @endpoint POST /api/admin/partners/[id]/regenerate-key
- * 
- * @module api/admin/partners/[id]/regenerate-key
- * @since 2026-06-17
+ * ⚠️ CRITICAL: Old API key will be invalidated immediately
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -15,43 +12,11 @@ import {
   getPartnerById,
   regenerateApiKey,
 } from '@/services/api-gateway/partner.service';
+import { APIError } from '@/types/api-gateway';
 
-async function checkAdminRole(req: NextRequest) {
-  const supabase = await createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  
-  if (authError || !user) {
-    return {
-      user: null,
-      is_super_admin: false,
-      error: NextResponse.json(
-        { success: false, error: { code: 'AUTH_001', message: 'Authentication required' } },
-        { status: 401 }
-      ),
-    };
-  }
-  
-  const { data: profile } = await supabase
-    .from('users')
-    .select('role, tenant_id')
-    .eq('id', user.id)
-    .single();
-  
-  if (!profile || (profile.role !== 'admin' && profile.role !== 'super_admin')) {
-    return {
-      user: null,
-      is_super_admin: false,
-      error: NextResponse.json(
-        { success: false, error: { code: 'AUTH_003', message: 'Admin access required' } },
-        { status: 403 }
-      ),
-    };
-  }
-  
-  return {
-    user,
-    tenant_id: profile.tenant_id || undefined,
-    is_super_admin: profile.role === 'super_admin',
+interface RouteContext {
+  params: {
+    id: string;
   };
 }
 
@@ -59,70 +24,81 @@ async function checkAdminRole(req: NextRequest) {
  * POST /api/admin/partners/[id]/regenerate-key
  * 
  * Regenerate API key for partner
- * 
- * **WARNING:** This will immediately invalidate the old API key.
- * Partner will need to update their integration with the new key.
  */
-export async function POST(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id: partner_id } = await params;
-  const { user, tenant_id, is_super_admin, error } = await checkAdminRole(req);
-  if (error) return error;
-  
+export async function POST(request: NextRequest, context: RouteContext) {
   try {
-    // Check if partner exists and user has access
-    const existing = await getPartnerById(
-      partner_id,
-      is_super_admin ? undefined : tenant_id
-    );
-    
-    if (!existing) {
+    const { id } = context.params;
+    const supabase = await createClient();
+
+    // Get current user
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
       return NextResponse.json(
-        {
-          success: false,
-          error: { code: 'VAL_001', message: 'Partner not found' },
-        },
+        { success: false, error: { message: 'Unauthorized', code: 'AUTH_001' } },
+        { status: 401 }
+      );
+    }
+
+    // Get user's tenant
+    const { data: profile } = await supabase
+      .from('users')
+      .select('tenant_id')
+      .eq('id', user.id)
+      .single();
+
+    if (!profile?.tenant_id) {
+      return NextResponse.json(
+        { success: false, error: { message: 'Tenant not found', code: 'TENANT_001' } },
         { status: 404 }
       );
     }
-    
-    if (!is_super_admin && existing.tenant_id !== tenant_id) {
+
+    // Verify partner belongs to user's tenant
+    const existingPartner = await getPartnerById(id, profile.tenant_id);
+    if (!existingPartner) {
       return NextResponse.json(
-        {
-          success: false,
-          error: { code: 'AUTH_004', message: 'Cannot regenerate key for partner from other tenant' },
-        },
-        { status: 403 }
+        { success: false, error: { message: 'Partner not found', code: 'VAL_001' } },
+        { status: 404 }
       );
     }
-    
+
     // Regenerate API key
-    const { partner, new_api_key } = await regenerateApiKey(partner_id, user.id);
-    
+    const { partner, new_api_key } = await regenerateApiKey(id, user.id);
+
     return NextResponse.json({
       success: true,
       data: {
         partner,
         new_api_key,
-      },
-      warning: 'Old API key has been invalidated. Partner must update their integration.',
-      meta: {
-        timestamp: new Date().toISOString(),
-        regenerated_by: user.id,
+        message: 'API key regenerated successfully. The old key is now invalid.',
       },
     });
-  } catch (error) {
-    console.error('[POST /api/admin/partners/[id]/regenerate-key] Error:', error);
-    
+  } catch (error: any) {
+    console.error('Error regenerating API key:', error);
+
+    if (error instanceof APIError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            message: error.message,
+            code: error.code,
+            details: error.details,
+          },
+        },
+        { status: error.statusCode }
+      );
+    }
+
     return NextResponse.json(
       {
         success: false,
         error: {
-          code: 'SERVER_002',
-          message: 'Failed to regenerate API key',
-          details: error instanceof Error ? error.message : 'Unknown error',
+          message: 'Internal server error',
+          code: 'SERVER_001',
         },
       },
       { status: 500 }
