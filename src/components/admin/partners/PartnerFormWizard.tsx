@@ -181,7 +181,7 @@ export function PartnerFormWizard({
         const { data: newPartner } = await response.json();
 
         toast.success(`Partner "${formData.partner_name}" created successfully`);
-        router.push(`/admin/partners/${newPartner.id}`);
+        router.push(`/dashboard/admin/partners/${newPartner.id}`);
       } else {
         // Update existing partner
         const input: UpdateAPIPartnerInput = {
@@ -209,7 +209,7 @@ export function PartnerFormWizard({
         }
 
         toast.success(`Partner "${formData.partner_name}" updated successfully`);
-        router.push(`/admin/partners/${existingPartner!.id}`);
+        router.push(`/dashboard/admin/partners/${existingPartner!.id}`);
       }
     } catch (error: any) {
       console.error('Error submitting form:', error);
