@@ -43,6 +43,7 @@ import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import type { APIPartner } from '@/types/api-gateway';
+import { RateLimitCustomizationDialog } from '../RateLimitCustomizationDialog';
 
 interface PartnerOverviewTabProps {
   partner: APIPartner;
@@ -52,6 +53,7 @@ export function PartnerOverviewTab({ partner }: PartnerOverviewTabProps) {
   const router = useRouter();
   const [showApiKey, setShowApiKey] = useState(false);
   const [regenerateDialog, setRegenerateDialog] = useState(false);
+  const [rateLimitDialog, setRateLimitDialog] = useState(false);
   const [loading, setLoading] = useState(false);
 
   // Copy API key
@@ -395,6 +397,60 @@ export function PartnerOverviewTab({ partner }: PartnerOverviewTabProps) {
         </Card>
       )}
 
+      {/* Rate Limit Configuration */}
+      <Card className="md:col-span-2">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="h-5 w-5" />
+                Rate Limit Configuration
+              </CardTitle>
+              <CardDescription>Giới hạn API requests</CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setRateLimitDialog(true)}
+            >
+              <Key className="mr-2 h-4 w-4" />
+              Tùy Chỉnh
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Tier</p>
+              <Badge variant="outline" className="text-base capitalize">
+                {partner.rate_limit_tier || 'basic'}
+              </Badge>
+            </div>
+
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Per Minute</p>
+              <p className="text-lg font-semibold">
+                {partner.rate_limit_per_minute.toLocaleString('vi-VN')}
+              </p>
+            </div>
+
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Per Day</p>
+              <p className="text-lg font-semibold">
+                {partner.rate_limit_per_day.toLocaleString('vi-VN')}
+              </p>
+            </div>
+
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Burst Limit</p>
+              <p className="text-lg font-semibold">
+                {partner.rate_limit_burst.toLocaleString('vi-VN')}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Regenerate Key Dialog */}
       <AlertDialog open={regenerateDialog} onOpenChange={setRegenerateDialog}>
         <AlertDialogContent>
@@ -419,6 +475,13 @@ export function PartnerOverviewTab({ partner }: PartnerOverviewTabProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Rate Limit Customization Dialog */}
+      <RateLimitCustomizationDialog
+        partner={partner}
+        open={rateLimitDialog}
+        onOpenChange={setRateLimitDialog}
+      />
     </div>
   );
 }
