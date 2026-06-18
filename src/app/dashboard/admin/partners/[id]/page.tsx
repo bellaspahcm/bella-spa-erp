@@ -89,7 +89,7 @@ export default async function PartnerDetailPage({
   const partnerData = partner as APIPartner;
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 md:p-8 lg:p-10 space-y-6">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-4">
