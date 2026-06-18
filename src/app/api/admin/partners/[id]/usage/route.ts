@@ -9,14 +9,14 @@ import { createClient } from '@/lib/supabase-server';
 import { subDays } from 'date-fns';
 
 interface RouteContext {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
-    const { id: partnerId } = context.params;
+    const { id: partnerId } = await context.params;
     const supabase = await createClient();
 
     // Get current user

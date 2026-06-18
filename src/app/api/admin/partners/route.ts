@@ -103,9 +103,9 @@ export async function GET(request: NextRequest) {
       data: filteredPartners,
       pagination: {
         total: search ? filteredPartners.length : total,
-        limit: params.limit,
-        offset: params.offset,
-        has_more: params.offset + params.limit < (search ? filteredPartners.length : total),
+        limit: params.limit || 20,
+        offset: params.offset || 0,
+        has_more: (params.offset || 0) + (params.limit || 20) < (search ? filteredPartners.length : total),
       },
     });
   } catch (error: any) {
