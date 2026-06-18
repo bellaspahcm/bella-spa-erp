@@ -41,7 +41,7 @@ export default async function NewPartnerPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 md:p-8 lg:p-10 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
         <Link href="/admin/partners">

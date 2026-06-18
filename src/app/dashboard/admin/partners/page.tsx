@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 
 export default function PartnersPage() {
   return (
-    <div className="space-y-6">
+    <div className="p-6 md:p-8 lg:p-10 space-y-6">
       {/* Header - Bella ERP Style */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50 dark:from-rose-950/20 dark:via-pink-950/20 dark:to-purple-950/20 border border-rose-200 dark:border-rose-900 p-8 shadow-sm">
         {/* Decorative elements */}
