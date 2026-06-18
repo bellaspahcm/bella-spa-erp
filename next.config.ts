@@ -21,6 +21,8 @@ const securityHeaders = [
       "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://sentry.io https://o4511424569868288.ingest.us.sentry.io",
       "worker-src 'self' blob:",
       "frame-ancestors 'none'",
+      "manifest-src 'self'",
+      "media-src 'self'",
     ].join('; '),
   },
 ];
