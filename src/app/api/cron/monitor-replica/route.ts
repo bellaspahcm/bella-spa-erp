@@ -7,7 +7,7 @@ import { NextResponse } from 'next/server';
  * Runs every 5 minutes to check replication lag.
  * Sends alerts if lag exceeds threshold.
  * 
- * Triggered by Vercel Cron: */5 * * * *
+ * Triggered by Vercel Cron every 5 minutes
  */
 export async function GET(request: Request) {
   // Verify cron secret

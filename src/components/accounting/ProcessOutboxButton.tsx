@@ -75,7 +75,7 @@ export function ProcessOutboxButton() {
         <span className="whitespace-nowrap">
           {isProcessing ? 'Đang xử lý...' : 'Cập nhật số liệu kế toán'}
         </span>
-        {hasPending && !isProcessing && (
+        {hasPending && !isProcessing && status && (
           <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-2xs font-black">
             {status.pending}
           </span>
@@ -86,7 +86,7 @@ export function ProcessOutboxButton() {
       </button>
 
       {/* Status Info */}
-      {hasPending && !isProcessing && (
+      {hasPending && !isProcessing && status && (
         <div className="flex items-center gap-1.5 px-1 text-2xs text-rose-600 dark:text-[#A67D44]">
           <Clock className="w-3 h-3" />
           <span>
