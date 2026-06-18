@@ -9,7 +9,7 @@
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
 import { NextRequest } from 'next/server';
 import { apiKeyMiddleware, RequestWithPartner } from '@/lib/middleware/api-key.middleware';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase-server';
 
 // Mock data
 const MOCK_TENANT_A = 'tenant_a_uuid';
