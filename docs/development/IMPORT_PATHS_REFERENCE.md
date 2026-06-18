@@ -149,6 +149,65 @@ When creating new files:
 
 ---
 
+### Error #2: Missing Database Types for New Tables (2026-06-18)
+**Commit**: `4d504899`  
+**Files Affected**: `src/app/api/admin/partners/[id]/logs/route.ts`  
+**Root Cause**: Created `api_request_logs` table in migration but didn't regenerate TypeScript types  
+**Impact**: TypeScript errors when trying to access the table, temptation to use `any` or `@ts-ignore`  
+**Resolution**: Temporarily disabled endpoint with 501 response until types are regenerated
+
+**Problem**:
+```typescript
+// ❌ Table exists in DB but not in types
+type APIRequestLog = Database['public']['Tables']['api_request_logs']['Row'];
+//                                                  ^^^^^^^^^^^^^^^^^^
+// TypeScript error: Property 'api_request_logs' does not exist
+```
+
+**Wrong Solutions (NEVER DO THIS)**:
+```typescript
+// ❌ Using 'any' type
+const typedSupabase = supabase as any;
+
+// ❌ Using @ts-ignore
+// @ts-ignore
+const { data } = await supabase.from('api_request_logs').select('*');
+```
+
+**Correct Solution**:
+```typescript
+// ✅ Return 501 until types are regenerated
+export async function GET(req: NextRequest) {
+  return NextResponse.json(
+    {
+      success: false,
+      error: {
+        code: 'NOT_IMPLEMENTED',
+        message: 'Endpoint temporarily disabled',
+        details: 'Database types need regeneration. Run: npx supabase gen types typescript --project-id <project-id> > src/types/database.types.ts',
+      },
+    },
+    { status: 501 }
+  );
+  
+  /* Full implementation commented out - uncomment after regenerating types */
+}
+```
+
+**How to Fix Permanently**:
+1. Run migration: `npx supabase migration up`
+2. Regenerate types: `npx supabase gen types typescript --project-id <project-id> > src/types/database.types.ts`
+3. Verify table exists in `src/types/database.types.ts`
+4. Uncomment implementation in route file
+5. Remove 501 response
+
+**Prevention**:
+- Always regenerate types after running migrations that add/modify tables
+- Add type regeneration to CI/CD pipeline
+- Document new tables in migration files
+
+---
+
 ## 🛠️ Verification Checklist
 
 Before pushing to Vercel:
