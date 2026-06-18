@@ -94,7 +94,7 @@ export async function GET(
     }
 
     // Verify partner exists and belongs to tenant
-    const { data: partner } = await supabase
+    const { data: partner } = await (supabase as any)
       .from('api_partners')
       .select('id, tenant_id, partner_name, is_active')
       .eq('id', partnerId)
@@ -127,12 +127,12 @@ export async function GET(
     const startTime = new Date(now.getTime() - windowMs);
 
     // Query request logs for metrics calculation
-    const { data: logs, error: logsError } = await supabase
+    const { data: logs, error: logsError } = await (supabase as any)
       .from('api_request_logs')
       .select('status_code, response_time_ms, is_error, created_at')
       .eq('partner_id', partnerId)
       .gte('created_at', startTime.toISOString())
-      .order('created_at', { ascending: true }) as any;
+      .order('created_at', { ascending: true });
 
     if (logsError) {
       console.error('[GET /api/admin/partners/[id]/sla-metrics] Logs query error:', logsError);

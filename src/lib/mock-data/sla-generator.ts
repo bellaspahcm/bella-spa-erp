@@ -1,323 +1,362 @@
 /**
- * SLA Mock Data Generator
+ * Mock SLA Data Generator
  * 
- * Generates realistic mock data for testing SLA monitoring features
- * 
- * @module lib/mock-data/sla-generator
- * @since 2026-06-18
+ * Provides comprehensive test data for SLA monitoring dashboard.
+ * Generates realistic metrics, alerts, and time series data.
  */
 
 import {
   SLAMetrics,
   SLAAlert,
   SLAAlertSeverity,
-  SLAAlertStatus,
   SLAAlertType,
-  SLATimeRange,
-  SLAComplianceStatus,
+  SLAAlertStatus
 } from '@/types/api-gateway';
 
-/**
- * Generate mock SLA metrics for testing
- */
-export function generateMockSLAMetrics(
-  partnerId: string,
-  timeRange: SLATimeRange = '24h',
-  scenario: 'healthy' | 'degraded' | 'critical' = 'healthy'
-): SLAMetrics {
-  const now = new Date();
+// Extract time series data type from SLAMetrics
+type SLATimeSeriesData = NonNullable<SLAMetrics['time_series']>[number];
 
-  // Scenario-based metrics
-  let uptimePercent: number;
-  let p95ResponseTime: number;
-  let errorRatePercent: number;
-  let availabilityStatus: 'up' | 'down' | 'degraded';
-  let complianceStatus: SLAComplianceStatus;
+// ============================================================================
+// SCENARIO TYPES
+// ============================================================================
 
-  switch (scenario) {
-    case 'critical':
-      uptimePercent = 97.5 + Math.random() * 1; // 97.5-98.5%
-      p95ResponseTime = 400 + Math.random() * 300; // 400-700ms
-      errorRatePercent = 5 + Math.random() * 3; // 5-8%
-      availabilityStatus = 'degraded';
-      complianceStatus = 'breached';
-      break;
+export type SLAScenario = 'healthy' | 'degraded' | 'critical';
 
-    case 'degraded':
-      uptimePercent = 98.5 + Math.random() * 1; // 98.5-99.5%
-      p95ResponseTime = 300 + Math.random() * 150; // 300-450ms
-      errorRatePercent = 3 + Math.random() * 2; // 3-5%
-      availabilityStatus = 'degraded';
-      complianceStatus = 'at_risk';
-      break;
-
-    case 'healthy':
-    default:
-      uptimePercent = 99.5 + Math.random() * 0.5; // 99.5-100%
-      p95ResponseTime = 100 + Math.random() * 150; // 100-250ms
-      errorRatePercent = Math.random() * 2; // 0-2%
-      availabilityStatus = 'up';
-      complianceStatus = 'compliant';
-      break;
-  }
-
-  // Calculate derived metrics
-  const totalRequests = Math.floor(1000 + Math.random() * 9000); // 1k-10k
-  const failedRequests = Math.floor((totalRequests * errorRatePercent) / 100);
-  const successfulRequests = totalRequests - failedRequests;
-
-  const avgResponseTime = p95ResponseTime * 0.6; // avg ~60% of p95
-  const p99ResponseTime = p95ResponseTime * 1.4; // p99 ~140% of p95
-  const maxResponseTime = p95ResponseTime * 2; // max ~200% of p95
-
-  const timeWindows: Record<SLATimeRange, number> = {
-    '1h': 60,
-    '24h': 1440,
-    '7d': 10080,
-    '30d': 43200,
-  };
-  const windowMinutes = timeWindows[timeRange];
-  const downtimeMinutes = ((100 - uptimePercent) / 100) * windowMinutes;
-
-  const requestsPerMinute = totalRequests / windowMinutes;
-  const requestsPerMinutePeak = requestsPerMinute * (1.5 + Math.random() * 0.5); // 1.5-2x avg
-
-  // Compliance calculation
-  const uptimeTarget = 99.5;
-  const p95LatencyTarget = 300;
-  const errorRateTarget = 3.0;
-
-  const uptimeCompliance = Math.min((uptimePercent / uptimeTarget) * 100, 100);
-  const latencyCompliance = p95ResponseTime > 0
-    ? Math.max(100 - ((p95ResponseTime / p95LatencyTarget) - 1) * 100, 0)
-    : 100;
-  const errorRateCompliance = errorRatePercent > 0
-    ? Math.max(100 - ((errorRatePercent / errorRateTarget) - 1) * 100, 0)
-    : 100;
-  
-  const compliancePercent = (uptimeCompliance + latencyCompliance + errorRateCompliance) / 3;
-
-  // Generate time series data
-  const bucketCount = timeRange === '1h' ? 12 : timeRange === '24h' ? 24 : timeRange === '7d' ? 7 : 30;
-  const timeSeries = Array.from({ length: bucketCount }, (_, i) => {
-    const timestamp = new Date(now.getTime() - (bucketCount - i) * (windowMinutes / bucketCount) * 60 * 1000);
-    const bucketRequests = Math.floor(totalRequests / bucketCount);
-    const bucketErrors = Math.floor(failedRequests / bucketCount);
-    const bucketUptime = 98 + Math.random() * 2; // Vary between 98-100%
-
-    return {
-      timestamp: timestamp.toISOString(),
-      requests: bucketRequests + Math.floor(Math.random() * 100 - 50),
-      errors: bucketErrors + Math.floor(Math.random() * 10 - 5),
-      avg_response_time: Math.round(avgResponseTime + Math.random() * 50 - 25),
-      uptime_percent: Math.round(bucketUptime * 100) / 100,
-    };
-  });
-
-  return {
-    partner_id: partnerId,
-    time_range: timeRange,
-    
-    uptime_percent: Math.round(uptimePercent * 100) / 100,
-    downtime_minutes: Math.round(downtimeMinutes * 100) / 100,
-    availability_status: availabilityStatus,
-    
-    avg_response_time_ms: Math.round(avgResponseTime),
-    p95_response_time_ms: Math.round(p95ResponseTime),
-    p99_response_time_ms: Math.round(p99ResponseTime),
-    max_response_time_ms: Math.round(maxResponseTime),
-    
-    total_requests: totalRequests,
-    successful_requests: successfulRequests,
-    failed_requests: failedRequests,
-    error_rate_percent: Math.round(errorRatePercent * 100) / 100,
-    
-    requests_per_minute_avg: Math.round(requestsPerMinute * 100) / 100,
-    requests_per_minute_peak: Math.round(requestsPerMinutePeak),
-    
-    compliance_status: complianceStatus,
-    compliance_percent: Math.round(compliancePercent * 100) / 100,
-    
-    time_series: timeSeries,
-    
-    calculated_at: now.toISOString(),
-    last_updated_at: now.toISOString(),
-  };
+export interface MockSLAOptions {
+  scenario?: SLAScenario;
+  timeRange?: '1h' | '24h' | '7d' | '30d';
+  includeTimeSeries?: boolean;
+  partnerId?: string;
 }
 
+// ============================================================================
+// METRICS GENERATOR
+// ============================================================================
+
 /**
- * Generate mock SLA alerts for testing
+ * Generate mock SLA metrics based on scenario
  */
-export function generateMockSLAAlerts(
-  partnerId: string,
-  tenantId: string,
-  count: number = 30,
-  scenario: 'healthy' | 'degraded' | 'critical' = 'healthy'
-): SLAAlert[] {
-  const alerts: SLAAlert[] = [];
-  const now = new Date();
+export function generateMockSLAMetrics(options: MockSLAOptions = {}): SLAMetrics {
+  const {
+    scenario = 'healthy',
+    timeRange = '24h',
+    includeTimeSeries = false,
+    partnerId = 'partner_123'
+  } = options;
 
-  // Alert templates with severity based on scenario
-  const alertTemplates: Array<{
-    alert_type: SLAAlertType;
-    severity: SLAAlertSeverity;
-    title: string;
-    message: string;
-    metric_name: string;
-    metric_value: number;
-    threshold_value: number;
-  }> = [];
+  // Base metrics by scenario
+  const scenarioData = {
+    healthy: {
+      uptime: 99.95 + Math.random() * 0.04, // 99.95-99.99%
+      downtime: Math.floor(Math.random() * 5),
+      avgLatency: 85 + Math.random() * 15, // 85-100ms
+      p95: 140 + Math.random() * 20, // 140-160ms
+      p99: 195 + Math.random() * 15, // 195-210ms
+      max: 280 + Math.random() * 40, // 280-320ms
+      errorRate: 0.1 + Math.random() * 0.3, // 0.1-0.4%
+      totalReq: 45000 + Math.floor(Math.random() * 15000),
+      failedReq: 25 + Math.floor(Math.random() * 35),
+      compliance: 'compliant' as const,
+      compliancePercent: 99.5 + Math.random() * 0.5,
+      status: 'up' as const
+    },
+    degraded: {
+      uptime: 97.5 + Math.random() * 1.5, // 97.5-99%
+      downtime: 35 + Math.floor(Math.random() * 25),
+      avgLatency: 185 + Math.random() * 40, // 185-225ms
+      p95: 480 + Math.random() * 60, // 480-540ms
+      p99: 850 + Math.random() * 100, // 850-950ms
+      max: 1800 + Math.random() * 400, // 1.8-2.2s
+      errorRate: 1.8 + Math.random() * 1.2, // 1.8-3%
+      totalReq: 38000 + Math.floor(Math.random() * 10000),
+      failedReq: 780 + Math.floor(Math.random() * 420),
+      compliance: 'at_risk' as const,
+      compliancePercent: 85 + Math.random() * 10,
+      status: 'degraded' as const
+    },
+    critical: {
+      uptime: 92.3 + Math.random() * 2, // 92-94%
+      downtime: 110 + Math.floor(Math.random() * 50),
+      avgLatency: 420 + Math.random() * 80, // 420-500ms
+      p95: 1250 + Math.random() * 250, // 1.25-1.5s
+      p99: 2800 + Math.random() * 500, // 2.8-3.3s
+      max: 5500 + Math.random() * 1500, // 5.5-7s
+      errorRate: 6.5 + Math.random() * 2.5, // 6.5-9%
+      totalReq: 28000 + Math.floor(Math.random() * 8000),
+      failedReq: 2100 + Math.floor(Math.random() * 900),
+      compliance: 'breached' as const,
+      compliancePercent: 55 + Math.random() * 20,
+      status: 'down' as const
+    }
+  };
 
-  if (scenario === 'critical' || scenario === 'degraded') {
-    alertTemplates.push(
-      {
-        alert_type: 'latency',
-        severity: scenario === 'critical' ? 'critical' : 'warning',
-        title: 'High Response Time Detected',
-        message: 'P95 response time exceeded threshold',
-        metric_name: 'p95_response_time_ms',
-        metric_value: scenario === 'critical' ? 650 : 456,
-        threshold_value: 300,
-      },
-      {
-        alert_type: 'error_rate',
-        severity: scenario === 'critical' ? 'critical' : 'warning',
-        title: 'Error Rate Spike',
-        message: 'Error rate exceeded threshold',
-        metric_name: 'error_rate_percent',
-        metric_value: scenario === 'critical' ? 8.5 : 4.2,
-        threshold_value: 3.0,
-      }
-    );
+  const data = scenarioData[scenario];
+  const now = new Date().toISOString();
+
+  const metrics: SLAMetrics = {
+    partner_id: partnerId,
+    time_range: timeRange,
+    uptime_percent: Number(data.uptime.toFixed(2)),
+    downtime_minutes: data.downtime,
+    availability_status: data.status,
+    avg_response_time_ms: Number(data.avgLatency.toFixed(1)),
+    p95_response_time_ms: Number(data.p95.toFixed(1)),
+    p99_response_time_ms: Number(data.p99.toFixed(1)),
+    max_response_time_ms: Number(data.max.toFixed(1)),
+    total_requests: data.totalReq,
+    successful_requests: data.totalReq - data.failedReq,
+    failed_requests: data.failedReq,
+    error_rate_percent: Number(data.errorRate.toFixed(2)),
+    requests_per_minute_avg: Number((data.totalReq / getMinutesInRange(timeRange)).toFixed(1)),
+    requests_per_minute_peak: Number((data.totalReq / getMinutesInRange(timeRange) * 4).toFixed(1)),
+    compliance_status: data.compliance,
+    compliance_percent: Number(data.compliancePercent.toFixed(1)),
+    calculated_at: now,
+    last_updated_at: now
+  };
+
+  // Add time series if requested
+  if (includeTimeSeries) {
+    metrics.time_series = generateTimeSeries(timeRange, scenario);
   }
 
-  if (scenario === 'critical') {
-    alertTemplates.push(
-      {
-        alert_type: 'uptime',
-        severity: 'critical',
-        title: 'Uptime Below Target',
-        message: 'Service uptime dropped below 99.5%',
-        metric_name: 'uptime_percent',
-        metric_value: 98.2,
-        threshold_value: 99.5,
-      },
-      {
-        alert_type: 'availability',
-        severity: 'critical',
-        title: 'Service Unavailable',
-        message: 'Multiple consecutive failures detected',
-        metric_name: 'consecutive_failures',
-        metric_value: 5,
-        threshold_value: 3,
-      }
-    );
-  }
+  return metrics;
+}
 
-  // Add some info alerts for all scenarios
-  alertTemplates.push({
-    alert_type: 'latency',
-    severity: 'info',
-    title: 'Response Time Elevated',
-    message: 'Average response time slightly elevated',
-    metric_name: 'avg_response_time_ms',
-    metric_value: 250,
-    threshold_value: 200,
-  });
+// ============================================================================
+// TIME SERIES GENERATOR
+// ============================================================================
 
-  const statuses: SLAAlertStatus[] = scenario === 'critical' 
-    ? ['active', 'active', 'acknowledged']
-    : scenario === 'degraded'
-    ? ['active', 'acknowledged', 'resolved']
-    : ['acknowledged', 'resolved', 'resolved'];
+function generateTimeSeries(
+  timeRange: '1h' | '24h' | '7d' | '30d',
+  scenario: SLAScenario
+): SLATimeSeriesData[] {
+  const intervals = {
+    '1h': { count: 12, minutes: 5 },      // 5-minute intervals
+    '24h': { count: 24, minutes: 60 },    // 1-hour intervals
+    '7d': { count: 28, minutes: 360 },    // 6-hour intervals
+    '30d': { count: 30, minutes: 1440 }   // 1-day intervals
+  };
 
-  for (let i = 0; i < count; i++) {
-    const template = alertTemplates[i % alertTemplates.length];
-    const status = statuses[Math.floor(Math.random() * statuses.length)];
-    const hoursAgo = Math.floor(Math.random() * 168); // Random within last 7 days
-    const triggeredAt = new Date(now.getTime() - hoursAgo * 60 * 60 * 1000);
+  const config = intervals[timeRange];
+  const now = Date.now();
+  const series: SLATimeSeriesData[] = [];
+
+  for (let i = config.count - 1; i >= 0; i--) {
+    const timestamp = new Date(now - i * config.minutes * 60 * 1000).toISOString();
     
-    let acknowledgedAt: string | undefined;
-    let resolvedAt: string | undefined;
-    let durationMinutes: number | undefined;
+    // Base values by scenario with random variations
+    const baseValues = {
+      healthy: { uptime: 99.9, latency: 95, errors: 10, requests: 2500 },
+      degraded: { uptime: 98.5, latency: 220, errors: 60, requests: 2100 },
+      critical: { uptime: 93.0, latency: 480, errors: 200, requests: 1600 }
+    };
 
-    if (status === 'acknowledged' || status === 'resolved') {
-      const ackMinutesAfter = Math.floor(Math.random() * 60) + 5; // 5-65 minutes
-      acknowledgedAt = new Date(triggeredAt.getTime() + ackMinutesAfter * 60 * 1000).toISOString();
-    }
-
-    if (status === 'resolved') {
-      const resolveMinutesAfterAck = Math.floor(Math.random() * 120) + 10; // 10-130 minutes
-      resolvedAt = new Date(
-        new Date(acknowledgedAt!).getTime() + resolveMinutesAfterAck * 60 * 1000
-      ).toISOString();
-      durationMinutes = Math.floor((new Date(resolvedAt).getTime() - triggeredAt.getTime()) / 60000);
-    }
-
-    const notificationChannels: ('email' | 'webhook' | 'telegram')[] = [];
-    if (template.severity === 'critical') {
-      notificationChannels.push('email', 'webhook', 'telegram');
-    } else if (template.severity === 'warning') {
-      notificationChannels.push('email', 'webhook');
-    } else {
-      notificationChannels.push('webhook');
-    }
-
-    alerts.push({
-      id: `alert_${partnerId.slice(0, 8)}_${i + 1}`,
-      partner_id: partnerId,
-      tenant_id: tenantId,
-      
-      alert_type: template.alert_type,
-      severity: template.severity,
-      status,
-      
-      title: template.title,
-      message: template.message,
-      
-      metric_name: template.metric_name,
-      metric_value: template.metric_value,
-      threshold_value: template.threshold_value,
-      
-      triggered_at: triggeredAt.toISOString(),
-      acknowledged_at: acknowledgedAt,
-      resolved_at: resolvedAt,
-      
-      duration_minutes: durationMinutes,
-      
-      notification_sent: true,
-      notification_channels_used: notificationChannels,
-      
-      metadata: {
-        triggered_by: 'system',
-        acknowledged_by: acknowledgedAt ? 'Admin User' : undefined,
-        resolved_by: resolvedAt ? 'Admin User' : undefined,
-      },
-      
-      created_at: triggeredAt.toISOString(),
-      updated_at: resolvedAt || acknowledgedAt || triggeredAt.toISOString(),
+    const base = baseValues[scenario];
+    
+    // Add realistic variations
+    const variation = () => (Math.random() - 0.5) * 0.15; // ±7.5% variation
+    
+    series.push({
+      timestamp,
+      uptime_percent: Number((base.uptime + base.uptime * variation() * 0.01).toFixed(2)),
+      avg_response_time: Number((base.latency + base.latency * variation()).toFixed(1)),
+      errors: Math.floor(Math.max(0, base.errors + base.errors * variation())),
+      requests: Math.floor(base.requests + base.requests * variation())
     });
   }
 
-  // Sort by triggered_at desc
-  return alerts.sort((a, b) => 
-    new Date(b.triggered_at).getTime() - new Date(a.triggered_at).getTime()
-  );
+  return series;
 }
 
+// ============================================================================
+// ALERTS GENERATOR
+// ============================================================================
+
 /**
- * Generate a complete mock SLA dataset for comprehensive testing
+ * Generate mock SLA alerts
  */
-export function generateCompleteMockSLAData(
-  partnerId: string,
-  tenantId: string,
-  scenario: 'healthy' | 'degraded' | 'critical' = 'healthy'
-) {
-  return {
-    metrics_1h: generateMockSLAMetrics(partnerId, '1h', scenario),
-    metrics_24h: generateMockSLAMetrics(partnerId, '24h', scenario),
-    metrics_7d: generateMockSLAMetrics(partnerId, '7d', scenario),
-    metrics_30d: generateMockSLAMetrics(partnerId, '30d', scenario),
-    alerts: generateMockSLAAlerts(partnerId, tenantId, 30, scenario),
+export function generateMockSLAAlerts(options: MockSLAOptions = {}): SLAAlert[] {
+  const {
+    scenario = 'healthy',
+    partnerId = 'partner_123'
+  } = options;
+
+  const alertCount = {
+    healthy: 0,
+    degraded: 3,
+    critical: 8
   };
+
+  const count = alertCount[scenario];
+  if (count === 0) return [];
+
+  const alerts: SLAAlert[] = [];
+  const now = Date.now();
+
+  // Alert templates
+  const templates: Array<{
+    type: SLAAlertType;
+    severity: SLAAlertSeverity;
+    title: string;
+    message: string;
+    metricName: string;
+    threshold: number;
+    actual: number;
+  }> = [
+    {
+      type: 'latency',
+      severity: 'critical',
+      title: 'P95 Latency Vượt Ngưỡng Nghiêm Trọng',
+      message: 'P95 latency đã vượt ngưỡng 500ms trong 5 phút liên tiếp',
+      metricName: 'p95_response_time_ms',
+      threshold: 500,
+      actual: scenario === 'critical' ? 1350 : 620
+    },
+    {
+      type: 'error_rate',
+      severity: 'warning',
+      title: 'Tỷ Lệ Lỗi Cao Bất Thường',
+      message: 'Error rate đạt mức cao hơn 5% trong 10 phút qua',
+      metricName: 'error_rate_percent',
+      threshold: 5,
+      actual: scenario === 'critical' ? 8.2 : 6.1
+    },
+    {
+      type: 'uptime',
+      severity: 'critical',
+      title: 'Mất Kết Nối API',
+      message: 'API không phản hồi trong 3 phút. Có thể dịch vụ đang gặp sự cố',
+      metricName: 'uptime_percent',
+      threshold: 99.9,
+      actual: scenario === 'critical' ? 92.8 : 97.5
+    },
+    {
+      type: 'availability',
+      severity: 'info',
+      title: 'Availability Giảm',
+      message: 'Availability giảm xuống dưới 98% do nhiều request thất bại',
+      metricName: 'uptime_percent',
+      threshold: 98,
+      actual: 96.4
+    },
+    {
+      type: 'latency',
+      severity: 'warning',
+      title: 'P99 Latency Vượt Ngưỡng',
+      message: 'P99 latency đạt 2.8s, vượt ngưỡng cho phép 1s',
+      metricName: 'p99_response_time_ms',
+      threshold: 1000,
+      actual: 2850
+    },
+    {
+      type: 'error_rate',
+      severity: 'critical',
+      title: 'Tỷ Lệ Lỗi Cực Kỳ Cao',
+      message: 'Error rate vượt 10% - cần điều tra ngay lập tức',
+      metricName: 'error_rate_percent',
+      threshold: 10,
+      actual: 12.3
+    },
+    {
+      type: 'uptime',
+      severity: 'warning',
+      title: 'Downtime Kéo Dài',
+      message: 'API đã offline trong 15 phút. Tổng downtime: 45 phút trong 24h',
+      metricName: 'uptime_percent',
+      threshold: 99,
+      actual: 94.2
+    },
+    {
+      type: 'availability',
+      severity: 'info',
+      title: 'Nhiều Request Timeout',
+      message: 'Phát hiện nhiều request timeout liên tiếp trong 5 phút',
+      metricName: 'uptime_percent',
+      threshold: 97,
+      actual: 95.8
+    }
+  ];
+
+  // Select alerts based on count
+  const selectedTemplates = templates.slice(0, Math.min(count, templates.length));
+
+  selectedTemplates.forEach((template, index) => {
+    const minutesAgo = index * (scenario === 'critical' ? 5 : 15);
+    const isResolved = scenario === 'degraded' && index < 1; // Degraded: 1 resolved alert
+    const triggeredAt = new Date(now - minutesAgo * 60 * 1000).toISOString();
+
+    alerts.push({
+      id: `alert_${partnerId}_${Date.now()}_${index}`,
+      partner_id: partnerId,
+      tenant_id: 'tenant_123',
+      alert_type: template.type,
+      severity: template.severity,
+      status: isResolved ? 'resolved' : (index === 0 ? 'active' : 'acknowledged'),
+      title: template.title,
+      message: template.message,
+      metric_name: template.metricName,
+      metric_value: template.actual,
+      threshold_value: template.threshold,
+      triggered_at: triggeredAt,
+      acknowledged_at: !isResolved && index > 0 
+        ? new Date(now - (minutesAgo - 2) * 60 * 1000).toISOString() 
+        : undefined,
+      resolved_at: isResolved 
+        ? new Date(now - (minutesAgo - 10) * 60 * 1000).toISOString() 
+        : undefined,
+      duration_minutes: isResolved ? 10 : undefined,
+      notification_sent: true,
+      notification_channels_used: ['email', 'webhook'],
+      metadata: {
+        resolved_by: isResolved ? 'admin@bella.vn' : undefined,
+        resolution_notes: isResolved ? 'Đã tăng cường server capacity, metrics đã ổn định.' : undefined
+      },
+      created_at: triggeredAt,
+      updated_at: new Date().toISOString()
+    });
+  });
+
+  return alerts;
+}
+
+// ============================================================================
+// COMPLETE MOCK DATA
+// ============================================================================
+
+/**
+ * Generate complete mock SLA data (metrics + alerts)
+ */
+export function generateCompleteMockSLAData(options: MockSLAOptions = {}) {
+  return {
+    metrics: generateMockSLAMetrics(options),
+    alerts: generateMockSLAAlerts(options)
+  };
+}
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+function getTimeRangeStart(timeRange: '1h' | '24h' | '7d' | '30d'): string {
+  const now = Date.now();
+  const durations = {
+    '1h': 60 * 60 * 1000,
+    '24h': 24 * 60 * 60 * 1000,
+    '7d': 7 * 24 * 60 * 60 * 1000,
+    '30d': 30 * 24 * 60 * 60 * 1000
+  };
+  
+  return new Date(now - durations[timeRange]).toISOString();
+}
+
+function getMinutesInRange(timeRange: '1h' | '24h' | '7d' | '30d'): number {
+  const minutes = {
+    '1h': 60,
+    '24h': 24 * 60,
+    '7d': 7 * 24 * 60,
+    '30d': 30 * 24 * 60
+  };
+  
+  return minutes[timeRange];
 }

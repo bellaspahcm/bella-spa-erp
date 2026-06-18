@@ -530,7 +530,7 @@ export function SLAAlertConfigDialog({
                   <Label htmlFor="check_interval">Check Interval (seconds)</Label>
                   <Select
                     value={checkInterval.toString()}
-                    onValueChange={(value) => setCheckInterval(parseInt(value))}
+                    onValueChange={(value) => value && setCheckInterval(parseInt(value))}
                   >
                     <SelectTrigger>
                       <SelectValue />
