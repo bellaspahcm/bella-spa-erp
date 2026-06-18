@@ -1,0 +1,42 @@
+{
+  "name": "bella-erp-staging",
+  "framework": "nextjs",
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm ci",
+  "outputDirectory": ".next",
+  "regions": ["sin1"],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, must-revalidate"
+        },
+        {
+          "key": "X-Environment",
+          "value": "staging"
+        },
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/accounting-worker",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/zalo-reminders",
+      "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/ai-autopilot",
+      "schedule": "0 23 * * *"
+    }
+  ]
+}

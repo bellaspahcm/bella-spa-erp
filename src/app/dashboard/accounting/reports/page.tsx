@@ -22,6 +22,7 @@ import {
 } from '@/core/services/analytics/export-actions';
 import { SkeletonTable } from '@/components/ui/SkeletonLoader';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
+import { ProcessOutboxButton } from '@/components/accounting/ProcessOutboxButton';
 import { toast } from 'sonner';
 import { getAccountingErrorMessage as getErrorMessage } from '@/lib/accounting-error-message';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
@@ -273,6 +274,9 @@ export default function AccountingReportsPage() {
 
         {/* Dynamic Filters Bar based on active tab */}
         <div className="grid w-full min-w-0 grid-cols-1 gap-4 xl:w-auto xl:justify-items-end">
+          {/* Process Outbox Button - Always visible */}
+          <ProcessOutboxButton />
+          
           {activeTab === 'trial_balance' || activeTab === 'balance_sheet' ? (
             <div className={dateFieldClassName}>
               <span className={dateLabelClassName}>Tính đến ngày:</span>

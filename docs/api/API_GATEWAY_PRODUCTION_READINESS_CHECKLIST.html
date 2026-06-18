@@ -1,0 +1,1419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Gateway Production Readiness Checklist | Bella ERP</title>
+    <style>
+        :root {
+            --rose-50: #fff1f2;
+            --rose-100: #ffe4e6;
+            --rose-200: #fecdd3;
+            --rose-500: #f43f5e;
+            --rose-600: #e11d48;
+            --rose-700: #be123c;
+            --rose-800: #9f1239;
+            --rose-900: #881337;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+            --green-100: #dcfce7;
+            --green-500: #22c55e;
+            --green-700: #15803d;
+            --yellow-100: #fef3c7;
+            --yellow-500: #eab308;
+            --yellow-700: #a16207;
+            --red-100: #fee2e2;
+            --red-500: #ef4444;
+            --red-700: #b91c1c;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--gray-900);
+            background: linear-gradient(135deg, var(--rose-50) 0%, var(--gray-50) 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--rose-800) 0%, var(--rose-900) 100%);
+            color: white;
+            padding: 3rem 2rem;
+            border-radius: 1rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(136, 19, 55, 0.2);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            font-weight: 400;
+        }
+        
+        .status-bar {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .status-item {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 0.75rem 1.25rem;
+            border-radius: 0.5rem;
+            backdrop-filter: blur(10px);
+        }
+        
+        .status-label {
+            font-size: 0.8rem;
+            opacity: 0.8;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .status-value {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-top: 0.25rem;
+        }
+        
+        .summary-box {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+        
+        .progress-bar-container {
+            width: 100%;
+            height: 30px;
+            background: var(--gray-200);
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 1rem 0;
+            position: relative;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--green-500) 0%, var(--green-700) 100%);
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+        
+        .phase-section {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            margin-bottom: 1.5rem;
+        }
+        
+        .phase-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--gray-200);
+        }
+        
+        .phase-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .phase-title h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+        
+        .phase-icon {
+            font-size: 1.8rem;
+        }
+        
+        .status-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .badge-complete {
+            background: var(--green-100);
+            color: var(--green-700);
+        }
+        
+        .badge-progress {
+            background: var(--yellow-100);
+            color: var(--yellow-700);
+        }
+        
+        .badge-pending {
+            background: var(--gray-200);
+            color: var(--gray-700);
+        }
+        
+        .badge-blocker {
+            background: var(--red-100);
+            color: var(--red-700);
+        }
+        
+        .checklist {
+            list-style: none;
+            margin-top: 1rem;
+        }
+        
+        .checklist-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--gray-100);
+        }
+        
+        .checklist-item:last-child {
+            border-bottom: none;
+        }
+        
+        .checkbox {
+            width: 20px;
+            height: 20px;
+            min-width: 20px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            margin-top: 2px;
+        }
+        
+        .checkbox.checked {
+            background: var(--green-500);
+            color: white;
+        }
+        
+        .checkbox.unchecked {
+            background: var(--gray-200);
+            color: var(--gray-400);
+        }
+        
+        .item-text {
+            flex: 1;
+            color: var(--gray-700);
+        }
+        
+        .item-text.checked {
+            color: var(--gray-500);
+            text-decoration: line-through;
+        }
+        
+        .subsection {
+            margin-top: 1.5rem;
+        }
+        
+        .subsection h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--rose-800);
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .alert {
+            padding: 1.25rem;
+            border-radius: 0.75rem;
+            margin: 1.5rem 0;
+            border-left: 4px solid;
+        }
+        
+        .alert-warning {
+            background: var(--yellow-100);
+            border-color: var(--yellow-500);
+            color: var(--yellow-700);
+        }
+        
+        .alert-danger {
+            background: var(--red-100);
+            border-color: var(--red-500);
+            color: var(--red-700);
+        }
+        
+        .alert-success {
+            background: var(--green-100);
+            border-color: var(--green-500);
+            color: var(--green-700);
+        }
+        
+        .alert-title {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+        
+        .metric-card {
+            background: var(--gray-50);
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            border: 2px solid var(--gray-200);
+        }
+        
+        .metric-label {
+            font-size: 0.9rem;
+            color: var(--gray-600);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 600;
+        }
+        
+        .metric-value {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--rose-800);
+            margin-top: 0.5rem;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            margin: 1.5rem 0;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+        
+        th {
+            background: var(--rose-800);
+            color: white;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--gray-200);
+        }
+        
+        tr:hover {
+            background: var(--rose-50);
+        }
+        
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--gray-600);
+            margin-top: 3rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>✅ API Gateway Production Readiness Checklist</h1>
+            <p class="subtitle">Comprehensive pre-launch validation for Bella ERP API Gateway</p>
+            <div class="status-bar">
+                <div class="status-item">
+                    <div class="status-label">Status</div>
+                    <div class="status-value">PRE-PRODUCTION</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">Overall Progress</div>
+                    <div class="status-value">85% Complete</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">Last Updated</div>
+                    <div class="status-value">2026-06-18</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">Go-Live Target</div>
+                    <div class="status-value">TBD</div>
+                </div>
+            </div>
+        </header>
+
+        <div class="summary-box">
+            <h2 style="margin-bottom: 1rem;">📋 Executive Summary</h2>
+            <p style="color: var(--gray-700); margin-bottom: 1rem;">
+                This checklist ensures the Bella API Gateway is production-ready before launching to external partners.
+                All critical infrastructure, security, and documentation components must be validated before go-live.
+            </p>
+            <div class="progress-bar-container">
+                <div class="progress-bar" style="width: 85%;">85% Complete (17/20 items)</div>
+            </div>
+        </div>
+
+        <!-- Phase 1: Core Infrastructure -->
+        <div class="phase-section">
+            <div class="phase-header">
+                <div class="phase-title">
+                    <span class="phase-icon">🎯</span>
+                    <h2>Phase 1: Core Infrastructure</h2>
+                </div>
+                <span class="status-badge badge-complete">✅ COMPLETE</span>
+            </div>
+
+            <div class="subsection">
+                <h3>✅ Database & Schema</h3>
+                <ul class="checklist">
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked"><code>api_partners</code> table created with proper indexes</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked"><code>api_request_logs</code> table with partitioning strategy</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked"><code>api_rate_limit_counters</code> table with TTL</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked"><code>sandbox.sandbox_metadata</code> table</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked">Database migrations tested in staging</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked">Backup & restore procedures documented</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="subsection">
+                <h3>✅ Authentication & Security</h3>
+                <ul class="checklist">
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked">API Key generation algorithm (Bearer token format)</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked">API Key validation middleware</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked">Scope-based permission system (14 scopes defined)</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked">Tenant isolation at database level</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked">HTTPS enforcement</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked">Rate limiting middleware (5 tiers)</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="subsection">
+                <h3>✅ Core API Endpoints (24 endpoints)</h3>
+                <ul class="checklist">
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked"><strong>Admin API</strong> (10 endpoints): Partner CRUD, Logs, Usage, Analytics, SLA metrics, alerts, config</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked"><strong>Public API</strong> (14 endpoints): Orders (5), Payments (3), Customers (3), Products (1), Webhooks (2)</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Phase 2: Admin UI -->
+        <div class="phase-section">
+            <div class="phase-header">
+                <div class="phase-title">
+                    <span class="phase-icon">🎨</span>
+                    <h2>Phase 2: Admin UI</h2>
+                </div>
+                <span class="status-badge badge-complete">✅ COMPLETE</span>
+            </div>
+
+            <div class="subsection">
+                <h3>✅ Partner Management Dashboard</h3>
+                <ul class="checklist">
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked">Partners list with filters & search</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked">Stats dashboard (4 KPI cards)</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked">Create partner wizard (4 steps)</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked">Edit partner form</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="subsection">
+                <h3>✅ Partner Detail Page (9 Tabs)</h3>
+                <ul class="checklist">
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked">Tab 1: Overview (API key management)</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked">Tab 2: Scopes (Permission manager)</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked">Tab 3: Logs (Request history)</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked">Tab 4: Webhooks (Configuration)</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked">Tab 5: Usage Analytics (Charts & metrics)</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked">Tab 6: Webhook Logs (Delivery tracking)</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked">Tab 7: Security (Key rotation)</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked">Tab 8: Activity (Audit trail)</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked">Tab 9: SLA Monitor (Compliance tracking)</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="subsection">
+                <h3>✅ Advanced Features</h3>
+                <ul class="checklist">
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked">Rate limit customization per partner</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked">Advanced analytics dashboard</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked">Webhook retry mechanism (auto + manual)</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked">API key rotation scheduler</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked">Partner activity timeline</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked">SLA monitoring & alerts</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Phase 3: Documentation -->
+        <div class="phase-section">
+            <div class="phase-header">
+                <div class="phase-title">
+                    <span class="phase-icon">📚</span>
+                    <h2>Phase 3: Documentation</h2>
+                </div>
+                <span class="status-badge badge-complete">✅ COMPLETE</span>
+            </div>
+
+            <div class="subsection">
+                <h3>✅ Essential Documentation (8 files)</h3>
+                <ul class="checklist">
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked"><strong>BELLA_API_GATEWAY_MASTER_GUIDE.md</strong> - Complete guide (626 lines)</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked"><strong>BELLA_API_GATEWAY_MASTER_GUIDE.html</strong> - Styled HTML version</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked"><strong>API_REFERENCE.md</strong> - Complete endpoint reference</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked"><strong>GETTING_STARTED.md</strong> - Quick start guide</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked"><strong>WEBHOOKS.md</strong> - Webhook implementation</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked"><strong>ERROR_HANDLING.md</strong> - Error codes & retry logic</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked"><strong>SECURITY_BEST_PRACTICES.md</strong> - Security guidelines</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked"><strong>ADMIN_UI_GUIDE.md</strong> - Admin panel documentation</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="subsection">
+                <h3>✅ Supporting Documentation</h3>
+                <ul class="checklist">
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked"><strong>README.md</strong> - Entry point with clear hierarchy</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked"><strong>API_DOCUMENTATION_AUDIT.md</strong> - Audit report</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked"><strong>Postman Collection</strong> - API testing suite</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked">Documentation consolidation (20 → 8 files)</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Phase 4: Testing & QA -->
+        <div class="phase-section">
+            <div class="phase-header">
+                <div class="phase-title">
+                    <span class="phase-icon">🚧</span>
+                    <h2>Phase 4: Testing & QA</h2>
+                </div>
+                <span class="status-badge badge-progress">⚠️ IN PROGRESS (3/5)</span>
+            </div>
+
+            <div class="subsection">
+                <h3>✅ Unit Testing</h3>
+                <ul class="checklist">
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked">Authentication middleware tests</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked">Rate limiting tests</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked">Validation middleware tests</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="subsection">
+                <h3>⏳ Integration Testing (PENDING)</h3>
+                <ul class="checklist">
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text"><strong>Partner CRUD flow</strong> - Create → Edit → Delete</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text"><strong>API key lifecycle</strong> - Generate → Rotate → Revoke</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text"><strong>Webhook delivery</strong> - Subscribe → Test → Verify signature</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text"><strong>Rate limiting</strong> - Test all 5 tiers</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text"><strong>Sandbox reset</strong> - Test data isolation</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="subsection">
+                <h3>⏳ End-to-End Testing (PENDING)</h3>
+                <ul class="checklist">
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text"><strong>Partner onboarding flow</strong> - Registration → API key → First call</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text"><strong>Order creation flow</strong> - Create order → Process payment → Webhook</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text"><strong>Error scenarios</strong> - Invalid API key, Rate limit exceeded, Permission denied</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="subsection">
+                <h3>✅ Admin UI Testing</h3>
+                <ul class="checklist">
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked">All 9 tabs functional</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked">Create partner wizard (4 steps)</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked">Responsive design (mobile + desktop)</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="subsection">
+                <h3>⏳ Security Testing (PENDING)</h3>
+                <ul class="checklist">
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text"><strong>Penetration testing</strong> - OWASP Top 10</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text"><strong>API key exposure</strong> - Verify not in logs/errors</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text"><strong>SQL injection</strong> - Test all input fields</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text"><strong>Rate limit bypass</strong> - Test circumvention attempts</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text"><strong>Webhook signature</strong> - Verify signature validation</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Phase 5: Security Hardening -->
+        <div class="phase-section">
+            <div class="phase-header">
+                <div class="phase-title">
+                    <span class="phase-icon">🔒</span>
+                    <h2>Phase 5: Security Hardening</h2>
+                </div>
+                <span class="status-badge badge-progress">⚠️ PARTIAL (2/4)</span>
+            </div>
+
+            <div class="subsection">
+                <h3>✅ Implemented</h3>
+                <ul class="checklist">
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked">API Key hashing (not stored in plain text)</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked">HTTPS enforcement</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked">Webhook signature verification (HMAC SHA-256)</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked">Rate limiting per tier</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="subsection">
+                <h3>⏳ Pending</h3>
+                <ul class="checklist">
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text"><strong>API Key rotation policy</strong> - Automatic rotation (30/60/90 days)</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text"><strong>IP Whitelist</strong> - Optional IP restrictions per partner</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text"><strong>Audit logging</strong> - All admin actions logged</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text"><strong>Security headers</strong> - HSTS, CSP, X-Frame-Options</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Phase 6: Monitoring & Observability -->
+        <div class="phase-section">
+            <div class="phase-header">
+                <div class="phase-title">
+                    <span class="phase-icon">📊</span>
+                    <h2>Phase 6: Monitoring & Observability</h2>
+                </div>
+                <span class="status-badge badge-progress">⏳ PARTIAL (2/5)</span>
+            </div>
+
+            <div class="subsection">
+                <h3>✅ Implemented</h3>
+                <ul class="checklist">
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked">Request/response logging to database</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked">SLA metrics calculation (uptime, latency, error rate)</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked">Admin UI analytics dashboard</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="subsection">
+                <h3>⏳ Pending</h3>
+                <ul class="checklist">
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text"><strong>Real-time monitoring</strong> - Integration with monitoring service (Datadog, New Relic)</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text"><strong>Alert notifications</strong> - Email/Slack alerts for critical events</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text"><strong>Performance metrics</strong> - P95/P99 latency tracking</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text"><strong>Error tracking</strong> - Sentry or similar error tracking</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text"><strong>Log aggregation</strong> - Centralized logging (ELK, Cloudwatch)</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Phase 7: Deployment & Operations -->
+        <div class="phase-section">
+            <div class="phase-header">
+                <div class="phase-title">
+                    <span class="phase-icon">🚀</span>
+                    <h2>Phase 7: Deployment & Operations</h2>
+                </div>
+                <span class="status-badge badge-pending">⏳ PENDING (0/5)</span>
+            </div>
+
+            <div class="subsection">
+                <h3>⏳ Infrastructure</h3>
+                <ul class="checklist">
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text"><strong>Production environment</strong> - Separate from staging</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text"><strong>Database replication</strong> - Read replicas for analytics</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text"><strong>CDN setup</strong> - API endpoint caching (if applicable)</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text"><strong>Load balancing</strong> - Distribute traffic across servers</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text"><strong>Auto-scaling</strong> - Based on request volume</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="subsection">
+                <h3>⏳ CI/CD Pipeline</h3>
+                <ul class="checklist">
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text"><strong>Automated tests</strong> - Run on every commit</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text"><strong>Staging deployment</strong> - Auto-deploy to staging</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text"><strong>Production deployment</strong> - Manual approval required</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text"><strong>Rollback plan</strong> - Quick rollback procedure</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text"><strong>Database migrations</strong> - Zero-downtime migrations</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Phase 8: Partner Onboarding -->
+        <div class="phase-section">
+            <div class="phase-header">
+                <div class="phase-title">
+                    <span class="phase-icon">👥</span>
+                    <h2>Phase 8: Partner Onboarding</h2>
+                </div>
+                <span class="status-badge badge-pending">⏳ NOT STARTED (0/5)</span>
+            </div>
+
+            <div class="subsection">
+                <h3>⏳ Pre-Launch</h3>
+                <ul class="checklist">
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text"><strong>Partner criteria</strong> - Define selection criteria</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text"><strong>Onboarding process</strong> - Document step-by-step flow</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text"><strong>Approval workflow</strong> - Admin approval process</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text"><strong>SLA agreements</strong> - Define SLA tiers & commitments</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text"><strong>Support process</strong> - Define support channels & SLA</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="subsection">
+                <h3>⏳ Launch Strategy</h3>
+                <ul class="checklist">
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text"><strong>Pilot partners</strong> - Select 2-3 pilot partners</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text"><strong>Beta program</strong> - Limited beta (5-10 partners)</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text"><strong>General availability</strong> - Public launch</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text"><strong>Marketing materials</strong> - Blog post, press release</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text"><strong>Developer portal</strong> - Public documentation site</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Success Metrics -->
+        <div class="phase-section">
+            <div class="phase-header">
+                <div class="phase-title">
+                    <span class="phase-icon">📈</span>
+                    <h2>Success Metrics (KPIs)</h2>
+                </div>
+            </div>
+
+            <div class="subsection">
+                <h3>🎯 Technical Metrics</h3>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-label">API Uptime</div>
+                        <div class="metric-value">99.9%</div>
+                        <p style="margin-top: 0.5rem; color: var(--gray-600); font-size: 0.9rem;">Three nines reliability</p>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">P95 Latency</div>
+                        <div class="metric-value">&lt; 200ms</div>
+                        <p style="margin-top: 0.5rem; color: var(--gray-600); font-size: 0.9rem;">95th percentile response time</p>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Error Rate</div>
+                        <div class="metric-value">&lt; 1%</div>
+                        <p style="margin-top: 0.5rem; color: var(--gray-600); font-size: 0.9rem;">Target error threshold</p>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Rate Limit Hit Rate</div>
+                        <div class="metric-value">&lt; 5%</div>
+                        <p style="margin-top: 0.5rem; color: var(--gray-600); font-size: 0.9rem;">Proper tier assignment indicator</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="subsection">
+                <h3>💼 Business Metrics</h3>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-label">Active Partners</div>
+                        <div class="metric-value">10</div>
+                        <p style="margin-top: 0.5rem; color: var(--gray-600); font-size: 0.9rem;">First 3 months target</p>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">API Calls/Day</div>
+                        <div class="metric-value">100K</div>
+                        <p style="margin-top: 0.5rem; color: var(--gray-600); font-size: 0.9rem;">6 months target</p>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Partner NPS</div>
+                        <div class="metric-value">&gt; 50</div>
+                        <p style="margin-top: 0.5rem; color: var(--gray-600); font-size: 0.9rem;">Satisfaction score</p>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Time to First Call</div>
+                        <div class="metric-value">&lt; 1 hour</div>
+                        <p style="margin-top: 0.5rem; color: var(--gray-600); font-size: 0.9rem;">From approval to first API call</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Go/No-Go Decision Matrix -->
+        <div class="phase-section">
+            <div class="phase-header">
+                <div class="phase-title">
+                    <span class="phase-icon">🚦</span>
+                    <h2>Go/No-Go Decision Matrix</h2>
+                </div>
+            </div>
+
+            <div class="subsection">
+                <h3>✅ MUST HAVE (Before Launch)</h3>
+                <ul class="checklist">
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked">Core API endpoints functional</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked">Authentication & authorization working</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked">Rate limiting enforced</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked">Admin UI complete</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked">Documentation complete</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text"><strong>⚠️ BLOCKER: Integration tests passed</strong></span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text"><strong>⚠️ BLOCKER: Security audit completed</strong></span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text"><strong>⚠️ BLOCKER: Production infrastructure ready</strong></span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="subsection">
+                <h3>⚠️ SHOULD HAVE (Nice to Have)</h3>
+                <ul class="checklist">
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text">Real-time monitoring</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text">Alert notifications</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text">API key rotation automation</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text">IP whitelist feature</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text">Developer portal</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="alert alert-danger">
+                <div class="alert-title">🚫 Current Status: NOT READY FOR PRODUCTION</div>
+                <p><strong>Blockers (3):</strong></p>
+                <ol style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                    <li>Integration & E2E tests not completed</li>
+                    <li>Security audit not performed</li>
+                    <li>Production infrastructure not provisioned</li>
+                </ol>
+                <p style="margin-top: 1rem;"><strong>Estimated Time to Launch:</strong> 2-3 weeks (assuming resources available)</p>
+            </div>
+        </div>
+
+        <!-- Pre-Launch Checklist -->
+        <div class="phase-section">
+            <div class="phase-header">
+                <div class="phase-title">
+                    <span class="phase-icon">📋</span>
+                    <h2>Pre-Launch Checklist (Final Week)</h2>
+                </div>
+            </div>
+
+            <div class="subsection">
+                <h3>1️⃣ Week Before Launch</h3>
+                <ul class="checklist">
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text">Complete all integration tests</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text">Security audit passed</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text">Load testing completed (1000 req/min sustained)</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text">Backup & disaster recovery tested</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text">Monitoring & alerting configured</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text">Support team trained</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="subsection">
+                <h3>3️⃣ Days Before Launch</h3>
+                <ul class="checklist">
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text">Deploy to production environment</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text">Smoke tests in production</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text">DNS & SSL certificates verified</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text">Rate limits configured per tier</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text">Rollback plan documented & tested</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="subsection">
+                <h3>🚀 Launch Day</h3>
+                <ul class="checklist">
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text">Final smoke tests</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text">Monitor dashboard ready</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text">Support team on standby</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text">Communication plan ready (email, social media)</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text">Launch announcement published</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="subsection">
+                <h3>📊 Post-Launch (First 24 Hours)</h3>
+                <ul class="checklist">
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text">Monitor error rates every hour</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text">Check partner feedback</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text">Quick response to issues (&lt; 15 min)</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox unchecked">○</span>
+                        <span class="item-text">Daily status report to stakeholders</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="alert alert-warning">
+                <div class="alert-title">⚠️ Critical Launch Dependencies</div>
+                <p>The following items MUST be completed before moving to launch phase:</p>
+                <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                    <li><strong>Integration Testing:</strong> Complete Partner CRUD, API key lifecycle, Webhook delivery tests</li>
+                    <li><strong>Security Audit:</strong> Penetration testing, OWASP Top 10 validation, API key exposure checks</li>
+                    <li><strong>Infrastructure:</strong> Production environment provisioned with auto-scaling, load balancing, monitoring</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Related Documents -->
+        <div class="phase-section">
+            <div class="phase-header">
+                <div class="phase-title">
+                    <span class="phase-icon">🔗</span>
+                    <h2>Related Documents</h2>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; margin-top: 1rem;">
+                <a href="./BELLA_API_GATEWAY_MASTER_GUIDE.html" style="display: block; padding: 1.25rem; background: var(--rose-50); border-radius: 0.75rem; text-decoration: none; color: var(--rose-900); border: 2px solid var(--rose-200); transition: all 0.2s;">
+                    <div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 0.5rem;">📘 API Gateway Master Guide</div>
+                    <p style="color: var(--gray-700); font-size: 0.9rem;">Complete guide to Bella API Gateway architecture, endpoints, and usage</p>
+                </a>
+                
+                <a href="./ADMIN_UI_GUIDE.md" style="display: block; padding: 1.25rem; background: var(--rose-50); border-radius: 0.75rem; text-decoration: none; color: var(--rose-900); border: 2px solid var(--rose-200); transition: all 0.2s;">
+                    <div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 0.5rem;">🎨 Admin UI Guide</div>
+                    <p style="color: var(--gray-700); font-size: 0.9rem;">Partner management dashboard and admin interface documentation</p>
+                </a>
+                
+                <a href="./API_DOCUMENTATION_AUDIT.md" style="display: block; padding: 1.25rem; background: var(--rose-50); border-radius: 0.75rem; text-decoration: none; color: var(--rose-900); border: 2px solid var(--rose-200); transition: all 0.2s;">
+                    <div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 0.5rem;">📊 Documentation Audit</div>
+                    <p style="color: var(--gray-700); font-size: 0.9rem;">Analysis of API documentation structure and recommendations</p>
+                </a>
+                
+                <a href="./SECURITY_BEST_PRACTICES.md" style="display: block; padding: 1.25rem; background: var(--rose-50); border-radius: 0.75rem; text-decoration: none; color: var(--rose-900); border: 2px solid var(--rose-200); transition: all 0.2s;">
+                    <div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 0.5rem;">🔒 Security Best Practices</div>
+                    <p style="color: var(--gray-700); font-size: 0.9rem;">Security guidelines and recommendations for API integration</p>
+                </a>
+            </div>
+        </div>
+
+        <!-- Sign-Off Section -->
+        <div class="phase-section">
+            <div class="phase-header">
+                <div class="phase-title">
+                    <span class="phase-icon">📝</span>
+                    <h2>Sign-Off</h2>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Role</th>
+                            <th>Name</th>
+                            <th>Signature</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Tech Lead</strong></td>
+                            <td>_______________</td>
+                            <td>_______________</td>
+                            <td>______</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Security Lead</strong></td>
+                            <td>_______________</td>
+                            <td>_______________</td>
+                            <td>______</td>
+                        </tr>
+                        <tr>
+                            <td><strong>QA Lead</strong></td>
+                            <td>_______________</td>
+                            <td>_______________</td>
+                            <td>______</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Product Owner</strong></td>
+                            <td>_______________</td>
+                            <td>_______________</td>
+                            <td>______</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="margin-top: 2rem; padding: 1.5rem; background: var(--gray-100); border-radius: 0.75rem;">
+                <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+                    <div>
+                        <div style="font-size: 0.85rem; color: var(--gray-600); text-transform: uppercase; letter-spacing: 0.05em;">Last Updated</div>
+                        <div style="font-size: 1.1rem; font-weight: 700; color: var(--gray-900); margin-top: 0.25rem;">2026-06-18</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.85rem; color: var(--gray-600); text-transform: uppercase; letter-spacing: 0.05em;">Version</div>
+                        <div style="font-size: 1.1rem; font-weight: 700; color: var(--gray-900); margin-top: 0.25rem;">1.0</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.85rem; color: var(--gray-600); text-transform: uppercase; letter-spacing: 0.05em;">Status</div>
+                        <div style="font-size: 1.1rem; font-weight: 700; color: var(--rose-800); margin-top: 0.25rem;">DRAFT - Awaiting sign-off</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contact Information -->
+        <div class="phase-section">
+            <div class="phase-header">
+                <div class="phase-title">
+                    <span class="phase-icon">📞</span>
+                    <h2>Contacts</h2>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+                <div style="padding: 1.25rem; background: var(--gray-50); border-radius: 0.75rem;">
+                    <div style="font-weight: 700; color: var(--rose-800); margin-bottom: 0.5rem;">Project Owner</div>
+                    <a href="mailto:api-team@bellaspa.vn" style="color: var(--gray-700); text-decoration: none;">api-team@bellaspa.vn</a>
+                </div>
+                
+                <div style="padding: 1.25rem; background: var(--gray-50); border-radius: 0.75rem;">
+                    <div style="font-weight: 700; color: var(--rose-800); margin-bottom: 0.5rem;">Technical Lead</div>
+                    <a href="mailto:tech-lead@bellaspa.vn" style="color: var(--gray-700); text-decoration: none;">tech-lead@bellaspa.vn</a>
+                </div>
+                
+                <div style="padding: 1.25rem; background: var(--gray-50); border-radius: 0.75rem;">
+                    <div style="font-weight: 700; color: var(--rose-800); margin-bottom: 0.5rem;">Security Team</div>
+                    <a href="mailto:security@bellaspa.vn" style="color: var(--gray-700); text-decoration: none;">security@bellaspa.vn</a>
+                </div>
+                
+                <div style="padding: 1.25rem; background: var(--gray-50); border-radius: 0.75rem;">
+                    <div style="font-weight: 700; color: var(--rose-800); margin-bottom: 0.5rem;">DevOps</div>
+                    <a href="mailto:devops@bellaspa.vn" style="color: var(--gray-700); text-decoration: none;">devops@bellaspa.vn</a>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p style="font-size: 0.9rem;">© 2026 Bella ERP. All rights reserved.</p>
+            <p style="font-size: 0.85rem; margin-top: 0.5rem; color: var(--gray-500);">
+                This is a confidential document. Do not distribute without authorization.
+            </p>
+        </footer>
+    </div>
+</body>
+</html>

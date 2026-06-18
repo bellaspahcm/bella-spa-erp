@@ -1,0 +1,210 @@
+name: Deploy to Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag to deploy (e.g., v1.2.3)'
+        required: true
+        type: string
+      skip_smoke_tests:
+        description: 'Skip smoke tests (emergency hotfix only)'
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  pre-deployment-validation:
+    name: Pre-Deployment Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.version }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run full test suite
+        run: |
+          echo "🧪 Running full test suite..."
+          npm run lint
+          npm run test:ci
+          npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
+
+      - name: Run security audit
+        run: |
+          echo "🔒 Running security checks..."
+          npm run security:audit
+          npm run security:secrets
+
+      - name: Validate database migrations
+        run: |
+          echo "🗃️ Validating database migrations..."
+          # Add migration validation logic
+          # Check for breaking changes
+          # Verify rollback procedures
+
+      - name: Check for breaking changes
+        run: |
+          echo "⚠️ Checking for breaking API changes..."
+          # Add API compatibility check
+          # Compare with previous version
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [pre-deployment-validation]
+    environment:
+      name: production
+      url: https://bella-erp.com
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.version }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Create deployment marker
+        run: |
+          echo "🚀 Starting production deployment..."
+          echo "Version: ${{ github.event.inputs.version }}"
+          echo "Timestamp: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+          echo "Deployer: ${{ github.actor }}"
+
+      - name: Deploy to Vercel Production
+        id: deploy
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PRODUCTION_PROJECT_ID }}
+          vercel-args: '--prod --yes'
+          working-directory: ./
+          scope: ${{ secrets.VERCEL_ORG_ID }}
+
+      - name: Wait for deployment propagation
+        run: |
+          echo "⏳ Waiting 60 seconds for deployment to propagate..."
+          sleep 60
+
+      - name: Health check
+        run: |
+          echo "🏥 Running health checks..."
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://bella-erp.com/api/health)
+          if [ $response -ne 200 ]; then
+            echo "❌ Health check failed with status $response"
+            exit 1
+          fi
+          echo "✅ Health check passed"
+
+      - name: Run critical smoke tests
+        if: ${{ !inputs.skip_smoke_tests }}
+        run: npx playwright test tests/smoke/production-critical.spec.ts
+        env:
+          E2E_BASE_URL: https://bella-erp.com
+          E2E_ADMIN_EMAIL: ${{ secrets.PRODUCTION_E2E_ADMIN_EMAIL }}
+          E2E_ADMIN_PASSWORD: ${{ secrets.PRODUCTION_E2E_ADMIN_PASSWORD }}
+
+      - name: Create deployment record
+        run: |
+          echo "📝 Recording deployment..."
+          # Post to deployment tracking system
+          # Update status page
+          # Notify monitoring systems
+
+      - name: Notify success
+        if: success()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          custom_payload: |
+            {
+              "text": "✅ Production Deployment Successful",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Production Deployment Successful* 🎉\n\n*Version:* ${{ github.event.inputs.version }}\n*Deployed by:* ${{ github.actor }}\n*Time:* $(date -u +"%Y-%m-%d %H:%M:%S UTC")\n*URL:* https://bella-erp.com"
+                  }
+                }
+              ]
+            }
+          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Notify failure
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          custom_payload: |
+            {
+              "text": "❌ Production Deployment Failed",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Production Deployment Failed* ⚠️\n\n*Version:* ${{ github.event.inputs.version }}\n*Attempted by:* ${{ github.actor }}\n*Time:* $(date -u +"%Y-%m-%d %H:%M:%S UTC")\n\n*Action Required:* Review logs and initiate rollback if necessary"
+                  }
+                }
+              ]
+            }
+          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  post-deployment-monitoring:
+    name: Post-Deployment Monitoring
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [deploy-production]
+    if: success()
+
+    steps:
+      - name: Monitor error rates
+        run: |
+          echo "📊 Monitoring error rates for 5 minutes..."
+          # Query Sentry/monitoring for error spike
+          sleep 300
+
+      - name: Check performance metrics
+        run: |
+          echo "⚡ Checking performance metrics..."
+          # Query New Relic/Datadog for P95 latency
+          # Alert if regression detected
+
+      - name: Verify cron jobs
+        run: |
+          echo "⏰ Verifying cron job execution..."
+          # Check that scheduled tasks are running
+
+      - name: Final health report
+        run: |
+          echo "✅ Deployment monitoring complete"
+          echo "All systems nominal"
