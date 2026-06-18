@@ -827,13 +827,13 @@ export async function getTenantPartnerStats(
     // Aggregate statistics
     const stats: PartnerStatistics = {
       total_partners: partners.length,
-      active_partners: partners.filter(p => p.is_active).length,
-      sandbox_partners: partners.filter(p => p.is_sandbox).length,
+      active_partners: partners.filter((p: any) => p.is_active).length,
+      sandbox_partners: partners.filter((p: any) => p.is_sandbox).length,
       by_type: {} as Record<PartnerType, number>,
     };
     
     // Count by type
-    partners.forEach(partner => {
+    partners.forEach((partner: any) => {
       const type = partner.partner_type as PartnerType;
       stats.by_type[type] = (stats.by_type[type] || 0) + 1;
     });
