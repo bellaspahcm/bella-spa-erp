@@ -12,13 +12,23 @@
 import { NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { success, error as errorResponse, notFound } from '@/lib/api/response';
-import type { Database } from '@/types/supabase';
+import type { Database } from '@/types/database.types';
 
 /**
  * Get sandbox status for a partner
  * 
  * @route GET /api/admin/sandbox/status?partner_id=uuid
  * @access Admin, Super Admin
+ * 
+ * NOTE: This endpoint is temporarily disabled pending database type regeneration.
+ * The sandbox_metadata table exists in the database (created in migration
+ * 20260617010000_api_gateway_sandbox_environment.sql) but the TypeScript types
+ * have not been regenerated yet.
+ * 
+ * To enable this endpoint:
+ * 1. Run: npx supabase gen types typescript --project-id <project-id> > src/types/database.types.ts
+ * 2. Verify sandbox_metadata table appears in generated types
+ * 3. Uncomment the implementation below
  * 
  * @example
  * ```bash
@@ -27,6 +37,23 @@ import type { Database } from '@/types/supabase';
  * ```
  */
 export async function GET(req: NextRequest) {
+  // Temporarily return "not implemented" until database types are regenerated
+  return new Response(
+    JSON.stringify({
+      success: false,
+      error: {
+        code: 'NOT_IMPLEMENTED',
+        message: 'Sandbox status endpoint is temporarily disabled',
+        details: 'The sandbox_metadata table exists but TypeScript types need to be regenerated. Run: npx supabase gen types typescript --project-id <project-id> > src/types/database.types.ts',
+      },
+    }),
+    {
+      status: 501,
+      headers: { 'Content-Type': 'application/json' },
+    }
+  );
+
+  /* IMPLEMENTATION - Uncomment after regenerating database types
   try {
     // TODO: Add authentication check (admin/super admin only)
 
@@ -106,4 +133,5 @@ export async function GET(req: NextRequest) {
     console.error('Sandbox status error:', err);
     return errorResponse(req, 'INTERNAL_ERROR', err.message || 'An error occurred', 500);
   }
+  */
 }

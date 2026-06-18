@@ -32,7 +32,7 @@ async function checkAdminRole(req: NextRequest): Promise<{
   is_super_admin: boolean;
   error?: NextResponse;
 }> {
-  const supabase = createClient();
+  const supabase = await createClient();
   
   // Get authenticated user
   const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -102,7 +102,7 @@ async function checkAdminRole(req: NextRequest): Promise<{
   
   return {
     user,
-    tenant_id: profile.tenant_id,
+    tenant_id: profile.tenant_id || undefined,
     is_super_admin,
   };
 }

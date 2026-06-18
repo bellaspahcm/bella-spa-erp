@@ -15,7 +15,7 @@ import {
 } from '@/services/api-gateway/partner.service';
 
 async function checkAdminRole(req: NextRequest) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   
   if (authError || !user) {
@@ -48,7 +48,7 @@ async function checkAdminRole(req: NextRequest) {
   
   return {
     user,
-    tenant_id: profile.tenant_id,
+    tenant_id: profile.tenant_id || undefined,
     is_super_admin: profile.role === 'super_admin',
   };
 }
