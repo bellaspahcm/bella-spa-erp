@@ -56,7 +56,7 @@ export async function validateBody<T extends ZodSchema>(
   const contentType = req.headers.get('content-type');
   if (!contentType || !ALLOWED_CONTENT_TYPES.some(ct => contentType.toLowerCase().startsWith(ct))) {
     throw new APIError(
-      'INVALID_INPUT',
+      'VAL_001',
       'Invalid Content-Type. Expected application/json',
       { received: contentType },
       415
@@ -70,7 +70,7 @@ export async function validateBody<T extends ZodSchema>(
     const contentLength = req.headers.get('content-length');
     if (contentLength && parseInt(contentLength) > MAX_BODY_SIZE) {
       throw new APIError(
-        'INVALID_INPUT',
+        'VAL_001',
         `Request body too large. Maximum ${MAX_BODY_SIZE / 1024 / 1024}MB`,
         { size: parseInt(contentLength), max_size: MAX_BODY_SIZE },
         413
@@ -82,7 +82,7 @@ export async function validateBody<T extends ZodSchema>(
     if (error instanceof APIError) throw error;
     
     throw new APIError(
-      'INVALID_INPUT',
+      'VAL_001',
       'Invalid JSON in request body',
       { details: error instanceof Error ? error.message : 'Unknown error' },
       400
@@ -95,7 +95,7 @@ export async function validateBody<T extends ZodSchema>(
   } catch (error) {
     if (error instanceof ZodError) {
       throw new APIError(
-        'INVALID_INPUT',
+        'VAL_001',
         'Validation failed',
         { errors: formatZodErrors(error) },
         400
@@ -140,7 +140,7 @@ export function validateQuery<T extends ZodSchema>(
   } catch (error) {
     if (error instanceof ZodError) {
       throw new APIError(
-        'INVALID_INPUT',
+        'VAL_001',
         'Invalid query parameters',
         { errors: formatZodErrors(error) },
         400
@@ -167,7 +167,7 @@ export function validateParams<T extends ZodSchema>(
   } catch (error) {
     if (error instanceof ZodError) {
       throw new APIError(
-        'INVALID_INPUT',
+        'VAL_001',
         'Invalid path parameters',
         { errors: formatZodErrors(error) },
         400
@@ -210,7 +210,7 @@ export function blockTenantInjection(body: unknown): void {
     for (const key of keys) {
       if (suspiciousKeys.includes(key)) {
         throw new APIError(
-          'TENANT_INJECTION_ATTEMPT',
+          'AUTHZ_003',
           'tenant_id cannot be provided by client',
           { provided_field: key, provided_value: (body as any)[key] },
           403
@@ -236,10 +236,7 @@ export function detectSQLInjection(value: string): void {
 
   for (const pattern of sqlPatterns) {
     if (pattern.test(value)) {
-      throw new APIError('INVALID_INPUT', {
-        message: 'Potential SQL injection detected',
-        field: 'input',
-      }, 400);
+      throw new APIError('VAL_001', 'Potential SQL injection detected', { field: 'input' }, 400);
     }
   }
 }

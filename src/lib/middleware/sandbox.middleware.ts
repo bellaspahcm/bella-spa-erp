@@ -50,7 +50,7 @@ export function detectEnvironment(apiKey: string): Environment {
     return 'production';
   } else {
     throw new APIError(
-      'INVALID_API_KEY',
+      'AUTH_001',
       'Invalid API key format. Must start with pk_test_ (sandbox) or pk_live_ (production)',
       { provided_prefix: apiKey.substring(0, 8) },
       401
