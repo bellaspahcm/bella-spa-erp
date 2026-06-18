@@ -86,12 +86,24 @@ export async function GET(request: NextRequest) {
 
     const search = searchParams.get('search');
 
-    // Fetch partners
-    const { partners, total } = await listPartners(params);
+    // Fetch partners - with fallback to empty array if table doesn't exist yet
+    let partners: any[] = [];
+    let total = 0;
+
+    try {
+      const result = await listPartners(params);
+      partners = result.partners;
+      total = result.total;
+    } catch (error: any) {
+      console.warn('listPartners error (returning empty array):', error.message);
+      // Return empty array if table doesn't exist yet
+      partners = [];
+      total = 0;
+    }
 
     // Apply search filter if provided (case-insensitive)
     let filteredPartners = partners;
-    if (search) {
+    if (search && partners.length > 0) {
       const searchLower = search.toLowerCase();
       filteredPartners = partners.filter((p) =>
         p.partner_name.toLowerCase().includes(searchLower)

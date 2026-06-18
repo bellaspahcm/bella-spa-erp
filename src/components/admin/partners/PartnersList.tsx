@@ -13,7 +13,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Plus, Search, Filter, Download, RefreshCw } from 'lucide-react';
+import { Plus, Search, Filter, Download, RefreshCw, Key, Shield, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -88,7 +88,9 @@ export function PartnersList() {
       setPagination(data.pagination);
     } catch (error) {
       console.error('Error fetching partners:', error);
-      toast.error('Failed to load partners. Please try again.');
+      toast.error('Không thể tải danh sách API Partners', {
+        description: 'Vui lòng kiểm tra kết nối và thử lại',
+      });
     } finally {
       setLoading(false);
     }
@@ -134,93 +136,168 @@ export function PartnersList() {
   };
 
   return (
-    <div className="space-y-4">
-      {/* Toolbar */}
-      <div className="flex items-center justify-between gap-4">
-        {/* Search */}
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search partners..."
-            value={search}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSearch(e.target.value)}
-            className="pl-9"
-          />
+    <div className="space-y-6">
+      {/* Stats Cards - Bella ERP Style */}
+      <div className="grid gap-4 md:grid-cols-4">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-rose-50 to-pink-50 dark:from-rose-950/20 dark:to-pink-950/20 border border-rose-200 dark:border-rose-900 p-6 shadow-sm hover:shadow-md transition-all">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Tổng Partners</p>
+              <p className="text-3xl font-bold text-primary dark:text-rose-400 mt-1">{pagination.total}</p>
+            </div>
+            <div className="w-12 h-12 rounded-xl bg-primary/10 dark:bg-rose-500/10 flex items-center justify-center">
+              <Key className="w-6 h-6 text-primary dark:text-rose-400" />
+            </div>
+          </div>
         </div>
 
-        {/* Filters */}
-        <div className="flex items-center gap-2">
-          <Select 
-            value={typeFilter} 
-            onValueChange={(value: string | null) => value && setTypeFilter(value as PartnerType | 'all')}
-          >
-            <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="Partner Type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="pos">POS</SelectItem>
-              <SelectItem value="payment">Payment</SelectItem>
-              <SelectItem value="invoice">Invoice</SelectItem>
-              <SelectItem value="franchise">Franchise</SelectItem>
-              <SelectItem value="hr">HR</SelectItem>
-              <SelectItem value="analytics">Analytics</SelectItem>
-              <SelectItem value="mobile_app">Mobile App</SelectItem>
-              <SelectItem value="other">Other</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select 
-            value={statusFilter} 
-            onValueChange={(value: string | null) => value && setStatusFilter(value as 'all' | 'active' | 'inactive')}
-          >
-            <SelectTrigger className="w-[130px]">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="inactive">Inactive</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select 
-            value={sandboxFilter} 
-            onValueChange={(value: string | null) => value && setSandboxFilter(value as 'all' | 'sandbox' | 'production')}
-          >
-            <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="Environment" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Environments</SelectItem>
-              <SelectItem value="sandbox">Sandbox</SelectItem>
-              <SelectItem value="production">Production</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border border-green-200 dark:border-green-900 p-6 shadow-sm hover:shadow-md transition-all">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Đang hoạt động</p>
+              <p className="text-3xl font-bold text-green-600 dark:text-green-400 mt-1">
+                {partners.filter((p) => p.is_active).length}
+              </p>
+            </div>
+            <div className="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center">
+              <Shield className="w-6 h-6 text-green-600 dark:text-green-400" />
+            </div>
+          </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleExport}>
-            <Download className="mr-2 h-4 w-4" />
-            Export
-          </Button>
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/20 dark:to-amber-950/20 border border-orange-200 dark:border-orange-900 p-6 shadow-sm hover:shadow-md transition-all">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Sandbox</p>
+              <p className="text-3xl font-bold text-orange-600 dark:text-orange-400 mt-1">
+                {partners.filter((p) => p.is_sandbox).length}
+              </p>
+            </div>
+            <div className="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center">
+              <AlertCircle className="w-6 h-6 text-orange-600 dark:text-orange-400" />
+            </div>
+          </div>
+        </div>
 
-          <Button variant="outline" size="sm" onClick={() => fetchPartners()}>
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh
-          </Button>
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border border-blue-200 dark:border-blue-900 p-6 shadow-sm hover:shadow-md transition-all">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Production</p>
+              <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 mt-1">
+                {partners.filter((p) => !p.is_sandbox).length}
+              </p>
+            </div>
+            <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center">
+              <Shield className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            </div>
+          </div>
+        </div>
+      </div>
 
-          <Button onClick={handleCreatePartner}>
-            <Plus className="mr-2 h-4 w-4" />
-            New Partner
-          </Button>
+      {/* Toolbar - Bella ERP Style */}
+      <div className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4">
+          {/* Search */}
+          <div className="relative flex-1 w-full lg:max-w-sm">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-600" />
+            <Input
+              placeholder="Tìm kiếm partner..."
+              value={search}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSearch(e.target.value)}
+              className="pl-10 h-11 rounded-xl border-gray-200 dark:border-gray-800 focus:border-primary dark:focus:border-rose-500"
+            />
+          </div>
+
+          {/* Filters */}
+          <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+            <Select 
+              value={typeFilter} 
+              onValueChange={(value: string | null) => value && setTypeFilter(value as PartnerType | 'all')}
+            >
+              <SelectTrigger className="w-full sm:w-[150px] h-11 rounded-xl border-gray-200 dark:border-gray-800">
+                <SelectValue placeholder="Loại partner" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả loại</SelectItem>
+                <SelectItem value="pos">POS</SelectItem>
+                <SelectItem value="payment">Payment</SelectItem>
+                <SelectItem value="invoice">Invoice</SelectItem>
+                <SelectItem value="franchise">Franchise</SelectItem>
+                <SelectItem value="hr">HR</SelectItem>
+                <SelectItem value="analytics">Analytics</SelectItem>
+                <SelectItem value="mobile_app">Mobile App</SelectItem>
+                <SelectItem value="other">Khác</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select 
+              value={statusFilter} 
+              onValueChange={(value: string | null) => value && setStatusFilter(value as 'all' | 'active' | 'inactive')}
+            >
+              <SelectTrigger className="w-full sm:w-[130px] h-11 rounded-xl border-gray-200 dark:border-gray-800">
+                <SelectValue placeholder="Trạng thái" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả</SelectItem>
+                <SelectItem value="active">Hoạt động</SelectItem>
+                <SelectItem value="inactive">Tắt</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select 
+              value={sandboxFilter} 
+              onValueChange={(value: string | null) => value && setSandboxFilter(value as 'all' | 'sandbox' | 'production')}
+            >
+              <SelectTrigger className="w-full sm:w-[150px] h-11 rounded-xl border-gray-200 dark:border-gray-800">
+                <SelectValue placeholder="Môi trường" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả môi trường</SelectItem>
+                <SelectItem value="sandbox">Sandbox</SelectItem>
+                <SelectItem value="production">Production</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-2 w-full lg:w-auto">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleExport}
+              className="flex-1 sm:flex-none h-11 rounded-xl border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-900"
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Export
+            </Button>
+
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => fetchPartners()}
+              className="flex-1 sm:flex-none h-11 rounded-xl border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-900"
+            >
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Làm mới
+            </Button>
+
+            <Button 
+              onClick={handleCreatePartner}
+              className="flex-1 sm:flex-none h-11 rounded-xl bg-primary hover:bg-primary/90 dark:bg-rose-600 dark:hover:bg-rose-700 text-white shadow-md hover:shadow-lg transition-all"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Tạo Partner
+            </Button>
+          </div>
         </div>
       </div>
 
       {/* Results Summary */}
-      <div className="text-sm text-muted-foreground">
-        Showing {partners.length} of {pagination.total} partners
+      <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 px-1">
+        <span>
+          Hiển thị <span className="font-semibold text-primary dark:text-rose-400">{partners.length}</span> trong tổng số{' '}
+          <span className="font-semibold text-primary dark:text-rose-400">{pagination.total}</span> partners
+        </span>
       </div>
 
       {/* Table */}
@@ -232,10 +309,10 @@ export function PartnersList() {
 
       {/* Pagination */}
       {pagination.total > pagination.limit && (
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
-            Page {Math.floor(pagination.offset / pagination.limit) + 1} of{' '}
-            {Math.ceil(pagination.total / pagination.limit)}
+        <div className="flex items-center justify-between bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 shadow-sm">
+          <div className="text-sm text-gray-600 dark:text-gray-400">
+            Trang <span className="font-semibold text-primary dark:text-rose-400">{Math.floor(pagination.offset / pagination.limit) + 1}</span> /{' '}
+            <span className="font-semibold">{Math.ceil(pagination.total / pagination.limit)}</span>
           </div>
 
           <div className="flex items-center gap-2">
@@ -244,8 +321,9 @@ export function PartnersList() {
               size="sm"
               onClick={() => handlePageChange(pagination.offset - pagination.limit)}
               disabled={pagination.offset === 0}
+              className="h-10 rounded-xl border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-900 disabled:opacity-50"
             >
-              Previous
+              Trang trước
             </Button>
 
             <Button
@@ -253,8 +331,9 @@ export function PartnersList() {
               size="sm"
               onClick={() => handlePageChange(pagination.offset + pagination.limit)}
               disabled={!pagination.has_more}
+              className="h-10 rounded-xl border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-900 disabled:opacity-50"
             >
-              Next
+              Trang sau
             </Button>
           </div>
         </div>
