@@ -3,7 +3,7 @@
 **Phase**: Phase 1 - API Gateway Core  
 **Total Tasks**: 14 tasks  
 **Estimated Duration**: 6-8 weeks  
-**Current Progress**: 12/14 completed (85.7%)  
+**Current Progress**: 13/14 completed (92.9%)  
 **Status**: 🟢 In Progress
 
 ---
@@ -28,7 +28,7 @@ Xây dựng nền tảng API Gateway vững chắc với:
 
 ---
 
-## ✅ COMPLETED TASKS (12/14)
+## ✅ COMPLETED TASKS (13/14)
 
 ### Task #1: Database Schema ✅
 **Status**: ✅ Completed  
@@ -166,7 +166,7 @@ Xây dựng nền tảng API Gateway vững chắc với:
 
 ---
 
-## ⬜ PENDING TASKS (2)
+## ⬜ PENDING TASKS (1)
 
 ### Task #4: Admin UI - Partner Management
 **Status**: ⬜ Not Started  
@@ -870,14 +870,18 @@ export const GET = withSandbox(async (req, { sandbox, partner }) => {
 
 ---
 
-### Task #13: Postman Collection v2
-**Status**: ⬜ Not Started  
+### Task #13: Postman Collection v2 ✅
+**Status**: ✅ Completed  
+**Completed**: 2026-06-18  
 **Duration**: Week 7-8
 
 **Deliverables**:
-- ⬜ `postman/Bella_API_v1.postman_collection.json`
-- ⬜ `postman/Bella_API_Sandbox.postman_environment.json`
-- ⬜ `postman/Bella_API_Production.postman_environment.json`
+- ✅ `postman/Bella_API_v1.postman_collection.json` (24 requests, 7 categories)
+- ✅ `postman/Bella_API_Sandbox.postman_environment.json`
+- ✅ `postman/Bella_API_Production.postman_environment.json`
+- ✅ `postman/README.md` (comprehensive usage guide)
+
+**Commit**: (pending)
 
 **Collection Structure**:
 ```
@@ -983,7 +987,7 @@ Bella API v1
 
 | Metric | Current | Target | Status |
 |--------|---------|--------|--------|
-| **Tasks Completed** | 12/14 | 14/14 | 🟡 85.7% |
+| **Tasks Completed** | 13/14 | 14/14 | � 92.9% |
 | **Database Schema** | ✅ Done | Done | ✅ |
 | **Middleware** | ✅ Done | Done | ✅ |
 | **Services** | ✅ Done | Done | ✅ |
@@ -1001,7 +1005,7 @@ Bella API v1
 Week 1-2: Foundation (Tasks 1-4) ◉◉◉◉◉◉◉◉◉◉◉━━━━━━━━ 100% [COMPLETED]
 Week 3-4: Security (Tasks 5-7)  ◉◉◉◉◉◉◉◉◉◉◉━━━━━━━━ 100% [COMPLETED]
 Week 5-6: Features (Tasks 8-10) ◉◉◉◉◉◉◉◉◉◉◉━━━━━━━━ 100% [COMPLETED]
-Week 7-8: Launch (Tasks 11-14)  ◉◉◉◉◉◉◉◉━━━━━━━━━━━━  50%
+Week 7-8: Launch (Tasks 11-14)  ◉◉◉◉◉◉◉◉◉◉◉◉━━━━━━━━  75%
 ```
 
 ### Risk Register
@@ -1029,10 +1033,11 @@ Week 7-8: Launch (Tasks 11-14)  ◉◉◉◉◉◉◉◉━━━━━━━━
 8. ✅ Implement request validation (Task #9)
 9. ✅ Complete response standardization (Task #10)
 10. ✅ Complete sandbox environment (Task #11)
-11. ✅ Complete API documentation (Task #12) - COMPLETED
+11. ✅ Complete API documentation (Task #12)
+12. ✅ Create Postman Collection v2 (Task #13) - COMPLETED
 
-### Short Term (Next 2 Weeks)
-1. Create Postman collection v2 (Task #13) - NEXT
+### Short Term (Next 1-2 Weeks)
+1. Onboard pilot partner (Task #14) - NEXT
 2. [Optional] Admin UI (Task #4) - Can be done later
 
 ### Medium Term (Week 5-8)
