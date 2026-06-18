@@ -33,8 +33,8 @@ Admin UI cung cấp giao diện quản lý đối tác API một cách trực qu
 ### Vị Trí Truy Cập
 
 ```
-Dashboard → Admin → API Partners
-URL: /admin/partners
+Dashboard → Hệ thống → API Partners
+URL: /dashboard/admin/partners
 ```
 
 ### Quyền Truy Cập
@@ -47,7 +47,7 @@ Chỉ **admin** và **owner** mới có quyền truy cập Admin UI.
 
 ### Đường Dẫn
 ```
-/admin/partners
+/dashboard/admin/partners
 ```
 
 ### Tính Năng
@@ -80,7 +80,7 @@ Chỉ **admin** và **owner** mới có quyền truy cập Admin UI.
 
 ### Đường Dẫn
 ```
-/admin/partners/new
+/dashboard/admin/partners/new
 ```
 
 ### Quy Trình 4 Bước
@@ -291,7 +291,7 @@ Kiểm tra lại toàn bộ thông tin trước khi tạo:
 
 ### Đường Dẫn
 ```
-/admin/partners/[id]/edit
+/dashboard/admin/partners/[id]/edit
 ```
 
 ### Quy Trình
@@ -327,7 +327,7 @@ Tương tự quy trình tạo mới (4 bước), nhưng:
 
 1. **Từ Danh Sách**: Click icon Edit hoặc menu → "Edit Partner"
 2. **Từ Chi Tiết**: Click nút "Edit" trên trang chi tiết
-3. **Trực tiếp URL**: `/admin/partners/{partner_id}/edit`
+3. **Trực tiếp URL**: `/dashboard/admin/partners/{partner_id}/edit`
 
 ---
 
@@ -335,7 +335,7 @@ Tương tự quy trình tạo mới (4 bước), nhưng:
 
 ### Đường Dẫn
 ```
-/admin/partners/[id]
+/dashboard/admin/partners/[id]
 ```
 
 ### Tổng Quan
@@ -346,7 +346,7 @@ Trang chi tiết đối tác cung cấp giao diện tập trung với **5 tabs**
 
 1. **Từ Danh Sách**: Click vào dòng đối tác hoặc nút "View Details"
 2. **Từ Edit**: Click "Cancel" hoặc quay lại từ trang edit
-3. **Trực tiếp URL**: `/admin/partners/{partner_id}`
+3. **Trực tiếp URL**: `/dashboard/admin/partners/{partner_id}`
 
 ### Header Trang
 
@@ -899,11 +899,11 @@ Response:
 ### Điều Hướng Giữa Các Tabs
 
 - **URL Update**: Mỗi tab có URL riêng:
-  - `/admin/partners/[id]` - Overview (default)
-  - `/admin/partners/[id]?tab=scopes`
-  - `/admin/partners/[id]?tab=logs`
-  - `/admin/partners/[id]?tab=webhooks`
-  - `/admin/partners/[id]?tab=usage`
+  - `/dashboard/admin/partners/[id]` - Overview (default)
+  - `/dashboard/admin/partners/[id]?tab=scopes`
+  - `/dashboard/admin/partners/[id]?tab=logs`
+  - `/dashboard/admin/partners/[id]?tab=webhooks`
+  - `/dashboard/admin/partners/[id]?tab=usage`
 
 - **Browser Back/Forward**: Hoạt động bình thường với history
 
