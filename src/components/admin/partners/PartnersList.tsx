@@ -108,7 +108,7 @@ export function PartnersList() {
   };
 
   const handleCreatePartner = () => {
-    router.push('/admin/partners/new');
+    router.push('/dashboard/admin/partners/new');
   };
 
   const handleExport = async () => {
