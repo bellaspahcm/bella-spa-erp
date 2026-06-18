@@ -77,11 +77,11 @@ export function PartnersTable({ partners, loading, onRefresh }: PartnersTablePro
 
   // Handlers
   const handleView = (partner: APIPartner) => {
-    router.push(`/admin/partners/${partner.id}`);
+    router.push(`/dashboard/admin/partners/${partner.id}`);
   };
 
   const handleEdit = (partner: APIPartner) => {
-    router.push(`/admin/partners/${partner.id}/edit`);
+    router.push(`/dashboard/admin/partners/${partner.id}/edit`);
   };
 
   const handleCopyApiKey = async (apiKey: string) => {
@@ -202,7 +202,7 @@ export function PartnersTable({ partners, loading, onRefresh }: PartnersTablePro
         <p className="mt-2 text-sm text-muted-foreground">
           Create your first API partner to get started
         </p>
-        <Button className="mt-4" onClick={() => router.push('/admin/partners/new')}>
+        <Button className="mt-4" onClick={() => router.push('/dashboard/admin/partners/new')}>
           Create Partner
         </Button>
       </div>
