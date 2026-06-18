@@ -153,16 +153,21 @@ async function validateAPIKey(apiKey: string): Promise<PartnerValidationResult |
 
 /**
  * Log API request to database (async, non-blocking)
+ * 
+ * NOTE: The api_request_logs table exists in the database but TypeScript
+ * types haven't been regenerated yet. Using type assertion as temporary workaround.
+ * TODO: Regenerate types with: npx supabase gen types typescript --project-id <id>
  */
 async function logAPIRequest(logData: CreateAPIRequestLogInput): Promise<void> {
   const supabase = await createClient();
   
   try {
     // Insert log (don't await - fire and forget)
-    supabase
+    // Type assertion needed because table exists in DB but not in generated types yet
+    (supabase as any)
       .from('api_request_logs')
       .insert(logData)
-      .then(({ error }) => {
+      .then(({ error }: any) => {
         if (error) {
           console.error('[API Key Middleware] Failed to log request:', error);
         }
