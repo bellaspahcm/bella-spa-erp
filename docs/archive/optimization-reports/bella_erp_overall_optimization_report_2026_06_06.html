@@ -1,0 +1,1053 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Báo cáo đánh giá năng lực vận hành và sẵn sàng mở rộng chuỗi Bella ERP - 06/06/2026</title>
+  <style>
+    :root {
+      --ink: #101828;
+      --muted: #667085;
+      --line: #e6eaf0;
+      --soft: #f7f9fc;
+      --rose: #b51655;
+      --rose-2: #f7dce8;
+      --blue: #1d4ed8;
+      --green: #047857;
+      --amber: #b45309;
+      --violet: #6d28d9;
+      --panel: #ffffff;
+      --dark: #111827;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: #eef2f7;
+      font-family: Inter, Arial, "Segoe UI", sans-serif;
+      line-height: 1.6;
+    }
+
+    .page {
+      width: min(1180px, calc(100% - 32px));
+      margin: 24px auto 72px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      box-shadow: 0 24px 70px rgba(16, 24, 40, .12);
+    }
+
+    header {
+      padding: 44px 52px 40px;
+      color: #fff;
+      background: linear-gradient(135deg, #111827, #6f123c);
+    }
+
+    .kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 11px;
+      border: 1px solid rgba(255, 255, 255, .25);
+      border-radius: 8px;
+      color: #ffe3ee;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    .kicker::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #ff6a9a;
+    }
+
+    h1 {
+      max-width: 960px;
+      margin: 18px 0 12px;
+      font-size: clamp(32px, 5vw, 56px);
+      line-height: 1.06;
+      letter-spacing: 0;
+    }
+
+    header p {
+      max-width: 900px;
+      margin: 0;
+      color: rgba(255, 255, 255, .84);
+      font-size: 17px;
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      padding: 18px 52px;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .meta {
+      padding: 14px 15px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--soft);
+    }
+
+    .meta span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    .meta strong {
+      display: block;
+      margin-top: 4px;
+      font-size: 17px;
+    }
+
+    main { padding: 42px 52px 56px; }
+
+    section { margin-top: 44px; }
+    section:first-child { margin-top: 0; }
+
+    h2 {
+      margin: 0 0 12px;
+      font-size: 28px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 0 0 8px;
+      font-size: 18px;
+      line-height: 1.28;
+    }
+
+    .lead {
+      max-width: 940px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 330px 1fr;
+      gap: 20px;
+      margin-top: 24px;
+    }
+
+    .metric-band {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-top: 22px;
+    }
+
+    .metric-box {
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .metric-box strong {
+      display: block;
+      color: var(--rose);
+      font-size: 30px;
+      line-height: 1.1;
+      font-weight: 900;
+    }
+
+    .metric-box span {
+      display: block;
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .score-card,
+    .status,
+    .card,
+    .compare-card,
+    .callout,
+    .step {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .score-card {
+      padding: 28px;
+      border-color: #efbfd2;
+      background: #fff7fa;
+    }
+
+    .score-number {
+      color: var(--rose);
+      font-size: 80px;
+      font-weight: 900;
+      line-height: .95;
+      letter-spacing: 0;
+    }
+
+    .score-number small {
+      color: #8d1646;
+      font-size: 25px;
+    }
+
+    .score-card p {
+      margin: 14px 0 0;
+      color: #475467;
+    }
+
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .status { padding: 18px; }
+
+    .label {
+      display: inline-flex;
+      padding: 5px 9px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 850;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    .label.good { color: var(--green); background: #ecfdf3; }
+    .label.watch { color: var(--amber); background: #fffaeb; }
+    .label.strong { color: var(--blue); background: #eff6ff; }
+    .label.ai { color: var(--violet); background: #f5f3ff; }
+
+    .status strong {
+      display: block;
+      margin-top: 10px;
+      font-size: 17px;
+    }
+
+    .status p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .table-wrap {
+      margin-top: 18px;
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    table {
+      width: 100%;
+      min-width: 860px;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      color: #475467;
+      background: #f8fafc;
+      font-size: 12px;
+      font-weight: 850;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    tr:last-child td { border-bottom: 0; }
+
+    .score-pill {
+      display: inline-flex;
+      min-width: 58px;
+      justify-content: center;
+      padding: 6px 10px;
+      border-radius: 8px;
+      color: #fff;
+      background: var(--dark);
+      font-weight: 850;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .score-pill.green { background: var(--green); }
+    .score-pill.blue { background: var(--blue); }
+    .score-pill.amber { background: var(--amber); }
+
+    .cards,
+    .comparison {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-top: 20px;
+    }
+
+    .card,
+    .compare-card { padding: 20px; }
+
+    .card p,
+    .compare-card p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .timeline {
+      display: grid;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .step {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      gap: 18px;
+      padding: 18px;
+    }
+
+    .step time {
+      color: var(--rose);
+      font-weight: 850;
+      font-size: 13px;
+      text-transform: uppercase;
+    }
+
+    .step p {
+      margin: 4px 0 0;
+      color: var(--muted);
+    }
+
+    .callout {
+      margin-top: 20px;
+      padding: 20px 22px;
+      border-left: 5px solid var(--rose);
+      background: #fff5f9;
+    }
+
+    .callout p { margin: 0; color: #5b1734; }
+
+    .sources {
+      margin-top: 18px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcff;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .sources a {
+      color: var(--blue);
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    footer {
+      padding: 28px 52px 40px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      background: #fbfcff;
+      font-size: 13px;
+    }
+
+    @media (max-width: 900px) {
+      header,
+      main,
+      footer {
+        padding-left: 24px;
+        padding-right: 24px;
+      }
+
+      .meta-grid,
+      .summary-grid,
+      .metric-band,
+      .status-grid,
+      .cards,
+      .comparison {
+        grid-template-columns: 1fr;
+      }
+
+      .meta-grid {
+        padding-left: 24px;
+        padding-right: 24px;
+      }
+
+      .step {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+    }
+
+    @media print {
+      body { background: #fff; }
+      .page {
+        width: 100%;
+        margin: 0;
+        box-shadow: none;
+        border: 0;
+      }
+      section,
+      .card,
+      .status,
+      .step {
+        break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div class="kicker">Báo cáo đánh giá cấp điều hành</div>
+      <h1>Báo cáo năng lực vận hành, kiểm soát rủi ro và sẵn sàng mở rộng chuỗi Bella ERP</h1>
+      <p>
+        Báo cáo tổng thể này phản ánh tình trạng hệ thống sau các đợt tối ưu đến ngày 06/06/2026.
+        Nội dung tập trung vào độ đúng số liệu, hiệu quả vận hành, khả năng kiểm soát rủi ro,
+        khả năng mở rộng chuỗi và vị thế so với nhóm phần mềm quản lý spa đang có trên thị trường Việt Nam.
+      </p>
+    </header>
+
+    <div class="meta-grid">
+      <div class="meta">
+        <span>Ngày báo cáo</span>
+        <strong>06/06/2026</strong>
+      </div>
+      <div class="meta">
+        <span>Phạm vi</span>
+        <strong>Toàn hệ thống</strong>
+      </div>
+      <div class="meta">
+        <span>Tình trạng kiểm tra</span>
+        <strong>Đã đạt bộ kiểm cốt lõi</strong>
+      </div>
+      <div class="meta">
+        <span>Trạng thái chung</span>
+        <strong>Sẵn sàng vận hành có kiểm soát</strong>
+      </div>
+    </div>
+
+    <main>
+      <section>
+        <h2>Nền kiểm thử đang bảo vệ hệ thống</h2>
+        <p class="lead">
+          Trước khi chấm điểm hệ thống, cần nhìn rõ Bella ERP hiện đang được bảo vệ bởi bao nhiêu bài kiểm tra
+          và vì sao phải kiểm nhiều lớp như vậy. Đây là nền tảng giúp các tối ưu gần đây không chỉ sửa lỗi trước mắt,
+          mà còn giảm khả năng lỗi cũ quay lại khi tiếp tục phát triển.
+        </p>
+
+        <div class="metric-band">
+          <div class="metric-box">
+            <strong>125</strong>
+            <span>tài sản kiểm thử và kiểm soát tự động đang có trong dự án.</span>
+          </div>
+          <div class="metric-box">
+            <strong>1.011</strong>
+            <span>ca hoặc nhánh kiểm thử được khai báo trong các bộ kiểm hiện hữu.</span>
+          </div>
+          <div class="metric-box">
+            <strong>9</strong>
+            <span>dạng kiểm thử bao phủ từ nghiệp vụ, dữ liệu, bảo mật đến giao diện và hiệu năng.</span>
+          </div>
+          <div class="metric-box">
+            <strong>6</strong>
+            <span>lớp bảo vệ trước khi một thay đổi được xem là đủ an toàn để vận hành.</span>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Nhóm kiểm thử</th>
+                <th>Số lượng</th>
+                <th>Mục tiêu</th>
+                <th>Kết quả hiện tại</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Kiểm thử nghiệp vụ lõi</td>
+                <td>98 file</td>
+                <td>Kiểm các nghiệp vụ nhạy cảm như booking, thanh toán, lương, kho, kế toán, công nợ, báo cáo và AI vận hành.</td>
+                <td>Bộ kiểm lõi đã được dùng làm hàng rào hồi quy, trong đó nhóm kiểm trọng yếu chạy khi phát hành.</td>
+              </tr>
+              <tr>
+                <td>Kiểm thử trình duyệt và giao diện</td>
+                <td>11 kịch bản</td>
+                <td>Kiểm hành trình người dùng, màn hình mobile, bảng dữ liệu, bảo mật biên và các luồng liên phân hệ.</td>
+                <td>Đã có kịch bản; nhóm này nên tiếp tục bật chạy định kỳ để bắt lỗi tràn layout sớm hơn.</td>
+              </tr>
+              <tr>
+                <td>Kiểm thử tải và hiệu năng</td>
+                <td>6 kịch bản</td>
+                <td>Kiểm đăng nhập, dashboard, đặt lịch, checkout, tải lâu và nhiều người thao tác cùng lúc.</td>
+                <td>Đã có nền tảng; nên dùng khi chuẩn bị mở thêm chi nhánh hoặc tăng lượng người dùng.</td>
+              </tr>
+              <tr>
+                <td>Kiểm soát dữ liệu, quyền và bảo mật</td>
+                <td>10 bộ kiểm</td>
+                <td>Kiểm quyền truy cập, thông tin nhạy cảm, dữ liệu thật, sai lệch nghiệp vụ, báo cáo và cấu trúc dữ liệu.</td>
+                <td>Các lớp kiểm cốt lõi đã đạt tại thời điểm lập báo cáo, giúp giảm lỗi âm thầm trong vận hành.</td>
+              </tr>
+              <tr>
+                <td>Cửa kiểm phát hành</td>
+                <td>14 kiểm chính, thêm 1 kiểm giao diện khi bật cấu hình</td>
+                <td>Chặn thay đổi lỗi trước khi đưa vào hệ thống chính: chất lượng mã, báo cáo, quyền, dữ liệu, build, bảo mật và hồi quy trọng yếu.</td>
+                <td>Đang là tuyến phòng thủ chính cho mỗi lần đẩy thay đổi mới.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Dạng kiểm thử</th>
+                <th>Vai trò trong vận hành</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>1. Kiểm quy tắc tính toán</td>
+                <td>Bảo đảm các công thức cọc, công nợ, lương, hoa hồng, thưởng, phạt, kho và báo cáo không bị tính lệch.</td>
+              </tr>
+              <tr>
+                <td>2. Kiểm liên phân hệ</td>
+                <td>Bảo đảm một thao tác ở booking, thanh toán hoặc hoàn thành buổi tạo đúng tác động sang kế toán, kho, lương và báo cáo.</td>
+              </tr>
+              <tr>
+                <td>3. Kiểm dữ liệu thật</td>
+                <td>Phát hiện các ca sai lệch đang tồn tại trong dữ liệu vận hành, ví dụ đã thu cọc nhưng khách vẫn thấy mã thanh toán cọc.</td>
+              </tr>
+              <tr>
+                <td>4. Kiểm phân quyền</td>
+                <td>Ngăn người không đúng vai trò xem hoặc thao tác dữ liệu tài chính, khách hàng, lương và chi nhánh.</td>
+              </tr>
+              <tr>
+                <td>5. Kiểm bảo mật</td>
+                <td>Phát hiện nguy cơ lộ thông tin nhạy cảm, ghi log quá mức hoặc dùng thư viện có rủi ro.</td>
+              </tr>
+              <tr>
+                <td>6. Kiểm báo cáo và xuất dữ liệu</td>
+                <td>Bảo đảm dữ liệu kế toán, báo cáo quản trị và file xuất ra không sai cấu trúc hoặc thiếu thông tin quan trọng.</td>
+              </tr>
+              <tr>
+                <td>7. Kiểm giao diện và mobile</td>
+                <td>Bảo đảm bảng, bộ lọc ngày, nút làm mới, portal khách hàng và màn hình quản trị không bị tràn, đè chữ hoặc khó thao tác.</td>
+              </tr>
+              <tr>
+                <td>8. Kiểm tải và đồng thời</td>
+                <td>Bảo đảm hệ thống chịu được nhiều người thao tác cùng lúc, đặc biệt ở đặt lịch, checkout và dashboard.</td>
+              </tr>
+              <tr>
+                <td>9. Kiểm sẵn sàng phát hành</td>
+                <td>Bảo đảm mỗi thay đổi mới đi qua một chuỗi kiểm cố định trước khi được xem là đủ an toàn để dùng thật.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Lớp bảo vệ</th>
+                <th>Chặn loại lỗi nào</th>
+                <th>Vì sao cần có</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Lớp 1: chất lượng nền</td>
+                <td>Lỗi cú pháp, lỗi cấu trúc, lỗi không thể phát hành.</td>
+                <td>Nếu nền không sạch, các kiểm sâu hơn có thể cho kết quả nhiễu.</td>
+              </tr>
+              <tr>
+                <td>Lớp 2: nghiệp vụ đơn lẻ</td>
+                <td>Công thức sai ở một module như lương, thanh toán, kho hoặc kế toán.</td>
+                <td>Mỗi con số tiền, ngày công, tồn kho đều phải đúng từ nguồn tính đầu tiên.</td>
+              </tr>
+              <tr>
+                <td>Lớp 3: luồng liên phân hệ</td>
+                <td>Booking đúng nhưng kế toán sai, hoàn thành buổi đúng nhưng kho/lương không cập nhật đúng.</td>
+                <td>ERP nguy hiểm nhất ở lỗi nối giữa các phân hệ, vì người dùng thường không thấy ngay.</td>
+              </tr>
+              <tr>
+                <td>Lớp 4: dữ liệu thật và phân quyền</td>
+                <td>Sai lệch đang tồn tại trong dữ liệu, quyền truy cập vượt mức, báo cáo đọc nhầm dữ liệu.</td>
+                <td>Test giả lập chưa đủ; hệ thống vận hành cần kiểm trực tiếp trên tình huống thật.</td>
+              </tr>
+              <tr>
+                <td>Lớp 5: trải nghiệm người dùng</td>
+                <td>Tràn ngày, bảng đè chữ, nút bị che, portal hiển thị sai hành động thanh toán.</td>
+                <td>Lỗi giao diện làm người dùng mất niềm tin dù số liệu phía sau đã đúng.</td>
+              </tr>
+              <tr>
+                <td>Lớp 6: tải, ổn định và vận hành chuỗi</td>
+                <td>Chậm, nghẽn, thao tác trùng, nhiều người đặt lịch hoặc checkout cùng lúc.</td>
+                <td>Khi mở rộng chi nhánh, lỗi hiệu năng và đồng thời có thể biến thành lỗi tài chính.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout">
+          <p>
+            Cần tổng số bài kiểm như vậy vì Bella ERP không chỉ là phần mềm nhập liệu. Hệ thống đang xử lý tiền cọc,
+            công nợ liệu trình, lương KTV, tồn kho, sổ cái, báo cáo lãi lỗ và vận hành đa chi nhánh. Một lỗi nhỏ có thể
+            tạo sai lệch dây chuyền: khách bị yêu cầu thanh toán lại, KTV nhận sai lương, kho bị âm, hoặc báo cáo điều hành
+            ra quyết định sai. Vì vậy bộ kiểm phải đi từ công thức nhỏ nhất đến dữ liệu thật, giao diện và khả năng chịu tải.
+          </p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Kết luận nhanh</h2>
+        <p class="lead">
+          Bella ERP đã chuyển từ giai đoạn xây nhiều tính năng sang giai đoạn vận hành có hàng rào kiểm soát.
+          Điểm thay đổi lớn nhất không chỉ là thêm màn hình hay báo cáo, mà là các nghiệp vụ quan trọng
+          đã có quy tắc tính toán chung và bộ kiểm tự động để phát hiện sai lệch trước khi ảnh hưởng đến
+          kế toán, lương, công nợ, kho hoặc trải nghiệm khách hàng.
+        </p>
+
+        <div class="summary-grid">
+          <div class="score-card">
+            <div class="score-number">91<small>/100</small></div>
+            <p>
+              Điểm tổng thể sau tối ưu. Hệ thống đã đủ tốt để vận hành nội bộ và mở rộng chuỗi có kiểm soát.
+              Phần còn lại cần nâng chuẩn là kiểm tra giao diện định kỳ, thông báo tự động, báo cáo gửi theo lịch
+              và kịch bản dự phòng khi phát sinh sự cố.
+            </p>
+          </div>
+
+          <div class="status-grid">
+            <div class="status">
+              <span class="label good">Đã nâng cấp</span>
+              <strong>Số liệu kinh doanh được kiểm bằng dữ liệu thật</strong>
+              <p>Thanh toán, lịch dịch vụ, doanh thu, sổ cái, lương và kho đã có bộ kiểm chống sai lệch.</p>
+            </div>
+            <div class="status">
+              <span class="label strong">Đã xác thực</span>
+              <strong>Quy trình kiểm tra tự động đã bao phủ lõi vận hành</strong>
+              <p>Các lớp kiểm về tính đúng, bảo mật, quyền truy cập, báo cáo và dữ liệu thật đều đã được kích hoạt.</p>
+            </div>
+            <div class="status">
+              <span class="label ai">Đã chuẩn hóa</span>
+              <strong>Nghiệp vụ quan trọng bắt đầu gom về lõi quy tắc chung</strong>
+              <p>Thanh toán, doanh thu, sổ cái, lương, chấm công và kho giảm dần tình trạng tính rời rạc.</p>
+            </div>
+            <div class="status">
+              <span class="label watch">Cần theo dõi</span>
+              <strong>Vẫn cần nâng chuẩn cho quy mô chuỗi lớn</strong>
+              <p>Cần bổ sung kiểm tra giao diện tự động định kỳ, cảnh báo chủ động, báo cáo gửi lịch và diễn tập phục hồi.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Bảng điểm từng phần</h2>
+        <p class="lead">
+          Điểm dưới đây đánh giá khả năng vận hành sau tối ưu, dựa trên tính năng hiện có,
+          mức kiểm soát tự động, khả năng bảo trì và rủi ro còn lại.
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Hạng mục</th>
+                <th>Điểm</th>
+                <th>Nhận định</th>
+                <th>Rủi ro còn lại</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Thanh toán, lịch dịch vụ, doanh thu</td>
+                <td><span class="score-pill green">94</span></td>
+                <td>Đã có quy tắc chung để nhận diện cọc, số tiền còn lại, trạng thái thanh toán và hiển thị thanh toán cho khách.</td>
+                <td>Cần kiểm thêm các tình huống hoàn tiền, đổi gói, chuyển gói và nhiều lần thanh toán trong cùng một hợp đồng.</td>
+              </tr>
+              <tr>
+                <td>Kế toán và sổ cái</td>
+                <td><span class="score-pill green">92</span></td>
+                <td>Sổ cái đã được kiểm cân đối, báo cáo quản trị theo chuẩn kế toán nội bộ rõ hơn và hạn chế ghi nhận sai trạng thái.</td>
+                <td>Cần hoàn thiện quy trình đóng kỳ, kiểm dữ liệu lịch sử và báo cáo gửi định kỳ cho ban điều hành.</td>
+              </tr>
+              <tr>
+                <td>Lương KTV, chấm công, KPI</td>
+                <td><span class="score-pill green">92</span></td>
+                <td>Lương đã tính theo ngày công thật, hệ số gói, hoa hồng, KPI, thưởng sao và phạt. Không còn mặc định đủ 26 ngày khi tháng mới qua vài ngày.</td>
+                <td>Cần thêm bảng giải thích chi tiết lương cho từng KTV để giảm tranh chấp và tăng minh bạch.</td>
+              </tr>
+              <tr>
+                <td>Kho và tiêu hao theo buổi</td>
+                <td><span class="score-pill blue">89</span></td>
+                <td>Đã kiểm việc hoàn thành buổi, trừ vật tư, tránh trừ lặp và phát hiện tồn kho bất thường.</td>
+                <td>Cần chuẩn hóa thêm định mức vật tư theo từng gói, từng loại dịch vụ và từng chi nhánh.</td>
+              </tr>
+              <tr>
+                <td>Đối soát tài chính</td>
+                <td><span class="score-pill green">93</span></td>
+                <td>Công nợ, tiền treo, lệch doanh thu và bù trừ chi nhánh đã có luồng xử lý an toàn hơn.</td>
+                <td>Cần tăng tự động gợi ý xử lý và nhật ký phê duyệt cho kế toán.</td>
+              </tr>
+              <tr>
+                <td>Giao diện điện thoại và bảng dữ liệu</td>
+                <td><span class="score-pill blue">88</span></td>
+                <td>Đã xử lý nhiều lỗi tràn ngày, ngắt dòng, đè chữ, cố định cột gây khó đọc và thêm nút làm mới trên điện thoại.</td>
+                <td>Cần kiểm tra giao diện tự động theo lịch để phát hiện lỗi hiển thị trước khi người dùng gặp.</td>
+              </tr>
+              <tr>
+                <td>Bảo mật và phân quyền</td>
+                <td><span class="score-pill green">91</span></td>
+                <td>Đã tăng kiểm soát quyền truy cập, thông tin nhạy cảm và các thao tác dễ gây rò rỉ dữ liệu.</td>
+                <td>Cần lịch rà soát phân quyền định kỳ, xoay khóa truy cập và kiểm thử bảo mật chuyên sâu.</td>
+              </tr>
+              <tr>
+                <td>Bảo trì và mở rộng ngành</td>
+                <td><span class="score-pill blue">89</span></td>
+                <td>Các quy tắc nghiệp vụ chung giúp giảm tính toán trùng, dễ mở rộng sang mô hình dịch vụ khác hoặc thêm chi nhánh.</td>
+                <td>Một số màn hình lớn vẫn nên tách nhỏ hơn để giảm chi phí bảo trì lâu dài.</td>
+              </tr>
+              <tr>
+                <td>AI và tự động hóa điều hành</td>
+                <td><span class="score-pill amber">84</span></td>
+                <td>Đã có trợ lý phân tích vận hành, tài chính, CSKH, kho và lương.</td>
+                <td>Cần thêm cơ chế phê duyệt hành động, nhật ký quyết định và đo hiệu quả khuyến nghị theo thời gian.</td>
+              </tr>
+              <tr>
+                <td>Chuỗi, nhượng quyền, báo cáo lãi lỗ hợp nhất</td>
+                <td><span class="score-pill green">91</span></td>
+                <td>Đã xử lý tốt hơn phần bù trừ nội bộ, doanh thu nội bộ, phí nhượng quyền và so sánh chi nhánh.</td>
+                <td>Cần dashboard chuẩn hóa để so sánh chi nhánh và cảnh báo sai lệch chi phí vận hành.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section>
+        <h2>Những tối ưu quan trọng đã hoàn thành</h2>
+        <div class="cards">
+          <div class="card">
+            <h3>1. Quy tắc tính toán chung</h3>
+            <p>
+              Thanh toán, lịch dịch vụ, doanh thu, lương, chấm công và kho đã được gom về các quy tắc chung.
+              Việc này giúp một con số không bị tính khác nhau giữa màn hình quản trị, cổng khách hàng và báo cáo.
+            </p>
+          </div>
+          <div class="card">
+            <h3>2. Hàng rào dữ liệu thật</h3>
+            <p>
+              Hệ thống hiện kiểm các điểm dễ sai nhất: cọc, công nợ, sổ cái, lương, tồn kho và thông tin ghi nhận kế toán.
+              Đây là lớp bảo vệ trực tiếp chống lỗi vận hành âm thầm.
+            </p>
+          </div>
+          <div class="card">
+            <h3>3. Kiểm tra tự động toàn diện hơn</h3>
+            <p>
+              Bộ kiểm hiện bao phủ phần cốt lõi: báo cáo, quyền truy cập, dữ liệu thật, bảo mật, xuất dữ liệu và các nghiệp vụ trọng yếu.
+            </p>
+          </div>
+          <div class="card">
+            <h3>4. Lương KTV chính xác hơn</h3>
+            <p>
+              Lương không còn mặc định đủ 26 ngày khi tháng mới chạy vài ngày. Hệ thống tôn trọng ngày công thật,
+              trạng thái bản ghi, KPI, thưởng sao, phạt và hệ số gói dịch vụ.
+            </p>
+          </div>
+          <div class="card">
+            <h3>5. Kế toán quản trị chắc hơn</h3>
+            <p>
+              Các báo cáo chính như cân đối phát sinh, kết quả kinh doanh, lưu chuyển tiền và lãi lỗ hợp nhất
+              đã có thêm lớp đối soát để giảm rủi ro sai số.
+            </p>
+          </div>
+          <div class="card">
+            <h3>6. Cổng khách hàng an toàn hơn</h3>
+            <p>
+              Trường hợp khách đã cọc nhưng vẫn bị hiện mã thanh toán cọc đã được đưa vào nhóm kiểm trọng yếu,
+              giảm rủi ro thu nhầm hoặc làm khách mất niềm tin.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Timeline tối ưu gần nhất</h2>
+        <div class="timeline">
+          <div class="step">
+            <time>06/06/2026</time>
+            <div>
+              <h3>Kiểm soát sai lệch nghiệp vụ bằng dữ liệu thật</h3>
+              <p>Thêm lớp kiểm cho thanh toán, lịch dịch vụ, doanh thu, sổ cái, lương và kho.</p>
+            </div>
+          </div>
+          <div class="step">
+            <time>06/06/2026</time>
+            <div>
+              <h3>Nâng chuẩn quy trình kiểm tự động</h3>
+              <p>Tăng số lớp kiểm trước khi phát hành, gồm quyền truy cập, báo cáo, dữ liệu thật và nghiệp vụ trọng yếu.</p>
+            </div>
+          </div>
+          <div class="step">
+            <time>06/06/2026</time>
+            <div>
+              <h3>Đối soát tài chính và báo cáo hợp nhất</h3>
+              <p>Củng cố bù trừ chi nhánh, loại trừ doanh thu nội bộ, thu nợ và đối soát lãi lỗ hợp nhất.</p>
+            </div>
+          </div>
+          <div class="step">
+            <time>06/06/2026</time>
+            <div>
+              <h3>Lương, kho và hoàn thành buổi dịch vụ</h3>
+              <p>Chuẩn hóa lương theo ngày công thật, tránh trừ kho lặp và kiểm tiêu hao theo ca hoàn thành.</p>
+            </div>
+          </div>
+          <div class="step">
+            <time>Trước đó</time>
+            <div>
+              <h3>Giao diện điện thoại và bảng dữ liệu</h3>
+              <p>Sửa lỗi bảng bị đè chữ, ô ngày tràn, cột cố định khó đọc, và bổ sung nút làm mới dữ liệu trên điện thoại.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>So sánh với phần mềm spa tại Việt Nam</h2>
+        <p class="lead">
+          Thị trường Việt Nam có nhiều phần mềm spa, salon và bán hàng mạnh ở nhu cầu phổ thông như lịch hẹn,
+          bán hàng, khách hàng, nhân viên, kho, thu chi, marketing và đa chi nhánh. Bella ERP hiện khác biệt
+          ở chiều sâu kiểm soát số liệu, kế toán quản trị, lương KTV theo logic ngành, công nợ liệu trình
+          và khả năng vận hành chuỗi nhượng quyền.
+        </p>
+        <div class="comparison">
+          <div class="compare-card">
+            <h3>Nhóm phần mềm phổ thông</h3>
+            <p>
+              Mạnh ở triển khai nhanh, lịch hẹn, bán hàng, khách hàng, kho và báo cáo doanh thu cơ bản.
+              Phù hợp spa nhỏ hoặc salon cần dùng nhanh.
+            </p>
+          </div>
+          <div class="compare-card">
+            <h3>Nhóm phần mềm spa chuyên dụng</h3>
+            <p>
+              Mạnh ở liệu trình, chăm sóc khách, marketing, thẻ liệu trình, quản lý nhân viên và trải nghiệm tại cơ sở.
+              Phù hợp cơ sở dịch vụ muốn quản lý vận hành hằng ngày.
+            </p>
+          </div>
+          <div class="compare-card">
+            <h3>Bella ERP sau tối ưu</h3>
+            <p>
+              Mạnh ở kiểm soát tài chính, lương KTV, công nợ liệu trình, sổ cái, lãi lỗ hợp nhất,
+              bù trừ chi nhánh, nhượng quyền và trợ lý phân tích vận hành.
+            </p>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Năng lực</th>
+                <th>Phần mềm phổ thông</th>
+                <th>Bella ERP hiện tại</th>
+                <th>Nhận định</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Triển khai nhanh cho spa nhỏ</td>
+                <td>Rất mạnh</td>
+                <td>Khá</td>
+                <td>Đối thủ phổ thông có lợi thế vì gọn và dễ bắt đầu hơn.</td>
+              </tr>
+              <tr>
+                <td>Quản lý lịch, khách hàng, kho cơ bản</td>
+                <td>Mạnh</td>
+                <td>Mạnh</td>
+                <td>Bella đã đủ dùng, nhưng nên tiếp tục làm giao diện nhẹ hơn cho thao tác thường ngày.</td>
+              </tr>
+              <tr>
+                <td>Công nợ liệu trình, cọc, số tiền còn lại</td>
+                <td>Trung bình</td>
+                <td>Rất mạnh</td>
+                <td>Bella có lợi thế vì bám sát bài toán liệu trình, cọc trước và thanh toán nhiều lần.</td>
+              </tr>
+              <tr>
+                <td>Lương KTV theo ngày công, buổi, hệ số gói, KPI</td>
+                <td>Trung bình</td>
+                <td>Rất mạnh</td>
+                <td>Đây là điểm khác biệt rõ so với phần mềm bán hàng hoặc spa phổ thông.</td>
+              </tr>
+              <tr>
+                <td>Kế toán quản trị và sổ cái</td>
+                <td>Trung bình</td>
+                <td>Rất mạnh</td>
+                <td>Bella phù hợp ban điều hành cần số liệu tài chính sâu hơn báo cáo doanh thu thông thường.</td>
+              </tr>
+              <tr>
+                <td>Chuỗi và nhượng quyền</td>
+                <td>Khá</td>
+                <td>Mạnh</td>
+                <td>Bella đã có nền tảng cho bù trừ chi nhánh, phí nhượng quyền và báo cáo hợp nhất.</td>
+              </tr>
+              <tr>
+                <td>Trợ lý phân tích điều hành</td>
+                <td>Đang phát triển</td>
+                <td>Khá mạnh</td>
+                <td>Cần thêm đo hiệu quả khuyến nghị và luồng phê duyệt để trở thành lợi thế bền vững.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="sources">
+          Nguồn tham khảo thị trường:
+          <a href="https://www.kiotviet.vn/phan-mem-quan-ly-spa-chuyen-nghiep/">KiotViet Spa</a>,
+          <a href="https://www.kiotviet.vn/kiotviet-salon-spa/">KiotViet Salon/Spa</a>,
+          <a href="https://posapp.vn/phan-mem-quan-ly-spa-salon-nail-mien-phi">PosApp Spa/Salon/Nail</a>,
+          <a href="https://spaai.vn/phan-mem-spa">SpaAI</a>,
+          <a href="https://www.spago.vn/">SPAGO</a>,
+          <a href="https://www.sapo.vn/blog/phan-mem-quan-ly-spa">Sapo blog so sánh phần mềm spa</a>.
+        </div>
+      </section>
+
+      <section>
+        <h2>Những rủi ro còn lại cần xử lý</h2>
+        <div class="cards">
+          <div class="card">
+            <h3>1. Kiểm tra giao diện định kỳ</h3>
+            <p>
+              Các lỗi mobile như tràn ô ngày, ngắt dòng bảng, đè chữ đã sửa nhiều lần.
+              Cần chạy kiểm giao diện tự động theo lịch để phát hiện trước khi người dùng báo lỗi.
+            </p>
+          </div>
+          <div class="card">
+            <h3>2. Thông báo chủ động</h3>
+            <p>
+              KTV, kế toán, quản lý và khách hàng cần nhận cảnh báo ngay khi có nợ, lệch doanh thu,
+              sắp hết vật tư, lịch bị gián đoạn hoặc cần đối soát.
+            </p>
+          </div>
+          <div class="card">
+            <h3>3. Báo cáo tự gửi theo lịch</h3>
+            <p>
+              Ban điều hành nên nhận báo cáo lãi lỗ, công nợ, lương, kho và hiệu suất chi nhánh theo lịch,
+              thay vì phải vào hệ thống xem thủ công.
+            </p>
+          </div>
+          <div class="card">
+            <h3>4. Hồ sơ giải thích số liệu</h3>
+            <p>
+              Những con số nhạy cảm như lương, công nợ, doanh thu và tồn kho cần có màn hình giải thích nguồn gốc
+              để người dùng tin và dễ đối soát.
+            </p>
+          </div>
+          <div class="card">
+            <h3>5. Diễn tập sự cố</h3>
+            <p>
+              Cần có kịch bản xử lý khi sai dữ liệu, mất quyền truy cập, nhập nhầm thanh toán,
+              hoặc cần phục hồi báo cáo trong ngày chốt sổ.
+            </p>
+          </div>
+          <div class="card">
+            <h3>6. Chuẩn hóa tài liệu vận hành</h3>
+            <p>
+              Khi mở rộng đội hoặc thêm chi nhánh, cần tài liệu thao tác chuẩn cho thu ngân, kế toán,
+              quản lý chi nhánh, KTV và ban điều hành.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Lộ trình đề xuất</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Thời hạn</th>
+                <th>Việc nên làm</th>
+                <th>Lý do ưu tiên</th>
+                <th>Kết quả kỳ vọng</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>7 ngày</td>
+                <td>Khóa bộ kiểm giao diện điện thoại và bảng dữ liệu quan trọng.</td>
+                <td>Đây là nhóm lỗi người dùng nhìn thấy ngay và dễ làm mất niềm tin.</td>
+                <td>Giảm lỗi tràn, đè chữ, ngắt dòng và sai layout sau mỗi lần tối ưu.</td>
+              </tr>
+              <tr>
+                <td>14 ngày</td>
+                <td>Hoàn thiện hồ sơ giải thích lương, công nợ, doanh thu và tồn kho.</td>
+                <td>Các con số nhạy cảm cần minh bạch để giảm tranh chấp vận hành.</td>
+                <td>Người quản lý hiểu vì sao hệ thống ra số đó, không chỉ nhìn kết quả cuối.</td>
+              </tr>
+              <tr>
+                <td>30 ngày</td>
+                <td>Thêm báo cáo tự gửi theo lịch cho ban điều hành và kế toán.</td>
+                <td>Giúp quản trị chủ động, không phụ thuộc việc vào hệ thống thủ công.</td>
+                <td>Báo cáo tháng, tuần và cảnh báo bất thường đến đúng người.</td>
+              </tr>
+              <tr>
+                <td>60 ngày</td>
+                <td>Chuẩn hóa cảnh báo chủ động cho KTV, khách hàng, kế toán và quản lý.</td>
+                <td>Cảnh báo sớm giúp xử lý trước khi lỗi trở thành thiệt hại tài chính hoặc trải nghiệm xấu.</td>
+                <td>Giảm trễ lịch, nợ tồn, thiếu vật tư và lệch doanh thu.</td>
+              </tr>
+              <tr>
+                <td>90 ngày</td>
+                <td>Chuẩn hóa bộ vận hành chuỗi và nhượng quyền.</td>
+                <td>Đây là nền tảng để nhân rộng chi nhánh mà không tăng quá mạnh chi phí kiểm soát.</td>
+                <td>So sánh chi nhánh, phí nhượng quyền, bù trừ nội bộ và lãi lỗ hợp nhất rõ ràng hơn.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section>
+        <h2>Kết luận điều hành</h2>
+        <div class="callout">
+          <p>
+            Bella ERP hiện đã vượt khỏi mức phần mềm quản lý spa thông thường và tiến gần hơn đến một hệ thống điều hành chuỗi.
+            Lợi thế lớn nhất là khả năng kiểm soát các con số nhạy cảm của ngành: cọc, công nợ liệu trình, doanh thu,
+            lương KTV, tồn kho, sổ cái và lãi lỗ hợp nhất. Trọng tâm tiếp theo không phải thêm thật nhiều tính năng mới,
+            mà là làm cho mọi số liệu quan trọng có thể giải thích, kiểm chứng, cảnh báo sớm và gửi đến đúng người đúng lúc.
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      Báo cáo nội bộ dành cho điều hành Bella Spa. Nội dung được lập từ trạng thái hệ thống, tài liệu triển khai,
+      các bộ kiểm tự động và thông tin thị trường tham khảo tại thời điểm 06/06/2026.
+      Báo cáo không thay thế kiểm toán tài chính, tư vấn pháp lý hoặc đánh giá bảo mật chuyên sâu độc lập.
+    </footer>
+  </div>
+</body>
+</html>
