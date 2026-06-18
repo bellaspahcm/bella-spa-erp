@@ -68,13 +68,13 @@ async function checkAdminRole(req: NextRequest) {
  */
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id: partner_id } = await params;
   const { user, tenant_id, is_super_admin, error } = await checkAdminRole(req);
   if (error) return error;
   
   try {
-    const partner_id = params.id;
     const body = await req.json();
     
     // Validate scopes
@@ -164,13 +164,13 @@ export async function POST(
  */
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id: partner_id } = await params;
   const { user, tenant_id, is_super_admin, error } = await checkAdminRole(req);
   if (error) return error;
   
   try {
-    const partner_id = params.id;
     const body = await req.json();
     
     // Validate scopes
@@ -262,13 +262,13 @@ export async function DELETE(
  */
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id: partner_id } = await params;
   const { user, tenant_id, is_super_admin, error } = await checkAdminRole(req);
   if (error) return error;
   
   try {
-    const partner_id = params.id;
     const body = await req.json();
     
     // Validate preset

@@ -65,14 +65,13 @@ async function checkAdminRole(req: NextRequest) {
  */
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id: partner_id } = await params;
   const { user, tenant_id, is_super_admin, error } = await checkAdminRole(req);
   if (error) return error;
   
   try {
-    const partner_id = params.id;
-    
     // Check if partner exists and user has access
     const existing = await getPartnerById(
       partner_id,
