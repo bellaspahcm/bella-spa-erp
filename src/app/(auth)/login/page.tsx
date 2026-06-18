@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { getSupabase } from '@/lib/supabase-client';
 import { challengeAndVerify, needsMfaChallenge } from '@/lib/mfa';
 import Image from 'next/image';
-import { Mail, Lock, Loader2, ShieldCheck, Smartphone } from 'lucide-react';
+import { Mail, Lock, Loader2, ShieldCheck, Smartphone, AlertTriangle } from 'lucide-react';
 
 type Stage =
   | { name: 'password' }
@@ -19,6 +19,21 @@ export default function LoginPage() {
   const [stage, setStage] = useState<Stage>({ name: 'password' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [initError, setInitError] = useState<string | null>(null);
+
+  // Check if Supabase client can be initialized
+  useEffect(() => {
+    try {
+      getSupabase(); // Try to initialize
+    } catch (err) {
+      console.error('Failed to initialize Supabase client:', err);
+      setInitError(
+        err instanceof Error 
+          ? err.message 
+          : 'Không thể kết nối đến server. Vui lòng thử lại sau.'
+      );
+    }
+  }, []);
 
   useEffect(() => {
     try {
@@ -37,10 +52,18 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Check for initialization error first
+    if (initError) {
+      setError(initError);
+      return;
+    }
+    
     setLoading(true);
     setError(null);
 
-    const supabase = getSupabase();
+    try {
+      const supabase = getSupabase();
 
     // DEVELOPMENT BYPASS: dev user with password123 — preserved as-is
     if (process.env.NODE_ENV === 'development' && password === 'password123') {
@@ -99,6 +122,15 @@ export default function LoginPage() {
     }
 
     finalizeLogin();
+    } catch (err) {
+      console.error('Login error:', err);
+      setError(
+        err instanceof Error 
+          ? err.message 
+          : 'Đăng nhập thất bại. Vui lòng thử lại.'
+      );
+      setLoading(false);
+    }
   };
 
   const handleMfaSubmit = async (e: React.FormEvent) => {
@@ -121,6 +153,31 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
+      {initError && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="w-full max-w-md p-8 bg-red-50 border-2 border-red-200 rounded-3xl shadow-xl"
+        >
+          <div className="flex flex-col items-center text-center gap-4">
+            <AlertTriangle className="w-16 h-16 text-red-500" />
+            <h2 className="text-2xl font-black text-red-900">
+              Lỗi Kết Nối
+            </h2>
+            <p className="text-red-700 font-medium">
+              {initError}
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-4 px-6 py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl transition-colors"
+            >
+              Tải lại trang
+            </button>
+          </div>
+        </motion.div>
+      )}
+      
+      {!initError && (
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -290,6 +347,7 @@ export default function LoginPage() {
           &copy; {new Date().getFullYear()} Bella Spa Group
         </p>
       </motion.div>
+      )}
     </div>
   );
 }
