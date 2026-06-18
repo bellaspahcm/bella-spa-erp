@@ -8,7 +8,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase-server';
 import { getPartnerById } from '@/services/api-gateway/partner.service';
 
 async function checkAdminRole(req: NextRequest) {
