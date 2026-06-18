@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Corinthia, Inter, Playfair_Display } from 'next/font/google';
+import { Corinthia, Inter, Playfair_Display, Geist } from 'next/font/google';
 import "./globals.css";
 
 const corinthia = Corinthia({
@@ -35,6 +35,11 @@ import TenantContextWrapper from "@/components/providers/TenantContextWrapper";
 
 // Register module adapters on app startup
 import { registerSpaModule } from "@/modules/spa/register";
+import { cn } from "@/lib/utils";
+
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
+
+
 registerSpaModule();
 
 const tenantThemeBootstrapScript = `
@@ -93,7 +98,7 @@ export default async function RootLayout({
   const theme = cookieStore.get("theme")?.value || "light";
 
   return (
-    <html lang="vi" className={`h-full antialiased ${theme === "dark" ? "dark" : ""} ${corinthia.variable} ${playfair.variable} ${inter.variable}`} suppressHydrationWarning>
+    <html lang="vi" className={cn("h-full", "antialiased", theme === "dark" ? "dark" : "", corinthia.variable, playfair.variable, inter.variable, "font-sans", geist.variable)} suppressHydrationWarning>
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="apple-mobile-web-app-capable" content="yes" />

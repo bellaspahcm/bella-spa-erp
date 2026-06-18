@@ -52,7 +52,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import type { APIPartner } from '@/types/api-gateway';
 
@@ -64,7 +64,6 @@ interface PartnersTableProps {
 
 export function PartnersTable({ partners, loading, onRefresh }: PartnersTableProps) {
   const router = useRouter();
-  const { toast } = useToast();
   
   const [deleteDialog, setDeleteDialog] = useState<{
     open: boolean;
@@ -88,16 +87,9 @@ export function PartnersTable({ partners, loading, onRefresh }: PartnersTablePro
   const handleCopyApiKey = async (apiKey: string) => {
     try {
       await navigator.clipboard.writeText(apiKey);
-      toast({
-        title: 'API Key copied',
-        description: 'API key has been copied to clipboard',
-      });
+      toast.success('API key copied to clipboard');
     } catch (error) {
-      toast({
-        title: 'Copy failed',
-        description: 'Failed to copy API key to clipboard',
-        variant: 'destructive',
-      });
+      toast.error('Failed to copy API key to clipboard');
     }
   };
 
@@ -111,19 +103,12 @@ export function PartnersTable({ partners, loading, onRefresh }: PartnersTablePro
         throw new Error('Failed to regenerate API key');
       }
 
-      toast({
-        title: 'API Key regenerated',
-        description: `New API key generated for ${partner.partner_name}`,
-      });
+      toast.success(`New API key generated for ${partner.partner_name}`);
 
       onRefresh();
       setRegenerateDialog({ open: false, partner: null });
     } catch (error) {
-      toast({
-        title: 'Regeneration failed',
-        description: 'Failed to regenerate API key',
-        variant: 'destructive',
-      });
+      toast.error('Failed to regenerate API key');
     }
   };
 
@@ -137,19 +122,12 @@ export function PartnersTable({ partners, loading, onRefresh }: PartnersTablePro
         throw new Error('Failed to delete partner');
       }
 
-      toast({
-        title: 'Partner deleted',
-        description: `${partner.partner_name} has been deleted`,
-      });
+      toast.success(`${partner.partner_name} has been deleted`);
 
       onRefresh();
       setDeleteDialog({ open: false, partner: null });
     } catch (error) {
-      toast({
-        title: 'Delete failed',
-        description: 'Failed to delete partner',
-        variant: 'destructive',
-      });
+      toast.error('Failed to delete partner');
     }
   };
 
@@ -323,7 +301,7 @@ export function PartnersTable({ partners, loading, onRefresh }: PartnersTablePro
                 {/* Actions */}
                 <TableCell>
                   <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
+                    <DropdownMenuTrigger>
                       <Button variant="ghost" size="icon">
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>
@@ -369,7 +347,7 @@ export function PartnersTable({ partners, loading, onRefresh }: PartnersTablePro
       {/* Delete Confirmation Dialog */}
       <AlertDialog
         open={deleteDialog.open}
-        onOpenChange={(open) => setDeleteDialog({ open, partner: null })}
+        onOpenChange={(open: boolean) => setDeleteDialog({ open, partner: null })}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -394,7 +372,7 @@ export function PartnersTable({ partners, loading, onRefresh }: PartnersTablePro
       {/* Regenerate Key Confirmation Dialog */}
       <AlertDialog
         open={regenerateDialog.open}
-        onOpenChange={(open) => setRegenerateDialog({ open, partner: null })}
+        onOpenChange={(open: boolean) => setRegenerateDialog({ open, partner: null })}
       >
         <AlertDialogContent>
           <AlertDialogHeader>

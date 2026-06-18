@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -18,55 +20,104 @@
 
 :root {
   /* Option C: Deep Rose Luxury (Refined & Softened) */
-  --primary: #9D174D;
+  --primary: oklch(0.205 0 0);
   --primary-hover: #831843;
-  --primary-foreground: #ffffff;
-  
-  --secondary: #1E293B;
-  --secondary-foreground: #ffffff;
-  
-  --accent: #BE185D;
-  --accent-foreground: #ffffff;
-  
-  --background: #FDF2F5;
-  --foreground: #0F172A;
-  
-  --card: #ffffff;
-  --card-foreground: #0F172A;
-  
-  --muted: #F1F5F9;
-  --muted-foreground: #64748B;
-  
-  --border: #FCE4EC;
-  --input: #FCE4EC;
-  --ring: #9D174D;
-  
-  --radius: 1.5rem;
+  --primary-foreground: oklch(0.985 0 0);
+
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+
+  --radius: 0.625rem;
+
+  --background: oklch(1 0 0);
+
+  --foreground: oklch(0.145 0 0);
+
+  --popover: oklch(1 0 0);
+
+  --popover-foreground: oklch(0.145 0 0);
+
+  --destructive: oklch(0.577 0.245 27.325);
+
+  --chart-1: oklch(0.87 0 0);
+
+  --chart-2: oklch(0.556 0 0);
+
+  --chart-3: oklch(0.439 0 0);
+
+  --chart-4: oklch(0.371 0 0);
+
+  --chart-5: oklch(0.269 0 0);
+
+  --sidebar: oklch(0.985 0 0);
+
+  --sidebar-foreground: oklch(0.145 0 0);
+
+  --sidebar-primary: oklch(0.205 0 0);
+
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+
+  --sidebar-accent: oklch(0.97 0 0);
+
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+
+  --sidebar-border: oklch(0.922 0 0);
+
+  --sidebar-ring: oklch(0.708 0 0);
 }
 
 .dark {
-  --primary: #5D1C34; /* Deep Velvet Burgundy */
+  --primary: oklch(0.922 0 0); /* Deep Velvet Burgundy */
   --primary-hover: #4D1328;
-  --primary-foreground: #EFE9E1; /* Off-white/Cream */
-  
-  --secondary: #292623;
-  --secondary-foreground: #EFE9E1;
-  
-  --accent: #A67D44; /* Bronze/Gold */
-  --accent-foreground: #11100F;
-  
-  --background: #11100F; /* Pitch black/charcoal */
-  --foreground: #EFE9E1; /* Off-white/Cream text */
-  
-  --card: #1C1B19;
-  --card-foreground: #EFE9E1;
-  
-  --muted: #292623;
-  --muted-foreground: #CDBCAB; /* Warm beige */
-  
-  --border: #3E3A35;
-  --input: #3E3A35;
-  --ring: #A67D44;
+  --primary-foreground: oklch(0.205 0 0); /* Off-white/Cream */
+
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+
+  --accent: oklch(0.269 0 0); /* Bronze/Gold */
+  --accent-foreground: oklch(0.985 0 0);
+
+  --background: oklch(0.145 0 0); /* Pitch black/charcoal */
+  --foreground: oklch(0.985 0 0); /* Off-white/Cream text */
+
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0); /* Warm beige */
+
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
 }
 
 @theme inline {
@@ -85,9 +136,9 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);
   --color-pink-deep: #881337;
-  
-  --font-sans: "Segoe UI", -apple-system, BlinkMacSystemFont, "Roboto", "Helvetica Neue", sans-serif;
-  
+
+  --font-sans: var(--font-sans);
+
   --text-xs: 12px;
   --text-sm: 13px;
   --text-base: 14px;
@@ -101,14 +152,37 @@
   --text-7xl: 24px;
   --text-8xl: 24px;
   --text-9xl: 24px;
-  
+
   --radius-xl: 1.5rem;
   --radius-2xl: 2rem;
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-destructive: var(--destructive);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
 body {
   background-color: var(--background);
-  color: var(--foreground);
   font-family: var(--font-sans);
   font-size: 14px;
   font-weight: 400;
@@ -331,8 +405,6 @@ h1, h2, h3, h4, h5, h6 {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
-
-
 
 /* Fix date/time inputs clipping */
 input[type="date"],
@@ -2038,4 +2110,16 @@ html[data-tenant-brand-button="minimal"][data-tenant-module="beauty_spa"] :is(bu
 html[data-tenant-brand-button="minimal"][data-tenant-module="beauty_spa"] .beauty-customer-add-cta {
   box-shadow: none !important;
   letter-spacing: 0.04em !important;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
 }

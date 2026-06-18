@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { PartnersTable } from './PartnersTable';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import type { APIPartner, PartnerType } from '@/types/api-gateway';
 
 interface PartnersListResponse {
@@ -40,7 +40,6 @@ interface PartnersListResponse {
 export function PartnersList() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { toast } = useToast();
 
   // State
   const [partners, setPartners] = useState<APIPartner[]>([]);
@@ -89,11 +88,7 @@ export function PartnersList() {
       setPagination(data.pagination);
     } catch (error) {
       console.error('Error fetching partners:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load partners. Please try again.',
-        variant: 'destructive',
-      });
+      toast.error('Failed to load partners. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -127,16 +122,9 @@ export function PartnersList() {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
 
-      toast({
-        title: 'Export successful',
-        description: 'Partners list exported to CSV',
-      });
+      toast.success('Partners list exported to CSV');
     } catch (error) {
-      toast({
-        title: 'Export failed',
-        description: 'Failed to export partners list',
-        variant: 'destructive',
-      });
+      toast.error('Failed to export partners list');
     }
   };
 
@@ -155,14 +143,17 @@ export function PartnersList() {
           <Input
             placeholder="Search partners..."
             value={search}
-            onChange={(e) => handleSearch(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSearch(e.target.value)}
             className="pl-9"
           />
         </div>
 
         {/* Filters */}
         <div className="flex items-center gap-2">
-          <Select value={typeFilter} onValueChange={(value) => setTypeFilter(value as PartnerType | 'all')}>
+          <Select 
+            value={typeFilter} 
+            onValueChange={(value: string | null) => value && setTypeFilter(value as PartnerType | 'all')}
+          >
             <SelectTrigger className="w-[150px]">
               <SelectValue placeholder="Partner Type" />
             </SelectTrigger>
@@ -179,7 +170,10 @@ export function PartnersList() {
             </SelectContent>
           </Select>
 
-          <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as any)}>
+          <Select 
+            value={statusFilter} 
+            onValueChange={(value: string | null) => value && setStatusFilter(value as 'all' | 'active' | 'inactive')}
+          >
             <SelectTrigger className="w-[130px]">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
@@ -190,7 +184,10 @@ export function PartnersList() {
             </SelectContent>
           </Select>
 
-          <Select value={sandboxFilter} onValueChange={(value) => setSandboxFilter(value as any)}>
+          <Select 
+            value={sandboxFilter} 
+            onValueChange={(value: string | null) => value && setSandboxFilter(value as 'all' | 'sandbox' | 'production')}
+          >
             <SelectTrigger className="w-[150px]">
               <SelectValue placeholder="Environment" />
             </SelectTrigger>
