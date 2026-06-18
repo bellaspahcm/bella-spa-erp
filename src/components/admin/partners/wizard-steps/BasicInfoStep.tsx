@@ -87,10 +87,10 @@ export function BasicInfoStep({ formData, updateFormData }: BasicInfoStepProps) 
             <SelectContent>
               {PARTNER_TYPES.map((type) => (
                 <SelectItem key={type.value} value={type.value}>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-col gap-0.5 py-0.5">
                     <span className="font-medium">{type.label}</span>
                     <span className="text-xs text-muted-foreground">
-                      — {type.description}
+                      {type.description}
                     </span>
                   </div>
                 </SelectItem>
