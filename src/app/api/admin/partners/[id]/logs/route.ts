@@ -101,6 +101,7 @@ export async function GET(
     const supabase = await createClient();
     
     // Build query
+    // @ts-ignore - api_request_logs table not yet in generated types
     let query = supabase
       .from('api_request_logs')
       .select('*', { count: 'exact' })
