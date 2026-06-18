@@ -3,7 +3,9 @@ import { toast } from 'sonner';
 
 type OutboxStatus = {
   pending: number;
-  failed: number;
+  retrying: number;
+  dead: number;
+  total: number;
   last_processed_at: string | null;
   timestamp: string;
 };
@@ -11,9 +13,16 @@ type OutboxStatus = {
 type ProcessResult = {
   success: boolean;
   processed: number;
-  errors: number;
-  total: number;
+  successCount: number;
+  failureCount: number;
+  deadLetterCount: number;
   timestamp: string;
+  triggered_by: string;
+};
+
+type ErrorResult = {
+  error: string;
+  details?: any;
 };
 
 /**
@@ -83,17 +92,18 @@ export function useAccountingOutbox() {
         },
       });
 
-      const result: ProcessResult = await response.json();
+      const result: ProcessResult | ErrorResult = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to process');
+        const error = 'error' in result ? result.error : 'Failed to process';
+        throw new Error(error);
       }
 
       // Success notification
-      if (result.processed > 0) {
+      if ('processed' in result && result.processed > 0) {
         toast.success('✅ Xử lý thành công!', {
           id: processingToast,
-          description: `Đã xử lý ${result.processed}/${result.total} bút toán kế toán`,
+          description: `Đã xử lý ${result.processed} bút toán (${result.successCount} thành công, ${result.failureCount} lỗi)`,
           duration: 5000,
         });
       } else {
@@ -105,9 +115,9 @@ export function useAccountingOutbox() {
       }
 
       // Show errors if any
-      if (result.errors > 0) {
+      if ('failureCount' in result && result.failureCount > 0) {
         toast.warning('⚠️ Một số bút toán gặp lỗi', {
-          description: `${result.errors}/${result.total} bút toán không xử lý được`,
+          description: `${result.failureCount} bút toán không xử lý được (sẽ retry tự động)`,
           duration: 5000,
         });
       }
