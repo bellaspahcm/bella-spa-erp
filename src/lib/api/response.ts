@@ -16,6 +16,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import type { APIScope } from '@/types/api-gateway';
 
 // ============================================================================
 // TYPES
@@ -672,9 +673,9 @@ export function withAPIMiddleware<
     // Step 3: Authorization (Scope check)
     if (options.scope) {
       if (Array.isArray(options.scope)) {
-        requireAnyScope(req, options.scope);
+        requireAnyScope(req, options.scope as APIScope[]);
       } else {
-        requireScope(req, options.scope);
+        requireScope(req, options.scope as APIScope);
       }
     }
 

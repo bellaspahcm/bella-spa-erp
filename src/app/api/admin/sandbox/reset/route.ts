@@ -12,13 +12,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { success, error as errorResponse, badRequest } from '@/lib/api/response';
-import type { Database } from '@/types/supabase';
+import type { Database } from '@/types/database.types';
 
 /**
  * Reset sandbox data for a partner
  * 
  * @route DELETE /api/admin/sandbox/reset
  * @access Admin, Super Admin
+ * 
+ * NOTE: This endpoint is temporarily disabled pending database type regeneration.
+ * The reset_sandbox_data RPC function exists in the database (created in migration
+ * 20260617010000_api_gateway_sandbox_environment.sql) but the TypeScript types
+ * have not been regenerated yet.
+ * 
+ * To enable this endpoint:
+ * 1. Run: npx supabase gen types typescript --project-id <project-id> > src/types/database.types.ts
+ * 2. Verify reset_sandbox_data and seed_test_data RPCs appear in generated types
+ * 3. Uncomment the implementation below
  * 
  * @example
  * ```bash
@@ -29,6 +39,20 @@ import type { Database } from '@/types/supabase';
  * ```
  */
 export async function DELETE(req: NextRequest) {
+  // Temporarily return "not implemented" until database types are regenerated
+  return NextResponse.json(
+    {
+      success: false,
+      error: {
+        code: 'NOT_IMPLEMENTED',
+        message: 'Sandbox reset endpoint is temporarily disabled',
+        details: 'The reset_sandbox_data RPC function exists but TypeScript types need to be regenerated. Run: npx supabase gen types typescript --project-id <project-id> > src/types/database.types.ts',
+      },
+    },
+    { status: 501 }
+  );
+
+  /* IMPLEMENTATION - Uncomment after regenerating database types
   try {
     // TODO: Add authentication check (admin/super admin only)
     // const session = await getServerSession(req);
@@ -89,4 +113,5 @@ export async function DELETE(req: NextRequest) {
     console.error('Sandbox reset error:', err);
     return errorResponse(req, 'INTERNAL_ERROR', err.message || 'An error occurred', 500);
   }
+  */
 }
