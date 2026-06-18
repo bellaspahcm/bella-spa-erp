@@ -60,7 +60,7 @@ export async function createPartner(
   input: CreateAPIPartnerInput,
   created_by_user_id?: string
 ): Promise<APIPartner> {
-  const supabase = createClient();
+  const supabase = await createClient();
   
   try {
     // Generate API key if not provided
@@ -174,7 +174,7 @@ export async function getPartnerById(
   partner_id: string,
   tenant_id?: string
 ): Promise<APIPartner | null> {
-  const supabase = createClient();
+  const supabase = await createClient();
   
   try {
     let query = supabase
@@ -227,7 +227,7 @@ export async function getPartnerById(
 export async function getPartnerByApiKey(
   api_key: string
 ): Promise<APIPartner | null> {
-  const supabase = createClient();
+  const supabase = await createClient();
   
   try {
     const { data: partner, error } = await supabase
@@ -273,7 +273,7 @@ export async function getPartnerByApiKey(
 export async function listPartners(
   params: ListPartnersParams = {}
 ): Promise<{ partners: APIPartner[]; total: number }> {
-  const supabase = createClient();
+  const supabase = await createClient();
   
   try {
     const {
@@ -353,7 +353,7 @@ export async function updatePartner(
   input: UpdateAPIPartnerInput,
   updated_by_user_id?: string
 ): Promise<APIPartner> {
-  const supabase = createClient();
+  const supabase = await createClient();
   
   try {
     // Check if partner exists
@@ -414,7 +414,7 @@ export async function updatePartner(
 export async function deletePartner(
   partner_id: string
 ): Promise<boolean> {
-  const supabase = createClient();
+  const supabase = await createClient();
   
   try {
     // Soft delete: set is_active to false
@@ -465,7 +465,7 @@ export async function regenerateApiKey(
   partner_id: string,
   updated_by_user_id?: string
 ): Promise<{ partner: APIPartner; new_api_key: string }> {
-  const supabase = createClient();
+  const supabase = await createClient();
   
   try {
     // Get existing partner
@@ -551,7 +551,7 @@ export async function addScopes(
   partner_id: string,
   scopes: APIScope[]
 ): Promise<APIPartner> {
-  const supabase = createClient();
+  const supabase = await createClient();
   
   try {
     const existing = await getPartnerById(partner_id);
@@ -612,7 +612,7 @@ export async function removeScopes(
   partner_id: string,
   scopes: APIScope[]
 ): Promise<APIPartner> {
-  const supabase = createClient();
+  const supabase = await createClient();
   
   try {
     const existing = await getPartnerById(partner_id);
@@ -694,7 +694,7 @@ export async function applySecurePreset(
     );
   }
   
-  const supabase = createClient();
+  const supabase = await createClient();
   
   try {
     const { data: partner, error } = await supabase
@@ -747,7 +747,7 @@ export async function applySecurePreset(
 export async function getPartnerUsageStats(
   partner_id: string
 ): Promise<APIPartnerUsageSummary | null> {
-  const supabase = createClient();
+  const supabase = await createClient();
   
   try {
     const { data: stats, error } = await supabase
@@ -793,7 +793,7 @@ export async function getPartnerUsageStats(
 export async function getTenantPartnerStats(
   tenant_id: string
 ): Promise<PartnerStatistics> {
-  const supabase = createClient();
+  const supabase = await createClient();
   
   try {
     const { data: partners, error } = await supabase
