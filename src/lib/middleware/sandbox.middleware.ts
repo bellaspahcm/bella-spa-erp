@@ -157,7 +157,7 @@ export function validateEnvironmentAccess(
   
   if (currentEnvironment !== requiredEnvironment) {
     throw new APIError(
-      'FORBIDDEN',
+      'AUTHZ_001',
       `This endpoint requires ${requiredEnvironment} API key. You are using ${currentEnvironment} key.`,
       {
         current_environment: currentEnvironment,
