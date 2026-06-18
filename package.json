@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "lint:strict": "eslint --config eslint.strict.config.mjs \"src/**/*.{ts,tsx}\"",
+    "env:check": "node scripts/check-required-env.mjs",
     "docs:api:check": "node scripts/check-api-docs.mjs",
     "docs:api:versioning": "node scripts/check-api-versioning.mjs",
     "db:access:check": "node scripts/check-supabase-data-access.cjs",
