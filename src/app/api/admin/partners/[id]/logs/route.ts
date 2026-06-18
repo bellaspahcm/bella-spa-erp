@@ -45,7 +45,7 @@ async function checkAdminRole(req: NextRequest) {
   
   return {
     user,
-    tenant_id: profile.tenant_id,
+    tenant_id: profile.tenant_id || undefined,
     is_super_admin: profile.role === 'super_admin',
   };
 }
