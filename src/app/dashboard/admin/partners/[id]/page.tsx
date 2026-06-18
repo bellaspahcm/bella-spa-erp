@@ -1,7 +1,7 @@
 /**
  * Trang Chi Tiết Đối Tác
  * 
- * Hiển thị thông tin đầy đủ về một đối tác API với 8 tabs:
+ * Hiển thị thông tin đầy đủ về một đối tác API với 9 tabs:
  * - Overview: Thông tin tổng quan
  * - Scopes: Quản lý phân quyền
  * - Security: API Key Rotation & Security Settings
@@ -10,6 +10,7 @@
  * - Webhooks: Cấu hình webhook
  * - Webhook Logs: Nhật ký webhook delivery
  * - Usage: Thống kê sử dụng
+ * - SLA: Giám sát SLA & Alerts
  */
 
 import { Metadata } from 'next';
@@ -30,6 +31,7 @@ import { PartnerUsageTab } from '@/components/admin/partners/detail-tabs/Partner
 import { PartnerWebhookLogsTab } from '@/components/admin/partners/detail-tabs/PartnerWebhookLogsTab';
 import { PartnerSecurityTab } from '@/components/admin/partners/detail-tabs/PartnerSecurityTab';
 import { PartnerActivityTab } from '@/components/admin/partners/detail-tabs/PartnerActivityTab';
+import { PartnerSLAMonitorTab } from '@/components/admin/partners/detail-tabs/PartnerSLAMonitorTab';
 
 export const metadata: Metadata = {
   title: 'Chi Tiết Đối Tác | Admin',
@@ -125,7 +127,7 @@ export default async function PartnerDetailPage({
 
       {/* Tabs */}
       <Tabs defaultValue={activeTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-8 lg:w-auto lg:inline-grid">
+        <TabsList className="grid w-full grid-cols-9 lg:w-auto lg:inline-grid">
           <TabsTrigger value="overview">Tổng Quan</TabsTrigger>
           <TabsTrigger value="scopes">Phân Quyền</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
@@ -134,6 +136,7 @@ export default async function PartnerDetailPage({
           <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
           <TabsTrigger value="webhook-logs">Webhook Logs</TabsTrigger>
           <TabsTrigger value="usage">Thống Kê</TabsTrigger>
+          <TabsTrigger value="sla">SLA</TabsTrigger>
         </TabsList>
 
         {/* Tab Content */}
@@ -167,6 +170,10 @@ export default async function PartnerDetailPage({
 
         <TabsContent value="usage" className="space-y-4">
           <PartnerUsageTab partnerId={id} />
+        </TabsContent>
+
+        <TabsContent value="sla" className="space-y-4">
+          <PartnerSLAMonitorTab partner={partnerData} />
         </TabsContent>
       </Tabs>
     </div>
