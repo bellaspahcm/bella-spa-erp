@@ -2,6 +2,8 @@
 
 Chào mừng bạn đến với **Bella Spa ERP** — giải pháp quản trị doanh nghiệp (ERP) toàn diện được thiết kế riêng cho mô hình chuỗi Spa chăm sóc mẹ và bé cao cấp. Hệ thống được xây dựng trên các công nghệ hiện đại nhất, chú trọng vào tính chính xác tài chính, tự động hóa kho vận, quản lý nhân sự hiệu quả và tích hợp Trợ lý điều hành AI COO.
 
+> **Latest Update:** Content Security Policy (CSP) optimizations and PWA metadata improvements for enhanced security and performance.
+
 ---
 
 ## 🌟 Tính Năng Cốt Lõi
