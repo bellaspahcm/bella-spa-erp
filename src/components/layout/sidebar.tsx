@@ -27,7 +27,8 @@ import {
   HelpCircle,
   ReceiptText,
   RefreshCw,
-  GraduationCap
+  GraduationCap,
+  Key
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -275,6 +276,7 @@ const menuItems: SidebarMenuItem[] = [
   { icon: Package,         label: 'Kho hàng',            href: '/dashboard/inventory' },
 
   { type: 'header', label: 'Hệ thống' },
+  { icon: Key,             label: 'API Partners',        href: '/admin/partners' },
   { icon: MonitorDot,      label: 'Trung tâm giám sát', href: '/dashboard/system-monitor' },
   { icon: History,         label: 'Nhật ký hệ thống',    href: '/dashboard/audit' },
   { icon: HelpCircle,      label: 'Hướng dẫn sử dụng',   href: '/dashboard/guides' },
