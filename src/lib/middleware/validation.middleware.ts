@@ -185,7 +185,7 @@ function formatZodErrors(error: ZodError): Array<{
   message: string;
   code: string;
 }> {
-  return error.errors.map(err => ({
+  return error.issues.map(err => ({
     field: err.path.join('.'),
     message: err.message,
     code: err.code,
