@@ -1,10 +1,11 @@
 /**
  * Trang Chi Tiết Đối Tác
  * 
- * Hiển thị thông tin đầy đủ về một đối tác API với 7 tabs:
+ * Hiển thị thông tin đầy đủ về một đối tác API với 8 tabs:
  * - Overview: Thông tin tổng quan
  * - Scopes: Quản lý phân quyền
  * - Security: API Key Rotation & Security Settings
+ * - Activity: Timeline hoạt động real-time
  * - Logs: Nhật ký request
  * - Webhooks: Cấu hình webhook
  * - Webhook Logs: Nhật ký webhook delivery
@@ -28,6 +29,7 @@ import { PartnerWebhooksTab } from '@/components/admin/partners/detail-tabs/Part
 import { PartnerUsageTab } from '@/components/admin/partners/detail-tabs/PartnerUsageTab';
 import { PartnerWebhookLogsTab } from '@/components/admin/partners/detail-tabs/PartnerWebhookLogsTab';
 import { PartnerSecurityTab } from '@/components/admin/partners/detail-tabs/PartnerSecurityTab';
+import { PartnerActivityTab } from '@/components/admin/partners/detail-tabs/PartnerActivityTab';
 
 export const metadata: Metadata = {
   title: 'Chi Tiết Đối Tác | Admin',
@@ -123,10 +125,11 @@ export default async function PartnerDetailPage({
 
       {/* Tabs */}
       <Tabs defaultValue={activeTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-7 lg:w-auto lg:inline-grid">
+        <TabsList className="grid w-full grid-cols-8 lg:w-auto lg:inline-grid">
           <TabsTrigger value="overview">Tổng Quan</TabsTrigger>
           <TabsTrigger value="scopes">Phân Quyền</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
+          <TabsTrigger value="activity">Activity</TabsTrigger>
           <TabsTrigger value="logs">Nhật Ký</TabsTrigger>
           <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
           <TabsTrigger value="webhook-logs">Webhook Logs</TabsTrigger>
@@ -144,6 +147,10 @@ export default async function PartnerDetailPage({
 
         <TabsContent value="security" className="space-y-4">
           <PartnerSecurityTab partner={partnerData} />
+        </TabsContent>
+
+        <TabsContent value="activity" className="space-y-4">
+          <PartnerActivityTab partner={partnerData} />
         </TabsContent>
 
         <TabsContent value="logs" className="space-y-4">
