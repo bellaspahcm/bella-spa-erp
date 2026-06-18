@@ -85,6 +85,20 @@ function generateRequestId(): string {
 }
 
 /**
+ * Get client IP address from request
+ * NextRequest doesn't have .ip property, need to extract from headers
+ */
+function getClientIP(req: NextRequest): string {
+  // Try various headers in order of reliability
+  return (
+    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    req.headers.get('x-real-ip') ||
+    req.headers.get('cf-connecting-ip') || // Cloudflare
+    'unknown'
+  );
+}
+
+/**
  * Extract API key from request headers
  */
 function extractAPIKey(req: NextRequest): string | null {
@@ -274,7 +288,7 @@ export async function apiKeyMiddleware(
       is_error: true,
       error_code: 'AUTH_001',
       error_message: 'Invalid API key',
-      ip_address: req.ip || 'unknown',
+      ip_address: getClientIP(req),
       user_agent: req.headers.get('user-agent') || undefined,
       request_id: requestId,
     });
@@ -298,7 +312,7 @@ export async function apiKeyMiddleware(
       is_error: true,
       error_code: 'AUTH_002',
       error_message: 'API key inactive',
-      ip_address: req.ip || 'unknown',
+      ip_address: getClientIP(req),
       user_agent: req.headers.get('user-agent') || undefined,
       request_id: requestId,
     });
@@ -343,7 +357,7 @@ export async function apiKeyMiddleware(
             partner_tenant_id: partnerInfo.tenant_id,
             provided_tenant_id: body.tenant_id,
             endpoint: pathname,
-            ip_address: req.ip,
+            ip_address: getClientIP(req),
           }
         );
         
@@ -358,7 +372,7 @@ export async function apiKeyMiddleware(
           is_error: true,
           error_code: 'AUTHZ_003',
           error_message: 'Tenant mismatch - potential security breach',
-          ip_address: req.ip || 'unknown',
+          ip_address: getClientIP(req),
           user_agent: req.headers.get('user-agent') || undefined,
           request_id: requestId,
           metadata: {
@@ -396,7 +410,7 @@ export async function apiKeyMiddleware(
     status_code: 200, // Will be updated by route handler
     response_time_ms: Date.now() - startTime,
     is_error: false,
-    ip_address: req.ip || 'unknown',
+    ip_address: getClientIP(req),
     user_agent: req.headers.get('user-agent') || undefined,
     request_id: requestId,
   });
@@ -437,4 +451,3 @@ export async function withAPIKey(req: RequestWithPartner): Promise<{
   // Success - return partner context
   return { partner: req.partner };
 }
-
