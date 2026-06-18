@@ -17,9 +17,9 @@ import {
 import { UpdateAPIPartnerInput, APIError } from '@/types/api-gateway';
 
 interface RouteContext {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 /**
@@ -29,7 +29,7 @@ interface RouteContext {
  */
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
-    const { id } = context.params;
+    const { id } = await context.params;
     const supabase = await createClient();
 
     // Get current user
@@ -111,7 +111,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
  */
 export async function PUT(request: NextRequest, context: RouteContext) {
   try {
-    const { id } = context.params;
+    const { id } = await context.params;
     const supabase = await createClient();
 
     // Get current user
@@ -196,7 +196,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
  */
 export async function DELETE(request: NextRequest, context: RouteContext) {
   try {
-    const { id } = context.params;
+    const { id } = await context.params;
     const supabase = await createClient();
 
     // Get current user

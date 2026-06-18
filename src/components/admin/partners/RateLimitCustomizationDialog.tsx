@@ -171,7 +171,9 @@ export function RateLimitCustomizationDialog({
 
   // State
   const [selectedTier, setSelectedTier] = useState<RateLimitTier>(
-    partner.rate_limit_tier || 'basic'
+    (partner.rate_limit_tier === 'pro' ? 'premium' : 
+     partner.rate_limit_tier === 'unlimited' ? 'enterprise' : 
+     partner.rate_limit_tier || 'basic') as RateLimitTier
   );
   const [customLimits, setCustomLimits] = useState({
     per_minute: partner.rate_limit_per_minute || 100,
@@ -182,7 +184,12 @@ export function RateLimitCustomizationDialog({
 
   // Reset when partner changes
   useEffect(() => {
-    setSelectedTier(partner.rate_limit_tier || 'basic');
+    const mappedTier = (
+      partner.rate_limit_tier === 'pro' ? 'premium' : 
+      partner.rate_limit_tier === 'unlimited' ? 'enterprise' : 
+      partner.rate_limit_tier || 'basic'
+    ) as RateLimitTier;
+    setSelectedTier(mappedTier);
     setCustomLimits({
       per_minute: partner.rate_limit_per_minute || 100,
       per_day: partner.rate_limit_per_day || 10000,
@@ -191,7 +198,12 @@ export function RateLimitCustomizationDialog({
   }, [partner]);
 
   // Get current config
-  const currentConfig = TIER_CONFIGS[partner.rate_limit_tier || 'basic'];
+  const mappedCurrentTier = (
+    partner.rate_limit_tier === 'pro' ? 'premium' : 
+    partner.rate_limit_tier === 'unlimited' ? 'enterprise' : 
+    partner.rate_limit_tier || 'basic'
+  ) as RateLimitTier;
+  const currentConfig = TIER_CONFIGS[mappedCurrentTier];
   const selectedConfig = TIER_CONFIGS[selectedTier];
 
   // Calculate changes
@@ -211,7 +223,7 @@ export function RateLimitCustomizationDialog({
   };
 
   const hasChanges =
-    selectedTier !== partner.rate_limit_tier ||
+    selectedTier !== mappedCurrentTier ||
     (selectedTier === 'custom' &&
       (customLimits.per_minute !== partner.rate_limit_per_minute ||
         customLimits.per_day !== partner.rate_limit_per_day ||

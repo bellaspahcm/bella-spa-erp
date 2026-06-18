@@ -83,7 +83,7 @@ export async function POST(
     }
 
     // Verify partner belongs to user's tenant
-    const partner = await getPartnerById(partnerId, profile.tenant_id);
+    const partner = await getPartnerById(partnerId, profile.tenant_id || undefined);
 
     if (!partner) {
       return NextResponse.json(

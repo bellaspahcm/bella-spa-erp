@@ -54,15 +54,17 @@ export function formatCurrency(
  * Parse money input string to number
  * Handles Vietnamese number format (1.000.000 or 1,000,000)
  * 
- * @param input - Input string
+ * @param input - Input string or number
  * @returns Parsed number
  * 
  * @example
  * parseMoneyInput("1.500.000") // 1500000
  * parseMoneyInput("1,500,000") // 1500000
  * parseMoneyInput("1500000") // 1500000
+ * parseMoneyInput(1500000) // 1500000
  */
-export function parseMoneyInput(input: string): number {
+export function parseMoneyInput(input: string | number): number {
+  if (typeof input === 'number') return input;
   if (!input) return 0;
   
   // Remove all non-digit characters except minus sign
@@ -73,25 +75,26 @@ export function parseMoneyInput(input: string): number {
 }
 
 /**
- * Get local date string in Vietnamese format
- * @param date - Date to format
- * @returns Formatted date string (dd/MM/yyyy)
+ * Get local date string in YYYY-MM-DD format for input[type="date"]
+ * @param date - Date to format (optional, defaults to today)
+ * @returns Formatted date string (yyyy-MM-dd)
  * 
  * @example
- * getLocalDateString(new Date('2024-06-18')) // "18/06/2024"
+ * getLocalDateString() // "2024-06-18" (today)
+ * getLocalDateString(new Date('2024-06-18')) // "2024-06-18"
  */
-export function getLocalDateString(date: Date | string): string {
-  const d = typeof date === 'string' ? new Date(date) : date;
+export function getLocalDateString(date?: Date | string): string {
+  const d = date ? (typeof date === 'string' ? new Date(date) : date) : new Date();
   
   if (isNaN(d.getTime())) {
     return '';
   }
   
-  const day = String(d.getDate()).padStart(2, '0');
-  const month = String(d.getMonth() + 1).padStart(2, '0');
   const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
   
-  return `${day}/${month}/${year}`;
+  return `${year}-${month}-${day}`;
 }
 
 /**
@@ -104,8 +107,9 @@ export function getLocalDateString(date: Date | string): string {
  * @example
  * formatMoneyInput(1500000) // "1.500.000"
  * formatMoneyInput("1500000") // "1.500.000"
+ * formatMoneyInput(null) // ""
  */
-export function formatMoneyInput(value: string | number): string {
+export function formatMoneyInput(value: string | number | null | undefined): string {
   if (value === '' || value === null || value === undefined) return '';
   
   const numValue = typeof value === 'string' ? parseMoneyInput(value) : value;
@@ -130,60 +134,147 @@ export function formatNumberWithSeparator(value: number): string {
  * Parse integer input string to number
  * Removes all non-digit characters
  * 
- * @param input - Input string
+ * @param input - Input string, number, or null/undefined
+ * @param options - Parsing options (min, max, fallback)
  * @returns Parsed integer
  * 
  * @example
  * parseIntegerInput("123abc") // 123
  * parseIntegerInput("-456") // -456
+ * parseIntegerInput(123) // 123
+ * parseIntegerInput(undefined, { fallback: 1 }) // 1
+ * parseIntegerInput("150", { max: 100, min: 0 }) // 100
  */
-export function parseIntegerInput(input: string): number {
-  if (!input) return 0;
+export function parseIntegerInput(
+  input: string | number | null | undefined,
+  options?: { min?: number; max?: number; fallback?: number }
+): number {
+  if (input === null || input === undefined || input === '') {
+    return options?.fallback ?? 0;
+  }
+  
+  if (typeof input === 'number') {
+    let value = Math.round(input);
+    // Apply min/max constraints
+    if (options?.min !== undefined && value < options.min) {
+      value = options.min;
+    }
+    if (options?.max !== undefined && value > options.max) {
+      value = options.max;
+    }
+    return value;
+  }
+  
   const cleaned = input.replace(/[^\d-]/g, '');
-  const parsed = parseInt(cleaned, 10);
-  return isNaN(parsed) ? 0 : parsed;
+  let parsed = parseInt(cleaned, 10);
+  
+  if (isNaN(parsed)) return options?.fallback ?? 0;
+  
+  // Apply min/max constraints
+  if (options?.min !== undefined && parsed < options.min) {
+    parsed = options.min;
+  }
+  if (options?.max !== undefined && parsed > options.max) {
+    parsed = options.max;
+  }
+  
+  return parsed;
 }
 
 /**
  * Parse decimal input string to number
  * Handles both comma and dot as decimal separators
  * 
- * @param input - Input string
+ * @param input - Input string, number, or null
+ * @param options - Parsing options (min, max, fallback)
  * @returns Parsed decimal number
  * 
  * @example
  * parseDecimalInput("12,5") // 12.5
  * parseDecimalInput("12.5") // 12.5
+ * parseDecimalInput(12.5) // 12.5
+ * parseDecimalInput(null, { fallback: 1 }) // 1
+ * parseDecimalInput("150", { max: 100 }) // 100
  */
-export function parseDecimalInput(input: string): number {
-  if (!input) return 0;
+export function parseDecimalInput(
+  input: string | number | null | undefined,
+  options?: { min?: number; max?: number; fallback?: number }
+): number {
+  if (input === null || input === undefined || input === '') {
+    return options?.fallback ?? 0;
+  }
+  
+  if (typeof input === 'number') {
+    let value = input;
+    // Apply min/max constraints
+    if (options?.min !== undefined && value < options.min) {
+      value = options.min;
+    }
+    if (options?.max !== undefined && value > options.max) {
+      value = options.max;
+    }
+    return value;
+  }
   
   // Replace comma with dot for parsing
   const normalized = input.replace(',', '.');
   // Remove all non-digit, non-dot, non-minus characters
   const cleaned = normalized.replace(/[^\d.-]/g, '');
-  const parsed = parseFloat(cleaned);
+  let parsed = parseFloat(cleaned);
   
-  return isNaN(parsed) ? 0 : parsed;
+  if (isNaN(parsed)) return options?.fallback ?? 0;
+  
+  // Apply min/max constraints
+  if (options?.min !== undefined && parsed < options.min) {
+    parsed = options.min;
+  }
+  if (options?.max !== undefined && parsed > options.max) {
+    parsed = options.max;
+  }
+  
+  return parsed;
 }
 
 /**
  * Parse percent input string to number
  * Removes percent sign and converts to decimal
  * 
- * @param input - Input string (e.g., "15%" or "15")
+ * @param input - Input string, number, or null/undefined (e.g., "15%" or "15")
+ * @param options - Parsing options (min, max, fallback)
  * @returns Parsed number (e.g., 15, not 0.15)
  * 
  * @example
  * parsePercentInput("15%") // 15
  * parsePercentInput("15") // 15
+ * parsePercentInput(15) // 15
+ * parsePercentInput(null, { fallback: 10 }) // 10
+ * parsePercentInput("150", { max: 100, fallback: 10 }) // 10
  */
-export function parsePercentInput(input: string): number {
-  if (!input) return 0;
+export function parsePercentInput(
+  input: string | number | null | undefined,
+  options?: { min?: number; max?: number; fallback?: number }
+): number {
+  if (input === null || input === undefined || input === '') {
+    return options?.fallback ?? 0;
+  }
+  
+  if (typeof input === 'number') {
+    let value = input;
+    // Apply min/max constraints
+    if (options?.min !== undefined && value < options.min) {
+      value = options.fallback ?? options.min;
+    }
+    if (options?.max !== undefined && value > options.max) {
+      value = options.fallback ?? options.max;
+    }
+    return value;
+  }
   
   // Remove percent sign and parse as decimal
   const cleaned = input.replace('%', '').trim();
-  return parseDecimalInput(cleaned);
+  let value = parseDecimalInput(cleaned, options);
+  
+  return value;
 }
 
 /**
@@ -214,17 +305,18 @@ export function getMonthStart(date?: Date | string): string {
  * Resolve package name from object or string
  * Helper for handling package naming in various contexts
  * 
- * @param pkg - Package object with name property or string
+ * @param pkg - Package object with name or package_name property, or string, or any object
  * @returns Package name string
  * 
  * @example
  * resolvePackageName({ name: "Massage 90 phút" }) // "Massage 90 phút"
+ * resolvePackageName({ package_name: "Massage 90 phút" }) // "Massage 90 phút"
  * resolvePackageName("Massage 90 phút") // "Massage 90 phút"
  */
-export function resolvePackageName(pkg: { name: string } | string | null | undefined): string {
+export function resolvePackageName(pkg: any): string {
   if (!pkg) return '';
   if (typeof pkg === 'string') return pkg;
-  return pkg.name || '';
+  return pkg.name || pkg.package_name || pkg.packages?.name || '';
 }
 
 /**

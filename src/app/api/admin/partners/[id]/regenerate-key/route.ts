@@ -15,9 +15,9 @@ import {
 import { APIError } from '@/types/api-gateway';
 
 interface RouteContext {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 /**
@@ -27,7 +27,7 @@ interface RouteContext {
  */
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
-    const { id } = context.params;
+    const { id } = await context.params;
     const supabase = await createClient();
 
     // Get current user
