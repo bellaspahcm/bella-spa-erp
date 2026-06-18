@@ -276,7 +276,7 @@ const menuItems: SidebarMenuItem[] = [
   { icon: Package,         label: 'Kho hàng',            href: '/dashboard/inventory' },
 
   { type: 'header', label: 'Hệ thống' },
-  { icon: Key,             label: 'API Partners',        href: '/admin/partners' },
+  { icon: Key,             label: 'API Partners',        href: '/dashboard/admin/partners' },
   { icon: MonitorDot,      label: 'Trung tâm giám sát', href: '/dashboard/system-monitor' },
   { icon: History,         label: 'Nhật ký hệ thống',    href: '/dashboard/audit' },
   { icon: HelpCircle,      label: 'Hướng dẫn sử dụng',   href: '/dashboard/guides' },
