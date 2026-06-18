@@ -392,7 +392,7 @@ export function withValidation<
         {
           success: false,
           error: {
-            code: 'INTERNAL_ERROR',
+            code: 'SERVER_001',
             message: 'An unexpected error occurred',
           },
           meta: {

@@ -591,7 +591,7 @@ export async function rateLimitMiddleware(req: NextRequest): Promise<void> {
   
   if (!partner) {
     throw new APIError(
-      'INTERNAL_ERROR',
+      'SERVER_001',
       'Partner not set. Ensure withAPIKey() is called before rateLimitMiddleware()'
     );
   }
@@ -606,7 +606,7 @@ export async function rateLimitMiddleware(req: NextRequest): Promise<void> {
     if (!knownPartnersCache.has(partner.id)) {
       console.warn('🚫 Unknown partner blocked in degraded mode:', {
         partner_id: partner.id,
-        partner_name: partner.name,
+        partner_name: partner.partner_name,
         circuit_state: circuitBreaker.state,
       });
       
@@ -657,7 +657,7 @@ export async function rateLimitMiddleware(req: NextRequest): Promise<void> {
     // Log rate limit event for monitoring
     console.warn('Rate limit exceeded:', {
       partner_id: partner.id,
-      partner_name: partner.name,
+      partner_name: partner.partner_name,
       tier,
       operation,
       limit: result.limit,
@@ -762,14 +762,14 @@ async function sendRateLimitAlert(
     
   } else if (partner && result) {
     alert.partner_id = partner.id;
-    alert.partner_name = partner.name;
+    alert.partner_name = partner.partner_name;
     alert.tenant_id = partner.tenant_id;
     alert.tier = tier;
     alert.limit = result.limit;
     alert.mode = result.mode;
     
     if (alertType === 'APPROACHING_LIMIT') {
-      alert.message = `⚠️ Partner ${partner.name} at 80% rate limit (${result.mode} mode)`;
+      alert.message = `⚠️ Partner ${partner.partner_name} at 80% rate limit (${result.mode} mode)`;
       alert.remaining = result.remaining;
       alert.consumed_percentage = ((result.limit - result.remaining) / result.limit * 100).toFixed(1) + '%';
       console.warn('⚠️ APPROACHING LIMIT:', JSON.stringify(alert, null, 2));
@@ -778,7 +778,7 @@ async function sendRateLimitAlert(
       // await sendPartnerEmailWarning(partner, alert);
       
     } else if (alertType === 'LIMIT_EXCEEDED') {
-      alert.message = `🚫 Partner ${partner.name} exceeded rate limit (${result.mode} mode)`;
+      alert.message = `🚫 Partner ${partner.partner_name} exceeded rate limit (${result.mode} mode)`;
       alert.reset = new Date(result.reset * 1000).toISOString();
       alert.retryAfter = result.retryAfter;
       console.error('🚫 LIMIT EXCEEDED:', JSON.stringify(alert, null, 2));
