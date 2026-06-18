@@ -24,6 +24,7 @@ import { PartnerScopesTab } from '@/components/admin/partners/detail-tabs/Partne
 import { PartnerLogsTab } from '@/components/admin/partners/detail-tabs/PartnerLogsTab';
 import { PartnerWebhooksTab } from '@/components/admin/partners/detail-tabs/PartnerWebhooksTab';
 import { PartnerUsageTab } from '@/components/admin/partners/detail-tabs/PartnerUsageTab';
+import { PartnerWebhookLogsTab } from '@/components/admin/partners/detail-tabs/PartnerWebhookLogsTab';
 
 export const metadata: Metadata = {
   title: 'Chi Tiết Đối Tác | Admin',
@@ -119,11 +120,12 @@ export default async function PartnerDetailPage({
 
       {/* Tabs */}
       <Tabs defaultValue={activeTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
+        <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-grid">
           <TabsTrigger value="overview">Tổng Quan</TabsTrigger>
           <TabsTrigger value="scopes">Phân Quyền</TabsTrigger>
           <TabsTrigger value="logs">Nhật Ký</TabsTrigger>
           <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
+          <TabsTrigger value="webhook-logs">Webhook Logs</TabsTrigger>
           <TabsTrigger value="usage">Thống Kê</TabsTrigger>
         </TabsList>
 
@@ -142,6 +144,10 @@ export default async function PartnerDetailPage({
 
         <TabsContent value="webhooks" className="space-y-4">
           <PartnerWebhooksTab partner={partnerData} />
+        </TabsContent>
+
+        <TabsContent value="webhook-logs" className="space-y-4">
+          <PartnerWebhookLogsTab partnerId={id} />
         </TabsContent>
 
         <TabsContent value="usage" className="space-y-4">
