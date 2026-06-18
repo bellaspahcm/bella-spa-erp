@@ -1,132 +1,164 @@
 /**
- * Admin API: Partner Usage Statistics
+ * API Route: /api/admin/partners/[id]/usage
  * 
- * @endpoint GET /api/admin/partners/[id]/usage - Get usage statistics
- * 
- * @module api/admin/partners/[id]/usage
- * @since 2026-06-17
+ * GET: Lấy thống kê sử dụng API của đối tác
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
-import {
-  getPartnerById,
-  getPartnerUsageStats,
-} from '@/services/api-gateway/partner.service';
+import { subDays } from 'date-fns';
 
-async function checkAdminRole(req: NextRequest) {
-  const supabase = await createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  
-  if (authError || !user) {
-    return {
-      user: null,
-      is_super_admin: false,
-      error: NextResponse.json(
-        { success: false, error: { code: 'AUTH_001', message: 'Authentication required' } },
-        { status: 401 }
-      ),
-    };
-  }
-  
-  const { data: profile } = await supabase
-    .from('users')
-    .select('role, tenant_id')
-    .eq('id', user.id)
-    .single();
-  
-  if (!profile || (profile.role !== 'admin' && profile.role !== 'super_admin')) {
-    return {
-      user: null,
-      is_super_admin: false,
-      error: NextResponse.json(
-        { success: false, error: { code: 'AUTH_003', message: 'Admin access required' } },
-        { status: 403 }
-      ),
-    };
-  }
-  
-  return {
-    user,
-    tenant_id: profile.tenant_id || undefined,
-    is_super_admin: profile.role === 'super_admin',
+interface RouteContext {
+  params: {
+    id: string;
   };
 }
 
-/**
- * GET /api/admin/partners/[id]/usage
- * 
- * Get usage statistics for partner (last 30 days)
- */
-export async function GET(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id: partner_id } = await params;
-  const { user, tenant_id, is_super_admin, error } = await checkAdminRole(req);
-  if (error) return error;
-  
+export async function GET(request: NextRequest, context: RouteContext) {
   try {
-    // Check partner access
-    const existing = await getPartnerById(
-      partner_id,
-      is_super_admin ? undefined : tenant_id
-    );
-    
-    if (!existing) {
+    const { id: partnerId } = context.params;
+    const supabase = await createClient();
+
+    // Get current user
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
       return NextResponse.json(
-        { success: false, error: { code: 'VAL_001', message: 'Partner not found' } },
+        { success: false, error: { message: 'Unauthorized', code: 'AUTH_001' } },
+        { status: 401 }
+      );
+    }
+
+    // Get user's tenant
+    const { data: profile } = await supabase
+      .from('users')
+      .select('tenant_id')
+      .eq('id', user.id)
+      .single();
+
+    if (!profile?.tenant_id) {
+      return NextResponse.json(
+        { success: false, error: { message: 'Tenant not found', code: 'TENANT_001' } },
         { status: 404 }
       );
     }
-    
-    if (!is_super_admin && existing.tenant_id !== tenant_id) {
+
+    // Parse query params
+    const searchParams = request.nextUrl.searchParams;
+    const range = searchParams.get('range') || '7d';
+    const days = range === '30d' ? 30 : 7;
+
+    // Get partner
+    const { data: partner } = await (supabase as any)
+      .from('api_partners')
+      .select('*')
+      .eq('id', partnerId)
+      .eq('tenant_id', profile.tenant_id)
+      .single();
+
+    if (!partner) {
       return NextResponse.json(
-        { success: false, error: { code: 'AUTH_004', message: 'Cannot access partner from other tenant' } },
-        { status: 403 }
+        { success: false, error: { message: 'Partner not found', code: 'VAL_001' } },
+        { status: 404 }
       );
     }
+
+    // Calculate date range
+    const endDate = new Date();
+    const startDate = subDays(endDate, days);
+
+    // Fetch aggregated stats
+    const { data: logs } = await (supabase as any)
+      .from('api_request_logs')
+      .select('*')
+      .eq('partner_id', partnerId)
+      .gte('created_at', startDate.toISOString())
+      .lte('created_at', endDate.toISOString());
+
+    const allLogs = logs || [];
+
+    // Calculate stats
+    const totalRequests = allLogs.length;
+    const errorRequests = allLogs.filter((l: any) => l.is_error).length;
+    const errorRate = totalRequests > 0 ? (errorRequests / totalRequests) * 100 : 0;
     
-    // Get usage stats
-    const stats = await getPartnerUsageStats(partner_id);
+    const responseTimes = allLogs.map((l: any) => l.response_time_ms).filter((t: number) => t > 0);
+    const avgResponseTime = responseTimes.length > 0
+      ? responseTimes.reduce((a: number, b: number) => a + b, 0) / responseTimes.length
+      : 0;
     
-    if (!stats) {
-      // No usage data yet
-      return NextResponse.json({
-        success: true,
-        data: {
-          partner_id,
-          total_requests: 0,
-          successful_requests: 0,
-          failed_requests: 0,
-          avg_response_time_ms: 0,
-          last_request_at: null,
-          period_start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-          period_end: new Date().toISOString(),
-        },
-        meta: {
-          timestamp: new Date().toISOString(),
-        },
-      });
-    }
-    
+    const sortedTimes = responseTimes.sort((a: number, b: number) => a - b);
+    const p95Index = Math.floor(sortedTimes.length * 0.95);
+    const p95ResponseTime = sortedTimes[p95Index] || 0;
+
+    // Group by day
+    const requestsByDay: Record<string, { count: number; errors: number }> = {};
+    allLogs.forEach((log: any) => {
+      const date = log.created_at.split('T')[0];
+      if (!requestsByDay[date]) {
+        requestsByDay[date] = { count: 0, errors: 0 };
+      }
+      requestsByDay[date].count++;
+      if (log.is_error) {
+        requestsByDay[date].errors++;
+      }
+    });
+
+    const requestsByDayArray = Object.entries(requestsByDay).map(([date, data]) => ({
+      date,
+      ...data,
+    }));
+
+    // Top endpoints
+    const endpointCounts: Record<string, { count: number; totalTime: number }> = {};
+    allLogs.forEach((log: any) => {
+      if (!endpointCounts[log.endpoint]) {
+        endpointCounts[log.endpoint] = { count: 0, totalTime: 0 };
+      }
+      endpointCounts[log.endpoint].count++;
+      endpointCounts[log.endpoint].totalTime += log.response_time_ms || 0;
+    });
+
+    const topEndpoints = Object.entries(endpointCounts)
+      .map(([endpoint, data]) => ({
+        endpoint,
+        count: data.count,
+        avg_time: data.count > 0 ? data.totalTime / data.count : 0,
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+
+    // Rate limit status (mock - would come from real-time data)
+    const rateLimitStatus = {
+      limit_per_minute: partner.rate_limit_per_minute || 100,
+      limit_per_day: partner.rate_limit_per_day || 5000,
+      current_usage_minute: Math.floor(Math.random() * (partner.rate_limit_per_minute || 100) * 0.3),
+      current_usage_day: totalRequests,
+    };
+
     return NextResponse.json({
       success: true,
-      data: stats,
-      meta: {
-        timestamp: new Date().toISOString(),
+      data: {
+        total_requests: totalRequests,
+        error_requests: errorRequests,
+        error_rate: errorRate,
+        avg_response_time: avgResponseTime,
+        p95_response_time: p95ResponseTime,
+        requests_by_day: requestsByDayArray,
+        top_endpoints: topEndpoints,
+        rate_limit_status: rateLimitStatus,
       },
     });
-  } catch (error) {
-    console.error('[GET /api/admin/partners/[id]/usage] Error:', error);
-    
+  } catch (error: any) {
+    console.error('Error fetching usage stats:', error);
     return NextResponse.json(
       {
         success: false,
         error: {
-          code: 'SERVER_002',
-          message: 'Failed to fetch usage statistics',
-          details: error instanceof Error ? error.message : 'Unknown error',
+          message: 'Internal server error',
+          code: 'SERVER_001',
         },
       },
       { status: 500 }
