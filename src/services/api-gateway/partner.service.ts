@@ -94,6 +94,7 @@ export async function createPartner(
     }
     
     // Create partner record
+    // Note: api_partners table exists in migration but not yet in generated types
     const partnerData = {
       tenant_id: input.tenant_id,
       partner_name: input.partner_name,
@@ -124,7 +125,7 @@ export async function createPartner(
       updated_by: created_by_user_id,
     };
     
-    const { data: partner, error } = await supabase
+    const { data: partner, error } = await (supabase as any)
       .from('api_partners')
       .insert(partnerData)
       .select()
@@ -178,7 +179,8 @@ export async function getPartnerById(
   const supabase = await createClient();
   
   try {
-    let query = supabase
+    // Note: api_partners table exists in migration but not yet in generated types
+    let query = (supabase as any)
       .from('api_partners')
       .select('*')
       .eq('id', partner_id);
@@ -231,7 +233,8 @@ export async function getPartnerByApiKey(
   const supabase = await createClient();
   
   try {
-    const { data: partner, error } = await supabase
+    // Note: api_partners table exists in migration but not yet in generated types
+    const { data: partner, error } = await (supabase as any)
       .from('api_partners')
       .select('*')
       .eq('api_key', api_key)
@@ -286,7 +289,8 @@ export async function listPartners(
       offset = 0,
     } = params;
     
-    let query = supabase
+    // Note: api_partners table exists in migration but not yet in generated types
+    let query = (supabase as any)
       .from('api_partners')
       .select('*', { count: 'exact' });
     
@@ -375,7 +379,8 @@ export async function updatePartner(
       updated_at: new Date().toISOString(),
     };
     
-    const { data: partner, error } = await supabase
+    // Note: api_partners table exists in migration but not yet in generated types
+    const { data: partner, error } = await (supabase as any)
       .from('api_partners')
       .update(updateData)
       .eq('id', partner_id)
@@ -418,8 +423,9 @@ export async function deletePartner(
   const supabase = await createClient();
   
   try {
+    // Note: api_partners table exists in migration but not yet in generated types
     // Soft delete: set is_active to false
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('api_partners')
       .update({ is_active: false })
       .eq('id', partner_id);
@@ -495,7 +501,8 @@ export async function regenerateApiKey(
     }
     
     // Update partner with new key
-    const { data: partner, error } = await supabase
+    // Note: api_partners table exists in migration but not yet in generated types
+    const { data: partner, error } = await (supabase as any)
       .from('api_partners')
       .update({
         api_key: newApiKey,
@@ -572,7 +579,8 @@ export async function addScopes(
     
     const updatedScopes = Array.from(currentScopes);
     
-    const { data: partner, error } = await supabase
+    // Note: api_partners table exists in migration but not yet in generated types
+    const { data: partner, error } = await (supabase as any)
       .from('api_partners')
       .update({ allowed_scopes: updatedScopes })
       .eq('id', partner_id)
@@ -643,7 +651,8 @@ export async function removeScopes(
       );
     }
     
-    const { data: partner, error } = await supabase
+    // Note: api_partners table exists in migration but not yet in generated types
+    const { data: partner, error } = await (supabase as any)
       .from('api_partners')
       .update({ allowed_scopes: updatedScopes })
       .eq('id', partner_id)
@@ -699,7 +708,8 @@ export async function applySecurePreset(
   const supabase = await createClient();
   
   try {
-    const { data: partner, error } = await supabase
+    // Note: api_partners table exists in migration but not yet in generated types
+    const { data: partner, error } = await (supabase as any)
       .from('api_partners')
       .update({
         allowed_scopes: scopes,
@@ -752,7 +762,8 @@ export async function getPartnerUsageStats(
   const supabase = await createClient();
   
   try {
-    const { data: stats, error } = await supabase
+    // Note: api_partner_usage_summary view exists in migration but not yet in generated types
+    const { data: stats, error } = await (supabase as any)
       .from('api_partner_usage_summary')
       .select('*')
       .eq('partner_id', partner_id)
@@ -798,7 +809,8 @@ export async function getTenantPartnerStats(
   const supabase = await createClient();
   
   try {
-    const { data: partners, error } = await supabase
+    // Note: api_partners table exists in migration but not yet in generated types
+    const { data: partners, error } = await (supabase as any)
       .from('api_partners')
       .select('partner_type, is_active, is_sandbox')
       .eq('tenant_id', tenant_id);
