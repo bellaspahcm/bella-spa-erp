@@ -101,7 +101,7 @@ export function detectSandboxMode(req: NextRequest): SandboxConfig {
   
   if (!partner) {
     throw new APIError(
-      'INTERNAL_ERROR',
+      'SERVER_001',
       'Partner not set. Ensure withAPIKey() is called before detectSandboxMode()'
     );
   }
@@ -124,7 +124,7 @@ export function detectSandboxMode(req: NextRequest): SandboxConfig {
   if (isSandbox) {
     console.log('🧪 Sandbox request:', {
       partner_id: partner.id,
-      partner_name: partner.name,
+      partner_name: partner.partner_name,
       tenant_id: partner.tenant_id,
       schema,
       method: req.method,
