@@ -3,7 +3,7 @@
   "crons": [
     {
       "path": "/api/cron/accounting-worker",
-      "schedule": "0 2 * * *"
+      "schedule": "*/15 * * * *"
     },
     {
       "path": "/api/cron/zalo-reminders",
