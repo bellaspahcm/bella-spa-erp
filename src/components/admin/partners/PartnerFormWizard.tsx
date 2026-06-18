@@ -231,9 +231,9 @@ export function PartnerFormWizard({
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="max-w-4xl mx-auto space-y-8 p-6">
       {/* Progress Indicator */}
-      <nav aria-label="Progress">
+      <nav aria-label="Progress" className="bg-white dark:bg-gray-800 p-4 rounded-lg">
         <ol className="flex items-center justify-between">
           {STEPS.map((step, stepIdx) => (
             <li key={step.id} className="relative flex-1">
@@ -281,7 +281,7 @@ export function PartnerFormWizard({
       </nav>
 
       {/* Step Content */}
-      <div className="bg-white rounded-lg border p-8">
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-8 shadow-sm">
         {currentStep === 1 && (
           <BasicInfoStep formData={formData} updateFormData={updateFormData} />
         )}
@@ -295,7 +295,7 @@ export function PartnerFormWizard({
       </div>
 
       {/* Navigation Buttons */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
         <Button
           variant="outline"
           onClick={goToPreviousStep}

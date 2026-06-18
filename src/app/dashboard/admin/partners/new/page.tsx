@@ -41,24 +41,28 @@ export default async function NewPartnerPage() {
   }
 
   return (
-    <div className="p-6 md:p-8 lg:p-10 space-y-6">
+    <div className="min-h-screen bg-background p-6 md:p-8 lg:p-10 space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 bg-white dark:bg-gray-900 p-4 rounded-lg shadow">
         <Link href="/dashboard/admin/partners">
           <Button variant="ghost" size="icon">
             <ArrowLeft className="h-4 w-4" />
           </Button>
         </Link>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Create New Partner</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+            Create New Partner
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400">
             Set up a new API partner with authentication and permissions
           </p>
         </div>
       </div>
 
       {/* Form Wizard */}
-      <PartnerFormWizard mode="create" tenantId={profile.tenant_id} />
+      <div className="bg-white dark:bg-gray-900 rounded-lg shadow">
+        <PartnerFormWizard mode="create" tenantId={profile.tenant_id} />
+      </div>
     </div>
   );
 }

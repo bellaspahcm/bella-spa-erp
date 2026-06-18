@@ -72,6 +72,16 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Skip admin routes - they require authentication
+  if (url.pathname.startsWith('/dashboard/admin')) {
+    return;
+  }
+
+  // Skip API routes
+  if (url.pathname.startsWith('/api/')) {
+    return;
+  }
+
   // Skip Next.js hot module reloading (HMR) or hot updates in development
   if (url.pathname.includes('/_next/webpack-hmr') || url.pathname.includes('hot-update')) {
     return;
