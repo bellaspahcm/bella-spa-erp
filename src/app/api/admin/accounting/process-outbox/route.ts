@@ -55,9 +55,18 @@ export async function POST(request: Request) {
       );
     }
 
-    const baseUrl = process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}`
-      : 'http://localhost:3000';
+    // Build the base URL correctly for both local and production
+    let baseUrl = 'http://localhost:3000';
+    
+    if (process.env.VERCEL_URL) {
+      baseUrl = `https://${process.env.VERCEL_URL}`;
+    } else if (process.env.NEXT_PUBLIC_SITE_URL) {
+      baseUrl = process.env.NEXT_PUBLIC_SITE_URL;
+    } else if (request.headers.get('host')) {
+      // Use the request host if available
+      const protocol = request.headers.get('x-forwarded-proto') || 'http';
+      baseUrl = `${protocol}://${request.headers.get('host')}`;
+    }
     
     const cronUrl = `${baseUrl}/api/cron/accounting-worker`;
 
