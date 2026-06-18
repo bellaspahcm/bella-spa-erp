@@ -98,7 +98,7 @@ export async function GET(
     const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100);
     const offset = parseInt(searchParams.get('offset') || '0');
     
-    const supabase = createClient();
+    const supabase = await createClient();
     
     // Build query
     let query = supabase
