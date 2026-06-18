@@ -67,7 +67,8 @@ export async function createPartner(
     let apiKey = input.api_key;
     
     if (!apiKey) {
-      const { data: generatedKey, error: keyError } = await supabase
+      // Note: generate_api_key RPC exists in migration but not yet in generated types
+      const { data: generatedKey, error: keyError } = await (supabase as any)
         .rpc('generate_api_key', { is_test: input.is_sandbox || false });
       
       if (keyError) {
@@ -480,7 +481,8 @@ export async function regenerateApiKey(
     }
     
     // Generate new API key
-    const { data: newApiKey, error: keyError } = await supabase
+    // Note: generate_api_key RPC exists in migration but not yet in generated types
+    const { data: newApiKey, error: keyError } = await (supabase as any)
       .rpc('generate_api_key', { is_test: existing.is_sandbox });
     
     if (keyError) {
