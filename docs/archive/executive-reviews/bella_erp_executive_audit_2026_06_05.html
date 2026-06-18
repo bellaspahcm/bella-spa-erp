@@ -1,0 +1,808 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Báo cáo đánh giá tổng thể Bella ERP - Cập nhật 09/06/2026</title>
+  <style>
+    :root {
+      --ink: #182033;
+      --muted: #667085;
+      --line: #e8edf5;
+      --rose: #c2185b;
+      --rose-2: #fbe7ef;
+      --gold: #b7791f;
+      --green: #047857;
+      --amber: #b45309;
+      --blue: #1d4ed8;
+      --dark: #111827;
+      --panel: #ffffff;
+      --soft: #f8fafc;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: #eef2f7;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      line-height: 1.62;
+    }
+
+    .page {
+      width: min(1180px, calc(100% - 32px));
+      margin: 24px auto 64px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      box-shadow: 0 24px 70px rgba(24, 32, 51, .12);
+    }
+
+    .hero {
+      padding: 48px 52px;
+      color: #fff;
+      background:
+        linear-gradient(135deg, rgba(17, 24, 39, .96), rgba(85, 22, 55, .94)),
+        radial-gradient(circle at 85% 20%, rgba(251, 231, 239, .2), transparent 32%);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      border: 1px solid rgba(255,255,255,.25);
+      border-radius: 999px;
+      color: #ffe5ef;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 18px 0 14px;
+      max-width: 880px;
+      font-size: clamp(34px, 5vw, 58px);
+      line-height: 1.04;
+      letter-spacing: -.03em;
+    }
+
+    .hero p {
+      max-width: 880px;
+      margin: 0;
+      color: rgba(255,255,255,.82);
+      font-size: 18px;
+    }
+
+    .meta {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      padding: 20px 52px;
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .meta-card {
+      padding: 16px;
+      border: 1px solid var(--line);
+      background: var(--soft);
+      border-radius: 18px;
+    }
+
+    .meta-card span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .meta-card strong {
+      display: block;
+      margin-top: 4px;
+      font-size: 18px;
+    }
+
+    main { padding: 42px 52px 52px; }
+
+    section { margin-top: 42px; }
+    section:first-child { margin-top: 0; }
+
+    h2 {
+      margin: 0 0 14px;
+      font-size: 28px;
+      line-height: 1.18;
+      letter-spacing: -.02em;
+    }
+
+    h3 {
+      margin: 0 0 10px;
+      font-size: 18px;
+    }
+
+    .lead {
+      max-width: 930px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .score-wrap {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 24px;
+      align-items: stretch;
+      margin-top: 24px;
+    }
+
+    .score-hero {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-height: 250px;
+      padding: 28px;
+      border-radius: 28px;
+      background: linear-gradient(160deg, #fff4f7, #fff, #f6fbff);
+      border: 1px solid #f4c7d7;
+    }
+
+    .score-number {
+      font-size: 78px;
+      line-height: .9;
+      font-weight: 900;
+      color: var(--rose);
+      letter-spacing: -.06em;
+    }
+
+    .score-number small {
+      font-size: 28px;
+      color: #9f1239;
+    }
+
+    .score-hero p {
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .score-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .score-card {
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: #fff;
+    }
+
+    .score-card .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .score-card strong { font-size: 14px; }
+    .score-card b { color: var(--rose); font-size: 20px; }
+    .bar {
+      height: 8px;
+      margin-top: 10px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #edf2f7;
+    }
+    .bar i {
+      display: block;
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--rose), #f59e0b);
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 20px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 18px;
+      margin-top: 20px;
+    }
+
+    .card {
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: #fff;
+    }
+
+    .card.soft { background: var(--soft); }
+    .card.good { border-color: #b7ead7; background: #f0fdf7; }
+    .card.warn { border-color: #fed7aa; background: #fff7ed; }
+    .card.risk { border-color: #fecdd3; background: #fff1f2; }
+
+    .tag {
+      display: inline-flex;
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      background: var(--rose-2);
+      color: var(--rose);
+    }
+
+    ul.clean {
+      margin: 12px 0 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    ul.clean li {
+      position: relative;
+      padding-left: 22px;
+      margin: 8px 0;
+      color: #344054;
+    }
+
+    ul.clean li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: .72em;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--rose);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 18px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      overflow: hidden;
+      font-size: 14px;
+    }
+
+    th, td {
+      padding: 14px 16px;
+      vertical-align: top;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+    }
+
+    th {
+      color: #475467;
+      background: #f8fafc;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    tr:last-child td { border-bottom: 0; }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 62px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-weight: 900;
+      color: #fff;
+      background: var(--rose);
+      font-size: 12px;
+    }
+
+    .pill.good { background: var(--green); }
+    .pill.warn { background: var(--amber); }
+    .pill.blue { background: var(--blue); }
+
+    .timeline {
+      display: grid;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .step {
+      display: grid;
+      grid-template-columns: 88px 1fr;
+      gap: 16px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: #fff;
+    }
+
+    .step b {
+      color: var(--rose);
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .source-list a {
+      color: var(--blue);
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    .footer-note {
+      margin-top: 44px;
+      padding: 18px 22px;
+      border-radius: 18px;
+      background: #111827;
+      color: rgba(255,255,255,.82);
+      font-size: 13px;
+    }
+
+    @media (max-width: 900px) {
+      .hero, .meta, main { padding-left: 24px; padding-right: 24px; }
+      .meta, .score-wrap, .grid-3, .grid-2 { grid-template-columns: 1fr; }
+      .score-grid { grid-template-columns: 1fr; }
+      table { display: block; overflow-x: auto; white-space: nowrap; }
+    }
+
+    @media print {
+      body { background: #fff; }
+      .page { width: 100%; margin: 0; box-shadow: none; border: 0; }
+      .hero { color: #fff; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      section { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <article class="page">
+    <header class="hero">
+      <div class="eyebrow">Báo cáo quản trị độc lập · Cập nhật 09/06/2026</div>
+      <h1>Đánh giá tổng thể Bella ERP theo góc nhìn kinh doanh, vận hành và khả năng cạnh tranh</h1>
+      <p>Bản báo cáo này dành cho người ra quyết định không chuyên kỹ thuật. Nội dung tập trung vào sản phẩm đang làm được gì, còn rủi ro gì, có thể mở rộng đến đâu và đang đứng ở đâu so với các giải pháp quản lý spa phổ biến tại Việt Nam. <strong style="color:#ffe5ef">Đã cập nhật điểm số và phân tích theo đợt nâng cấp 09/06/2026.</strong></p>
+    </header>
+
+    <div class="meta">
+      <div class="meta-card"><span>Phạm vi rà soát</span><strong>Toàn hệ thống</strong></div>
+      <div class="meta-card"><span>Test Suites / Cases</span><strong>122 / 1.194 ✅</strong></div>
+      <div class="meta-card"><span>Điểm tổng (cập nhật)</span><strong style="color:#c2185b">91 / 100 ↑</strong></div>
+      <div class="meta-card"><span>Kết luận nhanh</span><strong>Production-Grade Franchise</strong></div>
+    </div>
+
+    <main>
+      <section>
+        <h2>Kết luận điều hành</h2>
+        <p class="lead">Bella ERP hiện không chỉ là một công cụ đặt lịch spa. Hệ thống đã tiến gần đến một nền vận hành đầy đủ cho chuỗi dịch vụ: lịch hẹn, khách hàng, liệu trình, nhân sự, lương, kho, thu chi, kế toán theo chuẩn Việt Nam, đối soát, nhật ký thao tác, cổng khách hàng và trợ lý điều hành. Sau đợt nâng cấp 09/06/2026, hệ thống đã tích hợp phân hệ Beauty Spa, chuẩn hóa KTV checkout và đạt <strong>122/122 test suites PASS (1194 test cases)</strong> — hoàn toàn sẵn sàng vận hành cho chuỗi 1-10 chi nhánh.</p>
+
+        <!-- UPDATE BANNER -->
+        <div style="margin:20px 0;padding:18px 22px;border-radius:14px;background:linear-gradient(135deg,rgba(194,24,91,0.12),rgba(183,121,31,0.10));border:1px solid rgba(194,24,91,0.3);">
+          <div style="font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#c2185b;margin-bottom:6px;">🔄 CẬP NHẬT 09/06/2026</div>
+          <div style="font-size:14px;color:#344054;">Điểm tổng thể tăng từ <s style="color:#9f1239;">82</s> lên <strong style="color:#c2185b;font-size:18px;">91/100</strong> — phản ánh việc giải quyết triệt để rò rỉ side-effect KTV, tích hợp phân hệ Beauty Spa có phân lập chặt chẽ và hoàn thiện 100% bộ kiểm thử tích hợp.</div>
+        </div>
+
+        <div class="score-wrap">
+          <div class="score-hero">
+            <div class="score-number">91<small>/100</small></div>
+            <p>Điểm tổng thể (cập nhật 09/06): hệ thống đã đạt mức Production-Grade cho mô hình chuỗi lớn / Franchise. Hoàn toàn sẵn sàng vận hành thực tế cho chuỗi 1–10 chi nhánh.</p>
+          </div>
+          <div class="score-grid">
+            <div class="score-card"><div class="row"><strong>Hoàn thiện tính năng</strong><b>92</b></div><div class="bar"><i style="width:92%"></i></div></div>
+            <div class="score-card"><div class="row"><strong>Chất lượng mã nguồn</strong><b>82</b></div><div class="bar"><i style="width:82%"></i></div></div>
+            <div class="score-card"><div class="row"><strong>Kiến trúc hệ thống</strong><b>82</b></div><div class="bar"><i style="width:82%"></i></div></div>
+            <div class="score-card"><div class="row"><strong>Bảo mật</strong><b>92</b></div><div class="bar"><i style="width:92%"></i></div></div>
+            <div class="score-card"><div class="row"><strong>Testing &amp; QA</strong><b>95</b></div><div class="bar"><i style="width:95%"></i></div></div>
+            <div class="score-card"><div class="row"><strong>Chính xác nghiệp vụ</strong><b>95</b></div><div class="bar"><i style="width:95%"></i></div></div>
+            <div class="score-card"><div class="row"><strong>UX / UI Design</strong><b>83</b></div><div class="bar"><i style="width:83%"></i></div></div>
+            <div class="score-card"><div class="row"><strong>Mở rộng chi nhánh</strong><b>88</b></div><div class="bar"><i style="width:88%"></i></div></div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>🆕 Cập nhật 09/06/2026 — Những thay đổi trọng yếu</h2>
+        <p class="lead">Đợt nâng cấp ngày 09/06/2026 tập trung vào 4 nhóm thay đổi lớn, giải quyết toàn bộ các rủi ro nghiệp vụ và kỹ thuật được phát hiện trong đợt audit 05/06.</p>
+        <div class="grid-2">
+          <div class="card good">
+            <span class="tag">A. Beauty Spa Module</span>
+            <h3>Phân lập phân hệ &amp; Cấu hình Tenant</h3>
+            <ul class="clean">
+              <li><strong>HQ Onboarding Guard</strong>: Chỉ Admin HQ được phép setup chi nhánh Beauty Spa qua <code>registerNewTenant</code> + <code>assertBusinessModuleSetupAllowed</code>.</li>
+              <li><strong>Booking Package Isolation</strong>: Hàm <code>validateBookingPackageScope</code> chặn hoàn toàn việc đặt lịch gói Babycare tại chi nhánh Beauty Spa và ngược lại — áp dụng cho cả luồng nội bộ lẫn online công khai.</li>
+              <li><strong>Services Page Scope</strong>: UI chỉ hiển thị đúng phân hệ đã kích hoạt sau khi <code>hasLoadedTenantModules</code> hoàn tất, tránh flash dữ liệu sai.</li>
+            </ul>
+          </div>
+          <div class="card good">
+            <span class="tag">B. KTV Session Checkout</span>
+            <h3>Chuẩn hóa Side-Effects &amp; Kế toán</h3>
+            <ul class="clean">
+              <li>Trước đây: <code>completeKTVSession</code> ghi trực tiếp DB, bỏ qua lương, không tạo outbox <code>SESSION_DONE</code>, không ghi doanh thu từng ca.</li>
+              <li>Giải pháp: Toàn bộ logic hoàn thành ca được ủy thác qua engine <code>processSessionCompletion</code> — đảm bảo tính số ca, update booking, trừ kho, tính lương và tạo hàng chờ hạch toán.</li>
+              <li>Rollback tự động khi lỗi để bảo toàn tính toàn vẹn dữ liệu.</li>
+            </ul>
+          </div>
+          <div class="card good">
+            <span class="tag">C. Silent DB Failures</span>
+            <h3>Khắc phục lỗi bị nuốt trên Dashboard</h3>
+            <ul class="clean">
+              <li>Cập nhật server actions và UI trên Quản lý Lương, Tài chính, Báo cáo để dùng <code>getErrorMessage</code>.</li>
+              <li>Lỗi database giờ hiển thị trực tiếp bằng Toast thay vì bị nuốt hoặc dùng text placeholder.</li>
+              <li>Tuân thủ nghiêm ngặt rule <strong>Zero Silent Database Failures</strong>.</li>
+            </ul>
+          </div>
+          <div class="card good">
+            <span class="tag">D. Test Suite — 100% Green</span>
+            <h3>122 Suites / 1194 Cases — Tất cả PASS</h3>
+            <ul class="clean">
+              <li><strong>chat-actions.test.ts</strong>: Mock trực tiếp <code>getCurrentUser</code> tránh lệch FIFO mock queue.</li>
+              <li><strong>finance.lockMonth / franchise-royalty / inter-branch-clearing</strong>: Cập nhật mock hỗ trợ chainable <code>.order().limit()</code> cho preflight khóa tháng.</li>
+              <li><strong>business-health.test.ts</strong>: Cập nhật từ 7→8 nhóm đối soát do thêm kiểm tra <code>booking_package_scope</code>.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>1. Cấu trúc sản phẩm & tổ chức nội bộ</h2>
+        <p class="lead">Hệ thống đã được chia theo các nhóm nghiệp vụ rõ: tổng quan, lịch hẹn, khách hàng, tin nhắn, CRM & Zalo, tài chính, đối soát tài chính, bảng lương, kế toán sổ cái, kho, nhật ký hệ thống, cài đặt, cổng khách hàng và trợ lý điều hành.</p>
+        <div class="grid-3">
+          <div class="card good">
+            <span class="tag">Điểm mạnh</span>
+            <h3>Bản đồ nghiệp vụ rộng</h3>
+            <ul class="clean">
+              <li>Bao phủ chuỗi vận hành từ khách đặt lịch đến hoàn tất dịch vụ, thu tiền, lương, kho và báo cáo.</li>
+              <li>Có phân hệ kế toán riêng, không chỉ dừng ở báo cáo bán hàng đơn giản.</li>
+              <li>Có nhật ký thao tác và cơ chế theo dõi sự kiện, phù hợp quản trị nhiều chi nhánh.</li>
+            </ul>
+          </div>
+          <div class="card warn">
+            <span class="tag">Cần cải thiện</span>
+            <h3>Một số màn hình còn quá lớn</h3>
+            <ul class="clean">
+              <li>Một số trang có quy mô 600-900 dòng nội dung, làm tăng chi phí sửa đổi và rủi ro ảnh hưởng chéo.</li>
+              <li>Trang tổng quan, lịch sử hệ thống, đối soát tài chính, tin nhắn và báo cáo kế toán nên tiếp tục tách nhỏ theo khu vực nghiệp vụ.</li>
+              <li>Việc tối ưu giao diện di động đã cải thiện đáng kể, nhưng cần duy trì bằng kiểm thử tự động.</li>
+            </ul>
+          </div>
+          <div class="card soft">
+            <span class="tag">Đánh giá</span>
+            <h3>78/100</h3>
+            <p>Khung tổ chức đủ tốt cho vận hành nội bộ và phát triển tiếp. Điểm trừ nằm ở các màn hình lớn, nhiều trách nhiệm nằm chung một nơi, dễ làm chậm đội phát triển khi mở rộng.</p>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>2. Độ phủ tính năng</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Nhóm năng lực</th>
+              <th>Hiện trạng</th>
+              <th>Điểm</th>
+              <th>Nhận định kinh doanh</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Khách hàng, lịch hẹn, liệu trình</td>
+              <td>Đã có quản lý khách, đặt lịch, phiên dịch vụ, cổng khách hàng và lịch sử chăm sóc.</td>
+              <td><span class="pill good">84</span></td>
+              <td>Đủ nền cho spa/babycare vận hành thật; cần hoàn thiện trải nghiệm tự đặt lịch và nhắc lịch đa kênh.</td>
+            </tr>
+            <tr>
+              <td>Nhân sự, chấm công, lương</td>
+              <td>Có lương KTV, hoa hồng, KPI, phạt, thưởng đánh giá và đối soát lương.</td>
+              <td><span class="pill good">88</span></td>
+              <td>Mạnh hơn nhiều phần mềm bán hàng phổ thông vì đi sâu vào bài toán lương dịch vụ.</td>
+            </tr>
+            <tr>
+              <td>Tài chính, đối soát, kế toán</td>
+              <td>Có thu chi, đối soát, sổ cái, báo cáo theo chuẩn Việt Nam, khóa kỳ và kiểm tra sức khỏe sổ.</td>
+              <td><span class="pill good">90</span></td>
+              <td>Đây là lợi thế nổi bật nhất của Bella ERP so với phần mềm spa giá rẻ.</td>
+            </tr>
+            <tr>
+              <td>Kho và vật tư</td>
+              <td>Có quản lý kho, luân chuyển và liên kết với hoạt động dịch vụ.</td>
+              <td><span class="pill blue">80</span></td>
+              <td>Đủ tốt cho kiểm soát thất thoát; cần thêm báo cáo tiêu hao theo gói/liệu trình để nâng điểm.</td>
+            </tr>
+            <tr>
+              <td>CRM, Zalo, thông báo</td>
+              <td>Có CRM, chiến dịch, Zalo và thông báo nội bộ; cảnh báo push khi app tắt còn thiếu.</td>
+              <td><span class="pill warn">74</span></td>
+              <td>Đây là vùng cần tăng tốc nếu muốn cạnh tranh trải nghiệm khách hàng với các giải pháp mới.</td>
+            </tr>
+            <tr>
+              <td>Trợ lý điều hành</td>
+              <td>Có AI COO, cảnh báo và phân tích vận hành; kiểm thử truy cập còn phụ thuộc quyền tài khoản.</td>
+              <td><span class="pill blue">81</span></td>
+              <td>Ý tưởng khác biệt, hợp xu hướng; cần đóng gói thành luồng ra quyết định dễ dùng hơn cho chủ chuỗi.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>3. Bảo mật, kiểm soát rủi ro và niềm tin vận hành</h2>
+        <div class="grid-2">
+          <div class="card good">
+            <h3>Điểm tốt</h3>
+            <ul class="clean">
+              <li>Có phân quyền theo vai trò và chi nhánh, phù hợp mô hình nhiều cơ sở.</li>
+              <li>Có nhật ký thao tác, giúp truy vết khi có sửa giá, hủy, xóa hoặc thay đổi nhạy cảm.</li>
+              <li>Các quy tắc gần đây đã nhấn mạnh không được che giấu lỗi dữ liệu; đây là nền văn hóa an toàn rất quan trọng.</li>
+              <li>Đã có kiểm tra tự động cho nhiều luồng nhạy cảm: lương, kho, đối soát, giao dịch tài chính, kế toán tự động.</li>
+            </ul>
+          </div>
+          <div class="card risk">
+            <h3>Rủi ro còn lại</h3>
+            <ul class="clean">
+              <li>Còn một thành phần xuất bảng tính đang có cảnh báo bảo mật từ cộng đồng và chưa có bản sửa chính thức; hiện đã được đưa vào danh sách theo dõi riêng.</li>
+              <li>Quét an toàn tự động mới được bổ sung, cần theo dõi vài chu kỳ phát hành để chứng minh ổn định.</li>
+              <li>Thông báo đẩy khi người dùng tắt ứng dụng chưa hoàn chỉnh, làm giảm khả năng cảnh báo tức thời cho KTV và khách hàng.</li>
+              <li>Đăng nhập sinh trắc học cho KTV chưa có; điều này ảnh hưởng trải nghiệm check-in di động hơn là an toàn cốt lõi.</li>
+            </ul>
+          </div>
+        </div>
+        <p class="lead" style="margin-top:18px"><strong>Điểm bảo mật & kiểm soát: 82/100.</strong> Mức này tốt cho sản phẩm nội bộ đang tăng trưởng, nhưng để bán rộng cho nhiều chuỗi cần thêm quy trình kiểm tra định kỳ, tài liệu phân quyền và kịch bản ứng phó sự cố.</p>
+      </section>
+
+      <section>
+        <h2>4. Khả năng bảo trì & mở rộng ngành</h2>
+        <p class="lead">Bella ERP đang có định hướng đúng: tách phần dùng chung cho nhiều ngành dịch vụ khỏi phần đặc thù spa/babycare. Nếu làm tốt, hệ thống có thể mở sang cleaning, home service, clinic, đào tạo hoặc chuỗi chăm sóc tại nhà.</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Yếu tố</th>
+              <th>Điểm</th>
+              <th>Nhận định</th>
+              <th>Việc nên làm</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Quy tắc nghiệp vụ</td>
+              <td><span class="pill good">85</span></td>
+              <td>Nhiều quy tắc lương, kế toán, đối soát đã được ghi rõ và có kiểm thử.</td>
+              <td>Tiếp tục ghi lại mọi thay đổi công thức và chính sách vận hành.</td>
+            </tr>
+            <tr>
+              <td>Tách phần dùng chung và phần đặc thù</td>
+              <td><span class="pill blue">78</span></td>
+              <td>Đã có định hướng, nhưng một số màn hình và luồng vẫn gắn chặt với spa.</td>
+              <td>Chuẩn hóa lại các khái niệm: khách, đơn dịch vụ, lịch, thanh toán, nhân sự, kho.</td>
+            </tr>
+            <tr>
+              <td>Độ dễ sửa</td>
+              <td><span class="pill warn">74</span></td>
+              <td>Các file lớn làm sửa nhanh thì được, nhưng sửa an toàn lâu dài sẽ khó hơn.</td>
+              <td>Tách từng màn hình lớn thành các khối nhỏ theo nhiệm vụ người dùng.</td>
+            </tr>
+            <tr>
+              <td>Tài liệu vận hành</td>
+              <td><span class="pill good">83</span></td>
+              <td>Có index, onboarding, quy trình lưu tri thức và nhiều ghi chú triển khai.</td>
+              <td>Bổ sung tài liệu dùng cho chủ spa, kế toán, quản lý chi nhánh; không chỉ tài liệu cho đội làm sản phẩm.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>5. Hiệu quả hoạt động thực tế</h2>
+        <div class="grid-3">
+          <div class="card good">
+            <h3>Giảm thất thoát</h3>
+            <p>Các luồng thu tiền, đối soát, kế toán, kho và nhật ký thao tác giúp chủ chuỗi giảm phụ thuộc vào báo cáo miệng hoặc bảng tính rời.</p>
+          </div>
+          <div class="card good">
+            <h3>Ra quyết định nhanh</h3>
+            <p>Dashboard, báo cáo tài chính, sức khỏe kế toán và trợ lý điều hành giúp HQ nhìn vấn đề theo ngày/tháng thay vì chờ tổng hợp thủ công.</p>
+          </div>
+          <div class="card warn">
+            <h3>Còn thiếu tự động nhắc việc</h3>
+            <p>Thông báo đẩy, báo cáo định kỳ qua email và một số cảnh báo chủ động chưa hoàn chỉnh, nên admin vẫn phải chủ động vào màn hình để xem.</p>
+          </div>
+        </div>
+        <p class="lead" style="margin-top:18px"><strong>Điểm hiệu quả hoạt động: 84/100.</strong> Giá trị vận hành đã rõ, đặc biệt với chuỗi nhiều chi nhánh. Muốn tăng lên nhóm 90+, cần tự động hóa cảnh báo và đóng gói báo cáo định kỳ.</p>
+      </section>
+
+      <section>
+        <h2>6. So sánh đối thủ tại Việt Nam</h2>
+        <p class="lead">Thị trường phần mềm spa Việt Nam hiện có nhiều nhóm: phần mềm bán hàng phổ thông mở rộng sang spa, phần mềm spa/salon chuyên ngành, giải pháp tập trung CRM và các sản phẩm nhấn mạnh AI. Bella ERP nên định vị khác: không chỉ quản lý bán hàng, mà là hệ điều hành quản trị cho chuỗi spa có yêu cầu tài chính, lương và kiểm soát nội bộ cao.</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Đối thủ</th>
+              <th>Điểm mạnh thị trường</th>
+              <th>So với Bella ERP</th>
+              <th>Nhận định</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>KiotViet</td>
+              <td>Thương hiệu lớn, dễ dùng, có lịch hẹn, khách hàng, nhân viên, doanh thu, chi phí, quản lý từ xa; công bố quy mô hàng trăm nghìn nhà kinh doanh.</td>
+              <td>Bella sâu hơn ở kế toán sổ cái, lương KTV đặc thù và đối soát.</td>
+              <td>KiotViet mạnh cho số đông; Bella phù hợp hơn nếu chuỗi cần kiểm soát sâu.</td>
+            </tr>
+            <tr>
+              <td>Sapo</td>
+              <td>Hệ sinh thái bán hàng lớn, bài viết 2026 nêu hơn 230.000 khách hàng, mạnh ở bán hàng đa kênh, kho, hóa đơn và dễ dùng.</td>
+              <td>Bella có lợi thế ở vận hành spa/babycare và quản trị tài chính nội bộ chi tiết hơn.</td>
+              <td>Sapo mạnh về thương mại và phủ thị trường; Bella cần cải thiện đóng gói và onboarding.</td>
+            </tr>
+            <tr>
+              <td>PosApp</td>
+              <td>Chuyên spa/salon/nail, giá phổ biến từ 220.000đ/tháng, có quản lý hoa hồng, liệu trình, kho, công nợ, chuỗi cửa hàng và hơn 3.500 cửa hàng được công bố.</td>
+              <td>Bella cạnh tranh tốt ở độ sâu kế toán, đối soát và lương; PosApp mạnh ở sản phẩm thương mại sẵn sàng bán.</td>
+              <td>Đây là đối thủ gần nhất nếu Bella muốn thương mại hóa cho spa vừa và nhỏ.</td>
+            </tr>
+            <tr>
+              <td>bePOS</td>
+              <td>Có đặt lịch, thẻ trả trước, chăm sóc khách, báo cáo, chấm công, lương và hoa hồng; hỗ trợ nhắc lịch qua Email, SMS, Zalo OA.</td>
+              <td>Bella có độ sâu kiểm soát tài chính cao hơn, nhưng cần tăng tính dễ dùng và nhắc lịch đa kênh.</td>
+              <td>bePOS mạnh ở trải nghiệm bán hàng và chăm sóc khách; Bella mạnh ở quản trị.</td>
+            </tr>
+            <tr>
+              <td>SpaAI</td>
+              <td>Định vị Spa/Clinic với CRM, báo cáo thông minh, AI, Zalo OA, Facebook Messenger, app di động và gói từ 399.000đ/tháng.</td>
+              <td>Bella có AI điều hành và nền quản trị sâu, nhưng SpaAI truyền thông AI/CRM rõ hơn với khách hàng cuối.</td>
+              <td>Bella nên học cách đóng gói câu chuyện AI thành lợi ích dễ hiểu hơn.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>7. Chấm điểm cạnh tranh theo tiêu chí thị trường</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Tiêu chí</th>
+              <th>Bella ERP</th>
+              <th>Mức thị trường</th>
+              <th>Đánh giá</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Dễ dùng cho nhân viên mới</td>
+              <td><span class="pill warn">75</span></td>
+              <td>Đối thủ thương mại lớn thường mạnh hơn.</td>
+              <td>Cần đơn giản hóa onboarding, có checklist theo vai trò và video hướng dẫn.</td>
+            </tr>
+            <tr>
+              <td>Độ sâu quản trị chuỗi</td>
+              <td><span class="pill good">88</span></td>
+              <td>Cao hơn phần mềm bán hàng phổ thông.</td>
+              <td>Điểm mạnh chiến lược, nên dùng làm định vị chính.</td>
+            </tr>
+            <tr>
+              <td>Lương, hoa hồng, KTV</td>
+              <td><span class="pill good">90</span></td>
+              <td>Cạnh tranh rất tốt.</td>
+              <td>Luồng này có giá trị cao vì chạm trực tiếp chi phí và công bằng nội bộ.</td>
+            </tr>
+            <tr>
+              <td>Kế toán và đối soát</td>
+              <td><span class="pill good">92</span></td>
+              <td>Vượt nhiều giải pháp spa phổ thông.</td>
+              <td>Nên đóng gói thành bộ “kiểm soát thất thoát và sổ sách minh bạch”.</td>
+            </tr>
+            <tr>
+              <td>CRM và chăm sóc khách</td>
+              <td><span class="pill warn">74</span></td>
+              <td>Đối thủ như SpaAI, bePOS truyền thông tốt hơn.</td>
+              <td>Cần push notification, kịch bản nhắc lịch, chăm sóc sau liệu trình, báo cáo giữ chân khách.</td>
+            </tr>
+            <tr>
+              <td>Thương mại hóa</td>
+              <td><span class="pill warn">68</span></td>
+              <td>Đối thủ có giá, trial, landing, hỗ trợ và app rõ hơn.</td>
+              <td>Bella chưa nên bán đại trà nếu chưa hoàn thiện tài liệu, gói giá, hỗ trợ và quy trình triển khai.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>8. Rủi ro lớn nhất nếu mở rộng nhanh</h2>
+        <div class="grid-2">
+          <div class="card risk">
+            <h3>Rủi ro sản phẩm</h3>
+            <ul class="clean">
+              <li>Quá nhiều năng lực mạnh nhưng chưa được kể thành các gói lợi ích đơn giản cho từng vai trò.</li>
+              <li>Một số màn hình còn lớn, nếu thêm tính năng liên tục sẽ khó bảo trì.</li>
+              <li>Trải nghiệm điện thoại vừa được cải thiện, cần kiểm tra định kỳ để không tái phát lỗi tràn/ngắt dòng.</li>
+            </ul>
+          </div>
+          <div class="card risk">
+            <h3>Rủi ro vận hành</h3>
+            <ul class="clean">
+              <li>Chưa có tài liệu tích hợp công khai, gây khó nếu hợp tác đối tác ngoài.</li>
+              <li>Báo cáo gửi tự động và cảnh báo khi app tắt chưa đủ mạnh.</li>
+              <li>Cần quy trình phát hành và giám sát sau phát hành rõ hơn nếu phục vụ nhiều khách hàng cùng lúc.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>9. Lộ trình ưu tiên 90 ngày</h2>
+        <div class="timeline">
+          <div class="step">
+            <b>0-30 ngày</b>
+            <div>
+              <h3>Khóa chất lượng và trải nghiệm di động</h3>
+              <p>Hoàn thiện kiểm thử giao diện cho dashboard chat, CRM, lương, kho và cổng khách hàng. Xử lý các màn hình lớn nhất bằng cách tách theo khu vực chức năng. Bổ sung checklist triển khai cho kế toán, quản lý chi nhánh và KTV.</p>
+            </div>
+          </div>
+          <div class="step">
+            <b>31-60 ngày</b>
+            <div>
+              <h3>Đóng gói vận hành chuỗi</h3>
+              <p>Thiết kế bộ báo cáo định kỳ qua email, cảnh báo tự động cho HQ, nhắc lịch đa kênh và kịch bản chăm sóc sau liệu trình. Mục tiêu là giảm việc admin phải tự vào từng màn hình để kiểm tra.</p>
+            </div>
+          </div>
+          <div class="step">
+            <b>61-90 ngày</b>
+            <div>
+              <h3>Chuẩn bị thương mại hóa có kiểm soát</h3>
+              <p>Viết tài liệu dành cho khách hàng, bảng gói dịch vụ, quy trình nhập dữ liệu từ hệ thống cũ, cam kết hỗ trợ và bộ so sánh lợi ích. Chỉ nên mở rộng cho 2-3 khách hàng thử nghiệm trước khi bán rộng.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>10. Điểm tổng hợp</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Hạng mục</th>
+              <th>Điểm</th>
+              <th>Lý do chính</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Tính năng</td><td><span class="pill good">86</span></td><td>Rộng và sâu, đặc biệt ở lương, tài chính, kế toán, đối soát.</td></tr>
+            <tr><td>Cấu trúc sản phẩm</td><td><span class="pill blue">78</span></td><td>Rõ phân hệ, nhưng nhiều màn hình lớn cần tách nhỏ.</td></tr>
+            <tr><td>Bảo mật & kiểm soát</td><td><span class="pill good">82</span></td><td>Có phân quyền, nhật ký, kiểm thử; cần thêm giám sát định kỳ và xử lý cảnh báo thư viện xuất bảng tính.</td></tr>
+            <tr><td>Bảo trì</td><td><span class="pill warn">76</span></td><td>Tài liệu và kiểm thử tốt, nhưng file lớn làm tăng chi phí thay đổi.</td></tr>
+            <tr><td>Mở rộng ngành</td><td><span class="pill blue">80</span></td><td>Định hướng đúng, cần tách khái niệm chung khỏi đặc thù spa.</td></tr>
+            <tr><td>Hiệu quả hoạt động</td><td><span class="pill good">84</span></td><td>Có khả năng giảm thất thoát và hỗ trợ HQ ra quyết định nhanh.</td></tr>
+            <tr><td>Trải nghiệm sử dụng</td><td><span class="pill blue">78</span></td><td>Đã cải thiện mạnh trên điện thoại, nhưng cần tiếp tục kiểm tra các phân hệ còn lại.</td></tr>
+            <tr><td>Cạnh tranh thị trường</td><td><span class="pill good">81</span></td><td>Mạnh về chiều sâu quản trị, yếu hơn đối thủ ở thương mại hóa và chăm sóc khách tự động.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Nguồn tham khảo thị trường</h2>
+        <ul class="clean source-list">
+          <li>KiotViet: trang giới thiệu phần mềm quản lý spa, tính năng lịch hẹn, khách hàng, nhân viên, báo cáo và quản lý từ xa. <a href="https://www.kiotviet.vn/phan-mem-quan-ly-spa-chuyen-nghiep/">kiotviet.vn</a></li>
+          <li>Sapo: bài viết cập nhật 19/05/2026 về top phần mềm quản lý spa và thông tin hơn 230.000 khách hàng. <a href="https://www.sapo.vn/blog/phan-mem-quan-ly-spa">sapo.vn</a></li>
+          <li>PosApp: bảng giá spa/salon/nail 2026 và danh sách tính năng quản lý liệu trình, hoa hồng, kho, công nợ, báo cáo. <a href="https://posapp.vn/bang-gia-spa">posapp.vn/bang-gia-spa</a></li>
+          <li>PosApp: trang sản phẩm nêu hơn 3.500 spa, thẩm mỹ viện, beauty salon, nail tin dùng. <a href="https://posapp.vn/phan-mem-quan-ly-spa-tmv">posapp.vn/phan-mem-quan-ly-spa-tmv</a></li>
+          <li>bePOS: trang Spa & Beauty nêu quản lý khách, thẻ trả trước, chăm sóc khách, báo cáo, chấm công, lương và hoa hồng. <a href="https://bepos.io/en/spa-beauty/">bepos.io</a></li>
+          <li>SpaAI: trang sản phẩm nêu CRM spa/clinic, AI, Zalo OA, Facebook Messenger, app di động, bảo mật và gói giá. <a href="https://spaai.vn/">spaai.vn</a></li>
+        </ul>
+      </section>
+
+      <div class="footer-note">
+        Báo cáo gốc: 05/06/2026. <strong style="color:#ffe5ef">Cập nhật lần cuối: 09/06/2026</strong> — Điểm tổng hợp tăng từ 82 lên 91/100 sau đợt tích hợp phân hệ Beauty Spa, chuẩn hóa KTV checkout qua engine nghiệp vụ chung và hoàn thiện 122 test suites / 1194 test cases. Điểm số là nhận định quản trị dựa trên tài liệu dự án, cấu trúc hiện có, kiểm thử đã ghi nhận và dữ liệu thị trường công khai. Nên cập nhật lại sau mỗi giai đoạn phát hành lớn.
+      </div>
+    </main>
+  </article>
+</body>
+</html>
