@@ -123,7 +123,7 @@ function requiresAPIKey(pathname: string): boolean {
  * Validate API key and get partner info from database
  */
 async function validateAPIKey(apiKey: string): Promise<PartnerValidationResult | null> {
-  const supabase = createClient();
+  const supabase = await createClient();
   
   try {
     // Call database function to validate partner
@@ -150,7 +150,7 @@ async function validateAPIKey(apiKey: string): Promise<PartnerValidationResult |
  * Log API request to database (async, non-blocking)
  */
 async function logAPIRequest(logData: CreateAPIRequestLogInput): Promise<void> {
-  const supabase = createClient();
+  const supabase = await createClient();
   
   try {
     // Insert log (don't await - fire and forget)
