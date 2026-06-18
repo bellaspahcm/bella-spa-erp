@@ -12,7 +12,7 @@ import { createClient } from '@/lib/supabase-server';
 import { getPartnerById } from '@/services/api-gateway/partner.service';
 
 async function checkAdminRole(req: NextRequest) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   
   if (authError || !user) {
