@@ -123,7 +123,7 @@ function requiresAPIKey(pathname: string): boolean {
  * Validate API key and get partner info from database
  * 
  * NOTE: The validate_api_partner RPC exists in the database but TypeScript
- * types haven't been regenerated yet. Using ts-expect-error as temporary workaround.
+ * types haven't been regenerated yet. Using type assertion as temporary workaround.
  * TODO: Regenerate types with: npx supabase gen types typescript --project-id <id>
  */
 async function validateAPIKey(apiKey: string): Promise<PartnerValidationResult | null> {
@@ -131,8 +131,8 @@ async function validateAPIKey(apiKey: string): Promise<PartnerValidationResult |
   
   try {
     // Call database function to validate partner
-    // @ts-expect-error - RPC exists in DB but not in generated types yet
-    const { data, error } = await supabase
+    // Type assertion needed because RPC exists in DB but not in generated types yet
+    const { data, error } = await (supabase as any)
       .rpc('validate_api_partner', { p_api_key: apiKey });
     
     if (error) {
