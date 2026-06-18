@@ -65,3 +65,37 @@ You must strictly adhere to the following rules when working on this codebase to
 - **Dependency vulnerability exceptions require a written rationale.** If a dependency has no patched npm release or is constrained by export/test compatibility, document the reason in the audit allowlist or `.trivyignore`, keep the ignore narrow to the exact CVE/GHSA, and revisit it before upgrading or replacing the package.
 - **Server/runtime logs must use constant format strings.** Prefer `console.error('Context: %s', value)` or structured fields over template-string log messages for user-controlled or external values. This prevents unsafe format-string findings and reduces accidental log leakage.
 - **Security gate changes must be verified locally before push.** At minimum run the relevant combination of `npm.cmd run security:audit`, `npm.cmd run security:secrets`, `npm.cmd run lint`, `npm.cmd run build`, `npm.cmd run test:critical`, and `git diff --check`.
+
+
+## 10. Route Path Consistency and Navigation Safety
+- **Always use centralized route constants.** Never hardcode route paths in components or navigation logic. Define all routes in a single source of truth (`src/lib/constants/routes.ts` or similar) to prevent inconsistencies when refactoring folder structure.
+- **Search exhaustively when moving routes.** When moving page files (e.g., from `src/app/(dashboard)/admin` to `src/app/dashboard/admin`), you **MUST** search the entire codebase for hardcoded references to the old path:
+  ```bash
+  grep -r "'/old/path" src/ --include="*.tsx" --include="*.ts"
+  grep -r "\`/old/path" src/ --include="*.tsx" --include="*.ts"
+  ```
+- **Update all navigation calls.** Check `router.push()`, `<Link href="">`, `redirect()`, and any string concatenations that build URLs. A single missed reference will cause 404 errors in production.
+- **Service Worker must skip authenticated routes.** If the project uses a Service Worker (`public/sw.js`), ensure it skips caching for:
+  - Admin routes (e.g., `/dashboard/admin/*`)
+  - API routes (e.g., `/api/*`)
+  - Any routes requiring authentication or session state
+  - Example skip logic:
+    ```javascript
+    if (url.pathname.startsWith('/dashboard/admin') || url.pathname.startsWith('/api/')) {
+      return; // Don't cache
+    }
+    ```
+- **Test production builds locally before deploying.** Always run `npm run build && npm start` to verify routes work in production mode. Dev mode (`npm run dev`) may hide routing issues due to different rendering strategies.
+- **Clear browser cache and Service Worker after route changes.** Instruct users to hard refresh (`Ctrl+Shift+R`) or clear site data when testing production deployments. Cached Service Workers can serve stale routes and cause black screens or 404s.
+- **Prefer `smart_relocate` tool over manual file moves.** When available, use the `smart_relocate` tool to move files automatically with import updates, reducing the risk of broken references.
+
+**Real-world incident (18/06/2026):**
+- Moved admin partner pages from `src/app/(dashboard)/admin/partners` to `src/app/dashboard/admin/partners`.
+- Updated most navigation calls but missed 3 references in `PartnersTable.tsx`:
+  - `router.push('/admin/partners/new')` → caused 404 in production
+  - `router.push('/admin/partners/${id}')` → view button failed
+  - `router.push('/admin/partners/${id}/edit')` → edit button failed
+- Service Worker tried to cache admin routes, causing "Failed to fetch" errors.
+- **Resolution:** Exhaustive search for `/admin/partners`, fixed all 3 references, disabled SW caching for admin routes.
+- **Time lost:** ~2 hours debugging black screens and 404s.
+- **Lesson:** Always grep entire codebase after route moves, test production build locally, and ensure SW skips auth-required routes.

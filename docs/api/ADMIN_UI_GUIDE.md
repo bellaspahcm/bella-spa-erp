@@ -1360,3 +1360,254 @@ SELECT is_active, api_key FROM api_partners WHERE id = '[id]';
 **Cập nhật lần cuối**: 18/06/2026  
 **Phiên bản**: 1.1  
 **Tác giả**: Bella ERP Development Team
+
+
+---
+
+## 🐛 Khắc Phục Lỗi Đã Gặp
+
+### Lỗi #1: Trang Create Partner Bị Màn Đen (Black Screen) - 18/06/2026
+
+**Triệu chứng:**
+- Truy cập `/dashboard/admin/partners/new` trên production (Vercel) hiển thị màn hình đen hoàn toàn
+- Console log hiển thị lỗi:
+  ```
+  Uncaught (in promise) TypeError: Failed to fetch
+  Failed to load resource: the server responded with a status of 404
+  GET https://bella-spa-erp.vercel.app/admin/partners/new 404 (Not Found)
+  ```
+- Local dev server (`npm run dev`) hoạt động bình thường
+- Production build (`npm start`) cũng bị lỗi tương tự
+
+**Nguyên nhân gốc rễ:**
+
+1. **Routing path inconsistency** (Nguyên nhân chính):
+   - Component `PartnersTable.tsx` có button "Create Partner" navigate tới `/admin/partners/new` (path cũ)
+   - Route thực tế nằm ở `/dashboard/admin/partners/new` (đã được di chuyển)
+   - Browser request URL sai → 404 Not Found
+
+2. **Service Worker caching issue** (Nguyên nhân phụ):
+   - Service Worker (`public/sw.js`) cố precache các file static
+   - Một số file trong `PRECACHE_ASSETS` không tồn tại trên production
+   - SW fetch event handler gây lỗi "Failed to fetch"
+
+**Cách khắc phục:**
+
+#### Bước 1: Fix routing paths trong components
+
+Tìm và sửa tất cả references tới path cũ `/admin/partners`:
+
+```bash
+# Search toàn bộ codebase
+grep -r "\/admin\/partners" src/components --include="*.tsx" --include="*.ts"
+```
+
+Sửa trong `src/components/admin/partners/PartnersTable.tsx`:
+
+```typescript
+// ❌ SAI (path cũ)
+const handleView = (partner: APIPartner) => {
+  router.push(`/admin/partners/${partner.id}`);
+};
+
+const handleEdit = (partner: APIPartner) => {
+  router.push(`/admin/partners/${partner.id}/edit`);
+};
+
+<Button onClick={() => router.push('/admin/partners/new')}>
+  Create Partner
+</Button>
+
+// ✅ ĐÚNG (path mới)
+const handleView = (partner: APIPartner) => {
+  router.push(`/dashboard/admin/partners/${partner.id}`);
+};
+
+const handleEdit = (partner: APIPartner) => {
+  router.push(`/dashboard/admin/partners/${partner.id}/edit`);
+};
+
+<Button onClick={() => router.push('/dashboard/admin/partners/new')}>
+  Create Partner
+</Button>
+```
+
+**Files cần sửa:**
+- `src/components/admin/partners/PartnersTable.tsx` (3 chỗ)
+- `src/components/admin/partners/PartnerFormWizard.tsx` (2 chỗ - đã fix trước đó)
+- `src/components/admin/partners/PartnersList.tsx` (1 chỗ - đã fix trước đó)
+
+#### Bước 2: Vô hiệu hóa Service Worker caching tạm thời
+
+Sửa `public/sw.js` để skip caching admin routes:
+
+```javascript
+// Skip admin routes - they require authentication
+if (url.pathname.startsWith('/dashboard/admin')) {
+  return;
+}
+
+// Skip API routes
+if (url.pathname.startsWith('/api/')) {
+  return;
+}
+```
+
+Hoặc disable SW hoàn toàn nếu vẫn gặp vấn đề:
+
+```javascript
+// Install Event - Skip precaching
+self.addEventListener('install', (event) => {
+  event.waitUntil(self.skipWaiting());
+});
+
+// Activate Event - Clear all caches
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys()
+      .then((cacheNames) => Promise.all(cacheNames.map((cache) => caches.delete(cache))))
+      .then(() => self.clients.claim())
+  );
+});
+
+// Fetch Event - No caching
+self.addEventListener('fetch', (event) => {
+  return; // Let browser handle normally
+});
+```
+
+#### Bước 3: Clear browser cache và Service Worker
+
+Sau khi deploy lên production:
+
+1. **Hard refresh:**
+   - Windows: `Ctrl + Shift + R`
+   - Mac: `Cmd + Shift + R`
+
+2. **Clear Service Worker (Chrome/Edge):**
+   - Mở DevTools (`F12`)
+   - Tab "Application" → Sidebar "Service Workers"
+   - Click "Unregister" cho tất cả SWs
+
+3. **Clear Site Data:**
+   - DevTools → Tab "Application"
+   - Sidebar "Storage" → Click "Clear site data"
+
+4. **Test trong Incognito/Private mode:**
+   - `Ctrl + Shift + N` (Chrome/Edge)
+   - Không có SW hoặc cache cũ
+
+#### Bước 4: Verify fix
+
+```bash
+# Build production locally
+npm run build
+npm start
+
+# Test URLs
+- http://localhost:3000/dashboard/admin/partners (list page)
+- Click "Create Partner" button
+- Should navigate to: http://localhost:3000/dashboard/admin/partners/new ✅
+```
+
+**Commits liên quan:**
+- `edabb64e` - Fix routing links after folder move
+- `6da1dc15` - Fix service worker skip admin routes
+- `797acef1` - Disable service worker caching completely
+- `803c3faa` - Fix remaining old path references in PartnersTable
+
+**Thời gian xử lý:** ~2 giờ
+
+**Bài học:**
+
+1. ✅ **Luôn kiểm tra toàn bộ codebase** khi di chuyển route folder:
+   ```bash
+   # Tìm tất cả hardcoded paths
+   grep -r "'/admin/partners" src/ --include="*.tsx" --include="*.ts"
+   grep -r "\`/admin/partners" src/ --include="*.tsx" --include="*.ts"
+   ```
+
+2. ✅ **Test cả local production build** trước khi deploy:
+   ```bash
+   npm run build
+   npm start  # Not just npm run dev
+   ```
+
+3. ✅ **Service Worker cần skip authenticated routes**:
+   - Admin routes
+   - API routes
+   - Any routes requiring session/auth
+
+4. ✅ **Dùng search & replace an toàn** khi refactor paths:
+   - Tìm: `/admin/partners`
+   - Thay: `/dashboard/admin/partners`
+   - Confirm từng match để tránh replace nhầm (như trong comments)
+
+5. ✅ **Hard refresh không đủ** khi có Service Worker:
+   - Cần unregister SW
+   - Hoặc test trong Incognito mode
+   - Hoặc clear site data hoàn toàn
+
+**Cách phòng tránh:**
+
+1. **Tạo constant cho routes:**
+   ```typescript
+   // src/lib/constants/routes.ts
+   export const ROUTES = {
+     ADMIN: {
+       PARTNERS: {
+         LIST: '/dashboard/admin/partners',
+         NEW: '/dashboard/admin/partners/new',
+         DETAIL: (id: string) => `/dashboard/admin/partners/${id}`,
+         EDIT: (id: string) => `/dashboard/admin/partners/${id}/edit`,
+       }
+     }
+   };
+   
+   // Usage
+   router.push(ROUTES.ADMIN.PARTNERS.NEW);
+   ```
+
+2. **Dùng TypeScript helper cho navigation:**
+   ```typescript
+   // src/lib/navigation.ts
+   export const navigateTo = {
+     partnerList: () => '/dashboard/admin/partners',
+     partnerCreate: () => '/dashboard/admin/partners/new',
+     partnerDetail: (id: string) => `/dashboard/admin/partners/${id}`,
+     partnerEdit: (id: string) => `/dashboard/admin/partners/${id}/edit`,
+   };
+   ```
+
+3. **Viết test cho navigation links:**
+   ```typescript
+   describe('PartnersTable Navigation', () => {
+     it('should navigate to correct create path', () => {
+       const { getByText } = render(<PartnersTable />);
+       const createBtn = getByText('Create Partner');
+       fireEvent.click(createBtn);
+       expect(mockRouter.push).toHaveBeenCalledWith('/dashboard/admin/partners/new');
+     });
+   });
+   ```
+
+4. **Add ESLint rule để cảnh báo hardcoded paths:**
+   ```javascript
+   // .eslintrc.js
+   rules: {
+     'no-restricted-syntax': [
+       'error',
+       {
+         selector: 'Literal[value=/^\\/admin\\//]',
+         message: 'Use ROUTES constant instead of hardcoded admin paths'
+       }
+     ]
+   }
+   ```
+
+**Tài liệu tham khảo:**
+- Next.js 15 Routing: https://nextjs.org/docs/app/building-your-application/routing
+- Service Worker Best Practices: https://web.dev/service-worker-lifecycle/
+- Smart File Move tool: Dùng `smart_relocate` thay vì manual move để auto-update imports
+
+---
