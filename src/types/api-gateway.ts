@@ -512,3 +512,350 @@ export const SCOPE_PRESETS: Record<string, APIScope[]> = {
   ],
 };
 
+
+// ============================================================================
+// SLA MONITORING & ALERTS (Phase 4 - Task #6)
+// ============================================================================
+
+/**
+ * SLA Alert Severity Levels
+ */
+export type SLAAlertSeverity = 'info' | 'warning' | 'critical';
+
+/**
+ * SLA Alert Types
+ */
+export type SLAAlertType = 
+  | 'uptime'          // Uptime dropped below threshold
+  | 'latency'         // Response time exceeded threshold
+  | 'error_rate'      // Error rate exceeded threshold
+  | 'availability';   // Service unavailable
+
+/**
+ * SLA Alert Status
+ */
+export type SLAAlertStatus = 'active' | 'resolved' | 'acknowledged';
+
+/**
+ * Time Range Options for SLA Metrics
+ */
+export type SLATimeRange = '1h' | '24h' | '7d' | '30d';
+
+/**
+ * Notification Channel Types
+ */
+export type NotificationChannel = 'email' | 'webhook' | 'telegram' | 'slack';
+
+/**
+ * SLA Compliance Status
+ */
+export type SLAComplianceStatus = 'compliant' | 'at_risk' | 'breached' | 'unknown';
+
+/**
+ * SLA Metrics Summary
+ */
+export interface SLAMetrics {
+  partner_id: string;
+  time_range: SLATimeRange;
+  
+  // Uptime Metrics
+  uptime_percent: number;           // e.g., 99.95
+  downtime_minutes: number;         // Total downtime in minutes
+  availability_status: 'up' | 'down' | 'degraded';
+  
+  // Latency Metrics
+  avg_response_time_ms: number;     // Average response time
+  p95_response_time_ms: number;     // 95th percentile
+  p99_response_time_ms: number;     // 99th percentile
+  max_response_time_ms: number;     // Maximum response time
+  
+  // Error Metrics
+  total_requests: number;
+  successful_requests: number;
+  failed_requests: number;
+  error_rate_percent: number;       // e.g., 2.5
+  
+  // Request Volume
+  requests_per_minute_avg: number;
+  requests_per_minute_peak: number;
+  
+  // Compliance
+  compliance_status: SLAComplianceStatus;
+  compliance_percent: number;       // Overall SLA compliance score (0-100)
+  
+  // Time Series Data for Charts
+  time_series?: {
+    timestamp: string;              // ISO timestamp
+    requests: number;
+    errors: number;
+    avg_response_time: number;
+    uptime_percent: number;
+  }[];
+  
+  // Metadata
+  calculated_at: string;            // ISO timestamp
+  last_updated_at: string;
+}
+
+/**
+ * SLA Threshold Configuration
+ */
+export interface SLAThresholds {
+  // Uptime Target
+  uptime_target_percent: number;    // e.g., 99.9 for "three nines"
+  
+  // Latency Targets
+  p95_latency_ms: number;           // Max acceptable p95 latency
+  p99_latency_ms: number;           // Max acceptable p99 latency
+  
+  // Error Rate Target
+  error_rate_threshold_percent: number;  // e.g., 5.0
+  
+  // Availability
+  max_consecutive_failures: number; // Trigger alert after N failures
+}
+
+/**
+ * SLA Alert Rule Configuration
+ */
+export interface SLAAlertRule {
+  id: string;
+  partner_id: string;
+  
+  // Rule Settings
+  alert_type: SLAAlertType;
+  severity: SLAAlertSeverity;
+  enabled: boolean;
+  
+  // Threshold
+  threshold_value: number;          // Numeric threshold
+  comparison: 'gt' | 'gte' | 'lt' | 'lte' | 'eq';  // Greater than, less than, etc.
+  
+  // Cooldown (prevent alert spam)
+  cooldown_minutes: number;         // Wait N minutes before re-alerting
+  
+  // Notification Channels
+  notification_channels: NotificationChannel[];
+  
+  // Metadata
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * SLA Alert Record
+ */
+export interface SLAAlert {
+  id: string;
+  partner_id: string;
+  tenant_id: string;
+  
+  // Alert Details
+  alert_type: SLAAlertType;
+  severity: SLAAlertSeverity;
+  status: SLAAlertStatus;
+  
+  // Alert Message
+  title: string;                    // e.g., "High Error Rate Detected"
+  message: string;                  // Detailed description
+  
+  // Metrics Snapshot
+  metric_name: string;              // e.g., "error_rate_percent"
+  metric_value: number;             // Actual value when alert triggered
+  threshold_value: number;          // Configured threshold
+  
+  // Timeline
+  triggered_at: string;             // ISO timestamp when alert fired
+  acknowledged_at?: string;         // When someone acknowledged
+  resolved_at?: string;             // When issue was resolved
+  
+  // Duration
+  duration_minutes?: number;        // How long the issue lasted
+  
+  // Notification Status
+  notification_sent: boolean;
+  notification_channels_used: NotificationChannel[];
+  
+  // Metadata
+  metadata?: Record<string, any>;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * SLA Configuration (per partner)
+ */
+export interface SLAConfig {
+  partner_id: string;
+  
+  // Thresholds
+  thresholds: SLAThresholds;
+  
+  // Alert Rules
+  alert_rules: SLAAlertRule[];
+  
+  // Notification Settings
+  notification_channels: {
+    email?: {
+      enabled: boolean;
+      recipients: string[];         // Email addresses
+    };
+    webhook?: {
+      enabled: boolean;
+      url: string;
+      secret?: string;
+    };
+    telegram?: {
+      enabled: boolean;
+      chat_id: string;
+      bot_token: string;
+    };
+    slack?: {
+      enabled: boolean;
+      webhook_url: string;
+    };
+  };
+  
+  // Monitoring Settings
+  monitoring_enabled: boolean;
+  check_interval_seconds: number;   // How often to check SLA metrics
+  
+  // Metadata
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * SLA Report Summary
+ */
+export interface SLAReportSummary {
+  partner_id: string;
+  partner_name: string;
+  time_range: SLATimeRange;
+  
+  // Overall Status
+  overall_compliance: SLAComplianceStatus;
+  compliance_score: number;         // 0-100
+  
+  // Individual Metrics Compliance
+  uptime_compliant: boolean;
+  latency_compliant: boolean;
+  error_rate_compliant: boolean;
+  
+  // Alert Summary
+  total_alerts: number;
+  active_alerts: number;
+  resolved_alerts: number;
+  critical_alerts: number;
+  warning_alerts: number;
+  
+  // Trends
+  compliance_trend: 'improving' | 'stable' | 'degrading';
+  
+  // Report Metadata
+  generated_at: string;
+}
+
+/**
+ * Input: Get SLA Metrics
+ */
+export interface GetSLAMetricsInput {
+  partner_id: string;
+  time_range?: SLATimeRange;
+  include_time_series?: boolean;   // Include time series data for charts
+}
+
+/**
+ * Input: Get SLA Alerts
+ */
+export interface GetSLAAlertsInput {
+  partner_id: string;
+  severity?: SLAAlertSeverity;
+  status?: SLAAlertStatus;
+  alert_type?: SLAAlertType;
+  time_range?: SLATimeRange;
+  limit?: number;
+  offset?: number;
+}
+
+/**
+ * Input: Create/Update SLA Config
+ */
+export interface UpsertSLAConfigInput {
+  partner_id: string;
+  thresholds?: Partial<SLAThresholds>;
+  alert_rules?: Partial<SLAAlertRule>[];
+  notification_channels?: SLAConfig['notification_channels'];
+  monitoring_enabled?: boolean;
+  check_interval_seconds?: number;
+}
+
+/**
+ * Input: Acknowledge Alert
+ */
+export interface AcknowledgeSLAAlertInput {
+  alert_id: string;
+  acknowledged_by: string;          // User ID or name
+  notes?: string;
+}
+
+/**
+ * Input: Resolve Alert
+ */
+export interface ResolveSLAAlertInput {
+  alert_id: string;
+  resolved_by: string;
+  resolution_notes?: string;
+}
+
+/**
+ * SLA Health Score Calculation
+ */
+export interface SLAHealthScore {
+  overall_score: number;            // 0-100
+  uptime_score: number;             // 0-100
+  latency_score: number;            // 0-100
+  error_rate_score: number;         // 0-100
+  rating: 'excellent' | 'good' | 'fair' | 'poor';
+}
+
+/**
+ * Predefined SLA Tier Presets
+ */
+export const SLA_TIER_PRESETS: Record<string, SLAThresholds> = {
+  // 99% uptime, 500ms p95, 5% error rate
+  basic: {
+    uptime_target_percent: 99.0,
+    p95_latency_ms: 500,
+    p99_latency_ms: 1000,
+    error_rate_threshold_percent: 5.0,
+    max_consecutive_failures: 5,
+  },
+  
+  // 99.5% uptime, 300ms p95, 3% error rate
+  standard: {
+    uptime_target_percent: 99.5,
+    p95_latency_ms: 300,
+    p99_latency_ms: 600,
+    error_rate_threshold_percent: 3.0,
+    max_consecutive_failures: 3,
+  },
+  
+  // 99.9% uptime (three nines), 200ms p95, 1% error rate
+  premium: {
+    uptime_target_percent: 99.9,
+    p95_latency_ms: 200,
+    p99_latency_ms: 400,
+    error_rate_threshold_percent: 1.0,
+    max_consecutive_failures: 2,
+  },
+  
+  // 99.99% uptime (four nines), 100ms p95, 0.5% error rate
+  enterprise: {
+    uptime_target_percent: 99.99,
+    p95_latency_ms: 100,
+    p99_latency_ms: 200,
+    error_rate_threshold_percent: 0.5,
+    max_consecutive_failures: 1,
+  },
+};
