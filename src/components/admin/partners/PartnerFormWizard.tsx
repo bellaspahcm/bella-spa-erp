@@ -71,8 +71,6 @@ export function PartnerFormWizard({
   existingPartner,
   tenantId,
 }: PartnerFormWizardProps) {
-  console.log('[PartnerFormWizard] Rendering:', { mode, tenantId, hasExisting: !!existingPartner });
-  
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
