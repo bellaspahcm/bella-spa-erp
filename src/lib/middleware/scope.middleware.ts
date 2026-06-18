@@ -270,7 +270,7 @@ export async function withAPIKeyAndScope(
   req: RequestWithPartner,
   requiredScope: APIScope
 ): Promise<{
-  partner?: ReturnType<typeof req.partner>;
+  partner?: typeof req.partner;
   error?: NextResponse;
 }> {
   // Import here to avoid circular dependency
@@ -299,7 +299,7 @@ export async function withAPIKeyAndAnyScope(
   req: RequestWithPartner,
   requiredScopes: APIScope[]
 ): Promise<{
-  partner?: ReturnType<typeof req.partner>;
+  partner?: typeof req.partner;
   error?: NextResponse;
 }> {
   const { withAPIKey } = await import('./api-key.middleware');
@@ -324,7 +324,7 @@ export async function withAPIKeyAndAllScopes(
   req: RequestWithPartner,
   requiredScopes: APIScope[]
 ): Promise<{
-  partner?: ReturnType<typeof req.partner>;
+  partner?: typeof req.partner;
   error?: NextResponse;
 }> {
   const { withAPIKey } = await import('./api-key.middleware');
