@@ -87,14 +87,32 @@ function sanitizeString(str: string): string {
 
 /**
  * Safe string schema with XSS prevention
+ * Base schema without transform for chaining
  */
-export const safeStringSchema = z.string().transform(sanitizeString);
+export const safeStringSchema = z.string();
+
+/**
+ * Create a safe string schema with validation and XSS prevention
+ * Apply all validations first, then transform last
+ */
+export const createSafeString = (options?: { min?: number; max?: number }) => {
+  let schema = z.string();
+  if (options?.min) schema = schema.min(options.min);
+  if (options?.max) schema = schema.max(options.max);
+  return schema.transform(sanitizeString);
+};
 
 /**
  * Safe text schema (for longer content)
  * Max 10,000 characters
  */
 export const safeTextSchema = z.string().max(10000).transform(sanitizeString);
+
+/**
+ * Create a safe text schema with custom max length
+ */
+export const createSafeText = (maxLength: number) => 
+  z.string().max(maxLength).transform(sanitizeString);
 
 // ============================================================================
 // ORDER SCHEMAS
@@ -120,7 +138,7 @@ export const orderItemSchema = z.object({
   quantity: z.number().int().positive().max(1000),
   unit_price: z.number().nonnegative(),
   discount_amount: z.number().nonnegative().optional(),
-  notes: safeStringSchema.max(500).optional(),
+  notes: createSafeString({ max: 500 }).optional(),
 });
 
 /**
@@ -151,7 +169,7 @@ export const listOrdersQuerySchema = paginationSchema.extend({
   customer_id: uuidSchema.optional(),
   from_date: dateStringSchema.optional(),
   to_date: dateStringSchema.optional(),
-  search: safeStringSchema.max(255).optional(),
+  search: createSafeString({ max: 255 }).optional(),
 });
 
 // ============================================================================
@@ -162,11 +180,11 @@ export const listOrdersQuerySchema = paginationSchema.extend({
  * Create customer request body
  */
 export const createCustomerSchema = z.object({
-  name: safeStringSchema.min(1).max(255),
+  name: createSafeString({ min: 1, max: 255 }),
   phone: phoneSchema,
   email: emailSchema.optional(),
   date_of_birth: dateStringSchema.optional(),
-  address: safeTextSchema.max(500).optional(),
+  address: createSafeText(500).optional(),
   notes: safeTextSchema.optional(),
   idempotency_key: idempotencyKeySchema,
 }).strict();
@@ -175,11 +193,11 @@ export const createCustomerSchema = z.object({
  * Update customer request body
  */
 export const updateCustomerSchema = z.object({
-  name: safeStringSchema.min(1).max(255).optional(),
+  name: createSafeString({ min: 1, max: 255 }).optional(),
   phone: phoneSchema.optional(),
   email: emailSchema.optional(),
   date_of_birth: dateStringSchema.optional(),
-  address: safeTextSchema.max(500).optional(),
+  address: createSafeText(500).optional(),
   notes: safeTextSchema.optional(),
 }).strict();
 
@@ -187,7 +205,7 @@ export const updateCustomerSchema = z.object({
  * List customers query parameters
  */
 export const listCustomersQuerySchema = paginationSchema.extend({
-  search: safeStringSchema.max(255).optional(),
+  search: createSafeString({ max: 255 }).optional(),
   has_orders: z.coerce.boolean().optional(),
 });
 
@@ -283,7 +301,7 @@ export const updateWebhookSchema = z.object({
  * Create API partner request body
  */
 export const createAPIPartnerSchema = z.object({
-  partner_name: safeStringSchema.min(1).max(255),
+  partner_name: createSafeString({ min: 1, max: 255 }),
   partner_type: z.enum(['pos', 'payment', 'invoice', 'franchise', 'hr', 'analytics', 'mobile_app', 'other']),
   partner_description: safeTextSchema.optional(),
   contact_email: emailSchema.optional(),
@@ -299,7 +317,7 @@ export const createAPIPartnerSchema = z.object({
  * Update API partner request body
  */
 export const updateAPIPartnerSchema = z.object({
-  partner_name: safeStringSchema.min(1).max(255).optional(),
+  partner_name: createSafeString({ min: 1, max: 255 }).optional(),
   partner_description: safeTextSchema.optional(),
   contact_email: emailSchema.optional(),
   contact_phone: phoneSchema.optional(),
