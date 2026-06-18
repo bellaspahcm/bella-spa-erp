@@ -75,14 +75,13 @@ async function checkAdminRole(req: NextRequest): Promise<{
  */
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id: partner_id } = await params;
   const { user, tenant_id, is_super_admin, error } = await checkAdminRole(req);
   if (error) return error;
   
   try {
-    const partner_id = params.id;
-    
     // Fetch partner
     const partner = await getPartnerById(
       partner_id,
@@ -149,13 +148,13 @@ export async function GET(
  */
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id: partner_id } = await params;
   const { user, tenant_id, is_super_admin, error } = await checkAdminRole(req);
   if (error) return error;
   
   try {
-    const partner_id = params.id;
     const body: UpdateAPIPartnerInput = await req.json();
     
     // Check if partner exists and user has access
@@ -233,14 +232,13 @@ export async function PATCH(
  */
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id: partner_id } = await params;
   const { user, tenant_id, is_super_admin, error } = await checkAdminRole(req);
   if (error) return error;
   
   try {
-    const partner_id = params.id;
-    
     // Check if partner exists and user has access
     const existing = await getPartnerById(
       partner_id,
