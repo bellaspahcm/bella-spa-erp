@@ -55,6 +55,16 @@ async function checkAdminRole(req: NextRequest) {
  * 
  * Get request logs for partner
  * 
+ * NOTE: This endpoint is temporarily disabled pending database type regeneration.
+ * The api_request_logs table exists in the database (created in migration 
+ * 20260617000000_api_gateway_partner_management.sql) but the TypeScript types 
+ * have not been regenerated yet.
+ * 
+ * To enable this endpoint:
+ * 1. Run: npx supabase gen types typescript --project-id <project-id> > src/types/database.types.ts
+ * 2. Verify api_request_logs table appears in generated types
+ * 3. Remove the "not implemented" response and uncomment the implementation below
+ * 
  * Query params:
  * - method: Filter by HTTP method (GET, POST, etc.)
  * - status_code: Filter by status code (200, 400, 500, etc.)
@@ -72,6 +82,20 @@ export async function GET(
   const { user, tenant_id, is_super_admin, error } = await checkAdminRole(req);
   if (error) return error;
   
+  // Temporarily return "not implemented" until database types are regenerated
+  return NextResponse.json(
+    {
+      success: false,
+      error: {
+        code: 'NOT_IMPLEMENTED',
+        message: 'Request logs endpoint is temporarily disabled',
+        details: 'The api_request_logs table exists but TypeScript types need to be regenerated. Run: npx supabase gen types typescript --project-id <project-id> > src/types/database.types.ts',
+      },
+    },
+    { status: 501 }
+  );
+  
+  /* IMPLEMENTATION - Uncomment after regenerating database types
   try {
     // Check partner access
     const existing = await getPartnerById(
@@ -101,7 +125,8 @@ export async function GET(
     const supabase = await createClient();
     
     // Build query
-    // @ts-ignore - api_request_logs table not yet in generated types
+    type APIRequestLog = Database['public']['Tables']['api_request_logs']['Row'];
+    
     let query = supabase
       .from('api_request_logs')
       .select('*', { count: 'exact' })
@@ -164,4 +189,5 @@ export async function GET(
       { status: 500 }
     );
   }
+  */
 }
