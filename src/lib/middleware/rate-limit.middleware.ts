@@ -38,7 +38,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { APIError } from '@/lib/errors/api-error';
+import { APIError } from '@/types/api-gateway';
 import type { APIPartner } from '@/types/api-gateway';
 
 // Redis client (lazy initialization)

@@ -11,7 +11,7 @@ import {
   getPartnerUsageStats,
   RATE_LIMIT_TIERS,
 } from '@/lib/middleware/rate-limit.middleware';
-import { APIError } from '@/lib/errors/api-error';
+import { APIError } from '@/types/api-gateway';
 import type { APIPartner } from '@/types/api-gateway';
 
 // Mock Redis client
