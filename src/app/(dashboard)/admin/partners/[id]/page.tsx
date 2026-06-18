@@ -1,11 +1,13 @@
 /**
  * Trang Chi Tiết Đối Tác
  * 
- * Hiển thị thông tin đầy đủ về một đối tác API với 5 tabs:
+ * Hiển thị thông tin đầy đủ về một đối tác API với 7 tabs:
  * - Overview: Thông tin tổng quan
  * - Scopes: Quản lý phân quyền
+ * - Security: API Key Rotation & Security Settings
  * - Logs: Nhật ký request
  * - Webhooks: Cấu hình webhook
+ * - Webhook Logs: Nhật ký webhook delivery
  * - Usage: Thống kê sử dụng
  */
 
@@ -25,6 +27,7 @@ import { PartnerLogsTab } from '@/components/admin/partners/detail-tabs/PartnerL
 import { PartnerWebhooksTab } from '@/components/admin/partners/detail-tabs/PartnerWebhooksTab';
 import { PartnerUsageTab } from '@/components/admin/partners/detail-tabs/PartnerUsageTab';
 import { PartnerWebhookLogsTab } from '@/components/admin/partners/detail-tabs/PartnerWebhookLogsTab';
+import { PartnerSecurityTab } from '@/components/admin/partners/detail-tabs/PartnerSecurityTab';
 
 export const metadata: Metadata = {
   title: 'Chi Tiết Đối Tác | Admin',
@@ -120,9 +123,10 @@ export default async function PartnerDetailPage({
 
       {/* Tabs */}
       <Tabs defaultValue={activeTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-grid">
+        <TabsList className="grid w-full grid-cols-7 lg:w-auto lg:inline-grid">
           <TabsTrigger value="overview">Tổng Quan</TabsTrigger>
           <TabsTrigger value="scopes">Phân Quyền</TabsTrigger>
+          <TabsTrigger value="security">Security</TabsTrigger>
           <TabsTrigger value="logs">Nhật Ký</TabsTrigger>
           <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
           <TabsTrigger value="webhook-logs">Webhook Logs</TabsTrigger>
@@ -136,6 +140,10 @@ export default async function PartnerDetailPage({
 
         <TabsContent value="scopes" className="space-y-4">
           <PartnerScopesTab partner={partnerData} />
+        </TabsContent>
+
+        <TabsContent value="security" className="space-y-4">
+          <PartnerSecurityTab partner={partnerData} />
         </TabsContent>
 
         <TabsContent value="logs" className="space-y-4">
