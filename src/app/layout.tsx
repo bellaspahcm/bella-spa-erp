@@ -24,6 +24,15 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Bella Spa - Chăm Sóc Mẹ Và Bé | Chăm Sóc Trọn Yêu Thương",
   description: "Dịch vụ chăm sóc sức khỏe và sắc đẹp chuẩn y khoa cho mẹ bầu, mẹ sau sinh và bé yêu. Trải nghiệm dịch vụ 5 sao nâng niu từng khoảnh khắc.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Bella ERP",
+  },
+  icons: {
+    apple: "/icons/icon-192x192.png",
+  },
 };
 
 import { Toaster } from "sonner";
@@ -100,11 +109,6 @@ export default async function RootLayout({
   return (
     <html lang="vi" className={cn("h-full", "antialiased", theme === "dark" ? "dark" : "", corinthia.variable, playfair.variable, inter.variable, "font-sans", geist.variable)} suppressHydrationWarning>
       <head>
-        <link rel="manifest" href="/manifest.json" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="Bella ERP" />
-        <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
         <meta name="theme-color" content="#f8fafc" />
         <script dangerouslySetInnerHTML={{ __html: tenantThemeBootstrapScript }} />
       </head>
