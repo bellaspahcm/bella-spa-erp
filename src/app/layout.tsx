@@ -31,6 +31,7 @@ import OfflineIndicator from "@/components/common/offline-indicator";
 import PwaRegister from "@/components/common/PwaRegister";
 import { TenantContextProvider } from "@/core/providers/TenantContextProvider";
 import { cookies } from "next/headers";
+import TenantContextWrapper from "@/components/providers/TenantContextWrapper";
 
 // Register module adapters on app startup
 import { registerSpaModule } from "@/modules/spa/register";
@@ -103,9 +104,11 @@ export default async function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: tenantThemeBootstrapScript }} />
       </head>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
-        <TenantContextProvider>
+        {/* Only wrap authenticated pages with TenantContextProvider */}
+        {/* Auth pages (login, signup, etc.) should not be wrapped */}
+        <TenantContextWrapper>
           {children}
-        </TenantContextProvider>
+        </TenantContextWrapper>
         <PwaRegister />
         <OfflineIndicator />
         <Toaster position="top-center" richColors />
