@@ -105,7 +105,7 @@ export async function GET(
     }
 
     // Verify partner exists and belongs to tenant
-    const { data: partner } = await supabase
+    const { data: partner } = await (supabase as any)
       .from('api_partners')
       .select('id, tenant_id')
       .eq('id', partnerId)
@@ -305,7 +305,7 @@ export async function POST(
     }
 
     // Verify partner exists and belongs to tenant
-    const { data: partner } = await supabase
+    const { data: partner } = await (supabase as any)
       .from('api_partners')
       .select('id, tenant_id')
       .eq('id', partnerId)
