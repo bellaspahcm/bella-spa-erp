@@ -53,8 +53,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Build query
-    let query = (supabase as unknown)
-      .from('api_request_logs')
+    let query = supabase
+      .from('api_request_logs' as never)
       .select('*', { count: 'exact' })
       .eq('partner_id', partnerId)
       .eq('tenant_id', profile.tenant_id);

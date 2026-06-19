@@ -12,6 +12,15 @@ interface RotateKeyRequest {
   notifyPartner?: boolean;
 }
 
+interface PartnerData {
+  id: string;
+  name: string;
+  api_key: string;
+  contact_email?: string;
+  created_at: string;
+  updated_at?: string;
+}
+
 /**
  * Generate a new API key
  */
@@ -62,7 +71,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Partner not found' }, { status: 404 });
     }
 
-    const partnerData = partner as unknown;
+    const partnerData = partner as PartnerData;
 
     // Generate new API key
     const newApiKey = generateApiKey();
@@ -84,7 +93,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
         previous_key_expires_at: gracePeriodEndDate.toISOString(),
         last_rotated_at: now.toISOString(),
         updated_at: now.toISOString(),
-      })
+      } as never)
       .eq('id', partnerId)
       .select()
       .single();
@@ -128,7 +137,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
         reason,
       },
       created_at: now.toISOString(),
-    });
+    } as never);
 
     // TODO: Send notification email to partner if notifyPartner is true
     if (notifyPartner && partnerData.contact_email) {

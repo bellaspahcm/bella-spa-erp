@@ -17,6 +17,19 @@ interface ActivityEvent {
   metadata?: Record<string, unknown>;
 }
 
+interface LogEntry {
+  id: string;
+  created_at: string;
+  method: string;
+  endpoint: string;
+  status_code: number;
+  response_time_ms: number;
+  ip_address?: string;
+  user_agent?: string;
+  metadata?: Record<string, unknown>;
+  partner_id?: string;
+}
+
 /**
  * GET /api/admin/partners/[id]/activity
  * Fetch activity timeline for a partner
@@ -94,7 +107,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const { data: logs, error: logsError } = await logsQuery;
 
     if (logs && logs.length > 0) {
-      logs.forEach((log: unknown) => {
+      logs.forEach((log: LogEntry) => {
         const isError = log.status_code >= 400;
         const isWarning = log.status_code >= 300 && log.status_code < 400;
 
@@ -143,22 +156,24 @@ export async function GET(request: NextRequest, context: RouteContext) {
     }
 
     // 2. Fetch key rotation events (from metadata in logs or dedicated table)
-    const rotationLogs = logs?.filter((log: unknown) =>
+    const rotationLogs = logs?.filter((log: LogEntry) =>
       log.endpoint?.includes('rotate-key') || log.endpoint?.includes('regenerate-key')
     ) || [];
 
-    rotationLogs.forEach((log: unknown) => {
+    rotationLogs.forEach((log: LogEntry) => {
       if (eventTypeFilter && eventTypeFilter !== 'all' && eventTypeFilter !== 'key_rotation') {
         return;
       }
 
       const metadata = log.metadata || {};
+      const reason = typeof metadata.reason === 'string' ? metadata.reason : 'API key was rotated for security';
+      
       const event: ActivityEvent = {
         id: `rotation_${log.id}`,
         event_type: 'key_rotation',
         timestamp: log.created_at,
         title: '🔑 API Key Rotated',
-        description: metadata.reason || 'API key was rotated for security',
+        description: reason,
         status: 'info',
         metadata: {
           old_key_prefix: metadata.oldKeyPrefix,
@@ -174,11 +189,11 @@ export async function GET(request: NextRequest, context: RouteContext) {
     });
 
     // 3. Fetch config change events
-    const configLogs = logs?.filter((log: unknown) =>
+    const configLogs = logs?.filter((log: LogEntry) =>
       log.endpoint?.includes('rotation-policy') || log.endpoint?.includes('scopes')
     ) || [];
 
-    configLogs.forEach((log: unknown) => {
+    configLogs.forEach((log: LogEntry) => {
       const isScope = log.endpoint?.includes('scopes');
       const eventType: EventType = isScope ? 'scope_update' : 'config_change';
 

@@ -94,8 +94,8 @@ export async function GET(
     }
 
     // Verify partner exists and belongs to tenant
-    const { data: partner } = await (supabase as unknown)
-      .from('api_partners')
+    const { data: partner } = await supabase
+      .from('api_partners' as never)
       .select('id, tenant_id, partner_name, is_active')
       .eq('id', partnerId)
       .eq('tenant_id', profile.tenant_id)
@@ -127,8 +127,8 @@ export async function GET(
     const startTime = new Date(now.getTime() - windowMs);
 
     // Query request logs for metrics calculation
-    const { data: logs, error: logsError } = await (supabase as unknown)
-      .from('api_request_logs')
+    const { data: logs, error: logsError } = await supabase
+      .from('api_request_logs' as never)
       .select('status_code, response_time_ms, is_error, created_at')
       .eq('partner_id', partnerId)
       .gte('created_at', startTime.toISOString())

@@ -14,6 +14,13 @@ interface RotationPolicy {
   notificationEmail: string;
 }
 
+interface PartnerData {
+  id: string;
+  name: string;
+  rotation_policy?: RotationPolicy | null;
+  next_rotation_date?: string | null;
+}
+
 /**
  * POST /api/admin/partners/[id]/rotation-policy
  * Save rotation policy for a partner
@@ -83,7 +90,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
         rotation_policy: policy,
         next_rotation_date: nextRotationDate?.toISOString(),
         updated_at: new Date().toISOString(),
-      })
+      } as never)
       .eq('id', partnerId)
       .select()
       .single();
@@ -110,7 +117,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
         policy: policy,
       },
       created_at: new Date().toISOString(),
-    });
+    } as never);
 
     return NextResponse.json({
       success: true,
@@ -160,7 +167,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Partner not found' }, { status: 404 });
     }
 
-    const partnerData = partner as unknown;
+    const partnerData = partner as PartnerData;
 
     return NextResponse.json({
       success: true,
