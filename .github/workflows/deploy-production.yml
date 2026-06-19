@@ -103,19 +103,14 @@ jobs:
 
       - name: Validate Vercel deployment secrets
         run: |
-          test -n "${{ secrets.VERCEL_TOKEN }}" || (echo "Missing VERCEL_TOKEN secret" && exit 1)
-          test -n "${{ vars.VERCEL_ORG_ID || secrets.VERCEL_ORG_ID }}" || (echo "Missing VERCEL_ORG_ID variable/secret" && exit 1)
-          test -n "${{ vars.VERCEL_PRODUCTION_PROJECT_ID || secrets.VERCEL_PRODUCTION_PROJECT_ID }}" || (echo "Missing VERCEL_PRODUCTION_PROJECT_ID variable/secret" && exit 1)
-      - name: Deploy to Vercel Production
+          test -n "${{ secrets.VERCEL_DEPLOY_HOOK_URL }}" || (echo "Missing VERCEL_DEPLOY_HOOK_URL secret" && exit 1)
+
+      - name: Trigger Vercel Production Deploy Hook
         id: deploy
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ vars.VERCEL_ORG_ID || secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ vars.VERCEL_PRODUCTION_PROJECT_ID || secrets.VERCEL_PRODUCTION_PROJECT_ID }}
-          vercel-args: '--prod --yes'
-          working-directory: ./
-          scope: ${{ vars.VERCEL_ORG_ID || secrets.VERCEL_ORG_ID }}
+        run: |
+          response=$(curl -sS -X POST "${{ secrets.VERCEL_DEPLOY_HOOK_URL }}")
+          echo "$response"
+          echo "$response" | grep -q '"job"'
 
       - name: Wait for deployment propagation
         run: |
