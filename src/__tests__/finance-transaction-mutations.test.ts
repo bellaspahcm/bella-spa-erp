@@ -150,11 +150,11 @@ class ScriptedQueryBuilder {
   }
 }
 
-import { confirmTransaction, recordTransaction } from '../services/finance/transaction-mutations';
+import { confirmTransaction, recordTransaction } from '../core/services/finance/transaction-mutations';
 import {
   confirmTransaction as confirmTransactionResult,
   recordTransaction as recordTransactionResult,
-} from '../services/finance/transactions';
+} from '../core/services/finance/transactions';
 
 describe('finance transaction mutation outbox rollbacks', () => {
   let consoleErrorSpy: jest.SpyInstance;

@@ -45,6 +45,57 @@ export interface PartnerStatistics {
   by_type: Record<PartnerType, number>;
 }
 
+type ApiGatewayDbError = {
+  code?: string;
+  message: string;
+};
+
+type ApiGatewayQueryResult<T> = {
+  data: T | null;
+  error: ApiGatewayDbError | null;
+  count?: number | null;
+};
+
+type ApiPartnerUpdate = UpdateAPIPartnerInput & {
+  api_key?: string;
+  allowed_scopes?: APIScope[];
+  is_active?: boolean;
+  metadata?: Record<string, unknown>;
+  updated_by?: string;
+  updated_at?: string;
+};
+
+type TenantPartnerStatsRow = Pick<APIPartner, 'partner_type' | 'is_active' | 'is_sandbox'>;
+
+type ApiGatewaySelectBuilder<T> = PromiseLike<ApiGatewayQueryResult<T[]>> & {
+  eq(field: string, value: unknown): ApiGatewaySelectBuilder<T>;
+  order(field: string, options?: { ascending?: boolean }): ApiGatewaySelectBuilder<T>;
+  range(from: number, to: number): ApiGatewaySelectBuilder<T>;
+  single(): Promise<ApiGatewayQueryResult<T>>;
+};
+
+type ApiGatewayMutationBuilder<T> = PromiseLike<ApiGatewayQueryResult<T>> & {
+  eq(field: string, value: unknown): ApiGatewayMutationBuilder<T>;
+  select(columns?: string): ApiGatewaySelectBuilder<T>;
+  single(): Promise<ApiGatewayQueryResult<T>>;
+};
+
+type ApiGatewayTable<T> = {
+  select(columns?: string, options?: { count?: 'exact' | 'planned' | 'estimated' }): ApiGatewaySelectBuilder<T>;
+  insert(payload: unknown): ApiGatewayMutationBuilder<T>;
+  update(payload: unknown): ApiGatewayMutationBuilder<T>;
+};
+
+type ApiGatewaySupabaseClient = {
+  from(table: 'api_partners'): ApiGatewayTable<APIPartner>;
+  from(table: 'api_partner_usage_summary'): ApiGatewayTable<APIPartnerUsageSummary>;
+  rpc(functionName: 'generate_api_key', params: { is_test: boolean }): Promise<ApiGatewayQueryResult<string>>;
+};
+
+function asApiGatewayClient(client: unknown): ApiGatewaySupabaseClient {
+  return client as ApiGatewaySupabaseClient;
+}
+
 // ============================================================================
 // PARTNER CRUD OPERATIONS
 // ============================================================================
@@ -60,15 +111,25 @@ export async function createPartner(
   input: CreateAPIPartnerInput,
   created_by_user_id?: string
 ): Promise<APIPartner> {
-  const supabase = await createClient();
+  const supabase = asApiGatewayClient(await createClient());
   
   try {
+    // Validate scopes before generating keys or writing rows so invalid requests have no side effects.
+    if (!input.allowed_scopes || input.allowed_scopes.length === 0) {
+      throw new APIError(
+        'VAL_001',
+        'At least one scope is required',
+        { provided_scopes: input.allowed_scopes },
+        400
+      );
+    }
+
     // Generate API key if not provided
     let apiKey = input.api_key;
     
     if (!apiKey) {
       // Note: generate_api_key RPC exists in migration but not yet in generated types
-      const { data: generatedKey, error: keyError } = await (supabase as any)
+      const { data: generatedKey, error: keyError } = await supabase
         .rpc('generate_api_key', { is_test: input.is_sandbox || false });
       
       if (keyError) {
@@ -82,17 +143,8 @@ export async function createPartner(
       
       apiKey = generatedKey;
     }
-    
-    // Validate scopes
-    if (!input.allowed_scopes || input.allowed_scopes.length === 0) {
-      throw new APIError(
-        'VAL_001',
-        'At least one scope is required',
-        { provided_scopes: input.allowed_scopes },
-        400
-      );
-    }
-    
+
+
     // Create partner record
     // Note: api_partners table exists in migration but not yet in generated types
     const partnerData = {
@@ -125,7 +177,7 @@ export async function createPartner(
       updated_by: created_by_user_id,
     };
     
-    const { data: partner, error } = await (supabase as any)
+    const { data: partner, error } = await supabase
       .from('api_partners')
       .insert(partnerData)
       .select()
@@ -176,11 +228,11 @@ export async function getPartnerById(
   partner_id: string,
   tenant_id?: string
 ): Promise<APIPartner | null> {
-  const supabase = await createClient();
+  const supabase = asApiGatewayClient(await createClient());
   
   try {
     // Note: api_partners table exists in migration but not yet in generated types
-    let query = (supabase as any)
+    let query = supabase
       .from('api_partners')
       .select('*')
       .eq('id', partner_id);
@@ -230,11 +282,11 @@ export async function getPartnerById(
 export async function getPartnerByApiKey(
   api_key: string
 ): Promise<APIPartner | null> {
-  const supabase = await createClient();
+  const supabase = asApiGatewayClient(await createClient());
   
   try {
     // Note: api_partners table exists in migration but not yet in generated types
-    const { data: partner, error } = await (supabase as any)
+    const { data: partner, error } = await supabase
       .from('api_partners')
       .select('*')
       .eq('api_key', api_key)
@@ -277,7 +329,7 @@ export async function getPartnerByApiKey(
 export async function listPartners(
   params: ListPartnersParams = {}
 ): Promise<{ partners: APIPartner[]; total: number }> {
-  const supabase = await createClient();
+  const supabase = asApiGatewayClient(await createClient());
   
   try {
     const {
@@ -290,7 +342,7 @@ export async function listPartners(
     } = params;
     
     // Note: api_partners table exists in migration but not yet in generated types
-    let query = (supabase as any)
+    let query = supabase
       .from('api_partners')
       .select('*', { count: 'exact' });
     
@@ -358,7 +410,7 @@ export async function updatePartner(
   input: UpdateAPIPartnerInput,
   updated_by_user_id?: string
 ): Promise<APIPartner> {
-  const supabase = await createClient();
+  const supabase = asApiGatewayClient(await createClient());
   
   try {
     // Check if partner exists
@@ -373,14 +425,14 @@ export async function updatePartner(
     }
     
     // Prepare update data
-    const updateData: any = {
+    const updateData: ApiPartnerUpdate = {
       ...input,
       updated_by: updated_by_user_id,
       updated_at: new Date().toISOString(),
     };
     
     // Note: api_partners table exists in migration but not yet in generated types
-    const { data: partner, error } = await (supabase as any)
+    const { data: partner, error } = await supabase
       .from('api_partners')
       .update(updateData)
       .eq('id', partner_id)
@@ -420,12 +472,12 @@ export async function updatePartner(
 export async function deletePartner(
   partner_id: string
 ): Promise<boolean> {
-  const supabase = await createClient();
+  const supabase = asApiGatewayClient(await createClient());
   
   try {
     // Note: api_partners table exists in migration but not yet in generated types
     // Soft delete: set is_active to false
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from('api_partners')
       .update({ is_active: false })
       .eq('id', partner_id);
@@ -472,7 +524,7 @@ export async function regenerateApiKey(
   partner_id: string,
   updated_by_user_id?: string
 ): Promise<{ partner: APIPartner; new_api_key: string }> {
-  const supabase = await createClient();
+  const supabase = asApiGatewayClient(await createClient());
   
   try {
     // Get existing partner
@@ -488,7 +540,7 @@ export async function regenerateApiKey(
     
     // Generate new API key
     // Note: generate_api_key RPC exists in migration but not yet in generated types
-    const { data: newApiKey, error: keyError } = await (supabase as any)
+    const { data: newApiKey, error: keyError } = await supabase
       .rpc('generate_api_key', { is_test: existing.is_sandbox });
     
     if (keyError) {
@@ -502,7 +554,7 @@ export async function regenerateApiKey(
     
     // Update partner with new key
     // Note: api_partners table exists in migration but not yet in generated types
-    const { data: partner, error } = await (supabase as any)
+    const { data: partner, error } = await supabase
       .from('api_partners')
       .update({
         api_key: newApiKey,
@@ -560,7 +612,7 @@ export async function addScopes(
   partner_id: string,
   scopes: APIScope[]
 ): Promise<APIPartner> {
-  const supabase = await createClient();
+  const supabase = asApiGatewayClient(await createClient());
   
   try {
     const existing = await getPartnerById(partner_id);
@@ -580,7 +632,7 @@ export async function addScopes(
     const updatedScopes = Array.from(currentScopes);
     
     // Note: api_partners table exists in migration but not yet in generated types
-    const { data: partner, error } = await (supabase as any)
+    const { data: partner, error } = await supabase
       .from('api_partners')
       .update({ allowed_scopes: updatedScopes })
       .eq('id', partner_id)
@@ -622,7 +674,7 @@ export async function removeScopes(
   partner_id: string,
   scopes: APIScope[]
 ): Promise<APIPartner> {
-  const supabase = await createClient();
+  const supabase = asApiGatewayClient(await createClient());
   
   try {
     const existing = await getPartnerById(partner_id);
@@ -652,7 +704,7 @@ export async function removeScopes(
     }
     
     // Note: api_partners table exists in migration but not yet in generated types
-    const { data: partner, error } = await (supabase as any)
+    const { data: partner, error } = await supabase
       .from('api_partners')
       .update({ allowed_scopes: updatedScopes })
       .eq('id', partner_id)
@@ -705,11 +757,11 @@ export async function applySecurePreset(
     );
   }
   
-  const supabase = await createClient();
+  const supabase = asApiGatewayClient(await createClient());
   
   try {
     // Note: api_partners table exists in migration but not yet in generated types
-    const { data: partner, error } = await (supabase as any)
+    const { data: partner, error } = await supabase
       .from('api_partners')
       .update({
         allowed_scopes: scopes,
@@ -759,11 +811,11 @@ export async function applySecurePreset(
 export async function getPartnerUsageStats(
   partner_id: string
 ): Promise<APIPartnerUsageSummary | null> {
-  const supabase = await createClient();
+  const supabase = asApiGatewayClient(await createClient());
   
   try {
     // Note: api_partner_usage_summary view exists in migration but not yet in generated types
-    const { data: stats, error } = await (supabase as any)
+    const { data: stats, error } = await supabase
       .from('api_partner_usage_summary')
       .select('*')
       .eq('partner_id', partner_id)
@@ -806,11 +858,11 @@ export async function getPartnerUsageStats(
 export async function getTenantPartnerStats(
   tenant_id: string
 ): Promise<PartnerStatistics> {
-  const supabase = await createClient();
+  const supabase = asApiGatewayClient(await createClient());
   
   try {
     // Note: api_partners table exists in migration but not yet in generated types
-    const { data: partners, error } = await (supabase as any)
+    const { data: partners, error } = await supabase
       .from('api_partners')
       .select('partner_type, is_active, is_sandbox')
       .eq('tenant_id', tenant_id);
@@ -827,13 +879,13 @@ export async function getTenantPartnerStats(
     // Aggregate statistics
     const stats: PartnerStatistics = {
       total_partners: partners.length,
-      active_partners: partners.filter((p: any) => p.is_active).length,
-      sandbox_partners: partners.filter((p: any) => p.is_sandbox).length,
+      active_partners: partners.filter((p: TenantPartnerStatsRow) => p.is_active).length,
+      sandbox_partners: partners.filter((p: TenantPartnerStatsRow) => p.is_sandbox).length,
       by_type: {} as Record<PartnerType, number>,
     };
     
     // Count by type
-    partners.forEach((partner: any) => {
+    partners.forEach((partner: TenantPartnerStatsRow) => {
       const type = partner.partner_type as PartnerType;
       stats.by_type[type] = (stats.by_type[type] || 0) + 1;
     });
