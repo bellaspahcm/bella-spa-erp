@@ -208,7 +208,8 @@ export async function POST(
       const responseTime = Date.now() - startTime;
 
       // Handle timeout
-      if (error.name === 'AbortError' || error.name === 'TimeoutError') {
+      if (error && typeof error === 'object' && 'name' in error && 
+          (error.name === 'AbortError' || error.name === 'TimeoutError')) {
         return NextResponse.json({
           success: false,
           error: {
@@ -225,10 +226,10 @@ export async function POST(
       return NextResponse.json({
         success: false,
         error: {
-          message: `Failed to connect to webhook endpoint: ${error.message}`,
+          message: `Failed to connect to webhook endpoint: ${error instanceof Error ? error.message : 'Unknown error'}`,
           code: 'SERVER_002' as APIErrorCode,
           details: {
-            error_type: error.name,
+            error_type: error && typeof error === 'object' && 'name' in error ? (error as { name: string }).name : 'UnknownError',
             response_time_ms: responseTime,
           },
         },
@@ -244,7 +245,7 @@ export async function POST(
           message: 'Internal server error',
           code: 'SERVER_001' as APIErrorCode,
           details: {
-            error: error.message,
+            error: error instanceof Error ? error.message : 'Unknown error',
           },
         },
       },
