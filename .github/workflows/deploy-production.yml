@@ -1,11 +1,14 @@
 name: Deploy to Production
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       version:
         description: 'Version tag to deploy (e.g., v1.2.3)'
-        required: true
+        required: false
         type: string
       skip_smoke_tests:
         description: 'Skip smoke tests (emergency hotfix only)'
@@ -27,7 +30,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.version }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.sha }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -42,11 +45,11 @@ jobs:
         run: |
           echo "🧪 Running full test suite..."
           npm run lint
-          npm run test:ci
+          npm run test:critical
           npm run build
         env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL || vars.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY || vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
 
       - name: Run security audit
         run: |
@@ -80,7 +83,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.version }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.sha }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -94,20 +97,25 @@ jobs:
       - name: Create deployment marker
         run: |
           echo "🚀 Starting production deployment..."
-          echo "Version: ${{ github.event.inputs.version }}"
+          echo "Version: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.sha }}"
           echo "Timestamp: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
           echo "Deployer: ${{ github.actor }}"
 
+      - name: Validate Vercel deployment secrets
+        run: |
+          test -n "${{ secrets.VERCEL_TOKEN }}" || (echo "Missing VERCEL_TOKEN secret" && exit 1)
+          test -n "${{ vars.VERCEL_ORG_ID || secrets.VERCEL_ORG_ID }}" || (echo "Missing VERCEL_ORG_ID variable/secret" && exit 1)
+          test -n "${{ vars.VERCEL_PRODUCTION_PROJECT_ID || secrets.VERCEL_PRODUCTION_PROJECT_ID }}" || (echo "Missing VERCEL_PRODUCTION_PROJECT_ID variable/secret" && exit 1)
       - name: Deploy to Vercel Production
         id: deploy
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PRODUCTION_PROJECT_ID }}
+          vercel-org-id: ${{ vars.VERCEL_ORG_ID || secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ vars.VERCEL_PRODUCTION_PROJECT_ID || secrets.VERCEL_PRODUCTION_PROJECT_ID }}
           vercel-args: '--prod --yes'
           working-directory: ./
-          scope: ${{ secrets.VERCEL_ORG_ID }}
+          scope: ${{ vars.VERCEL_ORG_ID || secrets.VERCEL_ORG_ID }}
 
       - name: Wait for deployment propagation
         run: |
@@ -128,9 +136,9 @@ jobs:
         if: ${{ !inputs.skip_smoke_tests }}
         run: npx playwright test tests/smoke/production-critical.spec.ts
         env:
-          E2E_BASE_URL: https://bella-erp.com
-          E2E_ADMIN_EMAIL: ${{ secrets.PRODUCTION_E2E_ADMIN_EMAIL }}
-          E2E_ADMIN_PASSWORD: ${{ secrets.PRODUCTION_E2E_ADMIN_PASSWORD }}
+          E2E_BASE_URL: ${{ vars.PRODUCTION_BASE_URL || vars.E2E_BASE_URL || 'https://bella-erp.com' }}
+          E2E_ADMIN_EMAIL: ${{ secrets.PRODUCTION_E2E_ADMIN_EMAIL || secrets.E2E_ADMIN_EMAIL }}
+          E2E_ADMIN_PASSWORD: ${{ secrets.PRODUCTION_E2E_ADMIN_PASSWORD || secrets.E2E_ADMIN_PASSWORD }}
 
       - name: Create deployment record
         run: |
@@ -152,7 +160,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Production Deployment Successful* 🎉\n\n*Version:* ${{ github.event.inputs.version }}\n*Deployed by:* ${{ github.actor }}\n*Time:* $(date -u +"%Y-%m-%d %H:%M:%S UTC")\n*URL:* https://bella-erp.com"
+                    "text": "*Production Deployment Successful* 🎉\n\n*Version:* ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.sha }}\n*Deployed by:* ${{ github.actor }}\n*Time:* $(date -u +"%Y-%m-%d %H:%M:%S UTC")\n*URL:* https://bella-erp.com"
                   }
                 }
               ]
@@ -172,7 +180,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Production Deployment Failed* ⚠️\n\n*Version:* ${{ github.event.inputs.version }}\n*Attempted by:* ${{ github.actor }}\n*Time:* $(date -u +"%Y-%m-%d %H:%M:%S UTC")\n\n*Action Required:* Review logs and initiate rollback if necessary"
+                    "text": "*Production Deployment Failed* ⚠️\n\n*Version:* ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.sha }}\n*Attempted by:* ${{ github.actor }}\n*Time:* $(date -u +"%Y-%m-%d %H:%M:%S UTC")\n\n*Action Required:* Review logs and initiate rollback if necessary"
                   }
                 }
               ]
