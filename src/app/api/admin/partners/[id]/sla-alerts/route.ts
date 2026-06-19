@@ -105,8 +105,8 @@ export async function GET(
     }
 
     // Verify partner exists and belongs to tenant
-    const { data: partner } = await (supabase as unknown)
-      .from('api_partners')
+    const { data: partner } = await supabase
+      .from('api_partners' as never)
       .select('id, tenant_id')
       .eq('id', partnerId)
       .eq('tenant_id', profile.tenant_id)
@@ -199,7 +199,7 @@ export async function GET(
       {
         success: false,
         error: {
-          message: error.message || 'Internal server error',
+          message: error instanceof Error ? error.message : 'Internal server error',
           code: 'SERVER_001',
         },
       } satisfies APIResponse,
@@ -305,8 +305,8 @@ export async function POST(
     }
 
     // Verify partner exists and belongs to tenant
-    const { data: partner } = await (supabase as unknown)
-      .from('api_partners')
+    const { data: partner } = await supabase
+      .from('api_partners' as never)
       .select('id, tenant_id')
       .eq('id', partnerId)
       .eq('tenant_id', profile.tenant_id)
@@ -370,7 +370,7 @@ export async function POST(
       {
         success: false,
         error: {
-          message: error.message || 'Internal server error',
+          message: error instanceof Error ? error.message : 'Internal server error',
           code: 'SERVER_001',
         },
       } satisfies APIResponse,

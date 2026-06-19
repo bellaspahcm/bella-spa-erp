@@ -21,6 +21,13 @@ import {
   APIResponse,
 } from '@/types/api-gateway';
 
+interface PartnerData {
+  id: string;
+  tenant_id: string;
+  rate_limit_tier: string;
+}
+} from '@/types/api-gateway';
+
 /**
  * GET /api/admin/partners/[id]/sla-config
  * 
@@ -87,14 +94,16 @@ export async function GET(
     }
 
     // Verify partner exists and belongs to tenant
-    const { data: partner } = await (supabase as unknown)
-      .from('api_partners')
+    const { data: partner } = await supabase
+      .from('api_partners' as never)
       .select('id, tenant_id, rate_limit_tier')
       .eq('id', partnerId)
       .eq('tenant_id', profile.tenant_id)
       .single();
 
-    if (!partner) {
+    const partnerData = partner as PartnerData | null;
+
+    if (!partnerData) {
       return NextResponse.json(
         {
           success: false,
@@ -124,7 +133,7 @@ export async function GET(
       unlimited: 'enterprise',
     };
 
-    const tier = tierMapping[partner.rate_limit_tier] || 'basic';
+    const tier = tierMapping[partnerData.rate_limit_tier] || 'basic';
     const thresholds = SLA_TIER_PRESETS[tier];
 
     // Generate default alert rules
@@ -315,14 +324,16 @@ export async function POST(
     }
 
     // Verify partner exists and belongs to tenant
-    const { data: partner } = await (supabase as unknown)
-      .from('api_partners')
+    const { data: partner } = await supabase
+      .from('api_partners' as never)
       .select('id, tenant_id, rate_limit_tier')
       .eq('id', partnerId)
       .eq('tenant_id', profile.tenant_id)
       .single();
 
-    if (!partner) {
+    const partnerData = partner as PartnerData | null;
+
+    if (!partnerData) {
       return NextResponse.json(
         {
           success: false,

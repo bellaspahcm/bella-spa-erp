@@ -51,8 +51,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const days = range === '30d' ? 30 : 7;
 
     // Get partner
-    const { data: partner } = await (supabase as unknown)
-      .from('api_partners')
+    const { data: partner } = await supabase
+      .from('api_partners' as never)
       .select('*')
       .eq('id', partnerId)
       .eq('tenant_id', profile.tenant_id)
@@ -70,8 +70,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const startDate = subDays(endDate, days);
 
     // Fetch aggregated stats
-    const { data: logs } = await (supabase as unknown)
-      .from('api_request_logs')
+    const { data: logs } = await supabase
+      .from('api_request_logs' as never)
       .select('*')
       .eq('partner_id', partnerId)
       .gte('created_at', startDate.toISOString())

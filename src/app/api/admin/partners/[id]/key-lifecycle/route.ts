@@ -16,6 +16,39 @@ interface KeyRotationEvent {
   gracePeriodEnded?: string;
 }
 
+interface PartnerData {
+  id: string;
+  name: string;
+  api_key: string;
+  created_at: string;
+  last_rotated_at?: string;
+  next_rotation_date?: string;
+  rotation_policy?: {
+    autoRotationEnabled?: boolean;
+    rotationInterval?: string;
+    customIntervalDays?: number;
+  };
+}
+
+interface LogEntry {
+  id: string;
+  created_at: string;
+  endpoint: string;
+  partner_id: string;
+  metadata?: {
+    oldKeyPrefix?: string;
+    newKeyPrefix?: string;
+    reason?: string;
+    gracePeriodEndDate?: string;
+    action?: string;
+    policy?: {
+      autoRotationEnabled?: boolean;
+      rotationInterval?: string;
+      customIntervalDays?: number;
+    };
+  };
+}
+
 /**
  * GET /api/admin/partners/[id]/key-lifecycle
  * Get API key lifecycle data including rotation history
@@ -46,7 +79,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Partner not found' }, { status: 404 });
     }
 
-    const partnerData = partner as unknown;
+    const partnerData = partner as PartnerData;
 
     // Fetch rotation history from logs
     // In a real implementation, query from a dedicated rotation_history table
@@ -73,7 +106,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     // Add rotation events from logs
     if (logs && logs.length > 0) {
-      logs.forEach((log: unknown) => {
+      logs.forEach((log: LogEntry) => {
         if (log.endpoint === '/rotate-key-scheduled' || log.endpoint === '/regenerate-key') {
           const metadata = log.metadata || {};
           

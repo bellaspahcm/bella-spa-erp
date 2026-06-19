@@ -19,6 +19,13 @@ import {
 } from '@/services/api-gateway/partner.service';
 import { APIScope, SCOPE_PRESETS } from '@/types/api-gateway';
 
+interface ServiceError {
+  code?: string;
+  message?: string;
+  details?: unknown;
+  status_code?: number;
+}
+
 async function checkAdminRole(req: NextRequest) {
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -126,17 +133,18 @@ export async function POST(
   } catch (error) {
     console.error('[POST /api/admin/partners/[id]/scopes] Error:', error);
     
-    if ((error as unknown).code) {
+    const serviceError = error as ServiceError;
+    if (serviceError.code) {
       return NextResponse.json(
         {
           success: false,
           error: {
-            code: (error as unknown).code,
-            message: (error as unknown).message,
-            details: (error as unknown).details,
+            code: serviceError.code,
+            message: serviceError.message,
+            details: serviceError.details,
           },
         },
-        { status: (error as unknown).status_code || 500 }
+        { status: serviceError.status_code || 500 }
       );
     }
     
@@ -222,17 +230,18 @@ export async function DELETE(
   } catch (error) {
     console.error('[DELETE /api/admin/partners/[id]/scopes] Error:', error);
     
-    if ((error as unknown).code) {
+    const serviceError = error as ServiceError;
+    if (serviceError.code) {
       return NextResponse.json(
         {
           success: false,
           error: {
-            code: (error as unknown).code,
-            message: (error as unknown).message,
-            details: (error as unknown).details,
+            code: serviceError.code,
+            message: serviceError.message,
+            details: serviceError.details,
           },
         },
-        { status: (error as unknown).status_code || 500 }
+        { status: serviceError.status_code || 500 }
       );
     }
     
@@ -340,17 +349,18 @@ export async function PUT(
   } catch (error) {
     console.error('[PUT /api/admin/partners/[id]/scopes] Error:', error);
     
-    if ((error as unknown).code) {
+    const serviceError = error as ServiceError;
+    if (serviceError.code) {
       return NextResponse.json(
         {
           success: false,
           error: {
-            code: (error as unknown).code,
-            message: (error as unknown).message,
-            details: (error as unknown).details,
+            code: serviceError.code,
+            message: serviceError.message,
+            details: serviceError.details,
           },
         },
-        { status: (error as unknown).status_code || 500 }
+        { status: serviceError.status_code || 500 }
       );
     }
     
