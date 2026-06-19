@@ -51,7 +51,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const days = range === '30d' ? 30 : 7;
 
     // Get partner
-    const { data: partner } = await (supabase as any)
+    const { data: partner } = await (supabase as unknown)
       .from('api_partners')
       .select('*')
       .eq('id', partnerId)
@@ -70,7 +70,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const startDate = subDays(endDate, days);
 
     // Fetch aggregated stats
-    const { data: logs } = await (supabase as any)
+    const { data: logs } = await (supabase as unknown)
       .from('api_request_logs')
       .select('*')
       .eq('partner_id', partnerId)
@@ -81,10 +81,10 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     // Calculate stats
     const totalRequests = allLogs.length;
-    const errorRequests = allLogs.filter((l: any) => l.is_error).length;
+    const errorRequests = allLogs.filter((l: unknown) => l.is_error).length;
     const errorRate = totalRequests > 0 ? (errorRequests / totalRequests) * 100 : 0;
     
-    const responseTimes = allLogs.map((l: any) => l.response_time_ms).filter((t: number) => t > 0);
+    const responseTimes = allLogs.map((l: unknown) => l.response_time_ms).filter((t: number) => t > 0);
     const avgResponseTime = responseTimes.length > 0
       ? responseTimes.reduce((a: number, b: number) => a + b, 0) / responseTimes.length
       : 0;
@@ -95,7 +95,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     // Group by day
     const requestsByDay: Record<string, { count: number; errors: number }> = {};
-    allLogs.forEach((log: any) => {
+    allLogs.forEach((log: unknown) => {
       const date = log.created_at.split('T')[0];
       if (!requestsByDay[date]) {
         requestsByDay[date] = { count: 0, errors: 0 };
@@ -113,7 +113,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     // Top endpoints
     const endpointCounts: Record<string, { count: number; totalTime: number }> = {};
-    allLogs.forEach((log: any) => {
+    allLogs.forEach((log: unknown) => {
       if (!endpointCounts[log.endpoint]) {
         endpointCounts[log.endpoint] = { count: 0, totalTime: 0 };
       }
@@ -151,7 +151,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
         rate_limit_status: rateLimitStatus,
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching usage stats:', error);
     return NextResponse.json(
       {

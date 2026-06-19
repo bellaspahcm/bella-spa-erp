@@ -64,11 +64,6 @@ export function PartnerSLAMonitorTab({ partner }: PartnerSLAMonitorTabProps) {
   const [alertTypeFilter, setAlertTypeFilter] = useState<SLAAlertType | 'all'>('all');
   const [alertSearchQuery, setAlertSearchQuery] = useState('');
 
-  // Fetch SLA metrics
-  useEffect(() => {
-    fetchMetrics();
-    fetchAlerts();
-  }, [partner.id, timeRange]);
 
   const fetchMetrics = async () => {
     setIsLoadingMetrics(true);
@@ -81,7 +76,7 @@ export function PartnerSLAMonitorTab({ partner }: PartnerSLAMonitorTabProps) {
       }
       const { data } = await response.json();
       setMetrics(data);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error fetching SLA metrics:', error);
       toast.error('Failed to load SLA metrics');
     } finally {
@@ -109,7 +104,7 @@ export function PartnerSLAMonitorTab({ partner }: PartnerSLAMonitorTabProps) {
       }
       const { data } = await response.json();
       setAlerts(data);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error fetching alerts:', error);
       toast.error('Failed to load alerts');
     } finally {
@@ -135,7 +130,7 @@ export function PartnerSLAMonitorTab({ partner }: PartnerSLAMonitorTabProps) {
 
       toast.success('Alert acknowledged');
       fetchAlerts();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error acknowledging alert:', error);
       toast.error('Failed to acknowledge alert');
     }
@@ -159,7 +154,7 @@ export function PartnerSLAMonitorTab({ partner }: PartnerSLAMonitorTabProps) {
 
       toast.success('Alert resolved');
       fetchAlerts();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error resolving alert:', error);
       toast.error('Failed to resolve alert');
     }
@@ -404,7 +399,7 @@ export function PartnerSLAMonitorTab({ partner }: PartnerSLAMonitorTabProps) {
             />
 
             {/* Severity Filter */}
-            <Select value={alertSeverityFilter} onValueChange={(value) => setAlertSeverityFilter(value as any)}>
+            <Select value={alertSeverityFilter} onValueChange={(value) => setAlertSeverityFilter(value as unknown)}>
               <SelectTrigger>
                 <SelectValue placeholder="All severities" />
               </SelectTrigger>
@@ -417,7 +412,7 @@ export function PartnerSLAMonitorTab({ partner }: PartnerSLAMonitorTabProps) {
             </Select>
 
             {/* Status Filter */}
-            <Select value={alertStatusFilter} onValueChange={(value) => setAlertStatusFilter(value as any)}>
+            <Select value={alertStatusFilter} onValueChange={(value) => setAlertStatusFilter(value as unknown)}>
               <SelectTrigger>
                 <SelectValue placeholder="All statuses" />
               </SelectTrigger>
@@ -430,7 +425,7 @@ export function PartnerSLAMonitorTab({ partner }: PartnerSLAMonitorTabProps) {
             </Select>
 
             {/* Type Filter */}
-            <Select value={alertTypeFilter} onValueChange={(value) => setAlertTypeFilter(value as any)}>
+            <Select value={alertTypeFilter} onValueChange={(value) => setAlertTypeFilter(value as unknown)}>
               <SelectTrigger>
                 <SelectValue placeholder="All types" />
               </SelectTrigger>

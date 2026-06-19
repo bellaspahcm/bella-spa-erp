@@ -171,7 +171,7 @@ export async function POST(
       const responseTime = Date.now() - startTime;
 
       // Try to get response body
-      let responseBody: any = null;
+      let responseBody: unknown = null;
       const contentType = webhookResponse.headers.get('content-type');
 
       if (contentType?.includes('application/json')) {
@@ -204,7 +204,7 @@ export async function POST(
             : `Webhook endpoint returned status ${webhookResponse.status}`,
         },
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       const responseTime = Date.now() - startTime;
 
       // Handle timeout
@@ -234,7 +234,7 @@ export async function POST(
         },
       });
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Test webhook error:', error);
 
     return NextResponse.json(

@@ -76,7 +76,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
         message: 'API key regenerated successfully. The old key is now invalid.',
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error regenerating API key:', error);
 
     if (error instanceof APIError) {

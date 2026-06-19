@@ -98,7 +98,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     // Verify partner belongs to tenant
     const { data: partner } = await supabase
-      .from('api_partners' as any)
+      .from('api_partners' as never)
       .select('id, webhook_url, webhook_secret')
       .eq('id', partnerId)
       .eq('tenant_id', profile.tenant_id)

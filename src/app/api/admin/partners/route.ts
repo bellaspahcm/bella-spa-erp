@@ -87,14 +87,14 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
 
     // Fetch partners - with fallback to empty array if table doesn't exist yet
-    let partners: any[] = [];
+    let partners: unknown[] = [];
     let total = 0;
 
     try {
       const result = await listPartners(params);
       partners = result.partners;
       total = result.total;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.warn('listPartners error (returning empty array):', error.message);
       // Return empty array if table doesn't exist yet
       partners = [];
@@ -120,7 +120,7 @@ export async function GET(request: NextRequest) {
         has_more: (params.offset || 0) + (params.limit || 20) < (search ? filteredPartners.length : total),
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error listing partners:', error);
 
     if (error instanceof APIError) {
@@ -217,7 +217,7 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error creating partner:', error);
 
     if (error instanceof APIError) {

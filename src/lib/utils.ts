@@ -272,7 +272,7 @@ export function parsePercentInput(
   
   // Remove percent sign and parse as decimal
   const cleaned = input.replace('%', '').trim();
-  let value = parseDecimalInput(cleaned, options);
+  const value = parseDecimalInput(cleaned, options);
   
   return value;
 }

@@ -77,7 +77,7 @@ export default async function PartnerDetailPage({
   }
 
   // Lấy thông tin đối tác
-  const { data: partner, error } = await (supabase as any)
+  const { data: partner, error } = await (supabase as unknown)
     .from('api_partners')
     .select('*')
     .eq('id', id)

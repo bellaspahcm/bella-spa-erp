@@ -49,7 +49,7 @@ export default async function AdvancedAnalyticsPage() {
 
   // Fetch all partners for this tenant
   const { data: partners } = await supabase
-    .from('api_partners' as any)
+    .from('api_partners' as never)
     .select('*')
     .eq('tenant_id', profile.tenant_id)
     .order('created_at', { ascending: false });
@@ -72,7 +72,7 @@ export default async function AdvancedAnalyticsPage() {
           </div>
         }
       >
-        <AdvancedAnalyticsDashboard partners={(partners as any) || []} tenantId={profile.tenant_id || ''} />
+        <AdvancedAnalyticsDashboard partners={(partners as unknown) || []} tenantId={profile.tenant_id || ''} />
       </Suspense>
     </div>
   );

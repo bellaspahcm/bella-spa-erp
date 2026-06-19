@@ -14,6 +14,7 @@
  */
 
 import { NextRequest } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 import type { APIPartner } from '@/types/api-gateway';
 import { APIError } from '@/types/api-gateway';
 
@@ -97,7 +98,7 @@ export function getSchemaForEnvironment(environment: Environment): string {
  */
 export function detectSandboxMode(req: NextRequest): SandboxConfig {
   // Ensure partner is set (should be set by withAPIKey)
-  const partner = (req as any).partner as APIPartner | undefined;
+  const partner = (req as unknown).partner as APIPartner | undefined;
   
   if (!partner) {
     throw new APIError(
@@ -118,7 +119,7 @@ export function detectSandboxMode(req: NextRequest): SandboxConfig {
     isSandbox,
   };
 
-  (req as any).sandbox = config;
+  (req as unknown).sandbox = config;
 
   // Log sandbox requests for monitoring
   if (isSandbox) {
@@ -191,7 +192,7 @@ export function addSandboxHeaders(
   req: NextRequest,
   headers: Headers | Record<string, string>
 ): void {
-  const sandbox = (req as any).sandbox as SandboxConfig | undefined;
+  const sandbox = (req as unknown).sandbox as SandboxConfig | undefined;
   
   if (!sandbox) {
     // If sandbox not detected, assume production
@@ -249,7 +250,7 @@ export function withSandbox(
     }
   ) => Promise<Response>
 ) {
-  return async (req: NextRequest, routeContext?: any): Promise<Response> => {
+  return async (req: NextRequest, routeContext?: unknown): Promise<Response> => {
     // Import withAPIKey to avoid circular dependency
     const { withAPIKey } = await import('./api-key.middleware');
     
@@ -262,7 +263,7 @@ export function withSandbox(
     // Execute handler
     const response = await handler(req, {
       sandbox,
-      partner: (req as any).partner,
+      partner: (req as unknown).partner,
     });
     
     // Add sandbox headers to response
@@ -288,8 +289,7 @@ export function withSandbox(
  * ```
  */
 export function getSandboxAwareSupabaseClient(req: NextRequest) {
-  const { createClient } = require('@supabase/supabase-js');
-  const sandbox = (req as any).sandbox as SandboxConfig | undefined;
+  const sandbox = (req as unknown).sandbox as SandboxConfig | undefined;
   
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

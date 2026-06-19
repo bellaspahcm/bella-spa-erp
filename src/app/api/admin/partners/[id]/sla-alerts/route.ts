@@ -105,7 +105,7 @@ export async function GET(
     }
 
     // Verify partner exists and belongs to tenant
-    const { data: partner } = await (supabase as any)
+    const { data: partner } = await (supabase as unknown)
       .from('api_partners')
       .select('id, tenant_id')
       .eq('id', partnerId)
@@ -192,7 +192,7 @@ export async function GET(
       { status: 200 }
     );
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[GET /api/admin/partners/[id]/sla-alerts] Error:', error);
     
     return NextResponse.json(
@@ -305,7 +305,7 @@ export async function POST(
     }
 
     // Verify partner exists and belongs to tenant
-    const { data: partner } = await (supabase as any)
+    const { data: partner } = await (supabase as unknown)
       .from('api_partners')
       .select('id, tenant_id')
       .eq('id', partnerId)
@@ -363,7 +363,7 @@ export async function POST(
       { status: 200 }
     );
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[POST /api/admin/partners/[id]/sla-alerts] Error:', error);
     
     return NextResponse.json(

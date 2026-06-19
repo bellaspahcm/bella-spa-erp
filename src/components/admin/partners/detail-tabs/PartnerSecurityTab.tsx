@@ -65,15 +65,7 @@ export function PartnerSecurityTab({ partner, onPartnerUpdate }: PartnerSecurity
   });
   const [isRotating, setIsRotating] = useState(false);
 
-  // Fetch rotation policy
-  useEffect(() => {
-    fetchRotationPolicy();
-  }, [partner.id]);
 
-  // Fetch lifecycle data
-  useEffect(() => {
-    fetchLifecycleData();
-  }, [partner.id]);
 
   const fetchRotationPolicy = async () => {
     setIsLoadingPolicy(true);
@@ -109,7 +101,7 @@ export function PartnerSecurityTab({ partner, onPartnerUpdate }: PartnerSecurity
         lastRotatedAt: lifecycleData.lastRotatedAt ? new Date(lifecycleData.lastRotatedAt) : null,
         nextRotationDate: lifecycleData.nextRotationDate ? new Date(lifecycleData.nextRotationDate) : null,
         autoRotationEnabled: lifecycleData.autoRotationEnabled,
-        rotationHistory: lifecycleData.rotationHistory.map((event: any) => ({
+        rotationHistory: lifecycleData.rotationHistory.map((event: unknown) => ({
           ...event,
           timestamp: new Date(event.timestamp),
           gracePeriodEnded: event.gracePeriodEnded ? new Date(event.gracePeriodEnded) : undefined,

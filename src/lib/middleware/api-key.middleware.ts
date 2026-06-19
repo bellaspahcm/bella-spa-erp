@@ -146,7 +146,7 @@ async function validateAPIKey(apiKey: string): Promise<PartnerValidationResult |
   try {
     // Call database function to validate partner
     // Type assertion needed because RPC exists in DB but not in generated types yet
-    const { data, error } = await (supabase as any)
+    const { data, error } = await (supabase as unknown)
       .rpc('validate_api_partner', { p_api_key: apiKey });
     
     if (error) {
@@ -178,10 +178,10 @@ async function logAPIRequest(logData: CreateAPIRequestLogInput): Promise<void> {
   try {
     // Insert log (don't await - fire and forget)
     // Type assertion needed because table exists in DB but not in generated types yet
-    (supabase as any)
+    (supabase as unknown)
       .from('api_request_logs')
       .insert(logData)
-      .then(({ error }: any) => {
+      .then(({ error }: unknown) => {
         if (error) {
           console.error('[API Key Middleware] Failed to log request:', error);
         }
@@ -198,7 +198,7 @@ function createErrorResponse(
   code: string,
   message: string,
   statusCode: number = 401,
-  details?: any
+  details?: unknown
 ) {
   return NextResponse.json(
     {

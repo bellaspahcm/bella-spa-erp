@@ -417,7 +417,7 @@ describe('E2E Negative Business Pipeline Suite', () => {
       deposit_amount: 1000000,
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const result = await createBooking(bookingFormData as any);
     expect(result.error).toBeDefined();
     expect(result.error).toContain('Dữ liệu booking không hợp lệ');

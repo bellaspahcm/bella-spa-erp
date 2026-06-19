@@ -119,7 +119,7 @@ export interface APIPartner {
   last_error_message?: string;
   
   // Metadata
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   notes?: string;
   
   // Audit
@@ -141,13 +141,13 @@ export interface APIRequestLog {
   // Request Information
   method: HTTPMethod;
   endpoint: string;
-  request_body?: Record<string, any>;
-  request_headers?: Record<string, any>;
-  query_params?: Record<string, any>;
+  request_body?: Record<string, unknown>;
+  request_headers?: Record<string, unknown>;
+  query_params?: Record<string, unknown>;
   
   // Response Information
   status_code: number;
-  response_body?: Record<string, any>;
+  response_body?: Record<string, unknown>;
   response_time_ms: number;
   
   // Error Tracking
@@ -167,7 +167,7 @@ export interface APIRequestLog {
   rate_limit_reset_at?: string;
   
   // Metadata
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   created_at: string;
 }
 
@@ -268,7 +268,7 @@ export interface CreateAPIPartnerInput {
   rate_limit_burst?: number; // Legacy
   
   // Metadata
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   notes?: string;
 }
 
@@ -297,7 +297,7 @@ export interface UpdateAPIPartnerInput {
   rate_limit_burst?: number; // Legacy
   
   // Metadata
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   notes?: string;
 }
 
@@ -310,12 +310,12 @@ export interface CreateAPIRequestLogInput {
   
   method: HTTPMethod;
   endpoint: string;
-  request_body?: Record<string, any>;
-  request_headers?: Record<string, any>;
-  query_params?: Record<string, any>;
+  request_body?: Record<string, unknown>;
+  request_headers?: Record<string, unknown>;
+  query_params?: Record<string, unknown>;
   
   status_code: number;
-  response_body?: Record<string, any>;
+  response_body?: Record<string, unknown>;
   response_time_ms: number;
   
   is_error?: boolean;
@@ -331,7 +331,7 @@ export interface CreateAPIRequestLogInput {
   rate_limit_remaining?: number;
   rate_limit_reset_at?: string;
   
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 // ============================================================================
@@ -341,13 +341,13 @@ export interface CreateAPIRequestLogInput {
 /**
  * Standard API Response Wrapper
  */
-export interface APIResponse<T = any> {
+export interface APIResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: {
     message: string;
     code: string;
-    details?: any;
+    details?: unknown;
   };
   meta?: {
     timestamp: string;
@@ -368,7 +368,7 @@ export interface APIResponse<T = any> {
 /**
  * Paginated API Response
  */
-export interface PaginatedAPIResponse<T = any> {
+export interface PaginatedAPIResponse<T = unknown> {
   success: boolean;
   data: T[];
   pagination: {
@@ -448,7 +448,7 @@ export class APIError extends Error {
   constructor(
     public code: APIErrorCode,
     message?: string,
-    public details?: any,
+    public details?: unknown,
     public statusCode: number = 500
   ) {
     super(message || API_ERROR_CODES[code]);
@@ -677,7 +677,7 @@ export interface SLAAlert {
   notification_channels_used: NotificationChannel[];
   
   // Metadata
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   created_at: string;
   updated_at: string;
 }

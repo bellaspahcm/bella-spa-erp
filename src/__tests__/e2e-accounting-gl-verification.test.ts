@@ -32,7 +32,7 @@ describe('E2E Accounting GL Verification (Critical Accounting Test)', () => {
   let testKtvId: string;
   let testPackageId: string;
   let testBookingId: string;
-  let testJournalEntryIds: string[] = [];
+  const testJournalEntryIds: string[] = [];
 
   beforeAll(async () => {
     const { url, adminKey } = requireSupabaseAdminEnv();

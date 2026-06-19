@@ -39,10 +39,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { APIError } from '@/types/api-gateway';
+import Redis from 'ioredis';
 import type { APIPartner } from '@/types/api-gateway';
 
 // Redis client (lazy initialization)
-let redisClient: any = null;
+let redisClient: unknown = null;
 let redisStatus: 'connected' | 'disconnected' | 'unknown' = 'unknown';
 let lastRedisCheckTime = 0;
 
@@ -206,7 +207,7 @@ function recordRedisFailure(): void {
     });
     
     // Send critical alert
-    sendRateLimitAlert(null as any, 'free', null as any, 'REDIS_DOWN').catch(console.error);
+    sendRateLimitAlert(null as unknown, 'free', null as unknown, 'REDIS_DOWN').catch(console.error);
   }
 }
 
@@ -230,7 +231,7 @@ function recordRedisSuccess(): void {
       });
       
       // Send recovery alert
-      sendRateLimitAlert(null as any, 'free', null as any, 'REDIS_RECOVERED').catch(console.error);
+      sendRateLimitAlert(null as unknown, 'free', null as unknown, 'REDIS_RECOVERED').catch(console.error);
     }
   } else if (circuitBreaker.state === 'OPEN') {
     // First success after OPEN → HALF_OPEN
@@ -324,7 +325,6 @@ async function getRedisClient() {
 
   try {
     // Use ioredis for Redis connection
-    const Redis = require('ioredis');
     redisClient = new Redis(redisUrl, {
       maxRetriesPerRequest: 3,
       enableReadyCheck: true,
@@ -587,7 +587,7 @@ async function getPartnerTier(partnerId: string): Promise<RateLimitTier> {
  */
 export async function rateLimitMiddleware(req: NextRequest): Promise<void> {
   // Ensure partner is set (should be set by withAPIKey)
-  const partner = (req as any).partner as APIPartner | undefined;
+  const partner = (req as unknown).partner as APIPartner | undefined;
   
   if (!partner) {
     throw new APIError(
@@ -644,7 +644,7 @@ export async function rateLimitMiddleware(req: NextRequest): Promise<void> {
   }
 
   // Set rate limit headers (informational) with mode and circuit state
-  (req as any).rateLimitHeaders = {
+  (req as unknown).rateLimitHeaders = {
     'X-RateLimit-Limit': result.limit === Infinity ? 'unlimited' : result.limit.toString(),
     'X-RateLimit-Remaining': result.remaining === Infinity ? 'unlimited' : result.remaining.toString(),
     'X-RateLimit-Reset': result.reset.toString(),
@@ -731,7 +731,7 @@ async function sendRateLimitAlert(
     'REDIS_RECOVERED': 'INFO',
   }[alertType];
 
-  const alert: any = {
+  const alert: unknown = {
     type: alertType,
     severity: alertSeverity,
     timestamp: new Date().toISOString(),
@@ -797,7 +797,7 @@ async function sendRateLimitAlert(
  * TODO: Telegram Integration
  * Send alert to Telegram channel via bot
  */
-async function sendTelegramAlert(alert: any): Promise<void> {
+async function sendTelegramAlert(alert: unknown): Promise<void> {
   // Implementation:
   // const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
   // const TELEGRAM_CHAT_ID = process.env.TELEGRAM_ALERTS_CHAT_ID;
@@ -817,7 +817,7 @@ async function sendTelegramAlert(alert: any): Promise<void> {
  * TODO: Sentry Integration
  * Create Sentry event with proper severity
  */
-async function sendSentryEvent(level: 'error' | 'warning' | 'info', alert: any): Promise<void> {
+async function sendSentryEvent(level: 'error' | 'warning' | 'info', alert: unknown): Promise<void> {
   // Implementation:
   // const Sentry = require('@sentry/node');
   // 
@@ -835,7 +835,7 @@ async function sendSentryEvent(level: 'error' | 'warning' | 'info', alert: any):
  * TODO: Email Integration
  * Send email alert for critical issues
  */
-async function sendEmailAlert(to: string, alert: any): Promise<void> {
+async function sendEmailAlert(to: string, alert: unknown): Promise<void> {
   // Implementation using SendGrid, AWS SES, or similar:
   // const sgMail = require('@sendgrid/mail');
   // sgMail.setApiKey(process.env.SENDGRID_API_KEY);
@@ -936,7 +936,7 @@ export function addRateLimitHeaders(
   req: NextRequest,
   response: NextResponse
 ): NextResponse {
-  const headers = (req as any).rateLimitHeaders as Record<string, string> | undefined;
+  const headers = (req as unknown).rateLimitHeaders as Record<string, string> | undefined;
   
   if (headers) {
     Object.entries(headers).forEach(([key, value]) => {

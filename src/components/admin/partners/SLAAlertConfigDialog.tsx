@@ -81,12 +81,6 @@ export function SLAAlertConfigDialog({
   const [monitoringEnabled, setMonitoringEnabled] = useState(true);
   const [checkInterval, setCheckInterval] = useState(60);
 
-  // Fetch current config when dialog opens
-  useEffect(() => {
-    if (open && partner.id) {
-      fetchConfig();
-    }
-  }, [open, partner.id]);
 
   const fetchConfig = async () => {
     setIsLoadingConfig(true);
@@ -118,7 +112,7 @@ export function SLAAlertConfigDialog({
       
       setMonitoringEnabled(data.monitoring_enabled);
       setCheckInterval(data.check_interval_seconds);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error fetching SLA config:', error);
       toast.error('Failed to load current configuration');
     } finally {
@@ -210,7 +204,7 @@ export function SLAAlertConfigDialog({
       if (onConfigSaved) {
         onConfigSaved();
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error saving SLA config:', error);
       toast.error(error.message || 'Failed to save configuration');
     } finally {

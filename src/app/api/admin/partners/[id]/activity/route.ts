@@ -14,7 +14,7 @@ interface ActivityEvent {
   title: string;
   description: string;
   status: 'success' | 'warning' | 'error' | 'info';
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -65,7 +65,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     // Fetch partner to verify access
     const { data: partner, error: partnerError } = await supabase
-      .from('api_partners' as any)
+      .from('api_partners' as never)
       .select('id, partner_name')
       .eq('id', partnerId)
       .single();
@@ -74,14 +74,14 @@ export async function GET(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Partner not found' }, { status: 404 });
     }
 
-    const partnerData = partner as any;
+    const partnerData = partner as unknown;
 
     // Collect all activity events from different sources
     const events: ActivityEvent[] = [];
 
     // 1. Fetch API request logs
     let logsQuery = supabase
-      .from('api_request_logs' as any)
+      .from('api_request_logs' as never)
       .select('*')
       .eq('partner_id', partnerId)
       .order('created_at', { ascending: false })
@@ -94,7 +94,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const { data: logs, error: logsError } = await logsQuery;
 
     if (logs && logs.length > 0) {
-      logs.forEach((log: any) => {
+      logs.forEach((log: unknown) => {
         const isError = log.status_code >= 400;
         const isWarning = log.status_code >= 300 && log.status_code < 400;
 
@@ -143,11 +143,11 @@ export async function GET(request: NextRequest, context: RouteContext) {
     }
 
     // 2. Fetch key rotation events (from metadata in logs or dedicated table)
-    const rotationLogs = logs?.filter((log: any) =>
+    const rotationLogs = logs?.filter((log: unknown) =>
       log.endpoint?.includes('rotate-key') || log.endpoint?.includes('regenerate-key')
     ) || [];
 
-    rotationLogs.forEach((log: any) => {
+    rotationLogs.forEach((log: unknown) => {
       if (eventTypeFilter && eventTypeFilter !== 'all' && eventTypeFilter !== 'key_rotation') {
         return;
       }
@@ -174,11 +174,11 @@ export async function GET(request: NextRequest, context: RouteContext) {
     });
 
     // 3. Fetch config change events
-    const configLogs = logs?.filter((log: any) =>
+    const configLogs = logs?.filter((log: unknown) =>
       log.endpoint?.includes('rotation-policy') || log.endpoint?.includes('scopes')
     ) || [];
 
-    configLogs.forEach((log: any) => {
+    configLogs.forEach((log: unknown) => {
       const isScope = log.endpoint?.includes('scopes');
       const eventType: EventType = isScope ? 'scope_update' : 'config_change';
 

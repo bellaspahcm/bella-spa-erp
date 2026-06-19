@@ -38,8 +38,8 @@ describe('E2E Full Refund Flow (Critical Business Case)', () => {
   let testKtvId: string;
   let testPackageId: string;
   let testBookingId: string;
-  let testRevenueIds: string[] = [];
-  let testSessionIds: string[] = [];
+  const testRevenueIds: string[] = [];
+  const testSessionIds: string[] = [];
 
   beforeAll(async () => {
     const { url, adminKey } = requireSupabaseAdminEnv();
