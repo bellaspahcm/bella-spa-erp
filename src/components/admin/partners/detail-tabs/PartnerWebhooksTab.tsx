@@ -199,7 +199,7 @@ export function PartnerWebhooksTab({ partner }: PartnerWebhooksTabProps) {
     } catch (error: unknown) {
       setTestResult({
         success: false,
-        message: error.message || 'Không thể kết nối với webhook endpoint',
+        message: error instanceof Error ? error.message : 'Không thể kết nối với webhook endpoint',
       });
       toast.error('Không thể test webhook');
     } finally {

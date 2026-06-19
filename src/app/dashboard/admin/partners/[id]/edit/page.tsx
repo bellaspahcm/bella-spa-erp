@@ -11,7 +11,7 @@ import { notFound, redirect } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { PartnerFormWizard } from '@/components/admin/partners/PartnerFormWizard';
 import { createClient } from '@/lib/supabase-server';
-import type { APIPartner } from '@/types/api-gateway';
+import { getPartnerById } from '@/services/api-gateway/partner.service';
 
 export const metadata: Metadata = {
   title: 'Edit Partner | Admin',
@@ -49,16 +49,9 @@ export default async function EditPartnerPage({ params }: EditPartnerPageProps) 
     redirect('/dashboard');
   }
 
-  // Fetch existing partner
-  // Note: api_partners table exists in migration but not yet in generated types
-  const { data: partner, error } = await (supabase as unknown)
-    .from('api_partners')
-    .select('*')
-    .eq('id', id)
-    .eq('tenant_id', profile.tenant_id) // Security: ensure partner belongs to user's tenant
-    .single();
+  const partner = await getPartnerById(id, profile.tenant_id);
 
-  if (error || !partner) {
+  if (!partner) {
     notFound();
   }
 
@@ -82,7 +75,7 @@ export default async function EditPartnerPage({ params }: EditPartnerPageProps) 
       {/* Form Wizard */}
       <PartnerFormWizard
         mode="edit"
-        existingPartner={partner as APIPartner}
+        existingPartner={partner}
         tenantId={profile.tenant_id}
       />
     </div>

@@ -8,7 +8,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
 import { z } from 'zod';
-import type { APIErrorCode } from '@/types/api-gateway';
+import type { APIErrorCode, APIPartner, APIRequestLog } from '@/types/api-gateway';
+
+type PartnerAnalyticsRow = Pick<
+  APIPartner,
+  'id' | 'partner_name' | 'partner_type' | 'is_sandbox'
+>;
+
+type QueryResult<T> = {
+  data: T;
+  error: { message: string } | null;
+};
 
 const querySchema = z.object({
   range: z.enum(['7d', '30d', '90d']).default('30d'),
@@ -56,6 +66,21 @@ export async function GET(request: NextRequest) {
         { status: 401 }
       );
     }
+
+    if (!profile.tenant_id) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            message: 'User profile is not assigned to a tenant',
+            code: 'AUTHZ_001' as APIErrorCode,
+          },
+        },
+        { status: 403 }
+      );
+    }
+
+    const tenantId = profile.tenant_id;
 
     // Role check
     if (profile.role !== 'admin' && profile.role !== 'owner') {
@@ -117,26 +142,34 @@ export async function GET(request: NextRequest) {
     // Fetch analytics data for each partner
     const analyticsPromises = partnerIdArray.map(async (partnerId) => {
       // Verify partner belongs to tenant
-      const { data: partner } = (await supabase
+      const { data: partner, error: partnerError } = (await supabase
         .from('api_partners' as never)
         .select('id, partner_name, partner_type, is_sandbox')
         .eq('id', partnerId)
-        .eq('tenant_id', profile.tenant_id)
-        .single()) as unknown;
+        .eq('tenant_id', tenantId)
+        .single()) as unknown as QueryResult<PartnerAnalyticsRow | null>;
+
+      if (partnerError) {
+        throw new Error('Failed to load API partner analytics scope: ' + partnerError.message);
+      }
 
       if (!partner) {
         return null; // Skip invalid partners
       }
 
       // Get request logs for this partner in the time range
-      const { data: logs } = await supabase
+      const { data: logs, error: logsError } = (await supabase
         .from('api_request_logs' as never)
         .select('*')
         .eq('partner_id', partnerId)
         .gte('created_at', startDate.toISOString())
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: true })) as unknown as QueryResult<APIRequestLog[] | null>;
 
-      const totalLogs: unknown[] = logs || [];
+      if (logsError) {
+        throw new Error('Failed to load API request logs for analytics: ' + logsError.message);
+      }
+
+      const totalLogs = logs ?? [];
       const total_requests = totalLogs.length;
       const error_requests = totalLogs.filter((log) => log.is_error).length;
       const error_rate = total_requests > 0 ? (error_requests / total_requests) * 100 : 0;

@@ -90,7 +90,7 @@ export function PartnerFormWizard({
     webhook_secret: existingPartner?.webhook_secret || '',
     webhook_events: existingPartner?.webhook_events || [],
     
-    rate_limit_tier: (existingPartner?.rate_limit_tier as unknown) || 'basic',
+    rate_limit_tier: existingPartner?.rate_limit_tier || 'basic',
     notes: existingPartner?.notes || '',
   });
 
@@ -213,7 +213,7 @@ export function PartnerFormWizard({
       }
     } catch (error: unknown) {
       console.error('Error submitting form:', error);
-      toast.error(error.message || 'Failed to save partner');
+      toast.error(error instanceof Error ? error.message : 'Failed to save partner');
     } finally {
       setLoading(false);
     }

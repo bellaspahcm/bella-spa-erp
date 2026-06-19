@@ -51,6 +51,10 @@ const userManualsHeaders = [
   },
 ];
 
+const apiNoStoreHeaders = [
+  { key: 'Cache-Control', value: 'private, no-store, max-age=0' },
+];
+
 const nextConfig: NextConfig = {
   // Strip console.log/info/debug in production builds. Keeps console.error/warn
   // so real errors still surface in Sentry. Saves bundle size + runtime cost.
@@ -66,6 +70,10 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
+      {
+        source: '/api/:path*',
+        headers: apiNoStoreHeaders,
+      },
       {
         source: '/user-manuals/:path*',
         headers: userManualsHeaders,

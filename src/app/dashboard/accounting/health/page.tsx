@@ -425,7 +425,7 @@ export default function AccountingHealthPage() {
           )}
         </div>
 
-        <div className="mt-8">
+        <div id="unresolved-findings" className="mt-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
             <div>
               <h4 className="text-sm font-black uppercase tracking-wider text-slate-950 dark:text-[#EFE9E1]">

@@ -16,6 +16,7 @@
 import { NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import type { APIPartner } from '@/types/api-gateway';
+import type { PartnerContext, RequestWithPartner } from './api-key.middleware';
 import { APIError } from '@/types/api-gateway';
 
 /**
@@ -31,6 +32,8 @@ interface SandboxConfig {
   schema: string; // 'sandbox' or 'public'
   isSandbox: boolean;
 }
+
+type RequestWithSandbox = RequestWithPartner & { sandbox?: SandboxConfig };
 
 /**
  * Detect environment from API key prefix
@@ -98,7 +101,7 @@ export function getSchemaForEnvironment(environment: Environment): string {
  */
 export function detectSandboxMode(req: NextRequest): SandboxConfig {
   // Ensure partner is set (should be set by withAPIKey)
-  const partner = (req as unknown).partner as APIPartner | undefined;
+  const partner = (req as RequestWithPartner).partner;
   
   if (!partner) {
     throw new APIError(
@@ -108,7 +111,7 @@ export function detectSandboxMode(req: NextRequest): SandboxConfig {
   }
 
   // Detect environment from API key
-  const environment = detectEnvironment(partner.api_key);
+  const environment: Environment = partner.is_sandbox ? 'sandbox' : 'production';
   const schema = getSchemaForEnvironment(environment);
   const isSandbox = environment === 'sandbox';
 
@@ -119,12 +122,12 @@ export function detectSandboxMode(req: NextRequest): SandboxConfig {
     isSandbox,
   };
 
-  (req as unknown).sandbox = config;
+  (req as RequestWithSandbox).sandbox = config;
 
   // Log sandbox requests for monitoring
   if (isSandbox) {
     console.log('🧪 Sandbox request:', {
-      partner_id: partner.id,
+      partner_id: partner.partner_id,
       partner_name: partner.partner_name,
       tenant_id: partner.tenant_id,
       schema,
@@ -192,7 +195,7 @@ export function addSandboxHeaders(
   req: NextRequest,
   headers: Headers | Record<string, string>
 ): void {
-  const sandbox = (req as unknown).sandbox as SandboxConfig | undefined;
+  const sandbox = (req as RequestWithSandbox).sandbox;
   
   if (!sandbox) {
     // If sandbox not detected, assume production
@@ -246,11 +249,11 @@ export function withSandbox(
     req: NextRequest,
     context: {
       sandbox: SandboxConfig;
-      partner: APIPartner;
+      partner: PartnerContext;
     }
   ) => Promise<Response>
 ) {
-  return async (req: NextRequest, routeContext?: unknown): Promise<Response> => {
+  return async (req: NextRequest, _routeContext?: unknown): Promise<Response> => {
     // Import withAPIKey to avoid circular dependency
     const { withAPIKey } = await import('./api-key.middleware');
     
@@ -263,7 +266,7 @@ export function withSandbox(
     // Execute handler
     const response = await handler(req, {
       sandbox,
-      partner: (req as unknown).partner,
+      partner: (req as RequestWithPartner).partner!,
     });
     
     // Add sandbox headers to response
@@ -289,7 +292,7 @@ export function withSandbox(
  * ```
  */
 export function getSandboxAwareSupabaseClient(req: NextRequest) {
-  const sandbox = (req as unknown).sandbox as SandboxConfig | undefined;
+  const sandbox = (req as RequestWithSandbox).sandbox;
   
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

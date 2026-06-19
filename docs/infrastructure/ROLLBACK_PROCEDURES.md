@@ -44,11 +44,11 @@ Rollback    (Complex)
 ```bash
 # Vercel Dashboard → Deployments → Production
 # OR
-vercel ls bella-erp-production
+vercel ls bella-spa-erp
 ```
 
 2. **Instant rollback via Dashboard:**
-- Navigate to **Vercel Dashboard → bella-erp-production → Deployments**
+- Navigate to **Vercel Dashboard → bella-spa-erp → Deployments**
 - Find previous working deployment
 - Click **"⋯"** → **"Promote to Production"**
 - Confirm rollback
@@ -57,22 +57,22 @@ vercel ls bella-erp-production
 3. **Instant rollback via CLI:**
 ```bash
 # List recent deployments
-vercel ls bella-erp-production
+vercel ls bella-spa-erp
 
 # Promote previous deployment to production
-vercel promote <previous-deployment-url> --scope=bella-erp-production
+vercel promote <previous-deployment-url> --scope=bella-spa-erp
 
 # Example:
-# vercel promote bella-erp-production-abc123.vercel.app --scope=bella-erp
+# vercel promote bella-spa-erp-abc123.vercel.app --scope=bella-spa-s-projects
 ```
 
 4. **Verify rollback:**
 ```bash
 # Check health endpoint
-curl https://bella-erp.com/api/health
+curl https://bella-spa-erp.vercel.app/api/health
 
 # Run smoke test
-npm run test:e2e:production -- tests/smoke/critical-paths.spec.ts
+npm run e2e:auth-smoke
 ```
 
 **Rollback Time:** **~1 minute**
@@ -318,10 +318,10 @@ Follow appropriate rollback type procedure (see above).
 
 ```bash
 # 1. Health check
-curl https://bella-erp.com/api/health
+curl https://bella-spa-erp.vercel.app/api/health
 
 # 2. Smoke tests
-npm run test:e2e:production -- tests/smoke/
+npm run e2e:auth-smoke
 
 # 3. Manual verification
 # - Login works
@@ -379,90 +379,15 @@ Deployed code had a typo in webhook HMAC signature validation...
 
 ### Automated Rollback Script
 
-**`scripts/emergency-rollback.sh`:**
-```bash
-#!/bin/bash
-# Emergency Rollback Script
-# Usage: ./scripts/emergency-rollback.sh [reason]
+The canonical implementation is scripts/emergency-rollback.sh. It defaults to dry-run and will not promote a deployment unless --execute is supplied and the operator types the exact target URL.
 
-set -e
+    # Offline dry-run against a known Ready deployment
+    ./scripts/emergency-rollback.sh "payment-webhook-broken" --target https://known-ready-deployment.vercel.app
 
-REASON=$1
+    # Re-run only after reviewing the target
+    ./scripts/emergency-rollback.sh "payment-webhook-broken" --target https://known-ready-deployment.vercel.app       --execute
 
-if [ -z "$REASON" ]; then
-  echo "Usage: ./scripts/emergency-rollback.sh <reason>"
-  echo "Example: ./scripts/emergency-rollback.sh 'payment-webhook-broken'"
-  exit 1
-fi
-
-echo "🚨 EMERGENCY ROLLBACK INITIATED"
-echo "Reason: $REASON"
-echo "Time: $(date)"
-echo ""
-
-# Get current deployment
-CURRENT_DEPLOYMENT=$(vercel ls bella-erp-production --json | jq -r '.[0].url')
-echo "Current deployment: $CURRENT_DEPLOYMENT"
-
-# Get previous deployment
-PREVIOUS_DEPLOYMENT=$(vercel ls bella-erp-production --json | jq -r '.[1].url')
-echo "Rolling back to: $PREVIOUS_DEPLOYMENT"
-echo ""
-
-# Confirm
-echo "⚠️  This will rollback production to previous deployment."
-echo "Are you sure? Type 'ROLLBACK' to confirm:"
-read -r confirmation
-
-if [ "$confirmation" != "ROLLBACK" ]; then
-  echo "❌ Rollback cancelled"
-  exit 1
-fi
-
-# Execute rollback
-echo "⏳ Rolling back..."
-vercel promote "$PREVIOUS_DEPLOYMENT" --scope=bella-erp-production --yes
-
-# Wait for propagation
-echo "⏳ Waiting for deployment to propagate (30 seconds)..."
-sleep 30
-
-# Health check
-echo "🏥 Running health check..."
-HEALTH_STATUS=$(curl -s https://bella-erp.com/api/health | jq -r '.status')
-
-if [ "$HEALTH_STATUS" = "healthy" ]; then
-  echo "✅ Rollback successful! Production is healthy."
-else
-  echo "⚠️  Health check failed. Investigate immediately!"
-  exit 1
-fi
-
-# Log rollback
-echo "[$(date)] ROLLBACK: $REASON → $PREVIOUS_DEPLOYMENT" >> rollback-log.txt
-
-# Notify team
-echo "📢 Notifying team..."
-curl -X POST "$SLACK_WEBHOOK_URL" \
-  -H 'Content-Type: application/json' \
-  -d "{\"text\":\"🚨 Production rollback executed\n\nReason: $REASON\nRolled back to: $PREVIOUS_DEPLOYMENT\nStatus: ✅ Healthy\"}"
-
-echo ""
-echo "✅ Rollback complete!"
-echo ""
-echo "Next steps:"
-echo "1. Verify production is working"
-echo "2. Investigate root cause"
-echo "3. Create post-mortem document"
-echo "4. Fix issue and re-deploy"
-```
-
-**Usage:**
-```bash
-chmod +x scripts/emergency-rollback.sh
-./scripts/emergency-rollback.sh "payment-webhook-broken"
-```
-
+When --target is omitted, the script queries project bella-spa-erp in scope bella-spa-s-projects and selects the previous Ready deployment. Override these defaults with VERCEL_PROJECT_NAME, VERCEL_SCOPE, and PRODUCTION_BASE_URL.
 ### Database Rollback Script
 
 **`scripts/rollback-migration.sh`:**

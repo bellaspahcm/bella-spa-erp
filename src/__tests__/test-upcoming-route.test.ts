@@ -10,6 +10,10 @@ jest.mock('@/services/ktv-actions', () => ({
   getKTVUpcomingSessions: (...args: unknown[]) => mockGetKTVUpcomingSessions(...args),
 }));
 
+jest.mock('@/core/middleware/tenantContext', () => ({
+  withTenantContext: (handler: (request: unknown) => unknown) => handler,
+}));
+
 import { NextRequest } from 'next/server';
 import { GET } from '@/app/api/test-upcoming/route';
 

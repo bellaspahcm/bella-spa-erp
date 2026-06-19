@@ -302,8 +302,14 @@ const GROUP_META: Record<string, Pick<BusinessHealthGroup, 'label' | 'descriptio
   tenant_data_isolation: {
     label: 'Cách ly dữ liệu chi nhánh',
     description: 'Kiểm tra booking, khách hàng và ca liệu trình không bị lẫn dữ liệu giữa Bella Spa và Beauty Spa.',
-    href: '/dashboard/accounting/health',
+    href: '/dashboard/accounting/health#unresolved-findings',
     action_label: 'Xem lỗi dữ liệu',
+  },
+  booking_package_scope: {
+    label: 'Phạm vi gói dịch vụ của booking',
+    description: 'Kiểm tra gói dịch vụ của booking thuộc đúng chi nhánh và phân hệ được kích hoạt.',
+    href: '/dashboard/accounting/health#unresolved-findings',
+    action_label: 'Xem chi tiết',
   },
   payment_booking_revenue: {
     label: 'Thanh toán, booking & doanh thu',
@@ -352,6 +358,9 @@ const GROUP_META: Record<string, Pick<BusinessHealthGroup, 'label' | 'descriptio
 const FINDING_TITLE: Record<string, string> = {
   booking_customer_missing_customer: 'Booking không tìm thấy hồ sơ khách hàng',
   booking_customer_tenant_mismatch: 'Booking và khách hàng khác chi nhánh',
+  booking_package_missing_package: 'Booking tham chiếu gói không tồn tại',
+  booking_package_tenant_mismatch: 'Gói dịch vụ và booking khác chi nhánh',
+  booking_package_module_disabled: 'Phân hệ của gói dịch vụ chưa được kích hoạt cho chi nhánh',
   session_booking_missing_booking: 'Ca liệu trình không tìm thấy booking',
   session_booking_tenant_mismatch: 'Ca liệu trình và booking khác chi nhánh',
   confirmed_revenue_non_positive: 'Khoản thu đã xác nhận nhưng số tiền không hợp lệ',
@@ -798,6 +807,7 @@ function getFindingHref(groupName: string, code: string) {
   if (code.includes('salary')) return '/dashboard/salary';
   if (code.includes('inventory') || code.includes('consumption')) return '/dashboard/inventory';
   if (code.includes('booking_completed_sessions')) return '/dashboard/sessions';
+  if (code.includes('booking_package')) return '/dashboard/bookings';
   if (code.includes('booking') || code.includes('revenue') || code.includes('deposit') || code.includes('overpaid')) {
     return '/dashboard/finance/reconciliation';
   }
@@ -811,6 +821,7 @@ function getActionLabel(groupName: string, code: string) {
   if (code.includes('salary')) return 'Kiểm tra lương';
   if (code.includes('inventory') || code.includes('consumption')) return 'Kiểm tra kho';
   if (code.includes('booking_completed_sessions')) return 'Kiểm tra ca';
+  if (code.includes('booking_package')) return 'Kiểm tra booking';
   if (code.includes('booking') || code.includes('revenue') || code.includes('deposit') || code.includes('overpaid')) {
     return 'Đối soát tài chính';
   }

@@ -373,7 +373,7 @@
                 </div>
                 <div class="status-item">
                     <div class="status-label">Last Updated</div>
-                    <div class="status-value">2026-06-18</div>
+                    <div class="status-value">2026-06-19</div>
                 </div>
                 <div class="status-item">
                     <div class="status-label">Go-Live Target</div>
@@ -855,27 +855,27 @@
             </div>
 
             <div class="subsection">
-                <h3>⏳ Pending</h3>
+                <h3>📋 Observability Task Status</h3>
                 <ul class="checklist">
                     <li class="checklist-item">
                         <span class="checkbox unchecked">○</span>
-                        <span class="item-text"><strong>Real-time monitoring</strong> - Integration with monitoring service (Datadog, New Relic)</span>
+                        <span class="item-text"><strong>Real-time monitoring</strong> - Sentry tracing is enabled; a real post-deployment Sentry/Datadog/New Relic monitoring gate is still pending</span>
                     </li>
                     <li class="checklist-item">
                         <span class="checkbox unchecked">○</span>
-                        <span class="item-text"><strong>Alert notifications</strong> - Email/Slack alerts for critical events</span>
+                        <span class="item-text"><strong>Alert notifications</strong> - Configure and verify Email/Slack delivery; Partner SLA alerts are not production-backed yet</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked"><strong>Performance metrics</strong> - P95/P99 latency calculated from <code>api_request_logs</code> and displayed in Partner SLA analytics</span>
+                    </li>
+                    <li class="checklist-item">
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked"><strong>Error tracking</strong> - Sentry enabled for client, server, edge, and request errors with PII redaction</span>
                     </li>
                     <li class="checklist-item">
                         <span class="checkbox unchecked">○</span>
-                        <span class="item-text"><strong>Performance metrics</strong> - P95/P99 latency tracking</span>
-                    </li>
-                    <li class="checklist-item">
-                        <span class="checkbox unchecked">○</span>
-                        <span class="item-text"><strong>Error tracking</strong> - Sentry or similar error tracking</span>
-                    </li>
-                    <li class="checklist-item">
-                        <span class="checkbox unchecked">○</span>
-                        <span class="item-text"><strong>Log aggregation</strong> - Centralized logging (ELK, Cloudwatch)</span>
+                        <span class="item-text"><strong>Log aggregation</strong> - Sentry Vercel Log Drain is configured; production ingestion, search, retention, and alert smoke tests remain pending</span>
                     </li>
                 </ul>
             </div>
@@ -888,62 +888,61 @@
                     <span class="phase-icon">🚀</span>
                     <h2>Phase 7: Deployment & Operations</h2>
                 </div>
-                <span class="status-badge badge-pending">⏳ PENDING (0/5)</span>
+                <span class="status-badge badge-progress">⏳ PARTIAL (7/10)</span>
             </div>
 
             <div class="subsection">
-                <h3>⏳ Infrastructure</h3>
+                <h3>📋 Infrastructure Status</h3>
                 <ul class="checklist">
                     <li class="checklist-item">
                         <span class="checkbox unchecked">○</span>
-                        <span class="item-text"><strong>Production environment</strong> - Separate from staging</span>
+                        <span class="item-text"><strong>Production environment</strong> - Vercel production exists; a separate staging project, database, URL, and secrets are not provisioned yet</span>
                     </li>
                     <li class="checklist-item">
                         <span class="checkbox unchecked">○</span>
-                        <span class="item-text"><strong>Database replication</strong> - Read replicas for analytics</span>
+                        <span class="item-text"><strong>Database replication</strong> - Code and health route exist, but Supabase Read Replica requires paid provisioning and remains disabled</span>
                     </li>
                     <li class="checklist-item">
-                        <span class="checkbox unchecked">○</span>
-                        <span class="item-text"><strong>CDN setup</strong> - API endpoint caching (if applicable)</span>
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked"><strong>CDN boundary</strong> - Vercel serves static/Next assets through its CDN; <code>/api/*</code> is explicitly <code>private, no-store</code>, so tenant/auth API caching is intentionally not applicable</span>
                     </li>
                     <li class="checklist-item">
-                        <span class="checkbox unchecked">○</span>
-                        <span class="item-text"><strong>Load balancing</strong> - Distribute traffic across servers</span>
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked"><strong>Load balancing</strong> - Managed by the Vercel serverless platform; no separate paid balancer is required</span>
                     </li>
                     <li class="checklist-item">
-                        <span class="checkbox unchecked">○</span>
-                        <span class="item-text"><strong>Auto-scaling</strong> - Based on request volume</span>
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked"><strong>Auto-scaling</strong> - Managed per request by the Vercel serverless runtime within plan limits</span>
                     </li>
                 </ul>
             </div>
 
             <div class="subsection">
-                <h3>⏳ CI/CD Pipeline</h3>
+                <h3>📋 CI/CD Pipeline Status</h3>
                 <ul class="checklist">
                     <li class="checklist-item">
-                        <span class="checkbox unchecked">○</span>
-                        <span class="item-text"><strong>Automated tests</strong> - Run on every commit</span>
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked"><strong>Automated tests</strong> - Push/PR workflow runs lint, critical Jest tests, security, migration, and production build gates on Node 24</span>
                     </li>
                     <li class="checklist-item">
                         <span class="checkbox unchecked">○</span>
-                        <span class="item-text"><strong>Staging deployment</strong> - Auto-deploy to staging</span>
+                        <span class="item-text"><strong>Staging deployment</strong> - Fail-closed workflow is ready for <code>develop</code>, but isolated staging Vercel/Supabase configuration is still missing</span>
                     </li>
                     <li class="checklist-item">
-                        <span class="checkbox unchecked">○</span>
-                        <span class="item-text"><strong>Production deployment</strong> - Manual approval required</span>
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked"><strong>Production deployment</strong> - Manual <code>workflow_dispatch</code> only, with validation, deploy hook, health, authenticated smoke, and post-deploy health gates</span>
                     </li>
                     <li class="checklist-item">
-                        <span class="checkbox unchecked">○</span>
-                        <span class="item-text"><strong>Rollback plan</strong> - Quick rollback procedure</span>
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked"><strong>Rollback plan</strong> - Correct Vercel project/scope, default dry-run, exact target confirmation, and local Git Bash dry-run verified</span>
                     </li>
                     <li class="checklist-item">
-                        <span class="checkbox unchecked">○</span>
-                        <span class="item-text"><strong>Database migrations</strong> - Zero-downtime migrations</span>
+                        <span class="checkbox checked">✓</span>
+                        <span class="item-text checked"><strong>Database migrations</strong> - Remote drift gate plus tested zero-downtime policy blocks destructive and locking SQL before deployment</span>
                     </li>
                 </ul>
             </div>
         </div>
-
         <!-- Phase 8: Partner Onboarding -->
         <div class="phase-section">
             <div class="phase-header">

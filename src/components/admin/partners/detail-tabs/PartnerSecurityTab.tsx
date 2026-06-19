@@ -52,6 +52,21 @@ interface KeyLifecycleData {
   rotationHistory: KeyRotationEvent[];
 }
 
+type KeyRotationEventResponse = Omit<KeyRotationEvent, 'timestamp' | 'gracePeriodEnded'> & {
+  timestamp: string;
+  gracePeriodEnded?: string;
+};
+
+type KeyLifecycleResponse = Omit<
+  KeyLifecycleData,
+  'currentKeyCreatedAt' | 'lastRotatedAt' | 'nextRotationDate' | 'rotationHistory'
+> & {
+  currentKeyCreatedAt: string;
+  lastRotatedAt?: string | null;
+  nextRotationDate?: string | null;
+  rotationHistory: KeyRotationEventResponse[];
+};
+
 export function PartnerSecurityTab({ partner, onPartnerUpdate }: PartnerSecurityTabProps) {
   const [rotationPolicy, setRotationPolicy] = useState<RotationPolicy | null>(null);
   const [lifecycleData, setLifecycleData] = useState<KeyLifecycleData | null>(null);
@@ -94,14 +109,14 @@ export function PartnerSecurityTab({ partner, onPartnerUpdate }: PartnerSecurity
       const data = await response.json();
       
       // Convert date strings to Date objects
-      const lifecycleData = data.data;
+      const lifecycleData = data.data as KeyLifecycleResponse;
       setLifecycleData({
         currentKeyCreatedAt: new Date(lifecycleData.currentKeyCreatedAt),
         currentKeyPrefix: lifecycleData.currentKeyPrefix,
         lastRotatedAt: lifecycleData.lastRotatedAt ? new Date(lifecycleData.lastRotatedAt) : null,
         nextRotationDate: lifecycleData.nextRotationDate ? new Date(lifecycleData.nextRotationDate) : null,
         autoRotationEnabled: lifecycleData.autoRotationEnabled,
-        rotationHistory: lifecycleData.rotationHistory.map((event: unknown) => ({
+        rotationHistory: lifecycleData.rotationHistory.map((event) => ({
           ...event,
           timestamp: new Date(event.timestamp),
           gracePeriodEnded: event.gracePeriodEnded ? new Date(event.gracePeriodEnded) : undefined,

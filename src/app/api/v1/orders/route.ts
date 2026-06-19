@@ -125,7 +125,7 @@ export const POST = withSandbox(
         notes: body.notes,
         scheduled_date: body.scheduled_date,
         status: 'pending',
-        created_by: partner.id,
+        created_by: partner.partner_id,
       })
       .select()
       .single();

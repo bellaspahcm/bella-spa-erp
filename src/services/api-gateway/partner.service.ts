@@ -140,7 +140,16 @@ export async function createPartner(
           500
         );
       }
-      
+
+      if (!generatedKey) {
+        throw new APIError(
+          'SERVER_002',
+          'API key generator returned no key',
+          undefined,
+          500
+        );
+      }
+
       apiKey = generatedKey;
     }
 
@@ -551,6 +560,15 @@ export async function regenerateApiKey(
         500
       );
     }
+
+    if (!newApiKey) {
+      throw new APIError(
+        'SERVER_002',
+        'API key generator returned no key',
+        undefined,
+        500
+      );
+    }
     
     // Update partner with new key
     // Note: api_partners table exists in migration but not yet in generated types
@@ -876,16 +894,18 @@ export async function getTenantPartnerStats(
       );
     }
     
+    const partnerRows = partners ?? [];
+
     // Aggregate statistics
     const stats: PartnerStatistics = {
-      total_partners: partners.length,
-      active_partners: partners.filter((p: TenantPartnerStatsRow) => p.is_active).length,
-      sandbox_partners: partners.filter((p: TenantPartnerStatsRow) => p.is_sandbox).length,
+      total_partners: partnerRows.length,
+      active_partners: partnerRows.filter((p: TenantPartnerStatsRow) => p.is_active).length,
+      sandbox_partners: partnerRows.filter((p: TenantPartnerStatsRow) => p.is_sandbox).length,
       by_type: {} as Record<PartnerType, number>,
     };
     
     // Count by type
-    partners.forEach((partner: TenantPartnerStatsRow) => {
+    partnerRows.forEach((partner: TenantPartnerStatsRow) => {
       const type = partner.partner_type as PartnerType;
       stats.by_type[type] = (stats.by_type[type] || 0) + 1;
     });
