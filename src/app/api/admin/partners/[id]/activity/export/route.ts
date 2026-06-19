@@ -82,7 +82,16 @@ export async function GET(request: NextRequest, context: RouteContext) {
       'IP Address',
     ];
 
-    const rows = logs.map((log: unknown) => {
+    type LogEntry = {
+      created_at: string;
+      method: string;
+      endpoint: string;
+      status_code: number;
+      response_time_ms: number;
+      ip_address?: string;
+    };
+
+    const rows = logs.map((log: LogEntry) => {
       const isError = log.status_code >= 400;
       const isWarning = log.status_code >= 300 && log.status_code < 400;
 
@@ -121,8 +130,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
     // Build CSV content
     const csvContent = [
       headers.join(','),
-      ...rows.map((row: unknown) =>
-        row.map((cell: unknown) => {
+      ...rows.map((row) =>
+        (row as (string | number)[]).map((cell) => {
           // Escape commas and quotes in CSV
           const cellStr = String(cell);
           if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
