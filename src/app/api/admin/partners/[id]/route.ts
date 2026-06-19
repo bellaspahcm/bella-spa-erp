@@ -72,7 +72,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       success: true,
       data: partner,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching partner:', error);
 
     if (error instanceof APIError) {
@@ -159,7 +159,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       success: true,
       data: partner,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error updating partner:', error);
 
     if (error instanceof APIError) {
@@ -241,7 +241,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       success: true,
       data: { message: 'Partner deleted successfully' },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error deleting partner:', error);
 
     if (error instanceof APIError) {

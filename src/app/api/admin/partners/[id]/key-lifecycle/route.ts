@@ -37,7 +37,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     // Fetch partner
     const { data: partner, error: partnerError } = await supabase
-      .from('api_partners' as any)
+      .from('api_partners' as never)
       .select('*')
       .eq('id', partnerId)
       .single();
@@ -46,12 +46,12 @@ export async function GET(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Partner not found' }, { status: 404 });
     }
 
-    const partnerData = partner as any;
+    const partnerData = partner as unknown;
 
     // Fetch rotation history from logs
     // In a real implementation, query from a dedicated rotation_history table
     const { data: logs, error: logsError } = await supabase
-      .from('api_request_logs' as any)
+      .from('api_request_logs' as never)
       .select('*')
       .eq('partner_id', partnerId)
       .in('endpoint', ['/rotate-key-scheduled', '/regenerate-key', '/rotation-policy'])
@@ -73,7 +73,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     // Add rotation events from logs
     if (logs && logs.length > 0) {
-      logs.forEach((log: any) => {
+      logs.forEach((log: unknown) => {
         if (log.endpoint === '/rotate-key-scheduled' || log.endpoint === '/regenerate-key') {
           const metadata = log.metadata || {};
           

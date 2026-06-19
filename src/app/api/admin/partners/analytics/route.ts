@@ -118,11 +118,11 @@ export async function GET(request: NextRequest) {
     const analyticsPromises = partnerIdArray.map(async (partnerId) => {
       // Verify partner belongs to tenant
       const { data: partner } = (await supabase
-        .from('api_partners' as any)
+        .from('api_partners' as never)
         .select('id, partner_name, partner_type, is_sandbox')
         .eq('id', partnerId)
         .eq('tenant_id', profile.tenant_id)
-        .single()) as any;
+        .single()) as unknown;
 
       if (!partner) {
         return null; // Skip invalid partners
@@ -130,13 +130,13 @@ export async function GET(request: NextRequest) {
 
       // Get request logs for this partner in the time range
       const { data: logs } = await supabase
-        .from('api_request_logs' as any)
+        .from('api_request_logs' as never)
         .select('*')
         .eq('partner_id', partnerId)
         .gte('created_at', startDate.toISOString())
         .order('created_at', { ascending: true });
 
-      const totalLogs: any[] = logs || [];
+      const totalLogs: unknown[] = logs || [];
       const total_requests = totalLogs.length;
       const error_requests = totalLogs.filter((log) => log.is_error).length;
       const error_rate = total_requests > 0 ? (error_requests / total_requests) * 100 : 0;

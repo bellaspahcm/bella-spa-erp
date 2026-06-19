@@ -46,7 +46,7 @@ export function BasicInfoStep({ formData, updateFormData }: BasicInfoStepProps) 
       <div>
         <h2 className="text-2xl font-bold">Basic Information</h2>
         <p className="text-muted-foreground mt-1">
-          Enter the partner's basic details and contact information
+          Enter the partner&apos;s basic details and contact information
         </p>
       </div>
 

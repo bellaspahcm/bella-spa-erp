@@ -73,7 +73,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     // Verify partner belongs to tenant
     const { data: partner } = await supabase
-      .from('api_partners' as any)
+      .from('api_partners' as never)
       .select('id')
       .eq('id', partnerId)
       .eq('tenant_id', profile.tenant_id)

@@ -98,10 +98,10 @@ export const db = {
 /**
  * Decorator to automatically use read replica for analytics
  */
-export function useReadReplica<T extends (...args: any[]) => Promise<any>>(
+export function useReadReplica<T extends (...args: unknown[]) => Promise<unknown>>(
   fn: T
 ): T {
-  return (async (...args: any[]) => {
+  return (async (...args: unknown[]) => {
     const client = getReplicaClient();
     return fn.call({ client }, ...args);
   }) as T;

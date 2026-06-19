@@ -65,7 +65,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     // Check if partner exists
     const { data: partner, error: partnerError } = await supabase
-      .from('api_partners' as any)
+      .from('api_partners' as never)
       .select('id, name')
       .eq('id', partnerId)
       .single();
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     // Note: In a real implementation, you would have a separate table for rotation policies
     // For now, we'll store it in the api_partners table or a metadata field
     const { data: updatedPartner, error: updateError } = await supabase
-      .from('api_partners' as any)
+      .from('api_partners' as never)
       .update({
         rotation_policy: policy,
         next_rotation_date: nextRotationDate?.toISOString(),
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     }
 
     // Log the policy change
-    await supabase.from('api_request_logs' as any).insert({
+    await supabase.from('api_request_logs' as never).insert({
       partner_id: partnerId,
       method: 'POST',
       endpoint: '/rotation-policy',
@@ -151,7 +151,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     // Fetch partner with rotation policy
     const { data: partner, error: partnerError } = await supabase
-      .from('api_partners' as any)
+      .from('api_partners' as never)
       .select('id, name, rotation_policy, next_rotation_date')
       .eq('id', partnerId)
       .single();
@@ -160,7 +160,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Partner not found' }, { status: 404 });
     }
 
-    const partnerData = partner as any;
+    const partnerData = partner as unknown;
 
     return NextResponse.json({
       success: true,

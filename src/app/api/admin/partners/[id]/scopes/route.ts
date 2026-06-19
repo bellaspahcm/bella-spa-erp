@@ -126,17 +126,17 @@ export async function POST(
   } catch (error) {
     console.error('[POST /api/admin/partners/[id]/scopes] Error:', error);
     
-    if ((error as any).code) {
+    if ((error as unknown).code) {
       return NextResponse.json(
         {
           success: false,
           error: {
-            code: (error as any).code,
-            message: (error as any).message,
-            details: (error as any).details,
+            code: (error as unknown).code,
+            message: (error as unknown).message,
+            details: (error as unknown).details,
           },
         },
-        { status: (error as any).status_code || 500 }
+        { status: (error as unknown).status_code || 500 }
       );
     }
     
@@ -222,17 +222,17 @@ export async function DELETE(
   } catch (error) {
     console.error('[DELETE /api/admin/partners/[id]/scopes] Error:', error);
     
-    if ((error as any).code) {
+    if ((error as unknown).code) {
       return NextResponse.json(
         {
           success: false,
           error: {
-            code: (error as any).code,
-            message: (error as any).message,
-            details: (error as any).details,
+            code: (error as unknown).code,
+            message: (error as unknown).message,
+            details: (error as unknown).details,
           },
         },
-        { status: (error as any).status_code || 500 }
+        { status: (error as unknown).status_code || 500 }
       );
     }
     
@@ -340,17 +340,17 @@ export async function PUT(
   } catch (error) {
     console.error('[PUT /api/admin/partners/[id]/scopes] Error:', error);
     
-    if ((error as any).code) {
+    if ((error as unknown).code) {
       return NextResponse.json(
         {
           success: false,
           error: {
-            code: (error as any).code,
-            message: (error as any).message,
-            details: (error as any).details,
+            code: (error as unknown).code,
+            message: (error as unknown).message,
+            details: (error as unknown).details,
           },
         },
-        { status: (error as any).status_code || 500 }
+        { status: (error as unknown).status_code || 500 }
       );
     }
     

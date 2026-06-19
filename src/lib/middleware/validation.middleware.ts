@@ -212,7 +212,7 @@ export function blockTenantInjection(body: unknown): void {
         throw new APIError(
           'AUTHZ_003',
           'tenant_id cannot be provided by client',
-          { provided_field: key, provided_value: (body as any)[key] },
+          { provided_field: key, provided_value: (body as unknown)[key] },
           403
         );
       }
@@ -313,8 +313,8 @@ export async function validate<
 }> {
   const { bodySchema, querySchema, checkTenantInjection = true } = options;
 
-  let body: any = undefined;
-  let query: any = undefined;
+  let body: unknown = undefined;
+  let query: unknown = undefined;
 
   // Validate body if schema provided
   if (bodySchema) {

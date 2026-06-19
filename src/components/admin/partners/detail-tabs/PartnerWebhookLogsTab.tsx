@@ -59,10 +59,10 @@ interface WebhookLog {
   partner_id: string;
   event_type: string;
   webhook_url: string;
-  request_payload: any;
+  request_payload: unknown;
   request_headers: Record<string, string>;
   response_status: number | null;
-  response_body: any;
+  response_body: unknown;
   response_time_ms: number | null;
   attempt_number: number;
   max_attempts: number;

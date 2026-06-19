@@ -52,7 +52,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     // Fetch logs
     let logsQuery = supabase
-      .from('api_request_logs' as any)
+      .from('api_request_logs' as never)
       .select('*')
       .eq('partner_id', partnerId)
       .order('created_at', { ascending: false })
@@ -82,7 +82,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       'IP Address',
     ];
 
-    const rows = logs.map((log: any) => {
+    const rows = logs.map((log: unknown) => {
       const isError = log.status_code >= 400;
       const isWarning = log.status_code >= 300 && log.status_code < 400;
 
@@ -121,8 +121,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
     // Build CSV content
     const csvContent = [
       headers.join(','),
-      ...rows.map((row: any) =>
-        row.map((cell: any) => {
+      ...rows.map((row: unknown) =>
+        row.map((cell: unknown) => {
           // Escape commas and quotes in CSV
           const cellStr = String(cell);
           if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {

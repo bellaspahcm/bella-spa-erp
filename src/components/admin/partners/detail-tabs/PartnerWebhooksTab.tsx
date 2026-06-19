@@ -196,7 +196,7 @@ export function PartnerWebhooksTab({ partner }: PartnerWebhooksTabProps) {
         });
         toast.error('Webhook test thất bại');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       setTestResult({
         success: false,
         message: error.message || 'Không thể kết nối với webhook endpoint',

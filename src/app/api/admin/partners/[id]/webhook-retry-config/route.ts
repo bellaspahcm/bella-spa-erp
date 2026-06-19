@@ -67,11 +67,11 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     // Verify partner belongs to tenant
     const { data: partner } = (await supabase
-      .from('api_partners' as any)
+      .from('api_partners' as never)
       .select('id, metadata')
       .eq('id', partnerId)
       .eq('tenant_id', profile.tenant_id)
-      .single()) as any;
+      .single()) as unknown;
 
     if (!partner) {
       return NextResponse.json(
@@ -87,7 +87,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     }
 
     // Get retry config from partner metadata or use defaults
-    const retryConfig = (partner.metadata as any)?.webhook_retry_config || {
+    const retryConfig = (partner.metadata as unknown)?.webhook_retry_config || {
       enabled: true,
       max_attempts: 3,
       retry_delay_seconds: 60,
@@ -195,11 +195,11 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 
     // Verify partner belongs to tenant and get current metadata
     const { data: partner } = (await supabase
-      .from('api_partners' as any)
+      .from('api_partners' as never)
       .select('id, metadata')
       .eq('id', partnerId)
       .eq('tenant_id', profile.tenant_id)
-      .single()) as any;
+      .single()) as unknown;
 
     if (!partner) {
       return NextResponse.json(
@@ -223,7 +223,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     };
 
     const { error: updateError } = await supabase
-      .from('api_partners' as any)
+      .from('api_partners' as never)
       .update({
         metadata: updatedMetadata,
         updated_at: new Date().toISOString(),

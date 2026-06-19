@@ -90,7 +90,7 @@ export function PartnerFormWizard({
     webhook_secret: existingPartner?.webhook_secret || '',
     webhook_events: existingPartner?.webhook_events || [],
     
-    rate_limit_tier: (existingPartner?.rate_limit_tier as any) || 'basic',
+    rate_limit_tier: (existingPartner?.rate_limit_tier as unknown) || 'basic',
     notes: existingPartner?.notes || '',
   });
 
@@ -211,7 +211,7 @@ export function PartnerFormWizard({
         toast.success(`Partner "${formData.partner_name}" updated successfully`);
         router.push(`/dashboard/admin/partners/${existingPartner!.id}`);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error submitting form:', error);
       toast.error(error.message || 'Failed to save partner');
     } finally {

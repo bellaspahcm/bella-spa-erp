@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Build query
-    let query = (supabase as any)
+    let query = (supabase as unknown)
       .from('api_request_logs')
       .select('*', { count: 'exact' })
       .eq('partner_id', partnerId)
@@ -90,7 +90,7 @@ export async function GET(request: NextRequest) {
         has_more: (count || 0) > offset + limit,
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching logs:', error);
     return NextResponse.json(
       {

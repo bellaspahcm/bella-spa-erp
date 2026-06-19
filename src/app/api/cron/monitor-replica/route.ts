@@ -101,7 +101,7 @@ export async function GET(request: Request) {
 async function sendAlert(alert: {
   level: 'warning' | 'critical';
   message: string;
-  details: Record<string, any>;
+  details: Record<string, unknown>;
 }) {
   const webhookUrl = process.env.SLACK_WEBHOOK_URL;
   

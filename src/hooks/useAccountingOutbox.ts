@@ -22,7 +22,7 @@ type ProcessResult = {
 
 type ErrorResult = {
   error: string;
-  details?: any;
+  details?: unknown;
 };
 
 /**
@@ -114,7 +114,7 @@ export function useAccountingOutbox() {
         });
       }
 
-      // Show errors if any
+      // Show errors if unknown
       if ('failureCount' in result && result.failureCount > 0) {
         toast.warning('⚠️ Một số bút toán gặp lỗi', {
           description: `${result.failureCount} bút toán không xử lý được (sẽ retry tự động)`,

@@ -51,7 +51,7 @@ export default async function EditPartnerPage({ params }: EditPartnerPageProps) 
 
   // Fetch existing partner
   // Note: api_partners table exists in migration but not yet in generated types
-  const { data: partner, error } = await (supabase as any)
+  const { data: partner, error } = await (supabase as unknown)
     .from('api_partners')
     .select('*')
     .eq('id', id)

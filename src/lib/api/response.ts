@@ -52,7 +52,7 @@ export interface APIResponseMeta {
 /**
  * Success response structure
  */
-export interface APISuccessResponse<T = any> {
+export interface APISuccessResponse<T = unknown> {
   success: true;
   data: T;
   pagination?: {
@@ -72,7 +72,7 @@ export interface APIErrorResponse {
   error: {
     code: string;
     message: string;
-    details?: any;
+    details?: unknown;
     field_errors?: Array<{
       field: string;
       message: string;
@@ -129,7 +129,7 @@ function buildMeta(
   };
 
   // Add rate limit info if available
-  const rateLimitHeaders = (req as any).rateLimitHeaders;
+  const rateLimitHeaders = (req as unknown).rateLimitHeaders;
   if (rateLimitHeaders) {
     meta.rate_limit = {
       limit: rateLimitHeaders['X-RateLimit-Limit'],
@@ -168,7 +168,7 @@ function buildHeaders(
   };
 
   // Add rate limit headers if available
-  const rateLimitHeaders = (req as any).rateLimitHeaders;
+  const rateLimitHeaders = (req as unknown).rateLimitHeaders;
   if (rateLimitHeaders) {
     Object.assign(headers, rateLimitHeaders);
   }
@@ -200,7 +200,7 @@ function buildHeaders(
  * return success(req, { id: '123', name: 'Order #123' });
  * ```
  */
-export function success<T = any>(
+export function success<T = unknown>(
   req: NextRequest,
   data: T,
   options?: ResponseOptions
@@ -235,7 +235,7 @@ export function success<T = any>(
  * });
  * ```
  */
-export function paginated<T = any>(
+export function paginated<T = unknown>(
   req: NextRequest,
   data: T[],
   pagination: PaginationOptions,
@@ -289,7 +289,7 @@ export function paginated<T = any>(
  * return created(req, newOrder, '/api/v1/orders/123');
  * ```
  */
-export function created<T = any>(
+export function created<T = unknown>(
   req: NextRequest,
   data: T,
   location?: string,
@@ -339,7 +339,7 @@ export function noContent(req: NextRequest): NextResponse {
  * return accepted(req, { job_id: 'job_123', status: 'processing' });
  * ```
  */
-export function accepted<T = any>(
+export function accepted<T = unknown>(
   req: NextRequest,
   data: T,
   options?: ResponseOptions
@@ -377,7 +377,7 @@ export function error(
   code: string,
   message: string,
   status: number = 500,
-  details?: any
+  details?: unknown
 ): NextResponse<APIErrorResponse> {
   const response: APIErrorResponse = {
     success: false,
@@ -401,7 +401,7 @@ export function error(
 export function badRequest(
   req: NextRequest,
   message: string = 'Bad request',
-  details?: any
+  details?: unknown
 ): NextResponse<APIErrorResponse> {
   return error(req, 'INVALID_INPUT', message, 400, details);
 }
@@ -412,7 +412,7 @@ export function badRequest(
 export function unauthorized(
   req: NextRequest,
   message: string = 'Unauthorized',
-  details?: any
+  details?: unknown
 ): NextResponse<APIErrorResponse> {
   return error(req, 'UNAUTHORIZED', message, 401, details);
 }
@@ -423,7 +423,7 @@ export function unauthorized(
 export function forbidden(
   req: NextRequest,
   message: string = 'Forbidden',
-  details?: any
+  details?: unknown
 ): NextResponse<APIErrorResponse> {
   return error(req, 'FORBIDDEN', message, 403, details);
 }
@@ -434,7 +434,7 @@ export function forbidden(
 export function notFound(
   req: NextRequest,
   resource: string = 'Resource',
-  details?: any
+  details?: unknown
 ): NextResponse<APIErrorResponse> {
   return error(req, 'NOT_FOUND', `${resource} not found`, 404, details);
 }
@@ -445,7 +445,7 @@ export function notFound(
 export function conflict(
   req: NextRequest,
   message: string = 'Resource conflict',
-  details?: any
+  details?: unknown
 ): NextResponse<APIErrorResponse> {
   return error(req, 'CONFLICT', message, 409, details);
 }
@@ -469,7 +469,7 @@ export function unprocessableEntity(
 export function rateLimitExceeded(
   req: NextRequest,
   retryAfter: number,
-  details?: any
+  details?: unknown
 ): NextResponse<APIErrorResponse> {
   const headers: Record<string, string> = {
     'Retry-After': retryAfter.toString(),
@@ -500,7 +500,7 @@ export function rateLimitExceeded(
 export function internalError(
   req: NextRequest,
   message: string = 'Internal server error',
-  details?: any
+  details?: unknown
 ): NextResponse<APIErrorResponse> {
   // Log internal errors
   console.error('Internal server error:', {
@@ -553,7 +553,7 @@ export function serviceUnavailable(
  */
 export function fromAPIError(
   req: NextRequest,
-  apiError: any
+  apiError: unknown
 ): NextResponse<APIErrorResponse> {
   return error(
     req,
@@ -599,12 +599,12 @@ export function fromUnknownError(
  * ```
  */
 export function withErrorHandling(
-  handler: (req: NextRequest, context?: any) => Promise<NextResponse>
+  handler: (req: NextRequest, context?: unknown) => Promise<NextResponse>
 ) {
-  return async (req: NextRequest, context?: any): Promise<NextResponse> => {
+  return async (req: NextRequest, context?: unknown): Promise<NextResponse> => {
     try {
       return await handler(req, context);
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Handle APIError instances
       if (err.name === 'APIError' || err.code) {
         return fromAPIError(req, err);
@@ -632,8 +632,8 @@ export function withErrorHandling(
  * ```
  */
 export function withAPIMiddleware<
-  TBody = any,
-  TQuery = any
+  TBody = unknown,
+  TQuery = unknown
 >(
   handler: (
     req: NextRequest,
@@ -642,12 +642,12 @@ export function withAPIMiddleware<
         body: TBody;
         query: TQuery;
       };
-      partner: any;
+      partner: unknown;
     }
   ) => Promise<NextResponse>,
   options: {
-    bodySchema?: any;
-    querySchema?: any;
+    bodySchema?: unknown;
+    querySchema?: unknown;
     scope?: string | string[];
     skipAuth?: boolean;
     skipRateLimit?: boolean;
@@ -687,8 +687,8 @@ export function withAPIMiddleware<
 
     // Step 5: Business Logic
     return await handler(req, {
-      validated: validated as any,
-      partner: (req as any).partner,
+      validated: validated as unknown,
+      partner: (req as unknown).partner,
     });
   });
 }

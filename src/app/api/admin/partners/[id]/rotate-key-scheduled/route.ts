@@ -53,7 +53,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     // Fetch partner
     const { data: partner, error: partnerError } = await supabase
-      .from('api_partners' as any)
+      .from('api_partners' as never)
       .select('*')
       .eq('id', partnerId)
       .single();
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Partner not found' }, { status: 404 });
     }
 
-    const partnerData = partner as any;
+    const partnerData = partner as unknown;
 
     // Generate new API key
     const newApiKey = generateApiKey();
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     // Update partner with new key
     const { data: updatedPartner, error: updateError } = await supabase
-      .from('api_partners' as any)
+      .from('api_partners' as never)
       .update({
         api_key: newApiKey,
         previous_api_key: partnerData.api_key,
@@ -111,7 +111,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     };
 
     // Log the rotation
-    await supabase.from('api_request_logs' as any).insert({
+    await supabase.from('api_request_logs' as never).insert({
       partner_id: partnerId,
       method: 'POST',
       endpoint: '/rotate-key-scheduled',
