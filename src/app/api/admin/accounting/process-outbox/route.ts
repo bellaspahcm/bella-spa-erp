@@ -90,11 +90,18 @@ export async function POST(request: Request) {
     });
 
     console.log('[Accounting Outbox] Response status:', response.status);
+    console.log('[Accounting Outbox] Response headers:', Object.fromEntries(response.headers.entries()));
     
-    const result = await response.json().catch((jsonError) => {
+    const responseText = await response.text();
+    console.log('[Accounting Outbox] Response text (first 500 chars):', responseText.substring(0, 500));
+    
+    let result;
+    try {
+      result = JSON.parse(responseText);
+    } catch (jsonError) {
       console.error('[Accounting Outbox] JSON parse error:', jsonError);
-      throw new Error(`Failed to parse cron response: ${jsonError.message}`);
-    });
+      throw new Error(`Failed to parse cron response: ${jsonError instanceof Error ? jsonError.message : 'Unknown error'}. Response: ${responseText.substring(0, 200)}`);
+    }
 
     if (!response.ok) {
       console.error('[Accounting Outbox] Manual processing failed:', result);
