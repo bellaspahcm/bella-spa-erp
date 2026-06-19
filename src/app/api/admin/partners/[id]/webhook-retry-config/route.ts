@@ -15,6 +15,18 @@ interface RouteContext {
   }>;
 }
 
+interface PartnerData {
+  id: string;
+  metadata?: {
+    webhook_retry_config?: {
+      enabled: boolean;
+      max_attempts: number;
+      retry_delay_seconds: number;
+      backoff_multiplier: number;
+    };
+  };
+}
+
 const retryConfigSchema = z.object({
   enabled: z.boolean(),
   max_attempts: z.number().int().min(1).max(10),
@@ -73,7 +85,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
       .eq('tenant_id', profile.tenant_id)
       .single();
 
-    if (!partner) {
+    const partnerData = partner as PartnerData | null;
+
+    if (!partnerData) {
       return NextResponse.json(
         {
           success: false,
@@ -87,7 +101,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     }
 
     // Get retry config from partner metadata or use defaults
-    const retryConfig = (partner.metadata as unknown)?.webhook_retry_config || {
+    const retryConfig = partnerData.metadata?.webhook_retry_config || {
       enabled: true,
       max_attempts: 3,
       retry_delay_seconds: 60,
