@@ -26,7 +26,6 @@ interface PartnerData {
   tenant_id: string;
   rate_limit_tier: string;
 }
-} from '@/types/api-gateway';
 
 /**
  * GET /api/admin/partners/[id]/sla-config
