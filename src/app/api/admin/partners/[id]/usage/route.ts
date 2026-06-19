@@ -14,6 +14,15 @@ interface RouteContext {
   }>;
 }
 
+interface LogEntry {
+  id: string;
+  created_at: string;
+  is_error: boolean;
+  response_time_ms: number;
+  status_code?: number;
+  endpoint?: string;
+}
+
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const { id: partnerId } = await context.params;
@@ -81,10 +90,10 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     // Calculate stats
     const totalRequests = allLogs.length;
-    const errorRequests = allLogs.filter((l: unknown) => l.is_error).length;
+    const errorRequests = allLogs.filter((l: LogEntry) => l.is_error).length;
     const errorRate = totalRequests > 0 ? (errorRequests / totalRequests) * 100 : 0;
     
-    const responseTimes = allLogs.map((l: unknown) => l.response_time_ms).filter((t: number) => t > 0);
+    const responseTimes = allLogs.map((l: LogEntry) => l.response_time_ms).filter((t: number) => t > 0);
     const avgResponseTime = responseTimes.length > 0
       ? responseTimes.reduce((a: number, b: number) => a + b, 0) / responseTimes.length
       : 0;
@@ -95,7 +104,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     // Group by day
     const requestsByDay: Record<string, { count: number; errors: number }> = {};
-    allLogs.forEach((log: unknown) => {
+    allLogs.forEach((log: LogEntry) => {
       const date = log.created_at.split('T')[0];
       if (!requestsByDay[date]) {
         requestsByDay[date] = { count: 0, errors: 0 };
@@ -113,7 +122,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     // Top endpoints
     const endpointCounts: Record<string, { count: number; totalTime: number }> = {};
-    allLogs.forEach((log: unknown) => {
+    allLogs.forEach((log: LogEntry) => {
       if (!endpointCounts[log.endpoint]) {
         endpointCounts[log.endpoint] = { count: 0, totalTime: 0 };
       }

@@ -23,6 +23,14 @@ import {
   APIResponse,
 } from '@/types/api-gateway';
 
+interface LogEntry {
+  id: string;
+  created_at: string;
+  is_error: boolean;
+  response_time_ms: number;
+  status_code?: number;
+}
+
 /**
  * GET /api/admin/partners/[id]/sla-metrics
  * 
@@ -142,12 +150,12 @@ export async function GET(
 
     // Calculate metrics
     const totalRequests = requestLogs.length;
-    const failedRequests = requestLogs.filter((log: unknown) => log.is_error).length;
+    const failedRequests = requestLogs.filter((log: LogEntry) => log.is_error).length;
     const successfulRequests = totalRequests - failedRequests;
     const errorRatePercent = totalRequests > 0 ? (failedRequests / totalRequests) * 100 : 0;
 
     // Latency metrics
-    const responseTimes = requestLogs.map((log: unknown) => log.response_time_ms).filter(Boolean);
+    const responseTimes = requestLogs.map((log: LogEntry) => log.response_time_ms).filter(Boolean);
     const avgResponseTime = responseTimes.length > 0
       ? responseTimes.reduce((sum: number, t: number) => sum + t, 0) / responseTimes.length
       : 0;
@@ -180,7 +188,7 @@ export async function GET(
     if (requestLogs.length > 0) {
       // Group by minute and find peak
       const minuteBuckets = new Map<string, number>();
-      requestLogs.forEach((log: unknown) => {
+      requestLogs.forEach((log: LogEntry) => {
         const minute = new Date(log.created_at).toISOString().slice(0, 16); // YYYY-MM-DDTHH:MM
         minuteBuckets.set(minute, (minuteBuckets.get(minute) || 0) + 1);
       });
@@ -222,9 +230,9 @@ export async function GET(
     if (includeTimeSeries) {
       // Group logs by time bucket (hourly for 7d/30d, every 10 min for 1h/24h)
       const bucketSize = ['7d', '30d'].includes(timeRange) ? 60 : 10; // minutes
-      const buckets = new Map<string, unknown[]>();
+      const buckets = new Map<string, LogEntry[]>();
 
-      requestLogs.forEach((log: unknown) => {
+      requestLogs.forEach((log: LogEntry) => {
         const timestamp = new Date(log.created_at);
         const bucketKey = new Date(
           timestamp.getTime() - (timestamp.getTime() % (bucketSize * 60 * 1000))
@@ -239,8 +247,8 @@ export async function GET(
       timeSeries = Array.from(buckets.entries())
         .map(([timestamp, logs]) => {
           const total = logs.length;
-          const errors = logs.filter((l: unknown) => l.is_error).length;
-          const times = logs.map((l: unknown) => l.response_time_ms).filter(Boolean);
+          const errors = logs.filter((l: LogEntry) => l.is_error).length;
+          const times = logs.map((l: LogEntry) => l.response_time_ms).filter(Boolean);
           const avgTime = times.length > 0
             ? times.reduce((sum, t) => sum + t, 0) / times.length
             : 0;
@@ -306,7 +314,7 @@ export async function GET(
       {
         success: false,
         error: {
-          message: error.message || 'Internal server error',
+          message: error instanceof Error ? error.message : 'Internal server error',
           code: 'SERVER_001',
         },
       } satisfies APIResponse,

@@ -238,7 +238,7 @@ export async function GET(
       {
         success: false,
         error: {
-          message: error.message || 'Internal server error',
+          message: error instanceof Error ? error.message : 'Internal server error',
           code: 'SERVER_001',
         },
       } satisfies APIResponse,
@@ -478,7 +478,7 @@ export async function POST(
       enterprise: 'enterprise',
       unlimited: 'enterprise',
     };
-    const tier = tierMapping[partner.rate_limit_tier] || 'basic';
+    const tier = tierMapping[partnerData.rate_limit_tier] || 'basic';
     const baseThresholds = SLA_TIER_PRESETS[tier];
 
     const updatedConfig: SLAConfig = {
@@ -520,7 +520,7 @@ export async function POST(
       {
         success: false,
         error: {
-          message: error.message || 'Internal server error',
+          message: error instanceof Error ? error.message : 'Internal server error',
           code: 'SERVER_001',
         },
       } satisfies APIResponse,
