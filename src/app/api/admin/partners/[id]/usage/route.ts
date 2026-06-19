@@ -23,6 +23,13 @@ interface LogEntry {
   endpoint?: string;
 }
 
+interface PartnerData {
+  id: string;
+  tenant_id: string;
+  rate_limit_per_minute?: number;
+  rate_limit_per_day?: number;
+}
+
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const { id: partnerId } = await context.params;
@@ -67,7 +74,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
       .eq('tenant_id', profile.tenant_id)
       .single();
 
-    if (!partner) {
+    const partnerData = partner as PartnerData | null;
+
+    if (!partnerData) {
       return NextResponse.json(
         { success: false, error: { message: 'Partner not found', code: 'VAL_001' } },
         { status: 404 }
@@ -123,11 +132,12 @@ export async function GET(request: NextRequest, context: RouteContext) {
     // Top endpoints
     const endpointCounts: Record<string, { count: number; totalTime: number }> = {};
     allLogs.forEach((log: LogEntry) => {
-      if (!endpointCounts[log.endpoint]) {
-        endpointCounts[log.endpoint] = { count: 0, totalTime: 0 };
+      const endpoint = log.endpoint || 'unknown';
+      if (!endpointCounts[endpoint]) {
+        endpointCounts[endpoint] = { count: 0, totalTime: 0 };
       }
-      endpointCounts[log.endpoint].count++;
-      endpointCounts[log.endpoint].totalTime += log.response_time_ms || 0;
+      endpointCounts[endpoint].count++;
+      endpointCounts[endpoint].totalTime += log.response_time_ms || 0;
     });
 
     const topEndpoints = Object.entries(endpointCounts)
@@ -141,9 +151,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     // Rate limit status (mock - would come from real-time data)
     const rateLimitStatus = {
-      limit_per_minute: partner.rate_limit_per_minute || 100,
-      limit_per_day: partner.rate_limit_per_day || 5000,
-      current_usage_minute: Math.floor(Math.random() * (partner.rate_limit_per_minute || 100) * 0.3),
+      limit_per_minute: partnerData.rate_limit_per_minute || 100,
+      limit_per_day: partnerData.rate_limit_per_day || 5000,
+      current_usage_minute: Math.floor(Math.random() * (partnerData.rate_limit_per_minute || 100) * 0.3),
       current_usage_day: totalRequests,
     };
 

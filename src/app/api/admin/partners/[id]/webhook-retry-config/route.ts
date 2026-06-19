@@ -66,12 +66,12 @@ export async function GET(request: NextRequest, context: RouteContext) {
     }
 
     // Verify partner belongs to tenant
-    const { data: partner } = (await supabase
+    const { data: partner } = await supabase
       .from('api_partners' as never)
       .select('id, metadata')
       .eq('id', partnerId)
       .eq('tenant_id', profile.tenant_id)
-      .single()) as unknown;
+      .single();
 
     if (!partner) {
       return NextResponse.json(
