@@ -46,7 +46,8 @@ export function normalizePromotionCode(value: string | null | undefined) {
 
 export function normalizePromotionDiscountPercent(value: number | string | null | undefined) {
   if (value === null || value === undefined || value === '') return null;
-  return parsePercentInput(value);
+  const parsed = parsePercentInput(value);
+  return Math.min(Math.max(parsed, 0), 100);
 }
 
 export function normalizePromotionDate(value: string | null | undefined) {
