@@ -1,17 +1,1 @@
-{
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "crons": [
-    {
-      "path": "/api/cron/accounting-worker",
-      "schedule": "*/15 * * * *"
-    },
-    {
-      "path": "/api/cron/zalo-reminders",
-      "schedule": "0 3 * * *"
-    },
-    {
-      "path": "/api/cron/ai-autopilot",
-      "schedule": "0 22 * * *"
-    }
-  ]
-}
+{\ crons\:[{\path\:\/api/cron/accounting-worker\,\schedule\:\0 0 \\u002a \\u002a \\u002a\},{\path\:\/api/cron/zalo-reminders\,\schedule\:\0 3 \\u002a \\u002a \\u002a\},{\path\:\/api/cron/ai-autopilot\,\schedule\:\0 22 \\u002a \\u002a \\u002a\}]}
