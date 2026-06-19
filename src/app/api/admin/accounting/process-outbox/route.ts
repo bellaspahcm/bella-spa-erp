@@ -1,6 +1,7 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
 import { getCurrentUser } from '@/services/user-actions';
+import { GET as cronWorkerHandler } from '@/app/api/cron/accounting-worker/route';
 
 /**
  * Manual Accounting Outbox Processing
@@ -46,7 +47,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // Trigger the accounting worker cron endpoint
+    // Trigger the accounting worker by calling its handler directly
+    // This avoids authentication middleware issues with internal fetch()
     const cronSecret = process.env.CRON_SECRET;
     if (!cronSecret) {
       return NextResponse.json(
@@ -55,53 +57,23 @@ export async function POST(request: Request) {
       );
     }
 
-    // Build the base URL correctly for both local and production
-    let baseUrl = 'http://localhost:3000';
-    
-    if (process.env.VERCEL_URL) {
-      baseUrl = `https://${process.env.VERCEL_URL}`;
-    } else if (process.env.NEXT_PUBLIC_SITE_URL) {
-      baseUrl = process.env.NEXT_PUBLIC_SITE_URL;
-    } else if (request.headers.get('host')) {
-      // Use the request host if available
-      const protocol = request.headers.get('x-forwarded-proto') || 'http';
-      baseUrl = `${protocol}://${request.headers.get('host')}`;
-    }
-    
-    const cronUrl = `${baseUrl}/api/cron/accounting-worker`;
+    console.log('[Accounting Outbox] Triggering manual processing (direct handler call)');
 
-    console.log('[Accounting Outbox] Triggering manual processing via', cronUrl);
-    console.log('[Accounting Outbox] Base URL components:', { 
-      VERCEL_URL: process.env.VERCEL_URL,
-      NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
-      host: request.headers.get('host'),
-      protocol: request.headers.get('x-forwarded-proto')
-    });
-
-    // Call the cron endpoint with authorization
-    const response = await fetch(cronUrl, {
+    // Create a mock NextRequest with proper Authorization header for the cron handler
+    const cronRequest = new NextRequest('http://localhost/api/cron/accounting-worker', {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${cronSecret}`,
       },
-    }).catch((fetchError) => {
-      console.error('[Accounting Outbox] Fetch error:', fetchError);
-      throw new Error(`Failed to reach cron endpoint: ${fetchError.message}`);
     });
 
-    console.log('[Accounting Outbox] Response status:', response.status);
-    console.log('[Accounting Outbox] Response headers:', Object.fromEntries(response.headers.entries()));
+    // Call the cron handler directly
+    const response = await cronWorkerHandler(cronRequest);
     
-    const responseText = await response.text();
-    console.log('[Accounting Outbox] Response text (first 500 chars):', responseText.substring(0, 500));
-    
-    let result;
-    try {
-      result = JSON.parse(responseText);
-    } catch (jsonError) {
-      console.error('[Accounting Outbox] JSON parse error:', jsonError);
-      throw new Error(`Failed to parse cron response: ${jsonError instanceof Error ? jsonError.message : 'Unknown error'}. Response: ${responseText.substring(0, 200)}`);
-    }
+    // Parse the response
+    const result = await response.json();
+
+    console.log('[Accounting Outbox] Cron handler result:', result);
 
     if (!response.ok) {
       console.error('[Accounting Outbox] Manual processing failed:', result);
