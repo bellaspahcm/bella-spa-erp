@@ -212,7 +212,7 @@ export function blockTenantInjection(body: unknown): void {
         throw new APIError(
           'AUTHZ_003',
           'tenant_id cannot be provided by client',
-          { provided_field: key, provided_value: (body as unknown)[key] },
+          { provided_field: key, provided_value: (body as Record<string, unknown>)[key] },
           403
         );
       }
@@ -331,7 +331,10 @@ export async function validate<
     query = validateQuery(req, querySchema);
   }
 
-  return { body, query };
+  return { body, query } as {
+    body: TBody extends ZodSchema ? z.infer<TBody> : undefined;
+    query: TQuery extends ZodSchema ? z.infer<TQuery> : undefined;
+  };
 }
 
 /**

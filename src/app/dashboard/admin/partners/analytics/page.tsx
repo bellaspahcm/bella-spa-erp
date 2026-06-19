@@ -13,6 +13,7 @@ import { Suspense } from 'react';
 import { createClient } from '@/lib/supabase-server';
 import { redirect } from 'next/navigation';
 import { AdvancedAnalyticsDashboard } from '@/components/admin/partners/AdvancedAnalyticsDashboard';
+import { listPartners } from '@/services/api-gateway/partner.service';
 
 export const metadata = {
   title: 'Analytics Dashboard - API Partners',
@@ -42,17 +43,20 @@ export default async function AdvancedAnalyticsPage() {
     redirect('/login');
   }
 
+  if (!profile.tenant_id) {
+    redirect('/dashboard');
+  }
+
   // Role check - admin/owner only
   if (profile.role !== 'admin' && profile.role !== 'owner') {
     redirect('/dashboard');
   }
 
-  // Fetch all partners for this tenant
-  const { data: partners } = await supabase
-    .from('api_partners' as never)
-    .select('*')
-    .eq('tenant_id', profile.tenant_id)
-    .order('created_at', { ascending: false });
+  const { partners } = await listPartners({
+    tenant_id: profile.tenant_id,
+    limit: 100,
+    offset: 0,
+  });
 
   return (
     <div className="p-6 md:p-8 lg:p-10 space-y-6">
@@ -72,7 +76,7 @@ export default async function AdvancedAnalyticsPage() {
           </div>
         }
       >
-        <AdvancedAnalyticsDashboard partners={(partners as unknown) || []} tenantId={profile.tenant_id || ''} />
+        <AdvancedAnalyticsDashboard partners={partners} tenantId={profile.tenant_id} />
       </Suspense>
     </div>
   );

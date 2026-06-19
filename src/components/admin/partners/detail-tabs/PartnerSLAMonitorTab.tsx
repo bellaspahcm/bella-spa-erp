@@ -399,7 +399,7 @@ export function PartnerSLAMonitorTab({ partner }: PartnerSLAMonitorTabProps) {
             />
 
             {/* Severity Filter */}
-            <Select value={alertSeverityFilter} onValueChange={(value) => setAlertSeverityFilter(value as unknown)}>
+            <Select value={alertSeverityFilter} onValueChange={(value) => setAlertSeverityFilter(value as SLAAlertSeverity | 'all')}>
               <SelectTrigger>
                 <SelectValue placeholder="All severities" />
               </SelectTrigger>
@@ -412,7 +412,7 @@ export function PartnerSLAMonitorTab({ partner }: PartnerSLAMonitorTabProps) {
             </Select>
 
             {/* Status Filter */}
-            <Select value={alertStatusFilter} onValueChange={(value) => setAlertStatusFilter(value as unknown)}>
+            <Select value={alertStatusFilter} onValueChange={(value) => setAlertStatusFilter(value as SLAAlertStatus | 'all')}>
               <SelectTrigger>
                 <SelectValue placeholder="All statuses" />
               </SelectTrigger>
@@ -425,7 +425,7 @@ export function PartnerSLAMonitorTab({ partner }: PartnerSLAMonitorTabProps) {
             </Select>
 
             {/* Type Filter */}
-            <Select value={alertTypeFilter} onValueChange={(value) => setAlertTypeFilter(value as unknown)}>
+            <Select value={alertTypeFilter} onValueChange={(value) => setAlertTypeFilter(value as SLAAlertType | 'all')}>
               <SelectTrigger>
                 <SelectValue placeholder="All types" />
               </SelectTrigger>

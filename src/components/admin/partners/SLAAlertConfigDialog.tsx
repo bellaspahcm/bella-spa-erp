@@ -17,7 +17,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { APIPartner, SLAConfig, SLAThresholds, SLA_TIER_PRESETS } from '@/types/api-gateway';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -82,7 +82,7 @@ export function SLAAlertConfigDialog({
   const [checkInterval, setCheckInterval] = useState(60);
 
 
-  const fetchConfig = async () => {
+  const fetchConfig = useCallback(async () => {
     setIsLoadingConfig(true);
     try {
       const response = await fetch(`/api/admin/partners/${partner.id}/sla-config`);
@@ -118,7 +118,13 @@ export function SLAAlertConfigDialog({
     } finally {
       setIsLoadingConfig(false);
     }
-  };
+  }, [partner.id]);
+
+  useEffect(() => {
+    if (open && partner.id) {
+      void fetchConfig();
+    }
+  }, [fetchConfig, open, partner.id]);
 
   const handleApplyPreset = (tier: keyof typeof SLA_TIER_PRESETS) => {
     const preset = SLA_TIER_PRESETS[tier];
@@ -206,7 +212,7 @@ export function SLAAlertConfigDialog({
       }
     } catch (error: unknown) {
       console.error('Error saving SLA config:', error);
-      toast.error(error.message || 'Failed to save configuration');
+      toast.error(error instanceof Error ? error.message : 'Failed to save configuration');
     } finally {
       setLoading(false);
     }

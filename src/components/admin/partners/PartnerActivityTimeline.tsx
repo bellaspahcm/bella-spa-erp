@@ -52,6 +52,8 @@ interface ActivityEvent {
   };
 }
 
+type ActivityEventResponse = Omit<ActivityEvent, 'timestamp'> & { timestamp: string };
+
 interface ActivityStats {
   total_events: number;
   success_count: number;
@@ -97,10 +99,10 @@ export function PartnerActivityTimeline({
         throw new Error('Failed to fetch activity');
       }
 
-      const data = await response.json();
+      const data = (await response.json()) as { data: { events: ActivityEventResponse[]; stats: ActivityStats } };
       
       // Convert date strings to Date objects
-      const parsedEvents: ActivityEvent[] = data.data.events.map((event: unknown) => ({
+      const parsedEvents: ActivityEvent[] = data.data.events.map((event) => ({
         ...event,
         timestamp: new Date(event.timestamp),
       }));
@@ -341,7 +343,7 @@ export function PartnerActivityTimeline({
           </Select>
 
           {/* Date Range Filter */}
-          <Select value={dateRange} onValueChange={(value) => setDateRange(value as unknown)}>
+          <Select value={dateRange} onValueChange={(value) => setDateRange(value as '24h' | '7d' | '30d' | 'all')}>
             <SelectTrigger className="w-full lg:w-[150px] h-10 rounded-lg border-gray-200 dark:border-gray-800">
               <SelectValue placeholder="Khoảng thời gian" />
             </SelectTrigger>

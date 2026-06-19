@@ -86,20 +86,9 @@ export async function GET(request: NextRequest) {
 
     const search = searchParams.get('search');
 
-    // Fetch partners - with fallback to empty array if table doesn't exist yet
-    let partners: unknown[] = [];
-    let total = 0;
-
-    try {
-      const result = await listPartners(params);
-      partners = result.partners;
-      total = result.total;
-    } catch (error: unknown) {
-      console.warn('listPartners error (returning empty array):', error.message);
-      // Return empty array if table doesn't exist yet
-      partners = [];
-      total = 0;
-    }
+    const result = await listPartners(params);
+    const partners = result.partners;
+    const total = result.total;
 
     // Apply search filter if provided (case-insensitive)
     let filteredPartners = partners;

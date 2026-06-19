@@ -46,11 +46,36 @@ export interface PartnerContext {
 export interface RequestWithPartner extends NextRequest {
   partner?: PartnerContext;
   request_id?: string;
+  rateLimitHeaders?: Record<string, string>;
 }
 
 // ============================================================================
 // CONSTANTS
 // ============================================================================
+
+type APIKeyQueryError = {
+  code?: string;
+  message: string;
+};
+
+type APIKeyQueryResult<T> = {
+  data: T | null;
+  error: APIKeyQueryError | null;
+};
+
+type APIKeySupabaseClient = {
+  rpc(
+    functionName: 'validate_api_partner',
+    params: { p_api_key: string }
+  ): Promise<APIKeyQueryResult<PartnerValidationResult[]>>;
+  from(table: 'api_request_logs'): {
+    insert(payload: CreateAPIRequestLogInput): Promise<APIKeyQueryResult<unknown>>;
+  };
+};
+
+function asAPIKeySupabaseClient(client: unknown): APIKeySupabaseClient {
+  return client as APIKeySupabaseClient;
+}
 
 const API_KEY_HEADER = 'x-api-key';
 const ALTERNATIVE_HEADER = 'authorization'; // Bearer <api-key>
@@ -141,28 +166,20 @@ function requiresAPIKey(pathname: string): boolean {
  * TODO: Regenerate types with: npx supabase gen types typescript --project-id <id>
  */
 async function validateAPIKey(apiKey: string): Promise<PartnerValidationResult | null> {
-  const supabase = await createClient();
-  
-  try {
-    // Call database function to validate partner
-    // Type assertion needed because RPC exists in DB but not in generated types yet
-    const { data, error } = await (supabase as unknown)
-      .rpc('validate_api_partner', { p_api_key: apiKey });
-    
-    if (error) {
-      console.error('[API Key Middleware] Database error:', error);
-      return null;
-    }
-    
-    if (!data || data.length === 0) {
-      return null;
-    }
-    
-    return data[0] as PartnerValidationResult;
-  } catch (error) {
-    console.error('[API Key Middleware] Validation error:', error);
-    return null;
+  const supabase = asAPIKeySupabaseClient(await createClient());
+  const { data, error } = await supabase
+    .rpc('validate_api_partner', { p_api_key: apiKey });
+
+  if (error) {
+    throw new APIError(
+      'SERVER_002',
+      'Failed to validate API partner',
+      { code: error.code, message: error.message },
+      500
+    );
   }
+
+  return data?.[0] ?? null;
 }
 
 /**
@@ -173,21 +190,18 @@ async function validateAPIKey(apiKey: string): Promise<PartnerValidationResult |
  * TODO: Regenerate types with: npx supabase gen types typescript --project-id <id>
  */
 async function logAPIRequest(logData: CreateAPIRequestLogInput): Promise<void> {
-  const supabase = await createClient();
-  
-  try {
-    // Insert log (don't await - fire and forget)
-    // Type assertion needed because table exists in DB but not in generated types yet
-    (supabase as unknown)
-      .from('api_request_logs')
-      .insert(logData)
-      .then(({ error }: unknown) => {
-        if (error) {
-          console.error('[API Key Middleware] Failed to log request:', error);
-        }
-      });
-  } catch (error) {
-    console.error('[API Key Middleware] Logging error:', error);
+  const supabase = asAPIKeySupabaseClient(await createClient());
+  const { error } = await supabase
+    .from('api_request_logs')
+    .insert(logData);
+
+  if (error) {
+    throw new APIError(
+      'SERVER_002',
+      'Failed to persist API request audit log',
+      { code: error.code, message: error.message },
+      500
+    );
   }
 }
 

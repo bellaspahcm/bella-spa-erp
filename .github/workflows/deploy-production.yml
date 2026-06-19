@@ -1,213 +1,109 @@
 name: Deploy to Production
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version tag to deploy (e.g., v1.2.3)'
-        required: false
-        type: string
-      skip_smoke_tests:
-        description: 'Skip smoke tests (emergency hotfix only)'
-        required: false
-        type: boolean
-        default: false
 
 concurrency:
   group: production-deploy
   cancel-in-progress: false
 
+env:
+  PRODUCTION_BASE_URL: ${{ vars.PRODUCTION_BASE_URL || vars.E2E_BASE_URL || 'https://bella-spa-erp.vercel.app' }}
+
 jobs:
-  pre-deployment-validation:
-    name: Pre-Deployment Validation
+  validate:
+    name: Validate Release
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-
+    timeout-minutes: 30
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.sha }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+          fetch-depth: 2
+      - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run full test suite
-        run: |
-          echo "🧪 Running full test suite..."
-          npm run lint
-          npm run test:critical
-          npm run build
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run test:critical
+      - run: npm run security:audit
+      - run: npm run security:secrets
+      - run: npm run docs:api:versioning
+      - run: npm run db:migration:zero-downtime
+      - run: npm run db:migration:check
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      - run: npm run build
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL || vars.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY || vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
 
-      - name: Run security audit
-        run: |
-          echo "🔒 Running security checks..."
-          npm run security:audit
-          npm run security:secrets
-
-      - name: Validate database migrations
-        run: |
-          echo "🗃️ Validating database migrations..."
-          # Add migration validation logic
-          # Check for breaking changes
-          # Verify rollback procedures
-
-      - name: Check for breaking changes
-        run: |
-          echo "⚠️ Checking for breaking API changes..."
-          # Add API compatibility check
-          # Compare with previous version
-
-  deploy-production:
-    name: Deploy to Production
+  deploy:
+    name: Deploy Approved Release
+    needs: validate
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    needs: [pre-deployment-validation]
     environment:
-      name: production
-      url: https://bella-erp.com
-
+      name: Production
+      url: ${{ vars.PRODUCTION_BASE_URL || vars.E2E_BASE_URL || 'https://bella-spa-erp.vercel.app' }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.sha }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Create deployment marker
-        run: |
-          echo "🚀 Starting production deployment..."
-          echo "Version: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.sha }}"
-          echo "Timestamp: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-          echo "Deployer: ${{ github.actor }}"
-
-      - name: Validate Vercel deployment secrets
-        run: |
-          test -n "${{ secrets.VERCEL_DEPLOY_HOOK_URL }}" || (echo "Missing VERCEL_DEPLOY_HOOK_URL secret" && exit 1)
-
-      - name: Trigger Vercel Production Deploy Hook
-        id: deploy
-        run: |
-          response=$(curl -sS -X POST "${{ secrets.VERCEL_DEPLOY_HOOK_URL }}")
-          echo "$response"
-          echo "$response" | grep -q '"job"'
-
-      - name: Wait for deployment propagation
-        run: |
-          echo "⏳ Waiting 60 seconds for deployment to propagate..."
-          sleep 60
-
-      - name: Health check
-        run: |
-          echo "🏥 Running health checks..."
-          response=$(curl -s -o /dev/null -w "%{http_code}" https://bella-erp.com/api/health)
-          if [ $response -ne 200 ]; then
-            echo "❌ Health check failed with status $response"
-            exit 1
-          fi
-          echo "✅ Health check passed"
-
-      - name: Run critical smoke tests
-        if: ${{ !inputs.skip_smoke_tests }}
-        run: npx playwright test tests/smoke/production-critical.spec.ts
+      - name: Require deploy hook
         env:
-          E2E_BASE_URL: ${{ vars.PRODUCTION_BASE_URL || vars.E2E_BASE_URL || 'https://bella-erp.com' }}
+          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: test -n "$VERCEL_DEPLOY_HOOK_URL"
+      - name: Trigger Vercel production deployment
+        env:
+          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: |
+          response="$(curl --fail-with-body --silent --show-error --request POST "$VERCEL_DEPLOY_HOOK_URL")"
+          printf '%s\n' "$response"
+          printf '%s' "$response" | grep -q '"job"'
+      - name: Wait for a healthy release
+        run: |
+          for attempt in 1 2 3 4 5 6 7 8; do
+            status="$(curl --silent --output /dev/null --write-out '%{http_code}' "$PRODUCTION_BASE_URL/api/health")"
+            if [ "$status" = 200 ]; then
+              exit 0
+            fi
+            echo "Health attempt $attempt returned HTTP $status"
+            sleep 15
+          done
+          exit 1
+
+  smoke:
+    name: Production Smoke Test
+    needs: deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run e2e:auth-smoke
+        env:
+          E2E_BASE_URL: ${{ env.PRODUCTION_BASE_URL }}
           E2E_ADMIN_EMAIL: ${{ secrets.PRODUCTION_E2E_ADMIN_EMAIL || secrets.E2E_ADMIN_EMAIL }}
           E2E_ADMIN_PASSWORD: ${{ secrets.PRODUCTION_E2E_ADMIN_PASSWORD || secrets.E2E_ADMIN_PASSWORD }}
-
-      - name: Create deployment record
-        run: |
-          echo "📝 Recording deployment..."
-          # Post to deployment tracking system
-          # Update status page
-          # Notify monitoring systems
-
-      - name: Notify success
-        if: success()
-        uses: 8398a7/action-slack@v3
+      - uses: actions/upload-artifact@v4
+        if: always()
         with:
-          status: custom
-          custom_payload: |
-            {
-              "text": "✅ Production Deployment Successful",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*Production Deployment Successful* 🎉\n\n*Version:* ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.sha }}\n*Deployed by:* ${{ github.actor }}\n*Time:* $(date -u +"%Y-%m-%d %H:%M:%S UTC")\n*URL:* https://bella-erp.com"
-                  }
-                }
-              ]
-            }
-          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          name: production-playwright-report
+          path: playwright-report/
+          retention-days: 14
 
-      - name: Notify failure
-        if: failure()
-        uses: 8398a7/action-slack@v3
-        with:
-          status: custom
-          custom_payload: |
-            {
-              "text": "❌ Production Deployment Failed",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*Production Deployment Failed* ⚠️\n\n*Version:* ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.sha }}\n*Attempted by:* ${{ github.actor }}\n*Time:* $(date -u +"%Y-%m-%d %H:%M:%S UTC")\n\n*Action Required:* Review logs and initiate rollback if necessary"
-                  }
-                }
-              ]
-            }
-          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
-
-  post-deployment-monitoring:
-    name: Post-Deployment Monitoring
+  verify:
+    name: Post-Deployment Verification
+    needs: smoke
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: [deploy-production]
-    if: success()
-
     steps:
-      - name: Monitor error rates
+      - name: Sample production health
         run: |
-          echo "📊 Monitoring error rates for 5 minutes..."
-          # Query Sentry/monitoring for error spike
-          sleep 300
-
-      - name: Check performance metrics
-        run: |
-          echo "⚡ Checking performance metrics..."
-          # Query New Relic/Datadog for P95 latency
-          # Alert if regression detected
-
-      - name: Verify cron jobs
-        run: |
-          echo "⏰ Verifying cron job execution..."
-          # Check that scheduled tasks are running
-
-      - name: Final health report
-        run: |
-          echo "✅ Deployment monitoring complete"
-          echo "All systems nominal"
+          for sample in 1 2 3; do
+            curl --fail --silent --show-error "$PRODUCTION_BASE_URL/api/health" > /dev/null
+            sleep 20
+          done

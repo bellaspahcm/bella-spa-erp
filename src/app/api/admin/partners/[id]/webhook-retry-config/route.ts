@@ -213,7 +213,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       .select('id, metadata')
       .eq('id', partnerId)
       .eq('tenant_id', profile.tenant_id)
-      .single()) as unknown;
+      .single()) as { data: PartnerData | null };
 
     if (!partner) {
       return NextResponse.json(
@@ -242,7 +242,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
         metadata: updatedMetadata,
         updated_at: new Date().toISOString(),
         updated_by: user.id,
-      })
+      } as never)
       .eq('id', partnerId)
       .eq('tenant_id', profile.tenant_id);
 

@@ -17,6 +17,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import type { APIScope } from '@/types/api-gateway';
+import type { PartnerContext, RequestWithPartner } from '@/lib/middleware/api-key.middleware';
+import type { ZodType } from 'zod';
 
 // ============================================================================
 // TYPES
@@ -118,6 +120,26 @@ export interface PaginationOptions {
 /**
  * Build metadata for API response
  */
+type APIErrorLike = {
+  name?: string;
+  code?: string;
+  message?: string;
+  statusCode?: number;
+  details?: unknown;
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function isAPIErrorLike(value: unknown): value is APIErrorLike {
+  return isRecord(value) && (
+    value.name === 'APIError' ||
+    typeof value.code === 'string' ||
+    typeof value.message === 'string'
+  );
+}
+
 function buildMeta(
   req: NextRequest,
   options?: ResponseOptions
@@ -129,7 +151,7 @@ function buildMeta(
   };
 
   // Add rate limit info if available
-  const rateLimitHeaders = (req as unknown).rateLimitHeaders;
+  const rateLimitHeaders = (req as RequestWithPartner).rateLimitHeaders;
   if (rateLimitHeaders) {
     meta.rate_limit = {
       limit: rateLimitHeaders['X-RateLimit-Limit'],
@@ -168,7 +190,7 @@ function buildHeaders(
   };
 
   // Add rate limit headers if available
-  const rateLimitHeaders = (req as unknown).rateLimitHeaders;
+  const rateLimitHeaders = (req as RequestWithPartner).rateLimitHeaders;
   if (rateLimitHeaders) {
     Object.assign(headers, rateLimitHeaders);
   }
@@ -384,10 +406,13 @@ export function error(
     error: {
       code,
       message,
-      ...(details && { details }),
     },
     meta: buildMeta(req),
   };
+
+  if (details !== undefined) {
+    response.error.details = details;
+  }
 
   return NextResponse.json(response, {
     status,
@@ -474,6 +499,11 @@ export function rateLimitExceeded(
   const headers: Record<string, string> = {
     'Retry-After': retryAfter.toString(),
   };
+  const detailRecord = isRecord(details)
+    ? details
+    : details === undefined
+      ? {}
+      : { context: details };
 
   const response: APIErrorResponse = {
     success: false,
@@ -482,7 +512,7 @@ export function rateLimitExceeded(
       message: `Rate limit exceeded. Please retry after ${retryAfter} seconds.`,
       details: {
         retry_after: retryAfter,
-        ...details,
+        ...detailRecord,
       },
     },
     meta: buildMeta(req),
@@ -553,7 +583,7 @@ export function serviceUnavailable(
  */
 export function fromAPIError(
   req: NextRequest,
-  apiError: unknown
+  apiError: APIErrorLike
 ): NextResponse<APIErrorResponse> {
   return error(
     req,
@@ -606,7 +636,7 @@ export function withErrorHandling(
       return await handler(req, context);
     } catch (err: unknown) {
       // Handle APIError instances
-      if (err.name === 'APIError' || err.code) {
+      if (isAPIErrorLike(err)) {
         return fromAPIError(req, err);
       }
       
@@ -642,12 +672,12 @@ export function withAPIMiddleware<
         body: TBody;
         query: TQuery;
       };
-      partner: unknown;
+      partner: PartnerContext | undefined;
     }
   ) => Promise<NextResponse>,
   options: {
-    bodySchema?: unknown;
-    querySchema?: unknown;
+    bodySchema?: ZodType<TBody>;
+    querySchema?: ZodType<TQuery>;
     scope?: string | string[];
     skipAuth?: boolean;
     skipRateLimit?: boolean;
@@ -687,8 +717,8 @@ export function withAPIMiddleware<
 
     // Step 5: Business Logic
     return await handler(req, {
-      validated: validated as unknown,
-      partner: (req as unknown).partner,
+      validated: validated as { body: TBody; query: TQuery },
+      partner: (req as RequestWithPartner).partner,
     });
   });
 }

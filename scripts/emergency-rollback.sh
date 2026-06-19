@@ -1,91 +1,100 @@
-#!/bin/bash
-# Emergency Rollback Script for Bella ERP
-# Usage: ./scripts/emergency-rollback.sh [reason]
+#!/usr/bin/env bash
+# Safe Vercel rollback helper. Dry-run is the default.
+# Usage: ./scripts/emergency-rollback.sh "<reason>" [--target URL] [--execute]
 
-set -e
+set -euo pipefail
 
-REASON=$1
+PROJECT_NAME="${VERCEL_PROJECT_NAME:-bella-spa-erp}"
+VERCEL_SCOPE="${VERCEL_SCOPE:-bella-spa-s-projects}"
+PRODUCTION_BASE_URL="${PRODUCTION_BASE_URL:-https://bella-spa-erp.vercel.app}"
+EXECUTE=false
+TARGET=""
+REASON=""
 
-if [ -z "$REASON" ]; then
-  echo "Usage: ./scripts/emergency-rollback.sh <reason>"
-  echo "Example: ./scripts/emergency-rollback.sh 'payment-webhook-broken'"
-  exit 1
+usage() {
+  cat <<'USAGE'
+Usage: ./scripts/emergency-rollback.sh "<reason>" [--target URL] [--execute]
+
+Without --execute the script only prints the selected deployment.
+Use --target to verify a known Ready deployment without querying Vercel.
+USAGE
+}
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --target)
+      [ "$#" -ge 2 ] || { echo "--target requires a URL" >&2; exit 1; }
+      TARGET="$2"
+      shift 2
+      ;;
+    --execute)
+      EXECUTE=true
+      shift
+      ;;
+    --help|-h)
+      usage
+      exit 0
+      ;;
+    *)
+      if [ -n "$REASON" ]; then
+        echo "Unexpected argument: $1" >&2
+        usage
+        exit 1
+      fi
+      REASON="$1"
+      shift
+      ;;
+  esac
+done
+
+[ -n "$REASON" ] || { usage; exit 1; }
+
+if [ -z "$TARGET" ]; then
+  command -v jq >/dev/null 2>&1 || { echo "jq is required to select a deployment." >&2; exit 1; }
+  deployments="$(npx --yes vercel ls "$PROJECT_NAME" --scope "$VERCEL_SCOPE" --json)"
+  TARGET="$(printf '%s' "$deployments" | jq -r '
+    (if type == "array" then . else (.deployments // []) end)
+    | map(select(((.state // .status // .readyState // "") | ascii_upcase) == "READY"))
+    | .[1].url // empty
+  ')"
 fi
 
-echo "=========================================="
-echo "🚨 EMERGENCY ROLLBACK INITIATED"
-echo "=========================================="
+[ -n "$TARGET" ] || { echo "No previous Ready deployment was found." >&2; exit 1; }
+case "$TARGET" in
+  http://*.vercel.app|https://*.vercel.app) ;;
+  *.vercel.app) TARGET="https://$TARGET" ;;
+  *) echo "Rollback target must be a vercel.app deployment URL." >&2; exit 1 ;;
+esac
+
 echo "Reason: $REASON"
-echo "Time: $(date)"
-echo ""
+echo "Project: $PROJECT_NAME"
+echo "Scope: $VERCEL_SCOPE"
+echo "Target: $TARGET"
 
-# Get current and previous deployments
-echo "📋 Fetching deployment information..."
-CURRENT_DEPLOYMENT=$(vercel ls bella-erp-production --json 2>/dev/null | jq -r '.[0].url' 2>/dev/null || echo "unknown")
-PREVIOUS_DEPLOYMENT=$(vercel ls bella-erp-production --json 2>/dev/null | jq -r '.[1].url' 2>/dev/null || echo "unknown")
+if [ "$EXECUTE" != true ]; then
+  echo "DRY RUN: production was not changed."
+  echo "Re-run with --execute after reviewing the target."
+  exit 0
+fi
 
-echo "Current deployment: $CURRENT_DEPLOYMENT"
-echo "Rolling back to: $PREVIOUS_DEPLOYMENT"
-echo ""
-
-# Confirm rollback
-echo "⚠️  This will rollback production to the previous deployment."
-echo "⚠️  This action affects LIVE USERS!"
-echo ""
-echo "Type 'ROLLBACK' to confirm:"
+echo "Type exactly: ROLLBACK $TARGET"
 read -r confirmation
+[ "$confirmation" = "ROLLBACK $TARGET" ] || { echo "Rollback cancelled." >&2; exit 1; }
 
-if [ "$confirmation" != "ROLLBACK" ]; then
-  echo "❌ Rollback cancelled"
-  exit 1
-fi
+npx --yes vercel promote "$TARGET" --scope "$VERCEL_SCOPE" --yes
 
-# Execute rollback
-echo ""
-echo "⏳ Executing rollback..."
-vercel promote "$PREVIOUS_DEPLOYMENT" --scope=bella-erp-production --yes
+for attempt in 1 2 3 4 5 6; do
+  status="$(curl --silent --output /dev/null --write-out '%{http_code}' "$PRODUCTION_BASE_URL/api/health")"
+  if [ "$status" = 200 ]; then
+    echo "Rollback completed and production health is HTTP 200."
+    if [ -n "${ROLLBACK_LOG_PATH:-}" ]; then
+      printf '%s ROLLBACK reason=%s target=%s\n' "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" "$REASON" "$TARGET" >> "$ROLLBACK_LOG_PATH"
+    fi
+    exit 0
+  fi
+  echo "Health attempt $attempt returned HTTP $status"
+  sleep 10
+done
 
-# Wait for propagation
-echo "⏳ Waiting for deployment to propagate (30 seconds)..."
-sleep 30
-
-# Health check
-echo "🏥 Running health check..."
-HEALTH_RESPONSE=$(curl -s https://bella-erp.com/api/health)
-HEALTH_STATUS=$(echo "$HEALTH_RESPONSE" | jq -r '.status' 2>/dev/null || echo "unknown")
-
-echo ""
-if [ "$HEALTH_STATUS" = "healthy" ]; then
-  echo "✅ Rollback successful! Production is healthy."
-else
-  echo "⚠️  Health check status: $HEALTH_STATUS"
-  echo "Response: $HEALTH_RESPONSE"
-  echo ""
-  echo "⚠️  Investigate immediately!"
-  exit 1
-fi
-
-# Log rollback
-echo "[$(date)] ROLLBACK: $REASON → $PREVIOUS_DEPLOYMENT" >> rollback-log.txt
-
-# Notify team (if Slack webhook configured)
-if [ -n "$SLACK_WEBHOOK_URL" ]; then
-  echo "📢 Notifying team via Slack..."
-  curl -X POST "$SLACK_WEBHOOK_URL" \
-    -H 'Content-Type: application/json' \
-    -d "{\"text\":\"🚨 *Production Rollback Executed*\n\n*Reason:* $REASON\n*Rolled back to:* $PREVIOUS_DEPLOYMENT\n*Time:* $(date)\n*Status:* ✅ Healthy\"}" \
-    2>/dev/null || echo "⚠️  Slack notification failed"
-fi
-
-echo ""
-echo "=========================================="
-echo "✅ ROLLBACK COMPLETE"
-echo "=========================================="
-echo ""
-echo "Next steps:"
-echo "1. ✅ Verify production is working normally"
-echo "2. 🔍 Investigate root cause of the issue"
-echo "3. 📝 Create post-mortem document in docs/incidents/"
-echo "4. 🛠️  Fix the issue and create new deployment"
-echo "5. 🧪 Test thoroughly before re-deploying"
-echo ""
+echo "Rollback promotion completed, but production health did not recover." >&2
+exit 1

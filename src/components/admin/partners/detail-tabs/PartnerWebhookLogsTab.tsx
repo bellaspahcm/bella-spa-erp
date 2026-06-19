@@ -706,7 +706,7 @@ export function PartnerWebhookLogsTab({ partnerId }: PartnerWebhookLogsTabProps)
                 </pre>
               </div>
 
-              {selectedLogDetails.response_body && (
+              {selectedLogDetails.response_body != null && (
                 <div>
                   <h4 className="font-medium mb-2">Response Body:</h4>
                   <pre className="p-3 bg-muted rounded text-xs overflow-x-auto">

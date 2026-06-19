@@ -7,99 +7,89 @@ on:
 
 concurrency:
   group: staging-deploy
-  cancel-in-progress: false
+  cancel-in-progress: true
+
+env:
+  STAGING_BASE_URL: ${{ vars.STAGING_E2E_BASE_URL }}
 
 jobs:
-  deploy-staging:
-    name: Deploy to Vercel Staging
+  validate:
+    name: Validate Staging Configuration
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-    environment:
-      name: staging
-      url: https://bella-erp-staging.vercel.app
-
+    timeout-minutes: 5
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run pre-deployment checks
+      - name: Require isolated staging configuration
+        env:
+          STAGING_BASE_URL: ${{ vars.STAGING_E2E_BASE_URL }}
+          STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          STAGING_SUPABASE_DB_URL: ${{ secrets.STAGING_SUPABASE_DB_URL }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+          VERCEL_STAGING_PROJECT_ID: ${{ vars.VERCEL_STAGING_PROJECT_ID }}
         run: |
-          echo "🔍 Running pre-deployment validation..."
-          npm run lint
-          npm run build
+          test -n "$STAGING_BASE_URL"
+          test -n "$STAGING_SUPABASE_URL"
+          test -n "$STAGING_SUPABASE_DB_URL"
+          test -n "$VERCEL_TOKEN"
+          test -n "$VERCEL_ORG_ID"
+          test -n "$VERCEL_STAGING_PROJECT_ID"
+
+  deploy:
+    name: Deploy Isolated Staging Project
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: Staging
+      url: ${{ vars.STAGING_E2E_BASE_URL }}
+    env:
+      VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ vars.VERCEL_STAGING_PROJECT_ID }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run test:critical
+      - run: npm run db:migration:zero-downtime
+      - run: npm run db:migration:check
+        env:
+          SUPABASE_DB_URL: ${{ secrets.STAGING_SUPABASE_DB_URL }}
+      - run: npm run build
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+      - run: npx vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+      - run: npx vercel build --prod --token="$VERCEL_TOKEN"
+      - run: npx vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
 
-      - name: Deploy to Vercel Staging
-        uses: amondnet/vercel-action@v25
+  smoke:
+    name: Staging Smoke Test
+    needs: deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_STAGING_PROJECT_ID }}
-          vercel-args: '--prod --yes'
-          working-directory: ./
-          scope: ${{ secrets.VERCEL_ORG_ID }}
-
-      - name: Wait for deployment to be ready
-        run: sleep 30
-
-      - name: Run post-deployment smoke tests
-        run: npx playwright test tests/smoke/critical-paths.spec.ts
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run e2e:auth-smoke
         env:
-          E2E_BASE_URL: https://bella-erp-staging.vercel.app
+          E2E_BASE_URL: ${{ env.STAGING_BASE_URL }}
           E2E_ADMIN_EMAIL: ${{ secrets.STAGING_E2E_ADMIN_EMAIL }}
           E2E_ADMIN_PASSWORD: ${{ secrets.STAGING_E2E_ADMIN_PASSWORD }}
-
-      - name: Notify deployment status
+      - uses: actions/upload-artifact@v4
         if: always()
-        uses: 8398a7/action-slack@v3
         with:
-          status: ${{ job.status }}
-          text: |
-            🚀 Staging Deployment ${{ job.status }}
-            Branch: ${{ github.ref_name }}
-            Commit: ${{ github.sha }}
-            URL: https://bella-erp-staging.vercel.app
-          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-
-  database-migration-check:
-    name: Check Database Migrations
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    needs: [deploy-staging]
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Check pending migrations
-        run: |
-          echo "🗃️ Checking for pending database migrations..."
-          # Add your migration check script here
-          # Example: npx supabase migration list --environment staging
-
-      - name: Validate migration compatibility
-        run: |
-          echo "✅ Migration compatibility check passed"
-          # Add backward compatibility validation
+          name: staging-deployment-playwright-report
+          path: playwright-report/
+          retention-days: 7

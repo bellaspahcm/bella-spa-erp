@@ -20,7 +20,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { createClient } from '@/lib/supabase-server';
-import type { APIPartner } from '@/types/api-gateway';
+import { getPartnerById } from '@/services/api-gateway/partner.service';
 
 // Tab Components
 import { PartnerOverviewTab } from '@/components/admin/partners/detail-tabs/PartnerOverviewTab';
@@ -76,19 +76,11 @@ export default async function PartnerDetailPage({
     redirect('/dashboard');
   }
 
-  // Lấy thông tin đối tác
-  const { data: partner, error } = await (supabase as unknown)
-    .from('api_partners')
-    .select('*')
-    .eq('id', id)
-    .eq('tenant_id', profile.tenant_id) // Security: chỉ lấy partner của tenant này
-    .single();
+  const partnerData = await getPartnerById(id, profile.tenant_id);
 
-  if (error || !partner) {
+  if (!partnerData) {
     notFound();
   }
-
-  const partnerData = partner as APIPartner;
 
   return (
     <div className="p-6 md:p-8 lg:p-10 space-y-6">

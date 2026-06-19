@@ -40,10 +40,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { APIError } from '@/types/api-gateway';
 import Redis from 'ioredis';
-import type { APIPartner } from '@/types/api-gateway';
+import type { PartnerContext, RequestWithPartner } from './api-key.middleware';
 
 // Redis client (lazy initialization)
-let redisClient: unknown = null;
+let redisClient: Redis | null = null;
 let redisStatus: 'connected' | 'disconnected' | 'unknown' = 'unknown';
 let lastRedisCheckTime = 0;
 
@@ -207,7 +207,7 @@ function recordRedisFailure(): void {
     });
     
     // Send critical alert
-    sendRateLimitAlert(null as unknown, 'free', null as unknown, 'REDIS_DOWN').catch(console.error);
+    sendRateLimitAlert(null, 'free', null, 'REDIS_DOWN').catch(console.error);
   }
 }
 
@@ -231,7 +231,7 @@ function recordRedisSuccess(): void {
       });
       
       // Send recovery alert
-      sendRateLimitAlert(null as unknown, 'free', null as unknown, 'REDIS_RECOVERED').catch(console.error);
+      sendRateLimitAlert(null, 'free', null, 'REDIS_RECOVERED').catch(console.error);
     }
   } else if (circuitBreaker.state === 'OPEN') {
     // First success after OPEN → HALF_OPEN
@@ -291,7 +291,7 @@ interface RateLimitResult {
  * Initialize Redis client with circuit breaker protection
  * Uses environment variables for connection
  */
-async function getRedisClient() {
+async function getRedisClient(): Promise<Redis | null> {
   // Circuit breaker: Don't attempt if OPEN
   if (!shouldAttemptRedis()) {
     return null;
@@ -375,7 +375,12 @@ async function refreshKnownPartnersCache(): Promise<void> {
     
     console.log(`✅ Refreshed known partners cache: ${knownPartnersCache.size} partners`);
   } catch (error) {
-    console.error('❌ Failed to refresh known partners cache:', error);
+    throw new APIError(
+      'SERVER_002',
+      'Failed to refresh known partner cache',
+      error,
+      500
+    );
   }
 }
 
@@ -558,9 +563,22 @@ async function getPartnerTier(partnerId: string): Promise<RateLimitTier> {
     .eq('id', partnerId)
     .single();
 
-  if (error || !data) {
-    console.warn(`Failed to get tier for partner ${partnerId}, using 'free'`);
-    return 'free';
+  if (error) {
+    throw new APIError(
+      'SERVER_002',
+      'Failed to load partner rate-limit tier',
+      error,
+      500
+    );
+  }
+
+  if (!data) {
+    throw new APIError(
+      'VAL_001',
+      'Partner rate-limit configuration not found',
+      { partner_id: partnerId },
+      404
+    );
   }
 
   return (data.rate_limit_tier as RateLimitTier) || 'free';
@@ -587,7 +605,7 @@ async function getPartnerTier(partnerId: string): Promise<RateLimitTier> {
  */
 export async function rateLimitMiddleware(req: NextRequest): Promise<void> {
   // Ensure partner is set (should be set by withAPIKey)
-  const partner = (req as unknown).partner as APIPartner | undefined;
+  const partner = (req as RequestWithPartner).partner;
   
   if (!partner) {
     throw new APIError(
@@ -603,9 +621,9 @@ export async function rateLimitMiddleware(req: NextRequest): Promise<void> {
   if (circuitBreaker.state !== 'CLOSED') {
     await refreshKnownPartnersCache();
     
-    if (!knownPartnersCache.has(partner.id)) {
+    if (!knownPartnersCache.has(partner.partner_id)) {
       console.warn('🚫 Unknown partner blocked in degraded mode:', {
-        partner_id: partner.id,
+        partner_id: partner.partner_id,
         partner_name: partner.partner_name,
         circuit_state: circuitBreaker.state,
       });
@@ -624,13 +642,13 @@ export async function rateLimitMiddleware(req: NextRequest): Promise<void> {
   }
 
   // Get partner's tier
-  const tier = await getPartnerTier(partner.id);
+  const tier = await getPartnerTier(partner.partner_id);
 
   // Check per-minute limit
-  const minuteResult = await checkRateLimit(partner.id, tier, 'minute', operation);
+  const minuteResult = await checkRateLimit(partner.partner_id, tier, 'minute', operation);
   
   // Check per-day limit
-  const dayResult = await checkRateLimit(partner.id, tier, 'day', operation);
+  const dayResult = await checkRateLimit(partner.partner_id, tier, 'day', operation);
 
   // Use the stricter limit (whichever has fewer remaining)
   let result: RateLimitResult;
@@ -644,7 +662,7 @@ export async function rateLimitMiddleware(req: NextRequest): Promise<void> {
   }
 
   // Set rate limit headers (informational) with mode and circuit state
-  (req as unknown).rateLimitHeaders = {
+  (req as RequestWithPartner).rateLimitHeaders = {
     'X-RateLimit-Limit': result.limit === Infinity ? 'unlimited' : result.limit.toString(),
     'X-RateLimit-Remaining': result.remaining === Infinity ? 'unlimited' : result.remaining.toString(),
     'X-RateLimit-Reset': result.reset.toString(),
@@ -656,7 +674,7 @@ export async function rateLimitMiddleware(req: NextRequest): Promise<void> {
   if (!result.allowed) {
     // Log rate limit event for monitoring
     console.warn('Rate limit exceeded:', {
-      partner_id: partner.id,
+      partner_id: partner.partner_id,
       partner_name: partner.partner_name,
       tier,
       operation,
@@ -692,7 +710,7 @@ export async function rateLimitMiddleware(req: NextRequest): Promise<void> {
   
   if (consumedPercentage > 80 && consumedPercentage < 100) {
     console.warn('Partner approaching rate limit:', {
-      partner_id: partner.id,
+      partner_id: partner.partner_id,
       tier,
       operation,
       consumed: `${consumedPercentage.toFixed(1)}%`,
@@ -719,7 +737,7 @@ export async function rateLimitMiddleware(req: NextRequest): Promise<void> {
  * - Database: TODO - Store in security_events table
  */
 async function sendRateLimitAlert(
-  partner: APIPartner | null,
+  partner: PartnerContext | null,
   tier: RateLimitTier,
   result: RateLimitResult | null,
   alertType: 'APPROACHING_LIMIT' | 'LIMIT_EXCEEDED' | 'REDIS_DOWN' | 'REDIS_RECOVERED'
@@ -731,7 +749,7 @@ async function sendRateLimitAlert(
     'REDIS_RECOVERED': 'INFO',
   }[alertType];
 
-  const alert: unknown = {
+  const alert: Record<string, unknown> = {
     type: alertType,
     severity: alertSeverity,
     timestamp: new Date().toISOString(),
@@ -761,7 +779,7 @@ async function sendRateLimitAlert(
     // await sendSentryEvent('info', alert);
     
   } else if (partner && result) {
-    alert.partner_id = partner.id;
+    alert.partner_id = partner.partner_id;
     alert.partner_name = partner.partner_name;
     alert.tenant_id = partner.tenant_id;
     alert.tier = tier;
@@ -898,8 +916,8 @@ export async function getPartnerUsageStats(partnerId: string): Promise<{
   const dayKey = `rate_limit:${partnerId}:day:${dayWindow}`;
 
   const [minuteCount, dayCount] = await Promise.all([
-    redis.get(minuteKey).then((v: string) => parseInt(v || '0')),
-    redis.get(dayKey).then((v: string) => parseInt(v || '0')),
+    redis.get(minuteKey).then((v) => parseInt(v || '0')),
+    redis.get(dayKey).then((v) => parseInt(v || '0')),
   ]);
 
   const minuteLimit = RATE_LIMIT_TIERS[tier].per_minute;
@@ -936,7 +954,7 @@ export function addRateLimitHeaders(
   req: NextRequest,
   response: NextResponse
 ): NextResponse {
-  const headers = (req as unknown).rateLimitHeaders as Record<string, string> | undefined;
+  const headers = (req as RequestWithPartner).rateLimitHeaders as Record<string, string> | undefined;
   
   if (headers) {
     Object.entries(headers).forEach(([key, value]) => {
