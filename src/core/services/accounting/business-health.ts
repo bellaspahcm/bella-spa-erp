@@ -191,6 +191,10 @@ type CustomerRow = Pick<
   Database['public']['Tables']['customers']['Row'],
   'id' | 'tenant_id' | 'name_mother' | 'phone'
 >;
+type TenantRow = Pick<
+  Database['public']['Tables']['tenants']['Row'],
+  'id' | 'enabled_modules'
+>;
 
 type BusinessHealthDataset = {
   bookings: BookingRow[];
@@ -205,6 +209,7 @@ type BusinessHealthDataset = {
   journalLines: JournalLineRow[];
   accountingOutbox: AccountingOutboxRow[];
   customers: CustomerRow[];
+  tenants: TenantRow[];
 };
 
 type InvariantFinding = {
@@ -516,6 +521,7 @@ async function loadBusinessHealthDataset(supabase: SupabaseClient, tenantId: str
     journalEntries,
     accountingOutbox,
     customers,
+    tenants,
   ] = await Promise.all([
     queryRows<BookingRow>(
       supabase
@@ -605,6 +611,13 @@ async function loadBusinessHealthDataset(supabase: SupabaseClient, tenantId: str
         .limit(MAX_ROWS),
       'customers'
     ),
+    queryRows<TenantRow>(
+      supabase
+        .from('tenants')
+        .select('id, enabled_modules')
+        .limit(MAX_ROWS),
+      'tenants'
+    ),
   ]);
 
   const journalLines = await loadJournalLines(supabase, journalEntries);
@@ -622,6 +635,7 @@ async function loadBusinessHealthDataset(supabase: SupabaseClient, tenantId: str
     journalLines,
     accountingOutbox,
     customers,
+    tenants,
   };
 }
 
