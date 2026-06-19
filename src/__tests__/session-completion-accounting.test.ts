@@ -360,14 +360,14 @@ describe('session completion accounting side effects', () => {
         op: 'insert',
         payload: [expect.objectContaining({
           booking_id: 'booking-1',
-          amount: 350000,
+          amount: 500000,
           revenue_type: 'package_payment',
           payment_method: 'bank_transfer',
           received_date: '2026-06-03',
           status: 'confirmed',
           tenant_id: 'tenant-1',
           accounting_metadata: expect.objectContaining({
-            amount: 350000,
+            amount: 500000,
             booking_id: 'booking-1',
           }),
         })],
@@ -381,7 +381,7 @@ describe('session completion accounting side effects', () => {
         referenceType: 'REVENUE',
         referenceId: 'revenue-1',
         payload: expect.objectContaining({
-          totalAmount: 350000,
+          totalAmount: 500000,
           branchId: 'tenant-1',
         }),
       }),
@@ -504,7 +504,7 @@ describe('session completion accounting side effects', () => {
         op: 'insert',
         payload: [expect.objectContaining({
           booking_id: 'booking-1',
-          amount: 350000,
+          amount: 500000,
           status: 'confirmed',
         })],
       }),

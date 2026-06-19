@@ -1,4 +1,3 @@
-import { FINANCE_CONSTANTS } from '@/constants/finance';
 import { BookingError } from '@/core/lib/errors';
 import {
   calculateConfirmedPaidAmount,
@@ -194,7 +193,6 @@ export async function deleteSingleSessionRevenue(
     ? await deleteQuery.eq('id', revenueId)
     : await deleteQuery
     .eq('booking_id', bookingId)
-    .eq('amount', FINANCE_CONSTANTS.SINGLE_SESSION_REVENUE)
     .eq('notes', `Tự động: Thu phí dịch vụ lẻ - ${packageName}`);
 
   return error?.message || '';
@@ -303,6 +301,11 @@ export async function recordSingleSessionRevenueIfNeeded(params: {
     return { isRevenueCreated: false, createdRevenueId: null };
   }
 
+  // Calculate actual revenue amount after discount instead of hardcoding
+  const fullPrice = asFiniteNumber(currentBooking?.full_price);
+  const discountPercent = clampDiscountPercent(currentBooking?.discount_percent);
+  const actualAmount = Math.max(0, fullPrice * (1 - discountPercent / 100));
+
   const revenueType = 'package_payment';
   const businessEventType = inferBusinessEventType({
     sourceTable: 'revenue',
@@ -310,7 +313,7 @@ export async function recordSingleSessionRevenueIfNeeded(params: {
   });
   const accountingPayload = buildRevenueAccountingMetadata({
     revenueType,
-    amount: FINANCE_CONSTANTS.SINGLE_SESSION_REVENUE,
+    amount: actualAmount,
     paymentMethod: 'bank_transfer',
     bookingId,
     reason: `Tự động: Thu phí dịch vụ lẻ - ${packageName}`,
@@ -318,7 +321,7 @@ export async function recordSingleSessionRevenueIfNeeded(params: {
 
   const revenuePayload: RevenueInsert = {
     booking_id: bookingId,
-    amount: FINANCE_CONSTANTS.SINGLE_SESSION_REVENUE,
+    amount: actualAmount,
     revenue_type: revenueType,
     payment_method: 'bank_transfer',
     received_date: today,
@@ -371,7 +374,7 @@ export async function recordSingleSessionRevenueIfNeeded(params: {
     buildPackageSaleOutboxEvent({
       tenantId,
       revenueId: createdRevenueId,
-      totalAmount: FINANCE_CONSTANTS.SINGLE_SESSION_REVENUE,
+      totalAmount: actualAmount,
       description: accountingPayload.reason,
     }),
     '[processSessionCompletion:single-session-revenue]'
