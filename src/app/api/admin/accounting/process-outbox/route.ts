@@ -71,6 +71,12 @@ export async function POST(request: Request) {
     const cronUrl = `${baseUrl}/api/cron/accounting-worker`;
 
     console.log('[Accounting Outbox] Triggering manual processing via', cronUrl);
+    console.log('[Accounting Outbox] Base URL components:', { 
+      VERCEL_URL: process.env.VERCEL_URL,
+      NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
+      host: request.headers.get('host'),
+      protocol: request.headers.get('x-forwarded-proto')
+    });
 
     // Call the cron endpoint with authorization
     const response = await fetch(cronUrl, {
@@ -78,9 +84,17 @@ export async function POST(request: Request) {
       headers: {
         'Authorization': `Bearer ${cronSecret}`,
       },
+    }).catch((fetchError) => {
+      console.error('[Accounting Outbox] Fetch error:', fetchError);
+      throw new Error(`Failed to reach cron endpoint: ${fetchError.message}`);
     });
 
-    const result = await response.json();
+    console.log('[Accounting Outbox] Response status:', response.status);
+    
+    const result = await response.json().catch((jsonError) => {
+      console.error('[Accounting Outbox] JSON parse error:', jsonError);
+      throw new Error(`Failed to parse cron response: ${jsonError.message}`);
+    });
 
     if (!response.ok) {
       console.error('[Accounting Outbox] Manual processing failed:', result);
