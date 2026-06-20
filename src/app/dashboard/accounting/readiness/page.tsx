@@ -165,9 +165,13 @@ export default function AccountingReadinessPage() {
     setBackfilling(true);
     try {
       const result = await runAccountingMetadataBackfill({ limit: 500 });
-      setLastBackfillResult(result);
-      const scanned = result.reduce((sum, row) => sum + row.scanned_records, 0);
-      const review = result.reduce((sum, row) => sum + row.review_created, 0);
+      if (!result.success) {
+        toast.error(result.error);
+        return;
+      }
+      setLastBackfillResult(result.data);
+      const scanned = result.data.reduce((sum, row) => sum + row.scanned_records, 0);
+      const review = result.data.reduce((sum, row) => sum + row.review_created, 0);
       toast.success(`Đã quét ${scanned} dòng dữ liệu cũ. ${review} dòng cần kế toán review.`);
       await loadData();
     } catch (err) {

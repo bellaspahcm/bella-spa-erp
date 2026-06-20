@@ -5,6 +5,35 @@
 
 ---
 
+### 20/06/2026: Sửa lỗi chạy Backfill dữ liệu kế toán và cải thiện xử lý lỗi Server Action
+
+* **Bối cảnh**:
+  * Khi người dùng nhấn nút "CHẠY BACKFILL" trên trang sẵn sàng dữ liệu kế toán (`/dashboard/accounting/readiness`), hệ thống phát sinh lỗi khiến UI hiển thị thông báo lỗi chung chung của Next.js production: `An error occurred in the Server Components render...`.
+
+* **Nguyên nhân gốc rễ (4 lỗi)**:
+  1. 🔴 **CRITICAL — Lỗi phân quyền RPC**: Database RPC `backfill_accounting_metadata` yêu cầu người gọi phải có quyền `admin` hoặc `accountant` dựa trên `auth.uid()`. Tuy nhiên, trong môi trường local development bypass hoặc các tiến trình chạy ngầm qua service_role, `auth.uid()` trả về NULL dẫn đến lỗi `Unauthorized`.
+  2. 🔴 **HIGH — Lỗi safeupdate của Supabase**: Cập nhật bảng tạm `pg_temp.accounting_backfill_stage` thiếu mệnh đề `WHERE` dẫn đến việc extension `safeupdate` chặn và báo lỗi `UPDATE requires a WHERE clause`.
+  3. 🟠 **MEDIUM — Trùng lặp tên cột trả về**: PostgreSQL báo lỗi ambiguous (`column reference "source_table" is ambiguous`) do tên cột trong câu lệnh SELECT trùng với tên cột định nghĩa trong mệnh đề RETURNS TABLE.
+  4. 🟠 **MEDIUM — Che giấu lỗi Server Action**: Server Action ném trực tiếp lỗi thô (`throw error`) khiến Next.js che giấu toàn bộ chi tiết lỗi trong môi trường production, hiển thị thông báo lỗi hệ thống mặc định thay vì mô tả lỗi thực tế trên UI toast.
+
+* **Thay đổi chính**:
+  - **Database Layer**:
+    - Cập nhật hàm `backfill_accounting_metadata` trong [backfill_accounting_metadata.sql](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/supabase/migrations/20260530080000_backfill_accounting_metadata.sql) để cho phép bỏ qua kiểm tra quyền nếu `auth.role() = 'service_role'`.
+    - Thêm chỉ thị `#variable_conflict use_column` vào hàm SQL để giải quyết lỗi ambiguous tên cột.
+    - Thêm `WHERE true;` vào cuối lệnh UPDATE bảng tạm `accounting_backfill_stage` để bypass cơ chế an toàn `safeupdate`.
+  - **Server Action Layer**:
+    - Cập nhật hàm `runAccountingMetadataBackfill` trong [templates.ts](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/src/core/services/accounting/templates.ts) để bắt lỗi thông qua try/catch và trả về kết quả có cấu trúc `{ success: true, data }` hoặc `{ success: false, error }` thay vì `throw error`.
+    - Cập nhật đồng bộ các nơi gọi action trong [business-health.ts](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/src/core/services/accounting/business-health.ts).
+  - **UI Layer**:
+    - Cập nhật hàm `handleRunBackfill` trong [page.tsx](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/src/app/dashboard/accounting/readiness/page.tsx) để đọc kết quả trạng thái `result.success` và hiển thị toast chi tiết thay vì để Next.js xử lý lỗi thô.
+
+* **Kiểm tra**:
+  - Tập lệnh thử nghiệm [test-backfill-rpc.js](file:///C:/Users/DELL/.gemini/antigravity-ide/brain/a55f317c-e45c-402c-bbb9-24d00b822df5/scratch/test-backfill-rpc.js) chạy thành công và nhận đủ dữ liệu backfill.
+  - Chạy `npm run test:critical` vượt qua 100% (181/181 tests passed).
+  - `npm run build` hoàn thành biên dịch dự án production thành công mà không có lỗi TypeScript hay Turbopack.
+
+---
+
 ### 14/06/2026: Fix KTV Check-in/Check-out — Lỗi Người Dùng Báo Thường Xuyên
 
 * **Bối cảnh**:

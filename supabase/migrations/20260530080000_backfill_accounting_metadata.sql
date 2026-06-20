@@ -56,6 +56,7 @@ RETURNS TABLE (
     classified_records INTEGER,
     review_created INTEGER
 ) AS $$
+#variable_conflict use_column
 DECLARE
     v_tenant_id UUID;
     v_limit INTEGER;
@@ -68,10 +69,13 @@ BEGIN
     END IF;
 
     IF NOT (
-        (public.is_admin() OR public.is_accountant())
-        AND (
-            public.is_hq_super_admin()
-            OR v_tenant_id = public.get_auth_tenant_id()
+        auth.role() = 'service_role'
+        OR (
+            (public.is_admin() OR public.is_accountant())
+            AND (
+                public.is_hq_super_admin()
+                OR v_tenant_id = public.get_auth_tenant_id()
+            )
         )
     ) THEN
         RAISE EXCEPTION 'Unauthorized: only admin/accountant can backfill accounting metadata.';
@@ -224,7 +228,8 @@ BEGIN
             ELSE public.accounting_missing_required_fields(business_event_type, payload)
         END,
         needs_review = business_event_type IS NULL
-            OR array_length(public.accounting_missing_required_fields(business_event_type, payload), 1) IS NOT NULL;
+            OR array_length(public.accounting_missing_required_fields(business_event_type, payload), 1) IS NOT NULL
+    WHERE true;
 
     UPDATE public.revenue r
     SET business_event_type = s.business_event_type,
