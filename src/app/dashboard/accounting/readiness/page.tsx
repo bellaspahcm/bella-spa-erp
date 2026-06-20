@@ -146,7 +146,11 @@ export default function AccountingReadinessPage() {
   ) => {
     setResolvingItemId(reviewItemId);
     try {
-      await resolveAccountingReviewItem({ reviewItemId, status });
+      const result = await resolveAccountingReviewItem({ reviewItemId, status });
+      if (!result.success) {
+        toast.error(result.error || 'Không thể xử lý review item.');
+        return;
+      }
       toast.success(
         status === 'APPROVED_FOR_POSTING'
           ? 'Đã duyệt dòng dữ liệu cho hạch toán.'
