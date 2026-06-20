@@ -938,9 +938,13 @@ export async function runBusinessHealthRepairAction(params: {
 
   if (params.action === 'run_metadata_backfill') {
     const result = await runAccountingMetadataBackfill({ limit: 500 });
+    if (!result.success) {
+      throw new Error(result.error);
+    }
+    const data = result.data;
     await safeRevalidatePath('/dashboard/accounting/health');
-    const scanned = result.reduce((sum, row) => sum + row.scanned_records, 0);
-    const review = result.reduce((sum, row) => sum + row.review_created, 0);
+    const scanned = data.reduce((sum, row) => sum + row.scanned_records, 0);
+    const review = data.reduce((sum, row) => sum + row.review_created, 0);
 
     return {
       success: true,

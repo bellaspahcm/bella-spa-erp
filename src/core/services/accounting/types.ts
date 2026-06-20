@@ -171,6 +171,10 @@ export interface AccountingBackfillResult {
   review_created: number;
 }
 
+export type AccountingBackfillActionResult =
+  | { success: true; data: AccountingBackfillResult[] }
+  | { success: false; error: string };
+
 export type AccountingHealthStatus = 'pass' | 'warn' | 'fail';
 
 export type AccountingHealthSeverity = 'healthy' | 'warning' | 'critical';
