@@ -8,23 +8,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
 import { z } from 'zod';
 import type { APIErrorCode } from '@/types/api-gateway';
+import { getPartnerById, updatePartner } from '@/services/api-gateway/partner.service';
 
 interface RouteContext {
   params: Promise<{
     id: string;
   }>;
-}
-
-interface PartnerData {
-  id: string;
-  metadata?: {
-    webhook_retry_config?: {
-      enabled: boolean;
-      max_attempts: number;
-      retry_delay_seconds: number;
-      backoff_multiplier: number;
-    };
-  };
 }
 
 const retryConfigSchema = z.object({
@@ -78,16 +67,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
     }
 
     // Verify partner belongs to tenant
-    const { data: partner } = await supabase
-      .from('api_partners' as never)
-      .select('id, metadata')
-      .eq('id', partnerId)
-      .eq('tenant_id', profile.tenant_id)
-      .single();
+    const partner = await getPartnerById(partnerId, profile.tenant_id);
 
-    const partnerData = partner as PartnerData | null;
-
-    if (!partnerData) {
+    if (!partner) {
       return NextResponse.json(
         {
           success: false,
@@ -101,7 +83,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
     }
 
     // Get retry config from partner metadata or use defaults
-    const retryConfig = partnerData.metadata?.webhook_retry_config || {
+    const configuredRetry = partner.metadata?.webhook_retry_config;
+    const parsedRetry = retryConfigSchema.safeParse(configuredRetry);
+    const retryConfig = parsedRetry.success ? parsedRetry.data : {
       enabled: true,
       max_attempts: 3,
       retry_delay_seconds: 60,
@@ -208,12 +192,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     const retryConfig = parsed.data;
 
     // Verify partner belongs to tenant and get current metadata
-    const { data: partner } = (await supabase
-      .from('api_partners' as never)
-      .select('id, metadata')
-      .eq('id', partnerId)
-      .eq('tenant_id', profile.tenant_id)
-      .single()) as { data: PartnerData | null };
+    const partner = await getPartnerById(partnerId, profile.tenant_id);
 
     if (!partner) {
       return NextResponse.json(
@@ -236,19 +215,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       updated_by: user.id,
     };
 
-    const { error: updateError } = await supabase
-      .from('api_partners' as never)
-      .update({
-        metadata: updatedMetadata,
-        updated_at: new Date().toISOString(),
-        updated_by: user.id,
-      } as never)
-      .eq('id', partnerId)
-      .eq('tenant_id', profile.tenant_id);
-
-    if (updateError) {
-      throw updateError;
-    }
+    await updatePartner(partnerId, { metadata: updatedMetadata }, user.id);
 
     return NextResponse.json({
       success: true,

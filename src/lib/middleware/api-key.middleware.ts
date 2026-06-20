@@ -15,6 +15,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { getSupabaseAdminUrl, getSupabaseAdminKey } from '@/lib/supabase-admin-env';
 import {
   APIError,
   PartnerValidationResult,
@@ -183,6 +185,42 @@ async function validateAPIKey(apiKey: string): Promise<PartnerValidationResult |
 }
 
 /**
+ * Fetch partner metadata for validation checks (IP Whitelist, etc.)
+ */
+async function getPartnerMetadata(partnerId: string): Promise<Record<string, unknown>> {
+  const adminUrl = getSupabaseAdminUrl();
+  const adminKey = getSupabaseAdminKey();
+  if (!adminUrl || !adminKey) {
+    throw new APIError(
+      'SERVER_002',
+      'Partner security metadata is unavailable',
+      undefined,
+      500
+    );
+  }
+
+  const supabaseAdmin = createSupabaseClient(adminUrl, adminKey);
+  const { data, error } = await supabaseAdmin
+    .from('api_partners')
+    .select('metadata')
+    .eq('id', partnerId)
+    .single();
+
+  if (error || !data) {
+    throw new APIError(
+      'SERVER_002',
+      'Failed to load partner security metadata',
+      error ? { code: error.code, message: error.message } : undefined,
+      500
+    );
+  }
+
+  return data.metadata && typeof data.metadata === 'object' && !Array.isArray(data.metadata)
+    ? data.metadata as Record<string, unknown>
+    : {};
+}
+
+/**
  * Log API request to database (async, non-blocking)
  * 
  * NOTE: The api_request_logs table exists in the database but TypeScript
@@ -339,6 +377,49 @@ export async function apiKeyMiddleware(
   }
   
   // ============================================================
+  // STEP 2.5: Optional IP Whitelisting Check
+  // ============================================================
+  const clientIp = getClientIP(req);
+  const metadata = await getPartnerMetadata(partnerInfo.partner_id);
+
+  if (metadata.ip_whitelist) {
+    const whitelist = Array.isArray(metadata.ip_whitelist)
+      ? metadata.ip_whitelist
+      : typeof metadata.ip_whitelist === 'string'
+        ? metadata.ip_whitelist.split(',').map((ip: string) => ip.trim())
+        : [];
+
+    if (whitelist.length > 0 && !whitelist.includes(clientIp)) {
+      console.warn(
+        '[SECURITY] Blocked request from unauthorized IP: %s for partner: %s',
+        clientIp,
+        partnerInfo.partner_name
+      );
+
+      await logAPIRequest({
+        partner_id: partnerInfo.partner_id,
+        tenant_id: partnerInfo.tenant_id,
+        method,
+        endpoint: pathname,
+        status_code: 403,
+        response_time_ms: Date.now() - startTime,
+        is_error: true,
+        error_code: 'AUTHZ_001',
+        error_message: 'Forbidden: IP address not in whitelist',
+        ip_address: clientIp,
+        user_agent: req.headers.get('user-agent') || undefined,
+        request_id: requestId,
+      });
+
+      return createErrorResponse(
+        'AUTHZ_001',
+        'Forbidden: Your IP address is not whitelisted for this API key.',
+        403,
+        { ip_address: clientIp }
+      );
+    }
+  }
+  // ============================================================
   // STEP 3: Attach Partner Context to Request
   // ============================================================
   
@@ -359,28 +440,30 @@ export async function apiKeyMiddleware(
   
   // If request body contains tenant_id, validate it matches partner's tenant
   if (req.method !== 'GET') {
+    let body: unknown;
     try {
-      const body = await req.json();
-      
-      if (body.tenant_id && body.tenant_id !== partnerInfo.tenant_id) {
-        // SECURITY ALERT: Potential tenant injection attack!
-        console.error(
-          '[SECURITY ALERT] Tenant injection attempt detected',
-          {
-            partner_id: partnerInfo.partner_id,
-            partner_tenant_id: partnerInfo.tenant_id,
-            provided_tenant_id: body.tenant_id,
-            endpoint: pathname,
-            ip_address: getClientIP(req),
-          }
-        );
-        
+      body = await req.json();
+    } catch {
+      body = null;
+    }
+
+    if (body && typeof body === 'object' && !Array.isArray(body)) {
+      const tenantId = (body as Record<string, unknown>).tenant_id;
+      if (tenantId && tenantId !== partnerInfo.tenant_id) {
+        console.error('[SECURITY ALERT] Tenant injection attempt detected', {
+          partner_id: partnerInfo.partner_id,
+          partner_tenant_id: partnerInfo.tenant_id,
+          provided_tenant_id: tenantId,
+          endpoint: pathname,
+          ip_address: getClientIP(req),
+        });
+
         await logAPIRequest({
           partner_id: partnerInfo.partner_id,
           tenant_id: partnerInfo.tenant_id,
           method,
           endpoint: pathname,
-          request_body: { tenant_id: body.tenant_id }, // Log attempted injection
+          request_body: { tenant_id: tenantId },
           status_code: 403,
           response_time_ms: Date.now() - startTime,
           is_error: true,
@@ -391,32 +474,28 @@ export async function apiKeyMiddleware(
           request_id: requestId,
           metadata: {
             security_alert: true,
-            attempted_tenant_id: body.tenant_id,
+            attempted_tenant_id: tenantId,
           },
         });
-        
+
         return createErrorResponse(
           'AUTHZ_003',
           'Tenant ID mismatch. You cannot access data from other tenants.',
           403,
           {
             your_tenant_id: partnerInfo.tenant_id,
-            provided_tenant_id: body.tenant_id,
+            provided_tenant_id: tenantId,
             note: 'Tenant is resolved from your API key. Do not provide tenant_id in request body.',
           }
         );
       }
-    } catch (error) {
-      // Body parsing failed - continue (might be GET or empty body)
     }
   }
-  
   // ============================================================
   // STEP 5: Success - Continue to Route Handler
   // ============================================================
   
-  // Log successful authentication (async, non-blocking)
-  logAPIRequest({
+  await logAPIRequest({
     partner_id: partnerInfo.partner_id,
     tenant_id: partnerInfo.tenant_id,
     method,

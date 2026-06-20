@@ -230,7 +230,7 @@ export function detectSQLInjection(value: string): void {
   const sqlPatterns = [
     /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|EXECUTE)\b)/i,
     /(--|;|\/\*|\*\/)/,
-    /(\bOR\b|\bAND\b).*=.*=/, // OR 1=1, AND 1=1
+    /\b(?:OR|AND)\b\s+.+?=.+/i, // OR 1=1, AND 1=1
     /(\bUNION\b.*\bSELECT\b)/i,
   ];
 

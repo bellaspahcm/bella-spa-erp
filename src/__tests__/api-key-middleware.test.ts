@@ -1,12 +1,29 @@
-/**
- * API Key Middleware Tests - Phase 1
- * 
- * Critical security tests for tenant isolation
- * 
- * @module __tests__/api-key-middleware
- */
+jest.mock('server-only', () => ({}), { virtual: true });
 
-import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
+const mockRpc = jest.fn();
+const mockInsert = jest.fn();
+const mockFrom = jest.fn();
+
+jest.mock('@/lib/supabase-server', () => ({
+  createClient: jest.fn(() => Promise.resolve({
+    rpc: mockRpc,
+    from: mockFrom,
+  })),
+}));
+
+const mockAdminFrom = jest.fn();
+jest.mock('@supabase/supabase-js', () => ({
+  createClient: jest.fn(() => ({
+    from: mockAdminFrom,
+  })),
+}));
+
+jest.mock('@/lib/supabase-admin-env', () => ({
+  getSupabaseAdminUrl: () => 'https://mock.supabase.co',
+  getSupabaseAdminKey: () => 'mock-key',
+}));
+
+import { describe, it, expect, beforeEach } from '@jest/globals';
 import { NextRequest } from 'next/server';
 import { apiKeyMiddleware, RequestWithPartner } from '@/lib/middleware/api-key.middleware';
 import { createClient } from '@/lib/supabase-server';
@@ -19,16 +36,57 @@ const MOCK_API_KEY_B = 'pk_live_tenant_b_test_key';
 const MOCK_INVALID_KEY = 'pk_live_invalid_key';
 
 describe('API Key Middleware - Security Tests', () => {
-  beforeAll(async () => {
-    // Setup: Create test partners in database
-    const supabase = createClient();
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockInsert.mockResolvedValue({ data: null, error: null });
     
-    // Create test partners (this would be done via migration seed in real setup)
-    // For now, these tests assume partners exist
-  });
-  
-  afterAll(async () => {
-    // Cleanup test data
+    mockRpc.mockImplementation((fn, params) => {
+      if (params.p_api_key === MOCK_API_KEY_A) {
+        return Promise.resolve({
+          data: [{
+            partner_id: 'test_partner_a',
+            tenant_id: MOCK_TENANT_A,
+            partner_name: 'Partner A',
+            allowed_scopes: ['order:read', 'order:write'],
+            is_active: true,
+            is_sandbox: false,
+            rate_limit_per_minute: 100,
+            rate_limit_per_day: 5000,
+          }],
+          error: null,
+        });
+      }
+      return Promise.resolve({ data: null, error: null });
+    });
+
+    mockFrom.mockImplementation((table) => {
+      return {
+        insert: mockInsert,
+        delete: () => ({
+          eq: () => Promise.resolve({ data: null, error: null }),
+        }),
+        select: () => ({
+          eq: () => ({
+            order: () => ({
+              limit: () => Promise.resolve({
+                data: [{ endpoint: '/api/v1/orders', method: 'GET' }],
+                error: null,
+              }),
+            }),
+          }),
+        }),
+      };
+    });
+
+    mockAdminFrom.mockImplementation((table) => {
+      return {
+        select: () => ({
+          eq: () => ({
+            single: () => Promise.resolve({ data: { metadata: {} }, error: null }),
+          }),
+        }),
+      };
+    });
   });
   
   describe('Authentication', () => {
@@ -92,6 +150,103 @@ describe('API Key Middleware - Security Tests', () => {
       expect(response).toBeNull();
       expect(req.partner).toBeDefined();
       expect(req.partner?.tenant_id).toBe(MOCK_TENANT_A);
+    });
+
+    it('should reject requests if client IP is not in partner IP whitelist', async () => {
+      // Mock metadata with IP whitelist
+      mockAdminFrom.mockImplementationOnce(() => ({
+        select: () => ({
+          eq: () => ({
+            single: () => Promise.resolve({
+              data: { metadata: { ip_whitelist: ['192.168.1.100'] } },
+              error: null,
+            }),
+          }),
+        }),
+      }));
+
+      const req = new NextRequest('http://localhost:3000/api/v1/orders', {
+        method: 'GET',
+        headers: {
+          'x-api-key': MOCK_API_KEY_A,
+          'x-forwarded-for': '203.0.113.195', // Unauthorized IP
+        },
+      }) as RequestWithPartner;
+
+      const response = await apiKeyMiddleware(req);
+
+      expect(response).not.toBeNull();
+      expect(response?.status).toBe(403);
+
+      const body = await response?.json();
+      expect(body.error.code).toBe('AUTHZ_001');
+      expect(body.error.message).toContain('IP address is not whitelisted');
+      expect(mockInsert).toHaveBeenCalledWith(expect.objectContaining({
+        partner_id: 'test_partner_a',
+        tenant_id: MOCK_TENANT_A,
+        endpoint: '/api/v1/orders',
+        status_code: 403,
+        is_error: true,
+        error_code: 'AUTHZ_001',
+        ip_address: '203.0.113.195',
+      }));
+    });
+
+    it('should propagate audit persistence failures for rejected IPs', async () => {
+      mockAdminFrom.mockImplementationOnce(() => ({
+        select: () => ({
+          eq: () => ({
+            single: () => Promise.resolve({
+              data: { metadata: { ip_whitelist: ['192.168.1.100'] } },
+              error: null,
+            }),
+          }),
+        }),
+      }));
+      mockInsert.mockResolvedValueOnce({
+        data: null,
+        error: { code: 'DB_DOWN', message: 'audit unavailable' },
+      });
+
+      const req = new NextRequest('http://localhost:3000/api/v1/orders', {
+        method: 'GET',
+        headers: {
+          'x-api-key': MOCK_API_KEY_A,
+          'x-forwarded-for': '203.0.113.195',
+        },
+      }) as RequestWithPartner;
+
+      await expect(apiKeyMiddleware(req)).rejects.toMatchObject({
+        code: 'SERVER_002',
+        message: 'Failed to persist API request audit log',
+      });
+    });
+
+    it('should allow requests if client IP matches partner IP whitelist', async () => {
+      // Mock metadata with IP whitelist
+      mockAdminFrom.mockImplementationOnce(() => ({
+        select: () => ({
+          eq: () => ({
+            single: () => Promise.resolve({
+              data: { metadata: { ip_whitelist: ['192.168.1.100', '203.0.113.195'] } },
+              error: null,
+            }),
+          }),
+        }),
+      }));
+
+      const req = new NextRequest('http://localhost:3000/api/v1/orders', {
+        method: 'GET',
+        headers: {
+          'x-api-key': MOCK_API_KEY_A,
+          'x-forwarded-for': '203.0.113.195', // Authorized IP
+        },
+      }) as RequestWithPartner;
+
+      const response = await apiKeyMiddleware(req);
+
+      expect(response).toBeNull(); // Should pass
+      expect(req.partner).toBeDefined();
     });
   });
   
@@ -183,7 +338,7 @@ describe('API Key Middleware - Security Tests', () => {
   
   describe('Request Logging', () => {
     it('should log all API requests', async () => {
-      const supabase = createClient();
+      const supabase = await createClient();
       
       const req = new NextRequest('http://localhost:3000/api/v1/orders', {
         method: 'GET',

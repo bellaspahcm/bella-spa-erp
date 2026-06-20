@@ -60,7 +60,8 @@ context:
 - [x] Them zero-downtime migration policy check, test va ket noi vao CI/deploy.
 - [x] Verify kha nang Supabase read replica; xac nhan can tra phi, de pending va ghi ro bang chung, khong provision.
 - [x] Xac nhan Vercel CDN/load-balancing/auto-scaling boundaries; dat no-store cho toan bo /api/* va giu CDN cho static assets.
-- [x] Cap nhat Phase 7 checklist thanh PARTIAL 7/10 voi bang chung va cac muc tra phi/ngoai vi de pending.
+- [x] Cap nhat Phase 7 checklist thanh PARTIAL 4/10 voi bang chung va cac muc tra phi/ngoai vi de pending.
+- [x] Provision Supabase E2E project rieng, restore production schema-only, cau hinh GitHub E2E secrets va verify 4/4 real-database suites pass.
 
 **Acceptance Criteria:**
 - Given mot push/PR, when GitHub Actions chay, then lint, build, critical tests, migration drift va security gates deu thuc thi va bao xanh.
@@ -79,6 +80,7 @@ context:
 - `npm.cmd run security:audit` va `npm.cmd run security:secrets` -- gates pass.
 - `npm.cmd run db:migration:check` va zero-downtime policy test -- pass.
 - `git diff --check` -- khong co whitespace errors.
+- `npm.cmd run test:real-db-e2e -- --silent` -- 4 suites, 4 tests pass tren Supabase E2E rieng.
 - GitHub staging/production runs va Vercel deployment list -- staging Ready, production Ready sau approval.
 - Production va replica health endpoints -- HTTP 200 voi trang thai healthy.
 
@@ -92,4 +94,11 @@ context:
 - npm.cmd run security:audit and npm.cmd run security:secrets: pass.
 - Workflow YAML parsing, rollback shell syntax, and offline rollback dry-run: pass.
 - git diff --check: pass.
-- External pending: isolated staging project/database/secrets and paid Supabase Read Replica.
+- External pending: isolated staging application project/database/secrets, Production reviewers/Vercel token/database secret, real rollback drill, remote migration run, and paid Supabase Read Replica.
+## Review Outcome
+
+- Independent review found immutable deployment, fail-open migration, rollback target, audit persistence, strict typing, pagination, and replica-health gaps.
+- Patched: exact-SHA preview before promote, smoke before promote, main-only production dispatch, required production DB secret, fail-closed audit logging, typed partner service usage, full partner pagination, explicit replica-unavailable health, and verified rollback target ownership/state.
+- Existing static-analysis workflow already provides CodeQL, Semgrep, Gitleaks, and Trivy; duplicate scanner finding was rejected.
+- Full local Jest result: 152 suites and 1,730 tests passed.
+- Four real-database business E2E suites now run through the separate fail-closed `test:real-db-e2e` gate. Supabase project `bella-spa-erp-e2e` is schema-only (no production data), and the required repository secrets are configured.

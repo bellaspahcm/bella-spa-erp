@@ -49,8 +49,10 @@ describe('Validation Middleware', () => {
         body: JSON.stringify({ name: 'John', age: 30 }), // Missing email
       });
 
-      await expect(validateBody(req, schema)).rejects.toThrow(APIError);
-      await expect(validateBody(req, schema)).rejects.toThrow('INVALID_INPUT');
+      await expect(validateBody(req, schema)).rejects.toMatchObject({
+        code: 'VAL_001',
+        message: 'Validation failed',
+      });
     });
 
     it('rejects invalid body (wrong type)', async () => {
@@ -176,7 +178,7 @@ describe('Validation Middleware', () => {
       };
 
       expect(() => validateParams(params, schema)).toThrow(APIError);
-      expect(() => validateParams(params, schema)).toThrow('Invalid UUID');
+      expect(() => validateParams(params, schema)).toThrow('Invalid path parameters');
     });
   });
 
@@ -197,7 +199,7 @@ describe('Validation Middleware', () => {
       };
 
       expect(() => blockTenantInjection(body)).toThrow(APIError);
-      expect(() => blockTenantInjection(body)).toThrow('TENANT_INJECTION_ATTEMPT');
+      expect(() => blockTenantInjection(body)).toThrow('tenant_id cannot be provided by client');
     });
 
     it('blocks tenantId (camelCase) in request body', () => {
@@ -361,7 +363,10 @@ describe('Validation Middleware', () => {
         tenant_id: z.string().optional(), // Allow in schema but should be blocked
       });
 
-      await expect(validate(req, { bodySchema: schema })).rejects.toThrow('TENANT_INJECTION_ATTEMPT');
+      await expect(validate(req, { bodySchema: schema })).rejects.toMatchObject({
+        code: 'AUTHZ_003',
+        message: 'tenant_id cannot be provided by client',
+      });
     });
 
     it('skips tenant injection check when disabled', async () => {

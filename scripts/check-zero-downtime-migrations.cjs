@@ -1,51 +1,128 @@
 const { execFileSync } = require('node:child_process');
-const { readFileSync } = require('node:fs');
+const { existsSync, readFileSync } = require('node:fs');
 const { resolve } = require('node:path');
 
 const MIGRATION_PATH = /^supabase[\\/]migrations[\\/].+\.sql$/i;
 const RULES = [
-  { code: 'drop-object', matches: (sql) => /\bDROP\s+(?:TABLE|SCHEMA|TYPE)\b/i.test(sql) },
-  { code: 'drop-column', matches: (sql) => /\bDROP\s+COLUMN\b/i.test(sql) },
-  { code: 'alter-column-type', matches: (sql) => /\bALTER\s+COLUMN\b[\s\S]*?\bTYPE\b/i.test(sql) },
-  { code: 'rename-table-or-column', matches: (sql) => /\bALTER\s+TABLE\b[\s\S]*?\bRENAME\s+(?:COLUMN|TO)\b/i.test(sql) },
-  {
-    code: 'blocking-index',
-    matches: (sql) => /\bCREATE\s+(?:UNIQUE\s+)?INDEX\b/i.test(sql)
-      && !/\bCREATE\s+(?:UNIQUE\s+)?INDEX\s+CONCURRENTLY\b/i.test(sql),
-  },
+  { code: 'drop-object', pattern: /\bDROP\s+(?:TABLE|SCHEMA|TYPE|VIEW|MATERIALIZED\s+VIEW|FUNCTION|PROCEDURE)\b/gi },
+  { code: 'drop-column', pattern: /\bDROP\s+COLUMN\b/gi },
+  { code: 'truncate', pattern: /\bTRUNCATE(?:\s+TABLE)?\b/gi },
+  { code: 'alter-column-type', pattern: /\bALTER\s+COLUMN\b[^;]*?\bTYPE\b/gi },
+  { code: 'rename-table-or-column', pattern: /\bALTER\s+TABLE\b[^;]*?\bRENAME\s+(?:COLUMN|TO)\b/gi },
+  { code: 'set-not-null', pattern: /\bALTER\s+COLUMN\b[^;]*?\bSET\s+NOT\s+NULL\b/gi },
+  { code: 'validate-constraint', pattern: /\bVALIDATE\s+CONSTRAINT\b/gi },
+  { code: 'blocking-index', pattern: /\bCREATE\s+(?:UNIQUE\s+)?INDEX\b(?!\s+CONCURRENTLY\b)/gi },
 ];
 
-function hasAllowAnnotation(statement, code) {
-  return new RegExp('--\\s*zero-downtime:\\s*allow\\s+' + code + '\\s+-\\s+\\S', 'i')
-    .test(statement);
+function maskRange(chars, start, end) {
+  for (let index = start; index < end; index += 1) {
+    if (chars[index] !== '\n' && chars[index] !== '\r') chars[index] = ' ';
+  }
+}
+
+function maskSqlLiteralsAndComments(sql) {
+  const source = String(sql);
+  const chars = source.split('');
+  let index = 0;
+  let dollarTag = null;
+
+  while (index < source.length) {
+    if (dollarTag && source.startsWith(dollarTag, index)) {
+      maskRange(chars, index, index + dollarTag.length);
+      index += dollarTag.length;
+      dollarTag = null;
+      continue;
+    }
+
+    if (!dollarTag && source.startsWith('--', index)) {
+      const end = source.indexOf('\n', index);
+      const stop = end === -1 ? source.length : end;
+      maskRange(chars, index, stop);
+      index = stop;
+      continue;
+    }
+
+    if (!dollarTag && source.startsWith('/*', index)) {
+      let depth = 1;
+      let cursor = index + 2;
+      while (cursor < source.length && depth > 0) {
+        if (source.startsWith('/*', cursor)) {
+          depth += 1;
+          cursor += 2;
+        } else if (source.startsWith('*/', cursor)) {
+          depth -= 1;
+          cursor += 2;
+        } else {
+          cursor += 1;
+        }
+      }
+      maskRange(chars, index, cursor);
+      index = cursor;
+      continue;
+    }
+
+    if (!dollarTag && source[index] === '$') {
+      const tagMatch = source.slice(index).match(/^\$[A-Za-z_][A-Za-z0-9_]*\$|^\$\$/);
+      if (tagMatch) {
+        dollarTag = tagMatch[0];
+        maskRange(chars, index, index + dollarTag.length);
+        index += dollarTag.length;
+        continue;
+      }
+    }
+
+    if (source[index] === "'" || source[index] === '"') {
+      const quote = source[index];
+      let cursor = index + 1;
+      while (cursor < source.length) {
+        if (source[cursor] === quote && source[cursor + 1] === quote) {
+          cursor += 2;
+          continue;
+        }
+        if (source[cursor] === quote) {
+          cursor += 1;
+          break;
+        }
+        cursor += 1;
+      }
+      maskRange(chars, index, cursor);
+      index = cursor;
+      continue;
+    }
+
+    index += 1;
+  }
+
+  return chars.join('');
+}
+
+function hasAllowAnnotation(sourceLines, lineIndex, code) {
+  const nearby = sourceLines.slice(Math.max(0, lineIndex - 2), lineIndex + 1).join('\n');
+  return new RegExp('--\\s*zero-downtime:\\s*allow\\s+' + code + '\\s+-\\s+\\S', 'i').test(nearby);
 }
 
 function analyzeSql(sql) {
   const source = String(sql);
+  const masked = maskSqlLiteralsAndComments(source);
+  const sourceLines = source.split(/\r?\n/);
   const findings = [];
-  const statementPattern = /(?:^|;)([\s\S]*?)(?=;|$)/g;
-  let match;
 
-  while ((match = statementPattern.exec(source)) !== null) {
-    const rawStatement = match[1];
-    const executable = rawStatement.replace(/--.*$/gm, '').trim();
-    if (!executable) continue;
-
-    const statementOffset = match.index + (match[0].startsWith(';') ? 1 : 0);
-    const line = source.slice(0, statementOffset).split(/\r?\n/).length;
-
-    for (const rule of RULES) {
-      if (rule.matches(executable) && !hasAllowAnnotation(rawStatement, rule.code)) {
+  for (const rule of RULES) {
+    rule.pattern.lastIndex = 0;
+    let match;
+    while ((match = rule.pattern.exec(masked)) !== null) {
+      const line = masked.slice(0, match.index).split(/\r?\n/).length;
+      if (!hasAllowAnnotation(sourceLines, line - 1, rule.code)) {
         findings.push({
           code: rule.code,
           line,
-          statement: executable.replace(/\s+/g, ' '),
+          statement: match[0].replace(/\s+/g, ' ').trim(),
         });
       }
     }
   }
 
-  return findings;
+  return findings.sort((left, right) => left.line - right.line || left.code.localeCompare(right.code));
 }
 
 function gitLines(args) {
@@ -59,36 +136,49 @@ function gitLines(args) {
   }
 }
 
-function listChangedMigrations(baseRef = process.env.ZERO_DOWNTIME_BASE_REF || 'HEAD^') {
-  const candidates = new Set([
-    ...gitLines(['diff', '--name-only', '--diff-filter=ACMR', baseRef, '--', 'supabase/migrations']),
-    ...gitLines(['diff', '--name-only', '--diff-filter=ACMR', '--cached', '--', 'supabase/migrations']),
-    ...gitLines(['diff', '--name-only', '--diff-filter=ACMR', '--', 'supabase/migrations']),
-    ...gitLines(['ls-files', '--others', '--exclude-standard', '--', 'supabase/migrations']),
-  ]);
+function addChangedEntries(entries, lines, defaultStatus) {
+  for (const line of lines) {
+    const columns = line.split(/\s+/);
+    const status = columns.length > 1 ? columns[0][0] : defaultStatus;
+    const file = columns.length > 1 ? columns.at(-1) : columns[0];
+    if (!MIGRATION_PATH.test(file)) continue;
+    if (status === 'D' || !entries.has(file)) entries.set(file, status);
+  }
+}
 
-  return [...candidates].filter((file) => MIGRATION_PATH.test(file)).sort();
+function listChangedMigrations(baseRef = process.env.ZERO_DOWNTIME_BASE_REF || 'HEAD^') {
+  const entries = new Map();
+  addChangedEntries(entries, gitLines(['diff', '--name-status', '--diff-filter=ACMRD', baseRef, '--', 'supabase/migrations']), 'M');
+  addChangedEntries(entries, gitLines(['diff', '--name-status', '--diff-filter=ACMRD', '--cached', '--', 'supabase/migrations']), 'M');
+  addChangedEntries(entries, gitLines(['diff', '--name-status', '--diff-filter=ACMRD', '--', 'supabase/migrations']), 'M');
+  addChangedEntries(entries, gitLines(['ls-files', '--others', '--exclude-standard', '--', 'supabase/migrations']), 'A');
+
+  return [...entries].map(([file, status]) => ({ file, status })).sort((a, b) => a.file.localeCompare(b.file));
 }
 
 function main() {
   const baseArgIndex = process.argv.indexOf('--base');
   const baseRef = baseArgIndex >= 0 ? process.argv[baseArgIndex + 1] : undefined;
-  if (baseArgIndex >= 0 && !baseRef) {
-    throw new Error('The --base option requires a git ref.');
-  }
+  if (baseArgIndex >= 0 && !baseRef) throw new Error('The --base option requires a git ref.');
 
-  const files = listChangedMigrations(baseRef);
-  if (files.length === 0) {
+  const migrations = listChangedMigrations(baseRef);
+  if (migrations.length === 0) {
     console.log('No changed Supabase migrations require zero-downtime review.');
     return;
   }
 
   let failed = false;
-  for (const file of files) {
-    const findings = analyzeSql(readFileSync(resolve(file), 'utf8'));
+  for (const migration of migrations) {
+    if (migration.status === 'D' || !existsSync(resolve(migration.file))) {
+      failed = true;
+      console.error(migration.file + ': deleted migration history is not allowed');
+      continue;
+    }
+
+    const findings = analyzeSql(readFileSync(resolve(migration.file), 'utf8'));
     for (const finding of findings) {
       failed = true;
-      console.error(file + ':' + finding.line + ' [' + finding.code + '] ' + finding.statement);
+      console.error(migration.file + ':' + finding.line + ' [' + finding.code + '] ' + finding.statement);
     }
   }
 
@@ -99,7 +189,7 @@ function main() {
     return;
   }
 
-  console.log('Zero-downtime migration check passed for ' + files.length + ' migration(s).');
+  console.log('Zero-downtime migration check passed for ' + migrations.length + ' migration(s).');
 }
 
 if (require.main === module) {
@@ -111,4 +201,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { analyzeSql, listChangedMigrations };
+module.exports = { analyzeSql, listChangedMigrations, maskSqlLiteralsAndComments };

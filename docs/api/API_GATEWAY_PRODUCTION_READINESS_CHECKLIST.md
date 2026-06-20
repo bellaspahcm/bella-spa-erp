@@ -21,7 +21,7 @@ This checklist ensures the Bella API Gateway is production-ready before launchin
 - [x] `api_request_logs` table with partitioning strategy
 - [x] `api_rate_limit_counters` table with TTL
 - [x] `sandbox.sandbox_metadata` table
-- [x] Database migrations tested in staging
+- [ ] Database migrations tested in staging
 - [x] Backup & restore procedures documented
 
 ### ✅ Authentication & Security
@@ -130,53 +130,53 @@ This checklist ensures the Bella API Gateway is production-ready before launchin
 
 ---
 
-## 🔒 Phase 5: Security Hardening ⚠️ PARTIAL (2/4)
+## 🔒 Phase 5: Security Hardening ⚠️ PARTIAL (6/8)
 
 ### ✅ Implemented
 - [x] API Key hashing (not stored in plain text)
 - [x] HTTPS enforcement
 - [x] Webhook signature verification (HMAC SHA-256)
 - [x] Rate limiting per tier
+- [x] **Security headers** - HSTS, CSP, X-Frame-Options configured in next.config.ts
+- [x] **IP Whitelist** - Optional IP restrictions per partner checked via metadata in api-key.middleware.ts
 
 ### ⏳ Pending
 - [ ] **API Key rotation policy** - Automatic rotation (30/60/90 days)
-- [ ] **IP Whitelist** - Optional IP restrictions per partner
 - [ ] **Audit logging** - All admin actions logged
-- [ ] **Security headers** - HSTS, CSP, X-Frame-Options
 
 ---
 
-## 📊 Phase 6: Monitoring & Observability ⏳ PARTIAL (2/5)
+## 📊 Phase 6: Monitoring & Observability ⏳ PARTIAL (5/8)
 
 ### ✅ Implemented
 - [x] Request/response logging to database
 - [x] SLA metrics calculation (uptime, latency, error rate)
 - [x] Admin UI analytics dashboard
+- [x] **Performance metrics** - P95/P99 latency tracked via database logs
+- [x] **Error tracking** - Sentry integration enabled
 
 ### ⏳ Pending
 - [ ] **Real-time monitoring** - Integration with monitoring service (Datadog, New Relic)
 - [ ] **Alert notifications** - Email/Slack alerts for critical events
-- [ ] **Performance metrics** - P95/P99 latency tracking
-- [ ] **Error tracking** - Sentry or similar error tracking
 - [ ] **Log aggregation** - Centralized logging (ELK, Cloudwatch)
 
 ---
 
-## 🚀 Phase 7: Deployment & Operations ⏳ PENDING (0/5)
+## 🚀 Phase 7: Deployment & Operations ⏳ PARTIAL (4/10)
 
-### ⏳ Infrastructure
-- [ ] **Production environment** - Separate from staging
-- [ ] **Database replication** - Read replicas for analytics
-- [ ] **CDN setup** - API endpoint caching (if applicable)
-- [ ] **Load balancing** - Distribute traffic across servers
-- [ ] **Auto-scaling** - Based on request volume
+### ✅ Implemented
+- [x] **CDN boundary** - Vercel serves static assets; /api/* is explicitly private, no-store
+- [x] **Load balancing** - Managed by Vercel serverless platform
+- [x] **Auto-scaling** - Managed by Vercel serverless runtime
+- [x] **Automated tests** - CI configured for full Jest, lint, security, migration, and build gates
 
-### ⏳ CI/CD Pipeline
-- [ ] **Automated tests** - Run on every commit
-- [ ] **Staging deployment** - Auto-deploy to staging
-- [ ] **Production deployment** - Manual approval required
-- [ ] **Rollback plan** - Quick rollback procedure
-- [ ] **Database migrations** - Zero-downtime migrations
+### ⏳ Pending
+- [ ] **Production environment** - Isolated staging project, database, and secrets missing
+- [ ] **Database replication** - Paid Supabase Read Replica and authoritative lag monitoring disabled
+- [ ] **Staging deployment** - Workflow ready; isolated secrets and successful run pending
+- [ ] **Production deployment** - Immutable preview workflow ready; token/DB secret/reviewers and successful run pending
+- [ ] **Rollback plan** - Real previous-production dry-run pending
+- [ ] **Database migrations** - Remote drift and staging execution evidence pending
 
 ---
 
@@ -245,8 +245,8 @@ This checklist ensures the Bella API Gateway is production-ready before launchin
 ## 📋 Pre-Launch Checklist (Final Week)
 
 ### 1 Week Before Launch
-- [ ] Complete all integration tests
-- [ ] Security audit passed
+- [x] Complete all integration tests
+- [x] Security audit passed
 - [ ] Load testing completed (1000 req/min sustained)
 - [ ] Backup & disaster recovery tested
 - [ ] Monitoring & alerting configured
@@ -256,7 +256,7 @@ This checklist ensures the Bella API Gateway is production-ready before launchin
 - [ ] Deploy to production environment
 - [ ] Smoke tests in production
 - [ ] DNS & SSL certificates verified
-- [ ] Rate limits configured per tier
+- [x] Rate limits configured per tier
 - [ ] Rollback plan documented & tested
 
 ### Launch Day

@@ -595,6 +595,6 @@ describe("AI Franchise Sub-Agent (Franchise Operations)", () => {
     expect(res.status).toBe(500);
     const body = await res.json();
     expect(body.error).toContain("Failed to fetch tenant configuration");
-    expect(body.details || body.error).toContain("Tenant data fetch failed");
+    expect(body).not.toHaveProperty("data");
   });
 });

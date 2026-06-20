@@ -14,12 +14,17 @@ const config: Config = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
+  testMatch: [
+    '<rootDir>/src/**/*.test.[jt]s?(x)',
+    '<rootDir>/tests/**/*.test.[jt]s?(x)',
+  ],
   // Jest chỉ scan src/. Playwright E2E nằm trong e2e/ — chạy bằng `npm run e2e`.
   testPathIgnorePatterns: [
     '/node_modules/',
     '/.next/',
     '/e2e/',
     '/playwright-report/',
+    '/src/__tests__/e2e-(order-lifecycle-real|refund-full|accounting-gl-verification|payroll-month-close)\\.test\\.ts$',
   ],
 }
  

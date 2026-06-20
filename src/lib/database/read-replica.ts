@@ -17,8 +17,8 @@ import type { Database } from '@/types/database.types';
 // Connection strings từ environment
 const PRIMARY_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const PRIMARY_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
-const REPLICA_URL = process.env.SUPABASE_READ_REPLICA_URL || PRIMARY_URL;
-const REPLICA_KEY = process.env.SUPABASE_READ_REPLICA_KEY || PRIMARY_KEY;
+const REPLICA_URL = process.env.SUPABASE_READ_REPLICA_URL;
+const REPLICA_KEY = process.env.SUPABASE_READ_REPLICA_KEY;
 
 // Flag để enable/disable read replica routing
 const USE_READ_REPLICA = process.env.USE_READ_REPLICA === 'true';
@@ -55,6 +55,9 @@ export function getReplicaClient(): SupabaseClient<Database> {
     return getPrimaryClient();
   }
 
+  if (!REPLICA_URL || !REPLICA_KEY) {
+    throw new Error('Read replica is enabled but its credentials are missing');
+  }
   if (!replicaClient) {
     replicaClient = createClient<Database>(REPLICA_URL, REPLICA_KEY, {
       auth: {
@@ -115,27 +118,42 @@ export async function checkReplicaHealth(): Promise<{
   lag_ms: number | null;
   error?: string;
 }> {
+  if (!USE_READ_REPLICA) {
+    return {
+      healthy: false,
+      lag_ms: null,
+      error: 'Read replica is disabled',
+    };
+  }
+
+  if (!REPLICA_URL || !REPLICA_KEY) {
+    return {
+      healthy: false,
+      lag_ms: null,
+      error: 'Read replica credentials are missing',
+    };
+  }
+
+  if (REPLICA_URL === PRIMARY_URL) {
+    return {
+      healthy: false,
+      lag_ms: null,
+      error: 'Read replica URL points to the primary database',
+    };
+  }
+
   try {
-    const primary = getPrimaryClient();
     const replica = getReplicaClient();
+    const { error } = await replica.from('tenants').select('id').limit(1);
 
-    // Query current timestamp from both using simple SELECT
-    const [primaryResult, replicaResult] = await Promise.all([
-      primary.from('tenants').select('created_at').limit(1).single(),
-      replica.from('tenants').select('created_at').limit(1).single(),
-    ]);
-
-    if (primaryResult.error || replicaResult.error) {
-      throw new Error('Failed to query database');
+    if (error) {
+      throw error;
     }
 
-    // Use current time as proxy for lag detection
-    const now = Date.now();
-    const primaryResponseTime = Date.now();
-    
     return {
-      healthy: true, // If both queries succeed, replica is healthy
-      lag_ms: 0, // Actual lag requires specialized monitoring
+      healthy: false,
+      lag_ms: null,
+      error: 'Replica connected, but authoritative replication lag monitoring is not configured',
     };
   } catch (error) {
     return {

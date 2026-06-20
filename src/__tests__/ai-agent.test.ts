@@ -104,8 +104,33 @@ const ADMIN_USER = { id: "user-admin", tenant_id: TENANT_ID, role: "admin", full
 const ACCOUNTANT_USER = { id: "user-acct", tenant_id: TENANT_ID, role: "accountant", full_name: "Chief Accountant" };
 const KTV_USER = { id: "user-ktv", tenant_id: TENANT_ID, role: "ktv", full_name: "Staff KTV" };
 
+function configureRouteUser(profile: typeof ADMIN_USER) {
+  mockFrom.mockImplementation((table: string) => ({
+    insert: mockInsert,
+    select: jest.fn().mockReturnThis(),
+    eq: jest.fn().mockReturnThis(),
+    single: jest.fn().mockResolvedValue({
+      data: table === "tenants"
+        ? {
+            id: TENANT_ID,
+            name: "Bella Spa Test",
+            enabled_modules: ["spa"],
+            subscription_tier: "professional",
+            role_permissions: {},
+          }
+        : profile,
+      error: null,
+    }),
+    maybeSingle: jest.fn().mockResolvedValue({
+      data: { gemini_api_key: "TEST-GEMINI-KEY-123" },
+      error: null,
+    }),
+  }));
+}
+
 beforeEach(() => {
   jest.clearAllMocks();
+  configureRouteUser(ADMIN_USER);
   mockRpc.mockReset();
   mockInsert.mockReset();
   mockInsert.mockResolvedValue({ error: null });
@@ -155,12 +180,7 @@ describe("AI COO Orchestrator Security & RBAC Guard", () => {
   });
 
   it("blocks and rejects KTV user (non-admin)", async () => {
-    mockFrom.mockImplementationOnce(() => ({
-      select: jest.fn().mockReturnThis(),
-      eq: jest.fn().mockReturnThis(),
-      single: jest.fn().mockResolvedValue({ data: KTV_USER, error: null }),
-      insert: mockInsert
-    } as any));
+    configureRouteUser(KTV_USER);
 
     const req = new NextRequest("http://localhost/api/v1/ai/coo-orchestrator", {
       method: "POST",
@@ -176,12 +196,7 @@ describe("AI COO Orchestrator Security & RBAC Guard", () => {
 
 describe("AI COO Orchestrator Routing & RPC execution", () => {
   it("routes human-resource command to CHRO agent and calls salary and attendance RPCs", async () => {
-    mockFrom.mockImplementationOnce(() => ({
-      select: jest.fn().mockReturnThis(),
-      eq: jest.fn().mockReturnThis(),
-      single: jest.fn().mockResolvedValue({ data: ADMIN_USER, error: null }),
-      insert: mockInsert
-    } as any));
+    configureRouteUser(ADMIN_USER);
 
     // Mock RPC responses
     mockRpc.mockImplementation((fnName) => {
@@ -395,12 +410,7 @@ describe("AI COO Orchestrator Error propagation (Zero Silent DB Failures)", () =
 
 describe("AI Action Approval Security & Side-Effects", () => {
   it("restricts action approval to admin & accountant only", async () => {
-    mockFrom.mockImplementationOnce(() => ({
-      select: jest.fn().mockReturnThis(),
-      eq: jest.fn().mockReturnThis(),
-      single: jest.fn().mockResolvedValue({ data: KTV_USER, error: null }),
-      insert: mockInsert
-    } as any));
+    configureRouteUser(KTV_USER);
 
     const req = new NextRequest("http://localhost/api/v1/ai/action-approval", {
       method: "POST",

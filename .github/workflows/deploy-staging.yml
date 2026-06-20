@@ -5,12 +5,12 @@ on:
     branches: [develop]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 concurrency:
   group: staging-deploy
   cancel-in-progress: true
-
-env:
-  STAGING_BASE_URL: ${{ vars.STAGING_E2E_BASE_URL }}
 
 jobs:
   validate:
@@ -26,6 +26,7 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
           VERCEL_STAGING_PROJECT_ID: ${{ vars.VERCEL_STAGING_PROJECT_ID }}
+          BYPASS_SECRET: ${{ secrets.STAGING_VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: |
           test -n "$STAGING_BASE_URL"
           test -n "$STAGING_SUPABASE_URL"
@@ -33,50 +34,67 @@ jobs:
           test -n "$VERCEL_TOKEN"
           test -n "$VERCEL_ORG_ID"
           test -n "$VERCEL_STAGING_PROJECT_ID"
+          test -n "$BYPASS_SECRET"
 
-  deploy:
-    name: Deploy Isolated Staging Project
+  preview:
+    name: Deploy Exact Staging Preview
     needs: validate
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    environment:
-      name: Staging
-      url: ${{ vars.STAGING_E2E_BASE_URL }}
+    timeout-minutes: 35
+    outputs:
+      deployment_url: ${{ steps.deploy.outputs.deployment_url }}
     env:
       VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ vars.VERCEL_STAGING_PROJECT_ID }}
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      BYPASS_SECRET: ${{ secrets.STAGING_VERCEL_AUTOMATION_BYPASS_SECRET }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
-          fetch-depth: 2
-      - uses: actions/setup-node@v4
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
         with:
           node-version: '24'
           cache: npm
       - run: npm ci
       - run: npm run lint
       - run: npm run test:critical
-      - run: npm run db:migration:zero-downtime
+      - run: npm run db:migration:zero-downtime -- --base HEAD^
       - run: npm run db:migration:check
         env:
           SUPABASE_DB_URL: ${{ secrets.STAGING_SUPABASE_DB_URL }}
-      - run: npm run build
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
       - run: npx vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
       - run: npx vercel build --prod --token="$VERCEL_TOKEN"
-      - run: npx vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+      - name: Deploy without promotion
+        id: deploy
+        run: |
+          output="$(npx vercel deploy --prebuilt --yes --token="$VERCEL_TOKEN")"
+          printf '%s\n' "$output"
+          deployment_url="$(printf '%s\n' "$output" | grep -Eo 'https://[^[:space:]]+\.vercel\.app' | tail -1)"
+          printf '%s' "$deployment_url" | grep -Eq '^https://[^/]+\.vercel\.app$'
+          echo "deployment_url=$deployment_url" >> "$GITHUB_OUTPUT"
+      - name: Wait for exact preview health
+        env:
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment_url }}
+        run: |
+          for attempt in 1 2 3 4 5 6 7 8; do
+            status="$(curl --silent --output /dev/null --write-out '%{http_code}' --header "x-vercel-protection-bypass: $BYPASS_SECRET" "$DEPLOYMENT_URL/api/health" || true)"
+            if [ "$status" = 200 ]; then
+              exit 0
+            fi
+            echo "Staging preview health attempt $attempt returned HTTP $status"
+            sleep 15
+          done
+          exit 1
 
   smoke:
-    name: Staging Smoke Test
-    needs: deploy
+    name: Smoke Exact Staging Preview
+    needs: preview
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: '24'
           cache: npm
@@ -84,12 +102,23 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run e2e:auth-smoke
         env:
-          E2E_BASE_URL: ${{ env.STAGING_BASE_URL }}
+          E2E_BASE_URL: ${{ needs.preview.outputs.deployment_url }}
           E2E_ADMIN_EMAIL: ${{ secrets.STAGING_E2E_ADMIN_EMAIL }}
           E2E_ADMIN_PASSWORD: ${{ secrets.STAGING_E2E_ADMIN_PASSWORD }}
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: staging-deployment-playwright-report
-          path: playwright-report/
-          retention-days: 7
+          E2E_VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.STAGING_VERCEL_AUTOMATION_BYPASS_SECRET }}
+
+  promote:
+    name: Promote Verified Staging Preview
+    needs: [preview, smoke]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: staging
+      url: ${{ vars.STAGING_E2E_BASE_URL }}
+    env:
+      VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ vars.VERCEL_STAGING_PROJECT_ID }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      DEPLOYMENT_URL: ${{ needs.preview.outputs.deployment_url }}
+    steps:
+      - run: npx vercel promote "$DEPLOYMENT_URL" --yes --token="$VERCEL_TOKEN"

@@ -39,6 +39,10 @@ type BookingRow = Database['public']['Tables']['bookings']['Row'];
 type SessionLogRow = Database['public']['Tables']['session_logs']['Row'];
 type RevenueRow = Database['public']['Tables']['revenue']['Row'];
 type SalaryRecordRow = Database['public']['Tables']['salary_records']['Row'];
+type TenantInsert = Database['public']['Tables']['tenants']['Insert'];
+type BookingInsert = Database['public']['Tables']['bookings']['Insert'];
+
+jest.setTimeout(60_000);
 
 describe('E2E Order Lifecycle (Real Database)', () => {
   let supabase: ReturnType<typeof createSupabaseClient<Database>>;
@@ -64,13 +68,13 @@ describe('E2E Order Lifecycle (Real Database)', () => {
     if (tenant) {
       testTenantId = tenant.id;
     } else {
+      const tenantPayload: TenantInsert = {
+        name: 'Test Tenant E2E',
+        status: 'active',
+      };
       const { data: newTenant, error } = await supabase
         .from('tenants')
-        .insert({
-          name: 'Test Tenant E2E',
-          domain_prefix: 'test-e2e',
-          status: 'active',
-        })
+        .insert(tenantPayload)
         .select('id')
         .single();
       
@@ -179,22 +183,23 @@ describe('E2E Order Lifecycle (Real Database)', () => {
     // For E2E test, we'll insert directly to database
     const today = new Date().toISOString().split('T')[0];
     
+    const bookingPayload: BookingInsert = {
+      tenant_id: testTenantId,
+      booking_number: `ORDER-E2E-${Date.now()}`,
+      customer_id: testCustomerId,
+      package_id: testPackageId,
+      assigned_ktv_id: testKtvId,
+      start_date: today,
+      full_price: 1000000,
+      deposit_amount: 300000,
+      discount_percent: 0,
+      status: 'booked',
+      total_sessions: 10,
+      completed_sessions: 0,
+    };
     const { data: booking, error: bookingError } = await supabase
       .from('bookings')
-      .insert({
-        tenant_id: testTenantId,
-        customer_id: testCustomerId,
-        package_id: testPackageId,
-        assigned_ktv_id: testKtvId,
-        start_date: today,
-        total_price: 1000000,
-        deposit: 300000,
-        remaining: 700000,
-        discount_percent: 0,
-        status: 'active',
-        total_sessions: 10,
-        completed_sessions: 0,
-      })
+      .insert(bookingPayload)
       .select('*')
       .single();
 
@@ -219,7 +224,7 @@ describe('E2E Order Lifecycle (Real Database)', () => {
       id: testBookingId,
       customer_id: testCustomerId,
       assigned_ktv_id: testKtvId,
-      status: 'active',
+      status: 'booked',
       total_sessions: 10,
       completed_sessions: 0,
     });
@@ -235,10 +240,10 @@ describe('E2E Order Lifecycle (Real Database)', () => {
       .from('session_logs')
       .insert({
         booking_id: testBookingId,
-        assigned_ktv_id: testKtvId,
         session_number: 1,
         assigned_date: sessionDateStr,
         status: 'scheduled',
+        tenant_id: testTenantId,
       })
       .select('*')
       .single();
@@ -313,11 +318,10 @@ describe('E2E Order Lifecycle (Real Database)', () => {
       .insert({
         tenant_id: testTenantId,
         booking_id: testBookingId,
-        customer_id: testCustomerId,
         amount: 700000, // Remaining payment
         payment_method: 'cash',
         status: 'confirmed',
-        revenue_date: today,
+        received_date: today,
         notes: 'E2E Test Payment',
       })
       .select('*')
@@ -341,7 +345,6 @@ describe('E2E Order Lifecycle (Real Database)', () => {
     expect(verifyRevenue).toHaveLength(1);
     expect(verifyRevenue![0]).toMatchObject({
       booking_id: testBookingId,
-      customer_id: testCustomerId,
       amount: 700000,
       status: 'confirmed',
     });
@@ -350,14 +353,14 @@ describe('E2E Order Lifecycle (Real Database)', () => {
     // STEP 6: Calculate Commission (Salary)
     // =========================================
     // Check if salary record exists for this KTV
-    const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+    const currentMonth = `${new Date().toISOString().slice(0, 7)}-01`;
 
     const { data: existingSalary } = await supabase
       .from('salary_records')
       .select('*')
       .eq('tenant_id', testTenantId)
       .eq('ktv_id', testKtvId)
-      .eq('salary_month', currentMonth)
+      .eq('month_year', currentMonth)
       .single();
 
     let salaryRecordId: string;
@@ -369,7 +372,7 @@ describe('E2E Order Lifecycle (Real Database)', () => {
         .insert({
           tenant_id: testTenantId,
           ktv_id: testKtvId,
-          salary_month: currentMonth,
+          month_year: currentMonth,
           base_salary: 5000000,
           session_bonus: 100000, // 100k per session
           total_sessions: 1,
@@ -455,7 +458,7 @@ describe('E2E Order Lifecycle (Real Database)', () => {
       assigned_ktv_id: testKtvId,
       total_sessions: 10,
       completed_sessions: 1,
-      status: 'active',
+      status: 'booked',
     });
     console.log('✅ bookings table: OK', {
       totalSessions: 10,

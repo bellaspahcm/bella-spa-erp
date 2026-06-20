@@ -53,7 +53,7 @@ function asMoney(value: number | string | null | undefined) {
 }
 
 export function normalizeDiscountPercent(value: number | string | null | undefined) {
-  return parsePercentInput(value);
+  return parsePercentInput(value, { min: 0, max: 100 });
 }
 
 function normalizeStatus(status: string | null | undefined) {

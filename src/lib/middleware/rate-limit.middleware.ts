@@ -85,6 +85,24 @@ const knownPartnersCache = new Set<string>();
 let knownPartnersCacheTime = 0;
 const KNOWN_PARTNERS_CACHE_TTL = 60000; // 1 minute
 
+export function resetRateLimitStateForTests(): void {
+  if (process.env.NODE_ENV !== 'test') {
+    throw new Error('Rate-limit state reset is only available in tests');
+  }
+
+  redisClient = null;
+  redisStatus = 'unknown';
+  lastRedisCheckTime = 0;
+  circuitBreaker.state = 'CLOSED';
+  circuitBreaker.failureCount = 0;
+  circuitBreaker.successCount = 0;
+  circuitBreaker.lastFailureTime = 0;
+  circuitBreaker.nextAttemptTime = 0;
+  emergencyLimiter.clear();
+  knownPartnersCache.clear();
+  knownPartnersCacheTime = 0;
+}
+
 /**
  * Rate limit tiers with degraded mode limits
  * Define limits per minute and per day for each partner tier
@@ -989,4 +1007,3 @@ export function withRateLimit(
     return addRateLimitHeaders(req, response);
   };
 }
-

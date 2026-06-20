@@ -147,7 +147,7 @@ export async function GET(request: NextRequest) {
         .select('id, partner_name, partner_type, is_sandbox')
         .eq('id', partnerId)
         .eq('tenant_id', tenantId)
-        .single()) as unknown as QueryResult<PartnerAnalyticsRow | null>;
+        .maybeSingle()) as unknown as QueryResult<PartnerAnalyticsRow | null>;
 
       if (partnerError) {
         throw new Error('Failed to load API partner analytics scope: ' + partnerError.message);

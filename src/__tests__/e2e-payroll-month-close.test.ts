@@ -25,6 +25,10 @@ import type { Database } from '@/types/database.types';
 type SalaryRecordRow = Database['public']['Tables']['salary_records']['Row'];
 type SessionLogRow = Database['public']['Tables']['session_logs']['Row'];
 type BookingRow = Database['public']['Tables']['bookings']['Row'];
+type TenantInsert = Database['public']['Tables']['tenants']['Insert'];
+type BookingInsert = Database['public']['Tables']['bookings']['Insert'];
+
+jest.setTimeout(60_000);
 
 describe('E2E Payroll Month-End Closing (Critical HR Test)', () => {
   let supabase: ReturnType<typeof createSupabaseClient<Database>>;
@@ -55,13 +59,13 @@ describe('E2E Payroll Month-End Closing (Critical HR Test)', () => {
     if (tenant) {
       testTenantId = tenant.id;
     } else {
+      const tenantPayload: TenantInsert = {
+        name: 'Test Tenant Payroll',
+        status: 'active',
+      };
       const { data: newTenant, error } = await supabase
         .from('tenants')
-        .insert({
-          name: 'Test Tenant Payroll',
-          domain_prefix: 'test-payroll',
-          status: 'active',
-        })
+        .insert(tenantPayload)
         .select('id')
         .single();
       
@@ -177,23 +181,24 @@ describe('E2E Payroll Month-End Closing (Critical HR Test)', () => {
     // =========================================
     // STEP 1: Create Booking & Complete 3 Sessions
     // =========================================
+    const bookingPayload: BookingInsert = {
+      tenant_id: testTenantId,
+      booking_number: `PAYROLL-E2E-${Date.now()}`,
+      customer_id: testCustomerId,
+      package_id: testPackageId,
+      assigned_ktv_id: testKtvId,
+      start_date: session1DateStr,
+      full_price: 5000000,
+      deposit_amount: 5000000,
+      discount_percent: 0,
+      status: 'booked',
+      total_sessions: 10,
+      completed_sessions: 0,
+      ktv_commission: 150000,
+    };
     const { data: booking, error: bookingError } = await supabase
       .from('bookings')
-      .insert({
-        tenant_id: testTenantId,
-        customer_id: testCustomerId,
-        package_id: testPackageId,
-        assigned_ktv_id: testKtvId,
-        start_date: session1DateStr,
-        total_price: 5000000,
-        deposit: 5000000,
-        remaining: 0,
-        discount_percent: 0,
-        status: 'active',
-        total_sessions: 10,
-        completed_sessions: 0,
-        ktv_commission: 150000,
-      })
+      .insert(bookingPayload)
       .select('*')
       .single();
 
@@ -209,7 +214,6 @@ describe('E2E Payroll Month-End Closing (Critical HR Test)', () => {
         .from('session_logs')
         .insert({
           booking_id: testBookingId,
-          assigned_ktv_id: testKtvId,
           session_number: i,
           assigned_date: sessionDate,
           status: 'scheduled',
@@ -313,7 +317,7 @@ describe('E2E Payroll Month-End Closing (Critical HR Test)', () => {
       .from('salary_records')
       .update({ 
         status: 'confirmed',
-        confirmed_at: new Date().toISOString(),
+        ktv_confirmed_at: new Date().toISOString(),
       })
       .eq('id', testSalaryRecordId);
 
@@ -332,20 +336,8 @@ describe('E2E Payroll Month-End Closing (Critical HR Test)', () => {
       p_month: testMonth,
     });
 
-    if (lockError) {
-      console.warn('⚠️ Step 5: lock_monthly_records RPC failed (may not exist)', lockError);
-      
-      // Fallback: Manually update is_locked flag
-      const { error: manualLockError } = await supabase
-        .from('salary_records')
-        .update({ is_locked: true })
-        .eq('id', testSalaryRecordId);
-
-      expect(manualLockError).toBeNull();
-      console.log('✅ Step 5: Month locked (manual fallback)', { is_locked: true });
-    } else {
-      console.log('✅ Step 5: Month locked via RPC', { testMonth });
-    }
+    expect(lockError).toBeNull();
+    console.log('✅ Step 5: Month locked via RPC', { testMonth });
 
     // =========================================
     // STEP 6: Verify Salary Record is Locked
@@ -358,7 +350,7 @@ describe('E2E Payroll Month-End Closing (Critical HR Test)', () => {
 
     expect(lockedSalary).toBeDefined();
     expect(lockedSalary!.is_locked).toBe(true);
-    expect(lockedSalary!.status).toBe('confirmed');
+    expect(lockedSalary!.status).toBe('approved');
 
     console.log('✅ Step 6: Salary record locked', {
       is_locked: lockedSalary!.is_locked,

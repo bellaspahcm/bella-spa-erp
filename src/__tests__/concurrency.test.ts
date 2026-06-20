@@ -98,6 +98,18 @@ class MockQueryBuilder {
   }
 
   single() {
+    if (this.table === 'tenants') {
+      return Promise.resolve({
+        data: {
+          id: 'tenant-a',
+          name: 'Bella Spa A',
+          enabled_modules: ['spa'],
+          subscription_tier: 'professional',
+          role_permissions: {},
+        },
+        error: null,
+      });
+    }
     if (this.table === 'bookings') {
       return Promise.resolve({
         data: {
