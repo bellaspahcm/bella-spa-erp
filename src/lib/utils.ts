@@ -17,37 +17,36 @@ export function cn(...inputs: ClassValue[]) {
  * formatCurrency(1500000, { showSymbol: false }) // "1.500.000"
  */
 export function formatCurrency(
-  amount: number | null | undefined,
+  amount: number | string | null | undefined,
   options?: {
     compact?: boolean;
     showSymbol?: boolean;
   }
 ): string {
-  if (amount === null || amount === undefined || isNaN(amount)) {
-    return options?.showSymbol !== false ? '0 ₫' : '0';
-  }
+  const value = typeof amount === 'string' ? Number(amount) : amount;
+  if (value === null || value === undefined || !Number.isFinite(value)) return '0';
 
-  const { compact = false, showSymbol = true } = options || {};
+  const { compact = false, showSymbol = false } = options || {};
 
   if (compact) {
     // Compact format for large numbers
-    if (Math.abs(amount) >= 1_000_000_000) {
-      const formatted = (amount / 1_000_000_000).toFixed(1);
-      return showSymbol ? `${formatted} Tỷ` : formatted + ' Tỷ';
+    if (Math.abs(value) >= 1_000_000_000) {
+      return `${(value / 1_000_000_000).toFixed(1)} Tỷ`;
     }
-    if (Math.abs(amount) >= 1_000_000) {
-      const formatted = (amount / 1_000_000).toFixed(1);
-      return showSymbol ? `${formatted} Tr` : formatted + ' Tr';
+    if (Math.abs(value) >= 1_000_000) {
+      return `${(value / 1_000_000).toFixed(1)} Tr`;
     }
-    if (Math.abs(amount) >= 1_000) {
-      const formatted = (amount / 1_000).toFixed(0);
-      return showSymbol ? `${formatted}K` : formatted + 'K';
+    if (Math.abs(value) >= 1_000) {
+      return `${(value / 1_000).toFixed(0)}K`;
     }
   }
 
-  // Full format with thousand separators
-  const formatted = new Intl.NumberFormat('vi-VN').format(Math.round(amount));
+  const formatted = new Intl.NumberFormat('vi-VN').format(Math.round(value));
   return showSymbol ? `${formatted} ₫` : formatted;
+}
+
+export function parseCurrency(value: string): string {
+  return value.replace(/\D/g, '');
 }
 
 /**
@@ -63,15 +62,16 @@ export function formatCurrency(
  * parseMoneyInput("1500000") // 1500000
  * parseMoneyInput(1500000) // 1500000
  */
-export function parseMoneyInput(input: string | number): number {
-  if (typeof input === 'number') return input;
-  if (!input) return 0;
-  
-  // Remove all non-digit characters except minus sign
-  const cleaned = input.replace(/[^\d-]/g, '');
-  const parsed = parseInt(cleaned, 10);
-  
-  return isNaN(parsed) ? 0 : parsed;
+export function parseMoneyInput(input: string | number | null | undefined): number {
+  if (input === null || input === undefined) return 0;
+  if (typeof input === 'number') {
+    return Number.isFinite(input) ? Math.max(0, Math.round(input)) : 0;
+  }
+
+  const digits = parseCurrency(input);
+  if (!digits) return 0;
+  const parsed = Number.parseInt(digits, 10);
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
 }
 
 /**
@@ -85,16 +85,14 @@ export function parseMoneyInput(input: string | number): number {
  */
 export function getLocalDateString(date?: Date | string): string {
   const d = date ? (typeof date === 'string' ? new Date(date) : date) : new Date();
-  
-  if (isNaN(d.getTime())) {
-    return '';
-  }
-  
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  
-  return `${year}-${month}-${day}`;
+  if (Number.isNaN(d.getTime())) return '';
+
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Ho_Chi_Minh',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(d);
 }
 
 /**
@@ -110,10 +108,8 @@ export function getLocalDateString(date?: Date | string): string {
  * formatMoneyInput(null) // ""
  */
 export function formatMoneyInput(value: string | number | null | undefined): string {
-  if (value === '' || value === null || value === undefined) return '';
-  
-  const numValue = typeof value === 'string' ? parseMoneyInput(value) : value;
-  return formatNumberWithSeparator(numValue);
+  const amount = parseMoneyInput(value);
+  return amount > 0 ? formatNumberWithSeparator(amount) : '';
 }
 
 /**
@@ -125,9 +121,32 @@ export function formatMoneyInput(value: string | number | null | undefined): str
  * @example
  * formatNumberWithSeparator(1500000) // "1.500.000"
  */
-export function formatNumberWithSeparator(value: number): string {
-  if (value === null || value === undefined || isNaN(value)) return '0';
-  return new Intl.NumberFormat('vi-VN').format(Math.round(value));
+export function formatNumberWithSeparator(
+  value: number | string | null | undefined
+): string {
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) return '';
+    return new Intl.NumberFormat('vi-VN').format(Math.round(value));
+  }
+
+  const trimmed = value.trim();
+  const decimalMatch = trimmed.match(/^(-?\d+)\.(\d+)$/);
+  if (
+    decimalMatch &&
+    (decimalMatch[2].length !== 3 || decimalMatch[1].replace('-', '').length > 3)
+  ) {
+    const numeric = Number(trimmed);
+    if (Number.isFinite(numeric)) {
+      return new Intl.NumberFormat('vi-VN').format(Math.round(numeric));
+    }
+  }
+
+  const isNegative = trimmed.startsWith('-');
+  const digits = parseCurrency(trimmed);
+  if (!digits) return '';
+  const formatted = new Intl.NumberFormat('vi-VN').format(Number.parseInt(digits, 10));
+  return isNegative ? `-${formatted}` : formatted;
 }
 
 /**
@@ -145,40 +164,32 @@ export function formatNumberWithSeparator(value: number): string {
  * parseIntegerInput(undefined, { fallback: 1 }) // 1
  * parseIntegerInput("150", { max: 100, min: 0 }) // 100
  */
+type NumericInputOptions = {
+  min?: number;
+  max?: number;
+  fallback?: number;
+};
+
+function clampNumericInput(value: number, options: NumericInputOptions = {}): number {
+  const min = options.min ?? 0;
+  const fallback = options.fallback ?? min;
+  const normalized = Number.isFinite(value) ? value : fallback;
+  const lowerBounded = Math.max(min, normalized);
+  return options.max === undefined ? lowerBounded : Math.min(options.max, lowerBounded);
+}
+
 export function parseIntegerInput(
   input: string | number | null | undefined,
-  options?: { min?: number; max?: number; fallback?: number }
+  options: NumericInputOptions = {}
 ): number {
+  const fallback = options.fallback ?? options.min ?? 0;
   if (input === null || input === undefined || input === '') {
-    return options?.fallback ?? 0;
+    return clampNumericInput(Math.trunc(fallback), options);
   }
-  
-  if (typeof input === 'number') {
-    let value = Math.round(input);
-    // Apply min/max constraints
-    if (options?.min !== undefined && value < options.min) {
-      value = options.min;
-    }
-    if (options?.max !== undefined && value > options.max) {
-      value = options.max;
-    }
-    return value;
-  }
-  
-  const cleaned = input.replace(/[^\d-]/g, '');
-  let parsed = parseInt(cleaned, 10);
-  
-  if (isNaN(parsed)) return options?.fallback ?? 0;
-  
-  // Apply min/max constraints
-  if (options?.min !== undefined && parsed < options.min) {
-    parsed = options.min;
-  }
-  if (options?.max !== undefined && parsed > options.max) {
-    parsed = options.max;
-  }
-  
-  return parsed;
+
+  const numeric = typeof input === 'number' ? input : Number(input);
+  const integer = Number.isFinite(numeric) ? Math.trunc(numeric) : Math.trunc(fallback);
+  return clampNumericInput(integer, options);
 }
 
 /**
@@ -198,41 +209,15 @@ export function parseIntegerInput(
  */
 export function parseDecimalInput(
   input: string | number | null | undefined,
-  options?: { min?: number; max?: number; fallback?: number }
+  options: NumericInputOptions = {}
 ): number {
+  const fallback = options.fallback ?? options.min ?? 0;
   if (input === null || input === undefined || input === '') {
-    return options?.fallback ?? 0;
+    return clampNumericInput(fallback, options);
   }
-  
-  if (typeof input === 'number') {
-    let value = input;
-    // Apply min/max constraints
-    if (options?.min !== undefined && value < options.min) {
-      value = options.min;
-    }
-    if (options?.max !== undefined && value > options.max) {
-      value = options.max;
-    }
-    return value;
-  }
-  
-  // Replace comma with dot for parsing
-  const normalized = input.replace(',', '.');
-  // Remove all non-digit, non-dot, non-minus characters
-  const cleaned = normalized.replace(/[^\d.-]/g, '');
-  let parsed = parseFloat(cleaned);
-  
-  if (isNaN(parsed)) return options?.fallback ?? 0;
-  
-  // Apply min/max constraints
-  if (options?.min !== undefined && parsed < options.min) {
-    parsed = options.min;
-  }
-  if (options?.max !== undefined && parsed > options.max) {
-    parsed = options.max;
-  }
-  
-  return parsed;
+
+  const numeric = typeof input === 'number' ? input : Number(input.replace(',', '.'));
+  return clampNumericInput(numeric, { fallback, ...options });
 }
 
 /**
@@ -252,29 +237,18 @@ export function parseDecimalInput(
  */
 export function parsePercentInput(
   input: string | number | null | undefined,
-  options?: { min?: number; max?: number; fallback?: number }
+  options: NumericInputOptions = {}
 ): number {
+  const percentOptions = { min: 0, max: 100, ...options };
+  const fallback = options.fallback ?? 0;
   if (input === null || input === undefined || input === '') {
-    return options?.fallback ?? 0;
+    return clampNumericInput(fallback, percentOptions);
   }
-  
-  if (typeof input === 'number') {
-    let value = input;
-    // Apply min/max constraints
-    if (options?.min !== undefined && value < options.min) {
-      value = options.fallback ?? options.min;
-    }
-    if (options?.max !== undefined && value > options.max) {
-      value = options.fallback ?? options.max;
-    }
-    return value;
-  }
-  
-  // Remove percent sign and parse as decimal
-  const cleaned = input.replace('%', '').trim();
-  const value = parseDecimalInput(cleaned, options);
-  
-  return value;
+
+  const numeric = typeof input === 'number'
+    ? input
+    : Number(input.replace('%', '').trim().replace(',', '.'));
+  return clampNumericInput(numeric, { fallback, ...percentOptions });
 }
 
 /**
@@ -313,10 +287,25 @@ export function getMonthStart(date?: Date | string): string {
  * resolvePackageName({ package_name: "Massage 90 phút" }) // "Massage 90 phút"
  * resolvePackageName("Massage 90 phút") // "Massage 90 phút"
  */
-export function resolvePackageName(pkg: any): string {
-  if (!pkg) return '';
-  if (typeof pkg === 'string') return pkg;
-  return pkg.name || pkg.package_name || pkg.packages?.name || '';
+export interface BookingForPackageName {
+  packages?: { name?: string | null } | { name?: string | null }[] | null;
+  package_name?: string | null;
+  name?: string | null;
+}
+
+export function resolvePackageName(
+  pkg: BookingForPackageName | string | null | undefined
+): string {
+  if (!pkg) return 'Dịch vụ lẻ';
+  if (typeof pkg === 'string') return pkg || 'Dịch vụ lẻ';
+
+  if (Array.isArray(pkg.packages)) {
+    if (pkg.packages[0]?.name) return pkg.packages[0].name;
+  } else if (pkg.packages?.name) {
+    return pkg.packages.name;
+  }
+
+  return pkg.package_name || pkg.name || 'Dịch vụ lẻ';
 }
 
 /**
@@ -331,16 +320,20 @@ export function resolvePackageName(pkg: any): string {
  * sanitizeTime("14:30") // "14:30"
  * sanitizeTime("invalid") // "00:00"
  */
-export function sanitizeTime(time: string | null | undefined): string {
-  if (!time) return '00:00';
-  
-  // Extract HH:MM from various formats
-  const match = time.match(/^(\d{1,2}):(\d{2})/);
-  
-  if (!match) return '00:00';
-  
-  const hours = String(parseInt(match[1], 10)).padStart(2, '0');
-  const minutes = match[2];
-  
-  return `${hours}:${minutes}`;
+export function sanitizeTime(raw: unknown): string | null {
+  if (!raw) return null;
+  const value = String(raw).trim();
+
+  if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(value)) {
+    const [hours, minutes] = value.split(':');
+    return `${hours.padStart(2, '0')}:${minutes}`;
+  }
+
+  const embeddedTime = value.match(/(\d{1,2}):(\d{2})/);
+  if (embeddedTime) {
+    return `${embeddedTime[1].padStart(2, '0')}:${embeddedTime[2]}`;
+  }
+
+  if (/^\d{1,2}$/.test(value)) return `${value.padStart(2, '0')}:00`;
+  return null;
 }

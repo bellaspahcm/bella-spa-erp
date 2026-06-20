@@ -44,7 +44,7 @@ export async function GET() {
       },
     });
   } catch (error) {
-    console.error('[Health Check] Replica health check failed:', error);
+    console.error('[Health Check] Replica health check failed: %s', error instanceof Error ? error.message : String(error));
     
     return NextResponse.json(
       {

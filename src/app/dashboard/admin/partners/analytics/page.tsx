@@ -52,11 +52,21 @@ export default async function AdvancedAnalyticsPage() {
     redirect('/dashboard');
   }
 
-  const { partners } = await listPartners({
-    tenant_id: profile.tenant_id,
-    limit: 100,
-    offset: 0,
-  });
+  const partners = [];
+  const pageSize = 100;
+  let offset = 0;
+  let total = 0;
+
+  do {
+    const page = await listPartners({
+      tenant_id: profile.tenant_id,
+      limit: pageSize,
+      offset,
+    });
+    partners.push(...page.partners);
+    total = page.total;
+    offset += page.partners.length;
+  } while (offset < total && offset > 0);
 
   return (
     <div className="p-6 md:p-8 lg:p-10 space-y-6">

@@ -151,10 +151,13 @@ describe('dashboard tenant isolation source guards', () => {
     const studentDashboardSource = readSource('src/app/student/dashboard/page.tsx');
     const studentCompleteButtonSource = readSource('src/app/student/dashboard/StudentLessonCompleteButton.tsx');
 
-    expect(proxySource).toContain("const isStudentRoute = request.nextUrl.pathname.startsWith('/student')");
+    expect(proxySource).toContain("const isStudentRoute = pathname.startsWith('/student')");
     expect(proxySource).toContain("role === 'student'");
     expect(proxySource).toContain("new URL('/student/dashboard', request.url)");
-    expect(proxySource).toContain("matcher: ['/dashboard/:path*', '/ktv/:path*', '/student/:path*', '/login']");
+    expect(proxySource).toContain("'/dashboard/:path*'");
+    expect(proxySource).toContain("'/ktv/:path*'");
+    expect(proxySource).toContain("'/student/:path*'");
+    expect(proxySource).toContain("'/login'");
     expect(sidebarSource).toContain("label: 'Đào tạo'");
     expect(sidebarSource).toContain("href: '/dashboard/training'");
     expect(permissionsSource).toContain("'Đào tạo': 'student_training'");

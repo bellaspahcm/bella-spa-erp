@@ -8,7 +8,7 @@
  * 4. Verify refund transaction recorded
  * 5. Verify KTV commission clawback (salary adjustment)
  * 6. Verify accounting entries reversed (debit/credit swapped)
- * 7. Verify booking status = 'refunded'
+ * 7. Verify booking status = 'cancelled'
  * 
  * Business Rules:
  * - Full refund = total paid - completed sessions cost
@@ -30,6 +30,10 @@ type RevenueRow = Database['public']['Tables']['revenue']['Row'];
 type SessionLogRow = Database['public']['Tables']['session_logs']['Row'];
 type SalaryRecordRow = Database['public']['Tables']['salary_records']['Row'];
 type JournalEntryRow = Database['public']['Tables']['journal_entries']['Row'];
+type TenantInsert = Database['public']['Tables']['tenants']['Insert'];
+type BookingInsert = Database['public']['Tables']['bookings']['Insert'];
+
+jest.setTimeout(60_000);
 
 describe('E2E Full Refund Flow (Critical Business Case)', () => {
   let supabase: ReturnType<typeof createSupabaseClient<Database>>;
@@ -55,13 +59,13 @@ describe('E2E Full Refund Flow (Critical Business Case)', () => {
     if (tenant) {
       testTenantId = tenant.id;
     } else {
+      const tenantPayload: TenantInsert = {
+        name: 'Test Tenant Refund E2E',
+        status: 'active',
+      };
       const { data: newTenant, error } = await supabase
         .from('tenants')
-        .insert({
-          name: 'Test Tenant Refund E2E',
-          domain_prefix: 'test-refund-e2e',
-          status: 'active',
-        })
+        .insert(tenantPayload)
         .select('id')
         .single();
       
@@ -163,23 +167,24 @@ describe('E2E Full Refund Flow (Critical Business Case)', () => {
     expect(customerError).toBeNull();
     testCustomerId = customer!.id;
 
+    const bookingPayload: BookingInsert = {
+      tenant_id: testTenantId,
+      booking_number: `REFUND-E2E-${Date.now()}`,
+      customer_id: testCustomerId,
+      package_id: testPackageId,
+      assigned_ktv_id: testKtvId,
+      start_date: today,
+      full_price: 5000000,
+      deposit_amount: 5000000,
+      discount_percent: 0,
+      status: 'booked',
+      total_sessions: 10,
+      completed_sessions: 0,
+      ktv_commission: 150000,
+    };
     const { data: booking, error: bookingError } = await supabase
       .from('bookings')
-      .insert({
-        tenant_id: testTenantId,
-        customer_id: testCustomerId,
-        package_id: testPackageId,
-        assigned_ktv_id: testKtvId,
-        start_date: today,
-        total_price: 5000000,
-        deposit: 5000000, // Fully paid upfront
-        remaining: 0,
-        discount_percent: 0,
-        status: 'active',
-        total_sessions: 10,
-        completed_sessions: 0,
-        ktv_commission: 150000, // 150k per session
-      })
+      .insert(bookingPayload)
       .select('*')
       .single();
 
@@ -192,11 +197,10 @@ describe('E2E Full Refund Flow (Critical Business Case)', () => {
       .insert({
         tenant_id: testTenantId,
         booking_id: testBookingId,
-        customer_id: testCustomerId,
         amount: 5000000,
         payment_method: 'bank_transfer',
         status: 'confirmed',
-        revenue_date: today,
+        received_date: today,
         revenue_type: 'deposit',
         notes: 'Full payment upfront',
       })
@@ -224,7 +228,6 @@ describe('E2E Full Refund Flow (Critical Business Case)', () => {
       .from('session_logs')
       .insert({
         booking_id: testBookingId,
-        assigned_ktv_id: testKtvId,
         session_number: 1,
         assigned_date: session1DateStr,
         status: 'scheduled',
@@ -259,7 +262,6 @@ describe('E2E Full Refund Flow (Critical Business Case)', () => {
       .from('session_logs')
       .insert({
         booking_id: testBookingId,
-        assigned_ktv_id: testKtvId,
         session_number: 2,
         assigned_date: session2DateStr,
         status: 'scheduled',
@@ -305,7 +307,7 @@ describe('E2E Full Refund Flow (Critical Business Case)', () => {
       .single();
 
     if (!existingSalary) {
-      await supabase
+      const { error: salaryInsertError } = await supabase
         .from('salary_records')
         .insert({
           tenant_id: testTenantId,
@@ -317,15 +319,19 @@ describe('E2E Full Refund Flow (Critical Business Case)', () => {
           total_salary: 6300000,
           status: 'draft',
         });
+      expect(salaryInsertError).toBeNull();
     } else {
-      await supabase
+      const { error: salaryUpdateError } = await supabase
         .from('salary_records')
         .update({
-          total_sessions: (existingSalary.total_sessions || 0) + 2,
-          session_bonus: (existingSalary.session_bonus || 0) + 300000,
-          total_salary: (existingSalary.total_salary || 0) + 300000,
+          base_salary: 6000000,
+          total_sessions: 2,
+          session_bonus: 300000,
+          total_salary: 6300000,
+          status: 'draft',
         })
         .eq('id', existingSalary.id);
+      expect(salaryUpdateError).toBeNull();
     }
 
     console.log('✅ Step 2: 2 sessions completed', {
@@ -341,9 +347,9 @@ describe('E2E Full Refund Flow (Critical Business Case)', () => {
     // Total paid = 5,000,000 VND
     // Completed sessions cost = (5,000,000 / 10 sessions) * 2 sessions = 1,000,000 VND
     // Refund amount = 5,000,000 - 1,000,000 = 4,000,000 VND
-    const sessionCost = booking!.total_price / booking!.total_sessions;
+    const sessionCost = booking!.full_price! / booking!.total_sessions!;
     const completedSessionsCost = sessionCost * 2;
-    const refundAmount = booking!.total_price - completedSessionsCost;
+    const refundAmount = booking!.full_price! - completedSessionsCost;
 
     expect(refundAmount).toBe(4000000);
 
@@ -353,11 +359,10 @@ describe('E2E Full Refund Flow (Critical Business Case)', () => {
       .insert({
         tenant_id: testTenantId,
         booking_id: testBookingId,
-        customer_id: testCustomerId,
         amount: -refundAmount, // Negative amount = refund
         payment_method: 'bank_transfer',
         status: 'confirmed',
-        revenue_date: today,
+        received_date: today,
         revenue_type: 'refund',
         notes: 'Full refund for cancellation',
       })
@@ -367,10 +372,10 @@ describe('E2E Full Refund Flow (Critical Business Case)', () => {
     expect(refundError).toBeNull();
     testRevenueIds.push(refund!.id);
 
-    // Update booking status to 'refunded'
+    // A refunded booking is represented by the supported terminal status 'cancelled'.
     const { error: refundStatusError } = await supabase
       .from('bookings')
-      .update({ status: 'refunded' })
+      .update({ status: 'cancelled' })
       .eq('id', testBookingId);
 
     expect(refundStatusError).toBeNull();
@@ -432,11 +437,11 @@ describe('E2E Full Refund Flow (Critical Business Case)', () => {
       .single();
 
     expect(finalBooking).toBeDefined();
-    expect(finalBooking!.status).toBe('refunded');
+    expect(finalBooking!.status).toBe('cancelled');
     expect(finalBooking!.completed_sessions).toBe(2);
 
     console.log('✅ Step 6: Booking status verified', {
-      status: 'refunded',
+      status: 'cancelled',
       completedSessions: 2,
       totalSessions: 10,
     });

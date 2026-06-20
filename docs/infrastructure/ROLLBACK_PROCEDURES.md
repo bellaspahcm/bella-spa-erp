@@ -379,7 +379,7 @@ Deployed code had a typo in webhook HMAC signature validation...
 
 ### Automated Rollback Script
 
-The canonical implementation is scripts/emergency-rollback.sh. It defaults to dry-run and will not promote a deployment unless --execute is supplied and the operator types the exact target URL.
+The canonical implementation is scripts/emergency-rollback.sh. It validates Ready state and project ownership through Vercel before every dry-run or promotion. It will not promote unless --execute is supplied and the operator types the exact verified target URL.
 
     # Offline dry-run against a known Ready deployment
     ./scripts/emergency-rollback.sh "payment-webhook-broken" --target https://known-ready-deployment.vercel.app
@@ -387,7 +387,7 @@ The canonical implementation is scripts/emergency-rollback.sh. It defaults to dr
     # Re-run only after reviewing the target
     ./scripts/emergency-rollback.sh "payment-webhook-broken" --target https://known-ready-deployment.vercel.app       --execute
 
-When --target is omitted, the script queries project bella-spa-erp in scope bella-spa-s-projects and selects the previous Ready deployment. Override these defaults with VERCEL_PROJECT_NAME, VERCEL_SCOPE, and PRODUCTION_BASE_URL.
+When --target is omitted, the script queries project bella-spa-erp in scope bella-spa-s-projects and selects the previous Ready production deployment. VERCEL_TOKEN and jq are required. Override defaults with VERCEL_PROJECT_NAME, VERCEL_SCOPE, and PRODUCTION_BASE_URL.
 ### Database Rollback Script
 
 **`scripts/rollback-migration.sh`:**

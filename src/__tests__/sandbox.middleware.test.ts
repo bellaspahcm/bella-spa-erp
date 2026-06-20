@@ -50,7 +50,7 @@ describe('Sandbox Middleware', () => {
         id: 'partner-123',
         name: 'Test Partner',
         tenant_id: 'tenant-123',
-        api_key: 'pk_test_abc123xyz',
+        is_sandbox: true,
       };
 
       const config = detectSandboxMode(req);
@@ -66,7 +66,7 @@ describe('Sandbox Middleware', () => {
         id: 'partner-123',
         name: 'Prod Partner',
         tenant_id: 'tenant-123',
-        api_key: 'pk_live_abc123xyz',
+        is_sandbox: false,
       };
 
       const config = detectSandboxMode(req);
@@ -88,7 +88,7 @@ describe('Sandbox Middleware', () => {
       const req = new NextRequest('https://api.bella.vn/v1/orders');
       (req as any).partner = {
         id: 'partner-123',
-        api_key: 'pk_test_abc123',
+        is_sandbox: true,
       };
 
       detectSandboxMode(req);
@@ -218,7 +218,7 @@ describe('Sandbox Middleware', () => {
         id: 'partner-123',
         name: 'Test Partner',
         tenant_id: 'tenant-456',
-        api_key: 'pk_test_abc123xyz',
+        is_sandbox: true,
       };
 
       // 3. Detect sandbox mode
@@ -251,7 +251,7 @@ describe('Sandbox Middleware', () => {
         id: 'partner-789',
         name: 'Production Partner',
         tenant_id: 'tenant-999',
-        api_key: 'pk_live_abc123xyz',
+        is_sandbox: false,
       };
 
       // 3. Detect sandbox mode

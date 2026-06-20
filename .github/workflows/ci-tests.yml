@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [develop, main]
 
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -16,40 +19,64 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: '24'
           cache: npm
       - run: npm ci
       - run: npm run lint
 
-  critical-tests:
-    name: Critical Tests
+  tests:
+    name: Unit and Integration Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: '24'
           cache: npm
       - run: npm ci
-      - run: npm run test:critical
+      - run: npm test -- --runInBand
         env:
           NODE_ENV: test
 
+  real-db-e2e:
+    name: Real Database Business E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Require isolated E2E database credentials
+        env:
+          SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.E2E_SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          test -n "$SUPABASE_URL"
+          test -n "$SUPABASE_SERVICE_ROLE_KEY"
+      - name: Run real database business E2E
+        env:
+          NODE_ENV: test
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
+          SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.E2E_SUPABASE_SERVICE_ROLE_KEY }}
+        run: npm run test:real-db-e2e
+
   security:
-    name: Security Gates
+    name: Dependency and Secret Gates
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: '24'
           cache: npm
@@ -60,29 +87,51 @@ jobs:
   migrations:
     name: Migration Gates
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
-          fetch-depth: 2
-      - uses: actions/setup-node@v4
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
         with:
           node-version: '24'
           cache: npm
       - run: npm ci
-      - run: npm run db:migration:zero-downtime
-      - run: npm run db:migration:check
+      - name: Resolve migration comparison base
+        id: migration-base
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          base="$PR_BASE_SHA"
+          if [ -z "$base" ]; then
+            base="$PUSH_BEFORE_SHA"
+          fi
+          if [ -z "$base" ] || printf '%s' "$base" | grep -Eq '^0+$'; then
+            base="HEAD^"
+          fi
+          git rev-parse --verify "$base^{commit}" > /dev/null
+          echo "base=$base" >> "$GITHUB_OUTPUT"
+      - name: Zero-downtime migration policy
+        env:
+          BASE_REF: ${{ steps.migration-base.outputs.base }}
+        run: npm run db:migration:zero-downtime -- --base "$BASE_REF"
+      - name: Require database drift credentials
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
-          DB_MIGRATION_CHECK_OPTIONAL: '1'
+        run: test -n "$SUPABASE_DB_URL"
+      - name: Supabase migration drift
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: npm run db:migration:check
 
   build:
     name: Production Build
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: '24'
           cache: npm
@@ -92,50 +141,24 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL || vars.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY || vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
 
-  staging-smoke:
-    name: Staging Smoke Test
-    if: ${{ vars.STAGING_E2E_BASE_URL != '' }}
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-          cache: npm
-      - run: npm ci
-      - run: npx playwright install --with-deps chromium
-      - run: npm run e2e:auth-smoke
-        env:
-          E2E_BASE_URL: ${{ vars.STAGING_E2E_BASE_URL }}
-          E2E_ADMIN_EMAIL: ${{ secrets.STAGING_E2E_ADMIN_EMAIL }}
-          E2E_ADMIN_PASSWORD: ${{ secrets.STAGING_E2E_ADMIN_PASSWORD }}
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: staging-playwright-report
-          path: playwright-report/
-          retention-days: 7
-
   all-gates:
     name: All Required Gates Passed
     if: always()
-    needs: [lint, critical-tests, security, migrations, build, staging-smoke]
+    needs: [lint, tests, real-db-e2e, security, migrations, build]
     runs-on: ubuntu-latest
     steps:
       - name: Enforce required results
         env:
           LINT_RESULT: ${{ needs.lint.result }}
-          TEST_RESULT: ${{ needs.critical-tests.result }}
+          TEST_RESULT: ${{ needs.tests.result }}
+          REAL_DB_E2E_RESULT: ${{ needs.real-db-e2e.result }}
           SECURITY_RESULT: ${{ needs.security.result }}
           MIGRATION_RESULT: ${{ needs.migrations.result }}
           BUILD_RESULT: ${{ needs.build.result }}
-          SMOKE_RESULT: ${{ needs.staging-smoke.result }}
         run: |
           test "$LINT_RESULT" = success
           test "$TEST_RESULT" = success
+          test "$REAL_DB_E2E_RESULT" = success
           test "$SECURITY_RESULT" = success
           test "$MIGRATION_RESULT" = success
           test "$BUILD_RESULT" = success
-          test "$SMOKE_RESULT" = success || test "$SMOKE_RESULT" = skipped

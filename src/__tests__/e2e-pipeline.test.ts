@@ -76,7 +76,16 @@ function resetMockStore() {
       { id: 'tenant-a', name: 'Bella Spa Branch A', royalty_type: 'percentage', royalty_rate: 10, internal_clearing_rate: 150000 },
     ],
     packages: [
-      { id: 'pkg-123', tenant_id: 'tenant-a', module_key: 'babycare', name: 'Gói Chăm Sóc Bầu VIP' },
+      {
+        id: 'pkg-123',
+        tenant_id: 'tenant-a',
+        module_key: 'babycare',
+        name: 'Gói Chăm Sóc Bầu VIP',
+        description: 'Gói kiểm thử pipeline',
+        price: 5_000_000,
+        total_sessions: 15,
+        session_multiplier: 1,
+      },
     ],
   };
 }

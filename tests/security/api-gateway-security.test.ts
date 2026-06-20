@@ -12,9 +12,15 @@
  * @since 2026-06-19
  */
 
-import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
-import { createMocks } from 'node-mocks-http';
+import { describe, it, expect } from '@jest/globals';
+import { NextRequest } from 'next/server';
 import crypto from 'crypto';
+import {
+  apiKeyMiddleware,
+  type RequestWithPartner,
+} from '@/lib/middleware/api-key.middleware';
+import { blockTenantInjection, detectSQLInjection } from '@/lib/middleware/validation.middleware';
+import { requireScope } from '@/lib/middleware/scope.middleware';
 
 // Mock environment variables
 process.env.CRON_SECRET = 'test-cron-secret-12345';
@@ -29,44 +35,40 @@ describe('API Gateway Security Testing', () => {
   describe('OWASP A01:2021 - Broken Access Control', () => {
     
     it('should reject requests without authentication', async () => {
-      const { req, res } = createMocks({
-        method: 'GET',
-        url: '/api/admin/partners',
-      });
+      const request = new NextRequest('https://api.bella.vn/api/v1/orders');
 
-      // Simulate calling admin endpoint without auth
-      // In real implementation, this would be handled by middleware
-      
-      expect(res._getStatusCode()).not.toBe(200);
+      const response = await apiKeyMiddleware(request);
+
+      expect(response?.status).toBe(401);
+      await expect(response?.json()).resolves.toMatchObject({
+        error: { code: 'AUTH_001' },
+      });
     });
 
-    it('should prevent access to other tenant data', async () => {
-      const { req, res } = createMocks({
-        method: 'GET',
-        url: '/api/v1/orders?tenant_id=other-tenant',
-        headers: {
-          'authorization': 'Bearer bella_live_tenant1_key',
-        },
-      });
-
-      // Should only return data for authenticated tenant, not other-tenant
-      // This tests tenant isolation
-      
-      expect(true).toBe(true); // Placeholder
+    it('should prevent access to other tenant data', () => {
+      expect(() => blockTenantInjection({ tenant_id: 'other-tenant' })).toThrow(
+        'tenant_id cannot be provided by client'
+      );
     });
 
-    it('should prevent privilege escalation', async () => {
-      const { req, res } = createMocks({
-        method: 'POST',
-        url: '/api/admin/partners',
-        headers: {
-          'authorization': 'Bearer bella_live_startup_tier_key',
-        },
-      });
+    it('should prevent privilege escalation', () => {
+      const request = new NextRequest(
+        'https://api.bella.vn/api/v1/admin/partners'
+      ) as RequestWithPartner;
+      request.partner = {
+        partner_id: 'partner-123',
+        tenant_id: 'tenant-123',
+        partner_name: 'Startup Partner',
+        allowed_scopes: ['order:read'],
+        is_active: true,
+        is_sandbox: false,
+        rate_limit_per_minute: 60,
+        rate_limit_per_day: 1000,
+      };
 
-      // Startup tier should not be able to create partners (admin only)
-      
-      expect(true).toBe(true); // Placeholder
+      const response = requireScope(request, 'partner:admin');
+
+      expect(response?.status).toBe(403);
     });
   });
 
@@ -385,31 +387,22 @@ describe('API Gateway Security Testing', () => {
   
   describe('SQL Injection Prevention', () => {
     
-    it('should sanitize order_id parameter', () => {
-      const maliciousId = "123' OR '1'='1";
-      
-      // Supabase uses parameterized queries, so this should be safe
-      // But we test sanitization anyway
-      const sanitized = maliciousId.replace(/['"]/g, '');
-      
-      expect(sanitized).not.toContain("'");
+    it('should reject SQL injection in order_id parameters', () => {
+      expect(() => detectSQLInjection("123' OR '1'='1")).toThrow(
+        'Potential SQL injection detected'
+      );
     });
 
-    it('should sanitize email parameter', () => {
-      const maliciousEmail = "admin@example.com'; DROP TABLE users; --";
-      
-      const sanitized = maliciousEmail.split(';')[0].trim();
-      
-      expect(sanitized).toBe('admin@example.com');
-      expect(sanitized).not.toContain('DROP TABLE');
+    it('should reject SQL injection in email parameters', () => {
+      expect(() =>
+        detectSQLInjection("admin@example.com'; DROP TABLE users; --")
+      ).toThrow('Potential SQL injection detected');
     });
 
-    it('should sanitize search queries', () => {
-      const maliciousSearch = "'; DELETE FROM orders WHERE '1'='1";
-      
-      // Search should be treated as literal string, not SQL
-      expect(maliciousSearch).toContain('DELETE');
-      // But in real implementation, this would be parameterized
+    it('should reject SQL injection in search queries', () => {
+      expect(() =>
+        detectSQLInjection("'; DELETE FROM orders WHERE '1'='1")
+      ).toThrow('Potential SQL injection detected');
     });
 
     it('should use parameterized queries (Supabase)', () => {
@@ -570,7 +563,9 @@ describe('API Gateway Security Testing', () => {
     });
 
     it('should validate webhook signature format', () => {
-      const validSignature = 'sha256=abc123def456789...';
+      const validSignature =
+        'sha256=' +
+        crypto.createHash('sha256').update('webhook-payload').digest('hex');
       const invalidSignature = 'md5=abc123'; // Wrong algorithm
 
       expect(validSignature).toMatch(/^sha256=[a-f0-9]{64}$/);
