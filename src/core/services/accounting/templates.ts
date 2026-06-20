@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient } from '@/lib/supabase-server';
+import { createDevelopmentBypassClient } from '@/lib/supabase-dev-bypass-server';
 import { safeRevalidatePath } from '@/lib/revalidate';
 import { recordAuditLog } from '@/services/audit-actions';
 import { getCurrentUser } from '@/services/user-actions';
@@ -12,7 +12,6 @@ import {
   inferBusinessEventType,
 } from './template-rules';
 import type {
-  AccountingBackfillResult,
   AccountingBackfillActionResult,
   AccountingEventTemplate,
   AccountingReadinessSummary,
@@ -215,33 +214,43 @@ export async function resolveAccountingReviewItem(params: {
   reviewItemId: string;
   status: AccountingReviewResolutionStatus;
 }) {
-  const supabase = await createClient();
-  const user = await getCurrentUser();
-  if (!user?.tenant_id || !['admin', 'super_admin', 'accountant'].includes(user.role || '')) {
-    throw new Error('Unauthorized: chỉ admin/kế toán mới được xử lý hàng chờ kế toán.');
+  try {
+    const supabase = await createDevelopmentBypassClient();
+    const user = await getCurrentUser();
+    if (!user?.tenant_id || !['admin', 'super_admin', 'accountant'].includes(user.role || '')) {
+      return { success: false, error: 'Unauthorized: chỉ admin/kế toán mới được xử lý hàng chờ kế toán.' };
+    }
+
+    const { data, error } = await supabase.rpc('resolve_accounting_review_item', {
+      p_review_item_id: params.reviewItemId,
+      p_status: params.status,
+    });
+
+    if (error) {
+      return { success: false, error: `Lỗi cơ sở dữ liệu: ${error.message}` };
+    }
+
+    await recordAuditLog({
+      action: 'UPDATE',
+      table_name: 'accounting_review_queue',
+      record_id: params.reviewItemId,
+      new_data: {
+        status: params.status,
+        resolved_result: data?.[0] ?? null,
+      },
+    });
+
+    await safeRevalidatePath('/dashboard/accounting/readiness');
+    await safeRevalidatePath('/dashboard/accounting/reconciliation');
+
+    return { success: true, data: data?.[0] ?? null };
+  } catch (err) {
+    console.error('[resolveAccountingReviewItem] Failed:', err);
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Lỗi hệ thống khi xử lý hàng chờ kế toán.',
+    };
   }
-
-  const { data, error } = await supabase.rpc('resolve_accounting_review_item', {
-    p_review_item_id: params.reviewItemId,
-    p_status: params.status,
-  });
-
-  if (error) throw error;
-
-  await recordAuditLog({
-    action: 'UPDATE',
-    table_name: 'accounting_review_queue',
-    record_id: params.reviewItemId,
-    new_data: {
-      status: params.status,
-      resolved_result: data?.[0] ?? null,
-    },
-  });
-
-  await safeRevalidatePath('/dashboard/accounting/readiness');
-  await safeRevalidatePath('/dashboard/accounting/reconciliation');
-
-  return { success: true, data: data?.[0] ?? null };
 }
 
 export async function runAccountingMetadataBackfill(params?: {

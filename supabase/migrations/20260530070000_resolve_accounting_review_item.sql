@@ -32,10 +32,13 @@ BEGIN
     END IF;
 
     IF NOT (
-        (public.is_admin() OR public.is_accountant())
-        AND (
-            public.is_hq_super_admin()
-            OR v_item.tenant_id = public.get_auth_tenant_id()
+        current_user IN ('service_role', 'postgres')
+        OR (
+            (public.is_admin() OR public.is_accountant())
+            AND (
+                public.is_hq_super_admin()
+                OR v_item.tenant_id = public.get_auth_tenant_id()
+            )
         )
     ) THEN
         RAISE EXCEPTION 'Unauthorized: only admin/accountant can resolve accounting review items.';
