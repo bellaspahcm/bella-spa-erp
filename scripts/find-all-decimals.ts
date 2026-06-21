@@ -34,7 +34,7 @@ async function findAllDecimals() {
     .gte('entry.entry_date', '2026-06-01')
     .eq('entry.status', 'POSTED');
 
-  const decimalsFound: Record<string, any[]> = {};
+  const decimalsFound: Record<string, any> = {};
 
   lines?.forEach((line: any) => {
     const debit = Number(line.debit_amount);
