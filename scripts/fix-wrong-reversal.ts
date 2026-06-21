@@ -354,6 +354,7 @@ async function main() {
     }
 
     console.log('=== SUMMARY ===');
+    // @ts-ignore - wrongEntry type is inferred as never but we check for null above
     console.log(`Wrong entry ID: ${wrongEntry.id}`);
     console.log(`Wrong amount in entry: 199.54 (should be 199,500)`);
     console.log('');
@@ -370,6 +371,7 @@ async function main() {
       rl.question('\n⚠️  This will:\n  1. Reverse the wrong entry (undo the 199.54 entry)\n  2. Create correct reversal (199,500)\n\nProceed? (yes/no): ', async (answer: string) => {
         if (answer.toLowerCase() === 'yes') {
           // Step 2: Reverse the wrong entry
+          // @ts-ignore - wrongEntry is checked for null above
           const reversalId = await reverseWrongEntry(wrongEntry.id);
           
           if (reversalId) {
