@@ -253,13 +253,27 @@ async function main() {
   ];
 
   checks.forEach((check, i) => {
-    const match = typeof check.expected === 'number' 
-      ? Math.abs(check.actual - check.expected) < 1
-      : check.actual === check.expected;
+    let match: boolean;
+    if (typeof check.expected === 'number' && typeof check.actual === 'number') {
+      match = Math.abs(check.actual - check.expected) < 1;
+    } else {
+      match = check.actual === check.expected;
+    }
     
     console.log(`${i + 1}. ${check.name}:`);
-    console.log(`   Expected: ${check.expected.toLocaleString('vi-VN')} ${check.unit}`);
-    console.log(`   Actual: ${check.actual.toLocaleString('vi-VN')} ${check.unit}`);
+    
+    if (typeof check.expected === 'number') {
+      console.log(`   Expected: ${check.expected.toLocaleString('vi-VN')} ${check.unit}`);
+    } else {
+      console.log(`   Expected: ${check.expected} ${check.unit}`);
+    }
+    
+    if (typeof check.actual === 'number') {
+      console.log(`   Actual: ${check.actual.toLocaleString('vi-VN')} ${check.unit}`);
+    } else {
+      console.log(`   Actual: ${check.actual} ${check.unit}`);
+    }
+    
     console.log(`   Status: ${match ? '✅ PASS' : '⚠️  CHECK'}`);
     if (check.note) console.log(`   Note: ${check.note}`);
     console.log();
