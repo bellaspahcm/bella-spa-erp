@@ -51,7 +51,7 @@ interface JournalEntryRow {
 }
 
 async function getConfirmedBookings() {
-  console.log('\n=== CONFIRMED BOOKINGS (June 2026) ===\n');
+  console.log('\n=== CONFIRMED BOOKINGS (June 2026) - EXCLUDING DEMO ===\n');
 
   const { data: bookings, error } = await supabase
     .from('bookings')
@@ -79,12 +79,17 @@ async function getConfirmedBookings() {
     return [];
   }
 
-  console.log(`Found ${bookings?.length || 0} confirmed bookings:\n`);
+  // Filter out demo bookings (BSP-DEMO-* prefix)
+  const realBookings = bookings?.filter((b: any) => {
+    return !b.booking_number.includes('BSP-DEMO-') && !b.booking_number.includes('DEMO');
+  }) || [];
+
+  console.log(`Found ${realBookings.length} real bookings (${bookings?.length || 0} total, ${(bookings?.length || 0) - realBookings.length} demo excluded):\n`);
 
   let totalRevenue = 0;
   let totalDeposit = 0;
 
-  bookings?.forEach((booking: any, idx: number) => {
+  realBookings.forEach((booking: any, idx: number) => {
     const revenue = Number(booking.full_price || 0);
     const deposit = Number(booking.deposit_amount || 0);
     totalRevenue += revenue;
@@ -99,11 +104,11 @@ async function getConfirmedBookings() {
   });
 
   console.log('─'.repeat(80));
-  console.log(`Total Bookings Revenue: ${totalRevenue.toLocaleString('vi-VN')}đ`);
+  console.log(`Total Real Bookings Revenue: ${totalRevenue.toLocaleString('vi-VN')}đ`);
   console.log(`Total Deposits Received: ${totalDeposit.toLocaleString('vi-VN')}đ`);
   console.log('─'.repeat(80));
 
-  return bookings || [];
+  return realBookings;
 }
 
 async function getAccountingRevenue() {
@@ -214,7 +219,7 @@ async function getUnearnedRevenue() {
 }
 
 async function compareRevenueRecognition() {
-  console.log('\n\n=== REVENUE RECOGNITION COMPARISON ===\n');
+  console.log('\n\n=== REVENUE RECOGNITION COMPARISON - EXCLUDING DEMO ===\n');
 
   // Get session logs for completed sessions
   const { data: sessions, error } = await supabase
@@ -224,6 +229,7 @@ async function compareRevenueRecognition() {
       completed_date,
       status,
       booking:bookings (
+        booking_number,
         full_price,
         total_sessions,
         customer:customers (
@@ -240,11 +246,16 @@ async function compareRevenueRecognition() {
     return;
   }
 
-  console.log(`Found ${sessions?.length || 0} completed sessions in June 2026:\n`);
+  // Filter out demo sessions
+  const realSessions = sessions?.filter((s: any) => {
+    return s.booking && !s.booking.booking_number.includes('BSP-DEMO-') && !s.booking.booking_number.includes('DEMO');
+  }) || [];
+
+  console.log(`Found ${realSessions.length} real completed sessions (${sessions?.length || 0} total, ${(sessions?.length || 0) - realSessions.length} demo excluded):\n`);
 
   let totalSessionRevenue = 0;
 
-  sessions?.forEach((session: any, idx: number) => {
+  realSessions.forEach((session: any, idx: number) => {
     const booking = session.booking;
     if (!booking) return;
 
@@ -252,11 +263,12 @@ async function compareRevenueRecognition() {
     totalSessionRevenue += revenuePerSession;
 
     console.log(`${idx + 1}. ${session.completed_date} - ${booking.customer?.name_mother || 'N/A'}`);
+    console.log(`   Booking: ${booking.booking_number}`);
     console.log(`   Revenue recognized: ${revenuePerSession.toLocaleString('vi-VN')}đ (${booking.full_price}/${booking.total_sessions})`);
   });
 
   console.log('\n' + '─'.repeat(80));
-  console.log(`Total Session Revenue (should match accounting): ${totalSessionRevenue.toLocaleString('vi-VN')}đ`);
+  console.log(`Total Real Session Revenue (should match accounting): ${totalSessionRevenue.toLocaleString('vi-VN')}đ`);
   console.log('─'.repeat(80));
 
   return totalSessionRevenue;
