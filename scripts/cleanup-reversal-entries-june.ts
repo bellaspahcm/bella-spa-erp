@@ -56,10 +56,10 @@ interface JournalEntry {
 
 interface JournalLine {
   id: string;
-  journal_entry_id: string;
+  entry_id: string;
   account_id: string;
-  debit: number;
-  credit: number;
+  debit_amount: number;
+  credit_amount: number;
   description: string | null;
 }
 
@@ -180,8 +180,8 @@ async function main() {
     l.account_id === 'ce0977b8-eacb-44a7-9f43-b1f2bb72be81'    // 5113
   );
 
-  const totalCreditToRemove = revenueLines.reduce((sum, l) => sum + (l.credit || 0), 0);
-  const totalDebitToRemove = revenueLines.reduce((sum, l) => sum + (l.debit || 0), 0);
+  const totalCreditToRemove = revenueLines.reduce((sum, l) => sum + (l.credit_amount || 0), 0);
+  const totalDebitToRemove = revenueLines.reduce((sum, l) => sum + (l.debit_amount || 0), 0);
   const netRevenueChange = totalCreditToRemove - totalDebitToRemove;
 
   console.log(`💰 Impact Analysis:`);
@@ -200,7 +200,7 @@ async function main() {
 
   console.log('🔍 Entries to delete:');
   entriesToDelete.forEach(e => {
-    console.log(`   ${e.entry_type} - ${e.entry_date} - ${e.description?.substring(0, 80)}`);
+    console.log(`   ${e.entry_date} - ${e.description?.substring(0, 80)}`);
   });
   console.log();
 

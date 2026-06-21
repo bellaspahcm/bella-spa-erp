@@ -38,24 +38,26 @@ async function main() {
 
   console.log(`Found ${entries.length} entries\n`);
 
-  // Group by entry_type
+  // Group by reference_type (since entry_type doesn't exist)
   const byType: Record<string, any[]> = {};
   entries.forEach(e => {
-    if (!byType[e.entry_type]) byType[e.entry_type] = [];
-    byType[e.entry_type].push(e);
+    const type = e.reference_type || 'unknown';
+    if (!byType[type]) byType[type] = [];
+    byType[type].push(e);
   });
 
-  console.log('📊 Entries by Type:');
+  console.log('📊 Entries by Reference Type:');
   Object.keys(byType).sort().forEach(type => {
     console.log(`   ${type}: ${byType[type].length} entries`);
   });
   console.log();
 
-  // Show all entry types and descriptions
-  console.log('📋 All Entries (Type - Date - Description):');
+  // Show all entries (Reference Type - Date - Description)
+  console.log('📋 All Entries (Reference Type - Date - Description):');
   entries.forEach((e, i) => {
     const desc = e.description?.substring(0, 100) || '';
-    console.log(`${i + 1}. ${e.entry_type} - ${e.entry_date} - ${desc}`);
+    const type = e.reference_type || 'unknown';
+    console.log(`${i + 1}. ${type} - ${e.entry_date} - ${desc}`);
   });
 }
 
