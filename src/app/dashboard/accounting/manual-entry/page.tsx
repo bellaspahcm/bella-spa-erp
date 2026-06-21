@@ -1,6 +1,7 @@
 'use client';
 
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
+import { CurrencyInput } from '@/components/ui/CurrencyInput';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import { getAccounts,postManualJournalEntry } from '@/services/accounting-actions';
 import { getUsers } from '@/services/user-actions';
@@ -244,24 +245,44 @@ export default function ManualEntryPage() {
               {/* Debit Amount */}
               <div className="space-y-1 xl:col-span-2">
                 <span className="text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest">Phát sinh Nợ</span>
-                <input 
-                  type="number" 
+                <CurrencyInput 
+                  value={line.debit_amount}
+                  onChange={(val) => {
+                    setLines(prev => {
+                      const copy = [...prev];
+                      copy[idx] = {
+                        ...copy[idx],
+                        debit_amount: val,
+                        // An accounting line cannot be both debit and credit
+                        ...(val > 0 ? { credit_amount: 0 } : {}),
+                      };
+                      return copy;
+                    });
+                  }}
                   placeholder="0"
-                  value={line.debit_amount || ''}
-                  onChange={(e) => handleLineChange(idx, 'debit_amount', e.target.value)}
-                  className="w-full px-3.5 py-2 bg-white dark:bg-[#1C1B19] border border-slate-200/50 dark:border-[#3E3A35]/50 rounded-xl text-xs font-mono font-bold text-right outline-none text-emerald-600 focus:ring-2 focus:ring-emerald-500/10" 
+                  className="text-emerald-600"
                 />
               </div>
 
               {/* Credit Amount */}
               <div className="space-y-1 xl:col-span-2">
                 <span className="text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest">Phát sinh Có</span>
-                <input 
-                  type="number" 
+                <CurrencyInput 
+                  value={line.credit_amount}
+                  onChange={(val) => {
+                    setLines(prev => {
+                      const copy = [...prev];
+                      copy[idx] = {
+                        ...copy[idx],
+                        credit_amount: val,
+                        // An accounting line cannot be both debit and credit
+                        ...(val > 0 ? { debit_amount: 0 } : {}),
+                      };
+                      return copy;
+                    });
+                  }}
                   placeholder="0"
-                  value={line.credit_amount || ''}
-                  onChange={(e) => handleLineChange(idx, 'credit_amount', e.target.value)}
-                  className="w-full px-3.5 py-2 bg-white dark:bg-[#1C1B19] border border-slate-200/50 dark:border-[#3E3A35]/50 rounded-xl text-xs font-mono font-bold text-right outline-none text-rose-600 focus:ring-2 focus:ring-rose-500/10" 
+                  className="text-rose-600"
                 />
               </div>
 
