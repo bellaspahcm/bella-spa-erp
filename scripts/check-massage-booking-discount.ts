@@ -68,7 +68,7 @@ async function checkMassageBookingDiscount() {
   
   const { data: sessions, error: sessionError } = await supabase
     .from('session_logs')
-    .select('id, session_number, status, completed_at')
+    .select('id, session_number, status, completed_date')
     .eq('booking_id', booking.id)
     .order('session_number', { ascending: true });
 
@@ -79,7 +79,7 @@ async function checkMassageBookingDiscount() {
 
   console.log(`📊 Found ${sessions?.length || 0} sessions`);
   sessions?.forEach(session => {
-    console.log(`   Session ${session.session_number}: ${session.status} (ID: ${session.id})`);
+    console.log(`   Session ${session.session_number}: ${session.status} (completed: ${session.completed_date || 'N/A'})`);
   });
 
   // Check outbox events for these sessions
@@ -126,7 +126,7 @@ async function checkMassageBookingDiscount() {
   console.log(`📖 Found ${journals?.length || 0} SESSION_DONE journal entries`);
   journals?.forEach(journal => {
     console.log(`   Journal ${journal.id.substring(0, 8)}...:`);
-    console.log(`      Session: ${journal.reference_id.substring(0, 8)}...`);
+    console.log(`      Session: ${journal.reference_id?.substring(0, 8) || 'N/A'}...`);
     console.log(`      Status: ${journal.status}`);
     console.log(`      Description: ${journal.description}`);
     console.log('');
@@ -138,8 +138,8 @@ async function checkMassageBookingDiscount() {
     
     const { data: lines, error: linesError } = await supabase
       .from('journal_lines')
-      .select('journal_entry_id, account_id, debit_amount, credit_amount')
-      .in('journal_entry_id', journalIds);
+      .select('entry_id, account_id, debit_amount, credit_amount')
+      .in('entry_id', journalIds);
 
     if (linesError) {
       console.error('❌ Error finding journal lines:', linesError.message);
@@ -157,7 +157,7 @@ async function checkMassageBookingDiscount() {
 
     console.log('💰 Revenue Recognition (Account 5113) per Journal:');
     journals?.forEach(journal => {
-      const journalLines = lines?.filter(l => l.journal_entry_id === journal.id);
+      const journalLines = lines?.filter(l => l.entry_id === journal.id);
       const revenueLine = journalLines?.find(l => l.account_id === revenueAccountId);
       
       if (revenueLine) {

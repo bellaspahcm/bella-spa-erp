@@ -136,38 +136,48 @@ async function fixMassageRevenueAmount() {
   // 6. Show accounting consistency
   console.log('\n=== Accounting Consistency Check ===\n');
 
-  const { data: journals, error: journalError } = await supabase
-    .from('journal_entries')
-    .select('id, description')
-    .eq('reference_type', 'SESSION_DONE')
-    .eq('booking_id', currentRevenue.booking_id);
+  // Get session logs for this booking
+  const { data: sessions } = await supabase
+    .from('session_logs')
+    .select('id')
+    .eq('booking_id', currentRevenue.booking_id!);
 
-  if (!journalError && journals && journals.length > 0) {
-    console.log('📖 Related Journal Entries:');
-    
-    for (const journal of journals) {
-      const { data: lines } = await supabase
-        .from('journal_lines')
-        .select('account_id, credit_amount')
-        .eq('entry_id', journal.id);
+  if (sessions && sessions.length > 0) {
+    const sessionIds = sessions.map(s => s.id);
 
-      const { data: revenueAccount } = await supabase
-        .from('accounting_accounts')
-        .select('id')
-        .eq('account_code', '5113')
-        .single();
+    const { data: journals, error: journalError } = await supabase
+      .from('journal_entries')
+      .select('id, description')
+      .eq('reference_type', 'SESSION_DONE')
+      .in('reference_id', sessionIds);
 
-      const revenueLine = lines?.find(l => l.account_id === revenueAccount?.id);
+    if (!journalError && journals && journals.length > 0) {
+      console.log('📖 Related Journal Entries:');
       
-      if (revenueLine) {
-        console.log(`   Journal ${journal.id.substring(0, 8)}...:`);
-        console.log(`      Accounting revenue: ${revenueLine.credit_amount?.toLocaleString('vi-VN')} đ`);
-        console.log(`      Revenue table: ${CORRECT_AMOUNT.toLocaleString('vi-VN')} đ`);
+      for (const journal of journals) {
+        const { data: lines } = await supabase
+          .from('journal_lines')
+          .select('account_id, credit_amount')
+          .eq('entry_id', journal.id);
+
+        const { data: revenueAccount } = await supabase
+          .from('accounting_accounts')
+          .select('id')
+          .eq('account_code', '5113')
+          .single();
+
+        const revenueLine = lines?.find(l => l.account_id === revenueAccount?.id);
         
-        if (Math.abs((revenueLine.credit_amount || 0) - CORRECT_AMOUNT) < 1) {
-          console.log('      ✅ MATCH! Accounting and revenue table now consistent');
-        } else {
-          console.log(`      ⚠️  Mismatch: ${Math.abs((revenueLine.credit_amount || 0) - CORRECT_AMOUNT)} đ difference`);
+        if (revenueLine) {
+          console.log(`   Journal ${journal.id.substring(0, 8)}...:`);
+          console.log(`      Accounting revenue: ${revenueLine.credit_amount?.toLocaleString('vi-VN')} đ`);
+          console.log(`      Revenue table: ${CORRECT_AMOUNT.toLocaleString('vi-VN')} đ`);
+          
+          if (Math.abs((revenueLine.credit_amount || 0) - CORRECT_AMOUNT) < 1) {
+            console.log('      ✅ MATCH! Accounting and revenue table now consistent');
+          } else {
+            console.log(`      ⚠️  Mismatch: ${Math.abs((revenueLine.credit_amount || 0) - CORRECT_AMOUNT)} đ difference`);
+          }
         }
       }
     }
