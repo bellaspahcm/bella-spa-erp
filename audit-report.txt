@@ -1,0 +1,82 @@
+
+
+ΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûê
+ΓûêΓûê                  COMPREHENSIVE ACCOUNTING AUDIT                         ΓûêΓûê
+ΓûêΓûê                        JUNE 2026 DATA REVIEW                            ΓûêΓûê
+ΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûê
+
+================================================================================
+JOURNAL ENTRIES AUDIT - FROM JUNE 1, 2026
+================================================================================
+
+Error: {
+  code: 'PGRST200',
+  details: "Searched for a foreign key relationship between 'journal_lines' and 'users' in the schema 'public', but no matches were found.",
+  hint: null,
+  message: "Could not find a relationship between 'journal_lines' and 'users' in the schema cache"
+}
+
+
+================================================================================
+BUSINESS TRANSACTIONS AUDIT - FROM JUNE 1, 2026
+================================================================================
+
+1. BOOKINGS:
+
+   Found 0 bookings
+
+2. PACKAGE SALES:
+
+   Found 0 package sales
+
+3. COMPLETED SESSIONS:
+
+   Found 0 completed sessions
+
+4. EXPENSES:
+
+   Found 0 expenses
+
+
+================================================================================
+RECONCILIATION: ACCOUNTING VS BUSINESS DATA
+================================================================================
+
+BUSINESS TRANSACTIONS vs ACCOUNTING ENTRIES:
+
+  Bookings: 6 transactions
+    ΓåÆ BOOKING entries in accounting: 0
+    ΓÜá∩╕Å  MISMATCH! Missing 6 entries
+
+  Package Sales: 0 transactions
+    ΓåÆ PACKAGE_SALE entries in accounting: 8
+    ΓÜá∩╕Å  MISMATCH! Missing -8 entries
+
+  Completed Sessions: 0 transactions
+    ΓåÆ SESSION_DONE entries in accounting: 30
+    ΓÜá∩╕Å  MISMATCH! Missing -30 entries
+
+  Approved/Paid Expenses: 0 transactions
+    ΓåÆ EXPENSE entries in accounting: 0
+
+  Manual Entries: 2
+  Reversal Entries: 7
+
+
+================================================================================
+IDENTIFYING MISSING ACCOUNTING ENTRIES
+================================================================================
+
+Γ£à All packages have accounting entries
+
+
+Γ£à All completed sessions have accounting entries
+
+
+================================================================================
+AUDIT COMPLETE
+================================================================================
+
+Review the output above to identify discrepancies between
+accounting entries and actual business transactions.
+
