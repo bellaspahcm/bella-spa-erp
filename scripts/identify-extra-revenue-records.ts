@@ -84,33 +84,11 @@ async function identifyExtraRevenue() {
           console.log('      ⚠️  TENANT MISMATCH! Booking and revenue have different tenants');
         }
 
-        // Get customer details
-        const { data: customer, error: customerError } = await supabase
-          .from('customers')
-          .select('id, full_name, phone, tenant_id')
-          .eq('id', booking.customer_id)
-          .single();
-
-        if (customerError) {
-          console.error('      ❌ Error finding customer:', customerError.message);
-        } else if (customer) {
-          console.log('      👤 Customer:');
-          console.log(`         Name: ${customer.full_name}`);
-          console.log(`         Phone: ${customer.phone || '(no phone)'}`);
-          console.log(`         Tenant: ${customer.tenant_id}`);
+        // Check if booking number indicates demo
+        if (booking.booking_number.startsWith('BSP-DEMO-') || booking.booking_number.startsWith('DEMO-')) {
+          console.log('      🚫 DEMO BOOKING DETECTED!');
+          console.log(`         DELETE THIS REVENUE RECORD: ${revenue.id}`);
           console.log('');
-
-          // Check if customer name suggests demo/test
-          const lowerName = (customer.full_name || '').toLowerCase();
-          if (
-            lowerName.includes('demo') ||
-            lowerName.includes('test') ||
-            lowerName.includes('thử nghiệm') ||
-            customer.id.startsWith('BSP-DEMO-')
-          ) {
-            console.log('      🚫 DEMO/TEST CUSTOMER DETECTED!');
-            console.log(`         DELETE THIS REVENUE RECORD: ${revenue.id}`);
-          }
         }
 
         // Check for sessions
