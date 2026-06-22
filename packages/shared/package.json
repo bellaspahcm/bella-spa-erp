@@ -1,0 +1,17 @@
+{
+  "name": "@bella/shared",
+  "version": "1.0.0",
+  "description": "Shared types, validators, and utilities for Bella ERP (web + mobile)",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc"
+  },
+  "keywords": ["bella", "erp", "shared"],
+  "author": "Bella ERP Team",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "typescript": "^5"
+  }
+}
