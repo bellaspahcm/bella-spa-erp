@@ -584,6 +584,12 @@ input[type="time"]::-webkit-datetime-edit-ampm-field {
   color: #64748b !important; /* Darker gray for better contrast in light mode */
 }
 
+/* Force slate-600 to be darker in light mode */
+.text-slate-600:not(.dark *),
+[class*="text-slate-600"]:not(.dark *) {
+  color: #475569 !important; /* Even darker for maximum contrast */
+}
+
 /* Text overrides for contrast and tone - DARK MODE */
 .dark .text-slate-600,
 .dark [class*="text-slate-600"] {
