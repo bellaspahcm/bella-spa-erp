@@ -21,7 +21,9 @@ describe('Meta Ads UI integration', () => {
   it('wires Meta Ads into settings and dashboard navigation', () => {
     const settingsSource = read('src/app/dashboard/settings/page.tsx');
     const sidebarSource = read('src/components/layout/sidebar.tsx');
-    const permissionsSource = read('src/lib/business-rules/permissions.ts');
+    
+    // Check permissions module exports correctly (via @bella/shared re-export)
+    const { SIDEBAR_MODULE_BY_LABEL } = require('../lib/business-rules/permissions');
 
     expect(settingsSource).toContain('MetaAdsSettingsTab');
     expect(settingsSource).toContain('meta-ads');
@@ -32,7 +34,9 @@ describe('Meta Ads UI integration', () => {
     expect(sidebarSource.indexOf("href: '/dashboard/marketing'")).toBeLessThan(
       sidebarSource.indexOf("href: '/dashboard/services'"),
     );
-    expect(permissionsSource).toContain("'Meta Ads': 'marketing_ads'");
+    
+    // Verify Meta Ads is properly mapped (runtime check instead of source check)
+    expect(SIDEBAR_MODULE_BY_LABEL['Meta Ads']).toBe('marketing_ads');
   });
 
   it('uses shared dropdown UI and horizontal table scrolling', () => {
