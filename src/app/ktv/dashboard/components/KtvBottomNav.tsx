@@ -10,11 +10,11 @@ export function KtvBottomNav() {
         <Clock className="w-6 h-6" />
         <span className="text-[10px] font-black uppercase">Lịch ca</span>
       </Link>
-      <Link href="/ktv/earnings" className="text-slate-300 hover:text-primary flex flex-col items-center gap-1 transition-colors">
+      <Link href="/ktv/earnings" className="text-slate-900 flex flex-col items-center gap-1">
         <DollarSign className="w-6 h-6" />
         <span className="text-[10px] font-black uppercase">Thu nhập</span>
       </Link>
-      <Link href="/ktv/leaderboard" className="text-slate-300 hover:text-primary flex flex-col items-center gap-1 transition-colors">
+      <Link href="/ktv/leaderboard" className="text-slate-900 flex flex-col items-center gap-1">
         <CalendarIcon className="w-6 h-6" />
         <span className="text-[10px] font-black uppercase">Cá nhân</span>
       </Link>
