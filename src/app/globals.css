@@ -20,8 +20,8 @@
 
 :root {
   /* Option C: Deep Rose Luxury (Refined & Softened) */
-  --primary: #C2185B;
-  --primary-hover: #831843;
+  --primary: #E91E63;
+  --primary-hover: #C2185B;
   --primary-foreground: oklch(0.985 0 0);
 
   --secondary: oklch(0.97 0 0);
