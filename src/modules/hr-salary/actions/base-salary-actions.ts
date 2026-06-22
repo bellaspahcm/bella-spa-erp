@@ -435,15 +435,13 @@ export async function getKtvSalaryForConfirmation(month?: string): Promise<KtvSa
       service_percentage_bonus: centralSalaryRow.advances ?? 0,
       total_salary: centralSalaryRow.total_salary ?? 0,
       status: 'draft',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
       confirmed_at: null,
       confirmed_by_ktv: null,
       disputed_at: null,
       dispute_reason: null,
       admin_confirmed_at: null,
       admin_confirmed_by: null,
-    };
+    } as SalaryRecordRow;
   }
 
   // Get session details for KTV to cross-check
