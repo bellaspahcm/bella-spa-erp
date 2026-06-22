@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Loader2, X } from 'lucide-react';
 
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
-import { getLocalDateString } from '@/lib/utils';
+import { getLocalDateString } from '@bella/shared';;
 import type { BookingResourceOption } from './BookingDayDetailModal';
 
 export type BookingOption = {

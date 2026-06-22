@@ -1,4 +1,5 @@
-import { parseDecimalInput, parseIntegerInput, parseMoneyInput } from '@/lib/utils';
+import { parseMoneyInput } from '@bella/shared';
+import { parseDecimalInput, parseIntegerInput } from '@/lib/utils';;
 import {
   normalizeOptionalBookingResourceType,
   type BookingResourceType,

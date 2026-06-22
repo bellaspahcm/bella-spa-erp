@@ -3,7 +3,8 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { CheckCircle2, DollarSign, X } from 'lucide-react';
 
-import { cn, formatMoneyInput } from '@/lib/utils';
+import { formatMoneyInput } from '@bella/shared';
+import { cn } from '@/lib/utils';;
 
 import type { DebtAlert, PaymentMethod } from '../types';
 import { formatNumberishCurrency } from '../utils';

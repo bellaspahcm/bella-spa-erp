@@ -1,5 +1,5 @@
 import { Plus, RefreshCw, Sparkles } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency } from '@bella/shared';;
 import type { HqPackageTemplate } from '@/types/domain';
 
 interface HqServiceTemplateListProps {

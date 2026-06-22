@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase-server';
 import { getCurrentUser } from '@/services/user-actions';
 import { createDevelopmentBypassClient } from '@/lib/supabase-dev-bypass-server';
-import { resolvePackageName, getLocalDateString } from '@/lib/utils';
+import { resolvePackageName, getLocalDateString } from '@bella/shared';;
 import { calcProRataBaseSalary } from './base-salary-actions';
 import {
   buildPackageMultiplierMap,

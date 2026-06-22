@@ -5,7 +5,7 @@ import { createDevelopmentBypassClient } from '@/lib/supabase-dev-bypass-server'
 import { safeRevalidatePath } from '@/lib/revalidate';
 import { getSupabaseAdminKey, getSupabaseAdminUrl } from '@/lib/supabase-admin-env';
 import { getCurrentUser } from './user-actions';
-import { resolvePackageName } from '@/lib/utils';
+import { resolvePackageName } from '@bella/shared';;
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database.types';
 

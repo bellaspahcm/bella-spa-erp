@@ -1,4 +1,4 @@
-import { getLocalDateString, sanitizeTime } from '@/lib/utils';
+import { getLocalDateString, sanitizeTime } from '@bella/shared';;
 import { buildCompletedSessionAccountingUpdate } from './session-completion-helpers';
 import { processSessionCompletion } from './session-completion-engine';
 import type { createClient } from '@/lib/supabase-server';

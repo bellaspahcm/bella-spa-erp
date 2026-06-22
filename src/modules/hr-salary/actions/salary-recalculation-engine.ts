@@ -1,6 +1,6 @@
 'use server';
 
-import { getLocalDateString } from '@/lib/utils';
+import { getLocalDateString } from '@bella/shared';;
 import { Database } from '@/types/database.types';
 import { TenantSalaryConfig } from '@/types/domain';
 import type { SupabaseClient } from '@supabase/supabase-js';

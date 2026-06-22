@@ -10,7 +10,7 @@ import {
   getCachedInventoryTransferOrdersForPage,
   getCachedMonthlyReconciliationForPage,
 } from '@/lib/inventory-page-client-cache';
-import { getLocalDateString } from '@/lib/utils';
+import { getLocalDateString } from '@bella/shared';;
 import {
   createInventoryRequest,
   confirmTransferReceipt,

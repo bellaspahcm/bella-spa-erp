@@ -4,7 +4,8 @@
 import React from "react";
 import { Coins, Star, Zap, Database, AlertOctagon } from "lucide-react";
 import { TenantGeneralSettings } from "@/types/domain";
-import { parseIntegerInput, parseMoneyInput } from "@/lib/utils";
+import { parseMoneyInput } from '@bella/shared';
+import { parseIntegerInput } from '@/lib/utils';;
 
 interface SalaryConfigTabProps {
   generalSettings: TenantGeneralSettings;

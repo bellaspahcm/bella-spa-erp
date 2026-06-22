@@ -2,7 +2,7 @@
 
 import * as XLSX from 'xlsx';
 import { createClient } from '@/lib/supabase-server';
-import { getLocalDateString } from '@/lib/utils';
+import { getLocalDateString } from '@bella/shared';;
 import { DEFAULT_KTV_SESSION_COMMISSION, calculateSalaryTotal } from '@/lib/business-rules/salary';
 import { buildPackageMultiplierMap, getSessionPackageMultiplier } from '@/modules/hr-salary/actions/salary-attendance-calculation';
 import { getCurrentUser } from '@/services/user-actions';

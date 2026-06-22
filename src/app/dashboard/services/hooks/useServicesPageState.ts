@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 
-import { formatMoneyInput, parseDecimalInput, parseIntegerInput, parseMoneyInput } from '@/lib/utils';
+import { formatMoneyInput, parseMoneyInput } from '@bella/shared';
+import { parseDecimalInput, parseIntegerInput } from '@/lib/utils';;
 import { getInventoryItems, getPackageMaterials, upsertPackageMaterials } from '@/services/inventory-actions';
 import {
   createPackage,

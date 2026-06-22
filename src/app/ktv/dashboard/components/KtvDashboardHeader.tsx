@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency } from '@bella/shared';;
 
 export type KtvDashboardNotification = {
   id: string;

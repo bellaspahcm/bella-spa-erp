@@ -29,7 +29,8 @@ import {
   InventoryTransferOrder
 } from '@/services/inventory-transfer-actions';
 import { createClient } from '@/lib/supabase-client';
-import { formatMoneyInput, parseIntegerInput, parseMoneyInput } from '@/lib/utils';
+import { formatMoneyInput, parseMoneyInput } from '@bella/shared';
+import { parseIntegerInput } from '@/lib/utils';;
 import { toast } from 'sonner';
 import { HqDashboardStats, HqTenantRecord, CurrentUser, HqAuditLogRecord, HqPackageTemplate } from '@/types/domain';
 import { getHqAuditLogs, getAuditTables, getAuditUsers } from '@/services/audit-actions';

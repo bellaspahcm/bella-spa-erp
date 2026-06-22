@@ -1,4 +1,4 @@
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency } from '@bella/shared';;
 
 import type { Numberish } from './types';
 

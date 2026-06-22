@@ -1,6 +1,6 @@
 'use server';
 
-import { sanitizeTime } from '@/lib/utils';
+import { sanitizeTime } from '@bella/shared';;
 import { safeRevalidatePath } from '@/lib/revalidate';
 import { validateBookingPackageScope } from './create-booking-helpers';
 import { BookingError } from '@/core/lib/errors';

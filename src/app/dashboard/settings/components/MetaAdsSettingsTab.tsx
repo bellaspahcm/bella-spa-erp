@@ -19,7 +19,8 @@ import {
   saveMetaAdAccountConnection,
   syncMetaAdsInsights,
 } from "@/services/marketing/meta-ads";
-import { cn, getLocalDateString } from "@/lib/utils";
+import { getLocalDateString } from '@bella/shared';
+import { cn } from '@/lib/utils';;
 import { PremiumSelect } from "@/components/ui/PremiumSelect";
 
 type ConnectionsResult = Awaited<ReturnType<typeof getMetaAdAccountConnections>>;

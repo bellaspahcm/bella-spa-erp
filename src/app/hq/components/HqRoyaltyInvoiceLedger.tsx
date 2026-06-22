@@ -1,5 +1,5 @@
 import { Calendar, CheckCircle2, RefreshCw } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency } from '@bella/shared';;
 import type { FranchiseRoyaltyInvoice } from '@/services/franchise-actions';
 
 interface HqRoyaltyInvoiceLedgerProps {

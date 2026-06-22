@@ -1,4 +1,4 @@
-import { resolvePackageName, getLocalDateString } from '@/lib/utils';
+import { resolvePackageName, getLocalDateString } from '@bella/shared';;
 import { getSupabaseAdminKey, getSupabaseAdminUrl } from '@/lib/supabase-admin-env';
 import { buildPackageSaleOutboxEvent } from '@/lib/business-rules/accounting-outbox';
 import { normalizeDiscountPercent } from '@/lib/business-rules/payment';

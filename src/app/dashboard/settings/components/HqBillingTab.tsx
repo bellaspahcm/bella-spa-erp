@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency } from '@bella/shared';;
 import { 
   getFranchiseRoyaltyInvoices, 
   simulateFranchiseRoyaltyPayment, 

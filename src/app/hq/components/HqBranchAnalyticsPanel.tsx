@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { TrendingUp } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency } from '@bella/shared';;
 import type { HqDashboardStats, HqTenantRecord } from '@/types/domain';
 
 interface HqBranchAnalyticsPanelProps {

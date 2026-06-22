@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { getLocalDateString } from '@/lib/utils';
+import { getLocalDateString } from '@bella/shared';;
 import { formatBookingCustomerLabel, getTenantSpecialtyOptions } from '@/lib/business-rules/tenant-module-presentation';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
 

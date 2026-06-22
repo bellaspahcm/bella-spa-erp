@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase-server';
 import { getTenantPresentationFromModules } from '@/lib/business-rules/tenant-module-presentation';
 import { resolveTenantBrandIdentity } from '@/lib/business-rules/tenant-modules';
 import { getCurrentUser } from '../user-actions';
-import { getLocalDateString } from '@/lib/utils';
+import { getLocalDateString } from '@bella/shared';;
 import { recordAuditLog } from '../audit-actions';
 import { pickFirstTenantRow } from './tenant-row';
 import { getOrRefreshZaloToken } from './zalo-config';

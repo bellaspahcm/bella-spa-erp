@@ -14,7 +14,7 @@ import {
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
-import { formatCurrency, parseMoneyInput } from '@/lib/utils';
+import { formatCurrency, parseMoneyInput } from '@bella/shared';;
 import { cn } from '@/lib/utils';
 import { AllocateRevenueModal } from './components/AllocateRevenueModal';
 import { DebtPaymentModal } from './components/DebtPaymentModal';

@@ -18,7 +18,8 @@ import {
 } from 'lucide-react';
 import { getTenantModulePresentationOrNeutral } from '@/lib/business-rules/tenant-module-presentation';
 import type { TenantModuleKey } from '@/lib/business-rules/tenant-modules';
-import { cn, resolvePackageName } from '@/lib/utils';
+import { resolvePackageName } from '@bella/shared';
+import { cn } from '@/lib/utils';;
 import { toast } from 'sonner';
 import { SessionBooking } from '../types';
 

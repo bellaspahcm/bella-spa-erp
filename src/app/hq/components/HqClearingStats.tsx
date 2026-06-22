@@ -1,5 +1,5 @@
 import { AlertCircle, ArrowLeftRight, CheckCircle2 } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency } from '@bella/shared';;
 import type { InterBranchClearingRecord } from '@/services/clearing-actions';
 
 interface HqClearingStatsProps {
