@@ -97,7 +97,7 @@
   --card-foreground: oklch(0.985 0 0);
 
   --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0); /* Warm beige */
+  --muted-foreground: oklch(0.78 0 0); /* Lighter warm beige for better contrast */
 
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
@@ -576,17 +576,33 @@ input[type="time"]::-webkit-datetime-edit-ampm-field {
 /* Text overrides for contrast and tone */
 .dark .text-slate-600,
 .dark [class*="text-slate-600"] {
-  color: #CDBCAB !important;
+  color: #D4C5B6 !important; /* Increased brightness for better readability */
 }
 
 .dark .text-slate-500,
 .dark [class*="text-slate-500"] {
-  color: #CDBCAB !important;
+  color: #D4C5B6 !important; /* Increased brightness for better readability */
 }
 
 .dark .text-slate-400,
 .dark [class*="text-slate-400"] {
-  color: #CDBCAB/80 !important;
+  color: rgba(212, 197, 182, 0.90) !important; /* Increased opacity from 80% to 90% */
+}
+
+/* Gray color overrides for better contrast in dark mode */
+.dark .text-gray-600,
+.dark [class*="text-gray-600"] {
+  color: #D4C5B6 !important; /* Better contrast than default gray-600 */
+}
+
+.dark .text-gray-500,
+.dark [class*="text-gray-500"] {
+  color: #D4C5B6 !important; /* Better contrast than default gray-500 */
+}
+
+.dark .text-gray-400,
+.dark [class*="text-gray-400"] {
+  color: rgba(212, 197, 182, 0.85) !important; /* Lighter gray with good contrast */
 }
 
 .dark .text-foreground {
@@ -606,7 +622,7 @@ input[type="time"]::-webkit-datetime-edit-ampm-field {
 
 .dark .bg-slate-50\/50 {
   background-color: #292623 !important;
-  color: #CDBCAB !important;
+  color: #D4C5B6 !important; /* Brighter text for better contrast */
   border-color: #3E3A35 !important;
 }
 
