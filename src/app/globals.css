@@ -137,15 +137,15 @@
   --color-border: var(--border);
   --color-pink-deep: #881337;
   
-  /* Override Tailwind default slate colors for better contrast */
-  --color-slate-300: #64748b;
-  --color-slate-400: #334155;
-  --color-slate-500: #334155;
-  --color-slate-600: #1e293b;
-  --color-gray-300: #64748b;
-  --color-gray-400: #334155;
-  --color-gray-500: #334155;
-  --color-gray-600: #1e293b;
+  /* Override Tailwind default slate colors for better contrast on white/pink bg */
+  --color-slate-300: #cbd5e1;
+  --color-slate-400: #94a3b8;
+  --color-slate-500: #64748b;
+  --color-slate-600: #475569;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
 
   --font-sans: var(--font-sans);
 
@@ -583,24 +583,7 @@ input[type="time"]::-webkit-datetime-edit-ampm-field {
   background-color: #4D1328 !important;
 }
 
-/* Text overrides for contrast and tone - LIGHT MODE */
-.text-slate-400,
-[class*="text-slate-400"],
-.text-gray-400,
-[class*="text-gray-400"] {
-  color: #334155 !important; /* slate-700: Much darker for better contrast, readable on pink/white */
-}
-
-/* Force slate-600 to be darker in light mode */
-.text-slate-600:not(.dark *),
-[class*="text-slate-600"]:not(.dark *) {
-  color: #1e293b !important; /* slate-800 for maximum contrast */
-}
-
-.text-slate-500:not(.dark *),
-[class*="text-slate-500"]:not(.dark *) {
-  color: #334155 !important; /* slate-700 */
-}
+/* Text overrides for contrast - keep default Tailwind colors */
 
 /* Text overrides for contrast and tone - DARK MODE */
 .dark .text-slate-600,

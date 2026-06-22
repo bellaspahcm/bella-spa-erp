@@ -79,15 +79,15 @@ export function KtvAttendanceCard({
         </div>
 
         <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className="bg-slate-50 rounded-2xl p-4 text-center">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">Giờ Check-in</span>
-            <span className="text-lg font-black text-slate-700">
+          <div className="bg-slate-100 rounded-2xl p-4 text-center border border-slate-200">
+            <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider block mb-1">Giờ Check-in</span>
+            <span className="text-lg font-black text-slate-900">
               {formatAttendanceTime(todayAttendance?.checkin_time)}
             </span>
           </div>
-          <div className="bg-slate-50 rounded-2xl p-4 text-center">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">Giờ Check-out</span>
-            <span className="text-lg font-black text-slate-700">
+          <div className="bg-slate-100 rounded-2xl p-4 text-center border border-slate-200">
+            <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider block mb-1">Giờ Check-out</span>
+            <span className="text-lg font-black text-slate-900">
               {formatAttendanceTime(todayAttendance?.checkout_time)}
             </span>
           </div>
