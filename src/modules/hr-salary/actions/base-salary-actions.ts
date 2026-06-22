@@ -403,46 +403,8 @@ export async function getKtvSalaryForConfirmation(month?: string): Promise<KtvSa
   }
 
   let resolvedRecord = record;
-  if (!record) {
-    // If no saved record exists, fetch from central salary sheet calculation engine
-    if (!currentUser.tenant_id) {
-      throw new Error('Cannot fetch central KTV salary sheet without tenant context');
-    }
-
-    const centralSalaryRow = await getCentralSalarySheetRecordForKtv({
-      ktvId: currentUser.id,
-      tenantId: currentUser.tenant_id,
-      monthYear: monthStr,
-    });
-
-    if (!centralSalaryRow) {
-      // No saved record and no computed record means KTV has no salary data for this month
-      return null;
-    }
-
-    // Convert central salary sheet row to salary record format for display
-    resolvedRecord = {
-      id: `temp-${currentUser.id}-${monthStr}`,
-      tenant_id: currentUser.tenant_id,
-      ktv_id: currentUser.id,
-      month_year: monthStr,
-      base_salary: centralSalaryRow.base_salary ?? 0,
-      total_sessions: centralSalaryRow.total_sessions ?? 0,
-      session_bonus: centralSalaryRow.session_bonus ?? 0,
-      kpi_bonus: centralSalaryRow.kpi_bonus ?? 0,
-      rating_bonus: centralSalaryRow.rating_bonus ?? 0,
-      violations_deduction: centralSalaryRow.deductions ?? 0,
-      service_percentage_bonus: centralSalaryRow.advances ?? 0,
-      total_salary: centralSalaryRow.total_salary ?? 0,
-      status: 'draft',
-      confirmed_at: null,
-      confirmed_by_ktv: null,
-      disputed_at: null,
-      dispute_reason: null,
-      admin_confirmed_at: null,
-      admin_confirmed_by: null,
-    } as SalaryRecordRow;
-  }
+  // Note: If no saved record exists, we return null instead of creating a temporary record
+  // The UI should handle null gracefully and show "no salary data available" message
 
   // Get session details for KTV to cross-check
   const { data: sessions, error: sessionsError } = await supabase
