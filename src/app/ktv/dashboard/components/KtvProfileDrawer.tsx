@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import Link from 'next/link';
 import { KeyRound, LogOut, Mail, X } from 'lucide-react';
 
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency } from '@bella/shared';;
 
 export type KtvProfileUser = {
   id?: string | null;

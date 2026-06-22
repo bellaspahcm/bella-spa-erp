@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { getLocalDateString } from '@/lib/utils';
+import { getLocalDateString } from '@bella/shared';;
 import { resolveTenantId } from './shared';
 import { assertOpenAccountingPeriod } from '@/core/services/accounting/period-guards';
 import { buildRevenueAccountingMetadata, inferBusinessEventType } from '@/core/services/accounting/template-rules';

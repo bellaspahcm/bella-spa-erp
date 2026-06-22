@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { getCustomerBookingByToken, submitCustomerRating } from '@/services/customer-actions';
 import { toast } from 'sonner';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency } from '@bella/shared';;
 import PortalChatWidget from '@/components/features/portal/PortalChatWidget';
 import { calculatePortalPaymentSummary } from './payment-utils';
 import { TenantBrandLogo } from '@/components/common/TenantBrandLogo';

@@ -1,6 +1,6 @@
 'use server';
 
-import { getLocalDateString } from '@/lib/utils';
+import { getLocalDateString } from '@bella/shared';;
 import { safeRevalidatePath } from '@/lib/revalidate';
 import type { Database } from '@/types/database.types';
 import { processSessionCompletion } from './session-completion-engine';

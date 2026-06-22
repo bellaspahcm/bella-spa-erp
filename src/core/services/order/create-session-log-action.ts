@@ -1,6 +1,6 @@
 'use server';
 
-import { sanitizeTime } from '@/lib/utils';
+import { sanitizeTime } from '@bella/shared';;
 import { safeRevalidatePath } from '@/lib/revalidate';
 import { validateBookingResourceSchedule } from './booking-resource-schedule-guard';
 import type { Database } from '@/types/database.types';

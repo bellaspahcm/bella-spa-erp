@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase-server';
 import { getCurrentUser } from '../user-actions';
-import { getLocalDateString } from '@/lib/utils';
+import { getLocalDateString } from '@bella/shared';;
 import type { CRMStats } from './types';
 
 const EMPTY_CRM_STATS: CRMStats = {

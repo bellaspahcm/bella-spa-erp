@@ -1,6 +1,6 @@
 'use server';
 
-import { getLocalDateString } from '@/lib/utils';
+import { getLocalDateString } from '@bella/shared';;
 import { safeRevalidatePath } from '@/lib/revalidate';
 import { validateBookingPackageScope } from './create-booking-helpers';
 import { BookingError } from '@/core/lib/errors';

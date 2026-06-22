@@ -1,5 +1,5 @@
 import { Edit, Settings } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency } from '@bella/shared';;
 import type { HqTenantRecord } from '@/types/domain';
 
 interface HqClearingRateLedgerProps {

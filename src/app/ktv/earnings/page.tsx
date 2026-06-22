@@ -10,7 +10,7 @@ import {
 import { getKTVEarnings, getKTVLeaderboard } from '@/services/ktv-actions';
 import { getKtvSalaryForConfirmation, ktvConfirmSalary, ktvDisputeSalary } from '@/modules/hr-salary/actions/base-salary-actions';
 import { createClient } from '@/lib/supabase-client';
-import { formatCurrency, getLocalDateString } from '@/lib/utils';
+import { formatCurrency, getLocalDateString } from '@bella/shared';;
 import { toast } from 'sonner';
 import Link from 'next/link';
 import type { Database } from '@/types/database.types';

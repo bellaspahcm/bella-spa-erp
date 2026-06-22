@@ -1,7 +1,8 @@
 'use client';
 
 import { createClient } from '@/lib/supabase-client';
-import { cn,resolvePackageName } from '@/lib/utils';
+import { resolvePackageName } from '@bella/shared';
+import { cn } from '@/lib/utils';;
 import { reusePackage } from '@/core/services/order';
 import {
 completeSession,

@@ -23,7 +23,8 @@ import {
   recognizeMetaAdsSpendAsExpense,
   syncMetaAdsInsights,
 } from "@/services/marketing/meta-ads";
-import { cn, formatCurrency, getLocalDateString } from "@/lib/utils";
+import { formatCurrency, getLocalDateString } from '@bella/shared';
+import { cn } from '@/lib/utils';;
 
 type ConnectionsResult = Awaited<ReturnType<typeof getMetaAdAccountConnections>>;
 type InsightsResult = Awaited<ReturnType<typeof getMetaAdsDailyInsights>>;

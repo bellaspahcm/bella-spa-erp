@@ -1,4 +1,4 @@
-import { getLocalDateString } from '@/lib/utils';
+import { getLocalDateString } from '@bella/shared';;
 import {
   calculateBookingPaymentState,
   validatePaymentAmountAgainstState,

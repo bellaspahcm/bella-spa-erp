@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase-server';
 import { revalidatePath } from 'next/cache';
 import { getCurrentUser } from './user-actions';
-import { resolvePackageName, getLocalDateString } from '@/lib/utils';
+import { resolvePackageName, getLocalDateString } from '@bella/shared';;
 import type { Database } from '@/types/database.types';
 import { processSessionCompletion } from '@/core/services/order/session-completion-engine';
 

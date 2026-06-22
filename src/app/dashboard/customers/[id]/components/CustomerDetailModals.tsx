@@ -1,6 +1,7 @@
 'use client';
 
-import { cn, formatMoneyInput, parseIntegerInput, parseMoneyInput, parsePercentInput } from '@/lib/utils';
+import { formatMoneyInput, parseMoneyInput } from '@bella/shared';
+import { cn, parseIntegerInput, parsePercentInput } from '@/lib/utils';;
 import {
   getTenantModulePresentationOrNeutral,
 } from '@/lib/business-rules/tenant-module-presentation';

@@ -1,5 +1,5 @@
 import { RefreshCw } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency } from '@bella/shared';;
 import type { HqPackageTemplate } from '@/types/domain';
 import type { HqDistributedPackageRecord } from './HqServiceStats';
 

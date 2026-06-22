@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 
 import { calculateBookingPaymentState } from '@/lib/business-rules/payment';
 import { resolveTenantBrandIdentity } from '@/lib/business-rules/tenant-modules';
-import { getLocalDateString } from '@/lib/utils';
+import { getLocalDateString } from '@bella/shared';;
 import {
   getInvoicePrintLogsForBooking,
   recordInvoicePrintLog,

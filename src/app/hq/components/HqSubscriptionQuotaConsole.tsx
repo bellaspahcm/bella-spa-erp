@@ -13,7 +13,7 @@ import {
   SlidersHorizontal,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency } from '@bella/shared';;
 import {
   getHqSubscriptionOverview,
   resetTenantUsageCounter,

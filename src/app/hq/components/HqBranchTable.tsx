@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { Lock, MapPin, Phone, Plus, RefreshCw, Unlock } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency } from '@bella/shared';;
 import { getDefaultTenantModuleKey } from '@/lib/business-rules/tenant-modules';
 import type { HqTenantRecord } from '@/types/domain';
 

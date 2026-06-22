@@ -16,13 +16,8 @@ import {
   Trash2,
   RefreshCw
 } from 'lucide-react';
-import {
-  cn,
-  formatMoneyInput,
-  formatNumberWithSeparator,
-  parseDecimalInput,
-  parseIntegerInput,
-} from '@/lib/utils';
+import { formatMoneyInput } from '@bella/shared';
+import { cn, formatNumberWithSeparator, parseDecimalInput, parseIntegerInput,  } from '@/lib/utils';;
 
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { usePageRefresh } from '@/hooks/usePageRefresh';

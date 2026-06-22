@@ -1,6 +1,6 @@
 'use server';
 
-import { resolvePackageName } from '@/lib/utils';
+import { resolvePackageName } from '@bella/shared';;
 import { createDevelopmentBypassClient } from '@/lib/supabase-dev-bypass-server';
 import { getPackages as getTenantPackages } from '@/services/package-actions';
 import { BookingError } from '@/core/lib/errors';

@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase-server';
 import { getCurrentUser } from './user-actions';
 import { revalidatePath } from 'next/cache';
 import { recordAuditLog } from './audit-actions';
-import { getLocalDateString } from '@/lib/utils';
+import { getLocalDateString } from '@bella/shared';;
 import {
   buildAttendanceTimestamp,
   calculateAttendanceBreakdown,

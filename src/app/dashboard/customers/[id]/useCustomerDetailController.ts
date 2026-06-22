@@ -14,7 +14,8 @@ import {
   type TenantModuleKey,
 } from '@/lib/business-rules/tenant-modules';
 import { createClient } from '@/lib/supabase-client';
-import { parseIntegerInput, parseMoneyInput } from '@/lib/utils';
+import { parseMoneyInput } from '@bella/shared';
+import { parseIntegerInput } from '@/lib/utils';;
 import { generateShareToken, getBookingsByCustomerId, recordRemainingPayment, reusePackage, updateBooking } from '@/core/services/order';
 import { getCustomerById, updateCustomer } from '@/services/customer-actions';
 import { getTenantSettings } from '@/services/tenant-actions';

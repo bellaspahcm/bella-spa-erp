@@ -1,6 +1,6 @@
 import { AlertTriangle, Link as LinkIcon, Wallet } from 'lucide-react';
 
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency } from '@bella/shared';;
 
 type ReconciliationKpiCardsProps = {
   debtCount: number;

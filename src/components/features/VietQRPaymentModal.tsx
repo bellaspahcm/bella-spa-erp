@@ -1,6 +1,6 @@
 "use client";
 
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency } from '@bella/shared';;
 import { AnimatePresence,motion } from "framer-motion";
 import { Copy,CreditCard,QrCode,Sparkles,X } from "lucide-react";
 import Image from "next/image";

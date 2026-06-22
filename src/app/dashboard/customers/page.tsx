@@ -15,7 +15,8 @@ import {
   getCustomerSecondarySummary,
   getTenantModulePresentationOrNeutral,
 } from '@/lib/business-rules/tenant-module-presentation';
-import { cn,getLocalDateString } from '@/lib/utils';
+import { getLocalDateString } from '@bella/shared';
+import { cn } from '@/lib/utils';;
 
 import {
 Baby,

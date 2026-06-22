@@ -1,5 +1,5 @@
 import { AlertCircle, CheckCircle2, DollarSign } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency } from '@bella/shared';;
 
 interface HqFranchiseRoyaltyStatsProps {
   totalProjectedFees: number;

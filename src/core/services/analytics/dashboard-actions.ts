@@ -1,6 +1,6 @@
 'use server';
 import type { Database } from '@/types/database.types';
-import { resolvePackageName } from '@/lib/utils';
+import { resolvePackageName } from '@bella/shared';;
 import { getCurrentUser } from '@/services/user-actions';
 
 type KtvLeaderboardRow = Database['public']['Functions']['get_ktv_leaderboard']['Returns'][number];

@@ -1,5 +1,5 @@
 import { Activity, DollarSign, MessageSquare, Store } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency } from '@bella/shared';;
 import type { HqDashboardStats } from '@/types/domain';
 
 interface HqBranchKpiCardsProps {

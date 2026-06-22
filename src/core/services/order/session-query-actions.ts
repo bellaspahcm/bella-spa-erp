@@ -1,6 +1,6 @@
 'use server';
 
-import { getLocalDateString, resolvePackageName } from '@/lib/utils';
+import { getLocalDateString, resolvePackageName } from '@bella/shared';;
 import { createDevelopmentBypassClient } from '@/lib/supabase-dev-bypass-server';
 import { BookingError } from '@/core/lib/errors';
 import type { Database } from '@/types/database.types';

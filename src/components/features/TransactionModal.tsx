@@ -1,7 +1,7 @@
 'use client';
 
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
-import { formatMoneyInput, parseMoneyInput } from '@/lib/utils';
+import { formatMoneyInput, parseMoneyInput } from '@bella/shared';;
 import { getBookings } from '@/core/services/order';
 import { recordTransaction } from '@/services/finance-actions';
 import { AnimatePresence,motion } from 'framer-motion';
