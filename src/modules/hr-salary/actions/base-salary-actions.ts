@@ -423,6 +423,7 @@ export async function getKtvSalaryForConfirmation(month?: string): Promise<KtvSa
     // Convert central salary sheet row to salary record format for display
     resolvedRecord = {
       id: `temp-${currentUser.id}-${monthStr}`,
+      tenant_id: currentUser.tenant_id,
       ktv_id: currentUser.id,
       month_year: monthStr,
       base_salary: centralSalaryRow.base_salary ?? 0,
@@ -430,8 +431,8 @@ export async function getKtvSalaryForConfirmation(month?: string): Promise<KtvSa
       session_bonus: centralSalaryRow.session_bonus ?? 0,
       kpi_bonus: centralSalaryRow.kpi_bonus ?? 0,
       rating_bonus: centralSalaryRow.rating_bonus ?? 0,
-      violations_deduction: centralSalaryRow.violations_deduction ?? 0,
-      service_percentage_bonus: centralSalaryRow.service_percentage_bonus ?? 0,
+      violations_deduction: centralSalaryRow.deductions ?? 0,
+      service_percentage_bonus: centralSalaryRow.advances ?? 0,
       total_salary: centralSalaryRow.total_salary ?? 0,
       status: 'draft',
       created_at: new Date().toISOString(),
@@ -439,10 +440,10 @@ export async function getKtvSalaryForConfirmation(month?: string): Promise<KtvSa
       confirmed_at: null,
       confirmed_by_ktv: null,
       disputed_at: null,
-      disputed_reason: null,
+      dispute_reason: null,
       admin_confirmed_at: null,
       admin_confirmed_by: null,
-    } as typeof record;
+    };
   }
 
   // Get session details for KTV to cross-check
