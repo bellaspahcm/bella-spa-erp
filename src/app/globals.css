@@ -136,6 +136,14 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);
   --color-pink-deep: #881337;
+  
+  /* Override Tailwind default slate colors for better contrast */
+  --color-slate-400: #475569;
+  --color-slate-500: #64748b;
+  --color-slate-600: #475569;
+  --color-gray-400: #475569;
+  --color-gray-500: #64748b;
+  --color-gray-600: #475569;
 
   --font-sans: var(--font-sans);
 
@@ -575,19 +583,21 @@ input[type="time"]::-webkit-datetime-edit-ampm-field {
 
 /* Text overrides for contrast and tone - LIGHT MODE */
 .text-slate-400,
-[class*="text-slate-400"] {
-  color: #64748b !important; /* Darker gray for better contrast in light mode */
-}
-
+[class*="text-slate-400"],
 .text-gray-400,
 [class*="text-gray-400"] {
-  color: #64748b !important; /* Darker gray for better contrast in light mode */
+  color: #475569 !important; /* Much darker gray for better contrast in light mode */
 }
 
 /* Force slate-600 to be darker in light mode */
 .text-slate-600:not(.dark *),
 [class*="text-slate-600"]:not(.dark *) {
-  color: #475569 !important; /* Even darker for maximum contrast */
+  color: #334155 !important; /* slate-700 for maximum contrast */
+}
+
+.text-slate-500:not(.dark *),
+[class*="text-slate-500"]:not(.dark *) {
+  color: #475569 !important; /* slate-600 */
 }
 
 /* Text overrides for contrast and tone - DARK MODE */
