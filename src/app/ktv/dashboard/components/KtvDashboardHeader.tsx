@@ -268,12 +268,12 @@ export function KtvDashboardHeader({
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <div className="bg-slate-900 p-4 rounded-3xl text-white">
-          <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-1">Thu nhập tháng</p>
+        <div className="bg-slate-900 p-4 rounded-3xl text-white shadow-lg">
+          <p className="text-[10px] font-black uppercase tracking-widest opacity-70 mb-1">Thu nhập tháng</p>
           <p className="text-lg font-black">{formatCurrency(earnings.total)}</p>
         </div>
-        <div className="bg-rose-500 p-4 rounded-3xl text-white">
-          <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-1">Số ca đã xong</p>
+        <div className="bg-rose-600 p-4 rounded-3xl text-white shadow-lg">
+          <p className="text-[10px] font-black uppercase tracking-widest opacity-70 mb-1">Số ca đã xong</p>
           <p className="text-lg font-black">{earnings.sessions} ca</p>
         </div>
       </div>
