@@ -4,7 +4,7 @@ import {
   calculateProRataBaseSalaryFromActualDays,
   type AttendanceLike,
 } from '@/lib/business-rules/attendance';
-import { BUSINESS_RULES } from '@/constants/business-rules';
+import { BUSINESS_RULES } from '@bella/shared';
 
 export type SalaryConfigLike = {
   bonus_5_star: number;

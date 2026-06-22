@@ -5,7 +5,7 @@ import { getCurrentUser } from './user-actions';
 import { checkHqAuth } from './hq-actions';
 import { revalidatePath } from 'next/cache';
 import { safeRevalidatePath } from '@/lib/revalidate';
-import { BUSINESS_RULES } from '@/constants/business-rules';
+import { BUSINESS_RULES } from '@bella/shared';
 import { InventoryError } from '@/core/lib/errors';
 import type { Database, Json } from '@/types/database.types';
 

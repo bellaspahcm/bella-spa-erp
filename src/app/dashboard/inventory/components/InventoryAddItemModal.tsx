@@ -2,7 +2,7 @@ import type { Dispatch, SetStateAction } from 'react';
 
 import { AnimatePresence, motion } from 'framer-motion';
 import { PlusCircle, RefreshCw, X } from 'lucide-react';
-import { BUSINESS_RULES } from '@/constants/business-rules';
+import { BUSINESS_RULES } from '@bella/shared';
 
 import type { NewInventoryItem } from '../types';
 

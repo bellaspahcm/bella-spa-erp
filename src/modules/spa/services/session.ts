@@ -9,7 +9,7 @@
  */
 
 import type { CoreBookingOrder } from '@/core/types';
-import { BUSINESS_RULES } from '@/constants/business-rules';
+import { BUSINESS_RULES } from '@bella/shared';
 
 /**
  * Session tracking and multiplier logic will be integrated here.

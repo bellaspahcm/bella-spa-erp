@@ -63,6 +63,8 @@ const nextConfig: NextConfig = {
       ? { exclude: ['error', 'warn'] }
       : false,
   },
+  // Transpile workspace packages for Next.js (mobile + web code sharing)
+  transpilePackages: ['@bella/shared'],
   // Tree-shake heavy barrel imports. lucide-react / date-fns / recharts are
   // already optimized by default in Next 16; framer-motion is not, so add it.
   experimental: {
