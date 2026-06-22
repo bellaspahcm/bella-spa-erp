@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bella-spa-erp-v2';
+const CACHE_NAME = 'bella-spa-erp-v3-color-fix';
 const IS_LOCAL_DEV =
   self.location.hostname === 'localhost' ||
   self.location.hostname === '127.0.0.1' ||
