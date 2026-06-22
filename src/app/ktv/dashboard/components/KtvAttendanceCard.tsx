@@ -98,7 +98,7 @@ export function KtvAttendanceCard({
             <button
               onClick={() => onCheckIn()}
               disabled={isAttendanceLoading}
-              className="flex-1 py-4 bg-rose-500 hover:bg-rose-600 text-white font-black rounded-2xl transition-all shadow-lg shadow-rose-100 dark:shadow-none text-xs uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer"
+              className="flex-1 py-4 bg-slate-900 hover:bg-slate-800 text-white font-black rounded-2xl transition-all shadow-lg shadow-slate-200 dark:shadow-none text-xs uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer"
             >
               {isAttendanceLoading ? 'Đang gửi...' : 'Đầu ca: CHECK-IN'}
             </button>
@@ -106,7 +106,7 @@ export function KtvAttendanceCard({
             <button
               onClick={() => onCheckOut()}
               disabled={isAttendanceLoading}
-              className="flex-1 py-4 bg-slate-900 hover:bg-slate-800 text-white font-black rounded-2xl transition-all shadow-lg shadow-slate-100 text-xs uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer"
+              className="flex-1 py-4 bg-slate-900 hover:bg-slate-800 text-white font-black rounded-2xl transition-all shadow-lg shadow-slate-200 text-xs uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer"
             >
               {isAttendanceLoading ? 'Đang gửi...' : 'Cuối ca: CHECK-OUT'}
             </button>
@@ -120,14 +120,14 @@ export function KtvAttendanceCard({
         <div className="mt-4 pt-4 border-t border-slate-100 flex gap-3">
           <button
             onClick={onOpenLeaveModal}
-            className="flex-1 py-3.5 bg-white hover:bg-slate-50 text-slate-800 font-black rounded-2xl transition-all text-[11px] uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer border-2 border-slate-200 hover:border-slate-300 shadow-sm hover:shadow-md active:scale-95"
+            className="flex-1 py-3.5 bg-slate-900 hover:bg-slate-800 text-white font-black rounded-2xl transition-all text-[11px] uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-95"
           >
             <CalendarIcon className="w-4 h-4" />
             Đăng ký nghỉ
           </button>
           <button
             onClick={onOpenLeaveHistory}
-            className="flex-1 py-3.5 bg-white hover:bg-slate-50 text-slate-800 font-black rounded-2xl transition-all text-[11px] uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer border-2 border-slate-200 hover:border-slate-300 shadow-sm hover:shadow-md active:scale-95"
+            className="flex-1 py-3.5 bg-slate-900 hover:bg-slate-800 text-white font-black rounded-2xl transition-all text-[11px] uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-95"
           >
             <Clock className="w-4 h-4" />
             Lịch sử nghỉ
