@@ -2,6 +2,10 @@
   "name": "bella-spa-erp",
   "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -44,7 +48,12 @@
     "load:soak": "k6 run load-tests/scripts/05-checkout-soak.js",
     "load:soak:short": "k6 run -e SOAK_MINUTES=5 load-tests/scripts/05-checkout-soak.js",
     "load:report": "k6 run --out json=load-tests/results/result.json load-tests/scripts/01-smoke.js",
-    "ci:env:check": "node scripts/check-ci-quality-env.mjs"
+    "ci:env:check": "node scripts/check-ci-quality-env.mjs",
+    "mobile:dev": "npm run start --workspace=apps/mobile",
+    "mobile:ios": "npm run ios --workspace=apps/mobile",
+    "mobile:android": "npm run android --workspace=apps/mobile",
+    "mobile:typecheck": "npm run typecheck --workspace=apps/mobile",
+    "shared:typecheck": "npm run typecheck --workspace=packages/shared"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",

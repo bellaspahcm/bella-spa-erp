@@ -29,6 +29,7 @@ Không thực hiện thay đổi kiến trúc rộng nếu chưa ghi rõ intent 
 | Roadmap tách core platform đa ngành | `docs/plans/core-platform-extraction-roadmap.md` |
 | Kế hoạch hoãn triển khai Beauty Spa chuỗi nhiều chi nhánh | `docs/plans/beauty-spa-chain-expansion-deferred-plan.md` |
 | Kế hoạch triển khai máy POS và in bill nhiệt K80 | `docs/plans/pos-and-bill-printing-plan.md` |
+| Kế hoạch triển khai Mobile App | `docs/mobile-app/phase-1-week-1-foundation-plan.md` |
 | Nhật ký phát triển theo ngày | `docs/DEVELOPMENT_LOG.md` |
 | Một lát cắt triển khai cụ thể | `docs/implementation-artifacts/spec-*.md` |
 | Điều tra trước khi sửa rủi ro cao | `docs/implementation-artifacts/investigations/*.md` |
@@ -42,3 +43,4 @@ Không thực hiện thay đổi kiến trúc rộng nếu chưa ghi rõ intent 
 ## Quy Tắc Vàng
 
 Nếu một AI agent tương lai không thể hiểu vì sao một thay đổi tồn tại từ tài liệu và git history, quy trình lưu trữ đã thất bại. Hãy thêm artifact ngắn gọn trước hoặc trong lúc thực hiện thay đổi.
+
