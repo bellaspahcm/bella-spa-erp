@@ -271,7 +271,7 @@ export function KtvProfileDrawer({
               </button>
               <button
                 onClick={onLogout}
-                className="w-full bg-rose-500 hover:bg-rose-600 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-rose-100 dark:shadow-none"
+                className="w-full bg-slate-900 hover:bg-slate-800 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-slate-200 dark:shadow-none"
               >
                 <LogOut className="w-4 h-4" />
                 Đăng xuất tài khoản
