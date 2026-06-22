@@ -1,6 +1,9 @@
 import type { Json } from './database.types';
 import type { TenantBrandTheme, TenantEnabledModules } from '@/lib/business-rules/tenant-modules';
 
+// Re-export shared types from @bella/shared for backward compatibility
+export type { CurrentUser, AuthState, TenantInfo, BookingSummary, StaffRecord } from '@bella/shared';
+
 export interface KtvSalaryRecord {
   id: string;
   name: string;
@@ -81,26 +84,6 @@ export interface TenantGeneralSettings {
   qr_account_number: string;
   qr_account_name: string;
   salary_config: TenantSalaryConfig;
-}
-
-export interface CurrentUser {
-  id: string;
-  email: string;
-  full_name?: string | null;
-  role: string;
-  avatar_url?: string | null;
-  tenant_id: string | null;
-  isSuspended?: boolean;
-}
-
-export interface StaffRecord {
-  id: string;
-  full_name: string;
-  email: string;
-  role: string;
-  status: string;
-  sessions_count?: number;
-  avg_rating?: string | number;
 }
 
 export interface HqDashboardStats {
