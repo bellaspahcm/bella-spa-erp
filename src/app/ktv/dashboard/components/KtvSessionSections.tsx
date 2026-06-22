@@ -75,13 +75,13 @@ export function KtvSessionSections({
     <div className="px-6 mt-8 space-y-8">
       <section>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xs font-black text-slate-600 dark:text-[#D4C5B6] uppercase tracking-widest">Đang thực hiện</h2>
+          <h2 className="text-xs font-black text-primary dark:text-[#A67D44] uppercase tracking-widest">Đang thực hiện</h2>
           <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
         </div>
 
         {activeSessions.length === 0 ? (
-          <div className="bg-white dark:bg-[#1C1B19] p-8 rounded-[32px] border border-dashed border-slate-200 dark:border-[#3E3A35] text-center">
-            <p className="text-slate-600 dark:text-[#D4C5B6] text-sm font-medium">Không có ca nào đang chạy</p>
+          <div className="bg-white dark:bg-[#1C1B19] p-8 rounded-[32px] border border-dashed border-rose-200 dark:border-[#5D1C34] text-center">
+            <p className="text-rose-600 dark:text-[#A67D44] text-sm font-medium">Không có ca nào đang chạy</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -151,11 +151,11 @@ export function KtvSessionSections({
       </section>
 
       <section>
-        <h2 className="text-xs font-black text-slate-600 dark:text-[#D4C5B6] uppercase tracking-widest mb-4">Lịch hôm nay</h2>
+        <h2 className="text-xs font-black text-primary dark:text-[#A67D44] uppercase tracking-widest mb-4">Lịch hôm nay</h2>
 
         {upcomingSessions.length === 0 ? (
-          <div className="bg-white dark:bg-[#1C1B19] p-8 rounded-[32px] border border-slate-100 dark:border-[#3E3A35] text-center">
-            <p className="text-slate-600 dark:text-[#D4C5B6] text-sm font-medium">Hôm nay không còn ca nào</p>
+          <div className="bg-white dark:bg-[#1C1B19] p-8 rounded-[32px] border border-rose-100 dark:border-[#5D1C34] text-center">
+            <p className="text-rose-600 dark:text-[#A67D44] text-sm font-medium">Hôm nay không còn ca nào</p>
           </div>
         ) : (
           <div className="space-y-4">

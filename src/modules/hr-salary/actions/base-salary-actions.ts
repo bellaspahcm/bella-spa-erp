@@ -403,7 +403,8 @@ export async function getKtvSalaryForConfirmation(month?: string): Promise<KtvSa
   }
 
   let resolvedRecord = record;
-  if (record) {
+  if (!record) {
+    // If no saved record exists, fetch from central salary sheet calculation engine
     if (!currentUser.tenant_id) {
       throw new Error('Cannot fetch central KTV salary sheet without tenant context');
     }
@@ -415,10 +416,33 @@ export async function getKtvSalaryForConfirmation(month?: string): Promise<KtvSa
     });
 
     if (!centralSalaryRow) {
-      throw new Error(`Central KTV salary sheet row not found for ${currentUser.id} in ${monthStr}`);
+      // No saved record and no computed record means KTV has no salary data for this month
+      return null;
     }
 
-    resolvedRecord = mergeSalarySheetIntoRecord(record, centralSalaryRow);
+    // Convert central salary sheet row to salary record format for display
+    resolvedRecord = {
+      id: `temp-${currentUser.id}-${monthStr}`,
+      ktv_id: currentUser.id,
+      month_year: monthStr,
+      base_salary: centralSalaryRow.base_salary ?? 0,
+      total_sessions: centralSalaryRow.total_sessions ?? 0,
+      session_bonus: centralSalaryRow.session_bonus ?? 0,
+      kpi_bonus: centralSalaryRow.kpi_bonus ?? 0,
+      rating_bonus: centralSalaryRow.rating_bonus ?? 0,
+      violations_deduction: centralSalaryRow.violations_deduction ?? 0,
+      service_percentage_bonus: centralSalaryRow.service_percentage_bonus ?? 0,
+      total_salary: centralSalaryRow.total_salary ?? 0,
+      status: 'draft',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      confirmed_at: null,
+      confirmed_by_ktv: null,
+      disputed_at: null,
+      disputed_reason: null,
+      admin_confirmed_at: null,
+      admin_confirmed_by: null,
+    } as typeof record;
   }
 
   // Get session details for KTV to cross-check
