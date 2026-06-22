@@ -115,7 +115,8 @@ export default function KTVEarningsPage() {
         const salary = await getKtvSalaryForConfirmation(`${selectedMonth}-01`);
         setSalaryData(salary);
       }
-    } catch {
+    } catch (err) {
+      console.error('[KTVEarnings] Error loading data:', err);
       toast.error('Lỗi khi tải dữ liệu thu nhập');
     } finally {
       setIsLoading(false);

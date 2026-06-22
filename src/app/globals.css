@@ -20,7 +20,7 @@
 
 :root {
   /* Option C: Deep Rose Luxury (Refined & Softened) */
-  --primary: oklch(0.205 0 0);
+  --primary: #C2185B;
   --primary-hover: #831843;
   --primary-foreground: oklch(0.985 0 0);
 
@@ -80,7 +80,7 @@
 }
 
 .dark {
-  --primary: oklch(0.922 0 0); /* Deep Velvet Burgundy */
+  --primary: #F48FB1; /* Deep Velvet Burgundy */
   --primary-hover: #4D1328;
   --primary-foreground: oklch(0.205 0 0); /* Off-white/Cream */
 
