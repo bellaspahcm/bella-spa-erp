@@ -7,7 +7,7 @@ import {
   calculateSalaryTotal,
 } from '@/lib/business-rules/salary';
 import { calculateAttendanceWorkDays } from '@/lib/business-rules/attendance';
-import { BUSINESS_RULES } from '@/constants/business-rules';
+import { BUSINESS_RULES } from '@bella/shared';
 
 /**
  * Fetches the monthly profit & loss (P&L) report with dynamic KTV salary calculation.

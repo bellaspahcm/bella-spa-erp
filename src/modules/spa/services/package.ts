@@ -19,7 +19,7 @@ export {
 } from '@/services/package-actions';
 
 import type { CoreServiceCatalogItem } from '@/core/types';
-import { BUSINESS_RULES } from '@/constants/business-rules';
+import { BUSINESS_RULES } from '@bella/shared';
 
 /**
  * Package session multipliers based on tier.

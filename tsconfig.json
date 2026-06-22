@@ -19,7 +19,8 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@bella/shared": ["./packages/shared/src"]
     }
   },
   "include": [
