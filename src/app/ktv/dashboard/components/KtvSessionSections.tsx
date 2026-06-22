@@ -75,13 +75,13 @@ export function KtvSessionSections({
     <div className="px-6 mt-8 space-y-8">
       <section>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest">Đang thực hiện</h2>
+          <h2 className="text-xs font-black text-slate-600 dark:text-[#D4C5B6] uppercase tracking-widest">Đang thực hiện</h2>
           <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
         </div>
 
         {activeSessions.length === 0 ? (
-          <div className="bg-white p-8 rounded-[32px] border border-dashed border-slate-200 text-center">
-            <p className="text-slate-400 text-sm font-medium">Không có ca nào đang chạy</p>
+          <div className="bg-white dark:bg-[#1C1B19] p-8 rounded-[32px] border border-dashed border-slate-200 dark:border-[#3E3A35] text-center">
+            <p className="text-slate-600 dark:text-[#D4C5B6] text-sm font-medium">Không có ca nào đang chạy</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -151,11 +151,11 @@ export function KtvSessionSections({
       </section>
 
       <section>
-        <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Lịch hôm nay</h2>
+        <h2 className="text-xs font-black text-slate-600 dark:text-[#D4C5B6] uppercase tracking-widest mb-4">Lịch hôm nay</h2>
 
         {upcomingSessions.length === 0 ? (
-          <div className="bg-white p-8 rounded-[32px] border border-slate-100 text-center">
-            <p className="text-slate-400 text-sm font-medium">Hôm nay không còn ca nào</p>
+          <div className="bg-white dark:bg-[#1C1B19] p-8 rounded-[32px] border border-slate-100 dark:border-[#3E3A35] text-center">
+            <p className="text-slate-600 dark:text-[#D4C5B6] text-sm font-medium">Hôm nay không còn ca nào</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -164,25 +164,25 @@ export function KtvSessionSections({
               const isHotline = isHotlinePhone(customer?.phone);
 
               return (
-                <div key={session.id} className="bg-white p-6 rounded-[32px] border border-slate-100 space-y-4">
+                <div key={session.id} className="bg-white dark:bg-[#1C1B19] p-6 rounded-[32px] border border-slate-100 dark:border-[#3E3A35] space-y-4">
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-14 h-14 bg-slate-50 rounded-2xl flex flex-col items-center justify-center border border-slate-100 flex-shrink-0">
-                        <span className="text-[10px] font-black text-slate-400 uppercase leading-none mb-1">Giờ</span>
-                        <span className="text-sm font-black text-slate-900 leading-none">{session.assigned_time || '--:--'}</span>
+                      <div className="w-14 h-14 bg-slate-50 dark:bg-[#292623] rounded-2xl flex flex-col items-center justify-center border border-slate-100 dark:border-[#3E3A35] flex-shrink-0">
+                        <span className="text-[10px] font-black text-slate-600 dark:text-[#D4C5B6] uppercase leading-none mb-1">Giờ</span>
+                        <span className="text-sm font-black text-slate-900 dark:text-[#EFE9E1] leading-none">{session.assigned_time || '--:--'}</span>
                       </div>
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-1.5 mb-1">
-                          <span className="bg-rose-50 text-primary px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider">
+                          <span className="bg-rose-50 dark:bg-[#5D1C34]/30 text-primary dark:text-[#A67D44] px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider">
                             Buổi {session.session_number}/{session.bookings?.total_sessions || '--'}
                           </span>
                           {session.is_reassigned && (
-                            <span className="bg-amber-50 text-amber-600 border border-amber-100 text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-0.5">
+                            <span className="bg-amber-50 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-500/40 text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-0.5">
                               🔄 Làm thay
                             </span>
                           )}
                         </div>
-                        <p className="text-xs font-bold text-slate-500 truncate">{session.bookings?.package_name}</p>
+                        <p className="text-xs font-bold text-slate-600 dark:text-[#D4C5B6] truncate">{session.bookings?.package_name}</p>
                       </div>
                     </div>
 
@@ -196,34 +196,34 @@ export function KtvSessionSections({
                   </div>
 
                   {session.is_reassigned && (
-                    <div className="bg-amber-50/50 border border-amber-200/60 rounded-2xl p-3 flex gap-2 items-center">
+                    <div className="bg-amber-50/50 dark:bg-amber-500/10 border border-amber-200/60 dark:border-amber-500/30 rounded-2xl p-3 flex gap-2 items-center">
                       <span className="text-base shrink-0">⚠️</span>
-                      <p className="text-[11px] text-amber-800 font-bold leading-normal">
+                      <p className="text-[11px] text-amber-800 dark:text-amber-400 font-bold leading-normal">
                         Đây là ca làm thay được phân công. Vui lòng kiểm tra kỹ thông tin khách hàng và dịch vụ trước khi bắt đầu.
                       </p>
                     </div>
                   )}
 
-                  <div className="pt-3 border-t border-slate-100 space-y-3">
+                  <div className="pt-3 border-t border-slate-100 dark:border-[#3E3A35] space-y-3">
                     <div>
-                      <h4 className="text-base font-black text-slate-800">{customer?.name_mother}</h4>
+                      <h4 className="text-base font-black text-slate-800 dark:text-[#EFE9E1]">{customer?.name_mother}</h4>
                       {customer?.name_baby && (
-                        <p className="text-[11px] text-rose-500 font-bold mt-0.5 flex items-center gap-1">
+                        <p className="text-[11px] text-rose-500 dark:text-[#A67D44] font-bold mt-0.5 flex items-center gap-1">
                           <SecondaryIcon className="w-3.5 h-3.5 shrink-0" />
                           <span>{customerLabels.secondaryPrefix}: {customer.name_baby}</span>
                         </p>
                       )}
                     </div>
 
-                    <div className="space-y-1.5 text-xs text-slate-500">
+                    <div className="space-y-1.5 text-xs text-slate-600 dark:text-[#D4C5B6]">
                       <div className="flex items-start gap-2">
-                        <MapPin className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                        <MapPin className="w-4 h-4 text-slate-500 dark:text-[#D4C5B6] shrink-0 mt-0.5" />
                         <span className="leading-relaxed font-medium">{getSessionAddress(session)}</span>
                       </div>
                       {customer?.phone && !isHotline && (
                         <div className="flex items-center gap-2">
-                          <Phone className="w-4 h-4 text-slate-400 shrink-0" />
-                          <a href={`tel:${customer.phone}`} className="hover:text-primary font-bold transition-colors">
+                          <Phone className="w-4 h-4 text-slate-500 dark:text-[#D4C5B6] shrink-0" />
+                          <a href={`tel:${customer.phone}`} className="hover:text-primary dark:hover:text-[#A67D44] font-bold transition-colors">
                             {customer.phone}
                           </a>
                         </div>

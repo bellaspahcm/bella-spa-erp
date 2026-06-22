@@ -573,7 +573,18 @@ input[type="time"]::-webkit-datetime-edit-ampm-field {
   background-color: #4D1328 !important;
 }
 
-/* Text overrides for contrast and tone */
+/* Text overrides for contrast and tone - LIGHT MODE */
+.text-slate-400,
+[class*="text-slate-400"] {
+  color: #64748b !important; /* Darker gray for better contrast in light mode */
+}
+
+.text-gray-400,
+[class*="text-gray-400"] {
+  color: #64748b !important; /* Darker gray for better contrast in light mode */
+}
+
+/* Text overrides for contrast and tone - DARK MODE */
 .dark .text-slate-600,
 .dark [class*="text-slate-600"] {
   color: #D4C5B6 !important; /* Increased brightness for better readability */
