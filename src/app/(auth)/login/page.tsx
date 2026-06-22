@@ -128,7 +128,6 @@ export default function LoginPageSimple() {
       alignItems: 'center',
       justifyContent: 'center',
       padding: '1rem',
-      background: 'linear-gradient(to bottom right, #fdf2f8, #fff)',
     }}>
       <div style={{
         width: '100%',

@@ -120,16 +120,16 @@ export function KtvAttendanceCard({
         <div className="mt-4 pt-4 border-t border-slate-100 flex gap-3">
           <button
             onClick={onOpenLeaveModal}
-            className="flex-1 py-3 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold rounded-xl transition-all text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer"
+            className="flex-1 py-3.5 bg-white hover:bg-slate-50 text-slate-800 font-black rounded-2xl transition-all text-[11px] uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer border-2 border-slate-200 hover:border-slate-300 shadow-sm hover:shadow-md active:scale-95"
           >
-            <CalendarIcon className="w-3.5 h-3.5" />
+            <CalendarIcon className="w-4 h-4" />
             Đăng ký nghỉ
           </button>
           <button
             onClick={onOpenLeaveHistory}
-            className="flex-1 py-3 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold rounded-xl transition-all text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer"
+            className="flex-1 py-3.5 bg-white hover:bg-slate-50 text-slate-800 font-black rounded-2xl transition-all text-[11px] uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer border-2 border-slate-200 hover:border-slate-300 shadow-sm hover:shadow-md active:scale-95"
           >
-            <Clock className="w-3.5 h-3.5" />
+            <Clock className="w-4 h-4" />
             Lịch sử nghỉ
           </button>
         </div>

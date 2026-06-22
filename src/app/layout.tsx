@@ -55,11 +55,21 @@ const tenantThemeBootstrapScript = `
 (() => {
   try {
     const path = window.location.pathname || "";
+    
+    // Skip theme bootstrap for auth pages (login, signup)
+    if (path === "/login" || path.startsWith("/login/") || 
+        path === "/signup" || path.startsWith("/signup/") ||
+        path.includes("/(auth)/")) {
+      return; // Keep default pink gradient for auth pages
+    }
+    
     const isAppShell =
       path === "/dashboard" ||
       path.startsWith("/dashboard/") ||
       path === "/ktv" ||
       path.startsWith("/ktv/");
+
+    if (!isAppShell) return;
 
     if (!isAppShell) return;
 
