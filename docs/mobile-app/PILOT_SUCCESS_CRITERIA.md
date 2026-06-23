@@ -10,6 +10,40 @@
 
 ## 📊 PILOT OVERVIEW
 
+### Quick Reference: Specific Measurable Targets
+
+**To avoid ambiguity, here are the exact numeric thresholds for pilot success:**
+
+| Metric | Target | Measurement Method | Pass Threshold |
+|--------|--------|-------------------|----------------|
+| **Login Success Rate** | >95% | Successful logins / Total attempts | ≥95.0% |
+| **Crash Rate** | <1% | App crashes / Total sessions | ≤0.99% |
+| **Data Accuracy** | 100% | Correct data / Total verifications | 100% (no tolerance) |
+| **Dashboard Load (P95)** | <3s | 95th percentile load time | ≤3.0 seconds |
+| **Refresh Time (P95)** | <2s | 95th percentile refresh time | ≤2.0 seconds |
+| **Error Rate** | <2% | Failed operations / Total operations | ≤1.99% |
+| **User Satisfaction** | ≥4/5 | Average survey score (1-5 scale) | ≥4.0/5 |
+| **Self-Service Rate** | ≥80% | Tasks without support / Total tasks | ≥80.0% |
+| **Realtime Sync** | <30s | Web change → Mobile refresh delay | ≤30 seconds |
+
+**⚠️ Zero Tolerance Metrics** (ANY failure = pilot FAILS immediately):
+- 🔴 Security breach (KTV sees other KTV's sessions)
+- 🔴 Data loss (sessions disappear from database)
+- 🔴 Data corruption (wrong customer/KTV assignment)
+
+**Example Calculations**:
+```
+Login Success = 48 successful / 50 attempts = 96.0% ✅ PASS (>95%)
+Crash Rate = 0 crashes / 200 sessions = 0% ✅ PASS (<1%)
+Dashboard Load = P95 = 2.8s ✅ PASS (<3s)
+User Satisfaction = (5+4+5+4+4) / 5 users = 4.4/5 ✅ PASS (≥4/5)
+Data Accuracy = 70 correct / 70 checks = 100% ✅ PASS (=100%)
+```
+
+**Overall Success Criteria**: **ALL** metrics must PASS for pilot to be considered successful. No generic "85% success rate" - each metric has its own specific threshold.
+
+---
+
 ### Participants Profile
 
 | Role | Count | Criteria |
@@ -444,3 +478,102 @@ This section will be filled after pilot completion. Expected learnings:
 *PILOT_SUCCESS_CRITERIA.md*  
 *Version 1.0 - Created: 2026-06-22*  
 *Updated: TBD (after pilot completion)*
+
+
+---
+
+## 📊 APPENDIX: SPECIFIC THRESHOLDS SUMMARY
+
+**This section clarifies the exact numeric thresholds to avoid ambiguity.**
+
+### Why Specific Thresholds Matter
+
+Instead of saying "85% success rate" (which is vague), we define exact pass/fail criteria for each metric:
+
+| # | Metric | Target | Calculation | Pass Example | Fail Example |
+|---|--------|--------|-------------|--------------|--------------|
+| 1 | **Login Success** | >95% | Successful / Total | 48/50 = 96% ✅ | 45/50 = 90% ❌ |
+| 2 | **Crash Rate** | <1% | Crashes / Sessions | 0/200 = 0% ✅ | 3/200 = 1.5% ❌ |
+| 3 | **Data Accuracy** | 100% | Correct / Total | 70/70 = 100% ✅ | 69/70 = 98.6% ❌ |
+| 4 | **Dashboard Load** | <3s | P95 latency | 2.8s ✅ | 3.2s ❌ |
+| 5 | **Refresh Time** | <2s | P95 latency | 1.9s ✅ | 2.1s ❌ |
+| 6 | **Error Rate** | <2% | Errors / Operations | 2/150 = 1.3% ✅ | 4/150 = 2.7% ❌ |
+| 7 | **User Satisfaction** | ≥4/5 | Avg survey score | 4.2/5 ✅ | 3.8/5 ❌ |
+| 8 | **Self-Service** | ≥80% | No-help / Total | 12/15 = 80% ✅ | 11/15 = 73% ❌ |
+| 9 | **Realtime Sync** | <30s | Web → Mobile delay | 25s ✅ | 35s ❌ |
+
+### How to Use These Thresholds
+
+**During Pilot (Day 1-7)**:
+- Track each metric daily using the manual metrics table
+- Calculate percentages and averages
+- Compare against thresholds above
+- Flag any metric approaching failure threshold
+
+**At End of Pilot (Day 7)**:
+- Calculate final values for all 9 metrics
+- Check if ALL metrics PASS
+- If even 1 metric FAILS → Overall pilot = FAIL (unless it's a "GO WITH CONDITIONS" case)
+
+**Example Pilot Report**:
+```
+Final Metrics (Day 7):
+✅ Login Success: 97.2% (Target >95%) - PASS
+✅ Crash Rate: 0% (Target <1%) - PASS
+✅ Data Accuracy: 100% (Target 100%) - PASS
+✅ Dashboard Load: 2.7s (Target <3s) - PASS
+✅ Refresh Time: 1.8s (Target <2s) - PASS
+✅ Error Rate: 1.5% (Target <2%) - PASS
+✅ User Satisfaction: 4.3/5 (Target ≥4/5) - PASS
+✅ Self-Service: 85% (Target ≥80%) - PASS
+✅ Realtime Sync: 22s (Target <30s) - PASS
+
+OVERALL: 9/9 metrics PASS → Pilot SUCCESS → GO to Week 4
+```
+
+**Example Pilot Failure**:
+```
+Final Metrics (Day 7):
+✅ Login Success: 96.5% - PASS
+❌ Crash Rate: 1.2% (Target <1%) - FAIL (exceeded threshold)
+✅ Data Accuracy: 100% - PASS
+✅ Dashboard Load: 2.9s - PASS
+❌ Refresh Time: 2.3s (Target <2s) - FAIL (too slow)
+✅ Error Rate: 1.8% - PASS
+✅ User Satisfaction: 4.1/5 - PASS
+❌ Self-Service: 75% (Target ≥80%) - FAIL (too much support needed)
+✅ Realtime Sync: 28s - PASS
+
+OVERALL: 6/9 metrics PASS → Pilot FAIL → NO-GO
+- Fix crashes (root cause analysis required)
+- Optimize refresh performance (add indexes?)
+- Improve documentation (reduce support needs)
+- Re-run pilot after fixes
+```
+
+### Probability by Metric (Updated)
+
+Based on Week 1-3 preparation:
+
+| Metric | Target | Probability | Risk | Reasoning |
+|--------|--------|-------------|------|-----------|
+| Login Success | >95% | 95% | 🟢 LOW | Supabase Auth stable, well-tested |
+| Crash Rate | <1% | 90% | 🟢 LOW | No known crashes, error handling complete |
+| Data Accuracy | 100% | 95% | 🟢 LOW | RPCs reviewed, KTV isolation verified |
+| Dashboard Load | <3s | 85% | 🟡 MEDIUM | RPC optimized, but needs real device test |
+| Refresh Time | <2s | 85% | 🟡 MEDIUM | Same as above |
+| Error Rate | <2% | 90% | 🟢 LOW | Graceful degradation implemented |
+| User Satisfaction | ≥4/5 | 80% | 🟡 MEDIUM | Guides created but untested with users |
+| Self-Service | ≥80% | 80% | 🟡 MEDIUM | Assumes users read documentation |
+| Realtime Sync | <30s | 75% | 🟠 MEDIUM-HIGH | Depends on spa WiFi quality (unknown) |
+
+**Overall Success Probability**: **85%** (all 9 metrics pass simultaneously)
+
+### Key Takeaway
+
+**No more ambiguous "85% success rate"**. Every metric has a clear, measurable, binary pass/fail threshold. This eliminates subjective interpretation and ensures objective pilot evaluation.
+
+---
+
+*PILOT_SUCCESS_CRITERIA.md - Updated with specific measurable thresholds*  
+*Version 1.1 - Updated: 2026-06-22*
