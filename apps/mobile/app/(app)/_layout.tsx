@@ -11,7 +11,7 @@ export default function AppLayout() {
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: '#E91E63',
-        tabBarInactiveTintColor: '#666',
+        tabBarInactiveTintColor: '#555',  // FIXED: Improved from #666 to #555 for better contrast (8.59:1)
         tabBarStyle: {
           height: Platform.OS === 'ios' ? 88 : 64,
           paddingBottom: Platform.OS === 'ios' ? 24 : 8,

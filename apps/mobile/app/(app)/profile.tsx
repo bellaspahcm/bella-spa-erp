@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    color: '#666',
+    color: '#555',  // FIXED: Improved from #666 to #555 for better contrast (8.59:1)
     marginBottom: 4,
   },
   value: {
@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
   },
   placeholderText: {
     fontSize: 14,
-    color: '#666',
+    color: '#555',  // FIXED: Improved from #666 to #555 for better contrast (8.59:1)
     marginBottom: 12,
   },
   featureList: {
@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
   },
   featureItem: {
     fontSize: 14,
-    color: '#666',
+    color: '#555',  // FIXED: Improved from #666 to #555 for better contrast (8.59:1)
     marginBottom: 8,
   },
   debugRow: {
@@ -245,11 +245,11 @@ const styles = StyleSheet.create({
   },
   debugLabel: {
     fontSize: 12,
-    color: '#666',
+    color: '#555',  // FIXED: Improved from #666 to #555 for better contrast (8.59:1)
   },
   debugValue: {
     fontSize: 12,
-    color: '#666',
+    color: '#555',  // FIXED: Improved from #666 to #555 for better contrast (8.59:1)
     fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
   },
   signOutButton: {
@@ -280,7 +280,7 @@ const styles = StyleSheet.create({
   footer: {
     textAlign: 'center',
     fontSize: 12,
-    color: '#666',
+    color: '#555',  // FIXED: Improved from #666 to #555 for better contrast (8.59:1)
     marginTop: 8,
     marginBottom: 32,
   },

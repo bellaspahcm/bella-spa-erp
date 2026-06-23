@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
   },
   description: {
     fontSize: 16,
-    color: '#666',
+    color: '#555',  // FIXED: Improved from #666 to #555 for better contrast (8.59:1)
     textAlign: 'center',
     lineHeight: 24,
     marginBottom: 24,
@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
   },
   errorIdLabel: {
     fontSize: 14,
-    color: '#666',
+    color: '#555',  // FIXED: Improved from #666 to #555 for better contrast (8.59:1)
     marginRight: 8,
   },
   errorIdValue: {

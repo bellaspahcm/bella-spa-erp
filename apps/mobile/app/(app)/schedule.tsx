@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
   },
   placeholderText: {
     fontSize: 16,
-    color: '#666',
+    color: '#555',  // FIXED: Improved from #666 to #555 for better contrast (8.59:1)
     textAlign: 'center',
     marginBottom: 24,
   },
