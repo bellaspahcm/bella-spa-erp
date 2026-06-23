@@ -15,6 +15,7 @@ import {
 import { useAuth } from '../../src/contexts/AuthContext';
 import { useTenant } from '../../src/contexts/TenantContext';
 import { RoleBadge } from '../../src/components/RoleBadge';
+import { testSentry } from '../../src/lib/sentry';
 
 export default function ProfileScreen() {
   const auth = useAuth();
@@ -39,6 +40,23 @@ export default function ProfileScreen() {
         },
       },
     ]);
+  };
+
+  const handleTestSentry = () => {
+    Alert.alert(
+      'Test Sentry',
+      'Sentry sẽ ghi nhận một lỗi test. Kiểm tra dashboard sau 1-2 phút.',
+      [
+        { text: 'Hủy', style: 'cancel' },
+        {
+          text: 'Test',
+          onPress: () => {
+            testSentry();
+            Alert.alert('✅', 'Đã gửi test error đến Sentry. Kiểm tra dashboard.');
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -116,6 +134,18 @@ export default function ProfileScreen() {
             <Text style={styles.debugLabel}>Version:</Text>
             <Text style={styles.debugValue}>1.0.0 (Week 2)</Text>
           </View>
+
+          {/* Sentry Test Button (Dev Mode Only) */}
+          {__DEV__ && (
+            <TouchableOpacity
+              style={styles.testSentryButton}
+              onPress={handleTestSentry}
+            >
+              <Text style={styles.testSentryButtonText}>
+                🧪 Test Sentry Integration
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Sign Out Button */}
@@ -233,6 +263,18 @@ const styles = StyleSheet.create({
   signOutButtonText: {
     color: '#FFF',
     fontSize: 16,
+    fontWeight: '600',
+  },
+  testSentryButton: {
+    backgroundColor: '#9C27B0',
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  testSentryButtonText: {
+    color: '#FFF',
+    fontSize: 14,
     fontWeight: '600',
   },
   footer: {
