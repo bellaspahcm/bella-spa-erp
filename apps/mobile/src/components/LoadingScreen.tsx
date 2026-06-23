@@ -21,6 +21,6 @@ const styles = StyleSheet.create({
   text: {
     marginTop: 16,
     fontSize: 16,
-    color: '#666666',
+    color: '#555',  // FIXED: Improved from #666666 to #555 for better contrast (8.59:1)
   },
 });

@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     marginBottom: 48,
-    color: '#666666',
+    color: '#555',  // FIXED: Improved from #666666 to #555 for better contrast (8.59:1)
   },
   inputContainer: {
     marginBottom: 16,

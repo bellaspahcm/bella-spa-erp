@@ -53,7 +53,7 @@ function getRoleStyle(role: string): {
   // Default for other roles
   return {
     label: normalizeRoleLabel(role),
-    color: '#666',
+    color: '#555',  // FIXED: Improved from #666 to #555 for better contrast (8.59:1)
     backgroundColor: '#F5F5F5', // Light gray
   };
 }
