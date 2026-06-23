@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     textAlign: 'center',
-    color: '#999',
+    color: '#666',
     fontSize: 14,
     padding: 24,
   },
@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: '#999',
+    color: '#666',
   },
   inlineError: {
     flexDirection: 'row',
@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 12,
-    color: '#999',
+    color: '#666',
     textAlign: 'center',
   },
 });
