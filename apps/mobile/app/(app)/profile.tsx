@@ -1,0 +1,245 @@
+// apps/mobile/app/(app)/profile.tsx
+// Profile screen - user info and settings
+
+import { router } from 'expo-router';
+import React from 'react';
+import {
+  Alert,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { useAuth } from '../../src/contexts/AuthContext';
+import { useTenant } from '../../src/contexts/TenantContext';
+import { RoleBadge } from '../../src/components/RoleBadge';
+
+export default function ProfileScreen() {
+  const auth = useAuth();
+  const tenant = useTenant();
+
+  if (auth.status !== 'authenticated') {
+    router.replace('/');
+    return null;
+  }
+
+  const { user, signOut } = auth;
+  const tenantName = tenant.status === 'loaded' ? tenant.tenant.name : '';
+
+  const handleSignOut = async () => {
+    Alert.alert('Đăng xuất', 'Bạn có chắc chắn muốn đăng xuất?', [
+      { text: 'Hủy', style: 'cancel' },
+      {
+        text: 'Đăng xuất',
+        style: 'destructive',
+        onPress: async () => {
+          await signOut();
+        },
+      },
+    ]);
+  };
+
+  return (
+    <ScrollView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Cá nhân</Text>
+      </View>
+
+      {user.isSuspended && (
+        <View style={styles.warningBox}>
+          <Text style={styles.warningText}>
+            ⚠️ Tenant của bạn đã bị tạm ngưng
+          </Text>
+        </View>
+      )}
+
+      <View style={styles.content}>
+        {/* Profile Info Card */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Thông tin tài khoản</Text>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Email:</Text>
+            <Text style={styles.value}>{user.email}</Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Họ tên:</Text>
+            <Text style={styles.value}>{user.full_name || 'Chưa cập nhật'}</Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Vai trò:</Text>
+            <View>
+              <RoleBadge role={user.role} />
+            </View>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Chi nhánh:</Text>
+            <Text style={styles.value}>{tenantName || 'Đang tải...'}</Text>
+          </View>
+        </View>
+
+        {/* Settings Card (Placeholder) */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Cài đặt</Text>
+          <Text style={styles.placeholderText}>
+            Các tùy chọn cài đặt sẽ được thêm trong các phiên bản sau:
+          </Text>
+          <View style={styles.featureList}>
+            <Text style={styles.featureItem}>• Thông báo đẩy</Text>
+            <Text style={styles.featureItem}>• Ngôn ngữ</Text>
+            <Text style={styles.featureItem}>• Chế độ tối</Text>
+            <Text style={styles.featureItem}>• Đổi mật khẩu</Text>
+          </View>
+        </View>
+
+        {/* Debug Info (Dev Only) */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Thông tin kỹ thuật</Text>
+          <View style={styles.debugRow}>
+            <Text style={styles.debugLabel}>User ID:</Text>
+            <Text style={styles.debugValue}>{user.id}</Text>
+          </View>
+          <View style={styles.debugRow}>
+            <Text style={styles.debugLabel}>Tenant ID:</Text>
+            <Text style={styles.debugValue}>{user.tenant_id || 'N/A'}</Text>
+          </View>
+          <View style={styles.debugRow}>
+            <Text style={styles.debugLabel}>Platform:</Text>
+            <Text style={styles.debugValue}>{Platform.OS}</Text>
+          </View>
+          <View style={styles.debugRow}>
+            <Text style={styles.debugLabel}>Version:</Text>
+            <Text style={styles.debugValue}>1.0.0 (Week 2)</Text>
+          </View>
+        </View>
+
+        {/* Sign Out Button */}
+        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
+          <Text style={styles.signOutButtonText}>Đăng xuất</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.footer}>
+          Bella ERP Mobile • Phase 1 Week 2
+        </Text>
+      </View>
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F5F5F5',
+  },
+  header: {
+    backgroundColor: '#E91E63',
+    padding: 24,
+    paddingTop: 48,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#FFF',
+  },
+  content: {
+    padding: 16,
+  },
+  warningBox: {
+    backgroundColor: '#FFF3CD',
+    margin: 16,
+    marginTop: 16,
+    borderRadius: 8,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#FFECB5',
+  },
+  warningText: {
+    color: '#856404',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  card: {
+    backgroundColor: '#FFF',
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 16,
+    color: '#333',
+  },
+  infoRow: {
+    marginBottom: 16,
+  },
+  label: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 4,
+  },
+  value: {
+    fontSize: 16,
+    color: '#333',
+    fontWeight: '500',
+  },
+  placeholderText: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 12,
+  },
+  featureList: {
+    backgroundColor: '#F9F9F9',
+    padding: 12,
+    borderRadius: 8,
+  },
+  featureItem: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 8,
+  },
+  debugRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  debugLabel: {
+    fontSize: 12,
+    color: '#999',
+  },
+  debugValue: {
+    fontSize: 12,
+    color: '#666',
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+  },
+  signOutButton: {
+    backgroundColor: '#E91E63',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginTop: 8,
+    marginBottom: 16,
+  },
+  signOutButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  footer: {
+    textAlign: 'center',
+    fontSize: 12,
+    color: '#999',
+    marginTop: 8,
+    marginBottom: 32,
+  },
+});
