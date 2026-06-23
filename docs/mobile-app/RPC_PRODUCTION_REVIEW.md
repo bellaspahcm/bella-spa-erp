@@ -163,10 +163,188 @@ Both RPC functions have been reviewed and are **production-ready**. They follow 
 | `rpc_mobile_today_sessions` | 50-150ms | 100+ | Without index: ~200ms on 1000 rows |
 | `rpc_ktv_dashboard_stats` | 20-80ms | 100+ | Simple aggregation, very fast |
 
+**⚠️ IMPORTANT**: These are **estimates**. After pilot deployment, measure actual production metrics:
+- **P50 (median)**: 50% of requests faster than this
+- **P95**: 95% of requests faster than this
+- **P99**: 99% of requests faster than this (outliers)
+
 **Optimization Triggers:**
 - Add indexes if latency >200ms on production traffic
 - Monitor with Supabase dashboard after deployment
 - See "Performance Notes" sections above for exact index commands
+
+---
+
+## 🔍 Missing Production Concerns (To Be Added)
+
+### ⚠️ 1. Audit Logging (HIGH PRIORITY)
+
+**Problem**: Currently no RPC access logging → impossible to debug production issues
+
+**Recommendation**: Add `rpc_access_log` table to track all RPC calls
+
+**Schema**:
+```sql
+CREATE TABLE rpc_access_log (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id),
+  tenant_id UUID NOT NULL REFERENCES tenants(id),
+  rpc_name TEXT NOT NULL,
+  parameters JSONB,
+  duration_ms INT,
+  status TEXT, -- 'success' | 'error'
+  error_message TEXT,
+  ip_address INET,
+  user_agent TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_rpc_access_log_lookup 
+  ON rpc_access_log(tenant_id, rpc_name, created_at DESC);
+```
+
+**Benefits**:
+- Debug production issues: "KTV không thấy ca" → check log
+- Performance monitoring: Real P50/P95/P99 metrics
+- Security audit: Detect abuse patterns
+- Compliance: Track who accessed what data
+
+**Implementation**: See `20260622_rpc_audit_logging.sql` migration
+
+**⚠️ Note**: Enable after pilot phase to avoid cluttering initial testing
+
+---
+
+### ⚠️ 2. Rate Limiting (MEDIUM PRIORITY)
+
+**Problem**: KTV refresh liên tục → RPC spam → Database overload
+
+**Current Risk**:
+```
+KTV pull-to-refresh 10x/second
+→ 10 RPC calls/second
+→ No protection
+```
+
+**Recommendation**: Add rate limiting at API Gateway or RPC level
+
+**Strategy 1**: Supabase Edge Functions Rate Limit (if using Edge Functions)
+```typescript
+// Limit: 10 requests per 10 seconds per user
+const rateLimiter = new RateLimiter({
+  windowMs: 10000,
+  max: 10,
+  keyGenerator: (req) => req.user.id,
+});
+```
+
+**Strategy 2**: PostgreSQL Function-Level Rate Limit
+```sql
+-- Check last call time, reject if <1 second ago
+CREATE FUNCTION check_rate_limit(p_user_id UUID, p_rpc_name TEXT)
+RETURNS BOOLEAN AS $$
+DECLARE
+  v_last_call TIMESTAMPTZ;
+BEGIN
+  SELECT created_at INTO v_last_call
+  FROM rpc_access_log
+  WHERE user_id = p_user_id AND rpc_name = p_rpc_name
+  ORDER BY created_at DESC LIMIT 1;
+  
+  IF v_last_call IS NOT NULL AND (NOW() - v_last_call) < INTERVAL '1 second' THEN
+    RETURN FALSE; -- Rate limit exceeded
+  END IF;
+  
+  RETURN TRUE;
+END;
+$$ LANGUAGE plpgsql;
+```
+
+**Strategy 3**: Client-Side Debouncing (Temporary solution)
+```typescript
+// In mobile app hooks
+const debouncedRefresh = useMemo(
+  () => debounce(refresh, 1000), // Max 1 call per second
+  [refresh]
+);
+```
+
+**Recommendation**: Start with **Strategy 3** (client-side) for pilot, add **Strategy 2** (server-side) before scaling to 50+ KTVs.
+
+---
+
+### ⚠️ 3. Real Production Metrics (HIGH PRIORITY)
+
+**Problem**: Current benchmarks are estimates, not real measurements
+
+**Required Metrics**:
+
+| Metric | What to Track | Why Important |
+|--------|---------------|---------------|
+| **Latency** | P50, P95, P99 response time | Detect performance degradation |
+| **Throughput** | Requests per second | Capacity planning |
+| **Error Rate** | % of failed requests | Stability monitoring |
+| **Concurrent Users** | Active users at peak hours | Scaling decisions |
+
+**How to Track**:
+
+**Option 1**: Supabase Dashboard (Built-in)
+- Dashboard → Database → Query Performance
+- Limited to 7-day retention on free tier
+
+**Option 2**: RPC Access Log + Custom Queries
+```sql
+-- P50, P95, P99 latency from logs
+SELECT 
+  rpc_name,
+  PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY duration_ms) AS p50_ms,
+  PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY duration_ms) AS p95_ms,
+  PERCENTILE_CONT(0.99) WITHIN GROUP (ORDER BY duration_ms) AS p99_ms,
+  COUNT(*) as total_calls,
+  COUNT(*) FILTER (WHERE status = 'error') as errors,
+  ROUND(100.0 * COUNT(*) FILTER (WHERE status = 'error') / COUNT(*), 2) as error_rate_pct
+FROM rpc_access_log
+WHERE created_at >= NOW() - INTERVAL '24 hours'
+GROUP BY rpc_name;
+```
+
+**Option 3**: External APM (Advanced)
+- Sentry Performance Monitoring
+- Datadog
+- New Relic
+
+**Recommendation**: 
+- **Pilot phase**: Use Supabase Dashboard + manual log queries
+- **Production phase**: Add Sentry Performance (already planned for Phase 2)
+
+---
+
+## 📋 Updated Deployment Checklist
+
+### Pre-Deployment
+- [x] Code review completed
+- [x] Security assessment passed
+- [x] Performance considerations documented
+- [x] Test cases defined
+- [ ] **NEW**: Enable RPC audit logging (optional for pilot)
+- [ ] **NEW**: Add client-side debouncing for pull-to-refresh
+- [ ] Backup database (Supabase auto-backups daily)
+- [ ] Alert team of deployment window
+
+### Post-Deployment (First 24 hours)
+- [ ] Verify mobile app calls new RPCs successfully
+- [ ] Check Supabase logs for errors
+- [ ] Monitor query performance (latency <200ms)
+- [ ] Confirm KTV isolation works (Issue #1 fix verification)
+- [ ] **NEW**: Collect baseline metrics (P50/P95/P99)
+- [ ] **NEW**: Monitor for rate limit abuse patterns
+
+### Post-Pilot (Before scaling to 50+ KTVs)
+- [ ] **NEW**: Analyze RPC access logs
+- [ ] **NEW**: Compare actual vs expected latency
+- [ ] **NEW**: Add server-side rate limiting if needed
+- [ ] **NEW**: Add indexes if P95 >200ms
+- [ ] **NEW**: Document real production metrics
 
 ---
 
@@ -249,7 +427,7 @@ If issues detected:
 
 **Status**: ✅ **APPROVED FOR PRODUCTION DEPLOYMENT**
 
-**Confidence Level**: 🟢 **HIGH**
+**Confidence Level**: 🟢 **HIGH** (with noted gaps)
 
 **Reasoning**:
 1. Both functions follow security best practices
@@ -259,13 +437,20 @@ If issues detected:
 5. Proper error handling in mobile app (graceful degradation)
 6. Rollback plan is straightforward
 
+**Known Gaps (to address post-pilot)**:
+1. ⚠️ No audit logging (add before scaling to 50+ users)
+2. ⚠️ No rate limiting (client-side debouncing recommended for pilot)
+3. ⚠️ No real production metrics (collect during pilot phase)
+
 **Next Steps**:
 1. Follow `docs/mobile-app/RPC_DEPLOYMENT_GUIDE.md`
 2. Deploy to staging first
 3. Run test cases from this review
 4. Monitor for 1 hour on staging
 5. Deploy to production
-6. Monitor for 24 hours
+6. **NEW**: Collect baseline metrics (P50/P95/P99) during pilot
+7. **NEW**: Review metrics after 1 week, add audit logging if needed
+8. Monitor for 24 hours
 
 ---
 
