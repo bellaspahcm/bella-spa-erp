@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
   },
   babyName: {
     fontSize: 14,
-    color: '#666',
+    color: '#555',  // FIXED: Improved from #666 to #555 for better contrast
     marginBottom: 4,
   },
   packageName: {

@@ -1,7 +1,9 @@
 {
   "compilerOptions": {
     "target": "esnext",
-    "lib": ["esnext"],
+    "lib": [
+      "esnext"
+    ],
     "jsx": "react-native",
     "strict": true,
     "skipLibCheck": true,
@@ -14,16 +16,17 @@
     "isolatedModules": true,
     "noEmit": true,
     "paths": {
-      "@bella/shared": ["../../packages/shared/src/index.ts"]
+      "@bella/shared": [
+        "../../packages/shared/src/index.ts"
+      ]
     }
   },
   "include": [
     "**/*.ts",
-    "**/*.tsx",
-    ".expo/types/**/*.ts",
-    "expo-env.d.ts"
+    "**/*.tsx"
   ],
   "exclude": [
     "node_modules"
-  ]
+  ],
+  "extends": "expo/tsconfig.base"
 }
