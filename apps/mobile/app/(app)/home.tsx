@@ -1,7 +1,6 @@
 // apps/mobile/app/(app)/home.tsx
 // Dashboard screen - KPI stats and today's sessions
 
-import { isTechnicianRole } from '@bella/shared';
 import { router } from 'expo-router';
 import React from 'react';
 import {
@@ -19,7 +18,18 @@ import { DashboardErrorState } from '../../src/components/DashboardErrorState';
 import { KpiCard } from '../../src/components/KpiCard';
 import { RoleBadge } from '../../src/components/RoleBadge';
 import { SessionCard } from '../../src/components/SessionCard';
-import { formatCurrency } from '@bella/shared';
+
+// Inline utils (copied from @bella/shared for mobile-only build)
+function isTechnicianRole(role: string): boolean {
+  return role === 'ktv' || role === 'technician';
+}
+
+function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND',
+  }).format(amount);
+}
 
 export default function HomeScreen() {
   const auth = useAuth();

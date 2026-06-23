@@ -2,7 +2,7 @@
 // Port from src/services/user-actions.ts getCurrentUser()
 // Query users table for role - NOT user_metadata
 
-import type { CurrentUser } from '@bella/shared';
+import type { CurrentUser } from '../../lib/shared-utils';
 import { getMobileSupabase } from '../../lib/supabase';
 
 export type ProfileResult =

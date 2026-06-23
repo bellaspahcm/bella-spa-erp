@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { isAdminRole, isTechnicianRole, isManagerOrAbove } from '@bella/shared';
+import { isAdminRole, isTechnicianRole, isManagerOrAbove } from '../lib/shared-utils';
 
 interface RoleBadgeProps {
   role: string;

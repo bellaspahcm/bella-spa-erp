@@ -3,7 +3,7 @@
  * Uses RPC for server-side filtering (security and performance)
  */
 
-import { isTechnicianRole } from '@bella/shared';
+import { isTechnicianRole } from '../../lib/shared-utils';
 import { getMobileSupabase } from '../../lib/supabase';
 
 export interface TodaySession {

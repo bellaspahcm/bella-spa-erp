@@ -8,7 +8,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { isTechnicianRole } from '@bella/shared';
+import { isTechnicianRole } from '../lib/shared-utils';
 import {
   fetchDashboardStats,
   type AdminKpiData,
