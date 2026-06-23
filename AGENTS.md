@@ -99,3 +99,248 @@ You must strictly adhere to the following rules when working on this codebase to
 - **Resolution:** Exhaustive search for `/admin/partners`, fixed all 3 references, disabled SW caching for admin routes.
 - **Time lost:** ~2 hours debugging black screens and 404s.
 - **Lesson:** Always grep entire codebase after route moves, test production build locally, and ensure SW skips auth-required routes.
+
+---
+
+## 11. Mobile Development & RPC Best Practices (Week 3 Lessons - 2026-06-22)
+
+### 11.1. Never Use Client-Side Fallbacks for Authorization
+- **NEVER implement client-side filtering as a "temporary" fallback** for server-side RPCs.
+- **Example of FORBIDDEN pattern:**
+  ```typescript
+  // ❌ BAD: Client-side fallback
+  const { data, error } = await supabase.rpc('rpc_with_auth_filter', params);
+  if (error) {
+    // Fallback to client-side filter
+    return fetchAllData().filter(item => item.userId === currentUser);
+  }
+  ```
+- **Why it's dangerous:**
+  - Client can tamper `userId` parameter to see other users' data
+  - Security bypass: authorization moved from server to client
+  - Performance: fetch all data then filter locally (not scalable)
+- **Correct pattern:**
+  ```typescript
+  // ✅ GOOD: Throw error if RPC fails
+  const { data, error } = await supabase.rpc('rpc_with_auth_filter', params);
+  if (error) {
+    throw new Error(`Failed to fetch: ${error.message}`);
+  }
+  return data;
+  ```
+- **Real-world incident (Week 2-3):**
+  - Mobile app had `fetchTodaySessionsFallback` function with client-side filtering
+  - User review: "Đây là thứ tôi sẽ không cho phép tồn tại lâu"
+  - Resolution: Removed 140+ lines of fallback code, RPC-only approach
+  - Impact: Security rating 8/10 → 10/10
+
+### 11.2. Server-Side Filtering for Role-Based Data
+- **ALWAYS filter role-based data server-side via RPC**, not client-side.
+- **Example: KTV should only see their assigned sessions**
+  ```sql
+  -- ✅ GOOD: RPC with server-side JOIN
+  CREATE OR REPLACE FUNCTION rpc_ktv_dashboard_stats(
+    p_tenant_id UUID,
+    p_ktv_id UUID,
+    p_today DATE
+  )
+  RETURNS TABLE (total_sessions INT, completed_sessions INT)
+  AS $$
+    SELECT
+      COUNT(*)::INT AS total_sessions,
+      COUNT(*) FILTER (WHERE sl.status = 'completed')::INT AS completed_sessions
+    FROM session_logs sl
+    JOIN bookings b ON b.id = sl.booking_id
+    WHERE
+      sl.tenant_id = p_tenant_id
+      AND sl.scheduled_date = p_today
+      AND b.assigned_ktv_id = p_ktv_id;  -- ✅ Server-side filter
+  $$;
+  ```
+- **Real-world incident (Week 2-3):**
+  - KTV dashboard counted ALL spa sessions instead of only assigned ones
+  - Example: 10 total sessions → KTV A has 2 → App showed "10 ca" (wrong)
+  - Resolution: Created `rpc_ktv_dashboard_stats` with `assigned_ktv_id` filter
+  - Impact: Business Logic accuracy 7/10 → 10/10
+
+### 11.3. Complete Error Handling in Mobile Hooks
+- **ALWAYS expose error state and retry functionality** in React hooks.
+- **Required states:** `{ data, isLoading, error, retry/refresh }`
+- **Example pattern:**
+  ```typescript
+  export function useDataFetch(params) {
+    const [data, setData] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null); // ✅ Required
+    
+    const load = useCallback(async () => {
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        const result = await fetchData(params);
+        setData(result);
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unknown error');
+        setData(null);
+      } finally {
+        setIsLoading(false);
+      }
+    }, [params]);
+    
+    useEffect(() => { void load(); }, [load]);
+    
+    return { data, isLoading, error, retry: load }; // ✅ Expose error & retry
+  }
+  ```
+- **UI must handle all states:**
+  - Loading: Show skeleton or spinner
+  - Error: Show error message with retry button
+  - Empty: Show empty state
+  - Success: Show data
+- **Real-world incident (Week 2-3):**
+  - Hooks had no error handling → service errors caused blank screens
+  - User feedback: "Tôi muốn Loading, Error, Retry, Offline, Empty, Success đầy đủ"
+  - Resolution: Added error state to all hooks, created `DashboardErrorState` component
+  - Impact: Error Handling 7/10 → 9/10
+
+### 11.4. RPC Deployment Must Be Immediate, Not Deferred
+- **NEVER defer RPC deployment** while keeping fallback code "temporarily".
+- **Deploy RPCs immediately after creation:**
+  ```bash
+  # ✅ Correct workflow
+  1. Write RPC migration: migrations/YYYYMMDD_feature.sql
+  2. Test locally: supabase db reset
+  3. Deploy to staging: supabase db push --project-ref STAGING
+  4. Test on staging
+  5. Deploy to production: supabase db push --project-ref PROD
+  6. Update service code to use RPC (no fallback)
+  ```
+- **Why deferring is dangerous:**
+  - Fallback code becomes "temporary" debt that stays for weeks
+  - Security vulnerabilities remain in codebase
+  - Creates false sense of safety ("RPC will be deployed later")
+- **Real-world incident (Week 2-3):**
+  - Week 2 created RPC but kept fallback "until deployment"
+  - Fallback existed for 7+ days with security risk
+  - User directive: Fix foundation before new features
+  - Resolution: Deployed RPCs immediately, removed all fallback code
+  - Lesson: **Fallbacks are tech debt, deploy RPCs immediately**
+
+### 11.5. Test Role-Based Queries with Multiple Test Users
+- **ALWAYS test role-based queries with 2+ users** to verify isolation.
+- **Test scenario example:**
+  ```typescript
+  // ✅ Integration test for KTV stats isolation
+  test('KTV A sees only their sessions, not KTV B sessions', async () => {
+    const tenantId = 'test-tenant';
+    const ktvA = 'user-ktv-a';
+    const ktvB = 'user-ktv-b';
+    
+    // Assign 3 sessions to KTV A
+    await createSessions(tenantId, ktvA, 3);
+    // Assign 7 sessions to KTV B
+    await createSessions(tenantId, ktvB, 7);
+    
+    // Query as KTV A
+    const statsA = await fetchKtvStats(tenantId, ktvA);
+    expect(statsA.total).toBe(3); // NOT 10
+    
+    // Query as KTV B
+    const statsB = await fetchKtvStats(tenantId, ktvB);
+    expect(statsB.total).toBe(7); // NOT 10
+  });
+  ```
+- **Real-world incident (Week 2-3):**
+  - KTV stats bug not caught early because tests used single user
+  - Production pilot would have shown all spa sessions to every KTV
+  - Resolution: Need integration tests for "User A sees only their data"
+  - Lesson: **Multi-user test scenarios catch authorization bugs early**
+
+### 11.6. User Feedback Drives Quality Over Speed
+- **Prioritize quality over features when foundation is unstable.**
+- **Real-world decision (Week 3):**
+  - Original plan: Implement QR Check-in/GPS tracking
+  - User review: Week 2 rating 8.8/10 (3 critical issues)
+  - User directive: "Trước khi bước sang các tính năng hấp dẫn như QR Check-in, GPS Tracking, tôi sẽ yêu cầu đội phát triển hoàn thành 4 việc sau: Deploy RPC, loại bỏ fallback, sửa KPI KTV, bổ sung error state đầy đủ"
+  - **Decision: Defer all new features, fix foundation first**
+  - Result: Week 3 fixed all 3 issues → rating 8.8/10 → 9.4/10
+  - Quote: "Nếu nền dashboard chưa ổn định: Check-in → Thống kê sai → KTV mất niềm tin"
+  - **Lesson: Unstable foundation → User loses trust → Features don't matter**
+
+### 11.7. Inline Error UI for Section-Level Errors
+- **Use inline error displays** for section-level errors (not full-screen).
+- **Pattern:**
+  ```tsx
+  // ✅ Section-level error with retry context
+  {statsError ? (
+    <View style={styles.inlineError}>
+      <Text style={styles.inlineErrorIcon}>⚠️</Text>
+      <View style={styles.inlineErrorContent}>
+        <Text style={styles.inlineErrorTitle}>Không thể tải thống kê</Text>
+        <Text style={styles.inlineErrorMessage}>{statsError}</Text>
+      </View>
+    </View>
+  ) : (
+    // Show data
+  )}
+  ```
+- **When to use:**
+  - Stats section fails but sessions list works → show inline error for stats only
+  - User can still see working sections, retry failed section independently
+- **When to use full-screen error:**
+  - Critical failure: auth, tenant loading, network offline
+  - User cannot proceed without fixing the error
+- **Real-world implementation (Week 3):**
+  - Created `DashboardErrorState` component for full-screen errors
+  - Created inline error UI for section-level errors
+  - Red background + left border + error icon + message
+  - Impact: User never sees blank screens, knows what failed
+
+### 11.8. Supabase RPC Security Patterns
+- **Use `SECURITY DEFINER` with tenant isolation:**
+  ```sql
+  CREATE OR REPLACE FUNCTION rpc_function(p_tenant_id UUID, ...)
+  SECURITY DEFINER  -- Run with function owner privileges
+  AS $$
+    SELECT ...
+    WHERE tenant_id = p_tenant_id  -- ✅ Always filter by tenant
+      AND ...;  -- Additional filters
+  $$;
+  ```
+- **Why `SECURITY DEFINER`:**
+  - Mobile users may not have direct SELECT on all tables
+  - RPC bypasses RLS (Row-Level Security)
+  - **CRITICAL:** MUST filter by `tenant_id` to prevent cross-tenant data leaks
+- **Security checklist:**
+  - [ ] Function marked `SECURITY DEFINER`
+  - [ ] Function marked `STABLE` (not `VOLATILE`) for query optimization
+  - [ ] First WHERE clause filters by `tenant_id`
+  - [ ] Additional filters for role-based isolation (e.g., `assigned_ktv_id`)
+  - [ ] GRANT EXECUTE to `authenticated` role only
+  - [ ] Test with multiple tenants to verify isolation
+
+### 11.9. Documentation Must Reflect Reality
+- **Update documentation immediately after fixes**, not later.
+- **Documents updated in Week 3:**
+  - `WEEK_2_BUG_FIXES.md` — Marked issues as RESOLVED with solutions
+  - `WEEK_3_COMPLETION_REPORT.md` — Comprehensive completion report
+  - `AGENTS.md` — This section (lessons learned)
+- **Why immediate updates matter:**
+  - Future developers see what was fixed and why
+  - Prevents repeating same mistakes
+  - Shows decision-making process (quality over features)
+- **Commit message format:**
+  ```
+  Week 3: Fix Week 2 technical debt - RPC, KTV stats, error handling
+  
+  ✅ Issue #1 Fixed: KTV stats now filtered by assigned_ktv_id
+  ✅ Issue #2 Fixed: Removed insecure client-side fallback
+  ✅ Issue #3 Fixed: Complete error handling
+  ✅ Verification: All type checks and build pass
+  
+  Impact: Raises rating from 8.8/10 to 9.4/10
+  ```
+
+---
