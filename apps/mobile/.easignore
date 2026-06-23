@@ -1,0 +1,20 @@
+# Ignore large files and folders that EAS doesn't need
+node_modules/
+.expo/
+.git/
+dist/
+build/
+*.log
+.DS_Store
+coverage/
+*.md
+docs/
+screenshots/
+*.tgz
+.vscode/
+.idea/
+__tests__/
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
