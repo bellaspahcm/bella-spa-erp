@@ -5,6 +5,7 @@
  * 
  * ✅ Week 3 Fix: Added complete error handling (Loading, Error, Success states)
  * ✅ Pre-Week 4 Phase 1: Added Sentry error tracking and performance monitoring
+ * TEMP: Sentry disabled for build debugging
  */
 
 import { useCallback, useEffect, useState } from 'react';
@@ -14,7 +15,7 @@ import {
   type AdminKpiData,
   type TechnicianKpiData,
 } from '../services/dashboard/fetchDashboardStats';
-import { captureException, startTransaction, addSentryBreadcrumb } from '../lib/sentry';
+// import { captureException, startTransaction, addSentryBreadcrumb } from '../lib/sentry';
 
 export type KpiConfig =
   | { type: 'admin'; data: AdminKpiData }
@@ -43,19 +44,21 @@ export function useDashboardStats(params: {
     setError(null);
 
     // Start performance tracking
-    const transaction = startTransaction('useDashboardStats.load', 'hook');
-    const span = transaction.startChild({
-      op: 'fetch',
-      description: 'fetchDashboardStats',
-    });
+    // TEMP: Sentry disabled
+    // const transaction = startTransaction('useDashboardStats.load', 'hook');
+    // const span = transaction.startChild({
+    //   op: 'fetch',
+    //   description: 'fetchDashboardStats',
+    // });
 
     try {
       // Add breadcrumb for debugging
-      addSentryBreadcrumb('Fetching dashboard stats', 'data', {
-        tenantId,
-        userId,
-        role,
-      });
+      // TEMP: Sentry disabled
+      // addSentryBreadcrumb('Fetching dashboard stats', 'data', {
+      //   tenantId,
+      //   userId,
+      //   role,
+      // });
 
       const data = await fetchDashboardStats({ tenantId, userId, role });
 
@@ -67,13 +70,15 @@ export function useDashboardStats(params: {
       setError(null);
 
       // Mark as successful
-      span.setStatus('ok');
+      // TEMP: Sentry disabled
+      // span.setStatus('ok');
       
       // Add success breadcrumb
-      addSentryBreadcrumb('Dashboard stats loaded successfully', 'data', {
-        role,
-        dataType: isTechnicianRole(role) ? 'technician' : 'admin',
-      });
+      // TEMP: Sentry disabled
+      // addSentryBreadcrumb('Dashboard stats loaded successfully', 'data', {
+      //   role,
+      //   dataType: isTechnicianRole(role) ? 'technician' : 'admin',
+      // });
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : 'Không thể tải thống kê';
@@ -81,27 +86,31 @@ export function useDashboardStats(params: {
       setKpi(null);
 
       // Mark transaction as failed
-      span.setStatus('internal_error');
+      // TEMP: Sentry disabled
+      // span.setStatus('internal_error');
 
       // Report to Sentry with context
-      captureException(err as Error, {
-        hook: 'useDashboardStats',
-        operation: 'load',
-        tenantId,
-        userId,
-        role,
-        errorMessage,
-      });
+      // TEMP: Sentry disabled
+      // captureException(err as Error, {
+      //   hook: 'useDashboardStats',
+      //   operation: 'load',
+      //   tenantId,
+      //   userId,
+      //   role,
+      //   errorMessage,
+      // });
 
       // Add error breadcrumb
-      addSentryBreadcrumb('Dashboard stats fetch failed', 'error', {
-        errorMessage,
-        role,
-      });
+      // TEMP: Sentry disabled
+      // addSentryBreadcrumb('Dashboard stats fetch failed', 'error', {
+      //   errorMessage,
+      //   role,
+      // });
     } finally {
       setIsLoading(false);
-      span.finish();
-      transaction.finish();
+      // TEMP: Sentry disabled
+      // span.finish();
+      // transaction.finish();
     }
   }, [tenantId, userId, role]);
 
