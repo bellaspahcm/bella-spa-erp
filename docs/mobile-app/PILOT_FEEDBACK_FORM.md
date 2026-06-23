@@ -439,9 +439,265 @@ _________________________________________________________________________
 
 ---
 
-## SECTION 9: OVERALL SATISFACTION (ĐÁNH GIÁ TỔNG QUAN)
+---
 
-### 9.1 Overall Rating
+## SECTION 9: ROLE-SPECIFIC QUESTIONS
+
+### 🎯 FOR KTV ONLY (Dành riêng cho KTV)
+
+**Skip this section if you are Admin/Owner**
+
+#### 9.1 Schedule Visibility
+**Question**: Lịch ca hiển thị trên app có đúng không?
+
+☐ 5 - Hoàn toàn đúng, khớp 100%  
+☐ 4 - Đúng, chỉ thiếu 1-2 ca  
+☐ 3 - Đúng khoảng 70-80%  
+☐ 2 - Sai nhiều, chỉ đúng 50%  
+☐ 1 - Hoàn toàn sai
+
+**Rating**: _____ / 5
+
+**If incorrect, what was wrong?**  
+☐ Thiếu ca  
+☐ Ca không phải của tôi (của KTV khác)  
+☐ Thông tin khách hàng sai  
+☐ Giờ ca sai  
+☐ Khác: _________________________
+
+---
+
+#### 9.2 KTV Stats Accuracy
+**Question**: Số liệu thống kê (Tổng ca, Hoàn thành, Còn lại) có chính xác không?
+
+☐ 5 - Chính xác 100%  
+☐ 4 - Chính xác, lệch 1-2 ca  
+☐ 3 - Tạm ổn, lệch 3-5 ca  
+☐ 2 - Sai nhiều, lệch >5 ca  
+☐ 1 - Hoàn toàn sai
+
+**Rating**: _____ / 5
+
+**Manual count vs App**:
+- Tổng ca (manual): _____
+- Tổng ca (app): _____
+- Chênh lệch: _____
+
+---
+
+#### 9.3 Privacy Concern
+**Question**: Bạn có bao giờ thấy ca của KTV khác không? (Không phải ca của bạn)
+
+☐ **No** - Không, chỉ thấy ca của mình ✅  
+☐ **Yes** - Có thấy ca của KTV khác 🚨 **CRITICAL BUG**
+
+**⚠️ If YES, this is CRITICAL! Please describe**:
+- Tên KTV khác: _________________________
+- Số ca thấy nhầm: _____
+- Khi nào: _________________________
+
+---
+
+#### 9.4 Session Details Usefulness
+**Question**: Thông tin chi tiết ca (tên khách, gói, giờ) có đủ không?
+
+☐ 5 - Đầy đủ, không cần thêm gì  
+☐ 4 - Đủ, nhưng thiếu 1-2 thông tin  
+☐ 3 - Tạm ổn  
+☐ 2 - Thiếu nhiều thông tin quan trọng  
+☐ 1 - Quá ít thông tin
+
+**Rating**: _____ / 5
+
+**What information is missing?**  
+☐ Địa chỉ khách hàng  
+☐ Số điện thoại khách  
+☐ Ghi chú đặc biệt  
+☐ Phòng/giường  
+☐ Lịch sử khách hàng  
+☐ Khác: _________________________
+
+---
+
+#### 9.5 Realtime Updates Awareness
+**Question**: Khi admin tạo ca mới trên web, bạn có biết không?
+
+☐ **Yes** - Thấy ngay trên app (tự động cập nhật)  
+☐ **No** - Không biết, phải refresh mới thấy  
+☐ **Don't know** - Chưa chú ý
+
+**If you noticed realtime updates, how fast?**  
+☐ <10 seconds  
+☐ 10-30 seconds  
+☐ 30-60 seconds  
+☐ >60 seconds
+
+---
+
+#### 9.6 Most Wanted Feature (KTV Perspective)
+**Question**: Là KTV, bạn cần tính năng gì nhất?
+
+☐ Check-in/Check-out với QR code (xác nhận bắt đầu/kết thúc ca)  
+☐ Xem thu nhập tháng (lương, thưởng)  
+☐ Xem lịch tuần/tháng  
+☐ Thông báo khi có ca mới  
+☐ Chụp ảnh trước/sau dịch vụ  
+☐ Ghi chú khách hàng  
+☐ Xin nghỉ phép  
+☐ Khác: _________________________
+
+---
+
+### 👔 FOR ADMIN ONLY (Dành riêng cho Admin)
+
+**Skip this section if you are KTV**
+
+#### 9.7 Data Reliability for Management
+**Question**: Dữ liệu trên app có đáng tin cậy để quản lý không?
+
+☐ 5 - Hoàn toàn tin tưởng, dùng để ra quyết định  
+☐ 4 - Tin tưởng, nhưng vẫn kiểm tra web  
+☐ 3 - Tạm ổn, chỉ dùng để tham khảo  
+☐ 2 - Ít tin tưởng, nhiều sai sót  
+☐ 1 - Không tin tưởng, không dùng được
+
+**Rating**: _____ / 5
+
+**If unreliable, what data was wrong?**  
+_________________________________________________________________________
+
+---
+
+#### 9.8 KTV Monitoring Capability
+**Question**: App có giúp bạn theo dõi KTV dễ hơn không?
+
+☐ 5 - Dễ hơn rất nhiều, tiết kiệm thời gian  
+☐ 4 - Dễ hơn  
+☐ 3 - Ngang nhau  
+☐ 2 - Khó hơn  
+☐ 1 - Khó hơn nhiều
+
+**Rating**: _____ / 5
+
+**How does it help (or not help)?**  
+_________________________________________________________________________
+_________________________________________________________________________
+
+---
+
+#### 9.9 Realtime Sync (Admin Perspective)
+**Question**: Khi bạn tạo/cập nhật ca trên web, KTV có thấy ngay không?
+
+☐ **Yes** - KTV thấy ngay (<30s)  
+☐ **No** - KTV phải refresh mới thấy  
+☐ **Don't know** - Chưa test
+
+**If you tested, how long did it take?**  
+☐ <10 seconds ✅ Excellent  
+☐ 10-30 seconds ✅ Good  
+☐ 30-60 seconds ⚠️ Acceptable  
+☐ >60 seconds ❌ Too slow
+
+---
+
+#### 9.10 Manual Process Reduction
+**Question**: App có giảm công việc thủ công không?
+
+☐ **Yes** - Giảm được  
+☐ **No** - Không giảm  
+☐ **Actually increased** - Tăng thêm công việc
+
+**If YES, what manual tasks were reduced?**  
+☐ Gọi điện/nhắn tin thông báo lịch cho KTV  
+☐ In lịch giấy hàng ngày  
+☐ Cập nhật bảng trắng  
+☐ Trả lời câu hỏi "Ca của tôi hôm nay là gì?"  
+☐ Khác: _________________________
+
+**Time saved per day**: _____ minutes
+
+---
+
+#### 9.11 Admin-Specific Features Needed
+**Question**: Là Admin, bạn cần thêm tính năng gì trên app?
+
+☐ Thông báo đẩy đến KTV (push notification)  
+☐ Theo dõi vị trí KTV (GPS tracking)  
+☐ Gán ca cho KTV trực tiếp trên app  
+☐ Duyệt xin nghỉ phép  
+☐ Xem báo cáo tổng hợp  
+☐ Chat nhóm với KTV  
+☐ Khác: _________________________
+
+---
+
+### 👑 FOR OWNER ONLY (Dành riêng cho Chủ Spa)
+
+**Skip this section if you are KTV/Admin**
+
+#### 9.12 Business Value Assessment
+**Question**: App này có giá trị kinh doanh không?
+
+☐ 5 - Rất có giá trị, đáng đầu tư  
+☐ 4 - Có giá trị  
+☐ 3 - Tạm ổn  
+☐ 2 - Ít giá trị  
+☐ 1 - Không có giá trị
+
+**Rating**: _____ / 5
+
+**What business value does it bring (or not bring)?**  
+_________________________________________________________________________
+_________________________________________________________________________
+
+---
+
+#### 9.13 Scalability Decision
+**Question**: Sau pilot, bạn có muốn triển khai cho toàn bộ KTV không?
+
+☐ **Yes** - Triển khai ngay  
+☐ **Yes, but...** - Triển khai sau khi fix X, Y, Z  
+☐ **Maybe** - Cần thêm thời gian đánh giá  
+☐ **No** - Không triển khai
+
+**If not scaling, why?**  
+_________________________________________________________________________
+_________________________________________________________________________
+
+---
+
+#### 9.14 ROI Expectation
+**Question**: Bạn kỳ vọng app này sẽ mang lại gì?
+
+☐ Tiết kiệm thời gian quản lý  
+☐ Tăng năng suất KTV  
+☐ Giảm sai sót trong phân ca  
+☐ Tăng tính chuyên nghiệp  
+☐ Chuẩn bị cho mở rộng (nhiều chi nhánh)  
+☐ Giảm phụ thuộc vào 1 người (admin)  
+☐ Khác: _________________________
+
+---
+
+#### 9.15 Budget Willingness
+**Question**: Nếu cần phí duy trì (server, bảo trì), bạn có sẵn sàng đầu tư không?
+
+☐ **Yes** - Sẵn sàng  
+☐ **Depends** - Tùy chi phí  
+☐ **No** - Không
+
+**Acceptable monthly cost per KTV**:  
+☐ < 50,000 VNĐ/KTV  
+☐ 50,000 - 100,000 VNĐ/KTV  
+☐ 100,000 - 200,000 VNĐ/KTV  
+☐ > 200,000 VNĐ/KTV  
+☐ Depends on value delivered
+
+---
+
+## SECTION 10: OVERALL SATISFACTION (ĐÁNH GIÁ TỔNG QUAN)
+
+### 10.1 Overall Rating
 **Question**: Nhìn chung, bạn đánh giá app này bao nhiêu điểm?
 
 ☐ 5 - Excellent (Xuất sắc)  
@@ -454,7 +710,7 @@ _________________________________________________________________________
 
 ---
 
-### 9.2 Recommendation
+### 10.2 Recommendation
 **Question**: Bạn có muốn giới thiệu app này cho KTV khác không?
 
 ☐ Yes - Chắc chắn giới thiệu  
@@ -467,7 +723,7 @@ _________________________________________________________________________
 
 ---
 
-### 9.3 Biggest Positive
+### 10.3 Biggest Positive
 **Question**: Điều bạn thích nhất về app?
 
 _________________________________________________________________________
@@ -476,7 +732,7 @@ _________________________________________________________________________
 
 ---
 
-### 9.4 Biggest Negative
+### 10.4 Biggest Negative
 **Question**: Điều bạn không thích nhất về app?
 
 _________________________________________________________________________
@@ -485,7 +741,7 @@ _________________________________________________________________________
 
 ---
 
-## SECTION 10: OPEN FEEDBACK (Ý KIẾN KHÁC)
+## SECTION 11: OPEN FEEDBACK (Ý KIẾN KHÁC)
 
 **Any other comments, suggestions, or thoughts?**
 
