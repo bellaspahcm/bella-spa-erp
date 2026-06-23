@@ -4,6 +4,7 @@
  * Admin KPI ≠ KTV KPI
  * 
  * ✅ Week 3 Fix: Added complete error handling (Loading, Error, Success states)
+ * ✅ Pre-Week 4 Phase 1: Added Sentry error tracking and performance monitoring
  */
 
 import { useCallback, useEffect, useState } from 'react';
@@ -13,6 +14,7 @@ import {
   type AdminKpiData,
   type TechnicianKpiData,
 } from '../services/dashboard/fetchDashboardStats';
+import { captureException, startTransaction, addSentryBreadcrumb } from '../lib/sentry';
 
 export type KpiConfig =
   | { type: 'admin'; data: AdminKpiData }
@@ -40,7 +42,21 @@ export function useDashboardStats(params: {
     setIsLoading(true);
     setError(null);
 
+    // Start performance tracking
+    const transaction = startTransaction('useDashboardStats.load', 'hook');
+    const span = transaction.startChild({
+      op: 'fetch',
+      description: 'fetchDashboardStats',
+    });
+
     try {
+      // Add breadcrumb for debugging
+      addSentryBreadcrumb('Fetching dashboard stats', 'data', {
+        tenantId,
+        userId,
+        role,
+      });
+
       const data = await fetchDashboardStats({ tenantId, userId, role });
 
       if (isTechnicianRole(role)) {
@@ -49,13 +65,43 @@ export function useDashboardStats(params: {
         setKpi({ type: 'admin', data: data as AdminKpiData });
       }
       setError(null);
+
+      // Mark as successful
+      span.setStatus('ok');
+      
+      // Add success breadcrumb
+      addSentryBreadcrumb('Dashboard stats loaded successfully', 'data', {
+        role,
+        dataType: isTechnicianRole(role) ? 'technician' : 'admin',
+      });
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : 'Không thể tải thống kê';
       setError(errorMessage);
       setKpi(null);
+
+      // Mark transaction as failed
+      span.setStatus('internal_error');
+
+      // Report to Sentry with context
+      captureException(err as Error, {
+        hook: 'useDashboardStats',
+        operation: 'load',
+        tenantId,
+        userId,
+        role,
+        errorMessage,
+      });
+
+      // Add error breadcrumb
+      addSentryBreadcrumb('Dashboard stats fetch failed', 'error', {
+        errorMessage,
+        role,
+      });
     } finally {
       setIsLoading(false);
+      span.finish();
+      transaction.finish();
     }
   }, [tenantId, userId, role]);
 
