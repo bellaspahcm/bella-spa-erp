@@ -31,6 +31,13 @@
     "scheme": "bella-erp",
     "plugins": [
       "expo-router"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "2372754d-9112-4e46-a8bb-a48b05d055ed"
+      }
+    },
+    "owner": "bellaerpmobile"
   }
 }
