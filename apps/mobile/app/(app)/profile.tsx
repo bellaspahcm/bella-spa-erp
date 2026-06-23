@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
   },
   debugLabel: {
     fontSize: 12,
-    color: '#999',
+    color: '#666',
   },
   debugValue: {
     fontSize: 12,
@@ -238,7 +238,7 @@ const styles = StyleSheet.create({
   footer: {
     textAlign: 'center',
     fontSize: 12,
-    color: '#999',
+    color: '#666',
     marginTop: 8,
     marginBottom: 32,
   },
