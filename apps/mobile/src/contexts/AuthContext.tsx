@@ -1,7 +1,7 @@
 // apps/mobile/src/contexts/AuthContext.tsx
 // 4-state auth flow: loading → loading-profile → authenticated/unauthenticated
 
-import type { AuthState, CurrentUser } from '@bella/shared';
+import type { AuthState, CurrentUser } from '../lib/shared-utils';
 import type { Session } from '@supabase/supabase-js';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { fetchUserProfile } from '../services/auth/fetchUserProfile';

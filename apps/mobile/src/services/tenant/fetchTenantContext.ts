@@ -3,8 +3,8 @@
  * Fetches tenant info: name, module key, logo, status
  */
 
-import type { TenantModuleKey } from '@bella/shared';
-import { getDefaultTenantModuleKey } from '@bella/shared';
+import type { TenantModuleKey } from '../../lib/shared-utils';
+import { getDefaultTenantModuleKey } from '../../lib/shared-utils';
 import { getMobileSupabase } from '../../lib/supabase';
 
 export interface TenantContext {

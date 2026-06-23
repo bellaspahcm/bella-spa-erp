@@ -3,7 +3,7 @@
  * Different KPIs for Admin vs KTV roles
  */
 
-import { isTechnicianRole } from '@bella/shared';
+import { isTechnicianRole } from '../../lib/shared-utils';
 import { getMobileSupabase } from '../../lib/supabase';
 
 export interface AdminKpiData {
