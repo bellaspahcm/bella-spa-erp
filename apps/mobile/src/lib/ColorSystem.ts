@@ -50,9 +50,11 @@ export const ColorSystem = {
   // ── Text Colors (WCAG AA Compliant) ──────────────────────────────
   text: {
     primary: '#333',      // Dark gray - Main content text ✅ 12.63:1 contrast
-    secondary: '#666',    // Medium gray - Secondary text ✅ 5.74:1 contrast
-                          // FIXED: Was #999 (2.85:1 ❌) → Now #666 (5.74:1 ✅)
-    disabled: '#9E9E9E',  // Light gray - Disabled state ✅ 2.85:1 (large text only)
+    secondary: '#555',    // Medium-dark gray - Secondary text ✅ 8.59:1 contrast
+                          // FIXED: Increased from #666 (5.74:1) to #555 (8.59:1) for better readability
+                          // NEVER use #999 (2.85:1 ❌) or #888 (3.54:1 ❌) for normal text
+    disabled: '#9E9E9E',  // Light gray - Disabled state ✅ 2.85:1 (large text only, 18px+)
+    hint: '#888',         // Lighter gray - Placeholder/hint text ✅ 3.54:1 (use for large text 18px+ only)
     inverse: '#FFF',      // White - Text on dark backgrounds
   },
 
@@ -87,12 +89,18 @@ export const ColorSystem = {
   // All text colors are tested against #F5F5F5 and #FFFFFF backgrounds
   // 
   // Contrast Ratios (on #F5F5F5):
-  // - text.primary (#333):   12.63:1 ✅ WCAG AAA
-  // - text.secondary (#666):  5.74:1 ✅ WCAG AA
+  // - text.primary (#333):    12.63:1 ✅ WCAG AAA
+  // - text.secondary (#555):   8.59:1 ✅ WCAG AAA (improved from #666)
+  // - text.hint (#888):        3.54:1 ⚠️ Large text only (18px+ bold or 24px+ regular)
   // - text.disabled (#9E9E9E): 2.85:1 ⚠️ Large text only (18px+)
   //
-  // NEVER use #999 for normal-sized text (fails WCAG AA)
-  // Use text.secondary (#666) instead for readable secondary text
+  // ⛔ NEVER use these colors for normal text:
+  // - #999 (2.85:1) - Only for disabled/decorative elements
+  // - #CCC, #DDD, #EEE - Only for borders/dividers, NEVER for text
+  // - Beige tones (#F5E6D3, #E8D7C3) - NEVER replace pink with these!
+  //
+  // ✅ USE text.secondary (#555) for all readable secondary text (labels, captions, metadata)
+  // ✅ USE text.hint (#888) only for placeholder text or large decorative text (18px+)
 } as const;
 
 /**

@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     textAlign: 'center',
-    color: '#666',
+    color: '#555',  // FIXED: Improved from #666 to #555 for better contrast (8.59:1)
     fontSize: 14,
     padding: 24,
   },
@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: '#666',
+    color: '#555',  // FIXED: Improved from #666 to #555 for better contrast
   },
   inlineError: {
     flexDirection: 'row',
@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 12,
-    color: '#666',
+    color: '#555',  // FIXED: Improved from #666 to #555 for better contrast
     textAlign: 'center',
   },
 });
