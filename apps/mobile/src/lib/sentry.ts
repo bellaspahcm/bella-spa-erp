@@ -60,9 +60,8 @@ export function initSentry() {
     
     // Integrations
     integrations: [
-      // Automatically capture unhandled promise rejections
-      new Sentry.ReactNativeTracing({
-        routingInstrumentation: new Sentry.ReactNavigationInstrumentation(),
+      // Performance tracking (Sentry v8 API)
+      Sentry.reactNativeTracingIntegration({
         enableStallTracking: true,
         enableAppStartTracking: true,
         enableNativeFramesTracking: true,
