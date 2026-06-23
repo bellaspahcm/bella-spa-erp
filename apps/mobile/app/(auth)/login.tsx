@@ -1,7 +1,6 @@
 // apps/mobile/app/(auth)/login.tsx
-// Login screen with validation from @bella/shared
+// Login screen with inline validation
 
-import { validateEmail, validatePassword } from '@bella/shared';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
@@ -17,6 +16,28 @@ import {
 } from 'react-native';
 import { useAuth } from '../../src/contexts/AuthContext';
 
+// Inline validators (copied from @bella/shared for mobile-only build)
+function validateEmail(email: string): { ok: boolean; error?: string } {
+  if (!email) {
+    return { ok: false, error: 'Email không được để trống' };
+  }
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return { ok: false, error: 'Email không hợp lệ' };
+  }
+  return { ok: true };
+}
+
+function validatePassword(password: string): { ok: boolean; error?: string } {
+  if (!password) {
+    return { ok: false, error: 'Mật khẩu không được để trống' };
+  }
+  if (password.length < 6) {
+    return { ok: false, error: 'Mật khẩu phải có ít nhất 6 ký tự' };
+  }
+  return { ok: true };
+}
+
 export default function LoginScreen() {
   const { signIn } = useAuth();
   const [email, setEmail] = useState('');
@@ -30,7 +51,7 @@ export default function LoginScreen() {
     setEmailError(null);
     setPasswordError(null);
 
-    // Validate using @bella/shared validators
+    // Validate using inline validators
     const emailValidation = validateEmail(email);
     if (!emailValidation.ok) {
       setEmailError(emailValidation.error);
