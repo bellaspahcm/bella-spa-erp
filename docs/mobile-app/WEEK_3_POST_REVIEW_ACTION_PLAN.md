@@ -214,13 +214,28 @@ AND routine_name IN ('rpc_mobile_today_sessions', 'rpc_ktv_dashboard_stats');
 
 ---
 
-### Phase 2: Monitoring Setup (1 day) 🟡
+### Phase 2: Monitoring Setup (1 day) 🔴 **ELEVATED TO HIGH PRIORITY**
 
-**Can start in parallel with Week 4, but MUST complete before Week 4 features go to production**
+**⚠️ UPDATE 2026-06-22**: Based on user review, crash monitoring is now **CRITICAL** for workforce apps.
+
+**New Priority**: Start DURING pilot (parallel with Day 1-7), complete BEFORE scaling to 10+ KTVs.
+
+**Rationale**: 
+```
+Crash > UI đẹp (for workforce apps)
+```
+
+Without crash monitoring during pilot:
+- ❌ Cannot measure crash rate (<1% requirement)
+- ❌ Cannot diagnose issues remotely
+- ❌ Rely on manual user reports (unreliable)
+- ❌ Miss silent failures (app crashes but user doesn't report)
 
 **📄 Documentation:** ✅ `SENTRY_INTEGRATION_GUIDE.md` created (comprehensive 5-phase guide)
 
-#### 2.1. Sentry Integration ⏰ 4 hours
+#### 2.1. Sentry Integration ⏰ 4 hours **🔴 DO THIS BEFORE PILOT DAY 1**
+
+**NEW TIMELINE**: Deploy Sentry BEFORE pilot starts, not after.
 
 **Setup:**
 - [ ] Create Sentry account (if not exists)
@@ -518,12 +533,14 @@ describe('useDashboardStats', () => {
 - ❌ Production deployment
 - ❌ Real device testing
 - ❌ Monitoring setup
+- ❌ Crash tracking
 
-### Pre-Week 4 Checklist (2-3 days)
+### Pre-Week 4 Checklist (2-3 days) **UPDATED**
 **BLOCKERS - Must complete:**
+- [ ] **Day 0 (Pre-Pilot)**: Setup Sentry crash monitoring 🔴 **NEW**
 - [ ] Day 1: Deploy RPC to production
 - [ ] Day 1-2: Real device testing (iPhone + Android)
-- [ ] Day 2-3: Production pilot with 2-3 KTVs
+- [ ] Day 2-3: Production pilot with 2-3 KTVs (WITH crash monitoring active)
 - [ ] Document all test results
 
 ### Week 4 Parallel Work
@@ -531,11 +548,12 @@ describe('useDashboardStats', () => {
 - ✅ RPCs deployed to production
 - ✅ Device testing complete
 - ✅ KTV stats verified correct
+- ✅ Sentry monitoring active 🔴 **NEW REQUIREMENT**
 
 **In parallel with Week 4 features:**
-- [ ] Setup Sentry monitoring
+- [ ] ~~Setup Sentry monitoring~~ ✅ Already done in Pre-Pilot
 - [ ] Start unit testing foundation
-- [ ] Monitor pilot usage
+- [ ] Monitor pilot usage + crash reports
 
 ---
 
@@ -578,6 +596,11 @@ describe('useDashboardStats', () => {
 
 **Status:** Conditions NOT yet met ⚠️
 
+**UPDATED Requirements (2026-06-22)**:
+- Bắt buộc: RPC deploy + Device test + KTV verification
+- **NEW**: Sentry crash monitoring active 🔴
+- Khuyến nghị: 7-day pilot trước khi sang GPS/QR
+
 ---
 
 ## 📊 FINAL ASSESSMENT
@@ -608,13 +631,16 @@ STATUS: BLOCKED until:
 
 ## 🚀 NEXT IMMEDIATE ACTIONS
 
-1. **Deploy RPCs** (2 hours)
-2. **Get test devices** (1 hour)
-3. **Run device tests** (4-6 hours)
-4. **Production pilot** (2 days)
-5. **Then** start Week 4 features
+**UPDATED ORDER (2026-06-22)**:
 
-**ETA to Week 4 start:** 3-4 days from now
+1. **Setup Sentry** (4 hours) 🔴 **NEW #1 PRIORITY**
+2. **Deploy RPCs** (2 hours)
+3. **Get test devices** (1 hour)
+4. **Run device tests** (4-6 hours)
+5. **Production pilot** (2 days) - with crash monitoring
+6. **Then** start Week 4 features
+
+**ETA to Week 4 start:** 3-4 days from now (unchanged, but safer with monitoring)
 
 ---
 
@@ -692,8 +718,9 @@ STATUS: BLOCKED until:
 
 ---
 
-**Document Updated:** 2026-06-22 Evening  
-**Status:** ✅ Planning & Documentation COMPLETE → ⏸️ Awaiting Execution
+**Document Updated:** 2026-06-22 Evening (Post-User Review)  
+**Status:** ✅ Planning & Documentation COMPLETE → ⏸️ Awaiting Execution  
+**Critical Update:** Sentry monitoring elevated to Phase 1 (pre-pilot requirement)
 
 ---
 

@@ -228,7 +228,39 @@ If **ANY** of these occur, pilot is considered **FAILED** and must be halted:
 
 ---
 
-## 📋 DAILY MONITORING CHECKLIST
+---
+
+## 📊 DAILY MONITORING CHECKLIST
+
+### 🎛️ **TECHNICAL KPI DASHBOARD (Track Daily)**
+
+**Use this table to track technical metrics each day:**
+
+| Metric | Target | Day 1 | Day 2 | Day 3 | Day 4 | Day 5 | Day 6 | Day 7 | Status |
+|--------|--------|-------|-------|-------|-------|-------|-------|-------|--------|
+| **Login Success Rate** | >95% | ___% | ___% | ___% | ___% | ___% | ___% | ___% | PASS/FAIL |
+| **Crash Count** | 0 | ___ | ___ | ___ | ___ | ___ | ___ | ___ | PASS/FAIL |
+| **Dashboard Load (avg)** | <3s | ___s | ___s | ___s | ___s | ___s | ___s | ___s | PASS/FAIL |
+| **Refresh Time (avg)** | <2s | ___s | ___s | ___s | ___s | ___s | ___s | ___s | PASS/FAIL |
+| **Data Accuracy Issues** | 0 | ___ | ___ | ___ | ___ | ___ | ___ | ___ | PASS/FAIL |
+| **Error Count** | <2% | ___% | ___% | ___% | ___% | ___% | ___% | ___% | PASS/FAIL |
+| **Realtime Sync (max)** | <30s | ___s | ___s | ___s | ___s | ___s | ___s | ___s | PASS/FAIL |
+
+**How to fill:**
+- **Login Success Rate**: (Successful logins today) / (Total attempts today) × 100
+- **Crash Count**: Number of app crashes reported today
+- **Dashboard Load**: Average load time measured with stopwatch (3-5 samples)
+- **Refresh Time**: Average pull-to-refresh time (3-5 samples)
+- **Data Accuracy Issues**: Number of mismatched sessions found (manual cross-check)
+- **Error Count**: (Failed operations) / (Total operations) × 100
+- **Realtime Sync**: Maximum time observed from web update → mobile refresh
+
+**Daily Status Calculation**:
+- ✅ **ALL GREEN** = All metrics meet targets → Pilot on track
+- ⚠️ **1-2 YELLOW** = Some metrics close to threshold → Monitor closely
+- 🔴 **3+ RED or 1 CRITICAL** = Metrics failing → Escalate immediately
+
+---
 
 ### Day 1: Installation & First Use
 - [ ] All users installed app successfully
