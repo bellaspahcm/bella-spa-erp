@@ -1,104 +1,193 @@
 // apps/mobile/app/(app)/home.tsx
-// Home screen - show user profile from database
+// Dashboard screen - KPI stats and today's sessions
 
-import { isAdminRole } from '@bella/shared';
+import { isTechnicianRole } from '@bella/shared';
 import { router } from 'expo-router';
 import React from 'react';
 import {
-  Alert,
-  Platform,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { useAuth } from '../../src/contexts/AuthContext';
+import { useTenant } from '../../src/contexts/TenantContext';
+import { useDashboardStats } from '../../src/hooks/useDashboardStats';
+import { useTodaySessions } from '../../src/hooks/useTodaySessions';
+import { DashboardErrorState } from '../../src/components/DashboardErrorState';
+import { KpiCard } from '../../src/components/KpiCard';
+import { RoleBadge } from '../../src/components/RoleBadge';
+import { SessionCard } from '../../src/components/SessionCard';
+import { formatCurrency } from '@bella/shared';
 
 export default function HomeScreen() {
   const auth = useAuth();
+  const tenant = useTenant();
 
   if (auth.status !== 'authenticated') {
     router.replace('/');
     return null;
   }
 
-  const { user, signOut } = auth;
+  const { user } = auth;
 
-  const handleSignOut = async () => {
-    Alert.alert('Đăng xuất', 'Bạn có chắc chắn muốn đăng xuất?', [
-      { text: 'Hủy', style: 'cancel' },
-      {
-        text: 'Đăng xuất',
-        style: 'destructive',
-        onPress: async () => {
-          await signOut();
-        },
-      },
-    ]);
-  };
+  // ── Tenant Error ────────────────────────────────────────────────────
+  if (tenant.status === 'error') {
+    return (
+      <DashboardErrorState
+        message={`Không tải được thông tin chi nhánh: ${tenant.error}`}
+        onRetry={() => {
+          router.replace('/home');
+        }}
+      />
+    );
+  }
+
+  const tenantId = tenant.status === 'loaded' ? tenant.tenant.id : null;
+  const tenantName = tenant.status === 'loaded' ? tenant.tenant.name : '';
+  const isStale = tenant.status === 'loaded' && tenant.stale;
+
+  const {
+    sessions,
+    isLoading: sessionsLoading,
+    error: sessionsError,
+    refresh,
+  } = useTodaySessions({
+    tenantId,
+    userId: user.id,
+    role: user.role,
+  });
+
+  const {
+    kpi,
+    isLoading: statsLoading,
+    error: statsError,
+    retry: retryStats,
+  } = useDashboardStats({
+    tenantId,
+    userId: user.id,
+    role: user.role,
+  });
+
+  const isKtv = isTechnicianRole(user.role);
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.title}>Chào mừng!</Text>
-
-        {user.isSuspended && (
-          <View style={styles.warningBox}>
-            <Text style={styles.warningText}>
-              ⚠️ Tenant của bạn đã bị tạm ngưng
-            </Text>
-          </View>
-        )}
-
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Thông tin tài khoản</Text>
-
-          <View style={styles.infoRow}>
-            <Text style={styles.label}>Email:</Text>
-            <Text style={styles.value}>{user.email}</Text>
-          </View>
-
-          <View style={styles.infoRow}>
-            <Text style={styles.label}>Họ tên:</Text>
-            <Text style={styles.value}>{user.full_name || 'Chưa cập nhật'}</Text>
-          </View>
-
-          <View style={styles.infoRow}>
-            <Text style={styles.label}>Vai trò:</Text>
-            <View style={styles.roleContainer}>
-              <Text style={styles.value}>{user.role}</Text>
-              {isAdminRole(user.role) && (
-                <View style={styles.adminBadge}>
-                  <Text style={styles.adminBadgeText}>Quản trị</Text>
-                </View>
-              )}
-            </View>
-          </View>
-
-          <View style={styles.infoRow}>
-            <Text style={styles.label}>ID:</Text>
-            <Text style={[styles.value, styles.valueSmall]}>{user.id}</Text>
-          </View>
-
-          {user.tenant_id && (
-            <View style={styles.infoRow}>
-              <Text style={styles.label}>Tenant ID:</Text>
-              <Text style={[styles.value, styles.valueSmall]}>{user.tenant_id}</Text>
-            </View>
-          )}
+    <ScrollView
+      style={styles.container}
+      refreshControl={
+        <RefreshControl refreshing={sessionsLoading} onRefresh={refresh} />
+      }
+    >
+      {/* ── Header ────────────────────────────────────────────────── */}
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.greeting}>Xin chào, {user.full_name || 'Bạn'}!</Text>
+          <Text style={styles.tenantName}>
+            {tenantName || 'Bella Spa'}
+            {isStale && <Text style={styles.staleIndicator}> (cache)</Text>}
+          </Text>
         </View>
+        <RoleBadge role={user.role} />
+      </View>
 
-        <Text style={styles.note}>
-          ✅ Role được lấy từ bảng <Text style={styles.noteCode}>users</Text> trong
-          database (không dùng user_metadata)
+      {/* ── KPI Cards ────────────────────────────────────────────── */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Tổng quan hôm nay</Text>
+        {statsLoading ? (
+          <Text style={styles.loadingText}>Đang tải...</Text>
+        ) : statsError ? (
+          <View style={styles.inlineError}>
+            <Text style={styles.inlineErrorIcon}>⚠️</Text>
+            <View style={styles.inlineErrorContent}>
+              <Text style={styles.inlineErrorTitle}>
+                Không thể tải thống kê
+              </Text>
+              <Text style={styles.inlineErrorMessage}>{statsError}</Text>
+            </View>
+          </View>
+        ) : kpi?.type === 'admin' ? (
+          <View style={styles.kpiRow}>
+            <KpiCard
+              label="Lịch hôm nay"
+              value={kpi.data.todayBookings}
+              icon="📅"
+              variant="primary"
+            />
+            <KpiCard
+              label="Đang phục vụ"
+              value={kpi.data.activeNow}
+              icon="⏳"
+              variant="success"
+            />
+            <KpiCard
+              label="Doanh thu"
+              value={formatCurrency(kpi.data.todayRevenue)}
+              icon="💰"
+              variant="warning"
+            />
+          </View>
+        ) : kpi?.type === 'technician' ? (
+          <View style={styles.kpiRow}>
+            <KpiCard
+              label="Tổng ca"
+              value={kpi.data.todayTotal}
+              icon="📋"
+              variant="primary"
+            />
+            <KpiCard
+              label="Hoàn thành"
+              value={kpi.data.completed}
+              icon="✅"
+              variant="success"
+            />
+            <KpiCard
+              label="Còn lại"
+              value={kpi.data.remaining}
+              icon="⏰"
+              variant="warning"
+            />
+          </View>
+        ) : null}
+      </View>
+
+      {/* ── Today's Sessions ────────────────────────────────────── */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>
+          {isKtv ? 'Lịch của tôi hôm nay' : 'Lịch hôm nay'}
         </Text>
+        {sessionsLoading && sessions.length === 0 ? (
+          <Text style={styles.loadingText}>Đang tải lịch...</Text>
+        ) : sessionsError ? (
+          <View style={styles.inlineError}>
+            <Text style={styles.inlineErrorIcon}>⚠️</Text>
+            <View style={styles.inlineErrorContent}>
+              <Text style={styles.inlineErrorTitle}>
+                Không thể tải danh sách ca
+              </Text>
+              <Text style={styles.inlineErrorMessage}>{sessionsError}</Text>
+            </View>
+          </View>
+        ) : sessions.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyIcon}>📭</Text>
+            <Text style={styles.emptyText}>Chưa có lịch nào hôm nay</Text>
+          </View>
+        ) : (
+          sessions.map((session) => (
+            <SessionCard
+              key={session.id}
+              session={session}
+              showKtvName={!isKtv}
+            />
+          ))
+        )}
+      </View>
 
-        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
-          <Text style={styles.signOutButtonText}>Đăng xuất</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.footer}>Bella ERP Mobile v1.0.0</Text>
+      <View style={styles.footer}>
+        <Text style={styles.footerText}>
+          Kéo xuống để làm mới • Bella ERP Mobile v1.0
+        </Text>
       </View>
     </ScrollView>
   );
@@ -107,111 +196,98 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#F5F5F5',
   },
-  content: {
+  header: {
+    backgroundColor: '#E91E63',
     padding: 24,
+    paddingTop: 48,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
   },
-  title: {
-    fontSize: 28,
+  greeting: {
+    fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 24,
-    color: '#0066cc',
-  },
-  warningBox: {
-    backgroundColor: '#fff3cd',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#ffecb5',
-  },
-  warningText: {
-    color: '#856404',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  card: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 16,
-    color: '#333333',
-  },
-  infoRow: {
-    marginBottom: 12,
-  },
-  label: {
-    fontSize: 14,
-    color: '#666666',
+    color: '#FFF',
     marginBottom: 4,
   },
-  value: {
+  tenantName: {
     fontSize: 16,
-    color: '#333333',
-    fontWeight: '500',
+    color: '#FFF',
+    opacity: 0.9,
   },
-  valueSmall: {
+  staleIndicator: {
     fontSize: 12,
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    opacity: 0.7,
   },
-  roleContainer: {
+  section: {
+    marginTop: 24,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 12,
+    paddingHorizontal: 16,
+  },
+  kpiRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  adminBadge: {
-    backgroundColor: '#0066cc',
     paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
   },
-  adminBadgeText: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  note: {
+  loadingText: {
+    textAlign: 'center',
+    color: '#999',
     fontSize: 14,
-    color: '#666666',
-    lineHeight: 20,
-    marginBottom: 24,
-    backgroundColor: '#f0f9ff',
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#bfdbfe',
+    padding: 24,
   },
-  noteCode: {
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
-    fontWeight: '600',
-    color: '#0066cc',
-  },
-  signOutButton: {
-    backgroundColor: '#ff3333',
-    borderRadius: 8,
-    paddingVertical: 14,
+  emptyState: {
     alignItems: 'center',
+    padding: 48,
+  },
+  emptyIcon: {
+    fontSize: 64,
     marginBottom: 16,
   },
-  signOutButtonText: {
-    color: '#ffffff',
+  emptyText: {
     fontSize: 16,
+    color: '#999',
+  },
+  inlineError: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#FEF2F2',
+    borderLeftWidth: 4,
+    borderLeftColor: '#EF4444',
+    marginHorizontal: 16,
+    padding: 16,
+    borderRadius: 8,
+  },
+  inlineErrorIcon: {
+    fontSize: 24,
+    marginRight: 12,
+  },
+  inlineErrorContent: {
+    flex: 1,
+  },
+  inlineErrorTitle: {
+    fontSize: 14,
     fontWeight: '600',
+    color: '#991B1B',
+    marginBottom: 4,
+  },
+  inlineErrorMessage: {
+    fontSize: 12,
+    color: '#7F1D1D',
+    lineHeight: 18,
   },
   footer: {
-    textAlign: 'center',
+    padding: 24,
+    alignItems: 'center',
+  },
+  footerText: {
     fontSize: 12,
-    color: '#999999',
+    color: '#999',
+    textAlign: 'center',
   },
 });

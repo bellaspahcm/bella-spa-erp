@@ -4,7 +4,7 @@
 import type { AuthState, CurrentUser } from '@bella/shared';
 import type { Session } from '@supabase/supabase-js';
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { fetchUserProfile } from '../lib/fetchUserProfile';
+import { fetchUserProfile } from '../services/auth/fetchUserProfile';
 import { getMobileSupabase } from '../lib/supabase';
 
 type AuthContextValue = AuthState & {

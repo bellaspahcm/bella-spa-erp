@@ -44,7 +44,24 @@ export type { BookingForPackageName } from './utils/format';
 export type { RolePermissions } from './permissions/roles';
 export {
   isAdminRole,
+  isTechnicianRole,
+  isManagerOrAbove,
+  ROLE_GROUPS,
   SIDEBAR_MODULE_BY_LABEL,
   resolveSidebarModuleId,
   isSidebarItemAllowed,
 } from './permissions/roles';
+
+// Tenant
+export type {
+  TenantModuleKey,
+  TenantPrimaryBusinessModuleKey,
+  TenantEnabledModules,
+} from './tenant/module-keys';
+export { TENANT_MODULE_KEYS, DEFAULT_ENABLED_MODULES } from './tenant/module-keys';
+export {
+  normalizeEnabledModules,
+  normalizeEnabledModulesForSave,
+  getDefaultTenantModuleKey,
+  isTenantModuleEnabled,
+} from './tenant/module-resolver';

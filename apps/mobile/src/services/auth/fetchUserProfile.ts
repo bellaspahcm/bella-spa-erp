@@ -3,7 +3,7 @@
 // Query users table for role - NOT user_metadata
 
 import type { CurrentUser } from '@bella/shared';
-import { getMobileSupabase } from './supabase';
+import { getMobileSupabase } from '../../lib/supabase';
 
 export type ProfileResult =
   | { ok: true; user: CurrentUser }

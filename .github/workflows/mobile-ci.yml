@@ -1,0 +1,37 @@
+name: Mobile CI
+
+on:
+  push:
+    paths:
+      - 'apps/mobile/**'
+      - 'packages/shared/**'
+  pull_request:
+    paths:
+      - 'apps/mobile/**'
+      - 'packages/shared/**'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Shared package typecheck
+        run: npm run shared:typecheck
+
+      - name: Mobile typecheck
+        run: npm run mobile:typecheck
+
+      - name: Web build (regression check)
+        run: npm run build
+
+      - name: Secret leak check
+        run: npm run security:secrets
