@@ -512,7 +512,7 @@ export default function KTVDashboard() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#E91E63] dark:bg-[#5D1C34] flex items-center justify-center">
+      <div className="min-h-screen bg-[#F5F5F0] dark:bg-[#5D1C34] flex items-center justify-center">
         <RefreshCw className="w-8 h-8 text-white animate-spin" />
       </div>
     );
@@ -521,7 +521,7 @@ export default function KTVDashboard() {
   const unreadCount = notifications.filter((notification) => !notification.isRead).length;
 
   return (
-    <div className="min-h-screen bg-[#E91E63] dark:bg-[#5D1C34] pb-20">
+    <div className="min-h-screen bg-[#F5F5F0] dark:bg-[#5D1C34] pb-20">
       <KtvDashboardHeader
         user={user}
         earnings={earnings}
