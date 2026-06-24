@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npm install --legacy-peer-deps && npm run build",
-  "installCommand": "npm install --legacy-peer-deps --workspace=packages/* --include-workspace-root",
+  "buildCommand": "npm run build",
+  "installCommand": "npm install --legacy-peer-deps --ignore-scripts",
   "ignoreCommand": "git diff --quiet HEAD^ HEAD -- ':!apps/mobile'"
 }
