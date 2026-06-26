@@ -518,3 +518,59 @@ Khi user yeu cau "them phan he nganh moi", "mo rong Beauty", "lam module nganh X
 5. Chi de xuat viec chua lam; khong lap lai rule engine hoac refactor da co.
 6. Neu thay doi runtime, phai co test chung minh Bella Spa hien tai khong bi anh huong.
 7. Neu phat sinh loi moi, cap nhat "Lich Su Loi Moi" trong tai lieu nay.
+
+## Lo Trinh Mo Rong Salary Engine Da Nganh
+
+> Cap nhat: 2026-06-22
+> Ly do: Ghi nhan chien luoc mo rong salary engine de phuc vu nhieu nganh khong can fork code.
+
+### Nguyen Tac Chung
+
+**KHONG BAO GIO tao salary engine moi hoac fork `salary.ts` chi vi co them nganh moi.**
+
+Salary engine hien tai duoc thiet ke de phuc vu moi nganh co cong thuc luong tuong tu. Chi can:
+- Thuat ngu nghiep vu khac (Session/Job/Shift/Ca, KTV/Nhan vien/Ky thuat vien)
+- Package/service multiplier khac
+- Module key khac
+
+Neu cong thuc tinh luong VAN LA:
+
+thi TAI SU DUNG salary engine hien tai, KHONG tao moi.
+
+### Giai Doan 1: Them Nganh Moi Voi Cong Thuc Giong Beauty Spa
+
+**Khong sua `salary.ts`.**
+
+Chi can:
+1. Them module moi (vi du `industrial_cleaning`, `home_services`, `elderly_care`)
+2. Them Package voi `session_multiplier` phu hop
+3. Thay vocabulary UI (KTV → Nhan vien, Session → Ca/Job, Package → Goi dich vu)
+4. Chay toan bo salary engine hien tai
+
+**=> Khong can sua cong thuc luong.**
+
+### Giai Doan 2: Bo Sung Component Phu Cap Dac Thu
+
+Neu nganh moi can them phu cap dac thu, **DUNG them component moi, KHONG sua cong thuc tong luong.**
+
+**Van khong can `if (industry === ...)` trong engine.**
+
+### Giai Doan 3: Refactor Sang Rule Engine (CHI KHI CAN THIET)
+
+CHI refactor khi engine bat dau co qua nhieu component (>=5-6 loai) va lap code ro rang. **CHUA CAN LAM BAY GIO.**
+
+### Chuan Bi Tu Bay Gio: WorkUnit Abstraction
+
+De sau nay de refactor, BAT DAU dung khai niem `WorkUnit` ngay bay gio.
+
+### Chuan Bi Tu Bay Gio: Naming Convention
+
+Thay vi `sessionBonus`, doi thanh `sessionComponent` hoac `sessionRuleResult`.
+
+### Checklist Bat Buoc Truoc Moi Thay Doi Salary Engine
+
+```powershell
+npm.cmd run test:critical
+npm.cmd run lint
+npm.cmd run build
+
