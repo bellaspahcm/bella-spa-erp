@@ -2152,47 +2152,48 @@ html[data-tenant-brand-button="minimal"][data-tenant-module="beauty_spa"] .beaut
   }
 }
 
-/* Industrial Cleaning tenant shell: professional blue theme, scoped by runtime module marker */
+/* Industrial Cleaning tenant shell: professional blue/teal theme, scoped by runtime module marker */
+/* Color palette: #001C44 (navy), #0C3776 (blue), #2D93AE (teal), #BCFEFE (cyan), #FBDAD0 (peach) */
 html[data-tenant-module="industrial_cleaning"] {
-  --primary: #1E40AF; /* Blue-700 - đậm và nổi bật */
-  --primary-hover: #1E3A8A; /* Blue-800 - hover state */
-  --primary-foreground: #F8FAFC;
-  --secondary: #0F172A;
-  --secondary-foreground: #F8FAFC;
-  --accent: #2563EB; /* Tăng từ #3B82F6 → #2563EB (blue-600) cho nổi bật hơn */
-  --accent-foreground: #FFFFFF; /* Tăng từ #0F172A → #FFFFFF cho tương phản cao */
+  --primary: #0C3776; /* Blue từ palette - primary action color */
+  --primary-hover: #001C44; /* Navy đậm - hover state */
+  --primary-foreground: #FFFFFF;
+  --secondary: #001C44; /* Navy đậm cho secondary elements */
+  --secondary-foreground: #FFFFFF;
+  --accent: #2D93AE; /* Teal - accent color cho highlights */
+  --accent-foreground: #FFFFFF;
   --background: #F8FAFC;
-  --foreground: #0F172A;
+  --foreground: #001C44;
   --card: #FFFFFF;
-  --card-foreground: #0F172A;
+  --card-foreground: #001C44;
   --muted: #F1F5F9;
   --muted-foreground: #475569; /* Tăng từ #64748B → #475569 (slate-600) cho dễ đọc hơn */
-  --border: rgba(59, 130, 246, 0.24);
-  --input: rgba(59, 130, 246, 0.22);
-  --ring: #1E40AF;
+  --border: rgba(45, 147, 174, 0.24); /* Teal border */
+  --input: rgba(45, 147, 174, 0.22); /* Teal input border */
+  --ring: #2D93AE; /* Teal focus ring */
 }
 
 html[data-tenant-module="industrial_cleaning"] body {
   background-color: #F8FAFC;
   background-image:
     linear-gradient(180deg, rgba(255, 255, 255, 0.74) 0%, rgba(248, 250, 252, 0.96) 38%, rgba(241, 245, 249, 0.86) 100%),
-    radial-gradient(ellipse 70% 46% at 8% 0%, rgba(30, 64, 175, 0.08) 0%, transparent 58%),
-    radial-gradient(ellipse 58% 42% at 100% 14%, rgba(59, 130, 246, 0.16) 0%, transparent 55%);
+    radial-gradient(ellipse 70% 46% at 8% 0%, rgba(12, 55, 118, 0.08) 0%, transparent 58%),
+    radial-gradient(ellipse 58% 42% at 100% 14%, rgba(45, 147, 174, 0.12) 0%, transparent 55%);
 }
 
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-mobile-header {
   background: rgba(248, 250, 252, 0.92) !important;
-  border-color: rgba(59, 130, 246, 0.32) !important;
-  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.08) !important;
+  border-color: rgba(45, 147, 174, 0.32) !important;
+  box-shadow: 0 8px 28px rgba(0, 28, 68, 0.08) !important;
 }
 
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-sidebar {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0) 34%),
-    linear-gradient(158deg, #0F172A 0%, #1E293B 42%, #1E40AF 100%) !important;
-  border-color: rgba(59, 130, 246, 0.34) !important;
-  box-shadow: 16px 0 44px rgba(15, 23, 42, 0.18) !important;
-  color: #F8FAFC;
+    linear-gradient(158deg, #001C44 0%, #0C3776 42%, #2D93AE 100%) !important;
+  border-color: rgba(45, 147, 174, 0.34) !important;
+  box-shadow: 16px 0 44px rgba(0, 28, 68, 0.18) !important;
+  color: #FFFFFF;
 }
 
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-sidebar::before {
@@ -2200,58 +2201,58 @@ html[data-tenant-module="industrial_cleaning"] .beauty-erp-sidebar::before {
   position: absolute;
   inset: 22px;
   pointer-events: none;
-  border: 1px solid rgba(59, 130, 246, 0.16);
+  border: 1px solid rgba(45, 147, 174, 0.24);
   border-radius: 30px;
 }
 
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-logo-mark {
-  background: linear-gradient(145deg, #1E40AF 0%, #0F172A 100%) !important;
-  border: 1px solid rgba(59, 130, 246, 0.72) !important;
-  color: #3B82F6 !important;
-  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.22) !important;
+  background: linear-gradient(145deg, #0C3776 0%, #001C44 100%) !important;
+  border: 1px solid rgba(45, 147, 174, 0.72) !important;
+  color: #2D93AE !important;
+  box-shadow: 0 14px 30px rgba(0, 28, 68, 0.22) !important;
 }
 
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-logo-mark-large {
-  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.28) !important;
+  box-shadow: 0 18px 44px rgba(0, 28, 68, 0.28) !important;
 }
 
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-brand-script {
-  color: #F8FAFC !important;
+  color: #FFFFFF !important;
   text-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
 }
 
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-mobile-header .beauty-erp-brand-script {
-  color: #1E40AF !important;
+  color: #0C3776 !important;
   text-shadow: none;
 }
 
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-brand-subtitle,
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-header,
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-profile-role {
-  color: rgba(59, 130, 246, 0.86) !important;
+  color: rgba(45, 147, 174, 0.92) !important;
 }
 
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-scroll::-webkit-scrollbar-thumb {
-  background: rgba(59, 130, 246, 0.52) !important;
+  background: rgba(45, 147, 174, 0.52) !important;
 }
 
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-item {
-  color: rgba(248, 250, 252, 0.74) !important;
+  color: rgba(188, 254, 254, 0.82) !important; /* Cyan nhạt cho text không active */
   border-color: transparent !important;
 }
 
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-item:hover {
-  background: rgba(248, 250, 252, 0.08) !important;
-  border-color: rgba(59, 130, 246, 0.24) !important;
+  background: rgba(45, 147, 174, 0.15) !important; /* Teal với opacity */
+  border-color: rgba(45, 147, 174, 0.32) !important;
   color: #FFFFFF !important;
-  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.14) !important;
+  box-shadow: 0 10px 28px rgba(0, 28, 68, 0.14) !important;
 }
 
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-item-active {
-  background: rgba(248, 250, 252, 0.96) !important;
-  border-color: rgba(59, 130, 246, 0.54) !important;
-  color: #1E40AF !important;
-  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.2) !important;
+  background: rgba(45, 147, 174, 0.96) !important; /* Teal background cho active item */
+  border-color: rgba(188, 254, 254, 0.64) !important; /* Cyan border */
+  color: #FFFFFF !important; /* White text cho active */
+  box-shadow: 0 14px 32px rgba(0, 28, 68, 0.24) !important;
 }
 
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-item svg,
@@ -2261,71 +2262,71 @@ html[data-tenant-module="industrial_cleaning"] .beauty-erp-icon-button svg {
 
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-item-active svg,
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-item-active span {
-  color: #1E40AF !important;
+  color: #FFFFFF !important; /* White cho icon và text active */
 }
 
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-profile-card {
-  background: rgba(248, 250, 252, 0.1) !important;
-  border-color: rgba(59, 130, 246, 0.28) !important;
-  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.18) !important;
+  background: rgba(45, 147, 174, 0.12) !important; /* Teal background nhạt */
+  border-color: rgba(45, 147, 174, 0.32) !important;
+  box-shadow: 0 18px 36px rgba(0, 28, 68, 0.18) !important;
 }
 
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-profile-name {
-  color: #F8FAFC !important;
+  color: #FFFFFF !important;
 }
 
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-profile-divider {
-  background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.34), transparent) !important;
+  background: linear-gradient(90deg, transparent, rgba(45, 147, 174, 0.44), transparent) !important;
 }
 
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-avatar,
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-icon-button {
-  background: rgba(248, 250, 252, 0.9) !important;
-  border-color: rgba(59, 130, 246, 0.36) !important;
-  color: #1E40AF !important;
+  background: rgba(45, 147, 174, 0.18) !important; /* Teal background nhạt */
+  border-color: rgba(45, 147, 174, 0.48) !important;
+  color: #0C3776 !important; /* Blue cho icon */
 }
 
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-icon-button:hover {
-  background: #FFFFFF !important;
-  color: #0F172A !important;
-  border-color: rgba(59, 130, 246, 0.58) !important;
+  background: rgba(45, 147, 174, 0.32) !important; /* Teal đậm hơn khi hover */
+  color: #001C44 !important; /* Navy đậm */
+  border-color: rgba(45, 147, 174, 0.68) !important;
 }
 
 html[data-tenant-module="industrial_cleaning"] .glass-pink {
   background: rgba(255, 255, 255, 0.72) !important;
-  border-color: rgba(59, 130, 246, 0.26) !important;
-  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.08) !important;
+  border-color: rgba(45, 147, 174, 0.26) !important;
+  box-shadow: 0 18px 42px rgba(0, 28, 68, 0.08) !important;
 }
 
 html[data-tenant-module="industrial_cleaning"] .luxury-card-white {
-  border-color: rgba(59, 130, 246, 0.22) !important;
-  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.07) !important;
+  border-color: rgba(45, 147, 174, 0.22) !important;
+  box-shadow: 0 16px 36px rgba(0, 28, 68, 0.07) !important;
 }
 
 html[data-tenant-module="industrial_cleaning"] .luxury-card-pink {
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0) 42%),
-    linear-gradient(142deg, #1E40AF 0%, #3B82F6 48%, #0F172A 100%) !important;
-  border-color: rgba(59, 130, 246, 0.36) !important;
-  box-shadow: 0 22px 52px rgba(15, 23, 42, 0.2) !important;
+    linear-gradient(142deg, #0C3776 0%, #2D93AE 48%, #001C44 100%) !important; /* Navy → Teal → Navy gradient */
+  border-color: rgba(45, 147, 174, 0.36) !important;
+  box-shadow: 0 22px 52px rgba(0, 28, 68, 0.2) !important;
 }
 
 html[data-tenant-module="industrial_cleaning"] .luxury-card-pink:hover {
-  box-shadow: 0 28px 64px rgba(30, 64, 175, 0.24) !important;
+  box-shadow: 0 28px 64px rgba(12, 55, 118, 0.28) !important;
 }
 
 html[data-tenant-module="industrial_cleaning"] [class*="shadow-pink-"] {
-  box-shadow: 0 18px 38px rgba(15, 23, 42, 0.09) !important;
+  box-shadow: 0 18px 38px rgba(0, 28, 68, 0.09) !important;
 }
 
 /* Cleaning customer add CTA button */
 html[data-tenant-module="industrial_cleaning"] .beauty-customer-add-cta {
-  background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%) !important;
-  border: 1px solid rgba(59, 130, 246, 0.38) !important;
+  background: linear-gradient(135deg, #0C3776 0%, #2D93AE 100%) !important; /* Blue → Teal gradient */
+  border: 1px solid rgba(45, 147, 174, 0.48) !important;
   color: #FFFFFF !important;
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.16) inset,
-    0 16px 34px rgba(30, 64, 175, 0.18) !important;
+    0 16px 34px rgba(12, 55, 118, 0.24) !important;
 }
 
 html[data-tenant-module="industrial_cleaning"] .beauty-customer-add-cta svg,
@@ -2335,12 +2336,12 @@ html[data-tenant-module="industrial_cleaning"] .beauty-customer-add-cta span {
 
 /* Cleaning active care badge (for work orders in progress) */
 html[data-tenant-module="industrial_cleaning"] .beauty-active-care-badge {
-  background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%) !important;
-  border: 1px solid rgba(59, 130, 246, 0.36) !important;
+  background: linear-gradient(135deg, #0C3776 0%, #2D93AE 100%) !important; /* Blue → Teal gradient */
+  border: 1px solid rgba(45, 147, 174, 0.48) !important;
   color: #FFFFFF !important;
   opacity: 1 !important;
   animation: beauty-active-care-badge-glow 1.8s ease-in-out infinite;
-  box-shadow: 0 10px 22px rgba(30, 64, 175, 0.18) !important;
+  box-shadow: 0 10px 22px rgba(12, 55, 118, 0.22) !important; /* Blue shadow */
 }
 
 html[data-tenant-module="industrial_cleaning"] .beauty-active-care-badge svg,
@@ -2348,37 +2349,40 @@ html[data-tenant-module="industrial_cleaning"] .beauty-active-care-badge span {
   color: #FFFFFF !important;
 }
 
-/* Cleaning gradient overrides */
+/* Cleaning gradient overrides - thay thế màu hồng/rose bằng blue/teal */
 html[data-tenant-module="industrial_cleaning"] [class*="from-rose-"],
+html[data-tenant-module="industrial_cleaning"] [class*="from-pink-"],
 html[data-tenant-module="industrial_cleaning"] [class*="via-rose-"],
-html[data-tenant-module="industrial_cleaning"] [class*="to-pink-"] {
-  --tw-gradient-from: #1E40AF var(--tw-gradient-from-position) !important;
-  --tw-gradient-via: #3B82F6 var(--tw-gradient-via-position) !important;
-  --tw-gradient-to: #60A5FA var(--tw-gradient-to-position) !important;
+html[data-tenant-module="industrial_cleaning"] [class*="via-pink-"],
+html[data-tenant-module="industrial_cleaning"] [class*="to-pink-"],
+html[data-tenant-module="industrial_cleaning"] [class*="to-rose-"] {
+  --tw-gradient-from: #0C3776 var(--tw-gradient-from-position) !important; /* Blue */
+  --tw-gradient-via: #2D93AE var(--tw-gradient-via-position) !important; /* Teal */
+  --tw-gradient-to: #BCFEFE var(--tw-gradient-to-position) !important; /* Cyan */
 }
 
-/* Cleaning pink background overrides */
+/* Cleaning pink background overrides - thay màu hồng bằng teal nhạt */
 html[data-tenant-module="industrial_cleaning"] [class*="bg-pink-50"],
 html[data-tenant-module="industrial_cleaning"] [class*="bg-pink-100"],
 html[data-tenant-module="industrial_cleaning"] [class*="bg-rose-50"],
 html[data-tenant-module="industrial_cleaning"] [class*="bg-rose-100"] {
-  background-color: rgba(59, 130, 246, 0.12) !important;
+  background-color: rgba(45, 147, 174, 0.10) !important; /* Teal 10% */
 }
 
-/* Cleaning text color overrides */
+/* Cleaning text color overrides - thay màu hồng bằng blue/teal */
 html[data-tenant-module="industrial_cleaning"] [class*="text-pink-"],
 html[data-tenant-module="industrial_cleaning"] [class*="text-rose-400"],
 html[data-tenant-module="industrial_cleaning"] [class*="text-rose-500"],
 html[data-tenant-module="industrial_cleaning"] [class*="text-rose-600"],
 html[data-tenant-module="industrial_cleaning"] [class*="text-rose-700"] {
-  color: #1E40AF !important;
+  color: #0C3776 !important; /* Blue thay cho màu hồng */
 }
 
-/* Cleaning border color overrides */
+/* Cleaning border color overrides - thay màu hồng bằng teal */
 html[data-tenant-module="industrial_cleaning"] [class*="border-pink-"],
 html[data-tenant-module="industrial_cleaning"] [class*="border-rose-100"],
 html[data-tenant-module="industrial_cleaning"] [class*="border-rose-200"] {
-  border-color: rgba(59, 130, 246, 0.24) !important;
+  border-color: rgba(45, 147, 174, 0.28) !important; /* Teal border */
 }
 
 
