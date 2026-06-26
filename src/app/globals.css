@@ -2194,6 +2194,14 @@ html[data-tenant-module="industrial_cleaning"] .beauty-erp-sidebar {
   border-color: rgba(45, 147, 174, 0.34) !important;
   box-shadow: 16px 0 44px rgba(0, 28, 68, 0.18) !important;
   color: #FFFFFF;
+  /* Override hardcoded bg-[#FFF0F3] from sidebar.tsx */
+  background-color: transparent !important;
+}
+
+/* Override pink glow decorations inside sidebar */
+html[data-tenant-module="industrial_cleaning"] .beauty-erp-sidebar .bg-pink-300\/30,
+html[data-tenant-module="industrial_cleaning"] .beauty-erp-sidebar .bg-rose-300\/25 {
+  display: none !important;
 }
 
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-sidebar::before {
