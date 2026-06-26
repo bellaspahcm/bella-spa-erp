@@ -1,10 +1,50 @@
 # Spec: Industrial Cleaning Module
 
 > Created: 2026-06-22  
-> **Status: ✅ Phase 0 COMPLETE (2026-06-22)**  
-> **Implementation Time: 4 hours**  
+> **Status: ✅ Phase 1 COMPLETE (2026-06-22)**  
+> **Implementation Time: Phase 0: 4 hours | Phase 1: 2 hours**  
 > Author: AI Agent  
 > Approved by: Pending review
+
+## 🎉 Phase 1 Implementation Complete
+
+**Completion Date:** June 22, 2026
+
+### What Was Delivered
+
+✅ **Complete UI Vocabulary Migration** (Commit: f293ae0a)
+- 7 files migrated, 25+ vị trí text hard-coded thay sang module-aware vocabulary
+- Industrial Cleaning module giờ hiển thị "Nhân viên vệ sinh" và "Ca làm việc"
+- Bella ERP và Beauty Spa modules không bị ảnh hưởng (vẫn dùng "KTV" và "Buổi")
+
+**Migrated Components:**
+1. **StaffManagementTab.tsx** (5 vị trí) - vai trò badge, Add/Edit modal dropdown
+2. **BookingDayDetailModal.tsx** (2 vị trí) - label và placeholder "Kỹ thuật viên"
+3. **SessionMatrixTable.tsx** (3 vị trí) - description và table header
+4. **OnboardingTour.tsx** (6+ vị trí) - serviceDescription, salaryDescription, title, tip
+5. **SubscriptionTab.tsx** (5 vị trí) - PLANS array, KTV gauge label
+6. **HqSubscriptionPackageReference.tsx** (4 vị trí) - Kỹ thuật viên label trong subscription tiers
+7. **LeaveApprovalModal.tsx** (1 vị trí) - "Duyệt nghỉ phép KTV" text
+
+**Implementation Details:**
+- Client components: dùng `useModuleVocabulary()` hook
+- Server components: dùng `getModuleVocabulary(tenantModuleKey)` function
+- Vocabulary mapping:
+  - `baby_care`: "Kỹ thuật viên" / "KTV" / "Buổi"
+  - `industrial_cleaning`: "Nhân viên vệ sinh" / "NVS" / "Ca làm việc"
+
+**Testing & Validation:**
+- Build: compiled successfully in 12.4s, TypeScript in 38.5s
+- Tests: **ALL 181 TESTS PASSED** (17 test suites)
+- Zero regressions in payment, accounting, finance, salary, auth, tenant tests
+- Grep search confirmed no remaining hard-coded text (only comments/variable names)
+
+**Module Isolation Impact:**
+- Industrial Cleaning tenant switching → UI vocabulary thay đổi động
+- Zero performance impact (vocabulary resolves once per component mount)
+- Zero breaking changes to existing code
+
+---
 
 ## 🎉 Phase 0 Implementation Complete
 
