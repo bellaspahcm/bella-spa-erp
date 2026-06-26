@@ -224,7 +224,7 @@ describe('platform rule engines', () => {
       menuStyle: 'comfortable',
     });
     expect(resolveTenantBrandIdentity({
-      enabledModules: { babycare: false, beauty_spa: true, student_training: true },
+      enabledModules: { babycare: false, beauty_spa: true, student_training: true, industrial_cleaning: false },
       brandTheme: null,
       surface: 'app',
     })).toMatchObject({
