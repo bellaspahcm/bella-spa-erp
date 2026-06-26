@@ -139,6 +139,9 @@ const NEUTRAL_CUSTOMER_PRESENTATION: CustomerPresentation = {
   genderOptions: [
     { id: 'boy', label: 'Nam', tone: 'blue' },
     { id: 'girl', label: 'Nữ', tone: 'rose' },
+    { id: 'unknown', label: 'Khác / chưa rõ', tone: 'slate' },
+  ],
+};
 
 // Specialty options for booking filters
 const BABYCARE_SPECIALTIES: SpecialtyOption[] = [
