@@ -16,7 +16,7 @@ export type ServicePackageUpdate = Database['public']['Tables']['packages']['Upd
 export type ServiceStatus = 'active' | 'inactive';
 export type ServiceStatusFilter = 'all' | ServiceStatus;
 export type ServiceModalMode = 'add' | 'edit';
-export type ServiceModuleKey = 'babycare' | 'beauty_spa';
+export type ServiceModuleKey = 'babycare' | 'beauty_spa' | 'industrial_cleaning';
 export type ServiceModuleFilter = 'all' | ServiceModuleKey;
 export type ServiceKind = 'single_service' | 'treatment_package' | 'retail_product' | 'consultation';
 

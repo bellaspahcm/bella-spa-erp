@@ -25,6 +25,10 @@
       },
       "package": "com.bellaspa.erp"
     },
+    "updates": {
+      "enabled": false
+    },
+
     "web": {
       "favicon": "./assets/favicon.png"
     },
