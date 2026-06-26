@@ -169,31 +169,6 @@ const INDUSTRIAL_CLEANING_SPECIALTIES: SpecialtyOption[] = [
   { id: 'facial', label: 'Cleanroom / đặc biệt' },
 ];
 
-const BABYCARE_SPECIALTIES: SpecialtyOption[] = [
-  { id: 'all', label: 'Tất cả KTV' },
-  { id: 'combo', label: 'Combo mẹ & bé' },
-  { id: 'baby', label: 'Tắm bé' },
-  { id: 'pregnancy', label: 'Massage bầu' },
-  { id: 'lactation', label: 'Thông tia sữa/Kích sữa' },
-];
-
-const BEAUTY_SPA_SPECIALTIES: SpecialtyOption[] = [
-  { id: 'all', label: 'Tất cả KTV' },
-  { id: 'facial', label: 'Facial / chăm sóc da' },
-  { id: 'body', label: 'Body / spa trị liệu' },
-  { id: 'laser', label: 'Công nghệ cao' },
-  { id: 'relaxation', label: 'Thư giãn / dưỡng sinh' },
-];
-
-const INDUSTRIAL_CLEANING_SPECIALTIES: SpecialtyOption[] = [
-  { id: 'all', label: 'Tất cả nhân viên' },
-  { id: 'office', label: 'Văn phòng / tòa nhà' },
-  { id: 'manufacturing', label: 'Nhà xưởng / sản xuất' },
-  { id: 'hospital', label: 'Y tế / bệnh viện' },
-  { id: 'food-service', label: 'Nhà hàng / bếp ăn' },
-  { id: 'special', label: 'Cleanroom / đặc biệt' },
-];
-
 export function getTenantModulePresentation(moduleKey: TenantModuleKey): CustomerPresentation {
   return moduleKey === 'beauty_spa'
     ? BEAUTY_SPA_CUSTOMER_PRESENTATION
