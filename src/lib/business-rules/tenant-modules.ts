@@ -79,8 +79,8 @@ export const DEFAULT_BEAUTY_TENANT_BRAND_THEME: TenantBrandTheme = {
 export const DEFAULT_CLEANING_TENANT_BRAND_THEME: TenantBrandTheme = {
   brandName: '',
   logoUrl: '',
-  primaryColor: '#1E293B',
-  accentColor: '#64748B',
+  primaryColor: '#1E40AF', // Blue 700 - professional blue
+  accentColor: '#3B82F6', // Blue 500 - bright blue accent
   portalDisplayName: '',
   invoiceDisplayName: '',
   stylePreset: 'graphite_luxe',
