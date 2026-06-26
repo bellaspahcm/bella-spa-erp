@@ -2239,6 +2239,9 @@ html[data-tenant-module="industrial_cleaning"] .beauty-erp-logo-mark-large {
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-brand-script {
   color: #0C3776 !important; /* Blue đậm thay vì white */
   text-shadow: none;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important; /* Font mạnh mẽ */
+  font-weight: 700 !important; /* Bold */
+  letter-spacing: 0.02em !important;
 }
 
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-mobile-header .beauty-erp-brand-script {
@@ -2257,7 +2260,7 @@ html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-scroll::-webkit-s
 }
 
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-item {
-  color: rgba(12, 55, 118, 0.78) !important; /* Blue đậm cho text không active */
+  color: #0C3776 !important; /* Blue đậm hơn cho text không active */
   border-color: transparent !important;
 }
 
@@ -2310,6 +2313,28 @@ html[data-tenant-module="industrial_cleaning"] .beauty-erp-icon-button:hover {
   background: rgba(45, 147, 174, 0.32) !important; /* Teal đậm hơn khi hover */
   color: #001C44 !important; /* Navy đậm */
   border-color: rgba(45, 147, 174, 0.68) !important;
+}
+
+/* Theme Toggle Box - đổi màu hồng sang xanh */
+html[data-tenant-module="industrial_cleaning"] .beauty-theme-toggle {
+  background: rgba(184, 221, 232, 0.32) !important; /* Xanh nhạt thay vì hồng */
+  border-color: rgba(45, 147, 174, 0.28) !important; /* Teal border */
+}
+
+html[data-tenant-module="industrial_cleaning"] .beauty-theme-toggle-skeleton {
+  background: rgba(184, 221, 232, 0.24) !important;
+}
+
+html[data-tenant-module="industrial_cleaning"] .beauty-theme-toggle-active-light {
+  background: #FFFFFF !important;
+  border-color: rgba(45, 147, 174, 0.32) !important;
+  box-shadow: 0 2px 8px rgba(45, 147, 174, 0.12) !important;
+}
+
+html[data-tenant-module="industrial_cleaning"] .beauty-theme-toggle-active-dark {
+  background: linear-gradient(135deg, #0C3776 0%, #001C44 100%) !important;
+  border-color: rgba(45, 147, 174, 0.48) !important;
+  box-shadow: 0 4px 12px rgba(12, 55, 118, 0.24) !important;
 }
 
 html[data-tenant-module="industrial_cleaning"] .glass-pink {

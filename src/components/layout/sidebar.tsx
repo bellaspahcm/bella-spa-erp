@@ -260,7 +260,7 @@ const menuItems: SidebarMenuItem[] = [
   { icon: Users,           label: 'Khách hàng',         href: '/dashboard/customers' },
   { icon: Calendar,        label: 'Lịch hẹn',           href: '/dashboard/bookings' },
   { icon: ReceiptText,     label: 'POS / In bill',      href: '/dashboard/bookings?surface=pos' },
-  { icon: Flower2,         label: 'Thẻ liệu trình',     href: '/dashboard/sessions' },
+  { icon: Flower2,         label: 'Phiếu công việc',    href: '/dashboard/sessions' }, // Đổi từ "Thẻ liệu trình"
   { icon: MessageSquare,   label: 'Tin nhắn',           href: '/dashboard/chat' },
   { icon: Megaphone,       label: 'CRM & Zalo',         href: '/dashboard/crm' },
   { icon: Megaphone,       label: 'Meta Ads',           href: '/dashboard/marketing' },
