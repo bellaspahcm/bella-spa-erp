@@ -382,7 +382,402 @@ Khi tu nay ve sau phat hien loi trong Beauty Spa hoac nganh moi, them vao bang n
 
 - Module/tenant: Beauty Spa va subscription core.
 - Man hinh/luong: HQ subscription quota, demo tenant, luong goi dich vu -> booking resource -> session -> revenue -> accounting outbox.
-- Dau hieu: Goi Beauty co nhieu chi nhanh se khong canh bao/chan dung neu branch quota hard-code current = 1; demo seed co danh muc giuong/may/ghe nhung session chua gan `booking_resource_id`.
+- Dau hieu: Goi Beauty co nhieu chi nhanh se khong canh bao/chan dung neu branch quota hard-code current = 1; demo seed co danh muc giuong/may/ghe nhung session chua gan resource; revenue demo co late_fee khong nam trong enum check constraint; expense demo co nhieu object key khong giong nhau.
+- Nguyen nhan goc: Demo seed script phat trien truoc khi co branch quota read-model va conflict guard resource day du; demo seed bi add them type/metadata khong thong nhat giua cac record trong batch insert.
+- Cach sua: Demo branch quota snapshot phai dem theo root + child tenants; resource conflict phai validate full scope; demo revenue enum phai map enum DB dung; demo expense batch insert phai co cung set of keys.
+- Test/guard da them: `npm.cmd test -- src/__tests__/beauty-spa-subscription-quota.test.ts --runInBand`, `npm.cmd test -- src/__tests__/beauty-resource-booking-conflict.test.ts --runInBand`; `npm.cmd run e2e:beauty-uat`.
+- Commit: pending.
+- Rui ro con lai: Seed script van phai cap nhat thu cong theo DB schema; chua co code-gen tu schema den seed mock; integration test van skip neu khong co env Supabase local.
+
+---
+
+## 2026-06-22 - Industrial Cleaning Module: Loi Demo Data Seeding Va Cach Xu Ly
+
+### Boi Canh
+Trong qua trinh trien khai Industrial Cleaning module (Phase 0-2), gap rat nhieu loi lien quan toi demo data seeding, migrations, va PostgREST API behavior. Cac loi nay khong co trong Beauty Spa vi Beauty Spa seed script don gian hon va khong co nhieu edge cases phuc tap.
+
+### Danh Sach Loi Va Cach Xu Ly
+
+#### Loi 1: Missing `metadata` Columns
+**Dau hieu:**
+```
+Error posting to users: {"code":"PGRST204","message":"Could not find the 'metadata' column of 'users' in the schema cache"}
+Error posting to customers: {"code":"PGRST204","message":"Could not find the 'metadata' column of 'customers' in the schema cache"}
+Error posting to bookings: {"code":"PGRST204","message":"Could not find the 'metadata' column of 'bookings' in the schema cache"}
+```
+
+**Nguyen nhan:** Enhanced demo script can luu metadata chi tiet cho customers (facility_type, size, special_requirements), users (certifications, skills, shift_preference), va bookings (package details, frequency), nhung cac bang nay chua co cot `metadata JSONB`.
+
+**Cach sua:**
+```sql
+ALTER TABLE public.tenants ADD COLUMN IF NOT EXISTS metadata JSONB DEFAULT '{}'::jsonb;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS metadata JSONB DEFAULT '{}'::jsonb;
+ALTER TABLE public.customers ADD COLUMN IF NOT EXISTS metadata JSONB DEFAULT '{}'::jsonb;
+ALTER TABLE public.bookings ADD COLUMN IF NOT EXISTS metadata JSONB DEFAULT '{}'::jsonb;
+ALTER TABLE public.session_logs ADD COLUMN IF NOT EXISTS metadata JSONB DEFAULT '{}'::jsonb;
+```
+
+**Guard:** Migration phai doc schema hien tai va chi add column neu chua co (`IF NOT EXISTS`). Test seed script phai chay sau khi migration complete.
+
+---
+
+#### Loi 2: PostgREST Response Format Mismatch
+**Dau hieu:**
+```
+✅ Tenant created: undefined (ID: undefined)
+❌ Fatal error: TypeError: insertedStaff?.filter is not a function
+```
+
+**Nguyen nhan:** PostgREST voi header `Prefer: return=representation` tra ve **array** `[{...}]` cho moi insert (single hoac batch), nhung code expect single insert tra ve object `{...}`.
+
+**Cach sua ban dau (SAI):**
+```javascript
+// SAI - chi xu ly single insert
+return Array.isArray(result) ? result[0] : result;
+```
+
+**Cach sua DUNG:**
+```javascript
+// DUNG - detect single vs batch insert
+if (Array.isArray(data)) {
+  return result; // batch insert -> keep array
+} else {
+  return Array.isArray(result) ? result[0] : result; // single insert -> extract object
+}
+```
+
+**Guard:** Moi helper function `post()` hoac `insert()` phai xu ly ro ca single insert va batch insert. Test phai cover ca 2 truong hop.
+
+---
+
+#### Loi 3: Batch Insert "All Object Keys Must Match"
+**Dau hieu:**
+```
+Error posting to users: {"code":"PGRST102","message":"All object keys must match"}
+```
+
+**Nguyen nhan:** Batch insert array co mot so objects co `hire_date` field, mot so khong co. PostgREST yeu cau **tat ca objects trong batch phai co cung set of keys**.
+
+**Vi du loi:**
+```javascript
+const staff = [
+  { email: 'admin@...', role: 'admin', base_salary: 15000000, metadata: {...} }, // THIEU hire_date
+  { email: 'worker1@...', role: 'ktv', base_salary: 8000000, hire_date: '2024-06-01', metadata: {...} } // CO hire_date
+];
+```
+
+**Cach sua:**
+```javascript
+const staff = [
+  { email: 'admin@...', role: 'admin', base_salary: 15000000, hire_date: null, metadata: {...} }, // THEM hire_date: null
+  { email: 'worker1@...', role: 'ktv', base_salary: 8000000, hire_date: '2024-06-01', metadata: {...} }
+];
+```
+
+**Guard:** Truoc khi batch insert, phai verify tat ca objects co cung keys. Neu co optional field, phai set `null` cho objects khong co gia tri.
+
+---
+
+#### Loi 4: Duplicate Tenant/Users/Customers From Previous Seeds
+**Dau hieu:**
+```
+Error posting to users: {"code":"23505","message":"duplicate key value violates unique constraint \"users_email_key\""}
+Error posting to customers: {"code":"23505","message":"duplicate key value violates unique constraint \"customers_phone_key\""}
+```
+
+**Nguyen nhan:** Seed script chay lan truoc bi fail giua chung, de lai **mot phan data** (tenant, users, customers) trong DB. Lan seed tiep theo gap duplicate.
+
+**Cach sua:**
+1. **Cleanup script phai xoa TOAN BO du lieu lien quan** theo thu tu:
+   ```javascript
+   // Dung thu tu nay de tranh FK violations
+   DELETE FROM session_logs WHERE tenant_id = ...;
+   DELETE FROM revenue WHERE tenant_id = ...;
+   DELETE FROM expenses WHERE tenant_id = ...;
+   DELETE FROM bookings WHERE tenant_id = ...;
+   DELETE FROM customers WHERE tenant_id = ...;
+   DELETE FROM users WHERE tenant_id = ...;
+   DELETE FROM tenants WHERE id = ...;
+   ```
+
+2. **Cleanup phai xoa CA nhieu tenants neu co** (vi du: 6 CleanPro tenants tu cac lan seed failed truoc do):
+   ```sql
+   DO $$
+   DECLARE tenant_record RECORD;
+   BEGIN
+     FOR tenant_record IN 
+       SELECT id FROM tenants WHERE name LIKE '%CleanPro%[DEMO]%'
+     LOOP
+       -- Delete all related data for each tenant
+       DELETE FROM session_logs WHERE tenant_id = tenant_record.id;
+       DELETE FROM revenue WHERE tenant_id = tenant_record.id;
+       -- ... (repeat for all tables)
+       DELETE FROM tenants WHERE id = tenant_record.id;
+     END LOOP;
+   END $$;
+   ```
+
+**Guard:** 
+- Cleanup script bat buoc co `--confirm` flag, mac dinh la dry-run.
+- Cleanup phai co verification step cuoi cung de confirm Bella/Beauty Spa **KHONG bi anh huong**.
+- Seed script phai chay cleanup truoc khi seed (hoac seed script phai idempotent).
+
+---
+
+#### Loi 5: Auth Users vs Public Users Table Mismatch
+**Dau hieu:**
+```
+✅ Created 18 staff members (14 workers)
+(But in Supabase Auth Dashboard: 0 users created)
+```
+
+**Nguyen nhan:** Seed script chi insert vao `public.users` table (database table), **KHONG tao auth users** trong Supabase Auth service (auth.users). Day la 2 he thong rieng biet.
+
+**Cach sua:**
+1. **Cho production/manual demo:** Tao auth user thu cong trong Supabase Auth Dashboard, sau do link voi public.users:
+   ```sql
+   UPDATE public.users
+   SET id = (SELECT id FROM auth.users WHERE email = 'admin@cleanpro-v2.com')
+   WHERE email = 'admin@cleanpro-v2.com' AND id IS NULL;
+   ```
+
+2. **Cho automated seeding (lan sau):** Dung Supabase Admin API de tao auth users trong seed script:
+   ```javascript
+   const { data: authUser, error } = await supabase.auth.admin.createUser({
+     email: 'admin@cleanpro-v2.com',
+     password: 'Admin@123456',
+     email_confirm: true,
+     user_metadata: { full_name: 'Nguyen Van An', role: 'admin' }
+   });
+   
+   // Then insert into public.users with authUser.id
+   await supabase.from('users').insert({
+     id: authUser.id, // Link to auth user
+     email: 'admin@cleanpro-v2.com',
+     full_name: 'Nguyen Van An',
+     role: 'admin',
+     tenant_id: tenantId,
+     base_salary: 15000000,
+     metadata: { position: 'General Manager' }
+   });
+   ```
+
+**Guard:** Seed script phai ro rang noi "Auth users can duoc tao thu cong" hoac tu dong tao auth users. Khong duoc im lang insert vao public.users ma khong noi gi ve auth users.
+
+---
+
+#### Loi 6: Database Constraint Violations (enum, FK, check)
+**Dau hieu:**
+```
+Error posting to revenue: {"code":"23514","message":"new row for relation \"revenue\" violates check constraint \"revenue_revenue_type_check\""}
+```
+
+**Nguyen nhan:** Demo data co `revenue_type = 'late_fee'` nhung enum chi co `['deposit', 'payment', 'refund', 'adjustment']`. Script khong doc schema truoc khi seed.
+
+**Cach sua:**
+1. Seed script phai **doc schema/enum** truoc khi insert:
+   ```javascript
+   // Read allowed revenue types from DB
+   const { data: enumValues } = await supabase.rpc('get_enum_values', { 
+     enum_name: 'revenue_type' 
+   });
+   
+   // Only create revenue with valid types
+   const validTypes = enumValues.map(v => v.value);
+   const revenueData = demoRevenue.filter(r => validTypes.includes(r.revenue_type));
+   ```
+
+2. Hoac update schema truoc khi seed:
+   ```sql
+   ALTER TYPE revenue_type ADD VALUE IF NOT EXISTS 'late_fee';
+   ```
+
+**Guard:** Demo data phai sync voi DB schema. Neu schema thay doi, seed script phai cap nhat hoac fail ro rang (khong silent swallow error).
+
+---
+
+### Quy Tac Chung Cho Demo Data Seeding (Lan Sau Them Nganh Moi)
+
+#### 1. Pre-Seeding Checklist
+Truoc khi chay seed script, bat buoc kiem tra:
+- [ ] **Schema migrations complete:** Tat ca cot can thiet (`metadata`, `module_key`, etc.) da duoc add
+- [ ] **Constraints updated:** Enum types, check constraints da duoc update cho module moi
+- [ ] **Previous demo data cleaned:** Chay cleanup script de xoa tenant demo cu (neu co)
+- [ ] **Bella/Beauty Spa intact:** Verify Bella va Beauty Spa van hoat dong binh thuong
+
+#### 2. Seed Script Structure
+```javascript
+// 1. Load environment
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY; // Dung SERVICE_ROLE_KEY, khong dung ANON_KEY
+
+// 2. Helper functions
+async function post(table, data) {
+  // Xu ly ca single va batch insert
+  if (Array.isArray(data)) {
+    return result; // batch -> keep array
+  } else {
+    return Array.isArray(result) ? result[0] : result; // single -> extract object
+  }
+}
+
+// 3. Create tenant (with metadata)
+const tenant = await post('tenants', {
+  name: 'Demo Tenant [DEMO]',
+  status: 'active',
+  enabled_modules: { new_module: true },
+  metadata: { marker: 'DEMO_MARKER_V2', version: '2.0' }
+});
+
+// 4. Create users (all keys must match in batch)
+const users = [
+  { email: 'admin@demo.com', role: 'admin', hire_date: null, metadata: {...} },
+  { email: 'worker1@demo.com', role: 'ktv', hire_date: '2024-01-01', metadata: {...} }
+];
+const insertedUsers = await post('users', users);
+
+// 5. Create customers, bookings, sessions, revenue, expenses (with tenant_id filter)
+
+// 6. Verify data created
+console.log(`✅ Created ${insertedUsers.length} users, ${customers.length} customers, ...`);
+```
+
+#### 3. Cleanup Script Structure
+```javascript
+// 1. Dry-run mode by default
+const DRY_RUN = !process.argv.includes('--confirm');
+
+// 2. Find all demo tenants
+const tenants = await fetchAll('tenants', 'name=like.%[DEMO]%');
+
+// 3. Delete in correct order (avoid FK violations)
+for (const tenant of tenants) {
+  if (!DRY_RUN) {
+    await deleteRecords('session_logs', tenant.id);
+    await deleteRecords('revenue', tenant.id);
+    await deleteRecords('expenses', tenant.id);
+    await deleteRecords('bookings', tenant.id);
+    await deleteRecords('customers', tenant.id);
+    await deleteRecords('users', tenant.id);
+    await deleteRecords('tenants', tenant.id);
+  }
+}
+
+// 4. Verify Bella/Beauty Spa intact
+const verification = await supabase.from('tenants')
+  .select('name, enabled_modules')
+  .in('name', ['Bella Spa Headquarter', 'Beauty Spa Franchise Demo']);
+console.log('Verification:', verification);
+```
+
+#### 4. Migration Order
+Khi them module moi can metadata:
+1. **Add metadata columns TRUOC:**
+   ```sql
+   ALTER TABLE tenants ADD COLUMN IF NOT EXISTS metadata JSONB;
+   ALTER TABLE users ADD COLUMN IF NOT EXISTS metadata JSONB;
+   ALTER TABLE customers ADD COLUMN IF NOT EXISTS metadata JSONB;
+   ALTER TABLE bookings ADD COLUMN IF NOT EXISTS metadata JSONB;
+   ```
+
+2. **Update constraints/enums (neu can):**
+   ```sql
+   ALTER TABLE packages DROP CONSTRAINT IF EXISTS packages_module_key_check;
+   ALTER TABLE packages ADD CONSTRAINT packages_module_key_check 
+     CHECK (module_key IN ('baby_care', 'beauty_spa', 'industrial_cleaning'));
+   ```
+
+3. **Chay seed script SAU:**
+   ```bash
+   node scripts/run-seed-demo-dotenv.js
+   ```
+
+#### 5. Auth Users Handling
+**Option A: Manual (for quick testing):**
+1. Seed script chi tao `public.users` records
+2. Admin thu cong tao auth user trong Supabase Auth Dashboard
+3. Chay SQL link script:
+   ```sql
+   UPDATE public.users SET id = (SELECT id FROM auth.users WHERE email = '...')
+   WHERE email = '...' AND id IS NULL;
+   ```
+
+**Option B: Automated (for production-ready seeding):**
+1. Seed script dung Supabase Admin API:
+   ```javascript
+   const { data: authUser } = await supabase.auth.admin.createUser({
+     email: 'admin@demo.com',
+     password: 'Admin@123456',
+     email_confirm: true
+   });
+   await supabase.from('users').insert({ id: authUser.id, ... });
+   ```
+
+#### 6. Error Handling
+```javascript
+async function post(table, data) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(data)
+  });
+  
+  if (!res.ok) {
+    const error = await res.text();
+    console.error(`❌ Error posting to ${table}:`, error);
+    
+    // KHONG swallow error - phai throw hoac return null ro rang
+    throw new Error(`Failed to insert into ${table}: ${error}`);
+  }
+  
+  return await res.json();
+}
+```
+
+#### 7. Verification Steps
+Sau khi seed xong, bat buoc verify:
+```javascript
+// 1. Count records created
+console.log(`✅ Tenant: ${tenant.name}`);
+console.log(`✅ Users: ${users.length}`);
+console.log(`✅ Customers: ${customers.length}`);
+console.log(`✅ Bookings: ${bookings.length}`);
+console.log(`✅ Sessions: ${sessions.length}`);
+console.log(`✅ Revenue: ${revenue.length}`);
+console.log(`✅ Expenses: ${expenses.length}`);
+
+// 2. Verify Bella/Beauty Spa intact
+const bellaTenants = await supabase.from('tenants')
+  .select('name, enabled_modules')
+  .in('name', ['Bella Spa Headquarter', 'Beauty Spa Franchise Demo']);
+
+console.log('✅ Bella/Beauty Spa tenants:', bellaTenants.data.length);
+```
+
+---
+
+### Commit Lien Quan
+- **Metadata migrations:** `supabase/migrations/MANUAL_add_metadata_columns.sql`
+- **Cleanup all CleanPro tenants:** `supabase/migrations/MANUAL_cleanup_all_cleanpro_demo_data.sql`
+- **Link auth users:** `supabase/migrations/MANUAL_link_cleanpro_admin_auth.sql`
+- **Seed script fixes:** `scripts/seed-cleaning-demo-v2.mjs` (post helper, hire_date consistency)
+- **Cleanup script v2:** `scripts/cleanup-cleaning-demo-v2.mjs`
+- **Dotenv wrappers:** `scripts/run-seed-cleaning-v2-dotenv.js`, `scripts/run-cleanup-cleaning-v2-dotenv.js`
+
+### Test/Guard Da Them
+- ✅ Cleanup script bat buoc co `--confirm` flag
+- ✅ Cleanup phai xoa theo thu tu dung (tranh FK violations)
+- ✅ Cleanup phai verify Bella/Beauty Spa intact
+- ✅ Seed script phai handle PostgREST array response
+- ✅ Batch insert objects phai co cung keys
+- ✅ Migration phai dung `IF NOT EXISTS`
+- ✅ Seed script phai ro rang ve auth users (manual hoac automated)
+
+### Rui Ro Con Lai
+- Seed script van can manual setup auth users (chua fully automated)
+- Chua co code-gen tu DB schema den seed mock data
+- Neu DB schema thay doi (enum, constraints), seed script phai cap nhat thu cong
+- Chua co integration test chay seed + cleanup trong CI pipeline chua gan `booking_resource_id`.
 - Nguyen nhan goc: Entitlement `branch` da co nhung engine chua dem theo cum thuong mai root tenant + child tenants; demo flow chua noi tai nguyen vao buoi cham soc.
 - Cach sua: `checkSubscriptionLimit('branch')` dem root tenant va cac tenant co `parent_tenant_id` cung root; demo script gan `booking_resource_id` cho tung session Facial/Diode/Goi dau.
 - Test/guard da them: `src/__tests__/subscription.test.ts` va `src/__tests__/beauty-demo-tenant-script.test.ts` khoa branch quota va Beauty operating flow.
