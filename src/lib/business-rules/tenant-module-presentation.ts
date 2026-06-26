@@ -168,9 +168,6 @@ const INDUSTRIAL_CLEANING_SPECIALTIES: SpecialtyOption[] = [
   { id: 'lactation', label: 'Nhà hàng / bếp ăn' },
   { id: 'facial', label: 'Cleanroom / đặc biệt' },
 ];
-    { id: 'unknown', label: 'Khác / chưa rõ', tone: 'slate' },
-  ],
-};
 
 const BABYCARE_SPECIALTIES: SpecialtyOption[] = [
   { id: 'all', label: 'Tất cả KTV' },
