@@ -1,7 +1,7 @@
 import type { Json } from '@/types/database.types';
 
-export const TENANT_MODULE_KEYS = ['babycare', 'beauty_spa', 'student_training'] as const;
-export const TENANT_PRIMARY_BUSINESS_MODULE_KEYS = ['babycare', 'beauty_spa'] as const;
+export const TENANT_MODULE_KEYS = ['babycare', 'beauty_spa', 'student_training', 'industrial_cleaning'] as const;
+export const TENANT_PRIMARY_BUSINESS_MODULE_KEYS = ['babycare', 'beauty_spa', 'industrial_cleaning'] as const;
 
 export type TenantModuleKey = (typeof TENANT_MODULE_KEYS)[number];
 export type TenantPrimaryBusinessModuleKey = (typeof TENANT_PRIMARY_BUSINESS_MODULE_KEYS)[number];
@@ -47,6 +47,7 @@ export const DEFAULT_ENABLED_MODULES: TenantEnabledModules = {
   babycare: true,
   beauty_spa: false,
   student_training: false,
+  industrial_cleaning: false,
 };
 
 export const DEFAULT_TENANT_BRAND_THEME: TenantBrandTheme = {
@@ -73,6 +74,19 @@ export const DEFAULT_BEAUTY_TENANT_BRAND_THEME: TenantBrandTheme = {
   radiusStyle: 'soft',
   buttonStyle: 'pill',
   menuStyle: 'comfortable',
+};
+
+export const DEFAULT_CLEANING_TENANT_BRAND_THEME: TenantBrandTheme = {
+  brandName: '',
+  logoUrl: '',
+  primaryColor: '#1E293B',
+  accentColor: '#64748B',
+  portalDisplayName: '',
+  invoiceDisplayName: '',
+  stylePreset: 'graphite_luxe',
+  radiusStyle: 'balanced',
+  buttonStyle: 'rounded',
+  menuStyle: 'compact',
 };
 
 const HEX_COLOR_PATTERN = /^#[0-9A-Fa-f]{6}$/;
@@ -159,12 +173,15 @@ export function normalizeEnabledModules(value: unknown): TenantEnabledModules {
     student_training: typeof source.student_training === 'boolean'
       ? source.student_training
       : false,
+    industrial_cleaning: typeof source.industrial_cleaning === 'boolean'
+      ? source.industrial_cleaning
+      : false,
   };
 }
 
 export function normalizeEnabledModulesForSave(value: unknown): TenantEnabledModules {
   const modules = normalizeEnabledModules(value);
-  if (modules.babycare || modules.beauty_spa) return modules;
+  if (modules.babycare || modules.beauty_spa || modules.industrial_cleaning) return modules;
   return {
     ...modules,
     babycare: true,
@@ -173,13 +190,14 @@ export function normalizeEnabledModulesForSave(value: unknown): TenantEnabledMod
 
 export function getDefaultTenantModuleKey(value: unknown): TenantPrimaryBusinessModuleKey {
   const modules = normalizeEnabledModulesForSave(value);
+  if (modules.industrial_cleaning) return 'industrial_cleaning';
   return modules.babycare ? 'babycare' : 'beauty_spa';
 }
 
 export function getDefaultTenantBrandThemeForModule(moduleKey: TenantModuleKey): TenantBrandTheme {
-  return moduleKey === 'beauty_spa'
-    ? DEFAULT_BEAUTY_TENANT_BRAND_THEME
-    : DEFAULT_TENANT_BRAND_THEME;
+  if (moduleKey === 'beauty_spa') return DEFAULT_BEAUTY_TENANT_BRAND_THEME;
+  if (moduleKey === 'industrial_cleaning') return DEFAULT_CLEANING_TENANT_BRAND_THEME;
+  return DEFAULT_TENANT_BRAND_THEME;
 }
 
 export function normalizeTenantBrandThemeForModule(
@@ -237,7 +255,10 @@ export function resolveTenantBrandIdentity(input: {
   const theme = normalizeTenantBrandThemeForModule(input.brandTheme, moduleKey);
   const tenantName = cleanText(input.tenantName, TEXT_LIMITS.brandName);
   const explicitLogoUrl = cleanLogoUrl(input.logoUrl);
-  const defaultDisplayName = moduleKey === 'beauty_spa' ? 'Beauty Spa' : 'Bella Spa';
+  const defaultDisplayName = 
+    moduleKey === 'beauty_spa' ? 'Beauty Spa' :
+    moduleKey === 'industrial_cleaning' ? 'Industrial Cleaning' :
+    'Bella Spa';
   const baseDisplayName =
     theme.brandName ||
     (input.surface === 'portal' ? theme.portalDisplayName : '') ||
@@ -260,7 +281,10 @@ export function resolveTenantBrandIdentity(input: {
     portalDisplayName,
     invoiceDisplayName,
     logoUrl: explicitLogoUrl || theme.logoUrl || (moduleKey === 'babycare' ? '/FullLogo_Transparent_NoBuffer.png' : ''),
-    subtitle: moduleKey === 'beauty_spa' ? 'Beauty Spa ERP' : 'Management System',
+    subtitle: 
+      moduleKey === 'beauty_spa' ? 'Beauty Spa ERP' :
+      moduleKey === 'industrial_cleaning' ? 'Industrial Cleaning ERP' :
+      'Management System',
     primaryHoverColor: darkenHexColor(theme.primaryColor),
     monogram: buildMonogram(displayName),
     isBeautySpa: moduleKey === 'beauty_spa',
