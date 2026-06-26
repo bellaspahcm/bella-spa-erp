@@ -139,6 +139,32 @@ const NEUTRAL_CUSTOMER_PRESENTATION: CustomerPresentation = {
   genderOptions: [
     { id: 'boy', label: 'Nam', tone: 'blue' },
     { id: 'girl', label: 'Nữ', tone: 'rose' },
+
+// Specialty options for booking filters
+const BABYCARE_SPECIALTIES: SpecialtyOption[] = [
+  { id: 'all', label: 'Tất cả KTV' },
+  { id: 'combo', label: 'Combo mẹ & bé' },
+  { id: 'baby', label: 'Tắm bé' },
+  { id: 'pregnancy', label: 'Massage bầu' },
+  { id: 'lactation', label: 'Thông sữa / Kích sữa' },
+];
+
+const BEAUTY_SPA_SPECIALTIES: SpecialtyOption[] = [
+  { id: 'all', label: 'Tất cả KTV' },
+  { id: 'facial', label: 'Chăm sóc da mặt' },
+  { id: 'body', label: 'Chăm sóc body' },
+  { id: 'laser', label: 'Triệt lông / Công nghệ' },
+  { id: 'relaxation', label: 'Gội đầu / Dưỡng sinh' },
+];
+
+const INDUSTRIAL_CLEANING_SPECIALTIES: SpecialtyOption[] = [
+  { id: 'all', label: 'Tất cả nhân viên' },
+  { id: 'combo', label: 'Văn phòng / tòa nhà' },
+  { id: 'baby', label: 'Nhà xưởng / sản xuất' },
+  { id: 'pregnancy', label: 'Y tế / bệnh viện' },
+  { id: 'lactation', label: 'Nhà hàng / bếp ăn' },
+  { id: 'facial', label: 'Cleanroom / đặc biệt' },
+];
     { id: 'unknown', label: 'Khác / chưa rõ', tone: 'slate' },
   ],
 };
@@ -157,6 +183,15 @@ const BEAUTY_SPA_SPECIALTIES: SpecialtyOption[] = [
   { id: 'body', label: 'Body / spa trị liệu' },
   { id: 'laser', label: 'Công nghệ cao' },
   { id: 'relaxation', label: 'Thư giãn / dưỡng sinh' },
+];
+
+const INDUSTRIAL_CLEANING_SPECIALTIES: SpecialtyOption[] = [
+  { id: 'all', label: 'Tất cả nhân viên' },
+  { id: 'office', label: 'Văn phòng / tòa nhà' },
+  { id: 'manufacturing', label: 'Nhà xưởng / sản xuất' },
+  { id: 'hospital', label: 'Y tế / bệnh viện' },
+  { id: 'food-service', label: 'Nhà hàng / bếp ăn' },
+  { id: 'special', label: 'Cleanroom / đặc biệt' },
 ];
 
 export function getTenantModulePresentation(moduleKey: TenantModuleKey): CustomerPresentation {
@@ -180,6 +215,9 @@ export function getTenantPresentationFromModules(enabledModules: unknown): Custo
 }
 
 export function getTenantSpecialtyOptions(moduleKey: TenantModuleKey): SpecialtyOption[] {
+  if (moduleKey === 'industrial_cleaning') {
+    return INDUSTRIAL_CLEANING_SPECIALTIES;
+  }
   return moduleKey === 'beauty_spa' ? BEAUTY_SPA_SPECIALTIES : BABYCARE_SPECIALTIES;
 }
 
