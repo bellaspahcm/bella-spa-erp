@@ -15,12 +15,12 @@
  */
 
 import { useMemo } from 'react';
-import { useTenantModule } from '@/hooks/useTenantModule';
+import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
 import { getModuleVocabulary, type ModuleVocabulary } from '@/lib/business-rules/module-vocabulary';
 
 export function useModuleVocabulary(): ModuleVocabulary {
-  const { moduleKey } = useTenantModule();
+  const { tenantModuleKey } = useTenantModuleKey();
   
-  return useMemo(() => getModuleVocabulary(moduleKey), [moduleKey]);
+  return useMemo(() => getModuleVocabulary(tenantModuleKey), [tenantModuleKey]);
 }
 
