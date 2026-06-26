@@ -2198,6 +2198,17 @@ html[data-tenant-module="industrial_cleaning"] .beauty-erp-sidebar {
   background-color: transparent !important;
 }
 
+/* Stronger selector to override Tailwind inline classes */
+html[data-tenant-module="industrial_cleaning"] aside.beauty-erp-sidebar,
+html[data-tenant-module="industrial_cleaning"] aside[class*="bg-[#FFF0F3]"],
+html[data-tenant-module="industrial_cleaning"] aside[class*="border-[#FBCFE8]"] {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0) 34%),
+    linear-gradient(158deg, #001C44 0%, #0C3776 42%, #2D93AE 100%) !important;
+  background-color: transparent !important;
+  border-color: rgba(45, 147, 174, 0.34) !important;
+}
+
 /* Override pink glow decorations inside sidebar */
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-sidebar .bg-pink-300\/30,
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-sidebar .bg-rose-300\/25 {
