@@ -2154,19 +2154,19 @@ html[data-tenant-brand-button="minimal"][data-tenant-module="beauty_spa"] .beaut
 
 /* Industrial Cleaning tenant shell: professional blue theme, scoped by runtime module marker */
 html[data-tenant-module="industrial_cleaning"] {
-  --primary: #1E40AF;
-  --primary-hover: #1E3A8A;
+  --primary: #1E40AF; /* Blue-700 - đậm và nổi bật */
+  --primary-hover: #1E3A8A; /* Blue-800 - hover state */
   --primary-foreground: #F8FAFC;
   --secondary: #0F172A;
   --secondary-foreground: #F8FAFC;
-  --accent: #3B82F6;
-  --accent-foreground: #0F172A;
+  --accent: #2563EB; /* Tăng từ #3B82F6 → #2563EB (blue-600) cho nổi bật hơn */
+  --accent-foreground: #FFFFFF; /* Tăng từ #0F172A → #FFFFFF cho tương phản cao */
   --background: #F8FAFC;
   --foreground: #0F172A;
   --card: #FFFFFF;
   --card-foreground: #0F172A;
   --muted: #F1F5F9;
-  --muted-foreground: #64748B;
+  --muted-foreground: #475569; /* Tăng từ #64748B → #475569 (slate-600) cho dễ đọc hơn */
   --border: rgba(59, 130, 246, 0.24);
   --input: rgba(59, 130, 246, 0.22);
   --ring: #1E40AF;
@@ -2412,3 +2412,36 @@ html[data-tenant-module="baby_care"] [class*="text-gray-500"] {
 html[data-tenant-module="baby_care"] .text-muted-foreground {
   color: oklch(0.475 0 0) !important; /* Darkened from 0.556 */
 }
+
+
+/* =========================================================================
+   INDUSTRIAL CLEANING TENANT TEXT CONTRAST IMPROVEMENTS
+   Scoped to industrial_cleaning module only - does NOT affect beauty_spa or baby_care
+   ========================================================================= */
+
+/* Improve light gray text contrast for better readability (LIGHT MODE ONLY) */
+html[data-tenant-module="industrial_cleaning"] .text-slate-400,
+html[data-tenant-module="industrial_cleaning"] [class*="text-slate-400"] {
+  color: #64748b !important; /* Darkened from #94a3b8 */
+}
+
+html[data-tenant-module="industrial_cleaning"] .text-slate-500,
+html[data-tenant-module="industrial_cleaning"] [class*="text-slate-500"] {
+  color: #475569 !important; /* Darkened from #64748b - slate-600 for better contrast */
+}
+
+html[data-tenant-module="industrial_cleaning"] .text-gray-400,
+html[data-tenant-module="industrial_cleaning"] [class*="text-gray-400"] {
+  color: #6b7280 !important; /* Darkened from #9ca3af - gray-500 for better readability */
+}
+
+html[data-tenant-module="industrial_cleaning"] .text-gray-500,
+html[data-tenant-module="industrial_cleaning"] [class*="text-gray-500"] {
+  color: #4b5563 !important; /* Darkened from #6b7280 - gray-600 for high contrast */
+}
+
+/* Improve muted foreground (secondary text) contrast */
+html[data-tenant-module="industrial_cleaning"] .text-muted-foreground {
+  color: #475569 !important; /* slate-600 - đậm hơn #64748B để dễ đọc nhưng không quá đen */
+}
+
