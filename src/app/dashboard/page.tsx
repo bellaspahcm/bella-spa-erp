@@ -16,6 +16,7 @@ import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
 import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
+import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
 import { getTenantModulePresentationOrNeutral } from '@/lib/business-rules/tenant-module-presentation';
 import { createClient } from '@/lib/supabase-client';
 import { cn } from '@/lib/utils';
@@ -99,15 +100,20 @@ export default function DashboardPage() {
   const dashboardAlertsRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { tenantModuleKey } = useTenantModuleKey();
   const customerLabels = getTenantModulePresentationOrNeutral(tenantModuleKey);
+  const vocab = useModuleVocabulary();
   const businessLabel = tenantModuleKey === null
     ? 'Spa'
     : tenantModuleKey === 'beauty_spa'
       ? 'Beauty Spa'
+      : tenantModuleKey === 'industrial_cleaning'
+      ? 'CleanPro'
       : 'Bella Spa';
   const todayScheduleSubtitle = tenantModuleKey === null
     ? 'Lịch dịch vụ hôm nay'
     : tenantModuleKey === 'beauty_spa'
     ? 'Lịch dịch vụ & liệu trình hôm nay'
+    : tenantModuleKey === 'industrial_cleaning'
+    ? 'Lịch làm việc hôm nay'
     : 'Lịch trình liệu trình trực tuyến';
 
   useEffect(() => {
@@ -336,7 +342,7 @@ export default function DashboardPage() {
           <h1 className="text-4xl font-bold text-foreground tracking-tight uppercase">Dashboard</h1>
           <p className="text-muted-foreground font-semibold mt-1 flex items-center gap-2 justify-center md:justify-start">
             <span className="w-2 h-2 bg-accent rounded-full animate-pulse" />
-            Chào buổi sáng, {businessLabel} {userRole === 'admin' ? 'admin' : 'KTV'}!
+            Chào buổi sáng, {businessLabel} {userRole === 'admin' ? 'admin' : vocab.worker.short}!
           </p>
         </div>
         <div className="flex flex-wrap items-center justify-center md:justify-end gap-4 w-full md:w-auto">

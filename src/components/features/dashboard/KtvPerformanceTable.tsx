@@ -6,6 +6,7 @@ import { Users, Clock, Star, Trophy, Diamond } from 'lucide-react';
 
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import type { KtvPerformanceViewModel } from '@/core/services/analytics/dashboard-actions';
+import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
 
 interface KtvPerformanceTableProps {
   topKTVs: KtvPerformanceViewModel[];
@@ -13,6 +14,8 @@ interface KtvPerformanceTableProps {
 }
 
 export function KtvPerformanceTable({ topKTVs, isLoading }: KtvPerformanceTableProps) {
+  const vocab = useModuleVocabulary();
+  
   // Memoize KTV data to prevent unnecessary table re-renders
   const memoizedKTVs = useMemo(() => topKTVs, [topKTVs]);
 
@@ -78,7 +81,7 @@ export function KtvPerformanceTable({ topKTVs, isLoading }: KtvPerformanceTableP
         <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center">
           <Trophy className="w-6 h-6 text-primary" />
         </div>
-        <h2 className="text-2xl font-bold text-foreground uppercase tracking-tight">Top KTV Xuất Sắc</h2>
+        <h2 className="text-2xl font-bold text-foreground uppercase tracking-tight">Top {vocab.worker.plural} Xuất Sắc</h2>
       </div>
       
       <div className="beauty-top-ktv-table-wrap overflow-x-auto overscroll-x-contain custom-scrollbar">
@@ -87,12 +90,12 @@ export function KtvPerformanceTable({ topKTVs, isLoading }: KtvPerformanceTableP
             <tr className="text-left border-b border-pink-100">
               <th className="w-[240px] px-5 pb-4 font-bold text-xs uppercase tracking-widest text-muted-foreground whitespace-nowrap">
                 <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4 shrink-0" /> Tên KTV
+                  <Users className="w-4 h-4 shrink-0" /> Tên {vocab.worker.singular}
                 </div>
               </th>
               <th className="w-[120px] px-5 pb-4 font-bold text-xs uppercase tracking-widest text-muted-foreground whitespace-nowrap">
                 <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 shrink-0" /> Buổi
+                  <Clock className="w-4 h-4 shrink-0" /> {vocab.workUnit.singular}
                 </div>
               </th>
               <th className="w-[130px] px-5 pb-4 font-bold text-xs uppercase tracking-widest text-muted-foreground whitespace-nowrap">
@@ -112,7 +115,7 @@ export function KtvPerformanceTable({ topKTVs, isLoading }: KtvPerformanceTableP
             {memoizedKTVs.map((ktv, idx) => (
               <tr key={idx} className="beauty-top-ktv-row group hover:bg-white/40 transition-colors">
                 <td className="px-5 py-6 font-bold text-foreground whitespace-nowrap">{ktv.name}</td>
-                <td className="px-5 py-6 font-bold text-muted-foreground whitespace-nowrap">{ktv.sessions} buổi</td>
+                <td className="px-5 py-6 font-bold text-muted-foreground whitespace-nowrap">{ktv.sessions} {vocab.workUnit.plural.toLowerCase()}</td>
                 <td className="px-5 py-6 font-bold text-muted-foreground whitespace-nowrap">
                   <div className="flex items-center gap-1">
                     {ktv.rating} <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
