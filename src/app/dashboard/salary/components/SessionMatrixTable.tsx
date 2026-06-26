@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { Calendar as CalendarIcon, FileSpreadsheet, Lock, CheckCircle2, AlertCircle, Clock, Send, UserCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
 import { KtvSessionMatrix, KtvSalaryRecord } from '@/types/domain';
 
 interface SessionMatrixTableProps {
@@ -33,6 +34,8 @@ export default function SessionMatrixTable({
   handleConfirmOnBehalf,
   handlePublishOne,
 }: SessionMatrixTableProps) {
+  const vocab = useModuleVocabulary();
+  
   if (!matrixData) return null;
 
   const filteredKtvs = matrixData.ktvs.filter((ktv) =>
@@ -48,7 +51,7 @@ export default function SessionMatrixTable({
             Đối soát số buổi làm chi tiết
           </h2>
           <p className="text-slate-500 font-medium text-sm mt-1">
-            Chi tiết số buổi thực hiện theo từng kỹ thuật viên và gói dịch vụ
+            Chi tiết {vocab.workUnit.plural.toLowerCase()} thực hiện theo từng {vocab.worker.singular.toLowerCase()} và gói dịch vụ
           </p>
         </div>
         <button
@@ -66,7 +69,7 @@ export default function SessionMatrixTable({
           <thead>
             <tr className="bg-slate-50/80 backdrop-blur-md">
               <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[200px] bg-slate-50">
-                Kỹ thuật viên
+                {vocab.worker.singular}
               </th>
               {matrixData.packageNames.map((pkg: string) => (
                 <th

@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { getPendingLeaveRequests, getKTVConflictSessions, approveLeaveRequest, rejectLeaveRequest } from '@/services/attendance-actions';
 import { getUsers } from '@/services/user-actions';
@@ -38,6 +39,7 @@ interface LeaveApprovalModalProps {
 }
 
 export function LeaveApprovalModal({ isOpen, onClose, onSuccess, userRole }: LeaveApprovalModalProps) {
+  const vocab = useModuleVocabulary();
   const [pendingLeaves, setPendingLeaves] = useState<LeaveRequest[]>([]);
   const [selectedLeave, setSelectedLeave] = useState<LeaveRequest | null>(null);
   const [conflictSessions, setConflictSessions] = useState<ConflictSession[]>([]);
@@ -188,7 +190,7 @@ export function LeaveApprovalModal({ isOpen, onClose, onSuccess, userRole }: Lea
               {/* Header */}
               <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50">
                 <div>
-                  <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">Duyệt nghỉ phép KTV</h2>
+                  <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">Duyệt nghỉ phép {vocab.worker.short}</h2>
                   <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mt-0.5">Xử lý yêu cầu xin nghỉ & điều phối lịch trùng</p>
                 </div>
                 <button

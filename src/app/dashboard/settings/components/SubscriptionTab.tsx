@@ -25,6 +25,7 @@ import {
   SubscriptionInvoice 
 } from '@/services/subscription-actions';
 import { cn } from '@/lib/utils';
+import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
 import type { Database } from '@/types/database.types';
 import { UNLIMITED_QUOTA, calculateUsagePercent } from '@/lib/business-rules/subscription';
 
@@ -38,69 +39,71 @@ type SubscriptionPlanOption = {
   recommended?: boolean;
 };
 
-const PLANS: readonly SubscriptionPlanOption[] = [
-  {
-    id: 'free_trial',
-    name: 'Dùng thử',
-    price: 0,
-    features: [
-      'Tối đa 1 nhân sự kỹ thuật viên',
-      'Tối đa 15 khách hàng',
-      '20 tin nhắn Zalo SMS / tháng',
-      'Đầy đủ tính năng cốt lõi',
-    ],
-    color: 'from-slate-400 to-slate-600',
-    glow: 'shadow-slate-200/20',
-  },
-  {
-    id: 'basic',
-    name: 'Cơ bản (Basic)',
-    price: 499000,
-    features: [
-      'Tối đa 3 nhân sự kỹ thuật viên',
-      'Tối đa 50 khách hàng',
-      '100 tin nhắn Zalo SMS / tháng',
-      'Sao lưu dữ liệu tự động hàng ngày',
-      'Hỗ trợ kỹ thuật qua Zalo OA',
-    ],
-    color: 'from-pink-400 to-rose-600',
-    glow: 'shadow-pink-200/50 dark:shadow-none',
-  },
-  {
-    id: 'pro',
-    name: 'Chuyên nghiệp (Pro)',
-    price: 999000,
-    features: [
-      'Tối đa 10 nhân sự kỹ thuật viên',
-      'Tối đa 500 khách hàng',
-      '500 tin nhắn Zalo SMS / tháng',
-      'Báo cáo phân tích nâng cao CRM',
-      'Ưu tiên hỗ trợ kỹ thuật 24/7',
-    ],
-    color: 'from-purple-500 to-indigo-600',
-    glow: 'shadow-purple-200/50',
-    recommended: true,
-  },
-  {
-    id: 'enterprise',
-    name: 'Nhượng quyền (Enterprise)',
-    price: 2499000,
-    features: [
-      'Không giới hạn kỹ thuật viên',
-      'Không giới hạn số lượng khách hàng',
-      '2,000 tin nhắn Zalo SMS / tháng',
-      'API tích hợp & Whitelabel riêng',
-      'Quản lý đa chi nhánh chuyên nghiệp',
-      'Cam kết chất lượng dịch vụ SLA 99.9%',
-    ],
-    color: 'from-amber-500 to-orange-600',
-    glow: 'shadow-orange-200/50',
-  },
-] as const;
-
 type Plan = SubscriptionPlanOption;
 type SubscriptionStatus = Awaited<ReturnType<typeof getSubscriptionStatus>>;
 type PendingSubscriptionInvoice = Database['public']['Tables']['subscription_invoices']['Row'];
+
+function getPlans(workerLabel: string): readonly SubscriptionPlanOption[] {
+  return [
+    {
+      id: 'free_trial',
+      name: 'Dùng thử',
+      price: 0,
+      features: [
+        `Tối đa 1 ${workerLabel}`,
+        'Tối đa 15 khách hàng',
+        '20 tin nhắn Zalo SMS / tháng',
+        'Đầy đủ tính năng cốt lõi',
+      ],
+      color: 'from-slate-400 to-slate-600',
+      glow: 'shadow-slate-200/20',
+    },
+    {
+      id: 'basic',
+      name: 'Cơ bản (Basic)',
+      price: 499000,
+      features: [
+        `Tối đa 3 ${workerLabel}`,
+        'Tối đa 50 khách hàng',
+        '100 tin nhắn Zalo SMS / tháng',
+        'Sao lưu dữ liệu tự động hàng ngày',
+        'Hỗ trợ kỹ thuật qua Zalo OA',
+      ],
+      color: 'from-pink-400 to-rose-600',
+      glow: 'shadow-pink-200/50 dark:shadow-none',
+    },
+    {
+      id: 'pro',
+      name: 'Chuyên nghiệp (Pro)',
+      price: 999000,
+      features: [
+        `Tối đa 10 ${workerLabel}`,
+        'Tối đa 500 khách hàng',
+        '500 tin nhắn Zalo SMS / tháng',
+        'Báo cáo phân tích nâng cao CRM',
+        'Ưu tiên hỗ trợ kỹ thuật 24/7',
+      ],
+      color: 'from-purple-500 to-indigo-600',
+      glow: 'shadow-purple-200/50',
+      recommended: true,
+    },
+    {
+      id: 'enterprise',
+      name: 'Nhượng quyền (Enterprise)',
+      price: 2499000,
+      features: [
+        `Không giới hạn ${workerLabel}`,
+        'Không giới hạn số lượng khách hàng',
+        '2,000 tin nhắn Zalo SMS / tháng',
+        'API tích hợp & Whitelabel riêng',
+        'Quản lý đa chi nhánh chuyên nghiệp',
+        'Cam kết chất lượng dịch vụ SLA 99.9%',
+      ],
+      color: 'from-amber-500 to-orange-600',
+      glow: 'shadow-orange-200/50',
+    },
+  ] as const;
+}
 
 function getUsagePercent(current?: number, max?: number) {
   return calculateUsagePercent(current, max);
@@ -122,6 +125,8 @@ function getExpiryDateString(status: SubscriptionStatus | null) {
 }
 
 export default function SubscriptionTab() {
+  const vocab = useModuleVocabulary();
+  const PLANS = getPlans(vocab.worker.singular);
   const [status, setStatus] = useState<SubscriptionStatus | null>(null);
   const [invoices, setInvoices] = useState<SubscriptionInvoice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -308,7 +313,7 @@ export default function SubscriptionTab() {
               <div className="p-3 bg-indigo-50 rounded-xl text-indigo-600">
                 <Users className="w-5 h-5" />
               </div>
-              <span className="text-xs font-black text-indigo-600">Kỹ thuật viên</span>
+              <span className="text-xs font-black text-indigo-600">{vocab.worker.singular}</span>
             </div>
             <div>
               <div className="flex items-end justify-between mb-1">
