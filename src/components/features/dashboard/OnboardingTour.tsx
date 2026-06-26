@@ -14,6 +14,7 @@ import {
   CheckCircle,
   HelpCircle
 } from 'lucide-react';
+import { getModuleVocabulary } from '@/lib/business-rules/module-vocabulary';
 import type { TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 
 interface OnboardingTourProps {
@@ -24,16 +25,17 @@ interface OnboardingTourProps {
 }
 
 function buildSteps(brandName: string, tenantModuleKey: TenantModuleKey | null | undefined) {
+  const vocab = getModuleVocabulary(tenantModuleKey);
   const isBeautySpa = tenantModuleKey === 'beauty_spa';
   const serviceDescription = isBeautySpa
-    ? 'Tạo các dịch vụ facial, body, công nghệ cao hoặc gói liệu trình riêng của spa; đồng thời thiết lập định mức mỹ phẩm, mask, tinh chất và vật tư tiêu hao. Khi kỹ thuật viên hoàn thành buổi dịch vụ, kho hàng sẽ được cập nhật theo định mức đã cấu hình.'
-    : 'Tạo các gói liệu trình chăm sóc cao cấp cho Mẹ và Bé, đồng thời thiết lập định mức vật tư tiêu hao như tinh dầu, khăn và dụng cụ chăm sóc. Mỗi khi kỹ thuật viên hoàn thành ca, kho hàng sẽ tự động trừ hàng tương ứng theo định mức.';
+    ? `Tạo các dịch vụ facial, body, công nghệ cao hoặc gói liệu trình riêng của spa; đồng thời thiết lập định mức mỹ phẩm, mask, tinh chất và vật tư tiêu hao. Khi ${vocab.worker.singular.toLowerCase()} hoàn thành ${vocab.workUnit.singular.toLowerCase()} dịch vụ, kho hàng sẽ được cập nhật theo định mức đã cấu hình.`
+    : `Tạo các gói liệu trình chăm sóc cao cấp cho Mẹ và Bé, đồng thời thiết lập định mức vật tư tiêu hao như tinh dầu, khăn và dụng cụ chăm sóc. Mỗi khi ${vocab.worker.singular.toLowerCase()} hoàn thành ${vocab.workUnit.singular.toLowerCase()}, kho hàng sẽ tự động trừ hàng tương ứng theo định mức.`;
   const serviceTip = isBeautySpa
     ? 'Mẹo: Chia nhóm dịch vụ theo facial, body, công nghệ cao hoặc dưỡng sinh để lọc lịch và theo dõi hiệu suất rõ hơn.'
     : 'Mẹo: Bật cảnh báo tồn kho tối thiểu tại phần Cài đặt để nhận tin nhắn Zalo/Dashboard khi vật tư sắp hết.';
   const salaryDescription = isBeautySpa
-    ? `Thêm kỹ thuật viên vào hệ thống, phân vai trò chuyên môn và thiết lập hoa hồng linh hoạt theo dịch vụ, liệu trình hoặc doanh thu. ${brandName} tự động tổng hợp buổi hoàn thành, đánh giá khách hàng, thưởng/phạt và dữ liệu chấm công để hỗ trợ đối soát lương hằng tháng.`
-    : `Thêm KTV vào hệ thống, phân vai trò chuyên môn và thiết lập tỷ lệ hoa hồng hoặc thưởng rating. ${brandName} tự động tính điểm KPI từ đánh giá khách hàng và kỷ luật ca làm để tổng hợp lương thưởng hằng tháng.`;
+    ? `Thêm ${vocab.worker.singular.toLowerCase()} vào hệ thống, phân vai trò chuyên môn và thiết lập hoa hồng linh hoạt theo dịch vụ, liệu trình hoặc doanh thu. ${brandName} tự động tổng hợp ${vocab.workUnit.plural.toLowerCase()} hoàn thành, đánh giá khách hàng, thưởng/phạt và dữ liệu chấm công để hỗ trợ đối soát lương hằng tháng.`
+    : `Thêm ${vocab.worker.short} vào hệ thống, phân vai trò chuyên môn và thiết lập tỷ lệ hoa hồng hoặc thưởng rating. ${brandName} tự động tính điểm KPI từ đánh giá khách hàng và kỷ luật ${vocab.workUnit.singular.toLowerCase()} để tổng hợp lương thưởng hằng tháng.`;
 
   return [
   {
@@ -59,7 +61,7 @@ function buildSteps(brandName: string, tenantModuleKey: TenantModuleKey | null |
     tip: serviceTip
   },
   {
-    title: 'Quản lý & Tính Lương Kỹ Thuật Viên',
+    title: `Quản lý & Tính Lương ${vocab.worker.plural}`,
     subtitle: 'Cấu hình hoa hồng và thưởng KPI linh hoạt',
     description: salaryDescription,
     icon: Users,
@@ -72,13 +74,13 @@ function buildSteps(brandName: string, tenantModuleKey: TenantModuleKey | null |
   {
     title: 'VietQR & Đối soát Tự động',
     subtitle: 'Thanh toán tức thì, không lo sai lệch',
-    description: 'Hệ thống tự động sinh mã VietQR động chứa mã lịch hẹn/dịch vụ và số tiền cần thanh toán. Khi khách hàng quét mã chuyển khoản thành công, hệ thống sẽ tự động xác nhận giao dịch và cập nhật doanh thu để đối soát nhanh hơn.',
+    description: `Hệ thống tự động sinh mã VietQR động chứa mã lịch hẹn/dịch vụ và số tiền cần thanh toán. Khi khách hàng quét mã chuyển khoản thành công, hệ thống sẽ tự động xác nhận giao dịch và cập nhật doanh thu để đối soát nhanh hơn.`,
     icon: QrCode,
     color: 'text-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 border-emerald-100 dark:border-emerald-900/30',
     glowColor: 'rgba(16, 185, 129, 0.15)',
     actionLabel: 'Trải nghiệm Booking',
     actionLink: '/dashboard/bookings',
-    tip: 'Mẹo: Kỹ thuật viên hoàn thành buổi dịch vụ trễ hoặc khác chuẩn thời lượng nên ghi chú lý do để quản lý dễ đối soát chất lượng.'
+    tip: `Mẹo: ${vocab.worker.singular} hoàn thành ${vocab.workUnit.singular.toLowerCase()} dịch vụ trễ hoặc khác chuẩn thời lượng nên ghi chú lý do để quản lý dễ đối soát chất lượng.`
   }
 ];
 }

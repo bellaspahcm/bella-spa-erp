@@ -11,6 +11,7 @@ updateUser,
 updateUserStatus,
 } from "@/services/user-actions";
 import { StaffRecord } from "@/types/domain";
+import { useModuleVocabulary } from "@/hooks/useModuleVocabulary";
 import { AnimatePresence,motion } from "framer-motion";
 import {
 Mail,
@@ -29,6 +30,7 @@ import React,{ useEffect,useState } from "react";
 import { toast } from "sonner";
 
 export default function StaffManagementTab() {
+  const vocab = useModuleVocabulary();
   const [users, setUsers] = useState<StaffRecord[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -280,8 +282,8 @@ export default function StaffManagementTab() {
                         )}
                       >
                         {user.role === 'admin' ? 'Quản trị viên'
-                          : user.role === 'ktv' ? 'Kỹ thuật viên'
-                          : user.role === 'ktv_lead' ? 'KTV Trưởng'
+                          : user.role === 'ktv' ? vocab.worker.singular
+                          : user.role === 'ktv_lead' ? `${vocab.worker.role} Trưởng`
                           : user.role === 'admin_staff' ? 'Lễ tân / Staff'
                           : user.role === 'accountant' ? 'Kế toán'
                           : user.role === 'hr' ? 'Nhân sự'
@@ -452,8 +454,8 @@ export default function StaffManagementTab() {
                     value={newStaff.role}
                     onChange={(val) => setNewStaff({ ...newStaff, role: val })}
                     options={[
-                      { value: "ktv", label: "Kỹ thuật viên" },
-                      { value: "ktv_lead", label: "KTV Trưởng (Tổ trưởng)" },
+                      { value: "ktv", label: vocab.worker.singular },
+                      { value: "ktv_lead", label: `${vocab.worker.role} Trưởng (Tổ trưởng)` },
                       { value: "admin_staff", label: "Lễ tân / Nhân viên" },
                       { value: "accountant", label: "Kế toán" },
                       { value: "hr", label: "Nhân sự (HR)" },
@@ -564,8 +566,8 @@ export default function StaffManagementTab() {
                     value={editingStaff.role}
                     onChange={(val) => setEditingStaff({ ...editingStaff, role: val })}
                     options={[
-                      { value: "ktv", label: "Kỹ thuật viên" },
-                      { value: "ktv_lead", label: "KTV Trưởng (Tổ trưởng)" },
+                      { value: "ktv", label: vocab.worker.singular },
+                      { value: "ktv_lead", label: `${vocab.worker.role} Trưởng (Tổ trưởng)` },
                       { value: "admin_staff", label: "Lễ tân / Nhân viên" },
                       { value: "accountant", label: "Kế toán" },
                       { value: "hr", label: "Nhân sự (HR)" },

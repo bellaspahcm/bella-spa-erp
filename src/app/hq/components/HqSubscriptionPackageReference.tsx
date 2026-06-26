@@ -1,6 +1,14 @@
 import { Crown, Info } from 'lucide-react';
+import { getModuleVocabulary } from '@/lib/business-rules/module-vocabulary';
+import type { TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 
-export function HqSubscriptionPackageReference() {
+interface HqSubscriptionPackageReferenceProps {
+  tenantModuleKey?: TenantModuleKey | null;
+}
+
+export function HqSubscriptionPackageReference({ tenantModuleKey }: HqSubscriptionPackageReferenceProps = {}) {
+  const vocab = getModuleVocabulary(tenantModuleKey);
+  
   return (
             <section className="bg-gradient-to-br from-white to-slate-50 dark:from-[#1C1B19] dark:to-[#11100F] border border-slate-100 dark:border-[#3E3A35] rounded-[3rem] p-6 shadow-sm text-left transition-colors duration-300">
               <div className="flex items-center gap-2 mb-4">
@@ -28,7 +36,7 @@ export function HqSubscriptionPackageReference() {
                   </div>
                   <div className="space-y-1">
                     <p className="text-[11px] font-bold text-slate-600 dark:text-[#CDBCAB] flex justify-between">
-                      <span>Kỹ thuật viên:</span> <span className="font-black text-slate-800 dark:text-[#EFE9E1]">Tối đa 1 KTV</span>
+                      <span>{vocab.worker.singular}:</span> <span className="font-black text-slate-800 dark:text-[#EFE9E1]">Tối đa 1 {vocab.worker.short}</span>
                     </p>
                     <p className="text-[11px] font-bold text-slate-600 dark:text-[#CDBCAB] flex justify-between">
                       <span>Khách hàng:</span> <span className="font-black text-slate-800 dark:text-[#EFE9E1]">Tối đa 15</span>
@@ -49,7 +57,7 @@ export function HqSubscriptionPackageReference() {
                   </div>
                   <div className="space-y-1">
                     <p className="text-[11px] font-bold text-slate-600 dark:text-[#CDBCAB] flex justify-between">
-                      <span>Kỹ thuật viên:</span> <span className="font-black text-slate-800 dark:text-[#EFE9E1]">Tối đa 3 KTV</span>
+                      <span>{vocab.worker.singular}:</span> <span className="font-black text-slate-800 dark:text-[#EFE9E1]">Tối đa 3 {vocab.worker.short}</span>
                     </p>
                     <p className="text-[11px] font-bold text-slate-600 dark:text-[#CDBCAB] flex justify-between">
                       <span>Khách hàng:</span> <span className="font-black text-slate-800 dark:text-[#EFE9E1]">Tối đa 50</span>
@@ -70,7 +78,7 @@ export function HqSubscriptionPackageReference() {
                   </div>
                   <div className="space-y-1">
                     <p className="text-[11px] font-bold text-slate-600 dark:text-[#CDBCAB] flex justify-between">
-                      <span>Kỹ thuật viên:</span> <span className="font-black text-slate-800 dark:text-[#EFE9E1]">Tối đa 10 KTV</span>
+                      <span>{vocab.worker.singular}:</span> <span className="font-black text-slate-800 dark:text-[#EFE9E1]">Tối đa 10 {vocab.worker.short}</span>
                     </p>
                     <p className="text-[11px] font-bold text-slate-600 dark:text-[#CDBCAB] flex justify-between">
                       <span>Khách hàng:</span> <span className="font-black text-slate-800 dark:text-[#EFE9E1]">Tối đa 500</span>
@@ -91,7 +99,7 @@ export function HqSubscriptionPackageReference() {
                   </div>
                   <div className="space-y-1">
                     <p className="text-[11px] font-bold text-slate-600 dark:text-[#CDBCAB] flex justify-between">
-                      <span>Kỹ thuật viên:</span> <span className="font-black text-rose-600 dark:text-rose-400">Không giới hạn</span>
+                      <span>{vocab.worker.singular}:</span> <span className="font-black text-rose-600 dark:text-rose-400">Không giới hạn</span>
                     </p>
                     <p className="text-[11px] font-bold text-slate-600 dark:text-[#CDBCAB] flex justify-between">
                       <span>Khách hàng:</span> <span className="font-black text-rose-600 dark:text-rose-400">Không giới hạn</span>

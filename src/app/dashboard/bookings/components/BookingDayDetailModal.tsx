@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
+import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
 import type { BookingInvoicePrintLog } from '@/core/services/order/invoice-print-actions';
 
 export type KtvOption = {
@@ -106,6 +107,7 @@ export function BookingDayDetailModal({
   onVoidInvoice,
   onSave,
 }: BookingDayDetailModalProps) {
+  const vocab = useModuleVocabulary();
   const completedHistory = modalData
     ? sessionHistory.filter((session) => session.status === 'completed' && session.id !== modalData.id)
     : [];
@@ -188,7 +190,7 @@ export function BookingDayDetailModal({
                       <p className="break-words font-bold text-slate-900">{modalData.customer}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-slate-400 font-bold mb-2 ml-1">Kỹ thuật viên</p>
+                      <p className="text-xs text-slate-400 font-bold mb-2 ml-1">{vocab.worker.singular}</p>
                       <PremiumSelect
                         value={modalData.ktvId || ''}
                         options={[
@@ -199,7 +201,7 @@ export function BookingDayDetailModal({
                           const ktvName = ktvs.find((ktv) => ktv.id === value)?.full_name || 'Chưa phân công';
                           updateModalData({ ktvId: value, ktv: ktvName });
                         }}
-                        placeholder="Chọn kỹ thuật viên..."
+                        placeholder={`Chọn ${vocab.worker.singular.toLowerCase()}...`}
                       />
                     </div>
                   </div>
