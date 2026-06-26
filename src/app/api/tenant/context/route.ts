@@ -61,8 +61,22 @@ export async function GET(_request: NextRequest) {
 
     if (userError) {
       console.error('[GET /api/tenant/context] Failed to fetch user profile:', userError);
+      console.error('[GET /api/tenant/context] User ID:', user.id);
+      console.error('[GET /api/tenant/context] Error details:', JSON.stringify(userError));
+      
+      // If user record not found (PGRST116), provide more helpful error
+      if (userError.code === 'PGRST116') {
+        return NextResponse.json(
+          { 
+            error: 'User profile not found. Please contact administrator to set up your account.',
+            details: 'Your account exists in auth system but not linked to a tenant yet.'
+          },
+          { status: 403 }
+        );
+      }
+      
       return NextResponse.json(
-        { error: 'Failed to fetch user profile' },
+        { error: 'Failed to fetch user profile', details: userError.message },
         { status: 500 }
       );
     }
@@ -70,7 +84,7 @@ export async function GET(_request: NextRequest) {
     if (!userProfile?.tenant_id) {
       console.error('[GET /api/tenant/context] User has no tenant assigned:', user.id);
       return NextResponse.json(
-        { error: 'Forbidden: User has no tenant assigned' },
+        { error: 'Forbidden: User has no tenant assigned. Please contact administrator.' },
         { status: 403 }
       );
     }

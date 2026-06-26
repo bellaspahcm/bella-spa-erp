@@ -48,7 +48,14 @@ async function post(table, data) {
     console.error(`❌ Error posting to ${table}:`, error);
     return null;
   }
-  return await res.json();
+  const result = await res.json();
+  // For batch insert (array input), return array
+  // For single insert (object input), extract first element
+  if (Array.isArray(data)) {
+    return result; // batch insert -> keep array result
+  } else {
+    return Array.isArray(result) ? result[0] : result; // single insert -> extract object
+  }
 }
 
 async function fetchOne(table, filter) {
@@ -109,6 +116,7 @@ async function run() {
       role: 'admin', 
       tenant_id: tid,
       base_salary: 15000000,
+      hire_date: null,
       metadata: { position: 'General Manager' }
     },
     { 
@@ -117,6 +125,7 @@ async function run() {
       role: 'ktv_lead', 
       tenant_id: tid,
       base_salary: 10000000,
+      hire_date: null,
       metadata: { position: 'Operations Lead', certifications: ['Cleanroom', 'Medical Sanitation'] }
     },
     { 
@@ -125,6 +134,7 @@ async function run() {
       role: 'accountant', 
       tenant_id: tid,
       base_salary: 12000000,
+      hire_date: null,
       metadata: { position: 'Chief Accountant' }
     },
     { 
@@ -133,6 +143,7 @@ async function run() {
       role: 'ktv_lead', 
       tenant_id: tid,
       base_salary: 9000000,
+      hire_date: null,
       metadata: { position: 'Site Supervisor', certifications: ['Safety Training', 'First Aid'] }
     },
     

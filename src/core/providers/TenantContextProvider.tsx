@@ -102,6 +102,38 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
     loadTenantContext();
   }, []);
 
+  // Apply tenant module theme to <html> element when context loads
+  useEffect(() => {
+    if (!context) return;
+
+    const enabledModules = context.enabledModules;
+    let moduleKey: string = 'baby_care'; // Default fallback
+
+    // Determine primary module key (enabledModules is an array)
+    if (enabledModules.includes('industrial_cleaning' as any)) {
+      moduleKey = 'industrial_cleaning';
+    } else if (enabledModules.includes('beauty_spa' as any)) {
+      moduleKey = 'beauty_spa';
+    } else if (enabledModules.includes('babycare' as any) || enabledModules.includes('spa' as any)) {
+      moduleKey = 'baby_care';
+    }
+
+    // Set data-tenant-module attribute on <html> element
+    document.documentElement.dataset.tenantModule = moduleKey;
+    console.log('[TenantContextProvider] Applied module theme:', moduleKey);
+
+    // Update theme-color meta tag
+    const themeMeta = document.querySelector('meta[name="theme-color"]');
+    if (themeMeta) {
+      const themeColors: Record<string, string> = {
+        baby_care: '#FDF2F8',
+        beauty_spa: '#F0FDF4',
+        industrial_cleaning: '#F8FAFC',
+      };
+      themeMeta.setAttribute('content', themeColors[moduleKey] || themeColors.baby_care);
+    }
+  }, [context]);
+
   // Show loading state while fetching tenant configuration
   if (loading) {
     return (
