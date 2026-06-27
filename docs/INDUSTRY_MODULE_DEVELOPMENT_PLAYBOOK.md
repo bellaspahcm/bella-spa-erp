@@ -969,3 +969,300 @@ npm.cmd run test:critical
 npm.cmd run lint
 npm.cmd run build
 
+
+
+### 2026-06-22 - Industrial Cleaning UI/UX Theme và Terminology Compliance
+
+- **Module/tenant**: Industrial Cleaning (module mới), áp dụng pattern cho các ngành B2B tương lai.
+- **Màn hình/luồng**: Dashboard, customers, customer detail, booking panel, sidebar theme.
+- **Dấu hiệu**: 
+  1. Màu text xám nhạt khó đọc trên nền xanh nhạt của Industrial Cleaning theme
+  2. Thông tin khách hàng vẫn hiển thị fields Baby Care ("Ngày sinh", "Giới tính")
+  3. Badge "Đang có gói liệu trình" không phù hợp với Industrial Cleaning
+  4. Buttons và hover states vẫn màu hồng (rose/pink) thay vì blue/teal brand
+  5. Terminology hardcoded: "KTV", "Buổi", "gói liệu trình" thay vì dùng vocabulary system
+  
+- **Nguyên nhân gốc**:
+  1. **Text contrast**: CSS theme chỉ set base colors nhưng không override đủ các mức xám (slate-400/500/600, gray-400/500)
+  2. **Customer fields**: `getTenantModulePresentationOrNeutral()` không có case cho `industrial_cleaning`, fallback về NEUTRAL
+  3. **Badge/UI elements**: Conditional rendering thiếu check `tenantModuleKey !== 'industrial_cleaning'`
+  4. **Button colors**: CSS overrides thiếu `bg-rose-500/600`, `hover:bg-rose-600`, và `shadow-rose-*`
+  5. **Terminology**: Components không import và dùng `getModuleVocabulary()`, hardcode strings thay vì `vocab.worker.short`, `vocab.workUnit.singular`, `vocab.package.singular`
+
+- **Cách sửa theo thứ tự ưu tiên**:
+
+#### **1. Text Contrast (Highest Priority)**
+```css
+/* globals.css - Industrial Cleaning theme overrides */
+html[data-tenant-module="industrial_cleaning"] {
+  --muted-foreground: #334155; /* Tăng từ #475569 → #334155 (slate-700) */
+}
+
+html[data-tenant-module="industrial_cleaning"] .text-slate-500 {
+  color: #334155 !important; /* slate-700 thay vì slate-600 */
+}
+
+html[data-tenant-module="industrial_cleaning"] .text-slate-400 {
+  color: #475569 !important; /* slate-600 thay vì slate-500 */
+}
+
+html[data-tenant-module="industrial_cleaning"] .text-gray-500 {
+  color: #374151 !important; /* gray-700 thay vì gray-600 */
+}
+```
+
+**Quy tắc**:
+- Mỗi màu text xám tăng 1-2 bậc để đủ contrast trên nền sáng
+- Không tăng quá đậm trùng với text chính (`#001C44` navy)
+- Test trên các màu nền: white, slate-50, blue gradients
+
+#### **2. Customer Presentation (Module-Specific Labels)**
+```typescript
+// tenant-module-presentation.ts
+const INDUSTRIAL_CLEANING_CUSTOMER_PRESENTATION: CustomerPresentation = {
+  secondaryInfoTitle: 'Thông tin cơ sở',
+  secondaryInfoNameLabel: 'Loại cơ sở / Ghi chú',
+  secondaryInfoDateLabel: 'Lịch sử chăm sóc', // Không phải "Ngày sinh"
+  secondaryGenderLabel: 'Loại hình cơ sở', // Cho form, ẩn trong detail panel
+  // ... other B2B labels
+};
+
+// Update getTenantModulePresentationOrNeutral
+export function getTenantModulePresentationOrNeutral(
+  moduleKey: TenantModuleKey | null | undefined
+): CustomerPresentation {
+  if (moduleKey === 'beauty_spa') return BEAUTY_SPA_CUSTOMER_PRESENTATION;
+  if (moduleKey === 'industrial_cleaning') return INDUSTRIAL_CLEANING_CUSTOMER_PRESENTATION;
+  if (moduleKey === 'babycare') return BABYCARE_CUSTOMER_PRESENTATION;
+  return NEUTRAL_CUSTOMER_PRESENTATION;
+}
+```
+
+**Quy tắc**:
+- Mỗi module có presentation riêng với labels phù hợp ngữ cảnh
+- B2C: "Ngày sinh", "Giới tính"
+- B2B: "Lịch sử chăm sóc", "Loại hình cơ sở"
+- Fallback NEUTRAL chỉ dùng khi module chưa định nghĩa
+
+#### **3. Conditional Rendering (Hide Irrelevant UI)**
+```tsx
+// CustomerProfilePanel.tsx
+{/* Chỉ hiển thị Giới tính cho babycare và beauty_spa */}
+{tenantModuleKey !== 'industrial_cleaning' && (
+  <div className="...">
+    <span>{customerLabels.secondaryGenderLabel}</span>
+    <span>{customer.baby.gender}</span>
+  </div>
+)}
+
+// customers/page.tsx
+{/* Chỉ hiển thị badge cho babycare và beauty_spa */}
+{customer.is_in_care && tenantModuleKey !== 'industrial_cleaning' && (
+  <motion.div className="beauty-active-care-badge">
+    {customerLabels.activeCareBadge}
+  </motion.div>
+)}
+```
+
+**Quy tắc**:
+- Badge/field không phù hợp B2B thì conditional hide
+- Luôn check `tenantModuleKey` trước khi render
+- Không dùng `display: none` trong CSS, dùng conditional JSX
+
+#### **4. Button & Hover Color Overrides**
+```css
+/* Override rose/pink buttons cho industrial_cleaning */
+html[data-tenant-module="industrial_cleaning"] button[class*="bg-rose-500"],
+html[data-tenant-module="industrial_cleaning"] button[class*="bg-rose-600"] {
+  background-color: #2D93AE !important; /* Teal primary */
+}
+
+html[data-tenant-module="industrial_cleaning"] button[class*="bg-rose-500"]:hover,
+html[data-tenant-module="industrial_cleaning"] button[class*="hover:bg-rose-600"] {
+  background-color: #0C3776 !important; /* Blue darker hover */
+}
+
+html[data-tenant-module="industrial_cleaning"] [class*="shadow-rose-"],
+html[data-tenant-module="industrial_cleaning"] [class*="shadow-pink-"] {
+  --tw-shadow-color: rgba(45, 147, 174, 0.3) !important; /* Teal shadow */
+}
+```
+
+**Quy tắc**:
+- Override ở CSS level cao với `!important` để không cần sửa từng component
+- Cover: `bg-rose-*`, `hover:bg-rose-*`, `shadow-rose-*`, `border-rose-*`
+- Primary: Teal (#2D93AE), Hover: Blue (#0C3776)
+
+#### **5. Module Vocabulary System**
+```typescript
+// ActiveBookingPanel.tsx
+import { getModuleVocabulary } from '@/lib/business-rules/module-vocabulary';
+
+export function ActiveBookingPanel({
+  tenantModuleKey, // Thêm prop này
+  // ... other props
+}: {
+  tenantModuleKey: TenantModuleKey | null;
+  // ... other types
+}) {
+  const vocab = getModuleVocabulary(tenantModuleKey);
+  
+  return (
+    <>
+      <span>{vocab.worker.short} Phụ trách chính</span> {/* "NVS" hoặc "KTV" */}
+      <span>Tiến độ {vocab.workUnit.singular.toLowerCase()}</span> {/* "ca làm việc" hoặc "buổi" */}
+      <span>Chưa có {vocab.package.singular.toLowerCase()}</span> {/* Dynamic */}
+    </>
+  );
+}
+```
+
+**Quy tắc**:
+- **KHÔNG BAO GIỜ** hardcode: "KTV", "NVS", "Buổi", "Ca làm việc", "gói liệu trình", "Kỹ thuật viên"
+- Client components: Import và call `getModuleVocabulary(tenantModuleKey)`
+- Server components: Dùng `getModuleVocabulary()` từ `module-vocabulary.ts`
+- Pass `tenantModuleKey` prop từ page/controller xuống child components
+- Vocabulary keys:
+  - `vocab.worker.singular/plural/short/role`
+  - `vocab.workUnit.singular/plural/action`
+  - `vocab.service.singular/plural`
+  - `vocab.booking.singular/plural/action`
+  - `vocab.package.singular/plural`
+  - `vocab.customer.singular/plural/context`
+
+- **Test/guard đã thêm**:
+  - Visual review: Text contrast trên nền xanh nhạt
+  - Manual test: Customer detail page không hiển thị "Giới tính" cho Industrial Cleaning
+  - Manual test: Badge "Đang có gói liệu trình" không xuất hiện
+  - Manual test: Buttons màu teal/blue thay vì rose/pink
+  - Build passed: TypeScript 41s, 74 routes, no errors
+  
+- **Commits**:
+  - `324e87d9`: Text contrast improvements
+  - `1c729881`: Customer info fields + badge removal
+  - `e7abe72c`: Pink buttons/hover overrides
+  - `82832dc3`: Module vocabulary system
+
+- **Rủi ro còn lại**:
+  1. Các components khác có thể còn hardcode terminology - cần audit toàn bộ dashboard components
+  2. Dark mode của Industrial Cleaning chưa được test kỹ
+  3. Mobile theme chưa được verify trên device thật
+  4. Booking flow có thể còn terminology Baby Care trong modals/wizards
+  5. Error messages/toasts có thể còn hardcode terms
+
+- **Checklist cho module mới tương lai**:
+
+**Phase 4c - UI/UX Theme Compliance (BẮT BUỘC trước go-live)**
+
+1. **Text Contrast Audit**:
+   - [ ] Kiểm tra tất cả màu text: slate-300/400/500/600, gray-300/400/500/600
+   - [ ] Test trên tất cả màu nền: white, slate-50, module-specific gradients
+   - [ ] Muted text phải đủ contrast (tối thiểu 4.5:1 WCAG AA)
+   - [ ] Không được trùng màu với text chính (foreground)
+
+2. **Customer/Entity Presentation**:
+   - [ ] Tạo `<MODULE>_CUSTOMER_PRESENTATION` trong `tenant-module-presentation.ts`
+   - [ ] Override tất cả labels: `secondaryInfoTitle`, `secondaryInfoNameLabel`, `secondaryInfoDateLabel`, `secondaryGenderLabel`
+   - [ ] Update `getTenantModulePresentationOrNeutral()` với case mới
+   - [ ] Conditional hide fields không phù hợp: check `tenantModuleKey !== '<module>'`
+
+3. **Badge & UI Elements**:
+   - [ ] Tìm tất cả badge/tag/pill liên quan ngành cũ: `rg "beauty-active-care-badge|Đang có gói"`
+   - [ ] Conditional render hoặc update text theo module
+   - [ ] Icons và decorations phải phù hợp ngữ cảnh
+
+4. **Color Palette Override**:
+   - [ ] Định nghĩa color palette trong globals.css: primary, hover, accent, text, background
+   - [ ] Override tất cả màu ngành cũ:
+     ```css
+     html[data-tenant-module="<module>"] button[class*="bg-rose-"] { ... }
+     html[data-tenant-module="<module>"] [class*="text-rose-"] { ... }
+     html[data-tenant-module="<module>"] [class*="border-rose-"] { ... }
+     html[data-tenant-module="<module>"] [class*="shadow-rose-"] { ... }
+     ```
+   - [ ] Test hover states, focus rings, active states
+   - [ ] Đảm bảo CTA buttons có contrast cao, không bị mờ nhạt
+
+5. **Module Vocabulary System**:
+   - [ ] Định nghĩa vocabulary trong `module-vocabulary.ts`:
+     ```typescript
+     const <MODULE>_VOCABULARY: ModuleVocabulary = {
+       worker: { singular, plural, short, role },
+       workUnit: { singular, plural, action },
+       service: { singular, plural },
+       booking: { singular, plural, action },
+       package: { singular, plural },
+       customer: { singular, plural, context },
+     };
+     ```
+   - [ ] Update `getModuleVocabulary()` với case mới
+   - [ ] Audit toàn bộ components: `rg "KTV|Buổi|liệu trình|Kỹ thuật viên"`
+   - [ ] Thay hardcoded strings bằng `vocab.*` trong components
+   - [ ] Pass `tenantModuleKey` prop từ pages xuống components
+   - [ ] Test terminology hiển thị đúng cho mỗi module
+
+6. **Comprehensive Search Patterns**:
+   ```powershell
+   # Text hardcoded ngành cũ
+   rg "KTV|Kỹ thuật viên|Buổi|Ca làm|liệu trình|Mẹ|Bé|Combo|Massage|Tắm" src/app/dashboard --type tsx
+   
+   # Màu hồng/rose cần override
+   rg "rose-[0-9]|pink-[0-9]|bg-rose|text-rose|border-rose|shadow-rose" src/app/dashboard --type tsx
+   
+   # Customer fields có thể không phù hợp
+   rg "Ngày sinh|Giới tính|dob_baby|gender_baby" src/app/dashboard --type tsx
+   
+   # Badge/active states
+   rg "active-care-badge|Đang có gói|is_in_care" src/app/dashboard --type tsx
+   ```
+
+7. **Visual Regression Checklist**:
+   - [ ] Desktop: Sidebar theme đúng màu, text đủ contrast
+   - [ ] Desktop: Customer list, detail, booking panel đúng terminology
+   - [ ] Desktop: Buttons hover states đúng brand colors
+   - [ ] Mobile: Tất cả elements responsive, text readable
+   - [ ] Dark mode: Theme switching hoạt động (nếu support)
+   - [ ] F5/Hard refresh: Không flash theme/brand sai
+   - [ ] Loading states: Neutral hoặc module-specific, không flash ngành cũ
+
+8. **Documentation**:
+   - [ ] Update `docs/INDUSTRY_MODULE_DEVELOPMENT_PLAYBOOK.md` với module mới
+   - [ ] Screenshot theme trước/sau để reference
+   - [ ] Ghi lại color palette, vocabulary mappings
+   - [ ] Update `docs/implementation-artifacts/spec-<module>.md`
+
+**Tools để audit nhanh**:
+```powershell
+# Tìm hardcoded terminology
+rg "\"(KTV|Buổi|liệu trình)\"" src/app/dashboard --type tsx
+
+# Tìm màu rose/pink chưa override
+rg "className=\"[^\"]*rose-[0-9]" src/app/dashboard --type tsx
+
+# Tìm components chưa dùng vocabulary
+rg "import.*from.*components" src/app/dashboard/**/*.tsx | rg -v "getModuleVocabulary|useModuleVocabulary"
+
+# Check contrast (manual visual)
+# Đổi module sang industrial_cleaning, check màu text trên sidebar, cards, tables
+```
+
+**Lesson Learned Summary**:
+1. ✅ **CSS overrides ở high level > sửa từng component**: Dùng `html[data-tenant-module]` selector với `!important`
+2. ✅ **Vocabulary system > hardcode strings**: Centralized, dễ maintain, không miss
+3. ✅ **Conditional rendering > CSS hide**: JSX conditional rõ ràng hơn `display: none`
+4. ✅ **Text contrast là priority #1**: User không thể dùng nếu không đọc được
+5. ✅ **Build thành công ≠ UI đúng**: Cần visual verification và manual testing
+6. ✅ **Search exhaustively**: `rg` toàn bộ patterns trước khi claim "done"
+7. ❌ **Không giả định CSS theme đã đủ**: Luôn verify trên UI thật với module mới
+8. ❌ **Không skip presentation layer**: CustomerPresentation, vocabulary phải setup đầy đủ
+
+**Anti-patterns cần tránh**:
+- ❌ Hardcode "KTV", "Buổi", "liệu trình" trong JSX
+- ❌ Dùng `display: none` cho conditional UI, thay vì JSX conditional
+- ❌ Chỉ override một phần màu (bg nhưng quên shadow, border, hover)
+- ❌ Quên pass `tenantModuleKey` prop xuống child components
+- ❌ Fallback về NEUTRAL hoặc BABYCARE khi module mới chưa có presentation
+- ❌ Giả định "build pass = UI đúng"
+- ❌ Không test trên màu nền đa dạng (white, slate, gradients)
+- ❌ Copy-paste component cũ mà không audit terminology
+
