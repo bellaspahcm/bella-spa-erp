@@ -2649,7 +2649,8 @@ html[data-tenant-module="industrial_cleaning"] .beauty-erp-mobile-header .beauty
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-brand-subtitle,
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-header,
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-profile-role {
-  color: rgba(188, 254, 254, 0.8) !important;
+  color: rgba(188, 254, 254, 0.95) !important; /* Tăng từ 0.8 → 0.95 cho dễ đọc */
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); /* Thêm shadow để nổi bật trên nền đậm */
 }
 
 /* Removed duplicate scrollbar definition - consolidated above */
