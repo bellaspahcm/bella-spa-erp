@@ -129,7 +129,7 @@ export function KtvLeaveRequestModal({
                 <p className="text-xs text-rose-600 dark:text-[#A67D44] font-medium">Gửi yêu cầu nghỉ phép đến Quản trị viên</p>
               </div>
 
-              <form onSubmit={onSubmit} className="space-y-4 flex-grow overflow-y-auto pr-1">
+              <form onSubmit={onSubmit} className="space-y-4 flex-shrink overflow-y-auto pr-1 max-h-[calc(90vh-200px)]">
                 <div>
                   <label className="text-[10px] font-black text-slate-600 dark:text-[#D4C5B6] uppercase tracking-wider mb-1.5 block">
                     Chọn ngày nghỉ phép
