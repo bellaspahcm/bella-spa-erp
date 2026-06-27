@@ -2167,7 +2167,7 @@ html[data-tenant-module="industrial_cleaning"] {
   --card: #FFFFFF;
   --card-foreground: #001C44;
   --muted: #F1F5F9;
-  --muted-foreground: #475569; /* Tăng từ #64748B → #475569 (slate-600) cho dễ đọc hơn */
+  --muted-foreground: #334155; /* Tăng từ #475569 → #334155 (slate-700) cho dễ đọc hơn trên nền sáng */
   --border: rgba(45, 147, 174, 0.24); /* Teal border */
   --input: rgba(45, 147, 174, 0.22); /* Teal input border */
   --ring: #2D93AE; /* Teal focus ring */
@@ -2471,26 +2471,31 @@ html[data-tenant-module="baby_care"] .text-muted-foreground {
 /* Improve light gray text contrast for better readability (LIGHT MODE ONLY) */
 html[data-tenant-module="industrial_cleaning"] .text-slate-400,
 html[data-tenant-module="industrial_cleaning"] [class*="text-slate-400"] {
-  color: #64748b !important; /* Darkened from #94a3b8 */
+  color: #475569 !important; /* Tăng từ #64748b → #475569 (slate-600) cho dễ đọc */
 }
 
 html[data-tenant-module="industrial_cleaning"] .text-slate-500,
 html[data-tenant-module="industrial_cleaning"] [class*="text-slate-500"] {
-  color: #475569 !important; /* Darkened from #64748b - slate-600 for better contrast */
+  color: #334155 !important; /* Tăng từ #475569 → #334155 (slate-700) cho contrast cao hơn */
+}
+
+html[data-tenant-module="industrial_cleaning"] .text-slate-600,
+html[data-tenant-module="industrial_cleaning"] [class*="text-slate-600"] {
+  color: #1e293b !important; /* slate-800 - xám rất đậm, gần đen nhưng vẫn phân biệt được */
 }
 
 html[data-tenant-module="industrial_cleaning"] .text-gray-400,
 html[data-tenant-module="industrial_cleaning"] [class*="text-gray-400"] {
-  color: #6b7280 !important; /* Darkened from #9ca3af - gray-500 for better readability */
+  color: #4b5563 !important; /* Tăng từ #6b7280 → #4b5563 (gray-600) cho dễ đọc */
 }
 
 html[data-tenant-module="industrial_cleaning"] .text-gray-500,
 html[data-tenant-module="industrial_cleaning"] [class*="text-gray-500"] {
-  color: #4b5563 !important; /* Darkened from #6b7280 - gray-600 for high contrast */
+  color: #374151 !important; /* Tăng từ #4b5563 → #374151 (gray-700) cho contrast cao */
 }
 
 /* Improve muted foreground (secondary text) contrast */
 html[data-tenant-module="industrial_cleaning"] .text-muted-foreground {
-  color: #475569 !important; /* slate-600 - đậm hơn #64748B để dễ đọc nhưng không quá đen */
+  color: #334155 !important; /* Tăng từ #475569 → #334155 (slate-700) để dễ đọc hơn trên nền sáng */
 }
 
