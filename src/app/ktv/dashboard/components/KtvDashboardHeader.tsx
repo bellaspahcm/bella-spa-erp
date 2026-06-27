@@ -13,6 +13,7 @@ import {
 import type { ReactNode } from 'react';
 
 import { formatCurrency } from '@bella/shared';;
+import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
 
 export type KtvDashboardNotification = {
   id: string;
@@ -123,6 +124,8 @@ export function KtvDashboardHeader({
   onMarkAsRead,
   onSelectNotification,
 }: KtvDashboardHeaderProps) {
+  const vocab = useModuleVocabulary();
+  
   return (
     <div className="bg-white px-6 pt-8 pb-6 rounded-b-[40px] shadow-sm border-b border-slate-100">
       <div className="flex justify-between items-center mb-6">
@@ -263,8 +266,8 @@ export function KtvDashboardHeader({
       </div>
 
       <div className="mb-6">
-        <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-0.5">Kỹ thuật viên</p>
-        <h1 className="text-2xl font-black text-slate-900">{user?.full_name || 'Kỹ thuật viên'}</h1>
+        <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-0.5">{vocab.worker.singular}</p>
+        <h1 className="text-2xl font-black text-slate-900">{user?.full_name || vocab.worker.singular}</h1>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -273,8 +276,8 @@ export function KtvDashboardHeader({
           <p className="text-lg font-black">{formatCurrency(earnings.total)}</p>
         </div>
         <div className="bg-rose-600 p-4 rounded-3xl text-white shadow-lg">
-          <p className="text-[10px] font-black uppercase tracking-widest opacity-70 mb-1">Số ca đã xong</p>
-          <p className="text-lg font-black">{earnings.sessions} ca</p>
+          <p className="text-[10px] font-black uppercase tracking-widest opacity-70 mb-1">Số {vocab.workUnit.plural} đã xong</p>
+          <p className="text-lg font-black">{earnings.sessions} {vocab.workUnit.singular}</p>
         </div>
       </div>
     </div>

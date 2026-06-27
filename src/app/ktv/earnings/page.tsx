@@ -13,6 +13,7 @@ import { createClient } from '@/lib/supabase-client';
 import { formatCurrency, getLocalDateString } from '@bella/shared';;
 import { toast } from 'sonner';
 import Link from 'next/link';
+import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
 import type { Database } from '@/types/database.types';
 
 type KTVEarnings = Awaited<ReturnType<typeof getKTVEarnings>>;
@@ -70,6 +71,7 @@ function StatusBadge({ status }: { status: string }) {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function KTVEarningsPage() {
+  const vocab = useModuleVocabulary();
   const [earnings, setEarnings] = useState<KTVEarnings | null>(null);
   const [details, setDetails] = useState<EarningsSessionDetail[]>([]);
   const [leaderboardData, setLeaderboardData] = useState<KTVLeaderboardEntry | null>(null);
@@ -319,7 +321,7 @@ export default function KTVEarningsPage() {
             <div className="space-y-2 text-sm">
               {[
                 { label: 'Lương cứng',         value: rec.base_salary, color: 'text-slate-700' },
-                { label: 'Hoa hồng ca làm',    value: rec.session_bonus, color: 'text-emerald-600', prefix: '+' },
+                { label: `Hoa hồng ${vocab.workUnit.singular} làm`,    value: rec.session_bonus, color: 'text-emerald-600', prefix: '+' },
                 { label: 'Thưởng chất lượng',  value: rec.rating_bonus, color: 'text-amber-600', prefix: '+' },
                 { label: 'Thưởng KPI',         value: rec.kpi_bonus, color: 'text-primary', prefix: '+' },
                 { label: 'Phạt',               value: rec.violations_deduction, color: 'text-rose-500', prefix: '-' },

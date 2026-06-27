@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { KeyRound, LogOut, Mail, X } from 'lucide-react';
 
 import { formatCurrency } from '@bella/shared';;
+import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
 
 export type KtvProfileUser = {
   id?: string | null;
@@ -107,6 +108,8 @@ export function KtvProfileDrawer({
   onDiscardAction,
   onTriggerSync,
 }: KtvProfileDrawerProps) {
+  const vocab = useModuleVocabulary();
+  
   return (
     <AnimatePresence>
       {isOpen && (
@@ -144,9 +147,9 @@ export function KtvProfileDrawer({
                   {user?.full_name?.charAt(0) || 'K'}
                 </div>
                 <div>
-                  <h3 className="font-black text-xl">{user?.full_name || 'Kỹ thuật viên'}</h3>
+                  <h3 className="font-black text-xl">{user?.full_name || vocab.worker.singular}</h3>
                   <span className="bg-rose-500 text-white text-[9px] font-black px-2.5 py-1 rounded-full uppercase tracking-widest mt-1.5 inline-block">
-                    {user?.role === 'ktv' ? 'Kỹ thuật viên' : user?.role || 'Kỹ thuật viên'}
+                    {user?.role === 'ktv' ? vocab.worker.singular : user?.role || vocab.worker.singular}
                   </span>
                 </div>
               </div>
@@ -171,8 +174,8 @@ export function KtvProfileDrawer({
                   <p className="text-base font-black text-slate-800">{formatCurrency(earnings.total)}</p>
                 </div>
                 <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Số ca đã chạy</p>
-                  <p className="text-base font-black text-slate-800">{earnings.sessions} ca</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Số {vocab.workUnit.plural} đã chạy</p>
+                  <p className="text-base font-black text-slate-800">{earnings.sessions} {vocab.workUnit.singular}</p>
                 </div>
               </div>
 

@@ -29,6 +29,7 @@ import type {
   PaymentMethod,
 } from './types';
 import { formatNumberishCurrency, getErrorMessage } from './utils';
+import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
 import {
   simulateInterBranchClearing,
   type InterBranchClearingRecord,
@@ -45,6 +46,7 @@ const stickyBodyCellClassName =
   'bg-white';
 
 export default function FinancialReconciliationPage() {
+  const vocab = useModuleVocabulary();
   const [data, setData] = useState<FinancialAnomaliesData>({
     debt_alerts: [],
     orphaned_revenue: [],
@@ -411,7 +413,7 @@ export default function FinancialReconciliationPage() {
                         <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">Mã đối soát</th>
                         <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">Chi nhánh chủ nợ</th>
                         <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">Tháng</th>
-                        <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">Số buổi</th>
+                        <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">Số {vocab.workUnit.plural}</th>
                         <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">Đơn giá</th>
                         <th className="px-6 py-4 text-right text-[10px] font-black text-rose-500 uppercase tracking-wider whitespace-nowrap">Tổng tiền phải trả</th>
                         <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">Trạng thái</th>
@@ -513,7 +515,7 @@ export default function FinancialReconciliationPage() {
                         <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">Mã đối soát</th>
                         <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">Chi nhánh con nợ</th>
                         <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">Tháng</th>
-                        <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">Số buổi</th>
+                        <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">Số {vocab.workUnit.plural}</th>
                         <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">Đơn giá</th>
                         <th className="px-6 py-4 text-right text-[10px] font-black text-emerald-600 uppercase tracking-wider whitespace-nowrap">Tổng tiền phải thu</th>
                         <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">Trạng thái</th>
