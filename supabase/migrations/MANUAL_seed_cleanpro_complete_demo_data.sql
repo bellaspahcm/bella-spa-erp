@@ -314,9 +314,9 @@ BEGIN
   FOR i IN 1..8 LOOP
     -- Booking 1 sessions
     INSERT INTO public.session_logs (
-      booking_id, session_number, assigned_date, assigned_time, status, completed_date, notes
+      booking_id, tenant_id, session_number, assigned_date, assigned_time, status, completed_date, notes
     ) VALUES (
-      v_booking_1, i,
+      v_booking_1, v_tenant_id, i,
       CASE 
         WHEN i = 1 THEN (CURRENT_DATE - INTERVAL '2 days')::date
         WHEN i = 2 THEN (CURRENT_DATE - INTERVAL '1 day')::date
@@ -337,9 +337,9 @@ BEGIN
 
     -- Booking 2 sessions
     INSERT INTO public.session_logs (
-      booking_id, session_number, assigned_date, assigned_time, status, completed_date, notes
+      booking_id, tenant_id, session_number, assigned_date, assigned_time, status, completed_date, notes
     ) VALUES (
-      v_booking_2, i,
+      v_booking_2, v_tenant_id, i,
       CASE 
         WHEN i = 1 THEN (CURRENT_DATE - INTERVAL '2 days')::date
         WHEN i = 2 THEN (CURRENT_DATE - INTERVAL '1 day')::date
@@ -360,9 +360,9 @@ BEGIN
 
     -- Booking 3 sessions
     INSERT INTO public.session_logs (
-      booking_id, session_number, assigned_date, assigned_time, status, completed_date, notes
+      booking_id, tenant_id, session_number, assigned_date, assigned_time, status, completed_date, notes
     ) VALUES (
-      v_booking_3, i,
+      v_booking_3, v_tenant_id, i,
       CASE 
         WHEN i = 1 THEN (CURRENT_DATE - INTERVAL '2 days')::date
         WHEN i = 2 THEN (CURRENT_DATE - INTERVAL '1 day')::date
@@ -383,9 +383,9 @@ BEGIN
 
     -- Booking 4 sessions
     INSERT INTO public.session_logs (
-      booking_id, session_number, assigned_date, assigned_time, status, completed_date, notes
+      booking_id, tenant_id, session_number, assigned_date, assigned_time, status, completed_date, notes
     ) VALUES (
-      v_booking_4, i,
+      v_booking_4, v_tenant_id, i,
       CASE 
         WHEN i = 1 THEN (CURRENT_DATE - INTERVAL '2 days')::date
         WHEN i = 2 THEN (CURRENT_DATE - INTERVAL '1 day')::date
@@ -406,9 +406,9 @@ BEGIN
 
     -- Booking 5 sessions
     INSERT INTO public.session_logs (
-      booking_id, session_number, assigned_date, assigned_time, status, completed_date, notes
+      booking_id, tenant_id, session_number, assigned_date, assigned_time, status, completed_date, notes
     ) VALUES (
-      v_booking_5, i,
+      v_booking_5, v_tenant_id, i,
       CASE 
         WHEN i = 1 THEN (CURRENT_DATE - INTERVAL '2 days')::date
         WHEN i = 2 THEN (CURRENT_DATE - INTERVAL '1 day')::date
@@ -429,9 +429,9 @@ BEGIN
 
     -- Booking 6 sessions
     INSERT INTO public.session_logs (
-      booking_id, session_number, assigned_date, assigned_time, status, completed_date, notes
+      booking_id, tenant_id, session_number, assigned_date, assigned_time, status, completed_date, notes
     ) VALUES (
-      v_booking_6, i,
+      v_booking_6, v_tenant_id, i,
       CASE 
         WHEN i = 1 THEN (CURRENT_DATE - INTERVAL '2 days')::date
         WHEN i = 2 THEN (CURRENT_DATE - INTERVAL '1 day')::date
@@ -452,9 +452,9 @@ BEGIN
 
     -- Booking 7 sessions
     INSERT INTO public.session_logs (
-      booking_id, session_number, assigned_date, assigned_time, status, completed_date, notes
+      booking_id, tenant_id, session_number, assigned_date, assigned_time, status, completed_date, notes
     ) VALUES (
-      v_booking_7, i,
+      v_booking_7, v_tenant_id, i,
       CASE 
         WHEN i = 1 THEN (CURRENT_DATE - INTERVAL '2 days')::date
         WHEN i = 2 THEN (CURRENT_DATE - INTERVAL '1 day')::date
@@ -475,9 +475,9 @@ BEGIN
 
     -- Booking 8 sessions
     INSERT INTO public.session_logs (
-      booking_id, session_number, assigned_date, assigned_time, status, completed_date, notes
+      booking_id, tenant_id, session_number, assigned_date, assigned_time, status, completed_date, notes
     ) VALUES (
-      v_booking_8, i,
+      v_booking_8, v_tenant_id, i,
       CASE 
         WHEN i = 1 THEN (CURRENT_DATE - INTERVAL '2 days')::date
         WHEN i = 2 THEN (CURRENT_DATE - INTERVAL '1 day')::date
