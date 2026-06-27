@@ -1,7 +1,8 @@
 'use client';
 
 import { getCurrentUser } from '@/services/user-actions';
-import { ALL_GUIDES,GuideListItem,isManualPermitted } from '@/services/user-manuals-utils';
+import { getModuleGuides, GuideListItem, isManualPermitted } from '@/services/user-manuals-utils';
+import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
 import { motion } from 'framer-motion';
 import {
 ArrowRight,
@@ -15,6 +16,7 @@ import Link from 'next/link';
 import { useEffect,useState } from 'react';
 
 export default function UserManualsHub() {
+  const { tenantModuleKey } = useTenantModuleKey();
   const [guides, setGuides] = useState<GuideListItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -24,7 +26,8 @@ export default function UserManualsHub() {
       try {
         const user = await getCurrentUser();
         const role = user?.role ?? null;
-        setGuides(ALL_GUIDES.filter((g) => isManualPermitted(role, g.slug)));
+        const moduleGuides = getModuleGuides(tenantModuleKey);
+        setGuides(moduleGuides.filter((g) => isManualPermitted(role, g.slug)));
       } catch (err) {
         console.error('Failed to load guides:', err);
       } finally {
@@ -32,7 +35,7 @@ export default function UserManualsHub() {
       }
     }
     loadGuides();
-  }, []);
+  }, [tenantModuleKey]);
 
   const filteredGuides = guides.filter(
     (g) =>
