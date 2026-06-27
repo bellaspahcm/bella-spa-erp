@@ -26,6 +26,7 @@ import {
 import { toast } from 'sonner';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
+import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
 
 interface PnLData {
   month_year: string;
@@ -79,6 +80,7 @@ function formatChecksForConfirmation(checks: AccountingHealthCheck[]) {
 }
 
 export function FinancePnLSummary({ pnl, performance, selectedMonth, onMonthChange, onRefresh }: FinancePnLSummaryProps) {
+  const vocab = useModuleVocabulary();
   const [isLocking, setIsLocking] = useState(false);
   const [isUnlocking, setIsUnlocking] = useState(false);
   const [preflight, setPreflight] = useState<AccountingHealthSummary | null>(null);
@@ -503,7 +505,7 @@ export function FinancePnLSummary({ pnl, performance, selectedMonth, onMonthChan
                 <Activity className="w-5 h-5 text-amber-600" />
               </div>
               <div className="flex flex-col">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Quỹ lương KTV</span>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Quỹ lương {vocab.worker.plural}</span>
                 {!pnl.is_locked && (
                   <span className="text-[8px] font-black text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-full w-fit mt-0.5 animate-pulse border border-amber-100">
                     Real-time (Tạm tính)
@@ -514,13 +516,13 @@ export function FinancePnLSummary({ pnl, performance, selectedMonth, onMonthChan
             <h4 className="text-2xl font-black text-slate-900">{Number(pnl.total_ktv_salaries).toLocaleString()}đ</h4>
             <p className="text-[10px] font-bold text-slate-500 mt-2">
               {!pnl.is_locked 
-                ? "Cộng dồn hoa hồng ca + lương cứng đến nay" 
+                ? `Cộng dồn hoa hồng ${vocab.workUnit.singular.toLowerCase()} + lương cứng đến nay`
                 : "Lương cứng + Hoa hồng + Thưởng (Đã chốt)"}
             </p>
           </div>
           {!pnl.is_locked && (
             <div className="mt-3 text-[9px] text-amber-700 bg-amber-50/30 p-2.5 rounded-xl border border-amber-100/50 leading-relaxed font-semibold">
-              ⚠️ Đây là quỹ lương tạm tính tích lũy theo số ca dịch vụ hoàn thành thực tế hàng ngày, không phải mức chi cố định.
+              ⚠️ Đây là quỹ lương tạm tính tích lũy theo số {vocab.workUnit.plural.toLowerCase()} dịch vụ hoàn thành thực tế hàng ngày, không phải mức chi cố định.
             </div>
           )}
         </motion.div>
@@ -568,7 +570,7 @@ export function FinancePnLSummary({ pnl, performance, selectedMonth, onMonthChan
                 <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Gói dịch vụ</th>
                 <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Số lượng</th>
                 <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Doanh thu</th>
-                <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Chi phí KTV</th>
+                <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Chi phí {vocab.worker.plural}</th>
                 <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Lợi nhuận gộp</th>
                 <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Biên lợi nhuận</th>
               </tr>
