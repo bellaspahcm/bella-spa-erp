@@ -2218,11 +2218,12 @@ html[data-tenant-module="industrial_cleaning"] .beauty-erp-mobile-header {
 }
 
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-sidebar {
-  background: #F7FCFD !important; /* Xanh rất nhạt (gần trắng với tint xanh nhẹ) */
-  border-color: rgba(45, 147, 174, 0.18) !important;
-  box-shadow: 16px 0 44px rgba(139, 200, 216, 0.08) !important;
-  color: #001C44;
-  background-color: #F7FCFD !important; /* Đảm bảo override Tailwind */
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0) 34%),
+    linear-gradient(158deg, #001C44 0%, #0C3776 42%, #2D93AE 100%) !important;
+  border-color: rgba(45, 147, 174, 0.34) !important;
+  box-shadow: 16px 0 44px rgba(0, 28, 68, 0.18) !important;
+  color: #f8f9fa !important;
 }
 
 /* Stronger selector to override Tailwind inline classes */
@@ -2230,10 +2231,11 @@ html[data-tenant-module="industrial_cleaning"] aside.beauty-erp-sidebar,
 html[data-tenant-module="industrial_cleaning"] aside[class*="bg-[#FFF0F3]"],
 html[data-tenant-module="industrial_cleaning"] aside[class*="bg-[#FAFAFA]"],
 html[data-tenant-module="industrial_cleaning"] aside[class*="border-[#FBCFE8]"] {
-  background: #F7FCFD !important; /* Xanh rất nhạt thay vì gradient đậm */
-  background-color: #F7FCFD !important;
-  border-color: rgba(45, 147, 174, 0.18) !important;
-  color: #001C44 !important;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0) 34%),
+    linear-gradient(158deg, #001C44 0%, #0C3776 42%, #2D93AE 100%) !important;
+  border-color: rgba(45, 147, 174, 0.34) !important;
+  color: #f8f9fa !important;
 }
 
 /* Override decorative glows - change from pink to subtle teal */
