@@ -132,6 +132,7 @@ export default function CustomerDetailPage() {
           <ActiveBookingPanel
             activeBooking={activeBooking}
             ktvs={ktvs}
+            tenantModuleKey={tenantModuleKey}
             userRole={userRole}
             isDepositOnly={isDepositOnly}
             activeDepositAmount={activeDepositAmount}

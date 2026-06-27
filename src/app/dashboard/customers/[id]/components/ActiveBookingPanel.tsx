@@ -2,6 +2,8 @@
 
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { calculateBookingPaymentState } from '@/lib/business-rules/payment';
+import { getModuleVocabulary } from '@/lib/business-rules/module-vocabulary';
+import type { TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 import { cn, formatNumberWithSeparator } from '@/lib/utils';
 import { ChevronRight, FileText, Image as ImageIcon, Loader2, MessageCircle, Share2, Sparkles, User } from 'lucide-react';
 import type { CustomerDetailBooking, KtvOption } from '../types';
@@ -9,6 +11,7 @@ import type { CustomerDetailBooking, KtvOption } from '../types';
 export function ActiveBookingPanel({
   activeBooking,
   ktvs,
+  tenantModuleKey,
   userRole,
   isDepositOnly,
   activeDepositAmount,
@@ -27,6 +30,7 @@ export function ActiveBookingPanel({
 }: {
   activeBooking: CustomerDetailBooking | null;
   ktvs: KtvOption[];
+  tenantModuleKey: TenantModuleKey | null;
   userRole: 'admin' | 'ktv';
   isDepositOnly: boolean;
   activeDepositAmount: number;
@@ -43,6 +47,8 @@ export function ActiveBookingPanel({
   onUpdateKtv: (ktvId: string) => void;
   onOpenBookingSessions: () => void;
 }) {
+  const vocab = getModuleVocabulary(tenantModuleKey);
+  
   const paymentState = activeBooking
     ? calculateBookingPaymentState({
         fullPrice: activeBooking.full_price,
@@ -77,7 +83,7 @@ export function ActiveBookingPanel({
                           {isDepositOnly ? 'Trạng thái: Chờ chọn gói' : 'Gói dịch vụ hiện tại'}
                         </p>
                         <h2 className="text-2xl font-black text-white leading-tight sm:text-3xl">
-                          {isDepositOnly ? 'Đã đặt cọc (Chưa chọn gói)' : (activeBooking?.packages?.name || activeBooking?.package_name || 'Chưa có gói liệu trình')}
+                          {isDepositOnly ? 'Đã đặt cọc (Chưa chọn gói)' : (activeBooking?.packages?.name || activeBooking?.package_name || `Chưa có ${vocab.package.singular.toLowerCase()}`)}
                         </h2>
                       </div>
 
@@ -212,7 +218,7 @@ export function ActiveBookingPanel({
                   <div className="space-y-3">
                     <div className="flex items-center gap-3 text-white/60">
                       <User className="w-4 h-4" />
-                      <span className="text-[10px] font-black uppercase tracking-widest">KTV Phụ trách chính</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest">{vocab.worker.short} Phụ trách chính</span>
                     </div>
                     <div className="relative">
                       <PremiumSelect
@@ -230,7 +236,7 @@ export function ActiveBookingPanel({
 
                   <div className="bg-white/5 rounded-3xl p-5 border border-white/10 flex flex-col justify-center">
                     <div className="flex justify-between items-center mb-2">
-                      <span className="text-white/40 text-[10px] font-black uppercase tracking-widest">Tiến độ buổi</span>
+                      <span className="text-white/40 text-[10px] font-black uppercase tracking-widest">Tiến độ {vocab.workUnit.singular.toLowerCase()}</span>
                       <span className="text-white font-black text-sm">{activeBooking.completed_sessions || 0}/{activeBooking.total_sessions || 0}</span>
                       <button
                         onClick={onOpenBookingSessions}
