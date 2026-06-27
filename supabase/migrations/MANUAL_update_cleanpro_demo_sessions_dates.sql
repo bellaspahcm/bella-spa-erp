@@ -82,7 +82,7 @@ UPDATE public.session_logs sl
 SET 
   status = CASE 
     WHEN sl.session_number <= 2 THEN 'completed'
-    WHEN sl.session_number = 3 AND sl.assigned_time < TO_CHAR(NOW(), 'HH24:MI') THEN 'in_progress'
+    WHEN sl.session_number = 3 AND sl.assigned_time::time < CURRENT_TIME THEN 'in_progress'
     WHEN sl.session_number = 3 THEN 'scheduled'
     ELSE 'scheduled'
   END,
