@@ -244,6 +244,10 @@ export default function SubscriptionTab() {
               getSubscriptionInvoiceHistory()
             ]);
             
+            // Debug: Show what we got back
+            console.log('[DEBUG] Subscription status after payment:', newStatus);
+            console.log('[DEBUG] Invoice that was paid:', invoiceNumber);
+            
             // Check if the invoice is now marked as paid
             const paidInvoice = newInvoices.find(
               inv => inv.invoice_number === invoiceNumber && inv.status === 'paid'
@@ -254,11 +258,15 @@ export default function SubscriptionTab() {
               setStatus(newStatus);
               setInvoices(newInvoices);
               subscriptionUpdated = true;
-              toast.success('✅ Gói cước đã được kích hoạt thành công!');
+              
+              // Show detailed success message
+              const tierName = newStatus.limits?.tierName || newStatus.tier;
+              toast.success(`✅ Gói cước "${tierName}" đã được kích hoạt thành công!`);
             } else {
               // Not updated yet, retry after delay
               retries++;
               if (retries < maxRetries) {
+                console.log(`[DEBUG] Retry attempt ${retries}/${maxRetries}...`);
                 await new Promise(resolve => setTimeout(resolve, 1000));
               }
             }
