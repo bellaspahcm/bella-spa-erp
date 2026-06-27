@@ -2702,7 +2702,7 @@ html[data-tenant-module="industrial_cleaning"] .beauty-erp-profile-role {
 /* Removed duplicate scrollbar definition - consolidated above */
 
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-item {
-  color: rgba(255, 255, 255, 0.72) !important;
+  color: #FFFFFF !important; /* White 100% cho nav items */
   border-color: transparent !important;
 }
 
@@ -2716,6 +2716,7 @@ html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-item:hover {
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-item-active {
   background: rgba(255, 255, 255, 0.96) !important;
   border-color: rgba(45, 147, 174, 0.5) !important;
+  border-radius: 1.5rem !important; /* Fix cắt viền trắng */
   color: #2D93AE !important;
   box-shadow: 0 14px 32px rgba(0, 28, 68, 0.22) !important;
 }
