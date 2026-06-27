@@ -547,12 +547,10 @@ export function Sidebar() {
       )}>
         {/* Soft decorative light glows */}
         <div className={cn(
-          "absolute -top-24 -left-24 w-64 h-64 bg-pink-300/30 dark:bg-[#5D1C34]/10 rounded-full blur-[100px] pointer-events-none",
-          (isBeautySpaShell || isIndustrialCleaningShell) && "hidden"
+          "absolute -top-24 -left-24 w-64 h-64 bg-pink-300/30 dark:bg-[#5D1C34]/10 rounded-full blur-[100px] pointer-events-none hidden"
         )} />
         <div className={cn(
-          "absolute -bottom-24 -right-24 w-64 h-64 bg-rose-300/25 dark:bg-[#A67D44]/5 rounded-full blur-[100px] pointer-events-none",
-          (isBeautySpaShell || isIndustrialCleaningShell) && "hidden"
+          "absolute -bottom-24 -right-24 w-64 h-64 bg-rose-300/25 dark:bg-[#A67D44]/5 rounded-full blur-[100px] pointer-events-none hidden"
         )} />
 
         {/* ── Logo & Mobile Close Button ── */}
