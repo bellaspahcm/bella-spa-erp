@@ -626,8 +626,8 @@ export function Sidebar() {
                   whileHover={{ x: 4 }}
                   className={cn(
                     "flex items-center gap-4 px-5 py-3.5 rounded-[1.5rem] transition-all duration-300 relative group cursor-pointer border",
-                    isBeautySpaShell && "beauty-erp-nav-item",
-                    isBeautySpaShell && isActive && "beauty-erp-nav-item-active",
+                    (isBeautySpaShell || isIndustrialCleaningShell) && "beauty-erp-nav-item",
+                    (isBeautySpaShell || isIndustrialCleaningShell) && isActive && "beauty-erp-nav-item-active",
                     isActive
                       ? "bg-white text-primary border-primary/20 shadow-[0_8px_20px_rgba(219,39,119,0.12)] ring-1 ring-primary/20 dark:bg-[#5D1C34]/30 dark:text-[#EFE9E1] dark:border-[#A67D44]/40 dark:ring-[#A67D44]/20 dark:shadow-none"
                       : "text-[#8A6D7C] bg-transparent border-transparent hover:bg-white/70 hover:text-primary hover:shadow-[0_4px_12px_rgba(219,39,119,0.03)] hover:border-[#FFE4E6]/50 dark:text-[#CDBCAB] dark:hover:bg-[#1C1B19]/50 dark:hover:text-[#EFE9E1] dark:hover:border-[#3E3A35]/50"
@@ -669,13 +669,13 @@ export function Sidebar() {
           {/* Unified Profile & Actions Panel */}
           <div className={cn(
             "bg-white/80 dark:bg-[#1C1B19] rounded-[1.25rem] shadow-[0_4px_20px_rgba(219,39,119,0.06)] dark:shadow-none border border-[#FFE4E6] dark:border-[#3E3A35] flex flex-col overflow-hidden transition-all duration-300 hover:border-rose-300 dark:hover:border-[#A67D44]/30",
-            isBeautySpaShell && "beauty-erp-profile-card"
+            (isBeautySpaShell || isIndustrialCleaningShell) && "beauty-erp-profile-card"
           )}>
             <div className="p-3 flex items-center gap-3">
               <div className="relative shrink-0">
                 <div className={cn(
                   "w-9 h-9 bg-primary/10 dark:bg-[#5D1C34]/40 rounded-full flex items-center justify-center text-primary dark:text-[#A67D44] font-extrabold text-sm shadow-sm transition-transform duration-300 group-hover:scale-105",
-                  isBeautySpaShell && "beauty-erp-avatar"
+                  (isBeautySpaShell || isIndustrialCleaningShell) && "beauty-erp-avatar"
                 )}>
                   {user?.full_name?.charAt(0)?.toUpperCase() || 'A'}
                 </div>
@@ -684,18 +684,18 @@ export function Sidebar() {
               <div className="min-w-0 flex-1">
                 <p className={cn(
                   "text-[13px] font-extrabold text-[#4C243B] dark:text-[#EFE9E1] truncate leading-tight",
-                  isBeautySpaShell && "beauty-erp-profile-name"
+                  (isBeautySpaShell || isIndustrialCleaningShell) && "beauty-erp-profile-name"
                 )}>{user?.full_name || 'Admin Spa'}</p>
                 <p className={cn(
                   "text-[9px] text-primary dark:text-[#A67D44] font-black uppercase tracking-[0.1em] mt-0.5",
-                  isBeautySpaShell && "beauty-erp-profile-role"
+                  (isBeautySpaShell || isIndustrialCleaningShell) && "beauty-erp-profile-role"
                 )}>{roleLabel}</p>
               </div>
             </div>
             
             <div className={cn(
               "h-px w-full bg-gradient-to-r from-transparent via-[#FFE4E6] dark:via-[#3E3A35] to-transparent",
-              isBeautySpaShell && "beauty-erp-profile-divider"
+              (isBeautySpaShell || isIndustrialCleaningShell) && "beauty-erp-profile-divider"
             )} />
             
             <div className="flex items-center justify-between p-2">
@@ -707,7 +707,7 @@ export function Sidebar() {
                  title="Đăng xuất"
                  className={cn(
                    "p-2 mr-1 rounded-xl text-[#8A6D7C] dark:text-[#CDBCAB] hover:bg-rose-50 hover:text-primary dark:hover:bg-[#5D1C34]/40 dark:hover:text-[#A67D44] transition-all",
-                   isBeautySpaShell && "beauty-erp-icon-button"
+                   (isBeautySpaShell || isIndustrialCleaningShell) && "beauty-erp-icon-button"
                  )}
                >
                  <LogOut className="w-4 h-4" />
