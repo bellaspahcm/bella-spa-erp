@@ -858,6 +858,28 @@ html[data-tenant-module="pending"] [class*="to-pink-"] {
   --tw-gradient-to: #074e44 var(--tw-gradient-to-position) !important;
 }
 
+/* =========================================================================
+   BABY CARE / DEFAULT THEME - Pink Sidebar Override
+   Baby Care (babycare module or no module) uses pink theme
+   Stronger selectors to override Tailwind inline bg-[#FAFAFA] class
+   ========================================================================= */
+
+/* Override sidebar background for Baby Care / Default theme */
+aside.beauty-erp-sidebar:not([data-module="beauty_spa"]):not([data-module="industrial_cleaning"]),
+html:not([data-tenant-module="beauty_spa"]):not([data-tenant-module="industrial_cleaning"]) aside[class*="bg-[#FAFAFA]"].beauty-erp-sidebar {
+  background: linear-gradient(180deg, #FFF0F3 0%, #FCE7F3 100%) !important;
+  border-color: rgba(236, 72, 153, 0.15) !important;
+  color: #831843 !important;
+}
+
+/* Dark mode Baby Care sidebar */
+.dark aside.beauty-erp-sidebar:not([data-module="beauty_spa"]):not([data-module="industrial_cleaning"]),
+html.dark:not([data-tenant-module="beauty_spa"]):not([data-tenant-module="industrial_cleaning"]) aside[class*="bg-[#FAFAFA]"].beauty-erp-sidebar {
+  background: linear-gradient(135deg, #1C1B19 0%, #2E2B27 100%) !important;
+  border-color: rgba(166, 125, 68, 0.2) !important;
+  color: #EFE9E1 !important;
+}
+
 /* Beauty Spa tenant shell: scoped by runtime module marker, never applied to Bella/Babycare tenants. */
 html[data-tenant-module="beauty_spa"] {
   --primary: #074e44;
