@@ -137,15 +137,16 @@
   --color-border: var(--border);
   --color-pink-deep: #881337;
   
-  /* Override Tailwind default slate colors for better contrast on white/pink bg */
-  --color-slate-300: #cbd5e1;
-  --color-slate-400: #94a3b8;
-  --color-slate-500: #64748b;
-  --color-slate-600: #475569;
-  --color-gray-300: #d1d5db;
-  --color-gray-400: #9ca3af;
-  --color-gray-500: #6b7280;
-  --color-gray-600: #4b5563;
+  /* Override Tailwind default slate colors for better contrast on white/pink bg
+     Default Tailwind values are too light. Push all shades 2 steps darker. */
+  --color-slate-300: #94a3b8; /* was #cbd5e1, now use 400 */
+  --color-slate-400: #64748b; /* was #94a3b8, now use 500 for better contrast */
+  --color-slate-500: #475569; /* was #64748b, now use 600 for better contrast */
+  --color-slate-600: #334155; /* was #475569, now use 700 for better contrast */
+  --color-gray-300: #9ca3af; /* was #d1d5db, now use 400 */
+  --color-gray-400: #6b7280; /* was #9ca3af, now use 500 for better contrast */
+  --color-gray-500: #4b5563; /* was #6b7280, now use 600 for better contrast */
+  --color-gray-600: #374151; /* was #4b5563, now use 700 for better contrast */
 
   --font-sans: var(--font-sans);
 

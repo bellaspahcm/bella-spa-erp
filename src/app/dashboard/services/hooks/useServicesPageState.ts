@@ -600,7 +600,12 @@ export function useServicesPageState() {
   const filteredServices = useMemo(() => services
     .filter(service => {
       const matchesSearch = service.name.toLowerCase().includes(searchQuery.toLowerCase());
-      const normalizedModuleKey = service.module_key === 'beauty_spa' ? 'beauty_spa' : 'babycare';
+      // Support industrial_cleaning, beauty_spa, and babycare modules
+      const normalizedModuleKey = (
+        service.module_key === 'beauty_spa' ? 'beauty_spa'
+        : service.module_key === 'industrial_cleaning' ? 'industrial_cleaning'
+        : 'babycare'
+      );
       const matchesEnabledModule = enabledModules[normalizedModuleKey];
       const matchesModule = matchesEnabledModule && (moduleFilter === 'all' || normalizedModuleKey === moduleFilter);
       const matchesStatus = statusFilter === 'all' || service.status === statusFilter;
