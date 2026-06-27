@@ -17,6 +17,7 @@ import {
   ChevronRight 
 } from 'lucide-react';
 import { getTenantModulePresentationOrNeutral } from '@/lib/business-rules/tenant-module-presentation';
+import { getModuleVocabulary } from '@/lib/business-rules/module-vocabulary';
 import type { TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 import { resolvePackageName } from '@bella/shared';
 import { cn } from '@/lib/utils';;
@@ -48,6 +49,7 @@ export function SessionCard({
 }: SessionCardProps) {
   const [quickNote, setQuickNote] = useState('');
   const customerLabels = getTenantModulePresentationOrNeutral(tenantModuleKey);
+  const vocab = getModuleVocabulary(tenantModuleKey);
   
   const completedCount = Number(booking.completed_sessions) || 0;
   const totalCount = Number(booking.total_sessions) || 15;
@@ -134,7 +136,7 @@ export function SessionCard({
           {!hasKtv && !isFullyCompleted && (
             <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border bg-amber-50 text-amber-600 border-amber-200">
               <AlertCircle className="w-3 h-3" />
-              Chưa phân KTV
+              Chưa phân {vocab.worker.short}
             </span>
           )}
         </div>
@@ -150,7 +152,7 @@ export function SessionCard({
           </div>
           <div className="flex min-w-0 items-center gap-2.5">
             <UserCircle className="h-4 w-4 shrink-0 text-primary/60" />
-            KTV: <span className={cn("font-black", hasKtv ? "text-slate-900" : "text-amber-500")}>
+            {vocab.worker.short}: <span className={cn("font-black", hasKtv ? "text-slate-900" : "text-amber-500")}>
               {booking.assigned_ktv_name || 'Chưa phân công'}
             </span>
           </div>
@@ -209,10 +211,10 @@ export function SessionCard({
             <div className="w-full flex flex-col gap-2">
               <div className="flex w-full items-center justify-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3.5 text-[10px] font-black uppercase tracking-widest text-amber-700 sm:px-5">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                <span>Chưa phân công KTV</span>
+                <span>Chưa phân công {vocab.worker.short}</span>
               </div>
               <p className="text-center text-[9px] font-bold text-slate-400 leading-snug">
-                Vào <Link href={`/dashboard/customers/${booking.customers?.id}?bookingId=${booking.id}`} className="text-primary hover:underline font-black cursor-pointer underline-offset-2" onClick={(e) => e.stopPropagation()}>Chi tiết khách hàng</Link> để phân KTV trước khi cập nhật buổi
+                Vào <Link href={`/dashboard/customers/${booking.customers?.id}?bookingId=${booking.id}`} className="text-primary hover:underline font-black cursor-pointer underline-offset-2" onClick={(e) => e.stopPropagation()}>Chi tiết khách hàng</Link> để phân {vocab.worker.short} trước khi cập nhật {vocab.workUnit.singular.toLowerCase()}
               </p>
             </div>
           ) : (
