@@ -48,6 +48,64 @@
 
 ---
 
+### 🎨 Theme Color Fixes (Post-Phase 2)
+
+**Completion Date:** June 22, 2026
+
+**Issue:** Industrial Cleaning sidebar theme colors không hiển thị đúng - brand name, section headers, và nav items đều dùng default colors thay vì navy/teal/cyan theme.
+
+**Root Causes Identified:**
+
+1. **Duplicate CSS Sections** (Commit: 09e67476)
+   - Có 2 sections Industrial Cleaning CSS trong `globals.css`
+   - Section thứ 2 (lines 2900-3102) override section đầu tiên với giá trị sai:
+     - Brand script: `#f8f9fa` (xám nhạt) thay vì `#FFFFFF` (trắng)
+     - Nav header: `rgba(188, 254, 254, 0.86)` thay vì `0.95`
+     - Nav items: `rgba(248, 249, 250, 0.74)` (xám 74%) thay vì `#FFFFFF`
+   - **Fix:** Xóa toàn bộ duplicate section, chỉ giữ section đầu tiên
+
+2. **Missing Class Applications** (Commit: b5979d4d)
+   - Component `sidebar.tsx` chỉ apply `beauty-erp-*` classes cho Beauty Spa
+   - Industrial Cleaning không được apply theme classes
+   - **Fix:** Thay `isBeautySpaShell &&` bằng `(isBeautySpaShell || isIndustrialCleaningShell) &&` ở 8 vị trí:
+     - `beauty-erp-brand-script` (brand name "CleanPro")
+     - `beauty-erp-brand-subtitle` (subtitle text)
+     - `beauty-erp-logo-mark` (logo container)
+     - `beauty-erp-icon-button` (mobile close button + logout button)
+     - `beauty-erp-nav-header` (section headers "TỔNG QUAN", "AI COPILOT")
+     - `beauty-erp-avatar`, `beauty-erp-profile-card`, `beauty-erp-profile-name`, etc.
+
+3. **Low Contrast Nav Headers** (Commits: 5bfbf1c2, b70dafe7)
+   - Section headers màu cyan `rgba(188, 254, 254, 0.8)` quá nhạt trên nền navy
+   - **Fix:** Tăng opacity từ `0.8` → `0.95` + thêm `text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3)`
+   - **Critical Fix:** Apply `beauty-erp-nav-header` class cho Industrial Cleaning trong `sidebar.tsx`
+
+**Commits History:**
+1. `09e67476` - Remove duplicate Industrial Cleaning CSS section
+2. `b5979d4d` - Apply beauty-erp brand/logo classes to Industrial Cleaning sidebar
+3. `5bfbf1c2` - Increase nav header contrast (opacity 0.8 → 0.95, add text-shadow)
+4. `b70dafe7` - Apply beauty-erp-nav-header class to Industrial Cleaning section headers ✨
+
+**Final Result:**
+- ✅ Brand name "CleanPro": Trắng `#FFFFFF` nổi bật trên nền navy
+- ✅ Section headers ("TỔNG QUAN & AI", "DỊCH VỤ VÀ CÔNG VIỆC"): Cyan sáng `rgba(188, 254, 254, 0.95)` với shadow → dễ đọc
+- ✅ Nav items: Trắng `#FFFFFF` rõ ràng
+- ✅ Sidebar background: Navy→Blue→Teal gradient chuyên nghiệp
+- ✅ Logo mark: Teal gradient với cyan border
+
+**Lessons Learned:**
+- **Always check for duplicate CSS sections** - later sections override earlier ones
+- **Grep for conditional class applications** - find all `isBeautySpaShell &&` patterns when adding new module
+- **Test with hard refresh** - browser cache can hide CSS changes
+- **Component classes > inline styles** - theme CSS only works if component applies the classes
+- **Contrast matters** - test color visibility on actual background gradients, not just flat colors
+
+**Files Modified:**
+- `src/app/globals.css` (removed 252 lines duplicate, increased contrast)
+- `src/components/layout/sidebar.tsx` (8 class application fixes)
+
+---
+
 ## 🎉 Phase 1 Implementation Complete
 
 **Completion Date:** June 22, 2026
