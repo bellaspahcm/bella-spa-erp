@@ -135,6 +135,7 @@ export default function SubscriptionTab() {
   const [pendingInvoice, setPendingInvoice] = useState<PendingSubscriptionInvoice | null>(null);
   const [isPending, startTransition] = useTransition();
   const [isSimulating, setIsSimulating] = useState(false);
+  const [isConverting, setIsConverting] = useState(false);
 
   const expiryDateString = getExpiryDateString(status);
 
@@ -295,6 +296,36 @@ export default function SubscriptionTab() {
     }
   };
 
+  const handleConvertToFranchise = async () => {
+    setIsConverting(true);
+    try {
+      const res = await fetch('/api/admin/tenant/convert-to-franchise', {
+        method: 'POST',
+      });
+      const data = await res.json();
+      
+      if (!res.ok || data.error) {
+        toast.error('Lỗi: ' + (data.error || 'Không thể chuyển sang chế độ franchise'));
+        return;
+      }
+
+      toast.success('✅ Đã chuyển sang chế độ franchise! Đang tải lại...');
+      
+      // Reload subscription data
+      await loadData();
+      
+      // Force page reload to clear all caches
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } catch (err) {
+      console.error('Convert to franchise error:', err);
+      toast.error('Lỗi khi chuyển đổi chế độ franchise');
+    } finally {
+      setIsConverting(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -325,6 +356,35 @@ export default function SubscriptionTab() {
         <div className="absolute top-0 right-0 p-8 opacity-20 pointer-events-none">
           <Sparkles className="w-32 h-32 text-primary" />
         </div>
+        
+        {/* Debug: Show if tenant is HQ-owned (unlimited) */}
+        {status?.tier === 'hq_owned' && (
+          <div className="mb-6 p-4 rounded-2xl bg-amber-50 border border-amber-200 flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm font-bold text-amber-800 mb-2">
+                🏢 Tenant này đang ở chế độ HQ-owned (không giới hạn)
+              </p>
+              <p className="text-xs text-amber-700 mb-3">
+                Để test subscription system, cần chuyển sang chế độ franchise. 
+                Điều này sẽ bật giới hạn gói cước và cho phép nâng cấp/gia hạn gói.
+              </p>
+              <button
+                onClick={handleConvertToFranchise}
+                disabled={isConverting}
+                className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-all flex items-center gap-2 disabled:opacity-50"
+              >
+                {isConverting ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Zap className="w-4 h-4" />
+                )}
+                <span>Chuyển sang chế độ Franchise</span>
+              </button>
+            </div>
+          </div>
+        )}
+        
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
           <div className="md:col-span-2 space-y-3">
             <div className="flex items-center gap-3">

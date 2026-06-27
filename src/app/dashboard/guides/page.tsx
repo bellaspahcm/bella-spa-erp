@@ -3,6 +3,7 @@
 import { getCurrentUser } from '@/services/user-actions';
 import { getModuleGuides, GuideListItem, isManualPermitted } from '@/services/user-manuals-utils';
 import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
+import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
 import { motion } from 'framer-motion';
 import {
 ArrowRight,
@@ -17,6 +18,7 @@ import { useEffect,useState } from 'react';
 
 export default function UserManualsHub() {
   const { tenantModuleKey } = useTenantModuleKey();
+  const vocab = useModuleVocabulary();
   const [guides, setGuides] = useState<GuideListItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -52,10 +54,18 @@ export default function UserManualsHub() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FFF5F7] dark:bg-[#11100F] py-12 px-6 lg:px-12 relative overflow-hidden transition-colors duration-300">
-      {/* Decorative Blur Background elements */}
-      <div className="absolute top-[-100px] right-[-100px] w-[400px] h-[400px] bg-pink-300/30 dark:bg-[#5D1C34]/15 rounded-full blur-[100px] pointer-events-none" />
-      <div className="absolute bottom-[-100px] left-[-100px] w-[500px] h-[500px] bg-rose-300/20 dark:bg-[#A67D44]/5 rounded-full blur-[120px] pointer-events-none" />
+    <div className={`min-h-screen py-12 px-6 lg:px-12 relative overflow-hidden transition-colors duration-300 ${
+      tenantModuleKey === 'industrial_cleaning' 
+        ? 'bg-slate-50 dark:bg-[#11100F]'
+        : 'bg-[#FFF5F7] dark:bg-[#11100F]'
+    }`}>
+      {/* Decorative Blur Background elements - only for Bella/Beauty Spa */}
+      {tenantModuleKey !== 'industrial_cleaning' && (
+        <>
+          <div className="absolute top-[-100px] right-[-100px] w-[400px] h-[400px] bg-pink-300/30 dark:bg-[#5D1C34]/15 rounded-full blur-[100px] pointer-events-none" />
+          <div className="absolute bottom-[-100px] left-[-100px] w-[500px] h-[500px] bg-rose-300/20 dark:bg-[#A67D44]/5 rounded-full blur-[120px] pointer-events-none" />
+        </>
+      )}
 
       <div className="max-w-7xl mx-auto relative z-10 space-y-12">
         {/* Header Section */}
@@ -69,7 +79,7 @@ export default function UserManualsHub() {
             Sổ tay hướng dẫn
           </h1>
           <p className="text-sm font-medium text-slate-500 dark:text-[#CDBCAB] leading-relaxed max-w-2xl mx-auto">
-            Học quy trình SOP chuẩn hóa, quản lý nghiệp vụ tài chính, kế toán, nhân sự hoặc check-in/out kỹ thuật viên dành riêng cho vai trò của bạn.
+            Học quy trình SOP chuẩn hóa, quản lý nghiệp vụ tài chính, kế toán, nhân sự hoặc check-in/out {vocab.worker.singular.toLowerCase()} dành riêng cho vai trò của bạn.
           </p>
         </header>
 
