@@ -565,19 +565,19 @@ export function Sidebar() {
                 logoUrl={tenantBrand.logoUrl}
                 monogram={tenantBrand.monogram}
                 className="w-24 h-24 relative z-10 transform group-hover:rotate-[5deg] transition-transform duration-500 text-2xl"
-                markClassName={cn("rounded-[1.75rem]", isBeautySpaShell && "beauty-erp-logo-mark beauty-erp-logo-mark-large")}
+                markClassName={cn("rounded-[1.75rem]", (isBeautySpaShell || isIndustrialCleaningShell) && "beauty-erp-logo-mark beauty-erp-logo-mark-large")}
               />
             </div>
             <div className="text-center">
               <h2 className={cn(
                 "max-w-64 truncate text-[3.2rem] font-handwriting leading-[0.8] mb-2 drop-shadow-sm text-primary dark:text-[#A67D44]",
-                isBeautySpaShell && "beauty-erp-brand-script"
+                (isBeautySpaShell || isIndustrialCleaningShell) && "beauty-erp-brand-script"
               )}>
                 {tenantBrand.displayName}
               </h2>
               <span className={cn(
                 "text-[10px] font-extrabold text-[#8A6D7C] dark:text-[#CDBCAB] uppercase tracking-[0.25em] block mt-1",
-                isBeautySpaShell && "beauty-erp-brand-subtitle"
+                (isBeautySpaShell || isIndustrialCleaningShell) && "beauty-erp-brand-subtitle"
               )}>
                 {tenantBrand.subtitle}
               </span>
@@ -589,7 +589,7 @@ export function Sidebar() {
             onClick={() => setIsOpen(false)}
             className={cn(
               "lg:hidden p-2 rounded-xl text-primary dark:text-[#A67D44] hover:bg-white/60 dark:hover:bg-[#1C1B19]/50 active:scale-95 transition-all",
-              isBeautySpaShell && "beauty-erp-icon-button"
+              (isBeautySpaShell || isIndustrialCleaningShell) && "beauty-erp-icon-button"
             )}
           >
             <X className="w-5 h-5" />
