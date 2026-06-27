@@ -2,6 +2,7 @@
 
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { TenantModuleKey } from '@/lib/business-rules/tenant-modules';
+import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
 
 type BookingsTimelineDateRibbonProps = {
   selectedDate: Date;
@@ -41,11 +42,16 @@ export function BookingsTimelineDateRibbon({
   onSelectedDateChange,
 }: BookingsTimelineDateRibbonProps) {
   const weekDays = getDaysOfWeek(selectedDate);
+  const vocab = useModuleVocabulary();
+  
+  // Dynamic coordinator label based on module
   const coordinatorLabel = moduleKey == null
-    ? 'Spa Coordinator'
-    : moduleKey === 'beauty_spa'
-      ? 'Beauty Spa Coordinator'
-      : 'Bella Spa Coordinator';
+    ? 'Điều phối viên'
+    : moduleKey === 'industrial_cleaning'
+      ? 'Quản lý ca làm việc'
+      : moduleKey === 'beauty_spa'
+        ? 'Beauty Spa Coordinator'
+        : 'Bella Spa Coordinator';
 
   const moveDate = (days: number) => {
     const next = new Date(selectedDate);
@@ -95,10 +101,10 @@ export function BookingsTimelineDateRibbon({
               onClick={() => onSelectedDateChange(date)}
               className={`flex flex-col items-center justify-center w-12 h-14 rounded-2xl transition-all shrink-0 select-none ${
                 selected
-                  ? 'beauty-date-ribbon-day-active bg-gradient-to-br from-rose-500 to-rose-400 text-white shadow-md shadow-rose-200 dark:shadow-none scale-105'
+                  ? 'beauty-date-ribbon-day-active bg-primary text-white shadow-md scale-105'
                   : dateIsToday
-                    ? 'bg-rose-50 text-rose-500 border border-rose-100'
-                    : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                    ? 'bg-primary/10 text-primary border border-primary/20 font-extrabold'
+                    : 'bg-slate-50 text-slate-700 hover:bg-slate-100 font-bold'
               }`}
             >
               <span className="text-[9px] font-black uppercase tracking-widest">{dayLabel}</span>
