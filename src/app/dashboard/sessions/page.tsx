@@ -450,7 +450,7 @@ function SessionsContent() {
               className="relative flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-xs font-bold uppercase tracking-wider text-slate-700 shadow-sm transition-all hover:bg-slate-50"
             >
               <Calendar className="w-4 h-4 text-rose-500" />
-              Nghỉ phép KTV
+              Nghỉ phép {vocab.worker.short}
               {pendingLeaves.length > 0 && (
                 <span className="flex items-center justify-center bg-rose-500 text-white text-[9px] font-black rounded-full h-4 w-4 px-1 animate-pulse">
                   {pendingLeaves.length}
