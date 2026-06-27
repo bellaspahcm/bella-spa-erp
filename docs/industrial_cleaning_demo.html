@@ -1,0 +1,2597 @@
+<!DOCTYPE html>
+<html lang="vi" data-tenant-module="industrial_cleaning">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CleanPro ERP — Phân Hệ Vệ Sinh Công Nghiệp</title>
+    
+    <!-- Google Fonts: Outfit (Headings) & Inter (Body) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons for modern visuals -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Chart.js CDN for beautiful interactive charts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+
+    <style>
+        /* ==================== DESIGN SYSTEM & VARIABLES ==================== */
+        :root {
+            --bg-base: #080c14;
+            --bg-sidebar: #0d121f;
+            --bg-card: rgba(17, 24, 39, 0.7);
+            --bg-card-hover: rgba(30, 41, 59, 0.8);
+            --border-color: rgba(59, 130, 246, 0.15);
+            --border-hover: rgba(59, 130, 246, 0.3);
+            
+            --primary: #2563eb;
+            --primary-glow: rgba(37, 99, 235, 0.4);
+            --accent: #06b6d4;
+            --accent-glow: rgba(6, 182, 212, 0.3);
+            
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            
+            --success: #10b981;
+            --success-bg: rgba(16, 185, 129, 0.15);
+            --success-border: rgba(16, 185, 129, 0.3);
+            
+            --warning: #f59e0b;
+            --warning-bg: rgba(245, 158, 11, 0.15);
+            --warning-border: rgba(245, 158, 11, 0.3);
+            
+            --danger: #ef4444;
+            --danger-bg: rgba(239, 68, 68, 0.15);
+            --danger-border: rgba(239, 68, 68, 0.3);
+            
+            --night-shift: #6366f1;
+            --night-shift-bg: rgba(99, 102, 241, 0.15);
+            
+            --font-heading: 'Outfit', sans-serif;
+            --font-body: 'Inter', sans-serif;
+            
+            --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --shadow-glow: 0 0 20px rgba(37, 99, 235, 0.15);
+            --shadow-card: 0 10px 30px -10px rgba(0, 0, 0, 0.7);
+        }
+
+        /* ==================== GLOBAL STYLES ==================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            display: flex;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-base);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(59, 130, 246, 0.2);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+
+        /* ==================== APP LAYOUT ==================== */
+        .app-container {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* ==================== SIDEBAR ==================== */
+        .sidebar {
+            width: 280px;
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 10;
+        }
+
+        .brand-section {
+            padding: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid var(--border-color);
+            background: linear-gradient(180deg, rgba(37, 99, 235, 0.05) 0%, transparent 100%);
+        }
+
+        .brand-logo {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: white;
+            box-shadow: 0 0 15px var(--primary-glow);
+            position: relative;
+        }
+
+        .brand-logo::after {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, var(--accent), var(--primary));
+            z-index: -1;
+            opacity: 0.5;
+        }
+
+        .brand-info h1 {
+            font-family: var(--font-heading);
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand-info p {
+            font-size: 11px;
+            color: var(--accent);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .sidebar-menu {
+            flex: 1;
+            padding: 24px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            overflow-y: auto;
+        }
+
+        .menu-title {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-left: 12px;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 16px;
+            border-radius: 10px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            border: 1px solid transparent;
+        }
+
+        .menu-item i {
+            font-size: 16px;
+            width: 20px;
+            text-align: center;
+            transition: var(--transition-smooth);
+        }
+
+        .menu-item:hover {
+            color: var(--text-primary);
+            background-color: rgba(255, 255, 255, 0.03);
+            border-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .menu-item.active {
+            color: var(--text-primary);
+            background: linear-gradient(90deg, rgba(37, 99, 235, 0.15) 0%, rgba(6, 182, 212, 0.03) 100%);
+            border-color: var(--border-color);
+            box-shadow: var(--shadow-glow);
+            position: relative;
+        }
+
+        .menu-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 25%;
+            height: 50%;
+            width: 4px;
+            background: linear-gradient(180deg, var(--accent) 0%, var(--primary) 100%);
+            border-radius: 0 4px 4px 0;
+            box-shadow: 0 0 10px var(--accent);
+        }
+
+        .menu-item.active i {
+            color: var(--accent);
+            text-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        .tenant-selector {
+            padding: 16px;
+            border-top: 1px solid var(--border-color);
+            background-color: rgba(0,0,0,0.2);
+        }
+
+        .tenant-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background-color: rgba(13, 18, 31, 0.5);
+        }
+
+        .tenant-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            background-color: rgba(37, 99, 235, 0.2);
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .tenant-details h4 {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .tenant-details p {
+            font-size: 10px;
+            color: var(--text-secondary);
+        }
+
+        /* ==================== MAIN CONTENT ==================== */
+        .main-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Header */
+        .main-header {
+            height: 80px;
+            border-bottom: 1px solid var(--border-color);
+            padding: 0 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: var(--bg-sidebar);
+            flex-shrink: 0;
+            z-index: 5;
+        }
+
+        .header-title-area h2 {
+            font-family: var(--font-heading);
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            color: var(--text-primary);
+        }
+
+        .header-title-area p {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .search-box {
+            position: relative;
+            width: 280px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 10px 16px 10px 40px;
+            border-radius: 20px;
+            background-color: var(--bg-base);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            font-size: 13px;
+            outline: none;
+            transition: var(--transition-smooth);
+        }
+
+        .search-box input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 10px rgba(37, 99, 235, 0.2);
+            width: 320px;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .header-btn {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            transition: var(--transition-smooth);
+        }
+
+        .header-btn:hover {
+            color: var(--text-primary);
+            background-color: rgba(255, 255, 255, 0.06);
+            border-color: var(--border-hover);
+        }
+
+        .header-btn .badge-dot {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--danger);
+            box-shadow: 0 0 8px var(--danger);
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-left: 20px;
+            border-left: 1px solid var(--border-color);
+        }
+
+        .user-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 14px;
+            border: 2px solid rgba(255,255,255,0.1);
+        }
+
+        .user-meta h5 {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .user-meta span {
+            font-size: 10px;
+            color: var(--text-secondary);
+            display: block;
+        }
+
+        /* Content Container */
+        .content-container {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ==================== DASHBOARD METRICS ==================== */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .metric-card {
+            background-color: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: var(--transition-smooth);
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow-card);
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+            opacity: 0;
+            transition: var(--transition-smooth);
+        }
+
+        .metric-card:hover {
+            background-color: var(--bg-card-hover);
+            transform: translateY(-4px);
+            border-color: var(--border-hover);
+            box-shadow: 0 12px 24px -10px rgba(37, 99, 235, 0.2);
+        }
+
+        .metric-card:hover::before {
+            opacity: 1;
+        }
+
+        .metric-info h6 {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .metric-value-wrapper {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .metric-number {
+            font-family: var(--font-heading);
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .metric-trend {
+            font-size: 11px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .metric-trend.up { color: var(--success); }
+        .metric-trend.down { color: var(--danger); }
+
+        .metric-desc {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .metric-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background-color: rgba(37, 99, 235, 0.1);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            border: 1px solid rgba(37, 99, 235, 0.15);
+            box-shadow: inset 0 0 10px rgba(37, 99, 235, 0.1);
+        }
+
+        .metric-card:nth-child(2) .metric-icon {
+            background-color: rgba(6, 182, 212, 0.1);
+            color: var(--accent);
+            border-color: rgba(6, 182, 212, 0.15);
+        }
+        .metric-card:nth-child(3) .metric-icon {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            border-color: rgba(16, 185, 129, 0.15);
+        }
+        .metric-card:nth-child(4) .metric-icon {
+            background-color: rgba(99, 102, 241, 0.1);
+            color: var(--night-shift);
+            border-color: rgba(99, 102, 241, 0.15);
+        }
+
+        /* ==================== CARDS & GRIDS ==================== */
+        .layout-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .full-width-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .card {
+            background-color: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 28px;
+            box-shadow: var(--shadow-card);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+
+        .card-title {
+            font-family: var(--font-heading);
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-title i {
+            color: var(--accent);
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        /* Charts */
+        .chart-box {
+            height: 320px;
+            position: relative;
+        }
+
+        /* ==================== BUTTONS ==================== */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            border: 1px solid transparent;
+            outline: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, #1d4ed8 100%);
+            color: white;
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+            background: linear-gradient(135deg, #3b82f6 0%, var(--primary) 100%);
+        }
+
+        .btn-accent {
+            background: linear-gradient(135deg, var(--accent) 0%, #0891b2 100%);
+            color: white;
+            box-shadow: 0 4px 14px rgba(6, 182, 212, 0.3);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-accent:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(6, 182, 212, 0.4);
+            background: linear-gradient(135deg, #22d3ee 0%, var(--accent) 100%);
+        }
+
+        .btn-secondary {
+            background-color: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        .btn-secondary:hover {
+            background-color: rgba(255, 255, 255, 0.07);
+            color: var(--text-primary);
+            border-color: var(--border-hover);
+        }
+
+        .btn-icon {
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            justify-content: center;
+            border-radius: 8px;
+        }
+
+        /* ==================== ALERTS & ANNOUNCEMENTS ==================== */
+        .alert-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .alert-item {
+            padding: 16px;
+            border-radius: 12px;
+            border-left: 4px solid;
+            display: flex;
+            gap: 14px;
+            transition: var(--transition-smooth);
+        }
+
+        .alert-item:hover {
+            transform: translateX(4px);
+        }
+
+        .alert-item.info {
+            background-color: rgba(59, 130, 246, 0.08);
+            border-color: var(--primary);
+            color: #dbeafe;
+        }
+        .alert-item.success {
+            background-color: rgba(16, 185, 129, 0.08);
+            border-color: var(--success);
+            color: #d1fae5;
+        }
+        .alert-item.warning {
+            background-color: rgba(245, 158, 11, 0.08);
+            border-color: var(--warning);
+            color: #fef3c7;
+        }
+        .alert-item.danger {
+            background-color: rgba(239, 68, 68, 0.08);
+            border-color: var(--danger);
+            color: #fee2e2;
+        }
+
+        .alert-icon {
+            font-size: 16px;
+            margin-top: 2px;
+        }
+
+        .alert-body h5 {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .alert-body p {
+            font-size: 11px;
+            opacity: 0.8;
+            margin-top: 4px;
+            line-height: 1.4;
+        }
+
+        .alert-time {
+            font-size: 10px;
+            opacity: 0.6;
+            margin-top: 6px;
+            display: block;
+        }
+
+        /* ==================== DATA TABLES ==================== */
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        .data-table th {
+            background-color: rgba(13, 18, 31, 0.8);
+            padding: 16px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .data-table td {
+            padding: 16px;
+            font-size: 13px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
+            background-color: rgba(17, 24, 39, 0.2);
+            transition: var(--transition-smooth);
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .data-table tr:hover td {
+            background-color: rgba(255, 255, 255, 0.02);
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .badge-green { background-color: var(--success-bg); color: var(--success); border: 1px solid var(--success-border); }
+        .badge-orange { background-color: var(--warning-bg); color: var(--warning); border: 1px solid var(--warning-border); }
+        .badge-red { background-color: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger-border); }
+        .badge-blue { background-color: rgba(37, 99, 235, 0.15); color: var(--accent); border: 1px solid var(--border-color); }
+        .badge-purple { background-color: var(--night-shift-bg); color: var(--night-shift); border: 1px solid rgba(99, 102, 241, 0.3); }
+
+        /* ==================== FILTERS BAR ==================== */
+        .filters-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .select-input {
+            background-color: var(--bg-sidebar);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            outline: none;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+
+        .select-input:focus {
+            border-color: var(--primary);
+        }
+
+        /* ==================== WORK ORDER LIST SPECS ==================== */
+        .booking-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: var(--transition-smooth);
+        }
+
+        .booking-card:hover {
+            transform: translateX(4px);
+            border-color: var(--border-hover);
+            background-color: var(--bg-card-hover);
+        }
+
+        .booking-main {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .booking-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            background-color: rgba(59, 130, 246, 0.1);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            border: 1px solid var(--border-color);
+        }
+
+        .booking-details h4 {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .booking-details p {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .booking-meta {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+        }
+
+        .meta-item {
+            text-align: right;
+        }
+
+        .meta-item span {
+            font-size: 11px;
+            color: var(--text-muted);
+            display: block;
+        }
+
+        .meta-item p {
+            font-size: 13px;
+            font-weight: 600;
+            margin-top: 2px;
+        }
+
+        /* ==================== SALARY ENGINE DISPLAY ==================== */
+        .salary-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .salary-summary-card {
+            background-color: rgba(13, 18, 31, 0.4);
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .salary-summary-card h6 {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        .salary-summary-card p {
+            font-family: var(--font-heading);
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--accent);
+            margin-top: 6px;
+        }
+
+        .recalc-banner {
+            background: linear-gradient(90deg, rgba(37, 99, 235, 0.1) 0%, rgba(6, 182, 212, 0.05) 100%);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px 24px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .recalc-text h5 {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .recalc-text p {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        /* ==================== FINANCE SHEET STYLES ==================== */
+        .pl-table {
+            width: 100%;
+            margin-top: 16px;
+        }
+
+        .pl-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 14px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 13px;
+        }
+
+        .pl-row.indent-1 { padding-left: 36px; color: var(--text-secondary); }
+        .pl-row.indent-2 { padding-left: 56px; color: var(--text-muted); font-size: 12px; }
+
+        .pl-row.subtotal {
+            font-weight: 600;
+            background-color: rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .pl-row.grand-total {
+            font-family: var(--font-heading);
+            font-size: 16px;
+            font-weight: 700;
+            background-color: rgba(6, 182, 212, 0.08);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--accent);
+            margin-top: 10px;
+        }
+
+        .pl-row.grand-total .value {
+            color: var(--text-primary);
+        }
+
+        .pl-row.expense .value {
+            color: #f87171;
+        }
+
+        .pl-row.revenue .value {
+            color: #34d399;
+        }
+
+        /* ==================== MODAL STYLES ==================== */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(10px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-box {
+            background-color: var(--bg-sidebar);
+            border: 1px solid var(--border-color);
+            width: 90%;
+            max-width: 600px;
+            border-radius: 16px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.active .modal-box {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-header h3 {
+            font-family: var(--font-heading);
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 18px;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+
+        .modal-close:hover {
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 24px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .modal-footer {
+            padding: 20px 24px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            background-color: rgba(0, 0, 0, 0.2);
+        }
+
+        /* Form Controls */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-input {
+            width: 100%;
+            background-color: var(--bg-base);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px 16px;
+            color: var(--text-primary);
+            font-size: 13px;
+            outline: none;
+            transition: var(--transition-smooth);
+        }
+
+        .form-input:focus {
+            border-color: var(--primary);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        /* ==================== TOAST ==================== */
+        .toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 1000;
+        }
+
+        .toast {
+            background-color: var(--bg-sidebar);
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--primary);
+            padding: 16px 20px;
+            border-radius: 8px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 300px;
+            transform: translateX(120%);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .toast.active {
+            transform: translateX(0);
+        }
+
+        .toast.success { border-left-color: var(--success); }
+        .toast.warning { border-left-color: var(--warning); }
+        .toast.error { border-left-color: var(--danger); }
+
+        .toast-icon { font-size: 16px; }
+        .toast.success .toast-icon { color: var(--success); }
+        .toast.warning .toast-icon { color: var(--warning); }
+        .toast.error .toast-icon { color: var(--danger); }
+
+        .toast-content h6 {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .toast-content p {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        /* ==================== ANIMATED COUNT TICKERS ==================== */
+        .count-ticker {
+            display: inline-block;
+        }
+
+        /* Tooltip details */
+        .tooltip-info {
+            display: inline-block;
+            cursor: pointer;
+            color: var(--accent);
+            font-size: 11px;
+            margin-left: 4px;
+            text-decoration: underline dotted;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <!-- ==================== SIDEBAR ==================== -->
+        <div class="sidebar">
+            <div class="brand-section">
+                <div class="brand-logo">
+                    <i class="fa-solid fa-soap"></i>
+                </div>
+                <div class="brand-info">
+                    <h1>CleanPro ERP</h1>
+                    <p>Phân hệ Vệ sinh CN</p>
+                </div>
+            </div>
+            
+            <div class="sidebar-menu">
+                <span class="menu-title">Bảng điều khiển</span>
+                <div class="menu-item active" onclick="switchTab('dashboard', this)">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    Tổng quan
+                </div>
+                
+                <span class="menu-title">Vận hành dịch vụ</span>
+                <div class="menu-item" onclick="switchTab('bookings', this)">
+                    <i class="fa-solid fa-file-invoice"></i>
+                    Phiếu công việc
+                </div>
+                <div class="menu-item" onclick="switchTab('sessions', this)">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    Nhật ký ca làm
+                </div>
+                
+                <span class="menu-title">Nhân sự & Tính lương</span>
+                <div class="menu-item" onclick="switchTab('salary', this)">
+                    <i class="fa-solid fa-wallet"></i>
+                    AI Tính Lương
+                </div>
+                
+                <span class="menu-title">Báo cáo tài chính</span>
+                <div class="menu-item" onclick="switchTab('finance', this)">
+                    <i class="fa-solid fa-chart-line"></i>
+                    Báo cáo P&L
+                </div>
+            </div>
+            
+            <div class="tenant-selector">
+                <div class="tenant-card">
+                    <div class="tenant-avatar">CP</div>
+                    <div class="tenant-details">
+                        <h4>CleanPro V2 HQ</h4>
+                        <p>ID: tenant-cleanpro-demo</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== MAIN WORK WRAPPER ==================== -->
+        <div class="main-wrapper">
+            
+            <!-- ==================== TOP HEADER ==================== -->
+            <header class="main-header">
+                <div class="header-title-area">
+                    <h2 id="current-tab-title">Tổng quan Vận hành</h2>
+                    <p id="current-tab-desc">Hệ thống giám sát thời gian thực & Phân tích tối ưu</p>
+                </div>
+                
+                <div class="header-actions">
+                    <div class="search-box">
+                        <input type="text" id="global-search" placeholder="Tìm kiếm khách hàng, ca việc..." onkeyup="handleGlobalSearch()">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </div>
+                    
+                    <div class="header-btn" onclick="showToast('Thông báo', 'Bạn không có thông báo mới nào.', 'success')">
+                        <i class="fa-regular fa-bell"></i>
+                        <span class="badge-dot"></span>
+                    </div>
+                    
+                    <div class="user-profile">
+                        <div class="user-avatar">AD</div>
+                        <div class="user-meta">
+                            <h5>Nguyễn Văn An</h5>
+                            <span>General Manager</span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- ==================== CONTENT CONTAINER ==================== -->
+            <div class="content-container">
+                
+                <!-- ==================== TAB 1: DASHBOARD ==================== -->
+                <div id="tab-dashboard" class="tab-content active">
+                    <!-- Metrics Cards Grid -->
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-info">
+                                <h6>Doanh thu Q1 2026</h6>
+                                <div class="metric-value-wrapper">
+                                    <div class="metric-number"><span id="metric-revenue" class="count-ticker" data-value="142850000">0</span>đ</div>
+                                </div>
+                                <div class="metric-trend up">
+                                    <i class="fa-solid fa-arrow-trend-up"></i> +12.4%
+                                    <span class="metric-desc">so với Q4 2025</span>
+                                </div>
+                            </div>
+                            <div class="metric-icon">
+                                <i class="fa-solid fa-money-bill-wave"></i>
+                            </div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div class="metric-info">
+                                <h6>Phiếu công việc (Bookings)</h6>
+                                <div class="metric-value-wrapper">
+                                    <div class="metric-number"><span id="metric-bookings" class="count-ticker" data-value="35">0</span> phiếu</div>
+                                </div>
+                                <div class="metric-trend up">
+                                    <i class="fa-solid fa-arrow-trend-up"></i> +8.2%
+                                    <span class="metric-desc">đang chạy trong tháng</span>
+                                </div>
+                            </div>
+                            <div class="metric-icon">
+                                <i class="fa-solid fa-file-signature"></i>
+                            </div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div class="metric-info">
+                                <h6>Ca làm hoàn thành</h6>
+                                <div class="metric-value-wrapper">
+                                    <div class="metric-number"><span id="metric-sessions" class="count-ticker" data-value="102">0</span> ca</div>
+                                </div>
+                                <div class="metric-trend up">
+                                    <i class="fa-solid fa-arrow-trend-up"></i> +96.4%
+                                    <span class="metric-desc">hệ số quy đổi đạt 1.62x</span>
+                                </div>
+                            </div>
+                            <div class="metric-icon">
+                                <i class="fa-solid fa-calendar-check"></i>
+                            </div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div class="metric-info">
+                                <h6>Nhân viên vệ sinh</h6>
+                                <div class="metric-value-wrapper">
+                                    <div class="metric-number"><span id="metric-staff" class="count-ticker" data-value="14">0</span> NVS</div>
+                                </div>
+                                <div class="metric-trend up">
+                                    <i class="fa-solid fa-circle-check"></i> 100%
+                                    <span class="metric-desc">đã gán chứng chỉ an toàn</span>
+                                </div>
+                            </div>
+                            <div class="metric-icon">
+                                <i class="fa-solid fa-users-gear"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Layout Grid 2 cols -->
+                    <div class="layout-grid">
+                        <!-- Chart Area -->
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <i class="fa-solid fa-chart-line"></i>
+                                    Biểu Đồ Tài Chính Quý 1 - 2026
+                                </div>
+                                <div class="card-actions">
+                                    <button class="btn btn-secondary btn-icon" onclick="showToast('Xuất báo cáo', 'Đang kết xuất biểu đồ dạng PDF...', 'info')">
+                                        <i class="fa-solid fa-download"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="chart-box">
+                                <canvas id="dashboard-revenue-chart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Alerts and Monitoring -->
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <i class="fa-solid fa-triangle-exclamation"></i>
+                                    Trực Ca & Giám Sát Rủi Ro
+                                </div>
+                            </div>
+                            <div class="alert-list">
+                                <div class="alert-item warning">
+                                    <div class="alert-icon"><i class="fa-solid fa-moon"></i></div>
+                                    <div class="alert-body">
+                                        <h5>Ca đêm cần kiểm tra đặc biệt</h5>
+                                        <p>Hoàng Văn Tú đang thực hiện ca đêm tại phòng sạch <strong>Samsung Display VN</strong> (23h-07h). Yêu cầu bắt buộc tuân thủ quy trình phòng sạch chống tĩnh điện ESD.</p>
+                                        <span class="alert-time">Hôm nay, 23:00 - Ca Đêm</span>
+                                    </div>
+                                </div>
+                                <div class="alert-item success">
+                                    <div class="alert-icon"><i class="fa-solid fa-circle-check"></i></div>
+                                    <div class="alert-body">
+                                        <h5>Nghiệm thu hoàn tất 100%</h5>
+                                        <p>Phiếu công việc <strong>TechViet Office</strong> đã được phê duyệt nghiệm thu đầy đủ và tất toán 100% hợp đồng, chứng từ outbox đã đồng bộ thành công sang Sổ Cái Kế Toán.</p>
+                                        <span class="alert-time">Hôm nay, 16:30</span>
+                                    </div>
+                                </div>
+                                <div class="alert-item danger">
+                                    <div class="alert-icon"><i class="fa-solid fa-clock"></i></div>
+                                    <div class="alert-body">
+                                        <h5>Cảnh báo trễ hạn NET60</h5>
+                                        <p>Phiếu công việc của một đơn vị đối tác vệ sinh kính cao tầng đã trễ thanh toán 14 ngày. Hệ thống tự động kích hoạt tính phạt chậm trả 2%.</p>
+                                        <span class="alert-time">2 ngày trước</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Actions/Sessions List -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">
+                                <i class="fa-solid fa-list-check"></i>
+                                Nhật Ký Ca Làm Việc Gần Đây
+                            </div>
+                            <div class="card-actions">
+                                <button class="btn btn-secondary" onclick="switchTab('sessions', document.querySelector('[onclick*=\'sessions\']'))">Xem tất cả</button>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table" id="dashboard-sessions-table">
+                                <thead>
+                                    <tr>
+                                        <th>Mã ca</th>
+                                        <th>Khách hàng doanh nghiệp</th>
+                                        <th>Dịch vụ vệ sinh</th>
+                                        <th>Nhân viên vệ sinh</th>
+                                        <th>Ca làm</th>
+                                        <th>Đánh giá chất lượng</th>
+                                        <th>Trạng thái</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Populated dynamically via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==================== TAB 2: BOOKINGS ==================== -->
+                <div id="tab-bookings" class="tab-content">
+                    <div class="filters-bar">
+                        <div class="filter-group">
+                            <select class="select-input" id="filter-booking-frequency" onchange="filterBookings()">
+                                <option value="">Mọi tần suất</option>
+                                <option value="Daily">Hàng ngày (Daily)</option>
+                                <option value="Weekly">Hàng tuần (Weekly)</option>
+                                <option value="Monthly">Hàng tháng (Monthly)</option>
+                                <option value="Variable">Linh hoạt (On-demand)</option>
+                            </select>
+                            
+                            <select class="select-input" id="filter-booking-status" onchange="filterBookings()">
+                                <option value="">Mọi trạng thái</option>
+                                <option value="in_progress">Đang thực hiện</option>
+                                <option value="completed">Đã hoàn thành</option>
+                                <option value="booked">Mới tạo / Chờ thực hiện</option>
+                            </select>
+                        </div>
+                        
+                        <button class="btn btn-primary" onclick="openNewBookingModal()">
+                            <i class="fa-solid fa-plus"></i> Tạo Phiếu Công Việc Mới
+                        </button>
+                    </div>
+
+                    <div id="bookings-list-container">
+                        <!-- Bookings populate dynamically via JS -->
+                    </div>
+                </div>
+
+                <!-- ==================== TAB 3: SESSIONS ==================== -->
+                <div id="tab-sessions" class="tab-content">
+                    <div class="filters-bar">
+                        <div class="filter-group">
+                            <select class="select-input" id="filter-session-shift" onchange="filterSessions()">
+                                <option value="">Mọi ca làm</option>
+                                <option value="Sáng">Ca Sáng</option>
+                                <option value="Chiều">Ca Chiều</option>
+                                <option value="Đêm">Ca Đêm (Trực đêm)</option>
+                            </select>
+                            
+                            <select class="select-input" id="filter-session-rating" onchange="filterSessions()">
+                                <option value="">Mọi mức chất lượng</option>
+                                <option value="5">5.0 ★ (Xuất sắc)</option>
+                                <option value="4">4.0 - 4.9 ★ (Đạt yêu cầu)</option>
+                                <option value="3">Dưới 4.0 ★ (Cần cải thiện)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="table-responsive">
+                            <table class="data-table" id="all-sessions-table">
+                                <thead>
+                                    <tr>
+                                        <th>Mã ca</th>
+                                        <th>Khách hàng</th>
+                                        <th>Gói dịch vụ</th>
+                                        <th>Nhân viên vệ sinh</th>
+                                        <th>Thời gian thực tế</th>
+                                        <th>Đánh giá</th>
+                                        <th>Ghi chú vận hành</th>
+                                        <th>Hệ số</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Dynamic data -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==================== TAB 4: SALARY ENGINE ==================== -->
+                <div id="tab-salary" class="tab-content">
+                    <div class="recalc-banner">
+                        <div class="recalc-text">
+                            <h5>Động cơ AI Tính Lương Vệ Sinh Công Nghiệp</h5>
+                            <p>Tích hợp hệ số quy đổi gói phức tạp (1.0x, 1.5x, 2.0x), tính lương pro-rata theo làm việc thực tế, và phạt vi phạm kỷ luật an toàn lao động.</p>
+                        </div>
+                        <div class="filter-group">
+                            <select class="select-input" id="salary-month-select" onchange="handleSalaryMonthChange()">
+                                <option value="2026-03">Tháng 3 / 2026 (Kỳ lương hiện tại)</option>
+                                <option value="2026-02">Tháng 2 / 2026</option>
+                                <option value="2026-01">Tháng 1 / 2026</option>
+                            </select>
+                            <button class="btn btn-accent" onclick="recalculateSalary()">
+                                <i class="fa-solid fa-rotate"></i> AI Tính Lại Lương
+                            </button>
+                            <button class="btn btn-primary" onclick="lockAndPublishSalary()">
+                                <i class="fa-solid fa-lock"></i> Chốt Số Liệu
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="salary-summary-grid">
+                        <div class="salary-summary-card">
+                            <h6>Tổng quỹ lương tính toán</h6>
+                            <p id="salary-sum-total">114,850,000đ</p>
+                        </div>
+                        <div class="salary-summary-card">
+                            <h6>Số ca quy đổi hoàn thành</h6>
+                            <p id="salary-sum-sessions">328.5 ca</p>
+                        </div>
+                        <div class="salary-summary-card">
+                            <h6>Lệch lớn cần đối soát (Discrepancy)</h6>
+                            <p id="salary-sum-discrepancy" style="color: var(--success)">0 ca (Khớp 100%)</p>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">
+                                <i class="fa-solid fa-table-list"></i>
+                                Bảng Tính Lương Chi Tiết Nhân Viên Vệ Sinh
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table" id="salary-records-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nhân viên</th>
+                                        <th>Ngày vào</th>
+                                        <th>Lương cơ bản gốc</th>
+                                        <th>Lương cơ bản (Pro-rata)</th>
+                                        <th>Số ca quy đổi</th>
+                                        <th>Hoa hồng ca làm (VND)</th>
+                                        <th>Thưởng KPI</th>
+                                        <th>Khấu trừ vi phạm</th>
+                                        <th>Thực nhận (VND)</th>
+                                        <th>Trạng thái</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Dynamic -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==================== TAB 5: FINANCE REPORT ==================== -->
+                <div id="tab-finance" class="tab-content">
+                    <div class="filters-bar">
+                        <div class="filter-group">
+                            <select class="select-input" id="finance-quarter-select">
+                                <option value="Q1-2026">Báo cáo Q1 / 2026 (01/01/2026 - 31/03/2026)</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-secondary" onclick="showToast('Xuất Excel', 'Đang xuất Báo cáo tài chính theo TT133...', 'success')">
+                            <i class="fa-solid fa-file-excel"></i> Xuất Báo Cáo TT133
+                        </button>
+                    </div>
+
+                    <div class="layout-grid">
+                        <!-- P&L Sheet -->
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <i class="fa-solid fa-receipt"></i>
+                                    Báo Cáo Hoạt Động Kinh Doanh (P&L) - Q1 2026
+                                </div>
+                            </div>
+                            
+                            <div class="pl-table">
+                                <div class="pl-row subtotal revenue">
+                                    <span>I. DOANH THU HOẠT ĐỘNG (Chỉ ghi nhận trạng thái 'confirmed')</span>
+                                    <span class="value" id="pl-total-revenue">142,850,000đ</span>
+                                </div>
+                                <div class="pl-row indent-1">
+                                    <span>1. Doanh thu Vệ sinh cơ bản (Basic, 1.0x)</span>
+                                    <span class="value">42,500,000đ</span>
+                                </div>
+                                <div class="pl-row indent-1">
+                                    <span>2. Doanh thu Vệ sinh tiêu chuẩn (Standard, 1.5x)</span>
+                                    <span class="value">58,000,000đ</span>
+                                </div>
+                                <div class="pl-row indent-1">
+                                    <span>3. Doanh thu Vệ sinh cao cấp VIP (Premium, 2.0x)</span>
+                                    <span class="value">41,200,000đ</span>
+                                </div>
+                                <div class="pl-row indent-1">
+                                    <span>4. Phụ thu chậm thanh toán (Phạt NET60 2%)</span>
+                                    <span class="value">1,150,000đ</span>
+                                </div>
+
+                                <div class="pl-row subtotal expense" style="margin-top: 15px;">
+                                    <span>II. CHI PHÍ HOẠT ĐỘNG (Chỉ ghi nhận trạng thái 'approved'/'paid')</span>
+                                    <span class="value" id="pl-total-expenses">93,250,000đ</span>
+                                </div>
+                                <div class="pl-row indent-1">
+                                    <span>1. Chi phí vận hành trực tiếp (OpEx)</span>
+                                    <span class="value">42,400,000đ</span>
+                                </div>
+                                <div class="pl-row indent-2">
+                                    <span>- Tiền thuê kho chứa thiết bị (Cố định)</span>
+                                    <span class="value">27,000,000đ</span>
+                                </div>
+                                <div class="pl-row indent-2">
+                                    <span>- Hóa chất tẩy rửa & Vật tư tiêu hao</span>
+                                    <span class="value">8,400,000đ</span>
+                                </div>
+                                <div class="pl-row indent-2">
+                                    <span>- Chi phí thuê xe chà sàn & Xe nâng (Ninja Van)</span>
+                                    <span class="value">5,000,000đ</span>
+                                </div>
+                                <div class="pl-row indent-2">
+                                    <span>- Điện, nước & Internet</span>
+                                    <span class="value">2,000,000đ</span>
+                                </div>
+                                <div class="pl-row indent-1">
+                                    <span>2. Chi phí quỹ lương Nhân sự vệ sinh</span>
+                                    <span class="value" id="pl-salary-expense">50,850,000đ</span>
+                                </div>
+                                <div class="pl-row indent-2">
+                                    <span>- Lương cơ bản chi trả thực tế (Đã trừ pro-rata)</span>
+                                    <span class="value">32,250,000đ</span>
+                                </div>
+                                <div class="pl-row indent-2">
+                                    <span>- Hoa hồng ca làm việc (Quy đổi multiplier)</span>
+                                    <span class="value">16,200,000đ</span>
+                                </div>
+                                <div class="pl-row indent-2">
+                                    <span>- Thưởng KPI, thưởng ca đêm & Phụ cấp độc hại</span>
+                                    <span class="value">3,100,000đ</span>
+                                </div>
+                                <div class="pl-row indent-2" style="color: var(--danger)">
+                                    <span>- Giảm trừ chất lượng ca làm (Khấu trừ phạt)</span>
+                                    <span class="value">-700,000đ</span>
+                                </div>
+
+                                <div class="pl-row grand-total" style="margin-top: 25px;">
+                                    <span>III. LỢI NHUẬN TRƯỚC THUẾ (EBT)</span>
+                                    <span class="value" id="pl-net-profit">49,600,000đ</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Rule Verification -->
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <i class="fa-solid fa-shield-halved"></i>
+                                    Tuân Thủ Quy Tắc Kế Toán ERP
+                                </div>
+                            </div>
+                            <div class="alert-list">
+                                <div class="alert-item success">
+                                    <div class="alert-icon"><i class="fa-solid fa-circle-check"></i></div>
+                                    <div class="alert-body">
+                                        <h5>Không ghi nhận doanh thu ảo</h5>
+                                        <p>Doanh thu cọc của <strong>Samsung Display VN</strong> (mức cọc 30% ~ 24,000,000đ) chỉ được ghi nhận khi có chứng từ giao dịch báo Có từ ngân hàng (status = 'confirmed').</p>
+                                    </div>
+                                </div>
+                                <div class="alert-item success">
+                                    <div class="alert-icon"><i class="fa-solid fa-circle-check"></i></div>
+                                    <div class="alert-body">
+                                        <h5>Lọc chi phí chưa phê duyệt</h5>
+                                        <p>Các hóa đơn mua hóa chất tồn đọng chưa được Giám đốc phê duyệt (nháp hoặc chờ duyệt) bị loại bỏ khỏi mục Chi phí vật tư để tránh thổi phồng chi phí doanh nghiệp.</p>
+                                    </div>
+                                </div>
+                                <div class="alert-item info">
+                                    <div class="alert-icon"><i class="fa-solid fa-circle-info"></i></div>
+                                    <div class="alert-body">
+                                        <h5>Đồng bộ quỹ lương thời gian thực</h5>
+                                        <p>Chi phí lương của nhân viên chưa chốt sổ chính thức được tính toán tự động dựa theo ca việc tích lũy và số ngày làm việc thực tế (pro-rata).</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ==================== NEW BOOKING MODAL ==================== -->
+    <div class="modal-overlay" id="new-booking-modal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>Tạo Phiếu Công Việc Mới</h3>
+                <button class="modal-close" onclick="closeModal('new-booking-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="new-booking-form">
+                    <div class="form-group">
+                        <label>Khách Hàng Doanh Nghiệp</label>
+                        <input type="text" id="form-customer" class="form-input" placeholder="Tên doanh nghiệp / Nhà hàng / Văn phòng..." required>
+                    </div>
+                    
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Số Điện Thoại</label>
+                            <input type="text" id="form-phone" class="form-input" placeholder="090XXXXXXX" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Gói Dịch Vụ</label>
+                            <select id="form-package" class="form-input" onchange="updateFormMultiplier()" required>
+                                <option value="basic">Vệ sinh cơ bản (1.0x)</option>
+                                <option value="standard">Vệ sinh tiêu chuẩn (1.5x)</option>
+                                <option value="premium">Vệ sinh cao cấp VIP (2.0x)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Tần Suất Ca Làm</label>
+                            <select id="form-frequency" class="form-input" required>
+                                <option value="Daily">Hàng ngày (Daily)</option>
+                                <option value="Weekly">Hàng tuần (Weekly)</option>
+                                <option value="Monthly">Hàng tháng (Monthly)</option>
+                                <option value="Variable">Linh hoạt (On-demand)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Hệ Số Quy Đổi Ca</label>
+                            <input type="text" id="form-multiplier" class="form-input" value="1.0" readonly>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Nhân Viên Vệ Sinh Phân Công</label>
+                        <select id="form-staff" class="form-input" required>
+                            <!-- Populated in JS -->
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Yêu Cầu Đặc Biệt / Thiết Bị Cần Thuê</label>
+                        <textarea id="form-notes" class="form-input" rows="3" placeholder="Ví dụ: Cần xe nâng, máy chà sàn công nghiệp, chứng chỉ an toàn hóa chất..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('new-booking-modal')">Hủy bỏ</button>
+                <button class="btn btn-primary" onclick="submitBookingForm()">Tạo phiếu ngay</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== DETAIL BOOKING MODAL ==================== -->
+    <div class="modal-overlay" id="detail-booking-modal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>Chi Tiết Phiếu Công Việc: <span id="detail-wo-id"></span></h3>
+                <button class="modal-close" onclick="closeModal('detail-booking-modal')">&times;</button>
+            </div>
+            <div class="modal-body" id="detail-booking-body">
+                <!-- Populated dynamically via JS -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('detail-booking-modal')">Đóng</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== TOAST MESSAGES ==================== -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- ==================== JAVASCRIPT LOGIC ==================== -->
+    <script>
+        // ==================== STATE MANAGEMENT ==================== */
+        const state = {
+            activeTab: 'dashboard',
+            searchQuery: '',
+            salaryStatus: 'draft', // draft, published, finalized
+            
+            // Raw seed database (matching docs/implementation-artifacts/spec-industrial-cleaning-module.md)
+            workers: [
+                { id: 'worker-1', name: 'Hoàng Văn Tú', email: 'worker1@cleanpro-v2.com', hireDate: '2024-01-01', baseSalary: 8000000, certifications: ['ESD Cleanroom', 'Safety Cert'], kpiBonus: 1000000, violations: 0, status: 'active' },
+                { id: 'worker-2', name: 'Nguyễn Thị Mai', email: 'worker2@cleanpro-v2.com', hireDate: '2024-02-01', baseSalary: 7500000, certifications: ['Food Safety', 'Medical Sanitation'], kpiBonus: 800000, violations: 100000, status: 'active' },
+                { id: 'worker-10', name: 'Lý Thị Hằng', email: 'worker10@cleanpro-v2.com', hireDate: '2026-01-15', baseSalary: 6500000, certifications: ['General Cleaning'], kpiBonus: 500000, violations: 0, status: 'active' },
+                { id: 'worker-12', name: 'Phan Thị Xuân', email: 'worker12@cleanpro-v2.com', hireDate: '2026-02-15', baseSalary: 6500000, certifications: ['High Rise Window'], kpiBonus: 400000, violations: 200000, status: 'active' },
+                { id: 'worker-14', name: 'Đinh Thị Thu', email: 'worker14@cleanpro-v2.com', hireDate: '2026-03-10', baseSalary: 6500000, certifications: ['Hazardous Waste'], kpiBonus: 0, violations: 0, status: 'active' }
+            ],
+            
+            bookings: [
+                { 
+                    id: 'WO-2026-0001', 
+                    customer: 'TechViet Office', 
+                    phone: '0901111001', 
+                    packageKey: 'basic', 
+                    packageName: 'Vệ sinh cơ bản', 
+                    multiplier: 1.0, 
+                    frequency: 'Weekly', 
+                    workerId: 'worker-10', 
+                    status: 'completed', 
+                    notes: 'Đã hoàn thành và đối soát hóa đơn thanh toán Q1.', 
+                    area: 450,
+                    fullPrice: 8500000
+                },
+                { 
+                    id: 'WO-2026-0002', 
+                    customer: 'Samsung Display Việt Nam', 
+                    phone: '0902222001', 
+                    packageKey: 'premium', 
+                    packageName: 'Vệ sinh cao cấp VIP', 
+                    multiplier: 2.0, 
+                    frequency: 'Daily', 
+                    workerId: 'worker-1', 
+                    status: 'in_progress', 
+                    notes: 'Ca làm ban đêm (23h - 07h sáng). Yêu cầu nghiêm ngặt trang phục ESD, HEPA vacuum.', 
+                    area: 12000,
+                    fullPrice: 48000000
+                },
+                { 
+                    id: 'WO-2026-0003', 
+                    customer: 'Ninja Van Warehouse', 
+                    phone: '0903333001', 
+                    packageKey: 'standard', 
+                    packageName: 'Vệ sinh tiêu chuẩn', 
+                    multiplier: 1.5, 
+                    frequency: 'Monthly', 
+                    workerId: 'worker-12', 
+                    status: 'in_progress', 
+                    notes: 'Dịch vụ định kỳ 2x/tháng. Đã thuê xe nâng người tự hành scissor lift để làm sạch trần kho.', 
+                    area: 8000,
+                    fullPrice: 22000000
+                },
+                { 
+                    id: 'WO-2026-0004', 
+                    customer: 'Nhà hàng The Deck Saigon', 
+                    phone: '0904444001', 
+                    packageKey: 'basic', 
+                    packageName: 'Vệ sinh cơ bản', 
+                    multiplier: 1.0, 
+                    frequency: 'Daily', 
+                    workerId: 'worker-2', 
+                    status: 'in_progress', 
+                    notes: 'Vệ sinh bếp sâu, khử dầu mỡ và hệ thống hút mùi.', 
+                    area: 350,
+                    fullPrice: 15000000
+                },
+                { 
+                    id: 'WO-2026-0005', 
+                    customer: 'Bệnh viện Đa khoa Sài Gòn', 
+                    phone: '0905555001', 
+                    packageKey: 'standard', 
+                    packageName: 'Vệ sinh tiêu chuẩn', 
+                    multiplier: 1.5, 
+                    frequency: 'Daily', 
+                    workerId: 'worker-2', 
+                    status: 'in_progress', 
+                    notes: 'Làm sạch 2 ca/ngày (Sáng 6h-8h, Tối 18h-20h). Rác thải y tế gom đúng nơi quy định.', 
+                    area: 3200,
+                    fullPrice: 31000000
+                },
+                { 
+                    id: 'WO-2026-0007', 
+                    customer: 'Viettel IDC Data Center', 
+                    phone: '0907777001', 
+                    packageKey: 'premium', 
+                    packageName: 'Vệ sinh cao cấp VIP', 
+                    multiplier: 2.0, 
+                    frequency: 'Monthly', 
+                    workerId: 'worker-1', 
+                    status: 'booked', 
+                    notes: 'Bảo trì phòng máy chủ khuya (02h - 06h). Hạn chế tối đa nước, dùng bình xịt đặc biệt.', 
+                    area: 2500,
+                    fullPrice: 18000000
+                },
+                { 
+                    id: 'WO-2026-0010', 
+                    customer: 'WeWork Saigon Centre', 
+                    phone: '0910101001', 
+                    packageKey: 'basic', 
+                    packageName: 'Vệ sinh cơ bản', 
+                    multiplier: 1.0, 
+                    frequency: 'Variable', 
+                    workerId: 'worker-14', 
+                    status: 'in_progress', 
+                    notes: 'Ca làm việc linh hoạt theo yêu cầu quản lý mặt bằng co-working.', 
+                    area: 1500,
+                    fullPrice: 12000000
+                }
+            ],
+            
+            sessions: [
+                { id: 'S-101', bookingId: 'WO-2026-0002', shift: 'Đêm', date: '2026-03-25', checkIn: '23:00', checkOut: '07:02', rating: 5.0, notes: 'Quy trình phòng sạch đạt chuẩn. HEPA hút bụi toàn sàn chống tĩnh điện.', workerId: 'worker-1' },
+                { id: 'S-102', bookingId: 'WO-2026-0005', shift: 'Sáng', date: '2026-03-25', checkIn: '06:00', checkOut: '08:05', rating: 4.8, notes: 'Khử trùng buồng cấp cứu và phòng đệm sạch sẽ.', workerId: 'worker-2' },
+                { id: 'S-103', bookingId: 'WO-2026-0004', shift: 'Chiều', date: '2026-03-24', checkIn: '14:30', checkOut: '17:00', rating: 4.5, notes: 'Vệ sinh sàn bếp bóng loáng, đã thông cống mỡ bồn rửa.', workerId: 'worker-2' },
+                { id: 'S-104', bookingId: 'WO-2026-0003', shift: 'Sáng', date: '2026-03-15', checkIn: '08:00', checkOut: '18:15', rating: 4.9, notes: 'Dọn dẹp hệ thống kệ hàng cao bằng xe nâng. Đảm bảo an toàn bảo hộ.', workerId: 'worker-12' },
+                { id: 'S-105', bookingId: 'WO-2026-0002', shift: 'Đêm', date: '2026-03-24', checkIn: '23:01', checkOut: '07:00', rating: 5.0, notes: 'Màng lọc không khí đã được hút sạch. Không phát hiện bụi tĩnh điện.', workerId: 'worker-1' },
+                { id: 'S-106', bookingId: 'WO-2026-0005', shift: 'Chiều', date: '2026-03-24', checkIn: '18:00', checkOut: '20:10', rating: 4.7, notes: 'Hoàn thành bàn giao ca tối đúng quy trình.', workerId: 'worker-2' },
+                { id: 'S-107', bookingId: 'WO-2026-0010', shift: 'Sáng', date: '2026-03-23', checkIn: '09:00', checkOut: '12:00', rating: 4.0, notes: 'Lau dọn quầy trà bánh và các bốt điện thoại làm việc.', workerId: 'worker-14' }
+            ]
+        };
+
+        // Commissions map matching packages
+        const commissionConfig = {
+            basic: 200000,
+            standard: 250000,
+            premium: 300000
+        };
+
+        // ==================== INITIALIZATION ==================== */
+        window.addEventListener('DOMContentLoaded', () => {
+            initCharts();
+            renderDashboardSessions();
+            renderBookingsList();
+            renderSessionsList();
+            populateStaffDropdowns();
+            calculateAndRenderSalary();
+            triggerCounterAnimations();
+        });
+
+        // ==================== TABS SWAP ==================== */
+        function switchTab(tabId, el) {
+            state.activeTab = tabId;
+            
+            // Update Active Menu
+            document.querySelectorAll('.menu-item').forEach(item => item.classList.remove('active'));
+            el.classList.add('active');
+            
+            // Toggle Content
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            const targetContent = document.getElementById(`tab-${tabId}`);
+            targetContent.classList.add('active');
+            
+            // Update Header Meta
+            const titleEl = document.getElementById('current-tab-title');
+            const descEl = document.getElementById('current-tab-desc');
+            
+            if (tabId === 'dashboard') {
+                titleEl.innerText = "Tổng quan Vận hành";
+                descEl.innerText = "Hệ thống giám sát thời gian thực & Phân tích tối ưu";
+                triggerCounterAnimations();
+            } else if (tabId === 'bookings') {
+                titleEl.innerText = "Phiếu Công Việc (Bookings)";
+                descEl.innerText = "Quản lý hợp đồng dịch vụ vệ sinh và tiến độ dự án";
+            } else if (tabId === 'sessions') {
+                titleEl.innerText = "Nhật Ký Ca Làm Việc (Sessions)";
+                descEl.innerText = "Chi tiết check-in/out thực tế và đánh giá chất lượng";
+            } else if (tabId === 'salary') {
+                titleEl.innerText = "AI Công Cụ Tính Lương";
+                descEl.innerText = "Động cơ đồng bộ tính toán lương cơ chế ERP đa ngành";
+            } else if (tabId === 'finance') {
+                titleEl.innerText = "Báo Cáo Tài Chính Doanh Nghiệp (P&L)";
+                descEl.innerText = "Bảng phân tích doanh thu thực chất và chi phí hoạt động";
+            }
+        }
+
+        // ==================== CHARTS ==================== */
+        let financeChart;
+        function initCharts() {
+            const ctx = document.getElementById('dashboard-revenue-chart').getContext('2d');
+            
+            const gradientRevenue = ctx.createLinearGradient(0, 0, 0, 300);
+            gradientRevenue.addColorStop(0, 'rgba(6, 182, 212, 0.4)');
+            gradientRevenue.addColorStop(1, 'rgba(6, 182, 212, 0)');
+            
+            const gradientExpense = ctx.createLinearGradient(0, 0, 0, 300);
+            gradientExpense.addColorStop(0, 'rgba(239, 68, 68, 0.3)');
+            gradientExpense.addColorStop(1, 'rgba(239, 68, 68, 0)');
+
+            financeChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Tháng 1', 'Tháng 2', 'Tháng 3'],
+                    datasets: [
+                        {
+                            label: 'Doanh Thu Thực Tế (Confirmed)',
+                            data: [38500000, 48200000, 56150000],
+                            borderColor: '#06b6d4',
+                            borderWidth: 3,
+                            backgroundColor: gradientRevenue,
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#ffffff',
+                            pointHoverRadius: 8
+                        },
+                        {
+                            label: 'Chi Phí (OpEx + Nhân sự)',
+                            data: [28000000, 30450000, 34800000],
+                            borderColor: '#ef4444',
+                            borderWidth: 2,
+                            backgroundColor: gradientExpense,
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#ffffff',
+                            pointHoverRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#94a3b8',
+                                font: {
+                                    family: 'Inter',
+                                    size: 12
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: {
+                                color: '#94a3b8',
+                                font: { family: 'Inter' },
+                                callback: function(value) { return (value / 1000000) + 'Mđ'; }
+                            }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                color: '#94a3b8',
+                                font: { family: 'Inter' }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // ==================== RENDERING LOGIC ==================== */
+        function renderDashboardSessions() {
+            const tbody = document.querySelector('#dashboard-sessions-table tbody');
+            tbody.innerHTML = '';
+            
+            // Limit to 4 for dashboard preview
+            const recentSessions = state.sessions.slice(0, 4);
+            
+            recentSessions.forEach(session => {
+                const booking = state.bookings.find(b => b.id === session.bookingId);
+                const worker = state.workers.find(w => w.id === session.workerId);
+                
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-family: monospace; font-weight: 600; color: var(--accent);">${session.id}</td>
+                    <td><strong>${booking ? booking.customer : 'N/A'}</strong></td>
+                    <td>${booking ? booking.packageName : 'N/A'}</td>
+                    <td>${worker ? worker.name : 'N/A'}</td>
+                    <td>${session.date} (${session.checkIn} - ${session.checkOut})</td>
+                    <td>
+                        <span style="color: var(--warning); font-weight: bold;">
+                            ${session.rating} <i class="fa-solid fa-star"></i>
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge ${session.shift === 'Đêm' ? 'badge-purple' : 'badge-blue'}">
+                            Ca ${session.shift}
+                        </span>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderBookingsList() {
+            const container = document.getElementById('bookings-list-container');
+            container.innerHTML = '';
+            
+            let filteredBookings = [...state.bookings];
+            
+            // Search Query Filter
+            if (state.searchQuery) {
+                filteredBookings = filteredBookings.filter(b => 
+                    b.customer.toLowerCase().includes(state.searchQuery.toLowerCase()) ||
+                    b.id.toLowerCase().includes(state.searchQuery.toLowerCase())
+                );
+            }
+            
+            // Dropdown filters
+            const freqVal = document.getElementById('filter-booking-frequency').value;
+            if (freqVal) {
+                filteredBookings = filteredBookings.filter(b => b.frequency === freqVal);
+            }
+            
+            const statusVal = document.getElementById('filter-booking-status').value;
+            if (statusVal) {
+                filteredBookings = filteredBookings.filter(b => b.status === statusVal);
+            }
+
+            if (filteredBookings.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                        <i class="fa-solid fa-folder-open" style="font-size: 40px; margin-bottom: 12px; color: var(--text-muted);"></i>
+                        <p>Không tìm thấy phiếu công việc phù hợp.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            filteredBookings.forEach(booking => {
+                const worker = state.workers.find(w => w.id === booking.workerId);
+                const statusBadge = getStatusBadge(booking.status);
+                
+                const div = document.createElement('div');
+                div.className = 'booking-card';
+                div.innerHTML = `
+                    <div class="booking-main">
+                        <div class="booking-avatar">
+                            <i class="fa-solid fa-industry"></i>
+                        </div>
+                        <div class="booking-details">
+                            <h4 onclick="showBookingDetail('${booking.id}')" style="cursor: pointer; color: var(--accent); hover: underline;">
+                                ${booking.customer} 
+                                <span style="font-family: monospace; font-size:12px; color: var(--text-muted); font-weight:normal; margin-left: 8px;">[${booking.id}]</span>
+                            </h4>
+                            <p><i class="fa-solid fa-phone" style="font-size: 10px;"></i> ${booking.phone} | <i class="fa-solid fa-location-dot" style="font-size: 10px;"></i> Quy mô: ${booking.area.toLocaleString()} m²</p>
+                        </div>
+                    </div>
+                    <div class="booking-meta">
+                        <div class="meta-item">
+                            <span>Gói dịch vụ</span>
+                            <p>${booking.packageName} <span style="color: var(--accent)">(${booking.multiplier.toFixed(1)}x)</span></p>
+                        </div>
+                        <div class="meta-item">
+                            <span>Nhân sự</span>
+                            <p>${worker ? worker.name : 'Chưa phân công'}</p>
+                        </div>
+                        <div class="meta-item">
+                            <span>Tần suất ca</span>
+                            <p>${booking.frequency}</p>
+                        </div>
+                        <div class="meta-item">
+                            <span>Giá trị dự án</span>
+                            <p>${booking.fullPrice.toLocaleString()}đ</p>
+                        </div>
+                        <div>
+                            ${statusBadge}
+                        </div>
+                        <button class="btn btn-secondary btn-icon" onclick="showBookingDetail('${booking.id}')">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function renderSessionsList() {
+            const tbody = document.querySelector('#all-sessions-table tbody');
+            tbody.innerHTML = '';
+            
+            let filteredSessions = [...state.sessions];
+            
+            // Dropdown filters
+            const shiftVal = document.getElementById('filter-session-shift').value;
+            if (shiftVal) {
+                filteredSessions = filteredSessions.filter(s => s.shift === shiftVal);
+            }
+            
+            const ratingVal = document.getElementById('filter-session-rating').value;
+            if (ratingVal) {
+                if (ratingVal === '5') {
+                    filteredSessions = filteredSessions.filter(s => s.rating === 5.0);
+                } else if (ratingVal === '4') {
+                    filteredSessions = filteredSessions.filter(s => s.rating >= 4.0 && s.rating < 5.0);
+                } else {
+                    filteredSessions = filteredSessions.filter(s => s.rating < 4.0);
+                }
+            }
+
+            filteredSessions.forEach(session => {
+                const booking = state.bookings.find(b => b.id === session.bookingId);
+                const worker = state.workers.find(w => w.id === session.workerId);
+                
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-family: monospace; font-weight: 600; color: var(--accent);">${session.id}</td>
+                    <td><strong>${booking ? booking.customer : 'N/A'}</strong></td>
+                    <td>${booking ? booking.packageName : 'N/A'}</td>
+                    <td>
+                        <strong>${worker ? worker.name : 'N/A'}</strong>
+                        <div style="font-size: 10px; color: var(--text-secondary); margin-top:2px;">
+                            ${worker ? worker.certifications.map(c => `<span style="background: rgba(6,182,212,0.1); border: 1px solid rgba(6,182,212,0.2); padding: 1px 4px; border-radius: 4px; margin-right: 2px;">${c}</span>`).join('') : ''}
+                        </div>
+                    </td>
+                    <td>${session.date} <span style="color: var(--text-muted)">(${session.checkIn} - ${session.checkOut})</span></td>
+                    <td>
+                        <span style="color: var(--warning); font-weight: bold;">
+                            ${session.rating} <i class="fa-solid fa-star"></i>
+                        </span>
+                    </td>
+                    <td style="max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${session.notes}">
+                        ${session.notes}
+                    </td>
+                    <td>
+                        <span class="badge badge-blue">
+                            ${booking ? booking.multiplier.toFixed(1) : '1.0'}x ca
+                        </span>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // ==================== CALCULATION & ENGINE (AGENTS.md Compliance) ==================== */
+        function calculateAndRenderSalary() {
+            const tbody = document.querySelector('#salary-records-table tbody');
+            tbody.innerHTML = '';
+            
+            let totalQuỹLương = 0;
+            let totalQuyĐổiCa = 0;
+
+            state.workers.forEach(worker => {
+                // Find all completed sessions for this worker
+                const completedSessions = state.sessions.filter(s => s.workerId === worker.id);
+                
+                let totalCaQuyDổi = 0;
+                let commissionReceived = 0;
+
+                completedSessions.forEach(session => {
+                    const booking = state.bookings.find(b => b.id === session.bookingId);
+                    const multiplier = booking ? booking.multiplier : 1.0;
+                    const packKey = booking ? booking.packageKey : 'basic';
+                    const commPerSession = commissionConfig[packKey] || 200000;
+
+                    totalCaQuyDổi += multiplier; // e.g. 1.5 ca or 2.0 ca
+                    commissionReceived += (multiplier * commPerSession);
+                });
+
+                // Night shift specific bonus simulations (e.g. Hoàng Văn Tú has 2 night shifts -> 300k bonus)
+                let otherBonuses = 0;
+                if (worker.id === 'worker-1') {
+                    otherBonuses += 300000; // Overtime/night shift bonus
+                }
+
+                // Compliance Rule 5: Pro-rata base salary dynamically computed for Drafts
+                let actualBaseSalary = worker.baseSalary;
+                let remarks = "";
+                
+                // Simulate working days in the month (Standard month = 26 days)
+                let workingDaysCount = 26; 
+                
+                if (worker.id === 'worker-10') {
+                    // Ly Thi Hang hired mid-month (Jan 15)
+                    workingDaysCount = 16;
+                    actualBaseSalary = Math.round((worker.baseSalary / 26) * workingDaysCount);
+                    remarks = "Tân binh tuyển 15/01";
+                } else if (worker.id === 'worker-12') {
+                    workingDaysCount = 20; // Hired Feb 15
+                    actualBaseSalary = Math.round((worker.baseSalary / 26) * workingDaysCount);
+                    remarks = "Tân binh tuyển 15/02";
+                } else if (worker.id === 'worker-14') {
+                    workingDaysCount = 18; // Hired Mar 10
+                    actualBaseSalary = Math.round((worker.baseSalary / 26) * workingDaysCount);
+                    remarks = "Tân binh tuyển 10/03";
+                }
+
+                const totalSalary = actualBaseSalary + commissionReceived + worker.kpiBonus + otherBonuses - worker.violations;
+
+                totalQuỹLương += totalSalary;
+                totalQuyĐổiCa += totalCaQuyDổi;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>
+                        <strong>${worker.name}</strong>
+                        <div style="font-size: 10px; color: var(--text-secondary); margin-top:2px;">
+                            ${worker.email} ${remarks ? `| <span style="color: var(--warning)">${remarks}</span>` : ''}
+                        </div>
+                    </td>
+                    <td>${worker.hireDate}</td>
+                    <td>${worker.baseSalary.toLocaleString()}đ</td>
+                    <td>${actualBaseSalary.toLocaleString()}đ <span class="tooltip-info" title="Hệ số công: ${workingDaysCount}/26 ngày">${workingDaysCount} ngày</span></td>
+                    <td><strong style="color: var(--accent)">${totalCaQuyDổi.toFixed(1)} ca</strong></td>
+                    <td>${commissionReceived.toLocaleString()}đ</td>
+                    <td>${worker.kpiBonus.toLocaleString()}đ</td>
+                    <td style="color: var(--danger)">-${worker.violations.toLocaleString()}đ</td>
+                    <td><strong style="color: var(--success); font-size:14px;">${totalSalary.toLocaleString()}đ</strong></td>
+                    <td>
+                        <span class="badge ${state.salaryStatus === 'draft' ? 'badge-orange' : 'badge-green'}">
+                            ${state.salaryStatus === 'draft' ? 'Bản nháp (Draft)' : 'Chốt sổ (Confirmed)'}
+                        </span>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // Update stats displays
+            document.getElementById('salary-sum-total').innerText = totalQuỹLương.toLocaleString() + 'đ';
+            document.getElementById('salary-sum-sessions').innerText = totalQuyĐổiCa.toFixed(1) + ' ca';
+            document.getElementById('pl-salary-expense').innerText = totalQuỹLương.toLocaleString() + 'đ';
+            
+            // Adjust P&L
+            const rev = 142850000;
+            const opex = 42400000;
+            const profit = rev - opex - totalQuỹLương;
+            document.getElementById('pl-total-expenses').innerText = (opex + totalQuỹLương).toLocaleString() + 'đ';
+            document.getElementById('pl-net-profit').innerText = profit.toLocaleString() + 'đ';
+        }
+
+        // ==================== INTERACTION SIMULATIONS ==================== */
+        
+        // AI Recalculate salary
+        function recalculateSalary() {
+            showToast('AI Engine', 'Đang quét toàn bộ nhật ký ca làm và đồng bộ chỉ tiêu KPI...', 'info');
+            
+            setTimeout(() => {
+                calculateAndRenderSalary();
+                showToast('Hoàn tất tính toán', 'Đồng bộ AI thành công! Bảng lương đã cập nhật chỉ tiêu mới.', 'success');
+            }, 1000);
+        }
+
+        // Lock salary sheet
+        function lockAndPublishSalary() {
+            if (state.salaryStatus === 'published') {
+                showToast('Cảnh báo', 'Kỳ lương này đã được chốt sổ trước đó.', 'warning');
+                return;
+            }
+            state.salaryStatus = 'published';
+            calculateAndRenderSalary();
+            showToast('Đồng bộ outbox', 'Chốt sổ lương thành công! Outbox tự động kích hoạt tạo bút toán tài chính.', 'success');
+        }
+
+        // Create new booking (Simulation)
+        function submitBookingForm() {
+            const cust = document.getElementById('form-customer').value;
+            const phone = document.getElementById('form-phone').value;
+            const pack = document.getElementById('form-package').value;
+            const freq = document.getElementById('form-frequency').value;
+            const staffId = document.getElementById('form-staff').value;
+            const notes = document.getElementById('form-notes').value;
+
+            if (!cust || !phone || !staffId) {
+                showToast('Lỗi nhập liệu', 'Vui lòng điền đầy đủ thông tin bắt buộc.', 'error');
+                return;
+            }
+
+            const packNames = {
+                basic: 'Vệ sinh cơ bản',
+                standard: 'Vệ sinh tiêu chuẩn',
+                premium: 'Vệ sinh cao cấp VIP'
+            };
+            const multipliers = {
+                basic: 1.0,
+                standard: 1.5,
+                premium: 2.0
+            };
+            const priceFactor = {
+                basic: 12000000,
+                standard: 20000000,
+                premium: 35000000
+            };
+
+            const newId = `WO-2026-00${state.bookings.length + 1}`;
+            const newBooking = {
+                id: newId,
+                customer: cust,
+                phone: phone,
+                packageKey: pack,
+                packageName: packNames[pack],
+                multiplier: multipliers[pack],
+                frequency: freq,
+                workerId: staffId,
+                status: 'booked',
+                notes: notes || 'Không có ghi chú đặc biệt.',
+                area: Math.floor(Math.random() * 4000) + 1000,
+                fullPrice: priceFactor[pack]
+            };
+
+            state.bookings.unshift(newBooking); // Add to beginning of list
+            
+            // Add a mock session log immediately for demonstration if daily/weekly
+            if (freq === 'Daily' || freq === 'Weekly') {
+                const sessId = `S-1${state.sessions.length + 1}`;
+                state.sessions.unshift({
+                    id: sessId,
+                    bookingId: newId,
+                    shift: 'Sáng',
+                    date: '2026-03-26',
+                    checkIn: '08:00',
+                    checkOut: '12:00',
+                    rating: 5.0,
+                    notes: 'Ca làm việc khởi tạo ban đầu, bàn giao thiết bị đầy đủ.',
+                    workerId: staffId
+                });
+            }
+
+            closeModal('new-booking-modal');
+            renderBookingsList();
+            renderSessionsList();
+            calculateAndRenderSalary();
+            
+            // Update dashboard state metrics
+            document.getElementById('metric-bookings').innerText = state.bookings.length;
+            document.getElementById('metric-sessions').innerText = state.sessions.length;
+
+            showToast('Thành công', `Đã tạo phiếu công việc ${newId} và phân phối nhiệm vụ cho nhân viên.`, 'success');
+        }
+
+        // Global search input handling
+        function handleGlobalSearch() {
+            const query = document.getElementById('global-search').value;
+            state.searchQuery = query;
+            
+            if (state.activeTab === 'bookings') {
+                renderBookingsList();
+            } else if (state.activeTab === 'sessions') {
+                // Simply search/filter lists
+                renderSessionsList();
+            }
+        }
+
+        function filterBookings() {
+            renderBookingsList();
+        }
+
+        function filterSessions() {
+            renderSessionsList();
+        }
+
+        function handleSalaryMonthChange() {
+            calculateAndRenderSalary();
+        }
+
+        // ==================== MODALS LOGIC ==================== */
+        function openNewBookingModal() {
+            document.getElementById('new-booking-form').reset();
+            updateFormMultiplier();
+            document.getElementById('new-booking-modal').classList.add('active');
+        }
+
+        function showBookingDetail(bookingId) {
+            const booking = state.bookings.find(b => b.id === bookingId);
+            if (!booking) return;
+
+            const worker = state.workers.find(w => w.id === booking.workerId);
+            const history = state.sessions.filter(s => s.bookingId === bookingId);
+            
+            const detailBody = document.getElementById('detail-booking-body');
+            document.getElementById('detail-wo-id').innerText = bookingId;
+
+            detailBody.innerHTML = `
+                <div style="display:flex; flex-direction:column; gap:16px;">
+                    <div>
+                        <h4 style="font-size:16px; color: var(--accent);">${booking.customer}</h4>
+                        <p style="font-size:13px; color: var(--text-secondary); margin-top:4px;">
+                            Số điện thoại: ${booking.phone} | Diện tích sàn vệ sinh: ${booking.area.toLocaleString()} m²
+                        </p>
+                    </div>
+                    <hr style="border:0; border-top:1px solid var(--border-color);">
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+                        <div>
+                            <span style="font-size:11px; color: var(--text-secondary); text-transform:uppercase;">Gói Dịch Vụ Áp Dụng</span>
+                            <p style="font-size:14px; font-weight:600; margin-top:2px;">${booking.packageName} (${booking.multiplier}x hệ số)</p>
+                        </div>
+                        <div>
+                            <span style="font-size:11px; color: var(--text-secondary); text-transform:uppercase;">Tần Suất Kế Hoạch</span>
+                            <p style="font-size:14px; font-weight:600; margin-top:2px;">${booking.frequency}</p>
+                        </div>
+                    </div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+                        <div>
+                            <span style="font-size:11px; color: var(--text-secondary); text-transform:uppercase;">Nhân Sự Đang Phân Công</span>
+                            <p style="font-size:14px; font-weight:600; margin-top:2px;">${worker ? worker.name : 'Chưa phân công'}</p>
+                        </div>
+                        <div>
+                            <span style="font-size:11px; color: var(--text-secondary); text-transform:uppercase;">Tổng Tiền Hợp Đồng</span>
+                            <p style="font-size:14px; font-weight:600; margin-top:2px; color:var(--success);">${booking.fullPrice.toLocaleString()}đ</p>
+                        </div>
+                    </div>
+                    <div>
+                        <span style="font-size:11px; color: var(--text-secondary); text-transform:uppercase;">Mô Tả Công Việc / Yêu Cầu Thiết Bị</span>
+                        <p style="font-size:13px; margin-top:4px; line-height:1.5; color: var(--text-primary); padding: 10px; background: rgba(255,255,255,0.02); border-radius:6px;">
+                            ${booking.notes}
+                        </p>
+                    </div>
+                    <hr style="border:0; border-top:1px solid var(--border-color);">
+                    <div>
+                        <span style="font-size:11px; color: var(--text-secondary); text-transform:uppercase; display:block; margin-bottom:8px;">Lịch Sử Ca Làm Tích Lũy (${history.length})</span>
+                        ${history.length > 0 ? `
+                            <div style="max-height: 150px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;">
+                                ${history.map(h => `
+                                    <div style="padding: 10px; background: rgba(0,0,0,0.2); border-radius:6px; font-size:12px; display:flex; justify-content:space-between; align-items:center;">
+                                        <span><strong>Ca ${h.shift}</strong> (${h.date})</span>
+                                        <span>Điểm chất lượng: <strong style="color:var(--warning)">${h.rating} ★</strong></span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : '<p style="font-size:12px; color:var(--text-muted)">Chưa tích lũy ca làm nào.</p>'}
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('detail-booking-modal').classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        function updateFormMultiplier() {
+            const pack = document.getElementById('form-package').value;
+            const multipliers = {
+                basic: '1.0 (Quy đổi thông thường)',
+                standard: '1.5 (Quy đổi tiêu chuẩn)',
+                premium: '2.0 (Vệ sinh VIP chuyên sâu)'
+            };
+            document.getElementById('form-multiplier').value = multipliers[pack];
+        }
+
+        function populateStaffDropdowns() {
+            const select = document.getElementById('form-staff');
+            select.innerHTML = '';
+            
+            state.workers.forEach(w => {
+                const opt = document.createElement('option');
+                opt.value = w.id;
+                opt.innerText = `${w.name} (${w.certifications.join(', ')})`;
+                select.appendChild(opt);
+            });
+        }
+
+        // ==================== TOAST COMPONENT ==================== */
+        function showToast(title, message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            const icons = {
+                success: 'fa-circle-check',
+                info: 'fa-circle-info',
+                warning: 'fa-triangle-exclamation',
+                error: 'fa-circle-xmark'
+            };
+
+            toast.innerHTML = `
+                <div class="toast-icon"><i class="fa-solid ${icons[type]}"></i></div>
+                <div class="toast-content">
+                    <h6>${title}</h6>
+                    <p>${message}</p>
+                </div>
+            `;
+            
+            container.appendChild(toast);
+            
+            // Trigger animation
+            setTimeout(() => toast.classList.add('active'), 50);
+            
+            // Remove after 4s
+            setTimeout(() => {
+                toast.classList.remove('active');
+                setTimeout(() => toast.remove(), 400);
+            }, 4000);
+        }
+
+        // ==================== UTILITY FUNCTIONS ==================== */
+        function getStatusBadge(status) {
+            if (status === 'in_progress') return '<span class="badge badge-orange">Đang chạy</span>';
+            if (status === 'completed') return '<span class="badge badge-green">Hoàn thành</span>';
+            if (status === 'booked') return '<span class="badge badge-blue">Chờ chạy</span>';
+            return '<span class="badge badge-red">Đã hủy</span>';
+        }
+
+        function triggerCounterAnimations() {
+            document.querySelectorAll('.count-ticker').forEach(ticker => {
+                const target = parseInt(ticker.getAttribute('data-value'), 10);
+                let current = 0;
+                const increment = Math.ceil(target / 40);
+                const isCurrency = ticker.id === 'metric-revenue';
+                
+                const interval = setInterval(() => {
+                    current += increment;
+                    if (current >= target) {
+                        current = target;
+                        clearInterval(interval);
+                    }
+                    ticker.innerText = isCurrency ? current.toLocaleString() : current;
+                }, 20);
+            });
+        }
+    </script>
+</body>
+</html>

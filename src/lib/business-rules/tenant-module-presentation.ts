@@ -113,6 +113,36 @@ const BEAUTY_SPA_CUSTOMER_PRESENTATION: CustomerPresentation = {
   ],
 };
 
+const INDUSTRIAL_CLEANING_CUSTOMER_PRESENTATION: CustomerPresentation = {
+  customerListSubtitle: 'Quản lý hồ sơ khách hàng doanh nghiệp',
+  customerSearchPlaceholder: 'Tìm tên doanh nghiệp, SĐT, loại cơ sở, địa chỉ...',
+  editDescription: 'Chỉnh sửa hồ sơ khách hàng doanh nghiệp',
+  createDescription: 'Nhập thông tin cơ bản của khách hàng doanh nghiệp',
+  primaryNameLabel: 'Tên doanh nghiệp / Người liên hệ',
+  primaryNamePlaceholder: 'VD: Công ty TNHH ABC',
+  secondaryNameLabel: 'Loại cơ sở / Ghi chú',
+  secondaryNamePlaceholder: 'VD: Văn phòng 500m²',
+  secondaryDateLabel: 'Ngày bắt đầu hợp đồng',
+  secondaryGenderLabel: 'Loại hình cơ sở',
+  secondaryInfoTitle: 'Thông tin cơ sở',
+  secondaryInfoNameLabel: 'Loại cơ sở / Ghi chú',
+  secondaryInfoDateLabel: 'Lịch sử chăm sóc',
+  activeCareBadge: 'Đang có hợp đồng dịch vụ',
+  activeStatusLabel: 'Đang phục vụ',
+  depositStatusLabel: 'Đã ký hợp đồng',
+  leadStatusLabel: 'Khách tiềm năng',
+  customerPrefix: 'Khách hàng',
+  secondaryPrefix: 'Cơ sở',
+  secondaryFallback: 'Chưa phân loại',
+  locationLatitudeLabel: 'Vĩ độ địa chỉ cơ sở (Latitude)',
+  locationLongitudeLabel: 'Kinh độ địa chỉ cơ sở (Longitude)',
+  genderOptions: [
+    { id: 'boy', label: 'Văn phòng', tone: 'blue' },
+    { id: 'girl', label: 'Nhà xưởng', tone: 'slate' },
+    { id: 'unknown', label: 'Khác', tone: 'slate' },
+  ],
+};
+
 const NEUTRAL_CUSTOMER_PRESENTATION: CustomerPresentation = {
   customerListSubtitle: 'Quản lý hồ sơ khách hàng',
   customerSearchPlaceholder: 'Tìm tên khách, SĐT, ngày sinh, dịch vụ, địa chỉ...',
@@ -170,18 +200,27 @@ const INDUSTRIAL_CLEANING_SPECIALTIES: SpecialtyOption[] = [
 ];
 
 export function getTenantModulePresentation(moduleKey: TenantModuleKey): CustomerPresentation {
-  return moduleKey === 'beauty_spa'
-    ? BEAUTY_SPA_CUSTOMER_PRESENTATION
-    : BABYCARE_CUSTOMER_PRESENTATION;
+  if (moduleKey === 'beauty_spa') {
+    return BEAUTY_SPA_CUSTOMER_PRESENTATION;
+  }
+  if (moduleKey === 'industrial_cleaning') {
+    return INDUSTRIAL_CLEANING_CUSTOMER_PRESENTATION;
+  }
+  return BABYCARE_CUSTOMER_PRESENTATION;
 }
 
 export function getTenantModulePresentationOrNeutral(
   moduleKey: TenantModuleKey | null | undefined,
 ): CustomerPresentation {
-  if (moduleKey === 'beauty_spa' || moduleKey === 'babycare') {
-    return getTenantModulePresentation(moduleKey);
+  if (moduleKey === 'beauty_spa') {
+    return BEAUTY_SPA_CUSTOMER_PRESENTATION;
   }
-
+  if (moduleKey === 'industrial_cleaning') {
+    return INDUSTRIAL_CLEANING_CUSTOMER_PRESENTATION;
+  }
+  if (moduleKey === 'babycare') {
+    return BABYCARE_CUSTOMER_PRESENTATION;
+  }
   return NEUTRAL_CUSTOMER_PRESENTATION;
 }
 

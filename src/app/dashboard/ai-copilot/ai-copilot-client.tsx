@@ -47,6 +47,10 @@ function getErrorMessage(error: unknown, fallback: string) {
 }
 
 function getAiWelcomeMessage(moduleKey: TenantModuleKey | null) {
+  if (moduleKey === "industrial_cleaning") {
+    return "Xin chào Ban điều hành! Tôi là AI COO - trợ lý vận hành cho CleanPro. Tôi có thể hỗ trợ theo dõi lịch làm việc, hồ sơ khách hàng doanh nghiệp, doanh thu, chấm công & lương nhân viên vệ sinh, CRM/Zalo và các điểm bất thường cần xử lý trong ngày. Anh/chị cần tôi kiểm tra mảng nào hôm nay?";
+  }
+
   if (moduleKey === "beauty_spa") {
     return "Xin chào Ban điều hành! Tôi là AI COO - trợ lý vận hành cho Beauty Spa. Tôi có thể hỗ trợ theo dõi lịch dịch vụ, hồ sơ khách hàng, doanh thu, chấm công & lương KTV, CRM/Zalo, Meta Ads và các điểm bất thường cần xử lý trong ngày. Anh/chị cần tôi kiểm tra mảng nào hôm nay?";
   }
@@ -55,7 +59,7 @@ function getAiWelcomeMessage(moduleKey: TenantModuleKey | null) {
     return "Xin chào Ban điều hành! Tôi là AI COO - trợ lý vận hành cho Bella Spa. Tôi có thể hỗ trợ phân tích tài chính, lịch chăm sóc, chấm công & lương KTV, đối soát dòng tiền, CRM/Zalo và các quyết định cải tiến trong ngày. Anh/chị cần tôi kiểm tra mảng nào hôm nay?";
   }
 
-  return "Xin chào Ban điều hành! Tôi là AI COO - trợ lý vận hành của hệ thống. Tôi có thể hỗ trợ phân tích lịch dịch vụ, hồ sơ khách hàng, tài chính, nhân sự KTV, CRM/Zalo và các điểm bất thường cần xử lý. Anh/chị cần tôi kiểm tra mảng nào hôm nay?";
+  return "Xin chào Ban điều hành! Tôi là AI COO - trợ lý vận hành của hệ thống. Tôi có thể hỗ trợ phân tích lịch dịch vụ, hồ sơ khách hàng, tài chính, nhân sự, CRM/Zalo và các điểm bất thường cần xử lý. Anh/chị cần tôi kiểm tra mảng nào hôm nay?";
 }
 
 export default function AICopilotClient() {

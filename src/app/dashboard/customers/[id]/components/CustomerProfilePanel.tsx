@@ -106,10 +106,13 @@ export function CustomerProfilePanel({
                 <span className="text-sm font-bold text-slate-500">{customerLabels.secondaryInfoDateLabel}</span>
                 <span className="break-words font-black text-slate-900">{customer.baby.dob}</span>
               </div>
-              <div className="flex flex-col gap-1 rounded-2xl bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between">
-                <span className="text-sm font-bold text-slate-500">Giới tính</span>
-                <span className="break-words font-black text-slate-900">{customer.baby.gender}</span>
-              </div>
+              {/* Chỉ hiển thị Giới tính cho babycare và beauty_spa, không hiển thị cho industrial_cleaning */}
+              {tenantModuleKey !== 'industrial_cleaning' && (
+                <div className="flex flex-col gap-1 rounded-2xl bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <span className="text-sm font-bold text-slate-500">{customerLabels.secondaryGenderLabel}</span>
+                  <span className="break-words font-black text-slate-900">{customer.baby.gender}</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
