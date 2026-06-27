@@ -21,7 +21,7 @@ export function useOfflineSync() {
     if (!offlineDB) return;
     const pendingActions = await offlineDB.offlineQueue
       .where('status')
-      .anyOf(['pending', 'failed'])
+      .anyOf(['pending', 'failed', 'syncing']) // Include 'syncing' to retry stuck actions
       .sortBy('localTimestamp');
 
     if (pendingActions.length === 0) return;
