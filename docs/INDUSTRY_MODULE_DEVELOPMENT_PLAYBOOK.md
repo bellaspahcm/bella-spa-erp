@@ -1266,3 +1266,255 @@ rg "import.*from.*components" src/app/dashboard/**/*.tsx | rg -v "getModuleVocab
 - ❌ Không test trên màu nền đa dạng (white, slate, gradients)
 - ❌ Copy-paste component cũ mà không audit terminology
 
+
+
+### 2026-06-22 - Industrial Cleaning: Offline sync stuck, sidebar hardcoded, date picker duplicate icons
+
+- Module/tenant: Industrial Cleaning (CleanPro), nhưng ảnh hưởng tất cả modules.
+- Màn hình/luồng: Offline sync banner, Sidebar menu labels, Session edit modal date/time pickers.
+- Dấu hiệu: 
+  1. Offline sync banner "Đang chờ đồng bộ" stuck sau khi bấm "Đồng bộ ngay" vì actions với status `'syncing'` không được query lại
+  2. Sidebar label hardcoded "Phiếu công việc" (Industrial Cleaning term) cho tất cả modules thay vì dynamic theo vocabulary
+  3. Date/time pickers hiển thị 2 icons giống nhau (custom icon + native browser icon) overlap trên mobile
+- Nguyên nhân gốc:
+  1. `triggerSync()` trong `useOfflineSync.ts` chỉ query actions với status `['pending', 'failed']`, thiếu `'syncing'`. Khi `syncOfflineAction()` set status thành `'syncing'` nhưng fail trước khi delete, actions застряли навсегда
+  2. Sidebar dùng logic `tenantBrand.moduleKey === 'industrial_cleaning' ? 'Phiếu công việc'` thay vì dùng vocabulary system
+  3. Date inputs có cả custom icon (với `pointer-events-none`) và native browser icon, chưa hide custom icon trên mobile
+- Cách sửa:
+  1. Thêm `'syncing'` vào query filter: `.in('status', ['pending', 'failed', 'syncing'])`
+  2. Sửa sidebar logic thành: `moduleKey === 'industrial_cleaning' ? vocab.booking.singular : moduleKey === 'beauty_spa' ? 'Liệu trình' : 'Thẻ liệu trình'`
+  3. Thêm `hidden md:block` cho custom icons và adjust padding: `pl-3 md:pl-11`
+- Test/guard đã thêm: Manual test offline sync retry, sidebar labels across modules, mobile date picker visual check
+- Commit: `41096e17`, `8adb8ce9`
+- Rủi ro còn lại: Offline sync vẫn có thể bị race condition nếu nhiều tabs cùng sync; sidebar cần refactor dùng vocabulary system toàn bộ thay vì hardcode conditions
+
+### 2026-06-22 - Industrial Cleaning: CleanPro demo data seed errors and tenant isolation
+
+- Module/tenant: Industrial Cleaning (CleanPro)
+- Màn hình/luồng: Demo data seeding via Supabase SQL Editor
+- Dấu hiệu: 
+  1. SQL syntax error: `INTERVAL (3-i)` không hợp lệ trong PostgreSQL
+  2. Constraint violation: `bookings.status = 'active'` không thuộc enum hợp lệ (`inquiry`, `deposit_pending`, `booked`, `in_progress`, `completed`, `cancelled`)
+  3. NOT NULL violation: `session_logs.tenant_id` bị thiếu trong INSERT statements
+  4. Verification query cho thấy 22 customers, 19 workers, 48 bookings thay vì 5/5/8 như mong đợi → dữ liệu cũ chưa được cleanup
+- Nguyên nhân gốc:
+  1. Biểu thức `(3-i)` không thể dùng trực tiếp trong INTERVAL string concatenation
+  2. Status `'active'` không phải giá trị hợp lệ theo constraint `bookings_status_check`
+  3. Bảng `session_logs` yêu cầu `tenant_id NOT NULL` nhưng INSERT không có field này
+  4. Script chạy nhiều lần hoặc trên database đã có dữ liệu CleanPro cũ
+- Cách sửa:
+  1. Thay `(3-i)` bằng explicit CASE: `CASE WHEN i = 1 THEN (CURRENT_DATE - INTERVAL '2 days')::date WHEN i = 2 THEN (CURRENT_DATE - INTERVAL '1 day')::date ELSE NULL END`
+  2. Đổi status từ `'active'` → `'in_progress'` (8 bookings)
+  3. Thêm `tenant_id` vào INSERT columns và values: `INSERT INTO session_logs (booking_id, tenant_id, session_number, ...)`
+  4. Tạo cleanup script `MANUAL_cleanup_cleanpro_data.sql` để xóa dữ liệu cũ trước khi seed
+- Test/guard đã thêm: Verification query kiểm tra counts (5 customers, 5 workers, 8 bookings, 64 sessions), README hướng dẫn cleanup → seed workflow
+- Commit: `72f2d6b6`, `a5052517`, `418bc196`, `331e776c`, `7f3a57c0`
+- Files: 
+  - `supabase/migrations/MANUAL_seed_cleanpro_complete_demo_data.sql` - Seed 5 customers, 5 NVS, 8 bookings, 64 sessions
+  - `supabase/migrations/MANUAL_cleanup_cleanpro_data.sql` - Cleanup script
+  - `supabase/migrations/MANUAL_cleanpro_seed_README.md` - Step-by-step guide
+- Rủi ro còn lại: Script dùng DO $$ block nên không rollback từng phần; nếu fail giữa chừng phải cleanup và seed lại toàn bộ
+
+### 2026-06-22 - Industrial Cleaning: Pink/beige color contrast issues
+
+- Module/tenant: Beauty Spa và Industrial Cleaning (ảnh hưởng cả Bella Spa khi chưa load module)
+- Màn hình/luồng: Leaderboard podiums, buttons, backgrounds với `bg-rose-*`, `bg-pink-*`, `text-slate-*`
+- Dấu hiệu:
+  1. Màu hồng hệ thống bị thay bằng màu be/xám `rgba(200, 169, 122, 0.12)` làm mất tương phản
+  2. Chữ xám nhạt (`text-slate-700`, `text-slate-600`, `text-slate-500`) khó đọc nhưng không được đậm quá trùng màu đen
+  3. Bục vinh danh rank 2, 3 trong leaderboard bị nhạt không rõ
+- Nguyên nhân gốc:
+  1. `globals.css` override `bg-rose-50/100/pink-50/100` thành beige `rgba(200, 169, 122, 0.12)` cho Beauty Spa, quá nhạt
+  2. Tailwind default `text-slate-700` là `rgb(51, 65, 85)` nhưng không được enforce trong beauty_spa module
+  3. `bg-rose-200` và `bg-slate-200` chưa có override nên dùng Tailwind default (quá nhạt)
+- Cách sửa:
+  1. Override `bg-rose-50/100/pink-50/100` thành light pink `rgba(255, 228, 230, 0.85)` thay vì beige
+  2. Thêm override cho `bg-rose-200/pink-200` → `rgba(251, 207, 232, 0.92)` (stronger pink cho rank 3)
+  3. Thêm override cho `bg-slate-200/100/50` với full opacity
+  4. Thêm override `text-slate-700/600/500` → `rgb(51, 65, 85)` (darker gray)
+  5. Thêm override `text-slate-400/300` → `rgb(100, 116, 139)` (medium gray cho secondary text)
+- Test/guard đã thêm: Visual check leaderboard podiums, buttons, text contrast
+- Commit: `1f599468`
+- Rủi ro còn lại: Cần kiểm tra toàn bộ UI components sử dụng rose/pink/slate colors để đảm bảo contrast; dark mode cũng cần review tương tự
+
+### 2026-06-22 - Module Vocabulary: Default to NEUTRAL instead of Beauty Spa
+
+- Module/tenant: Tất cả modules, đặc biệt Industrial Cleaning
+- Màn hình/luồng: Bảng lương (`/dashboard/salary`), tất cả trang sử dụng `useModuleVocabulary()`
+- Dấu hiệu:
+  1. Trang bảng lương ban đầu hiển thị "Lương **Kỹ thuật viên**" (Beauty Spa term) trước khi chuyển thành "Lương **Nhân viên vệ sinh**" (Industrial Cleaning)
+  2. User Industrial Cleaning thấy vocabulary KTV trong khoảng thời gian ngắn khi trang đang load
+  3. Hook `useTenantModuleKey()` initialize với `null`, khiến `getModuleVocabulary(null)` trả về Beauty Spa vocabulary
+- Nguyên nhân gốc:
+  1. `useTenantModuleKey()` state khởi tạo: `const [tenantModuleKey, setTenantModuleKey] = useState<TenantModuleKey | null>(null)`
+  2. `getModuleVocabulary(null)` default về `BEAUTY_BABYCARE_VOCABULARY` thay vì neutral
+  3. Trang không check `isTenantModuleLoading` nên render ngay với vocabulary sai
+- Cách sửa:
+  1. Tạo `NEUTRAL_VOCABULARY` với thuật ngữ trung lập:
+     - `worker`: "Nhân viên" (thay vì "Kỹ thuật viên" hoặc "Nhân viên vệ sinh")
+     - `workUnit`: "Ca làm việc" 
+     - `service`: "Dịch vụ"
+     - `booking`: "Đơn hàng"
+  2. Sửa `getModuleVocabulary()` logic:
+     - `moduleKey === 'industrial_cleaning'` → `CLEANING_VOCABULARY`
+     - `moduleKey === 'beauty_spa' || 'babycare'` → `BEAUTY_BABYCARE_VOCABULARY`
+     - `else` (null/undefined) → `NEUTRAL_VOCABULARY`
+- Test/guard đã thêm: Visual check trang salary load ban đầu, verify không thấy "Kỹ thuật viên" khi moduleKey chưa load
+- Commit: `010c4555`
+- Rủi ro còn lại: 
+  - Browser cache có thể giữ bản build cũ, cần hard refresh (`Ctrl+Shift+R`)
+  - Nếu neutral vocabulary không đủ rõ ràng cho user, có thể cần skeleton/loading state thay vì hiển thị neutral text
+
+### 2026-06-22 - User Guides: Module-specific instead of hardcoded Bella Spa
+
+- Module/tenant: Tất cả modules (Bella Spa, Beauty Spa, Industrial Cleaning)
+- Màn hình/luồng: Hướng dẫn sử dụng (`/dashboard/guides`)
+- Dấu hiệu:
+  1. Trang guides hiển thị "Sổ tay Kỹ thuật viên", "Combo Mẹ & Bé", "KTV" cho tất cả modules
+  2. Industrial Cleaning users thấy guides về chăm sóc mẹ và bé
+  3. Beauty Spa users thấy guides về baby care thay vì spa làm đẹp
+- Nguyên nhân gốc:
+  1. `ALL_GUIDES` constant trong `user-manuals-utils.ts` hardcoded cho Bella Spa (Baby Care)
+  2. Guides page không dùng `useTenantModuleKey()` để filter guides theo module
+  3. Chưa có guides riêng cho Beauty Spa và Industrial Cleaning
+- Cách sửa:
+  1. Tạo 3 bộ guides riêng:
+     - `BABYCARE_GUIDES`: Quy trình SOP, Sổ tay KTV, HR, Kế toán, Quản trị viên
+     - `BEAUTY_SPA_GUIDES`: Quy trình SOP Spa, Sổ tay Chuyên viên (Therapist), HR Spa, Kế toán Spa
+     - `CLEANING_GUIDES`: Quy trình SOP Vệ sinh, Sổ tay NVS (Worker), Giám sát (Supervisor), HR Dịch vụ, Kế toán B2B
+  2. Thêm function `getModuleGuides(moduleKey)` để lấy guides theo module
+  3. Cập nhật guides page:
+     - Import `useTenantModuleKey` và `getModuleGuides`
+     - Load guides: `const moduleGuides = getModuleGuides(tenantModuleKey)`
+     - Re-load khi `tenantModuleKey` thay đổi: `useEffect(..., [tenantModuleKey])`
+  4. Giữ `ALL_GUIDES` export cho backward compatibility (deprecated)
+- Test/guard đã thêm: Visual check guides page cho 3 modules, verify không thấy KTV/Baby Care guides trong CleanPro
+- Commit: `223aebbf`
+- Files:
+  - `src/services/user-manuals-utils.ts` - Module-specific guides definitions
+  - `src/app/dashboard/guides/page.tsx` - Dynamic guide loading
+- Rủi ro còn lại:
+  - Guides slugs hiện tại (sop, ktv, hr, v.v.) chưa có nội dung markdown thực tế
+  - Cần tạo dynamic routes `/dashboard/guides/[slug]/page.tsx` cho từng module
+  - Hoặc tạo mapping slug → module-specific content files
+
+## Industrial Cleaning Module: Tổng Kết Và Bài Học
+
+### Session 2026-06-22: 10 Lỗi Đã Sửa
+
+1. **Offline sync stuck** - Thêm `'syncing'` status vào query filter
+2. **Sidebar hardcoded** - Cần refactor dùng vocabulary system
+3. **Date picker duplicate icons** - Hide custom icons trên mobile
+4. **CleanPro seed SQL syntax** - Fix INTERVAL expression
+5. **Booking status constraint** - Đổi `'active'` → `'in_progress'`
+6. **Session tenant_id missing** - Thêm tenant_id vào INSERT
+7. **Demo data không cleanup** - Tạo cleanup script
+8. **Color contrast issues** - Override pink/beige backgrounds và gray text
+9. **Vocabulary KTV flash** - Default NEUTRAL thay vì Beauty Spa
+10. **Guides hardcoded Bella** - Module-specific guides cho 3 modules
+
+### Pattern Lỗi Chung Cần Tránh
+
+#### 1. **Database Schema Constraints**
+- ❌ **Sai:** Dùng giá trị không có trong CHECK constraint (`'active'` không thuộc bookings_status enum)
+- ✅ **Đúng:** Kiểm tra constraint definitions trước khi seed: `\d+ table_name` hoặc grep migrations
+- 🔧 **Guard:** Unit test insert với tất cả giá trị enum hợp lệ
+
+#### 2. **PostgreSQL Date/Time Expressions**
+- ❌ **Sai:** `INTERVAL (3-i) || ' days'` - biểu thức động không hợp lệ
+- ✅ **Đúng:** Dùng CASE WHEN explicit: `CASE WHEN i = 1 THEN ... WHEN i = 2 THEN ... END`
+- 🔧 **Guard:** Test seed script trên local database trước khi commit
+
+#### 3. **NOT NULL Violations**
+- ❌ **Sai:** INSERT thiếu required columns như `tenant_id`
+- ✅ **Đúng:** Kiểm tra schema `\d+ table_name`, verify tất cả NOT NULL columns
+- 🔧 **Guard:** TypeScript types từ Supabase codegen, hoặc RPC với typed params
+
+#### 4. **Demo Data Cleanup**
+- ❌ **Sai:** Chạy seed nhiều lần không cleanup → dữ liệu duplicate/wrong counts
+- ✅ **Đúng:** Tạo cleanup script chạy TRƯỚC seed, verify counts = 0
+- 🔧 **Guard:** Verification query ở cuối seed script, README với workflow rõ ràng
+
+#### 5. **UI Color Contrast**
+- ❌ **Sai:** Override backgrounds thành màu nhạt/beige mất tương phản
+- ✅ **Đúng:** Test contrast ratio (WCAG AA: 4.5:1 cho text), giữ colors rõ ràng
+- 🔧 **Guard:** Visual review trên device thực, check dark mode
+
+#### 6. **Vocabulary Default State**
+- ❌ **Sai:** Default về vocabulary của module cũ (Beauty Spa) khi chưa load
+- ✅ **Đúng:** Default về NEUTRAL vocabulary hoặc loading skeleton
+- 🔧 **Guard:** Test first render với `tenantModuleKey = null`
+
+#### 7. **Content Hardcoding**
+- ❌ **Sai:** Hardcode terms/guides của module cũ trong shared pages
+- ✅ **Đúng:** Module-aware content system với dynamic loading
+- 🔧 **Guard:** Grep codebase cho hard-coded terms: `rg "Kỹ thuật viên|KTV|Mẹ & Bé"`
+
+### Checklist Cho Module Mới (Updated)
+
+Trước khi coi module mới là "xong":
+
+**Database & Schema:**
+- [ ] Verify tất cả CHECK constraints và enum values
+- [ ] Kiểm tra NOT NULL columns trong schema
+- [ ] Test seed script trên local database trước
+- [ ] Tạo cleanup script với verification
+- [ ] README hướng dẫn cleanup → seed workflow
+
+**UI & UX:**
+- [ ] Test color contrast (WCAG AA minimum)
+- [ ] Check mobile date pickers không duplicate icons
+- [ ] Verify sidebar/menu labels dùng vocabulary
+- [ ] Test first-paint không flash wrong vocabulary
+- [ ] Hard refresh browser để test từ clean state
+
+**Vocabulary & Content:**
+- [ ] Tạo NEUTRAL vocabulary cho loading state
+- [ ] Module-specific guides/help content
+- [ ] Grep toàn bộ codebase cho hardcoded terms
+- [ ] Test với `tenantModuleKey = null`
+
+**Offline & Sync:**
+- [ ] Query offline actions bao gồm tất cả status states
+- [ ] Test offline → online → sync flow
+- [ ] Verify sync không stuck sau retry
+
+**Deployment:**
+- [ ] Clear `.next/` cache: `Remove-Item -Recurse -Force .next`
+- [ ] Build thành công: `npm run build`
+- [ ] Push commits: `git push origin main`
+- [ ] Hard refresh trên production: `Ctrl+Shift+R`
+
+### Files Quan Trọng Cần Review Cho Module Mới
+
+```
+src/lib/business-rules/module-vocabulary.ts       # Vocabulary definitions
+src/services/user-manuals-utils.ts                # Guides/help content
+src/app/dashboard/guides/page.tsx                 # Guides UI
+src/app/globals.css                                # Module-scoped CSS
+src/hooks/useModuleVocabulary.ts                  # Vocabulary hook
+src/hooks/useTenantModuleKey.ts                   # Module key hook
+src/components/layout/sidebar.tsx                 # Sidebar labels
+supabase/migrations/MANUAL_seed_*.sql             # Demo data scripts
+supabase/migrations/MANUAL_cleanup_*.sql          # Cleanup scripts
+docs/INDUSTRY_MODULE_DEVELOPMENT_PLAYBOOK.md      # This file (!)
+```
+
+### Workflow Chuẩn Khi Thêm Module Mới
+
+1. **Discovery** → Spec → Vocabulary mapping
+2. **Schema** → Constraints → NOT NULL check → RLS
+3. **Seed data** → Test locally → Cleanup script → README
+4. **Vocabulary** → NEUTRAL default → Module-specific
+5. **Guides** → Module-specific content
+6. **UI** → Color contrast → Mobile check
+7. **Build** → Clear cache → Test → Push
+8. **Verify** → Hard refresh → Cross-module test
+9. **Document** → Update playbook với lỗi mới
+
+**Thời gian ước lượng:** 
+- Simple module (chỉ vocabulary + guides): 2-4 giờ
+- Medium module (+ schema + seed): 1-2 ngày  
+- Complex module (+ business logic + accounting): 3-5 ngày
+
+**Nhớ:** Mỗi lỗi mới phải được document ngay trong playbook này để module sau không lặp lại!
