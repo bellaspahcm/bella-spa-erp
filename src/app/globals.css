@@ -2414,6 +2414,22 @@ html[data-tenant-module="industrial_cleaning"] [class*="bg-rose-100"] {
   background-color: rgba(45, 147, 174, 0.10) !important; /* Teal 10% */
 }
 
+/* Cleaning rose button backgrounds - thay màu nền button hồng bằng teal/blue */
+html[data-tenant-module="industrial_cleaning"] button[class*="bg-rose-500"],
+html[data-tenant-module="industrial_cleaning"] button[class*="bg-rose-600"],
+html[data-tenant-module="industrial_cleaning"] a[class*="bg-rose-500"],
+html[data-tenant-module="industrial_cleaning"] a[class*="bg-rose-600"] {
+  background-color: #2D93AE !important; /* Teal cho primary buttons */
+}
+
+html[data-tenant-module="industrial_cleaning"] button[class*="bg-rose-500"]:hover,
+html[data-tenant-module="industrial_cleaning"] button[class*="bg-rose-600"]:hover,
+html[data-tenant-module="industrial_cleaning"] button[class*="hover:bg-rose-600"],
+html[data-tenant-module="industrial_cleaning"] a[class*="bg-rose-500"]:hover,
+html[data-tenant-module="industrial_cleaning"] a[class*="bg-rose-600"]:hover {
+  background-color: #0C3776 !important; /* Blue đậm cho hover */
+}
+
 /* Cleaning text color overrides - thay màu hồng bằng blue/teal */
 html[data-tenant-module="industrial_cleaning"] [class*="text-pink-"],
 html[data-tenant-module="industrial_cleaning"] [class*="text-rose-400"],
@@ -2428,6 +2444,13 @@ html[data-tenant-module="industrial_cleaning"] [class*="border-pink-"],
 html[data-tenant-module="industrial_cleaning"] [class*="border-rose-100"],
 html[data-tenant-module="industrial_cleaning"] [class*="border-rose-200"] {
   border-color: rgba(45, 147, 174, 0.28) !important; /* Teal border */
+}
+
+/* Cleaning shadow color overrides - thay shadow hồng bằng teal */
+html[data-tenant-module="industrial_cleaning"] [class*="shadow-rose-"],
+html[data-tenant-module="industrial_cleaning"] [class*="shadow-pink-"] {
+  --tw-shadow-color: rgba(45, 147, 174, 0.3) !important;
+  --tw-shadow: var(--tw-shadow-colored) !important;
 }
 
 
