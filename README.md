@@ -96,3 +96,4 @@ npx playwright test
 1. **Zero Silent Database Failures:** Tuyệt đối không được nuốt lỗi cơ sở dữ liệu. Nếu có lỗi phát sinh trong giao dịch, phải re-throw hoặc trả về lỗi rõ ràng để hệ thống thực hiện rollback trạng thái.
 2. **Mandatory Side-Effect Assertions:** Trong các bài test, bắt buộc phải truy vấn các bảng chịu tác động phụ (như `attendance`, `revenue`, `inventory_logs`) để khẳng định dữ liệu được ghi nhận/hoàn tác chính xác 100%.
 3. **Strict Database Payload Typing:** Không sử dụng kiểu `any` hoặc ép kiểu lỏng lẻo khi insert/update cơ sở dữ liệu. Sử dụng kiểu tự động sinh từ Supabase Schema để phát hiện lỗi ngay khi gõ code.
+# Force rebuild
