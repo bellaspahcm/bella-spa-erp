@@ -16,10 +16,18 @@ Cập nhật dates cho demo sessions của CleanPro Industrial Services để c�
 5. Click **Run** (hoặc Ctrl+Enter)
 6. Xem kết quả trong tab **Results**
 
-### Option 2: Qua CLI
+### Option 2: Qua psql CLI (nếu có PostgreSQL client)
 ```bash
-# Từ root folder của project
-npx supabase db execute -f supabase/migrations/MANUAL_update_cleanpro_demo_sessions_dates.sql --local
+# Connect to local Supabase database
+psql postgresql://postgres:postgres@localhost:54322/postgres -f supabase/migrations/MANUAL_update_cleanpro_demo_sessions_dates.sql
+```
+
+**Hoặc dùng Supabase CLI để reset và apply migrations:**
+```bash
+# Reset local database và apply tất cả migrations (bao gồm MANUAL scripts)
+npx supabase db reset --local
+
+# Lưu ý: Lệnh này sẽ xóa toàn bộ data và chạy lại tất cả migrations
 ```
 
 ## Kết quả mong đợi
