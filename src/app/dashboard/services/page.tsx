@@ -130,6 +130,9 @@ export default function ServicesPage() {
     ...(enabledModules.beauty_spa
       ? [{ value: 'beauty_spa', label: 'Beauty Spa' }]
       : []),
+    ...(enabledModules.industrial_cleaning
+      ? [{ value: 'industrial_cleaning', label: 'Industrial Cleaning' }]
+      : []),
   ];
   const canManageServices = hasLoadedTenantModules && enabledModuleOptions.length > 0;
   const showModuleFilter = hasLoadedTenantModules && enabledModuleOptions.length > 1;
@@ -201,8 +204,9 @@ export default function ServicesPage() {
                 { value: 'all', label: 'Tất cả module', icon: <Tag className="h-4 w-4 text-slate-400" /> },
                 { value: 'babycare', label: 'Bella Mother & Baby', icon: <CheckCircle2 className="h-4 w-4 text-emerald-500" /> },
                 { value: 'beauty_spa', label: 'Beauty Spa', icon: <Sparkles className="h-4 w-4 text-fuchsia-500" /> },
+                { value: 'industrial_cleaning', label: 'Industrial Cleaning', icon: <Zap className="h-4 w-4 text-cyan-500" /> },
               ]}
-              onChange={(val) => setModuleFilter(val as 'all' | 'babycare' | 'beauty_spa')}
+              onChange={(val) => setModuleFilter(val as 'all' | 'babycare' | 'beauty_spa' | 'industrial_cleaning')}
               placeholder="Lọc module..."
             />
           </div>
