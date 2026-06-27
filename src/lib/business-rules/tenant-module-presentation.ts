@@ -290,6 +290,12 @@ export function getPackageSpecialty(input: {
   packageName?: string | null;
 }): TenantSpecialtyKey {
   const moduleKey = input.packageModuleKey === 'beauty_spa' ? 'beauty_spa' : input.tenantModuleKey;
+  
+  // Industrial Cleaning: always return 'all' (no specialty filtering)
+  if (moduleKey === 'industrial_cleaning') {
+    return 'all';
+  }
+  
   const category = normalizeText(input.serviceCategory);
   const name = normalizeText(input.packageName);
 
@@ -330,6 +336,11 @@ export function getKtvFallbackSpecialtyByName(
   fullName: string | null | undefined,
   moduleKey: TenantModuleKey,
 ): TenantSpecialtyKey {
+  // Industrial Cleaning: always return 'all' (no specialty filtering by name)
+  if (moduleKey === 'industrial_cleaning') {
+    return 'all';
+  }
+  
   const name = normalizeText(fullName);
 
   if (moduleKey === 'beauty_spa') {
