@@ -1386,12 +1386,28 @@ html[data-tenant-module="beauty_spa"] [class*="bg-pink-50"],
 html[data-tenant-module="beauty_spa"] [class*="bg-pink-100"],
 html[data-tenant-module="beauty_spa"] [class*="bg-rose-50"],
 html[data-tenant-module="beauty_spa"] [class*="bg-rose-100"] {
-  background-color: rgba(200, 169, 122, 0.12) !important;
+  background-color: rgba(255, 228, 230, 0.85) !important; /* Changed from beige to light pink with better visibility */
+}
+
+/* Stronger pink for bg-rose-200 to maintain contrast in podiums */
+html[data-tenant-module="beauty_spa"] [class*="bg-rose-200"],
+html[data-tenant-module="beauty_spa"] [class*="bg-pink-200"] {
+  background-color: rgba(251, 207, 232, 0.92) !important; /* Stronger pink for rank 3 podium */
 }
 
 html[data-tenant-module="beauty_spa"] [class*="shadow-pink-"],
 html[data-tenant-module="beauty_spa"] [class*="shadow-rose-"] {
   box-shadow: var(--beauty-shadow-md) !important;
+}
+
+/* Stronger slate backgrounds for better visibility in leaderboard podiums */
+html[data-tenant-module="beauty_spa"] [class*="bg-slate-200"],
+html[data-tenant-module="beauty_spa"] [class*="bg-slate-100"] {
+  background-color: rgba(226, 232, 240, 1) !important; /* Slate-200 with full opacity */
+}
+
+html[data-tenant-module="beauty_spa"] [class*="bg-slate-50"] {
+  background-color: rgba(248, 250, 252, 1) !important; /* Slate-50 with full opacity */
 }
 
 html[data-tenant-module="beauty_spa"] [class*="text-pink-"],
@@ -1643,6 +1659,18 @@ html.dark[data-tenant-module="pending"] main [class*="text-slate-900"],
 html.dark[data-tenant-module="pending"] main [class*="text-slate-800"],
 html.dark[data-tenant-module="pending"] main [class*="text-slate-700"] {
   color: #F8F1E3 !important;
+}
+
+/* Light mode: Make text-slate-700/600/500 darker for better contrast */
+html[data-tenant-module="beauty_spa"] [class*="text-slate-700"],
+html[data-tenant-module="beauty_spa"] [class*="text-slate-600"],
+html[data-tenant-module="beauty_spa"] [class*="text-slate-500"] {
+  color: rgb(51, 65, 85) !important; /* Darker gray (slate-700) but not black */
+}
+
+html[data-tenant-module="beauty_spa"] [class*="text-slate-400"],
+html[data-tenant-module="beauty_spa"] [class*="text-slate-300"] {
+  color: rgb(100, 116, 139) !important; /* Medium gray (slate-500) for secondary text */
 }
 
 html.dark[data-tenant-module="beauty_spa"] p,
