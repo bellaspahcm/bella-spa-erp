@@ -112,7 +112,7 @@ export default function DashboardPage() {
       : 'Bella Spa';
   
   // Don't show role-specific greeting until tenant data is fully loaded
-  const greetingText = tenantModuleKey === null
+  const greetingText = tenantModuleKey === null || userRole === null
     ? 'Chào buổi sáng!'  // Generic greeting while loading - no business name or role
     : userRole === 'admin'
       ? `Chào buổi sáng, ${businessLabel} admin!`
