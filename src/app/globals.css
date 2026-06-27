@@ -2336,6 +2336,13 @@ html[data-tenant-module="industrial_cleaning"] .beauty-erp-profile-card:hover {
   border-color: rgba(45, 147, 174, 0.32) !important;
 }
 
+/* Override date ribbon active state - change from pink to teal */
+html[data-tenant-module="industrial_cleaning"] .beauty-date-ribbon-day-active {
+  background: #2D93AE !important; /* Teal solid */
+  box-shadow: 0 4px 12px rgba(45, 147, 174, 0.25) !important;
+  color: #FFFFFF !important;
+}
+
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-item svg,
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-icon-button svg {
   color: currentColor !important;
