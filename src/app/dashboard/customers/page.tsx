@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 
 import { usePageRefresh } from '@/hooks/usePageRefresh';
 import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
+import { useModuleVocabulary } from '@/lib/business-rules/module-vocabulary';
 import { calculateBookingPaymentState, type PaymentRevenueLike } from '@/lib/business-rules/payment';
 import {
   getCustomerGenderPresentation,
@@ -91,6 +92,7 @@ export default function CustomersPage() {
   const customerLoadRequestRef = useRef(0);
   const backgroundCustomerLoadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { tenantModuleKey, refreshTenantModuleKey } = useTenantModuleKey();
+  const vocab = useModuleVocabulary(tenantModuleKey);
 
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState(ALL_STATUS_FILTER);
@@ -640,7 +642,7 @@ export default function CustomersPage() {
               </button>
               <button 
                 onClick={() => router.push(`/dashboard/customers/${customer.id}`)}
-                className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-bold text-white shadow-lg shadow-rose-200 transition-all hover:bg-rose-600 dark:shadow-none sm:flex-none sm:px-5"
+                className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-bold text-white shadow-lg shadow-rose-200 transition-all hover:bg-rose-600 hover:shadow-xl hover:shadow-rose-300 active:scale-95 active:shadow-md dark:shadow-none sm:flex-none sm:px-5"
               >
                 Chi tiết
                 <ChevronRight className="w-4 h-4" />
@@ -681,7 +683,7 @@ export default function CustomersPage() {
                           <div className="w-8 h-8 rounded-lg bg-pink-50 flex items-center justify-center group-hover/item:bg-pink-100 transition-colors">
                             <ClipboardList className="w-4 h-4 text-rose-500" />
                           </div>
-                          Thẻ liệu trình
+                          {vocab.booking.singular}
                         </button>
                         <button 
                           onClick={() => handleZalo(customer.phone)}

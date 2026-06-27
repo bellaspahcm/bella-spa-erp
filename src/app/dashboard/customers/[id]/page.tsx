@@ -127,6 +127,7 @@ export default function CustomerDetailPage() {
             bookings={customer.allBookings || []}
             activeBooking={activeBooking}
             onSelectBooking={setActiveBooking}
+            tenantModuleKey={tenantModuleKey}
           />
 
           <ActiveBookingPanel
@@ -159,6 +160,7 @@ export default function CustomerDetailPage() {
             onOpenSessions={handleOpenSessions}
             onOpenBookingSessions={handleOpenBookingSessions}
             onReusePackage={handleReuseActivePackage}
+            tenantModuleKey={tenantModuleKey}
           />
 
           <PaymentHistoryPanel activeBooking={activeBooking} userRole={userRole} />

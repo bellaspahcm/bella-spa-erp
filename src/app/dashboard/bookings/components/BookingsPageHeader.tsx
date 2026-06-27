@@ -3,6 +3,8 @@
 import { Calendar as CalendarIcon, CalendarDays, Plus } from 'lucide-react';
 
 import PremiumExportButton from '@/components/ui/PremiumExportButton';
+import { useModuleVocabulary } from '@/lib/business-rules/module-vocabulary';
+import type { TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 
 export type BookingsViewMode = 'calendar' | 'timeline';
 
@@ -11,6 +13,7 @@ type BookingsPageHeaderProps = {
   surface?: 'schedule' | 'pos';
   onViewChange: (view: BookingsViewMode) => void;
   onCreateClick: () => void;
+  tenantModuleKey: TenantModuleKey | null;
 };
 
 export function BookingsPageHeader({
@@ -18,8 +21,10 @@ export function BookingsPageHeader({
   surface = 'schedule',
   onViewChange,
   onCreateClick,
+  tenantModuleKey,
 }: BookingsPageHeaderProps) {
   const isPosSurface = surface === 'pos';
+  const vocab = useModuleVocabulary(tenantModuleKey);
 
   return (
     <div className="mb-6 flex flex-col gap-4 md:mb-8 md:flex-row md:items-center md:justify-between">
@@ -30,7 +35,7 @@ export function BookingsPageHeader({
         <p className="text-slate-500 font-medium mt-1">
           {isPosSurface
             ? 'Mở lịch hẹn, chọn ca và in bill thanh toán K80'
-            : 'Điều phối và theo dõi lịch chăm sóc'}
+            : `Điều phối và theo dõi lịch ${vocab.service.singular.toLowerCase()}`}
         </p>
       </div>
 
@@ -46,7 +51,7 @@ export function BookingsPageHeader({
             }`}
           >
             <CalendarDays className="w-3.5 h-3.5 text-rose-500" />
-            <span>Timeline KTV</span>
+            <span>Timeline {vocab.worker.short}</span>
           </button>
           <button
             onClick={() => onViewChange('calendar')}

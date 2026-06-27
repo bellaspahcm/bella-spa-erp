@@ -2,6 +2,8 @@
 
 import { ChevronRight, ClipboardList, Clock, Heart, History, TrendingUp } from 'lucide-react';
 import type { CustomerDetailBooking, CustomerDetailSession } from '../types';
+import { useModuleVocabulary } from '@/lib/business-rules/module-vocabulary';
+import type { TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 
 export function SessionHistoryPanel({
   activeBooking,
@@ -12,6 +14,7 @@ export function SessionHistoryPanel({
   onOpenSessions,
   onOpenBookingSessions,
   onReusePackage,
+  tenantModuleKey,
 }: {
   activeBooking: CustomerDetailBooking | null;
   sortedSessions: CustomerDetailSession[];
@@ -21,14 +24,17 @@ export function SessionHistoryPanel({
   onOpenSessions: () => void;
   onOpenBookingSessions: () => void;
   onReusePackage: () => void;
+  tenantModuleKey: TenantModuleKey | null;
 }) {
+  const vocab = useModuleVocabulary(tenantModuleKey);
+  
   return (
           <div className="bg-white rounded-[3rem] p-8 shadow-xl shadow-slate-200/50 border border-slate-100">
             <div className="flex items-center justify-between mb-8">
               <h3 className="text-xl font-black text-slate-900 flex items-center gap-3 flex-wrap">
                 <History className="text-primary w-6 h-6 flex-shrink-0" />
                 <span>
-                  Lịch sử chăm sóc: <span className="text-primary">{activeBooking?.package_name || activeBooking?.packages?.name || (activeBooking?.status === 'deposit_pending' ? 'Phiếu Đặt Cọc' : 'Dịch vụ lẻ')}</span> ({activeBooking?.completed_sessions || 0}/{activeBooking?.total_sessions || 15})
+                  {vocab.serviceHistory.label}: <span className="text-primary">{activeBooking?.package_name || activeBooking?.packages?.name || (activeBooking?.status === 'deposit_pending' ? 'Phiếu Đặt Cọc' : 'Dịch vụ lẻ')}</span> ({activeBooking?.completed_sessions || 0}/{activeBooking?.total_sessions || 15})
                 </span>
               </h3>
               <button
@@ -47,8 +53,8 @@ export function SessionHistoryPanel({
                       <Clock className="w-7 h-7" />
                     </div>
                     <div>
-                      <p className="text-xs font-black text-primary uppercase tracking-[0.2em] mb-1">Buổi tiếp theo</p>
-                      <h4 className="text-xl font-black text-slate-900">Buổi số {nextSession.session_number}</h4>
+                      <p className="text-xs font-black text-primary uppercase tracking-[0.2em] mb-1">{vocab.workUnit.singular} tiếp theo</p>
+                      <h4 className="text-xl font-black text-slate-900">{vocab.workUnit.singular} số {nextSession.session_number}</h4>
                       <p className="text-xs text-slate-500 font-bold mt-1">
                         Ngày {nextSession.assigned_date || 'Chưa đặt'} • {nextSession.assigned_time || activeBooking?.preferred_time || '--:--'}
                       </p>
@@ -59,7 +65,7 @@ export function SessionHistoryPanel({
                     className="w-full md:w-auto bg-primary hover:bg-rose-600 text-white px-8 py-4 rounded-2xl font-black transition-all shadow-xl shadow-rose-200 dark:shadow-none flex items-center justify-center gap-3 active:scale-95"
                   >
                     <ClipboardList className="w-5 h-5" />
-                    XEM THẺ LIỆU TRÌNH
+                    XEM {vocab.booking.singular.toUpperCase()}
                   </button>
                 </div>
               ) : isCompleted ? (
@@ -69,8 +75,8 @@ export function SessionHistoryPanel({
                       <Heart className="w-7 h-7" />
                     </div>
                     <div>
-                      <p className="text-xs font-black text-emerald-600 uppercase tracking-[0.2em] mb-1">Liệu trình đã hoàn tất</p>
-                      <h4 className="text-xl font-black text-slate-900">Khách hàng đã hoàn tất gói liệu trình</h4>
+                      <p className="text-xs font-black text-emerald-600 uppercase tracking-[0.2em] mb-1">{vocab.service.singular} đã hoàn tất</p>
+                      <h4 className="text-xl font-black text-slate-900">{vocab.customer.singular} đã hoàn tất {vocab.package.singular.toLowerCase()}</h4>
                     </div>
                   </div>
                   <button
@@ -92,9 +98,9 @@ export function SessionHistoryPanel({
                         <ClipboardList className="w-5 h-5" />
                       </div>
                       <div>
-                        <p className="font-black text-slate-800">{session.type || 'Chăm sóc liệu trình'} - Buổi {session.session_number}/{activeBooking?.total_sessions || 15}</p>
+                        <p className="font-black text-slate-800">{session.type || vocab.service.singular} - {vocab.workUnit.singular} {session.session_number}/{activeBooking?.total_sessions || 15}</p>
                         <p className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 flex-wrap mt-1">
-                          <span>KTV: <strong className="text-slate-700">{session.completed_by_ktv?.full_name || activeBooking?.assigned_ktv?.full_name || 'Chưa phân công'}</strong>{session.completed_by_ktv?.phone || activeBooking?.assigned_ktv?.phone ? ` (${session.completed_by_ktv?.phone || activeBooking?.assigned_ktv?.phone})` : ''}</span>
+                          <span>{vocab.worker.short}: <strong className="text-slate-700">{session.completed_by_ktv?.full_name || activeBooking?.assigned_ktv?.full_name || 'Chưa phân công'}</strong>{session.completed_by_ktv?.phone || activeBooking?.assigned_ktv?.phone ? ` (${session.completed_by_ktv?.phone || activeBooking?.assigned_ktv?.phone})` : ''}</span>
                           <span>•</span>
                           <span>Hotline: <strong className="text-rose-500 font-black">0865 701 493</strong></span>
                           <span>•</span>
@@ -143,8 +149,8 @@ export function SessionHistoryPanel({
               ) : (
                 <div className="text-center py-12 bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200">
                   <Clock className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                  <p className="text-slate-400 font-bold italic">Chưa có dữ liệu liệu trình hoàn thành</p>
-                  <p className="text-xs text-slate-400 mt-1 uppercase tracking-widest font-black">Khách hàng chưa thực hiện buổi nào</p>
+                  <p className="text-slate-400 font-bold italic">{vocab.serviceHistory.emptyState}</p>
+                  <p className="text-xs text-slate-400 mt-1 uppercase tracking-widest font-black">{vocab.customer.singular} chưa thực hiện {vocab.workUnit.singular.toLowerCase()} nào</p>
                 </div>
               )}
             </div>
