@@ -866,15 +866,27 @@ html[data-tenant-module="pending"] [class*="to-pink-"] {
 
 /* Override sidebar background for Baby Care / Default theme */
 html[data-tenant-module="baby_care"] aside.beauty-erp-sidebar,
-html[data-tenant-module="baby_care"] aside[class*="bg-[#FAFAFA]"] {
+html[data-tenant-module="baby_care"] aside[class*="bg-[#FAFAFA]"],
+html[data-tenant-module="babycare"] aside.beauty-erp-sidebar,
+html[data-tenant-module="babycare"] aside[class*="bg-[#FAFAFA]"] {
   background: #FFF0F3 !important;
   border-color: rgba(236, 72, 153, 0.15) !important;
   color: #831843 !important;
 }
 
+/* Hide pink glow decorations in baby_care / babycare to ensure uniform background */
+html[data-tenant-module="baby_care"] aside .bg-pink-300\/30,
+html[data-tenant-module="baby_care"] aside .bg-rose-300\/25,
+html[data-tenant-module="babycare"] aside .bg-pink-300\/30,
+html[data-tenant-module="babycare"] aside .bg-rose-300\/25 {
+  display: none !important;
+}
+
 /* Dark mode Baby Care sidebar */
 html.dark[data-tenant-module="baby_care"] aside.beauty-erp-sidebar,
-html.dark[data-tenant-module="baby_care"] aside[class*="bg-[#FAFAFA]"] {
+html.dark[data-tenant-module="baby_care"] aside[class*="bg-[#FAFAFA]"],
+html.dark[data-tenant-module="babycare"] aside.beauty-erp-sidebar,
+html.dark[data-tenant-module="babycare"] aside[class*="bg-[#FAFAFA]"] {
   background: linear-gradient(135deg, #1C1B19 0%, #2E2B27 100%) !important;
   border-color: rgba(166, 125, 68, 0.2) !important;
   color: #EFE9E1 !important;
@@ -2532,27 +2544,36 @@ html[data-tenant-module="industrial_cleaning"] [class*="shadow-pink-"] {
 
 /* Improve light gray text contrast for better readability (LIGHT MODE ONLY) */
 html[data-tenant-module="baby_care"] .text-slate-400,
-html[data-tenant-module="baby_care"] [class*="text-slate-400"] {
+html[data-tenant-module="baby_care"] [class*="text-slate-400"],
+html[data-tenant-module="babycare"] .text-slate-400,
+html[data-tenant-module="babycare"] [class*="text-slate-400"] {
   color: #64748b !important; /* Darkened from #94a3b8 */
 }
 
 html[data-tenant-module="baby_care"] .text-slate-500,
-html[data-tenant-module="baby_care"] [class*="text-slate-500"] {
+html[data-tenant-module="baby_care"] [class*="text-slate-500"],
+html[data-tenant-module="babycare"] .text-slate-500,
+html[data-tenant-module="babycare"] [class*="text-slate-500"] {
   color: #475569 !important; /* Darkened from #64748b */
 }
 
 html[data-tenant-module="baby_care"] .text-gray-400,
-html[data-tenant-module="baby_care"] [class*="text-gray-400"] {
+html[data-tenant-module="baby_care"] [class*="text-gray-400"],
+html[data-tenant-module="babycare"] .text-gray-400,
+html[data-tenant-module="babycare"] [class*="text-gray-400"] {
   color: #6b7280 !important; /* Darkened from #9ca3af */
 }
 
 html[data-tenant-module="baby_care"] .text-gray-500,
-html[data-tenant-module="baby_care"] [class*="text-gray-500"] {
+html[data-tenant-module="baby_care"] [class*="text-gray-500"],
+html[data-tenant-module="babycare"] .text-gray-500,
+html[data-tenant-module="babycare"] [class*="text-gray-500"] {
   color: #4b5563 !important; /* Darkened from #6b7280 */
 }
 
 /* Improve muted foreground (secondary text) contrast */
-html[data-tenant-module="baby_care"] .text-muted-foreground {
+html[data-tenant-module="baby_care"] .text-muted-foreground,
+html[data-tenant-module="babycare"] .text-muted-foreground {
   color: oklch(0.475 0 0) !important; /* Darkened from 0.556 */
 }
 
