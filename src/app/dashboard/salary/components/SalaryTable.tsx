@@ -12,6 +12,7 @@ Search,
 ShieldCheck,
 Star
 } from 'lucide-react';
+import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
 
 interface SalaryTableProps {
   filteredSalaries: KtvSalaryRecord[];
@@ -36,6 +37,7 @@ export default function SalaryTable({
   handleApprove,
   handleExport,
 }: SalaryTableProps) {
+  const vocab = useModuleVocabulary();
   const isNotKtv = currentUser?.role?.toLowerCase() !== 'ktv';
 
   return (
@@ -66,12 +68,12 @@ export default function SalaryTable({
         <table className="bella-data-table min-w-[90rem] text-left">
           <thead>
             <tr className="bg-slate-50/80 backdrop-blur-md">
-              <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[220px]">Kỹ thuật viên</th>
-              <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[100px]">Số buổi</th>
+              <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[220px]">{vocab.worker.singular}</th>
+              <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[100px]">Số {vocab.workUnit.plural}</th>
               <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[100px]">Ngày công</th>
               <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[100px]">Đánh giá</th>
               <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[150px]">Lương cứng</th>
-              <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[150px]">Hoa hồng ca</th>
+              <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[150px]">Hoa hồng {vocab.workUnit.singular}</th>
               <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[150px]">Thưởng chất lượng</th>
               <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[150px]">Thưởng KPI</th>
               <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[150px]">Phạt</th>

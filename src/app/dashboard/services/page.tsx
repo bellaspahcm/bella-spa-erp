@@ -93,6 +93,7 @@ export default function ServicesPage() {
     startIndex,
     endIndex,
     currentPage,
+    isLoading,
     openAddModal,
     openEditModal,
     addMaterialRow,
@@ -386,8 +387,30 @@ export default function ServicesPage() {
       )}
 
       {/* Services Grid */}
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2 xl:gap-6">
-        {paginatedServices.map((service, idx) => (
+      {isLoading ? (
+        <div className="flex min-h-[400px] items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <RefreshCw className="h-12 w-12 animate-spin text-primary" />
+            <p className="text-sm font-bold text-slate-500">Đang tải danh sách dịch vụ...</p>
+          </div>
+        </div>
+      ) : paginatedServices.length === 0 ? (
+        <div className="flex min-h-[400px] items-center justify-center">
+          <div className="flex flex-col items-center gap-4 text-center">
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-slate-100">
+              <Sparkles className="h-10 w-10 text-slate-400" />
+            </div>
+            <div>
+              <h3 className="text-lg font-black text-slate-900">Chưa có dịch vụ nào</h3>
+              <p className="mt-1 text-sm font-medium text-slate-500">
+                Bấm "Thêm dịch vụ mới" để tạo gói dịch vụ đầu tiên
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2 xl:gap-6">
+          {paginatedServices.map((service, idx) => (
           <motion.div 
             key={service.id}
             initial={{ opacity: 0, y: 20 }}
@@ -518,6 +541,7 @@ export default function ServicesPage() {
           </motion.div>
         ))}
       </div>
+      )}
 
       {/* Pagination Controls */}
       {totalPages > 1 && (
