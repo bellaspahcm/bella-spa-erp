@@ -2189,25 +2189,21 @@ html[data-tenant-module="industrial_cleaning"] .beauty-erp-mobile-header {
 }
 
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-sidebar {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0) 34%),
-    linear-gradient(158deg, #E8F4F8 0%, #B8DDE8 42%, #8BC8D8 100%) !important;
-  border-color: rgba(45, 147, 174, 0.28) !important;
-  box-shadow: 16px 0 44px rgba(139, 200, 216, 0.14) !important;
-  color: #001C44; /* Text màu đậm cho contrast */
-  /* Override hardcoded bg-[#FFF0F3] from sidebar.tsx */
-  background-color: transparent !important;
+  background: #F7FCFD !important; /* Xanh rất nhạt (gần trắng với tint xanh nhẹ) */
+  border-color: rgba(45, 147, 174, 0.18) !important;
+  box-shadow: 16px 0 44px rgba(139, 200, 216, 0.08) !important;
+  color: #001C44;
+  background-color: #F7FCFD !important; /* Đảm bảo override Tailwind */
 }
 
 /* Stronger selector to override Tailwind inline classes */
 html[data-tenant-module="industrial_cleaning"] aside.beauty-erp-sidebar,
 html[data-tenant-module="industrial_cleaning"] aside[class*="bg-[#FFF0F3]"],
+html[data-tenant-module="industrial_cleaning"] aside[class*="bg-[#FAFAFA]"],
 html[data-tenant-module="industrial_cleaning"] aside[class*="border-[#FBCFE8]"] {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0) 34%),
-    linear-gradient(158deg, #E8F4F8 0%, #B8DDE8 42%, #8BC8D8 100%) !important;
-  background-color: transparent !important;
-  border-color: rgba(45, 147, 174, 0.28) !important;
+  background: #F7FCFD !important; /* Xanh rất nhạt thay vì gradient đậm */
+  background-color: #F7FCFD !important;
+  border-color: rgba(45, 147, 174, 0.18) !important;
   color: #001C44 !important;
 }
 
@@ -2273,10 +2269,33 @@ html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-item:hover {
 }
 
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-item-active {
-  background: #2D93AE !important; /* Teal solid cho active */
-  border-color: rgba(188, 254, 254, 0.48) !important; /* Cyan border */
-  color: #FFFFFF !important; /* White text cho active */
-  box-shadow: 0 14px 32px rgba(45, 147, 174, 0.28) !important;
+  background: #FFFFFF !important; /* White background cho active state */
+  border-color: rgba(45, 147, 174, 0.32) !important; /* Teal border */
+  color: #0C3776 !important; /* Blue text cho active */
+  box-shadow: 0 4px 12px rgba(45, 147, 174, 0.12) !important; /* Teal shadow thay vì hồng */
+}
+
+html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-item-active svg,
+html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-item-active span {
+  color: #0C3776 !important; /* Blue đậm cho icon và text active */
+}
+
+/* Override hardcoded pink shadow in sidebar nav active state */
+html[data-tenant-module="industrial_cleaning"] aside nav a[class*="shadow-[0_8px_20px_rgba(219,39,119"],
+html[data-tenant-module="industrial_cleaning"] aside nav motion[class*="shadow-[0_8px_20px_rgba(219,39,119"] {
+  box-shadow: 0 4px 12px rgba(45, 147, 174, 0.12) !important;
+}
+
+/* Override active rail indicator */
+html[data-tenant-module="industrial_cleaning"] aside nav div[class*="bg-primary"][class*="shadow-[0_0_10px_rgba(190,24,93"] {
+  background: #2D93AE !important; /* Teal thay vì primary (pink) */
+  box-shadow: 0 0 10px rgba(45, 147, 174, 0.35) !important;
+}
+
+/* Override active dot indicator */
+html[data-tenant-module="industrial_cleaning"] aside nav div[class*="bg-primary rounded-full"][class*="shadow-[0_0_6px_rgba(219,39,119"] {
+  background: #2D93AE !important;
+  box-shadow: 0 0 6px rgba(45, 147, 174, 0.4) !important;
 }
 
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-item svg,
