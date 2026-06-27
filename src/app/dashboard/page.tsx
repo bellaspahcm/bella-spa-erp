@@ -111,9 +111,12 @@ export default function DashboardPage() {
       ? 'CleanPro'
       : 'Bella Spa';
   
+  // Don't show role-specific greeting until tenant data is fully loaded
   const greetingText = tenantModuleKey === null
-    ? 'Chào buổi sáng!'  // Generic greeting while loading
-    : `Chào buổi sáng, ${businessLabel} ${userRole === 'admin' ? 'admin' : vocab.worker.short}!`;
+    ? 'Chào buổi sáng!'  // Generic greeting while loading - no business name or role
+    : userRole === 'admin'
+      ? `Chào buổi sáng, ${businessLabel} admin!`
+      : `Chào buổi sáng, ${businessLabel} ${vocab.worker.short}!`;
   
   const todayScheduleSubtitle = tenantModuleKey === null
     ? 'Lịch dịch vụ hôm nay'
