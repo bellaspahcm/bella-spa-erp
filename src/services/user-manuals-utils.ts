@@ -1,4 +1,5 @@
 import { isManualPermittedByRole } from '@/lib/business-rules/permissions';
+import type { TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 
 export interface GuideListItem {
   slug: string;
@@ -6,9 +7,13 @@ export interface GuideListItem {
   subtitle: string;
   icon: string;
   description: string;
+  modules?: TenantModuleKey[]; // Which modules this guide applies to (undefined = all modules)
 }
 
-export const ALL_GUIDES: GuideListItem[] = [
+/**
+ * Bella Spa (Baby Care) Guides
+ */
+const BABYCARE_GUIDES: GuideListItem[] = [
   {
     slug: 'sop',
     title: 'Quy trình SOP',
@@ -45,6 +50,103 @@ export const ALL_GUIDES: GuideListItem[] = [
     description: 'Cấu hình chi nhánh, thiết lập Zalo OA, phân quyền nhân sự tối cao và bảo mật hệ thống.',
   },
 ];
+
+/**
+ * Beauty Spa Guides
+ */
+const BEAUTY_SPA_GUIDES: GuideListItem[] = [
+  {
+    slug: 'sop-beauty',
+    title: 'Quy trình SOP Spa',
+    subtitle: 'SOP · Vận hành Spa',
+    icon: '📋',
+    description: 'Quy trình vận hành tiêu chuẩn cho spa làm đẹp: check-in, tư vấn, liệu trình, thanh toán.',
+  },
+  {
+    slug: 'therapist',
+    title: 'Sổ tay Chuyên viên',
+    subtitle: 'Therapist · Thực hiện liệu trình',
+    icon: '💅',
+    description: 'Hướng dẫn thực hiện liệu trình chăm sóc da, massage, nail, và các dịch vụ spa làm đẹp.',
+  },
+  {
+    slug: 'hr-beauty',
+    title: 'Sổ tay Nhân sự Spa',
+    subtitle: 'HR · Quản lý nhân viên',
+    icon: '👥',
+    description: 'Tuyển dụng chuyên viên spa, đào tạo kỹ năng, chấm công và quản lý hoa hồng.',
+  },
+  {
+    slug: 'accountant-beauty',
+    title: 'Sổ tay Kế toán Spa',
+    subtitle: 'Accountant · Tài chính Spa',
+    icon: '💰',
+    description: 'Quản lý doanh thu dịch vụ, chi phí nguyên vật liệu, đối soát công nợ khách hàng.',
+  },
+];
+
+/**
+ * Industrial Cleaning Guides
+ */
+const CLEANING_GUIDES: GuideListItem[] = [
+  {
+    slug: 'sop-cleaning',
+    title: 'Quy trình SOP Vệ sinh',
+    subtitle: 'SOP · Vận hành Dịch vụ',
+    icon: '🧹',
+    description: 'Quy trình vận hành tiêu chuẩn cho dịch vụ vệ sinh công nghiệp: an toàn, chất lượng, báo cáo.',
+  },
+  {
+    slug: 'worker',
+    title: 'Sổ tay Nhân viên vệ sinh',
+    subtitle: 'NVS · Thực hiện công việc',
+    icon: '🧤',
+    description: 'Hướng dẫn check-in tại địa điểm, thực hiện ca vệ sinh, báo cáo hoàn thành và an toàn lao động.',
+  },
+  {
+    slug: 'supervisor',
+    title: 'Sổ tay Giám sát',
+    subtitle: 'Supervisor · Quản lý hiện trường',
+    icon: '🎯',
+    description: 'Quản lý đội ngũ NVS, phân công công việc, kiểm tra chất lượng và xử lý sự cố.',
+  },
+  {
+    slug: 'hr-cleaning',
+    title: 'Sổ tay Nhân sự Dịch vụ',
+    subtitle: 'HR · Quản lý NVS',
+    icon: '👷',
+    description: 'Tuyển dụng NVS, đào tạo kỹ năng, chấm công ca làm việc và quản lý lương.',
+  },
+  {
+    slug: 'accountant-cleaning',
+    title: 'Sổ tay Kế toán Dịch vụ',
+    subtitle: 'Accountant · Tài chính B2B',
+    icon: '📊',
+    description: 'Quản lý hợp đồng doanh nghiệp, thanh toán định kỳ, chi phí vật tư và lương NVS.',
+  },
+];
+
+/**
+ * Get guides for a specific module
+ */
+export function getModuleGuides(moduleKey: TenantModuleKey | null | undefined): GuideListItem[] {
+  if (moduleKey === 'industrial_cleaning') {
+    return CLEANING_GUIDES;
+  }
+  
+  if (moduleKey === 'beauty_spa') {
+    return BEAUTY_SPA_GUIDES;
+  }
+  
+  // Default: Bella Spa (Baby Care)
+  return BABYCARE_GUIDES;
+}
+
+/**
+ * Legacy export for backward compatibility
+ * @deprecated Use getModuleGuides() instead
+ */
+export const ALL_GUIDES: GuideListItem[] = BABYCARE_GUIDES;
 
 /**
  * Kiểm tra quyền truy cập của role đối với tài liệu tương ứng
