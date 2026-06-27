@@ -68,6 +68,46 @@ export type ModuleVocabulary = {
 };
 
 /**
+ * Vocabulary for default/neutral state (when module not yet loaded)
+ * Uses generic terms that work for all domains
+ */
+const NEUTRAL_VOCABULARY: ModuleVocabulary = {
+  worker: {
+    singular: 'Nhân viên',
+    plural: 'Nhân viên',
+    short: 'NV',
+    role: 'Nhân viên',
+  },
+  workUnit: {
+    singular: 'Ca làm việc',
+    plural: 'Các ca làm việc',
+    action: 'Hoàn thành ca',
+  },
+  service: {
+    singular: 'Dịch vụ',
+    plural: 'Các dịch vụ',
+  },
+  booking: {
+    singular: 'Đơn hàng',
+    plural: 'Các đơn hàng',
+    action: 'Tạo đơn',
+  },
+  package: {
+    singular: 'Gói dịch vụ',
+    plural: 'Các gói dịch vụ',
+  },
+  customer: {
+    singular: 'Khách hàng',
+    plural: 'Khách hàng',
+    context: 'khách hàng',
+  },
+  serviceHistory: {
+    label: 'Lịch sử dịch vụ',
+    emptyState: 'Chưa có dữ liệu dịch vụ hoàn thành',
+  },
+};
+
+/**
  * Vocabulary for Beauty Spa / Baby Care domains
  * (Default/Original vocabulary)
  */
@@ -148,14 +188,19 @@ const CLEANING_VOCABULARY: ModuleVocabulary = {
 
 /**
  * Get vocabulary for a specific module
+ * Returns neutral vocabulary when moduleKey is null/undefined (before tenant data loads)
  */
 export function getModuleVocabulary(moduleKey: TenantModuleKey | null | undefined): ModuleVocabulary {
   if (moduleKey === 'industrial_cleaning') {
     return CLEANING_VOCABULARY;
   }
   
-  // Default: Beauty Spa / Baby Care vocabulary
-  return BEAUTY_BABYCARE_VOCABULARY;
+  if (moduleKey === 'beauty_spa' || moduleKey === 'babycare') {
+    return BEAUTY_BABYCARE_VOCABULARY;
+  }
+  
+  // Default: Neutral vocabulary (when module not yet loaded or unknown)
+  return NEUTRAL_VOCABULARY;
 }
 
 /**
