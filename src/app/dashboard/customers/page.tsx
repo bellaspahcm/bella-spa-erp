@@ -578,7 +578,7 @@ export default function CustomersPage() {
                 )}
 
                 {/* Prominent Notification for Active Care */}
-                {customer.is_in_care && (
+                {customer.is_in_care && tenantModuleKey !== 'industrial_cleaning' && (
                   <motion.div 
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
