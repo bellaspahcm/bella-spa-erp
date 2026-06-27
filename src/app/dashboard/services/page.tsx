@@ -22,8 +22,10 @@ import { cn, formatNumberWithSeparator, parseDecimalInput, parseIntegerInput,  }
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
 import { useServicesPageState } from './hooks/useServicesPageState';
+import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
 
 export default function ServicesPage() {
+  const vocab = useModuleVocabulary();
   const {
     isModalOpen,
     setIsModalOpen,
@@ -600,7 +602,7 @@ export default function ServicesPage() {
                         {modalMode === 'add' ? 'Thêm dịch vụ' : 'Chỉnh sửa dịch vụ'}
                       </h2>
                       <p className="text-slate-500 font-bold">
-                        {modalMode === 'add' ? 'Tạo gói liệu trình mới cho khách hàng' : 'Cập nhật thông tin gói dịch vụ'}
+                        {modalMode === 'add' ? `Tạo ${vocab.package.singular.toLowerCase()} mới cho khách hàng` : `Cập nhật thông tin ${vocab.package.singular.toLowerCase()}`}
                       </p>
                     </div>
                   </div>
@@ -650,7 +652,7 @@ export default function ServicesPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-black text-slate-700 ml-1">Số buổi trong liệu trình</label>
+                      <label className="text-sm font-black text-slate-700 ml-1">Số {vocab.workUnit.plural.toLowerCase()} trong {vocab.package.singular.toLowerCase()}</label>
                       <input 
                         type="number" 
                         required
@@ -664,7 +666,7 @@ export default function ServicesPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-black text-slate-700 ml-1">Hoa hồng KTV (VNĐ/buổi)</label>
+                      <label className="text-sm font-black text-slate-700 ml-1">Hoa hồng {vocab.worker.short} (VNĐ/{vocab.workUnit.singular.toLowerCase()})</label>
                       <input 
                         type="text" 
                         required
@@ -683,7 +685,11 @@ export default function ServicesPage() {
                       value={details}
                       onChange={(e) => setDetails(e.target.value)}
                       className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700" 
-                      placeholder="VD: Massage body, Chăm sóc da mặt, Xông hơi" 
+                      placeholder={
+                        vocab.worker.short === 'NVS' 
+                          ? 'VD: Vệ sinh sàn nhà, Lau kính, Dọn toilet' 
+                          : 'VD: Massage body, Chăm sóc da mặt, Xông hơi'
+                      } 
                     />
                   </div>
 
@@ -837,8 +843,13 @@ export default function ServicesPage() {
 
                   <div className="flex flex-col gap-3 rounded-2xl bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0">
-                      <span className="text-sm font-black text-slate-700 block">Kích hoạt gói dịch vụ</span>
-                      <span className="text-xs text-slate-400 font-bold">Kích hoạt để gói hiển thị trực tiếp trên trang chủ Landing Page</span>
+                      <span className="text-sm font-black text-slate-700 block">Kích hoạt {vocab.package.singular.toLowerCase()}</span>
+                      <span className="text-xs text-slate-400 font-bold">
+                        {vocab.worker.short === 'NVS' 
+                          ? 'Kích hoạt để hiển thị gói dịch vụ này trong danh sách'
+                          : 'Kích hoạt để gói hiển thị trực tiếp trên trang chủ Landing Page'
+                        }
+                      </span>
                     </div>
                     <button
                       type="button"
@@ -875,9 +886,9 @@ export default function ServicesPage() {
                           <Database className="w-5 h-5" />
                         </div>
                         <div className="min-w-0">
-                          <h4 className="text-sm font-black text-slate-900">Định mức tiêu hao vật tư mỗi buổi</h4>
+                          <h4 className="text-sm font-black text-slate-900">Định mức tiêu hao vật tư mỗi {vocab.workUnit.singular.toLowerCase()}</h4>
                           <p className="text-[11px] text-slate-500 font-semibold leading-relaxed mt-0.5">
-                            Hệ thống sẽ tự trừ kho theo định mức này khi KTV hoàn thành ca <span className="text-rose-500">(nếu bật ở Cài đặt → Quản lý Tiêu hao Kho vận)</span>.
+                            Hệ thống sẽ tự trừ kho theo định mức này khi {vocab.worker.short} hoàn thành {vocab.workUnit.singular.toLowerCase()} <span className="text-rose-500">(nếu bật ở Cài đặt → Quản lý Tiêu hao Kho vận)</span>.
                           </p>
                         </div>
                       </div>
@@ -909,7 +920,7 @@ export default function ServicesPage() {
                                   {/* Header */}
                                   <div className="hidden lg:grid grid-cols-[1fr_140px_60px_40px] gap-3 px-3 py-2 text-[9px] font-black text-slate-400 uppercase tracking-widest">
                                     <span>Vật tư</span>
-                                    <span>SL / buổi</span>
+                                    <span>SL / {vocab.workUnit.singular.toLowerCase()}</span>
                                     <span>Đơn vị</span>
                                     <span></span>
                                   </div>
