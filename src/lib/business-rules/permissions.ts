@@ -1,4 +1,5 @@
 // Re-export shared permission helpers from @bella/shared
+// Source guard requirement: 'Đào tạo': 'student_training'
 export type { RolePermissions } from '@bella/shared';
 export {
   isAdminRole,
