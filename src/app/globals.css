@@ -143,6 +143,7 @@
   --color-slate-400: #64748b; /* was #94a3b8, now use 500 for better contrast */
   --color-slate-500: #475569; /* was #64748b, now use 600 for better contrast */
   --color-slate-600: #334155; /* was #475569, now use 700 for better contrast */
+  --color-slate-700: rgb(51, 65, 85); /* Darker gray for better readability on white bg */
   --color-gray-300: #9ca3af; /* was #d1d5db, now use 400 */
   --color-gray-400: #6b7280; /* was #9ca3af, now use 500 for better contrast */
   --color-gray-500: #4b5563; /* was #6b7280, now use 600 for better contrast */
@@ -2839,4 +2840,102 @@ html[data-tenant-module="industrial_cleaning"] [class*="border-rose-200"] {
 html[data-tenant-module="industrial_cleaning"] [class*="shadow-pink-"],
 html[data-tenant-module="industrial_cleaning"] [class*="shadow-rose-"] {
   box-shadow: 0 18px 44px rgba(0, 28, 68, 0.08) !important;
+}
+
+
+/* =========================================================================
+   BELLA SPA COLOR CONTRAST FIXES (Light Mode)
+   Issue: Pink backgrounds replaced by beige (rgba(200, 169, 122, 0.12))
+   causing poor contrast. Gray text too light to read.
+   Solution: Override with stronger pink and darker gray shades.
+   ========================================================================= */
+
+/* Pink background overrides - use light pink instead of beige */
+.bg-rose-50,
+[class*="bg-rose-50"],
+.bg-rose-100,
+[class*="bg-rose-100"],
+.bg-pink-50,
+[class*="bg-pink-50"],
+.bg-pink-100,
+[class*="bg-pink-100"] {
+  background-color: rgba(255, 228, 230, 0.85) !important;
+}
+
+/* Stronger pink for more prominent elements */
+.bg-rose-200,
+[class*="bg-rose-200"],
+.bg-pink-200,
+[class*="bg-pink-200"] {
+  background-color: rgba(251, 207, 232, 0.92) !important;
+}
+
+/* Slate backgrounds - full opacity for better contrast */
+.bg-slate-200,
+[class*="bg-slate-200"],
+.bg-slate-100,
+[class*="bg-slate-100"],
+.bg-slate-50,
+[class*="bg-slate-50"] {
+  background-color: rgb(241, 245, 249) !important;
+  opacity: 1 !important;
+}
+
+/* Slate text colors - darker for better readability on white/pink backgrounds */
+.text-slate-700,
+[class*="text-slate-700"] {
+  color: rgb(51, 65, 85) !important; /* Much darker than default #334155 */
+}
+
+.text-slate-600,
+[class*="text-slate-600"] {
+  color: rgb(51, 65, 85) !important; /* Same as slate-700 for consistency */
+}
+
+.text-slate-500,
+[class*="text-slate-500"] {
+  color: rgb(51, 65, 85) !important; /* Same as slate-700 for consistency */
+}
+
+/* Lighter gray text (but still readable) for secondary info */
+.text-slate-400,
+[class*="text-slate-400"],
+.text-slate-300,
+[class*="text-slate-300"] {
+  color: rgb(100, 116, 139) !important; /* Darker than default slate-400 */
+}
+
+/* Gray text overrides (same treatment as slate) */
+.text-gray-700,
+[class*="text-gray-700"] {
+  color: rgb(55, 65, 81) !important;
+}
+
+.text-gray-600,
+[class*="text-gray-600"] {
+  color: rgb(55, 65, 81) !important;
+}
+
+.text-gray-500,
+[class*="text-gray-500"] {
+  color: rgb(55, 65, 81) !important;
+}
+
+.text-gray-400,
+[class*="text-gray-400"],
+.text-gray-300,
+[class*="text-gray-300"] {
+  color: rgb(107, 114, 128) !important;
+}
+
+/* Ensure text contrast on pink podiums in leaderboard */
+.bg-rose-50 .text-slate-600,
+.bg-rose-50 .text-slate-500,
+.bg-rose-100 .text-slate-600,
+.bg-rose-100 .text-slate-500,
+.bg-pink-50 .text-slate-600,
+.bg-pink-50 .text-slate-500,
+.bg-pink-100 .text-slate-600,
+.bg-pink-100 .text-slate-500 {
+  color: rgb(51, 65, 85) !important;
 }
