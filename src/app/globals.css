@@ -2207,6 +2207,28 @@ html[data-tenant-module="industrial_cleaning"] aside[class*="border-[#FBCFE8]"] 
   color: #001C44 !important;
 }
 
+/* Override decorative glows - change from pink to subtle teal */
+html[data-tenant-module="industrial_cleaning"] aside div[class*="bg-pink-300/30"],
+html[data-tenant-module="industrial_cleaning"] aside div[class*="bg-rose-300/25"] {
+  background-color: rgba(45, 147, 174, 0.04) !important; /* Xanh nhạt thay vì hồng */
+}
+
+/* Override scrollbar thumb - change from pink to teal */
+html[data-tenant-module="industrial_cleaning"] aside nav[class*="scrollbar-thumb"]::-webkit-scrollbar-thumb,
+html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-scroll::-webkit-scrollbar-thumb {
+  background: rgba(45, 147, 174, 0.35) !important; /* Teal nhạt cho scrollbar */
+}
+
+/* Override hover states - change from rose to teal */
+html[data-tenant-module="industrial_cleaning"] aside button[class*="hover:bg-rose-50"],
+html[data-tenant-module="industrial_cleaning"] aside button[class*="border-pink-100"] {
+  border-color: rgba(45, 147, 174, 0.22) !important;
+}
+
+html[data-tenant-module="industrial_cleaning"] aside button[class*="hover:bg-rose-50"]:hover {
+  background-color: rgba(45, 147, 174, 0.08) !important; /* Teal nhạt thay vì rose */
+}
+
 /* Override pink glow decorations inside sidebar */
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-sidebar .bg-pink-300\/30,
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-sidebar .bg-rose-300\/25 {
@@ -2253,7 +2275,7 @@ html[data-tenant-module="industrial_cleaning"] .beauty-erp-profile-role {
 }
 
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-scroll::-webkit-scrollbar-thumb {
-  background: rgba(45, 147, 174, 0.52) !important;
+  background: rgba(45, 147, 174, 0.38) !important; /* Teal nhạt cho scrollbar, consistent */
 }
 
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-item {
@@ -2272,7 +2294,7 @@ html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-item-active {
   background: #FFFFFF !important; /* White background cho active state */
   border-color: rgba(45, 147, 174, 0.32) !important; /* Teal border */
   color: #0C3776 !important; /* Blue text cho active */
-  box-shadow: 0 4px 12px rgba(45, 147, 174, 0.12) !important; /* Teal shadow thay vì hồng */
+  box-shadow: 0 4px 12px rgba(45, 147, 174, 0.08) !important; /* Teal shadow rất nhạt */
 }
 
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-item-active svg,
@@ -2280,22 +2302,38 @@ html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-item-active span 
   color: #0C3776 !important; /* Blue đậm cho icon và text active */
 }
 
-/* Override hardcoded pink shadow in sidebar nav active state */
-html[data-tenant-module="industrial_cleaning"] aside nav a[class*="shadow-[0_8px_20px_rgba(219,39,119"],
-html[data-tenant-module="industrial_cleaning"] aside nav motion[class*="shadow-[0_8px_20px_rgba(219,39,119"] {
-  box-shadow: 0 4px 12px rgba(45, 147, 174, 0.12) !important;
+/* Override ALL hardcoded pink/rose shadows in sidebar */
+html[data-tenant-module="industrial_cleaning"] aside [class*="shadow-[0_8px_20px_rgba(219,39,119"],
+html[data-tenant-module="industrial_cleaning"] aside [class*="shadow-[0_4px_12px_rgba(219,39,119"],
+html[data-tenant-module="industrial_cleaning"] aside [class*="shadow-[0_4px_20px_rgba(219,39,119"] {
+  box-shadow: 0 4px 12px rgba(45, 147, 174, 0.08) !important; /* Teal shadow nhạt */
+}
+
+/* Override nav item hover shadow */
+html[data-tenant-module="industrial_cleaning"] aside nav a:hover {
+  box-shadow: 0 2px 8px rgba(45, 147, 174, 0.06) !important; /* Teal shadow cực nhạt */
 }
 
 /* Override active rail indicator */
 html[data-tenant-module="industrial_cleaning"] aside nav div[class*="bg-primary"][class*="shadow-[0_0_10px_rgba(190,24,93"] {
   background: #2D93AE !important; /* Teal thay vì primary (pink) */
-  box-shadow: 0 0 10px rgba(45, 147, 174, 0.35) !important;
+  box-shadow: 0 0 10px rgba(45, 147, 174, 0.25) !important; /* Teal glow nhạt */
 }
 
 /* Override active dot indicator */
 html[data-tenant-module="industrial_cleaning"] aside nav div[class*="bg-primary rounded-full"][class*="shadow-[0_0_6px_rgba(219,39,119"] {
   background: #2D93AE !important;
-  box-shadow: 0 0 6px rgba(45, 147, 174, 0.4) !important;
+  box-shadow: 0 0 6px rgba(45, 147, 174, 0.3) !important; /* Teal glow nhạt */
+}
+
+/* Override profile card shadow */
+html[data-tenant-module="industrial_cleaning"] .beauty-erp-profile-card {
+  box-shadow: 0 4px 20px rgba(45, 147, 174, 0.06) !important; /* Teal shadow nhạt */
+  border-color: rgba(45, 147, 174, 0.22) !important;
+}
+
+html[data-tenant-module="industrial_cleaning"] .beauty-erp-profile-card:hover {
+  border-color: rgba(45, 147, 174, 0.32) !important;
 }
 
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-item svg,
@@ -2623,9 +2661,7 @@ html[data-tenant-module="industrial_cleaning"] .beauty-erp-profile-role {
   color: rgba(188, 254, 254, 0.8) !important;
 }
 
-html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-scroll::-webkit-scrollbar-thumb {
-  background: rgba(188, 254, 254, 0.45) !important;
-}
+/* Removed duplicate scrollbar definition - consolidated above */
 
 html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-item {
   color: rgba(255, 255, 255, 0.72) !important;
