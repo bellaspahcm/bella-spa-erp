@@ -548,11 +548,11 @@ export function Sidebar() {
         {/* Soft decorative light glows */}
         <div className={cn(
           "absolute -top-24 -left-24 w-64 h-64 bg-pink-300/30 dark:bg-[#5D1C34]/10 rounded-full blur-[100px] pointer-events-none",
-          isBeautySpaShell && "hidden"
+          (isBeautySpaShell || isIndustrialCleaningShell) && "hidden"
         )} />
         <div className={cn(
           "absolute -bottom-24 -right-24 w-64 h-64 bg-rose-300/25 dark:bg-[#A67D44]/5 rounded-full blur-[100px] pointer-events-none",
-          isBeautySpaShell && "hidden"
+          (isBeautySpaShell || isIndustrialCleaningShell) && "hidden"
         )} />
 
         {/* ── Logo & Mobile Close Button ── */}
@@ -598,8 +598,11 @@ export function Sidebar() {
 
         {/* ── Nav (scrollable) ── */}
         <nav className={cn(
-          "flex-1 min-h-0 px-5 space-y-1.5 overflow-y-auto relative z-10 pb-2 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-rose-200/60 dark:[&::-webkit-scrollbar-thumb]:bg-[#3E3A35]",
-          isBeautySpaShell && "beauty-erp-nav-scroll"
+          "flex-1 min-h-0 px-5 space-y-1.5 overflow-y-auto relative z-10 pb-2 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:transparent [&::-webkit-scrollbar-thumb]:rounded-full",
+          isBeautySpaShell || isIndustrialCleaningShell 
+            ? "" 
+            : "[&::-webkit-scrollbar-thumb]:bg-rose-200/60 dark:[&::-webkit-scrollbar-thumb]:bg-[#3E3A35]",
+          (isBeautySpaShell || isIndustrialCleaningShell) && "beauty-erp-nav-scroll"
         )}>
           {finalMenuItems.map((item, idx) => {
             if (isMenuHeader(item)) {
