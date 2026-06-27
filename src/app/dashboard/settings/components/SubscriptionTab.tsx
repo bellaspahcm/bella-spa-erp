@@ -225,10 +225,59 @@ export default function SubscriptionTab() {
       if (res.error) {
         toast.error('Không thể kích hoạt thử nghiệm: ' + res.error);
       } else {
-        toast.success('Sandbox: Đã gạch nợ thành công! Gói cước đã được kích hoạt.');
+        toast.success('Sandbox: Đã gạch nợ thành công! Đang cập nhật gói cước...');
         setPendingInvoice(null);
         setSelectedPlan(null);
-        await loadData();
+        
+        // Wait for database to commit and Next.js revalidation to propagate
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        // Retry loading data until subscription is updated (max 3 attempts)
+        let retries = 0;
+        const maxRetries = 3;
+        let subscriptionUpdated = false;
+        
+        while (retries < maxRetries && !subscriptionUpdated) {
+          try {
+            const [newStatus, newInvoices] = await Promise.all([
+              getSubscriptionStatus(),
+              getSubscriptionInvoiceHistory()
+            ]);
+            
+            // Check if the invoice is now marked as paid
+            const paidInvoice = newInvoices.find(
+              inv => inv.invoice_number === invoiceNumber && inv.status === 'paid'
+            );
+            
+            if (paidInvoice) {
+              // Success! Update UI
+              setStatus(newStatus);
+              setInvoices(newInvoices);
+              subscriptionUpdated = true;
+              toast.success('✅ Gói cước đã được kích hoạt thành công!');
+            } else {
+              // Not updated yet, retry after delay
+              retries++;
+              if (retries < maxRetries) {
+                await new Promise(resolve => setTimeout(resolve, 1000));
+              }
+            }
+          } catch (retryErr) {
+            console.error('Retry error:', retryErr);
+            retries++;
+            if (retries < maxRetries) {
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+          }
+        }
+        
+        if (!subscriptionUpdated) {
+          // Fallback: force page reload if retries exhausted
+          toast.info('Đang làm mới trang để cập nhật gói cước...');
+          setTimeout(() => {
+            window.location.reload();
+          }, 500);
+        }
       }
     } catch (err) {
       toast.error('Lỗi khi giả lập thanh toán');
