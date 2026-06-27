@@ -260,7 +260,7 @@ const menuItems: SidebarMenuItem[] = [
   { icon: Users,           label: 'Khách hàng',         href: '/dashboard/customers' },
   { icon: Calendar,        label: 'Lịch hẹn',           href: '/dashboard/bookings' },
   { icon: ReceiptText,     label: 'POS / In bill',      href: '/dashboard/bookings?surface=pos' },
-  { icon: Flower2,         label: 'Phiếu công việc',    href: '/dashboard/sessions' }, // Đổi từ "Thẻ liệu trình"
+  { icon: Flower2,         label: 'Thẻ liệu trình',     href: '/dashboard/sessions' }, // Dynamic label adjusted below
   { icon: MessageSquare,   label: 'Tin nhắn',           href: '/dashboard/chat' },
   { icon: Megaphone,       label: 'CRM & Zalo',         href: '/dashboard/crm' },
   { icon: Megaphone,       label: 'Meta Ads',           href: '/dashboard/marketing' },
@@ -387,12 +387,19 @@ export function Sidebar() {
         return true;
       });
 
-  const moduleAwareMenuItems = tenantBrand.isBeautySpa
-    ? baseMenuItems.map((item): SidebarMenuItem => {
-        if (isMenuHeader(item) || item.href !== '/dashboard/sessions') return item;
-        return { ...item, label: 'Liệu trình' };
-      })
-    : baseMenuItems;
+  const moduleAwareMenuItems = baseMenuItems.map((item): SidebarMenuItem => {
+    if (isMenuHeader(item) || item.href !== '/dashboard/sessions') return item;
+    // Industrial Cleaning: "Phiếu công việc"
+    if (tenantBrand.moduleKey === 'industrial_cleaning') {
+      return { ...item, label: 'Phiếu công việc' };
+    }
+    // Beauty Spa: "Liệu trình"
+    if (tenantBrand.isBeautySpa) {
+      return { ...item, label: 'Liệu trình' };
+    }
+    // Babycare (default): "Thẻ liệu trình"
+    return item;
+  });
 
   const filteredMenuItems = [...moduleAwareMenuItems];
 
