@@ -203,7 +203,7 @@ BEGIN
     'CL-' || TO_CHAR(NOW(), 'YYMMDD') || '-001',
     (CURRENT_DATE - INTERVAL '10 days')::date,
     8, 2,
-    12000000, 6000000, 'active',
+    12000000, 6000000, 'in_progress',
     NOW() - INTERVAL '10 days'
   ) RETURNING id INTO v_booking_1;
 
@@ -217,7 +217,7 @@ BEGIN
     'CL-' || TO_CHAR(NOW(), 'YYMMDD') || '-002',
     (CURRENT_DATE - INTERVAL '8 days')::date,
     8, 2,
-    18000000, 9000000, 'active',
+    18000000, 9000000, 'in_progress',
     NOW() - INTERVAL '8 days'
   ) RETURNING id INTO v_booking_2;
 
@@ -231,7 +231,7 @@ BEGIN
     'CL-' || TO_CHAR(NOW(), 'YYMMDD') || '-003',
     (CURRENT_DATE - INTERVAL '7 days')::date,
     8, 2,
-    12000000, 6000000, 'active',
+    12000000, 6000000, 'in_progress',
     NOW() - INTERVAL '7 days'
   ) RETURNING id INTO v_booking_3;
 
@@ -245,7 +245,7 @@ BEGIN
     'CL-' || TO_CHAR(NOW(), 'YYMMDD') || '-004',
     (CURRENT_DATE - INTERVAL '6 days')::date,
     8, 2,
-    18000000, 9000000, 'active',
+    18000000, 9000000, 'in_progress',
     NOW() - INTERVAL '6 days'
   ) RETURNING id INTO v_booking_4;
 
@@ -259,7 +259,7 @@ BEGIN
     'CL-' || TO_CHAR(NOW(), 'YYMMDD') || '-005',
     (CURRENT_DATE - INTERVAL '5 days')::date,
     8, 2,
-    12000000, 6000000, 'active',
+    12000000, 6000000, 'in_progress',
     NOW() - INTERVAL '5 days'
   ) RETURNING id INTO v_booking_5;
 
@@ -273,7 +273,7 @@ BEGIN
     'CL-' || TO_CHAR(NOW(), 'YYMMDD') || '-006',
     (CURRENT_DATE - INTERVAL '4 days')::date,
     8, 2,
-    18000000, 9000000, 'active',
+    18000000, 9000000, 'in_progress',
     NOW() - INTERVAL '4 days'
   ) RETURNING id INTO v_booking_6;
 
@@ -287,7 +287,7 @@ BEGIN
     'CL-' || TO_CHAR(NOW(), 'YYMMDD') || '-007',
     (CURRENT_DATE - INTERVAL '3 days')::date,
     8, 2,
-    12000000, 6000000, 'active',
+    12000000, 6000000, 'in_progress',
     NOW() - INTERVAL '3 days'
   ) RETURNING id INTO v_booking_7;
 
@@ -301,7 +301,7 @@ BEGIN
     'CL-' || TO_CHAR(NOW(), 'YYMMDD') || '-008',
     (CURRENT_DATE - INTERVAL '2 days')::date,
     8, 2,
-    18000000, 9000000, 'active',
+    18000000, 9000000, 'in_progress',
     NOW() - INTERVAL '2 days'
   ) RETURNING id INTO v_booking_8;
 
