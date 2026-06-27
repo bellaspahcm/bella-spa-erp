@@ -30,6 +30,7 @@ import { toast } from 'sonner';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
 import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
+import { useModuleVocabulary } from '@/lib/business-rules/module-vocabulary';
 import { LeaveApprovalModal } from './components/LeaveApprovalModal';
 import { SessionCard } from './components/SessionCard';
 import { SessionLogsDetailsModal } from './components/SessionLogsDetailsModal';
@@ -91,13 +92,10 @@ function SessionsContent() {
   const [userRole, setUserRole] = useState<'KTV' | 'admin' | ''>('');
   const [selectedBooking, setSelectedBooking] = useState<SessionBooking | null>(null);
   const { tenantModuleKey, refreshTenantModuleKey } = useTenantModuleKey();
-  const sessionPageTitle = tenantModuleKey === 'beauty_spa' ? 'Liệu trình & dịch vụ' : 'Thẻ liệu trình';
-  const sessionPageSubtitle = tenantModuleKey === 'beauty_spa'
-    ? 'Quản lý tiến độ dịch vụ & ghi chú chăm sóc'
-    : 'Quản lý lộ trình & ghi chú chăm sóc';
-  const sessionSearchPlaceholder = tenantModuleKey === 'beauty_spa'
-    ? 'Tìm tên khách, hồ sơ, SĐT, kỹ thuật viên, dịch vụ...'
-    : 'Tìm tên khách, hồ sơ, SĐT, tên KTV, tên gói...';
+  const vocab = useModuleVocabulary(tenantModuleKey);
+  const sessionPageTitle = vocab.booking.singular;
+  const sessionPageSubtitle = `Quản lý lộ trình & ghi chú ${vocab.service.singular.toLowerCase()}`;
+  const sessionSearchPlaceholder = `Tìm tên khách, hồ sơ, SĐT, ${vocab.worker.short}, tên gói...`;
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -112,7 +110,7 @@ function SessionsContent() {
   const [pendingLeaves, setPendingLeaves] = useState<LeaveRequest[]>([]);
   const [isLeavesOpen, setIsLeavesOpen] = useState(false);
 
-  const statusOptions = ['Tất cả trạng thái', 'Đang chăm sóc', 'Hoàn thành'];
+  const statusOptions = ['Tất cả trạng thái', `Đang ${vocab.service.singular.toLowerCase()}`, 'Hoàn thành'];
   const [monthFilter, setMonthFilter] = useState('all');
   const [yearFilter, setYearFilter] = useState(String(new Date().getFullYear()));
   const currentYear = new Date().getFullYear();
@@ -574,7 +572,7 @@ function SessionsContent() {
           {totalPages > 1 && (
             <div className="mt-10 flex flex-col items-center justify-between gap-6 md:flex-row">
               <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">
-                Hiển thị <span className="text-slate-900">{startIndex}-{endIndex}</span> trên tổng số <span className="text-slate-900">{displaySessions.length}</span> thẻ liệu trình
+                Hiển thị <span className="text-slate-900">{startIndex}-{endIndex}</span> trên tổng số <span className="text-slate-900">{displaySessions.length}</span> {vocab.booking.singular.toLowerCase()}
               </p>
               
               <div className="bella-pagination">

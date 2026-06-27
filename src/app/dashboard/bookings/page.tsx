@@ -132,6 +132,7 @@ function BookingsContent() {
             setCreateDate(getLocalDateString());
             setShowCreateModal(true);
           }}
+          tenantModuleKey={null}
         />
         <div className="rounded-[2rem] border border-slate-100 bg-white p-10 text-center shadow-sm">
           <Loader2 className="mx-auto mb-4 h-8 w-8 animate-spin text-primary" />
@@ -185,6 +186,7 @@ function BookingsContent() {
           setCreateDate(getLocalDateString());
           setShowCreateModal(true);
         }}
+        tenantModuleKey={resolvedTenantModuleKey}
       />
 
       {/* Switch Rendering Views */}

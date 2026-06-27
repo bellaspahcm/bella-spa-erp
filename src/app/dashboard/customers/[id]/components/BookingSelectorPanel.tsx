@@ -2,16 +2,21 @@
 
 import { cn } from '@/lib/utils';
 import type { CustomerDetailBooking } from '../types';
+import { useModuleVocabulary } from '@/lib/business-rules/module-vocabulary';
+import type { TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 
 export function BookingSelectorPanel({
   bookings,
   activeBooking,
   onSelectBooking,
+  tenantModuleKey,
 }: {
   bookings: CustomerDetailBooking[];
   activeBooking: CustomerDetailBooking | null;
   onSelectBooking: (booking: CustomerDetailBooking) => void;
+  tenantModuleKey: TenantModuleKey | null;
 }) {
+  const vocab = useModuleVocabulary(tenantModuleKey);
   const activeBookingName = activeBooking?.package_name || activeBooking?.packages?.name || (activeBooking?.status === 'deposit_pending' ? 'Phiếu Đặt Cọc' : 'Dịch vụ lẻ');
 
   return (
@@ -19,7 +24,9 @@ export function BookingSelectorPanel({
             <div className="pointer-events-none absolute inset-x-8 top-0 h-1.5 rounded-b-full bg-gradient-to-r from-primary/20 via-primary to-primary/20 animate-pulse" />
             <div className="flex flex-col gap-3 px-2 mb-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Chọn gói liệu trình đang xem</p>
+                <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">
+                  Chọn {vocab.booking.singular.toLowerCase()} đang xem
+                </p>
                 {activeBooking && (
                   <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-[9px] font-black uppercase tracking-[0.18em] text-primary">
                     <span className="h-2 w-2 rounded-full bg-primary animate-ping" />
@@ -28,16 +35,9 @@ export function BookingSelectorPanel({
                 )}
               </div>
               <span className="w-fit rounded-full bg-primary/10 px-3 py-1 text-[9px] font-black uppercase text-primary">
-                Có {bookings.length} gói dịch vụ
+                Có {bookings.length} {vocab.package.singular.toLowerCase()}
               </span>
             </div>
-            {activeBooking && (
-              <div className="mb-4 rounded-2xl border border-primary/15 bg-primary/[0.04] px-4 py-3">
-                <p className="text-xs font-bold text-slate-600">
-                  Hệ thống đang hiển thị thông tin và tiến độ của gói: <span className="text-primary font-black">{activeBookingName}</span>
-                </p>
-              </div>
-            )}
             <div className="flex flex-wrap gap-2">
               {bookings.length > 0 ? (
                 bookings.map((b) => (
@@ -58,7 +58,9 @@ export function BookingSelectorPanel({
                 ))
               ) : (
                 <div className="w-full py-4 text-center border-2 border-dashed border-slate-100 rounded-2xl">
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Khách hàng chưa có gói liệu trình nào</p>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                    {vocab.customer.singular} chưa có {vocab.package.singular.toLowerCase()} nào
+                  </p>
                 </div>
               )}
             </div>

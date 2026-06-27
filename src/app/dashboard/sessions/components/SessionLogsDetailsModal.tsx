@@ -2,6 +2,7 @@
 
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { getTenantModulePresentationOrNeutral } from '@/lib/business-rules/tenant-module-presentation';
+import { getModuleVocabulary } from '@/lib/business-rules/module-vocabulary';
 import type { TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 import { createClient } from '@/lib/supabase-client';
 import { cn } from '@/lib/utils';
@@ -352,8 +353,9 @@ export function SessionLogsDetailsModal({
   if (!isOpen || !activeBooking) return null;
 
   const customerLabels = getTenantModulePresentationOrNeutral(tenantModuleKey);
+  const vocab = getModuleVocabulary(tenantModuleKey);
   const customerHeaderLabel = `${customerLabels.customerPrefix}: ${activeBooking.customers?.name_mother || 'Khách hàng'}${activeBooking.customers?.name_baby ? ` - ${customerLabels.secondaryPrefix}: ${activeBooking.customers.name_baby}` : ''}`;
-  const sessionHeaderTitle = tenantModuleKey === 'beauty_spa' ? 'Liệu trình & dịch vụ' : 'Thẻ liệu trình';
+  const sessionHeaderTitle = vocab.booking.singular;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-10">
@@ -383,7 +385,7 @@ export function SessionLogsDetailsModal({
               <p className="mt-2 md:mt-0 text-slate-500 font-bold uppercase text-[9px] md:text-[10px] tracking-[0.16em] md:tracking-[0.2em] flex flex-wrap items-center gap-x-2 gap-y-1 md:gap-3">
                 <span className="text-primary">{activeBooking.package_name}</span>
                 <span className="text-slate-300">•</span>
-                <span>KTV: {activeBooking.assigned_ktv_name}</span>
+                <span>{vocab.worker.short}: {activeBooking.assigned_ktv_name}</span>
                 <span className="text-slate-300">•</span>
                 <span>Tiến độ: {activeBooking.completed_sessions || 0}/{activeBooking.total_sessions || 15}</span>
               </p>

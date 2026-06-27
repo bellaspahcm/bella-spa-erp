@@ -59,6 +59,12 @@ export type ModuleVocabulary = {
     plural: string;
     context: string; // "Khách hàng", "Doanh nghiệp", "Gia đình", etc.
   };
+  
+  // Service history / care history terms
+  serviceHistory: {
+    label: string; // "Lịch sử chăm sóc", "Lịch sử vệ sinh", etc.
+    emptyState: string; // "Chưa có dữ liệu liệu trình", "Chưa có ca làm việc", etc.
+  };
 };
 
 /**
@@ -95,6 +101,10 @@ const BEAUTY_BABYCARE_VOCABULARY: ModuleVocabulary = {
     plural: 'Khách hàng',
     context: 'mẹ và bé',
   },
+  serviceHistory: {
+    label: 'Lịch sử chăm sóc',
+    emptyState: 'Chưa có dữ liệu liệu trình hoàn thành',
+  },
 };
 
 /**
@@ -129,6 +139,10 @@ const CLEANING_VOCABULARY: ModuleVocabulary = {
     singular: 'Khách hàng',
     plural: 'Khách hàng',
     context: 'doanh nghiệp',
+  },
+  serviceHistory: {
+    label: 'Lịch sử vệ sinh',
+    emptyState: 'Chưa có ca làm việc hoàn thành',
   },
 };
 
