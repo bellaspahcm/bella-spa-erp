@@ -867,7 +867,7 @@ html[data-tenant-module="pending"] [class*="to-pink-"] {
 /* Override sidebar background for Baby Care / Default theme */
 html[data-tenant-module="baby_care"] aside.beauty-erp-sidebar,
 html[data-tenant-module="baby_care"] aside[class*="bg-[#FAFAFA]"] {
-  background: linear-gradient(180deg, #FFF0F3 0%, #FCE7F3 100%) !important;
+  background: #FFF0F3 !important;
   border-color: rgba(236, 72, 153, 0.15) !important;
   color: #831843 !important;
 }
