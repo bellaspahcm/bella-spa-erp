@@ -32,6 +32,7 @@ import {
 import { usePageRefresh } from '@/hooks/usePageRefresh';
 import { calculateSalaryTotal } from '@/lib/business-rules/salary';
 import SkeletonLoader, { SkeletonTable } from '@/components/ui/SkeletonLoader';
+import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
 
 // Types
 import { 
@@ -108,6 +109,7 @@ function downloadExcelBlob(blob: Blob, filename: string) {
 }
 
 export default function SalaryPage() {
+  const vocab = useModuleVocabulary();
   const [ktvSalaries, setKtvSalaries] = useState<KtvSalaryRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -297,7 +299,7 @@ export default function SalaryPage() {
   const handleApprove = (id: string, name: string) => {
     showConfirm({
       title: 'Phê duyệt lương',
-      message: `Bạn có chắc chắn muốn phê duyệt bảng lương tháng này cho kỹ thuật viên ${name}? Bảng lương sau khi duyệt sẽ chuyển sang trạng thái đã phê duyệt.`,
+      message: `Bạn có chắc chắn muốn phê duyệt bảng lương tháng này cho ${vocab.worker.singular.toLowerCase()} ${name}? Bảng lương sau khi duyệt sẽ chuyển sang trạng thái đã phê duyệt.`,
       confirmText: 'Phê duyệt',
       onConfirm: async () => {
         const actionKey = getSalaryActionKey('approve', id);
@@ -367,13 +369,13 @@ export default function SalaryPage() {
   const handlePublishAll = () => {
     showConfirm({
       title: 'Gửi đối soát tất cả',
-      message: 'Bạn có chắc chắn muốn gửi bảng lương dự thảo đến tất cả Kỹ thuật viên để họ xác nhận không?',
+      message: `Bạn có chắc chắn muốn gửi bảng lương dự thảo đến tất cả ${vocab.worker.plural} để họ xác nhận không?`,
       confirmText: 'Gửi tất cả',
       onConfirm: async () => {
         setIsLoading(true);
         const res = await publishAllSalaryRecords();
         if (res.success) {
-          toast.success(`Đã gửi đối soát cho ${res.count} KTV`);
+          toast.success(`Đã gửi đối soát cho ${res.count} ${vocab.worker.short}`);
           await refreshSalaryData();
           void loadMatrixData({ force: true });
         } else {
@@ -391,7 +393,7 @@ export default function SalaryPage() {
   const handleFinalizeAll = () => {
     showConfirm({
       title: 'Chốt sổ tất cả',
-      message: 'Bạn có chắc chắn muốn chốt sổ và khóa toàn bộ bảng lương đã được Kỹ thuật viên xác nhận không?',
+      message: `Bạn có chắc chắn muốn chốt sổ và khóa toàn bộ bảng lương đã được ${vocab.worker.plural} xác nhận không?`,
       confirmText: 'Chốt sổ tất cả',
       onConfirm: async () => {
         setIsLoading(true);
@@ -434,7 +436,7 @@ export default function SalaryPage() {
   const handleConfirmOnBehalf = (ktvId: string, ktvName: string) => {
     showConfirm({
       title: 'Xác nhận đối soát thay',
-      message: `Bạn có chắc chắn muốn thay mặt Kỹ thuật viên ${ktvName} để xác nhận bảng đối soát này không?`,
+      message: `Bạn có chắc chắn muốn thay mặt ${vocab.worker.singular} ${ktvName} để xác nhận bảng đối soát này không?`,
       confirmText: 'Xác nhận thay',
       onConfirm: async () => {
         const actionKey = getSalaryActionKey('confirm', ktvId);
@@ -457,8 +459,8 @@ export default function SalaryPage() {
 
   const handleFinalizeOne = (ktvId: string, ktvName: string) => {
     showConfirm({
-      title: 'Chốt sổ lương KTV',
-      message: `Bạn có chắc chắn muốn khóa và chốt sổ bảng lương của kỹ thuật viên ${ktvName}? Sau khi chốt sổ, các thông tin này sẽ không thể sửa đổi.`,
+      title: `Chốt sổ lương ${vocab.worker.short}`,
+      message: `Bạn có chắc chắn muốn khóa và chốt sổ bảng lương của ${vocab.worker.singular.toLowerCase()} ${ktvName}? Sau khi chốt sổ, các thông tin này sẽ không thể sửa đổi.`,
       confirmText: 'Chốt sổ',
       onConfirm: async () => {
         const actionKey = getSalaryActionKey('finalize', ktvId);
@@ -569,8 +571,8 @@ export default function SalaryPage() {
               Kỳ lương: {currentMonthYear}
             </span>
           </div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tighter sm:text-4xl">Lương KTV</h1>
-          <p className="text-slate-500 font-medium mt-1">Quản lý thu nhập và hiệu suất làm việc của kỹ thuật viên</p>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tighter sm:text-4xl">Lương {vocab.worker.plural}</h1>
+          <p className="text-slate-500 font-medium mt-1">Quản lý thu nhập và hiệu suất làm việc của {vocab.worker.singular.toLowerCase()}</p>
         </div>
         <div className="bella-toolbar flex flex-col gap-3 sm:flex-row sm:items-center">
           <PremiumExportButton />
@@ -678,8 +680,8 @@ export default function SalaryPage() {
             <div className="min-w-0">
               <h4 className="font-black text-amber-900 uppercase tracking-widest text-xs mb-1">Quy định tính lương</h4>
               <p className="text-amber-800/80 text-sm font-medium">
-                Lương KTV được tính dựa trên số buổi thực tế hoàn thành (Hoa hồng theo từng loại dịch vụ) + Lương cứng + Thưởng hiệu suất KPI. 
-                Giá tiền công được khóa tại thời điểm tạo hợp đồng để đảm bảo quyền lợi KTV. Hạn chốt lương cuối cùng là ngày 05 hàng tháng.
+                Lương {vocab.worker.short} được tính dựa trên số {vocab.workUnit.plural.toLowerCase()} thực tế hoàn thành (Hoa hồng theo từng loại dịch vụ) + Lương cứng + Thưởng hiệu suất KPI. 
+                Giá tiền công được khóa tại thời điểm tạo hợp đồng để đảm bảo quyền lợi {vocab.worker.short}. Hạn chốt lương cuối cùng là ngày 05 hàng tháng.
               </p>
             </div>
           </div>
