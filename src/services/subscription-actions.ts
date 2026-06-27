@@ -211,6 +211,19 @@ export async function simulateInvoicePayment(invoiceNumber: string) {
     return { error: error.message };
   }
 
+  // Debug: Verify tenant subscription was actually updated
+  const { data: tenantAfter, error: tenantCheckErr } = await supabase
+    .from('tenants')
+    .select('subscription_tier, subscription_expires_at')
+    .eq('id', tenantId)
+    .single();
+
+  if (tenantCheckErr) {
+    console.error('[simulateInvoicePayment] Failed to verify tenant subscription update:', tenantCheckErr);
+  } else {
+    console.log('[simulateInvoicePayment] Tenant subscription after RPC:', tenantAfter);
+  }
+
   revalidatePath('/dashboard/settings');
   return { success: true };
 }
