@@ -179,9 +179,9 @@ export default function DashboardPage() {
        * KTV composite rating (60% customer satisfaction + 40% discipline score).
        * This metric is specific to spa/babycare KTV performance evaluation.
        */
-      { label: 'Đánh giá KTV', value: String(statsData.avgRating?.value || '5.0'), trend: Number(statsData.avgRating?.trend || 0), iconName: 'Star' as const, color: 'text-amber-600', bg: 'bg-amber-50' },
+      { label: `Đánh giá ${vocab.worker.short}`, value: String(statsData.avgRating?.value || '5.0'), trend: Number(statsData.avgRating?.trend || 0), iconName: 'Star' as const, color: 'text-amber-600', bg: 'bg-amber-50' },
     ];
-  }, [userRole]);
+  }, [userRole, vocab.worker.short]);
 
   const fetchPrimaryData = useCallback(async () => {
     if (userRole === null) return; // Wait for role to be identified
