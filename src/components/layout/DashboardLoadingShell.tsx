@@ -80,7 +80,7 @@ export function DashboardAuthorizedShell({ children }: { children: React.ReactNo
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar />
-      <main className="flex-1 flex flex-col min-w-0 pt-16 lg:pt-0 max-w-full overflow-x-hidden">
+      <main className="flex-1 flex flex-col min-w-0 pt-16 lg:pt-0 max-w-full overflow-x-auto">
         {children}
       </main>
     </div>
