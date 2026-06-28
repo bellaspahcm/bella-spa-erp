@@ -1557,28 +1557,30 @@ docs/INDUSTRY_MODULE_DEVELOPMENT_PLAYBOOK.md      # This file (!)
   - [page.tsx](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/src/app/dashboard/services/page.tsx) - Cập nhật hiển thị nút đồng bộ và xử lý ép kiểu an toàn trong Modal Form.
 - **Rủi ro còn lại**: Cần kiểm tra xem khi có tenant bật đồng thời nhiều phân hệ chính (multi-module) thì nút đồng bộ sẽ hoạt động như thế nào; hiện tại nút sẽ ưu tiên đồng bộ theo phân hệ có thứ tự kiểm tra (`industrial_cleaning` -> `beauty_spa` -> `babycare`).
 
-### 2026-06-28 - Lỗi độ tương phản màu chữ thẻ KPI, sập màu nền gradient và phân tách 2 màu ở bảng đối soát tài chính
+### 2026-06-28 - Lỗi độ tương phản màu chữ thẻ KPI, sập màu nền gradient, phân tách màu và bảng đối soát tài chính / lương không full box
 
-- **Phân hệ/Tenant**: `industrial_cleaning` (Dịch vụ vệ sinh) và các phân hệ dùng chung (`core` / `accounting` / `finance`).
-- **Màn hình/Luồng**: Đối soát tài chính (`/dashboard/finance/reconciliation`).
+- **Phân hệ/Tenant**: `industrial_cleaning` (Dịch vụ vệ sinh) và các phân hệ dùng chung (`core` / `accounting` / `finance` / `ai_copilot`).
+- **Màn hình/Luồng**: Đối soát tài chính (`/dashboard/finance/reconciliation`) và Đối soát lương (`/dashboard/ai-copilot/salary-reconciliation` & `/dashboard/accounting/salary-reconciliation`).
 - **Dấu hiệu**:
   1. Chữ số hiển thị trong các box KPI (như `120.000.000`) bị đổi thành màu trắng nhạt/xám đậm trùng với nền hoặc biến mất hoàn toàn không đọc được.
   2. Bảng số liệu bị phân tách 2 màu không đồng đều (cột đầu tiên màu trắng, các cột sau màu xám nhạt).
-  3. Dữ liệu bảng không lấp đầy box (bị co lại ở góc trái, không full chiều rộng).
+  3. Bảng đối soát tài chính và đối soát lương bị co cụm về góc trái, không chiếm hết không gian chiều ngang của thẻ chứa (không full box).
 - **Nguyên nhân gốc**:
   1. **Lỗi chữ KPI khó đọc**: Global heading rule (`h1, h2, h3 { color: var(--foreground) }`) đã ghi đè màu chữ của tiêu đề thẻ KPI, biến chữ màu trắng nguyên bản thành màu Navy tối của phân hệ vệ sinh, gây mất độ tương phản trên nền gradient tối.
   2. **Lỗi sập màu gradient**: Lớp phủ gradient trong `globals.css` sử dụng các biến vị trí từ Tailwind v3 như `var(--tw-gradient-from-position)`, không còn tương thích hoặc bị bỏ qua trong Tailwind CSS v4, làm màu nền bị sập hoặc biến thành trong suốt/trắng.
   3. **Lỗi phân tách 2 màu ở bảng**: Việc sử dụng bộ chọn thuộc tính dạng substring `[class*="bg-slate-50"]` và `[class*="bg-rose-50"]` trong CSS phân hệ vệ sinh đã vô tình ghi đè toàn bộ các ô có class biến thể (như `hover:bg-slate-50/50` hay `even:bg-slate-50`), làm sai lệch màu sắc các dòng/cột của bảng đối soát.
-  4. **Lỗi không full width**: Các bảng biểu đối soát (`table`) thiếu class `w-full`, trong khi có thuộc tính `min-w` cố định nên không giãn đều theo khung chứa trên màn hình rộng.
+  4. **Lỗi không full width**: Các bảng biểu đối soát (`table`) thiếu class `w-full` (hoặc đang cấu hình `w-max` thay vì `w-full`), trong khi có thuộc tính `min-w` cố định nên không giãn đều theo khung chứa trên màn hình rộng.
 - **Cách sửa**:
   1. **Cưỡng chế màu chữ trắng**: Thêm trực tiếp class `text-white` vào các thẻ `h3` hiển thị tiền trong `ReconciliationKpiCards.tsx` để ghi đè quy tắc CSS global.
   2. **Chuẩn hóa gradient v4 & bộ chọn class**: Trong `globals.css`, loại bỏ các biến `*-position` thừa ở 4 khối override gradient, thay thế bộ chọn substring `[class*="bg-slate-50"]` thành class chính xác `.bg-slate-50`, `.bg-rose-50`, và bổ sung quy tắc `.bella-data-table tr:hover td` đồng đều cho phân hệ vệ sinh.
-  3. **Full Width Tables**: Thêm class `w-full` vào 3 thẻ `table` trong trang `reconciliation/page.tsx`.
+  3. **Full Width Tables**: Thêm class `w-full` vào 3 thẻ `table` trong trang đối soát tài chính (`reconciliation/page.tsx`) và table trong `salary-reconciliation-client.tsx`, đồng thời đổi `tableClassName` từ `w-max` thành `w-full` trong trang đối soát lương kế toán `salary-reconciliation/page.tsx`.
 - **Test/guard đã thêm**: Chạy bộ test Jest `reconciliation.test.ts` và `industrial-cleaning-module-isolation.test.ts` đều vượt qua 100%. Next.js production build biên dịch thành công.
 - **Commit**: pending.
 - **Files**:
   - [globals.css](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/src/app/globals.css) - Sửa đổi CSS gradient v4 và bộ chọn màu nền.
   - [ReconciliationKpiCards.tsx](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/src/app/dashboard/finance/reconciliation/components/ReconciliationKpiCards.tsx) - Thêm text-white vào h3.
-  - [page.tsx](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/src/app/dashboard/finance/reconciliation/page.tsx) - Thêm w-full vào table.
+  - [page.tsx](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/src/app/dashboard/finance/reconciliation/page.tsx) - Thêm w-full vào table đối soát tài chính.
+  - [salary-reconciliation-client.tsx](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/src/app/dashboard/ai-copilot/salary-reconciliation/salary-reconciliation-client.tsx) - Thêm w-full vào table đối soát lương AI.
+  - [page.tsx](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/src/app/dashboard/accounting/salary-reconciliation/page.tsx) - Đổi w-max thành w-full ở tableClassName đối soát lương kế toán.
 - **Rủi ro còn lại**: Không có. Quy tắc CSS đã được đóng gói chính xác bằng các lớp cụ thể, không còn nguy cơ ghi đè nhầm các class Tailwind động của trang khác.
 
