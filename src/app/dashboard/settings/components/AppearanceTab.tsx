@@ -50,6 +50,13 @@ const brandPresetOptions: Array<{
   accentColor: string;
 }> = [
   {
+    value: 'ocean_clean',
+    label: 'Ocean Clean',
+    description: 'Xanh dương chuyên nghiệp, tin cậy, phù hợp Dịch vụ vệ sinh.',
+    primaryColor: '#1E40AF',
+    accentColor: '#3B82F6',
+  },
+  {
     value: 'jade_wellness',
     label: 'Jade Wellness',
     description: 'Xanh ngọc sạch, an tâm, phù hợp Beauty Spa/wellness.',

@@ -8,7 +8,7 @@ export type TenantPrimaryBusinessModuleKey = (typeof TENANT_PRIMARY_BUSINESS_MOD
 
 export type TenantEnabledModules = Record<TenantModuleKey, boolean>;
 
-export const TENANT_BRAND_STYLE_PRESETS = ['bella_rose', 'jade_wellness', 'graphite_luxe'] as const;
+export const TENANT_BRAND_STYLE_PRESETS = ['bella_rose', 'jade_wellness', 'graphite_luxe', 'ocean_clean'] as const;
 export const TENANT_BRAND_RADIUS_STYLES = ['soft', 'balanced', 'compact'] as const;
 export const TENANT_BRAND_BUTTON_STYLES = ['pill', 'rounded', 'minimal'] as const;
 export const TENANT_BRAND_MENU_STYLES = ['comfortable', 'compact'] as const;
@@ -83,7 +83,7 @@ export const DEFAULT_CLEANING_TENANT_BRAND_THEME: TenantBrandTheme = {
   accentColor: '#3B82F6', // Blue 500 - bright blue accent
   portalDisplayName: '',
   invoiceDisplayName: '',
-  stylePreset: 'graphite_luxe',
+  stylePreset: 'ocean_clean',
   radiusStyle: 'balanced',
   buttonStyle: 'rounded',
   menuStyle: 'compact',
