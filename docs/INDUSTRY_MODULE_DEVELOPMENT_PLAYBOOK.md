@@ -1398,6 +1398,22 @@ rg "import.*from.*components" src/app/dashboard/**/*.tsx | rg -v "getModuleVocab
   - Cần tạo dynamic routes `/dashboard/guides/[slug]/page.tsx` cho từng module
   - Hoặc tạo mapping slug → module-specific content files
 
+### 2026-06-28 - Two-Tone Sidebar Background Color Discrepancy on Babycare Module
+
+- Module/tenant: Baby Care / Default (Bella Spa)
+- Màn hình/luồng: Sidebar Menu / Layout Shell
+- Dấu hiệu:
+  1. Khu vực thanh điều hướng Menu (thẻ `nav` ở giữa) hiển thị màu hồng đậm hơn so với khu vực Logo (phía trên) và Profile (phía dưới), gây lệch 2 tông màu trên sidebar.
+- Nguyên nhân gốc:
+  1. Hai đốm sáng trang trí (`bg-pink-300/30` và `bg-rose-300/25`) đè lên sidebar và không thể bị ẩn triệt để qua class selector CSS (như `.bg-pink-300\/30`) do xung đột đóng gói class của Tailwind v4.
+  2. Mặc dù `aside` đã được cấu hình màu nền `#FFF0F3` (hồng nhạt), thẻ `nav` bên trong không có background cụ thể nên bị ảnh hưởng sắc độ hoặc bị lọt sáng từ đốm nền.
+- Cách sửa:
+  1. Ẩn vĩnh viễn hai đốm sáng trang trí bằng cách thêm trực tiếp class `hidden` vào thuộc tính class trong mã nguồn React của [sidebar.tsx](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/src/components/layout/sidebar.tsx).
+  2. Thêm quy định CSS cụ thể cho `.beauty-erp-sidebar nav` trong [globals.css](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/src/app/globals.css) để cưỡng chế màu nền của `nav` khớp hoàn toàn với màu `#FFF0F3` (Light mode) và linear-gradient (Dark mode) của `aside`.
+- Test/guard đã thêm: Build verification thành công, chạy kiểm thử Jest `tenant-isolation-source-guards.test.ts` vượt qua 100%.
+- Commit: `659c6f3e` (và `50328405`)
+- Rủi ro còn lại: Không có, bộ chọn CSS đã được khóa chặt sau selector phân hệ `html[data-tenant-module="baby_care"]` và `html[data-tenant-module="babycare"]` đảm bảo không tác động tới giao diện các ngành khác.
+
 ## Industrial Cleaning Module: Tổng Kết Và Bài Học
 
 ### Session 2026-06-22: 10 Lỗi Đã Sửa
