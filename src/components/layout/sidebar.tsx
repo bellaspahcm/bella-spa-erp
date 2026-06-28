@@ -472,14 +472,14 @@ export function Sidebar() {
       {/* ── Mobile Top Header Bar (lg:hidden) ── */}
       <div className={cn(
         "lg:hidden fixed top-0 left-0 right-0 h-16 bg-white/90 dark:bg-[#11100F]/95 border-b border-[#FFE4E6] dark:border-[#3E3A35] backdrop-blur-md z-30 px-6 flex items-center justify-between shadow-[0_2px_15px_rgba(0,0,0,0.02)] transition-colors duration-300",
-        isBeautySpaShell && "beauty-erp-mobile-header"
+        (isBeautySpaShell || isIndustrialCleaningShell) && "beauty-erp-mobile-header"
       )}>
         <div className="flex w-20 items-center justify-start">
           <button
             onClick={() => setIsOpen(true)}
             className={cn(
               "p-2.5 rounded-xl text-primary dark:text-[#A67D44] hover:bg-rose-50 dark:hover:bg-[#1C1B19] active:scale-95 transition-all",
-              isBeautySpaShell && "beauty-erp-icon-button"
+              (isBeautySpaShell || isIndustrialCleaningShell) && "beauty-erp-icon-button"
             )}
           >
             <Menu className="w-5.5 h-5.5" />
@@ -492,11 +492,11 @@ export function Sidebar() {
             logoUrl={tenantBrand.logoUrl}
             monogram={tenantBrand.monogram}
             className="w-7 h-7 text-[10px]"
-            markClassName={cn("rounded-xl", isBeautySpaShell && "beauty-erp-logo-mark")}
+            markClassName={cn("rounded-xl", (isBeautySpaShell || isIndustrialCleaningShell) && "beauty-erp-logo-mark")}
           />
           <span className={cn(
             "max-w-[9rem] truncate font-handwriting text-2xl text-primary dark:text-[#A67D44] leading-none mt-1",
-            isBeautySpaShell && "beauty-erp-brand-script"
+            (isBeautySpaShell || isIndustrialCleaningShell) && "beauty-erp-brand-script"
           )}>
             {tenantBrand.displayName}
           </span>
@@ -511,7 +511,7 @@ export function Sidebar() {
             title="Làm mới dữ liệu"
             className={cn(
               "flex h-10 w-10 items-center justify-center rounded-full border border-pink-100 bg-white/80 text-primary shadow-sm transition-all hover:bg-rose-50 active:scale-95 disabled:opacity-70 dark:border-[#3E3A35] dark:bg-[#1C1B19] dark:text-[#A67D44] dark:hover:bg-[#5D1C34]/30",
-              isBeautySpaShell && "beauty-erp-icon-button"
+              (isBeautySpaShell || isIndustrialCleaningShell) && "beauty-erp-icon-button"
             )}
           >
             <RefreshCw className={cn('h-4 w-4', isMobileRefreshing && 'animate-spin')} />
@@ -519,7 +519,7 @@ export function Sidebar() {
 
           <div className={cn(
             "w-8 h-8 rounded-full bg-primary/10 dark:bg-[#5D1C34]/40 flex items-center justify-center text-primary dark:text-[#A67D44] font-black text-xs border border-pink-100 dark:border-[#3E3A35]",
-            isBeautySpaShell && "beauty-erp-avatar"
+            (isBeautySpaShell || isIndustrialCleaningShell) && "beauty-erp-avatar"
           )}>
             {user?.full_name?.charAt(0)?.toUpperCase() || 'A'}
           </div>

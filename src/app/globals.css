@@ -2542,6 +2542,74 @@ html[data-tenant-module="industrial_cleaning"] [class*="shadow-pink-"] {
   --tw-shadow: var(--tw-shadow-colored) !important;
 }
 
+/* Cleaning brand appearance controls */
+html[data-tenant-module="industrial_cleaning"] .glass-pink,
+html[data-tenant-module="industrial_cleaning"] .luxury-card-white,
+html[data-tenant-module="industrial_cleaning"] .luxury-card-pink,
+html[data-tenant-module="industrial_cleaning"] .luxury-box-hover,
+html[data-tenant-module="industrial_cleaning"] .dashboard-schedule-card,
+html[data-tenant-module="industrial_cleaning"] .active-booking-panel,
+html[data-tenant-module="industrial_cleaning"] .bella-toolbar,
+html[data-tenant-module="industrial_cleaning"] .bella-pagination {
+  border-radius: var(--brand-card-radius, 2rem) !important;
+}
+
+html[data-tenant-module="industrial_cleaning"] input:not([type="checkbox"]):not([type="radio"]):not([type="color"]),
+html[data-tenant-module="industrial_cleaning"] select,
+html[data-tenant-module="industrial_cleaning"] textarea,
+html[data-tenant-module="industrial_cleaning"] .premium-select,
+html[data-tenant-module="industrial_cleaning"] [role="combobox"],
+html[data-tenant-module="industrial_cleaning"] .beauty-theme-toggle {
+  border-radius: var(--brand-control-radius, 1.5rem) !important;
+}
+
+html[data-tenant-module="industrial_cleaning"] .beauty-erp-nav-item {
+  border-radius: var(--brand-menu-radius, 1.5rem) !important;
+}
+
+html[data-tenant-brand-menu="compact"][data-tenant-module="industrial_cleaning"] .beauty-erp-nav-item {
+  gap: 0.75rem !important;
+  padding: 0.7rem 1rem !important;
+}
+
+html[data-tenant-brand-menu="compact"][data-tenant-module="industrial_cleaning"] .beauty-erp-nav-header {
+  margin-top: 0.55rem !important;
+  padding-bottom: 0.1rem !important;
+  padding-top: 0.55rem !important;
+}
+
+html[data-tenant-brand-button][data-tenant-module="industrial_cleaning"] :is(button, a)[class*="bg-primary"]:not([class*="bg-primary/"]),
+html[data-tenant-brand-button][data-tenant-module="industrial_cleaning"] :is(button, a)[class*="from-primary"],
+html[data-tenant-brand-button][data-tenant-module="industrial_cleaning"] :is(button, a)[class*="bg-rose-"],
+html[data-tenant-brand-button][data-tenant-module="industrial_cleaning"] .beauty-customer-add-cta,
+html[data-tenant-brand-button][data-tenant-module="industrial_cleaning"] .dashboard-schedule-actions > *,
+html[data-tenant-brand-button][data-tenant-module="industrial_cleaning"] .active-booking-panel button {
+  border-radius: var(--brand-button-radius, 999px) !important;
+}
+
+html[data-tenant-brand-button="pill"][data-tenant-module="industrial_cleaning"] :is(button, a)[class*="bg-primary"]:not([class*="bg-primary/"]),
+html[data-tenant-brand-button="pill"][data-tenant-module="industrial_cleaning"] :is(button, a)[class*="from-primary"],
+html[data-tenant-brand-button="pill"][data-tenant-module="industrial_cleaning"] :is(button, a)[class*="bg-rose-"],
+html[data-tenant-brand-button="pill"][data-tenant-module="industrial_cleaning"] .beauty-customer-add-cta {
+  box-shadow: 0 16px 34px color-mix(in srgb, var(--primary) 24%, transparent) !important;
+}
+
+html[data-tenant-brand-button="rounded"][data-tenant-module="industrial_cleaning"] :is(button, a)[class*="bg-primary"]:not([class*="bg-primary/"]),
+html[data-tenant-brand-button="rounded"][data-tenant-module="industrial_cleaning"] :is(button, a)[class*="from-primary"],
+html[data-tenant-brand-button="rounded"][data-tenant-module="industrial_cleaning"] :is(button, a)[class*="bg-rose-"],
+html[data-tenant-brand-button="rounded"][data-tenant-module="industrial_cleaning"] .beauty-customer-add-cta {
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--primary) 18%, transparent) !important;
+}
+
+html[data-tenant-brand-button="minimal"][data-tenant-module="industrial_cleaning"] :is(button, a)[class*="bg-primary"]:not([class*="bg-primary/"]),
+html[data-tenant-brand-button="minimal"][data-tenant-module="industrial_cleaning"] :is(button, a)[class*="from-primary"],
+html[data-tenant-brand-button="minimal"][data-tenant-module="industrial_cleaning"] :is(button, a)[class*="bg-rose-"],
+html[data-tenant-brand-button="minimal"][data-tenant-module="industrial_cleaning"] .beauty-customer-add-cta {
+  box-shadow: none !important;
+  letter-spacing: 0.04em !important;
+}
+
+
 
 /* =========================================================================
    BELLA (BABY_CARE) TENANT TEXT CONTRAST IMPROVEMENTS
@@ -2553,28 +2621,28 @@ html[data-tenant-module="baby_care"] .text-slate-400,
 html[data-tenant-module="baby_care"] [class*="text-slate-400"],
 html[data-tenant-module="babycare"] .text-slate-400,
 html[data-tenant-module="babycare"] [class*="text-slate-400"] {
-  color: #64748b !important; /* Darkened from #94a3b8 */
+  color: #475569 !important; /* Darkened to slate-600 for better contrast */
 }
 
 html[data-tenant-module="baby_care"] .text-slate-500,
 html[data-tenant-module="baby_care"] [class*="text-slate-500"],
 html[data-tenant-module="babycare"] .text-slate-500,
 html[data-tenant-module="babycare"] [class*="text-slate-500"] {
-  color: #475569 !important; /* Darkened from #64748b */
+  color: #334155 !important; /* Darkened to slate-700 for better contrast */
 }
 
 html[data-tenant-module="baby_care"] .text-gray-400,
 html[data-tenant-module="baby_care"] [class*="text-gray-400"],
 html[data-tenant-module="babycare"] .text-gray-400,
 html[data-tenant-module="babycare"] [class*="text-gray-400"] {
-  color: #6b7280 !important; /* Darkened from #9ca3af */
+  color: #4b5563 !important; /* Darkened to gray-600 for better contrast */
 }
 
 html[data-tenant-module="baby_care"] .text-gray-500,
 html[data-tenant-module="baby_care"] [class*="text-gray-500"],
 html[data-tenant-module="babycare"] .text-gray-500,
 html[data-tenant-module="babycare"] [class*="text-gray-500"] {
-  color: #4b5563 !important; /* Darkened from #6b7280 */
+  color: #374151 !important; /* Darkened to gray-700 for better contrast */
 }
 
 /* Improve muted foreground (secondary text) contrast */

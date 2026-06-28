@@ -651,8 +651,8 @@ export default function AppearanceTab() {
                 ngành đã được cấp, không thể tự chuyển đổi giữa các mô hình kinh doanh khác nhau.
               </p>
             </div>
-          </div>
-        )}
+            )}
+        </div>
       </section>
     </div>
   );
