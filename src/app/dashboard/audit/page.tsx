@@ -833,9 +833,9 @@ export default function AuditPage() {
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="bg-white border border-slate-100 rounded-3xl shadow-sm"
+        className="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden"
       >
-        <div className="w-full overflow-x-auto overscroll-x-contain custom-scrollbar rounded-3xl">
+        <div className="w-full overflow-x-auto overscroll-x-contain shadow-[inset_-18px_0_18px_-18px_rgba(15,23,42,0.12)]">
           <table className="bella-data-table min-w-[1100px] w-full text-left">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-100">
