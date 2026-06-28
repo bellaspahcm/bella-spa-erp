@@ -23,6 +23,7 @@ import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
 import { useServicesPageState } from './hooks/useServicesPageState';
 import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
+import type { ServiceModuleKey } from './types';
 
 export default function ServicesPage() {
   const vocab = useModuleVocabulary();
@@ -154,10 +155,10 @@ export default function ServicesPage() {
           <p className="text-slate-500 font-medium mt-1">Thiết lập bảng giá và các chương trình ưu đãi</p>
         </div>
         <div className="bella-toolbar flex flex-col gap-3 sm:flex-row">
-          {hasLoadedTenantModules && enabledModules.babycare && (
+          {hasLoadedTenantModules && (enabledModules.babycare || enabledModules.industrial_cleaning || enabledModules.beauty_spa) && (
             <button
               onClick={syncDefaultPackages}
-              title="Đồng bộ các gói dịch vụ mặc định của Bella Spa từ Landing Page thành các bản nháp trong ERP"
+              title="Đồng bộ các gói dịch vụ mặc định của ngành kinh doanh thành các bản nháp trong ERP"
               className="flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 font-bold text-slate-700 transition-all hover:bg-slate-50 active:scale-95 sm:px-6"
             >
               <span>Đồng bộ gói mặc định</span>
@@ -739,7 +740,7 @@ export default function ServicesPage() {
                           {enabledModuleOptions.length > 1 ? (
                             <PremiumSelect
                               value={moduleKey}
-                              onChange={(value) => setModuleKey(value === 'beauty_spa' ? 'beauty_spa' : 'babycare')}
+                              onChange={(value) => setModuleKey(value as ServiceModuleKey)}
                               options={enabledModuleOptions}
                               placeholder="Chọn module"
                             />
