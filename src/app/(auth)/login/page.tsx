@@ -145,12 +145,14 @@ export default function LoginPage() {
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <div style={{
-      minHeight: '100vh',
+      flex: 1,
       display: 'flex',
+      flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: '1.5rem',
+      padding: '1.5rem 1.5rem 2rem',
       position: 'relative',
+      minHeight: '100dvh',
     }}>
       {/* Ambient glow blobs */}
       <GlowDot color="#6366f1" style={{ width: 360, height: 360, top: '5%', left: '-8%' }} />
@@ -163,50 +165,42 @@ export default function LoginPage() {
         {/* Header */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '2rem', textAlign: 'center' }}>
           {/* Logo */}
-          <div style={{
-            marginBottom: '1.25rem',
-            padding: '0.875rem',
-            background: 'rgba(99,102,241,0.12)',
-            borderRadius: '1.25rem',
-            border: '1px solid rgba(99,102,241,0.2)',
-            boxShadow: '0 0 24px rgba(99,102,241,0.25)',
-          }}>
+          <div style={{ marginBottom: '1.25rem' }}>
             <Image
-              src="/logo.png"
-              alt="Bella Multi-Service ERP"
-              width={56}
-              height={56}
-              style={{ width: 'auto', height: '3.5rem', filter: 'drop-shadow(0 0 12px rgba(99,102,241,0.5))' }}
+              src="/bella-erp-logo.png"
+              alt="Bella ERP"
+              width={220}
+              height={70}
+              priority
+              style={{ width: 'auto', height: '3.25rem', filter: 'drop-shadow(0 0 16px rgba(139,92,246,0.5)) brightness(1.15)' }}
             />
           </div>
 
-          {/* Title */}
-          <div style={{ marginBottom: '0.375rem' }}>
+          {/* Subtitle badge */}
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.375rem',
+            background: 'rgba(99,102,241,0.12)',
+            border: '1px solid rgba(99,102,241,0.25)',
+            borderRadius: '999px',
+            padding: '0.25rem 0.75rem',
+            marginBottom: '0.25rem',
+          }}>
+            <span style={{
+              width: 6, height: 6,
+              borderRadius: '50%',
+              background: CYAN,
+              display: 'inline-block',
+              boxShadow: `0 0 6px ${CYAN}`,
+            }} />
             <span style={{
               fontSize: '0.625rem',
-              fontWeight: '800',
-              letterSpacing: '0.25em',
+              fontWeight: '700',
+              letterSpacing: '0.2em',
               textTransform: 'uppercase',
               color: CYAN,
-              display: 'block',
-              marginBottom: '0.25rem',
-            }}>
-              BELLA GROUP
-            </span>
-            <h1 style={{
-              fontSize: '1.5rem',
-              fontWeight: '900',
-              background: `linear-gradient(135deg, #f1f5f9 30%, ${ACCENT2} 100%)`,
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-              textTransform: 'uppercase',
-              letterSpacing: '-0.01em',
-              lineHeight: 1.15,
-              margin: 0,
-            }}>
-              MULTI-SERVICE ERP
-            </h1>
+            }}>MULTI-SERVICE ERP</span>
           </div>
 
           {/* Subtitle */}
@@ -500,18 +494,17 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Copyright */}
+      {/* Copyright — in normal flow, no position:absolute */}
       <p style={{
-        position: 'absolute',
-        bottom: '1.5rem',
-        width: '100%',
+        marginTop: '2rem',
         textAlign: 'center',
-        color: '#334155',
+        color: '#1e293b',
         fontSize: '0.6875rem',
         fontWeight: '700',
         textTransform: 'uppercase',
         letterSpacing: '0.12em',
         zIndex: 10,
+        position: 'relative',
       }}>
         &copy; {new Date().getFullYear()} Bella Group — All rights reserved
       </p>
