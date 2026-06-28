@@ -18,10 +18,14 @@ export default function AuthLayout({
 }) {
   return (
     <>
-      {/* Override html/body white background — prevents white strip on overscroll */}
+      {/* Sync full-page background: same dark base + grid on html/body so no split */}
       <style>{`
         html, body {
-          background: #060b14 !important;
+          background-color: #060b14 !important;
+          background-image:
+            linear-gradient(rgba(99,102,241,0.06) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(99,102,241,0.06) 1px, transparent 1px) !important;
+          background-size: 48px 48px !important;
           min-height: 100%;
         }
       `}</style>
@@ -32,7 +36,6 @@ export default function AuthLayout({
           display: 'flex',
           flexDirection: 'column',
           position: 'relative',
-          overflow: 'hidden',
           background: BG,
         }}
       >

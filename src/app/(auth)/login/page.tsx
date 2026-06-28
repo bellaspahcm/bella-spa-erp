@@ -169,10 +169,10 @@ export default function LoginPage() {
             <Image
               src="/bella-erp-logo.png"
               alt="Bella ERP"
-              width={220}
-              height={70}
+              width={308}
+              height={98}
               priority
-              style={{ width: 'auto', height: '3.25rem', filter: 'drop-shadow(0 0 16px rgba(139,92,246,0.5)) brightness(1.15)' }}
+              style={{ width: 'auto', height: '4.55rem', filter: 'drop-shadow(0 0 20px rgba(139,92,246,0.55)) brightness(1.1)' }}
             />
           </div>
 
