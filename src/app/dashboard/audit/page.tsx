@@ -833,17 +833,17 @@ export default function AuditPage() {
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="bg-white border border-slate-100 rounded-3xl overflow-hidden shadow-sm"
+        className="bg-white border border-slate-100 rounded-3xl shadow-sm"
       >
-        <div className="w-full overflow-x-auto overscroll-x-contain custom-scrollbar">
-          <table className="bella-data-table min-w-[1000px] text-left">
+        <div className="w-full overflow-x-auto overscroll-x-contain custom-scrollbar rounded-3xl">
+          <table className="bella-data-table min-w-[1100px] w-full text-left">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-100">
                 <th className="px-6 py-4 text-sm font-semibold text-slate-600 w-[180px] whitespace-nowrap">Thời gian</th>
                 <th className="px-6 py-4 text-sm font-semibold text-slate-600 w-[180px] whitespace-nowrap">Người thực hiện</th>
                 <th className="px-6 py-4 text-sm font-semibold text-slate-600 w-[120px] whitespace-nowrap">Hành động</th>
                 <th className="px-6 py-4 text-sm font-semibold text-slate-600 w-[160px] whitespace-nowrap">Bảng dữ liệu</th>
-                <th className="px-6 py-4 text-sm font-semibold text-slate-600 whitespace-nowrap">Chi tiết thay đổi</th>
+                <th className="px-6 py-4 text-sm font-semibold text-slate-600 whitespace-nowrap min-w-[300px]">Chi tiết thay đổi</th>
                 <th className="px-6 py-4 text-sm font-semibold text-slate-600 text-right w-[80px] whitespace-nowrap">Thao tác</th>
               </tr>
             </thead>
