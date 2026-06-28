@@ -210,7 +210,32 @@ export default function AppearanceTab() {
   };
 
   const updateBrandTheme = (patch: Partial<TenantBrandTheme>) => {
-    setBrandTheme((current) => ({ ...current, ...patch }));
+    const updated = { ...brandTheme, ...patch };
+    setBrandTheme(updated);
+    
+    // Auto-save changes immediately for better UX
+    saveTenantSettings({
+      brand_theme: normalizeTenantBrandThemeForModule(updated, tenantModuleKey),
+    }).then((result) => {
+      if (result.success) {
+        applyBrandThemePreview({
+          tenantId,
+          enabledModules,
+          brandTheme: updated,
+          logoUrl,
+          persist: true,
+        });
+        toast.success('Đã cập nhật giao diện');
+      } else {
+        toast.error(result.error);
+        // Revert on error
+        setBrandTheme(brandTheme);
+      }
+    }).catch((error) => {
+      console.error('Auto-save brand theme failed', error);
+      toast.error('Không thể lưu tự động');
+      setBrandTheme(brandTheme);
+    });
   };
 
   const applyBrandPreset = (preset: (typeof brandPresetOptions)[number]) => {
@@ -559,11 +584,13 @@ export default function AppearanceTab() {
               </div>
             </div>
 
-            <div className="space-y-4 rounded-[2rem] border border-rose-100 bg-white p-5 shadow-sm">
-              <div className="flex items-center gap-3">
-                <BadgeCheck className="h-5 w-5 text-primary" />
-                <h4 className="text-base font-black text-slate-900">Module đang cấp cho spa</h4>
-              </div>
+            {/* Only show module selection for Baby Care and Beauty Spa, not Industrial Cleaning */}
+            {tenantModuleKey !== 'industrial_cleaning' && (
+              <div className="space-y-4 rounded-[2rem] border border-rose-100 bg-white p-5 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <BadgeCheck className="h-5 w-5 text-primary" />
+                  <h4 className="text-base font-black text-slate-900">Module đang cấp cho spa</h4>
+                </div>
 
               <div className="space-y-3">
                 <div
