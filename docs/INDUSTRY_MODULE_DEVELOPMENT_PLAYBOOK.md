@@ -1534,3 +1534,25 @@ docs/INDUSTRY_MODULE_DEVELOPMENT_PLAYBOOK.md      # This file (!)
 - Complex module (+ business logic + accounting): 3-5 ngày
 
 **Nhớ:** Mỗi lỗi mới phải được document ngay trong playbook này để module sau không lặp lại!
+
+### 2026-06-28 - Lỗi trang quản lý dịch vụ trống trơn và nút thêm dịch vụ bị đơ ở phân hệ mới (Industrial Cleaning)
+
+- **Phân hệ/Tenant**: `industrial_cleaning` (Dịch vụ vệ sinh) và các phân hệ mới được kích hoạt độc lập.
+- **Màn hình/Luồng**: Quản lý dịch vụ (`/dashboard/services`), Modal Thêm/Sửa dịch vụ.
+- **Dấu hiệu**:
+  1. Trang dịch vụ của chi nhánh mới trống trơn ("Chưa có dịch vụ nào") dù dữ liệu mẫu đã được seed thành công ở database.
+  2. Nút "Thêm dịch vụ mới" khi click hoàn toàn bị đơ, không mở được Modal.
+- **Nguyên nhân gốc**:
+  1. **Lỗi dữ liệu trống**: Dữ liệu mẫu (seeding) của Dịch vụ vệ sinh được nạp dưới dạng HQ templates (`tenant_id = null`), trong khi trang quản lý dịch vụ chi nhánh chỉ truy vấn các dịch vụ thuộc sở hữu riêng của tenant (`tenant_id = auth.tenantId`). Ban đầu, tính năng "Đồng bộ gói mặc định" chỉ hỗ trợ cứng cho phân hệ `babycare` và bị ẩn đi đối với các phân hệ khác, khiến chi nhánh mới không thể sao chép các gói mẫu về làm bản nháp của mình.
+  2. **Lỗi đơ nút thêm**: Kiểu dữ liệu tham số trong hàm cập nhật `setModuleKey` và logic chuyển hướng trong `openEditModal` của hook `useServicesPageState` bị giới hạn cứng kiểu `'babycare' | 'beauty_spa'`. Khi click "Thêm dịch vụ mới", hàm `resetForm` cố gắng khởi tạo `moduleKey` là `'industrial_cleaning'`, gây ra lỗi bất tương thích kiểu dữ liệu và làm đơ luồng xử lý React state mở modal.
+- **Cách sửa**:
+  1. **Hỗ trợ đồng bộ đa phân hệ**: Cập nhật hàm `createDefaultPackages` để nhận `moduleKey` và trả về các gói dịch vụ mẫu tương ứng (`babycare` có 8 gói, `industrial_cleaning` có 3 gói mẫu, `beauty_spa` có 3 gói mẫu).
+  2. **Tự động nhận diện phân hệ để đồng bộ**: Cập nhật `syncDefaultPackages` tự động kiểm tra xem phân hệ nào của tenant đang được kích hoạt và đồng bộ đúng tập gói mẫu tương ứng về chi nhánh dưới dạng bản nháp.
+  3. **Mở rộng phạm vi hiển thị nút đồng bộ**: Cho phép hiển thị nút "Đồng bộ gói mặc định" khi có bất kỳ phân hệ chính nào (`babycare`, `industrial_cleaning`, `beauty_spa`) được kích hoạt.
+  4. **Chuẩn hóa kiểu dữ liệu**: Đổi kiểu tham số hàm `setModuleKey` thành kiểu chung `ServiceModuleKey` (chứa cả `'industrial_cleaning'`). Cập nhật `openEditModal` và PremiumSelect ở biểu mẫu modal để xử lý/ép kiểu an toàn sang `ServiceModuleKey`.
+- **Test/guard đã thêm**: Chạy bộ test Jest `package-actions.test.ts` và `industrial-cleaning-module-isolation.test.ts` đều vượt qua 100%. Next.js production build biên dịch thành công.
+- **Commit**: `71fbaa0d`
+- **Files**:
+  - [useServicesPageState.ts](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/src/app/dashboard/services/hooks/useServicesPageState.ts) - Cập nhật đồng bộ gói mẫu và sửa kiểu dữ liệu.
+  - [page.tsx](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/src/app/dashboard/services/page.tsx) - Cập nhật hiển thị nút đồng bộ và xử lý ép kiểu an toàn trong Modal Form.
+- **Rủi ro còn lại**: Cần kiểm tra xem khi có tenant bật đồng thời nhiều phân hệ chính (multi-module) thì nút đồng bộ sẽ hoạt động như thế nào; hiện tại nút sẽ ưu tiên đồng bộ theo phân hệ có thứ tự kiểm tra (`industrial_cleaning` -> `beauty_spa` -> `babycare`).
