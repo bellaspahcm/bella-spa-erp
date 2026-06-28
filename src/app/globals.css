@@ -853,9 +853,9 @@ html[data-tenant-module="pending"] .beauty-active-care-badge span {
 html[data-tenant-module="pending"] [class*="from-rose-"],
 html[data-tenant-module="pending"] [class*="via-rose-"],
 html[data-tenant-module="pending"] [class*="to-pink-"] {
-  --tw-gradient-from: #0b2240 var(--tw-gradient-from-position) !important;
-  --tw-gradient-via: #c8a97a var(--tw-gradient-via-position) !important;
-  --tw-gradient-to: #074e44 var(--tw-gradient-to-position) !important;
+  --tw-gradient-from: #0b2240 !important;
+  --tw-gradient-via: #c8a97a !important;
+  --tw-gradient-to: #074e44 !important;
 }
 
 /* =========================================================================
@@ -1462,9 +1462,9 @@ html[data-tenant-module="beauty_spa"] [class*="text-rose-700"] {
 html[data-tenant-module="beauty_spa"] [class*="from-rose-"],
 html[data-tenant-module="beauty_spa"] [class*="via-rose-"],
 html[data-tenant-module="beauty_spa"] [class*="to-pink-"] {
-  --tw-gradient-from: var(--beauty-em) var(--tw-gradient-from-position) !important;
-  --tw-gradient-via: var(--beauty-gold) var(--tw-gradient-via-position) !important;
-  --tw-gradient-to: var(--beauty-em-2) var(--tw-gradient-to-position) !important;
+  --tw-gradient-from: var(--beauty-em) !important;
+  --tw-gradient-via: var(--beauty-gold) !important;
+  --tw-gradient-to: var(--beauty-em-2) !important;
 }
 
 html[data-tenant-module="beauty_spa"] .active-booking-panel {
@@ -2490,16 +2490,16 @@ html[data-tenant-module="industrial_cleaning"] [class*="via-rose-"],
 html[data-tenant-module="industrial_cleaning"] [class*="via-pink-"],
 html[data-tenant-module="industrial_cleaning"] [class*="to-pink-"],
 html[data-tenant-module="industrial_cleaning"] [class*="to-rose-"] {
-  --tw-gradient-from: #0C3776 var(--tw-gradient-from-position) !important; /* Blue */
-  --tw-gradient-via: #2D93AE var(--tw-gradient-via-position) !important; /* Teal */
-  --tw-gradient-to: #BCFEFE var(--tw-gradient-to-position) !important; /* Cyan */
+  --tw-gradient-from: #0C3776 !important; /* Blue */
+  --tw-gradient-via: #2D93AE !important; /* Teal */
+  --tw-gradient-to: #BCFEFE !important; /* Cyan */
 }
 
 /* Cleaning pink background overrides - thay màu hồng bằng teal nhạt */
-html[data-tenant-module="industrial_cleaning"] [class*="bg-pink-50"],
-html[data-tenant-module="industrial_cleaning"] [class*="bg-pink-100"],
-html[data-tenant-module="industrial_cleaning"] [class*="bg-rose-50"],
-html[data-tenant-module="industrial_cleaning"] [class*="bg-rose-100"] {
+html[data-tenant-module="industrial_cleaning"] .bg-pink-50,
+html[data-tenant-module="industrial_cleaning"] .bg-pink-100,
+html[data-tenant-module="industrial_cleaning"] .bg-rose-50,
+html[data-tenant-module="industrial_cleaning"] .bg-rose-100 {
   background-color: rgba(45, 147, 174, 0.10) !important; /* Teal 10% */
 }
 
@@ -2856,9 +2856,9 @@ html[data-tenant-module="industrial_cleaning"] .luxury-card-pink:hover {
 html[data-tenant-module="industrial_cleaning"] [class*="from-rose-"],
 html[data-tenant-module="industrial_cleaning"] [class*="via-rose-"],
 html[data-tenant-module="industrial_cleaning"] [class*="to-pink-"] {
-  --tw-gradient-from: #2D93AE var(--tw-gradient-from-position) !important;
-  --tw-gradient-via: #0C3776 var(--tw-gradient-via-position) !important;
-  --tw-gradient-to: #001C44 var(--tw-gradient-to-position) !important;
+  --tw-gradient-from: #2D93AE !important;
+  --tw-gradient-via: #0C3776 !important;
+  --tw-gradient-to: #001C44 !important;
 }
 
 html[data-tenant-module="industrial_cleaning"] .beauty-customer-add-cta {
@@ -2890,10 +2890,10 @@ html[data-tenant-module="industrial_cleaning"] .beauty-active-care-badge span {
 }
 
 /* Industrial Cleaning: Override pink/rose accent colors to teal/cyan */
-html[data-tenant-module="industrial_cleaning"] [class*="bg-pink-50"],
-html[data-tenant-module="industrial_cleaning"] [class*="bg-pink-100"],
-html[data-tenant-module="industrial_cleaning"] [class*="bg-rose-50"],
-html[data-tenant-module="industrial_cleaning"] [class*="bg-rose-100"] {
+html[data-tenant-module="industrial_cleaning"] .bg-pink-50,
+html[data-tenant-module="industrial_cleaning"] .bg-pink-100,
+html[data-tenant-module="industrial_cleaning"] .bg-rose-50,
+html[data-tenant-module="industrial_cleaning"] .bg-rose-100 {
   background-color: rgba(188, 254, 254, 0.15) !important;
 }
 
@@ -2926,33 +2926,29 @@ html[data-tenant-module="industrial_cleaning"] [class*="shadow-rose-"] {
 
 /* Pink background overrides - use light pink instead of beige */
 .bg-rose-50,
-[class*="bg-rose-50"],
 .bg-rose-100,
-[class*="bg-rose-100"],
 .bg-pink-50,
-[class*="bg-pink-50"],
-.bg-pink-100,
-[class*="bg-pink-100"] {
+.bg-pink-100 {
   background-color: rgba(255, 228, 230, 0.85) !important;
 }
 
 /* Stronger pink for more prominent elements */
 .bg-rose-200,
-[class*="bg-rose-200"],
-.bg-pink-200,
-[class*="bg-pink-200"] {
+.bg-pink-200 {
   background-color: rgba(251, 207, 232, 0.92) !important;
 }
 
 /* Slate backgrounds - full opacity for better contrast */
 .bg-slate-200,
-[class*="bg-slate-200"],
 .bg-slate-100,
-[class*="bg-slate-100"],
-.bg-slate-50,
-[class*="bg-slate-50"] {
+.bg-slate-50 {
   background-color: rgb(241, 245, 249) !important;
   opacity: 1 !important;
+}
+
+/* Ensure hover consistency across entire table row for industrial_cleaning */
+html[data-tenant-module="industrial_cleaning"] .bella-data-table tr:hover td {
+  background-color: #F1F5F9 !important;
 }
 
 /* Slate text colors - darker for better readability on white/pink backgrounds */
