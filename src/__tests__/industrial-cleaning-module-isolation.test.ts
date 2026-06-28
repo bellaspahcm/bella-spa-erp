@@ -163,8 +163,8 @@ describe('Industrial Cleaning Module Isolation', () => {
       expect(css).toContain('html[data-tenant-module="industrial_cleaning"]');
       
       // Check for blue theme colors (not pink or jade)
-      expect(css).toContain('#1E40AF'); // Cleaning blue
-      expect(css).toContain('#3B82F6'); // Cleaning accent
+      expect(css).toContain('#0C3776'); // Cleaning blue
+      expect(css).toContain('#2D93AE'); // Cleaning accent
     });
   });
 
