@@ -29,7 +29,7 @@ const filterLabelClassName =
   'text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest whitespace-nowrap';
 const tableWrapperClassName =
   'w-full overflow-x-auto overscroll-x-contain rounded-2xl shadow-[inset_-18px_0_18px_-18px_rgba(15,23,42,0.45)] dark:shadow-[inset_-18px_0_18px_-18px_rgba(239,233,225,0.28)]';
-const tableClassName = 'w-max min-w-[58rem] border-collapse whitespace-nowrap';
+const tableClassName = 'w-full min-w-[58rem] border-collapse whitespace-nowrap';
 const stickyHeaderCellClassName =
   'bg-slate-50 dark:bg-[#11100F]';
 const stickyBodyCellClassName =
