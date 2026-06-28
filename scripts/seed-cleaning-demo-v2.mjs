@@ -85,7 +85,7 @@ async function run() {
       accentColor: '#3B82F6',
       portalDisplayName: 'CleanPro Services',
       invoiceDisplayName: 'CleanPro Industrial Cleaning',
-      stylePreset: 'graphite_luxe',
+      stylePreset: 'ocean_clean',
       radiusStyle: 'balanced',
       buttonStyle: 'rounded',
       menuStyle: 'compact'
