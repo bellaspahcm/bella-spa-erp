@@ -164,14 +164,14 @@ export default function LoginPage() {
 
         {/* Header */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '2rem', textAlign: 'center' }}>
-          <div style={{ marginBottom: '1.25rem' }}>
+          <div style={{ marginBottom: '1.25rem', width: '100%', display: 'flex', justifyContent: 'center' }}>
             <Image
               src="/bella-erp-logo.png"
               alt="Bella ERP"
-              width={400}
-              height={400}
+              width={1024}
+              height={464}
               priority
-              style={{ width: 'auto', height: '6.37rem', filter: 'brightness(1.85) drop-shadow(0 0 24px rgba(139,92,246,0.65))' }}
+              style={{ width: '90%', height: 'auto', filter: 'drop-shadow(0 0 16px rgba(139,92,246,0.45))' }}
             />
           </div>
 
