@@ -36,6 +36,7 @@ import type {
   ResourceType,
   ServiceModalMode,
   ServiceModuleFilter,
+  ServiceModuleKey,
   ServicePackage,
   ServiceStatus,
   ServiceStatusFilter,
@@ -58,80 +59,166 @@ const EMPTY_ENABLED_MODULES: TenantEnabledModules = {
   industrial_cleaning: false,
 };
 
-const createDefaultPackages = (): PackageActionInput[] => [
-  {
-    name: 'Gói Bầu Thư Giãn Bella',
-    price: 450000,
-    duration: '75 phút/buổi',
-    total_sessions: 1,
-    details: ['Ngâm chân thảo dược thải độc', 'Massage body thảo dược nhẹ nhàng', 'Chăm sóc da mặt cơ bản organic', 'Thư giãn vùng đầu, cổ, vai gáy'],
-    offer: 'Tặng kèm trà sữa hạt organic sau liệu trình',
-    status: 'inactive',
-  },
-  {
-    name: 'Gói Bầu VIP Toàn Diện',
-    price: 690000,
-    duration: '100 phút/buổi',
-    total_sessions: 1,
-    details: ['Rửa chân và xông chân đá muối Himalaya', 'Massage chuyên sâu thắt lưng, hông', 'Massage Thụy Điển kết hợp đá nóng bazan', 'Chăm sóc da mặt chuyên sâu sữa ong chúa', 'Gội đầu dưỡng sinh thảo dược tự nhiên'],
-    offer: 'Ưu đãi trải nghiệm buổi đầu giảm 30%',
-    status: 'inactive',
-  },
-  {
-    name: 'Gói Phục Hồi Cơ Bản',
-    price: 650000,
-    duration: '90 phút/buổi',
-    total_sessions: 1,
-    details: ['Xông tắm thảo dược Dao Đỏ tái tạo sinh lực', 'Massage thông tắc tia sữa, gọi sữa về', 'Massage bụng tống sản dịch bằng tinh dầu gừng', 'Quấn muối thảo dược giúp săn cơ bụng'],
-    offer: 'Hỗ trợ tư vấn nuôi con bằng sữa mẹ miễn phí',
-    status: 'inactive',
-  },
-  {
-    name: 'Gói Eo Thon Dáng Ngọc VIP',
-    price: 950000,
-    duration: '120 phút/buổi',
-    total_sessions: 1,
-    details: ['Chăm sóc đầy đủ gói Phục Hồi Cơ Bản', 'Đắp men rượu thuốc Bắc kết hợp chạy máy RF săn cơ', 'Đắp mặt nạ nghệ hạ thổ sáng hồng da', 'Massage body toàn thân giải tỏa trầm cảm sau sinh', 'Chăm sóc và tẩy tế bào chết body thảo mộc'],
-    offer: 'Tặng 01 buổi massage mặt chuyên sâu',
-    status: 'inactive',
-  },
-  {
-    name: 'Tắm Bé Chuẩn Y Khoa',
-    price: 200000,
-    duration: '45 phút/buổi',
-    total_sessions: 1,
-    details: ['Massage kích hoạt giác quan cơ/xương trước khi tắm', 'Tắm chuẩn y khoa, vệ sinh rốn, mắt, mũi, tai kỹ lưỡng', 'Hơ lá trầu giữ ấm ngực, thóp đầu và các khớp', 'Bôi tinh dầu tràm bảo vệ hô hấp'],
-    offer: 'Tặng kèm tưa lưỡi thảo dược',
-    status: 'inactive',
-  },
-  {
-    name: 'Gói Bé Yêu Thông Minh VIP',
-    price: 350000,
-    duration: '60 phút/buổi',
-    total_sessions: 1,
-    details: ['Massage nâng cao kích thích hệ tiêu hóa, chống đầy hơi', 'Tắm rửa sát khuẩn nước thảo dược tự nhiên', 'Hơ lá trầu ấm áp theo phương pháp cung đình', 'Bơi thủy liệu (Hydrotherapy) phát triển thể chất', 'Tập vận động phản xạ sớm nâng cao chỉ số EQ/IQ'],
-    offer: 'Ưu đãi trải nghiệm giảm 20%',
-    status: 'inactive',
-  },
-  {
-    name: 'Gói Bella Home-Care Tiêu Chuẩn',
-    price: 7900000,
-    duration: '90 phút/buổi',
-    total_sessions: 10,
-    details: ['5 buổi Chăm Sóc Phục Hồi cho mẹ sau sinh tại nhà', '5 buổi Tắm Bé & Massage chuẩn y khoa tại nhà', 'KTV là điều dưỡng có chứng chỉ hành nghề y tế'],
-    offer: 'Tặng thêm 01 hũ muối thảo dược quấn bụng trị giá 350k',
-    status: 'inactive',
-  },
-  {
-    name: 'Gói Hoàng Gia Bella Signature',
-    price: 18500000,
-    duration: '120 phút/buổi',
-    total_sessions: 25,
-    details: ['10 buổi Chăm sóc Bầu VIP thư giãn giảm đau nhức', '15 buổi Liệu trình Phục Hồi Eo Thon Dáng Ngọc sau sinh', '15 buổi Tắm Bé & Bơi Thủy Liệu VIP kích thích phát triển', 'Miễn phí tư vấn dinh dưỡng cùng Bác sĩ Sản Nhi trong suốt thai kỳ'],
-    offer: 'Tặng hộp quà Premium gồm 05 tinh dầu cao cấp và 01 túi thảo dược chườm mắt',
-    status: 'inactive',
-  },
-];
+const createDefaultPackages = (moduleKey: ServiceModuleKey): PackageActionInput[] => {
+  if (moduleKey === 'industrial_cleaning') {
+    return [
+      {
+        name: 'Vệ sinh cơ bản',
+        price: 5000000,
+        duration: '90 phút/buổi',
+        total_sessions: 12,
+        details: ['Vệ sinh sàn nhà, Lau kính, Dọn toilet', 'Thu gom rác thải sinh hoạt'],
+        offer: '',
+        ktv_commission: 150000,
+        status: 'active',
+        module_key: 'industrial_cleaning',
+      },
+      {
+        name: 'Vệ sinh tiêu chuẩn',
+        price: 8000000,
+        duration: '90 phút/buổi',
+        total_sessions: 16,
+        details: ['Hút bụi, lau sàn, vệ sinh cửa kính', 'Lau chùi bụi bẩn thiết bị văn phòng', 'Vệ sinh toilet, bồn rửa mặt, khu vực pantry'],
+        offer: '',
+        ktv_commission: 150000,
+        status: 'active',
+        module_key: 'industrial_cleaning',
+      },
+      {
+        name: 'Vệ sinh cao cấp VIP',
+        price: 12000000,
+        duration: '90 phút/buổi',
+        total_sessions: 20,
+        details: ['Vệ sinh sâu sàn nhà, đánh bóng, tẩy vết bẩn', 'Giặt thảm, ghế văn phòng, rèm cửa', 'Khử trùng toàn bộ không gian làm việc', 'Vệ sinh hệ thống điều hòa, thông gió'],
+        offer: '',
+        ktv_commission: 150000,
+        status: 'active',
+        module_key: 'industrial_cleaning',
+      },
+    ];
+  }
+
+  if (moduleKey === 'beauty_spa') {
+    return [
+      {
+        name: 'Triệt Lông Diode Laser',
+        price: 3500000,
+        duration: '60 phút/buổi',
+        total_sessions: 10,
+        details: ['Tẩy da chết vùng cần triệt', 'Thoa gel chuyên dụng làm dịu mát', 'Đi máy Diode Laser bước sóng 808nm', 'Lau sạch và thoa kem dưỡng ẩm bảo vệ'],
+        offer: 'Bảo hành trọn đời dịch vụ',
+        ktv_commission: 100000,
+        status: 'active',
+        module_key: 'beauty_spa',
+      },
+      {
+        name: 'Gội Đầu Dưỡng Sinh Đông Y',
+        price: 250000,
+        duration: '75 phút/buổi',
+        total_sessions: 1,
+        details: ['Khai huyệt vùng đầu, massage vai gáy cơ bản', 'Gội đầu lần 1 bằng nước thảo dược bồ kết cô đặc', 'Massage mặt, đắp mặt nạ organic', 'Gội đầu lần 2 kết hợp đi lược sừng đả thông kinh lạc', 'Sấy tóc và thoa serum dưỡng tóc'],
+        offer: 'Tặng kèm trà thảo mộc thư giãn',
+        ktv_commission: 50000,
+        status: 'active',
+        module_key: 'beauty_spa',
+      },
+      {
+        name: 'Facial Cấp Ẩm Chuyên Sâu',
+        price: 500000,
+        duration: '90 phút/buổi',
+        total_sessions: 1,
+        details: ['Tẩy trang, rửa mặt sạch sâu', 'Tẩy tế bào chết vật lý kết hợp xông hơi nóng', 'Hút bã nhờn, mụn cám bằng máy hút chân không', 'Massage mặt nâng cơ nâng cao bằng kem collagen', 'Điện di tinh chất Hyaluronic Acid (HA) làm mát sâu', 'Đắp mặt nạ ngủ làm dịu và phục hồi'],
+        offer: 'Ưu đãi trải nghiệm giảm 35%',
+        ktv_commission: 80000,
+        status: 'active',
+        module_key: 'beauty_spa',
+      },
+    ];
+  }
+
+  return [
+    {
+      name: 'Gói Bầu Thư Giãn Bella',
+      price: 450000,
+      duration: '75 phút/buổi',
+      total_sessions: 1,
+      details: ['Ngâm chân thảo dược thải độc', 'Massage body thảo dược nhẹ nhàng', 'Chăm sóc da mặt cơ bản organic', 'Thư giãn vùng đầu, cổ, vai gáy'],
+      offer: 'Tặng kèm trà sữa hạt organic sau liệu trình',
+      status: 'inactive',
+      module_key: 'babycare',
+    },
+    {
+      name: 'Gói Bầu VIP Toàn Diện',
+      price: 690000,
+      duration: '100 phút/buổi',
+      total_sessions: 1,
+      details: ['Rửa chân và xông chân đá muối Himalaya', 'Massage chuyên sâu thắt lưng, hông', 'Massage Thụy Điển kết hợp đá nóng bazan', 'Chăm sóc da mặt chuyên sâu sữa ong chúa', 'Gội đầu dưỡng sinh thảo dược tự nhiên'],
+      offer: 'Ưu đãi trải nghiệm buổi đầu giảm 30%',
+      status: 'inactive',
+      module_key: 'babycare',
+    },
+    {
+      name: 'Gói Phục Hồi Cơ Bản',
+      price: 650000,
+      duration: '90 phút/buổi',
+      total_sessions: 1,
+      details: ['Xông tắm thảo dược Dao Đỏ tái tạo sinh lực', 'Massage thông tắc tia sữa, gọi sữa về', 'Massage bụng tống sản dịch bằng tinh dầu gừng', 'Quấn muối thảo dược giúp săn cơ bụng'],
+      offer: 'Hỗ trợ tư vấn nuôi con bằng sữa mẹ miễn phí',
+      status: 'inactive',
+      module_key: 'babycare',
+    },
+    {
+      name: 'Gói Eo Thon Dáng Ngọc VIP',
+      price: 950000,
+      duration: '120 phút/buổi',
+      total_sessions: 1,
+      details: ['Chăm sóc đầy đủ gói Phục Hồi Cơ Bản', 'Đắp men rượu thuốc Bắc kết hợp chạy máy RF săn cơ', 'Đắp mặt nạ nghệ hạ thổ sáng hồng da', 'Massage body toàn thân giải tỏa trầm cảm sau sinh', 'Chăm sóc và tẩy tế bào chết body thảo mộc'],
+      offer: 'Tặng 01 buổi massage mặt chuyên sâu',
+      status: 'inactive',
+      module_key: 'babycare',
+    },
+    {
+      name: 'Tắm Bé Chuẩn Y Khoa',
+      price: 200000,
+      duration: '45 phút/buổi',
+      total_sessions: 1,
+      details: ['Massage kích hoạt giác quan cơ/xương trước khi tắm', 'Tắm chuẩn y khoa, vệ sinh rốn, mắt, mũi, tai kỹ lưỡng', 'Hơ lá trầu giữ ấm ngực, thóp đầu và các khớp', 'Bôi tinh dầu tràm bảo vệ hô hấp'],
+      offer: 'Tặng kèm tưa lưỡi thảo dược',
+      status: 'inactive',
+      module_key: 'babycare',
+    },
+    {
+      name: 'Gói Bé Yêu Thông Minh VIP',
+      price: 350000,
+      duration: '60 phút/buổi',
+      total_sessions: 1,
+      details: ['Massage nâng cao kích thích hệ tiêu hóa, chống đầy hơi', 'Tắm rửa sát khuẩn nước thảo dược tự nhiên', 'Hơ lá trầu ấm áp theo phương pháp cung đình', 'Bơi thủy liệu (Hydrotherapy) phát triển thể chất', 'Tập vận động phản xạ sớm nâng cao chỉ số EQ/IQ'],
+      offer: 'Ưu đãi trải nghiệm giảm 20%',
+      status: 'inactive',
+      module_key: 'babycare',
+    },
+    {
+      name: 'Gói Bella Home-Care Tiêu Chuẩn',
+      price: 7900000,
+      duration: '90 phút/buổi',
+      total_sessions: 10,
+      details: ['5 buổi Chăm Sóc Phục Hồi cho mẹ sau sinh tại nhà', '5 buổi Tắm Bé & Massage chuẩn y khoa tại nhà', 'KTV là điều dưỡng có chứng chỉ hành nghề y tế'],
+      offer: 'Tặng thêm 01 hũ muối thảo dược quấn bụng trị giá 350k',
+      status: 'inactive',
+      module_key: 'babycare',
+    },
+    {
+      name: 'Gói Hoàng Gia Bella Signature',
+      price: 18500000,
+      duration: '120 phút/buổi',
+      total_sessions: 25,
+      details: ['10 buổi Chăm sóc Bầu VIP thư giãn giảm đau nhức', '15 buổi Liệu trình Phục Hồi Eo Thon Dáng Ngọc sau sinh', '15 buổi Tắm Bé & Bơi Thủy Liệu VIP kích thích phát triển', 'Miễn phí tư vấn dinh dưỡng cùng Bác sĩ Sản Nhi trong suốt thai kỳ'],
+      offer: 'Tặng hộp quà Premium gồm 05 tinh dầu cao cấp và 01 túi thảo dược chườm mắt',
+      status: 'inactive',
+      module_key: 'babycare',
+    },
+  ];
+};
 
 export function useServicesPageState() {
   const [services, setServices] = useState<ServicePackage[]>([]);
@@ -187,7 +274,7 @@ export function useServicesPageState() {
       status: typeof status === 'function' ? status(prev.status) : status,
     }));
   };
-  const setModuleKey = (moduleKey: 'babycare' | 'beauty_spa') => setForm(prev => ({ ...prev, moduleKey }));
+  const setModuleKey = (moduleKey: ServiceModuleKey) => setForm(prev => ({ ...prev, moduleKey }));
   const setServiceKind = (serviceKind: 'single_service' | 'treatment_package' | 'retail_product' | 'consultation') => {
     setForm(prev => ({ ...prev, serviceKind }));
   };
@@ -331,7 +418,9 @@ export function useServicesPageState() {
       details: Array.isArray(service.details) ? service.details.join(', ') : (service.details || ''),
       ktvCommission: formatMoneyInput(service.ktv_commission ?? 150000),
       status: service.status === 'active' ? 'active' : 'inactive',
-      moduleKey: service.module_key === 'beauty_spa' ? 'beauty_spa' : 'babycare',
+      moduleKey: service.module_key === 'beauty_spa' ? 'beauty_spa'
+        : service.module_key === 'industrial_cleaning' ? 'industrial_cleaning'
+        : 'babycare',
       serviceKind: (
         service.service_kind === 'single_service'
         || service.service_kind === 'retail_product'
@@ -481,14 +570,19 @@ export function useServicesPageState() {
   };
 
   const syncDefaultPackages = async () => {
-    if (!enabledModules.babycare) {
-      toast.error('Gói mặc định này chỉ dùng cho tenant đã bật đúng module ngành tương ứng.');
+    const activeModule = enabledModules.industrial_cleaning ? 'industrial_cleaning'
+      : enabledModules.beauty_spa ? 'beauty_spa'
+      : enabledModules.babycare ? 'babycare'
+      : null;
+
+    if (!activeModule) {
+      toast.error('Không tìm thấy module ngành kinh doanh nào được kích hoạt.');
       return;
     }
 
     setIsLoading(true);
     try {
-      const defaultPackages = createDefaultPackages();
+      const defaultPackages = createDefaultPackages(activeModule);
       const existingPackages = await getPackages();
 
       const existingNames = new Set((existingPackages || []).map(packageRow => packageRow.name));
@@ -504,7 +598,7 @@ export function useServicesPageState() {
         if (result.error) throw new Error(result.error);
       }
 
-      toast.success(`Đã đồng bộ ${toInsert.length} gói dịch vụ mặc định làm bản nháp thành công! 🎉`);
+      toast.success(`Đã đồng bộ ${toInsert.length} gói dịch vụ mặc định thành công! 🎉`);
       void loadData();
     } catch (error) {
       console.error('Sync error:', error);
