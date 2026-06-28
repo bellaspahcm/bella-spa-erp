@@ -868,8 +868,12 @@ html[data-tenant-module="pending"] [class*="to-pink-"] {
 html[data-tenant-module="baby_care"] .beauty-erp-sidebar,
 html[data-tenant-module="babycare"] .beauty-erp-sidebar,
 html[data-tenant-module="baby_care"] aside.beauty-erp-sidebar,
-html[data-tenant-module="babycare"] aside.beauty-erp-sidebar {
+html[data-tenant-module="babycare"] aside.beauty-erp-sidebar,
+html[data-tenant-module="baby_care"] .beauty-erp-sidebar nav,
+html[data-tenant-module="babycare"] .beauty-erp-sidebar nav {
   background: #FFF0F3 !important;
+  background-color: #FFF0F3 !important;
+  background-image: none !important;
   border-color: rgba(236, 72, 153, 0.15) !important;
   color: #831843 !important;
 }
@@ -886,7 +890,9 @@ html[data-tenant-module="babycare"] aside .bg-rose-300\/25 {
 html.dark[data-tenant-module="baby_care"] .beauty-erp-sidebar,
 html.dark[data-tenant-module="babycare"] .beauty-erp-sidebar,
 html.dark[data-tenant-module="baby_care"] aside.beauty-erp-sidebar,
-html.dark[data-tenant-module="babycare"] aside.beauty-erp-sidebar {
+html.dark[data-tenant-module="babycare"] aside.beauty-erp-sidebar,
+html.dark[data-tenant-module="baby_care"] .beauty-erp-sidebar nav,
+html.dark[data-tenant-module="babycare"] .beauty-erp-sidebar nav {
   background: linear-gradient(135deg, #1C1B19 0%, #2E2B27 100%) !important;
   border-color: rgba(166, 125, 68, 0.2) !important;
   color: #EFE9E1 !important;
