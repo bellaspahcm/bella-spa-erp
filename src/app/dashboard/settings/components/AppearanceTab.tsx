@@ -652,7 +652,8 @@ export default function AppearanceTab() {
               </p>
             </div>
             )}
-        </div>
+          </div>
+        )}
       </section>
     </div>
   );
