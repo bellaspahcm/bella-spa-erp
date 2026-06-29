@@ -6,6 +6,11 @@ import { ShoppingCart, Plus, Download, Filter, X } from 'lucide-react';
 import { ProductSaleRow } from './ProductSaleRow';
 import { ProductSaleModal } from './ProductSaleModal';
 import { useTenantContext } from '@/core/hooks/useTenantContext';
+import { useKTVList } from '@/hooks/useKTVList';
+import { useCustomers } from '@/hooks/useCustomers';
+import { queryTenantCommissionConfig } from '@/lib/supabase-commission-queries';
+import { createClient } from '@/lib/supabase-client';
+import type { CommissionConfig } from '@/types/commission-types';
 import {
   getProductSales,
   deleteProductSale,
@@ -45,6 +50,11 @@ interface ProductSalesFilters {
 
 export function ProductSalesListPage() {
   const tenantContext = useTenantContext();
+  
+  // Fetch KTV list and customers for modal
+  const { ktvList, isLoading: isLoadingKTV } = useKTVList(tenantContext?.tenantId);
+  const { customers, isLoading: isLoadingCustomers } = useCustomers(tenantContext?.tenantId);
+  
   const [sales, setSales] = useState<ProductSale[]>([]);
   const [filteredSales, setFilteredSales] = useState<ProductSale[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -52,6 +62,7 @@ export function ProductSalesListPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedSale, setSelectedSale] = useState<ProductSale | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [commissionDefaults, setCommissionDefaults] = useState<CommissionConfig | null>(null);
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -119,6 +130,53 @@ export function ProductSalesListPage() {
   useEffect(() => {
     fetchSales();
   }, [fetchSales]);
+
+  // Fetch commission config
+  useEffect(() => {
+    async function fetchCommissionConfig() {
+      if (!tenantContext?.tenantId) return;
+
+      try {
+        const supabase = createClient();
+        const { data, error: configError } = await queryTenantCommissionConfig(
+          supabase,
+          tenantContext.tenantId
+        );
+
+        if (configError) {
+          console.error('[ProductSalesListPage] Error fetching commission config:', configError);
+          // Use fallback defaults
+          setCommissionDefaults({
+            service_commission_default: {
+              type: 'fixed' as const,
+              value: 150000,
+            },
+            product_sales_commission_default: {
+              type: 'percentage' as const,
+              value: 10,
+            },
+          });
+        } else {
+          setCommissionDefaults(data);
+        }
+      } catch (err) {
+        console.error('[ProductSalesListPage] Unexpected error fetching config:', err);
+        // Use fallback defaults
+        setCommissionDefaults({
+          service_commission_default: {
+            type: 'fixed' as const,
+            value: 150000,
+          },
+          product_sales_commission_default: {
+            type: 'percentage' as const,
+            value: 10,
+          },
+        });
+      }
+    }
+
+    fetchCommissionConfig();
+  }, [tenantContext?.tenantId]);
 
   // Client-side filtering for search
   useEffect(() => {
@@ -464,17 +522,19 @@ export function ProductSalesListPage() {
         </div>
       )}
 
-      {/* Product Sale Modal - TODO: Add proper props */}
-      {/* {isModalOpen && (
+      {/* Product Sale Modal */}
+      {isModalOpen && tenantContext?.tenantId && (
         <ProductSaleModal
           isOpen={isModalOpen}
           onClose={handleModalClose}
           onSuccess={handleModalSuccess}
           tenantId={tenantContext.tenantId}
-          ktvList={[]} // TODO: Fetch KTV list
-          customers={[]} // TODO: Fetch customers
+          ktvList={ktvList}
+          customers={customers}
+          commissionDefaults={commissionDefaults || undefined}
+          initialData={selectedSale || undefined}
         />
-      )} */}
+      )}
     </div>
   );
 }
