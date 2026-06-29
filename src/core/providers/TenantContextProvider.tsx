@@ -107,15 +107,37 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
     if (!context) return;
 
     const enabledModules = context.enabledModules;
+    console.log('[TenantContextProvider] enabledModules:', enabledModules);
+    console.log('[TenantContextProvider] enabledModules type:', typeof enabledModules);
+    console.log('[TenantContextProvider] is Array?', Array.isArray(enabledModules));
+    
     let moduleKey: string = 'baby_care'; // Default fallback
 
-    // Determine primary module key (enabledModules is an array)
-    if (enabledModules.includes('industrial_cleaning' as any)) {
-      moduleKey = 'industrial_cleaning';
-    } else if (enabledModules.includes('beauty_spa' as any)) {
-      moduleKey = 'beauty_spa';
-    } else if (enabledModules.includes('babycare' as any) || enabledModules.includes('spa' as any)) {
-      moduleKey = 'baby_care';
+    // Determine primary module key
+    // API now returns array of enabled module names: ['beauty_spa'] or ['babycare'] or ['industrial_cleaning']
+    if (Array.isArray(enabledModules)) {
+      console.log('[TenantContextProvider] Processing array format:', enabledModules);
+      
+      // Priority order: industrial_cleaning > beauty_spa > babycare/spa
+      if (enabledModules.includes('industrial_cleaning')) {
+        moduleKey = 'industrial_cleaning';
+      } else if (enabledModules.includes('beauty_spa')) {
+        moduleKey = 'beauty_spa';
+      } else if (enabledModules.includes('babycare') || enabledModules.includes('spa')) {
+        moduleKey = 'baby_care';
+      }
+    } else if (typeof enabledModules === 'object' && enabledModules !== null) {
+      // Fallback for legacy JSONB object format: { beauty_spa: true, babycare: false }
+      console.log('[TenantContextProvider] Processing legacy object format');
+      
+      const modules = enabledModules as any;
+      if (modules.industrial_cleaning === true) {
+        moduleKey = 'industrial_cleaning';
+      } else if (modules.beauty_spa === true) {
+        moduleKey = 'beauty_spa';
+      } else if (modules.babycare === true || modules.spa === true) {
+        moduleKey = 'baby_care';
+      }
     }
 
     // Set data-tenant-module attribute on <html> element

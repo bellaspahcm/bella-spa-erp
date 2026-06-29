@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   CheckCircle2,
@@ -19,7 +21,9 @@ import {
 } from 'lucide-react';
 
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
+import { ServiceItemsTable } from '@/components/bookings/ServiceItemsTable';
 import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
+import { useServiceItems } from '../hooks/useServiceItems';
 import type { BookingInvoicePrintLog } from '@/core/services/order/invoice-print-actions';
 
 export type KtvOption = {
@@ -82,6 +86,7 @@ type BookingDayDetailModalProps = {
   isLoadingInvoicePrintLogs: boolean;
   isPrintingInvoice: boolean;
   isUpdating: boolean;
+  tenantId?: string; // Added for service items fetching
   onClose: () => void;
   onModalDataChange: (modalData: BookingModalData) => void;
   onOpenQrModal: (bookingId: string) => void;
@@ -100,6 +105,7 @@ export function BookingDayDetailModal({
   isLoadingInvoicePrintLogs,
   isPrintingInvoice,
   isUpdating,
+  tenantId,
   onClose,
   onModalDataChange,
   onOpenQrModal,
@@ -108,6 +114,16 @@ export function BookingDayDetailModal({
   onSave,
 }: BookingDayDetailModalProps) {
   const vocab = useModuleVocabulary();
+  const router = useRouter();
+  const { serviceItems, isLoadingServiceItems, fetchServiceItems } = useServiceItems();
+  
+  // Fetch service items when modal opens with booking data
+  useEffect(() => {
+    if (isOpen && modalData?.bookingId && tenantId) {
+      void fetchServiceItems(modalData.bookingId, tenantId);
+    }
+  }, [isOpen, modalData?.bookingId, tenantId, fetchServiceItems]);
+  
   const completedHistory = modalData
     ? sessionHistory.filter((session) => session.status === 'completed' && session.id !== modalData.id)
     : [];
@@ -320,6 +336,21 @@ export function BookingDayDetailModal({
                     </div>
                   </div>
                 </div>
+
+                {/* Service Items Section - Commission System (Task 13) */}
+                <ServiceItemsTable
+                  items={serviceItems}
+                  isLoading={isLoadingServiceItems}
+                  showEditButton={true}
+                  onEditClick={() => {
+                    // Navigate to service items management page (Task 10)
+                    if (modalData?.bookingId) {
+                      onClose(); // Close modal first for smooth transition
+                      router.push(`/dashboard/bookings/${modalData.bookingId}/services`);
+                    }
+                  }}
+                  className="md:col-span-2"
+                />
 
                 <div className="space-y-4 md:col-span-2 sm:space-y-6">
                   <div className="rounded-[24px] border border-slate-100 bg-slate-50 p-4 sm:rounded-[32px] sm:p-6">
