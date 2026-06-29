@@ -13,11 +13,15 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { X, Loader2, ShoppingCart, Plus, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { createProductSale } from '@/modules/product-sales/actions/product-sales-actions';
+import { 
+  createProductSale, 
+  updateProductSale 
+} from '@/modules/product-sales/actions/product-sales-actions';
 import { BeautySpaSelect } from '@/components/ui/BeautySpaSelect';
 import { CommissionOverrideInput } from '@/components/bookings/CommissionOverrideInput';
 import { calculateProductSalesCommission } from '@/lib/business-rules/commission';
 import type { CommissionType } from '@/lib/business-rules/commission';
+import type { CommissionConfig } from '@/types/commission-types';
 
 interface KTV {
   id: string;
@@ -26,12 +30,25 @@ interface KTV {
 
 interface Customer {
   id: string;
-  full_name: string;
+  name_mother: string;
+  name_baby?: string | null;
 }
 
-interface CommissionDefaults {
-  type: CommissionType;
-  value: number;
+interface ProductSaleData {
+  id: string;
+  ktv_id: string;
+  customer_id: string | null;
+  product_name: string;
+  product_category: string | null;
+  product_sku: string | null;
+  quantity: number;
+  unit_price: number;
+  total_amount: number;
+  override_commission_type: CommissionType | null;
+  override_commission_value: number | null;
+  payment_method: 'cash' | 'bank_transfer' | 'zalo_pay' | 'momo' | 'card';
+  sale_date: string;
+  notes: string | null;
 }
 
 interface ProductSaleModalProps {
@@ -41,7 +58,8 @@ interface ProductSaleModalProps {
   tenantId: string;
   ktvList: KTV[];
   customers?: Customer[];
-  commissionDefaults?: CommissionDefaults;
+  commissionDefaults?: CommissionConfig;
+  initialData?: ProductSaleData;
 }
 
 interface FormData {
@@ -67,11 +85,19 @@ export function ProductSaleModal({
   tenantId,
   ktvList,
   customers = [],
-  commissionDefaults = { type: 'percentage', value: 10 },
+  commissionDefaults,
+  initialData,
 }: ProductSaleModalProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Detect edit mode
+  const isEditMode = !!initialData;
+  
+  // Extract commission defaults with fallback
+  const defaultType = commissionDefaults?.product_sales_commission_default?.type || 'percentage';
+  const defaultValue = commissionDefaults?.product_sales_commission_default?.value || 10;
 
   const [formData, setFormData] = useState<FormData>({
     ktvId: '',
@@ -89,6 +115,44 @@ export function ProductSaleModal({
     notes: '',
   });
 
+  // Pre-fill form when editing
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        ktvId: initialData.ktv_id,
+        customerId: initialData.customer_id || '',
+        productName: initialData.product_name,
+        productCategory: initialData.product_category || '',
+        productSku: initialData.product_sku || '',
+        quantity: initialData.quantity,
+        unitPrice: initialData.unit_price,
+        totalSalesAmount: initialData.total_amount,
+        overrideType: initialData.override_commission_type,
+        overrideValue: initialData.override_commission_value,
+        paymentMethod: initialData.payment_method,
+        saleDate: initialData.sale_date,
+        notes: initialData.notes || '',
+      });
+    } else {
+      // Reset to defaults when creating new
+      setFormData({
+        ktvId: '',
+        customerId: '',
+        productName: '',
+        productCategory: '',
+        productSku: '',
+        quantity: 1,
+        unitPrice: 0,
+        totalSalesAmount: 0,
+        overrideType: null,
+        overrideValue: null,
+        paymentMethod: 'cash',
+        saleDate: new Date().toISOString().split('T')[0],
+        notes: '',
+      });
+    }
+  }, [initialData]);
+
   // Calculate total sales amount when quantity or unit price changes
   useEffect(() => {
     const total = formData.quantity * formData.unitPrice;
@@ -100,8 +164,8 @@ export function ProductSaleModal({
     totalSalesAmount: formData.totalSalesAmount,
     overrideType: formData.overrideType,
     overrideValue: formData.overrideValue,
-    defaultType: commissionDefaults.type,
-    defaultValue: commissionDefaults.value,
+    defaultType: defaultType,
+    defaultValue: defaultValue,
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -110,45 +174,69 @@ export function ProductSaleModal({
     setError(null);
 
     try {
-      const result = await createProductSale({
-        tenantId,
-        ktvId: formData.ktvId,
-        customerId: formData.customerId || null,
-        productName: formData.productName,
-        productCategory: formData.productCategory || null,
-        productSku: formData.productSku || null,
-        quantity: formData.quantity,
-        unitPrice: formData.unitPrice,
-        totalSalesAmount: formData.totalSalesAmount,
-        overrideCommissionType: formData.overrideType,
-        overrideCommissionValue: formData.overrideValue,
-        paymentMethod: formData.paymentMethod,
-        saleDate: formData.saleDate,
-        notes: formData.notes || null,
-      });
+      let result;
+      
+      if (isEditMode && initialData) {
+        // Update existing product sale
+        result = await updateProductSale(initialData.id, {
+          ktvId: formData.ktvId,
+          customerId: formData.customerId || null,
+          productName: formData.productName,
+          productCategory: formData.productCategory || null,
+          productSku: formData.productSku || null,
+          quantity: formData.quantity,
+          unitPrice: formData.unitPrice,
+          overrideCommissionType: formData.overrideType,
+          overrideCommissionValue: formData.overrideValue,
+          paymentMethod: formData.paymentMethod,
+          saleDate: formData.saleDate,
+          notes: formData.notes || null,
+        });
+      } else {
+        // Create new product sale
+        result = await createProductSale({
+          tenantId,
+          ktvId: formData.ktvId,
+          customerId: formData.customerId || null,
+          productName: formData.productName,
+          productCategory: formData.productCategory || null,
+          productSku: formData.productSku || null,
+          quantity: formData.quantity,
+          unitPrice: formData.unitPrice,
+          totalSalesAmount: formData.totalSalesAmount,
+          overrideCommissionType: formData.overrideType,
+          overrideCommissionValue: formData.overrideValue,
+          paymentMethod: formData.paymentMethod,
+          saleDate: formData.saleDate,
+          notes: formData.notes || null,
+        });
+      }
 
       if (result.success) {
         router.refresh();
         onSuccess?.();
         onClose();
-        // Reset form
-        setFormData({
-          ktvId: '',
-          customerId: '',
-          productName: '',
-          productCategory: '',
-          productSku: '',
-          quantity: 1,
-          unitPrice: 0,
-          totalSalesAmount: 0,
-          overrideType: null,
-          overrideValue: null,
-          paymentMethod: 'cash',
-          saleDate: new Date().toISOString().split('T')[0],
-          notes: '',
-        });
+        
+        // Reset form only when creating (not editing)
+        if (!isEditMode) {
+          setFormData({
+            ktvId: '',
+            customerId: '',
+            productName: '',
+            productCategory: '',
+            productSku: '',
+            quantity: 1,
+            unitPrice: 0,
+            totalSalesAmount: 0,
+            overrideType: null,
+            overrideValue: null,
+            paymentMethod: 'cash',
+            saleDate: new Date().toISOString().split('T')[0],
+            notes: '',
+          });
+        }
       } else {
-        setError(result.error || 'Không thể lưu bán hàng');
+        setError(result.error || `Không thể ${isEditMode ? 'cập nhật' : 'lưu'} bán hàng`);
       }
     } catch (err) {
       console.error('Error creating product sale:', err);
@@ -183,8 +271,12 @@ export function ProductSaleModal({
                 <ShoppingCart className="h-5 w-5 text-emerald-600" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-slate-900">Ghi nhận bán hàng</h2>
-                <p className="text-xs text-slate-500">Thêm giao dịch bán sản phẩm</p>
+                <h2 className="text-lg font-bold text-slate-900">
+                  {isEditMode ? 'Chỉnh sửa bán hàng' : 'Ghi nhận bán hàng'}
+                </h2>
+                <p className="text-xs text-slate-500">
+                  {isEditMode ? 'Cập nhật thông tin giao dịch' : 'Thêm giao dịch bán sản phẩm'}
+                </p>
               </div>
             </div>
             <button
@@ -251,7 +343,9 @@ export function ProductSaleModal({
                       { value: '', label: '-- Chọn khách hàng --' },
                       ...customers.map((customer) => ({
                         value: customer.id,
-                        label: customer.full_name,
+                        label: customer.name_baby 
+                          ? `${customer.name_mother} (${customer.name_baby})`
+                          : customer.name_mother,
                       })),
                     ]}
                     value={formData.customerId}
@@ -431,9 +525,9 @@ export function ProductSaleModal({
                   {formData.overrideType
                     ? ' Đang sử dụng cài đặt tùy chỉnh.'
                     : ` Đang sử dụng mặc định hệ thống (${
-                        commissionDefaults.type === 'fixed'
-                          ? `${commissionDefaults.value.toLocaleString('vi-VN')}đ`
-                          : `${commissionDefaults.value}%`
+                        defaultType === 'fixed'
+                          ? `${defaultValue.toLocaleString('vi-VN')}đ`
+                          : `${defaultValue}%`
                       }).`}
                 </p>
               </div>
@@ -523,12 +617,12 @@ export function ProductSaleModal({
                 {isSubmitting ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Đang lưu...
+                    {isEditMode ? 'Đang cập nhật...' : 'Đang lưu...'}
                   </>
                 ) : (
                   <>
                     <Plus className="h-4 w-4" />
-                    Lưu bán hàng
+                    {isEditMode ? 'Cập nhật' : 'Lưu bán hàng'}
                   </>
                 )}
               </button>
