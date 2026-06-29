@@ -48,6 +48,8 @@ export default function StaffManagementTab() {
     full_name: "",
     email: "",
     role: "ktv",
+    position_tier: null as 'junior' | 'senior' | 'lead' | null,
+    hire_date: null as string | null,
   });
 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -144,9 +146,20 @@ export default function StaffManagementTab() {
       return;
     }
 
+    // Validate hire date not in future
+    if (editingStaff.hire_date && new Date(editingStaff.hire_date) > new Date()) {
+      toast.error("Ngày vào làm không thể là ngày trong tương lai");
+      return;
+    }
+
     setIsUpdating(true);
     try {
-      const result = await updateUser(editingStaff.id, editingStaff);
+      const result = await updateUser(editingStaff.id, {
+        full_name: editingStaff.full_name,
+        role: editingStaff.role,
+        position_tier: editingStaff.position_tier,
+        hire_date: editingStaff.hire_date,
+      });
       if (result.error) {
         toast.error("Lỗi: " + result.error);
       } else {
@@ -334,6 +347,8 @@ export default function StaffManagementTab() {
                               full_name: user.full_name,
                               email: user.email,
                               role: user.role || "ktv",
+                              position_tier: (user as any).position_tier || null,
+                              hire_date: (user as any).hire_date || null,
                             });
                             setIsEditModalOpen(true);
                           }}
@@ -576,6 +591,62 @@ export default function StaffManagementTab() {
                     placeholder="Chọn vai trò..."
                   />
                 </div>
+
+                {/* Position Tier - Only for KTV roles */}
+                {(editingStaff.role === 'ktv' || editingStaff.role === 'ktv_lead') && (
+                  <div className="space-y-4">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                      <Zap className="w-3.5 h-3.5" /> Cấp bậc (Position Tier)
+                    </label>
+                    <PremiumSelect
+                      value={editingStaff.position_tier || ''}
+                      onChange={(val) => setEditingStaff({ ...editingStaff, position_tier: val as 'junior' | 'senior' | 'lead' | null })}
+                      options={[
+                        { value: '', label: 'Chưa xác định' },
+                        { value: 'junior', label: 'Junior (1.0x - Cơ bản)' },
+                        { value: 'senior', label: 'Senior (1.2x - Cao hơn 20%)' },
+                        { value: 'lead', label: 'Lead (1.5x - Cao hơn 50%)' },
+                      ]}
+                      placeholder="Chọn cấp bậc..."
+                    />
+                    <p className="text-[10px] text-slate-400 italic ml-2">
+                      Cấp bậc ảnh hưởng đến hệ số hoa hồng trong tính lương
+                    </p>
+                  </div>
+                )}
+
+                {/* Hire Date - Only for KTV roles */}
+                {(editingStaff.role === 'ktv' || editingStaff.role === 'ktv_lead') && (
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                      <Star className="w-3.5 h-3.5" /> Ngày vào làm
+                    </label>
+                    <input
+                      type="date"
+                      value={editingStaff.hire_date || ''}
+                      onChange={(e) => setEditingStaff({ ...editingStaff, hire_date: e.target.value || null })}
+                      max={new Date().toISOString().split('T')[0]}
+                      className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none transition-all font-bold text-slate-700"
+                    />
+                    {editingStaff.hire_date && (() => {
+                      const years = Math.floor((new Date().getTime() - new Date(editingStaff.hire_date).getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+                      const bonusRate = years === 0 ? 0 : years < 1 ? 0 : years < 3 ? 5 : years < 5 ? 10 : 15;
+                      return (
+                        <div className="flex items-center gap-2 ml-2">
+                          <span className="text-xs font-bold text-emerald-600">
+                            {years} năm thâm niên
+                          </span>
+                          <span className="px-2 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-black">
+                            +{bonusRate}% thưởng thâm niên
+                          </span>
+                        </div>
+                      );
+                    })()}
+                    <p className="text-[10px] text-slate-400 italic ml-2">
+                      Thâm niên ảnh hưởng đến thưởng theo năm công tác
+                    </p>
+                  </div>
+                )}
 
                 <div className="pt-4">
                   <button
