@@ -583,7 +583,15 @@ export async function updateUserStatus(id: string, status: 'active' | 'inactive'
   return { success: true };
 }
 
-export async function updateUser(id: string, formData: { full_name: string; role: string }) {
+export async function updateUser(
+  id: string, 
+  formData: { 
+    full_name: string; 
+    role: string;
+    position_tier?: 'junior' | 'senior' | 'lead' | null;
+    hire_date?: string | null;
+  }
+) {
   const supabase = await createClient();
   const currentUser = await getCurrentUser();
   const tenantId = currentUser?.tenant_id;
@@ -593,21 +601,31 @@ export async function updateUser(id: string, formData: { full_name: string; role
 
   const { data: previousUser, error: snapshotError } = await supabase
     .from('users')
-    .select('full_name, role')
+    .select('full_name, role, position_tier, hire_date')
     .eq('id', id)
     .eq('tenant_id', tenantId)
-    .single();
+    .single() as { data: any; error: any };
 
   if (snapshotError || !previousUser) {
     return { error: snapshotError?.message || 'User not found' };
   }
   
+  const updatePayload: UserUpdate = {
+    full_name: formData.full_name,
+    role: formData.role,
+  };
+
+  // Only update position_tier and hire_date if provided (use type assertion for new fields)
+  if (formData.position_tier !== undefined) {
+    (updatePayload as any).position_tier = formData.position_tier;
+  }
+  if (formData.hire_date !== undefined) {
+    (updatePayload as any).hire_date = formData.hire_date;
+  }
+
   const { error } = await supabase
     .from('users')
-    .update({
-      full_name: formData.full_name,
-      role: formData.role
-    })
+    .update(updatePayload)
     .eq('id', id)
     .eq('tenant_id', tenantId);
 
@@ -622,19 +640,51 @@ export async function updateUser(id: string, formData: { full_name: string; role
       action: 'UPDATE',
       table_name: 'users',
       record_id: id,
-      old_data: { full_name: previousUser.full_name, role: previousUser.role },
-      new_data: { full_name: formData.full_name, role: formData.role }
+      old_data: { 
+        full_name: previousUser?.full_name, 
+        role: previousUser?.role,
+        position_tier: previousUser?.position_tier,
+        hire_date: previousUser?.hire_date,
+      },
+      new_data: updatePayload,
     });
   } catch (auditError: unknown) {
     const rollbackError = await rollbackUserUpdate(supabase, id, {
-      full_name: previousUser.full_name,
-      role: previousUser.role,
-    }, tenantId);
+      full_name: previousUser?.full_name,
+      role: previousUser?.role,
+    } as any, tenantId);
     const rollbackNote = rollbackError ? `; rollback failed: ${rollbackError}` : '';
     return { error: `Failed to record user update audit log: ${getErrorMessage(auditError)}${rollbackNote}` };
   }
 
   await safeRevalidatePath('/dashboard/settings');
+  
+  // Trigger salary recalculation if position_tier or hire_date changed for KTV roles
+  const isKTVRole = formData.role === 'ktv' || formData.role === 'ktv_lead';
+  const positionChanged = formData.position_tier !== undefined && formData.position_tier !== previousUser?.position_tier;
+  const hireDateChanged = formData.hire_date !== undefined && formData.hire_date !== previousUser?.hire_date;
+  
+  if (isKTVRole && (positionChanged || hireDateChanged)) {
+    try {
+      // Get current month
+      const now = new Date();
+      const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      
+      // Recalculate salary for current month
+      await recalculateAndSaveSalaryRecordEngine(
+        supabase,
+        id,
+        tenantId,
+        currentMonth
+      );
+      
+      console.log(`[updateUser] Recalculated salary for user ${id} due to position/hire date change`);
+    } catch (recalcError) {
+      // Log error but don't fail the user update
+      console.error('[updateUser] Failed to recalculate salary:', recalcError);
+    }
+  }
+  
   return { success: true };
 }
 
