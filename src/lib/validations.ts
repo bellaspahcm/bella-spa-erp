@@ -39,3 +39,19 @@ export const bookingSchema = z.object({
   preferred_time: z.string().optional(),
   serviceItems: z.array(serviceItemSchema).optional(),
 });
+
+export const productSaleSchema = z.object({
+  ktvId: z.string().uuid('KTV ID phải là UUID hợp lệ'),
+  customerId: z.string().uuid('Customer ID phải là UUID hợp lệ').optional(),
+  productName: z.string().min(1, 'Tên sản phẩm không được để trống'),
+  productCategory: z.string().optional(),
+  productSku: z.string().optional(),
+  quantity: z.coerce.number().positive('Số lượng phải > 0'),
+  unitPrice: z.coerce.number().min(0, 'Đơn giá phải >= 0'),
+  totalSalesAmount: z.coerce.number().min(0, 'Tổng tiền phải >= 0'),
+  overrideCommissionType: z.enum(['fixed', 'percentage']).optional(),
+  overrideCommissionValue: z.coerce.number().min(0).optional(),
+  paymentMethod: z.enum(['cash', 'bank_transfer', 'zalo_pay', 'momo', 'card']),
+  saleDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Ngày bán phải có định dạng YYYY-MM-DD'),
+  notes: z.string().optional(),
+});
