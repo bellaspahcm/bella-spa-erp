@@ -1,16 +1,16 @@
-# 📋 Commission System - Remaining Tasks (26/44)
+# 📋 Commission System - Remaining Tasks (24/44)
 
 **Project:** Bella ERP - Advanced Commission System  
-**Status:** MVP Complete + Service Items UI + Product Sales Full CRUD (18/44 done)  
-**Remaining:** 26 tasks to complete full system  
-**Estimated Time:** 10-12 developer-days
+**Status:** MVP Complete + Service Items UI + Product Sales Full CRUD + Position & Seniority UI (20/44 done)  
+**Remaining:** 24 tasks to complete full system  
+**Estimated Time:** 9-10 developer-days
 
 ---
 
 ## 📊 Overview by Phase
 
 ```
-Phase 6: Implementation (UI)     [████░░░░] 13/44 remaining (Tasks 10-17 ✅)
+Phase 6: Implementation (UI)     [████░░░░] 11/44 remaining (Tasks 10-19 ✅)
 Phase 7: Integration             [░░░░░░░░]  6/44 remaining
 Phase 8: Testing                 [░░░░░░░░]  3/44 remaining
 Phase 9: Documentation           [░░░░░░░░]  3/44 remaining
