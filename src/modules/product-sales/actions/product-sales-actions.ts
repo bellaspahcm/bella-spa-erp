@@ -92,25 +92,15 @@ export async function createProductSale(
   try {
     const supabase = await createClient();
 
-    // TODO: Uncomment after running migration 20260622164000_create_product_sales.sql
-    // This function will work once product_sales table exists in database
-    
-    console.warn('[createProductSale] Migration not run yet. Table product_sales does not exist.');
-    return {
-      success: false,
-      error: 'Chức năng này sẽ khả dụng sau khi chạy migration. Table product_sales chưa tồn tại.',
-    };
-
-    /* IMPLEMENTATION - Uncomment after migration:
-    
     // 1. Get tenant commission config for defaults
     const { data: tenant, error: tenantError } = await supabase
       .from('tenants')
-      .select('commission_config')
+      .select('id, metadata')
       .eq('id', input.tenantId)
       .single();
 
-    const commissionConfig = tenant?.commission_config as {
+    // commission_config may be in metadata or a separate column (depending on migration state)
+    const commissionConfig = ((tenant as any)?.commission_config || (tenant as any)?.metadata?.commission_config) as {
       product_sales_commission_default?: {
         type: CommissionType;
         value: number;
@@ -150,7 +140,8 @@ export async function createProductSale(
     };
 
     // 4. Insert product sale
-    const { data: productSale, error: insertError } = await supabase
+    // Note: Using type assertion because database types not regenerated yet
+    const { data: productSale, error: insertError } = await (supabase as any)
       .from('product_sales')
       .insert(insertData)
       .select('id, calculated_commission')
@@ -176,8 +167,6 @@ export async function createProductSale(
         calculatedCommission: productSale.calculated_commission,
       },
     };
-    
-    */
   } catch (error) {
     console.error('Unexpected error in createProductSale:', error);
     return {
@@ -198,18 +187,11 @@ export async function updateProductSale(
   id: string,
   input: Partial<CreateProductSaleInput>
 ): Promise<ActionResult> {
-  console.warn('[updateProductSale] Migration not run yet. Table product_sales does not exist.');
-  return {
-    success: false,
-    error: 'Chức năng này sẽ khả dụng sau khi chạy migration.',
-  };
-  
-  /* IMPLEMENTATION - Uncomment after migration:
   try {
     const supabase = await createClient();
 
     // Get existing record
-    const { data: existing, error: fetchError } = await supabase
+    const { data: existing, error: fetchError } = await (supabase as any)
       .from('product_sales')
       .select('*')
       .eq('id', id)
@@ -230,10 +212,22 @@ export async function updateProductSale(
       updated.total_sales_amount = updated.quantity * updated.unit_price;
     }
 
-    // TODO: Get tenant config when migration is run
-    // For now use system defaults
-    const defaultType: CommissionType = 'percentage';
-    const defaultValue = 10;
+    // Get tenant config
+    const { data: tenant } = await supabase
+      .from('tenants')
+      .select('id, metadata')
+      .eq('id', existing.tenant_id)
+      .single();
+
+    const commissionConfig = ((tenant as any)?.commission_config || (tenant as any)?.metadata?.commission_config) as {
+      product_sales_commission_default?: {
+        type: CommissionType;
+        value: number;
+      };
+    } | null;
+
+    const defaultType = commissionConfig?.product_sales_commission_default?.type;
+    const defaultValue = commissionConfig?.product_sales_commission_default?.value;
 
     // Recalculate commission
     const calculatedCommission = calculateProductSalesCommission({
@@ -245,7 +239,7 @@ export async function updateProductSale(
     });
 
     // Update record
-    const { error: updateError } = await supabase
+    const { error: updateError } = await (supabase as any)
       .from('product_sales')
       .update({
         product_name: updated.product_name,
@@ -280,7 +274,6 @@ export async function updateProductSale(
       error: 'Lỗi hệ thống',
     };
   }
-  */
 }
 
 /**
@@ -290,8 +283,34 @@ export async function updateProductSale(
  * @returns Action result
  */
 export async function deleteProductSale(id: string): Promise<ActionResult> {
-  console.warn('[deleteProductSale] Migration not run yet.');
-  return { success: false, error: 'Chức năng này sẽ khả dụng sau khi chạy migration.' };
+  try {
+    const supabase = await createClient();
+
+    // Soft delete by setting status to 'cancelled'
+    const { error } = await (supabase as any)
+      .from('product_sales')
+      .update({
+        status: 'cancelled',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting product sale:', error);
+      return {
+        success: false,
+        error: 'Không thể xóa bán hàng',
+      };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Unexpected error in deleteProductSale:', error);
+    return {
+      success: false,
+      error: 'Lỗi hệ thống',
+    };
+  }
 }
 
 export async function getProductSales(filters?: {
@@ -304,11 +323,94 @@ export async function getProductSales(filters?: {
   limit?: number;
   offset?: number;
 }): Promise<ActionResult<{ sales: unknown[]; total: number }>> {
-  console.warn('[getProductSales] Migration not run yet.');
-  return { success: false, error: 'Chức năng này sẽ khả dụng sau khi chạy migration.' };
+  try {
+    const supabase = await createClient();
+
+    let query = (supabase as any)
+      .from('product_sales')
+      .select('*, users!inner(full_name, role), customers(name)', { count: 'exact' });
+
+    if (filters?.tenantId) {
+      query = query.eq('tenant_id', filters.tenantId);
+    }
+    if (filters?.ktvId) {
+      query = query.eq('ktv_id', filters.ktvId);
+    }
+    if (filters?.customerId) {
+      query = query.eq('customer_id', filters.customerId);
+    }
+    if (filters?.status) {
+      query = query.eq('status', filters.status);
+    }
+    if (filters?.startDate) {
+      query = query.gte('sale_date', filters.startDate);
+    }
+    if (filters?.endDate) {
+      query = query.lte('sale_date', filters.endDate);
+    }
+
+    query = query.order('sale_date', { ascending: false });
+
+    if (filters?.limit) {
+      query = query.limit(filters.limit);
+    }
+    if (filters?.offset) {
+      query = query.range(filters.offset, filters.offset + (filters.limit || 20) - 1);
+    }
+
+    const { data, error, count } = await query;
+
+    if (error) {
+      console.error('Error fetching product sales:', error);
+      return {
+        success: false,
+        error: 'Không thể lấy danh sách bán hàng',
+      };
+    }
+
+    return {
+      success: true,
+      data: {
+        sales: data || [],
+        total: count || 0,
+      },
+    };
+  } catch (error) {
+    console.error('Unexpected error in getProductSales:', error);
+    return {
+      success: false,
+      error: 'Lỗi hệ thống',
+    };
+  }
 }
 
 export async function getProductSaleById(id: string): Promise<ActionResult<unknown>> {
-  console.warn('[getProductSaleById] Migration not run yet.');
-  return { success: false, error: 'Chức năng này sẽ khả dụng sau khi chạy migration.' };
+  try {
+    const supabase = await createClient();
+
+    const { data, error } = await (supabase as any)
+      .from('product_sales')
+      .select('*, users!inner(full_name, role), customers(name)')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      console.error('Error fetching product sale:', error);
+      return {
+        success: false,
+        error: 'Không tìm thấy bán hàng',
+      };
+    }
+
+    return {
+      success: true,
+      data,
+    };
+  } catch (error) {
+    console.error('Unexpected error in getProductSaleById:', error);
+    return {
+      success: false,
+      error: 'Lỗi hệ thống',
+    };
+  }
 }
