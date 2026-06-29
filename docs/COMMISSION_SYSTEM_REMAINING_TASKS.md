@@ -1,16 +1,16 @@
-# 📋 Commission System - Remaining Tasks (29/44)
+# 📋 Commission System - Remaining Tasks (28/44)
 
 **Project:** Bella ERP - Advanced Commission System  
-**Status:** MVP Complete + Service Items UI + Product Sales Form (15/44 done)  
-**Remaining:** 29 tasks to complete full system  
-**Estimated Time:** 12-14 developer-days
+**Status:** MVP Complete + Service Items UI + Product Sales Form + ProductSaleRow (16/44 done)  
+**Remaining:** 28 tasks to complete full system  
+**Estimated Time:** 11-13 developer-days
 
 ---
 
 ## 📊 Overview by Phase
 
 ```
-Phase 6: Implementation (UI)     [████░░░░] 16/44 remaining (Tasks 10-14 ✅)
+Phase 6: Implementation (UI)     [████░░░░] 15/44 remaining (Tasks 10-15 ✅)
 Phase 7: Integration             [░░░░░░░░]  6/44 remaining
 Phase 8: Testing                 [░░░░░░░░]  3/44 remaining
 Phase 9: Documentation           [░░░░░░░░]  3/44 remaining
@@ -328,29 +328,49 @@ if (validatedData.serviceItems && validatedData.serviceItems.length > 0) {
 
 ---
 
-#### ✅ Task 15: Create ProductSaleRow Component
+#### ✅ Task 15: Create ProductSaleRow Component [COMPLETED]
 **Priority:** Medium  
 **Estimate:** 1.5 hours  
+**Actual:** ~2 hours  
+**Status:** ✅ COMPLETE (2026-06-22)  
 **Dependencies:** Task 14
 
 **Acceptance Criteria:**
-- [ ] Reusable row component for product sales list
-- [ ] Display: Product name, quantity, amount, commission, date
-- [ ] Actions: Edit, Delete
-- [ ] Status badge (completed/cancelled/refunded)
-- [ ] Click row to expand details
-- [ ] Hover effects
-- [ ] Mobile responsive
+- [✅] Reusable row component for product sales list
+- [✅] Display: Product name, quantity, amount, commission, date
+- [✅] Actions: Edit, Delete
+- [✅] Status badge (completed/cancelled/refunded)
+- [✅] Click row to expand details
+- [✅] Hover effects
+- [✅] Mobile responsive
 
-**Files to Create:**
-- `src/components/product-sales/ProductSaleRow.tsx`
+**Files Created:**
+- `src/components/product-sales/ProductSaleRow.tsx` (470 lines)
+- `docs/TASK_15_TESTING_CHECKLIST.md` (72 test items)
+- `docs/TASK_15_SUMMARY.md` (implementation summary)
+
+**Component Features:**
+- Desktop: 7-column grid layout
+- Mobile: Stacked card layout
+- Expandable details with framer-motion animation
+- 4 status badges (completed/pending/cancelled/refunded)
+- 5 payment method labels
+- Commission override indicator
+- Edit/Delete action buttons
+- Disabled state support
+- Full accessibility (ARIA labels, keyboard nav)
+- Vietnamese number formatting
+
+**Build Status:** ✅ 0 TypeScript errors, 75/75 pages generated
+
+**Testing:** See `TASK_15_TESTING_CHECKLIST.md` for 14 sections, 72 test items
 
 ---
 
 #### ✅ Task 16: Product Sales CRUD Actions
 **Priority:** High  
 **Estimate:** 2 hours  
-**Dependencies:** Task 14
+**Dependencies:** Task 15
 
 **Acceptance Criteria:**
 - [ ] `createProductSale(data)` - Insert with commission calculation
