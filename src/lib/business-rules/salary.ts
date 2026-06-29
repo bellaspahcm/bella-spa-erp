@@ -41,6 +41,12 @@ export type SalaryTotalInput = {
   kpiBonus?: number | string | null;
   deductions?: number | string | null;
   advances?: number | string | null;
+  // Advanced commission system components (Beauty Spa)
+  serviceCommission?: number | string | null;
+  productSalesCommission?: number | string | null;
+  positionBonus?: number | string | null;
+  seniorityBonus?: number | string | null;
+  manualAdjustments?: number | string | null;
 };
 
 export type SalaryRecordFinancialLike = {
@@ -781,17 +787,27 @@ export function calculateKpiBonus(input: {
  * @returns Total salary in VND (minimum: 0, never negative)
  * 
  * @remarks
- * **Formula:**
+ * **Extended Formula (with Advanced Commission System):**
  * ```typescript
- * totalSalary = baseSalary + sessionBonus + ratingBonus + kpiBonus - deductions - advances
+ * totalSalary = baseSalary 
+ *             + sessionBonus + ratingBonus + kpiBonus 
+ *             + serviceCommission + productSalesCommission 
+ *             + positionBonus + seniorityBonus 
+ *             + manualAdjustments 
+ *             - deductions - advances
  * totalSalary = Math.max(0, totalSalary) // Never negative
  * ```
  * 
  * **Component Details:**
  * - `baseSalary`: Pro-rated from `(base_salary / 26) * actualDays`
- * - `sessionBonus`: Sum of all session commissions
+ * - `sessionBonus`: Sum of all session commissions (legacy Baby Care)
  * - `ratingBonus`: Weighted sessions × rating tier bonus
  * - `kpiBonus`: Fixed amount if target met
+ * - `serviceCommission`: Beauty Spa service-level commissions (new)
+ * - `productSalesCommission`: Beauty Spa product sales commissions (new)
+ * - `positionBonus`: Position tier multiplier bonus (new)
+ * - `seniorityBonus`: Years of service bonus (new)
+ * - `manualAdjustments`: Net admin bonuses/deductions (new, can be negative)
  * - `deductions`: Late penalties + absent penalties + disciplinary fines
  * - `advances`: Pre-paid amounts to be subtracted
  * 
@@ -802,6 +818,7 @@ export function calculateKpiBonus(input: {
  * 
  * @example
  * ```typescript
+ * // Legacy Baby Care formula (backward compatible)
  * const totalSalary = calculateSalaryTotal({
  *   baseSalary: 6000000,
  *   sessionBonus: 1500000,
@@ -812,6 +829,26 @@ export function calculateKpiBonus(input: {
  * });
  * // totalSalary === 8750000 VND
  * // (6M + 1.5M + 450k + 1M - 200k - 0)
+ * ```
+ * 
+ * @example
+ * ```typescript
+ * // Extended Beauty Spa formula with commission components
+ * const totalSalary = calculateSalaryTotal({
+ *   baseSalary: 6000000,
+ *   sessionBonus: 0, // Beauty Spa uses serviceCommission instead
+ *   ratingBonus: 0,
+ *   kpiBonus: 1000000,
+ *   serviceCommission: 2000000,
+ *   productSalesCommission: 500000,
+ *   positionBonus: 400000,
+ *   seniorityBonus: 600000,
+ *   manualAdjustments: 300000,
+ *   deductions: 200000,
+ *   advances: 0
+ * });
+ * // totalSalary === 10600000 VND
+ * // (6M + 0 + 0 + 1M + 2M + 500k + 400k + 600k + 300k - 200k - 0)
  * ```
  * 
  * @example
@@ -837,7 +874,12 @@ export function calculateSalaryTotal(input: SalaryTotalInput) {
     asFiniteNumber(input.baseSalary) +
       asFiniteNumber(input.sessionBonus) +
       asFiniteNumber(input.ratingBonus) +
-      asFiniteNumber(input.kpiBonus) -
+      asFiniteNumber(input.kpiBonus) +
+      asFiniteNumber(input.serviceCommission) +
+      asFiniteNumber(input.productSalesCommission) +
+      asFiniteNumber(input.positionBonus) +
+      asFiniteNumber(input.seniorityBonus) +
+      asFiniteNumber(input.manualAdjustments) -
       asFiniteNumber(input.deductions) -
       asFiniteNumber(input.advances),
   );

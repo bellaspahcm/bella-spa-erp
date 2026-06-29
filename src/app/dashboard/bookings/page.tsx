@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { getLocalDateString } from '@bella/shared';;
 import { formatBookingCustomerLabel, getTenantSpecialtyOptions } from '@/lib/business-rules/tenant-module-presentation';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
+import { useTenantContext } from '@/core/hooks/useTenantContext';
 
 import VietQRPaymentModal from '@/components/features/VietQRPaymentModal';
 import { BookingsPageHeader, type BookingsViewMode } from './components/BookingsPageHeader';
@@ -30,6 +31,7 @@ function BookingsContent() {
   const searchParams = useSearchParams();
   const customerName = searchParams.get('name');
   const surface = searchParams.get('surface') === 'pos' ? 'pos' : 'schedule';
+  const tenantContext = useTenantContext();
 
   const [view, setView] = useState<BookingsViewMode>('timeline');
   const [ktvSpecialty, setKtvSpecialty] = useState<KtvSpecialty>('all');
@@ -327,6 +329,7 @@ function BookingsContent() {
         isLoadingInvoicePrintLogs={isLoadingInvoicePrintLogs}
         isPrintingInvoice={isPrintingInvoice}
         isUpdating={isUpdating}
+        tenantId={tenantContext?.tenantId}
         onClose={() => setShowDetailModal(false)}
         onModalDataChange={setModalData}
         onOpenQrModal={handleOpenQrModal}

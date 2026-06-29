@@ -160,12 +160,29 @@ export async function GET(_request: NextRequest) {
  * @returns TenantContext object
  */
 function transformTenantRowToContext(tenant: TenantRow): TenantContext {
-  // Extract enabled modules from database (stored as text[] or JSON)
-  const enabledModules = Array.isArray(tenant.enabled_modules)
-    ? tenant.enabled_modules
-    : tenant.enabled_modules
-    ? [tenant.enabled_modules as string]
-    : ['spa']; // Default to spa module for backward compatibility
+  // Extract enabled modules from database (stored as JSONB object like {beauty_spa: true, babycare: false})
+  let enabledModules: string[] = ['spa']; // Default fallback
+  
+  if (tenant.enabled_modules) {
+    if (Array.isArray(tenant.enabled_modules)) {
+      // Already an array of strings - need to filter out non-strings
+      enabledModules = tenant.enabled_modules.filter((item): item is string => typeof item === 'string');
+    } else if (typeof tenant.enabled_modules === 'object' && tenant.enabled_modules !== null) {
+      // JSONB object format: {beauty_spa: true, babycare: false}
+      // Filter to get only enabled modules
+      enabledModules = Object.entries(tenant.enabled_modules)
+        .filter(([_key, value]) => value === true)
+        .map(([key, _value]) => key);
+      
+      // If no modules enabled, fallback to spa
+      if (enabledModules.length === 0) {
+        enabledModules = ['spa'];
+      }
+    } else if (typeof tenant.enabled_modules === 'string') {
+      // Single module as string
+      enabledModules = [tenant.enabled_modules];
+    }
+  }
 
   // Extract subscription plan (with fallback to 'basic')
   const subscriptionPlan = (tenant.subscription_tier as TenantContext['subscriptionPlan']) || 'basic';

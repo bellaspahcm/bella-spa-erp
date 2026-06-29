@@ -44,6 +44,7 @@ import SecurityTab from "./components/SecurityTab";
 import AccountingConfigTab from "./components/AccountingConfigTab";
 import PromotionsTab from "./components/PromotionsTab";
 import MetaAdsSettingsTab from "./components/MetaAdsSettingsTab";
+import CommissionSettingsTab from "./components/CommissionSettingsTab";
 
 const TABS = [
   { id: "general", label: "Thông tin chung", icon: Store },
@@ -51,6 +52,7 @@ const TABS = [
   { id: "hq-billing", label: "Hóa đơn HQ (Royalty)", icon: Receipt },
   { id: "meta-ads", label: "Meta Ads", icon: Megaphone },
   { id: "salary", label: "Lương & Thưởng", icon: Coins },
+  { id: "commission", label: "Hoa hồng (Beauty Spa)", icon: Sparkles },
   { id: "accounting", label: "Chế độ Kế toán", icon: Calculator },
   { id: "staff", label: "Nhân sự & Quyền", icon: Shield },
   { id: "permissions", label: "Phân quyền", icon: Lock },
@@ -283,6 +285,10 @@ function SettingsContent() {
                   generalSettings={generalSettings}
                   setGeneralSettings={setGeneralSettings}
                 />
+              )}
+
+              {activeTab === "commission" && (
+                <CommissionSettingsTab />
               )}
 
               {activeTab === "accounting" && (

@@ -21,8 +21,17 @@ Moi phan he nganh moi phai duoc phat trien theo vong doi trong tai lieu nay. Kho
 - co regression test de chung minh Bella Spa hien tai khong bi anh huong khong
 - thay doi toi uu hieu nang co dang tac dong vao route core dung chung hay chi module rieng
 - static analysis/security gate co canh bao runtime that hay chi artifact docs/archive/test, va exception neu co da duoc ghi ly do chua
+- **THEME COLORS co duoc override dung cho module moi hay van hien thi mau cu** (xem `docs/MODULE_THEME_COLOR_OVERRIDE_GUIDE.md`)
 
 Neu mot thay doi tao them nganh moi ma khong cap nhat playbook nay hoac artifact lien quan, task chua duoc xem la hoan tat.
+
+## Tai Lieu Lien Quan
+
+- **Theme Color Override Guide**: `docs/MODULE_THEME_COLOR_OVERRIDE_GUIDE.md` - BẮT BUỘC đọc khi thêm module mới
+  - Hướng dẫn fix API parse JSONB
+  - Hướng dẫn theme detection logic
+  - Comprehensive CSS overrides template
+  - Common pitfalls và solutions
 
 ## Nguyen Tac Kinh Doanh Da Rut Ra Tu Beauty Spa
 

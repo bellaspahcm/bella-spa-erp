@@ -18,6 +18,14 @@ import {
   hasSalaryFinancialRecalculationOverrides,
   isDraftSalaryRecord,
 } from '@/lib/business-rules/salary';
+import {
+  calculateServiceCommission,
+  calculateProductSalesCommission,
+  calculatePositionBonus,
+  calculateSeniorityBonus,
+  aggregateManualAdjustments,
+  type CommissionConfig,
+} from '@/lib/business-rules/commission';
 
 interface KtvUserDataAdmin {
   id: string;
@@ -68,6 +76,12 @@ export interface SalaryRecordDbAdmin {
   notes?: string | null;
   tenant_id: string;
   users?: { full_name: string | null } | null;
+  // Advanced commission system columns (Beauty Spa)
+  service_commission?: number | null;
+  product_sales_commission?: number | null;
+  position_bonus?: number | null;
+  seniority_bonus?: number | null;
+  manual_adjustments?: number | null;
 }
 
 export interface SalaryRecalculationOverrides {
@@ -172,6 +186,27 @@ export async function recalculateAndSaveSalaryRecordEngine(
   if (ktvError) throw ktvError;
   const ktv = ktvData as KtvUserDataAdmin | null;
 
+  // Try to get commission-related fields (position_tier, hire_date) if they exist
+  // These are added by migrations but may not be present yet
+  let positionTier: 'junior' | 'senior' | 'lead' = 'junior';
+  let hireDate: string | null = null;
+  
+  try {
+    const { data: commissionData } = await supabase
+      .from('users')
+      .select('position_tier, hire_date')
+      .eq('id', ktvId)
+      .single();
+    
+    if (commissionData) {
+      positionTier = ((commissionData as any).position_tier || 'junior') as 'junior' | 'senior' | 'lead';
+      hireDate = (commissionData as any).hire_date || null;
+    }
+  } catch (err) {
+    // Columns don't exist yet, use defaults
+    console.log('Commission fields not yet available in database, using defaults');
+  }
+
   const { data: tenantData, error: tenantError } = await supabase
     .from('tenants')
     .select('salary_config')
@@ -188,6 +223,34 @@ export async function recalculateAndSaveSalaryRecordEngine(
     kpi_bonus_amount: stored.kpi_bonus_amount ?? 1000000,
     penalty_late_per_day: stored.penalty_late_per_day ?? 50000,
     penalty_absent_per_day: stored.penalty_absent_per_day ?? 200000,
+  };
+
+  // Commission config for Beauty Spa (Task 28-32: Advanced Commission System)
+  // Try to get commission_config if column exists
+  let commissionConfig: CommissionConfig = {};
+  try {
+    const { data: commissionData } = await supabase
+      .from('tenants')
+      .select('commission_config')
+      .eq('id', tenantId)
+      .maybeSingle();
+    
+    if (commissionData) {
+      commissionConfig = (commissionData as any).commission_config || {};
+    }
+  } catch (err) {
+    // Column doesn't exist yet, use defaults
+    console.log('Commission config not yet available in database, using defaults');
+  }
+
+  const serviceCommissionDefault = commissionConfig.service_commission_default || { type: 'fixed' as const, value: 150000 };
+  const productCommissionDefault = commissionConfig.product_sales_commission_default || { type: 'percentage' as const, value: 10 };
+  const positionMultipliers = commissionConfig.position_multipliers || { junior: 1.0, senior: 1.2, lead: 1.5 };
+  const seniorityBonusRates = commissionConfig.seniority_bonus_rates || {
+    '0_to_1_year': 0.00,
+    '1_to_3_years': 0.05,
+    '3_to_5_years': 0.10,
+    '5_plus_years': 0.15,
   };
 
   const startOfMonthStr = monthYear;
@@ -268,6 +331,51 @@ export async function recalculateAndSaveSalaryRecordEngine(
   const kpiRecordsTyped = (kpiRecords || []) as KpiBonusRow[];
   const dbKpiBonus = kpiRecordsTyped.reduce((acc, k) => acc + Number(k.bonus_amount || 0), 0);
 
+  // Query commission data (Task 28-32: Advanced Commission System)
+  // Service commission from booking_service_items
+  const { data: serviceItems, error: serviceItemsError } = await (supabase as any)
+    .from('booking_service_items')
+    .select('calculated_commission')
+    .eq('ktv_id', ktvId)
+    .eq('tenant_id', tenantId)
+    .eq('status', 'completed')
+    .gte('completed_date', startOfMonthStr)
+    .lt('completed_date', endOfMonthStr);
+
+  if (serviceItemsError) console.error('Error querying service items:', serviceItemsError);
+  const serviceItemsTyped = (serviceItems || []) as { calculated_commission: number | null }[];
+  const liveServiceCommission = serviceItemsTyped.reduce((sum, item) => sum + Number(item.calculated_commission || 0), 0);
+
+  // Product sales commission from product_sales
+  const { data: productSales, error: productSalesError } = await (supabase as any)
+    .from('product_sales')
+    .select('calculated_commission')
+    .eq('ktv_id', ktvId)
+    .eq('tenant_id', tenantId)
+    .eq('status', 'completed')
+    .gte('sale_date', startOfMonthStr)
+    .lt('sale_date', endOfMonthStr);
+
+  if (productSalesError) console.error('Error querying product sales:', productSalesError);
+  const productSalesTyped = (productSales || []) as { calculated_commission: number | null }[];
+  const liveProductCommission = productSalesTyped.reduce((sum, sale) => sum + Number(sale.calculated_commission || 0), 0);
+
+  // Manual adjustments from salary_adjustments
+  const { data: manualAdjustments, error: adjustmentsError } = await (supabase as any)
+    .from('salary_adjustments')
+    .select('adjustment_type, amount, status')
+    .eq('ktv_id', ktvId)
+    .eq('tenant_id', tenantId)
+    .eq('month_year', monthYear);
+
+  if (adjustmentsError) console.error('Error querying manual adjustments:', adjustmentsError);
+  const adjustmentsTyped = (manualAdjustments || []) as Array<{
+    adjustment_type: 'bonus' | 'deduction';
+    amount: number;
+    status: string;
+  }>;
+  const liveManualAdjustments = aggregateManualAdjustments({ adjustments: adjustmentsTyped });
+
   const { data: existingData, error: existingError } = await supabase
     .from('salary_records')
     .select('*')
@@ -337,6 +445,43 @@ export async function recalculateAndSaveSalaryRecordEngine(
     ? overrides.kpi_bonus
     : (existing && !isDraft && existing.kpi_bonus !== null && existing.kpi_bonus !== undefined ? Number(existing.kpi_bonus) : dbKpiBonus);
 
+  // Calculate commission components (Task 28-32)
+  const finalServiceCommission =
+    existing && !isDraft && existing.service_commission !== null && existing.service_commission !== undefined
+      ? Number(existing.service_commission)
+      : liveServiceCommission;
+
+  const finalProductCommission =
+    existing && !isDraft && existing.product_sales_commission !== null && existing.product_sales_commission !== undefined
+      ? Number(existing.product_sales_commission)
+      : liveProductCommission;
+
+  // Position bonus: applied on service commission
+  const finalPositionBonus =
+    existing && !isDraft && existing.position_bonus !== null && existing.position_bonus !== undefined
+      ? Number(existing.position_bonus)
+      : calculatePositionBonus({
+          baseCommission: finalServiceCommission,
+          positionTier,
+          multipliers: positionMultipliers,
+        });
+
+  // Seniority bonus: applied on base salary
+  const finalSeniorityBonus =
+    existing && !isDraft && existing.seniority_bonus !== null && existing.seniority_bonus !== undefined
+      ? Number(existing.seniority_bonus)
+      : calculateSeniorityBonus({
+          baseSalary: finalBaseSalary,
+          hireDate,
+          bonusRates: seniorityBonusRates,
+        });
+
+  // Manual adjustments: net amount (can be negative)
+  const finalManualAdjustments =
+    existing && !isDraft && existing.manual_adjustments !== null && existing.manual_adjustments !== undefined
+      ? Number(existing.manual_adjustments)
+      : liveManualAdjustments;
+
   if (ktv?.resignation_date) {
     const resignDate = new Date(ktv.resignation_date);
     const monthDate = new Date(monthYear);
@@ -357,6 +502,12 @@ export async function recalculateAndSaveSalaryRecordEngine(
     kpiBonus: finalKpiBonus,
     deductions,
     advances,
+    // Advanced commission components (Task 28-32)
+    serviceCommission: finalServiceCommission,
+    productSalesCommission: finalProductCommission,
+    positionBonus: finalPositionBonus,
+    seniorityBonus: finalSeniorityBonus,
+    manualAdjustments: finalManualAdjustments,
   });
   const totalSalary =
     shouldUseStoredTotalSalary && existing?.total_salary !== null && existing?.total_salary !== undefined
@@ -379,7 +530,13 @@ export async function recalculateAndSaveSalaryRecordEngine(
     published_at: overrides?.status === 'published' ? new Date().toISOString() : (existing?.published_at || null),
     notes: proRataNote || null,
     tenant_id: tenantId,
-  };
+    // Advanced commission components (Task 28-32)
+    service_commission: finalServiceCommission,
+    product_sales_commission: finalProductCommission,
+    position_bonus: finalPositionBonus,
+    seniority_bonus: finalSeniorityBonus,
+    manual_adjustments: finalManualAdjustments,
+  } as any; // Cast to any because new columns not yet in generated types
 
   let result;
   if (existing) {

@@ -260,6 +260,30 @@ export async function createBooking(formData: CreateBookingInput): Promise<Creat
     return { error: sessionLogsResult.error };
   }
 
+  // Task 12: Create service items with commission calculation (optional feature)
+  if (validatedData.serviceItems && validatedData.serviceItems.length > 0) {
+    const { createBookingServiceItems } = await import('./create-booking-service-items-helper');
+    
+    // Extract commission defaults from tenant context settings
+    const commissionDefaults = tenantContext.context.settings?.commission_config?.service_commission_default;
+    
+    const serviceItemsResult = await createBookingServiceItems({
+      supabase,
+      booking,
+      serviceItems: validatedData.serviceItems,
+      tenantId,
+      commissionDefaults,
+    });
+    
+    if ('error' in serviceItemsResult || !serviceItemsResult.success) {
+      console.error('[createBooking] Service items creation failed:', serviceItemsResult.error);
+      // Note: Booking already created, don't return error (best-effort approach)
+      // Service items can be added later via booking detail page
+    } else {
+      console.log(`[createBooking] Created ${serviceItemsResult.count} service items with total commission: ${serviceItemsResult.totalCommission} VND`);
+    }
+  }
+
   const revalPaths = [
     '/dashboard/bookings',
     '/dashboard/sessions',

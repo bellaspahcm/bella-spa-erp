@@ -13,6 +13,17 @@ export const customerSchema = z.object({
   gender_baby: z.string().optional(),
 });
 
+export const serviceItemSchema = z.object({
+  serviceName: z.string().min(1, 'Tên dịch vụ không được để trống'),
+  packageId: z.string().uuid('Package ID phải là UUID hợp lệ').optional(),
+  quantity: z.coerce.number().int().min(1, 'Số lượng phải >= 1'),
+  unitPrice: z.coerce.number().min(0, 'Đơn giá phải >= 0'),
+  ktvId: z.string().uuid('KTV ID phải là UUID hợp lệ').optional(),
+  overrideType: z.enum(['fixed', 'percentage']).optional(),
+  overrideValue: z.coerce.number().min(0).optional(),
+  completedDate: z.string().optional(),
+});
+
 export const bookingSchema = z.object({
   customer_id: z.string().or(z.number()),
   package_id: z.string().optional(),
@@ -26,4 +37,5 @@ export const bookingSchema = z.object({
   ktv_commission: z.coerce.number().optional(),
   discount_percent: z.coerce.number().min(0).max(100).optional(),
   preferred_time: z.string().optional(),
+  serviceItems: z.array(serviceItemSchema).optional(),
 });

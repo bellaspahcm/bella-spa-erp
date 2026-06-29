@@ -1020,6 +1020,136 @@ html[data-tenant-module="beauty_spa"] .beauty-erp-profile-name {
   color: #f8f6f2 !important;
 }
 
+/* Beauty Spa: Override pink colors in customer profile with emerald/teal colors */
+html[data-tenant-module="beauty_spa"] .bg-rose-50 {
+  background-color: #d1fae5 !important; /* emerald-100 */
+}
+
+html[data-tenant-module="beauty_spa"] .bg-rose-50\/50 {
+  background-color: rgba(209, 250, 229, 0.5) !important; /* emerald-100/50 */
+}
+
+html[data-tenant-module="beauty_spa"] .bg-rose-500 {
+  background-color: #10b981 !important; /* emerald-500 */
+}
+
+html[data-tenant-module="beauty_spa"] .hover\:bg-rose-600:hover {
+  background-color: #059669 !important; /* emerald-600 */
+}
+
+html[data-tenant-module="beauty_spa"] .border-rose-100 {
+  border-color: #d1fae5 !important; /* emerald-100 */
+}
+
+html[data-tenant-module="beauty_spa"] .border-rose-100\/50 {
+  border-color: rgba(209, 250, 229, 0.5) !important; /* emerald-100/50 */
+}
+
+html[data-tenant-module="beauty_spa"] .shadow-rose-100 {
+  --tw-shadow-color: #d1fae5 !important; /* emerald-100 */
+  --tw-shadow: var(--tw-shadow-colored) !important;
+}
+
+html[data-tenant-module="beauty_spa"] .shadow-rose-200 {
+  --tw-shadow-color: #a7f3d0 !important; /* emerald-200 */
+  --tw-shadow: var(--tw-shadow-colored) !important;
+}
+
+html[data-tenant-module="beauty_spa"] .text-rose-500 {
+  color: #10b981 !important; /* emerald-500 */
+}
+
+html[data-tenant-module="beauty_spa"] .text-rose-600 {
+  color: #059669 !important; /* emerald-600 */
+}
+
+/* Beauty Spa: Override all pink shades system-wide */
+html[data-tenant-module="beauty_spa"] .bg-pink-50,
+html[data-tenant-module="beauty_spa"] *[class*="bg-pink-50"] {
+  background-color: #ecfdf5 !important; /* emerald-50 */
+}
+
+html[data-tenant-module="beauty_spa"] .bg-pink-50\/40 {
+  background-color: rgba(236, 253, 245, 0.4) !important; /* emerald-50/40 */
+}
+
+html[data-tenant-module="beauty_spa"] .bg-pink-100,
+html[data-tenant-module="beauty_spa"] *[class*="bg-pink-100"] {
+  background-color: #d1fae5 !important; /* emerald-100 */
+}
+
+html[data-tenant-module="beauty_spa"] .hover\:bg-pink-50:hover {
+  background-color: #ecfdf5 !important; /* emerald-50 */
+}
+
+html[data-tenant-module="beauty_spa"] .border-pink-100 {
+  border-color: #d1fae5 !important; /* emerald-100 */
+}
+
+html[data-tenant-module="beauty_spa"] .text-pink-600 {
+  color: #059669 !important; /* emerald-600 */
+}
+
+html[data-tenant-module="beauty_spa"] .text-pink-500 {
+  color: #10b981 !important; /* emerald-500 */
+}
+
+/* Beauty Spa: Override loader/spinner colors */
+html[data-tenant-module="beauty_spa"] .text-rose-500 {
+  color: #10b981 !important; /* emerald-500 */
+}
+
+html[data-tenant-module="beauty_spa"] .animate-spin.text-rose-500 {
+  color: #10b981 !important; /* emerald-500 */
+}
+
+/* Beauty Spa: Override menu icon colors (if using text-primary with wrong CSS variable) */
+html[data-tenant-module="beauty_spa"] button svg,
+html[data-tenant-module="beauty_spa"] [role="button"] svg {
+  /* Icons will inherit from parent color or use CSS variable */
+}
+
+/* Beauty Spa: Force primary color for all SVG icons to use emerald instead of pink */
+html[data-tenant-module="beauty_spa"] svg.text-primary,
+html[data-tenant-module="beauty_spa"] .text-primary > svg {
+  color: #074e44 !important; /* Beauty Spa primary green */
+}
+
+/* Beauty Spa: Override CHECK-IN icon color */
+html[data-tenant-module="beauty_spa"] .text-rose-600 {
+  color: #059669 !important; /* emerald-600 */
+}
+
+/* Beauty Spa: Override menu icon hover background */
+html[data-tenant-module="beauty_spa"] .hover\:bg-rose-50:hover {
+  background-color: #ecfdf5 !important; /* emerald-50 */
+}
+
+html[data-tenant-module="beauty_spa"] button.hover\:bg-rose-50:hover {
+  background-color: #ecfdf5 !important; /* emerald-50 */
+}
+
+/* Beauty Spa: Comprehensive rose color overrides (all shades) */
+html[data-tenant-module="beauty_spa"] .bg-rose-100 {
+  background-color: #d1fae5 !important; /* emerald-100 */
+}
+
+html[data-tenant-module="beauty_spa"] .bg-rose-200 {
+  background-color: #a7f3d0 !important; /* emerald-200 */
+}
+
+html[data-tenant-module="beauty_spa"] .text-rose-400 {
+  color: #34d399 !important; /* emerald-400 */
+}
+
+html[data-tenant-module="beauty_spa"] .border-rose-50 {
+  border-color: #ecfdf5 !important; /* emerald-50 */
+}
+
+html[data-tenant-module="beauty_spa"] .border-rose-200 {
+  border-color: #a7f3d0 !important; /* emerald-200 */
+}
+
 html[data-tenant-module="beauty_spa"] .beauty-erp-profile-divider {
   background: linear-gradient(90deg, transparent, rgba(200, 169, 122, 0.34), transparent) !important;
 }
@@ -3010,3 +3140,126 @@ html[data-tenant-module="industrial_cleaning"] .bella-data-table tr:hover td {
   color: rgb(51, 65, 85) !important;
 }
 
+
+/* ============================================
+   BEAUTY SPA MODULE - COMPREHENSIVE COLOR OVERRIDES
+   Replace all pink/rose colors with emerald/teal
+   ============================================ */
+
+/* Background Colors: Rose → Emerald */
+html[data-tenant-module="beauty_spa"] .bg-rose-50,
+html[data-tenant-module="beauty_spa"] [class*="bg-rose-50"] {
+  background-color: #ecfdf5 !important; /* emerald-50 */
+}
+
+html[data-tenant-module="beauty_spa"] .bg-rose-100,
+html[data-tenant-module="beauty_spa"] [class*="bg-rose-100"] {
+  background-color: #d1fae5 !important; /* emerald-100 */
+}
+
+html[data-tenant-module="beauty_spa"] .bg-rose-200 {
+  background-color: #a7f3d0 !important; /* emerald-200 */
+}
+
+html[data-tenant-module="beauty_spa"] .bg-rose-500 {
+  background-color: #10b981 !important; /* emerald-500 */
+}
+
+/* Background Colors: Pink → Emerald */
+html[data-tenant-module="beauty_spa"] .bg-pink-50,
+html[data-tenant-module="beauty_spa"] [class*="bg-pink-50"] {
+  background-color: #ecfdf5 !important; /* emerald-50 */
+}
+
+html[data-tenant-module="beauty_spa"] .bg-pink-100,
+html[data-tenant-module="beauty_spa"] [class*="bg-pink-100"] {
+  background-color: #d1fae5 !important; /* emerald-100 */
+}
+
+/* Text Colors: Rose → Emerald */
+html[data-tenant-module="beauty_spa"] .text-rose-400 {
+  color: #34d399 !important; /* emerald-400 */
+}
+
+html[data-tenant-module="beauty_spa"] .text-rose-500 {
+  color: #10b981 !important; /* emerald-500 */
+}
+
+html[data-tenant-module="beauty_spa"] .text-rose-600 {
+  color: #059669 !important; /* emerald-600 */
+}
+
+/* Text Colors: Pink → Emerald */
+html[data-tenant-module="beauty_spa"] .text-pink-500 {
+  color: #10b981 !important; /* emerald-500 */
+}
+
+html[data-tenant-module="beauty_spa"] .text-pink-600 {
+  color: #059669 !important; /* emerald-600 */
+}
+
+/* Border Colors */
+html[data-tenant-module="beauty_spa"] .border-rose-50 {
+  border-color: #ecfdf5 !important;
+}
+
+html[data-tenant-module="beauty_spa"] .border-rose-100 {
+  border-color: #d1fae5 !important;
+}
+
+html[data-tenant-module="beauty_spa"] .border-rose-200 {
+  border-color: #a7f3d0 !important;
+}
+
+html[data-tenant-module="beauty_spa"] .border-pink-100 {
+  border-color: #d1fae5 !important;
+}
+
+/* Hover States */
+html[data-tenant-module="beauty_spa"] .hover\:bg-rose-50:hover,
+html[data-tenant-module="beauty_spa"] button.hover\:bg-rose-50:hover {
+  background-color: #ecfdf5 !important;
+}
+
+html[data-tenant-module="beauty_spa"] .hover\:bg-rose-600:hover {
+  background-color: #059669 !important;
+}
+
+html[data-tenant-module="beauty_spa"] .hover\:bg-pink-50:hover {
+  background-color: #ecfdf5 !important;
+}
+
+/* Shadow Colors */
+html[data-tenant-module="beauty_spa"] .shadow-rose-100 {
+  --tw-shadow-color: #d1fae5 !important;
+  --tw-shadow: var(--tw-shadow-colored) !important;
+}
+
+html[data-tenant-module="beauty_spa"] .shadow-rose-200 {
+  --tw-shadow-color: #a7f3d0 !important;
+  --tw-shadow: var(--tw-shadow-colored) !important;
+}
+
+/* Loader/Spinner */
+html[data-tenant-module="beauty_spa"] .animate-spin.text-rose-500 {
+  color: #10b981 !important;
+}
+
+/* Opacity variants */
+html[data-tenant-module="beauty_spa"] .bg-rose-50\/40 {
+  background-color: rgba(236, 253, 245, 0.4) !important;
+}
+
+html[data-tenant-module="beauty_spa"] .bg-rose-50\/50 {
+  background-color: rgba(236, 253, 245, 0.5) !important;
+}
+
+html[data-tenant-module="beauty_spa"] .bg-pink-50\/40 {
+  background-color: rgba(236, 253, 245, 0.4) !important;
+}
+
+html[data-tenant-module="beauty_spa"] .border-rose-100\/50 {
+  border-color: rgba(209, 250, 229, 0.5) !important;
+}
+
+/* END BEAUTY SPA OVERRIDES */

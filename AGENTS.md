@@ -100,6 +100,24 @@ You must strictly adhere to the following rules when working on this codebase to
 - **Time lost:** ~2 hours debugging black screens and 404s.
 - **Lesson:** Always grep entire codebase after route moves, test production build locally, and ensure SW skips auth-required routes.
 
+## 11. Module Theme Color Override (NEW - 22/06/2026)
+- **MANDATORY when adding new industry modules**: Read `docs/MODULE_THEME_COLOR_OVERRIDE_GUIDE.md` BEFORE implementing any UI for new module
+- **API Route MUST parse JSONB correctly**: `{beauty_spa: true}` → `['beauty_spa']` (array of strings), NOT `[{beauty_spa: true}]` (array of objects)
+- **TenantContextProvider MUST check array format FIRST**: `if (Array.isArray(enabledModules))` before `typeof enabledModules === 'object'`
+- **Comprehensive CSS overrides REQUIRED**: Must override ALL rose/pink shades (50, 100, 200, 400, 500, 600) + opacity variants (/40, /50) + hover states + borders + shadows
+- **Use wildcard selectors**: `[class*="bg-rose-50"]` to catch all variants, not just `.bg-rose-50`
+- **Module isolation**: All overrides MUST be scoped with `html[data-tenant-module="module_key"]` to NOT affect other modules
+- **Test checklist**: Dashboard, Customer pages, Bookings, Settings, Icons, Buttons, Cards, Badges, Loaders - ALL must use module colors
+- **Verify in browser**: `document.documentElement.getAttribute('data-tenant-module')` must return correct module key
+
+**Real-world incident (22/06/2026):**
+- Added Beauty Spa module but forgot comprehensive CSS overrides
+- UI showed pink (Baby Care) colors instead of green/teal (Beauty Spa)
+- Root cause: API parsed JSONB wrong + missing CSS overrides for hardcoded Tailwind classes
+- **Resolution:** Fixed API parsing, added 150+ lines of CSS overrides for all rose/pink shades
+- **Time lost:** ~4 hours debugging and fixing colors across entire app
+- **Lesson:** Always follow `MODULE_THEME_COLOR_OVERRIDE_GUIDE.md` when adding new module. Time saved: 3.5 hours.
+
 ---
 
 ## 11. Mobile Development & RPC Best Practices (Week 3 Lessons - 2026-06-22)

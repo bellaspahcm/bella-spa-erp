@@ -27,7 +27,10 @@ export function CustomerProfilePanel({
           <div className="relative overflow-hidden rounded-[2rem] border border-slate-100 bg-white p-5 shadow-xl shadow-slate-200/50 sm:p-8 xl:rounded-[3rem]">
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-2xl" />
             <div className="flex flex-col items-center text-center relative z-10">
-              <div className="mb-5 flex h-24 w-24 items-center justify-center rounded-[2rem] border-4 border-white bg-rose-50 shadow-2xl shadow-rose-100 dark:shadow-none sm:mb-6 sm:h-32 sm:w-32 sm:rounded-[2.5rem]">
+              <div className={cn(
+                "mb-5 flex h-24 w-24 items-center justify-center rounded-[2rem] border-4 border-white shadow-2xl dark:shadow-none sm:mb-6 sm:h-32 sm:w-32 sm:rounded-[2.5rem]",
+                tenantModuleKey === 'beauty_spa' ? 'bg-emerald-50 shadow-emerald-100' : 'bg-rose-50 shadow-rose-100'
+              )}>
                 <Heart className="h-11 w-11 text-primary sm:h-14 sm:w-14" />
               </div>
               <h1 className="mb-2 max-w-full break-words text-xl font-black text-slate-900 sm:text-2xl">{customer.name_mother}</h1>
@@ -66,7 +69,10 @@ export function CustomerProfilePanel({
                     <p className="text-[10px] font-black text-slate-400 uppercase">Địa chỉ</p>
                     <p className="break-words font-bold text-slate-700" title={customer.address || undefined}>{customer.address}</p>
                     {customer.latitude && customer.longitude && (
-                      <p className="text-[9px] font-black text-rose-500 mt-0.5">
+                      <p className={cn(
+                        "text-[9px] font-black mt-0.5",
+                        tenantModuleKey === 'beauty_spa' ? 'text-emerald-500' : 'text-rose-500'
+                      )}>
                         GPS: {customer.latitude.toFixed(4)}, {customer.longitude.toFixed(4)}
                       </p>
                     )}
@@ -84,7 +90,12 @@ export function CustomerProfilePanel({
 
               <button
                 onClick={onOpenBooking}
-                className="w-full mt-4 flex items-center justify-center gap-3 bg-rose-500 hover:bg-rose-600 text-white py-4 rounded-2xl font-black transition-all shadow-lg shadow-rose-200 dark:shadow-none active:scale-95"
+                className={cn(
+                  "w-full mt-4 flex items-center justify-center gap-3 text-white py-4 rounded-2xl font-black transition-all shadow-lg dark:shadow-none active:scale-95",
+                  tenantModuleKey === 'beauty_spa' 
+                    ? 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-200' 
+                    : 'bg-rose-500 hover:bg-rose-600 shadow-rose-200'
+                )}
               >
                 <TrendingUp className="w-5 h-5" />
                 <span>ĐẶT LỊCH NGAY</span>
@@ -98,7 +109,12 @@ export function CustomerProfilePanel({
               {customerLabels.secondaryInfoTitle}
             </h3>
             <div className="space-y-4">
-              <div className="flex flex-col gap-1 rounded-2xl border border-rose-100/50 bg-rose-50/50 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className={cn(
+                "flex flex-col gap-1 rounded-2xl p-4 sm:flex-row sm:items-center sm:justify-between",
+                tenantModuleKey === 'beauty_spa' 
+                  ? 'border border-emerald-100/50 bg-emerald-50/50' 
+                  : 'border border-rose-100/50 bg-rose-50/50'
+              )}>
                 <span className="text-sm font-bold text-slate-500">{customerLabels.secondaryInfoNameLabel}</span>
                 <span className="break-words font-black text-slate-900">{customer.baby.name}</span>
               </div>
