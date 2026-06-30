@@ -490,24 +490,49 @@ export function AdjustmentsListPage() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-lg bg-indigo-100 flex items-center justify-center">
-            <DollarSign className="w-6 h-6 text-indigo-600" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-              Thưởng/Phạt lương
-            </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Quản lý điều chỉnh thủ công lương KTV
-            </p>
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 max-w-7xl">
+      <div className="space-y-6">
+        {/* Back Button + Header */}
+        <div className="flex items-center gap-4 mb-4">
+          <button
+            onClick={() => window.history.back()}
+            className="flex items-center gap-2 px-4 py-2 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            aria-label="Quay lại"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"
+                clipRule="evenodd"
+              />
+            </svg>
+            <span className="hidden sm:inline">Quay lại</span>
+          </button>
+
+          <div className="flex-1">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-lg bg-indigo-100 flex items-center justify-center">
+                <DollarSign className="w-6 h-6 text-indigo-600" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                  Thưởng/Phạt lương
+                </h1>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Quản lý điều chỉnh thủ công lương KTV
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        {/* Action Buttons */}
+        <div className="flex items-center justify-end gap-3">
           <button
             onClick={() => setShowFilters(!showFilters)}
             className="flex items-center gap-2 px-4 py-2 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"

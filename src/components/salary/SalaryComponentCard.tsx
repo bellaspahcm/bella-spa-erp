@@ -77,12 +77,12 @@ export function SalaryComponentCard({
                 </span>
               )}
               {tooltip && (
-                <div className="group relative">
+                <div className="group relative inline-flex">
                   <HelpCircle className="w-4 h-4 text-gray-400 cursor-help" />
-                  <div className="absolute left-0 top-6 z-50 hidden group-hover:block">
-                    <div className="bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg px-3 py-2 w-64 shadow-lg">
+                  <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 z-[100] hidden group-hover:block pointer-events-none">
+                    <div className="bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg px-3 py-2 max-w-xs whitespace-normal shadow-xl">
                       {tooltip}
-                      <div className="absolute -top-1 left-3 w-2 h-2 bg-gray-900 dark:bg-gray-700 rotate-45" />
+                      <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 w-2 h-2 bg-gray-900 dark:bg-gray-700 rotate-45" />
                     </div>
                   </div>
                 </div>
