@@ -1,5 +1,4 @@
 {
   "buildCommand": "npm run build",
-  "installCommand": "npm install --legacy-peer-deps --ignore-scripts",
-  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- ':!apps/mobile'"
+  "installCommand": "npm install --legacy-peer-deps --ignore-scripts"
 }
