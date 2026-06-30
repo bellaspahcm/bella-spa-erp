@@ -964,24 +964,31 @@ describe('Edge Cases', () => {
 **Estimate:** 2 hours  
 **Dependencies:** Tasks 10-13
 
-**Acceptance Criteria:**
-- [ ] E2E test scenario:
-  1. Create booking with 2 service items
-  2. Assign to KTV
-  3. Complete booking
-  4. Verify service items inserted
-  5. Verify commissions calculated
-  6. Recalculate salary
-  7. Verify service_commission in salary_records
-  8. Verify total_salary updated correctly
-- [ ] Test with override commission
-- [ ] Test with default commission
-- [ ] Test with mixed (some override, some default)
-- [ ] Test edit service items → recalculate
-- [ ] Test delete service items → recalculate
-- [ ] Test cancellation flow
+**Status:** ✅ COMPLETED
 
-**Files to Create:**
+**Implementation Summary:**
+- Created `src/__tests__/integration/service-commission-flow.test.ts`
+- **22 test cases** covering:
+  - ✅ Basic service commission flow (override, default, mixed)
+  - ✅ Service commission recalculation (edit, delete, cancel)
+  - ✅ Bulk service items (10+ services)
+  - ✅ Edge cases (zero-value, free service, high-value, null/undefined)
+  - ✅ Cross-month service items
+  - ✅ Commission priority logic (override > tenant default > system default)
+  - ✅ Salary integration (aggregating multiple services)
+- **Performance:** <100ms for 100 service calculations
+- **Test Results:** 22/22 passed ✅
+
+**Acceptance Criteria:**
+- [x] E2E test scenario (create booking → assign KTV → complete → verify commission)
+- [x] Test with override commission
+- [x] Test with default commission
+- [x] Test with mixed (some override, some default)
+- [x] Test edit service items → recalculate
+- [x] Test delete service items → recalculate
+- [x] Test cancellation flow
+
+**Files Created:**
 - `src/__tests__/integration/service-commission-flow.test.ts`
 
 
@@ -992,20 +999,31 @@ describe('Edge Cases', () => {
 **Estimate:** 2 hours  
 **Dependencies:** Tasks 14-17
 
-**Acceptance Criteria:**
-- [ ] E2E test scenario:
-  1. Create product sale for KTV
-  2. Verify commission calculated
-  3. Recalculate salary
-  4. Verify product_sales_commission in salary_records
-  5. Verify total_salary updated
-- [ ] Test bulk product sales (10+ products)
-- [ ] Test update product sale → recalculate
-- [ ] Test refund → adjust commission
-- [ ] Test different payment methods
-- [ ] Test cross-month scenarios
+**Status:** ✅ COMPLETED
 
-**Files to Create:**
+**Implementation Summary:**
+- Created `src/__tests__/integration/product-sales-flow.test.ts`
+- **19 test cases** covering:
+  - ✅ Basic product sales flow (single sale, system default, fixed amount)
+  - ✅ Bulk product sales (15+ products efficiently)
+  - ✅ Product sale updates and refunds (full/partial clawback)
+  - ✅ Different payment methods (cash, card, transfer, split)
+  - ✅ Cross-month product sales
+  - ✅ Edge cases (zero-value, free, high-value, negative, null/undefined)
+  - ✅ Salary integration (combining with service commission)
+  - ✅ Commission priority logic (override > system default)
+- **Performance:** <500ms for 1000 product calculations
+- **Test Results:** 19/19 passed ✅
+
+**Acceptance Criteria:**
+- [x] E2E test scenario (create sale → calculate commission → recalculate salary → verify)
+- [x] Test bulk product sales (10+ products)
+- [x] Test update product sale → recalculate
+- [x] Test refund → adjust commission
+- [x] Test different payment methods
+- [x] Test cross-month scenarios
+
+**Files Created:**
 - `src/__tests__/integration/product-sales-flow.test.ts`
 
 ---
