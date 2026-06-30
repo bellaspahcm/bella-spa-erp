@@ -132,6 +132,140 @@ You must strictly adhere to the following rules when working on this codebase to
 - **Time lost:** ~2 hours debugging black screens and 404s.
 - **Lesson:** Always grep entire codebase after route moves, test production build locally, and ensure SW skips auth-required routes.
 
+## 12. Commission System Integrity and Calculation Rules
+
+### 12.1. Commission Override Validation
+- **ALWAYS validate commission override inputs** before saving to `booking_service_items` or `product_sales` tables.
+- **Type-Value Consistency Check:**
+  ```typescript
+  // ✅ GOOD: Validate before insert
+  if (overrideType === 'percentage' && (overrideValue < 0 || overrideValue > 100)) {
+    throw new Error('Percentage must be 0-100');
+  }
+  if (overrideType === 'fixed' && overrideValue < 0) {
+    throw new Error('Fixed amount must be >= 0');
+  }
+  ```
+- **NEVER allow negative commission values** unless it's a manual adjustment with `adjustment_type = 'deduction'`.
+- **Commission cannot exceed subtotal** for percentage type (after calculation).
+
+### 12.2. Status-Based Commission Recognition
+- **ONLY recognize commission in salary calculations if `status = 'completed'`**.
+- **Status filters in commission queries:**
+  ```typescript
+  // ✅ GOOD: Filter completed only
+  const serviceCommissions = await supabase
+    .from('booking_service_items')
+    .select('*')
+    .eq('ktv_id', ktvId)
+    .eq('status', 'completed')  // MANDATORY
+    .gte('completed_date', monthStart)
+    .lt('completed_date', monthEnd);
+  ```
+- **DO NOT count pending, cancelled, or refunded items** in commission totals.
+- **Similar to Rule #6**: This is analogous to revenue recognition (only count confirmed revenue).
+
+### 12.3. Commission Recalculation Atomicity
+- **ANY change to commission data MUST trigger salary recalculation** for affected KTV and month.
+- **Tables that trigger recalculation:**
+  1. `booking_service_items` - Service commission
+  2. `product_sales` - Product sales commission
+  3. `salary_adjustments` - Manual adjustments (when status changes to 'approved')
+- **Recalculation must be atomic:** If commission update succeeds but recalculation fails, ROLLBACK both operations.
+- **Use central recalculation engine:** `recalculateAndSaveSalaryRecordEngine` (never write separate calculation logic).
+- **Example pattern:**
+  ```typescript
+  // ✅ GOOD: Atomic update with recalculation
+  const { error: insertError } = await supabase
+    .from('booking_service_items')
+    .insert(serviceItem);
+  
+  if (insertError) throw insertError;
+  
+  // Trigger recalculation
+  await recalculateAndSaveSalaryRecordEngine({
+    ktvId: serviceItem.ktv_id,
+    tenantId: serviceItem.tenant_id,
+    monthYear: extractMonthYear(serviceItem.completed_date),
+  });
+  ```
+
+### 12.4. Commission Configuration Inheritance
+- **Commission config hierarchy:**
+  1. Item-level override (`override_commission_type`, `override_commission_value`)
+  2. Tenant-level default (`tenants.commission_config`)
+  3. System default (if tenant config not set)
+- **ALWAYS check all 3 levels** in `calculateServiceCommission` and `calculateProductSalesCommission` functions.
+- **Config changes apply to new items only**, not retroactively (unless manual recalculation requested).
+
+### 12.5. Position and Seniority Bonus Consistency
+- **Position bonus applies to commission components only**, not base salary.
+- **Seniority bonus applies to base salary only**, not commission.
+- **Calculation order matters:**
+  ```typescript
+  // ✅ CORRECT order
+  const serviceCommission = calculateServiceCommission(...);  // Base commission
+  const positionBonus = calculatePositionBonus(serviceCommission);  // Apply position multiplier
+  const seniorityBonus = calculateSeniorityBonus(baseSalary);  // Apply to base salary
+  const totalSalary = baseSalary + serviceCommission + positionBonus + seniorityBonus + ...;
+  ```
+- **DO NOT apply position bonus twice** (e.g., to both service and product sales separately, then again to the sum).
+
+### 12.6. Manual Adjustments Approval Workflow
+- **Manual adjustments MUST go through approval workflow** before affecting salary.
+- **Only count approved adjustments** in salary calculation:
+  ```typescript
+  // ✅ GOOD: Filter approved only
+  const approvedAdjustments = adjustments.filter(a => a.status === 'approved');
+  const totalAdjustments = aggregateManualAdjustments({ adjustments: approvedAdjustments });
+  ```
+- **Status lifecycle:** `draft` → `pending` → `approved` → `applied` (in salary record)
+- **Rejected adjustments are never applied** to salary calculations.
+
+### 12.7. Commission Data Immutability After Salary Finalization
+- **Once salary record reaches `status = 'finalized'`, commission data is LOCKED** (see Rule #8).
+- **Prevent editing commission items if salary finalized:**
+  ```typescript
+  // ✅ GOOD: Check salary status before editing
+  const salaryRecord = await getSalaryRecord(ktvId, monthYear);
+  if (salaryRecord?.status === 'finalized' || salaryRecord?.is_locked) {
+    throw new Error('Cannot edit commission: Salary record is finalized/locked');
+  }
+  ```
+- **Audit trail:** Keep commission change history (use `updated_at`, `updated_by` fields).
+
+### 12.8. Integration with Existing Salary Components
+- **Commission system extends salary calculation, does NOT replace it.**
+- **Salary components order:**
+  1. Base salary (pro-rata if applicable)
+  2. Session bonus (legacy session-based commission)
+  3. Service commission (new service items commission)
+  4. Product sales commission (new product sales commission)
+  5. KPI bonus
+  6. Position bonus (multiplier on commission components)
+  7. Seniority bonus (percentage of base salary)
+  8. Rating bonus (star rating bonus)
+  9. Manual adjustments (bonus/deduction)
+  10. Violations deduction (disciplinary fines)
+- **Total salary = sum of all components** (with deductions subtracted).
+- **NEVER omit any component** from total calculation (see Rule #7).
+
+### 12.9. Testing Requirements for Commission Features
+- **MANDATORY test scenarios for any commission feature:**
+  1. Calculate with override (fixed and percentage)
+  2. Calculate with tenant default
+  3. Calculate with system default
+  4. Apply position bonus (junior/senior/lead)
+  5. Apply seniority bonus (0-1yr, 1-3yr, 3-5yr, 5+yr)
+  6. Aggregate manual adjustments (bonus + deduction)
+  7. Status filter (completed only)
+  8. Month boundary (verify date range filtering)
+  9. Multiple KTVs (verify isolation)
+  10. Finalized salary (verify immutability)
+- **Use existing test patterns** in `src/lib/business-rules/__tests__/commission.test.ts` (29 test cases).
+
+---
+
 ## 11. Module Theme Color Override (NEW - 22/06/2026)
 - **MANDATORY when adding new industry modules**: Read `docs/MODULE_THEME_COLOR_OVERRIDE_GUIDE.md` BEFORE implementing any UI for new module
 - **API Route MUST parse JSONB correctly**: `{beauty_spa: true}` → `['beauty_spa']` (array of strings), NOT `[{beauty_spa: true}]` (array of objects)
