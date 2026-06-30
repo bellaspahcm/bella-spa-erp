@@ -1,5 +1,6 @@
 {
   "buildCommand": "npm run build",
   "installCommand": "npm install --legacy-peer-deps --ignore-scripts",
-  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- ':!apps/mobile'"
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- ':!apps/mobile'",
+  "$comment": "Force deploy: UI color fixes deployed 2026-06-22"
 }
