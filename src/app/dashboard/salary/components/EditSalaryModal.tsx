@@ -46,7 +46,7 @@ export default function EditSalaryModal({
             {/* Left Column: Basic Salary Adjustments */}
             <div className="space-y-4">
               <div>
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1 block">Lương cứng (đ)</label>
+                <label className="text-xs font-black text-slate-700 uppercase tracking-widest mb-1 block">Lương cứng (đ)</label>
                 <input 
                   type="number" 
                   value={editingSalary.baseSalary} 
@@ -55,7 +55,7 @@ export default function EditSalaryModal({
                 />
               </div>
               <div>
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1 block">Thưởng KPI (đ)</label>
+                <label className="text-xs font-black text-slate-700 uppercase tracking-widest mb-1 block">Thưởng KPI (đ)</label>
                 <input 
                   type="number" 
                   value={editingSalary.kpiBonus} 
@@ -64,7 +64,7 @@ export default function EditSalaryModal({
                 />
               </div>
               <div>
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1 block">Phạt (đ)</label>
+                <label className="text-xs font-black text-slate-700 uppercase tracking-widest mb-1 block">Phạt (đ)</label>
                 <input 
                   type="number" 
                   value={editingSalary.deductions} 
@@ -73,7 +73,7 @@ export default function EditSalaryModal({
                 />
               </div>
               <div>
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1 block">Tạm ứng (đ)</label>
+                <label className="text-xs font-black text-slate-700 uppercase tracking-widest mb-1 block">Tạm ứng (đ)</label>
                 <input 
                   type="number" 
                   value={editingSalary.advances} 
