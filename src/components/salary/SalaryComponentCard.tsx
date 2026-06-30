@@ -44,20 +44,21 @@ export function SalaryComponentCard({
 
   const formatAmount = (value: number) => {
     const prefix = variant === 'income' ? '+' : variant === 'deduction' ? '-' : '';
-    return `${prefix}${Math.abs(value).toLocaleString('vi-VN')} đ`;
+    return `${prefix}${Math.abs(value).toLocaleString('vi-VN')} đ `; // Added trailing space
   };
 
   return (
-    <div className={cn('rounded-lg border overflow-hidden transition-all', variantStyles[variant], className)}>
+    <div className={cn('rounded-lg border transition-all', variantStyles[variant], className)}>
       {/* Header - Always visible */}
       <button
         onClick={() => children && setIsExpanded(!isExpanded)}
         className={cn(
-          'w-full flex items-center justify-between p-4 transition-colors',
+          'w-full flex items-center justify-between gap-4 py-4 pl-4 pr-8 transition-colors',
           children ? 'hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer' : 'cursor-default'
         )}
       >
-        <div className="flex items-center gap-3 flex-1 min-w-0">
+        {/* Left: Icon + Title + Badge */}
+        <div className="flex items-center gap-3 min-w-0 flex-1">
           {/* Icon */}
           {icon && (
             <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-white/50 dark:bg-black/20 flex items-center justify-center">
@@ -89,18 +90,21 @@ export function SalaryComponentCard({
               )}
             </div>
           </div>
+        </div>
 
-          {/* Amount */}
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <span className={cn('text-lg font-black', amountStyles[variant])}>
-              {formatAmount(amount)}
-            </span>
-            {children && (
-              <div className="text-gray-400">
-                {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-              </div>
-            )}
-          </div>
+        {/* Right: Amount + Chevron */}
+        <div className="flex items-center gap-3 flex-shrink-0">
+          <span 
+            className={cn('text-lg font-black whitespace-nowrap', amountStyles[variant])}
+            style={{ marginRight: '12px' }}
+          >
+            {formatAmount(amount)}
+          </span>
+          {children && (
+            <div className="text-gray-400 flex-shrink-0">
+              {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+            </div>
+          )}
         </div>
       </button>
 

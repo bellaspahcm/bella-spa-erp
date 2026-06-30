@@ -1296,6 +1296,18 @@ export async function updateSalaryConfig(ktvId: string, payload: { baseSalary: n
   );
   if (lockFailure) return lockFailure;
 
+  // ✅ NEW: Check if KTV's salary record is finalized (critical for data integrity)
+  const { getKtvSalaryImmutabilityFailure } = await import('./admin-salary-workflow-helpers');
+  const immutabilityFailure = await getKtvSalaryImmutabilityFailure(
+    supabase,
+    ktvId,
+    monthYear,
+    tenantId,
+    'Không thể chỉnh sửa: Bảng lương KTV này đã hoàn tất (finalized) và đã xuất chi.',
+    'Không thể chỉnh sửa: Bảng lương KTV này đã bị khóa (month-end close).'
+  );
+  if (immutabilityFailure) return immutabilityFailure;
+
   try {
     const previousSalaryRecord = await snapshotSalaryRecord(supabase, ktvId, monthYear, tenantId);
 
@@ -1411,6 +1423,18 @@ export async function confirmKtvSessions(ktvId: string, totalSessions: number) {
     'Tháng lương đã bị khóa, không thể xác nhận số buổi.'
   );
   if (lockFailure) return lockFailure;
+
+  // ✅ NEW: Check if KTV's salary record is finalized (critical for data integrity)
+  const { getKtvSalaryImmutabilityFailure } = await import('./admin-salary-workflow-helpers');
+  const immutabilityFailure = await getKtvSalaryImmutabilityFailure(
+    supabase,
+    ktvId,
+    currentMonthYear,
+    tenantId,
+    'Không thể xác nhận số buổi: Bảng lương KTV này đã hoàn tất (finalized) và đã xuất chi.',
+    'Không thể xác nhận số buổi: Bảng lương KTV này đã bị khóa (month-end close).'
+  );
+  if (immutabilityFailure) return immutabilityFailure;
   
   console.log(`Confirming sessions for KTV: ${ktvId}, Total: ${totalSessions}`);
   

@@ -51,7 +51,23 @@ You must strictly adhere to the following rules when working on this codebase to
 - **NEVER omit `session_bonus`** or `rating_bonus` from the legacy total calculation.
 - **Prioritize Pre-computed `total_salary`**: Always use the stored `total_salary` column from the `salary_records` table as the ultimate ground truth for "Kế toán chốt" (Legacy) and "AI Tính" (AI Computed) once a record is saved and is no longer in `'draft'` status. Do not re-calculate it using custom SQL logic that might drift from the central salary recalculation engine.
 - **Separate 'Chưa chốt lương' from Discrepancies**: KTVs who do not have a saved salary record yet (status `'NO_LEGACY'` or `'PENDING_LEGACY'`, displayed as "Chưa chốt lương") **MUST NOT** be counted under "Lệch lớn" (Major discrepancy) in UI summary statistics or dashboards. Discrepancies only exist when a record actually exists but differs from AI. Lumping them together creates false alarms for the user.
-## 8. Package-Based KTV Session Multipliers
+## 7. Salary Reconciliation Reports and Legacy Total Consistency
+- **Include All Salary Components**: In all salary reconciliation functions and RPCs (such as `get_salary_reconciliation` and `get_salary_reconciliation_report`), when calculating "Kế toán chốt" (Legacy Total), you **MUST** include all salary components: `base_salary`, `session_bonus` (commission per session), `kpi_bonus`, and `rating_bonus` (star rating bonus), and correctly subtract `violations_deduction` (disciplinary fines) and `service_percentage_bonus` (if used as advances).
+- **NEVER omit `session_bonus`** or `rating_bonus` from the legacy total calculation.
+- **Prioritize Pre-computed `total_salary`**: Always use the stored `total_salary` column from the `salary_records` table as the ultimate ground truth for "Kế toán chốt" (Legacy) and "AI Tính" (AI Computed) once a record is saved and is no longer in `'draft'` status. Do not re-calculate it using custom SQL logic that might drift from the central salary recalculation engine.
+- **Separate 'Chưa chốt lương' from Discrepancies**: KTVs who do not have a saved salary record yet (status `'NO_LEGACY'` or `'PENDING_LEGACY'`, displayed as "Chưa chốt lương") **MUST NOT** be counted under "Lệch lớn" (Major discrepancy) in UI summary statistics or dashboards. Discrepancies only exist when a record actually exists but differs from AI. Lumping them together creates false alarms for the user.
+
+## 8. Immutable Finalized Records and Locked Month-End Close
+- **Finalized salary records are fully immutable.** Once a salary record reaches `status = 'finalized'` (expense entry created, salary paid), it **MUST NOT** be recalculated, modified, or adjusted in any way.
+- **Locked records are temporarily immutable.** If `is_locked = true` (month-end close in progress), no modifications are allowed until the lock is released.
+- **Block all modification actions at source**: Any action that creates, updates, or approves salary adjustments, manual entries, or recalculations **MUST** check the target salary record's `status` and `is_locked` fields BEFORE proceeding:
+  - If `is_locked = true`: Return error `"Không thể điều chỉnh: Bảng lương đã bị khóa (month-end close). Liên hệ kế toán để mở khóa."`
+  - If `status = 'finalized'`: Return error `"Không thể điều chỉnh: Bảng lương đã hoàn tất (finalized) và đã xuất chi. Điều chỉnh sẽ không có hiệu lực."`
+- **This rule applies to ALL business modules**: Salary adjustments, KPI bonuses, attendance deductions, session completions, commission calculations, manual journal entries, and any other action that modifies salary components.
+- **Recalculation engine enforcement**: The `recalculateAndSaveSalaryRecordEngine` function already throws errors for finalized/locked records via `assertSalaryRecalculationLifecycle()`. All upstream actions must respect this lifecycle check.
+- **UX clarity**: When displaying finalized/locked records in UI, show a clear badge (e.g., "🔒 Đã khóa" or "✅ Đã hoàn tất") and disable all edit/adjust buttons to prevent user confusion.
+
+## 9. Package-Based KTV Session Multipliers
 - **Dynamic Session quy đổi**: The system calculates the total completed sessions count dynamically based on the package coefficients:
   - **Combo Mẹ & Bé Tiết Kiệm (and basic packages)**: `1.0` multiplier.
   - **Combo Mẹ & Bé Hạnh Phúc**: `1.5` multiplier.
@@ -60,14 +76,30 @@ You must strictly adhere to the following rules when working on this codebase to
 - **Rule alignment**: Any calculate, query, or report module (including the central `recalculateAndSaveSalaryRecord` engine, `getSalaryData` frontend fetch, and database RPCs like `calculate_ktv_salary_sheet`) **MUST** fetch package details from the `packages` table and sum sessions using `session_multiplier` coefficients, instead of using raw record counts (e.g., `sessions.length`).
 - **Tests Mocking**: When mocking salary calculations in Jest integration pipelines, the mocks must respect the package session multiplier mapping and keep the mock `salary_records` store fully updated to prevent regression.
 
-## 9. Static Analysis and Security Gate Integrity
+## 9. Package-Based KTV Session Multipliers
+- **Dynamic Session quy đổi**: The system calculates the total completed sessions count dynamically based on the package coefficients:
+  - **Combo Mẹ & Bé Tiết Kiệm (and basic packages)**: `1.0` multiplier.
+  - **Combo Mẹ & Bé Hạnh Phúc**: `1.5` multiplier.
+  - **Combo Mẹ & Bé VIP Toàn Diện**: `2.0` multiplier.
+- **Decimal Counts**: The sessions count in `salary_records` (represented by `total_sessions`) is typed as `NUMERIC(5,2)` in PostgreSQL and `number` in TypeScript to accurately hold decimal values (e.g. `14.5` ca).
+- **Rule alignment**: Any calculate, query, or report module (including the central `recalculateAndSaveSalaryRecordEngine` engine, `getSalaryData` frontend fetch, and database RPCs like `calculate_ktv_salary_sheet`) **MUST** fetch package details from the `packages` table and sum sessions using `session_multiplier` coefficients, instead of using raw record counts (e.g., `sessions.length`).
+- **Tests Mocking**: When mocking salary calculations in Jest integration pipelines, the mocks must respect the package session multiplier mapping and keep the mock `salary_records` store fully updated to prevent regression.
+
+## 10. Static Analysis and Security Gate Integrity
 - **Static analysis findings are blocking by default.** Do not bypass Semgrep, Trivy, Gitleaks, secret scans, or audit gates with broad ignore patterns. Any ignore must be scoped to non-runtime artifacts such as docs, archives, generated reports, screenshots, or tests.
 - **Dependency vulnerability exceptions require a written rationale.** If a dependency has no patched npm release or is constrained by export/test compatibility, document the reason in the audit allowlist or `.trivyignore`, keep the ignore narrow to the exact CVE/GHSA, and revisit it before upgrading or replacing the package.
 - **Server/runtime logs must use constant format strings.** Prefer `console.error('Context: %s', value)` or structured fields over template-string log messages for user-controlled or external values. This prevents unsafe format-string findings and reduces accidental log leakage.
 - **Security gate changes must be verified locally before push.** At minimum run the relevant combination of `npm.cmd run security:audit`, `npm.cmd run security:secrets`, `npm.cmd run lint`, `npm.cmd run build`, `npm.cmd run test:critical`, and `git diff --check`.
 
 
-## 10. Route Path Consistency and Navigation Safety
+## 10. Static Analysis and Security Gate Integrity
+- **Static analysis findings are blocking by default.** Do not bypass Semgrep, Trivy, Gitleaks, secret scans, or audit gates with broad ignore patterns. Any ignore must be scoped to non-runtime artifacts such as docs, archives, generated reports, screenshots, or tests.
+- **Dependency vulnerability exceptions require a written rationale.** If a dependency has no patched npm release or is constrained by export/test compatibility, document the reason in the audit allowlist or `.trivyignore`, keep the ignore narrow to the exact CVE/GHSA, and revisit it before upgrading or replacing the package.
+- **Server/runtime logs must use constant format strings.** Prefer `console.error('Context: %s', value)` or structured fields over template-string log messages for user-controlled or external values. This prevents unsafe format-string findings and reduces accidental log leakage.
+- **Security gate changes must be verified locally before push.** At minimum run the relevant combination of `npm.cmd run security:audit`, `npm.cmd run security:secrets`, `npm.cmd run lint`, `npm.cmd run build`, `npm.cmd run test:critical`, and `git diff --check`.
+
+
+## 11. Route Path Consistency and Navigation Safety
 - **Always use centralized route constants.** Never hardcode route paths in components or navigation logic. Define all routes in a single source of truth (`src/lib/constants/routes.ts` or similar) to prevent inconsistencies when refactoring folder structure.
 - **Search exhaustively when moving routes.** When moving page files (e.g., from `src/app/(dashboard)/admin` to `src/app/dashboard/admin`), you **MUST** search the entire codebase for hardcoded references to the old path:
   ```bash

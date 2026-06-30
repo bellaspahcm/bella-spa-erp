@@ -52,6 +52,41 @@ export async function createAdjustment(
     // Convert YYYY-MM to YYYY-MM-01 for database
     const monthYear = `${params.month}-01`;
 
+    // ✅ CRITICAL BUSINESS RULE: Check if salary record is finalized or locked
+    // Finalized/locked records are immutable - no adjustments allowed
+    // This prevents data corruption after accounting finalization
+    const { data: salaryRecord, error: salaryError } = await (supabase as any)
+      .from('salary_records')
+      .select('status, is_locked')
+      .eq('ktv_id', params.ktvId)
+      .eq('month_year', monthYear)
+      .eq('tenant_id', params.tenantId)
+      .maybeSingle();
+
+    if (salaryError) {
+      console.error('[createAdjustment] Error checking salary record status:', salaryError);
+      // Don't fail - allow creation if record doesn't exist yet
+    }
+
+    if (salaryRecord) {
+      // Check is_locked flag (month-end close)
+      if (salaryRecord.is_locked) {
+        return {
+          success: false,
+          error: 'Không thể điều chỉnh: Bảng lương đã bị khóa (month-end close). Liên hệ kế toán để mở khóa.',
+        };
+      }
+
+      // Check finalized status (expense entry created, salary paid)
+      const status = String(salaryRecord.status ?? '').toLowerCase();
+      if (status === 'finalized') {
+        return {
+          success: false,
+          error: 'Không thể điều chỉnh: Bảng lương đã hoàn tất (finalized) và đã xuất chi. Điều chỉnh sẽ không có hiệu lực.',
+        };
+      }
+    }
+
     // Insert adjustment
     const { data, error: insertError } = await (supabase as any)
       .from('salary_adjustments')
