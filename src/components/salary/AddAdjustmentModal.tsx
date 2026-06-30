@@ -28,7 +28,7 @@ interface FormData {
 const BONUS_CATEGORIES = [
   'Thưởng hiệu suất',
   'Thưởng lễ tết',
-  'Thưởng hoàn thành dự án',
+  'Thưởng hoàn thành mục tiêu',
   'Khác',
 ];
 
