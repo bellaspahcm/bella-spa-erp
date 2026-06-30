@@ -9,7 +9,7 @@
   ┬╖ optimizePackageImports
 
   Creating an optimized production build ...
-Γ£ô Compiled successfully in 17.2s
+Γ£ô Compiled successfully in 14.9s
   Running next.config.js provided runAfterProductionCompile ...
-Γ£ô Completed runAfterProductionCompile in 648ms
+Γ£ô Completed runAfterProductionCompile in 596ms
   Running TypeScript ...
