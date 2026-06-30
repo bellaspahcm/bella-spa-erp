@@ -570,8 +570,8 @@ export function AdjustmentsListPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="flex flex-col md:flex-row gap-4 mt-6">
-        <div className="flex-1 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+      <div className="flex flex-col md:flex-row gap-6 mt-6">
+        <div className="flex-1 min-w-0 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 mb-1">
             <Plus className="w-4 h-4" />
             <p className="text-sm font-medium">Tổng thưởng (đã duyệt)</p>
@@ -581,7 +581,7 @@ export function AdjustmentsListPage() {
           </p>
         </div>
         
-        <div className="flex-1 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+        <div className="flex-1 min-w-0 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center gap-2 text-red-600 dark:text-red-400 mb-1">
             <XCircle className="w-4 h-4" />
             <p className="text-sm font-medium">Tổng phạt (đã duyệt)</p>
@@ -591,7 +591,7 @@ export function AdjustmentsListPage() {
           </p>
         </div>
         
-        <div className="flex-1 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+        <div className="flex-1 min-w-0 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 mb-1">
             <CheckCircle2 className="w-4 h-4" />
             <p className="text-sm font-medium">Chờ duyệt</p>

@@ -305,38 +305,44 @@ h1, h2, h3, h4, h5, h6 {
   background: rgba(157, 23, 77, 0.2);
 }
 
-/* Global scrollbar styling for consistency */
+/* Global scrollbar styling for consistency - Override with !important */
 *::-webkit-scrollbar {
-  height: 8px;
-  width: 8px;
+  height: 8px !important;
+  width: 8px !important;
 }
 
 *::-webkit-scrollbar-track {
-  background: rgba(148, 163, 184, 0.08);
-  border-radius: 10px;
-  margin: 2px;
+  background: rgba(148, 163, 184, 0.08) !important;
+  border-radius: 10px !important;
+  margin: 2px !important;
 }
 
 *::-webkit-scrollbar-thumb {
-  background: rgba(100, 116, 139, 0.3);
-  border-radius: 10px;
-  transition: all 0.3s ease;
+  background: rgba(100, 116, 139, 0.3) !important;
+  border-radius: 10px !important;
+  transition: all 0.3s ease !important;
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background: rgba(71, 85, 105, 0.5);
+  background: rgba(71, 85, 105, 0.5) !important;
 }
 
 /* Round corners on both ends for better aesthetics */
 *::-webkit-scrollbar-corner {
-  background: transparent;
-  border-radius: 10px;
+  background: transparent !important;
+  border-radius: 10px !important;
 }
 
 /* Firefox scrollbar */
 * {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(100, 116, 139, 0.3) rgba(148, 163, 184, 0.08);
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(100, 116, 139, 0.3) rgba(148, 163, 184, 0.08) !important;
+}
+
+/* Ensure tooltips and popovers are not clipped by overflow containers */
+.group:has(.z-\\[9999\\]),
+.relative:has(.z-\\[9999\\]) {
+  overflow: visible !important;
 }
 
 .bella-toolbar,
