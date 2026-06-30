@@ -1,6 +1,5 @@
 {
   "buildCommand": "npm run build",
   "installCommand": "npm install --legacy-peer-deps --ignore-scripts",
-  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- ':!apps/mobile'",
-  "$forceDeployUIFixes": "2025-06-22T17:30:00Z"
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- ':!apps/mobile'"
 }
