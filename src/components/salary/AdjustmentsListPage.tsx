@@ -591,7 +591,7 @@ export function AdjustmentsListPage() {
           </p>
         </div>
         
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 flex-1">
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 flex-1" style={{ marginBottom: '24px' }}>
           <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 mb-1">
             <CheckCircle2 className="w-4 h-4" />
             <p className="text-sm font-medium">Chờ duyệt</p>
