@@ -570,7 +570,7 @@ export function AdjustmentsListPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="flex flex-col md:flex-row gap-6 mt-6">
+      <div className="flex flex-col md:flex-row gap-6 md:gap-6 mt-6" style={{ gap: '1.5rem' }}>
         <div className="flex-1 min-w-0 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 mb-1">
             <Plus className="w-4 h-4" />
