@@ -182,7 +182,8 @@ export function parseCommissionInput(
   if (type === 'percentage') {
     const percentage = asFiniteNumber(value);
     const clampedPercentage = Math.max(0, Math.min(100, percentage));
-    return Math.round((clampedPercentage / 100) * asFiniteNumber(baseAmount));
+    const safeBaseAmount = Math.max(0, asFiniteNumber(baseAmount)); // Clamp negative base
+    return Math.round((clampedPercentage / 100) * safeBaseAmount);
   }
   
   return 0;
@@ -353,9 +354,12 @@ export function calculatePositionBonus(input: PositionBonusInput): number {
   const multipliers = input.multipliers || DEFAULT_COMMISSION_CONFIG.position_multipliers;
   const multiplier = multipliers[input.positionTier] || 1.0;
   
+  // Clamp negative base commission to 0
+  const safeBaseCommission = Math.max(0, asFiniteNumber(input.baseCommission));
+  
   // Position bonus is the additional amount above baseline (1.0x)
   const bonusRate = Math.max(0, multiplier - 1.0);
-  return Math.round(asFiniteNumber(input.baseCommission) * bonusRate);
+  return Math.round(safeBaseCommission * bonusRate);
 }
 
 /**
@@ -412,9 +416,9 @@ export function getSeniorityBonusRate(
 ): number {
   const rates = bonusRates || DEFAULT_COMMISSION_CONFIG.seniority_bonus_rates;
   
-  if (yearsOfService >= 5) return rates['5_plus_years'];
-  if (yearsOfService >= 3) return rates['3_to_5_years'];
-  if (yearsOfService >= 1) return rates['1_to_3_years'];
+  if (yearsOfService > 5) return rates['5_plus_years']; // Changed >= to >
+  if (yearsOfService > 3) return rates['3_to_5_years']; // Changed >= to >
+  if (yearsOfService > 1) return rates['1_to_3_years']; // Changed >= to >
   return rates['0_to_1_year'];
 }
 
@@ -464,7 +468,10 @@ export function calculateSeniorityBonus(input: SeniorityBonusInput): number {
   const yearsOfService = calculateYearsOfService(input.hireDate);
   const bonusRate = getSeniorityBonusRate(yearsOfService, input.bonusRates);
   
-  return Math.round(asFiniteNumber(input.baseSalary) * bonusRate);
+  // Clamp negative base salary to 0
+  const safeBaseSalary = Math.max(0, asFiniteNumber(input.baseSalary));
+  
+  return Math.round(safeBaseSalary * bonusRate);
 }
 
 /**
@@ -500,6 +507,11 @@ export function calculateSeniorityBonus(input: SeniorityBonusInput): number {
  * ```
  */
 export function aggregateManualAdjustments(input: ManualAdjustmentsInput): number {
+  // Handle null/undefined adjustments gracefully
+  if (!input.adjustments || !Array.isArray(input.adjustments)) {
+    return 0;
+  }
+  
   let netAmount = 0;
   
   for (const adj of input.adjustments) {
