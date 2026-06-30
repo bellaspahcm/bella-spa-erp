@@ -669,6 +669,7 @@ export default function SalaryPage() {
               openEditModal={openEditModal}
               handleApprove={handleApprove}
               handleExport={handleExport}
+              currentMonth={getCurrentMonthString()}
             />
           )}
 

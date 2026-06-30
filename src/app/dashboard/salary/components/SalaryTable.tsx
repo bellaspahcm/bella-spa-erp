@@ -6,6 +6,7 @@ import {
 AlertCircle,
 CheckCircle2,
 Download,
+Eye,
 Filter,
 Loader2,
 Search,
@@ -13,6 +14,8 @@ ShieldCheck,
 Star
 } from 'lucide-react';
 import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
+import { useState } from 'react';
+import { SalaryDetailModal } from '@/components/salary/SalaryDetailModal';
 
 interface SalaryTableProps {
   filteredSalaries: KtvSalaryRecord[];
@@ -24,6 +27,7 @@ interface SalaryTableProps {
   openEditModal: (s: KtvSalaryRecord) => void;
   handleApprove: (id: string, name: string) => void;
   handleExport: (s: KtvSalaryRecord) => void;
+  currentMonth: string; // YYYY-MM format
 }
 
 export default function SalaryTable({
@@ -36,9 +40,13 @@ export default function SalaryTable({
   openEditModal,
   handleApprove,
   handleExport,
+  currentMonth,
 }: SalaryTableProps) {
   const vocab = useModuleVocabulary();
   const isNotKtv = currentUser?.role?.toLowerCase() !== 'ktv';
+  
+  // Modal state for salary detail
+  const [viewingSalary, setViewingSalary] = useState<KtvSalaryRecord | null>(null);
 
   return (
     <div className="mb-6 overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-sm md:mb-10 md:rounded-[40px]">
@@ -169,6 +177,13 @@ export default function SalaryTable({
                   {isNotKtv && s.status !== 'approved' && (
                     <div className="flex gap-2">
                       <button 
+                        onClick={() => setViewingSalary(s)}
+                        className="p-3 bg-blue-50 text-blue-500 hover:bg-blue-500 hover:text-white rounded-xl transition-all shadow-sm"
+                        title="Xem chi tiết lương"
+                      >
+                        <Eye className="w-5 h-5" />
+                      </button>
+                      <button 
                         onClick={() => openEditModal(s)}
                         className="p-3 bg-slate-100 text-slate-500 hover:bg-slate-200 rounded-xl transition-all shadow-sm"
                         title="Chỉnh sửa lương"
@@ -188,7 +203,7 @@ export default function SalaryTable({
                       <button 
                         onClick={() => handleExport(s)}
                         disabled={isExportBlocked}
-                        className="p-3 bg-blue-50 text-blue-500 hover:bg-blue-500 hover:text-white rounded-xl transition-all shadow-sm disabled:opacity-50 disabled:pointer-events-none"
+                        className="p-3 bg-emerald-50 text-emerald-500 hover:bg-emerald-500 hover:text-white rounded-xl transition-all shadow-sm disabled:opacity-50 disabled:pointer-events-none"
                         title={isExporting ? 'Đang xuất báo cáo' : 'Xuất báo cáo chi tiết'}
                       >
                         {isExporting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
@@ -196,14 +211,24 @@ export default function SalaryTable({
                     </div>
                   )}
                   {!isNotKtv && (
-                    <button 
-                      onClick={() => handleExport(s)}
-                      disabled={isExportBlocked}
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white rounded-xl transition-all font-bold text-xs disabled:opacity-50 disabled:pointer-events-none"
-                    >
-                      {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                      {isExporting ? 'Đang xuất' : 'Xuất báo cáo'}
-                    </button>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => setViewingSalary(s)}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white rounded-xl transition-all font-bold text-xs"
+                        title="Xem chi tiết lương"
+                      >
+                        <Eye className="w-4 h-4" />
+                        Chi tiết
+                      </button>
+                      <button 
+                        onClick={() => handleExport(s)}
+                        disabled={isExportBlocked}
+                        className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white rounded-xl transition-all font-bold text-xs disabled:opacity-50 disabled:pointer-events-none"
+                      >
+                        {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                        {isExporting ? 'Đang xuất' : 'Xuất báo cáo'}
+                      </button>
+                    </div>
                   )}
                 </td>
               </motion.tr>
@@ -212,6 +237,17 @@ export default function SalaryTable({
           </tbody>
         </table>
       </div>
+
+      {/* Salary Detail Modal */}
+      {viewingSalary && currentUser?.tenant_id && (
+        <SalaryDetailModal
+          isOpen={!!viewingSalary}
+          onClose={() => setViewingSalary(null)}
+          salary={viewingSalary}
+          tenantId={currentUser.tenant_id}
+          currentMonth={currentMonth}
+        />
+      )}
     </div>
   );
 }
