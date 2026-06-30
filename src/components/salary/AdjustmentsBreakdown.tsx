@@ -159,7 +159,7 @@ export function AdjustmentsBreakdown({
           </h3>
           <Link
             href="/dashboard/salary/adjustments"
-            className="flex items-center gap-1 text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-sm"
           >
             Quản lý
             <ExternalLink className="w-3 h-3" />

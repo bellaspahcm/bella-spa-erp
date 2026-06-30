@@ -131,7 +131,7 @@ export function KtvLeaveRequestModal({
 
               <form onSubmit={onSubmit} className="space-y-4 flex-shrink overflow-y-auto pr-1 max-h-[calc(90vh-200px)]">
                 <div>
-                  <label className="text-[10px] font-black text-slate-600 dark:text-[#D4C5B6] uppercase tracking-wider mb-1.5 block">
+                  <label className="text-[10px] font-black text-slate-700 dark:text-[#D4C5B6] uppercase tracking-wider mb-1.5 block">
                     Chọn ngày nghỉ phép
                   </label>
                   <input
@@ -145,7 +145,7 @@ export function KtvLeaveRequestModal({
                 </div>
 
                 <div>
-                  <label className="text-[10px] font-black text-slate-600 dark:text-[#D4C5B6] uppercase tracking-wider mb-1.5 block">
+                  <label className="text-[10px] font-black text-slate-700 dark:text-[#D4C5B6] uppercase tracking-wider mb-1.5 block">
                     Thời gian nghỉ
                   </label>
                   <div className="grid grid-cols-3 gap-2">
@@ -167,7 +167,7 @@ export function KtvLeaveRequestModal({
                 </div>
 
                 <div>
-                  <label className="text-[10px] font-black text-slate-600 dark:text-[#D4C5B6] uppercase tracking-wider mb-1.5 block">
+                  <label className="text-[10px] font-black text-slate-700 dark:text-[#D4C5B6] uppercase tracking-wider mb-1.5 block">
                     Lý do xin nghỉ
                   </label>
                   <textarea
@@ -236,18 +236,18 @@ export function KtvLeaveHistoryModal({
 
               <div className="mt-2 mb-6">
                 <h3 className="text-lg font-black text-slate-900 dark:text-[#EFE9E1] uppercase tracking-wider">Lịch sử nghỉ phép</h3>
-                <p className="text-xs text-slate-600 dark:text-[#D4C5B6] font-medium">Danh sách đơn xin nghỉ phép của bạn</p>
+                <p className="text-xs text-slate-700 dark:text-[#D4C5B6] font-medium">Danh sách đơn xin nghỉ phép của bạn</p>
               </div>
 
               <div className="flex-grow overflow-y-auto space-y-3 pr-1 max-h-[50vh]">
                 {isLoading ? (
                   <div className="flex flex-col items-center justify-center py-12">
-                    <RefreshCw className="w-8 h-8 text-slate-600 dark:text-[#D4C5B6] animate-spin mb-2" />
-                    <p className="text-xs text-slate-600 dark:text-[#D4C5B6] font-bold animate-pulse">Đang tải lịch sử...</p>
+                    <RefreshCw className="w-8 h-8 text-slate-700 dark:text-[#D4C5B6] animate-spin mb-2" />
+                    <p className="text-xs text-slate-700 dark:text-[#D4C5B6] font-bold animate-pulse">Đang tải lịch sử...</p>
                   </div>
                 ) : leaveHistory.length === 0 ? (
                   <div className="py-12 text-center">
-                    <p className="text-xs text-slate-600 dark:text-[#D4C5B6] font-bold">Bạn chưa gửi đơn xin nghỉ phép nào</p>
+                    <p className="text-xs text-slate-700 dark:text-[#D4C5B6] font-bold">Bạn chưa gửi đơn xin nghỉ phép nào</p>
                   </div>
                 ) : (
                   leaveHistory.map((leave) => (
@@ -258,11 +258,11 @@ export function KtvLeaveHistoryModal({
                           {getLeaveStatusLabel(leave.status)}
                         </span>
                       </div>
-                      <div className="text-[10px] text-slate-600 dark:text-[#D4C5B6] font-bold flex gap-3">
+                      <div className="text-[10px] text-slate-700 dark:text-[#D4C5B6] font-bold flex gap-3">
                         <span>Ca: <strong className="text-slate-700 dark:text-[#EFE9E1] uppercase">{getLeaveTypeLabel(leave.leave_type)}</strong></span>
                         <span>Gửi ngày: {formatCreatedDate(leave.created_at)}</span>
                       </div>
-                      <div className="text-xs text-slate-600 dark:text-[#D4C5B6] bg-white dark:bg-[#1C1B19] p-2.5 rounded-xl border border-slate-100 dark:border-[#3E3A35] leading-relaxed">
+                      <div className="text-xs text-slate-700 dark:text-[#D4C5B6] bg-white dark:bg-[#1C1B19] p-2.5 rounded-xl border border-slate-100 dark:border-[#3E3A35] leading-relaxed">
                         {leave.reason}
                       </div>
                       {leave.status === 'rejected' && leave.rejection_reason && (
