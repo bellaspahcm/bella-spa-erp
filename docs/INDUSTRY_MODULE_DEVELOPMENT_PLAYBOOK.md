@@ -387,6 +387,34 @@ Khi tu nay ve sau phat hien loi trong Beauty Spa hoac nganh moi, them vao bang n
 - Commit: pending.
 - Rui ro con lai: UAT smoke nay van can env E2E dung va co the skip tren local neu khong co service-role; khong thay the kiem thu thu cong truoc go-live cho tung spa that.
 
+### 2026-06-22 - Tailwind v4 gap/margin utilities khong generate CSS - phai dung inline styles
+
+- Module/tenant: Beauty Spa (trang Thưởng/Phạt lương).
+- Man hinh/luong: `/dashboard/salary/adjustments` - Stats cards (3 cards: Tổng thưởng, Tổng phạt, Chờ duyệt).
+- Dau hieu: 
+  - Tailwind classes `gap-6`, `md:gap-6`, `md:mr-6`, `grid gap-6` không tạo khoảng cách giữa các cards.
+  - Stats cards sát nhau hoàn toàn trên desktop dù đã dùng gap/margin utilities.
+  - Inline `style={{ gap: '1.5rem' }}` cũng không work.
+  - CSS `<style>` tag với media queries cũng không apply.
+  - Chỉ có **pure inline `style={{ marginRight: '24px', marginBottom: '24px' }}`** mới work.
+- Nguyen nhan goc: 
+  - Tailwind v4 CSS-first approach không generate/purge các utilities đúng cách hoặc có CSS global đang override.
+  - `gap` utilities và responsive margin classes bị tree-shake hoặc không compile.
+  - Next.js Turbopack hot reload không update styles đúng.
+- Cach sua:
+  - **Card 1 & 2**: `style={{ marginRight: '24px', marginBottom: '24px' }}`
+  - **Card 3**: `style={{ marginBottom: '24px' }}` (không cần marginRight vì là card cuối)
+  - Container: `flex flex-col md:flex-row`
+  - **KHÔNG dùng** gap, grid, Tailwind margin utilities, hoặc CSS classes cho spacing giữa cards.
+- Test/guard da them: 
+  - Manual visual test trên localhost desktop/mobile.
+  - Chưa có automated test vì là pure CSS/layout issue.
+- Commit: `78eed12f`
+- Rui ro con lai: 
+  - Nếu module khác gặp vấn đề tương tự với Tailwind gap/margin utilities, cần dùng inline styles thay vì classes.
+  - Cần điều tra root cause của Tailwind v4 CSS generation issue trong future tasks.
+  - Solution này bypass Tailwind hoàn toàn, không responsive được (cần media query riêng nếu muốn khác biệt mobile/desktop spacing).
+
 ### 2026-06-12 - Beauty branch quota va demo flow can khoa dung
 
 - Module/tenant: Beauty Spa va subscription core.
