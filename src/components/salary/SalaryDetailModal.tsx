@@ -117,10 +117,10 @@ export function SalaryDetailModal({
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="max-h-[92vh] w-full max-w-4xl overflow-hidden rounded-[28px] bg-white dark:bg-gray-900 shadow-2xl sm:rounded-[32px]"
+        className="flex flex-col max-h-[92vh] w-full max-w-4xl overflow-hidden rounded-[28px] bg-white dark:bg-gray-900 shadow-2xl sm:rounded-[32px]"
       >
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 sm:p-6">
+        <div className="flex-none flex items-center justify-between border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 sm:p-6">
           <div>
             <h2 className="text-2xl font-black text-slate-900 dark:text-gray-100">
               Chi Tiết Lương
@@ -138,7 +138,7 @@ export function SalaryDetailModal({
         </div>
 
         {/* Content */}
-        <div className="max-h-[calc(92vh-10rem)] overflow-y-auto p-5 sm:p-6 space-y-4">
+        <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
           {/* Total Salary Card */}
           <div className="bg-gradient-to-br from-primary/10 to-primary/5 dark:from-primary/20 dark:to-primary/10 rounded-xl p-6 border-2 border-primary/30">
             <div className="flex items-center justify-between">
@@ -290,7 +290,7 @@ export function SalaryDetailModal({
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 sm:p-6">
+        <div className="flex-none border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 sm:p-6">
           <button
             onClick={onClose}
             className="w-full py-4 bg-primary text-white font-black rounded-2xl hover:bg-primary-hover transition-all"

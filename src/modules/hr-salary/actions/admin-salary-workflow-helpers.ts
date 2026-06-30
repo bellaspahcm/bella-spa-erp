@@ -87,6 +87,68 @@ export async function getSalaryMonthLockFailure(
   return isLocked ? { success: false, error: lockedError } : null;
 }
 
+/**
+ * Checks if a specific KTV's salary record is finalized or locked.
+ * Returns error result if record is immutable, otherwise returns null (can proceed).
+ * 
+ * **Business Rule:** Finalized and locked salary records are immutable - no modifications allowed.
+ * 
+ * @param supabase - Supabase client with database access
+ * @param ktvId - KTV employee ID to check
+ * @param monthYear - Salary period in YYYY-MM-01 format
+ * @param tenantId - Tenant ID for multi-tenancy isolation
+ * @param finalizedError - Error message to return if record is finalized
+ * @param lockedError - Error message to return if record is locked
+ * @returns ActionFailure if record is finalized/locked, null if can proceed
+ */
+export async function getKtvSalaryImmutabilityFailure(
+  supabase: SalaryWorkflowClient,
+  ktvId: string,
+  monthYear: string,
+  tenantId: string,
+  finalizedError?: string,
+  lockedError?: string
+): Promise<ActionFailure | null> {
+  const { data: salaryRecord, error: salaryError } = await supabase
+    .from('salary_records')
+    .select('status, is_locked')
+    .eq('ktv_id', ktvId)
+    .eq('month_year', monthYear)
+    .eq('tenant_id', tenantId)
+    .maybeSingle();
+
+  if (salaryError) {
+    console.error('[getKtvSalaryImmutabilityFailure] Error checking salary record:', salaryError);
+    // Don't fail - allow operation if record doesn't exist yet
+    return null;
+  }
+
+  if (!salaryRecord) {
+    // No record exists yet - allow operation
+    return null;
+  }
+
+  // Check is_locked flag (month-end close)
+  if (salaryRecord.is_locked) {
+    return {
+      success: false,
+      error: lockedError || 'Không thể điều chỉnh: Bảng lương đã bị khóa (month-end close). Liên hệ kế toán để mở khóa.',
+    };
+  }
+
+  // Check finalized status (expense entry created, salary paid)
+  const status = String(salaryRecord.status ?? '').toLowerCase();
+  if (status === 'finalized') {
+    return {
+      success: false,
+      error: finalizedError || 'Không thể điều chỉnh: Bảng lương đã hoàn tất (finalized) và đã xuất chi. Điều chỉnh sẽ không có hiệu lực.',
+    };
+  }
+
+  // Safe to proceed
+  return null;
+}
+
 export async function createSalaryExpense({
   supabase,
   tenantId,
