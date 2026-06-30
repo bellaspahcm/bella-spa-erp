@@ -52,7 +52,9 @@
     "mobile:ios": "npm run ios --workspace=apps/mobile",
     "mobile:android": "npm run android --workspace=apps/mobile",
     "mobile:typecheck": "npm run typecheck --workspace=apps/mobile",
-    "shared:typecheck": "npm run typecheck --workspace=packages/shared"
+    "shared:typecheck": "npm run typecheck --workspace=packages/shared",
+    "smoke:test": "npx tsx scripts/smoke-test-position-tier-hire-date.ts",
+    "smoke:test:bash": "bash scripts/smoke-test.sh"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
@@ -101,6 +103,7 @@
     "metro-resolver": "^0.80.12",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
+    "tsx": "^4.22.4",
     "typescript": "^5"
   }
 }
