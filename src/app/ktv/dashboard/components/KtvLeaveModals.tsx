@@ -131,7 +131,7 @@ export function KtvLeaveRequestModal({
 
               <form onSubmit={onSubmit} className="space-y-4 flex-shrink overflow-y-auto pr-1 max-h-[calc(90vh-200px)]">
                 <div>
-                  <label className="text-[10px] font-black text-slate-700 dark:text-[#D4C5B6] uppercase tracking-wider mb-1.5 block">
+                  <label className="text-[10px] font-black text-slate-900 dark:text-[#D4C5B6] uppercase tracking-wider mb-1.5 block">
                     Chọn ngày nghỉ phép
                   </label>
                   <input
@@ -145,7 +145,7 @@ export function KtvLeaveRequestModal({
                 </div>
 
                 <div>
-                  <label className="text-[10px] font-black text-slate-700 dark:text-[#D4C5B6] uppercase tracking-wider mb-1.5 block">
+                  <label className="text-[10px] font-black text-slate-900 dark:text-[#D4C5B6] uppercase tracking-wider mb-1.5 block">
                     Thời gian nghỉ
                   </label>
                   <div className="grid grid-cols-3 gap-2">
@@ -167,7 +167,7 @@ export function KtvLeaveRequestModal({
                 </div>
 
                 <div>
-                  <label className="text-[10px] font-black text-slate-700 dark:text-[#D4C5B6] uppercase tracking-wider mb-1.5 block">
+                  <label className="text-[10px] font-black text-slate-900 dark:text-[#D4C5B6] uppercase tracking-wider mb-1.5 block">
                     Lý do xin nghỉ
                   </label>
                   <textarea
