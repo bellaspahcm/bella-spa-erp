@@ -157,7 +157,6 @@ export async function disputeSalary(monthYear: string, reason: string) {
       .update({
         status: 'disputed',
         dispute_reason: reason.trim(),
-        dispute_created_at: new Date().toISOString(),
       })
       .eq('id', salaryRecord.id);
 
