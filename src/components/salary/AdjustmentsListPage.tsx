@@ -570,8 +570,34 @@ export function AdjustmentsListPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+      <style dangerouslySetInnerHTML={{__html: `
+        .stats-cards-container {
+          display: flex !important;
+          flex-direction: column !important;
+          margin-top: 1.5rem !important;
+        }
+        .stats-card {
+          flex: 1 !important;
+          margin-bottom: 1.5rem !important;
+        }
+        .stats-card:last-child {
+          margin-bottom: 0 !important;
+        }
+        @media (min-width: 768px) {
+          .stats-cards-container {
+            flex-direction: row !important;
+          }
+          .stats-card {
+            margin-right: 1.5rem !important;
+            margin-bottom: 0 !important;
+          }
+          .stats-card:last-child {
+            margin-right: 0 !important;
+          }
+        }
+      `}} />
+      <div className="stats-cards-container">
+        <div className="stats-card bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 mb-1">
             <Plus className="w-4 h-4" />
             <p className="text-sm font-medium">Tổng thưởng (đã duyệt)</p>
@@ -581,7 +607,7 @@ export function AdjustmentsListPage() {
           </p>
         </div>
         
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+        <div className="stats-card bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center gap-2 text-red-600 dark:text-red-400 mb-1">
             <XCircle className="w-4 h-4" />
             <p className="text-sm font-medium">Tổng phạt (đã duyệt)</p>
@@ -591,7 +617,10 @@ export function AdjustmentsListPage() {
           </p>
         </div>
         
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+        <div 
+          className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4" 
+          style={{ flex: '1' }}
+        >
           <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 mb-1">
             <CheckCircle2 className="w-4 h-4" />
             <p className="text-sm font-medium">Chờ duyệt</p>
