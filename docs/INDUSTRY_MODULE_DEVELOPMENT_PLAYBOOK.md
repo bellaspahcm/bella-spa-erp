@@ -1593,3 +1593,712 @@ docs/INDUSTRY_MODULE_DEVELOPMENT_PLAYBOOK.md      # This file (!)
   - [page.tsx](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/src/app/dashboard/accounting/salary-reconciliation/page.tsx) - Đổi w-max thành w-full ở tableClassName đối soát lương kế toán.
 - **Rủi ro còn lại**: Không có. Quy tắc CSS đã được đóng gói chính xác bằng các lớp cụ thể, không còn nguy cơ ghi đè nhầm các class Tailwind động của trang khác.
 
+
+
+---
+
+## Case Study: Commission System Extension (June 2026)
+
+> Bài học từ việc mở rộng hệ thống hoa hồng cho Bella Spa ERP
+> 
+> **Bối cảnh:** Hệ thống ban đầu chỉ có hoa hồng cố định theo ca làm (session-based commission) cho module Baby Care. Cần mở rộng để hỗ trợ nhiều loại hoa hồng: service-level commission, product sales commission, position bonus, seniority bonus, và manual adjustments.
+> 
+> **Timeline:** 2 tuần (10-22 June 2026)
+> 
+> **Kết quả:** Hoàn thành 36/40 tasks, 130+ tests passed, 0 breaking changes cho code cũ
+
+### Extension Patterns Đã Áp Dụng
+
+#### 1. Database Schema Extension (Non-Breaking)
+
+**Pattern:** Add new tables và new columns, KHÔNG sửa tables/columns hiện có
+
+```sql
+-- ✅ CORRECT: Add new tables for new features
+CREATE TABLE booking_service_items (
+  id UUID PRIMARY KEY,
+  booking_id UUID REFERENCES bookings(id),
+  service_name TEXT NOT NULL,
+  subtotal NUMERIC(12,2) NOT NULL,
+  calculated_commission NUMERIC(12,2) NOT NULL,
+  override_commission_type commission_type,
+  override_commission_value NUMERIC(10,2),
+  -- ...
+);
+
+CREATE TABLE product_sales (
+  id UUID PRIMARY KEY,
+  ktv_id UUID REFERENCES users(id),
+  product_name TEXT NOT NULL,
+  sale_amount NUMERIC(12,2) NOT NULL,
+  calculated_commission NUMERIC(12,2) NOT NULL,
+  -- ...
+);
+
+-- ✅ CORRECT: Extend existing table with new columns
+ALTER TABLE salary_records
+  ADD COLUMN service_commission NUMERIC(12,2) DEFAULT 0,
+  ADD COLUMN product_sales_commission NUMERIC(12,2) DEFAULT 0,
+  ADD COLUMN position_bonus NUMERIC(12,2) DEFAULT 0,
+  ADD COLUMN seniority_bonus NUMERIC(12,2) DEFAULT 0,
+  ADD COLUMN manual_adjustments NUMERIC(12,2) DEFAULT 0;
+
+-- ❌ WRONG: Modify existing column behavior
+-- ALTER TABLE salary_records ALTER COLUMN session_bonus TYPE ...;
+-- This would break existing code!
+```
+
+**Bài học:**
+- Keep legacy columns (`session_bonus`) unchanged
+- Add new columns for new features
+- Set DEFAULT values để backward compatible
+- Update formula but keep old column for audit trail
+
+#### 2. Business Logic Extension (Backward Compatible)
+
+**Pattern:** Add new calculation functions, keep old ones working
+
+```typescript
+// ✅ CORRECT: Old function still works
+export function calculateSessionCommission(sessions: number): number {
+  return sessions * 150000; // Legacy Baby Care formula
+}
+
+// ✅ CORRECT: New functions for new features
+export function calculateServiceCommission(input: ServiceCommissionInput): number {
+  // Priority: override → tenant default → system default
+  if (input.overrideType && input.overrideValue !== null) {
+    return parseCommissionInput(input.overrideType, input.overrideValue, input.subtotal);
+  }
+  if (input.defaultType && input.defaultValue !== null) {
+    return parseCommissionInput(input.defaultType, input.defaultValue, input.subtotal);
+  }
+  return DEFAULT_COMMISSION_CONFIG.service_commission_default.value;
+}
+
+// ✅ CORRECT: Extend total salary calculation
+export function calculateTotalSalary(components: SalaryComponents): number {
+  return (
+    components.baseSalary +
+    components.sessionBonus + // Legacy - still counted
+    components.serviceCommission + // NEW
+    components.productSalesCommission + // NEW
+    components.positionBonus + // NEW
+    components.seniorityBonus + // NEW
+    components.manualAdjustments + // NEW
+    components.ratingBonus +
+    components.kpiBonus -
+    components.deductions -
+    components.advances
+  );
+}
+```
+
+**Bài học:**
+- Don't delete or rename existing functions
+- Add new functions alongside old ones
+- Extend calculation formulas additively
+- Test that old code paths still work
+
+#### 3. API/Action Extension (Non-Breaking)
+
+**Pattern:** Add new optional parameters, never change required ones
+
+```typescript
+// ✅ CORRECT: Old calls still work, new calls get more features
+interface RecalculateSalaryInput {
+  ktvId: string; // Required (existing)
+  tenantId: string; // Required (existing)
+  month: string; // Required (existing)
+  
+  // NEW: All optional for backward compatibility
+  includeServiceCommission?: boolean; // Default: true
+  includeProductSalesCommission?: boolean; // Default: true
+  includePositionBonus?: boolean; // Default: true
+  includeSeniorityBonus?: boolean; // Default: true
+  includeManualAdjustments?: boolean; // Default: true
+}
+
+// Old code still works:
+await recalculateAndSaveSalaryRecord(supabase, 'ktv-1', 'tenant-a', '2026-06');
+
+// New code gets more control:
+await recalculateAndSaveSalaryRecord(supabase, 'ktv-1', 'tenant-a', '2026-06', {
+  includePositionBonus: false, // Override specific components
+});
+```
+
+**Bài học:**
+- Never change existing required parameters
+- Add new parameters as optional with sensible defaults
+- Document default behavior clearly
+- Test both old and new calling patterns
+
+#### 4. UI Extension (Progressive Enhancement)
+
+**Pattern:** Add new UI components, don't break existing screens
+
+```typescript
+// ✅ CORRECT: Old salary table still works
+<SalaryTable
+  filteredSalaries={salaries}
+  currentUser={currentUser}
+  // ... existing props
+/>
+
+// ✅ CORRECT: Add new detail modal alongside
+<SalaryDetailModal
+  isOpen={!!viewingSalary}
+  onClose={() => setViewingSalary(null)}
+  salary={viewingSalary}
+  tenantId={tenantId}
+  currentMonth={currentMonth}
+/>
+
+// ✅ CORRECT: Add new "View Details" button, keep old buttons
+<button onClick={() => setViewingSalary(s)}>
+  <Eye className="w-5 h-5" />
+</button>
+<button onClick={() => openEditModal(s)}>
+  {/* Old edit button - still works */}
+</button>
+```
+
+**Bài học:**
+- Add new screens/modals alongside existing ones
+- Don't modify core components that other code depends on
+- Use feature flags for gradual rollout if needed
+- Keep old workflows available during transition
+
+### Testing Strategies Applied
+
+#### 1. Edge Case Testing (Task 34)
+
+**Coverage:** 60+ edge case tests
+
+```typescript
+describe('Commission Edge Cases', () => {
+  // Negative values
+  it('should clamp negative commission to 0');
+  it('should clamp negative subtotal to 0');
+  
+  // Large numbers
+  it('should handle 10B+ VND without overflow');
+  it('should handle MAX_SAFE_INTEGER');
+  
+  // Decimals & rounding
+  it('should handle 15.5% commission');
+  it('should round 12.5 VND correctly');
+  
+  // Null/undefined
+  it('should handle null adjustments array');
+  it('should handle undefined hire date');
+  
+  // Boundaries
+  it('should handle exactly 1.0 year seniority boundary');
+  it('should handle exactly 100% percentage');
+  
+  // Performance
+  it('should calculate 1000 items in <100ms');
+});
+```
+
+**Bài học:**
+- Test edge cases BEFORE production bugs appear
+- Cover negative, zero, null, undefined, max values
+- Test exact boundaries (0, 1, 100, etc.)
+- Performance test for bulk operations
+
+#### 2. Integration Testing (Tasks 35-36)
+
+**Coverage:** 41 integration tests for full flows
+
+```typescript
+describe('Service Commission Flow', () => {
+  it('should calculate for booking with 2 services');
+  it('should recalculate when service edited');
+  it('should clawback when booking cancelled');
+  it('should aggregate into salary_records');
+});
+
+describe('Product Sales Flow', () => {
+  it('should handle bulk sales (15+ products)');
+  it('should handle partial refund');
+  it('should work with split payment methods');
+});
+```
+
+**Bài học:**
+- Test full user journeys, not just units
+- Simulate real workflows (create → edit → delete → recalculate)
+- Test cross-table interactions
+- Verify side effects (salary updates after commission changes)
+
+#### 3. Regression Testing
+
+**Pattern:** Ensure old features still work after changes
+
+```typescript
+describe('Backward Compatibility', () => {
+  it('should still calculate legacy session commission', () => {
+    const oldSalary = {
+      baseSalary: 6000000,
+      sessionBonus: 3000000, // Legacy field
+      sessions: 20,
+      // NEW fields all 0
+      serviceCommission: 0,
+      productSalesCommission: 0,
+      // ...
+    };
+    
+    const total = calculateTotalSalary(oldSalary);
+    expect(total).toBe(9000000); // Old formula still works
+  });
+  
+  it('should support mixed legacy + new commission', () => {
+    const mixedSalary = {
+      baseSalary: 6000000,
+      sessionBonus: 1500000, // Legacy Baby Care
+      serviceCommission: 500000, // NEW Spa services
+      // ...
+    };
+    
+    const total = calculateTotalSalary(mixedSalary);
+    expect(total).toBe(8000000); // Both counted correctly
+  });
+});
+```
+
+**Bài học:**
+- Always test that old code paths still work
+- Test mixed scenarios (old + new features together)
+- Run full test suite after every change
+- Never assume "nobody uses that old feature"
+
+### Design Decisions & Tradeoffs
+
+#### 1. Commission Type: Fixed vs Percentage
+
+**Decision:** Support BOTH input formats
+
+```typescript
+type CommissionType = 'fixed' | 'percentage';
+
+interface CommissionInput {
+  type: CommissionType;
+  value: number; // Amount in VND OR percentage 0-100
+  baseAmount: number; // For percentage calculation
+}
+```
+
+**Rationale:**
+- Different businesses have different preferences
+- Spa services often use percentage
+- Product sales sometimes use fixed amount
+- Flexible system adapts to client needs
+
+**Tradeoff:**
+- More complex validation
+- More edge cases to test
+- But: Better real-world fit
+
+#### 2. Commission Priority: Override → Default → System
+
+**Decision:** 3-tier cascade priority
+
+```
+1. Override (transaction-level) - Highest priority
+2. Tenant Default (tenant config)
+3. System Default (hardcoded) - Lowest priority
+```
+
+**Rationale:**
+- Flexibility: Special deals need transaction override
+- Consistency: Most transactions use tenant default
+- Safety: System default prevents calculation errors
+
+**Tradeoff:**
+- More logic complexity
+- More test cases needed
+- But: Covers all real-world scenarios
+
+#### 3. Salary Status Lifecycle: Draft → Published → Confirmed → Finalized
+
+**Decision:** Multi-status workflow with recalculation rules
+
+```
+draft: Always recalculate (dynamic)
+published: Preserve saved values (manual edits protected)
+confirmed: No recalculation (KTV approved)
+finalized: Locked (month-end close)
+```
+
+**Rationale:**
+- Draft: Let system auto-calculate as data comes in
+- Published: Protect accountant manual adjustments
+- Confirmed: Respect KTV sign-off
+- Finalized: Immutable for audit/compliance
+
+**Tradeoff:**
+- Complex state machine logic
+- More edge cases (status transitions)
+- But: Matches real HR/accounting workflow
+
+#### 4. Manual Adjustments: Separate Table vs Inline Fields
+
+**Decision:** Separate `salary_adjustments` table
+
+**Rationale:**
+- Track adjustment history (who, when, why)
+- Support multiple adjustments per KTV per month
+- Audit trail for compliance
+- Approval workflow (draft → pending → approved → rejected)
+
+**Alternative Rejected:**
+```sql
+-- ❌ Rejected: Inline fields
+ALTER TABLE salary_records
+  ADD COLUMN bonus_1_amount NUMERIC,
+  ADD COLUMN bonus_1_reason TEXT,
+  ADD COLUMN bonus_2_amount NUMERIC,
+  ADD COLUMN bonus_2_reason TEXT,
+  -- Doesn't scale!
+```
+
+**Tradeoff:**
+- More tables to join
+- More complex queries
+- But: Better data model, clearer audit trail
+
+### Troubleshooting Guide
+
+#### Issue: Commission không hiển thị trong bảng lương
+
+**Triệu chứng:**
+- KTV đã hoàn thành dịch vụ/bán hàng
+- Nhưng `service_commission` hoặc `product_sales_commission` = 0 trong `salary_records`
+
+**Debug Steps:**
+
+1. **Kiểm tra dữ liệu nguồn:**
+```sql
+-- Có service items không?
+SELECT * FROM booking_service_items
+WHERE ktv_id = 'xxx'
+  AND DATE_TRUNC('month', completed_date) = '2026-06-01'
+  AND status = 'completed';
+
+-- Có product sales không?
+SELECT * FROM product_sales
+WHERE ktv_id = 'xxx'
+  AND DATE_TRUNC('month', sale_date) = '2026-06-01'
+  AND status IN ('completed', 'pending');
+```
+
+2. **Kiểm tra calculated_commission:**
+```sql
+-- Commission có được tính đúng không?
+SELECT service_name, subtotal, calculated_commission
+FROM booking_service_items
+WHERE ktv_id = 'xxx';
+
+-- Nếu calculated_commission = 0, check override/default config
+```
+
+3. **Trigger recalculation:**
+```typescript
+await recalculateAndSaveSalaryRecordEngine(
+  supabase,
+  ktvId,
+  tenantId,
+  '2026-06'
+);
+```
+
+4. **Kiểm tra status:**
+```sql
+-- Nếu status != 'draft', salary đã locked
+SELECT status FROM salary_records
+WHERE ktv_id = 'xxx' AND month = '2026-06-01';
+
+-- Status 'published'/'confirmed'/'finalized' không auto-recalculate
+```
+
+**Root Causes:**
+- Service items chưa complete (`status != 'completed'`)
+- Override commission = 0 (intentional free service)
+- Salary đã published/confirmed (manual values protected)
+- Month mismatch (service completed tháng khác)
+
+#### Issue: Calculation không đúng (số tiền sai)
+
+**Triệu chứng:**
+- Commission có hiển thị nhưng số tiền không khớp với expected
+
+**Debug Steps:**
+
+1. **Verify calculation inputs:**
+```typescript
+// Check service item inputs
+const serviceItem = {
+  subtotal: 800000,
+  overrideType: 'percentage',
+  overrideValue: 15, // Should be 120,000
+};
+
+const result = calculateServiceCommission(serviceItem);
+console.log(result); // 120000?
+```
+
+2. **Check for rounding issues:**
+```typescript
+// Math.round() behavior
+const result = parseCommissionInput('percentage', 33.333333, 1000000);
+// Expected: 333333 (not 333333.33 - rounded)
+```
+
+3. **Verify priority logic:**
+```typescript
+// Override should win over default
+const result = calculateServiceCommission({
+  subtotal: 500000,
+  overrideType: 'fixed',
+  overrideValue: 200000, // ← Should use this
+  defaultType: 'percentage',
+  defaultValue: 10, // ← Ignored
+});
+// Expected: 200000 (not 50000)
+```
+
+4. **Check edge cases:**
+```typescript
+// Negative values clamped to 0
+const result = parseCommissionInput('percentage', -10, 1000000);
+// Expected: 0 (not -100000)
+
+// Percentage clamped to 100%
+const result = parseCommissionInput('percentage', 150, 1000000);
+// Expected: 1000000 (not 1500000)
+```
+
+**Root Causes:**
+- Wrong override/default config in database
+- Rounding behavior misunderstood
+- Edge case (negative, >100%, null) not handled
+- Business logic bug (priority order wrong)
+
+#### Issue: Performance chậm khi tính lương cuối tháng
+
+**Triệu chứng:**
+- Batch recalculation cho 100+ KTVs mất >30 giây
+- UI bị lag/timeout
+
+**Debug Steps:**
+
+1. **Profile queries:**
+```sql
+-- Find slow queries
+SELECT query, calls, total_time, mean_time
+FROM pg_stat_statements
+WHERE query LIKE '%salary_records%'
+ORDER BY mean_time DESC
+LIMIT 10;
+```
+
+2. **Check missing indexes:**
+```sql
+-- Essential indexes
+CREATE INDEX IF NOT EXISTS idx_booking_service_items_ktv_month
+  ON booking_service_items(ktv_id, completed_date)
+  WHERE status = 'completed';
+
+CREATE INDEX IF NOT EXISTS idx_product_sales_ktv_month
+  ON product_sales(ktv_id, sale_date)
+  WHERE status IN ('completed', 'pending');
+
+CREATE INDEX IF NOT EXISTS idx_salary_adjustments_ktv_month
+  ON salary_adjustments(ktv_id, month, status)
+  WHERE status = 'approved';
+```
+
+3. **Batch operations:**
+```typescript
+// ❌ SLOW: Sequential recalculation
+for (const ktv of ktvs) {
+  await recalculateAndSaveSalaryRecord(supabase, ktv.id, tenantId, month);
+}
+
+// ✅ FAST: Parallel recalculation
+await Promise.all(
+  ktvs.map(ktv =>
+    recalculateAndSaveSalaryRecord(supabase, ktv.id, tenantId, month)
+  )
+);
+```
+
+4. **Use RPC for bulk:**
+```sql
+-- Create bulk recalculation RPC
+CREATE OR REPLACE FUNCTION recalculate_all_salaries(
+  p_tenant_id UUID,
+  p_month DATE
+) RETURNS TABLE(...) AS $$
+  -- Bulk calculation in single transaction
+  -- Faster than N individual calls
+$$ LANGUAGE plpgsql;
+```
+
+**Root Causes:**
+- N+1 query problem (individual KTV calculations)
+- Missing indexes on date ranges
+- No batching/parallel processing
+- Complex joins without optimization
+
+### Module Isolation Guidelines (Updated)
+
+**Nguyên tắc cũ vẫn giữ nguyên:**
+- Commission system là core feature, KHÔNG phải module-specific
+- Tất cả modules (babycare, beauty_spa, cleaning) đều dùng chung commission tables
+- Filter theo `module_key` khi cần (nếu có module-specific rules)
+
+**Nguyên tắc mới thêm:**
+- Commission config CÓ THỂ customize per tenant (trong `tenants.commission_config`)
+- Default system config trong `src/lib/business-rules/commission.ts`
+- UI hiển thị commission CÓ THỂ customize per module (vocabulary, icons, colors)
+
+**Example:**
+```typescript
+// ✅ CORRECT: Module-aware commission display
+const vocab = useModuleVocabulary();
+
+<CommissionCard
+  title={vocab.serviceCommission} // "Hoa hồng dịch vụ" for spa, etc.
+  icon={getModuleIcon(module)} // Different icons per module
+  amount={commission}
+/>
+
+// ❌ WRONG: Hardcoded vocabulary
+<CommissionCard
+  title="Hoa hồng ca Mẹ & Bé" // Only correct for babycare!
+  amount={commission}
+/>
+```
+
+### Architecture Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    COMMISSION SYSTEM ARCHITECTURE                │
+└─────────────────────────────────────────────────────────────────┘
+
+DATA LAYER (PostgreSQL + Supabase)
+┌─────────────────────┬──────────────────────┬────────────────────┐
+│  Service Items      │  Product Sales       │  Manual Adj.       │
+│  ─────────────      │  ──────────────      │  ────────────      │
+│  • booking_service  │  • product_sales     │  • salary_adj...   │
+│    _items           │  • ktv_id            │  • ktv_id          │
+│  • ktv_id           │  • sale_amount       │  • adjustment_type │
+│  • subtotal         │  • calculated_comm.  │  • amount          │
+│  • calculated_comm. │  • override_type     │  • status          │
+│  • override_type    │  • override_value    │  • reason          │
+│  • override_value   │  • payment_method    │  • approved_by     │
+│  • completed_date   │  • sale_date         │  • month           │
+└──────┬──────────────┴──────────┬───────────┴──────────┬─────────┘
+       │                         │                       │
+       │ Trigger recalculation on insert/update/delete  │
+       │                         │                       │
+       ▼                         ▼                       ▼
+┌─────────────────────────────────────────────────────────────────┐
+│               BUSINESS LOGIC LAYER (TypeScript)                  │
+├─────────────────────────────────────────────────────────────────┤
+│  Commission Calculation Engine                                   │
+│  • calculateServiceCommission()                                  │
+│  • calculateProductSalesCommission()                             │
+│  • calculatePositionBonus()                                      │
+│  • calculateSeniorityBonus()                                     │
+│  • aggregateManualAdjustments()                                  │
+│                                                                   │
+│  Priority Logic: Override → Tenant Default → System Default     │
+│                                                                   │
+│  Salary Recalculation Engine                                     │
+│  • recalculateAndSaveSalaryRecord()                              │
+│  • Aggregates all commission types                               │
+│  • Updates salary_records table                                  │
+│  • Respects status lifecycle (draft/published/confirmed)         │
+└───────────────────────────────┬─────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                  SALARY RECORDS (Aggregated)                     │
+├─────────────────────────────────────────────────────────────────┤
+│  salary_records                                                  │
+│  • ktv_id                                                        │
+│  • month                                                         │
+│  • base_salary                                                   │
+│  • session_bonus (legacy)                                        │
+│  • service_commission (NEW)                                      │
+│  • product_sales_commission (NEW)                                │
+│  • position_bonus (NEW)                                          │
+│  • seniority_bonus (NEW)                                         │
+│  • manual_adjustments (NEW)                                      │
+│  • rating_bonus                                                  │
+│  • kpi_bonus                                                     │
+│  • deductions                                                    │
+│  • advances                                                      │
+│  • total_salary (calculated)                                     │
+│  • status (draft/published/confirmed/finalized)                  │
+└───────────────────────────────┬─────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    UI LAYER (Next.js + React)                    │
+├─────────────────────────────────────────────────────────────────┤
+│  Admin UI                             │  KTV UI                  │
+│  ────────                             │  ──────                  │
+│  • Salary Table                       │  • Earnings Dashboard    │
+│  • Salary Detail Modal (Task 33)     │  • Commission Breakdown  │
+│  • Manual Adjustments Page (Task 22) │  • Monthly Statement     │
+│  • Adjustments Approval (Task 24)    │                          │
+│  • Commission Reports                 │                          │
+└─────────────────────────────────────────────────────────────────┘
+
+EXTENSION POINTS
+• Add new commission types: Extend calculation engine, add DB column
+• Add new bonus rules: Add calculation function, update formula
+• Add new UI views: Create component, integrate with existing pages
+• Module-specific customization: Use module_key filter, customize UI
+```
+
+### Key Takeaways
+
+**✅ DO:**
+- Add new tables/columns, don't modify existing ones
+- Keep legacy fields for audit trail and backward compatibility
+- Add new parameters as optional with sensible defaults
+- Test edge cases (negative, zero, null, max values) upfront
+- Write integration tests for full user journeys
+- Run regression tests after every change
+- Document extension points clearly
+- Use 3-tier priority (override → default → system)
+- Support both fixed and percentage commission types
+- Separate approval workflow with status lifecycle
+
+**❌ DON'T:**
+- Delete or rename existing tables/columns/functions
+- Change existing required parameters
+- Assume "nobody uses that old feature"
+- Skip edge case testing
+- Skip performance testing for bulk operations
+- Break backward compatibility without migration plan
+- Hardcode business logic that should be configurable
+- Mix new features with bug fixes in same PR
+- Deploy without staging validation
+- Forget to update documentation
+
+**🎯 Success Metrics:**
+- 0 breaking changes for existing code
+- 130+ tests all passing
+- <100ms for bulk operations (100 items)
+- <500ms for month-end processing (1000 items)
+- Clear extension patterns documented
+- Troubleshooting guide prevents common issues
