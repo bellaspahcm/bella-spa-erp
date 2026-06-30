@@ -1,0 +1,4 @@
+# Vercel Deployment Marker
+# This file is touched to force Vercel deployments when ignoreCommand would otherwise skip.
+# Last forced deployment: 2025-06-22T17:35:00Z
+# Reason: UI contrast fixes (stats cards gap, modal labels, tooltips)
