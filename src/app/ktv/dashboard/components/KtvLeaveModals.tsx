@@ -154,10 +154,10 @@ export function KtvLeaveRequestModal({
                         key={option}
                         type="button"
                         onClick={() => onLeaveTypeChange(option)}
-                        className={`py-3 rounded-xl text-[10px] font-black uppercase tracking-wider border transition-all ${
+                        className={`py-3 rounded-xl text-[10px] font-black uppercase tracking-wider border-2 transition-all ${
                           leaveType === option
                             ? 'bg-rose-500 dark:bg-[#5D1C34] text-white border-rose-500 dark:border-[#A67D44] shadow-md shadow-rose-100 dark:shadow-none'
-                            : 'bg-white dark:bg-[#292623] text-slate-600 dark:text-[#D4C5B6] border-slate-200 dark:border-[#3E3A35] hover:bg-slate-50 dark:hover:bg-[#3E3A35]'
+                            : 'bg-white dark:bg-[#292623] text-slate-700 dark:text-[#D4C5B6] border-slate-300 dark:border-[#3E3A35] hover:bg-slate-50 dark:hover:bg-[#3E3A35] hover:border-slate-400'
                         }`}
                       >
                         {getLeaveTypeLabel(option)}

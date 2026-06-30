@@ -103,8 +103,8 @@ export default function KTVLeaderboardPage() {
                   </div>
                   <p className="text-[10px] font-black text-slate-900 dark:text-[#EFE9E1] text-center truncate w-full">{leaderboard[1].full_name}</p>
                   <span className="text-[8px] font-black text-slate-700 dark:text-[#D4C5B6] uppercase">{leaderboard[1].sessions ?? 0} ca</span>
-                  <div className="h-16 w-full bg-slate-200 dark:bg-[#3E3A35] mt-2 rounded-t-2xl flex items-end justify-center pb-2">
-                     <Medal className="w-5 h-5 text-slate-600 dark:text-[#A67D44]" />
+                  <div className="h-16 w-full bg-gradient-to-br from-rose-200 to-pink-200 dark:bg-[#3E3A35] mt-2 rounded-t-2xl flex items-end justify-center pb-2 shadow-md shadow-rose-100/50 dark:shadow-none">
+                     <Medal className="w-5 h-5 text-rose-600 dark:text-[#A67D44]" />
                   </div>
                </div>
             )}
