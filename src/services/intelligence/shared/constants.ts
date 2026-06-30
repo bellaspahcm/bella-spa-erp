@@ -31,6 +31,12 @@ export const DEFAULT_CACHE_TTL = {
   EXECUTIVE: 600, // 10 minutes
 
   /**
+   * Operational metrics cache TTL.
+   * Medium TTL matching materialized view refresh rates (5-10 min).
+   */
+  OPERATIONAL: 600, // 10 minutes
+
+  /**
    * Finance metrics cache TTL.
    * Longer as financial data changes less frequently.
    */
@@ -83,6 +89,7 @@ export const DEFAULT_CACHE_TTL = {
  */
 export const CACHE_KEY_PREFIX = {
   EXECUTIVE: 'executive:',
+  OPERATIONAL: 'operational:',
   FINANCE: 'finance:',
   MARKETING: 'marketing:',
   SALES: 'sales:',
@@ -102,6 +109,7 @@ export const CACHE_KEY_PREFIX = {
  */
 export const CACHE_TAG = {
   EXECUTIVE: 'executive',
+  OPERATIONAL: 'operational',
   FINANCE: 'finance',
   MARKETING: 'marketing',
   SALES: 'sales',
@@ -166,6 +174,7 @@ export const DATETIME_FORMAT = 'YYYY-MM-DD HH:mm:ss';
  */
 export const MODULE_NAME = {
   EXECUTIVE: 'executive',
+  OPERATIONAL: 'operational',
   FINANCE: 'finance',
   MARKETING: 'marketing',
   SALES: 'sales',

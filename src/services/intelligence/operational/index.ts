@@ -11,19 +11,22 @@
  * 
  * Usage:
  * ```typescript
- * import { 
- *   getKtvPerformance, 
- *   getKtvLeaderboard, 
- *   getInventoryStatus 
- * } from '@/services/intelligence/operational';
+ * import { getOperationalIntelligenceService } from '@/services/intelligence/operational';
  * 
- * const ktvMetrics = await getKtvPerformance('ktv-123', 'month');
- * const leaderboard = await getKtvLeaderboard('tenant-123', 'week', 'revenue', 10);
- * const inventory = await getInventoryStatus('tenant-123', 'low_stock');
+ * const service = getOperationalIntelligenceService();
+ * const ktvMetrics = await service.getKtvPerformance('ktv-123', 'month');
+ * const leaderboard = await service.getKtvLeaderboard('tenant-123', 'week', 'revenue', 10);
+ * const inventory = await service.getInventoryStatus('tenant-123', 'low_stock');
  * ```
  */
 
-// Query functions
+// Service exports
+export {
+  OperationalIntelligenceService,
+  getOperationalIntelligenceService,
+} from './service';
+
+// Query functions (can be used directly without service layer)
 export {
   getKtvPerformance,
   getKtvLeaderboard,
@@ -44,4 +47,5 @@ export type {
 } from './queries';
 
 // Shared types
-export type { DateRange, TimePeriod } from '../shared/types';
+export type { DateRange, TimePeriod, IntelligenceResponse } from '../shared/types';
+
