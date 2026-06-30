@@ -1,9 +1,9 @@
-# 📋 Commission System - Remaining Tasks (44/44) ✅ COMPLETED
+# 📋 Commission System - Remaining Tasks (46/46) ✅ COMPLETED
 
 **Project:** Bella ERP - Advanced Commission System  
-**Status:** ✅ 100% COMPLETE - All 44 tasks finished (22/06/2026)  
-**Remaining:** 0 tasks (Ready for staging deployment)  
-**Total Time:** 7 developer-days (15-22 June 2026)
+**Status:** ✅ 100% COMPLETE - All 46 tasks finished (30/06/2026)  
+**Remaining:** 0 tasks (Ready for production deployment)  
+**Total Time:** 8 developer-days (15-30 June 2026)
 
 ---
 
@@ -19,9 +19,9 @@
 ✅ Phase 7: Salary Dashboard         [████████] 1/1 complete (100%)
 ✅ Phase 8: Comprehensive Testing    [████████] 3/3 complete (100%)
 ✅ Phase 9: Documentation            [████████] 3/3 complete (100%)
-✅ Phase 10: Production Deployment   [████████] 4/4 complete (100%)
+✅ Phase 10: Production Deployment   [████████] 6/6 complete (100%)
 
-TOTAL: 44/44 tasks complete (100%) ✅
+TOTAL: 46/46 tasks complete (100%) ✅
 ```
 
 ---
@@ -487,60 +487,89 @@ if (validatedData.serviceItems && validatedData.serviceItems.length > 0) {
 
 ### Epic 4: Position & Seniority UI (4 tasks)
 
-#### ✅ Task 18: Position Tier Selector in User Profile
+#### ✅ Task 18: Position Tier Selector in User Profile [COMPLETED]
 **Priority:** High  
 **Estimate:** 1 hour  
+**Actual:** ~1 hour  
+**Status:** ✅ COMPLETE (2026-06-30)  
 **Dependencies:** None
 
 **Acceptance Criteria:**
-- [ ] User profile page has "Position Tier" field
-- [ ] Dropdown with options: Junior, Senior, Lead
-- [ ] Shows current tier with badge
-- [ ] Admin can change tier
-- [ ] KTV sees tier but cannot change
-- [ ] Show multiplier info tooltip (e.g., "Senior: 1.2x commission")
-- [ ] Save triggers salary recalculation for current month
-- [ ] Success toast on save
-- [ ] Audit log entry for tier changes
+- [✅] User profile page has "Position Tier" field
+- [✅] Dropdown with options: Junior (1.0x), Senior (1.2x), Lead (1.5x)
+- [✅] Shows current tier with multiplier info
+- [✅] Admin can change tier
+- [✅] KTV sees tier but cannot change (edit modal admin-only)
+- [✅] Show multiplier info tooltip (in dropdown labels)
+- [✅] Save triggers salary recalculation for current month
+- [✅] Success toast on save
+- [✅] Audit log entry for tier changes
 
-**Files to Modify:**
-- `src/app/dashboard/staff/[id]/page.tsx` (or user profile page)
+**Files Modified:**
+- ✅ `src/app/dashboard/settings/components/StaffManagementTab.tsx`
+  - Added Position Tier dropdown to Edit User modal
+  - Conditional rendering for KTV roles only
+  - PremiumSelect with 4 options (empty, junior, senior, lead)
+  - Helper text explaining commission impact
+
+**Files Created:**
+- ✅ `supabase/migrations/20260630192732_add_position_tier_hire_date_to_users.sql`
+- ✅ `docs/TASK_18_19_TESTING_CHECKLIST.md`
+- ✅ `docs/TASK_18_19_SUMMARY.md`
+
+**Backend:** No changes needed - `user-actions.ts` already supports position_tier
 
 **UI Mock:**
 ```
-Position Tier: [Senior ▼] ℹ️ (1.2x commission multiplier)
+Position Tier: [Senior (1.2x - Cao hơn 20%) ▼]
 
 Options:
-- Junior (1.0x - Baseline)
-- Senior (1.2x - 20% higher) 
-- Lead (1.5x - 50% higher)
+- Chưa xác định
+- Junior (1.0x - Cơ bản)
+- Senior (1.2x - Cao hơn 20%) 
+- Lead (1.5x - Cao hơn 50%)
 ```
 
 ---
 
-#### ✅ Task 19: Hire Date Input in User Profile
+#### ✅ Task 19: Hire Date Input in User Profile [COMPLETED]
 **Priority:** High  
 **Estimate:** 1 hour  
+**Actual:** ~1 hour  
+**Status:** ✅ COMPLETE (2026-06-30)  
 **Dependencies:** None
 
 **Acceptance Criteria:**
-- [ ] User profile has "Hire Date" field
-- [ ] Date picker for admin to set
-- [ ] Display current hire date if exists
-- [ ] Calculate and show years of service badge
-- [ ] Show seniority bonus tier (0%, 5%, 10%, 15%)
-- [ ] Validate date not in future
-- [ ] Save triggers salary recalculation
-- [ ] Mobile-friendly date picker
+- [✅] User profile has "Hire Date" field
+- [✅] Date picker for admin to set
+- [✅] Display current hire date if exists
+- [✅] Calculate and show years of service badge
+- [✅] Show seniority bonus tier (0%, 5%, 10%, 15%)
+- [✅] Validate date not in future
+- [✅] Save triggers salary recalculation
+- [✅] Mobile-friendly date picker
 
-**Files to Modify:**
-- `src/app/dashboard/staff/[id]/page.tsx`
+**Files Modified:**
+- ✅ `src/app/dashboard/settings/components/StaffManagementTab.tsx`
+  - Added Hire Date input to Edit User modal
+  - Conditional rendering for KTV roles only
+  - HTML5 date picker with max={today}
+  - Real-time years of service calculation
+  - Badge showing seniority bonus rate
+  - Helper text explaining seniority tiers
+
+**Backend:** No changes needed - `user-actions.ts` already supports hire_date
 
 **UI Mock:**
 ```
 Hire Date: [📅 01/06/2022]
-Years of Service: 4 years
-Seniority Bonus: 10% (3-5 years tier)
+4 năm thâm niên [+10% thưởng thâm niên]
+
+Seniority Tiers:
+- < 1 year: 0%
+- 1-3 years: 5%
+- 3-5 years: 10%
+- >= 5 years: 15%
 ```
 
 
