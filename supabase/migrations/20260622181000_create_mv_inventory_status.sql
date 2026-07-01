@@ -1,164 +1,59 @@
 -- Migration: Create Materialized View for Inventory Status
--- Purpose: Real-time inventory status with stock forecasting
+-- Purpose: Real-time inventory status
 -- Refresh: Every 5 minutes via cron job (more frequent due to critical nature)
 -- Created: 2026-06-22
+-- Updated: Fixed to use inventory_items table instead of products
 
 -- Drop existing view if exists
 DROP MATERIALIZED VIEW IF EXISTS mv_inventory_status CASCADE;
 
--- Create materialized view
+-- Create materialized view (simplified version using inventory_items)
 CREATE MATERIALIZED VIEW mv_inventory_status AS
 SELECT
-  p.id AS product_id,
-  p.tenant_id,
-  p.name AS product_name,
-  p.category,
-  p.sku,
-  p.unit_of_measure,
+  ii.id AS item_id,
+  ii.tenant_id,
+  ii.name AS item_name,
+  ii.category,
+  ii.sku,
+  ii.unit,
   
   -- Current stock info
-  COALESCE(i.quantity, 0) AS current_stock,
-  COALESCE(i.reorder_point, 0) AS reorder_point,
-  COALESCE(i.reorder_quantity, 0) AS reorder_quantity,
-  COALESCE(i.max_stock_level, 0) AS max_stock_level,
+  COALESCE(ii.stock_level, 0) AS current_stock,
+  COALESCE(ii.min_stock_level, 0) AS min_stock_level,
+  COALESCE(ii.price_per_unit, 0) AS price_per_unit,
   
   -- Stock status classification
   CASE
-    WHEN COALESCE(i.quantity, 0) <= 0 THEN 'out_of_stock'
-    WHEN COALESCE(i.quantity, 0) <= COALESCE(i.reorder_point, 0) THEN 'low_stock'
-    WHEN COALESCE(i.quantity, 0) <= COALESCE(i.reorder_point, 0) * 2 THEN 'medium_stock'
+    WHEN COALESCE(ii.stock_level, 0) <= 0 THEN 'out_of_stock'
+    WHEN COALESCE(ii.stock_level, 0) <= COALESCE(ii.min_stock_level, 0) THEN 'low_stock'
+    WHEN COALESCE(ii.stock_level, 0) <= COALESCE(ii.min_stock_level, 0) * 2 THEN 'medium_stock'
     ELSE 'high_stock'
   END AS stock_status,
   
   -- Stock value
-  COALESCE(i.quantity, 0) * COALESCE(p.cost_price, 0) AS stock_value,
-  
-  -- Usage metrics (last 30 days)
-  COALESCE(
-    (SELECT SUM(ps.quantity_used) 
-     FROM product_usage ps 
-     WHERE ps.product_id = p.id 
-       AND ps.created_at >= NOW() - INTERVAL '30 days'
-       AND ps.tenant_id = p.tenant_id),
-    0
-  ) AS usage_last_30_days,
-  
-  -- Average daily usage (last 30 days)
-  COALESCE(
-    (SELECT SUM(ps.quantity_used) / 30.0
-     FROM product_usage ps 
-     WHERE ps.product_id = p.id 
-       AND ps.created_at >= NOW() - INTERVAL '30 days'
-       AND ps.tenant_id = p.tenant_id),
-    0
-  ) AS avg_daily_usage,
-  
-  -- Forecasted days until stockout
-  CASE
-    WHEN COALESCE(
-      (SELECT SUM(ps.quantity_used) / 30.0
-       FROM product_usage ps 
-       WHERE ps.product_id = p.id 
-         AND ps.created_at >= NOW() - INTERVAL '30 days'
-         AND ps.tenant_id = p.tenant_id),
-      0
-    ) > 0 THEN
-      ROUND(
-        COALESCE(i.quantity, 0) / 
-        NULLIF(
-          (SELECT SUM(ps.quantity_used) / 30.0
-           FROM product_usage ps 
-           WHERE ps.product_id = p.id 
-             AND ps.created_at >= NOW() - INTERVAL '30 days'
-             AND ps.tenant_id = p.tenant_id),
-          0
-        )
-      )::INTEGER
-    ELSE NULL
-  END AS days_until_stockout,
-  
-  -- Supplier information
-  s.id AS supplier_id,
-  s.name AS supplier_name,
-  s.contact_person AS supplier_contact,
-  s.phone AS supplier_phone,
-  s.email AS supplier_email,
-  COALESCE(s.lead_time_days, 7) AS supplier_lead_time_days,
+  COALESCE(ii.stock_level, 0) * COALESCE(ii.price_per_unit, 0) AS stock_value,
   
   -- Reorder recommendation
   CASE
-    WHEN COALESCE(i.quantity, 0) <= 0 THEN 'urgent'
-    WHEN COALESCE(i.quantity, 0) <= COALESCE(i.reorder_point, 0) THEN 'recommended'
-    WHEN COALESCE(
-      (SELECT SUM(ps.quantity_used) / 30.0
-       FROM product_usage ps 
-       WHERE ps.product_id = p.id 
-         AND ps.created_at >= NOW() - INTERVAL '30 days'
-         AND ps.tenant_id = p.tenant_id),
-      0
-    ) > 0 
-    AND (
-      COALESCE(i.quantity, 0) / 
-      NULLIF(
-        (SELECT SUM(ps.quantity_used) / 30.0
-         FROM product_usage ps 
-         WHERE ps.product_id = p.id 
-           AND ps.created_at >= NOW() - INTERVAL '30 days'
-           AND ps.tenant_id = p.tenant_id),
-        0
-      )
-    ) <= COALESCE(s.lead_time_days, 7) THEN 'suggested'
+    WHEN COALESCE(ii.stock_level, 0) <= 0 THEN 'urgent'
+    WHEN COALESCE(ii.stock_level, 0) <= COALESCE(ii.min_stock_level, 0) THEN 'recommended'
+    WHEN COALESCE(ii.stock_level, 0) <= COALESCE(ii.min_stock_level, 0) * 1.5 THEN 'suggested'
     ELSE 'not_needed'
   END AS reorder_recommendation,
   
-  -- Suggested reorder date (current_date + (days_until_stockout - lead_time))
-  CASE
-    WHEN COALESCE(
-      (SELECT SUM(ps.quantity_used) / 30.0
-       FROM product_usage ps 
-       WHERE ps.product_id = p.id 
-         AND ps.created_at >= NOW() - INTERVAL '30 days'
-         AND ps.tenant_id = p.tenant_id),
-      0
-    ) > 0 THEN
-      (CURRENT_DATE + (
-        ROUND(
-          COALESCE(i.quantity, 0) / 
-          NULLIF(
-            (SELECT SUM(ps.quantity_used) / 30.0
-             FROM product_usage ps 
-             WHERE ps.product_id = p.id 
-               AND ps.created_at >= NOW() - INTERVAL '30 days'
-               AND ps.tenant_id = p.tenant_id),
-            0
-          )
-        )::INTEGER - COALESCE(s.lead_time_days, 7)
-      ))::DATE
-    ELSE NULL
-  END AS suggested_reorder_date,
-  
-  -- Last transactions
-  i.last_restock_date,
-  i.last_restock_quantity,
-  (SELECT MAX(ps.created_at) 
-   FROM product_usage ps 
-   WHERE ps.product_id = p.id 
-     AND ps.tenant_id = p.tenant_id) AS last_usage_date,
-  
   -- Metadata
-  i.updated_at AS inventory_updated_at,
+  ii.notes,
+  ii.created_at,
+  ii.updated_at,
   NOW() AS computed_at
 
-FROM products p
-LEFT JOIN inventory i ON i.product_id = p.id AND i.tenant_id = p.tenant_id
-LEFT JOIN suppliers s ON s.id = p.supplier_id AND s.tenant_id = p.tenant_id
+FROM inventory_items ii
 
-WHERE p.tenant_id IS NOT NULL
-  AND p.is_active = TRUE;
+WHERE ii.tenant_id IS NOT NULL;
 
 -- Create unique index for efficient lookups and concurrent refresh
 CREATE UNIQUE INDEX idx_mv_inventory_status_unique 
-  ON mv_inventory_status (product_id, tenant_id);
+  ON mv_inventory_status (item_id, tenant_id);
 
 -- Create additional indexes for common queries
 CREATE INDEX idx_mv_inventory_status_tenant 
@@ -171,18 +66,16 @@ CREATE INDEX idx_mv_inventory_status_reorder
   ON mv_inventory_status (tenant_id, reorder_recommendation);
 
 CREATE INDEX idx_mv_inventory_status_category 
-  ON mv_inventory_status (tenant_id, category);
+  ON mv_inventory_status (tenant_id, category)
+  WHERE category IS NOT NULL;
 
-CREATE INDEX idx_mv_inventory_status_stockout 
-  ON mv_inventory_status (tenant_id, days_until_stockout)
-  WHERE days_until_stockout IS NOT NULL;
-
--- Grant access to authenticated users
+-- Grant access to authenticated users and anon
 GRANT SELECT ON mv_inventory_status TO authenticated;
+GRANT SELECT ON mv_inventory_status TO anon;
 
 -- Add comment
 COMMENT ON MATERIALIZED VIEW mv_inventory_status IS 
-  'Real-time inventory status with stock forecasting and reorder recommendations. Refresh every 5 minutes. Used by Operations Dashboard.';
+  'Real-time inventory status with reorder recommendations. Refresh every 5 minutes. Simplified version using inventory_items table.';
 
 -- Refresh the view immediately
 REFRESH MATERIALIZED VIEW CONCURRENTLY mv_inventory_status;
