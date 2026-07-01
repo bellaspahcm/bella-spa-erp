@@ -11,3 +11,7 @@ export { RoleDistributionChart } from './RoleDistributionChart';
 export { AttendanceRateChart } from './AttendanceRateChart';
 export { TopEarnersChart } from './TopEarnersChart';
 export { SalaryDistributionChart } from './SalaryDistributionChart';
+export { PerformanceScoreChart } from './PerformanceScoreChart';
+export { KpiTrendChart } from './KpiTrendChart';
+export { RatingDistributionChart } from './RatingDistributionChart';
+export { ProductivityComparisonChart } from './ProductivityComparisonChart';
