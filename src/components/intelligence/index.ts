@@ -15,3 +15,8 @@ export { PnLStatementChart } from './PnLStatementChart';
 export { RevenueBreakdownChart } from './RevenueBreakdownChart';
 export { ExpenseBreakdownChart } from './ExpenseBreakdownChart';
 export { ProfitabilityTrendChart } from './ProfitabilityTrendChart';
+
+// Cash Flow Intelligence Charts
+export { CashFlowAnalysisChart } from './CashFlowAnalysisChart';
+export { BurnRateChart } from './BurnRateChart';
+export { CashFlowForecastChart } from './CashFlowForecastChart';
