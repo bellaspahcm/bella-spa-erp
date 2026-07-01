@@ -14,7 +14,7 @@ SELECT
   u.full_name AS ktv_name,
   u.email AS ktv_email,
   u.phone AS ktv_phone,
-  DATE_TRUNC('month', COALESCE(sl.scheduled_date, CURRENT_DATE))::DATE AS month,
+  DATE_TRUNC('month', COALESCE(sl.assigned_date, CURRENT_DATE))::DATE AS month,
   
   -- Session metrics
   COUNT(DISTINCT sl.id) FILTER (WHERE sl.status = 'completed') AS total_sessions_completed,
@@ -36,13 +36,13 @@ SELECT
   COUNT(DISTINCT sl.id) FILTER (WHERE sl.rating <= 2) AS low_ratings_count,
   COUNT(DISTINCT sl.id) FILTER (WHERE sl.rating IS NOT NULL) AS total_ratings_count,
   
-  -- Revenue metrics (from bookings or session_logs)
-  COALESCE(SUM(b.total_amount) FILTER (WHERE sl.status = 'completed'), 0) AS total_revenue,
-  COALESCE(AVG(b.total_amount) FILTER (WHERE sl.status = 'completed'), 0) AS avg_revenue_per_session,
+  -- Revenue metrics (from bookings - using full_price)
+  COALESCE(SUM(b.full_price) FILTER (WHERE sl.status = 'completed'), 0) AS total_revenue,
+  COALESCE(AVG(b.full_price) FILTER (WHERE sl.status = 'completed'), 0) AS avg_revenue_per_session,
   
   -- Commission metrics (from salary_records or calculated)
-  COALESCE(SUM(sr.service_commission) FILTER (WHERE sr.month_year = DATE_TRUNC('month', sl.scheduled_date)::DATE), 0) AS total_service_commission,
-  COALESCE(SUM(sr.session_bonus) FILTER (WHERE sr.month_year = DATE_TRUNC('month', sl.scheduled_date)::DATE), 0) AS total_session_bonus,
+  COALESCE(SUM(sr.service_commission) FILTER (WHERE sr.month_year = DATE_TRUNC('month', sl.assigned_date)::DATE), 0) AS total_service_commission,
+  COALESCE(SUM(sr.session_bonus) FILTER (WHERE sr.month_year = DATE_TRUNC('month', sl.assigned_date)::DATE), 0) AS total_session_bonus,
   
   -- Attendance metrics
   COUNT(DISTINCT a.id) FILTER (WHERE a.status = 'present') AS days_present,
@@ -59,17 +59,17 @@ SELECT
   ) AS attendance_rate_pct,
   
   -- Metadata
-  MAX(sl.completed_at) AS last_session_date,
+  MAX(sl.completed_date) AS last_session_date,
   COUNT(DISTINCT b.customer_id) AS unique_customers_served,
   NOW() AS computed_at
 
 FROM users u
-LEFT JOIN session_logs sl ON sl.ktv_id = u.id
+LEFT JOIN session_logs sl ON sl.completed_by_ktv_id = u.id
 LEFT JOIN bookings b ON b.id = sl.booking_id
-LEFT JOIN attendance a ON a.user_id = u.id 
-  AND DATE_TRUNC('month', a.date) = DATE_TRUNC('month', COALESCE(sl.scheduled_date, CURRENT_DATE))
+LEFT JOIN attendance a ON a.ktv_id = u.id 
+  AND DATE_TRUNC('month', a.date) = DATE_TRUNC('month', COALESCE(sl.assigned_date, CURRENT_DATE))
 LEFT JOIN salary_records sr ON sr.ktv_id = u.id
-  AND sr.month_year = DATE_TRUNC('month', COALESCE(sl.scheduled_date, CURRENT_DATE))::DATE
+  AND sr.month_year = DATE_TRUNC('month', COALESCE(sl.assigned_date, CURRENT_DATE))::DATE
 
 WHERE u.role = 'ktv'
   AND u.tenant_id IS NOT NULL
@@ -80,7 +80,7 @@ GROUP BY
   u.full_name, 
   u.email, 
   u.phone, 
-  DATE_TRUNC('month', COALESCE(sl.scheduled_date, CURRENT_DATE))::DATE;
+  DATE_TRUNC('month', COALESCE(sl.assigned_date, CURRENT_DATE))::DATE;
 
 -- Create unique index for efficient lookups and concurrent refresh
 CREATE UNIQUE INDEX idx_mv_ktv_performance_summary_unique 

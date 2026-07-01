@@ -2,6 +2,7 @@
 -- Purpose: Session completion rates, peak hours, and satisfaction metrics
 -- Refresh: Every 10 minutes via cron job
 -- Created: 2026-06-22
+-- Updated: Fixed to use assigned_date, assigned_time, start_time, completed_by_ktv_id
 
 -- Drop existing view if exists
 DROP MATERIALIZED VIEW IF EXISTS mv_session_analytics CASCADE;
@@ -10,7 +11,7 @@ DROP MATERIALIZED VIEW IF EXISTS mv_session_analytics CASCADE;
 CREATE MATERIALIZED VIEW mv_session_analytics AS
 SELECT
   sl.tenant_id,
-  DATE_TRUNC('day', sl.scheduled_date)::DATE AS date,
+  DATE_TRUNC('day', sl.assigned_date)::DATE AS date,
   
   -- Session counts by status
   COUNT(*) AS total_sessions,
@@ -50,26 +51,26 @@ SELECT
     2
   ) AS no_show_rate_pct,
   
-  -- By package type (assuming packages table exists with package_type or category)
-  COUNT(*) FILTER (WHERE p.category = 'basic' OR p.name ILIKE '%basic%') AS basic_package_sessions,
-  COUNT(*) FILTER (WHERE p.category = 'premium' OR p.name ILIKE '%premium%' OR p.name ILIKE '%hạnh phúc%') AS premium_package_sessions,
-  COUNT(*) FILTER (WHERE p.category = 'vip' OR p.name ILIKE '%vip%' OR p.name ILIKE '%toàn diện%') AS vip_package_sessions,
+  -- By package type (assuming packages table exists with service_category)
+  COUNT(*) FILTER (WHERE p.service_category = 'basic' OR p.name ILIKE '%basic%' OR p.name ILIKE '%tiết kiệm%') AS basic_package_sessions,
+  COUNT(*) FILTER (WHERE p.service_category = 'premium' OR p.name ILIKE '%premium%' OR p.name ILIKE '%hạnh phúc%') AS premium_package_sessions,
+  COUNT(*) FILTER (WHERE p.service_category = 'vip' OR p.name ILIKE '%vip%' OR p.name ILIKE '%toàn diện%') AS vip_package_sessions,
   
-  -- By time of day (peak hours analysis)
+  -- By time of day (peak hours analysis) - using assigned_time
   COUNT(*) FILTER (
-    WHERE EXTRACT(HOUR FROM sl.scheduled_time) BETWEEN 8 AND 11
+    WHERE EXTRACT(HOUR FROM sl.assigned_time) BETWEEN 8 AND 11
   ) AS morning_sessions,
   COUNT(*) FILTER (
-    WHERE EXTRACT(HOUR FROM sl.scheduled_time) BETWEEN 12 AND 16
+    WHERE EXTRACT(HOUR FROM sl.assigned_time) BETWEEN 12 AND 16
   ) AS afternoon_sessions,
   COUNT(*) FILTER (
-    WHERE EXTRACT(HOUR FROM sl.scheduled_time) BETWEEN 17 AND 21
+    WHERE EXTRACT(HOUR FROM sl.assigned_time) BETWEEN 17 AND 21
   ) AS evening_sessions,
   
   -- Peak hour (hour with most sessions)
-  MODE() WITHIN GROUP (ORDER BY EXTRACT(HOUR FROM sl.scheduled_time)) AS peak_hour,
+  MODE() WITHIN GROUP (ORDER BY EXTRACT(HOUR FROM COALESCE(sl.assigned_time, '12:00'::TIME))) AS peak_hour,
   
-  -- Customer satisfaction (from session ratings or reviews)
+  -- Customer satisfaction (from session ratings)
   ROUND(
     COALESCE(AVG(sl.rating) FILTER (WHERE sl.rating IS NOT NULL), 0),
     2
@@ -79,21 +80,21 @@ SELECT
   COUNT(*) FILTER (WHERE sl.rating <= 2) AS low_satisfaction_count,
   COUNT(*) FILTER (WHERE sl.rating IS NOT NULL) AS total_ratings,
   
-  -- Duration analysis (in minutes)
+  -- Duration analysis (in minutes) - using start_time and end_time
   ROUND(
-    COALESCE(AVG(EXTRACT(EPOCH FROM (sl.completed_at - sl.started_at)) / 60) FILTER (WHERE sl.status = 'completed'), 0),
+    COALESCE(AVG(EXTRACT(EPOCH FROM (sl.end_time - sl.start_time)) / 60) FILTER (WHERE sl.status = 'completed' AND sl.start_time IS NOT NULL AND sl.end_time IS NOT NULL), 0),
     1
   ) AS avg_duration_minutes,
-  MAX(EXTRACT(EPOCH FROM (sl.completed_at - sl.started_at)) / 60) FILTER (WHERE sl.status = 'completed') AS max_duration_minutes,
-  MIN(EXTRACT(EPOCH FROM (sl.completed_at - sl.started_at)) / 60) FILTER (WHERE sl.status = 'completed') AS min_duration_minutes,
+  MAX(EXTRACT(EPOCH FROM (sl.end_time - sl.start_time)) / 60) FILTER (WHERE sl.status = 'completed' AND sl.start_time IS NOT NULL AND sl.end_time IS NOT NULL) AS max_duration_minutes,
+  MIN(EXTRACT(EPOCH FROM (sl.end_time - sl.start_time)) / 60) FILTER (WHERE sl.status = 'completed' AND sl.start_time IS NOT NULL AND sl.end_time IS NOT NULL) AS min_duration_minutes,
   
-  -- Revenue metrics
-  COALESCE(SUM(b.total_amount) FILTER (WHERE sl.status = 'completed'), 0) AS total_revenue,
-  COALESCE(AVG(b.total_amount) FILTER (WHERE sl.status = 'completed'), 0) AS avg_revenue_per_session,
+  -- Revenue metrics (using full_price from bookings)
+  COALESCE(SUM(b.full_price) FILTER (WHERE sl.status = 'completed'), 0) AS total_revenue,
+  COALESCE(AVG(b.full_price) FILTER (WHERE sl.status = 'completed'), 0) AS avg_revenue_per_session,
   
-  -- Unique customers and KTVs
+  -- Unique customers and KTVs (using completed_by_ktv_id)
   COUNT(DISTINCT b.customer_id) AS unique_customers,
-  COUNT(DISTINCT sl.ktv_id) AS unique_ktvs,
+  COUNT(DISTINCT sl.completed_by_ktv_id) AS unique_ktvs,
   
   -- Service quality indicators
   COUNT(*) FILTER (WHERE sl.status = 'completed' AND sl.rating >= 4) AS successful_quality_sessions,
@@ -114,11 +115,11 @@ LEFT JOIN bookings b ON b.id = sl.booking_id
 LEFT JOIN packages p ON p.id = b.package_id
 
 WHERE sl.tenant_id IS NOT NULL
-  AND sl.scheduled_date IS NOT NULL
+  AND sl.assigned_date IS NOT NULL
 
 GROUP BY 
   sl.tenant_id, 
-  DATE_TRUNC('day', sl.scheduled_date)::DATE;
+  DATE_TRUNC('day', sl.assigned_date)::DATE;
 
 -- Create unique index for efficient lookups and concurrent refresh
 CREATE UNIQUE INDEX idx_mv_session_analytics_unique 
@@ -137,12 +138,13 @@ CREATE INDEX idx_mv_session_analytics_completion_rate
 CREATE INDEX idx_mv_session_analytics_satisfaction 
   ON mv_session_analytics (tenant_id, avg_satisfaction_rating DESC);
 
--- Grant access to authenticated users
+-- Grant access to authenticated users and anon
 GRANT SELECT ON mv_session_analytics TO authenticated;
+GRANT SELECT ON mv_session_analytics TO anon;
 
 -- Add comment
 COMMENT ON MATERIALIZED VIEW mv_session_analytics IS 
-  'Daily session analytics with completion rates, peak hours, and satisfaction metrics. Refresh every 10 minutes. Used by Operations Dashboard.';
+  'Daily session analytics with completion rates, peak hours, and satisfaction metrics. Refresh every 10 minutes. Uses assigned_date, assigned_time, start_time/end_time, completed_by_ktv_id.';
 
 -- Refresh the view immediately
 REFRESH MATERIALIZED VIEW CONCURRENTLY mv_session_analytics;
