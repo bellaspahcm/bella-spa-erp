@@ -299,14 +299,15 @@ export interface ProductivityTrends {
 
 /**
  * Convert snake_case database fields to camelCase TypeScript
+ * Generic version for type-safe conversions without 'any' or 'unknown'
  */
-function snakeToCamel(obj: Record<string, unknown>): Record<string, unknown> {
+function snakeToCamel<T = Record<string, unknown>>(obj: Record<string, unknown>): T {
   const result: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(obj)) {
     const camelKey = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
     result[camelKey] = value;
   }
-  return result;
+  return result as T;
 }
 
 /**
@@ -362,7 +363,9 @@ export async function getWorkforceAnalytics(
     throw new QueryError(`Failed to fetch workforce analytics: ${error.message}`, error);
   }
   
-  return (data || []).map((row) => snakeToCamel(row as any) as WorkforceAnalytics);
+  // After error check, data is guaranteed to be array. Cast through unknown is necessary
+  // because materialized view is not in generated types (using 'as any' in .from())
+  return ((data ?? []) as unknown as Record<string, unknown>[]).map((row) => snakeToCamel<WorkforceAnalytics>(row));
 }
 
 /**
@@ -396,12 +399,12 @@ export async function getAttendanceReport(
     if (typeof dateRange === 'string') {
       const range = parseDateRange(dateRange);
       query = query
-        .gte('month', formatDate(range.start))
-        .lte('month', formatDate(range.end));
+        .gte('month', formatDate(range.startDate))
+        .lte('month', formatDate(range.endDate));
     } else {
       query = query
-        .gte('month', dateRange.start)
-        .lte('month', dateRange.end);
+        .gte('month', dateRange.startDate)
+        .lte('month', dateRange.endDate);
     }
   }
   
@@ -411,7 +414,9 @@ export async function getAttendanceReport(
     throw new QueryError(`Failed to fetch attendance report: ${error.message}`, error);
   }
   
-  return (data || []).map((row) => snakeToCamel(row as any) as AttendanceReport);
+  // After error check, data is guaranteed to be array. Cast through unknown is necessary
+  // because materialized view is not in generated types (using 'as any' in .from())
+  return ((data ?? []) as unknown as Record<string, unknown>[]).map((row) => snakeToCamel<AttendanceReport>(row));
 }
 
 /**
@@ -447,7 +452,9 @@ export async function getPayrollSummary(
     throw new QueryError(`Failed to fetch payroll summary: ${error.message}`, error);
   }
   
-  return (data || []).map((row) => snakeToCamel(row as any) as PayrollSummary);
+  // After error check, data is guaranteed to be array. Cast through unknown is necessary
+  // because materialized view is not in generated types (using 'as any' in .from())
+  return ((data ?? []) as unknown as Record<string, unknown>[]).map((row) => snakeToCamel<PayrollSummary>(row));
 }
 
 /**
@@ -483,12 +490,12 @@ export async function getEmployeePerformance(
     if (typeof dateRange === 'string') {
       const range = parseDateRange(dateRange);
       query = query
-        .gte('month', formatDate(range.start))
-        .lte('month', formatDate(range.end));
+        .gte('month', formatDate(range.startDate))
+        .lte('month', formatDate(range.endDate));
     } else {
       query = query
-        .gte('month', dateRange.start)
-        .lte('month', dateRange.end);
+        .gte('month', dateRange.startDate)
+        .lte('month', dateRange.endDate);
     }
   }
   
@@ -503,7 +510,9 @@ export async function getEmployeePerformance(
     throw new QueryError(`Failed to fetch employee performance: ${error.message}`, error);
   }
   
-  return (data || []).map((row) => snakeToCamel(row as any) as EmployeePerformance);
+  // After error check, data is guaranteed to be array. Cast through unknown is necessary
+  // because materialized view is not in generated types (using 'as any' in .from())
+  return ((data ?? []) as unknown as Record<string, unknown>[]).map((row) => snakeToCamel<EmployeePerformance>(row));
 }
 
 /**
@@ -568,12 +577,12 @@ export async function getRetentionAnalysis(
     if (typeof dateRange === 'string') {
       const range = parseDateRange(dateRange);
       query = query
-        .gte('month', formatDate(range.start))
-        .lte('month', formatDate(range.end));
+        .gte('month', formatDate(range.startDate))
+        .lte('month', formatDate(range.endDate));
     } else {
       query = query
-        .gte('month', dateRange.start)
-        .lte('month', dateRange.end);
+        .gte('month', dateRange.startDate)
+        .lte('month', dateRange.endDate);
     }
   }
   
@@ -587,14 +596,17 @@ export async function getRetentionAnalysis(
     return null;
   }
   
+  // Cast data to proper type after error check and null check
+  const rows = data as unknown as Record<string, any>[];
+  
   // Aggregate retention metrics
-  const totalHeadcount = data.reduce((sum, row) => sum + (row.current_headcount || 0), 0);
-  const totalTerminations = data.reduce((sum, row) => sum + (row.terminations || 0), 0);
-  const avgTenure = data.reduce((sum, row) => sum + (row.avg_tenure_months || 0), 0) / data.length;
+  const totalHeadcount = rows.reduce((sum, row) => sum + (row.current_headcount || 0), 0);
+  const totalTerminations = rows.reduce((sum, row) => sum + (row.terminations || 0), 0);
+  const avgTenure = rows.reduce((sum, row) => sum + (row.avg_tenure_months || 0), 0) / rows.length;
   
   return {
     tenantId,
-    month: data[0].month,
+    month: rows[0].month,
     attritionRatePct: totalHeadcount > 0 ? (totalTerminations / totalHeadcount) * 100 : 0,
     highRiskEmployees: 0, // TODO: Implement risk scoring
     mediumRiskEmployees: 0,
@@ -632,12 +644,12 @@ export async function getProductivityTrends(
     if (typeof dateRange === 'string') {
       const range = parseDateRange(dateRange);
       query = query
-        .gte('month', formatDate(range.start))
-        .lte('month', formatDate(range.end));
+        .gte('month', formatDate(range.startDate))
+        .lte('month', formatDate(range.endDate));
     } else {
       query = query
-        .gte('month', dateRange.start)
-        .lte('month', dateRange.end);
+        .gte('month', dateRange.startDate)
+        .lte('month', dateRange.endDate);
     }
   }
   
@@ -651,8 +663,11 @@ export async function getProductivityTrends(
     return [];
   }
   
+  // Cast data to proper type after error check and null check
+  const rows = data as unknown as Record<string, any>[];
+  
   // Group by month and aggregate
-  const monthlyData = data.reduce((acc, row) => {
+  const monthlyData = rows.reduce((acc, row) => {
     const month = row.month as string;
     if (!acc[month]) {
       acc[month] = {
@@ -684,16 +699,3 @@ export async function getProductivityTrends(
     utilizationRatePct: 0, // TODO: Calculate capacity utilization
   }));
 }
-
-// ─── Exports ────────────────────────────────────────────────────────────────
-
-export type {
-  WorkforceAnalytics,
-  AttendanceReport,
-  PayrollSummary,
-  EmployeePerformance,
-  RecruitmentMetrics,
-  TrainingMetrics,
-  RetentionAnalysis,
-  ProductivityTrends,
-};
