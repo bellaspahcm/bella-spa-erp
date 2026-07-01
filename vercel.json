@@ -1,4 +1,10 @@
 {
   "buildCommand": "npm run build",
-  "installCommand": "npm install --legacy-peer-deps --ignore-scripts"
+  "installCommand": "npm install --legacy-peer-deps --ignore-scripts",
+  "crons": [
+    {
+      "path": "/api/cron/sync-external-ads",
+      "schedule": "0 3 * * *"
+    }
+  ]
 }
