@@ -71,12 +71,12 @@ Write-Host ""
 Write-Host "Test 4: Cron Job - No Auth (Expected: 401)" -ForegroundColor Blue
 try {
     $response = Invoke-RestMethod -Uri "$BaseUrl/api/cron/sync-external-ads" -Method Get
-    Write-Host "✗ Should have rejected (got 200)" -ForegroundColor Red
+    Write-Host "X Should have rejected (got 200)" -ForegroundColor Red
 } catch {
     if ($_.Exception.Response.StatusCode.value__ -eq 401) {
-        Write-Host "✓ Correctly rejected (401)" -ForegroundColor Green
+        Write-Host "OK Correctly rejected (401)" -ForegroundColor Green
     } else {
-        Write-Host "✗ Unexpected status: $($_.Exception.Response.StatusCode.value__)" -ForegroundColor Red
+        Write-Host "X Unexpected status: $($_.Exception.Response.StatusCode.value__)" -ForegroundColor Red
     }
 }
 Write-Host ""
@@ -88,12 +88,12 @@ try {
         "Authorization" = "Bearer wrong-token"
     }
     $response = Invoke-RestMethod -Uri "$BaseUrl/api/cron/sync-external-ads" -Method Get -Headers $headers
-    Write-Host "✗ Should have rejected (got 200)" -ForegroundColor Red
+    Write-Host "X Should have rejected (got 200)" -ForegroundColor Red
 } catch {
     if ($_.Exception.Response.StatusCode.value__ -eq 401) {
-        Write-Host "✓ Correctly rejected (401)" -ForegroundColor Green
+        Write-Host "OK Correctly rejected (401)" -ForegroundColor Green
     } else {
-        Write-Host "✗ Unexpected status: $($_.Exception.Response.StatusCode.value__)" -ForegroundColor Red
+        Write-Host "X Unexpected status: $($_.Exception.Response.StatusCode.value__)" -ForegroundColor Red
     }
 }
 Write-Host ""
@@ -109,14 +109,17 @@ try {
     $response | ConvertTo-Json -Depth 5
     
     if ($response.success) {
-        Write-Host "`n✓ Sync job completed successfully" -ForegroundColor Green
-        Write-Host "`nSummary:" -ForegroundColor Blue
+        Write-Host ""
+        Write-Host "OK Sync job completed successfully" -ForegroundColor Green
+        Write-Host ""
+        Write-Host "Summary:" -ForegroundColor Blue
         Write-Host "  Tenants Processed: $($response.data.summary.tenantsProcessed)"
         Write-Host "  Tenants Succeeded: $($response.data.summary.tenantsSucceeded)"
         Write-Host "  Tenants Failed: $($response.data.summary.tenantsFailed)"
         Write-Host "  Total Records Synced: $($response.data.summary.totalRecordsSynced)"
     } else {
-        Write-Host "`n✗ Sync job failed" -ForegroundColor Red
+        Write-Host ""
+        Write-Host "X Sync job failed" -ForegroundColor Red
     }
 } catch {
     Write-Host "Failed: $_" -ForegroundColor Red
