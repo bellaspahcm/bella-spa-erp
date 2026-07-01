@@ -20,3 +20,9 @@ export { ProfitabilityTrendChart } from './ProfitabilityTrendChart';
 export { CashFlowAnalysisChart } from './CashFlowAnalysisChart';
 export { BurnRateChart } from './BurnRateChart';
 export { CashFlowForecastChart } from './CashFlowForecastChart';
+
+// Budget Tracking Intelligence Charts
+export { BudgetVarianceChart } from './BudgetVarianceChart';
+export { BudgetUtilizationChart } from './BudgetUtilizationChart';
+export { VarianceTrendChart } from './VarianceTrendChart';
+export { BudgetStatusChart } from './BudgetStatusChart';
