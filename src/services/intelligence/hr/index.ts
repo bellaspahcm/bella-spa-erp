@@ -1,17 +1,22 @@
 /**
  * HR Intelligence Module
  * 
- * Exports all HR Intelligence query functions and types.
+ * Exports all HR Intelligence query functions, types, and services.
  * 
  * Usage:
  * ```typescript
- * import { getWorkforceAnalytics, getAttendanceReport } from '@/services/intelligence/hr';
+ * import { getHRIntelligenceService } from '@/services/intelligence/hr';
  * 
- * const workforce = await getWorkforceAnalytics(tenantId, 'current_quarter');
- * const attendance = await getAttendanceReport(tenantId, 'current_month', ktvId);
+ * const hrService = getHRIntelligenceService();
+ * const workforce = await hrService.getWorkforceAnalytics(tenantId, 'current_quarter');
+ * const attendance = await hrService.getAttendanceReport(tenantId, 'current_month', ktvId);
  * ```
  */
 
+// Service exports
+export { HRIntelligenceService, getHRIntelligenceService } from './service';
+
+// Query function exports
 export {
   getWorkforceAnalytics,
   getAttendanceReport,
@@ -23,6 +28,7 @@ export {
   getProductivityTrends,
 } from './queries';
 
+// Type exports
 export type {
   WorkforceAnalytics,
   AttendanceReport,
