@@ -11,7 +11,9 @@ param(
 $BaseUrl = ""
 $CronSecret = ""
 
-Write-Host "`n=== Marketing Intelligence Sync Job Test ===`n" -ForegroundColor Blue
+Write-Host ""
+Write-Host "=== Marketing Intelligence Sync Job Test ===" -ForegroundColor Blue
+Write-Host ""
 
 # Determine environment
 if ($Env -eq "local") {
@@ -29,7 +31,8 @@ if ($Env -eq "local") {
 }
 
 Write-Host "Base URL: $BaseUrl" -ForegroundColor Green
-Write-Host "Secret: $($CronSecret.Substring(0,10))...`n" -ForegroundColor Green
+Write-Host "Secret: $($CronSecret.Substring(0,10))..." -ForegroundColor Green
+Write-Host ""
 
 # Test 1: Health check
 Write-Host "Test 1: API Health Check" -ForegroundColor Blue
@@ -138,11 +141,13 @@ try {
 }
 Write-Host ""
 
-Write-Host "=== Test Complete ===`n" -ForegroundColor Green
+Write-Host "=== Test Complete ===" -ForegroundColor Green
+Write-Host ""
 Write-Host "Note: Most tests will return empty data or 404 because:" -ForegroundColor Yellow
 Write-Host "  1. No marketing campaigns created yet"
 Write-Host "  2. No external ads data synced yet"
-Write-Host "  3. No tenant has ads credentials configured`n"
+Write-Host "  3. No tenant has ads credentials configured"
+Write-Host ""
 Write-Host "Next Steps:" -ForegroundColor Blue
 Write-Host "  1. Create a marketing campaign in database"
 Write-Host "  2. Add ads credentials to tenant metadata"
