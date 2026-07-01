@@ -1,0 +1,162 @@
+/**
+ * API Route: ROI Report
+ * 
+ * GET /api/intelligence/marketing/roi-report
+ * 
+ * Query params:
+ * - tenantId: string (required) - UUID of the tenant
+ * - period: 'day' | 'week' | 'month' | 'quarter' | 'year' (optional, default: 'month')
+ * - startDate: string YYYY-MM-DD (optional, for custom range)
+ * - endDate: string YYYY-MM-DD (optional, for custom range)
+ * - groupBy: 'campaign' | 'platform' | 'month' (optional, default: 'campaign')
+ * - platforms: string (optional) - Comma-separated platform names
+ * - minSpend: number (optional) - Filter out items with spend below this threshold
+ * 
+ * Returns: IntelligenceResponse<ROIReport>
+ * 
+ * Example:
+ * GET /api/intelligence/marketing/roi-report?tenantId=abc-123&period=month&groupBy=platform
+ */
+
+import { NextRequest, NextResponse } from 'next/server';
+import { getROIReport } from '@/services/intelligence/marketing/queries';
+import { periodToDateRange, isValidTenantId, formatDate } from '@/services/intelligence/shared/helpers';
+import type { TimePeriod } from '@/services/intelligence/shared/types';
+import type { DateRange, Platform, ROIGroupBy } from '@/services/intelligence/marketing/types';
+
+export async function GET(request: NextRequest) {
+  try {
+    // Parse query params
+    const { searchParams } = new URL(request.url);
+    const tenantId = searchParams.get('tenantId');
+    const period = searchParams.get('period') as TimePeriod | null;
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
+    const groupBy = (searchParams.get('groupBy') || 'campaign') as ROIGroupBy;
+    const platformsParam = searchParams.get('platforms');
+    const minSpendParam = searchParams.get('minSpend');
+
+    // Validate required params
+    if (!tenantId) {
+      return NextResponse.json(
+        { error: 'Missing required parameter: tenantId' },
+        { status: 400 }
+      );
+    }
+
+    if (!isValidTenantId(tenantId)) {
+      return NextResponse.json(
+        { error: 'Invalid tenantId format (must be UUID v4)' },
+        { status: 400 }
+      );
+    }
+
+    // Validate groupBy
+    const validGroupBy: ROIGroupBy[] = ['campaign', 'platform', 'month'];
+    if (!validGroupBy.includes(groupBy)) {
+      return NextResponse.json(
+        { error: `Invalid groupBy. Must be one of: ${validGroupBy.join(', ')}` },
+        { status: 400 }
+      );
+    }
+
+    // Build date range
+    let dateRange: DateRange;
+    if (startDate && endDate) {
+      // Validate date format (YYYY-MM-DD)
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (!dateRegex.test(startDate) || !dateRegex.test(endDate)) {
+        return NextResponse.json(
+          { error: 'Invalid date format. Use YYYY-MM-DD' },
+          { status: 400 }
+        );
+      }
+
+      dateRange = { start: startDate, end: endDate };
+    } else {
+      const periodValue = (period || 'month') as TimePeriod;
+      
+      // Validate period enum
+      const validPeriods: TimePeriod[] = ['day', 'week', 'month', 'quarter', 'year'];
+      if (!validPeriods.includes(periodValue)) {
+        return NextResponse.json(
+          { error: `Invalid period. Must be one of: ${validPeriods.join(', ')}` },
+          { status: 400 }
+        );
+      }
+
+      const range = periodToDateRange(periodValue);
+      dateRange = {
+        start: formatDate(range.startDate),
+        end: formatDate(range.endDate),
+      };
+    }
+
+    // Parse and validate platforms filter
+    let platforms: Platform[] | undefined;
+    if (platformsParam) {
+      const validPlatforms: Platform[] = ['facebook', 'google', 'tiktok', 'zalo'];
+      const requestedPlatforms = platformsParam.split(',').map(p => p.trim().toLowerCase());
+      
+      const invalidPlatforms = requestedPlatforms.filter(p => !validPlatforms.includes(p as Platform));
+      if (invalidPlatforms.length > 0) {
+        return NextResponse.json(
+          { 
+            error: `Invalid platform(s): ${invalidPlatforms.join(', ')}. Must be one of: ${validPlatforms.join(', ')}` 
+          },
+          { status: 400 }
+        );
+      }
+
+      platforms = requestedPlatforms as Platform[];
+    }
+
+    // Parse and validate minSpend
+    let minSpend: number | undefined;
+    if (minSpendParam) {
+      minSpend = parseFloat(minSpendParam);
+      if (isNaN(minSpend) || minSpend < 0) {
+        return NextResponse.json(
+          { error: 'Invalid minSpend. Must be a non-negative number' },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Call query function
+    const startTime = Date.now();
+    const data = await getROIReport({
+      tenantId,
+      dateRange,
+      groupBy,
+      platforms,
+      minSpend,
+    });
+
+    // Return response in IntelligenceResponse format
+    return NextResponse.json(
+      {
+        data,
+        metadata: {
+          generatedAt: new Date().toISOString(),
+          cacheHit: false, // TODO: Implement cache layer
+          queryTimeMs: Date.now() - startTime,
+          dataSourcesUsed: 
+            groupBy === 'campaign' 
+              ? ['mv_campaign_performance']
+              : ['mv_channel_performance'],
+        },
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error('[API] ROI Report error:', error);
+
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    
+    return NextResponse.json(
+      { error: 'Failed to get ROI report', details: errorMessage },
+      { status: 500 }
+    );
+  }
+}
