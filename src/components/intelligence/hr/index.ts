@@ -8,3 +8,6 @@ export { HeadcountTrendChart } from './HeadcountTrendChart';
 export { TurnoverRateChart } from './TurnoverRateChart';
 export { TenureDistributionChart } from './TenureDistributionChart';
 export { RoleDistributionChart } from './RoleDistributionChart';
+export { AttendanceRateChart } from './AttendanceRateChart';
+export { TopEarnersChart } from './TopEarnersChart';
+export { SalaryDistributionChart } from './SalaryDistributionChart';
