@@ -337,8 +337,8 @@ export async function getChannelPerformance(
       .from('mv_channel_performance' as any)
       .select('*')
       .eq('tenant_id', tenantId)
-      .gte('month', dateRange.start.slice(0, 7)) // YYYY-MM
-      .lte('month', dateRange.end.slice(0, 7))
+      .gte('month', `${dateRange.start.slice(0, 7)}-01`) // YYYY-MM-01 (first day of month)
+      .lte('month', `${dateRange.end.slice(0, 7)}-01`)   // YYYY-MM-01 (first day of month)
       .order('month', { ascending: false })
       .order('platform', { ascending: true });
 
