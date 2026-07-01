@@ -21,7 +21,7 @@
  * - Inventory changes → Invalidates operational:*
  */
 
-import type { IntelligenceService, DateRange, TimePeriod, IntelligenceResponse } from '../shared/types';
+import type { IntelligenceService, DateRange, TimePeriod, IntelligenceResponse, CacheService } from '../shared/types';
 import { IntelligenceError, QueryError } from '../shared/types';
 import { getCache } from '../cache';
 import { buildCacheKey, parseDateRange, formatDate } from '../shared/helpers';
@@ -49,7 +49,15 @@ import {
 
 export class OperationalIntelligenceService implements IntelligenceService {
   readonly moduleName = 'operational';
-  private cache = getCache();
+  private cache: CacheService;
+
+  /**
+   * Create Operational Intelligence Service.
+   * @param cache - Optional cache instance (defaults to getCache() singleton).
+   */
+  constructor(cache?: CacheService) {
+    this.cache = cache || getCache();
+  }
 
   // ───────────────────────────────────────────────────────────────────────────
   // Public API - KTV Performance
@@ -81,8 +89,15 @@ export class OperationalIntelligenceService implements IntelligenceService {
         }
       );
 
-      // Check cache
-      const cached = await this.cache.get<KtvPerformance[]>(cacheKey);
+      // Check cache (fallback to DB if cache read fails)
+      let cached: KtvPerformance[] | null = null;
+      try {
+        cached = await this.cache.get<KtvPerformance[]>(cacheKey);
+      } catch (cacheError) {
+        console.warn('[OperationalIntelligence.getKtvPerformance] Cache read error, falling back to database:', cacheError);
+        // Continue to database query
+      }
+
       if (cached) {
         return {
           data: cached,
@@ -98,11 +113,16 @@ export class OperationalIntelligenceService implements IntelligenceService {
       // Query database (materialized view)
       const data = await queryKtvPerformance(ktvId, dateRange);
 
-      // Write to cache (TTL: 10 minutes - matches mv_ktv_performance_summary refresh)
-      await this.cache.set(cacheKey, data, {
-        ttl: DEFAULT_CACHE_TTL.OPERATIONAL,
-        tags: [CACHE_KEY_PREFIX.OPERATIONAL.replace(':', ''), `ktv:${ktvId}`],
-      });
+      // Write to cache (best effort - don't fail if cache write fails)
+      try {
+        await this.cache.set(cacheKey, data, {
+          ttl: DEFAULT_CACHE_TTL.OPERATIONAL,
+          tags: [CACHE_KEY_PREFIX.OPERATIONAL.replace(':', ''), `ktv:${ktvId}`],
+        });
+      } catch (cacheError) {
+        console.warn('[OperationalIntelligence.getKtvPerformance] Cache write error (non-critical):', cacheError);
+        // Continue - data is already fetched
+      }
 
       return {
         data,
