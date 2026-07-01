@@ -34,7 +34,7 @@
   --card-foreground: oklch(0.145 0 0);
 
   --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
+  --muted-foreground: oklch(0.439 0 0); /* Darker for better contrast (was 0.556) */
 
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
@@ -138,14 +138,14 @@
   --color-pink-deep: #881337;
   
   /* Override Tailwind default slate colors for better contrast on white/pink bg
-     Default Tailwind values are too light. Push all shades 2 steps darker. */
+     Default Tailwind values are too light. Push slate-400 to 3 steps darker for maximum legibility. */
   --color-slate-300: #64748b; /* was #cbd5e1, now use 500 (2 steps darker) */
-  --color-slate-400: #475569; /* was #94a3b8, now use 600 (2 steps darker) */
+  --color-slate-400: #334155; /* was #94a3b8, now use 700 (3 steps darker) for critical legibility */
   --color-slate-500: #334155; /* was #64748b, now use 700 (2 steps darker) */
   --color-slate-600: #1e293b; /* was #475569, now use 800 (2 steps darker) */
   --color-slate-700: rgb(15, 23, 42); /* was rgb(51, 65, 85), now use 900 for maximum contrast */
   --color-gray-300: #6b7280; /* was #d1d5db, now use 500 (2 steps darker) */
-  --color-gray-400: #4b5563; /* was #9ca3af, now use 600 (2 steps darker) */
+  --color-gray-400: #374151; /* was #9ca3af, now use 700 (3 steps darker) for critical legibility */
   --color-gray-500: #374151; /* was #6b7280, now use 700 (2 steps darker) */
   --color-gray-600: #1f2937; /* was #4b5563, now use 800 (2 steps darker) */
 
