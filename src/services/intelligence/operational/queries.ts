@@ -28,6 +28,11 @@ import type { Database } from '@/types/database.types';
 import type { DateRange, TimePeriod } from '../shared/types';
 import { QueryError } from '../shared/types';
 import { parseDateRange, formatDate } from '../shared/helpers';
+import type { 
+  MvKtvPerformanceSummary, 
+  MvInventoryStatus, 
+  MvSessionAnalytics 
+} from '@/types/materialized-views.types';
 
 // ─── Type Definitions ───────────────────────────────────────────────────────
 
@@ -239,9 +244,9 @@ export async function getKtvPerformance(
     // Parse date range
     const range = parseDateRange(dateRange);
     
-    // Query materialized view
+    // Query materialized view (use rpc or type-safe approach)
     const { data, error } = await supabase
-      .from('mv_ktv_performance_summary')
+      .from('mv_ktv_performance_summary' as any)
       .select('*')
       .eq('ktv_id', ktvId)
       .gte('month', formatDate(range.startDate))
@@ -255,8 +260,8 @@ export async function getKtvPerformance(
       );
     }
     
-    // Map database columns to camelCase
-    return (data || []).map((row) => ({
+    // Map database columns to camelCase (type-safe with MV interface, use unknown bridge for Supabase MV inference)
+    return ((data || []) as unknown as MvKtvPerformanceSummary[]).map((row) => ({
       ktvId: row.ktv_id,
       tenantId: row.tenant_id,
       ktvName: row.ktv_name,
@@ -285,13 +290,13 @@ export async function getKtvPerformance(
       uniqueCustomersServed: row.unique_customers_served,
       computedAt: row.computed_at,
     }));
-  } catch (error) {
+  } catch (error: unknown) {
     if (error instanceof QueryError) {
       throw error;
     }
     throw new QueryError(
       `Unexpected error fetching KTV performance: ${error instanceof Error ? error.message : String(error)}`,
-      error
+      error as Error
     );
   }
 }
@@ -324,9 +329,9 @@ export async function getKtvLeaderboard(
       ? 'total_sessions_completed' 
       : 'avg_rating';
     
-    // Query materialized view
+    // Query materialized view (type-cast needed for MV support)
     const { data, error } = await supabase
-      .from('mv_ktv_performance_summary')
+      .from('mv_ktv_performance_summary' as any)
       .select('*')
       .eq('tenant_id', tenantId)
       .gte('month', formatDate(range.startDate))
@@ -341,7 +346,7 @@ export async function getKtvLeaderboard(
       );
     }
     
-    // Aggregate by KTV (sum across months in date range)
+    // Aggregate by KTV (sum across months in date range) - type-safe with MV interface
     const ktvMap = new Map<string, {
       ktvId: string;
       ktvName: string;
@@ -352,7 +357,7 @@ export async function getKtvLeaderboard(
       ratingCount: number;
     }>();
     
-    (data || []).forEach((row) => {
+    ((data || []) as unknown as MvKtvPerformanceSummary[]).forEach((row) => {
       const existing = ktvMap.get(row.ktv_id);
       if (existing) {
         existing.totalSessionsCompleted += row.total_sessions_completed;
@@ -391,13 +396,13 @@ export async function getKtvLeaderboard(
       totalRevenue: ktv.totalRevenue,
       attendanceRatePct: ktv.attendanceRatePct,
     }));
-  } catch (error) {
+  } catch (error: unknown) {
     if (error instanceof QueryError) {
       throw error;
     }
     throw new QueryError(
       `Unexpected error fetching KTV leaderboard: ${error instanceof Error ? error.message : String(error)}`,
-      error
+      error as Error
     );
   }
 }
@@ -416,9 +421,9 @@ export async function getInventoryStatus(
   try {
     const supabase = await createClient();
     
-    // Build query
+    // Build query (type-cast needed for MV support)
     let query = supabase
-      .from('mv_inventory_status')
+      .from('mv_inventory_status' as any)
       .select('*')
       .eq('tenant_id', tenantId);
     
@@ -439,8 +444,8 @@ export async function getInventoryStatus(
       );
     }
     
-    // Map database columns to camelCase
-    return (data || []).map((row) => ({
+    // Map database columns to camelCase (type-safe with MV interface, use unknown bridge)
+    return ((data || []) as unknown as MvInventoryStatus[]).map((row) => ({
       productId: row.product_id,
       tenantId: row.tenant_id,
       productName: row.product_name,
@@ -470,13 +475,13 @@ export async function getInventoryStatus(
       inventoryUpdatedAt: row.inventory_updated_at,
       computedAt: row.computed_at,
     }));
-  } catch (error) {
+  } catch (error: unknown) {
     if (error instanceof QueryError) {
       throw error;
     }
     throw new QueryError(
       `Unexpected error fetching inventory status: ${error instanceof Error ? error.message : String(error)}`,
-      error
+      error as Error
     );
   }
 }
@@ -495,9 +500,9 @@ export async function getInventoryForecast(
   try {
     const supabase = await createClient();
     
-    // Query materialized view for product
+    // Query materialized view for product (type-cast needed for MV support)
     const { data, error } = await supabase
-      .from('mv_inventory_status')
+      .from('mv_inventory_status' as any)
       .select('*')
       .eq('product_id', productId)
       .single();
@@ -510,13 +515,16 @@ export async function getInventoryForecast(
     }
     
     if (!data) {
-      throw new QueryError(`Product not found: ${productId}`, null);
+      throw new QueryError(`Product not found: ${productId}`, undefined);
     }
     
+    // Type-safe cast to MV interface
+    const row = data as unknown as MvInventoryStatus;
+    
     // Calculate forecast
-    const avgDailyUsage = data.avg_daily_usage || 0;
-    const currentStock = data.current_stock || 0;
-    const supplierLeadTime = data.supplier_lead_time_days || 7;
+    const avgDailyUsage = row.avg_daily_usage || 0;
+    const currentStock = row.current_stock || 0;
+    const supplierLeadTime = row.supplier_lead_time_days || 7;
     
     const forecastedDaysUntilStockout = avgDailyUsage > 0 
       ? Math.round(currentStock / avgDailyUsage) 
@@ -532,27 +540,27 @@ export async function getInventoryForecast(
     
     // Determine confidence level based on usage history
     const confidenceLevel: 'high' | 'medium' | 'low' = 
-      data.usage_last_30_days >= 10 ? 'high' :
-      data.usage_last_30_days >= 5 ? 'medium' : 'low';
+      row.usage_last_30_days >= 10 ? 'high' :
+      row.usage_last_30_days >= 5 ? 'medium' : 'low';
     
     return {
-      productId: data.product_id,
-      productName: data.product_name,
+      productId: row.product_id,
+      productName: row.product_name,
       currentStock: currentStock,
       avgDailyUsage: avgDailyUsage,
       forecastedDaysUntilStockout,
       forecastedStockoutDate,
       recommendedReorderDate,
-      recommendedReorderQuantity: data.reorder_quantity || 0,
+      recommendedReorderQuantity: row.reorder_quantity || 0,
       confidenceLevel,
     };
-  } catch (error) {
+  } catch (error: unknown) {
     if (error instanceof QueryError) {
       throw error;
     }
     throw new QueryError(
       `Unexpected error fetching inventory forecast: ${error instanceof Error ? error.message : String(error)}`,
-      error
+      error as Error
     );
   }
 }
@@ -574,9 +582,9 @@ export async function getSessionAnalytics(
     // Parse date range
     const range = parseDateRange(dateRange);
     
-    // Query materialized view
+    // Query materialized view (type-cast needed for MV support)
     const { data, error } = await supabase
-      .from('mv_session_analytics')
+      .from('mv_session_analytics' as any)
       .select('*')
       .eq('tenant_id', tenantId)
       .gte('date', formatDate(range.startDate))
@@ -590,8 +598,8 @@ export async function getSessionAnalytics(
       );
     }
     
-    // Map database columns to camelCase
-    return (data || []).map((row) => ({
+    // Map database columns to camelCase (type-safe with MV interface, use unknown bridge)
+    return ((data || []) as unknown as MvSessionAnalytics[]).map((row) => ({
       tenantId: row.tenant_id,
       date: row.date,
       totalSessions: row.total_sessions,
@@ -626,13 +634,13 @@ export async function getSessionAnalytics(
       qualitySuccessRatePct: row.quality_success_rate_pct,
       computedAt: row.computed_at,
     }));
-  } catch (error) {
+  } catch (error: unknown) {
     if (error instanceof QueryError) {
       throw error;
     }
     throw new QueryError(
       `Unexpected error fetching session analytics: ${error instanceof Error ? error.message : String(error)}`,
-      error
+      error as Error
     );
   }
 }
@@ -654,9 +662,9 @@ export async function getCapacityUtilization(
     // Parse date range
     const range = parseDateRange(dateRange);
     
-    // Query session analytics for capacity metrics
+    // Query session analytics for capacity metrics (type-cast needed for MV support)
     const { data: sessionData, error: sessionError } = await supabase
-      .from('mv_session_analytics')
+      .from('mv_session_analytics' as any)
       .select('*')
       .eq('tenant_id', tenantId)
       .gte('date', formatDate(range.startDate))
@@ -674,8 +682,8 @@ export async function getCapacityUtilization(
     // TODO: Make this dynamic based on actual KTV count and working hours
     const totalCapacityPerDay = 320;
     
-    // Calculate utilization for each day
-    return (sessionData || []).map((row) => {
+    // Calculate utilization for each day (type-safe with MV interface, use unknown bridge)
+    return ((sessionData || []) as unknown as MvSessionAnalytics[]).map((row) => {
       const bookedSessions = row.total_sessions;
       const utilizationRatePct = Math.round((bookedSessions / totalCapacityPerDay) * 100);
       
@@ -706,13 +714,13 @@ export async function getCapacityUtilization(
         recommendedStaffing,
       };
     });
-  } catch (error) {
+  } catch (error: unknown) {
     if (error instanceof QueryError) {
       throw error;
     }
     throw new QueryError(
       `Unexpected error fetching capacity utilization: ${error instanceof Error ? error.message : String(error)}`,
-      error
+      error as Error
     );
   }
 }
