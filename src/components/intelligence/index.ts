@@ -9,3 +9,9 @@ export { OperationalEfficiencyChart } from './OperationalEfficiencyChart';
 export { CustomerMetricsChart } from './CustomerMetricsChart';
 export { FinancialHealthChart } from './FinancialHealthChart';
 export { GrowthIndicatorsChart } from './GrowthIndicatorsChart';
+
+// Finance Intelligence Charts
+export { PnLStatementChart } from './PnLStatementChart';
+export { RevenueBreakdownChart } from './RevenueBreakdownChart';
+export { ExpenseBreakdownChart } from './ExpenseBreakdownChart';
+export { ProfitabilityTrendChart } from './ProfitabilityTrendChart';
