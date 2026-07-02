@@ -1,281 +1,154 @@
-/* ═══════════════════════════════════════════════════════════════════════
-   L'ÉMERAUDE LUXURY SPA — ISOLATED DESIGN SYSTEM
-   Scoped strictly under .beauty-spa-wrapper to prevent any style
-   leakage into the Bella ERP main interface.
-   ═══════════════════════════════════════════════════════════════════════ */
+/* =========================================================================
+   L'Émeraude Beauty Spa Landing Page - Isolated Styles
+   Prevents ERP theme (pink/beige) from leaking into landing page
+   ========================================================================= */
 
-/* ─── Google Fonts (Progressive Enhancement) ─────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=Corinthia:wght@400;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap');
+/* 1. RESET & ISOLATION - Prevent global ERP styles from applying */
+.beauty-spa-wrapper,
+.beauty-spa-wrapper * {
+  /* Force emerald green color palette */
+  --spa-primary: #074E44; /* Emerald green */
+  --spa-primary-dark: #0B2240; /* Deep navy blue */
+  --spa-accent: #C5A880; /* Champagne gold */
+  --spa-bg: #FAF9F6; /* Warm off-white */
+  --spa-text: #0B2240; /* Deep navy text */
+  
+  /* Override any ERP pink theme */
+  --primary: var(--spa-primary) !important;
+  --primary-hover: #0a6357 !important;
+  color: var(--spa-text);
+}
 
-/* ─── Design Tokens ──────────────────────────────────────────────────── */
+/* 2. BUTTONS - L'Émeraude emerald green theme */
+.beauty-spa-wrapper .beauty-btn-primary {
+  background: linear-gradient(135deg, var(--spa-primary) 0%, #0a6357 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(197, 168, 128, 0.3) !important;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.12) inset, 0 14px 28px rgba(7, 78, 68, 0.22) !important;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.beauty-spa-wrapper .beauty-btn-primary:hover {
+  background: linear-gradient(135deg, #0a6357 0%, #0d7767 100%) !important;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.15) inset, 0 18px 36px rgba(7, 78, 68, 0.28) !important;
+  transform: translateY(-2px) !important;
+}
+
+.beauty-spa-wrapper .beauty-btn-primary:active {
+  transform: translateY(0px) !important;
+  box-shadow: 0 0 0 rgba(255, 255, 255, 0.1) inset, 0 8px 16px rgba(7, 78, 68, 0.18) !important;
+}
+
+.beauty-spa-wrapper .beauty-btn-secondary {
+  background: #ffffff !important;
+  color: var(--spa-primary) !important;
+  border: 1.5px solid rgba(7, 78, 68, 0.22) !important;
+  box-shadow: 0 8px 20px rgba(11, 34, 64, 0.08) !important;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.beauty-spa-wrapper .beauty-btn-secondary:hover {
+  background: rgba(7, 78, 68, 0.04) !important;
+  border-color: rgba(7, 78, 68, 0.38) !important;
+  box-shadow: 0 12px 28px rgba(11, 34, 64, 0.12) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* 3. FORM INPUTS - Emerald green focus states */
+.beauty-spa-wrapper .beauty-input {
+  background: var(--spa-bg) !important;
+  border: 1.5px solid rgba(197, 168, 128, 0.2) !important;
+  color: var(--spa-text) !important;
+  transition: all 0.3s ease !important;
+}
+
+.beauty-spa-wrapper .beauty-input:focus {
+  outline: none !important;
+  border-color: var(--spa-primary) !important;
+  box-shadow: 0 0 0 3px rgba(7, 78, 68, 0.08) !important;
+  background: #ffffff !important;
+}
+
+.beauty-spa-wrapper .beauty-input::placeholder {
+  color: rgba(11, 34, 64, 0.4) !important;
+}
+
+/* 4. PREVENT PINK THEME OVERRIDES */
+.beauty-spa-wrapper [class*="text-pink-"],
+.beauty-spa-wrapper [class*="text-rose-"],
+.beauty-spa-wrapper [class*="bg-pink-"],
+.beauty-spa-wrapper [class*="bg-rose-"],
+.beauty-spa-wrapper [class*="border-pink-"],
+.beauty-spa-wrapper [class*="border-rose-"] {
+  /* Force reset to emerald theme if any pink classes leak in */
+  color: var(--spa-text) !important;
+  background-color: transparent !important;
+  border-color: rgba(197, 168, 128, 0.2) !important;
+}
+
+/* 5. TYPOGRAPHY - Ensure proper contrast */
+.beauty-spa-wrapper h1,
+.beauty-spa-wrapper h2,
+.beauty-spa-wrapper h3,
+.beauty-spa-wrapper h4,
+.beauty-spa-wrapper h5,
+.beauty-spa-wrapper h6 {
+  color: var(--spa-text) !important;
+}
+
+.beauty-spa-wrapper p,
+.beauty-spa-wrapper span,
+.beauty-spa-wrapper label {
+  color: var(--spa-text) !important;
+}
+
+/* 6. LINKS - Emerald green hover */
+.beauty-spa-wrapper a {
+  color: var(--spa-primary) !important;
+  transition: all 0.3s ease !important;
+}
+
+.beauty-spa-wrapper a:hover {
+  color: #0a6357 !important;
+}
+
+/* 7. PREVENT GLOBAL CSS VARIABLE OVERRIDES */
 .beauty-spa-wrapper {
-  --beauty-primary:        #074E44;  /* Deep Emerald */
-  --beauty-primary-light:  #0B695C;
-  --beauty-secondary:      #0B2240;  /* Sapphire */
-  --beauty-secondary-light:#153C6E;
-  --beauty-accent:         #C5A880;  /* Champagne Gold */
-  --beauty-accent-light:   #D4BC9A;
-  --beauty-accent-dark:    #B3946B;
-  --beauty-teal:           #7DD3C7;  /* Teal Highlight */
-  --beauty-bg:             #FAF9F6;  /* Alabaster */
-  --beauty-bg-card:        #FFFFFF;
-  --beauty-text:           #1E293B;
-  --beauty-text-muted:     #64748B;
-  --beauty-text-faint:     #94A3B8;
-  --beauty-border:         rgba(197, 168, 128, 0.2);
-  --beauty-border-active:  rgba(197, 168, 128, 0.5);
-  --beauty-shadow-sm:      0 4px 15px rgba(7, 78, 68, 0.04);
-  --beauty-shadow-md:      0 10px 30px rgba(7, 78, 68, 0.07);
-  --beauty-shadow-lg:      0 25px 60px rgba(11, 34, 64, 0.10);
-  --beauty-radius-sm:      12px;
-  --beauty-radius-md:      20px;
-  --beauty-radius-lg:      28px;
-  --beauty-radius-xl:      40px;
-
-  /* Typography variables (fallback if Next.js fonts not injected) */
-  --beauty-font-serif:     'Playfair Display', Georgia, 'Times New Roman', serif;
-  --beauty-font-script:    'Corinthia', cursive;
-  --beauty-font-sans:      'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-
-  /* Applied base styles */
-  min-height: 100vh;
-  background-color: var(--beauty-bg);
-  background-image:
-    radial-gradient(ellipse 80% 50% at 0% 0%, rgba(7, 78, 68, 0.06) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 40% at 100% 100%, rgba(11, 34, 64, 0.05) 0%, transparent 60%);
-  color: var(--beauty-text);
-  font-family: var(--beauty-font-sans);
-  position: relative;
-  overflow-x: hidden;
-  /* Hard isolation from ERP global styles */
+  /* Ensure no ERP CSS variables leak through */
   isolation: isolate;
 }
 
-/* ─── Scrollbar ──────────────────────────────────────────────────────── */
-.beauty-spa-wrapper ::-webkit-scrollbar        { width: 6px; }
-.beauty-spa-wrapper ::-webkit-scrollbar-track  { background: var(--beauty-bg); }
-.beauty-spa-wrapper ::-webkit-scrollbar-thumb  { background: var(--beauty-accent); border-radius: 99px; }
-.beauty-spa-wrapper ::-webkit-scrollbar-thumb:hover { background: var(--beauty-accent-dark); }
-
-/* ─── Typography Utilities ───────────────────────────────────────────── */
-.beauty-spa-wrapper .beauty-serif {
-  font-family: var(--beauty-font-serif) !important;
-}
-.beauty-spa-wrapper .beauty-script {
-  font-family: var(--beauty-font-script) !important;
-}
-.beauty-spa-wrapper h1,
-.beauty-spa-wrapper h2,
-.beauty-spa-wrapper h3 {
-  font-family: var(--beauty-font-serif);
-}
-.beauty-spa-wrapper * {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+/* 8. DARK MODE PROTECTION - Landing page should always be light */
+html.dark .beauty-spa-wrapper,
+html.dark .beauty-spa-wrapper * {
+  /* Force light mode for landing page even if user has dark mode on */
+  background-color: var(--spa-bg) !important;
+  color: var(--spa-text) !important;
 }
 
-/* ─── Glass Card ─────────────────────────────────────────────────────── */
-.beauty-spa-wrapper .beauty-glass-card {
-  background: rgba(255, 255, 255, 0.60);
-  backdrop-filter: blur(20px) saturate(140%);
-  -webkit-backdrop-filter: blur(20px) saturate(140%);
-  border: 1px solid rgba(255, 255, 255, 0.45);
-  box-shadow: var(--beauty-shadow-md);
-  transition: all 0.45s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.beauty-spa-wrapper .beauty-glass-card:hover {
-  transform: translateY(-7px);
-  box-shadow: var(--beauty-shadow-lg);
-  border-color: var(--beauty-border-active);
+html.dark .beauty-spa-wrapper .beauty-btn-primary {
+  background: linear-gradient(135deg, var(--spa-primary) 0%, #0a6357 100%) !important;
+  color: #ffffff !important;
 }
 
-/* Double-border luxury card */
-.beauty-spa-wrapper .beauty-luxury-border {
-  border: 1.5px solid var(--beauty-border);
-  position: relative;
-}
-.beauty-spa-wrapper .beauty-luxury-border::after {
-  content: '';
-  position: absolute;
-  inset: 4px;
-  border: 1px dashed rgba(197, 168, 128, 0.22);
-  border-radius: calc(inherit - 4px);
-  pointer-events: none;
+html.dark .beauty-spa-wrapper .beauty-btn-secondary {
+  background: #ffffff !important;
+  color: var(--spa-primary) !important;
 }
 
-/* ─── Button: Primary ────────────────────────────────────────────────── */
-.beauty-spa-wrapper .beauty-btn-primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background: linear-gradient(135deg, #074E44 0%, #0B695C 60%, #0d7a6e 100%);
-  background-size: 200% 200%;
-  color: #FFFFFF !important;
-  border: 1px solid #C5A880;
-  box-shadow: 0 6px 18px rgba(7, 78, 68, 0.18);
-  transition: all 0.45s cubic-bezier(0.16, 1, 0.3, 1);
-  letter-spacing: 1.5px;
-  font-weight: 800;
-  text-transform: uppercase;
-}
-.beauty-spa-wrapper .beauty-btn-primary:hover {
-  background-position: right center;
-  background: linear-gradient(135deg, #0B2240 0%, #153C6E 100%);
-  box-shadow: 0 14px 32px rgba(11, 34, 64, 0.2);
-  transform: translateY(-3px);
-  border-color: #D4BC9A;
-}
-.beauty-spa-wrapper .beauty-btn-primary:active {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(7, 78, 68, 0.15);
+html.dark .beauty-spa-wrapper .beauty-input {
+  background: var(--spa-bg) !important;
+  color: var(--spa-text) !important;
+  border-color: rgba(197, 168, 128, 0.2) !important;
 }
 
-/* ─── Button: Secondary ──────────────────────────────────────────────── */
-.beauty-spa-wrapper .beauty-btn-secondary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background: transparent;
-  color: var(--beauty-secondary) !important;
-  border: 1.5px solid var(--beauty-accent);
-  box-shadow: 0 2px 8px rgba(197, 168, 128, 0.1);
-  transition: all 0.35s;
-  letter-spacing: 1.5px;
-  font-weight: 800;
-  text-transform: uppercase;
-}
-.beauty-spa-wrapper .beauty-btn-secondary:hover {
-  background: rgba(197, 168, 128, 0.1);
-  color: var(--beauty-primary) !important;
-  border-color: var(--beauty-primary);
-  transform: translateY(-2px);
-}
-
-/* ─── Input / Select / Textarea ──────────────────────────────────────── */
-.beauty-spa-wrapper .beauty-input,
-.beauty-spa-wrapper .beauty-input:not([type='checkbox']):not([type='radio']) {
-  background: rgba(250, 249, 246, 0.95) !important;
-  border: 1.5px solid var(--beauty-border) !important;
-  color: var(--beauty-text) !important;
-  font-family: var(--beauty-font-sans) !important;
-  transition: all 0.3s ease !important;
-  appearance: none;
-  -webkit-appearance: none;
-}
-.beauty-spa-wrapper .beauty-input:focus {
-  background: #FFFFFF !important;
-  border-color: var(--beauty-primary) !important;
-  box-shadow: 0 0 0 3px rgba(7, 78, 68, 0.08) !important;
-  outline: none !important;
-}
-.beauty-spa-wrapper .beauty-input::placeholder {
-  color: var(--beauty-text-faint) !important;
-}
-
-/* ─── Gradient Background Blobs ──────────────────────────────────────── */
-.beauty-spa-wrapper .beauty-blob {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(140px);
-  pointer-events: none;
-  z-index: 0;
-}
-.beauty-spa-wrapper .beauty-blob-green {
-  background: radial-gradient(circle, rgba(7, 78, 68, 0.12) 0%, transparent 70%);
-}
-.beauty-spa-wrapper .beauty-blob-blue {
-  background: radial-gradient(circle, rgba(11, 34, 64, 0.09) 0%, transparent 70%);
-}
-.beauty-spa-wrapper .beauty-blob-gold {
-  background: radial-gradient(circle, rgba(197, 168, 128, 0.10) 0%, transparent 70%);
-}
-
-/* ─── Section Dividers ───────────────────────────────────────────────── */
-.beauty-spa-wrapper .beauty-section-divider {
-  height: 1px;
-  background: linear-gradient(90deg, transparent 0%, rgba(197, 168, 128, 0.35) 35%, rgba(197, 168, 128, 0.35) 65%, transparent 100%);
-  border: none;
-  margin: 0;
-}
-
-/* ─── Tag/Badge ──────────────────────────────────────────────────────── */
-.beauty-spa-wrapper .beauty-badge {
-  display: inline-block;
-  padding: 5px 12px;
-  border-radius: 99px;
-  font-size: 9px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 1.8px;
-  background: rgba(250, 249, 246, 0.92);
-  border: 1px solid var(--beauty-accent);
-  color: var(--beauty-primary);
-}
-
-/* ─── Keyframe Animations ────────────────────────────────────────────── */
-@keyframes beauty-float {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  33%       { transform: translateY(-12px) rotate(1deg); }
-  66%       { transform: translateY(-6px) rotate(-1deg); }
-}
-@keyframes beauty-shimmer {
-  0%   { background-position: -200% center; }
-  100% { background-position: 200% center; }
-}
-@keyframes beauty-pulse-gold {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(197, 168, 128, 0); }
-  50%       { box-shadow: 0 0 0 8px rgba(197, 168, 128, 0.12); }
-}
-@keyframes beauty-fade-in-up {
-  from { opacity: 0; transform: translateY(24px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-@keyframes beauty-scale-in {
-  from { opacity: 0; transform: scale(0.94); }
-  to   { opacity: 1; transform: scale(1); }
-}
-@keyframes beauty-spin-slow {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-}
-
-/* Animation utility classes */
-.beauty-spa-wrapper .beauty-float       { animation: beauty-float 6s ease-in-out infinite; }
-.beauty-spa-wrapper .beauty-pulse-gold  { animation: beauty-pulse-gold 3s ease-in-out infinite; }
-.beauty-spa-wrapper .beauty-fade-in-up  { animation: beauty-fade-in-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) both; }
-.beauty-spa-wrapper .beauty-scale-in   { animation: beauty-scale-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
-.beauty-spa-wrapper .beauty-spin-slow  { animation: beauty-spin-slow 20s linear infinite; }
-
-/* Shimmer text */
-.beauty-spa-wrapper .beauty-shimmer-text {
-  background: linear-gradient(90deg, var(--beauty-primary) 0%, var(--beauty-accent) 50%, var(--beauty-primary) 100%);
-  background-size: 200% auto;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  animation: beauty-shimmer 4s linear infinite;
-}
-
-/* ─── Responsive Helpers ─────────────────────────────────────────────── */
-@media (max-width: 1024px) {
-  .beauty-spa-wrapper .beauty-hide-lg { display: none !important; }
-}
-@media (max-width: 768px) {
-  .beauty-spa-wrapper .beauty-hide-md { display: none !important; }
-  .beauty-spa-wrapper .beauty-grid-2  { grid-template-columns: 1fr !important; }
-  .beauty-spa-wrapper .beauty-grid-3  { grid-template-columns: 1fr 1fr !important; }
-  .beauty-spa-wrapper .beauty-px-mobile { padding-left: 20px !important; padding-right: 20px !important; }
-}
-@media (max-width: 480px) {
-  .beauty-spa-wrapper .beauty-grid-3  { grid-template-columns: 1fr !important; }
-  .beauty-spa-wrapper .beauty-text-xl { font-size: clamp(28px, 8vw, 42px) !important; }
-}
-
-/* ─── Overlay Scrollbar Reset (prevent ERP globals overriding) ───────── */
-#beauty-spa-root * {
-  scrollbar-width: thin;
-  scrollbar-color: #C5A880 #FAF9F6;
+/* 9. PROTECT FROM TENANT MODULE OVERRIDES */
+html[data-tenant-module] .beauty-spa-wrapper,
+html[data-tenant-module="pending"] .beauty-spa-wrapper,
+html[data-tenant-module="baby_care"] .beauty-spa-wrapper,
+html[data-tenant-module="babycare"] .beauty-spa-wrapper {
+  /* Force emerald theme regardless of active tenant module */
+  --primary: var(--spa-primary) !important;
+  --primary-hover: #0a6357 !important;
+  background-color: var(--spa-bg) !important;
 }
