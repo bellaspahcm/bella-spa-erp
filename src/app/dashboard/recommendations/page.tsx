@@ -229,7 +229,7 @@ export default function RecommendationDashboard() {
             <CardContent className="flex gap-4">
               <div className="flex-1">
                 <label className="text-sm font-medium mb-2 block">Thuật Toán</label>
-                <Select value={algorithm} onValueChange={(value) => setAlgorithm(value)}>
+                <Select value={algorithm} onValueChange={(value) => value && setAlgorithm(value)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -243,7 +243,7 @@ export default function RecommendationDashboard() {
               </div>
               <div className="flex-1">
                 <label className="text-sm font-medium mb-2 block">Số Lượng Gợi Ý</label>
-                <Select value={limit.toString()} onValueChange={(v) => setLimit(parseInt(v))}>
+                <Select value={limit.toString()} onValueChange={(v) => v && setLimit(parseInt(v))}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>

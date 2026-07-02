@@ -207,7 +207,7 @@ export default function ForecastDashboard() {
             <CardContent className="flex gap-4">
               <div className="flex-1">
                 <label className="text-sm font-medium mb-2 block">Mô Hình</label>
-                <Select value={revenueModel} onValueChange={(value) => setRevenueModel(value)}>
+                <Select value={revenueModel} onValueChange={(value) => value && setRevenueModel(value)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -222,7 +222,7 @@ export default function ForecastDashboard() {
                 <label className="text-sm font-medium mb-2 block">Thời Gian Dự Báo</label>
                 <Select 
                   value={revenueHorizon.toString()} 
-                  onValueChange={(v) => setRevenueHorizon(parseInt(v))}
+                  onValueChange={(v) => v && setRevenueHorizon(parseInt(v))}
                 >
                   <SelectTrigger>
                     <SelectValue />
