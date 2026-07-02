@@ -199,56 +199,6 @@ export interface EmployeePerformance {
 }
 
 /**
- * Recruitment Metrics
- */
-export interface RecruitmentMetrics {
-  tenantId: string;
-  month: string;
-  
-  // Hiring pipeline
-  newApplicants: number;
-  interviewed: number;
-  offered: number;
-  hired: number;
-  rejected: number;
-  
-  // Conversion rates
-  interviewConversionPct: number;
-  offerConversionPct: number;
-  hireConversionPct: number;
-  
-  // Time metrics
-  avgTimeToHireDays: number;
-  avgTimeToInterviewDays: number;
-  
-  // Cost metrics
-  totalRecruitmentCost: number;
-  costPerHire: number;
-}
-
-/**
- * Training Metrics
- */
-export interface TrainingMetrics {
-  tenantId: string;
-  month: string;
-  
-  // Training completion
-  totalCourses: number;
-  coursesCompleted: number;
-  coursesInProgress: number;
-  avgCompletionRate: number;
-  
-  // Skill development
-  totalSkillsAcquired: number;
-  certificationIssued: number;
-  
-  // Training hours
-  totalTrainingHours: number;
-  avgHoursPerEmployee: number;
-}
-
-/**
  * Retention Analysis
  */
 export interface RetentionAnalysis {
@@ -516,44 +466,6 @@ export async function getEmployeePerformance(
 }
 
 /**
- * Get Recruitment Metrics
- * Returns hiring pipeline, conversion rates, and time-to-hire
- * 
- * Note: Placeholder implementation. Requires recruitment tracking tables.
- * 
- * @param tenantId - Tenant UUID
- * @param dateRange - Date range or period
- * @returns Array of RecruitmentMetrics records
- */
-export async function getRecruitmentMetrics(
-  tenantId: string,
-  dateRange?: DateRange | TimePeriod
-): Promise<RecruitmentMetrics[]> {
-  // TODO: Implement when recruitment tracking tables are available
-  // For now, return empty array as placeholder
-  return [];
-}
-
-/**
- * Get Training Metrics
- * Returns training completion rates and skill development
- * 
- * Note: Placeholder implementation. Requires training tracking tables.
- * 
- * @param tenantId - Tenant UUID
- * @param dateRange - Date range or period
- * @returns Array of TrainingMetrics records
- */
-export async function getTrainingMetrics(
-  tenantId: string,
-  dateRange?: DateRange | TimePeriod
-): Promise<TrainingMetrics[]> {
-  // TODO: Implement when training tracking tables are available
-  // For now, return empty array as placeholder
-  return [];
-}
-
-/**
  * Get Retention Analysis
  * Returns attrition risk and tenure distribution
  * 
@@ -699,3 +611,28 @@ export async function getProductivityTrends(
     utilizationRatePct: 0, // TODO: Calculate capacity utilization
   }));
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Re-export Training & Recruitment Metrics
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Training Metrics (from dedicated module)
+ * 
+ * Note: Training metrics are calculated from session_logs as proxy for
+ * on-the-job training until formal training_courses tables are added.
+ */
+export type { TrainingMetrics } from './training-metrics';
+export { getTrainingMetrics } from './training-metrics';
+
+/**
+ * Recruitment Metrics (from dedicated module)
+ * 
+ * Calculates recruitment pipeline metrics from recruitment tables:
+ * - recruitment_positions
+ * - recruitment_candidates
+ * - recruitment_pipelines
+ * - recruitment_interviews
+ */
+export type { RecruitmentMetrics } from './recruitment-metrics';
+export { getRecruitmentMetrics } from './recruitment-metrics';
