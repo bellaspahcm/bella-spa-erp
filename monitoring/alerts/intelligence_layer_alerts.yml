@@ -1,0 +1,294 @@
+# Intelligence Layer Alert Rules
+# Phase 8: Optimization & Production Readiness
+
+groups:
+  - name: intelligence_layer_alerts
+    interval: 30s
+    rules:
+      # ======================================================================
+      # FORECAST ACCURACY ALERTS
+      # ======================================================================
+      
+      - alert: ForecastAccuracyLow
+        expr: intelligence_forecast_accuracy < 70
+        for: 1h
+        labels:
+          severity: warning
+          component: forecast
+        annotations:
+          summary: "Low forecast accuracy detected"
+          description: "Forecast accuracy for {{ $labels.forecast_type }} using {{ $labels.model_name }} is {{ $value }}% (threshold: 70%)"
+          runbook: "Check model performance, retrain if needed, or switch to better model"
+
+      - alert: ForecastAccuracyCritical
+        expr: intelligence_forecast_accuracy < 60
+        for: 30m
+        labels:
+          severity: critical
+          component: forecast
+        annotations:
+          summary: "Critical forecast accuracy drop"
+          description: "Forecast accuracy for {{ $labels.forecast_type }} is critically low at {{ $value }}%"
+          runbook: "Immediate action required: investigate data quality, model drift, or switch models"
+
+      # ======================================================================
+      # CACHE PERFORMANCE ALERTS
+      # ======================================================================
+      
+      - alert: CacheHitRateLow
+        expr: |
+          (
+            sum(rate(intelligence_cache_hits_total[5m])) by (cache_type)
+            /
+            (sum(rate(intelligence_cache_hits_total[5m])) by (cache_type) + sum(rate(intelligence_cache_misses_total[5m])) by (cache_type))
+          ) < 0.60
+        for: 15m
+        labels:
+          severity: warning
+          component: cache
+        annotations:
+          summary: "Low cache hit rate"
+          description: "Cache hit rate for {{ $labels.cache_type }} is {{ $value | humanizePercentage }} (threshold: 60%)"
+          runbook: "Check cache TTL settings, verify cache warming, investigate cache invalidation patterns"
+
+      - alert: CacheHitRateCritical
+        expr: |
+          (
+            sum(rate(intelligence_cache_hits_total[5m])) by (cache_type)
+            /
+            (sum(rate(intelligence_cache_hits_total[5m])) by (cache_type) + sum(rate(intelligence_cache_misses_total[5m])) by (cache_type))
+          ) < 0.40
+        for: 10m
+        labels:
+          severity: critical
+          component: cache
+        annotations:
+          summary: "Critical cache hit rate drop"
+          description: "Cache hit rate critically low at {{ $value | humanizePercentage }}"
+          runbook: "Immediate investigation: cache service down? TTL too short? Memory pressure?"
+
+      # ======================================================================
+      # API RESPONSE TIME ALERTS
+      # ======================================================================
+      
+      - alert: APIResponseTimeSlow
+        expr: histogram_quantile(0.95, sum(rate(intelligence_api_duration_seconds_bucket[5m])) by (le, endpoint)) > 0.5
+        for: 10m
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: "API response time degradation"
+          description: "P95 response time for {{ $labels.endpoint }} is {{ $value }}s (threshold: 500ms)"
+          runbook: "Check query performance, cache hit rate, database load, external API latency"
+
+      - alert: APIResponseTimeCritical
+        expr: histogram_quantile(0.95, sum(rate(intelligence_api_duration_seconds_bucket[5m])) by (le, endpoint)) > 1.0
+        for: 5m
+        labels:
+          severity: critical
+          component: api
+        annotations:
+          summary: "Critical API response time"
+          description: "P95 response time for {{ $labels.endpoint }} is {{ $value }}s (threshold: 1s)"
+          runbook: "Immediate action: check database connections, cache service, external APIs, consider circuit breaker"
+
+      - alert: APIErrorRateHigh
+        expr: |
+          (
+            sum(rate(intelligence_api_requests_total{status=~"5.."}[5m])) by (endpoint)
+            /
+            sum(rate(intelligence_api_requests_total[5m])) by (endpoint)
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: "High API error rate"
+          description: "Error rate for {{ $labels.endpoint }} is {{ $value | humanizePercentage }} (threshold: 5%)"
+          runbook: "Check application logs, database errors, external API failures"
+
+      - alert: APIErrorRateCritical
+        expr: |
+          (
+            sum(rate(intelligence_api_requests_total{status=~"5.."}[5m])) by (endpoint)
+            /
+            sum(rate(intelligence_api_requests_total[5m])) by (endpoint)
+          ) > 0.10
+        for: 3m
+        labels:
+          severity: critical
+          component: api
+        annotations:
+          summary: "Critical API error rate"
+          description: "Error rate critically high at {{ $value | humanizePercentage }}"
+          runbook: "Immediate investigation: service outage? Database down? Circuit breaker triggered?"
+
+      # ======================================================================
+      # MATERIALIZED VIEW REFRESH ALERTS
+      # ======================================================================
+      
+      - alert: MaterializedViewRefreshSlow
+        expr: intelligence_mv_refresh_duration_seconds > 60
+        for: 5m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "Materialized view refresh taking too long"
+          description: "MV {{ $labels.mv_name }} refresh took {{ $value }}s (threshold: 60s)"
+          runbook: "Check database load, index health, concurrent queries, data volume growth"
+
+      - alert: MaterializedViewRefreshCritical
+        expr: intelligence_mv_refresh_duration_seconds > 300
+        for: 2m
+        labels:
+          severity: critical
+          component: database
+        annotations:
+          summary: "Critical materialized view refresh time"
+          description: "MV {{ $labels.mv_name }} refresh critically slow at {{ $value }}s"
+          runbook: "Immediate action: investigate table bloat, missing indexes, lock contention, cancel long-running queries"
+
+      - alert: MaterializedViewRefreshFailed
+        expr: intelligence_mv_refresh_errors_total > 0
+        for: 1m
+        labels:
+          severity: critical
+          component: database
+        annotations:
+          summary: "Materialized view refresh failed"
+          description: "MV {{ $labels.mv_name }} refresh failed {{ $value }} times"
+          runbook: "Check database logs, verify table dependencies, check disk space, validate SQL syntax"
+
+      # ======================================================================
+      # DATABASE CONNECTION POOL ALERTS
+      # ======================================================================
+      
+      - alert: DatabaseConnectionPoolExhausted
+        expr: intelligence_db_pool_active_connections / intelligence_db_pool_max_connections > 0.90
+        for: 5m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "Database connection pool near exhaustion"
+          description: "Connection pool usage at {{ $value | humanizePercentage }} (threshold: 90%)"
+          runbook: "Check for connection leaks, increase pool size, investigate long-running queries"
+
+      - alert: DatabaseConnectionPoolCritical
+        expr: intelligence_db_pool_active_connections / intelligence_db_pool_max_connections > 0.95
+        for: 2m
+        labels:
+          severity: critical
+          component: database
+        annotations:
+          summary: "Database connection pool critically exhausted"
+          description: "Connection pool usage critically high at {{ $value | humanizePercentage }}"
+          runbook: "Immediate action: kill idle connections, restart connection pool, scale database"
+
+      # ======================================================================
+      # RECOMMENDATION RELEVANCE ALERTS
+      # ======================================================================
+      
+      - alert: RecommendationRelevanceLow
+        expr: intelligence_recommendation_relevance_score < 0.50
+        for: 30m
+        labels:
+          severity: warning
+          component: recommendation
+        annotations:
+          summary: "Low recommendation relevance score"
+          description: "Relevance score for {{ $labels.recommendation_type }} is {{ $value }} (threshold: 0.50)"
+          runbook: "Review algorithm parameters, check data freshness, validate customer interaction data"
+
+      - alert: RecommendationRelevanceCritical
+        expr: intelligence_recommendation_relevance_score < 0.30
+        for: 15m
+        labels:
+          severity: critical
+          component: recommendation
+        annotations:
+          summary: "Critical recommendation relevance drop"
+          description: "Relevance score critically low at {{ $value }}"
+          runbook: "Immediate action: investigate collaborative filtering matrix staleness, retrain model, check data quality"
+
+      # ======================================================================
+      # QUERY PERFORMANCE ALERTS
+      # ======================================================================
+      
+      - alert: DatabaseQuerySlow
+        expr: histogram_quantile(0.95, sum(rate(intelligence_db_query_duration_seconds_bucket[5m])) by (le, query_name)) > 1.0
+        for: 10m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "Slow database query detected"
+          description: "P95 query time for {{ $labels.query_name }} is {{ $value }}s (threshold: 1s)"
+          runbook: "Check query plan, missing indexes, table statistics, lock contention"
+
+      - alert: DatabaseQueryCritical
+        expr: histogram_quantile(0.95, sum(rate(intelligence_db_query_duration_seconds_bucket[5m])) by (le, query_name)) > 5.0
+        for: 5m
+        labels:
+          severity: critical
+          component: database
+        annotations:
+          summary: "Critical database query performance"
+          description: "P95 query time critically slow at {{ $value }}s"
+          runbook: "Immediate action: check for full table scans, investigate bloat, consider query rewrite, check I/O wait"
+
+      # ======================================================================
+      # EXTERNAL API ALERTS (Marketing Intelligence)
+      # ======================================================================
+      
+      - alert: ExternalAPIRateLimitApproaching
+        expr: intelligence_external_api_requests_total > 8000
+        for: 5m
+        labels:
+          severity: warning
+          component: external_api
+        annotations:
+          summary: "Approaching external API rate limit"
+          description: "{{ $labels.provider }} API requests at {{ $value }}/hour (limit typically 10000/hour)"
+          runbook: "Implement request throttling, increase cache TTL, batch requests, consider upgrading API tier"
+
+      - alert: ExternalAPISyncFailed
+        expr: increase(intelligence_external_api_sync_errors_total[1h]) > 3
+        for: 1m
+        labels:
+          severity: critical
+          component: external_api
+        annotations:
+          summary: "External API sync repeatedly failing"
+          description: "{{ $labels.provider }} API sync failed {{ $value }} times in last hour"
+          runbook: "Check API credentials, network connectivity, provider status page, rate limit status"
+
+      # ======================================================================
+      # DATA FRESHNESS ALERTS
+      # ======================================================================
+      
+      - alert: StaleDataDetected
+        expr: (time() - intelligence_last_data_refresh_timestamp_seconds) / 3600 > 24
+        for: 1h
+        labels:
+          severity: warning
+          component: data_pipeline
+        annotations:
+          summary: "Stale data detected"
+          description: "{{ $labels.data_source }} has not been refreshed for {{ $value }} hours (threshold: 24h)"
+          runbook: "Check cron job status, verify data pipeline health, investigate upstream data sources"
+
+      - alert: StaleDataCritical
+        expr: (time() - intelligence_last_data_refresh_timestamp_seconds) / 3600 > 48
+        for: 30m
+        labels:
+          severity: critical
+          component: data_pipeline
+        annotations:
+          summary: "Critical stale data"
+          description: "{{ $labels.data_source }} critically stale ({{ $value }} hours old)"
+          runbook: "Immediate action: manually trigger refresh, investigate pipeline failure, notify data team"
+
