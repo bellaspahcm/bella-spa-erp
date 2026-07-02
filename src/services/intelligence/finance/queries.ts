@@ -484,6 +484,30 @@ export async function getBudgetVariance(
 }
 
 /**
+ * Calculate trend for a specific category/type by comparing current vs previous period
+ * 
+ * @param currentAmount - Current period amount
+ * @param previousAmount - Previous period amount
+ * @param threshold - Percentage threshold for trend detection (default: 5%)
+ * @returns Trend direction: 'increasing', 'stable', or 'decreasing'
+ */
+function calculateTrendFromHistory(
+  currentAmount: number,
+  previousAmount: number,
+  threshold: number = 0.05
+): 'increasing' | 'stable' | 'decreasing' {
+  if (previousAmount === 0) {
+    return currentAmount > 0 ? 'increasing' : 'stable';
+  }
+  
+  const changePercent = (currentAmount - previousAmount) / previousAmount;
+  
+  if (changePercent > threshold) return 'increasing';
+  if (changePercent < -threshold) return 'decreasing';
+  return 'stable';
+}
+
+/**
  * Get Expense Breakdown
  * 
  * Retrieves detailed expense breakdown by category and payment method.
@@ -523,6 +547,22 @@ export async function getExpenseBreakdown(
       );
     }
     
+    // Calculate previous period date range (same duration)
+    const startTime = range.startDate instanceof Date ? range.startDate.getTime() : new Date(range.startDate).getTime();
+    const endTime = range.endDate instanceof Date ? range.endDate.getTime() : new Date(range.endDate).getTime();
+    const durationMs = endTime - startTime;
+    const prevStartDate = new Date(startTime - durationMs);
+    const prevEndDate = new Date(startTime - 1); // Day before current start
+    
+    // Query previous period expenses for trend calculation
+    const { data: prevExpenses } = await supabase
+      .from('expenses')
+      .select('category, amount')
+      .eq('tenant_id', tenantId)
+      .eq('status', 'approved')
+      .gte('expense_date', formatDate(prevStartDate))
+      .lte('expense_date', formatDate(prevEndDate));
+    
     // Aggregate by category
     const categoryMap = new Map<string, number>();
     (expenses || []).forEach((exp: any) => {
@@ -530,14 +570,24 @@ export async function getExpenseBreakdown(
       categoryMap.set(exp.category, current + (exp.amount || 0));
     });
     
+    // Aggregate previous period by category for trend
+    const prevCategoryMap = new Map<string, number>();
+    (prevExpenses || []).forEach((exp: any) => {
+      const current = prevCategoryMap.get(exp.category) || 0;
+      prevCategoryMap.set(exp.category, current + (exp.amount || 0));
+    });
+    
     const totalExpense = Array.from(categoryMap.values()).reduce((sum, val) => sum + val, 0);
     
-    const byCategory = Array.from(categoryMap.entries()).map(([category, amount]) => ({
-      category,
-      amount,
-      percentage: totalExpense > 0 ? Math.round((amount / totalExpense) * 100) : 0,
-      trend: 'stable' as 'increasing' | 'stable' | 'decreasing', // TODO: Calculate trend from historical data
-    })).sort((a, b) => b.amount - a.amount);
+    const byCategory = Array.from(categoryMap.entries()).map(([category, amount]) => {
+      const prevAmount = prevCategoryMap.get(category) || 0;
+      return {
+        category,
+        amount,
+        percentage: totalExpense > 0 ? Math.round((amount / totalExpense) * 100) : 0,
+        trend: calculateTrendFromHistory(amount, prevAmount),
+      };
+    }).sort((a, b) => b.amount - a.amount);
     
     // Query revenue for payment method breakdown (expenses table doesn't have payment_method)
     const { data: revenueData, error: revError } = await supabase
@@ -563,9 +613,9 @@ export async function getExpenseBreakdown(
     })).sort((a, b) => b.amount - a.amount);
     
     // Calculate avg monthly expense
-    const startTime = range.startDate instanceof Date ? range.startDate.getTime() : new Date(range.startDate).getTime();
-    const endTime = range.endDate instanceof Date ? range.endDate.getTime() : new Date(range.endDate).getTime();
-    const monthsDiff = Math.max(1, Math.ceil((endTime - startTime) / (30 * 24 * 60 * 60 * 1000)));
+    const rangeStartTime = range.startDate instanceof Date ? range.startDate.getTime() : new Date(range.startDate).getTime();
+    const rangeEndTime = range.endDate instanceof Date ? range.endDate.getTime() : new Date(range.endDate).getTime();
+    const monthsDiff = Math.max(1, Math.ceil((rangeEndTime - rangeStartTime) / (30 * 24 * 60 * 60 * 1000)));
     const avgMonthlyExpense = Math.round(totalExpense / monthsDiff);
     
     return {
@@ -615,7 +665,14 @@ export async function getRevenueBreakdown(
     // Parse date range
     const range = parseDateRange(dateRange);
     
-    // Query revenue
+    // Calculate previous period date range (same duration)
+    const startTime = range.startDate instanceof Date ? range.startDate.getTime() : new Date(range.startDate).getTime();
+    const endTime = range.endDate instanceof Date ? range.endDate.getTime() : new Date(range.endDate).getTime();
+    const durationMs = endTime - startTime;
+    const prevStartDate = new Date(startTime - durationMs);
+    const prevEndDate = new Date(startTime - 1); // Day before current start
+    
+    // Query current period revenue
     const { data, error } = await supabase
       .from('revenue')
       .select('revenue_type, amount, payment_method, revenue_date')
@@ -631,6 +688,15 @@ export async function getRevenueBreakdown(
       );
     }
     
+    // Query previous period revenue for trend calculation
+    const { data: prevData } = await supabase
+      .from('revenue')
+      .select('revenue_type, amount')
+      .eq('tenant_id', tenantId)
+      .eq('status', 'confirmed')
+      .gte('revenue_date', formatDate(prevStartDate))
+      .lte('revenue_date', formatDate(prevEndDate));
+    
     // Aggregate by type
     const typeMap = new Map<string, number>();
     (data || []).forEach((rev: any) => {
@@ -639,14 +705,25 @@ export async function getRevenueBreakdown(
       typeMap.set(type, current + (rev.amount || 0));
     });
     
+    // Aggregate previous period by type for trend
+    const prevTypeMap = new Map<string, number>();
+    (prevData || []).forEach((rev: any) => {
+      const type = rev.revenue_type || 'other';
+      const current = prevTypeMap.get(type) || 0;
+      prevTypeMap.set(type, current + (rev.amount || 0));
+    });
+    
     const totalRevenue = Array.from(typeMap.values()).reduce((sum, val) => sum + val, 0);
     
-    const byType = Array.from(typeMap.entries()).map(([type, amount]) => ({
-      type,
-      amount,
-      percentage: totalRevenue > 0 ? Math.round((amount / totalRevenue) * 100) : 0,
-      trend: 'stable' as 'increasing' | 'stable' | 'decreasing', // TODO: Calculate trend from historical data
-    })).sort((a, b) => b.amount - a.amount);
+    const byType = Array.from(typeMap.entries()).map(([type, amount]) => {
+      const prevAmount = prevTypeMap.get(type) || 0;
+      return {
+        type,
+        amount,
+        percentage: totalRevenue > 0 ? Math.round((amount / totalRevenue) * 100) : 0,
+        trend: calculateTrendFromHistory(amount, prevAmount),
+      };
+    }).sort((a, b) => b.amount - a.amount);
     
     // Aggregate by payment method
     const methodMap = new Map<string, number>();
@@ -663,9 +740,9 @@ export async function getRevenueBreakdown(
     })).sort((a, b) => b.amount - a.amount);
     
     // Calculate avg monthly revenue
-    const startTime = range.startDate instanceof Date ? range.startDate.getTime() : new Date(range.startDate).getTime();
-    const endTime = range.endDate instanceof Date ? range.endDate.getTime() : new Date(range.endDate).getTime();
-    const monthsDiff = Math.max(1, Math.ceil((endTime - startTime) / (30 * 24 * 60 * 60 * 1000)));
+    const rangeStartTime = range.startDate instanceof Date ? range.startDate.getTime() : new Date(range.startDate).getTime();
+    const rangeEndTime = range.endDate instanceof Date ? range.endDate.getTime() : new Date(range.endDate).getTime();
+    const monthsDiff = Math.max(1, Math.ceil((rangeEndTime - rangeStartTime) / (30 * 24 * 60 * 60 * 1000)));
     const avgMonthlyRevenue = Math.round(totalRevenue / monthsDiff);
     
     return {
