@@ -352,9 +352,9 @@ function ExecutiveDashboardPage() {
   // ───────────────────────────────────────────────────────────────────────────
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="flex-1 p-4 sm:p-6 md:p-10 bg-background/30 overflow-auto relative">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold text-slate-900">Executive Dashboard</h1>
           <p className="text-slate-600 mt-1">Tổng quan chỉ số kinh doanh</p>
@@ -387,7 +387,7 @@ function ExecutiveDashboardPage() {
       </div>
 
       {/* Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
         {/* Card 1: Monthly Revenue Summary */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -694,7 +694,7 @@ function ExecutiveDashboardPage() {
 
       {/* Cache Info Footer */}
       {revenueSummary && (
-        <div className="text-center text-sm text-slate-500">
+        <div className="text-center text-sm text-slate-500 mt-8">
           <p>
             Dữ liệu được tạo lúc {new Date(revenueSummary.metadata.generatedAt).toLocaleTimeString('vi-VN')} 
             {' '}({revenueSummary.metadata.cacheHit ? 'Từ cache' : 'Truy vấn mới'}) 
