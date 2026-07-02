@@ -19,6 +19,7 @@
  */
 
 import { createClient } from '@/lib/supabase-server';
+import type { Database } from '@/types/database.types';
 import type { DateRange, TimePeriod } from '../shared/types';
 import { QueryError } from '../shared/types';
 import { parseDateRange, formatDate } from '../shared/helpers';
@@ -26,61 +27,19 @@ import { parseDateRange, formatDate } from '../shared/helpers';
 // ─── Type Definitions ───────────────────────────────────────────────────────
 
 /**
- * Recruitment Candidate Record
- * (Until recruitment_candidates is added to generated database types)
+ * Recruitment Candidate Record (from generated types)
  */
-interface RecruitmentCandidate {
-  id: string;
-  tenant_id: string;
-  position_id: string;
-  full_name: string;
-  source: string | null;
-  source_details: string | null;
-  applied_at: string;
-  current_stage: string;
-  stage_updated_at: string | null;
-  status: 'active' | 'hired' | 'rejected' | 'withdrawn';
-  hired_at: string | null;
-  hired_as_user_id: string | null;
-  recruitment_cost: number | null;
-  created_at: string;
-}
+type RecruitmentCandidate = Database['public']['Tables']['recruitment_candidates']['Row'];
 
 /**
- * Pipeline Transition Record
+ * Pipeline Transition Record (from generated types)
  */
-interface PipelineTransition {
-  id: string;
-  tenant_id: string;
-  candidate_id: string;
-  from_stage: string | null;
-  to_stage: string | null;
-  transitioned_at: string;
-  notes: string | null;
-  transitioned_by: string | null;
-  created_at: string;
-}
+type PipelineTransition = Database['public']['Tables']['recruitment_pipelines']['Row'];
 
 /**
- * Interview Record
+ * Interview Record (from generated types)
  */
-interface InterviewRecord {
-  id: string;
-  tenant_id: string;
-  candidate_id: string;
-  position_id: string;
-  interview_type: string;
-  scheduled_at: string;
-  completed_at: string | null;
-  interviewer_id: string;
-  status: 'scheduled' | 'completed' | 'cancelled' | 'no_show';
-  overall_rating: number | null;
-  technical_rating: number | null;
-  cultural_fit_rating: number | null;
-  feedback: string | null;
-  recommendation: string | null;
-  created_at: string;
-}
+type InterviewRecord = Database['public']['Tables']['recruitment_interviews']['Row'];
 
 /**
  * User Record (for retention check)
@@ -199,7 +158,7 @@ export async function getRecruitmentMetrics(
     
     // Query candidates within date range
     const { data: candidatesData, error: candidatesError } = await supabase
-      .from('recruitment_candidates' as any)
+      .from('recruitment_candidates')
       .select(`
         id,
         tenant_id,
@@ -227,8 +186,7 @@ export async function getRecruitmentMetrics(
       );
     }
     
-    // Type-cast the raw data to proper interface
-    const candidates: RecruitmentCandidate[] = candidatesData as unknown as RecruitmentCandidate[];
+    const candidates = candidatesData as RecruitmentCandidate[];
     
     // Query pipeline transitions for time-to-stage calculations
     const candidateIds: string[] = candidates.map(c => c.id);
@@ -236,7 +194,7 @@ export async function getRecruitmentMetrics(
     
     if (candidateIds.length > 0) {
       const { data: transitions, error: transitionsError } = await supabase
-        .from('recruitment_pipelines' as any)
+        .from('recruitment_pipelines')
         .select('*')
         .eq('tenant_id', tenantId)
         .in('candidate_id', candidateIds);
@@ -244,7 +202,7 @@ export async function getRecruitmentMetrics(
       if (transitionsError) {
         console.warn('[RecruitmentMetrics] Failed to query pipeline transitions:', transitionsError.message);
       } else {
-        pipelineTransitions = (transitions || []) as unknown as PipelineTransition[];
+        pipelineTransitions = (transitions || []) as PipelineTransition[];
       }
     }
     
@@ -252,7 +210,7 @@ export async function getRecruitmentMetrics(
     let interviews: InterviewRecord[] = [];
     if (candidateIds.length > 0) {
       const { data: interviewData, error: interviewsError } = await supabase
-        .from('recruitment_interviews' as any)
+        .from('recruitment_interviews')
         .select('*')
         .eq('tenant_id', tenantId)
         .in('candidate_id', candidateIds)
@@ -261,7 +219,7 @@ export async function getRecruitmentMetrics(
       if (interviewsError) {
         console.warn('[RecruitmentMetrics] Failed to query interviews:', interviewsError.message);
       } else {
-        interviews = (interviewData || []) as unknown as InterviewRecord[];
+        interviews = (interviewData || []) as InterviewRecord[];
       }
     }
     

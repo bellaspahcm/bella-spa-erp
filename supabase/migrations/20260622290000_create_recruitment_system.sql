@@ -78,7 +78,7 @@ ALTER TABLE recruitment_positions ENABLE ROW LEVEL SECURITY;
 CREATE POLICY recruitment_positions_tenant_isolation 
   ON recruitment_positions
   FOR ALL
-  USING (tenant_id = auth.jwt() ->> 'tenant_id');
+  USING (tenant_id::text = auth.jwt() ->> 'tenant_id');
 
 CREATE POLICY recruitment_positions_service_role
   ON recruitment_positions
@@ -163,7 +163,7 @@ ALTER TABLE recruitment_candidates ENABLE ROW LEVEL SECURITY;
 CREATE POLICY recruitment_candidates_tenant_isolation 
   ON recruitment_candidates
   FOR ALL
-  USING (tenant_id = auth.jwt() ->> 'tenant_id');
+  USING (tenant_id::text = auth.jwt() ->> 'tenant_id');
 
 CREATE POLICY recruitment_candidates_service_role
   ON recruitment_candidates
@@ -209,7 +209,7 @@ ALTER TABLE recruitment_pipelines ENABLE ROW LEVEL SECURITY;
 CREATE POLICY recruitment_pipelines_tenant_isolation 
   ON recruitment_pipelines
   FOR ALL
-  USING (tenant_id = auth.jwt() ->> 'tenant_id');
+  USING (tenant_id::text = auth.jwt() ->> 'tenant_id');
 
 CREATE POLICY recruitment_pipelines_service_role
   ON recruitment_pipelines
@@ -284,7 +284,7 @@ ALTER TABLE recruitment_interviews ENABLE ROW LEVEL SECURITY;
 CREATE POLICY recruitment_interviews_tenant_isolation 
   ON recruitment_interviews
   FOR ALL
-  USING (tenant_id = auth.jwt() ->> 'tenant_id');
+  USING (tenant_id::text = auth.jwt() ->> 'tenant_id');
 
 CREATE POLICY recruitment_interviews_service_role
   ON recruitment_interviews

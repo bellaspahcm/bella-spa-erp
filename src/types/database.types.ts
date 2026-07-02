@@ -3353,6 +3353,487 @@ export type Database = {
           },
         ]
       }
+      recruitment_candidates: {
+        Row: {
+          applied_at: string
+          certifications: string[] | null
+          cover_letter: string | null
+          created_at: string
+          current_company: string | null
+          current_stage: string
+          current_title: string | null
+          date_of_birth: string | null
+          education_level: string | null
+          email: string | null
+          full_name: string
+          hired_as_user_id: string | null
+          hired_at: string | null
+          id: string
+          linkedin_url: string | null
+          phone: string | null
+          portfolio_url: string | null
+          position_id: string
+          recruitment_cost: number | null
+          rejection_reason: string | null
+          resume_url: string | null
+          screened_at: string | null
+          screened_by: string | null
+          screening_notes: string | null
+          screening_status: string
+          skills: string[] | null
+          source: string
+          source_details: string | null
+          stage_updated_at: string
+          status: string
+          tenant_id: string
+          updated_at: string
+          years_of_experience: number | null
+        }
+        Insert: {
+          applied_at?: string
+          certifications?: string[] | null
+          cover_letter?: string | null
+          created_at?: string
+          current_company?: string | null
+          current_stage?: string
+          current_title?: string | null
+          date_of_birth?: string | null
+          education_level?: string | null
+          email?: string | null
+          full_name: string
+          hired_as_user_id?: string | null
+          hired_at?: string | null
+          id?: string
+          linkedin_url?: string | null
+          phone?: string | null
+          portfolio_url?: string | null
+          position_id: string
+          recruitment_cost?: number | null
+          rejection_reason?: string | null
+          resume_url?: string | null
+          screened_at?: string | null
+          screened_by?: string | null
+          screening_notes?: string | null
+          screening_status?: string
+          skills?: string[] | null
+          source?: string
+          source_details?: string | null
+          stage_updated_at?: string
+          status?: string
+          tenant_id: string
+          updated_at?: string
+          years_of_experience?: number | null
+        }
+        Update: {
+          applied_at?: string
+          certifications?: string[] | null
+          cover_letter?: string | null
+          created_at?: string
+          current_company?: string | null
+          current_stage?: string
+          current_title?: string | null
+          date_of_birth?: string | null
+          education_level?: string | null
+          email?: string | null
+          full_name?: string
+          hired_as_user_id?: string | null
+          hired_at?: string | null
+          id?: string
+          linkedin_url?: string | null
+          phone?: string | null
+          portfolio_url?: string | null
+          position_id?: string
+          recruitment_cost?: number | null
+          rejection_reason?: string | null
+          resume_url?: string | null
+          screened_at?: string | null
+          screened_by?: string | null
+          screening_notes?: string | null
+          screening_status?: string
+          skills?: string[] | null
+          source?: string
+          source_details?: string | null
+          stage_updated_at?: string
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+          years_of_experience?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recruitment_candidates_hired_as_user_id_fkey"
+            columns: ["hired_as_user_id"]
+            isOneToOne: false
+            referencedRelation: "mv_ktv_performance_summary"
+            referencedColumns: ["ktv_id"]
+          },
+          {
+            foreignKeyName: "recruitment_candidates_hired_as_user_id_fkey"
+            columns: ["hired_as_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_candidates_position_id_fkey"
+            columns: ["position_id"]
+            isOneToOne: false
+            referencedRelation: "recruitment_positions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_candidates_screened_by_fkey"
+            columns: ["screened_by"]
+            isOneToOne: false
+            referencedRelation: "mv_ktv_performance_summary"
+            referencedColumns: ["ktv_id"]
+          },
+          {
+            foreignKeyName: "recruitment_candidates_screened_by_fkey"
+            columns: ["screened_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_candidates_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "recruitment_candidates_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recruitment_interviews: {
+        Row: {
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          candidate_id: string
+          communication_rating: number | null
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          cultural_fit_rating: number | null
+          duration_minutes: number | null
+          feedback_at: string | null
+          feedback_by: string | null
+          feedback_notes: string | null
+          id: string
+          interview_round: number
+          interview_type: string
+          interviewer_ids: string[] | null
+          location: string | null
+          overall_rating: number | null
+          position_id: string
+          recommendation: string | null
+          scheduled_at: string
+          status: string
+          technical_rating: number | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          candidate_id: string
+          communication_rating?: number | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          cultural_fit_rating?: number | null
+          duration_minutes?: number | null
+          feedback_at?: string | null
+          feedback_by?: string | null
+          feedback_notes?: string | null
+          id?: string
+          interview_round?: number
+          interview_type?: string
+          interviewer_ids?: string[] | null
+          location?: string | null
+          overall_rating?: number | null
+          position_id: string
+          recommendation?: string | null
+          scheduled_at: string
+          status?: string
+          technical_rating?: number | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          candidate_id?: string
+          communication_rating?: number | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          cultural_fit_rating?: number | null
+          duration_minutes?: number | null
+          feedback_at?: string | null
+          feedback_by?: string | null
+          feedback_notes?: string | null
+          id?: string
+          interview_round?: number
+          interview_type?: string
+          interviewer_ids?: string[] | null
+          location?: string | null
+          overall_rating?: number | null
+          position_id?: string
+          recommendation?: string | null
+          scheduled_at?: string
+          status?: string
+          technical_rating?: number | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recruitment_interviews_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "recruitment_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_interviews_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "mv_ktv_performance_summary"
+            referencedColumns: ["ktv_id"]
+          },
+          {
+            foreignKeyName: "recruitment_interviews_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_interviews_feedback_by_fkey"
+            columns: ["feedback_by"]
+            isOneToOne: false
+            referencedRelation: "mv_ktv_performance_summary"
+            referencedColumns: ["ktv_id"]
+          },
+          {
+            foreignKeyName: "recruitment_interviews_feedback_by_fkey"
+            columns: ["feedback_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_interviews_position_id_fkey"
+            columns: ["position_id"]
+            isOneToOne: false
+            referencedRelation: "recruitment_positions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_interviews_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "recruitment_interviews_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recruitment_pipelines: {
+        Row: {
+          candidate_id: string
+          created_at: string
+          from_stage: string | null
+          id: string
+          notes: string | null
+          tenant_id: string
+          to_stage: string
+          transitioned_at: string
+          transitioned_by: string | null
+        }
+        Insert: {
+          candidate_id: string
+          created_at?: string
+          from_stage?: string | null
+          id?: string
+          notes?: string | null
+          tenant_id: string
+          to_stage: string
+          transitioned_at?: string
+          transitioned_by?: string | null
+        }
+        Update: {
+          candidate_id?: string
+          created_at?: string
+          from_stage?: string | null
+          id?: string
+          notes?: string | null
+          tenant_id?: string
+          to_stage?: string
+          transitioned_at?: string
+          transitioned_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recruitment_pipelines_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "recruitment_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_pipelines_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "recruitment_pipelines_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_pipelines_transitioned_by_fkey"
+            columns: ["transitioned_by"]
+            isOneToOne: false
+            referencedRelation: "mv_ktv_performance_summary"
+            referencedColumns: ["ktv_id"]
+          },
+          {
+            foreignKeyName: "recruitment_pipelines_transitioned_by_fkey"
+            columns: ["transitioned_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recruitment_positions: {
+        Row: {
+          benefits: string | null
+          closed_at: string | null
+          created_at: string
+          created_by: string | null
+          currency: string | null
+          department: string
+          employment_type: string
+          experience_level: string
+          headcount_filled: number
+          headcount_target: number
+          id: string
+          job_description: string | null
+          min_experience_years: number | null
+          opened_at: string | null
+          position_title: string
+          required_certifications: string[] | null
+          required_skills: string[] | null
+          responsibilities: string | null
+          role: string
+          salary_max: number | null
+          salary_min: number | null
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          benefits?: string | null
+          closed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          department: string
+          employment_type?: string
+          experience_level?: string
+          headcount_filled?: number
+          headcount_target?: number
+          id?: string
+          job_description?: string | null
+          min_experience_years?: number | null
+          opened_at?: string | null
+          position_title: string
+          required_certifications?: string[] | null
+          required_skills?: string[] | null
+          responsibilities?: string | null
+          role: string
+          salary_max?: number | null
+          salary_min?: number | null
+          status?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          benefits?: string | null
+          closed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          department?: string
+          employment_type?: string
+          experience_level?: string
+          headcount_filled?: number
+          headcount_target?: number
+          id?: string
+          job_description?: string | null
+          min_experience_years?: number | null
+          opened_at?: string | null
+          position_title?: string
+          required_certifications?: string[] | null
+          required_skills?: string[] | null
+          responsibilities?: string | null
+          role?: string
+          salary_max?: number | null
+          salary_min?: number | null
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recruitment_positions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "mv_ktv_performance_summary"
+            referencedColumns: ["ktv_id"]
+          },
+          {
+            foreignKeyName: "recruitment_positions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_positions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "recruitment_positions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       revenue: {
         Row: {
           accounting_metadata: Json
