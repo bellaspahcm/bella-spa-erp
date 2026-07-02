@@ -243,54 +243,19 @@ export default function ForecastDashboard() {
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">
-                    Tổng Dự Báo
+                    Dự Báo Doanh Thu
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
-                    {formatCurrency(revenueForecast.data.data.summary.totalPredictedRevenue)}
+                    {Array.isArray(revenueForecast.data.data) 
+                      ? `${revenueForecast.data.data.length} kết quả`
+                      : formatCurrency(revenueForecast.data.data.forecasted_value)}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {revenueHorizon} tháng tới
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    TB / Tháng
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {formatCurrency(revenueForecast.data.data.summary.avgMonthlyRevenue)}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Trung bình
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    Tăng Trưởng
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center gap-2">
-                    <div className="text-2xl font-bold">
-                      {formatPercent(revenueForecast.data.data.summary.growthRate)}
-                    </div>
-                    {revenueForecast.data.data.summary.growthRate >= 0 ? (
-                      <TrendingUp className="w-5 h-5 text-green-500" />
-                    ) : (
-                      <TrendingDown className="w-5 h-5 text-red-500" />
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {revenueForecast.data.data.summary.trend === 'increasing' ? 'Tăng' : 'Giảm'}
+                    Model: {Array.isArray(revenueForecast.data.data) 
+                      ? revenueForecast.data.data[0]?.model_name 
+                      : revenueForecast.data.data.model_name}
                   </p>
                 </CardContent>
               </Card>
@@ -303,12 +268,55 @@ export default function ForecastDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
-                    {forecastAccuracy.data?.data?.[0]?.avgAccuracyPct 
-                      ? formatPercent(forecastAccuracy.data.data[0].avgAccuracyPct)
+                    {Array.isArray(revenueForecast.data.data) && revenueForecast.data.data[0]?.accuracy_pct
+                      ? `${revenueForecast.data.data[0].accuracy_pct.toFixed(1)}%`
+                      : !Array.isArray(revenueForecast.data.data) && revenueForecast.data.data.accuracy_pct
+                      ? `${revenueForecast.data.data.accuracy_pct.toFixed(1)}%`
                       : 'N/A'}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Model {revenueModel}
+                    Accuracy
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    Confidence Range
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-sm font-bold">
+                    {!Array.isArray(revenueForecast.data.data) && (
+                      <>
+                        {formatCurrency(revenueForecast.data.data.confidence_lower)}
+                        {' - '}
+                        {formatCurrency(revenueForecast.data.data.confidence_upper)}
+                      </>
+                    )}
+                    {Array.isArray(revenueForecast.data.data) && revenueForecast.data.data.length > 0 && (
+                      <>Multi-period</>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    95% CI
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    Horizon
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {revenueHorizon} tháng
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Forecast period
                   </p>
                 </CardContent>
               </Card>
@@ -332,63 +340,71 @@ export default function ForecastDashboard() {
                   </div>
                 </div>
               ) : revenueForecast.data?.data ? (
-                <Line
-                  data={{
-                    labels: revenueForecast.data.data.forecasts.map(f => f.date),
-                    datasets: [
-                      {
-                        label: 'Dự Báo',
-                        data: revenueForecast.data.data.forecasts.map(f => f.predictedRevenue),
-                        borderColor: 'rgb(233, 30, 99)',
-                        backgroundColor: 'rgba(233, 30, 99, 0.1)',
-                        fill: false,
-                        tension: 0.4
-                      },
-                      {
-                        label: 'Upper Bound (95%)',
-                        data: revenueForecast.data.data.forecasts.map(f => f.confidenceUpper),
-                        borderColor: 'rgb(233, 30, 99)',
-                        backgroundColor: 'rgba(233, 30, 99, 0.05)',
-                        borderDash: [5, 5],
-                        fill: '+1',
-                        tension: 0.4
-                      },
-                      {
-                        label: 'Lower Bound (95%)',
-                        data: revenueForecast.data.data.forecasts.map(f => f.confidenceLower),
-                        borderColor: 'rgb(233, 30, 99)',
-                        backgroundColor: 'rgba(233, 30, 99, 0.05)',
-                        borderDash: [5, 5],
-                        fill: false,
-                        tension: 0.4
-                      }
-                    ]
-                  }}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                      legend: {
-                        position: 'top' as const,
-                      },
-                      tooltip: {
-                        callbacks: {
-                          label: (context) => {
-                            return `${context.dataset.label}: ${formatCurrency(context.parsed.y)}`;
+                (() => {
+                  const forecastData = Array.isArray(revenueForecast.data.data) 
+                    ? revenueForecast.data.data 
+                    : [revenueForecast.data.data];
+                  
+                  return (
+                    <Line
+                      data={{
+                        labels: forecastData.map(f => f.period_end_date),
+                        datasets: [
+                          {
+                            label: 'Dự Báo',
+                            data: forecastData.map(f => f.forecasted_value),
+                            borderColor: 'rgb(233, 30, 99)',
+                            backgroundColor: 'rgba(233, 30, 99, 0.1)',
+                            fill: false,
+                            tension: 0.4
+                          },
+                          {
+                            label: 'Upper Bound (95%)',
+                            data: forecastData.map(f => f.confidence_upper),
+                            borderColor: 'rgb(233, 30, 99)',
+                            backgroundColor: 'rgba(233, 30, 99, 0.05)',
+                            borderDash: [5, 5],
+                            fill: '+1',
+                            tension: 0.4
+                          },
+                          {
+                            label: 'Lower Bound (95%)',
+                            data: forecastData.map(f => f.confidence_lower),
+                            borderColor: 'rgb(233, 30, 99)',
+                            backgroundColor: 'rgba(233, 30, 99, 0.05)',
+                            borderDash: [5, 5],
+                            fill: false,
+                            tension: 0.4
+                          }
+                        ]
+                      }}
+                      options={{
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                          legend: {
+                            position: 'top' as const,
+                          },
+                          tooltip: {
+                            callbacks: {
+                              label: (context) => {
+                                return `${context.dataset.label}: ${formatCurrency(context.parsed.y || 0)}`;
+                              }
+                            }
+                          }
+                        },
+                        scales: {
+                          y: {
+                            ticks: {
+                              callback: (value) => formatCurrency(value as number)
+                            }
                           }
                         }
-                      }
-                    },
-                    scales: {
-                      y: {
-                        ticks: {
-                          callback: (value) => formatCurrency(value as number)
-                        }
-                      }
-                    }
-                  }}
-                  height={400}
-                />
+                      }}
+                      height={400}
+                    />
+                  );
+                })()
               ) : (
                 <Alert>
                   <AlertDescription>
@@ -398,51 +414,6 @@ export default function ForecastDashboard() {
               )}
             </CardContent>
           </Card>
-
-          {/* Model Comparison */}
-          {forecastAccuracy.data?.data && forecastAccuracy.data.data.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>So Sánh Các Mô Hình</CardTitle>
-                <CardDescription>
-                  Hiệu suất của các mô hình dự báo khác nhau
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {forecastAccuracy.data.data.map((model) => (
-                    <div key={model.modelName} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex-1">
-                        <div className="font-medium">{model.modelName}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {model.totalForecasts} dự báo
-                        </div>
-                      </div>
-                      <div className="flex gap-4">
-                        <div className="text-right">
-                          <div className="text-sm text-muted-foreground">Độ chính xác</div>
-                          <div className="font-bold text-green-600">
-                            {formatPercent(model.avgAccuracyPct)}
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-sm text-muted-foreground">MAPE</div>
-                          <div className="font-medium">
-                            {formatPercent(model.avgMape)}
-                          </div>
-                        </div>
-                      </div>
-                      {model.isBestModel && (
-                        <Badge variant="default" className="ml-4">
-                          Best Model
-                        </Badge>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
         </TabsContent>
 
         {/* Churn Forecast Tab */}
@@ -457,7 +428,7 @@ export default function ForecastDashboard() {
                 <label className="text-sm font-medium mb-2 block">Thời Gian Dự Báo</label>
                 <Select 
                   value={churnHorizon.toString()} 
-                  onValueChange={(v) => setChurnHorizon(parseInt(v))}
+                  onValueChange={(v) => v && setChurnHorizon(parseInt(v))}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -475,155 +446,76 @@ export default function ForecastDashboard() {
           {/* Summary Cards */}
           {churnForecast.data?.data && (
             <div className="grid gap-4 md:grid-cols-4">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    Tổng KH
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {churnForecast.data.data.summary.totalCustomers.toLocaleString()}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    Dự Báo Churn
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-red-600">
-                    {churnForecast.data.data.summary.predictedChurn.toLocaleString()}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {formatPercent(churnForecast.data.data.summary.churnRate)} tỷ lệ
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    Mất Doanh Thu
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-red-600">
-                    {formatCurrency(churnForecast.data.data.summary.expectedRevenueLoss)}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    TB Churn Prob
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {formatPercent(churnForecast.data.data.summary.avgChurnProbability * 100)}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {/* At-Risk Customers List */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Khách Hàng Có Nguy Cơ Rời Bỏ</CardTitle>
-                  <CardDescription>
-                    Top khách hàng có xác suất churn cao nhất trong {churnHorizon} ngày tới
-                  </CardDescription>
-                </div>
-                <Badge variant="destructive" className="text-lg px-3 py-1">
-                  <AlertTriangle className="w-4 h-4 mr-2" />
-                  {churnForecast.data?.data?.customersAtRisk?.length || 0} KH
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {churnForecast.isLoading ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2" />
-                  Đang phân tích...
-                </div>
-              ) : churnForecast.data?.data?.customersAtRisk && churnForecast.data.data.customersAtRisk.length > 0 ? (
-                <div className="space-y-3">
-                  {churnForecast.data.data.customersAtRisk.slice(0, 10).map((customer) => (
-                    <div 
-                      key={customer.customerId} 
-                      className="flex items-start justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3">
-                          <h4 className="font-semibold">{customer.customerName}</h4>
-                          <Badge 
-                            variant={
-                              customer.riskLevel === 'critical' ? 'destructive' :
-                              customer.riskLevel === 'high' ? 'default' : 'secondary'
-                            }
-                          >
-                            {customer.riskLevel === 'critical' ? 'Cực Kỳ Cao' :
-                             customer.riskLevel === 'high' ? 'Cao' :
-                             customer.riskLevel === 'medium' ? 'Trung Bình' : 'Thấp'}
-                          </Badge>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 gap-x-6 gap-y-1 mt-2 text-sm">
-                          <div>
-                            <span className="text-muted-foreground">Churn Probability:</span>
-                            <span className="font-semibold ml-2 text-red-600">
-                              {formatPercent(customer.churnProbability * 100)}
-                            </span>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">LTV:</span>
-                            <span className="font-semibold ml-2">
-                              {formatCurrency(customer.lifetimeValue)}
-                            </span>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Lần mua cuối:</span>
-                            <span className="ml-2">{customer.daysSinceLastPurchase} ngày trước</span>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Mất doanh thu:</span>
-                            <span className="font-semibold ml-2 text-red-600">
-                              {formatCurrency(customer.expectedRevenueLoss)}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="mt-3 space-y-1">
-                          <div className="text-xs font-medium text-muted-foreground">Khuyến nghị hành động:</div>
-                          {customer.recommendations?.slice(0, 2).map((rec, idx) => (
-                            <div key={idx} className="text-xs text-muted-foreground flex items-start gap-2">
-                              <span className="text-primary">•</span>
-                              <span>{rec}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                      Dự Báo Churn
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-red-600">
+                      {!Array.isArray(churnForecast.data.data) 
+                        ? formatPercent(churnForecast.data.data.forecasted_value)
+                        : `${churnForecast.data.data.length} periods`}
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <Alert>
-                  <Activity className="h-4 w-4" />
-                  <AlertDescription>
-                    Tuyệt vời! Không có khách hàng nào có nguy cơ churn cao.
-                  </AlertDescription>
-                </Alert>
-              )}
-            </CardContent>
-          </Card>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Model: {!Array.isArray(churnForecast.data.data) 
+                        ? churnForecast.data.data.model_name
+                        : churnForecast.data.data[0]?.model_name}
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                      Confidence Range
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-sm font-bold">
+                      {!Array.isArray(churnForecast.data.data) && (
+                        <>
+                          {formatPercent(churnForecast.data.data.confidence_lower)}
+                          {' - '}
+                          {formatPercent(churnForecast.data.data.confidence_upper)}
+                        </>
+                      )}
+                      {Array.isArray(churnForecast.data.data) && <>Multi-period</>}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">95% CI</p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                      Accuracy
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {!Array.isArray(churnForecast.data.data) && churnForecast.data.data.accuracy_pct
+                        ? formatPercent(churnForecast.data.data.accuracy_pct)
+                        : 'N/A'}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                      Horizon
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {churnHorizon} tháng
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+          )}
         </TabsContent>
 
         {/* Demand Forecast Tab */}
@@ -638,7 +530,7 @@ export default function ForecastDashboard() {
                 <label className="text-sm font-medium mb-2 block">Thời Gian Dự Báo</label>
                 <Select 
                   value={demandHorizon.toString()} 
-                  onValueChange={(v) => setDemandHorizon(parseInt(v))}
+                  onValueChange={(v) => v && setDemandHorizon(parseInt(v))}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -660,15 +552,17 @@ export default function ForecastDashboard() {
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">
-                    Tổng Demand
+                    Dự Báo Demand
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
-                    {demandForecast.data.data.summary.totalPredictedDemand.toLocaleString()}
+                    {!Array.isArray(demandForecast.data.data) 
+                      ? demandForecast.data.data.forecasted_value.toFixed(0)
+                      : `${demandForecast.data.data.length} periods`}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {demandHorizon} tuần tới
+                    {demandHorizon} tháng tới
                   </p>
                 </CardContent>
               </Card>
@@ -676,12 +570,14 @@ export default function ForecastDashboard() {
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">
-                    TB / Ngày
+                    Model
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">
-                    {demandForecast.data.data.summary.avgDailyDemand.toFixed(1)}
+                  <div className="text-sm font-bold">
+                    {!Array.isArray(demandForecast.data.data) 
+                      ? demandForecast.data.data.model_name
+                      : demandForecast.data.data[0]?.model_name}
                   </div>
                 </CardContent>
               </Card>
@@ -689,16 +585,15 @@ export default function ForecastDashboard() {
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">
-                    Peak Demand
+                    Accuracy
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-primary">
-                    {demandForecast.data.data.summary.peakDemandValue}
+                    {!Array.isArray(demandForecast.data.data) && demandForecast.data.data.accuracy_pct
+                      ? `${demandForecast.data.data.accuracy_pct.toFixed(1)}%`
+                      : 'N/A'}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {demandForecast.data.data.summary.peakDemandDate}
-                  </p>
                 </CardContent>
               </Card>
             </div>
@@ -721,38 +616,46 @@ export default function ForecastDashboard() {
                   </div>
                 </div>
               ) : demandForecast.data?.data ? (
-                <Bar
-                  data={{
-                    labels: demandForecast.data.data.forecasts.map(f => f.date),
-                    datasets: [
-                      {
-                        label: 'Dự Báo Demand',
-                        data: demandForecast.data.data.forecasts.map(f => f.predictedDemand),
-                        backgroundColor: 'rgba(233, 30, 99, 0.5)',
-                        borderColor: 'rgb(233, 30, 99)',
-                        borderWidth: 2
-                      }
-                    ]
-                  }}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                      legend: {
-                        position: 'top' as const,
-                      }
-                    },
-                    scales: {
-                      y: {
-                        beginAtZero: true,
-                        ticks: {
-                          stepSize: 5
+                (() => {
+                  const forecastData = Array.isArray(demandForecast.data.data) 
+                    ? demandForecast.data.data 
+                    : [demandForecast.data.data];
+                  
+                  return (
+                    <Bar
+                      data={{
+                        labels: forecastData.map(f => f.period_end_date),
+                        datasets: [
+                          {
+                            label: 'Dự Báo Demand',
+                            data: forecastData.map(f => f.forecasted_value),
+                            backgroundColor: 'rgba(233, 30, 99, 0.5)',
+                            borderColor: 'rgb(233, 30, 99)',
+                            borderWidth: 2
+                          }
+                        ]
+                      }}
+                      options={{
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                          legend: {
+                            position: 'top' as const,
+                          }
+                        },
+                        scales: {
+                          y: {
+                            beginAtZero: true,
+                            ticks: {
+                              stepSize: 5
+                            }
+                          }
                         }
-                      }
-                    }
-                  }}
-                  height={400}
-                />
+                      }}
+                      height={400}
+                    />
+                  );
+                })()
               ) : (
                 <Alert>
                   <AlertDescription>
