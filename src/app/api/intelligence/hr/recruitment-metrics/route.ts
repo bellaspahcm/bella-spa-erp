@@ -11,7 +11,7 @@
  * 
  * Returns: RecruitmentMetrics[] with cache metadata
  * 
- * Note: Placeholder implementation. Requires recruitment tracking tables.
+ * Note: Requires recruitment tables (recruitment_candidates, recruitment_positions, etc.)
  */
 
 import { NextRequest, NextResponse } from 'next/server';

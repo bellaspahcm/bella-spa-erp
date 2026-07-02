@@ -11,7 +11,7 @@
  * 
  * Returns: TrainingMetrics[] with cache metadata
  * 
- * Note: Placeholder implementation. Requires training tracking tables.
+ * Note: Calculates training metrics from session_logs as proxy for on-the-job training.
  */
 
 import { NextRequest, NextResponse } from 'next/server';

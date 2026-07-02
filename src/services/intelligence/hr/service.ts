@@ -418,8 +418,8 @@ export class HRIntelligenceService implements IntelligenceService {
   /**
    * Get Recruitment Metrics.
    * 
-   * Retrieves hiring pipeline, conversion rates, and time-to-hire.
-   * Note: Placeholder implementation. Requires recruitment tracking tables.
+   * Retrieves hiring pipeline, conversion rates, time-to-hire, and source effectiveness.
+   * Queries recruitment tables for comprehensive metrics.
    * 
    * @param tenantId - Tenant ID
    * @param dateRange - Period to analyze (or TimePeriod string)
@@ -430,10 +430,54 @@ export class HRIntelligenceService implements IntelligenceService {
     dateRange?: DateRange | TimePeriod
   ): Promise<IntelligenceResponse<RecruitmentMetrics[]>> {
     const startTime = Date.now();
+    const parsedRange = dateRange ? parseDateRange(dateRange as any) : undefined;
 
     try {
-      // Placeholder: Return empty data until recruitment tracking is implemented
+      // Build cache key
+      const cacheKey = buildCacheKey(
+        CACHE_KEY_PREFIX.HR,
+        tenantId,
+        'recruitmentMetrics',
+        parsedRange ? {
+          startDate: formatDate(parsedRange.startDate),
+          endDate: formatDate(parsedRange.endDate),
+        } : {}
+      );
+
+      // Check cache (fallback to DB if cache read fails)
+      let cached: RecruitmentMetrics[] | null = null;
+      try {
+        cached = await this.cache.get<RecruitmentMetrics[]>(cacheKey);
+      } catch (cacheError) {
+        console.warn('[HRIntelligence.getRecruitmentMetrics] Cache read error, falling back to database:', cacheError);
+        // Continue to database query
+      }
+
+      if (cached) {
+        return {
+          data: cached,
+          metadata: {
+            generatedAt: new Date(),
+            cacheHit: true,
+            queryTimeMs: Date.now() - startTime,
+            dataSourcesUsed: ['cache'],
+          },
+        };
+      }
+
+      // Query database (recruitment tables)
       const data = await queryRecruitmentMetrics(tenantId, dateRange);
+
+      // Write to cache (best effort - don't fail if cache write fails)
+      try {
+        await this.cache.set(cacheKey, data, {
+          ttl: 3600, // 1 hour
+          tags: [CACHE_KEY_PREFIX.HR.replace(':', ''), `tenant:${tenantId}`],
+        });
+      } catch (cacheError) {
+        console.warn('[HRIntelligence.getRecruitmentMetrics] Cache write error (non-critical):', cacheError);
+        // Continue - data is already fetched
+      }
 
       return {
         data,
@@ -441,7 +485,7 @@ export class HRIntelligenceService implements IntelligenceService {
           generatedAt: new Date(),
           cacheHit: false,
           queryTimeMs: Date.now() - startTime,
-          dataSourcesUsed: ['placeholder'],
+          dataSourcesUsed: ['recruitment_candidates', 'recruitment_pipelines', 'recruitment_interviews'],
         },
       };
     } catch (error) {
@@ -456,8 +500,8 @@ export class HRIntelligenceService implements IntelligenceService {
   /**
    * Get Training Metrics.
    * 
-   * Retrieves training completion rates and skill development.
-   * Note: Placeholder implementation. Requires training tracking tables.
+   * Retrieves training completion rates and skill development metrics.
+   * Calculates from session_logs as proxy for on-the-job training.
    * 
    * @param tenantId - Tenant ID
    * @param dateRange - Period to analyze (or TimePeriod string)
@@ -468,10 +512,54 @@ export class HRIntelligenceService implements IntelligenceService {
     dateRange?: DateRange | TimePeriod
   ): Promise<IntelligenceResponse<TrainingMetrics[]>> {
     const startTime = Date.now();
+    const parsedRange = dateRange ? parseDateRange(dateRange as any) : undefined;
 
     try {
-      // Placeholder: Return empty data until training tracking is implemented
+      // Build cache key
+      const cacheKey = buildCacheKey(
+        CACHE_KEY_PREFIX.HR,
+        tenantId,
+        'trainingMetrics',
+        parsedRange ? {
+          startDate: formatDate(parsedRange.startDate),
+          endDate: formatDate(parsedRange.endDate),
+        } : {}
+      );
+
+      // Check cache (fallback to DB if cache read fails)
+      let cached: TrainingMetrics[] | null = null;
+      try {
+        cached = await this.cache.get<TrainingMetrics[]>(cacheKey);
+      } catch (cacheError) {
+        console.warn('[HRIntelligence.getTrainingMetrics] Cache read error, falling back to database:', cacheError);
+        // Continue to database query
+      }
+
+      if (cached) {
+        return {
+          data: cached,
+          metadata: {
+            generatedAt: new Date(),
+            cacheHit: true,
+            queryTimeMs: Date.now() - startTime,
+            dataSourcesUsed: ['cache'],
+          },
+        };
+      }
+
+      // Query database (session_logs as proxy for training)
       const data = await queryTrainingMetrics(tenantId, dateRange);
+
+      // Write to cache (best effort - don't fail if cache write fails)
+      try {
+        await this.cache.set(cacheKey, data, {
+          ttl: 3600, // 1 hour
+          tags: [CACHE_KEY_PREFIX.HR.replace(':', ''), `tenant:${tenantId}`],
+        });
+      } catch (cacheError) {
+        console.warn('[HRIntelligence.getTrainingMetrics] Cache write error (non-critical):', cacheError);
+        // Continue - data is already fetched
+      }
 
       return {
         data,
@@ -479,7 +567,7 @@ export class HRIntelligenceService implements IntelligenceService {
           generatedAt: new Date(),
           cacheHit: false,
           queryTimeMs: Date.now() - startTime,
-          dataSourcesUsed: ['placeholder'],
+          dataSourcesUsed: ['session_logs', 'users'],
         },
       };
     } catch (error) {
