@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
@@ -16,7 +17,7 @@ import {
 } from '@/hooks/intelligence/use-recommendation';
 import { createClient } from '@/lib/supabase-client';
 
-export default function RecommendationsPage() {
+function RecommendationsPage() {
   const [customerId, setCustomerId] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [algorithm, setAlgorithm] = useState<'hybrid' | 'collaborative_filtering' | 'content_based' | 'rfm_based'>('hybrid');
@@ -462,5 +463,14 @@ export default function RecommendationsPage() {
         </Card>
       )}
     </div>
+  );
+}
+
+// Wrap with ErrorBoundary to prevent full page crashes
+export default function RecommendationsPageWrapper() {
+  return (
+    <ErrorBoundary>
+      <RecommendationsPage />
+    </ErrorBoundary>
   );
 }
