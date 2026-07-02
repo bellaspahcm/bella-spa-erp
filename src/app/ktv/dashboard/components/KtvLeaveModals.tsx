@@ -140,7 +140,7 @@ export function KtvLeaveRequestModal({
                     value={leaveDate}
                     onChange={(event) => onLeaveDateChange(event.target.value)}
                     min={minLeaveDate}
-                    className="w-full border border-slate-300 dark:border-[#3E3A35] dark:bg-[#292623] focus:ring-rose-500 dark:focus:ring-[#A67D44] focus:border-transparent rounded-2xl p-4 min-h-[56px] text-[16px] text-slate-800 dark:text-[#EFE9E1] placeholder-slate-600 dark:placeholder-[#D4C5B6]/60 focus:outline-none focus:ring-2 transition-all"
+                    className="w-full border border-slate-400 dark:border-[#3E3A35] dark:bg-[#292623] focus:ring-rose-500 dark:focus:ring-[#A67D44] focus:border-transparent rounded-2xl p-4 min-h-[56px] text-[16px] text-slate-900 dark:text-[#EFE9E1] placeholder-slate-700 dark:placeholder-[#D4C5B6]/60 focus:outline-none focus:ring-2 transition-all"
                   />
                 </div>
 
@@ -157,7 +157,7 @@ export function KtvLeaveRequestModal({
                         className={`py-3 rounded-xl text-[10px] font-black uppercase tracking-wider border-2 transition-all ${
                           leaveType === option
                             ? 'bg-rose-500 dark:bg-[#5D1C34] text-white border-rose-500 dark:border-[#A67D44] shadow-md shadow-rose-100 dark:shadow-none'
-                            : 'bg-white dark:bg-[#292623] text-slate-700 dark:text-[#D4C5B6] border-slate-300 dark:border-[#3E3A35] hover:bg-slate-50 dark:hover:bg-[#3E3A35] hover:border-slate-400'
+                            : 'bg-white dark:bg-[#292623] text-slate-800 dark:text-[#D4C5B6] border-slate-400 dark:border-[#3E3A35] hover:bg-slate-50 dark:hover:bg-[#3E3A35] hover:border-slate-500'
                         }`}
                       >
                         {getLeaveTypeLabel(option)}
@@ -176,7 +176,7 @@ export function KtvLeaveRequestModal({
                     onChange={(event) => onLeaveReasonChange(event.target.value)}
                     placeholder="Nêu rõ lý do cụ thể để quản lý duyệt..."
                     rows={3}
-                    className="w-full border border-slate-300 dark:border-[#3E3A35] dark:bg-[#292623] focus:ring-rose-500 dark:focus:ring-[#A67D44] focus:border-transparent rounded-2xl p-4 text-[16px] text-slate-800 dark:text-[#EFE9E1] placeholder-slate-600 dark:placeholder-[#D4C5B6]/60 focus:outline-none focus:ring-2 transition-all resize-none"
+                    className="w-full border border-slate-400 dark:border-[#3E3A35] dark:bg-[#292623] focus:ring-rose-500 dark:focus:ring-[#A67D44] focus:border-transparent rounded-2xl p-4 text-[16px] text-slate-900 dark:text-[#EFE9E1] placeholder-slate-700 dark:placeholder-[#D4C5B6]/60 focus:outline-none focus:ring-2 transition-all resize-none"
                   />
                 </div>
 
@@ -236,7 +236,7 @@ export function KtvLeaveHistoryModal({
 
               <div className="mt-2 mb-6">
                 <h3 className="text-lg font-black text-slate-900 dark:text-[#EFE9E1] uppercase tracking-wider">Lịch sử nghỉ phép</h3>
-                <p className="text-xs text-slate-700 dark:text-[#D4C5B6] font-medium">Danh sách đơn xin nghỉ phép của bạn</p>
+                <p className="text-xs text-slate-800 dark:text-[#D4C5B6] font-medium">Danh sách đơn xin nghỉ phép của bạn</p>
               </div>
 
               <div className="flex-grow overflow-y-auto space-y-3 pr-1 max-h-[50vh]">
@@ -247,22 +247,22 @@ export function KtvLeaveHistoryModal({
                   </div>
                 ) : leaveHistory.length === 0 ? (
                   <div className="py-12 text-center">
-                    <p className="text-xs text-slate-700 dark:text-[#D4C5B6] font-bold">Bạn chưa gửi đơn xin nghỉ phép nào</p>
+                    <p className="text-xs text-slate-800 dark:text-[#D4C5B6] font-bold">Bạn chưa gửi đơn xin nghỉ phép nào</p>
                   </div>
                 ) : (
                   leaveHistory.map((leave) => (
-                    <div key={leave.id} className="bg-slate-50 dark:bg-[#292623] p-4 rounded-2xl border border-slate-100 dark:border-[#3E3A35] space-y-2">
+                    <div key={leave.id} className="bg-slate-50 dark:bg-[#292623] p-4 rounded-2xl border border-slate-200 dark:border-[#3E3A35] space-y-2">
                       <div className="flex justify-between items-center">
-                        <span className="text-xs font-black text-slate-800 dark:text-[#EFE9E1]">{formatLeaveDate(leave.leave_date)}</span>
+                        <span className="text-xs font-black text-slate-900 dark:text-[#EFE9E1]">{formatLeaveDate(leave.leave_date)}</span>
                         <span className={`text-[9px] font-black px-2 py-0.5 rounded border uppercase tracking-wider ${getLeaveStatusClass(leave.status)}`}>
                           {getLeaveStatusLabel(leave.status)}
                         </span>
                       </div>
-                      <div className="text-[10px] text-slate-700 dark:text-[#D4C5B6] font-bold flex gap-3">
-                        <span>Ca: <strong className="text-slate-700 dark:text-[#EFE9E1] uppercase">{getLeaveTypeLabel(leave.leave_type)}</strong></span>
+                      <div className="text-[10px] text-slate-800 dark:text-[#D4C5B6] font-bold flex gap-3">
+                        <span>Ca: <strong className="text-slate-900 dark:text-[#EFE9E1] uppercase">{getLeaveTypeLabel(leave.leave_type)}</strong></span>
                         <span>Gửi ngày: {formatCreatedDate(leave.created_at)}</span>
                       </div>
-                      <div className="text-xs text-slate-700 dark:text-[#D4C5B6] bg-white dark:bg-[#1C1B19] p-2.5 rounded-xl border border-slate-100 dark:border-[#3E3A35] leading-relaxed">
+                      <div className="text-xs text-slate-900 dark:text-[#D4C5B6] bg-white dark:bg-[#1C1B19] p-2.5 rounded-xl border border-slate-200 dark:border-[#3E3A35] leading-relaxed">
                         {leave.reason}
                       </div>
                       {leave.status === 'rejected' && leave.rejection_reason && (
