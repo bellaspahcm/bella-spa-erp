@@ -1,19 +1,24 @@
 'use client';
 
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+/**
+ * Revenue Trend Chart Component
+ * 
+ * Displays 7-day revenue trend using Recharts
+ */
 
-interface RevenueDataPoint {
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+
+interface RevenueTrendData {
   date: string;
   revenue: number;
-  target?: number;
 }
 
 interface RevenueTrendChartProps {
-  data: RevenueDataPoint[];
+  data: RevenueTrendData[];
   height?: number;
 }
 
-export function RevenueTrendChart({ data, height = 300 }: RevenueTrendChartProps) {
+export function RevenueTrendChart({ data, height = 200 }: RevenueTrendChartProps) {
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('vi-VN', {
       notation: 'compact',
@@ -23,35 +28,35 @@ export function RevenueTrendChart({ data, height = 300 }: RevenueTrendChartProps
 
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <LineChart
-        data={data}
-        margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-      >
+      <LineChart data={data} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
         <XAxis 
           dataKey="date" 
           stroke="#64748b"
-          fontSize={12}
+          style={{ fontSize: '12px' }}
         />
         <YAxis 
           stroke="#64748b"
-          fontSize={12}
+          style={{ fontSize: '12px' }}
           tickFormatter={formatCurrency}
         />
         <Tooltip
-          formatter={(value) => 
-            new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(value))
-          }
-          labelFormatter={(label) => String(label)}
           contentStyle={{
-            backgroundColor: 'white',
+            backgroundColor: '#fff',
             border: '1px solid #e2e8f0',
             borderRadius: '8px',
-            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+            fontSize: '12px',
           }}
-        />
-        <Legend 
-          wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
+          formatter={(value) => {
+            if (typeof value !== 'number') return ['', 'Doanh thu'];
+            return [
+              new Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND',
+              }).format(value),
+              'Doanh thu',
+            ];
+          }}
         />
         <Line
           type="monotone"
@@ -60,21 +65,8 @@ export function RevenueTrendChart({ data, height = 300 }: RevenueTrendChartProps
           strokeWidth={2}
           dot={{ fill: '#10b981', r: 4 }}
           activeDot={{ r: 6 }}
-          name="Doanh thu"
         />
-        {data.some(d => d.target) && (
-          <Line
-            type="monotone"
-            dataKey="target"
-            stroke="#94a3b8"
-            strokeWidth={2}
-            strokeDasharray="5 5"
-            dot={false}
-            name="Mục tiêu"
-          />
-        )}
       </LineChart>
     </ResponsiveContainer>
   );
 }
-

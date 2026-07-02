@@ -1,88 +1,76 @@
 'use client';
 
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Cell } from 'recharts';
+/**
+ * Growth Indicators Chart Component
+ * 
+ * Displays MoM and YoY growth comparison using bar chart
+ */
 
-interface GrowthData {
-  name: string;
-  value: number;
-}
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 interface GrowthIndicatorsChartProps {
   momGrowth: number;
   yoyGrowth: number;
-  projectedGrowth: number;
+  projectedGrowth?: number;
   height?: number;
 }
 
 export function GrowthIndicatorsChart({
   momGrowth,
   yoyGrowth,
-  projectedGrowth,
-  height = 300,
+  projectedGrowth = 15,
+  height = 200,
 }: GrowthIndicatorsChartProps) {
-  const data: GrowthData[] = [
+  const data = [
     {
-      name: 'Tháng trước',
+      name: 'MoM',
       value: momGrowth,
+      color: momGrowth >= 0 ? '#10b981' : '#ef4444',
     },
     {
-      name: 'Năm trước',
+      name: 'YoY',
       value: yoyGrowth,
+      color: yoyGrowth >= 0 ? '#06b6d4' : '#ef4444',
     },
     {
       name: 'Dự báo',
       value: projectedGrowth,
+      color: '#a855f7',
     },
   ];
 
-  const getColor = (value: number) => {
-    if (value >= 20) return '#10b981'; // Green - Excellent
-    if (value >= 10) return '#3b82f6'; // Blue - Good
-    if (value >= 0) return '#f59e0b'; // Orange - Fair
-    return '#ef4444'; // Red - Poor
-  };
-
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <BarChart
-        data={data}
-        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-      >
+      <BarChart data={data} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
         <XAxis 
           dataKey="name" 
           stroke="#64748b"
-          fontSize={12}
+          style={{ fontSize: '12px' }}
         />
         <YAxis 
           stroke="#64748b"
-          fontSize={12}
+          style={{ fontSize: '12px' }}
           tickFormatter={(value) => `${value}%`}
         />
         <Tooltip
-          formatter={(value) => `${Number(value).toFixed(2)}%`}
-          labelFormatter={(label) => String(label)}
           contentStyle={{
-            backgroundColor: 'white',
+            backgroundColor: '#fff',
             border: '1px solid #e2e8f0',
             borderRadius: '8px',
-            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+            fontSize: '12px',
+          }}
+          formatter={(value) => {
+            if (typeof value !== 'number') return ['', 'Tăng trưởng'];
+            return [`${value >= 0 ? '+' : ''}${value.toFixed(1)}%`, 'Tăng trưởng'];
           }}
         />
-        <Legend 
-          wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
-        />
-        <Bar 
-          dataKey="value" 
-          radius={[8, 8, 0, 0]}
-          name="% Tăng trưởng"
-        >
+        <Bar dataKey="value" radius={[8, 8, 0, 0]}>
           {data.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={getColor(entry.value)} />
+            <Cell key={`cell-${index}`} fill={entry.color} />
           ))}
         </Bar>
       </BarChart>
     </ResponsiveContainer>
   );
 }
-

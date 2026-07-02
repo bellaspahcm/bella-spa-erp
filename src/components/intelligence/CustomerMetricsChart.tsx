@@ -1,51 +1,62 @@
 'use client';
 
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+/**
+ * Customer Metrics Chart Component
+ * 
+ * Displays new vs returning customers trend using area chart
+ */
 
-interface CustomerDataPoint {
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+
+interface CustomerTrendData {
   date: string;
   newCustomers: number;
   returningCustomers: number;
 }
 
 interface CustomerMetricsChartProps {
-  data: CustomerDataPoint[];
+  data: CustomerTrendData[];
   height?: number;
 }
 
-export function CustomerMetricsChart({ data, height = 300 }: CustomerMetricsChartProps) {
+export function CustomerMetricsChart({ data, height = 200 }: CustomerMetricsChartProps) {
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <AreaChart
-        data={data}
-        margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-      >
+      <AreaChart data={data} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
         <defs>
           <linearGradient id="colorNew" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#a855f7" stopOpacity={0.8}/>
-            <stop offset="95%" stopColor="#a855f7" stopOpacity={0}/>
+            <stop offset="5%" stopColor="#a855f7" stopOpacity={0.8} />
+            <stop offset="95%" stopColor="#a855f7" stopOpacity={0} />
           </linearGradient>
           <linearGradient id="colorReturning" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#ec4899" stopOpacity={0.8}/>
-            <stop offset="95%" stopColor="#ec4899" stopOpacity={0}/>
+            <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.8} />
+            <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
           </linearGradient>
         </defs>
         <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
         <XAxis 
           dataKey="date" 
           stroke="#64748b"
-          fontSize={12}
+          style={{ fontSize: '12px' }}
         />
         <YAxis 
           stroke="#64748b"
-          fontSize={12}
+          style={{ fontSize: '12px' }}
         />
         <Tooltip
           contentStyle={{
-            backgroundColor: 'white',
+            backgroundColor: '#fff',
             border: '1px solid #e2e8f0',
             borderRadius: '8px',
-            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+            fontSize: '12px',
+          }}
+        />
+        <Legend 
+          wrapperStyle={{ fontSize: '12px' }}
+          formatter={(value) => {
+            if (value === 'newCustomers') return 'Khách mới';
+            if (value === 'returningCustomers') return 'Khách quay lại';
+            return value;
           }}
         />
         <Area
@@ -54,15 +65,13 @@ export function CustomerMetricsChart({ data, height = 300 }: CustomerMetricsChar
           stroke="#a855f7"
           fillOpacity={1}
           fill="url(#colorNew)"
-          name="Khách mới"
         />
         <Area
           type="monotone"
           dataKey="returningCustomers"
-          stroke="#ec4899"
+          stroke="#06b6d4"
           fillOpacity={1}
           fill="url(#colorReturning)"
-          name="Khách quay lại"
         />
       </AreaChart>
     </ResponsiveContainer>
