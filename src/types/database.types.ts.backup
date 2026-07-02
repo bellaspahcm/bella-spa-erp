@@ -12,31 +12,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       _prisma_migrations: {
@@ -546,275 +521,6 @@ export type Database = {
           },
         ]
       }
-      api_partners: {
-        Row: {
-          allowed_scopes: string[]
-          api_key: string
-          api_secret: string | null
-          contact_email: string | null
-          contact_phone: string | null
-          created_at: string
-          created_by: string | null
-          failed_requests_count: number
-          id: string
-          is_active: boolean
-          is_sandbox: boolean
-          last_error_at: string | null
-          last_error_message: string | null
-          last_request_at: string | null
-          metadata: Json | null
-          notes: string | null
-          partner_description: string | null
-          partner_name: string
-          partner_type: string
-          rate_limit_burst: number
-          rate_limit_per_day: number
-          rate_limit_per_minute: number
-          rate_limit_tier: string
-          tenant_id: string
-          total_requests_count: number
-          updated_at: string
-          updated_by: string | null
-          webhook_events: string[] | null
-          webhook_secret: string | null
-          webhook_url: string | null
-        }
-        Insert: {
-          allowed_scopes?: string[]
-          api_key: string
-          api_secret?: string | null
-          contact_email?: string | null
-          contact_phone?: string | null
-          created_at?: string
-          created_by?: string | null
-          failed_requests_count?: number
-          id?: string
-          is_active?: boolean
-          is_sandbox?: boolean
-          last_error_at?: string | null
-          last_error_message?: string | null
-          last_request_at?: string | null
-          metadata?: Json | null
-          notes?: string | null
-          partner_description?: string | null
-          partner_name: string
-          partner_type: string
-          rate_limit_burst?: number
-          rate_limit_per_day?: number
-          rate_limit_per_minute?: number
-          rate_limit_tier?: string
-          tenant_id: string
-          total_requests_count?: number
-          updated_at?: string
-          updated_by?: string | null
-          webhook_events?: string[] | null
-          webhook_secret?: string | null
-          webhook_url?: string | null
-        }
-        Update: {
-          allowed_scopes?: string[]
-          api_key?: string
-          api_secret?: string | null
-          contact_email?: string | null
-          contact_phone?: string | null
-          created_at?: string
-          created_by?: string | null
-          failed_requests_count?: number
-          id?: string
-          is_active?: boolean
-          is_sandbox?: boolean
-          last_error_at?: string | null
-          last_error_message?: string | null
-          last_request_at?: string | null
-          metadata?: Json | null
-          notes?: string | null
-          partner_description?: string | null
-          partner_name?: string
-          partner_type?: string
-          rate_limit_burst?: number
-          rate_limit_per_day?: number
-          rate_limit_per_minute?: number
-          rate_limit_tier?: string
-          tenant_id?: string
-          total_requests_count?: number
-          updated_at?: string
-          updated_by?: string | null
-          webhook_events?: string[] | null
-          webhook_secret?: string | null
-          webhook_url?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "api_partners_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "reconciliation_health_today"
-            referencedColumns: ["tenant_id"]
-          },
-          {
-            foreignKeyName: "api_partners_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      api_rate_limit_counters: {
-        Row: {
-          created_at: string
-          error_count: number
-          id: string
-          partner_id: string
-          request_count: number
-          updated_at: string
-          window_start: string
-          window_type: string
-        }
-        Insert: {
-          created_at?: string
-          error_count?: number
-          id?: string
-          partner_id: string
-          request_count?: number
-          updated_at?: string
-          window_start: string
-          window_type: string
-        }
-        Update: {
-          created_at?: string
-          error_count?: number
-          id?: string
-          partner_id?: string
-          request_count?: number
-          updated_at?: string
-          window_start?: string
-          window_type?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "api_rate_limit_counters_partner_id_fkey"
-            columns: ["partner_id"]
-            isOneToOne: false
-            referencedRelation: "api_partner_usage_summary"
-            referencedColumns: ["partner_id"]
-          },
-          {
-            foreignKeyName: "api_rate_limit_counters_partner_id_fkey"
-            columns: ["partner_id"]
-            isOneToOne: false
-            referencedRelation: "api_partners"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      api_request_logs: {
-        Row: {
-          created_at: string
-          endpoint: string
-          error_code: string | null
-          error_message: string | null
-          error_stack: string | null
-          id: string
-          idempotency_key: string | null
-          ip_address: unknown
-          is_error: boolean
-          metadata: Json | null
-          method: string
-          partner_id: string
-          query_params: Json | null
-          rate_limit_remaining: number | null
-          rate_limit_reset_at: string | null
-          request_body: Json | null
-          request_headers: Json | null
-          request_id: string | null
-          response_body: Json | null
-          response_time_ms: number
-          status_code: number
-          tenant_id: string
-          user_agent: string | null
-        }
-        Insert: {
-          created_at?: string
-          endpoint: string
-          error_code?: string | null
-          error_message?: string | null
-          error_stack?: string | null
-          id?: string
-          idempotency_key?: string | null
-          ip_address?: unknown
-          is_error?: boolean
-          metadata?: Json | null
-          method: string
-          partner_id: string
-          query_params?: Json | null
-          rate_limit_remaining?: number | null
-          rate_limit_reset_at?: string | null
-          request_body?: Json | null
-          request_headers?: Json | null
-          request_id?: string | null
-          response_body?: Json | null
-          response_time_ms: number
-          status_code: number
-          tenant_id: string
-          user_agent?: string | null
-        }
-        Update: {
-          created_at?: string
-          endpoint?: string
-          error_code?: string | null
-          error_message?: string | null
-          error_stack?: string | null
-          id?: string
-          idempotency_key?: string | null
-          ip_address?: unknown
-          is_error?: boolean
-          metadata?: Json | null
-          method?: string
-          partner_id?: string
-          query_params?: Json | null
-          rate_limit_remaining?: number | null
-          rate_limit_reset_at?: string | null
-          request_body?: Json | null
-          request_headers?: Json | null
-          request_id?: string | null
-          response_body?: Json | null
-          response_time_ms?: number
-          status_code?: number
-          tenant_id?: string
-          user_agent?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "api_request_logs_partner_id_fkey"
-            columns: ["partner_id"]
-            isOneToOne: false
-            referencedRelation: "api_partner_usage_summary"
-            referencedColumns: ["partner_id"]
-          },
-          {
-            foreignKeyName: "api_request_logs_partner_id_fkey"
-            columns: ["partner_id"]
-            isOneToOne: false
-            referencedRelation: "api_partners"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "api_request_logs_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "reconciliation_health_today"
-            referencedColumns: ["tenant_id"]
-          },
-          {
-            foreignKeyName: "api_request_logs_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       app_notifications: {
         Row: {
           created_at: string
@@ -899,13 +605,6 @@ export type Database = {
             foreignKeyName: "attendance_ktv_id_fkey"
             columns: ["ktv_id"]
             isOneToOne: false
-            referencedRelation: "mv_ktv_performance_summary"
-            referencedColumns: ["ktv_id"]
-          },
-          {
-            foreignKeyName: "attendance_ktv_id_fkey"
-            columns: ["ktv_id"]
-            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -967,13 +666,6 @@ export type Database = {
           tenant_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "audit_logs_changed_by_id_fkey"
-            columns: ["changed_by_id"]
-            isOneToOne: false
-            referencedRelation: "mv_ktv_performance_summary"
-            referencedColumns: ["ktv_id"]
-          },
           {
             foreignKeyName: "audit_logs_changed_by_id_fkey"
             columns: ["changed_by_id"]
@@ -1141,13 +833,6 @@ export type Database = {
             foreignKeyName: "booking_service_items_ktv_id_fkey"
             columns: ["ktv_id"]
             isOneToOne: false
-            referencedRelation: "mv_ktv_performance_summary"
-            referencedColumns: ["ktv_id"]
-          },
-          {
-            foreignKeyName: "booking_service_items_ktv_id_fkey"
-            columns: ["ktv_id"]
-            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -1264,13 +949,6 @@ export type Database = {
             foreignKeyName: "bookings_assigned_ktv_id_fkey"
             columns: ["assigned_ktv_id"]
             isOneToOne: false
-            referencedRelation: "mv_ktv_performance_summary"
-            referencedColumns: ["ktv_id"]
-          },
-          {
-            foreignKeyName: "bookings_assigned_ktv_id_fkey"
-            columns: ["assigned_ktv_id"]
-            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -1342,13 +1020,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "customers"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "chat_messages_sender_id_fkey"
-            columns: ["sender_id"]
-            isOneToOne: false
-            referencedRelation: "mv_ktv_performance_summary"
-            referencedColumns: ["ktv_id"]
           },
           {
             foreignKeyName: "chat_messages_sender_id_fkey"
@@ -1459,13 +1130,6 @@ export type Database = {
             foreignKeyName: "courses_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
-            referencedRelation: "mv_ktv_performance_summary"
-            referencedColumns: ["ktv_id"]
-          },
-          {
-            foreignKeyName: "courses_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -1554,13 +1218,6 @@ export type Database = {
             foreignKeyName: "customers_referrer_id_fkey"
             columns: ["referrer_id"]
             isOneToOne: false
-            referencedRelation: "mv_ktv_performance_summary"
-            referencedColumns: ["ktv_id"]
-          },
-          {
-            foreignKeyName: "customers_referrer_id_fkey"
-            columns: ["referrer_id"]
-            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -1644,22 +1301,8 @@ export type Database = {
             foreignKeyName: "expenses_approved_by_id_fkey"
             columns: ["approved_by_id"]
             isOneToOne: false
-            referencedRelation: "mv_ktv_performance_summary"
-            referencedColumns: ["ktv_id"]
-          },
-          {
-            foreignKeyName: "expenses_approved_by_id_fkey"
-            columns: ["approved_by_id"]
-            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "expenses_submitted_by_id_fkey"
-            columns: ["submitted_by_id"]
-            isOneToOne: false
-            referencedRelation: "mv_ktv_performance_summary"
-            referencedColumns: ["ktv_id"]
           },
           {
             foreignKeyName: "expenses_submitted_by_id_fkey"
@@ -1681,116 +1324,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
-          },
-        ]
-      }
-      external_ads_data: {
-        Row: {
-          clicks: number | null
-          conversions: number | null
-          cpa: number | null
-          cpc: number | null
-          created_at: string
-          ctr: number | null
-          date: string
-          external_ad_id: string | null
-          external_adset_id: string | null
-          external_campaign_id: string
-          id: string
-          impressions: number | null
-          internal_campaign_id: string | null
-          platform: string
-          raw_data: Json | null
-          revenue: number | null
-          roas: number | null
-          roi: number | null
-          spend: number | null
-          sync_error: string | null
-          sync_status: string | null
-          synced_at: string
-          tenant_id: string
-          updated_at: string
-        }
-        Insert: {
-          clicks?: number | null
-          conversions?: number | null
-          cpa?: number | null
-          cpc?: number | null
-          created_at?: string
-          ctr?: number | null
-          date: string
-          external_ad_id?: string | null
-          external_adset_id?: string | null
-          external_campaign_id: string
-          id?: string
-          impressions?: number | null
-          internal_campaign_id?: string | null
-          platform: string
-          raw_data?: Json | null
-          revenue?: number | null
-          roas?: number | null
-          roi?: number | null
-          spend?: number | null
-          sync_error?: string | null
-          sync_status?: string | null
-          synced_at?: string
-          tenant_id: string
-          updated_at?: string
-        }
-        Update: {
-          clicks?: number | null
-          conversions?: number | null
-          cpa?: number | null
-          cpc?: number | null
-          created_at?: string
-          ctr?: number | null
-          date?: string
-          external_ad_id?: string | null
-          external_adset_id?: string | null
-          external_campaign_id?: string
-          id?: string
-          impressions?: number | null
-          internal_campaign_id?: string | null
-          platform?: string
-          raw_data?: Json | null
-          revenue?: number | null
-          roas?: number | null
-          roi?: number | null
-          spend?: number | null
-          sync_error?: string | null
-          sync_status?: string | null
-          synced_at?: string
-          tenant_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "external_ads_data_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "reconciliation_health_today"
-            referencedColumns: ["tenant_id"]
-          },
-          {
-            foreignKeyName: "external_ads_data_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_external_ads_data_campaign"
-            columns: ["internal_campaign_id"]
-            isOneToOne: false
-            referencedRelation: "marketing_campaigns"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_external_ads_data_campaign"
-            columns: ["internal_campaign_id"]
-            isOneToOne: false
-            referencedRelation: "mv_campaign_performance"
-            referencedColumns: ["campaign_id"]
           },
         ]
       }
@@ -2055,13 +1588,6 @@ export type Database = {
             foreignKeyName: "inventory_logs_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
-            referencedRelation: "mv_ktv_performance_summary"
-            referencedColumns: ["ktv_id"]
-          },
-          {
-            foreignKeyName: "inventory_logs_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -2071,13 +1597,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "inventory_items"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inventory_logs_item_id_fkey"
-            columns: ["item_id"]
-            isOneToOne: false
-            referencedRelation: "mv_inventory_status"
-            referencedColumns: ["item_id"]
           },
           {
             foreignKeyName: "inventory_logs_session_log_id_fkey"
@@ -2235,13 +1754,6 @@ export type Database = {
             foreignKeyName: "invoice_print_logs_printed_by_fkey"
             columns: ["printed_by"]
             isOneToOne: false
-            referencedRelation: "mv_ktv_performance_summary"
-            referencedColumns: ["ktv_id"]
-          },
-          {
-            foreignKeyName: "invoice_print_logs_printed_by_fkey"
-            columns: ["printed_by"]
-            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -2265,13 +1777,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "invoice_print_logs_voided_by_fkey"
-            columns: ["voided_by"]
-            isOneToOne: false
-            referencedRelation: "mv_ktv_performance_summary"
-            referencedColumns: ["ktv_id"]
           },
           {
             foreignKeyName: "invoice_print_logs_voided_by_fkey"
@@ -2445,13 +1950,6 @@ export type Database = {
             foreignKeyName: "kpi_records_ktv_id_fkey"
             columns: ["ktv_id"]
             isOneToOne: false
-            referencedRelation: "mv_ktv_performance_summary"
-            referencedColumns: ["ktv_id"]
-          },
-          {
-            foreignKeyName: "kpi_records_ktv_id_fkey"
-            columns: ["ktv_id"]
-            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -2500,13 +1998,6 @@ export type Database = {
           tenant_id?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "ktv_schedule_ktv_id_fkey"
-            columns: ["ktv_id"]
-            isOneToOne: false
-            referencedRelation: "mv_ktv_performance_summary"
-            referencedColumns: ["ktv_id"]
-          },
           {
             foreignKeyName: "ktv_schedule_ktv_id_fkey"
             columns: ["ktv_id"]
@@ -2579,66 +2070,6 @@ export type Database = {
             columns: ["module_id"]
             isOneToOne: false
             referencedRelation: "course_modules"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      marketing_campaigns: {
-        Row: {
-          budget: number | null
-          created_at: string
-          created_by_id: string | null
-          description: string | null
-          end_date: string | null
-          external_mappings: Json | null
-          id: string
-          name: string
-          start_date: string | null
-          status: string | null
-          tenant_id: string
-          updated_at: string
-        }
-        Insert: {
-          budget?: number | null
-          created_at?: string
-          created_by_id?: string | null
-          description?: string | null
-          end_date?: string | null
-          external_mappings?: Json | null
-          id?: string
-          name: string
-          start_date?: string | null
-          status?: string | null
-          tenant_id: string
-          updated_at?: string
-        }
-        Update: {
-          budget?: number | null
-          created_at?: string
-          created_by_id?: string | null
-          description?: string | null
-          end_date?: string | null
-          external_mappings?: Json | null
-          id?: string
-          name?: string
-          start_date?: string | null
-          status?: string | null
-          tenant_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "marketing_campaigns_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "reconciliation_health_today"
-            referencedColumns: ["tenant_id"]
-          },
-          {
-            foreignKeyName: "marketing_campaigns_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -3042,13 +2473,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "package_materials_item_id_fkey"
-            columns: ["item_id"]
-            isOneToOne: false
-            referencedRelation: "mv_inventory_status"
-            referencedColumns: ["item_id"]
-          },
-          {
             foreignKeyName: "package_materials_package_id_fkey"
             columns: ["package_id"]
             isOneToOne: false
@@ -3267,13 +2691,6 @@ export type Database = {
             foreignKeyName: "product_sales_ktv_id_fkey"
             columns: ["ktv_id"]
             isOneToOne: false
-            referencedRelation: "mv_ktv_performance_summary"
-            referencedColumns: ["ktv_id"]
-          },
-          {
-            foreignKeyName: "product_sales_ktv_id_fkey"
-            columns: ["ktv_id"]
-            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -3427,13 +2844,6 @@ export type Database = {
             foreignKeyName: "revenue_recorded_by_id_fkey"
             columns: ["recorded_by_id"]
             isOneToOne: false
-            referencedRelation: "mv_ktv_performance_summary"
-            referencedColumns: ["ktv_id"]
-          },
-          {
-            foreignKeyName: "revenue_recorded_by_id_fkey"
-            columns: ["recorded_by_id"]
-            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -3510,13 +2920,6 @@ export type Database = {
             foreignKeyName: "salary_adjustments_approved_by_id_fkey"
             columns: ["approved_by_id"]
             isOneToOne: false
-            referencedRelation: "mv_ktv_performance_summary"
-            referencedColumns: ["ktv_id"]
-          },
-          {
-            foreignKeyName: "salary_adjustments_approved_by_id_fkey"
-            columns: ["approved_by_id"]
-            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -3524,22 +2927,8 @@ export type Database = {
             foreignKeyName: "salary_adjustments_created_by_id_fkey"
             columns: ["created_by_id"]
             isOneToOne: false
-            referencedRelation: "mv_ktv_performance_summary"
-            referencedColumns: ["ktv_id"]
-          },
-          {
-            foreignKeyName: "salary_adjustments_created_by_id_fkey"
-            columns: ["created_by_id"]
-            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "salary_adjustments_ktv_id_fkey"
-            columns: ["ktv_id"]
-            isOneToOne: false
-            referencedRelation: "mv_ktv_performance_summary"
-            referencedColumns: ["ktv_id"]
           },
           {
             foreignKeyName: "salary_adjustments_ktv_id_fkey"
@@ -3599,13 +2988,6 @@ export type Database = {
           tenant_id?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "salary_disputes_ktv_id_fkey"
-            columns: ["ktv_id"]
-            isOneToOne: false
-            referencedRelation: "mv_ktv_performance_summary"
-            referencedColumns: ["ktv_id"]
-          },
           {
             foreignKeyName: "salary_disputes_ktv_id_fkey"
             columns: ["ktv_id"]
@@ -3746,13 +3128,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "accounting_event_templates"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "salary_records_ktv_id_fkey"
-            columns: ["ktv_id"]
-            isOneToOne: false
-            referencedRelation: "mv_ktv_performance_summary"
-            referencedColumns: ["ktv_id"]
           },
           {
             foreignKeyName: "salary_records_ktv_id_fkey"
@@ -3909,13 +3284,6 @@ export type Database = {
             foreignKeyName: "session_logs_completed_by_ktv_id_fkey"
             columns: ["completed_by_ktv_id"]
             isOneToOne: false
-            referencedRelation: "mv_ktv_performance_summary"
-            referencedColumns: ["ktv_id"]
-          },
-          {
-            foreignKeyName: "session_logs_completed_by_ktv_id_fkey"
-            columns: ["completed_by_ktv_id"]
-            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -3976,13 +3344,6 @@ export type Database = {
           tenant_id?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "session_reviews_ktv_id_fkey"
-            columns: ["ktv_id"]
-            isOneToOne: false
-            referencedRelation: "mv_ktv_performance_summary"
-            referencedColumns: ["ktv_id"]
-          },
           {
             foreignKeyName: "session_reviews_ktv_id_fkey"
             columns: ["ktv_id"]
@@ -4094,13 +3455,6 @@ export type Database = {
             foreignKeyName: "shifts_ktv_id_fkey"
             columns: ["ktv_id"]
             isOneToOne: false
-            referencedRelation: "mv_ktv_performance_summary"
-            referencedColumns: ["ktv_id"]
-          },
-          {
-            foreignKeyName: "shifts_ktv_id_fkey"
-            columns: ["ktv_id"]
-            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -4165,13 +3519,6 @@ export type Database = {
             foreignKeyName: "staff_leaves_approved_by_fkey"
             columns: ["approved_by"]
             isOneToOne: false
-            referencedRelation: "mv_ktv_performance_summary"
-            referencedColumns: ["ktv_id"]
-          },
-          {
-            foreignKeyName: "staff_leaves_approved_by_fkey"
-            columns: ["approved_by"]
-            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -4188,13 +3535,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "staff_leaves_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "mv_ktv_performance_summary"
-            referencedColumns: ["ktv_id"]
           },
           {
             foreignKeyName: "staff_leaves_user_id_fkey"
@@ -4243,13 +3583,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "student_class_attendance_checked_by_fkey"
-            columns: ["checked_by"]
-            isOneToOne: false
-            referencedRelation: "mv_ktv_performance_summary"
-            referencedColumns: ["ktv_id"]
-          },
           {
             foreignKeyName: "student_class_attendance_checked_by_fkey"
             columns: ["checked_by"]
@@ -4403,13 +3736,6 @@ export type Database = {
             foreignKeyName: "student_tuition_payments_recorded_by_fkey"
             columns: ["recorded_by"]
             isOneToOne: false
-            referencedRelation: "mv_ktv_performance_summary"
-            referencedColumns: ["ktv_id"]
-          },
-          {
-            foreignKeyName: "student_tuition_payments_recorded_by_fkey"
-            columns: ["recorded_by"]
-            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -4509,13 +3835,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "students_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "mv_ktv_performance_summary"
-            referencedColumns: ["ktv_id"]
           },
           {
             foreignKeyName: "students_user_id_fkey"
@@ -4723,13 +4042,6 @@ export type Database = {
             foreignKeyName: "tenant_subscription_overrides_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
-            referencedRelation: "mv_ktv_performance_summary"
-            referencedColumns: ["ktv_id"]
-          },
-          {
-            foreignKeyName: "tenant_subscription_overrides_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -4746,13 +4058,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "tenant_subscription_overrides_updated_by_fkey"
-            columns: ["updated_by"]
-            isOneToOne: false
-            referencedRelation: "mv_ktv_performance_summary"
-            referencedColumns: ["ktv_id"]
           },
           {
             foreignKeyName: "tenant_subscription_overrides_updated_by_fkey"
@@ -4958,36 +4263,6 @@ export type Database = {
           },
         ]
       }
-      test_migration_check: {
-        Row: {
-          id: string
-          platform: string
-        }
-        Insert: {
-          id?: string
-          platform: string
-        }
-        Update: {
-          id?: string
-          platform?: string
-        }
-        Relationships: []
-      }
-      test_migration_debug: {
-        Row: {
-          id: string
-          name: string | null
-        }
-        Insert: {
-          id?: string
-          name?: string | null
-        }
-        Update: {
-          id?: string
-          name?: string | null
-        }
-        Relationships: []
-      }
       training_classes: {
         Row: {
           capacity: number
@@ -5055,13 +4330,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "training_classes_trainer_id_fkey"
-            columns: ["trainer_id"]
-            isOneToOne: false
-            referencedRelation: "mv_ktv_performance_summary"
-            referencedColumns: ["ktv_id"]
           },
           {
             foreignKeyName: "training_classes_trainer_id_fkey"
@@ -5143,39 +4411,6 @@ export type Database = {
       }
     }
     Views: {
-      api_partner_usage_summary: {
-        Row: {
-          avg_response_time_ms: number | null
-          error_rate_percent: number | null
-          error_requests_30d: number | null
-          is_sandbox: boolean | null
-          last_request_at: string | null
-          max_response_time_ms: number | null
-          partner_id: string | null
-          partner_name: string | null
-          partner_type: string | null
-          rate_limit_per_day: number | null
-          rate_limit_per_minute: number | null
-          tenant_id: string | null
-          total_requests_30d: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "api_partners_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "reconciliation_health_today"
-            referencedColumns: ["tenant_id"]
-          },
-          {
-            foreignKeyName: "api_partners_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       db_policies: {
         Row: {
           cmd: string | null
@@ -5187,220 +4422,6 @@ export type Database = {
           with_check: string | null
         }
         Relationships: []
-      }
-      mv_campaign_performance: {
-        Row: {
-          avg_cpa: number | null
-          avg_cpc: number | null
-          avg_ctr: number | null
-          avg_roas: number | null
-          campaign_budget: number | null
-          campaign_end_date: string | null
-          campaign_id: string | null
-          campaign_name: string | null
-          campaign_start_date: string | null
-          campaign_status: string | null
-          computed_at: string | null
-          first_ad_date: string | null
-          last_ad_date: string | null
-          platforms_count: number | null
-          platforms_list: Json | null
-          roi_pct: number | null
-          tenant_id: string | null
-          total_clicks: number | null
-          total_conversions: number | null
-          total_impressions: number | null
-          total_revenue: number | null
-          total_spend: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "marketing_campaigns_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "reconciliation_health_today"
-            referencedColumns: ["tenant_id"]
-          },
-          {
-            foreignKeyName: "marketing_campaigns_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      mv_channel_performance: {
-        Row: {
-          avg_cpa: number | null
-          avg_cpc: number | null
-          avg_ctr: number | null
-          avg_roas: number | null
-          campaigns_count: number | null
-          computed_at: string | null
-          month: string | null
-          platform: string | null
-          records_count: number | null
-          roi_pct: number | null
-          tenant_id: string | null
-          total_clicks: number | null
-          total_conversions: number | null
-          total_impressions: number | null
-          total_revenue: number | null
-          total_spend: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "external_ads_data_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "reconciliation_health_today"
-            referencedColumns: ["tenant_id"]
-          },
-          {
-            foreignKeyName: "external_ads_data_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      mv_inventory_status: {
-        Row: {
-          category: string | null
-          computed_at: string | null
-          created_at: string | null
-          current_stock: number | null
-          item_id: string | null
-          item_name: string | null
-          min_stock_level: number | null
-          notes: string | null
-          price_per_unit: number | null
-          reorder_recommendation: string | null
-          sku: string | null
-          stock_status: string | null
-          stock_value: number | null
-          tenant_id: string | null
-          unit: string | null
-          updated_at: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "inventory_items_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "reconciliation_health_today"
-            referencedColumns: ["tenant_id"]
-          },
-          {
-            foreignKeyName: "inventory_items_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      mv_ktv_performance_summary: {
-        Row: {
-          attendance_rate_pct: number | null
-          avg_rating: number | null
-          avg_revenue_per_session: number | null
-          completion_rate_pct: number | null
-          computed_at: string | null
-          days_absent: number | null
-          days_late: number | null
-          days_present: number | null
-          high_ratings_count: number | null
-          ktv_email: string | null
-          ktv_id: string | null
-          ktv_name: string | null
-          ktv_phone: string | null
-          last_session_date: string | null
-          low_ratings_count: number | null
-          month: string | null
-          tenant_id: string | null
-          total_attendance_days: number | null
-          total_ratings_count: number | null
-          total_revenue: number | null
-          total_service_commission: number | null
-          total_session_bonus: number | null
-          total_sessions_all: number | null
-          total_sessions_cancelled: number | null
-          total_sessions_completed: number | null
-          total_sessions_no_show: number | null
-          unique_customers_served: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "users_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "reconciliation_health_today"
-            referencedColumns: ["tenant_id"]
-          },
-          {
-            foreignKeyName: "users_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      mv_session_analytics: {
-        Row: {
-          afternoon_sessions: number | null
-          avg_duration_minutes: number | null
-          avg_revenue_per_session: number | null
-          avg_satisfaction_rating: number | null
-          basic_package_sessions: number | null
-          cancellation_rate_pct: number | null
-          cancelled_sessions: number | null
-          completed_sessions: number | null
-          completion_rate_pct: number | null
-          computed_at: string | null
-          date: string | null
-          evening_sessions: number | null
-          high_satisfaction_count: number | null
-          in_progress_sessions: number | null
-          low_satisfaction_count: number | null
-          max_duration_minutes: number | null
-          medium_satisfaction_count: number | null
-          min_duration_minutes: number | null
-          morning_sessions: number | null
-          no_show_rate_pct: number | null
-          no_show_sessions: number | null
-          peak_hour: number | null
-          premium_package_sessions: number | null
-          quality_success_rate_pct: number | null
-          scheduled_sessions: number | null
-          successful_quality_sessions: number | null
-          tenant_id: string | null
-          total_ratings: number | null
-          total_revenue: number | null
-          total_sessions: number | null
-          unique_customers: number | null
-          unique_ktvs: number | null
-          vip_package_sessions: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "session_logs_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "reconciliation_health_today"
-            referencedColumns: ["tenant_id"]
-          },
-          {
-            foreignKeyName: "session_logs_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       outbox_health: {
         Row: {
@@ -5450,54 +4471,6 @@ export type Database = {
           has_legacy_revenue?: never
           tenant_id?: string | null
           tenant_name?: string | null
-        }
-        Relationships: []
-      }
-      v_cron_jobs_status: {
-        Row: {
-          active: boolean | null
-          command: string | null
-          database: string | null
-          jobid: number | null
-          jobname: string | null
-          nodename: string | null
-          nodeport: number | null
-          schedule: string | null
-          username: string | null
-        }
-        Insert: {
-          active?: boolean | null
-          command?: string | null
-          database?: string | null
-          jobid?: number | null
-          jobname?: string | null
-          nodename?: string | null
-          nodeport?: number | null
-          schedule?: string | null
-          username?: string | null
-        }
-        Update: {
-          active?: boolean | null
-          command?: string | null
-          database?: string | null
-          jobid?: number | null
-          jobname?: string | null
-          nodename?: string | null
-          nodeport?: number | null
-          schedule?: string | null
-          username?: string | null
-        }
-        Relationships: []
-      }
-      v_mv_refresh_status: {
-        Row: {
-          definition: string | null
-          hasindexes: boolean | null
-          ispopulated: boolean | null
-          matviewname: unknown
-          matviewowner: unknown
-          schemaname: unknown
-          tablespace: unknown
         }
         Relationships: []
       }
@@ -5581,7 +4554,6 @@ export type Database = {
         Args: { p_date: string; p_tenant_id: string }
         Returns: string
       }
-      generate_api_key: { Args: { is_test?: boolean }; Returns: string }
       generate_closing_entries: {
         Args: { p_period_id: string }
         Returns: {
@@ -5747,13 +4719,6 @@ export type Database = {
           unit: string
         }[]
       }
-      get_external_campaign_id: {
-        Args: {
-          campaign_row: Database["public"]["Tables"]["marketing_campaigns"]["Row"]
-          platform_name: string
-        }
-        Returns: string
-      }
       get_financial_anomalies: { Args: { p_tenant_id: string }; Returns: Json }
       get_income_statement: {
         Args: { p_from_date: string; p_tenant_id: string; p_to_date: string }
@@ -5911,13 +4876,6 @@ export type Database = {
           tenant_id: string
         }[]
       }
-      has_external_mapping: {
-        Args: {
-          campaign_row: Database["public"]["Tables"]["marketing_campaigns"]["Row"]
-          platform_name: string
-        }
-        Returns: boolean
-      }
       increment_loyalty_points: {
         Args: { p_customer_id: string; p_points: number }
         Returns: undefined
@@ -5994,19 +4952,6 @@ export type Database = {
         }
         Returns: Json
       }
-      refresh_all_intelligence_materialized_views: {
-        Args: never
-        Returns: {
-          refresh_duration: string
-          refresh_status: string
-          view_name: string
-        }[]
-      }
-      refresh_marketing_materialized_views: { Args: never; Returns: undefined }
-      refresh_operational_materialized_views: {
-        Args: never
-        Returns: undefined
-      }
       renew_tenant_subscription: {
         Args: { p_invoice_number: string; p_payment_method: string }
         Returns: boolean
@@ -6055,19 +5000,6 @@ export type Database = {
           synced_expense_count: number
           synced_revenue_count: number
           synced_salary_count: number
-        }[]
-      }
-      validate_api_partner: {
-        Args: { p_api_key: string }
-        Returns: {
-          allowed_scopes: string[]
-          is_active: boolean
-          is_sandbox: boolean
-          partner_id: string
-          partner_name: string
-          rate_limit_per_day: number
-          rate_limit_per_minute: number
-          tenant_id: string
         }[]
       }
     }
@@ -6218,9 +5150,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       AttendanceStatus: ["present", "late", "absent", "half_day"],
