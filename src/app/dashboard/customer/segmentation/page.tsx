@@ -15,6 +15,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import {
   Users,
   TrendingUp,
@@ -47,7 +48,7 @@ type SegmentFilter = 'all' | 'champions' | 'at-risk' | 'high-risk';
 // Main Component
 // ─────────────────────────────────────────────────────────────────────────────
 
-export default function CustomerSegmentationDashboard() {
+function CustomerSegmentationDashboard() {
   const router = useRouter();
   const [tenantId, setTenantId] = useState<string | null>(null);
   const [filter, setFilter] = useState<SegmentFilter>('all');
@@ -483,5 +484,14 @@ export default function CustomerSegmentationDashboard() {
         </div>
       </motion.div>
     </div>
+  );
+}
+
+// Wrap with ErrorBoundary to prevent full page crashes
+export default function CustomerSegmentationDashboardWrapper() {
+  return (
+    <ErrorBoundary>
+      <CustomerSegmentationDashboard />
+    </ErrorBoundary>
   );
 }

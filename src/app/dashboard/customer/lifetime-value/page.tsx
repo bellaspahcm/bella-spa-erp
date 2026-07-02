@@ -15,6 +15,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import {
   DollarSign,
   TrendingUp,
@@ -34,7 +35,7 @@ import {
   RetentionCurveChart,
 } from '@/components/intelligence/customer';
 
-export default function CustomerLTVDashboard() {
+function CustomerLTVDashboard() {
   const router = useRouter();
   const [tenantId, setTenantId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -321,5 +322,14 @@ export default function CustomerLTVDashboard() {
         </div>
       </motion.div>
     </div>
+  );
+}
+
+// Wrap with ErrorBoundary to prevent full page crashes
+export default function CustomerLTVDashboardWrapper() {
+  return (
+    <ErrorBoundary>
+      <CustomerLTVDashboard />
+    </ErrorBoundary>
   );
 }
