@@ -69,13 +69,14 @@ export function ProfitabilityTrendChart({ data, height = 300 }: ProfitabilityTre
           tickFormatter={formatCurrency}
         />
         <Tooltip
-          formatter={(value: number, name: string) => {
+          formatter={(value, name) => {
             const labels: Record<string, string> = {
               revenue: 'Doanh thu',
               expenses: 'Chi phí',
               profit: 'Lợi nhuận',
             };
-            return [formatCurrency(value), labels[name] || name];
+            const numValue = typeof value === 'number' ? value : 0;
+            return [formatCurrency(numValue), labels[String(name)] || String(name)];
           }}
           contentStyle={{
             backgroundColor: '#ffffff',
@@ -132,3 +133,4 @@ export function ProfitabilityTrendChart({ data, height = 300 }: ProfitabilityTre
     </ResponsiveContainer>
   );
 }
+

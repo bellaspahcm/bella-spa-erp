@@ -37,11 +37,12 @@ import type {
   GrowthIndicators
 } from '@/services/intelligence/executive';
 import {
-  RevenueTrendChart,
-  OperationalEfficiencyChart,
-  CustomerMetricsChart,
-  FinancialHealthChart,
-  GrowthIndicatorsChart,
+  // TODO: Phase 8 - Create these executive dashboard charts
+  // RevenueTrendChart,
+  // OperationalEfficiencyChart,
+  // CustomerMetricsChart,
+  // FinancialHealthChart,
+  // GrowthIndicatorsChart,
 } from '@/components/intelligence';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -343,10 +344,18 @@ export default function ExecutiveDashboardPage() {
                 </div>
               </div>
 
+              {/* TODO: Uncomment when RevenueTrendChart is implemented */}
               {/* Revenue Trend Chart */}
-              <div className="border-t border-slate-100 pt-4">
+              {/* <div className="border-t border-slate-100 pt-4">
                 <p className="text-sm font-medium text-slate-700 mb-3">Xu hướng 7 ngày qua</p>
                 <RevenueTrendChart data={generateRevenueTrendData()} height={200} />
+              </div> */}
+              
+              {/* Temporary placeholder */}
+              <div className="border-t border-slate-100 pt-4">
+                <p className="text-sm text-blue-700 bg-blue-50 p-3 rounded-lg">
+                  📊 Biểu đồ xu hướng doanh thu đang được phát triển
+                </p>
               </div>
             </>
           ) : (
@@ -377,13 +386,21 @@ export default function ExecutiveDashboardPage() {
 
           {operationalEfficiency ? (
             <>
+              {/* TODO: Uncomment when OperationalEfficiencyChart is implemented */}
               {/* Radial Chart */}
-              <OperationalEfficiencyChart
+              {/* <OperationalEfficiencyChart
                 ktvUtilization={operationalEfficiency.data.ktvUtilizationRate}
                 sessionRating={operationalEfficiency.data.averageSessionRating}
                 completionRate={operationalEfficiency.data.serviceCompletionRate}
                 height={250}
-              />
+              /> */}
+              
+              {/* Temporary placeholder */}
+              <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-700">
+                  📊 Biểu đồ hiệu suất vận hành đang được phát triển
+                </p>
+              </div>
 
               {/* Metrics Grid */}
               <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-slate-100">
@@ -458,10 +475,18 @@ export default function ExecutiveDashboardPage() {
                 </div>
               </div>
 
+              {/* TODO: Uncomment when CustomerMetricsChart is implemented */}
               {/* Customer Trend Chart */}
-              <div className="border-t border-slate-100 pt-4">
+              {/* <div className="border-t border-slate-100 pt-4">
                 <p className="text-sm font-medium text-slate-700 mb-3">Xu hướng khách hàng 7 ngày qua</p>
                 <CustomerMetricsChart data={generateCustomerTrendData()} height={200} />
+              </div> */}
+              
+              {/* Temporary placeholder */}
+              <div className="border-t border-slate-100 pt-4">
+                <p className="text-sm text-blue-700 bg-blue-50 p-3 rounded-lg">
+                  📊 Biểu đồ xu hướng khách hàng đang được phát triển
+                </p>
               </div>
             </>
           ) : (
@@ -492,13 +517,21 @@ export default function ExecutiveDashboardPage() {
 
           {financialHealth ? (
             <>
+              {/* TODO: Uncomment when FinancialHealthChart is implemented */}
               {/* Financial Health Chart */}
-              <FinancialHealthChart
+              {/* <FinancialHealthChart
                 profitMargin={financialHealth.data.profitMargin}
                 cashFlow={financialHealth.data.cashFlow}
                 receivables={financialHealth.data.outstandingReceivables}
                 height={250}
-              />
+              /> */}
+              
+              {/* Temporary placeholder */}
+              <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-700">
+                  📊 Biểu đồ sức khỏe tài chính đang được phát triển
+                </p>
+              </div>
 
               {/* Metrics Grid */}
               <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-slate-100">
@@ -552,13 +585,21 @@ export default function ExecutiveDashboardPage() {
 
           {growthIndicators ? (
             <>
+              {/* TODO: Uncomment when GrowthIndicatorsChart is implemented */}
               {/* Growth Chart */}
-              <GrowthIndicatorsChart
+              {/* <GrowthIndicatorsChart
                 momGrowth={growthIndicators.data.monthOverMonthGrowth}
                 yoyGrowth={growthIndicators.data.yearOverYearGrowth}
                 projectedGrowth={15} // Mock projected growth rate
                 height={200}
-              />
+              /> */}
+              
+              {/* Temporary placeholder */}
+              <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-700">
+                  📊 Biểu đồ chỉ số tăng trưởng đang được phát triển
+                </p>
+              </div>
 
               {/* Metrics Grid */}
               <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-slate-100">

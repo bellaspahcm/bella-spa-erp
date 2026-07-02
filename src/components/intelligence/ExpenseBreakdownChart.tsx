@@ -101,7 +101,10 @@ export function ExpenseBreakdownChart({ data, height = 300 }: ExpenseBreakdownCh
           ))}
         </Pie>
         <Tooltip
-          formatter={(value: number) => [formatCurrency(value), 'Chi phí']}
+          formatter={(value) => {
+            const numValue = typeof value === 'number' ? value : 0;
+            return [formatCurrency(numValue), 'Chi phí'];
+          }}
           contentStyle={{
             backgroundColor: '#ffffff',
             border: '1px solid #e2e8f0',
@@ -123,3 +126,4 @@ export function ExpenseBreakdownChart({ data, height = 300 }: ExpenseBreakdownCh
     </ResponsiveContainer>
   );
 }
+

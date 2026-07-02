@@ -84,7 +84,7 @@ export function PnLStatementChart({ data, height = 300 }: PnLStatementChartProps
           tickFormatter={formatCurrency}
         />
         <Tooltip
-          formatter={(value: number) => [formatCurrency(value), '']}
+          formatter={(value) => { const numValue = typeof value === 'number' ? value : 0; return [formatCurrency(numValue), '']; }}
           contentStyle={{
             backgroundColor: '#ffffff',
             border: '1px solid #e2e8f0',
@@ -101,3 +101,4 @@ export function PnLStatementChart({ data, height = 300 }: PnLStatementChartProps
     </ResponsiveContainer>
   );
 }
+

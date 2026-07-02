@@ -70,14 +70,15 @@ export function CashFlowForecastChart({ data, height = 300 }: CashFlowForecastCh
           tickFormatter={formatCurrency}
         />
         <Tooltip
-          formatter={(value: number, name: string) => {
+          formatter={(value, name) => {
             const labels: Record<string, string> = {
               projected: 'Dự báo',
               upper: 'Mức cao',
               lower: 'Mức thấp',
               cumulative: 'Tích lũy',
             };
-            return [formatCurrency(value), labels[name] || name];
+            const numValue = typeof value === 'number' ? value : 0;
+            return [formatCurrency(numValue), labels[String(name)] || String(name)];
           }}
           contentStyle={{
             backgroundColor: '#ffffff',
@@ -161,3 +162,4 @@ export function CashFlowForecastChart({ data, height = 300 }: CashFlowForecastCh
     </ResponsiveContainer>
   );
 }
+
