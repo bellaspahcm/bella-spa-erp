@@ -3,17 +3,58 @@
 /**
  * Operations Intelligence Landing Page
  * 
- * Overview of operational analytics and performance metrics
+ * Overview of operational analytics and performance metrics with real-time Quick Stats
+ * 
+ * UPDATED: 2026-06-22 - Added real Quick Stats using Intelligence Layer hooks
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Activity, Package, Users, Calendar, TrendingUp, Star } from 'lucide-react';
+import { Activity, Package, Users, Calendar, TrendingUp, Star, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
+import { useInventoryOptimization, useKTVPerformance, useSessionUtilization } from '@/hooks/intelligence';
 
 export default function OperationsIntelligencePage() {
   const router = useRouter();
+
+  // Get current month/year and date range for queries
+  const dateParams = useMemo(() => {
+    const now = new Date();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const year = String(now.getFullYear());
+    
+    // Last 30 days for session utilization
+    const endDate = now.toISOString().split('T')[0];
+    const startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    
+    return { month, year, startDate, endDate };
+  }, []);
+
+  // Fetch real-time Quick Stats using Intelligence Layer hooks
+  const inventoryQuery = useInventoryOptimization(undefined, { refetchOnMount: false });
+  const ktvQuery = useKTVPerformance(dateParams.month, dateParams.year, { refetchOnMount: false });
+  const sessionQuery = useSessionUtilization(dateParams.startDate, dateParams.endDate, { refetchOnMount: false });
+
+  // Calculate Quick Stats from fetched data
+  const quickStats = useMemo(() => {
+    const inventoryCount = inventoryQuery.data?.data?.length ?? 0;
+    const activeKTVs = ktvQuery.data?.data?.length ?? 0;
+    
+    // Calculate average session completion rate
+    let sessionCompletionRate = 0;
+    if (sessionQuery.data?.data && sessionQuery.data.data.length > 0) {
+      const totalUtilization = sessionQuery.data.data.reduce(
+        (sum, day) => sum + (day.utilizationRate || 0), 
+        0
+      );
+      sessionCompletionRate = totalUtilization / sessionQuery.data.data.length;
+    }
+
+    return { inventoryCount, activeKTVs, sessionCompletionRate };
+  }, [inventoryQuery.data, ktvQuery.data, sessionQuery.data]);
+
+  const isLoadingStats = inventoryQuery.isLoading || ktvQuery.isLoading || sessionQuery.isLoading;
 
   const operationModules = [
     {
@@ -78,13 +119,20 @@ export default function OperationsIntelligencePage() {
         })}
       </div>
 
-      {/* Quick Stats (placeholder) */}
+      {/* Quick Stats (real-time data) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
         <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-[2rem] p-6 border border-orange-200">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-orange-700 font-medium">Sản phẩm tồn kho</p>
-              <p className="text-3xl font-bold text-orange-900 mt-2">--</p>
+              <p className="text-3xl font-bold text-orange-900 mt-2">
+                {isLoadingStats ? (
+                  <RefreshCw className="h-6 w-6 animate-spin inline" />
+                ) : (
+                  quickStats.inventoryCount
+                )}
+              </p>
+              <p className="text-xs text-orange-600 mt-1">Inventory items</p>
             </div>
             <Package className="h-10 w-10 text-orange-600 opacity-50" />
           </div>
@@ -94,7 +142,14 @@ export default function OperationsIntelligencePage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-pink-700 font-medium">KTV hoạt động</p>
-              <p className="text-3xl font-bold text-pink-900 mt-2">--</p>
+              <p className="text-3xl font-bold text-pink-900 mt-2">
+                {isLoadingStats ? (
+                  <RefreshCw className="h-6 w-6 animate-spin inline" />
+                ) : (
+                  quickStats.activeKTVs
+                )}
+              </p>
+              <p className="text-xs text-pink-600 mt-1">Tháng {dateParams.month}/{dateParams.year}</p>
             </div>
             <Users className="h-10 w-10 text-pink-600 opacity-50" />
           </div>
@@ -104,7 +159,14 @@ export default function OperationsIntelligencePage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-blue-700 font-medium">Ca hoàn thành</p>
-              <p className="text-3xl font-bold text-blue-900 mt-2">--%</p>
+              <p className="text-3xl font-bold text-blue-900 mt-2">
+                {isLoadingStats ? (
+                  <RefreshCw className="h-6 w-6 animate-spin inline" />
+                ) : (
+                  `${quickStats.sessionCompletionRate.toFixed(1)}%`
+                )}
+              </p>
+              <p className="text-xs text-blue-600 mt-1">30 ngày qua</p>
             </div>
             <TrendingUp className="h-10 w-10 text-blue-600 opacity-50" />
           </div>
