@@ -54,11 +54,11 @@ ChartJS.register(
 
 export default function ForecastDashboard() {
   const [activeTab, setActiveTab] = useState('revenue');
-  const [revenueHorizon, setRevenueHorizon] = useState<number>(12);
-  const [churnHorizon, setChurnHorizon] = useState<number>(30);
-  const [demandHorizon, setDemandHorizon] = useState<number>(2);
-  const [revenueModel, setRevenueModel] = useState<string>('exponential_smoothing');
-  const [tenantId, setTenantId] = useState<string>('');
+  const [revenueHorizon, setRevenueHorizon] = useState(12);
+  const [churnHorizon, setChurnHorizon] = useState(30);
+  const [demandHorizon, setDemandHorizon] = useState(2);
+  const [revenueModel, setRevenueModel] = useState('exponential_smoothing');
+  const [tenantId, setTenantId] = useState('');
   const [isLoadingUser, setIsLoadingUser] = useState(true);
 
   // Get current user's tenant ID
