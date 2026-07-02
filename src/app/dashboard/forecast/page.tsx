@@ -29,7 +29,23 @@ import {
   AlertCircle
 } from 'lucide-react';
 
-// Lazy load Chart components to avoid SSR issues
+// Register Chart.js synchronously on client-side only
+if (typeof window !== 'undefined') {
+  const ChartJS = require('chart.js');
+  ChartJS.Chart.register(
+    ChartJS.CategoryScale,
+    ChartJS.LinearScale,
+    ChartJS.PointElement,
+    ChartJS.LineElement,
+    ChartJS.BarElement,
+    ChartJS.Title,
+    ChartJS.Tooltip,
+    ChartJS.Legend,
+    ChartJS.Filler
+  );
+}
+
+// Lazy load Chart components AFTER registration
 const Line = dynamic(
   () => import('react-chartjs-2').then((mod) => mod.Line),
   { ssr: false, loading: () => <div className="h-[400px] flex items-center justify-center"><RefreshCw className="w-6 h-6 animate-spin text-muted-foreground" /></div> }
@@ -39,23 +55,6 @@ const Bar = dynamic(
   () => import('react-chartjs-2').then((mod) => mod.Bar),
   { ssr: false, loading: () => <div className="h-[400px] flex items-center justify-center"><RefreshCw className="w-6 h-6 animate-spin text-muted-foreground" /></div> }
 );
-
-// Register Chart.js components on client-side only
-if (typeof window !== 'undefined') {
-  import('chart.js').then((ChartJS) => {
-    ChartJS.Chart.register(
-      ChartJS.CategoryScale,
-      ChartJS.LinearScale,
-      ChartJS.PointElement,
-      ChartJS.LineElement,
-      ChartJS.BarElement,
-      ChartJS.Title,
-      ChartJS.Tooltip,
-      ChartJS.Legend,
-      ChartJS.Filler
-    );
-  });
-}
 
 function ForecastDashboard() {
   const [activeTab, setActiveTab] = useState('revenue');
