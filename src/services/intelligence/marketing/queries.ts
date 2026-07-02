@@ -14,17 +14,24 @@
  * - Tenant isolation (tenant_id filter on all queries)
  * - Date range filtering
  * - TypeScript types for all return values
+ * - In-memory caching with TTL (5 minutes default)
  * 
  * Data Sources:
  * - mv_campaign_performance (materialized view)
  * - mv_channel_performance (materialized view)
  * - external_ads_data (raw ad data)
  * - marketing_campaigns (campaign metadata)
+ * 
+ * Cache Strategy:
+ * - All queries use marketingCache with 5-minute TTL
+ * - Cache keys follow pattern: 'marketing:{queryName}:{tenantId}:{params}'
+ * - Cache is automatically invalidated on data updates
  */
 
 import { createClient } from '@/lib/supabase-server';
 import type { Database } from '@/types/database.types';
 import { QueryError } from '../shared/types';
+import { marketingCache, createCacheKey } from './cache';
 import type {
   CampaignAnalytics,
   ChannelPerformance,
@@ -150,8 +157,34 @@ function getDefaultDateRange(): { start: string; end: string } {
  * Data sources:
  * - mv_campaign_performance (materialized view for overview)
  * - external_ads_data (raw data for daily/platform breakdowns)
+ * 
+ * Cache: 5 minutes TTL
  */
 export async function getCampaignAnalytics(
+  params: CampaignAnalyticsParams
+): Promise<CampaignAnalytics> {
+  const { campaignId, dateRange, tenantId } = params;
+  
+  // Create cache key
+  const cacheKey = createCacheKey(
+    'marketing',
+    'campaign-analytics',
+    tenantId || 'notenant',
+    campaignId,
+    dateRange?.start || 'all',
+    dateRange?.end || 'all'
+  );
+  
+  // Try to get from cache first
+  return marketingCache.getOrSet(cacheKey, async () => {
+    return _getCampaignAnalyticsUncached(params);
+  });
+}
+
+/**
+ * Internal uncached implementation of getCampaignAnalytics
+ */
+async function _getCampaignAnalyticsUncached(
   params: CampaignAnalyticsParams
 ): Promise<CampaignAnalytics> {
   const supabase = await createClient();
@@ -324,8 +357,34 @@ export async function getCampaignAnalytics(
  * 
  * Data source:
  * - mv_channel_performance (materialized view)
+ * 
+ * Cache: 5 minutes TTL
  */
 export async function getChannelPerformance(
+  params: ChannelPerformanceParams
+): Promise<ChannelPerformance[]> {
+  const { tenantId, dateRange, platforms } = params;
+  
+  // Create cache key
+  const cacheKey = createCacheKey(
+    'marketing',
+    'channel-performance',
+    tenantId,
+    dateRange.start,
+    dateRange.end,
+    platforms ? platforms.join(',') : 'all'
+  );
+  
+  // Try to get from cache first
+  return marketingCache.getOrSet(cacheKey, async () => {
+    return _getChannelPerformanceUncached(params);
+  });
+}
+
+/**
+ * Internal uncached implementation of getChannelPerformance
+ */
+async function _getChannelPerformanceUncached(
   params: ChannelPerformanceParams
 ): Promise<ChannelPerformance[]> {
   const supabase = await createClient();

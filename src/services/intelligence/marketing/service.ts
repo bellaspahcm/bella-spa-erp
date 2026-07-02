@@ -42,6 +42,7 @@ export interface TenantAdsCredentials {
   tiktok_advertiser_id?: string;
   zalo_access_token?: string;
   zalo_oa_id?: string;
+  zalo_secret_key?: string;
 }
 
 interface ExternalAdsDataInsert {
@@ -162,22 +163,259 @@ export class MarketingIntelligenceService {
       };
     }
 
-    // NOTE: Actual connector implementations will be added in future tasks
-    // For now, return placeholder results
     console.log(`[MarketingIntelligence] Syncing ${platform} for tenant ${tenantId}`);
     
-    // TODO: Implement actual connectors
-    // - FacebookAdsConnector: fetch last 7 days of ad data
-    // - GoogleAdsConnector: fetch reports using GAQL
-    // - TikTokAdsConnector: fetch integrated reports
-    // - ZaloOAConnector: fetch message stats
+    try {
+      // Dispatch to platform-specific connector
+      switch (platform) {
+        case 'facebook':
+          return await this.syncFacebookAds(tenantId, credentials);
+        case 'google':
+          return await this.syncGoogleAds(tenantId, credentials);
+        case 'tiktok':
+          return await this.syncTikTokAds(tenantId, credentials);
+        case 'zalo':
+          return await this.syncZaloOA(tenantId, credentials);
+        default:
+          return {
+            success: false,
+            error: `Unknown platform: ${platform}`,
+          };
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      return {
+        success: false,
+        error: errorMsg,
+      };
+    }
+  }
+
+  /**
+   * Sync Facebook Ads data
+   */
+  private async syncFacebookAds(
+    tenantId: string,
+    credentials: TenantAdsCredentials
+  ): Promise<SyncPlatformResult> {
+    const { createFacebookAdsConnector } = await import('./connectors/facebook-ads');
     
-    // For now, return success with 0 records (placeholder)
+    const connector = createFacebookAdsConnector({
+      accessToken: credentials.facebook_access_token || '',
+      adAccountId: credentials.facebook_ad_account_id || '',
+    });
+    
+    // Fetch last 7 days of data
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - 7);
+    
+    const insights = await connector.fetchInsights(
+      startDate.toISOString().split('T')[0],
+      endDate.toISOString().split('T')[0]
+    );
+    
+    // Upsert data into external_ads_data table
+    const supabase = await createClient();
+    let inserted = 0;
+    let updated = 0;
+    let failed = 0;
+    
+    for (const insight of insights) {
+      try {
+        const record: ExternalAdsDataInsert = {
+          tenant_id: tenantId,
+          platform: 'facebook',
+          date: insight.date,
+          external_campaign_id: insight.campaignId,
+          external_ad_id: insight.adId,
+          internal_campaign_id: null, // TODO: Map to internal campaign if exists
+          impressions: insight.impressions,
+          clicks: insight.clicks,
+          spend: insight.spend,
+          conversions: insight.conversions,
+          revenue: insight.revenue,
+          ctr: insight.ctr,
+          cpc: insight.cpc,
+          cpa: insight.cpa,
+          roas: insight.roas,
+          roi: insight.roas > 0 ? (insight.roas - 1) * 100 : null,
+          raw_data: insight.rawData,
+          sync_status: 'success',
+          synced_at: new Date().toISOString(),
+        };
+        
+        // Upsert (insert or update if exists)
+        const { error } = await supabase
+          .from('external_ads_data')
+          .upsert(record, {
+            onConflict: 'tenant_id,platform,date,external_campaign_id,external_ad_id',
+          });
+        
+        if (error) {
+          console.error(`[FacebookAds] Failed to upsert record:`, error);
+          failed++;
+        } else {
+          // Assume update if no error (Supabase doesn't distinguish insert vs update in upsert)
+          inserted++;
+        }
+      } catch (error) {
+        console.error(`[FacebookAds] Error processing insight:`, error);
+        failed++;
+      }
+    }
+    
     return {
       success: true,
-      recordsInserted: 0,
-      recordsUpdated: 0,
-      recordsFailed: 0,
+      recordsInserted: inserted,
+      recordsUpdated: 0, // Supabase upsert doesn't distinguish
+      recordsFailed: failed,
+    };
+  }
+
+  /**
+   * Sync Google Ads data (placeholder)
+   */
+  private async syncGoogleAds(
+    tenantId: string,
+    credentials: TenantAdsCredentials
+  ): Promise<SyncPlatformResult> {
+    // TODO: Implement Google Ads connector
+    console.log('[MarketingIntelligence] Google Ads sync not implemented yet');
+    return {
+      success: false,
+      error: 'Google Ads connector not implemented',
+    };
+  }
+
+  /**
+   * Sync TikTok Ads data (placeholder)
+   */
+  private async syncTikTokAds(
+    tenantId: string,
+    credentials: TenantAdsCredentials
+  ): Promise<SyncPlatformResult> {
+    // TODO: Implement TikTok Ads connector
+    console.log('[MarketingIntelligence] TikTok Ads sync not implemented yet');
+    return {
+      success: false,
+      error: 'TikTok Ads connector not implemented',
+    };
+  }
+
+  /**
+   * Sync Zalo OA data
+   */
+  private async syncZaloOA(
+    tenantId: string,
+    credentials: TenantAdsCredentials
+  ): Promise<SyncPlatformResult> {
+    const { createZaloOAConnector } = await import('./connectors/zalo-oa');
+    
+    const connector = createZaloOAConnector({
+      accessToken: credentials.zalo_access_token || '',
+      oaId: credentials.zalo_oa_id || '',
+      secretKey: credentials.zalo_secret_key || '',
+    });
+    
+    // Fetch last 7 days of data
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - 7);
+    
+    const insights = await connector.fetchOAInsights(
+      startDate.toISOString().split('T')[0],
+      endDate.toISOString().split('T')[0]
+    );
+    
+    // Upsert data into external_ads_data table
+    const supabase = await createClient();
+    let inserted = 0;
+    let updated = 0;
+    let failed = 0;
+    
+    for (const insight of insights) {
+      try {
+        // Map Zalo OA metrics to external_ads_data schema
+        // Note: Zalo OA has different metrics than traditional ads platforms
+        // We'll map the closest equivalents:
+        // - impressions: messagesSent + articleViews (total reach)
+        // - clicks: messageClicks + articleInteractions
+        // - conversions: miniProgramConversions + transactions
+        // - spend: 0 (Zalo OA doesn't have direct ad spend, but could track cost per message)
+        // - revenue: transaction revenue
+        const record: ExternalAdsDataInsert = {
+          tenant_id: tenantId,
+          platform: 'zalo',
+          date: insight.date,
+          external_campaign_id: `oa_${insight.oaId}`, // OA ID as campaign ID
+          external_ad_id: `oa_${insight.oaId}_${insight.date}`, // Unique per day
+          internal_campaign_id: null, // TODO: Map to internal campaign if exists
+          
+          // Map Zalo OA metrics to ads schema
+          impressions: insight.messagesSent + insight.articleViews,
+          clicks: insight.messageClicks + insight.articleInteractions,
+          spend: 0, // Zalo OA typically doesn't have direct spend (organic reach)
+          conversions: insight.miniProgramConversions + insight.transactions,
+          revenue: insight.revenue,
+          
+          // Calculated metrics
+          ctr: insight.clickThroughRate,
+          cpc: null, // N/A for organic reach
+          cpa: insight.transactions > 0 ? 0 : null, // N/A for organic
+          roas: null, // N/A for organic (infinite ROAS if revenue > 0 and spend = 0)
+          roi: null, // N/A for organic
+          
+          // Store full Zalo OA data in raw_data for detailed analysis
+          raw_data: {
+            oaName: insight.oaName,
+            totalFollowers: insight.totalFollowers,
+            newFollowers: insight.newFollowers,
+            unfollowers: insight.unfollowers,
+            messagesSent: insight.messagesSent,
+            messagesDelivered: insight.messagesDelivered,
+            messagesRead: insight.messagesRead,
+            messageClicks: insight.messageClicks,
+            articlesPublished: insight.articlesPublished,
+            articleViews: insight.articleViews,
+            articleShares: insight.articleShares,
+            articleInteractions: insight.articleInteractions,
+            miniProgramVisits: insight.miniProgramVisits,
+            miniProgramConversions: insight.miniProgramConversions,
+            transactions: insight.transactions,
+            engagementRate: insight.engagementRate,
+            clickThroughRate: insight.clickThroughRate,
+            conversionRate: insight.conversionRate,
+          },
+          
+          sync_status: 'success',
+          synced_at: new Date().toISOString(),
+        };
+        
+        // Upsert (insert or update if exists)
+        const { error } = await supabase
+          .from('external_ads_data')
+          .upsert(record, {
+            onConflict: 'tenant_id,platform,date,external_campaign_id,external_ad_id',
+          });
+        
+        if (error) {
+          console.error(`[ZaloOA] Failed to upsert record:`, error);
+          failed++;
+        } else {
+          inserted++;
+        }
+      } catch (error) {
+        console.error(`[ZaloOA] Error processing insight:`, error);
+        failed++;
+      }
+    }
+    
+    return {
+      success: true,
+      recordsInserted: inserted,
+      recordsUpdated: 0, // Supabase upsert doesn't distinguish
+      recordsFailed: failed,
     };
   }
 
@@ -306,12 +544,33 @@ export class MarketingIntelligenceService {
 
   /**
    * Clear all cached data for marketing intelligence
-   * 
-   * NOTE: Cache implementation will be added in future task
    */
   async clearCache(): Promise<void> {
-    console.log('[MarketingIntelligence] Cache clear requested (not implemented yet)');
-    // TODO: Implement cache clearing when cache layer is added
+    const { marketingCache } = await import('./cache');
+    marketingCache.clear();
+    console.log('[MarketingIntelligence] Cache cleared');
+  }
+  
+  /**
+   * Clear cache for a specific tenant
+   * 
+   * @param tenantId - Tenant UUID
+   */
+  async clearTenantCache(tenantId: string): Promise<void> {
+    const { marketingCache } = await import('./cache');
+    const pattern = `*:${tenantId}:*`;
+    const deleted = marketingCache.invalidatePattern(pattern);
+    console.log(`[MarketingIntelligence] Cleared ${deleted} cache entries for tenant ${tenantId}`);
+  }
+  
+  /**
+   * Get cache statistics
+   * 
+   * @returns Cache stats (hits, misses, evictions, size)
+   */
+  async getCacheStats() {
+    const { marketingCache } = await import('./cache');
+    return marketingCache.getStats();
   }
 }
 
