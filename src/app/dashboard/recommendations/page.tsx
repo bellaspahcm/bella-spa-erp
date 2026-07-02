@@ -1,5 +1,6 @@
 'use client';
 
+import './styles.css';
 import { useState, useEffect } from 'react';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,6 +26,7 @@ import {
 } from '@/components/intelligence';
 
 function RecommendationsPage() {
+  const [activeTab, setActiveTab] = useState('service');
   const [customerId, setCustomerId] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [algorithm, setAlgorithm] = useState<'hybrid' | 'collaborative_filtering' | 'content_based' | 'rfm_based'>('hybrid');
@@ -189,32 +191,48 @@ function RecommendationsPage() {
         </div>
       </IntelligenceSection>
 
-      {/* Results Tabs */}
+      {/* Results Tabs with clean background wrapper */}
       {searchTerm && (
-        <Tabs defaultValue="service" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 bg-white p-2 rounded-2xl border-2 border-rose-100 shadow-sm">
-            <TabsTrigger 
-              value="service" 
-              className="flex items-center justify-center gap-2 rounded-xl px-6 py-4 text-sm font-black uppercase tracking-wider transition-all data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-lg text-slate-500 hover:text-slate-950 hover:bg-slate-50"
-            >
-              <Star className="w-5 h-5" />
-              Dịch Vụ
-            </TabsTrigger>
-            <TabsTrigger 
-              value="package" 
-              className="flex items-center justify-center gap-2 rounded-xl px-6 py-4 text-sm font-black uppercase tracking-wider transition-all data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-lg text-slate-500 hover:text-slate-950 hover:bg-slate-50"
-            >
-              <Package className="w-5 h-5" />
-              Gói Combo
-            </TabsTrigger>
-            <TabsTrigger 
-              value="upsell" 
-              className="flex items-center justify-center gap-2 rounded-xl px-6 py-4 text-sm font-black uppercase tracking-wider transition-all data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-lg text-slate-500 hover:text-slate-950 hover:bg-slate-50"
-            >
-              <TrendingUp className="w-5 h-5" />
-              Bán Kèm
-            </TabsTrigger>
-          </TabsList>
+        <div className="rounded-[2rem] bg-white border border-rose-100 shadow-sm p-6 md:p-8">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
+            <TabsList className="grid w-full grid-cols-3 bg-transparent p-0 gap-2 h-auto">
+              <TabsTrigger 
+                value="service"
+                style={{
+                  backgroundColor: activeTab === 'service' ? '#E91E63' : '#f8fafc',
+                  color: activeTab === 'service' ? 'white' : '#64748b',
+                  borderColor: activeTab === 'service' ? '#E91E63' : '#e2e8f0'
+                }}
+                className="flex items-center justify-center gap-2 rounded-2xl px-6 py-4 text-sm font-black uppercase tracking-wider transition-all border hover:bg-white hover:text-slate-950 hover:border-rose-200"
+              >
+                <Star className="w-5 h-5" />
+                Dịch Vụ
+              </TabsTrigger>
+              <TabsTrigger 
+                value="package"
+                style={{
+                  backgroundColor: activeTab === 'package' ? '#E91E63' : '#f8fafc',
+                  color: activeTab === 'package' ? 'white' : '#64748b',
+                  borderColor: activeTab === 'package' ? '#E91E63' : '#e2e8f0'
+                }}
+                className="flex items-center justify-center gap-2 rounded-2xl px-6 py-4 text-sm font-black uppercase tracking-wider transition-all border hover:bg-white hover:text-slate-950 hover:border-rose-200"
+              >
+                <Package className="w-5 h-5" />
+                Gói Combo
+              </TabsTrigger>
+              <TabsTrigger 
+                value="upsell"
+                style={{
+                  backgroundColor: activeTab === 'upsell' ? '#E91E63' : '#f8fafc',
+                  color: activeTab === 'upsell' ? 'white' : '#64748b',
+                  borderColor: activeTab === 'upsell' ? '#E91E63' : '#e2e8f0'
+                }}
+                className="flex items-center justify-center gap-2 rounded-2xl px-6 py-4 text-sm font-black uppercase tracking-wider transition-all border hover:bg-white hover:text-slate-950 hover:border-rose-200"
+              >
+                <TrendingUp className="w-5 h-5" />
+                Bán Kèm
+              </TabsTrigger>
+            </TabsList>
 
           {/* Service Recommendations Tab */}
           <TabsContent value="service" className="space-y-6">
@@ -369,7 +387,8 @@ function RecommendationsPage() {
               )}
             </IntelligenceSection>
           </TabsContent>
-        </Tabs>
+          </Tabs>
+        </div>
       )}
 
       {!searchTerm && (

@@ -37,7 +37,7 @@ export function IntelligenceHeader({
   actions 
 }: IntelligenceHeaderProps) {
   return (
-    <div className="mb-8 flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+    <div className="relative z-10 mb-8 flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
       <div>
         <div className="mb-3 flex items-center gap-2 text-primary">
           <Icon className="h-5 w-5" />

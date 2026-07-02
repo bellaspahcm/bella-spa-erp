@@ -3305,3 +3305,10 @@ html[data-tenant-module="beauty_spa"] .border-rose-100\/50 {
 }
 
 /* END BEAUTY SPA OVERRIDES */
+
+/* Intelligence Dashboard Tabs - Active State Override */
+[data-state="active"][role="tab"] {
+  background-color: #E91E63 !important;
+  color: white !important;
+  border-color: #E91E63 !important;
+}

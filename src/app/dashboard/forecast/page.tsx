@@ -1,5 +1,6 @@
 'use client';
 
+import './styles.css';
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -235,7 +236,7 @@ function ForecastDashboard() {
         icon={TrendingUp}
         label="Intelligence & Dự Báo"
         title="Dự Báo Thông Minh"
-        description="Dự báo doanh thu, tỷ lệ churn và nhu cầu dịch vụ sử dụng Machine Learning"
+        description="Dự báo doanh thu, khách rời đi và nhu cầu dịch vụ sử dụng Machine Learning"
         actions={
           <IntelligenceButton
             onClick={() => {
@@ -252,39 +253,55 @@ function ForecastDashboard() {
         }
       />
 
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3 bg-white p-2 rounded-2xl border-2 border-rose-100 shadow-sm">
-          <TabsTrigger 
-            value="revenue" 
-            className="flex items-center justify-center gap-2 rounded-xl px-6 py-4 text-sm font-black uppercase tracking-wider transition-all data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-lg text-slate-500 hover:text-slate-950 hover:bg-slate-50"
-          >
-            <DollarSign className="w-5 h-5" />
-            <span>Doanh Thu</span>
-          </TabsTrigger>
-          <TabsTrigger 
-            value="churn" 
-            className="flex items-center justify-center gap-2 rounded-xl px-6 py-4 text-sm font-black uppercase tracking-wider transition-all data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-lg text-slate-500 hover:text-slate-950 hover:bg-slate-50"
-          >
-            <Users className="w-5 h-5" />
-            <span>Tỷ Lệ Rời Đi</span>
-          </TabsTrigger>
-          <TabsTrigger 
-            value="demand" 
-            className="flex items-center justify-center gap-2 rounded-xl px-6 py-4 text-sm font-black uppercase tracking-wider transition-all data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-lg text-slate-500 hover:text-slate-950 hover:bg-slate-50"
-          >
-            <Calendar className="w-5 h-5" />
-            <span>Nhu Cầu</span>
-          </TabsTrigger>
-        </TabsList>
+      {/* Tabs with clean background wrapper */}
+      <div className="rounded-[2rem] bg-white border border-rose-100 shadow-sm p-6 md:p-8">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
+          <TabsList className="grid w-full grid-cols-3 bg-transparent p-0 gap-2 h-auto">
+            <TabsTrigger 
+              value="revenue" 
+              style={{
+                backgroundColor: activeTab === 'revenue' ? '#E91E63' : '#f8fafc',
+                color: activeTab === 'revenue' ? 'white' : '#64748b',
+                borderColor: activeTab === 'revenue' ? '#E91E63' : '#e2e8f0'
+              }}
+              className="flex items-center justify-center gap-2 rounded-2xl px-6 py-4 text-sm font-black uppercase tracking-wider transition-all border hover:bg-white hover:text-slate-950 hover:border-rose-200"
+            >
+              <DollarSign className="w-5 h-5" />
+              <span>Doanh Thu</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="churn" 
+              style={{
+                backgroundColor: activeTab === 'churn' ? '#E91E63' : '#f8fafc',
+                color: activeTab === 'churn' ? 'white' : '#64748b',
+                borderColor: activeTab === 'churn' ? '#E91E63' : '#e2e8f0'
+              }}
+              className="flex items-center justify-center gap-2 rounded-2xl px-6 py-4 text-sm font-black uppercase tracking-wider transition-all border hover:bg-white hover:text-slate-950 hover:border-rose-200"
+            >
+              <Users className="w-5 h-5" />
+              <span>Khách Rời Đi</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="demand" 
+              style={{
+                backgroundColor: activeTab === 'demand' ? '#E91E63' : '#f8fafc',
+                color: activeTab === 'demand' ? 'white' : '#64748b',
+                borderColor: activeTab === 'demand' ? '#E91E63' : '#e2e8f0'
+              }}
+              className="flex items-center justify-center gap-2 rounded-2xl px-6 py-4 text-sm font-black uppercase tracking-wider transition-all border hover:bg-white hover:text-slate-950 hover:border-rose-200"
+            >
+              <Calendar className="w-5 h-5" />
+              <span>Nhu Cầu</span>
+            </TabsTrigger>
+          </TabsList>
 
         {/* Revenue Forecast Tab */}
         <TabsContent value="revenue" className="space-y-6">
           {/* Controls */}
           <Card>
-            <CardHeader>
-              <CardTitle>Cấu Hình Dự Báo</CardTitle>
-            </CardHeader>
+              <CardHeader>
+                <CardTitle>Cấu Hình Dự Báo</CardTitle>
+              </CardHeader>
             <CardContent className="flex gap-4">
               <div className="flex-1">
                 <label className="text-sm font-medium mb-2 block">Mô Hình</label>
@@ -293,9 +310,9 @@ function ForecastDashboard() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="simple_moving_average">Simple Moving Average</SelectItem>
-                    <SelectItem value="exponential_smoothing">Exponential Smoothing</SelectItem>
-                    <SelectItem value="linear_regression">Linear Regression</SelectItem>
+                    <SelectItem value="simple_moving_average">Trung Bình Động Đơn Giản</SelectItem>
+                    <SelectItem value="exponential_smoothing">Làm Mượt Hàm Mũ</SelectItem>
+                    <SelectItem value="linear_regression">Hồi Quy Tuyến Tính</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -346,7 +363,7 @@ function ForecastDashboard() {
                       : 'N/A'}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Model: {Array.isArray(revenueForecast.data.data) 
+                    Mô hình: {Array.isArray(revenueForecast.data.data) 
                       ? revenueForecast.data.data[0]?.model_name 
                       : revenueForecast.data.data.model_name}
                   </p>
@@ -368,7 +385,7 @@ function ForecastDashboard() {
                       : 'N/A'}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Accuracy
+                    Độ chính xác
                   </p>
                 </CardContent>
               </Card>
@@ -376,7 +393,7 @@ function ForecastDashboard() {
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">
-                    Confidence Range
+                    Khoảng Tin Cậy
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -396,7 +413,7 @@ function ForecastDashboard() {
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    95% CI
+                    Độ tin cậy 95%
                   </p>
                 </CardContent>
               </Card>
@@ -404,7 +421,7 @@ function ForecastDashboard() {
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">
-                    Horizon
+                    Thời Gian Dự Báo
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -412,7 +429,7 @@ function ForecastDashboard() {
                     {revenueHorizon} tháng
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Forecast period
+                    Khoảng thời gian dự báo
                   </p>
                 </CardContent>
               </Card>
@@ -424,7 +441,7 @@ function ForecastDashboard() {
             <CardHeader>
               <CardTitle>Biểu Đồ Dự Báo Doanh Thu</CardTitle>
               <CardDescription>
-                Dự báo {revenueHorizon} tháng tới với confidence interval 95%
+                Dự báo {revenueHorizon} tháng tới với khoảng tin cậy 95%
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -575,7 +592,7 @@ function ForecastDashboard() {
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium text-muted-foreground">
-                      Dự Báo Churn
+                      Dự Báo Khách Rời Đi
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -583,11 +600,11 @@ function ForecastDashboard() {
                       {!Array.isArray(churnForecast.data.data) && churnForecast.data.data?.forecasted_value != null
                         ? formatPercent(churnForecast.data.data.forecasted_value)
                         : Array.isArray(churnForecast.data.data)
-                        ? `${churnForecast.data.data.length} periods`
+                        ? `${churnForecast.data.data.length} kỳ`
                         : 'N/A'}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Model: {!Array.isArray(churnForecast.data.data) 
+                      Mô hình: {!Array.isArray(churnForecast.data.data) 
                         ? churnForecast.data.data.model_name
                         : churnForecast.data.data[0]?.model_name}
                     </p>
@@ -597,7 +614,7 @@ function ForecastDashboard() {
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium text-muted-foreground">
-                      Confidence Range
+                      Khoảng Tin Cậy
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -609,7 +626,7 @@ function ForecastDashboard() {
                           {formatPercent(churnForecast.data.data.confidence_upper)}
                         </>
                       ) : null}
-                      {Array.isArray(churnForecast.data.data) && <>Multi-period</>}
+                      {Array.isArray(churnForecast.data.data) && <>Nhiều kỳ</>}
                       {!Array.isArray(churnForecast.data.data) && (churnForecast.data.data?.confidence_lower == null || churnForecast.data.data?.confidence_upper == null) && <>N/A</>}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">95% CI</p>
@@ -619,7 +636,7 @@ function ForecastDashboard() {
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium text-muted-foreground">
-                      Accuracy
+                      Độ Chính Xác
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -634,7 +651,7 @@ function ForecastDashboard() {
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium text-muted-foreground">
-                      Horizon
+                      Thời Gian Dự Báo
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -691,7 +708,7 @@ function ForecastDashboard() {
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">
-                    Dự Báo Demand
+                    Dự Báo Nhu Cầu
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -699,7 +716,7 @@ function ForecastDashboard() {
                     {!Array.isArray(demandForecast.data.data) && demandForecast.data.data?.forecasted_value != null
                       ? demandForecast.data.data.forecasted_value.toFixed(0)
                       : Array.isArray(demandForecast.data.data)
-                      ? `${demandForecast.data.data.length} periods`
+                      ? `${demandForecast.data.data.length} kỳ`
                       : 'N/A'}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -711,7 +728,7 @@ function ForecastDashboard() {
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">
-                    Model
+                    Mô Hình
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -726,7 +743,7 @@ function ForecastDashboard() {
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">
-                    Accuracy
+                    Độ Chính Xác
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -827,7 +844,8 @@ function ForecastDashboard() {
             </CardContent>
           </Card>
         </TabsContent>
-      </Tabs>
+        </Tabs>
+      </div>
     </IntelligenceLayout>
   );
 }
