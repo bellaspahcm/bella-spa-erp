@@ -27,26 +27,10 @@ import { toast } from 'sonner';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
+import type { PnLData, ServicePerformance } from './FinancePnLSummary.types';
 
-interface PnLData {
-  month_year: string;
-  total_revenue: number;
-  total_operating_expenses: number;
-  total_ktv_salaries: number;
-  net_profit: number;
-  total_bookings: number;
-  total_sessions_completed: number;
-  is_locked: boolean;
-}
-
-interface ServicePerformance {
-  package_name: string;
-  total_bookings: number;
-  total_revenue: number;
-  total_ktv_cost: number;
-  net_service_profit: number;
-  profit_margin_percent: number;
-}
+// Re-export types for backward compatibility
+export type { PnLData, ServicePerformance } from './FinancePnLSummary.types';
 
 interface FinancePnLSummaryProps {
   pnl: PnLData | null;
