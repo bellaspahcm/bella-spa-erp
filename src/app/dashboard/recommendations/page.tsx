@@ -192,26 +192,26 @@ function RecommendationsPage() {
       {/* Results Tabs */}
       {searchTerm && (
         <Tabs defaultValue="service" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 bg-white/60 p-2 rounded-2xl border border-slate-100 backdrop-blur-md">
+          <TabsList className="grid w-full grid-cols-3 bg-white p-2 rounded-2xl border-2 border-rose-100 shadow-sm">
             <TabsTrigger 
               value="service" 
-              className="flex items-center gap-2 rounded-xl text-xs font-black uppercase tracking-wider data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-lg"
+              className="flex items-center justify-center gap-2 rounded-xl px-6 py-4 text-sm font-black uppercase tracking-wider transition-all data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-lg text-slate-500 hover:text-slate-950 hover:bg-slate-50"
             >
-              <Star className="w-4 h-4" />
+              <Star className="w-5 h-5" />
               Dịch Vụ
             </TabsTrigger>
             <TabsTrigger 
               value="package" 
-              className="flex items-center gap-2 rounded-xl text-xs font-black uppercase tracking-wider data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-lg"
+              className="flex items-center justify-center gap-2 rounded-xl px-6 py-4 text-sm font-black uppercase tracking-wider transition-all data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-lg text-slate-500 hover:text-slate-950 hover:bg-slate-50"
             >
-              <Package className="w-4 h-4" />
+              <Package className="w-5 h-5" />
               Gói Combo
             </TabsTrigger>
             <TabsTrigger 
               value="upsell" 
-              className="flex items-center gap-2 rounded-xl text-xs font-black uppercase tracking-wider data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-lg"
+              className="flex items-center justify-center gap-2 rounded-xl px-6 py-4 text-sm font-black uppercase tracking-wider transition-all data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-lg text-slate-500 hover:text-slate-950 hover:bg-slate-50"
             >
-              <TrendingUp className="w-4 h-4" />
+              <TrendingUp className="w-5 h-5" />
               Bán Kèm
             </TabsTrigger>
           </TabsList>

@@ -253,27 +253,27 @@ function ForecastDashboard() {
       />
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
-        <TabsList className="grid w-full grid-cols-3 bg-white/60 p-2 rounded-2xl border border-slate-100 backdrop-blur-md">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-3 bg-white p-2 rounded-2xl border-2 border-rose-100 shadow-sm">
           <TabsTrigger 
             value="revenue" 
-            className="flex items-center gap-2 rounded-xl text-xs font-black uppercase tracking-wider data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-lg"
+            className="flex items-center justify-center gap-2 rounded-xl px-6 py-4 text-sm font-black uppercase tracking-wider transition-all data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-lg text-slate-500 hover:text-slate-950 hover:bg-slate-50"
           >
-            <DollarSign className="w-4 h-4" />
+            <DollarSign className="w-5 h-5" />
             <span>Doanh Thu</span>
           </TabsTrigger>
           <TabsTrigger 
             value="churn" 
-            className="flex items-center gap-2 rounded-xl text-xs font-black uppercase tracking-wider data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-lg"
+            className="flex items-center justify-center gap-2 rounded-xl px-6 py-4 text-sm font-black uppercase tracking-wider transition-all data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-lg text-slate-500 hover:text-slate-950 hover:bg-slate-50"
           >
-            <Users className="w-4 h-4" />
+            <Users className="w-5 h-5" />
             <span>Tỷ Lệ Rời Đi</span>
           </TabsTrigger>
           <TabsTrigger 
             value="demand" 
-            className="flex items-center gap-2 rounded-xl text-xs font-black uppercase tracking-wider data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-lg"
+            className="flex items-center justify-center gap-2 rounded-xl px-6 py-4 text-sm font-black uppercase tracking-wider transition-all data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-lg text-slate-500 hover:text-slate-950 hover:bg-slate-50"
           >
-            <Calendar className="w-4 h-4" />
+            <Calendar className="w-5 h-5" />
             <span>Nhu Cầu</span>
           </TabsTrigger>
         </TabsList>
