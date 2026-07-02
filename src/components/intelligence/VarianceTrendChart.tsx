@@ -65,7 +65,10 @@ export function VarianceTrendChart({ data, categories, height = 300 }: VarianceT
           tickFormatter={formatPercent}
         />
         <Tooltip
-          formatter={(value: number, name: string) => [formatPercent(value), name]}
+          formatter={(value, name) => {
+            const numValue = typeof value === 'number' ? value : 0;
+            return [formatPercent(numValue), String(name)];
+          }}
           contentStyle={{
             backgroundColor: '#ffffff',
             border: '1px solid #e2e8f0',
@@ -104,3 +107,4 @@ export function VarianceTrendChart({ data, categories, height = 300 }: VarianceT
     </ResponsiveContainer>
   );
 }
+

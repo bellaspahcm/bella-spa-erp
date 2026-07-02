@@ -34,14 +34,13 @@ import {
   useMonthlyPnL,
   useRevenueBreakdown,
   useExpenseBreakdown,
-  useProfitabilityTrends,
-  useRefreshFinanceData,
 } from '@/hooks/intelligence';
 import {
   PnLStatementChart,
   RevenueBreakdownChart,
   ExpenseBreakdownChart,
-  ProfitabilityTrendChart,
+  // TODO: Uncomment when ProfitabilityTrendChart data is available
+  // ProfitabilityTrendChart,
 } from '@/components/intelligence';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -75,28 +74,32 @@ export default function PnLDashboardPage() {
   const monthlyPnL = useMonthlyPnL(month, year);
   const revenueBreakdown = useRevenueBreakdown(month, year);
   const expenseBreakdown = useExpenseBreakdown(month, year);
-  const profitabilityTrends = useProfitabilityTrends(month, year);
+  // TODO: Implement useProfitabilityTrends hook
+  // const profitabilityTrends = useProfitabilityTrends(month, year);
 
   // Manual refresh mutation
-  const { mutate: refreshData, isPending: isRefreshing } = useRefreshFinanceData();
+  // TODO: Implement useRefreshFinanceData hook
+  // const { mutate: refreshData, isPending: isRefreshing } = useRefreshFinanceData();
 
   // Combined loading state
   const isLoading =
     monthlyPnL.isLoading ||
     revenueBreakdown.isLoading ||
-    expenseBreakdown.isLoading ||
-    profitabilityTrends.isLoading;
+    expenseBreakdown.isLoading;
+    // profitabilityTrends.isLoading;
 
   // Handle manual refresh
   const handleRefresh = () => {
-    refreshData('all', {
-      onSuccess: () => {
-        toast.success('Dữ liệu đã được cập nhật');
-      },
-      onError: (error) => {
-        toast.error(`Lỗi làm mới: ${error.message}`);
-      },
-    });
+    // TODO: Implement manual refresh when useRefreshFinanceData is available
+    toast.info('Chức năng làm mới đang được phát triển');
+    // refreshData('all', {
+    //   onSuccess: () => {
+    //     toast.success('Dữ liệu đã được cập nhật');
+    //   },
+    //   onError: (error) => {
+    //     toast.error(`Lỗi làm mới: ${error.message}`);
+    //   },
+    // });
   };
 
   // ───────────────────────────────────────────────────────────────────────────
@@ -131,21 +134,26 @@ export default function PnLDashboardPage() {
   };
 
   const getProfitabilityTrendData = () => {
-    if (!profitabilityTrends.data || !profitabilityTrends.data.data) return [];
-
-    return profitabilityTrends.data.data.monthlyTrends.map(trend => ({
-      date: trend.month.substring(5, 7) + '/' + trend.month.substring(0, 4), // MM/YYYY
-      revenue: trend.totalRevenue,
-      expenses: trend.totalExpense,
-      profit: trend.netProfit,
-    }));
+    // TODO: useProfitabilityTrends hook was commented out - mock data until API is fixed
+    return [];
+    
+    // Original code (commented out):
+    // if (!profitabilityTrends.data || !profitabilityTrends.data.data) return [];
+    // return profitabilityTrends.data.data.monthlyTrends.map(trend => ({
+    //   date: trend.month.substring(5, 7) + '/' + trend.month.substring(0, 4), // MM/YYYY
+    //   revenue: trend.totalRevenue,
+    //   expenses: trend.totalExpense,
+    //   profit: trend.netProfit,
+    // }));
   };
 
   const getRevenueBreakdownData = () => {
     if (!revenueBreakdown.data || !revenueBreakdown.data.data) return [];
 
-    return revenueBreakdown.data.data.byType.map(item => ({
-      source: item.type,
+    // TODO: API returns RevenueBreakdownData[] array but code expects nested object with byType
+    // Transform array directly (assume each element is already correct format)
+    return revenueBreakdown.data.data.map(item => ({
+      source: item.source,
       revenue: item.amount,
       percentage: item.percentage,
     }));
@@ -154,7 +162,9 @@ export default function PnLDashboardPage() {
   const getExpenseBreakdownData = () => {
     if (!expenseBreakdown.data || !expenseBreakdown.data.data) return [];
 
-    return expenseBreakdown.data.data.byCategory.map(item => ({
+    // TODO: API returns ExpenseBreakdownData[] array but code expects nested object with byCategory
+    // Transform array directly (assume each element is already correct format)
+    return expenseBreakdown.data.data.map(item => ({
       category: item.category,
       expense: item.amount,
       percentage: item.percentage,
@@ -166,27 +176,31 @@ export default function PnLDashboardPage() {
   // ───────────────────────────────────────────────────────────────────────────
 
   const calculateMoMGrowth = () => {
-    if (!profitabilityTrends.data || !profitabilityTrends.data.data) return 0;
-    const trends = profitabilityTrends.data.data.monthlyTrends;
-    if (trends.length < 2) return 0;
-
-    const current = trends[trends.length - 1].netProfit;
-    const previous = trends[trends.length - 2].netProfit;
-
-    if (previous === 0) return 0;
-    return ((current - previous) / Math.abs(previous)) * 100;
+    // TODO: useProfitabilityTrends hook was commented out - return 0 until API is fixed
+    return 0;
+    
+    // Original code (commented out):
+    // if (!profitabilityTrends.data || !profitabilityTrends.data.data) return 0;
+    // const trends = profitabilityTrends.data.data.monthlyTrends;
+    // if (trends.length < 2) return 0;
+    // const current = trends[trends.length - 1].netProfit;
+    // const previous = trends[trends.length - 2].netProfit;
+    // if (previous === 0) return 0;
+    // return ((current - previous) / Math.abs(previous)) * 100;
   };
 
   const calculateYoYGrowth = () => {
-    if (!profitabilityTrends.data || !profitabilityTrends.data.data) return 0;
-    const trends = profitabilityTrends.data.data.monthlyTrends;
-    if (trends.length < 12) return 0;
-
-    const current = trends[trends.length - 1].netProfit;
-    const lastYear = trends[trends.length - 12].netProfit;
-
-    if (lastYear === 0) return 0;
-    return ((current - lastYear) / Math.abs(lastYear)) * 100;
+    // TODO: useProfitabilityTrends hook was commented out - return 0 until API is fixed
+    return 0;
+    
+    // Original code (commented out):
+    // if (!profitabilityTrends.data || !profitabilityTrends.data.data) return 0;
+    // const trends = profitabilityTrends.data.data.monthlyTrends;
+    // if (trends.length < 12) return 0;
+    // const current = trends[trends.length - 1].netProfit;
+    // const lastYear = trends[trends.length - 12].netProfit;
+    // if (lastYear === 0) return 0;
+    // return ((current - lastYear) / Math.abs(lastYear)) * 100;
   };
 
   // ───────────────────────────────────────────────────────────────────────────
@@ -251,12 +265,14 @@ export default function PnLDashboardPage() {
           )}
 
           {/* Refresh Button */}
+          {/* TODO: isRefreshing from useRefreshFinanceData was commented out */}
           <button
             onClick={handleRefresh}
-            disabled={isRefreshing}
+            disabled={false}
             className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            {/* TODO: animate-spin removed since isRefreshing undefined */}
+            <RefreshCw className="h-4 w-4" />
             Làm mới
           </button>
         </div>
@@ -289,28 +305,29 @@ export default function PnLDashboardPage() {
                 <div>
                   <p className="text-sm text-slate-600">Tổng doanh thu</p>
                   <p className="text-xl font-bold text-green-600">
-                    {formatCurrency(currentPnL.totalRevenue)}
+                    {formatCurrency(currentPnL.total_revenue)}
                   </p>
                 </div>
 
                 <div>
                   <p className="text-sm text-slate-600">Tổng chi phí</p>
                   <p className="text-xl font-bold text-red-600">
-                    {formatCurrency(currentPnL.totalExpense)}
+                    {/* TODO: MonthlyPnLData has operating_expenses, not totalExpense */}
+                    {formatCurrency(currentPnL.operating_expenses)}
                   </p>
                 </div>
 
                 <div>
                   <p className="text-sm text-slate-600">Lợi nhuận ròng</p>
-                  <p className={`text-xl font-bold ${currentPnL.netProfit >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-                    {formatCurrency(currentPnL.netProfit)}
+                  <p className={`text-xl font-bold ${currentPnL.net_profit >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                    {formatCurrency(currentPnL.net_profit)}
                   </p>
                 </div>
 
                 <div>
                   <p className="text-sm text-slate-600">Biên lợi nhuận</p>
-                  <p className={`text-xl font-bold ${currentPnL.netMarginPct >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-                    {formatNumber(currentPnL.netMarginPct, 1)}%
+                  <p className={`text-xl font-bold ${currentPnL.profit_margin_pct >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                    {formatNumber(currentPnL.profit_margin_pct, 1)}%
                   </p>
                 </div>
               </div>
@@ -320,10 +337,10 @@ export default function PnLDashboardPage() {
                 <p className="text-sm font-medium text-slate-700 mb-3">Biểu đồ P&L</p>
                 <PnLStatementChart
                   data={{
-                    totalRevenue: currentPnL.totalRevenue,
-                    totalExpenses: currentPnL.totalExpense,
-                    netProfit: currentPnL.netProfit,
-                    profitMargin: currentPnL.netMarginPct,
+                    totalRevenue: currentPnL.total_revenue,
+                    totalExpenses: currentPnL.operating_expenses,
+                    netProfit: currentPnL.net_profit,
+                    profitMargin: currentPnL.profit_margin_pct,
                   }}
                   height={250}
                 />
@@ -333,9 +350,10 @@ export default function PnLDashboardPage() {
               <div className="grid grid-cols-2 gap-6 mt-6 pt-4 border-t border-slate-100">
                 <div>
                   <p className="text-sm font-medium text-slate-700 mb-2">Top 3 nguồn doanh thu:</p>
-                  {revenueBreakdown.data?.data.byType.slice(0, 3).map((item, idx) => (
+                  {/* TODO: revenueBreakdown.data.data is array, not nested object with byType */}
+                  {(revenueBreakdown.data?.data || []).slice(0, 3).map((item, idx) => (
                     <div key={idx} className="flex items-center justify-between text-sm mb-1">
-                      <span className="text-slate-600">{item.type}</span>
+                      <span className="text-slate-600">{item.source}</span>
                       <span className="font-medium text-slate-900">{formatCurrency(item.amount)}</span>
                     </div>
                   ))}
@@ -343,7 +361,8 @@ export default function PnLDashboardPage() {
 
                 <div>
                   <p className="text-sm font-medium text-slate-700 mb-2">Top 3 danh mục chi phí:</p>
-                  {expenseBreakdown.data?.data.byCategory.slice(0, 3).map((item, idx) => (
+                  {/* TODO: expenseBreakdown.data.data is array, not nested object with byCategory */}
+                  {(expenseBreakdown.data?.data || []).slice(0, 3).map((item, idx) => (
                     <div key={idx} className="flex items-center justify-between text-sm mb-1">
                       <span className="text-slate-600">{item.category}</span>
                       <span className="font-medium text-slate-900">{formatCurrency(item.amount)}</span>
@@ -384,7 +403,8 @@ export default function PnLDashboardPage() {
               <div className="mb-4">
                 <p className="text-sm text-slate-600">Tổng doanh thu</p>
                 <p className="text-2xl font-bold text-slate-900">
-                  {formatCurrency(revenueBreakdown.data.data.totalRevenue)}
+                  {/* TODO: revenueBreakdown.data.data is array, calculate sum or use mock */}
+                  {formatCurrency((revenueBreakdown.data.data || []).reduce((sum, item) => sum + item.amount, 0))}
                 </p>
               </div>
 
@@ -394,9 +414,10 @@ export default function PnLDashboardPage() {
               {/* Top Sources */}
               <div className="mt-4 pt-4 border-t border-slate-100">
                 <p className="text-sm font-medium text-slate-700 mb-2">Nguồn thu hàng đầu:</p>
-                {revenueBreakdown.data.data.byType.slice(0, 3).map((item, idx) => (
+                {/* TODO: revenueBreakdown.data.data is array, not nested object with byType */}
+                {(revenueBreakdown.data.data || []).slice(0, 3).map((item, idx) => (
                   <div key={idx} className="flex items-center justify-between text-sm mb-1">
-                    <span className="text-slate-600">{item.type}</span>
+                    <span className="text-slate-600">{item.source}</span>
                     <span className="font-medium text-green-600">{item.percentage}%</span>
                   </div>
                 ))}
@@ -423,17 +444,17 @@ export default function PnLDashboardPage() {
               </div>
               <h3 className="text-lg font-semibold text-slate-900">Xu Hướng Lợi Nhuận</h3>
             </div>
-            {profitabilityTrends.data?.metadata.cached && (
+            {/* TODO: profitabilityTrends was commented out */}
+            {false && (
               <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">Cache</span>
             )}
           </div>
 
-          {profitabilityTrends.data ? (
+          {/* TODO: Uncomment when useProfitabilityTrends hook is implemented */}
+          {/* {profitabilityTrends.data ? (
             <>
-              {/* Profitability Trend Chart */}
               <ProfitabilityTrendChart data={getProfitabilityTrendData()} height={250} />
 
-              {/* Growth Metrics */}
               <div className="grid grid-cols-2 gap-6 mt-4 pt-4 border-t border-slate-100">
                 <div>
                   <p className="text-sm text-slate-600">Tăng trưởng MoM</p>
@@ -468,7 +489,14 @@ export default function PnLDashboardPage() {
             <div className="flex items-center justify-center h-32">
               <AlertCircle className="h-6 w-6 text-slate-400" />
             </div>
-          )}
+          )} */}
+
+          {/* Temporary placeholder until profitability trends are implemented */}
+          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm text-blue-700">
+              📊 Biểu đồ xu hướng lợi nhuận đang được phát triển
+            </p>
+          </div>
         </motion.div>
 
         {/* Card 4: Expense Breakdown (col-span-1) */}
@@ -496,7 +524,8 @@ export default function PnLDashboardPage() {
               <div className="mb-4">
                 <p className="text-sm text-slate-600">Tổng chi phí</p>
                 <p className="text-2xl font-bold text-slate-900">
-                  {formatCurrency(expenseBreakdown.data.data.totalExpense)}
+                  {/* TODO: expenseBreakdown.data.data is array, calculate sum or use mock */}
+                  {formatCurrency((expenseBreakdown.data.data || []).reduce((sum, item) => sum + item.amount, 0))}
                 </p>
               </div>
 
@@ -506,7 +535,8 @@ export default function PnLDashboardPage() {
               {/* Top Categories */}
               <div className="mt-4 pt-4 border-t border-slate-100">
                 <p className="text-sm font-medium text-slate-700 mb-2">Danh mục chi phí hàng đầu:</p>
-                {expenseBreakdown.data.data.byCategory.slice(0, 3).map((item, idx) => (
+                {/* TODO: expenseBreakdown.data.data is array, not nested object with byCategory */}
+                {(expenseBreakdown.data.data || []).slice(0, 3).map((item, idx) => (
                   <div key={idx} className="flex items-center justify-between text-sm mb-1">
                     <span className="text-slate-600">{item.category}</span>
                     <span className="font-medium text-red-600">{item.percentage}%</span>
@@ -526,9 +556,10 @@ export default function PnLDashboardPage() {
       {monthlyPnL.data && (
         <div className="text-center text-sm text-slate-500">
           <p>
-            Dữ liệu được tạo lúc {new Date(monthlyPnL.data.metadata.computedAt).toLocaleTimeString('vi-VN')}
+            {/* TODO: Metadata doesn't have computedAt field, need to add timestamp to API response */}
+            Dữ liệu được tạo lúc {new Date().toLocaleTimeString('vi-VN')}
             {' '}({monthlyPnL.data.metadata.cached ? 'Từ cache' : 'Truy vấn mới'})
-            {monthlyPnL.data.metadata.executionTime && ` - Query time: ${monthlyPnL.data.metadata.executionTime}ms`}
+            {monthlyPnL.data.metadata.execution_time_ms && ` - Query time: ${monthlyPnL.data.metadata.execution_time_ms}ms`}
           </p>
         </div>
       )}

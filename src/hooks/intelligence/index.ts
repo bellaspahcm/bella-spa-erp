@@ -43,9 +43,6 @@ export {
   // Cache Management
   useRefreshForecast,
   useForecastCacheStatus,
-  
-  // Query Keys (for advanced cache management)
-  forecastKeys,
 } from './use-forecast'
 
 // ============================================================================
@@ -73,12 +70,14 @@ export {
   // Convenience Hooks
   useAllFinanceData,
   
-  // Cache Management
-  useRefreshFinanceData,
-  useFinanceCacheStatus,
-  
-  // Query Keys
-  financeKeys,
+  // Types
+  type FinanceIntelligenceResponse,
+  type MonthlyPnLData,
+  type CashFlowData,
+  type BudgetVarianceData,
+  type ExpenseBreakdownData,
+  type RevenueBreakdownData,
+  type FinancialRatiosData,
 } from './use-finance'
 
 // ============================================================================
@@ -97,12 +96,10 @@ export {
   // Convenience Hooks
   useAllRecommendations,
   
-  // Cache Management
-  useRefreshRecommendations,
-  useRecommendationCacheStatus,
-  
-  // Query Keys
-  recommendationKeys,
+  // Types
+  type RecommendationItem,
+  type RecommendationResponse,
+  type RecommendationOptions,
 } from './use-recommendation'
 
 // ============================================================================
@@ -124,9 +121,6 @@ export {
   // Cache Management
   useRefreshOperationalData,
   useOperationalCacheStatus,
-  
-  // Query Keys
-  operationalKeys,
 } from './use-operational'
 
 // ============================================================================
@@ -151,9 +145,6 @@ export {
   // Cache Management
   useRefreshMarketingData,
   useMarketingCacheStatus,
-  
-  // Query Keys
-  marketingKeys,
 } from './use-marketing'
 
 // ============================================================================
@@ -178,9 +169,6 @@ export {
   // Cache Management
   useRefreshCustomerData,
   useCustomerCacheStatus,
-  
-  // Query Keys
-  customerKeys,
 } from './use-customer'
 
 // ============================================================================
@@ -205,7 +193,4 @@ export {
   // Cache Management
   useRefreshHRData,
   useHRCacheStatus,
-  
-  // Query Keys
-  hrKeys,
 } from './use-hr'

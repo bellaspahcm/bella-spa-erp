@@ -93,10 +93,11 @@ export function BudgetStatusChart({ data, height = 250 }: BudgetStatusChartProps
           ))}
         </Pie>
         <Tooltip
-          formatter={(value: number, name: string, props: any) => {
+          formatter={(value, name, props: any) => {
             const item = data.find((d) => d.status === props.payload.status);
+            const numValue = typeof value === 'number' ? value : 0;
             return [
-              `${value} danh mục (${item?.percentage.toFixed(1) || 0}%)`,
+              `${numValue} danh mục (${item?.percentage.toFixed(1) || 0}%)`,
               STATUS_LABELS[props.payload.status] || name,
             ];
           }}

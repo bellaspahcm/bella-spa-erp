@@ -77,3 +77,4 @@ export function RevenueTrendChart({ data, height = 300 }: RevenueTrendChartProps
     </ResponsiveContainer>
   );
 }
+
