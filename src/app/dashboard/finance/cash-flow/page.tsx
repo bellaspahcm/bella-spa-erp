@@ -35,12 +35,13 @@ import {
   // TODO: Implement useRefreshFinanceData hook
   // useRefreshFinanceData,
 } from '@/hooks/intelligence';
+// TODO: Finance chart components - using stub implementation
 import {
   CashFlowAnalysisChart,
   BurnRateChart,
   CashFlowForecastChart,
   RevenueBreakdownChart,
-} from '@/components/intelligence';
+} from '@/components/finance/charts';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
