@@ -41,6 +41,7 @@ import PwaRegister from "@/components/common/PwaRegister";
 import { TenantContextProvider } from "@/core/providers/TenantContextProvider";
 import { cookies } from "next/headers";
 import TenantContextWrapper from "@/components/providers/TenantContextWrapper";
+import { QueryClientProvider } from "@/components/providers/QueryClientProvider";
 
 // Register module adapters on app startup
 import { registerSpaModule } from "@/modules/spa/register";
@@ -125,9 +126,11 @@ export default async function RootLayout({
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         {/* Only wrap authenticated pages with TenantContextProvider */}
         {/* Auth pages (login, signup, etc.) should not be wrapped */}
-        <TenantContextWrapper>
-          {children}
-        </TenantContextWrapper>
+        <QueryClientProvider>
+          <TenantContextWrapper>
+            {children}
+          </TenantContextWrapper>
+        </QueryClientProvider>
         <PwaRegister />
         <OfflineIndicator />
         <Toaster position="top-center" richColors />
