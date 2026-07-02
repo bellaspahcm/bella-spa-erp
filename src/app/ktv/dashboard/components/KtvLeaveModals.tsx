@@ -140,7 +140,7 @@ export function KtvLeaveRequestModal({
                     value={leaveDate}
                     onChange={(event) => onLeaveDateChange(event.target.value)}
                     min={minLeaveDate}
-                    className="w-full border border-slate-200 dark:border-[#3E3A35] dark:bg-[#292623] focus:ring-rose-500 dark:focus:ring-[#A67D44] focus:border-transparent rounded-2xl p-4 min-h-[56px] text-[16px] text-slate-800 dark:text-[#EFE9E1] placeholder-slate-600 dark:placeholder-[#D4C5B6]/60 focus:outline-none focus:ring-2 transition-all"
+                    className="w-full border border-slate-300 dark:border-[#3E3A35] dark:bg-[#292623] focus:ring-rose-500 dark:focus:ring-[#A67D44] focus:border-transparent rounded-2xl p-4 min-h-[56px] text-[16px] text-slate-800 dark:text-[#EFE9E1] placeholder-slate-600 dark:placeholder-[#D4C5B6]/60 focus:outline-none focus:ring-2 transition-all"
                   />
                 </div>
 
@@ -176,7 +176,7 @@ export function KtvLeaveRequestModal({
                     onChange={(event) => onLeaveReasonChange(event.target.value)}
                     placeholder="Nêu rõ lý do cụ thể để quản lý duyệt..."
                     rows={3}
-                    className="w-full border border-slate-200 dark:border-[#3E3A35] dark:bg-[#292623] focus:ring-rose-500 dark:focus:ring-[#A67D44] focus:border-transparent rounded-2xl p-4 text-[16px] text-slate-800 dark:text-[#EFE9E1] placeholder-slate-600 dark:placeholder-[#D4C5B6]/60 focus:outline-none focus:ring-2 transition-all resize-none"
+                    className="w-full border border-slate-300 dark:border-[#3E3A35] dark:bg-[#292623] focus:ring-rose-500 dark:focus:ring-[#A67D44] focus:border-transparent rounded-2xl p-4 text-[16px] text-slate-800 dark:text-[#EFE9E1] placeholder-slate-600 dark:placeholder-[#D4C5B6]/60 focus:outline-none focus:ring-2 transition-all resize-none"
                   />
                 </div>
 

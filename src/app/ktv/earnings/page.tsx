@@ -299,14 +299,14 @@ export default function KTVEarningsPage() {
             <div className="w-10 h-10 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center mb-3">
               <Award className="w-5 h-5" />
             </div>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Thưởng KPI</p>
+            <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">Thưởng KPI</p>
             <p className="text-lg font-black text-slate-900">{formatCurrency(leaderboardData?.total_kpi_bonus || 0)}</p>
           </div>
           <div className="bg-white p-5 rounded-[32px] shadow-sm border border-slate-100">
             <div className="w-10 h-10 bg-amber-50 text-amber-500 rounded-2xl flex items-center justify-center mb-3">
               <Star className="w-5 h-5" />
             </div>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Đánh giá TB</p>
+            <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">Đánh giá TB</p>
             <p className="text-lg font-black text-slate-900">{Number(leaderboardData?.average_rating || 0).toFixed(1)} ⭐</p>
           </div>
         </div>
@@ -315,7 +315,7 @@ export default function KTVEarningsPage() {
         {rec && (
           <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm p-5">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Bảng lương kỳ này</h3>
+              <h3 className="text-xs font-black text-slate-600 uppercase tracking-widest">Bảng lương kỳ này</h3>
               <StatusBadge status={recStatus} />
             </div>
             <div className="space-y-2 text-sm">
@@ -337,7 +337,7 @@ export default function KTVEarningsPage() {
               )}
             </div>
             <div className="mt-4 pt-4 border-t-2 border-slate-100 flex justify-between items-center">
-              <span className="font-black text-slate-400 uppercase text-[10px] tracking-widest">Tổng nhận</span>
+              <span className="font-black text-slate-600 uppercase text-[10px] tracking-widest">Tổng nhận</span>
               <span className="text-2xl font-black text-slate-900">{formatCurrency(rec.total_salary || 0)}</span>
             </div>
 
@@ -364,7 +364,7 @@ export default function KTVEarningsPage() {
         {/* Package Reconciliation Summary */}
         <section className="bg-white rounded-[32px] border border-slate-100 shadow-sm p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Đối soát theo gói dịch vụ</h3>
+            <h3 className="text-xs font-black text-slate-600 uppercase tracking-widest">Đối soát theo gói dịch vụ</h3>
             <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-2.5 py-1 rounded-full border border-slate-100">
               {packageSummary.length} gói
             </span>
@@ -394,7 +394,7 @@ export default function KTVEarningsPage() {
 
         {/* Session list */}
         <section>
-          <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 px-2">Lịch sử ca làm việc</h3>
+          <h3 className="text-xs font-black text-slate-600 uppercase tracking-widest mb-4 px-2">Lịch sử ca làm việc</h3>
           {details.length === 0 ? (
             <div className="bg-white p-12 rounded-[40px] text-center border border-slate-100 shadow-sm">
               <p className="text-slate-400 text-sm">Chưa có dữ liệu cho tháng này</p>

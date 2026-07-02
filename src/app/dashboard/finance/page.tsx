@@ -11,6 +11,7 @@
  */
 
 import { FinancePnLSummary } from '@/components/features/FinancePnLSummary';
+import type { PnLData, ServicePerformance } from '@/components/features/FinancePnLSummary';
 import { TransactionModal } from '@/components/features/TransactionModal';
 import PremiumExportButton from '@/components/ui/PremiumExportButton';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
@@ -52,11 +53,6 @@ type MonthlyPnL = {
   net_profit: number;
   profit_margin_pct: number;
 } | null;
-type ServicePerformanceRow = {
-  service_name: string;
-  revenue: number;
-  sessions: number;
-};
 type SortableTransactionKey = keyof MappedTransaction;
 
 function getErrorMessage(error: unknown, fallback = 'Lỗi hệ thống') {
@@ -81,7 +77,6 @@ export default function FinancePage() {
     totalExpenseMonth: 0,
     transactions: []
   });
-  const [performanceData, setPerformanceData] = useState<ServicePerformanceRow[]>([]);
   const [activeTab, setActiveTab] = useState<'transactions' | 'analysis'>('transactions');
   const [selectedMonth, setSelectedMonth] = useState<string>(() => {
     const now = new Date();
@@ -117,10 +112,25 @@ export default function FinancePage() {
 
   // Fetch P&L data from Intelligence Layer (cached, no tenant ID needed - middleware handles it)
   const monthlyPnLQuery = useMonthlyPnL(month, year);
-  const pnlData = useMemo<MonthlyPnL>(() => {
+  
+  // Transform Intelligence Layer MonthlyPnL to component's expected PnLData format
+  const pnlData = useMemo<PnLData | null>(() => {
     if (!monthlyPnLQuery.data?.data?.[0]) return null;
-    return monthlyPnLQuery.data.data[0];
-  }, [monthlyPnLQuery.data]);
+    const intelligencePnL = monthlyPnLQuery.data.data[0];
+    
+    // Transform from Intelligence Layer API format (snake_case) to component format
+    // MonthlyPnLData uses: total_revenue, operating_expenses, net_profit (snake_case)
+    return {
+      month_year: `${year}-${month}`,
+      total_revenue: intelligencePnL.total_revenue,
+      total_operating_expenses: intelligencePnL.operating_expenses,
+      total_ktv_salaries: 0,  // Not available in MonthlyPnLData yet - only has aggregated operating_expenses
+      net_profit: intelligencePnL.net_profit,
+      total_bookings: 0,  // Not available in Intelligence Layer MonthlyPnLData yet
+      total_sessions_completed: 0,  // Not available in Intelligence Layer MonthlyPnLData yet
+      is_locked: false,  // Not available in Intelligence Layer MonthlyPnLData yet
+    };
+  }, [monthlyPnLQuery.data, month, year]);
 
   const fetchData = useCallback(async (month = selectedMonth, options: { force?: boolean } = {}) => {
     setIsRefreshing(true);
@@ -231,12 +241,6 @@ export default function FinancePage() {
         totalExpenseMonth,
         transactions: allTransactions,
       });
-
-      // Service performance from Intelligence Layer P&L data (if available)
-      if (monthlyPnLQuery.data?.data) {
-        // Mock service performance (Intelligence Layer doesn't have this yet)
-        setPerformanceData([]);
-      }
     } catch (error) {
       console.error('Error fetching finance data:', error);
       toast.error(getErrorMessage(error, 'Không thể tải dữ liệu tài chính. Vui lòng thử lại.'));
@@ -410,11 +414,8 @@ export default function FinancePage() {
       </div>
 
       {activeTab === 'analysis' ? (
-        // TODO: MonthlyPnL from Intelligence Layer has different structure than PnLData expected by FinancePnLSummary
-        // TODO: ServicePerformanceRow[] has different structure than ServicePerformance[] expected
-        // Need to either transform data or refactor component to accept Intelligence Layer formats
-        <FinancePnLSummary 
-          pnl={null} 
+      <FinancePnLSummary 
+          pnl={pnlData} 
           performance={[]} 
           selectedMonth={selectedMonth}
           onMonthChange={handleMonthChange}
