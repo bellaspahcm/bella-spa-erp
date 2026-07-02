@@ -226,44 +226,48 @@ function ForecastDashboard() {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="intelligence-dashboard page-container">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="section-header">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dự Báo Thông Minh</h1>
-          <p className="text-muted-foreground mt-1">
-            Dự báo doanh thu, churn và demand sử dụng Machine Learning
+          <div className="section-title-wrapper">
+            <TrendingUp className="section-title-icon" />
+            <span className="section-title-label">Intelligence & Dự Báo</span>
+          </div>
+          <h1 className="section-title">Dự Báo Thông Minh</h1>
+          <p className="section-description">
+            Dự báo doanh thu, tỷ lệ churn và nhu cầu dịch vụ sử dụng Machine Learning
           </p>
         </div>
-        <Button 
-          variant="outline" 
-          size="sm"
+
+        <button
           onClick={() => {
-            setChartKey(prev => prev + 1); // Force chart remount
+            setChartKey(prev => prev + 1);
             revenueForecast.refetch();
             churnForecast.refetch();
             demandForecast.refetch();
           }}
+          className="inline-flex items-center justify-center gap-2 rounded-2xl border border-rose-100 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:border-rose-200 hover:text-primary"
         >
-          <RefreshCw className="w-4 h-4 mr-2" />
-          Làm mới
-        </Button>
+          <RefreshCw className="h-4 w-4" />
+          Làm mới dữ liệu
+        </button>
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="revenue" className="flex items-center gap-2">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="section-spacing">
+        <TabsList className="TabsList grid w-full grid-cols-3">
+          <TabsTrigger value="revenue" className="TabsTrigger flex items-center gap-2">
             <DollarSign className="w-4 h-4" />
-            Doanh Thu
+            <span>Doanh Thu</span>
           </TabsTrigger>
-          <TabsTrigger value="churn" className="flex items-center gap-2">
+          <TabsTrigger value="churn" className="TabsTrigger flex items-center gap-2">
             <Users className="w-4 h-4" />
-            Churn Risk
+            <span>Tỷ Lệ Rời Đi</span>
           </TabsTrigger>
-          <TabsTrigger value="demand" className="flex items-center gap-2">
+          <TabsTrigger value="demand" className="TabsTrigger flex items-center gap-2">
             <Calendar className="w-4 h-4" />
-            Demand
+            <span>Nhu Cầu</span>
           </TabsTrigger>
         </TabsList>
 

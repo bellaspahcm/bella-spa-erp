@@ -15,6 +15,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import {
   Calendar,
   Clock,
@@ -50,7 +51,7 @@ type ViewMode = 'attendance' | 'payroll' | 'combined';
 // Main Component
 // ─────────────────────────────────────────────────────────────────────────────
 
-export default function AttendancePayrollDashboard() {
+function AttendancePayrollDashboard() {
   const router = useRouter();
   const [tenantId, setTenantId] = useState<string | null>(null);
   const [month, setMonth] = useState<string>(() => {
@@ -597,5 +598,14 @@ export default function AttendancePayrollDashboard() {
         </div>
       )}
     </div>
+  );
+}
+
+// Wrap with ErrorBoundary to prevent full page crashes
+export default function AttendancePayrollDashboardWrapper() {
+  return (
+    <ErrorBoundary>
+      <AttendancePayrollDashboard />
+    </ErrorBoundary>
   );
 }
