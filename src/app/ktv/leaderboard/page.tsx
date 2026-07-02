@@ -102,7 +102,7 @@ export default function KTVLeaderboardPage() {
                      <span className="text-xl font-black text-slate-700 dark:text-[#D4C5B6]">2</span>
                   </div>
                   <p className="text-[10px] font-black text-slate-900 dark:text-[#EFE9E1] text-center truncate w-full">{leaderboard[1].full_name}</p>
-                  <span className="text-[8px] font-black text-slate-700 dark:text-[#D4C5B6] uppercase">{leaderboard[1].sessions ?? 0} ca</span>
+                  <span className="text-[8px] font-black text-slate-800 dark:text-[#D4C5B6] uppercase">{leaderboard[1].sessions ?? 0} ca</span>
                   <div className="h-16 w-full bg-gradient-to-br from-pink-400 via-rose-400 to-pink-500 dark:from-[#5D1C34] dark:via-[#4D1328] dark:to-[#5D1C34] mt-2 rounded-t-2xl flex items-end justify-center pb-2 shadow-lg shadow-pink-200 dark:shadow-none">
                      <Medal className="w-5 h-5 text-white" />
                   </div>
@@ -130,7 +130,7 @@ export default function KTVLeaderboardPage() {
                      <span className="text-xl font-black text-slate-600 dark:text-[#D4C5B6]">3</span>
                   </div>
                   <p className="text-[10px] font-black text-slate-900 dark:text-[#EFE9E1] text-center truncate w-full">{leaderboard[2].full_name}</p>
-                  <span className="text-[8px] font-black text-slate-700 dark:text-[#D4C5B6] uppercase">{leaderboard[2].sessions ?? 0} ca</span>
+                  <span className="text-[8px] font-black text-slate-800 dark:text-[#D4C5B6] uppercase">{leaderboard[2].sessions ?? 0} ca</span>
                   <div className="h-12 w-full bg-rose-200 dark:bg-[#3E3A35] mt-2 rounded-t-2xl flex items-end justify-center pb-2">
                      <Medal className="w-5 h-5 text-rose-400 dark:text-[#A67D44]" />
                   </div>
@@ -150,28 +150,28 @@ export default function KTVLeaderboardPage() {
                return (
                  <div key={item.ktv_id} className="flex items-center justify-between p-5 border-b border-slate-50 dark:border-[#2E2B27] last:border-0">
                     <div className="flex items-center gap-4">
-                       <span className="text-xs font-black text-slate-500 dark:text-[#D4C5B6] w-4">{index + 4}</span>
+                       <span className="text-xs font-black text-slate-600 dark:text-[#D4C5B6] w-4">{index + 4}</span>
                        <div className="w-10 h-10 bg-slate-50 dark:bg-[#292623] rounded-xl flex items-center justify-center border border-slate-100 dark:border-[#3E3A35]">
                           <span className="text-xs font-black text-slate-600 dark:text-[#D4C5B6]">{item.full_name.charAt(0)}</span>
                        </div>
                        <div>
                           <h4 className="text-sm font-black text-slate-900 dark:text-[#EFE9E1]">{item.full_name}</h4>
-                          <p className="text-[10px] text-slate-700 dark:text-[#D4C5B6] font-medium">Hạng {item.rank} • {item.sessions ?? 0} ca làm</p>
+                          <p className="text-[10px] text-slate-800 dark:text-[#D4C5B6] font-medium">Hạng {item.rank} • {item.sessions ?? 0} ca làm</p>
                        </div>
                     </div>
                     <div className="text-right" title={ratingTooltip}>
-                       <div className={`flex items-center gap-1 font-black text-xs ${hasRating ? 'text-amber-500 dark:text-[#A67D44]' : 'text-slate-700 dark:text-[#D4C5B6]'}`}>
+                       <div className={`flex items-center gap-1 font-black text-xs ${hasRating ? 'text-amber-500 dark:text-[#A67D44]' : 'text-slate-800 dark:text-[#D4C5B6]'}`}>
                           <Star className={`w-3 h-3 ${hasRating ? 'fill-current' : ''}`} />
                           <span>{ratingDisplay}</span>
                        </div>
-                       <p className="text-[8px] font-black text-slate-700 dark:text-[#D4C5B6] uppercase tracking-widest">Đánh giá</p>
+                       <p className="text-[8px] font-black text-slate-800 dark:text-[#D4C5B6] uppercase tracking-widest">Đánh giá</p>
                     </div>
                  </div>
                );
             })}
 
             {leaderboard.length === 0 && !isLoading && (
-              <div className="p-12 text-center text-slate-700 dark:text-[#D4C5B6] text-sm">
+              <div className="p-12 text-center text-slate-800 dark:text-[#D4C5B6] text-sm">
                  Chưa có dữ liệu thi đua tháng này
               </div>
             )}
