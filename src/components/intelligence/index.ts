@@ -1,24 +1,29 @@
-// Intelligence UI Components - Barrel Export
-// Bella ERP Design System components for Intelligence dashboard pages
+/**
+ * Intelligence Components
+ * 
+ * Export all intelligence-related chart components and UI components
+ */
 
-// Layout components
-export {
-  IntelligenceLayout,
-  IntelligenceHeader,
-  IntelligenceSection,
-  IntelligenceButton
-} from './IntelligenceLayout';
+// Chart Components
+export { RevenueTrendChart } from './RevenueTrendChart';
+export { OperationalEfficiencyChart } from './OperationalEfficiencyChart';
+export { CustomerMetricsChart } from './CustomerMetricsChart';
+export { FinancialHealthChart } from './FinancialHealthChart';
+export { GrowthIndicatorsChart } from './GrowthIndicatorsChart';
+export { BudgetStatusChart } from './BudgetStatusChart';
+export { BudgetUtilizationChart } from './BudgetUtilizationChart';
+export { BudgetVarianceChart } from './BudgetVarianceChart';
+export { BurnRateChart } from './BurnRateChart';
+export { CashFlowAnalysisChart } from './CashFlowAnalysisChart';
+export { CashFlowForecastChart } from './CashFlowForecastChart';
+export { ExpenseBreakdownChart } from './ExpenseBreakdownChart';
+export { PnLStatementChart } from './PnLStatementChart';
+export { ProfitabilityTrendChart } from './ProfitabilityTrendChart';
+export { RevenueBreakdownChart } from './RevenueBreakdownChart';
+export { VarianceTrendChart } from './VarianceTrendChart';
 
-// Stats components
-export {
-  IntelligenceStatCard,
-  IntelligenceStatsGrid
-} from './IntelligenceStats';
+// Layout & UI Components
+export { IntelligenceLayout, IntelligenceHeader, IntelligenceSection, IntelligenceButton } from './IntelligenceLayout';
+export { IntelligenceLoading, IntelligenceError, IntelligenceEmpty } from './IntelligenceStates';
+export { IntelligenceStatCard, IntelligenceStatsGrid } from './IntelligenceStats';
 
-// State components
-export {
-  IntelligenceLoading,
-  IntelligenceError,
-  IntelligenceEmpty,
-  IntelligenceRefreshing
-} from './IntelligenceStates';
