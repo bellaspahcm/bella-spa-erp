@@ -30,7 +30,11 @@ import {
   GraduationCap,
   Key,
   TrendingUp,
-  Brain
+  Brain,
+  BarChart3,
+  Activity,
+  UserCheck,
+  Building2
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -261,6 +265,12 @@ const menuItems: SidebarMenuItem[] = [
   { type: 'header', label: 'Intelligence & Dự Báo' },
   { icon: TrendingUp,      label: 'Dự báo kinh doanh',  href: '/dashboard/forecast' },
   { icon: Brain,           label: 'Gợi ý thông minh',   href: '/dashboard/recommendations' },
+  { icon: BarChart3,       label: 'Executive Dashboard', href: '/dashboard/executive' },
+  { icon: UserCheck,       label: 'Phân tích khách hàng', href: '/dashboard/customer' },
+  { icon: DollarSign,      label: 'Phân tích tài chính', href: '/dashboard/finance' },
+  { icon: Building2,       label: 'Phân tích nhân sự',   href: '/dashboard/hr' },
+  { icon: Activity,        label: 'Phân tích vận hành',  href: '/dashboard/operations' },
+  { icon: Megaphone,       label: 'Phân tích marketing', href: '/dashboard/marketing' },
 
   { type: 'header', label: 'Khách hàng & Dịch vụ' },
   { icon: Users,           label: 'Khách hàng',         href: '/dashboard/customers' },
@@ -269,16 +279,13 @@ const menuItems: SidebarMenuItem[] = [
   { icon: Flower2,         label: 'Thẻ liệu trình',     href: '/dashboard/sessions' }, // Dynamic label adjusted below
   { icon: MessageSquare,   label: 'Tin nhắn',           href: '/dashboard/chat' },
   { icon: Megaphone,       label: 'CRM & Zalo',         href: '/dashboard/crm' },
-  { icon: Megaphone,       label: 'Meta Ads',           href: '/dashboard/marketing' },
   { icon: Sparkles,        label: 'Dịch vụ',            href: '/dashboard/services' },
   { icon: GraduationCap,   label: 'Đào tạo',            href: '/dashboard/training' },
 
   { type: 'header', label: 'Tài chính & Đối soát' },
-  { icon: DollarSign,      label: 'Tài chính',           href: '/dashboard/finance' },
-  { icon: ShieldAlert,     label: 'Đối soát Tài chính',  href: '/dashboard/finance/reconciliation' },
-  { icon: Scale,           label: 'Đối soát Lương (AI)', href: '/dashboard/ai-copilot/salary-reconciliation' },
   { icon: Banknote,        label: 'Bảng lương',          href: '/dashboard/salary' },
   { icon: Wallet,          label: 'Kế toán sổ cái',      href: '/dashboard/accounting' },
+  { icon: Scale,           label: 'Đối soát Lương (AI)', href: '/dashboard/ai-copilot/salary-reconciliation' },
   { icon: Package,         label: 'Kho hàng',            href: '/dashboard/inventory' },
 
   { type: 'header', label: 'Hệ thống' },
