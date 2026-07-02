@@ -1,0 +1,19 @@
+/* Intelligence Dashboard Tabs - Force Active State */
+[role="tablist"] [role="tab"][data-state="active"] {
+  background-color: #E91E63 !important;
+  color: white !important;
+  border-color: #E91E63 !important;
+  box-shadow: 0 10px 15px -3px rgba(233, 30, 99, 0.1), 0 4px 6px -4px rgba(233, 30, 99, 0.1) !important;
+}
+
+[role="tablist"] [role="tab"]:not([data-state="active"]) {
+  background-color: #f8fafc !important;
+  color: #64748b !important;
+  border-color: #e2e8f0 !important;
+}
+
+[role="tablist"] [role="tab"]:not([data-state="active"]):hover {
+  background-color: white !important;
+  color: #0f172a !important;
+  border-color: #fce7f3 !important;
+}
