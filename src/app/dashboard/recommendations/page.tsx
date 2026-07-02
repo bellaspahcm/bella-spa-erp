@@ -229,7 +229,7 @@ export default function RecommendationDashboard() {
             <CardContent className="flex gap-4">
               <div className="flex-1">
                 <label className="text-sm font-medium mb-2 block">Thuật Toán</label>
-                <Select value={algorithm} onValueChange={setAlgorithm}>
+                <Select value={algorithm} onValueChange={(value) => setAlgorithm(value)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
