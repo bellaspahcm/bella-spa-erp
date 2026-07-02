@@ -30,10 +30,10 @@ import {
 export default function RecommendationDashboard() {
   const [activeTab, setActiveTab] = useState('service');
   const [customerSearch, setCustomerSearch] = useState('');
-  const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
-  const [algorithm, setAlgorithm] = useState<string>('hybrid');
-  const [limit, setLimit] = useState<number>(5);
-  const [tenantId, setTenantId] = useState<string>('');
+  const [selectedCustomerId, setSelectedCustomerId] = useState('');
+  const [algorithm, setAlgorithm] = useState('hybrid');
+  const [limit, setLimit] = useState(5);
+  const [tenantId, setTenantId] = useState('');
   const [isLoadingUser, setIsLoadingUser] = useState(true);
 
   // Get current user's tenant ID
