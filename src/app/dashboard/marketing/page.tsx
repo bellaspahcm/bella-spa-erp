@@ -15,6 +15,7 @@ import {
   Target,
   Wallet,
 } from "lucide-react";
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { PremiumSelect } from "@/components/ui/PremiumSelect";
 import { usePageRefresh } from "@/hooks/usePageRefresh";
 import {
@@ -98,7 +99,7 @@ function StatCard(props: {
   );
 }
 
-export default function MarketingPage() {
+function MarketingDashboard() {
   const defaultRange = useMemo(() => getDefaultDateRange(), []);
   const [connections, setConnections] = useState<MetaAdAccountConnection[]>([]);
   const [insights, setInsights] = useState<MetaAdsInsight[]>([]);
@@ -491,5 +492,14 @@ export default function MarketingPage() {
         )}
       </section>
     </div>
+  );
+}
+
+// Wrap with ErrorBoundary to prevent full page crashes
+export default function MarketingDashboardWrapper() {
+  return (
+    <ErrorBoundary>
+      <MarketingDashboard />
+    </ErrorBoundary>
   );
 }

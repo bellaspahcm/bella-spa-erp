@@ -15,6 +15,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import {
   AlertTriangle,
   TrendingDown,
@@ -37,7 +38,7 @@ import {
 
 type RiskFilter = 'all' | 'High' | 'Medium' | 'Low';
 
-export default function ChurnRiskDashboard() {
+function ChurnRiskDashboard() {
   const router = useRouter();
   const [tenantId, setTenantId] = useState<string | null>(null);
   const [riskFilter, setRiskFilter] = useState<RiskFilter>('all');
@@ -339,5 +340,14 @@ export default function ChurnRiskDashboard() {
         </div>
       </motion.div>
     </div>
+  );
+}
+
+// Wrap with ErrorBoundary to prevent full page crashes
+export default function ChurnRiskDashboardWrapper() {
+  return (
+    <ErrorBoundary>
+      <ChurnRiskDashboard />
+    </ErrorBoundary>
   );
 }

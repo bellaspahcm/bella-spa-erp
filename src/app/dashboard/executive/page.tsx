@@ -16,6 +16,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -65,7 +66,7 @@ type TimePeriod = 'day' | 'week' | 'month' | 'quarter' | 'year';
 // Main Component
 // ─────────────────────────────────────────────────────────────────────────────
 
-export default function ExecutiveDashboardPage() {
+function ExecutiveDashboardPage() {
   const router = useRouter();
   const [tenantId, setTenantId] = useState<string | null>(null);
   const [period, setPeriod] = useState<TimePeriod>('month');
@@ -648,5 +649,14 @@ export default function ExecutiveDashboardPage() {
         </div>
       )}
     </div>
+  );
+}
+
+// Wrap with ErrorBoundary to prevent full page crashes
+export default function ExecutiveDashboardPageWrapper() {
+  return (
+    <ErrorBoundary>
+      <ExecutiveDashboardPage />
+    </ErrorBoundary>
   );
 }
