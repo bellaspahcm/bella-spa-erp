@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { 
   useRevenueForecast, 
   useChurnForecast, 
@@ -339,6 +339,16 @@ export default function ForecastDashboard() {
                     Đang tải dữ liệu...
                   </div>
                 </div>
+              ) : revenueForecast.error ? (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Lỗi khi tải dữ liệu</AlertTitle>
+                  <AlertDescription>
+                    {revenueForecast.error instanceof Error 
+                      ? revenueForecast.error.message 
+                      : 'Không thể tải dữ liệu dự báo doanh thu. Vui lòng thử lại sau.'}
+                  </AlertDescription>
+                </Alert>
               ) : revenueForecast.data?.data ? (
                 (() => {
                   const forecastData = Array.isArray(revenueForecast.data.data) 
@@ -348,11 +358,11 @@ export default function ForecastDashboard() {
                   return (
                     <Line
                       data={{
-                        labels: forecastData.map(f => f.period_end_date),
+                        labels: forecastData.map((f: any) => f.period_end_date),
                         datasets: [
                           {
                             label: 'Dự Báo',
-                            data: forecastData.map(f => f.forecasted_value),
+                            data: forecastData.map((f: any) => f.forecasted_value),
                             borderColor: 'rgb(233, 30, 99)',
                             backgroundColor: 'rgba(233, 30, 99, 0.1)',
                             fill: false,
@@ -360,7 +370,7 @@ export default function ForecastDashboard() {
                           },
                           {
                             label: 'Upper Bound (95%)',
-                            data: forecastData.map(f => f.confidence_upper),
+                            data: forecastData.map((f: any) => f.confidence_upper),
                             borderColor: 'rgb(233, 30, 99)',
                             backgroundColor: 'rgba(233, 30, 99, 0.05)',
                             borderDash: [5, 5],
@@ -369,7 +379,7 @@ export default function ForecastDashboard() {
                           },
                           {
                             label: 'Lower Bound (95%)',
-                            data: forecastData.map(f => f.confidence_lower),
+                            data: forecastData.map((f: any) => f.confidence_lower),
                             borderColor: 'rgb(233, 30, 99)',
                             backgroundColor: 'rgba(233, 30, 99, 0.05)',
                             borderDash: [5, 5],
@@ -615,6 +625,16 @@ export default function ForecastDashboard() {
                     Đang tải dữ liệu...
                   </div>
                 </div>
+              ) : demandForecast.error ? (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Lỗi khi tải dữ liệu</AlertTitle>
+                  <AlertDescription>
+                    {demandForecast.error instanceof Error 
+                      ? demandForecast.error.message 
+                      : 'Không thể tải dữ liệu dự báo demand. Vui lòng thử lại sau.'}
+                  </AlertDescription>
+                </Alert>
               ) : demandForecast.data?.data ? (
                 (() => {
                   const forecastData = Array.isArray(demandForecast.data.data) 
@@ -624,11 +644,11 @@ export default function ForecastDashboard() {
                   return (
                     <Bar
                       data={{
-                        labels: forecastData.map(f => f.period_end_date),
+                        labels: forecastData.map((f: any) => f.period_end_date),
                         datasets: [
                           {
                             label: 'Dự Báo Demand',
-                            data: forecastData.map(f => f.forecasted_value),
+                            data: forecastData.map((f: any) => f.forecasted_value),
                             backgroundColor: 'rgba(233, 30, 99, 0.5)',
                             borderColor: 'rgb(233, 30, 99)',
                             borderWidth: 2
