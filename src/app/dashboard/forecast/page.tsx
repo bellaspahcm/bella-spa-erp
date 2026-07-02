@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -52,7 +53,7 @@ ChartJS.register(
   Filler
 );
 
-export default function ForecastDashboard() {
+function ForecastDashboard() {
   const [activeTab, setActiveTab] = useState('revenue');
   const [revenueHorizon, setRevenueHorizon] = useState(12);
   const [churnHorizon, setChurnHorizon] = useState(30);
@@ -730,5 +731,13 @@ export default function ForecastDashboard() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+export default function ForecastDashboardWrapper() {
+  return (
+    <ErrorBoundary>
+      <ForecastDashboard />
+    </ErrorBoundary>
   );
 }
