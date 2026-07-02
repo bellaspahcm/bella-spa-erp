@@ -1,22 +1,20 @@
-'use client';
-
 /**
- * Burn Rate Radial/Gauge Chart
+ * Burn Rate Gauge Chart
  * 
- * Shows monthly burn rate and runway health status:
- * - Critical (0-3 months): Red zone
- * - Warning (3-6 months): Orange zone
- * - Healthy (6+ months): Green zone
+ * Visualizes monthly burn rate and runway in a semi-circular gauge.
+ * Shows current cash balance and estimated runway months.
  * 
- * Displays runway months in center with supporting metrics below.
+ * Uses custom SVG gauge visualization (Recharts doesn't have native gauge).
+ * 
+ * @created 2026-06-22
+ * @phase Intelligence Layer Phase 8 Task #4
  */
 
-import { RadialBarChart, RadialBar, Legend, ResponsiveContainer } from 'recharts';
-import { AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+import React from 'react';
 
 interface BurnRateData {
-  monthlyBurnRate: number; // negative value (cash burned per month)
-  runwayMonths: number; // months until cash runs out
+  monthlyBurnRate: number;
+  runwayMonths: number;
   currentCash: number;
   averageDailyCashFlow: number;
 }
@@ -26,121 +24,113 @@ interface BurnRateChartProps {
   height?: number;
 }
 
-/**
- * Burn Rate Radial Chart Component
- * 
- * Displays burn rate health status as a radial gauge with color-coded zones.
- * Shows runway months prominently in the center with detailed metrics below.
- * 
- * @param data - Burn rate metrics including runway and daily cash flow
- * @param height - Chart height in pixels (default: 250)
- */
 export function BurnRateChart({ data, height = 250 }: BurnRateChartProps) {
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: 'VND',
       notation: 'compact',
-      compactDisplay: 'short',
+      maximumFractionDigits: 1,
     }).format(value);
   };
 
-  // Determine status based on runway
-  const getStatus = (): 'critical' | 'warning' | 'healthy' => {
-    if (data.runwayMonths < 3) return 'critical';
-    if (data.runwayMonths < 6) return 'warning';
-    return 'healthy';
+  const formatNumber = (value: number, decimals = 0) => {
+    return new Intl.NumberFormat('vi-VN', {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    }).format(value);
   };
 
-  const getStatusColor = (status: 'critical' | 'warning' | 'healthy'): string => {
-    switch (status) {
-      case 'critical': return '#ef4444';
-      case 'warning': return '#f59e0b';
-      case 'healthy': return '#10b981';
-    }
+  // Determine runway health status
+  const getRunwayStatus = (months: number): { color: string; label: string } => {
+    if (months >= 12) return { color: '#10b981', label: 'Tốt' };
+    if (months >= 6) return { color: '#f59e0b', label: 'Cảnh báo' };
+    return { color: '#ef4444', label: 'Nguy hiểm' };
   };
 
-  const getStatusLabel = (status: 'critical' | 'warning' | 'healthy'): string => {
-    switch (status) {
-      case 'critical': return 'Nguy hiểm';
-      case 'warning': return 'Cảnh báo';
-      case 'healthy': return 'Khỏe mạnh';
-    }
-  };
-
-  const getStatusIcon = (status: 'critical' | 'warning' | 'healthy') => {
-    switch (status) {
-      case 'critical': return <XCircle className="h-5 w-5" />;
-      case 'warning': return <AlertTriangle className="h-5 w-5" />;
-      case 'healthy': return <CheckCircle className="h-5 w-5" />;
-    }
-  };
-
-  const status = getStatus();
-  const statusColor = getStatusColor(status);
-  const statusLabel = getStatusLabel(status);
-
-  // Prepare chart data (runway as percentage of 12 months max)
-  const runwayPercent = Math.min((data.runwayMonths / 12) * 100, 100);
-
-  const chartData = [
-    {
-      name: 'Runway',
-      value: runwayPercent,
-      fill: statusColor,
-    },
-  ];
+  const runwayStatus = getRunwayStatus(data.runwayMonths);
 
   return (
-    <div className="flex flex-col items-center">
-      {/* Radial Chart */}
-      <ResponsiveContainer width="100%" height={height}>
-        <RadialBarChart
-          cx="50%"
-          cy="50%"
-          innerRadius="60%"
-          outerRadius="90%"
-          data={chartData}
-          startAngle={180}
-          endAngle={0}
-        >
-          <RadialBar
-            background={{ fill: '#f1f5f9' }}
-            dataKey="value"
-            cornerRadius={10}
+    <div className="flex flex-col items-center justify-center" style={{ height }}>
+      {/* Runway Gauge (Semi-circle) */}
+      <div className="relative w-full max-w-[200px]">
+        <svg viewBox="0 0 200 120" className="w-full">
+          {/* Background Arc */}
+          <path
+            d="M 20 100 A 80 80 0 0 1 180 100"
+            fill="none"
+            stroke="#e2e8f0"
+            strokeWidth="20"
+            strokeLinecap="round"
           />
-        </RadialBarChart>
-      </ResponsiveContainer>
+          
+          {/* Runway Arc (colored based on health) */}
+          <path
+            d="M 20 100 A 80 80 0 0 1 180 100"
+            fill="none"
+            stroke={runwayStatus.color}
+            strokeWidth="20"
+            strokeLinecap="round"
+            strokeDasharray={`${Math.min(data.runwayMonths / 24, 1) * 251.2} 251.2`}
+            style={{ transition: 'stroke-dasharray 0.5s ease' }}
+          />
 
-      {/* Center Display - Runway Months */}
-      <div className="absolute" style={{ top: `${height * 0.5}px` }}>
-        <div className="flex flex-col items-center">
-          <p className="text-4xl font-bold text-slate-900">
-            {data.runwayMonths.toFixed(1)}
-          </p>
-          <p className="text-sm text-slate-600">tháng</p>
+          {/* Center Text - Runway Months */}
+          <text
+            x="100"
+            y="80"
+            textAnchor="middle"
+            fontSize="36"
+            fontWeight="700"
+            fill="#0f172a"
+          >
+            {formatNumber(data.runwayMonths, 1)}
+          </text>
+          <text
+            x="100"
+            y="100"
+            textAnchor="middle"
+            fontSize="14"
+            fontWeight="600"
+            fill="#64748b"
+          >
+            tháng
+          </text>
+        </svg>
+
+        {/* Status Badge */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2">
+          <span
+            className="inline-block px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider"
+            style={{
+              backgroundColor: `${runwayStatus.color}20`,
+              color: runwayStatus.color,
+            }}
+          >
+            {runwayStatus.label}
+          </span>
         </div>
       </div>
 
-      {/* Status Badge */}
-      <div className={`flex items-center gap-2 mt-4 px-3 py-1.5 rounded-full`} style={{ backgroundColor: `${statusColor}20`, color: statusColor }}>
-        {getStatusIcon(status)}
-        <span className="text-sm font-medium">{statusLabel}</span>
-      </div>
+      {/* Metrics Grid */}
+      <div className="w-full mt-6 space-y-3">
+        <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+          <span className="text-sm font-medium text-slate-600">Tiền mặt hiện tại</span>
+          <span className="text-sm font-bold text-slate-900">
+            {formatCurrency(data.currentCash)}
+          </span>
+        </div>
 
-      {/* Metrics */}
-      <div className="w-full mt-6 space-y-3 text-sm">
-        <div className="flex items-center justify-between">
-          <span className="text-slate-600">Tốc độ đốt tiền/tháng:</span>
-          <span className="font-medium text-red-600">{formatCurrency(Math.abs(data.monthlyBurnRate))}</span>
+        <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+          <span className="text-sm font-medium text-slate-600">Tốc độ đốt tiền/tháng</span>
+          <span className="text-sm font-bold text-red-600">
+            {formatCurrency(data.monthlyBurnRate)}
+          </span>
         </div>
-        <div className="flex items-center justify-between">
-          <span className="text-slate-600">Tiền mặt hiện tại:</span>
-          <span className="font-medium text-slate-900">{formatCurrency(data.currentCash)}</span>
-        </div>
-        <div className="flex items-center justify-between">
-          <span className="text-slate-600">Dòng tiền TB/ngày:</span>
-          <span className={`font-medium ${data.averageDailyCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+
+        <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+          <span className="text-sm font-medium text-slate-600">Dòng tiền TB/ngày</span>
+          <span className={`text-sm font-bold ${data.averageDailyCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
             {formatCurrency(data.averageDailyCashFlow)}
           </span>
         </div>

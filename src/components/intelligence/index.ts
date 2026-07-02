@@ -1,27 +1,39 @@
 /**
- * Intelligence Layer - UI Components
+ * Intelligence Layer Chart Components - Central Export
  * 
- * Reusable chart components for Executive Dashboard and other Intelligence views.
+ * This file exports all Intelligence Layer Recharts components for easy import.
+ * 
+ * USAGE:
+ * ```tsx
+ * import {
+ *   PnLStatementChart,
+ *   RevenueBreakdownChart,
+ *   CashFlowAnalysisChart,
+ * } from '@/components/intelligence'
+ * ```
+ * 
+ * @created 2026-06-22
+ * @phase Intelligence Layer Phase 8 Task #4
  */
 
-export { RevenueTrendChart } from './RevenueTrendChart';
-export { OperationalEfficiencyChart } from './OperationalEfficiencyChart';
-export { CustomerMetricsChart } from './CustomerMetricsChart';
-export { FinancialHealthChart } from './FinancialHealthChart';
-export { GrowthIndicatorsChart } from './GrowthIndicatorsChart';
-
-// Finance Intelligence Charts
+// ============================================================================
+// P&L DASHBOARD CHARTS
+// ============================================================================
 export { PnLStatementChart } from './PnLStatementChart';
 export { RevenueBreakdownChart } from './RevenueBreakdownChart';
 export { ExpenseBreakdownChart } from './ExpenseBreakdownChart';
 export { ProfitabilityTrendChart } from './ProfitabilityTrendChart';
 
-// Cash Flow Intelligence Charts
+// ============================================================================
+// CASH FLOW DASHBOARD CHARTS
+// ============================================================================
 export { CashFlowAnalysisChart } from './CashFlowAnalysisChart';
 export { BurnRateChart } from './BurnRateChart';
 export { CashFlowForecastChart } from './CashFlowForecastChart';
 
-// Budget Tracking Intelligence Charts
+// ============================================================================
+// BUDGET DASHBOARD CHARTS
+// ============================================================================
 export { BudgetVarianceChart } from './BudgetVarianceChart';
 export { BudgetUtilizationChart } from './BudgetUtilizationChart';
 export { VarianceTrendChart } from './VarianceTrendChart';

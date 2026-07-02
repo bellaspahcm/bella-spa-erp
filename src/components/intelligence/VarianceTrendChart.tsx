@@ -1,40 +1,47 @@
-'use client';
-
 /**
- * Variance Trend Multi-line Chart
+ * Variance Trend Line Chart
  * 
- * Shows variance trends for top categories over time:
- * - Multiple lines (one per category, max 5)
- * - Reference line at 0% (break-even point)
- * - Color-coded category lines
+ * Visualizes budget variance percentage trends over time by category.
+ * Shows multiple lines for top categories with color-coded performance.
+ * 
+ * Uses Recharts LineChart with multiple series.
+ * 
+ * @created 2026-06-22
+ * @phase Intelligence Layer Phase 8 Task #4
  */
 
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
+import React from 'react';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  ReferenceLine,
+} from 'recharts';
 
 interface VarianceTrendDataPoint {
-  month: string; // 'Jan 26', 'Feb 26', etc.
-  [category: string]: string | number; // dynamic keys for each category variance %
+  month: string;
+  [category: string]: string | number;
 }
 
 interface VarianceTrendChartProps {
   data: VarianceTrendDataPoint[];
-  categories: string[]; // list of category names to display
+  categories: string[];
   height?: number;
 }
 
-// Color palette for category lines
-const CATEGORY_COLORS = ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6'];
+const COLORS = [
+  '#3b82f6', // blue
+  '#10b981', // green
+  '#f59e0b', // amber
+  '#8b5cf6', // violet
+  '#ec4899', // pink
+];
 
-/**
- * Variance Trend Multi-line Chart Component
- * 
- * Displays variance percentage trends for multiple expense categories
- * over time with a reference line at 0% for break-even visualization.
- * 
- * @param data - Array of monthly data points with variance % for each category
- * @param categories - List of category names to display (max 5)
- * @param height - Chart height in pixels (default: 300)
- */
 export function VarianceTrendChart({ data, categories, height = 300 }: VarianceTrendChartProps) {
   const formatPercent = (value: number) => {
     return `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`;
@@ -44,56 +51,53 @@ export function VarianceTrendChart({ data, categories, height = 300 }: VarianceT
     <ResponsiveContainer width="100%" height={height}>
       <LineChart
         data={data}
-        margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+        margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
       >
-        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-        
+        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
         <XAxis
           dataKey="month"
-          stroke="#64748b"
-          fontSize={12}
+          tick={{ fontSize: 12, fill: '#64748b' }}
+          axisLine={{ stroke: '#cbd5e1' }}
         />
-        
         <YAxis
-          stroke="#64748b"
-          fontSize={12}
+          tick={{ fontSize: 12, fill: '#64748b' }}
+          axisLine={{ stroke: '#cbd5e1' }}
           tickFormatter={formatPercent}
         />
-
-        {/* Reference line at 0% (break-even) */}
+        <Tooltip
+          formatter={(value: number, name: string) => [formatPercent(value), name]}
+          contentStyle={{
+            backgroundColor: '#ffffff',
+            border: '1px solid #e2e8f0',
+            borderRadius: '8px',
+            fontSize: '12px',
+          }}
+        />
+        <Legend
+          verticalAlign="top"
+          height={36}
+          iconType="line"
+          wrapperStyle={{ fontSize: '11px', fontWeight: 600 }}
+        />
+        
+        {/* Zero reference line */}
         <ReferenceLine
           y={0}
           stroke="#94a3b8"
-          strokeDasharray="5 5"
-          strokeWidth={1}
-        />
-        
-        <Tooltip
-          formatter={(value, name) => [formatPercent(Number(value)), name]}
-          labelFormatter={(label) => String(label)}
-          contentStyle={{
-            backgroundColor: 'white',
-            border: '1px solid #e2e8f0',
-            borderRadius: '8px',
-            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-          }}
-        />
-        
-        <Legend
-          wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
+          strokeDasharray="3 3"
+          label={{ value: 'Đúng ngân sách', fontSize: 10, fill: '#94a3b8' }}
         />
 
-        {/* Generate line for each category */}
-        {categories.slice(0, 5).map((category, index) => (
+        {/* Category lines */}
+        {categories.map((category, index) => (
           <Line
             key={category}
             type="monotone"
             dataKey={category}
-            stroke={CATEGORY_COLORS[index % CATEGORY_COLORS.length]}
+            stroke={COLORS[index % COLORS.length]}
             strokeWidth={2}
-            dot={{ r: 4 }}
+            dot={{ r: 4, fill: COLORS[index % COLORS.length] }}
             activeDot={{ r: 6 }}
-            name={category}
           />
         ))}
       </LineChart>

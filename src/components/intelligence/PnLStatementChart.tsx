@@ -1,39 +1,44 @@
-'use client';
-
 /**
  * P&L Statement Waterfall Chart
  * 
- * Visualizes profit & loss flow from Revenue → Expenses → Net Profit.
- * Uses a bar chart with custom logic to simulate waterfall behavior.
+ * Visualizes Profit & Loss statement as a waterfall chart showing:
+ * - Total Revenue (starting bar)
+ * - Total Expenses (negative bar)
+ * - Net Profit (ending bar)
+ * 
+ * Uses Recharts BarChart with color-coded bars based on value type.
+ * 
+ * @created 2026-06-22
+ * @phase Intelligence Layer Phase 8 Task #4
  */
 
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import React from 'react';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  Cell,
+} from 'recharts';
 
-interface PnLData {
+interface PnLStatementData {
   totalRevenue: number;
   totalExpenses: number;
   netProfit: number;
-  profitMargin: number; // percentage
+  profitMargin: number;
 }
 
 interface PnLStatementChartProps {
-  data: PnLData;
+  data: PnLStatementData;
   height?: number;
 }
 
-/**
- * P&L Statement Waterfall Chart Component
- * 
- * Displays the flow from revenue to profit with color-coded bars:
- * - Green for revenue (positive)
- * - Red for expenses (negative)
- * - Blue/Green for net profit (depending on sign)
- * 
- * @param data - P&L data with revenue, expenses, and profit
- * @param height - Chart height in pixels (default: 300)
- */
 export function PnLStatementChart({ data, height = 300 }: PnLStatementChartProps) {
-  // Transform data for waterfall visualization
+  // Transform data for waterfall chart
   const chartData = [
     {
       name: 'Doanh thu',
@@ -42,35 +47,23 @@ export function PnLStatementChart({ data, height = 300 }: PnLStatementChartProps
     },
     {
       name: 'Chi phí',
-      value: data.totalExpenses,
+      value: -data.totalExpenses,
       fill: '#ef4444', // red
     },
     {
       name: 'Lợi nhuận ròng',
-      value: Math.abs(data.netProfit),
+      value: data.netProfit,
       fill: data.netProfit >= 0 ? '#3b82f6' : '#ef4444', // blue or red
     },
   ];
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('vi-VN', {
-      notation: 'compact',
-      compactDisplay: 'short',
-    }).format(value);
-  };
-
-  const formatTooltipCurrency = (value: any, name: any) => {
-    const formatted = new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: 'VND',
-    }).format(Number(value));
-    
-    // Show negative sign for expenses in tooltip
-    if (name === 'Chi phí') {
-      return [`-${formatted}`, name];
-    }
-    
-    return [formatted, name];
+      notation: 'compact',
+      maximumFractionDigits: 1,
+    }).format(Math.abs(value));
   };
 
   return (
@@ -79,24 +72,24 @@ export function PnLStatementChart({ data, height = 300 }: PnLStatementChartProps
         data={chartData}
         margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
       >
-        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
         <XAxis
           dataKey="name"
-          stroke="#64748b"
-          fontSize={12}
+          tick={{ fontSize: 12, fill: '#64748b' }}
+          axisLine={{ stroke: '#cbd5e1' }}
         />
         <YAxis
-          stroke="#64748b"
-          fontSize={12}
+          tick={{ fontSize: 12, fill: '#64748b' }}
+          axisLine={{ stroke: '#cbd5e1' }}
           tickFormatter={formatCurrency}
         />
         <Tooltip
-          formatter={formatTooltipCurrency}
+          formatter={(value: number) => [formatCurrency(value), '']}
           contentStyle={{
-            backgroundColor: 'white',
+            backgroundColor: '#ffffff',
             border: '1px solid #e2e8f0',
             borderRadius: '8px',
-            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+            fontSize: '12px',
           }}
         />
         <Bar dataKey="value" radius={[8, 8, 0, 0]}>

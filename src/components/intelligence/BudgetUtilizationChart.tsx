@@ -1,26 +1,25 @@
-'use client';
-
 /**
- * Budget Utilization Radial/Gauge Chart
+ * Budget Utilization Gauge Chart
  * 
- * Shows overall budget utilization percentage:
- * - Under budget (0-85%): Green zone
- * - On target (85-100%): Blue zone
- * - Over budget (>100%): Red zone
+ * Visualizes overall budget utilization as a circular progress gauge.
+ * Shows percentage utilization with color-coded status indicators.
  * 
- * Displays utilization percentage in center with category counts below.
+ * Uses custom SVG gauge visualization.
+ * 
+ * @created 2026-06-22
+ * @phase Intelligence Layer Phase 8 Task #4
  */
 
-import { RadialBarChart, RadialBar, ResponsiveContainer } from 'recharts';
-import { TrendingDown, Target, TrendingUp } from 'lucide-react';
+import React from 'react';
+import { CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
 
 interface BudgetUtilizationData {
   totalBudget: number;
   totalActual: number;
-  utilization: number; // percentage (actual / budget * 100)
-  categoriesUnder: number; // count
-  categoriesOnTarget: number; // count
-  categoriesOver: number; // count
+  utilization: number;
+  categoriesUnder: number;
+  categoriesOnTarget: number;
+  categoriesOver: number;
 }
 
 interface BudgetUtilizationChartProps {
@@ -28,138 +27,118 @@ interface BudgetUtilizationChartProps {
   height?: number;
 }
 
-/**
- * Budget Utilization Radial Chart Component
- * 
- * Displays budget utilization as a radial gauge with color-coded zones.
- * Shows utilization percentage prominently in the center with detailed metrics below.
- * 
- * @param data - Budget utilization metrics including category status counts
- * @param height - Chart height in pixels (default: 250)
- */
 export function BudgetUtilizationChart({ data, height = 250 }: BudgetUtilizationChartProps) {
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: 'VND',
       notation: 'compact',
-      compactDisplay: 'short',
+      maximumFractionDigits: 1,
     }).format(value);
   };
 
-  // Determine status based on utilization
-  const getStatus = (): 'under' | 'on_target' | 'over' => {
-    if (data.utilization < 85) return 'under';
-    if (data.utilization <= 100) return 'on_target';
-    return 'over';
+  const formatNumber = (value: number, decimals = 0) => {
+    return new Intl.NumberFormat('vi-VN', {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    }).format(value);
   };
 
-  const getStatusColor = (status: 'under' | 'on_target' | 'over'): string => {
-    switch (status) {
-      case 'under': return '#10b981';
-      case 'on_target': return '#3b82f6';
-      case 'over': return '#ef4444';
-    }
+  // Determine utilization status
+  const getUtilizationStatus = (percent: number): { color: string; label: string } => {
+    if (percent > 100) return { color: '#ef4444', label: 'Vượt ngân sách' };
+    if (percent >= 90) return { color: '#f59e0b', label: 'Gần đạt mức' };
+    if (percent >= 75) return { color: '#3b82f6', label: 'Đúng kế hoạch' };
+    return { color: '#10b981', label: 'Dưới ngân sách' };
   };
 
-  const getStatusLabel = (status: 'under' | 'on_target' | 'over'): string => {
-    switch (status) {
-      case 'under': return 'Dưới ngân sách';
-      case 'on_target': return 'Đúng mục tiêu';
-      case 'over': return 'Vượt ngân sách';
-    }
-  };
+  const utilizationStatus = getUtilizationStatus(data.utilization);
 
-  const getStatusIcon = (status: 'under' | 'on_target' | 'over') => {
-    switch (status) {
-      case 'under': return <TrendingDown className="h-5 w-5" />;
-      case 'on_target': return <Target className="h-5 w-5" />;
-      case 'over': return <TrendingUp className="h-5 w-5" />;
-    }
-  };
-
-  const status = getStatus();
-  const statusColor = getStatusColor(status);
-  const statusLabel = getStatusLabel(status);
-
-  // Prepare chart data (utilization as percentage, capped at 150% for display)
-  const displayUtilization = Math.min(data.utilization, 150);
-
-  const chartData = [
-    {
-      name: 'Utilization',
-      value: displayUtilization,
-      fill: statusColor,
-    },
-  ];
+  // Calculate circle properties (semi-circle gauge)
+  const radius = 70;
+  const circumference = 2 * Math.PI * radius;
+  const progressOffset = circumference - (Math.min(data.utilization, 100) / 100) * circumference;
 
   return (
-    <div className="flex flex-col items-center">
-      {/* Radial Chart */}
-      <ResponsiveContainer width="100%" height={height}>
-        <RadialBarChart
-          cx="50%"
-          cy="50%"
-          innerRadius="60%"
-          outerRadius="90%"
-          data={chartData}
-          startAngle={180}
-          endAngle={0}
-        >
-          <RadialBar
-            background={{ fill: '#f1f5f9' }}
-            dataKey="value"
-            cornerRadius={10}
+    <div className="flex flex-col items-center justify-center" style={{ height }}>
+      {/* Utilization Gauge (Full circle) */}
+      <div className="relative w-full max-w-[180px]">
+        <svg viewBox="0 0 200 200" className="w-full transform -rotate-90">
+          {/* Background Circle */}
+          <circle
+            cx="100"
+            cy="100"
+            r={radius}
+            fill="none"
+            stroke="#e2e8f0"
+            strokeWidth="16"
           />
-        </RadialBarChart>
-      </ResponsiveContainer>
+          
+          {/* Progress Circle */}
+          <circle
+            cx="100"
+            cy="100"
+            r={radius}
+            fill="none"
+            stroke={utilizationStatus.color}
+            strokeWidth="16"
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            strokeDashoffset={progressOffset}
+            style={{ transition: 'stroke-dashoffset 0.5s ease' }}
+          />
+        </svg>
 
-      {/* Center Display - Utilization Percentage */}
-      <div className="absolute" style={{ top: `${height * 0.5}px` }}>
-        <div className="flex flex-col items-center">
-          <p className="text-4xl font-bold text-slate-900">
-            {data.utilization.toFixed(1)}%
-          </p>
-          <p className="text-sm text-slate-600">sử dụng</p>
+        {/* Center Text */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className="text-3xl font-bold text-slate-900">
+            {formatNumber(data.utilization, 1)}%
+          </span>
+          <span className="text-xs font-medium text-slate-600 mt-1">Sử dụng</span>
         </div>
       </div>
 
       {/* Status Badge */}
-      <div className={`flex items-center gap-2 mt-4 px-3 py-1.5 rounded-full`} style={{ backgroundColor: `${statusColor}20`, color: statusColor }}>
-        {getStatusIcon(status)}
-        <span className="text-sm font-medium">{statusLabel}</span>
+      <div className="mt-4">
+        <span
+          className="inline-block px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider"
+          style={{
+            backgroundColor: `${utilizationStatus.color}20`,
+            color: utilizationStatus.color,
+          }}
+        >
+          {utilizationStatus.label}
+        </span>
       </div>
 
       {/* Budget Summary */}
-      <div className="w-full mt-6 space-y-3 text-sm">
-        <div className="flex items-center justify-between">
-          <span className="text-slate-600">Tổng ngân sách:</span>
-          <span className="font-medium text-blue-600">{formatCurrency(data.totalBudget)}</span>
+      <div className="w-full mt-4 space-y-2">
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-slate-600">Tổng ngân sách</span>
+          <span className="font-bold text-slate-900">{formatCurrency(data.totalBudget)}</span>
         </div>
-        <div className="flex items-center justify-between">
-          <span className="text-slate-600">Chi tiêu thực tế:</span>
-          <span className={`font-medium ${status === 'over' ? 'text-red-600' : 'text-slate-900'}`}>
-            {formatCurrency(data.totalActual)}
-          </span>
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-slate-600">Đã chi tiêu</span>
+          <span className="font-bold text-orange-600">{formatCurrency(data.totalActual)}</span>
         </div>
       </div>
 
-      {/* Category Status Counts */}
-      <div className="w-full mt-4 pt-4 border-t border-slate-100">
-        <p className="text-xs text-slate-600 mb-2">Danh mục theo trạng thái:</p>
-        <div className="grid grid-cols-3 gap-2 text-center">
-          <div className="bg-green-50 rounded-lg p-2">
-            <p className="text-lg font-bold text-green-600">{data.categoriesUnder}</p>
-            <p className="text-xs text-green-700">Dưới</p>
-          </div>
-          <div className="bg-blue-50 rounded-lg p-2">
-            <p className="text-lg font-bold text-blue-600">{data.categoriesOnTarget}</p>
-            <p className="text-xs text-blue-700">Đúng</p>
-          </div>
-          <div className="bg-red-50 rounded-lg p-2">
-            <p className="text-lg font-bold text-red-600">{data.categoriesOver}</p>
-            <p className="text-xs text-red-700">Vượt</p>
-          </div>
+      {/* Category Status Summary */}
+      <div className="w-full mt-4 grid grid-cols-3 gap-2 pt-4 border-t border-slate-100">
+        <div className="flex flex-col items-center">
+          <CheckCircle className="h-5 w-5 text-green-600 mb-1" />
+          <span className="text-xs font-medium text-slate-600">Dưới</span>
+          <span className="text-lg font-bold text-green-600">{data.categoriesUnder}</span>
+        </div>
+        <div className="flex flex-col items-center">
+          <AlertTriangle className="h-5 w-5 text-blue-600 mb-1" />
+          <span className="text-xs font-medium text-slate-600">Đúng</span>
+          <span className="text-lg font-bold text-blue-600">{data.categoriesOnTarget}</span>
+        </div>
+        <div className="flex flex-col items-center">
+          <XCircle className="h-5 w-5 text-red-600 mb-1" />
+          <span className="text-xs font-medium text-slate-600">Vượt</span>
+          <span className="text-lg font-bold text-red-600">{data.categoriesOver}</span>
         </div>
       </div>
     </div>

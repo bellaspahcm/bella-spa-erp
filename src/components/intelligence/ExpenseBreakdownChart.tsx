@@ -1,17 +1,29 @@
-'use client';
-
 /**
  * Expense Breakdown Pie Chart
  * 
- * Shows expense distribution by category with percentages.
+ * Visualizes expense distribution by category as a pie chart.
+ * Shows percentage breakdown with color-coded segments.
+ * 
+ * Uses Recharts PieChart with custom labels and tooltip.
+ * 
+ * @created 2026-06-22
+ * @phase Intelligence Layer Phase 8 Task #4
  */
 
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import React from 'react';
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
 
 interface ExpenseBreakdownItem {
-  category: string; // e.g., 'Lương KTV', 'Chi phí vận hành', 'Marketing'
+  category: string;
   expense: number;
-  percentage: number; // calculated percentage of total
+  percentage: number;
 }
 
 interface ExpenseBreakdownChartProps {
@@ -19,28 +31,56 @@ interface ExpenseBreakdownChartProps {
   height?: number;
 }
 
-// Color palette for expense categories (red/orange shades)
-const COLORS = ['#ef4444', '#f59e0b', '#84cc16', '#06b6d4', '#8b5cf6', '#ec4899'];
+const COLORS = [
+  '#ef4444', // red
+  '#f97316', // orange
+  '#f59e0b', // amber
+  '#eab308', // yellow
+  '#84cc16', // lime
+  '#22c55e', // green
+  '#14b8a6', // teal
+  '#06b6d4', // cyan
+];
 
-/**
- * Expense Breakdown Pie Chart Component
- * 
- * Displays expense distribution by category with color-coded slices.
- * Shows percentage labels on slices and detailed info in tooltip.
- * 
- * @param data - Array of expense items with category, amount, and percentage
- * @param height - Chart height in pixels (default: 300)
- */
 export function ExpenseBreakdownChart({ data, height = 300 }: ExpenseBreakdownChartProps) {
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: 'VND',
+      notation: 'compact',
+      maximumFractionDigits: 1,
     }).format(value);
   };
 
-  const renderLabel = (entry: any) => {
-    return `${entry.percentage}%`;
+  const renderCustomLabel = ({
+    cx,
+    cy,
+    midAngle,
+    innerRadius,
+    outerRadius,
+    percent,
+  }: any) => {
+    const RADIAN = Math.PI / 180;
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+    // Only show label if percentage is > 5%
+    if (percent < 0.05) return null;
+
+    return (
+      <text
+        x={x}
+        y={y}
+        fill="white"
+        textAnchor={x > cx ? 'start' : 'end'}
+        dominantBaseline="central"
+        fontSize={12}
+        fontWeight={700}
+      >
+        {`${(percent * 100).toFixed(0)}%`}
+      </text>
+    );
   };
 
   return (
@@ -51,7 +91,7 @@ export function ExpenseBreakdownChart({ data, height = 300 }: ExpenseBreakdownCh
           cx="50%"
           cy="50%"
           labelLine={false}
-          label={renderLabel}
+          label={renderCustomLabel}
           outerRadius={80}
           fill="#8884d8"
           dataKey="expense"
@@ -61,20 +101,23 @@ export function ExpenseBreakdownChart({ data, height = 300 }: ExpenseBreakdownCh
           ))}
         </Pie>
         <Tooltip
-          formatter={(value) => formatCurrency(Number(value))}
+          formatter={(value: number) => [formatCurrency(value), 'Chi phí']}
           contentStyle={{
-            backgroundColor: 'white',
+            backgroundColor: '#ffffff',
             border: '1px solid #e2e8f0',
             borderRadius: '8px',
-            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+            fontSize: '12px',
           }}
         />
         <Legend
-          wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
+          verticalAlign="bottom"
+          height={36}
+          iconType="circle"
           formatter={(value, entry: any) => {
-            const item = data.find(d => d.category === value);
+            const item = data.find((d) => d.category === value);
             return `${value} (${item?.percentage || 0}%)`;
           }}
+          wrapperStyle={{ fontSize: '12px' }}
         />
       </PieChart>
     </ResponsiveContainer>
