@@ -138,13 +138,13 @@ export async function getTrainingMetrics(
     const prevEndDateStr = formatDate(prevEndDate);
     
     // Query current period sessions with ratings
-    // Note: customer_rating field may not exist yet in session_logs
-    // If missing, we'll use dummy data or fallback to 0
+    // Using 'rating' field from session_logs (customer satisfaction rating)
     const { data: currentSessionsData, error: currentError } = await supabase
       .from('session_logs')
       .select(`
         id,
         completed_by_ktv_id,
+        rating,
         completed_date,
         bookings!inner(
           id,
@@ -175,6 +175,7 @@ export async function getTrainingMetrics(
     type SessionLog = {
       id: string;
       completed_by_ktv_id: string;
+      rating: number | null;
       completed_date: string;
       bookings: {
         id: string;
@@ -199,6 +200,7 @@ export async function getTrainingMetrics(
       .select(`
         id,
         completed_by_ktv_id,
+        rating,
         completed_date
       `)
       .eq('bookings.tenant_id', tenantId)
@@ -214,6 +216,7 @@ export async function getTrainingMetrics(
     type PrevSessionLog = {
       id: string;
       completed_by_ktv_id: string;
+      rating: number | null;
       completed_date: string;
     };
     
@@ -232,7 +235,7 @@ export async function getTrainingMetrics(
     currentSessions.forEach((session) => {
       const ktvId = session.completed_by_ktv_id;
       const ktvName = session.users?.full_name || 'Unknown';
-      const rating = 0; // TODO: Add customer_rating field to session_logs table
+      const rating = session.rating || 0;
       const serviceType = session.bookings?.packages?.service_category || 'other';
       const revenue = session.bookings?.ktv_commission || 0;
       
@@ -255,25 +258,13 @@ export async function getTrainingMetrics(
     });
     
     // Calculate previous period average ratings for each KTV
-    // TODO: When customer_rating field is added to session_logs, uncomment this section
     const prevRatingsMap = new Map<string, number>();
     const prevAvgRatings = new Map<string, number>();
-    
-    // For now, use dummy data since customer_rating doesn't exist yet
-    /* prevSessions.forEach((session) => {
-      const ktvId = session.completed_by_ktv_id;
-      const rating = 0; // TODO: Add customer_rating field
-      
-      if (rating > 0) {
-        const ratings = prevRatingsMap.get(ktvId) || [];
-        prevRatingsMap.set(ktvId, rating);
-      }
-    });
-    
     const prevRatingCounts = new Map<string, number[]>();
+    
     prevSessions.forEach((session) => {
       const ktvId = session.completed_by_ktv_id;
-      const rating = 0; // TODO: Add customer_rating field
+      const rating = session.rating || 0;
       if (rating > 0) {
         if (!prevRatingCounts.has(ktvId)) {
           prevRatingCounts.set(ktvId, []);
@@ -281,13 +272,11 @@ export async function getTrainingMetrics(
         prevRatingCounts.get(ktvId)!.push(rating);
       }
     });
-    */
     
-    // TODO: Uncomment when customer_rating is available
-    /* prevRatingCounts.forEach((ratings, ktvId) => {
+    prevRatingCounts.forEach((ratings, ktvId) => {
       const avg = ratings.reduce((sum, r) => sum + r, 0) / ratings.length;
       prevAvgRatings.set(ktvId, avg);
-    }); */
+    });
     
     // Build training metrics
     const metrics: TrainingMetrics[] = [];
