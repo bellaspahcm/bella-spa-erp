@@ -650,7 +650,7 @@ export class FinanceIntelligenceService implements IntelligenceService {
   async getFinancialRatios(
     tenantId: string,
     month: string
-  ): Promise<IntelligenceResponse<FinancialRatios>> {
+  ): Promise<IntelligenceResponse<any>> {
     const startTime = Date.now();
 
     try {
@@ -663,9 +663,9 @@ export class FinanceIntelligenceService implements IntelligenceService {
       );
 
       // Check cache (fallback to DB if cache read fails)
-      let cached: FinancialRatios | null = null;
+      let cached: any | null = null;
       try {
-        cached = await this.cache.get<FinancialRatios>(cacheKey);
+        cached = await this.cache.get<any>(cacheKey);
       } catch (cacheError) {
         console.warn('[FinanceIntelligence.getFinancialRatios] Cache read error, falling back to database:', cacheError);
         // Continue to database query
@@ -683,12 +683,13 @@ export class FinanceIntelligenceService implements IntelligenceService {
         };
       }
 
-      // Query database and compute ratios
-      const data = await queryFinancialRatios(tenantId, month);
+      // Import and call real financial ratios calculation
+      const { getFinancialRatiosWithBenchmarks } = await import('./financial-ratios');
+      const result = await getFinancialRatiosWithBenchmarks({ tenantId, period: month });
 
       // Write to cache (best effort - don't fail if cache write fails)
       try {
-        await this.cache.set(cacheKey, data, {
+        await this.cache.set(cacheKey, result, {
           ttl: 3600, // 1 hour
           tags: [CACHE_KEY_PREFIX.FINANCE.replace(':', ''), `tenant:${tenantId}`],
         });
@@ -698,12 +699,12 @@ export class FinanceIntelligenceService implements IntelligenceService {
       }
 
       return {
-        data,
+        data: result,
         metadata: {
           generatedAt: new Date(),
           cacheHit: false,
           queryTimeMs: Date.now() - startTime,
-          dataSourcesUsed: ['mv_monthly_pnl', 'mv_cash_flow'],
+          dataSourcesUsed: ['accounting_accounts', 'journal_entries', 'journal_entry_lines'],
         },
       };
     } catch (error) {
