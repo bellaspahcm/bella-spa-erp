@@ -9,11 +9,15 @@
  * 3. Cash Flow Forecast (future predictions with confidence bands)
  * 4. Payment Method Distribution (cash flow breakdown by payment method)
  * 
- * Data flows through Intelligence Layer with automatic caching.
+ * Data flows through Intelligence Layer with automatic caching via React Query hooks.
+ * 
+ * REFACTORED: 2026-06-22
+ * - Replaced fetch() calls with React Query hooks
+ * - Automatic cache management with proper staleTime
+ * - Optimistic UI updates with loading/error states
  */
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Wallet,
@@ -26,8 +30,10 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { createClient } from '@/lib/supabase-client';
-import type { IntelligenceResponse } from '@/services/intelligence/shared/types';
+import {
+  useCashFlowAnalysis,
+  useRefreshFinanceData,
+} from '@/hooks/intelligence';
 import {
   CashFlowAnalysisChart,
   BurnRateChart,
@@ -42,142 +48,37 @@ import {
 type PeriodType = 'day' | 'week' | 'month' | 'quarter' | 'year' | 'custom';
 type ForecastMonthsType = 3 | 6 | 12;
 
-interface CashFlowAnalysisData {
-  totalInflows: number;
-  totalOutflows: number;
-  netCashFlow: number;
-  cumulativeCash: number;
-  breakdown: Array<{
-    paymentMethod: string;
-    inflows: number;
-    outflows: number;
-  }>;
-  burnRate: number;
-  runway: number;
-  currentCash: number;
-  averageDailyCashFlow: number;
-}
-
-interface CashFlowForecastData {
-  forecastMonths: number;
-  projections: Array<{
-    month: string;
-    projected: number;
-    upper: number;
-    lower: number;
-    cumulative: number;
-  }>;
-  confidence: number;
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Main Component
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function CashFlowDashboardPage() {
-  const router = useRouter();
-  const [tenantId, setTenantId] = useState<string | null>(null);
   const [period, setPeriod] = useState<PeriodType>('month');
   const [forecastMonths, setForecastMonths] = useState<ForecastMonthsType>(6);
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // API Response states
-  const [cashFlowAnalysis, setCashFlowAnalysis] = useState<IntelligenceResponse<CashFlowAnalysisData> | null>(null);
-  const [cashFlowForecast, setCashFlowForecast] = useState<IntelligenceResponse<CashFlowForecastData> | null>(null);
+  // Fetch data using Intelligence Layer hooks
+  // Note: Cash Flow Analysis includes both analysis and forecast data
+  const cashFlowAnalysis = useCashFlowAnalysis(period, startDate, endDate);
 
-  // ───────────────────────────────────────────────────────────────────────────
-  // Initialize tenant and check authorization
-  // ───────────────────────────────────────────────────────────────────────────
+  // Manual refresh mutation
+  const { mutate: refreshData, isPending: isRefreshing } = useRefreshFinanceData();
 
-  useEffect(() => {
-    async function initTenant() {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+  // Loading state
+  const isLoading = cashFlowAnalysis.isLoading;
 
-      if (!user) {
-        router.push('/login');
-        return;
-      }
-
-      const { data: profile } = await supabase
-        .from('users')
-        .select('tenant_id, role')
-        .eq('id', user.id)
-        .single();
-
-      if (!profile || !profile.tenant_id) {
-        toast.error('Không tìm thấy tenant');
-        return;
-      }
-
-      // Check if user has admin role
-      if (profile.role !== 'admin') {
-        toast.error('Bạn không có quyền truy cập trang này');
-        router.push('/dashboard');
-        return;
-      }
-
-      setTenantId(profile.tenant_id);
-    }
-
-    initTenant();
-  }, [router]);
-
-  // ───────────────────────────────────────────────────────────────────────────
-  // Fetch all metrics
-  // ───────────────────────────────────────────────────────────────────────────
-
-  const fetchAllMetrics = async (refresh = false) => {
-    if (!tenantId) return;
-
-    if (refresh) setIsRefreshing(true);
-    else setIsLoading(true);
-
-    try {
-      const baseUrl = `/api/intelligence/finance`;
-      const analysisParams = new URLSearchParams({ tenantId, period });
-      const forecastParams = new URLSearchParams({ 
-        tenantId, 
-        forecastMonths: forecastMonths.toString(),
-      });
-
-      if (period === 'custom' && startDate && endDate) {
-        analysisParams.set('startDate', startDate);
-        analysisParams.set('endDate', endDate);
-      }
-
-      const [analysis, forecast] = await Promise.all([
-        fetch(`${baseUrl}/cash-flow-analysis?${analysisParams}`).then(r => r.json()),
-        fetch(`${baseUrl}/cash-flow-forecast?${forecastParams}`).then(r => r.json()),
-      ]);
-
-      // Check for errors
-      if (analysis.error) throw new Error(analysis.error);
-      if (forecast.error) throw new Error(forecast.error);
-
-      setCashFlowAnalysis(analysis);
-      setCashFlowForecast(forecast);
-
-      if (refresh) {
+  // Handle manual refresh
+  const handleRefresh = () => {
+    refreshData('cash-flow-analysis', {
+      onSuccess: () => {
         toast.success('Dữ liệu đã được cập nhật');
-      }
-    } catch (error) {
-      console.error('Failed to fetch cash flow metrics:', error);
-      toast.error('Không thể tải dữ liệu dashboard');
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
+      },
+      onError: (error) => {
+        toast.error(`Lỗi làm mới: ${error.message}`);
+      },
+    });
   };
-
-  useEffect(() => {
-    if (tenantId) {
-      fetchAllMetrics();
-    }
-  }, [tenantId, period, forecastMonths, startDate, endDate]);
 
   // ───────────────────────────────────────────────────────────────────────────
   // Helper functions
@@ -197,44 +98,40 @@ export default function CashFlowDashboardPage() {
     }).format(value);
   };
 
-  const formatPercent = (value: number) => {
-    return `${value >= 0 ? '+' : ''}${formatNumber(value, 2)}%`;
-  };
-
   // ───────────────────────────────────────────────────────────────────────────
   // Generate chart data from API responses
   // ───────────────────────────────────────────────────────────────────────────
 
   const getCashFlowBreakdownData = () => {
-    if (!cashFlowAnalysis || !cashFlowAnalysis.data) return [];
-    return cashFlowAnalysis.data.breakdown;
+    if (!cashFlowAnalysis.data || !cashFlowAnalysis.data.data) return [];
+    return cashFlowAnalysis.data.data.breakdown;
   };
 
   const getPaymentMethodDistributionData = () => {
-    if (!cashFlowAnalysis || !cashFlowAnalysis.data) return [];
+    if (!cashFlowAnalysis.data || !cashFlowAnalysis.data.data) return [];
 
-    return cashFlowAnalysis.data.breakdown.map(item => ({
+    return cashFlowAnalysis.data.data.breakdown.map(item => ({
       source: getPaymentMethodLabel(item.paymentMethod),
       revenue: item.inflows, // Using inflows as proxy for distribution
-      percentage: cashFlowAnalysis.data.totalInflows > 0 
-        ? Math.round((item.inflows / cashFlowAnalysis.data.totalInflows) * 100)
+      percentage: cashFlowAnalysis.data.data.totalInflows > 0 
+        ? Math.round((item.inflows / cashFlowAnalysis.data.data.totalInflows) * 100)
         : 0,
     }));
   };
 
   const getForecastChartData = () => {
-    if (!cashFlowForecast || !cashFlowForecast.data) return [];
-    return cashFlowForecast.data.projections;
+    if (!cashFlowAnalysis.data || !cashFlowAnalysis.data.data || !cashFlowAnalysis.data.data.forecast) return [];
+    return cashFlowAnalysis.data.data.forecast.projections;
   };
 
   const getBurnRateData = () => {
-    if (!cashFlowAnalysis || !cashFlowAnalysis.data) return null;
+    if (!cashFlowAnalysis.data || !cashFlowAnalysis.data.data) return null;
 
     return {
-      monthlyBurnRate: cashFlowAnalysis.data.burnRate,
-      runwayMonths: cashFlowAnalysis.data.runway,
-      currentCash: cashFlowAnalysis.data.currentCash,
-      averageDailyCashFlow: cashFlowAnalysis.data.averageDailyCashFlow,
+      monthlyBurnRate: cashFlowAnalysis.data.data.burnRate,
+      runwayMonths: cashFlowAnalysis.data.data.runway,
+      currentCash: cashFlowAnalysis.data.data.currentCash,
+      averageDailyCashFlow: cashFlowAnalysis.data.data.averageDailyCashFlow,
     };
   };
 
@@ -308,7 +205,7 @@ export default function CashFlowDashboardPage() {
 
           {/* Refresh Button */}
           <button
-            onClick={() => fetchAllMetrics(true)}
+            onClick={handleRefresh}
             disabled={isRefreshing}
             className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -333,12 +230,12 @@ export default function CashFlowDashboardPage() {
               </div>
               <h3 className="text-lg font-semibold text-slate-900">Phân Tích Dòng Tiền</h3>
             </div>
-            {cashFlowAnalysis?.metadata.cacheHit && (
+            {cashFlowAnalysis.data?.metadata.cached && (
               <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">Cache</span>
             )}
           </div>
 
-          {cashFlowAnalysis ? (
+          {cashFlowAnalysis.data ? (
             <>
               {/* Key Metrics */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -347,7 +244,7 @@ export default function CashFlowDashboardPage() {
                   <div className="flex items-center gap-1">
                     <TrendingUp className="h-4 w-4 text-green-600" />
                     <p className="text-xl font-bold text-green-600">
-                      {formatCurrency(cashFlowAnalysis.data.totalInflows)}
+                      {formatCurrency(cashFlowAnalysis.data.data.totalInflows)}
                     </p>
                   </div>
                 </div>
@@ -357,22 +254,22 @@ export default function CashFlowDashboardPage() {
                   <div className="flex items-center gap-1">
                     <TrendingDown className="h-4 w-4 text-red-600" />
                     <p className="text-xl font-bold text-red-600">
-                      {formatCurrency(cashFlowAnalysis.data.totalOutflows)}
+                      {formatCurrency(cashFlowAnalysis.data.data.totalOutflows)}
                     </p>
                   </div>
                 </div>
 
                 <div>
                   <p className="text-sm text-slate-600">Dòng tiền ròng</p>
-                  <p className={`text-xl font-bold ${cashFlowAnalysis.data.netCashFlow >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-                    {formatCurrency(cashFlowAnalysis.data.netCashFlow)}
+                  <p className={`text-xl font-bold ${cashFlowAnalysis.data.data.netCashFlow >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                    {formatCurrency(cashFlowAnalysis.data.data.netCashFlow)}
                   </p>
                 </div>
 
                 <div>
                   <p className="text-sm text-slate-600">Tiền mặt tích lũy</p>
                   <p className="text-xl font-bold text-slate-900">
-                    {formatCurrency(cashFlowAnalysis.data.cumulativeCash)}
+                    {formatCurrency(cashFlowAnalysis.data.data.cumulativeCash)}
                   </p>
                 </div>
               </div>
@@ -404,7 +301,7 @@ export default function CashFlowDashboardPage() {
               </div>
               <h3 className="text-lg font-semibold text-slate-900">Tốc Độ Đốt Tiền & Runway</h3>
             </div>
-            {cashFlowAnalysis?.metadata.cacheHit && (
+            {cashFlowAnalysis.data?.metadata.cached && (
               <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">Cache</span>
             )}
           </div>
@@ -432,23 +329,23 @@ export default function CashFlowDashboardPage() {
               </div>
               <h3 className="text-lg font-semibold text-slate-900">Dự Báo Dòng Tiền</h3>
             </div>
-            {cashFlowForecast?.metadata.cacheHit && (
+            {cashFlowAnalysis.data?.metadata.cached && (
               <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">Cache</span>
             )}
           </div>
 
-          {cashFlowForecast ? (
+          {cashFlowAnalysis.data && cashFlowAnalysis.data.data.forecast ? (
             <>
               {/* Forecast Info */}
               <div className="mb-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-slate-500" />
                   <p className="text-sm text-slate-600">
-                    Dự báo cho {cashFlowForecast.data.forecastMonths} tháng tới
+                    Dự báo cho {cashFlowAnalysis.data.data.forecast.forecastMonths} tháng tới
                   </p>
                 </div>
                 <div className="text-sm text-slate-600">
-                  Độ tin cậy: <span className="font-medium">{cashFlowForecast.data.confidence}%</span>
+                  Độ tin cậy: <span className="font-medium">{cashFlowAnalysis.data.data.forecast.confidence}%</span>
                 </div>
               </div>
 
@@ -476,18 +373,18 @@ export default function CashFlowDashboardPage() {
               </div>
               <h3 className="text-lg font-semibold text-slate-900">Phân Bổ Theo Phương Thức</h3>
             </div>
-            {cashFlowAnalysis?.metadata.cacheHit && (
+            {cashFlowAnalysis.data?.metadata.cached && (
               <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">Cache</span>
             )}
           </div>
 
-          {cashFlowAnalysis ? (
+          {cashFlowAnalysis.data ? (
             <>
               {/* Summary */}
               <div className="mb-4">
                 <p className="text-sm text-slate-600">Tổng dòng tiền vào</p>
                 <p className="text-2xl font-bold text-slate-900">
-                  {formatCurrency(cashFlowAnalysis.data.totalInflows)}
+                  {formatCurrency(cashFlowAnalysis.data.data.totalInflows)}
                 </p>
               </div>
 
@@ -497,12 +394,12 @@ export default function CashFlowDashboardPage() {
               {/* Top Payment Methods */}
               <div className="mt-4 pt-4 border-t border-slate-100">
                 <p className="text-sm font-medium text-slate-700 mb-2">Phương thức hàng đầu:</p>
-                {cashFlowAnalysis.data.breakdown.slice(0, 3).map((item, idx) => (
+                {cashFlowAnalysis.data.data.breakdown.slice(0, 3).map((item, idx) => (
                   <div key={idx} className="flex items-center justify-between text-sm mb-1">
                     <span className="text-slate-600">{getPaymentMethodLabel(item.paymentMethod)}</span>
                     <span className="font-medium text-green-600">
-                      {cashFlowAnalysis.data.totalInflows > 0 
-                        ? Math.round((item.inflows / cashFlowAnalysis.data.totalInflows) * 100)
+                      {cashFlowAnalysis.data.data.totalInflows > 0 
+                        ? Math.round((item.inflows / cashFlowAnalysis.data.data.totalInflows) * 100)
                         : 0}%
                     </span>
                   </div>
@@ -518,12 +415,12 @@ export default function CashFlowDashboardPage() {
       </div>
 
       {/* Cache Info Footer */}
-      {cashFlowAnalysis && (
+      {cashFlowAnalysis.data && (
         <div className="text-center text-sm text-slate-500">
           <p>
-            Dữ liệu được tạo lúc {new Date(cashFlowAnalysis.metadata.generatedAt).toLocaleTimeString('vi-VN')}
-            {' '}({cashFlowAnalysis.metadata.cacheHit ? 'Từ cache' : 'Truy vấn mới'})
-            {' '}- Query time: {cashFlowAnalysis.metadata.queryTimeMs}ms
+            Dữ liệu được tạo lúc {new Date(cashFlowAnalysis.data.metadata.computedAt).toLocaleTimeString('vi-VN')}
+            {' '}({cashFlowAnalysis.data.metadata.cached ? 'Từ cache' : 'Truy vấn mới'})
+            {cashFlowAnalysis.data.metadata.executionTime && ` - Query time: ${cashFlowAnalysis.data.metadata.executionTime}ms`}
           </p>
         </div>
       )}

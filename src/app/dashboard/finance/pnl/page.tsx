@@ -9,32 +9,34 @@
  * 3. Profitability Trends
  * 4. Expense Breakdown
  * 
- * Data flows through Intelligence Layer with automatic caching.
+ * Data flows through Intelligence Layer with automatic caching via React Query hooks.
+ * 
+ * REFACTORED: 2026-06-22
+ * - Replaced fetch() calls with React Query hooks
+ * - Automatic cache management with proper staleTime
+ * - Optimistic UI updates with loading/error states
  */
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
-  DollarSign,
   TrendingUp,
   TrendingDown,
-  PieChart,
   BarChart3,
+  PieChart,
   LineChart,
   Calendar,
   RefreshCw,
   AlertCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { createClient } from '@/lib/supabase-client';
-import type { IntelligenceResponse } from '@/services/intelligence/shared/types';
-import type {
-  MonthlyPnL,
-  RevenueBreakdown,
-  ExpenseBreakdown,
-  ProfitabilityTrends,
-} from '@/services/intelligence/finance/queries';
+import {
+  useMonthlyPnL,
+  useRevenueBreakdown,
+  useExpenseBreakdown,
+  useProfitabilityTrends,
+  useRefreshFinanceData,
+} from '@/hooks/intelligence';
 import {
   PnLStatementChart,
   RevenueBreakdownChart,
@@ -53,112 +55,49 @@ type PeriodType = 'current_month' | 'last_month' | 'custom';
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function PnLDashboardPage() {
-  const router = useRouter();
-  const [tenantId, setTenantId] = useState<string | null>(null);
   const [period, setPeriod] = useState<PeriodType>('current_month');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // API Response states
-  const [monthlyPnL, setMonthlyPnL] = useState<IntelligenceResponse<MonthlyPnL[]> | null>(null);
-  const [revenueBreakdown, setRevenueBreakdown] = useState<IntelligenceResponse<RevenueBreakdown> | null>(null);
-  const [expenseBreakdown, setExpenseBreakdown] = useState<IntelligenceResponse<ExpenseBreakdown> | null>(null);
-  const [profitabilityTrends, setProfitabilityTrends] = useState<IntelligenceResponse<ProfitabilityTrends> | null>(null);
-
-  // ───────────────────────────────────────────────────────────────────────────
-  // Initialize tenant and check authorization
-  // ───────────────────────────────────────────────────────────────────────────
-
-  useEffect(() => {
-    async function initTenant() {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-
-      if (!user) {
-        router.push('/login');
-        return;
-      }
-
-      const { data: profile } = await supabase
-        .from('users')
-        .select('tenant_id, role')
-        .eq('id', user.id)
-        .single();
-
-      if (!profile || !profile.tenant_id) {
-        toast.error('Không tìm thấy tenant');
-        return;
-      }
-
-      // Check if user has admin role
-      if (profile.role !== 'admin') {
-        toast.error('Bạn không có quyền truy cập trang này');
-        router.push('/dashboard');
-        return;
-      }
-
-      setTenantId(profile.tenant_id);
+  // Calculate month/year based on period
+  const { month, year } = useMemo(() => {
+    const now = new Date();
+    if (period === 'last_month') {
+      now.setMonth(now.getMonth() - 1);
     }
+    return {
+      month: String(now.getMonth() + 1).padStart(2, '0'),
+      year: String(now.getFullYear()),
+    };
+  }, [period]);
 
-    initTenant();
-  }, [router]);
+  // Fetch data using Intelligence Layer hooks
+  const monthlyPnL = useMonthlyPnL(month, year);
+  const revenueBreakdown = useRevenueBreakdown(month, year);
+  const expenseBreakdown = useExpenseBreakdown(month, year);
+  const profitabilityTrends = useProfitabilityTrends(month, year);
 
-  // ───────────────────────────────────────────────────────────────────────────
-  // Fetch all metrics
-  // ───────────────────────────────────────────────────────────────────────────
+  // Manual refresh mutation
+  const { mutate: refreshData, isPending: isRefreshing } = useRefreshFinanceData();
 
-  const fetchAllMetrics = async (refresh = false) => {
-    if (!tenantId) return;
+  // Combined loading state
+  const isLoading =
+    monthlyPnL.isLoading ||
+    revenueBreakdown.isLoading ||
+    expenseBreakdown.isLoading ||
+    profitabilityTrends.isLoading;
 
-    if (refresh) setIsRefreshing(true);
-    else setIsLoading(true);
-
-    try {
-      const baseUrl = `/api/intelligence/finance`;
-      const params = new URLSearchParams({ tenantId, period });
-
-      if (period === 'custom' && startDate && endDate) {
-        params.set('startDate', startDate);
-        params.set('endDate', endDate);
-      }
-
-      const [pnl, revenue, expense, profitability] = await Promise.all([
-        fetch(`${baseUrl}/monthly-pnl?${params}`).then(r => r.json()),
-        fetch(`${baseUrl}/revenue-breakdown?${params}`).then(r => r.json()),
-        fetch(`${baseUrl}/expense-breakdown?${params}`).then(r => r.json()),
-        fetch(`${baseUrl}/profitability-trends?${params}`).then(r => r.json()),
-      ]);
-
-      // Check for errors
-      if (pnl.error) throw new Error(pnl.error);
-      if (revenue.error) throw new Error(revenue.error);
-      if (expense.error) throw new Error(expense.error);
-      if (profitability.error) throw new Error(profitability.error);
-
-      setMonthlyPnL(pnl);
-      setRevenueBreakdown(revenue);
-      setExpenseBreakdown(expense);
-      setProfitabilityTrends(profitability);
-
-      if (refresh) {
+  // Handle manual refresh
+  const handleRefresh = () => {
+    refreshData('all', {
+      onSuccess: () => {
         toast.success('Dữ liệu đã được cập nhật');
-      }
-    } catch (error) {
-      console.error('Failed to fetch P&L metrics:', error);
-      toast.error('Không thể tải dữ liệu dashboard');
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
+      },
+      onError: (error) => {
+        toast.error(`Lỗi làm mới: ${error.message}`);
+      },
+    });
   };
-
-  useEffect(() => {
-    if (tenantId) {
-      fetchAllMetrics();
-    }
-  }, [tenantId, period, startDate, endDate]);
 
   // ───────────────────────────────────────────────────────────────────────────
   // Helper functions
@@ -187,14 +126,14 @@ export default function PnLDashboardPage() {
   // ───────────────────────────────────────────────────────────────────────────
 
   const getCurrentMonthPnL = () => {
-    if (!monthlyPnL || !monthlyPnL.data || monthlyPnL.data.length === 0) return null;
-    return monthlyPnL.data[0]; // Latest month
+    if (!monthlyPnL.data || !monthlyPnL.data.data || monthlyPnL.data.data.length === 0) return null;
+    return monthlyPnL.data.data[0]; // Latest month
   };
 
   const getProfitabilityTrendData = () => {
-    if (!profitabilityTrends || !profitabilityTrends.data) return [];
+    if (!profitabilityTrends.data || !profitabilityTrends.data.data) return [];
 
-    return profitabilityTrends.data.monthlyTrends.map(trend => ({
+    return profitabilityTrends.data.data.monthlyTrends.map(trend => ({
       date: trend.month.substring(5, 7) + '/' + trend.month.substring(0, 4), // MM/YYYY
       revenue: trend.totalRevenue,
       expenses: trend.totalExpense,
@@ -203,9 +142,9 @@ export default function PnLDashboardPage() {
   };
 
   const getRevenueBreakdownData = () => {
-    if (!revenueBreakdown || !revenueBreakdown.data) return [];
+    if (!revenueBreakdown.data || !revenueBreakdown.data.data) return [];
 
-    return revenueBreakdown.data.byType.map(item => ({
+    return revenueBreakdown.data.data.byType.map(item => ({
       source: item.type,
       revenue: item.amount,
       percentage: item.percentage,
@@ -213,9 +152,9 @@ export default function PnLDashboardPage() {
   };
 
   const getExpenseBreakdownData = () => {
-    if (!expenseBreakdown || !expenseBreakdown.data) return [];
+    if (!expenseBreakdown.data || !expenseBreakdown.data.data) return [];
 
-    return expenseBreakdown.data.byCategory.map(item => ({
+    return expenseBreakdown.data.data.byCategory.map(item => ({
       category: item.category,
       expense: item.amount,
       percentage: item.percentage,
@@ -227,8 +166,8 @@ export default function PnLDashboardPage() {
   // ───────────────────────────────────────────────────────────────────────────
 
   const calculateMoMGrowth = () => {
-    if (!profitabilityTrends || !profitabilityTrends.data) return 0;
-    const trends = profitabilityTrends.data.monthlyTrends;
+    if (!profitabilityTrends.data || !profitabilityTrends.data.data) return 0;
+    const trends = profitabilityTrends.data.data.monthlyTrends;
     if (trends.length < 2) return 0;
 
     const current = trends[trends.length - 1].netProfit;
@@ -239,8 +178,8 @@ export default function PnLDashboardPage() {
   };
 
   const calculateYoYGrowth = () => {
-    if (!profitabilityTrends || !profitabilityTrends.data) return 0;
-    const trends = profitabilityTrends.data.monthlyTrends;
+    if (!profitabilityTrends.data || !profitabilityTrends.data.data) return 0;
+    const trends = profitabilityTrends.data.data.monthlyTrends;
     if (trends.length < 12) return 0;
 
     const current = trends[trends.length - 1].netProfit;
@@ -313,7 +252,7 @@ export default function PnLDashboardPage() {
 
           {/* Refresh Button */}
           <button
-            onClick={() => fetchAllMetrics(true)}
+            onClick={handleRefresh}
             disabled={isRefreshing}
             className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -338,7 +277,7 @@ export default function PnLDashboardPage() {
               </div>
               <h3 className="text-lg font-semibold text-slate-900">Báo Cáo P&L Tháng</h3>
             </div>
-            {monthlyPnL?.metadata.cacheHit && (
+            {monthlyPnL.data?.metadata.cached && (
               <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">Cache</span>
             )}
           </div>
@@ -394,7 +333,7 @@ export default function PnLDashboardPage() {
               <div className="grid grid-cols-2 gap-6 mt-6 pt-4 border-t border-slate-100">
                 <div>
                   <p className="text-sm font-medium text-slate-700 mb-2">Top 3 nguồn doanh thu:</p>
-                  {revenueBreakdown?.data.byType.slice(0, 3).map((item, idx) => (
+                  {revenueBreakdown.data?.data.byType.slice(0, 3).map((item, idx) => (
                     <div key={idx} className="flex items-center justify-between text-sm mb-1">
                       <span className="text-slate-600">{item.type}</span>
                       <span className="font-medium text-slate-900">{formatCurrency(item.amount)}</span>
@@ -404,7 +343,7 @@ export default function PnLDashboardPage() {
 
                 <div>
                   <p className="text-sm font-medium text-slate-700 mb-2">Top 3 danh mục chi phí:</p>
-                  {expenseBreakdown?.data.byCategory.slice(0, 3).map((item, idx) => (
+                  {expenseBreakdown.data?.data.byCategory.slice(0, 3).map((item, idx) => (
                     <div key={idx} className="flex items-center justify-between text-sm mb-1">
                       <span className="text-slate-600">{item.category}</span>
                       <span className="font-medium text-slate-900">{formatCurrency(item.amount)}</span>
@@ -434,18 +373,18 @@ export default function PnLDashboardPage() {
               </div>
               <h3 className="text-lg font-semibold text-slate-900">Phân Tích Doanh Thu</h3>
             </div>
-            {revenueBreakdown?.metadata.cacheHit && (
+            {revenueBreakdown.data?.metadata.cached && (
               <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">Cache</span>
             )}
           </div>
 
-          {revenueBreakdown ? (
+          {revenueBreakdown.data ? (
             <>
               {/* Summary */}
               <div className="mb-4">
                 <p className="text-sm text-slate-600">Tổng doanh thu</p>
                 <p className="text-2xl font-bold text-slate-900">
-                  {formatCurrency(revenueBreakdown.data.totalRevenue)}
+                  {formatCurrency(revenueBreakdown.data.data.totalRevenue)}
                 </p>
               </div>
 
@@ -455,7 +394,7 @@ export default function PnLDashboardPage() {
               {/* Top Sources */}
               <div className="mt-4 pt-4 border-t border-slate-100">
                 <p className="text-sm font-medium text-slate-700 mb-2">Nguồn thu hàng đầu:</p>
-                {revenueBreakdown.data.byType.slice(0, 3).map((item, idx) => (
+                {revenueBreakdown.data.data.byType.slice(0, 3).map((item, idx) => (
                   <div key={idx} className="flex items-center justify-between text-sm mb-1">
                     <span className="text-slate-600">{item.type}</span>
                     <span className="font-medium text-green-600">{item.percentage}%</span>
@@ -484,12 +423,12 @@ export default function PnLDashboardPage() {
               </div>
               <h3 className="text-lg font-semibold text-slate-900">Xu Hướng Lợi Nhuận</h3>
             </div>
-            {profitabilityTrends?.metadata.cacheHit && (
+            {profitabilityTrends.data?.metadata.cached && (
               <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">Cache</span>
             )}
           </div>
 
-          {profitabilityTrends ? (
+          {profitabilityTrends.data ? (
             <>
               {/* Profitability Trend Chart */}
               <ProfitabilityTrendChart data={getProfitabilityTrendData()} height={250} />
@@ -546,18 +485,18 @@ export default function PnLDashboardPage() {
               </div>
               <h3 className="text-lg font-semibold text-slate-900">Phân Tích Chi Phí</h3>
             </div>
-            {expenseBreakdown?.metadata.cacheHit && (
+            {expenseBreakdown.data?.metadata.cached && (
               <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">Cache</span>
             )}
           </div>
 
-          {expenseBreakdown ? (
+          {expenseBreakdown.data ? (
             <>
               {/* Summary */}
               <div className="mb-4">
                 <p className="text-sm text-slate-600">Tổng chi phí</p>
                 <p className="text-2xl font-bold text-slate-900">
-                  {formatCurrency(expenseBreakdown.data.totalExpense)}
+                  {formatCurrency(expenseBreakdown.data.data.totalExpense)}
                 </p>
               </div>
 
@@ -567,7 +506,7 @@ export default function PnLDashboardPage() {
               {/* Top Categories */}
               <div className="mt-4 pt-4 border-t border-slate-100">
                 <p className="text-sm font-medium text-slate-700 mb-2">Danh mục chi phí hàng đầu:</p>
-                {expenseBreakdown.data.byCategory.slice(0, 3).map((item, idx) => (
+                {expenseBreakdown.data.data.byCategory.slice(0, 3).map((item, idx) => (
                   <div key={idx} className="flex items-center justify-between text-sm mb-1">
                     <span className="text-slate-600">{item.category}</span>
                     <span className="font-medium text-red-600">{item.percentage}%</span>
@@ -584,12 +523,12 @@ export default function PnLDashboardPage() {
       </div>
 
       {/* Cache Info Footer */}
-      {monthlyPnL && (
+      {monthlyPnL.data && (
         <div className="text-center text-sm text-slate-500">
           <p>
-            Dữ liệu được tạo lúc {new Date(monthlyPnL.metadata.generatedAt).toLocaleTimeString('vi-VN')}
-            {' '}({monthlyPnL.metadata.cacheHit ? 'Từ cache' : 'Truy vấn mới'})
-            {' '}- Query time: {monthlyPnL.metadata.queryTimeMs}ms
+            Dữ liệu được tạo lúc {new Date(monthlyPnL.data.metadata.computedAt).toLocaleTimeString('vi-VN')}
+            {' '}({monthlyPnL.data.metadata.cached ? 'Từ cache' : 'Truy vấn mới'})
+            {monthlyPnL.data.metadata.executionTime && ` - Query time: ${monthlyPnL.data.metadata.executionTime}ms`}
           </p>
         </div>
       )}

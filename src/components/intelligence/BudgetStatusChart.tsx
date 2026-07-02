@@ -1,20 +1,29 @@
-'use client';
-
 /**
  * Budget Status Pie Chart
  * 
- * Shows distribution of budget status across categories:
- * - Under Budget (green)
- * - On Target (blue)
- * - Over Budget (red)
+ * Visualizes distribution of budget categories by status (under/on_target/over).
+ * Shows percentage breakdown with color-coded segments.
+ * 
+ * Uses Recharts PieChart with custom labels.
+ * 
+ * @created 2026-06-22
+ * @phase Intelligence Layer Phase 8 Task #4
  */
 
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import React from 'react';
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
 
 interface BudgetStatusItem {
-  status: 'under' | 'on_target' | 'over'; // budget status
-  count: number; // number of categories
-  percentage: number; // percentage of total categories
+  status: 'under' | 'on_target' | 'over';
+  count: number;
+  percentage: number;
 }
 
 interface BudgetStatusChartProps {
@@ -22,74 +31,89 @@ interface BudgetStatusChartProps {
   height?: number;
 }
 
-// Status labels (Vietnamese)
-const STATUS_LABELS: Record<string, string> = {
-  'under': 'Dưới ngân sách',
-  'on_target': 'Đúng mục tiêu',
-  'over': 'Vượt ngân sách',
-};
-
-// Color mapping for status
 const STATUS_COLORS: Record<string, string> = {
-  'under': '#10b981',
-  'on_target': '#3b82f6',
-  'over': '#ef4444',
+  under: '#10b981', // green
+  on_target: '#3b82f6', // blue
+  over: '#ef4444', // red
 };
 
-/**
- * Budget Status Pie Chart Component
- * 
- * Displays the distribution of expense categories by their budget status
- * (under/on target/over budget) with color-coded segments.
- * 
- * @param data - Array of status items with counts and percentages
- * @param height - Chart height in pixels (default: 250)
- */
-export function BudgetStatusChart({ data, height = 250 }: BudgetStatusChartProps) {
-  // Transform data for pie chart display
-  const chartData = data.map(item => ({
-    name: STATUS_LABELS[item.status] || item.status,
-    value: item.count,
-    percentage: item.percentage,
-    status: item.status,
-  }));
+const STATUS_LABELS: Record<string, string> = {
+  under: 'Dưới ngân sách',
+  on_target: 'Đúng kế hoạch',
+  over: 'Vượt ngân sách',
+};
 
-  const renderLabel = (entry: any) => {
-    return `${entry.percentage.toFixed(0)}%`;
+export function BudgetStatusChart({ data, height = 250 }: BudgetStatusChartProps) {
+  const renderCustomLabel = ({
+    cx,
+    cy,
+    midAngle,
+    innerRadius,
+    outerRadius,
+    percent,
+  }: any) => {
+    const RADIAN = Math.PI / 180;
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+    // Only show label if percentage is > 5%
+    if (percent < 0.05) return null;
+
+    return (
+      <text
+        x={x}
+        y={y}
+        fill="white"
+        textAnchor={x > cx ? 'start' : 'end'}
+        dominantBaseline="central"
+        fontSize={12}
+        fontWeight={700}
+      >
+        {`${(percent * 100).toFixed(0)}%`}
+      </text>
+    );
   };
 
   return (
     <ResponsiveContainer width="100%" height={height}>
       <PieChart>
         <Pie
-          data={chartData}
+          data={data}
           cx="50%"
           cy="50%"
           labelLine={false}
-          label={renderLabel}
+          label={renderCustomLabel}
           outerRadius={80}
           fill="#8884d8"
-          dataKey="value"
+          dataKey="count"
         >
-          {chartData.map((entry, index) => (
+          {data.map((entry, index) => (
             <Cell key={`cell-${index}`} fill={STATUS_COLORS[entry.status]} />
           ))}
         </Pie>
         <Tooltip
-          formatter={(value, name, props) => [
-            `${value} danh mục (${props.payload.percentage.toFixed(1)}%)`,
-            name
-          ]}
+          formatter={(value: number, name: string, props: any) => {
+            const item = data.find((d) => d.status === props.payload.status);
+            return [
+              `${value} danh mục (${item?.percentage.toFixed(1) || 0}%)`,
+              STATUS_LABELS[props.payload.status] || name,
+            ];
+          }}
           contentStyle={{
-            backgroundColor: 'white',
+            backgroundColor: '#ffffff',
             border: '1px solid #e2e8f0',
             borderRadius: '8px',
-            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+            fontSize: '12px',
           }}
         />
         <Legend
           verticalAlign="bottom"
           height={36}
+          iconType="circle"
+          formatter={(value: string) => {
+            return STATUS_LABELS[value] || value;
+          }}
           wrapperStyle={{ fontSize: '12px' }}
         />
       </PieChart>

@@ -9,14 +9,17 @@
  * 3. Variance Trend by Category (historical variance trends)
  * 4. Budget Status Breakdown (pie chart of status distribution)
  * 
- * Data flows through Intelligence Layer with automatic caching.
+ * Data flows through Intelligence Layer with automatic caching via React Query hooks.
+ * 
+ * REFACTORED: 2026-06-22
+ * - Replaced fetch() calls with React Query hooks
+ * - Automatic cache management with proper staleTime
+ * - Optimistic UI updates with loading/error states
  */
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
-  PiggyBank,
   Target,
   TrendingUp,
   TrendingDown,
@@ -29,8 +32,10 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { createClient } from '@/lib/supabase-client';
-import type { IntelligenceResponse } from '@/services/intelligence/shared/types';
+import {
+  useBudgetVariance,
+  useRefreshFinanceData,
+} from '@/hooks/intelligence';
 import {
   BudgetVarianceChart,
   BudgetUtilizationChart,
@@ -42,13 +47,9 @@ import {
 // Types
 // ─────────────────────────────────────────────────────────────────────────────
 
-interface BudgetVarianceItem {
-  category: string;
-  budgetAmount: number;
-  actualAmount: number;
-  variance: number;
-  variancePercent: number;
-  status: 'under' | 'on_target' | 'over';
+interface MonthOption {
+  value: string;
+  label: string;
 }
 
 interface VarianceTrendDataPoint {
@@ -56,85 +57,48 @@ interface VarianceTrendDataPoint {
   [category: string]: string | number;
 }
 
-interface BudgetVarianceData {
-  month: string;
-  totalBudget: number;
-  totalActual: number;
-  variance: number;
-  variancePercent: number;
-  utilization: number;
-  categories: BudgetVarianceItem[];
-  categoriesUnder: number;
-  categoriesOnTarget: number;
-  categoriesOver: number;
-  historicalTrend: Array<{
-    month: string;
-    categoryVariances: Record<string, number>;
-  }>;
-}
-
-interface MonthOption {
-  value: string;
-  label: string;
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Main Component
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function BudgetTrackingDashboardPage() {
-  const router = useRouter();
-  const [tenantId, setTenantId] = useState<string | null>(null);
   const [selectedMonth, setSelectedMonth] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-
-  // API Response state
-  const [budgetVariance, setBudgetVariance] = useState<IntelligenceResponse<BudgetVarianceData> | null>(null);
-
-  // ───────────────────────────────────────────────────────────────────────────
-  // Initialize tenant and current month
-  // ───────────────────────────────────────────────────────────────────────────
-
-  useEffect(() => {
-    async function initTenant() {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-
-      if (!user) {
-        router.push('/login');
-        return;
-      }
-
-      const { data: profile } = await supabase
-        .from('users')
-        .select('tenant_id, role')
-        .eq('id', user.id)
-        .single();
-
-      if (!profile || !profile.tenant_id) {
-        toast.error('Không tìm thấy tenant');
-        return;
-      }
-
-      // Check if user has admin role
-      if (profile.role !== 'admin') {
-        toast.error('Bạn không có quyền truy cập trang này');
-        router.push('/dashboard');
-        return;
-      }
-
-      setTenantId(profile.tenant_id);
-    }
-
-    initTenant();
-  }, [router]);
 
   // Set current month on mount
   useEffect(() => {
     const now = new Date();
     setSelectedMonth(now.toISOString().slice(0, 7)); // YYYY-MM
   }, []);
+
+  // Parse month and year from selectedMonth
+  const { month, year } = useMemo(() => {
+    if (!selectedMonth) return { month: '', year: '' };
+    const [y, m] = selectedMonth.split('-');
+    return { month: m, year: y };
+  }, [selectedMonth]);
+
+  // Fetch data using Intelligence Layer hooks
+  const budgetVariance = useBudgetVariance(month, year, {
+    enabled: !!month && !!year,
+  });
+
+  // Manual refresh mutation
+  const { mutate: refreshData, isPending: isRefreshing } = useRefreshFinanceData();
+
+  // Loading state
+  const isLoading = budgetVariance.isLoading;
+
+  // Handle manual refresh
+  const handleRefresh = () => {
+    refreshData('budget-variance', {
+      onSuccess: () => {
+        toast.success('Dữ liệu đã được cập nhật');
+      },
+      onError: (error) => {
+        toast.error(`Lỗi làm mới: ${error.message}`);
+      },
+    });
+  };
 
   // ───────────────────────────────────────────────────────────────────────────
   // Generate month options (last 12 months)
@@ -151,46 +115,6 @@ export default function BudgetTrackingDashboardPage() {
     }
     return months;
   };
-
-  // ───────────────────────────────────────────────────────────────────────────
-  // Fetch budget variance data
-  // ───────────────────────────────────────────────────────────────────────────
-
-  const fetchBudgetVariance = async (refresh = false) => {
-    if (!tenantId || !selectedMonth) return;
-
-    if (refresh) setIsRefreshing(true);
-    else setIsLoading(true);
-
-    try {
-      const baseUrl = `/api/intelligence/finance`;
-      const params = new URLSearchParams({ tenantId, month: selectedMonth });
-
-      const response = await fetch(`${baseUrl}/budget-variance?${params}`);
-      const data = await response.json();
-
-      // Check for errors
-      if (data.error) throw new Error(data.error);
-
-      setBudgetVariance(data);
-
-      if (refresh) {
-        toast.success('Dữ liệu đã được cập nhật');
-      }
-    } catch (error) {
-      console.error('Failed to fetch budget variance:', error);
-      toast.error('Không thể tải dữ liệu dashboard');
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
-  };
-
-  useEffect(() => {
-    if (tenantId && selectedMonth) {
-      fetchBudgetVariance();
-    }
-  }, [tenantId, selectedMonth]);
 
   // ───────────────────────────────────────────────────────────────────────────
   // Helper functions
@@ -210,37 +134,33 @@ export default function BudgetTrackingDashboardPage() {
     }).format(value);
   };
 
-  const formatPercent = (value: number) => {
-    return `${value >= 0 ? '+' : ''}${formatNumber(value, 2)}%`;
-  };
-
   // ───────────────────────────────────────────────────────────────────────────
   // Generate chart data from API responses
   // ───────────────────────────────────────────────────────────────────────────
 
   const getBudgetVarianceData = () => {
-    if (!budgetVariance || !budgetVariance.data) return [];
-    return budgetVariance.data.categories;
+    if (!budgetVariance.data || !budgetVariance.data.data) return [];
+    return budgetVariance.data.data.categories;
   };
 
   const getBudgetUtilizationData = () => {
-    if (!budgetVariance || !budgetVariance.data) return null;
+    if (!budgetVariance.data || !budgetVariance.data.data) return null;
 
     return {
-      totalBudget: budgetVariance.data.totalBudget,
-      totalActual: budgetVariance.data.totalActual,
-      utilization: budgetVariance.data.utilization,
-      categoriesUnder: budgetVariance.data.categoriesUnder,
-      categoriesOnTarget: budgetVariance.data.categoriesOnTarget,
-      categoriesOver: budgetVariance.data.categoriesOver,
+      totalBudget: budgetVariance.data.data.totalBudget,
+      totalActual: budgetVariance.data.data.totalActual,
+      utilization: budgetVariance.data.data.utilization,
+      categoriesUnder: budgetVariance.data.data.categoriesUnder,
+      categoriesOnTarget: budgetVariance.data.data.categoriesOnTarget,
+      categoriesOver: budgetVariance.data.data.categoriesOver,
     };
   };
 
   const getVarianceTrendData = () => {
-    if (!budgetVariance || !budgetVariance.data || !budgetVariance.data.historicalTrend) return { data: [], categories: [] };
+    if (!budgetVariance.data || !budgetVariance.data.data || !budgetVariance.data.data.historicalTrend) return { data: [], categories: [] };
 
     // Transform historical trend data for chart
-    const trendData: VarianceTrendDataPoint[] = budgetVariance.data.historicalTrend.map(item => {
+    const trendData: VarianceTrendDataPoint[] = budgetVariance.data.data.historicalTrend.map(item => {
       const dataPoint: VarianceTrendDataPoint = { month: item.month };
       Object.entries(item.categoryVariances).forEach(([category, variance]) => {
         dataPoint[category] = variance;
@@ -249,7 +169,7 @@ export default function BudgetTrackingDashboardPage() {
     });
 
     // Get top 5 categories by absolute variance
-    const topCategories = budgetVariance.data.categories
+    const topCategories = budgetVariance.data.data.categories
       .sort((a, b) => Math.abs(b.variancePercent) - Math.abs(a.variancePercent))
       .slice(0, 5)
       .map(item => item.category);
@@ -258,40 +178,40 @@ export default function BudgetTrackingDashboardPage() {
   };
 
   const getBudgetStatusData = () => {
-    if (!budgetVariance || !budgetVariance.data) return [];
+    if (!budgetVariance.data || !budgetVariance.data.data) return [];
 
-    const totalCategories = budgetVariance.data.categories.length;
+    const totalCategories = budgetVariance.data.data.categories.length;
 
     return [
       {
         status: 'under' as const,
-        count: budgetVariance.data.categoriesUnder,
-        percentage: totalCategories > 0 ? (budgetVariance.data.categoriesUnder / totalCategories) * 100 : 0,
+        count: budgetVariance.data.data.categoriesUnder,
+        percentage: totalCategories > 0 ? (budgetVariance.data.data.categoriesUnder / totalCategories) * 100 : 0,
       },
       {
         status: 'on_target' as const,
-        count: budgetVariance.data.categoriesOnTarget,
-        percentage: totalCategories > 0 ? (budgetVariance.data.categoriesOnTarget / totalCategories) * 100 : 0,
+        count: budgetVariance.data.data.categoriesOnTarget,
+        percentage: totalCategories > 0 ? (budgetVariance.data.data.categoriesOnTarget / totalCategories) * 100 : 0,
       },
       {
         status: 'over' as const,
-        count: budgetVariance.data.categoriesOver,
-        percentage: totalCategories > 0 ? (budgetVariance.data.categoriesOver / totalCategories) * 100 : 0,
+        count: budgetVariance.data.data.categoriesOver,
+        percentage: totalCategories > 0 ? (budgetVariance.data.data.categoriesOver / totalCategories) * 100 : 0,
       },
     ];
   };
 
   const getOverBudgetCategories = () => {
-    if (!budgetVariance || !budgetVariance.data) return [];
-    return budgetVariance.data.categories
+    if (!budgetVariance.data || !budgetVariance.data.data) return [];
+    return budgetVariance.data.data.categories
       .filter(item => item.status === 'over')
       .sort((a, b) => b.variancePercent - a.variancePercent)
       .slice(0, 3);
   };
 
   const getUnderBudgetCategories = () => {
-    if (!budgetVariance || !budgetVariance.data) return [];
-    return budgetVariance.data.categories
+    if (!budgetVariance.data || !budgetVariance.data.data) return [];
+    return budgetVariance.data.data.categories
       .filter(item => item.status === 'under')
       .sort((a, b) => a.variancePercent - b.variancePercent)
       .slice(0, 3);
@@ -312,11 +232,11 @@ export default function BudgetTrackingDashboardPage() {
     );
   }
 
+  const varianceTrendData = getVarianceTrendData();
+
   // ───────────────────────────────────────────────────────────────────────────
   // Render
   // ───────────────────────────────────────────────────────────────────────────
-
-  const varianceTrendData = getVarianceTrendData();
 
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
@@ -346,7 +266,7 @@ export default function BudgetTrackingDashboardPage() {
 
           {/* Refresh Button */}
           <button
-            onClick={() => fetchBudgetVariance(true)}
+            onClick={handleRefresh}
             disabled={isRefreshing}
             className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -371,39 +291,39 @@ export default function BudgetTrackingDashboardPage() {
               </div>
               <h3 className="text-lg font-semibold text-slate-900">Tổng Quan Phương Sai Ngân Sách</h3>
             </div>
-            {budgetVariance?.metadata.cacheHit && (
+            {budgetVariance.data?.metadata.cached && (
               <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">Cache</span>
             )}
           </div>
 
-          {budgetVariance && budgetVariance.data ? (
+          {budgetVariance.data && budgetVariance.data.data ? (
             <>
               {/* Key Metrics */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 <div>
                   <p className="text-sm text-slate-600">Tổng ngân sách</p>
                   <p className="text-xl font-bold text-blue-600">
-                    {formatCurrency(budgetVariance.data.totalBudget)}
+                    {formatCurrency(budgetVariance.data.data.totalBudget)}
                   </p>
                 </div>
 
                 <div>
                   <p className="text-sm text-slate-600">Chi tiêu thực tế</p>
                   <p className="text-xl font-bold text-orange-600">
-                    {formatCurrency(budgetVariance.data.totalActual)}
+                    {formatCurrency(budgetVariance.data.data.totalActual)}
                   </p>
                 </div>
 
                 <div>
                   <p className="text-sm text-slate-600">Phương sai</p>
                   <div className="flex items-center gap-1">
-                    {budgetVariance.data.variance >= 0 ? (
+                    {budgetVariance.data.data.variance >= 0 ? (
                       <TrendingUp className="h-4 w-4 text-red-600" />
                     ) : (
                       <TrendingDown className="h-4 w-4 text-green-600" />
                     )}
-                    <p className={`text-xl font-bold ${budgetVariance.data.variance >= 0 ? 'text-red-600' : 'text-green-600'}`}>
-                      {formatCurrency(Math.abs(budgetVariance.data.variance))}
+                    <p className={`text-xl font-bold ${budgetVariance.data.data.variance >= 0 ? 'text-red-600' : 'text-green-600'}`}>
+                      {formatCurrency(Math.abs(budgetVariance.data.data.variance))}
                     </p>
                   </div>
                 </div>
@@ -411,10 +331,10 @@ export default function BudgetTrackingDashboardPage() {
                 <div>
                   <p className="text-sm text-slate-600">Tỷ lệ sử dụng</p>
                   <p className={`text-xl font-bold ${
-                    budgetVariance.data.utilization > 100 ? 'text-red-600' :
-                    budgetVariance.data.utilization < 85 ? 'text-green-600' : 'text-blue-600'
+                    budgetVariance.data.data.utilization > 100 ? 'text-red-600' :
+                    budgetVariance.data.data.utilization < 85 ? 'text-green-600' : 'text-blue-600'
                   }`}>
-                    {formatNumber(budgetVariance.data.utilization, 1)}%
+                    {formatNumber(budgetVariance.data.data.utilization, 1)}%
                   </p>
                 </div>
               </div>
@@ -490,7 +410,7 @@ export default function BudgetTrackingDashboardPage() {
               </div>
               <h3 className="text-lg font-semibold text-slate-900">Hiệu Suất Ngân Sách</h3>
             </div>
-            {budgetVariance?.metadata.cacheHit && (
+            {budgetVariance.data?.metadata.cached && (
               <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">Cache</span>
             )}
           </div>
@@ -518,7 +438,7 @@ export default function BudgetTrackingDashboardPage() {
               </div>
               <h3 className="text-lg font-semibold text-slate-900">Xu Hướng Phương Sai</h3>
             </div>
-            {budgetVariance?.metadata.cacheHit && (
+            {budgetVariance.data?.metadata.cached && (
               <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">Cache</span>
             )}
           </div>
@@ -555,12 +475,12 @@ export default function BudgetTrackingDashboardPage() {
               </div>
               <h3 className="text-lg font-semibold text-slate-900">Trạng Thái Ngân Sách</h3>
             </div>
-            {budgetVariance?.metadata.cacheHit && (
+            {budgetVariance.data?.metadata.cached && (
               <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">Cache</span>
             )}
           </div>
 
-          {budgetVariance && budgetVariance.data ? (
+          {budgetVariance.data && budgetVariance.data.data ? (
             <>
               <p className="text-sm text-slate-600 mb-3">
                 Phân bổ danh mục theo trạng thái
@@ -571,7 +491,7 @@ export default function BudgetTrackingDashboardPage() {
               <div className="mt-4 pt-4 border-t border-slate-100">
                 <p className="text-sm text-slate-600 mb-2">Tổng số danh mục:</p>
                 <p className="text-2xl font-bold text-slate-900">
-                  {budgetVariance.data.categories.length}
+                  {budgetVariance.data.data.categories.length}
                 </p>
               </div>
             </>
@@ -584,12 +504,12 @@ export default function BudgetTrackingDashboardPage() {
       </div>
 
       {/* Cache Info Footer */}
-      {budgetVariance && (
+      {budgetVariance.data && (
         <div className="text-center text-sm text-slate-500">
           <p>
-            Dữ liệu được tạo lúc {new Date(budgetVariance.metadata.generatedAt).toLocaleTimeString('vi-VN')}
-            {' '}({budgetVariance.metadata.cacheHit ? 'Từ cache' : 'Truy vấn mới'})
-            {' '}- Query time: {budgetVariance.metadata.queryTimeMs}ms
+            Dữ liệu được tạo lúc {new Date(budgetVariance.data.metadata.computedAt).toLocaleTimeString('vi-VN')}
+            {' '}({budgetVariance.data.metadata.cached ? 'Từ cache' : 'Truy vấn mới'})
+            {budgetVariance.data.metadata.executionTime && ` - Query time: ${budgetVariance.data.metadata.executionTime}ms`}
           </p>
         </div>
       )}
