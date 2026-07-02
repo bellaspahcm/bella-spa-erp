@@ -1,0 +1,251 @@
+# Alertmanager Configuration for Intelligence Layer
+# Phase 8: Optimization & Production Readiness
+
+global:
+  # Default SMTP configuration for email alerts
+  smtp_smarthost: 'smtp.gmail.com:587'
+  smtp_from: 'bella-erp-alerts@example.com'
+  smtp_auth_username: 'bella-erp-alerts@example.com'
+  smtp_auth_password: '<SMTP_PASSWORD>' # Set via environment variable
+  smtp_require_tls: true
+
+  # Slack webhook URL (set via environment variable)
+  slack_api_url: '<SLACK_WEBHOOK_URL>'
+
+  # How long to wait before sending a notification again if it has already been sent
+  repeat_interval: 4h
+
+# The root route on which each incoming alert enters
+route:
+  # Default receiver for all alerts
+  receiver: 'default-receiver'
+  
+  # Group alerts by these labels
+  group_by: ['alertname', 'component', 'severity']
+  
+  # How long to wait before sending initial notification
+  group_wait: 30s
+  
+  # How long to wait before sending notification about new alerts added to group
+  group_interval: 5m
+  
+  # Child routes
+  routes:
+    # Critical alerts → Immediate notification via Slack + Email
+    - match:
+        severity: critical
+      receiver: 'critical-alerts'
+      group_wait: 10s
+      group_interval: 2m
+      repeat_interval: 30m
+      continue: false
+
+    # Warning alerts → Slack only, throttled
+    - match:
+        severity: warning
+      receiver: 'warning-alerts'
+      group_wait: 1m
+      group_interval: 10m
+      repeat_interval: 2h
+      continue: false
+
+    # Database component alerts → Database team
+    - match:
+        component: database
+      receiver: 'database-team'
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 1h
+      continue: false
+
+    # External API alerts → Marketing team
+    - match:
+        component: external_api
+      receiver: 'marketing-team'
+      group_wait: 1m
+      group_interval: 10m
+      repeat_interval: 2h
+      continue: false
+
+    # Forecast/Recommendation alerts → Data Science team
+    - match_re:
+        component: forecast|recommendation
+      receiver: 'data-science-team'
+      group_wait: 5m
+      group_interval: 30m
+      repeat_interval: 4h
+      continue: false
+
+# Inhibition rules suppress certain alerts when others are firing
+inhibit_rules:
+  # If critical alert is firing, suppress warning alert for same component
+  - source_match:
+      severity: critical
+    target_match:
+      severity: warning
+    equal: ['alertname', 'component']
+
+  # If MaterializedViewRefreshFailed is firing, suppress MaterializedViewRefreshSlow
+  - source_match:
+      alertname: MaterializedViewRefreshFailed
+    target_match:
+      alertname: MaterializedViewRefreshSlow
+    equal: ['mv_name']
+
+  # If APIResponseTimeCritical is firing, suppress APIResponseTimeSlow
+  - source_match:
+      alertname: APIResponseTimeCritical
+    target_match:
+      alertname: APIResponseTimeSlow
+    equal: ['endpoint']
+
+  # If CacheHitRateCritical is firing, suppress CacheHitRateLow
+  - source_match:
+      alertname: CacheHitRateCritical
+    target_match:
+      alertname: CacheHitRateLow
+    equal: ['cache_type']
+
+# Receivers define notification integrations
+receivers:
+  # Default receiver (fallback)
+  - name: 'default-receiver'
+    email_configs:
+      - to: 'devops-team@example.com'
+        headers:
+          Subject: '[Bella ERP Intelligence] {{ .GroupLabels.alertname }}'
+        html: |
+          <h2>Intelligence Layer Alert</h2>
+          <p><strong>Alert:</strong> {{ .GroupLabels.alertname }}</p>
+          <p><strong>Severity:</strong> {{ .CommonLabels.severity }}</p>
+          <p><strong>Component:</strong> {{ .CommonLabels.component }}</p>
+          <p><strong>Summary:</strong> {{ .CommonAnnotations.summary }}</p>
+          <p><strong>Description:</strong> {{ .CommonAnnotations.description }}</p>
+          <p><strong>Runbook:</strong> {{ .CommonAnnotations.runbook }}</p>
+          <p><strong>Time:</strong> {{ .StartsAt }}</p>
+
+  # Critical alerts receiver
+  - name: 'critical-alerts'
+    slack_configs:
+      - channel: '#bella-erp-critical-alerts'
+        username: 'Bella ERP Intelligence Alerts'
+        icon_emoji: ':rotating_light:'
+        title: ':rotating_light: CRITICAL: {{ .GroupLabels.alertname }}'
+        text: |
+          *Severity:* {{ .CommonLabels.severity }}
+          *Component:* {{ .CommonLabels.component }}
+          *Summary:* {{ .CommonAnnotations.summary }}
+          *Description:* {{ .CommonAnnotations.description }}
+          *Runbook:* {{ .CommonAnnotations.runbook }}
+          *Time:* {{ .StartsAt }}
+        send_resolved: true
+        color: danger
+    email_configs:
+      - to: 'devops-team@example.com, cto@example.com'
+        headers:
+          Subject: '[CRITICAL] Intelligence Layer Alert: {{ .GroupLabels.alertname }}'
+        html: |
+          <h2 style="color: #d32f2f;">🚨 CRITICAL ALERT</h2>
+          <p><strong>Alert:</strong> {{ .GroupLabels.alertname }}</p>
+          <p><strong>Severity:</strong> <span style="color: #d32f2f;">{{ .CommonLabels.severity }}</span></p>
+          <p><strong>Component:</strong> {{ .CommonLabels.component }}</p>
+          <p><strong>Summary:</strong> {{ .CommonAnnotations.summary }}</p>
+          <p><strong>Description:</strong> {{ .CommonAnnotations.description }}</p>
+          <p><strong>Runbook:</strong> <a href="{{ .CommonAnnotations.runbook }}">{{ .CommonAnnotations.runbook }}</a></p>
+          <p><strong>Time:</strong> {{ .StartsAt }}</p>
+
+  # Warning alerts receiver
+  - name: 'warning-alerts'
+    slack_configs:
+      - channel: '#bella-erp-alerts'
+        username: 'Bella ERP Intelligence Alerts'
+        icon_emoji: ':warning:'
+        title: ':warning: Warning: {{ .GroupLabels.alertname }}'
+        text: |
+          *Severity:* {{ .CommonLabels.severity }}
+          *Component:* {{ .CommonLabels.component }}
+          *Summary:* {{ .CommonAnnotations.summary }}
+          *Description:* {{ .CommonAnnotations.description }}
+          *Runbook:* {{ .CommonAnnotations.runbook }}
+          *Time:* {{ .StartsAt }}
+        send_resolved: true
+        color: warning
+
+  # Database team receiver
+  - name: 'database-team'
+    slack_configs:
+      - channel: '#bella-erp-database-alerts'
+        username: 'Bella ERP Database Monitor'
+        icon_emoji: ':database:'
+        title: ':database: Database Alert: {{ .GroupLabels.alertname }}'
+        text: |
+          *Severity:* {{ .CommonLabels.severity }}
+          *Summary:* {{ .CommonAnnotations.summary }}
+          *Description:* {{ .CommonAnnotations.description }}
+          *Runbook:* {{ .CommonAnnotations.runbook }}
+          *Time:* {{ .StartsAt }}
+        send_resolved: true
+    email_configs:
+      - to: 'database-team@example.com'
+        headers:
+          Subject: '[Database Alert] {{ .GroupLabels.alertname }}'
+
+  # Marketing team receiver (for external API alerts)
+  - name: 'marketing-team'
+    slack_configs:
+      - channel: '#bella-erp-marketing-alerts'
+        username: 'Bella ERP Marketing Intelligence'
+        icon_emoji: ':chart_with_upwards_trend:'
+        title: ':chart_with_upwards_trend: External API Alert: {{ .GroupLabels.alertname }}'
+        text: |
+          *Severity:* {{ .CommonLabels.severity }}
+          *Summary:* {{ .CommonAnnotations.summary }}
+          *Description:* {{ .CommonAnnotations.description }}
+          *Runbook:* {{ .CommonAnnotations.runbook }}
+          *Time:* {{ .StartsAt }}
+        send_resolved: true
+    email_configs:
+      - to: 'marketing-team@example.com'
+        headers:
+          Subject: '[Marketing Alert] {{ .GroupLabels.alertname }}'
+
+  # Data Science team receiver (for forecast/recommendation alerts)
+  - name: 'data-science-team'
+    slack_configs:
+      - channel: '#bella-erp-data-science-alerts'
+        username: 'Bella ERP Intelligence Alerts'
+        icon_emoji: ':crystal_ball:'
+        title: ':crystal_ball: Model Alert: {{ .GroupLabels.alertname }}'
+        text: |
+          *Severity:* {{ .CommonLabels.severity }}
+          *Summary:* {{ .CommonAnnotations.summary }}
+          *Description:* {{ .CommonAnnotations.description }}
+          *Runbook:* {{ .CommonAnnotations.runbook }}
+          *Time:* {{ .StartsAt }}
+        send_resolved: true
+    email_configs:
+      - to: 'data-science-team@example.com'
+        headers:
+          Subject: '[ML Model Alert] {{ .GroupLabels.alertname }}'
+
+# Configuration for time intervals
+time_intervals:
+  # Business hours only (Monday-Friday 9am-6pm Vietnam time)
+  - name: business-hours
+    time_intervals:
+      - times:
+          - start_time: '09:00'
+            end_time: '18:00'
+        weekdays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']
+        location: 'Asia/Ho_Chi_Minh'
+
+  # After business hours and weekends
+  - name: after-hours
+    time_intervals:
+      - times:
+          - start_time: '18:00'
+            end_time: '09:00'
+        weekdays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']
+        location: 'Asia/Ho_Chi_Minh'
+      - weekdays: ['saturday', 'sunday']
+        location: 'Asia/Ho_Chi_Minh'
