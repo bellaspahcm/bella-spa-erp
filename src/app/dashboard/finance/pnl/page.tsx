@@ -35,13 +35,14 @@ import {
   useRevenueBreakdown,
   useExpenseBreakdown,
 } from '@/hooks/intelligence';
+// TODO: Finance chart components - using stub implementation
 import {
   PnLStatementChart,
   RevenueBreakdownChart,
   ExpenseBreakdownChart,
   // TODO: Uncomment when ProfitabilityTrendChart data is available
   // ProfitabilityTrendChart,
-} from '@/components/intelligence';
+} from '@/components/finance/charts';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types

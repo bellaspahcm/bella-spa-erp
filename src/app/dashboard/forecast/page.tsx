@@ -5,9 +5,7 @@ import dynamic from 'next/dynamic';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { 
   useRevenueForecast, 
@@ -28,6 +26,16 @@ import {
   Activity,
   AlertCircle
 } from 'lucide-react';
+import {
+  IntelligenceLayout,
+  IntelligenceHeader,
+  IntelligenceSection,
+  IntelligenceButton,
+  IntelligenceStatCard,
+  IntelligenceStatsGrid,
+  IntelligenceLoading,
+  IntelligenceError
+} from '@/components/intelligence';
 
 // Wrapper components for charts that only render on client-side
 const ChartWrapper = dynamic(() => Promise.resolve(({ children }: { children: React.ReactNode }) => <>{children}</>), {
@@ -198,25 +206,20 @@ function ForecastDashboard() {
 
   if (isLoadingUser) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center py-16">
-          <RefreshCw className="w-8 h-8 animate-spin text-muted-foreground" />
-          <span className="ml-3 text-muted-foreground">Đang tải thông tin người dùng...</span>
-        </div>
-      </div>
+      <IntelligenceLayout>
+        <IntelligenceLoading message="Đang tải thông tin người dùng..." />
+      </IntelligenceLayout>
     );
   }
 
   if (!tenantId) {
     return (
-      <div className="container mx-auto p-6">
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Không thể xác định chi nhánh của người dùng hiện tại. Vui lòng đăng nhập lại.
-          </AlertDescription>
-        </Alert>
-      </div>
+      <IntelligenceLayout>
+        <IntelligenceError 
+          title="Thiếu thông tin chi nhánh"
+          message="Không thể xác định chi nhánh của người dùng hiện tại. Vui lòng đăng nhập lại."
+        />
+      </IntelligenceLayout>
     );
   }
 
@@ -226,46 +229,50 @@ function ForecastDashboard() {
   };
 
   return (
-    <div className="intelligence-dashboard page-container">
+    <IntelligenceLayout>
       {/* Header */}
-      <div className="section-header">
-        <div>
-          <div className="section-title-wrapper">
-            <TrendingUp className="section-title-icon" />
-            <span className="section-title-label">Intelligence & Dự Báo</span>
-          </div>
-          <h1 className="section-title">Dự Báo Thông Minh</h1>
-          <p className="section-description">
-            Dự báo doanh thu, tỷ lệ churn và nhu cầu dịch vụ sử dụng Machine Learning
-          </p>
-        </div>
-
-        <button
-          onClick={() => {
-            setChartKey(prev => prev + 1);
-            revenueForecast.refetch();
-            churnForecast.refetch();
-            demandForecast.refetch();
-          }}
-          className="inline-flex items-center justify-center gap-2 rounded-2xl border border-rose-100 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:border-rose-200 hover:text-primary"
-        >
-          <RefreshCw className="h-4 w-4" />
-          Làm mới dữ liệu
-        </button>
-      </div>
+      <IntelligenceHeader
+        icon={TrendingUp}
+        label="Intelligence & Dự Báo"
+        title="Dự Báo Thông Minh"
+        description="Dự báo doanh thu, tỷ lệ churn và nhu cầu dịch vụ sử dụng Machine Learning"
+        actions={
+          <IntelligenceButton
+            onClick={() => {
+              setChartKey(prev => prev + 1);
+              revenueForecast.refetch();
+              churnForecast.refetch();
+              demandForecast.refetch();
+            }}
+            icon={RefreshCw}
+            variant="outline"
+          >
+            Làm mới dữ liệu
+          </IntelligenceButton>
+        }
+      />
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="section-spacing">
-        <TabsList className="TabsList grid w-full grid-cols-3">
-          <TabsTrigger value="revenue" className="TabsTrigger flex items-center gap-2">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
+        <TabsList className="grid w-full grid-cols-3 bg-white/60 p-2 rounded-2xl border border-slate-100 backdrop-blur-md">
+          <TabsTrigger 
+            value="revenue" 
+            className="flex items-center gap-2 rounded-xl text-xs font-black uppercase tracking-wider data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-lg"
+          >
             <DollarSign className="w-4 h-4" />
             <span>Doanh Thu</span>
           </TabsTrigger>
-          <TabsTrigger value="churn" className="TabsTrigger flex items-center gap-2">
+          <TabsTrigger 
+            value="churn" 
+            className="flex items-center gap-2 rounded-xl text-xs font-black uppercase tracking-wider data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-lg"
+          >
             <Users className="w-4 h-4" />
             <span>Tỷ Lệ Rời Đi</span>
           </TabsTrigger>
-          <TabsTrigger value="demand" className="TabsTrigger flex items-center gap-2">
+          <TabsTrigger 
+            value="demand" 
+            className="flex items-center gap-2 rounded-xl text-xs font-black uppercase tracking-wider data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-lg"
+          >
             <Calendar className="w-4 h-4" />
             <span>Nhu Cầu</span>
           </TabsTrigger>
@@ -821,7 +828,7 @@ function ForecastDashboard() {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+    </IntelligenceLayout>
   );
 }
 

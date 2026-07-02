@@ -37,12 +37,13 @@ import {
   // TODO: Implement useRefreshFinanceData hook
   // useRefreshFinanceData,
 } from '@/hooks/intelligence';
+// TODO: Finance chart components - using stub implementation
 import {
   BudgetVarianceChart,
   BudgetUtilizationChart,
   VarianceTrendChart,
   BudgetStatusChart,
-} from '@/components/intelligence';
+} from '@/components/finance/charts';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
