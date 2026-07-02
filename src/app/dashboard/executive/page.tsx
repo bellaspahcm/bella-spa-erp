@@ -105,8 +105,8 @@ function ExecutiveDashboardPage() {
         return;
       }
 
-      // Check if user has executive role
-      if (profile.role !== 'admin') {
+      // Check if user has executive role (allow admin and manager)
+      if (profile.role !== 'admin' && profile.role !== 'manager') {
         toast.error('Bạn không có quyền truy cập trang này');
         router.push('/dashboard');
         return;

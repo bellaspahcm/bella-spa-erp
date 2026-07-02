@@ -266,7 +266,7 @@ const menuItems: SidebarMenuItem[] = [
   { icon: TrendingUp,      label: 'Dự báo kinh doanh',  href: '/dashboard/forecast' },
   { icon: Brain,           label: 'Gợi ý thông minh',   href: '/dashboard/recommendations' },
   { icon: BarChart3,       label: 'Executive Dashboard', href: '/dashboard/executive' },
-  { icon: UserCheck,       label: 'Phân tích khách hàng', href: '/dashboard/customer' },
+  { icon: UserCheck,       label: 'Phân tích khách hàng', href: '/dashboard/customer-intelligence' },
   { icon: DollarSign,      label: 'Phân tích tài chính', href: '/dashboard/finance' },
   { icon: Building2,       label: 'Phân tích nhân sự',   href: '/dashboard/hr' },
   { icon: Activity,        label: 'Phân tích vận hành',  href: '/dashboard/operations' },
