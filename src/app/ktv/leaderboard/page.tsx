@@ -99,12 +99,12 @@ export default function KTVLeaderboardPage() {
             {leaderboard[1] && (
                <div className="flex flex-col items-center flex-1">
                   <div className="w-16 h-16 bg-white dark:bg-[#292623] rounded-2xl shadow-lg border-2 border-slate-100 dark:border-[#3E3A35] flex items-center justify-center mb-3 overflow-hidden relative">
-                     <span className="text-xl font-black text-slate-600 dark:text-[#D4C5B6]">2</span>
+                     <span className="text-xl font-black text-slate-700 dark:text-[#D4C5B6]">2</span>
                   </div>
                   <p className="text-[10px] font-black text-slate-900 dark:text-[#EFE9E1] text-center truncate w-full">{leaderboard[1].full_name}</p>
                   <span className="text-[8px] font-black text-slate-700 dark:text-[#D4C5B6] uppercase">{leaderboard[1].sessions ?? 0} ca</span>
-                  <div className="h-16 w-full bg-gradient-to-br from-pink-500 to-rose-500 dark:bg-[#3E3A35] mt-2 rounded-t-2xl flex items-end justify-center pb-2 shadow-md shadow-pink-300/60 dark:shadow-none">
-                     <Medal className="w-5 h-5 text-white dark:text-[#A67D44]" />
+                  <div className="h-16 w-full bg-gradient-to-br from-pink-400 via-rose-400 to-pink-500 dark:from-[#5D1C34] dark:via-[#4D1328] dark:to-[#5D1C34] mt-2 rounded-t-2xl flex items-end justify-center pb-2 shadow-lg shadow-pink-200 dark:shadow-none">
+                     <Medal className="w-5 h-5 text-white" />
                   </div>
                </div>
             )}

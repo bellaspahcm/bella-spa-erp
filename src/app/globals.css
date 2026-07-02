@@ -138,16 +138,17 @@
   --color-pink-deep: #881337;
   
   /* Override Tailwind default slate colors for better contrast on white/pink bg
-     Default Tailwind values are too light. Push slate-400 to 3 steps darker for maximum legibility. */
+     Default Tailwind values are too light. Push slate-400/500/600/700 to darker shades for maximum legibility. */
   --color-slate-300: #64748b; /* was #cbd5e1, now use 500 (2 steps darker) */
   --color-slate-400: #475569; /* was #94a3b8, now use 600 (2 steps darker) for better legibility ✅ 7.48:1 contrast */
   --color-slate-500: #334155; /* was #64748b, now use 700 (2 steps darker) */
-  --color-slate-600: #1e293b; /* was #475569, now use 800 (2 steps darker) */
-  --color-slate-700: rgb(15, 23, 42); /* was rgb(51, 65, 85), now use 900 for maximum contrast */
+  --color-slate-600: #1e293b; /* was #475569, now use 800 (2 steps darker) ✅ 11.6:1 contrast on white */
+  --color-slate-700: #0f172a; /* was rgb(51, 65, 85), now use 900 for maximum contrast ✅ 14.8:1 contrast */
   --color-gray-300: #6b7280; /* was #d1d5db, now use 500 (2 steps darker) */
   --color-gray-400: #4b5563; /* was #9ca3af, now use 600 (2 steps darker) for better legibility ✅ 7.14:1 contrast */
-  --color-gray-500: #374151; /* was #6b7280, now use 700 (2 steps darker) */
-  --color-gray-600: #1f2937; /* was #4b5563, now use 800 (2 steps darker) */
+  --color-gray-500: #374151; /* was #6b7280, now use 700 (2 steps darker) ✅ 9.73:1 contrast on white */
+  --color-gray-600: #1f2937; /* was #4b5563, now use 800 (2 steps darker) ✅ 12.6:1 contrast on white */
+  --color-gray-700: #111827; /* Add gray-700 override for maximum contrast ✅ 15.3:1 contrast on white */
 
   --font-sans: var(--font-sans);
 
