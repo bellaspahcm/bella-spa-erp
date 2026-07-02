@@ -29,32 +29,54 @@ import {
   AlertCircle
 } from 'lucide-react';
 
-// Register Chart.js synchronously on client-side only
-if (typeof window !== 'undefined') {
-  const ChartJS = require('chart.js');
-  ChartJS.Chart.register(
-    ChartJS.CategoryScale,
-    ChartJS.LinearScale,
-    ChartJS.PointElement,
-    ChartJS.LineElement,
-    ChartJS.BarElement,
-    ChartJS.Title,
-    ChartJS.Tooltip,
-    ChartJS.Legend,
-    ChartJS.Filler
-  );
-}
+// Wrapper components for charts that only render on client-side
+const ChartWrapper = dynamic(() => Promise.resolve(({ children }: { children: React.ReactNode }) => <>{children}</>), {
+  ssr: false,
+});
 
-// Lazy load Chart components AFTER registration
+// Lazy load Chart components with no SSR
 const Line = dynamic(
   () => import('react-chartjs-2').then((mod) => mod.Line),
-  { ssr: false, loading: () => <div className="h-[400px] flex items-center justify-center"><RefreshCw className="w-6 h-6 animate-spin text-muted-foreground" /></div> }
+  { 
+    ssr: false, 
+    loading: () => (
+      <div className="h-[400px] flex items-center justify-center">
+        <RefreshCw className="w-6 h-6 animate-spin text-muted-foreground" />
+      </div>
+    ) 
+  }
 );
 
 const Bar = dynamic(
   () => import('react-chartjs-2').then((mod) => mod.Bar),
-  { ssr: false, loading: () => <div className="h-[400px] flex items-center justify-center"><RefreshCw className="w-6 h-6 animate-spin text-muted-foreground" /></div> }
+  { 
+    ssr: false, 
+    loading: () => (
+      <div className="h-[400px] flex items-center justify-center">
+        <RefreshCw className="w-6 h-6 animate-spin text-muted-foreground" />
+      </div>
+    ) 
+  }
 );
+
+// Client-side only Chart.js registration
+if (typeof window !== 'undefined') {
+  // Use dynamic import with await to ensure synchronous execution
+  Promise.resolve().then(async () => {
+    const ChartJS = await import('chart.js');
+    ChartJS.Chart.register(
+      ChartJS.CategoryScale,
+      ChartJS.LinearScale,
+      ChartJS.PointElement,
+      ChartJS.LineElement,
+      ChartJS.BarElement,
+      ChartJS.Title,
+      ChartJS.Tooltip,
+      ChartJS.Legend,
+      ChartJS.Filler
+    );
+  });
+}
 
 function ForecastDashboard() {
   const [activeTab, setActiveTab] = useState('revenue');
@@ -64,6 +86,35 @@ function ForecastDashboard() {
   const [revenueModel, setRevenueModel] = useState('exponential_smoothing');
   const [tenantId, setTenantId] = useState('');
   const [isLoadingUser, setIsLoadingUser] = useState(true);
+  const [chartKey, setChartKey] = useState(0);
+  const [isChartReady, setIsChartReady] = useState(false);
+
+  // Register Chart.js on client-side mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      import('chart.js').then((ChartJS) => {
+        ChartJS.Chart.register(
+          ChartJS.CategoryScale,
+          ChartJS.LinearScale,
+          ChartJS.PointElement,
+          ChartJS.LineElement,
+          ChartJS.BarElement,
+          ChartJS.Title,
+          ChartJS.Tooltip,
+          ChartJS.Legend,
+          ChartJS.Filler
+        );
+        setIsChartReady(true);
+      });
+    }
+  }, []);
+
+  // Force chart remount when tab or settings change to prevent canvas reuse errors
+  useEffect(() => {
+    if (isChartReady) {
+      setChartKey(prev => prev + 1);
+    }
+  }, [activeTab, revenueHorizon, churnHorizon, demandHorizon, revenueModel, isChartReady]);
 
   // Get current user's tenant ID
   useEffect(() => {
@@ -135,7 +186,8 @@ function ForecastDashboard() {
     throwOnError: false
   });
 
-  const formatCurrency = (value: number) => {
+  const formatCurrency = (value: number | null | undefined) => {
+    if (value == null || !Number.isFinite(value)) return 'N/A';
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: 'VND',
@@ -168,7 +220,8 @@ function ForecastDashboard() {
     );
   }
 
-  const formatPercent = (value: number) => {
+  const formatPercent = (value: number | null | undefined) => {
+    if (value == null || !Number.isFinite(value)) return 'N/A';
     return `${value.toFixed(1)}%`;
   };
 
@@ -186,6 +239,7 @@ function ForecastDashboard() {
           variant="outline" 
           size="sm"
           onClick={() => {
+            setChartKey(prev => prev + 1); // Force chart remount
             revenueForecast.refetch();
             churnForecast.refetch();
             demandForecast.refetch();
@@ -276,7 +330,9 @@ function ForecastDashboard() {
                   <div className="text-2xl font-bold">
                     {Array.isArray(revenueForecast.data.data) 
                       ? `${revenueForecast.data.data.length} kết quả`
-                      : formatCurrency(revenueForecast.data.data.forecasted_value)}
+                      : revenueForecast.data.data?.forecasted_value
+                      ? formatCurrency(revenueForecast.data.data.forecasted_value)
+                      : 'N/A'}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
                     Model: {Array.isArray(revenueForecast.data.data) 
@@ -294,9 +350,9 @@ function ForecastDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
-                    {Array.isArray(revenueForecast.data.data) && revenueForecast.data.data[0]?.accuracy_pct
+                    {Array.isArray(revenueForecast.data.data) && revenueForecast.data.data[0]?.accuracy_pct != null
                       ? `${revenueForecast.data.data[0].accuracy_pct.toFixed(1)}%`
-                      : !Array.isArray(revenueForecast.data.data) && revenueForecast.data.data.accuracy_pct
+                      : !Array.isArray(revenueForecast.data.data) && revenueForecast.data.data?.accuracy_pct != null
                       ? `${revenueForecast.data.data.accuracy_pct.toFixed(1)}%`
                       : 'N/A'}
                   </div>
@@ -314,15 +370,18 @@ function ForecastDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-sm font-bold">
-                    {!Array.isArray(revenueForecast.data.data) && (
+                    {!Array.isArray(revenueForecast.data.data) && revenueForecast.data.data?.confidence_lower != null && revenueForecast.data.data?.confidence_upper != null ? (
                       <>
                         {formatCurrency(revenueForecast.data.data.confidence_lower)}
                         {' - '}
                         {formatCurrency(revenueForecast.data.data.confidence_upper)}
                       </>
-                    )}
+                    ) : null}
                     {Array.isArray(revenueForecast.data.data) && revenueForecast.data.data.length > 0 && (
                       <>Multi-period</>
+                    )}
+                    {!Array.isArray(revenueForecast.data.data) && (revenueForecast.data.data?.confidence_lower == null || revenueForecast.data.data?.confidence_upper == null) && (
+                      <>N/A</>
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -365,6 +424,13 @@ function ForecastDashboard() {
                     Đang tải dữ liệu...
                   </div>
                 </div>
+              ) : !isChartReady ? (
+                <div className="h-[400px] flex items-center justify-center">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    Đang khởi tạo biểu đồ...
+                  </div>
+                </div>
               ) : revenueForecast.error ? (
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
@@ -382,8 +448,10 @@ function ForecastDashboard() {
                     : [revenueForecast.data.data];
                   
                   return (
-                    <Line
-                      data={{
+                    <ChartWrapper>
+                      <Line
+                        key={`revenue-chart-${chartKey}`}
+                        data={{
                         labels: forecastData.map((f: any) => f.period_end_date),
                         datasets: [
                           {
@@ -439,6 +507,7 @@ function ForecastDashboard() {
                       }}
                       height={400}
                     />
+                    </ChartWrapper>
                   );
                 })()
               ) : (
@@ -500,9 +569,11 @@ function ForecastDashboard() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold text-red-600">
-                      {!Array.isArray(churnForecast.data.data) 
+                      {!Array.isArray(churnForecast.data.data) && churnForecast.data.data?.forecasted_value != null
                         ? formatPercent(churnForecast.data.data.forecasted_value)
-                        : `${churnForecast.data.data.length} periods`}
+                        : Array.isArray(churnForecast.data.data)
+                        ? `${churnForecast.data.data.length} periods`
+                        : 'N/A'}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
                       Model: {!Array.isArray(churnForecast.data.data) 
@@ -520,14 +591,15 @@ function ForecastDashboard() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-sm font-bold">
-                      {!Array.isArray(churnForecast.data.data) && (
+                      {!Array.isArray(churnForecast.data.data) && churnForecast.data.data?.confidence_lower != null && churnForecast.data.data?.confidence_upper != null ? (
                         <>
                           {formatPercent(churnForecast.data.data.confidence_lower)}
                           {' - '}
                           {formatPercent(churnForecast.data.data.confidence_upper)}
                         </>
-                      )}
+                      ) : null}
                       {Array.isArray(churnForecast.data.data) && <>Multi-period</>}
+                      {!Array.isArray(churnForecast.data.data) && (churnForecast.data.data?.confidence_lower == null || churnForecast.data.data?.confidence_upper == null) && <>N/A</>}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">95% CI</p>
                   </CardContent>
@@ -541,7 +613,7 @@ function ForecastDashboard() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">
-                      {!Array.isArray(churnForecast.data.data) && churnForecast.data.data.accuracy_pct
+                      {!Array.isArray(churnForecast.data.data) && churnForecast.data.data?.accuracy_pct != null
                         ? formatPercent(churnForecast.data.data.accuracy_pct)
                         : 'N/A'}
                     </div>
@@ -613,9 +685,11 @@ function ForecastDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
-                    {!Array.isArray(demandForecast.data.data) 
+                    {!Array.isArray(demandForecast.data.data) && demandForecast.data.data?.forecasted_value != null
                       ? demandForecast.data.data.forecasted_value.toFixed(0)
-                      : `${demandForecast.data.data.length} periods`}
+                      : Array.isArray(demandForecast.data.data)
+                      ? `${demandForecast.data.data.length} periods`
+                      : 'N/A'}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
                     {demandHorizon} tháng tới
@@ -646,7 +720,7 @@ function ForecastDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-primary">
-                    {!Array.isArray(demandForecast.data.data) && demandForecast.data.data.accuracy_pct
+                    {!Array.isArray(demandForecast.data.data) && demandForecast.data.data?.accuracy_pct != null
                       ? `${demandForecast.data.data.accuracy_pct.toFixed(1)}%`
                       : 'N/A'}
                   </div>
@@ -671,6 +745,13 @@ function ForecastDashboard() {
                     Đang tải dữ liệu...
                   </div>
                 </div>
+              ) : !isChartReady ? (
+                <div className="h-[400px] flex items-center justify-center">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    Đang khởi tạo biểu đồ...
+                  </div>
+                </div>
               ) : demandForecast.error ? (
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
@@ -688,8 +769,10 @@ function ForecastDashboard() {
                     : [demandForecast.data.data];
                   
                   return (
-                    <Bar
-                      data={{
+                    <ChartWrapper>
+                      <Bar
+                        key={`demand-chart-${chartKey}`}
+                        data={{
                         labels: forecastData.map((f: any) => f.period_end_date),
                         datasets: [
                           {
@@ -720,6 +803,7 @@ function ForecastDashboard() {
                       }}
                       height={400}
                     />
+                    </ChartWrapper>
                   );
                 })()
               ) : (
