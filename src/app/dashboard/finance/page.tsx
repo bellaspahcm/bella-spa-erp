@@ -10,8 +10,7 @@
  * - Optimistic UI updates with loading/error states
  */
 
-import { FinancePnLSummary } from '@/components/features/FinancePnLSummary';
-import type { PnLData, ServicePerformance } from '@/components/features/FinancePnLSummary';
+import { FinancePnLSummary, type PnLData, type ServicePerformance } from '@/components/features/FinancePnLSummary';
 import { TransactionModal } from '@/components/features/TransactionModal';
 import PremiumExportButton from '@/components/ui/PremiumExportButton';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
