@@ -95,28 +95,40 @@ export default function ForecastDashboard() {
     loadUser();
   }, []);
 
-  // Fetch forecasts
+  // Fetch forecasts with retry: false to prevent infinite retries on 400 errors
   const revenueForecast = useRevenueForecast({
     tenantId,
     months: revenueHorizon,
     model: revenueModel as any,
     enabled: !!tenantId
+  }, {
+    retry: false,
+    // Don't throw errors, just return them
+    throwOnError: false
   });
 
   const churnForecast = useChurnForecast({
     tenantId,
     months: churnHorizon,
     enabled: !!tenantId
+  }, {
+    retry: false,
+    throwOnError: false
   });
 
   const demandForecast = useDemandForecast({
     tenantId,
     months: demandHorizon,
     enabled: !!tenantId
+  }, {
+    retry: false,
+    throwOnError: false
   });
 
   const forecastAccuracy = useForecastAccuracy(tenantId, {
-    enabled: !!tenantId
+    enabled: !!tenantId,
+    retry: false,
+    throwOnError: false
   });
 
   const formatCurrency = (value: number) => {
@@ -238,7 +250,17 @@ export default function ForecastDashboard() {
           </Card>
 
           {/* Summary Cards */}
-          {revenueForecast.data?.data && (
+          {revenueForecast.error ? (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Lỗi khi tải dữ liệu dự báo doanh thu</AlertTitle>
+              <AlertDescription>
+                {revenueForecast.error instanceof Error 
+                  ? revenueForecast.error.message 
+                  : 'API không khả dụng. Vui lòng kiểm tra backend hoặc thử lại sau.'}
+              </AlertDescription>
+            </Alert>
+          ) : revenueForecast.data?.data && (
             <div className="grid gap-4 md:grid-cols-4">
               <Card>
                 <CardHeader className="pb-2">
@@ -454,7 +476,17 @@ export default function ForecastDashboard() {
           </Card>
 
           {/* Summary Cards */}
-          {churnForecast.data?.data && (
+          {churnForecast.error ? (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Lỗi khi tải dữ liệu dự báo churn</AlertTitle>
+              <AlertDescription>
+                {churnForecast.error instanceof Error 
+                  ? churnForecast.error.message 
+                  : 'API không khả dụng. Vui lòng kiểm tra backend hoặc thử lại sau.'}
+              </AlertDescription>
+            </Alert>
+          ) : churnForecast.data?.data && (
             <div className="grid gap-4 md:grid-cols-4">
                 <Card>
                   <CardHeader className="pb-2">
@@ -557,7 +589,17 @@ export default function ForecastDashboard() {
           </Card>
 
           {/* Summary Cards */}
-          {demandForecast.data?.data && (
+          {demandForecast.error ? (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Lỗi khi tải dữ liệu dự báo demand</AlertTitle>
+              <AlertDescription>
+                {demandForecast.error instanceof Error 
+                  ? demandForecast.error.message 
+                  : 'API không khả dụng. Vui lòng kiểm tra backend hoặc thử lại sau.'}
+              </AlertDescription>
+            </Alert>
+          ) : demandForecast.data?.data && (
             <div className="grid gap-4 md:grid-cols-3">
               <Card>
                 <CardHeader className="pb-2">
