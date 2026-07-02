@@ -207,7 +207,7 @@ export default function ForecastDashboard() {
             <CardContent className="flex gap-4">
               <div className="flex-1">
                 <label className="text-sm font-medium mb-2 block">Mô Hình</label>
-                <Select value={revenueModel} onValueChange={setRevenueModel}>
+                <Select value={revenueModel} onValueChange={(value) => setRevenueModel(value)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
