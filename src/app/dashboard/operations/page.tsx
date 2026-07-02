@@ -40,9 +40,9 @@ export default function OperationsIntelligencePage() {
   ];
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="flex-1 p-4 sm:p-6 md:p-10 bg-background/30 overflow-auto relative">
       {/* Header */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 pt-4">
         <div className="p-3 bg-rose-100 rounded-xl">
           <Activity className="h-8 w-8 text-rose-600" />
         </div>

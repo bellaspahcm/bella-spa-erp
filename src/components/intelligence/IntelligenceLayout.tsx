@@ -12,7 +12,7 @@ interface IntelligenceLayoutProps {
 
 export function IntelligenceLayout({ children, className }: IntelligenceLayoutProps) {
   return (
-    <div className={cn("flex-1 overflow-auto bg-background/30 p-4 sm:p-6 md:p-10", className)}>
+    <div className={cn("flex-1 overflow-auto bg-background/30 p-4 sm:p-6 md:p-10 relative", className)}>
       {children}
     </div>
   );
@@ -37,7 +37,7 @@ export function IntelligenceHeader({
   actions 
 }: IntelligenceHeaderProps) {
   return (
-    <div className="relative z-10 mb-8 flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+    <div className="relative z-10 mb-8 pt-4 flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
       <div>
         <div className="mb-3 flex items-center gap-2 text-primary">
           <Icon className="h-5 w-5" />
