@@ -1,19 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Brain, Search, RefreshCw, TrendingUp, Package, Star } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Brain, Search, RefreshCw, TrendingUp, Package, Star, AlertCircle } from 'lucide-react';
 import { 
   useServiceRecommendations,
   usePackageRecommendations,
   useUpsellRecommendations
 } from '@/hooks/intelligence/use-recommendation';
+import { createClient } from '@/lib/supabase-client';
 
 export default function RecommendationsPage() {
   const [customerId, setCustomerId] = useState('');
@@ -21,8 +22,42 @@ export default function RecommendationsPage() {
   const [algorithm, setAlgorithm] = useState<'hybrid' | 'collaborative_filtering' | 'content_based' | 'rfm_based'>('hybrid');
   const [limit, setLimit] = useState(5);
   const [budget, setBudget] = useState(5000000);
+  const [tenantId, setTenantId] = useState('');
+  const [isLoadingTenant, setIsLoadingTenant] = useState(true);
 
-  const tenantId = 'bella-spa';
+  // Get current user's tenant ID
+  useEffect(() => {
+    const loadTenant = async () => {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (user) {
+          const userTenantId = user.user_metadata?.tenant_id;
+          
+          if (userTenantId) {
+            setTenantId(userTenantId);
+          } else {
+            const { data: profile } = await supabase
+              .from('users')
+              .select('tenant_id')
+              .eq('id', user.id)
+              .single();
+            
+            if (profile?.tenant_id) {
+              setTenantId(profile.tenant_id);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load tenant context:', error);
+      } finally {
+        setIsLoadingTenant(false);
+      }
+    };
+
+    loadTenant();
+  }, []);
 
   // Fetch recommendations
   const serviceRecommendations = useServiceRecommendations({
@@ -30,7 +65,7 @@ export default function RecommendationsPage() {
     customerId: searchTerm,
     algorithm,
     limit,
-    enabled: !!searchTerm
+    enabled: !!searchTerm && !!tenantId
   });
 
   const packageRecommendations = usePackageRecommendations({
@@ -38,14 +73,14 @@ export default function RecommendationsPage() {
     customerId: searchTerm,
     limit,
     budget,
-    enabled: !!searchTerm
+    enabled: !!searchTerm && !!tenantId
   });
 
   const upsellRecommendations = useUpsellRecommendations({
     tenantId,
     customerId: searchTerm,
     limit,
-    enabled: !!searchTerm
+    enabled: !!searchTerm && !!tenantId
   });
 
   const handleSearch = () => {
@@ -53,6 +88,35 @@ export default function RecommendationsPage() {
       setSearchTerm(customerId.trim());
     }
   };
+
+  // Loading tenant state
+  if (isLoadingTenant) {
+    return (
+      <div className="container mx-auto py-6">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
+            <p className="text-muted-foreground">Loading tenant context...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error: No tenant found
+  if (!tenantId) {
+    return (
+      <div className="container mx-auto py-6">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Tenant Context Missing</AlertTitle>
+          <AlertDescription>
+            Unable to load tenant information. Please refresh the page or contact support.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -211,6 +275,16 @@ export default function RecommendationsPage() {
                     <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2" />
                     Analyzing...
                   </div>
+                ) : serviceRecommendations.isError ? (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Error Loading Recommendations</AlertTitle>
+                    <AlertDescription>
+                      {serviceRecommendations.error instanceof Error 
+                        ? serviceRecommendations.error.message 
+                        : 'Failed to load service recommendations. Please try again.'}
+                    </AlertDescription>
+                  </Alert>
                 ) : serviceRecommendations.data?.data && serviceRecommendations.data.data.length > 0 ? (
                   <div className="space-y-3">
                     {serviceRecommendations.data.data.map((rec) => (
@@ -264,6 +338,16 @@ export default function RecommendationsPage() {
                     <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2" />
                     Analyzing...
                   </div>
+                ) : packageRecommendations.isError ? (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Error Loading Recommendations</AlertTitle>
+                    <AlertDescription>
+                      {packageRecommendations.error instanceof Error 
+                        ? packageRecommendations.error.message 
+                        : 'Failed to load package recommendations. Please try again.'}
+                    </AlertDescription>
+                  </Alert>
                 ) : packageRecommendations.data?.data && packageRecommendations.data.data.length > 0 ? (
                   <div className="space-y-3">
                     {packageRecommendations.data.data.map((rec) => (
@@ -317,6 +401,16 @@ export default function RecommendationsPage() {
                     <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2" />
                     Analyzing...
                   </div>
+                ) : upsellRecommendations.isError ? (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Error Loading Recommendations</AlertTitle>
+                    <AlertDescription>
+                      {upsellRecommendations.error instanceof Error 
+                        ? upsellRecommendations.error.message 
+                        : 'Failed to load upsell recommendations. Please try again.'}
+                    </AlertDescription>
+                  </Alert>
                 ) : upsellRecommendations.data?.data && upsellRecommendations.data.data.length > 0 ? (
                   <div className="space-y-3">
                     {upsellRecommendations.data.data.map((rec) => (
