@@ -28,7 +28,9 @@ import {
   ReceiptText,
   RefreshCw,
   GraduationCap,
-  Key
+  Key,
+  TrendingUp,
+  Brain
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -255,6 +257,10 @@ const menuItems: SidebarMenuItem[] = [
   { type: 'header', label: 'Tổng quan & AI' },
   { icon: LayoutDashboard, label: 'Dashboard',          href: '/dashboard' },
   { icon: Sparkles,        label: 'AI Copilot',         href: '/dashboard/ai-copilot' },
+
+  { type: 'header', label: 'Intelligence & Dự Báo' },
+  { icon: TrendingUp,      label: 'Dự báo kinh doanh',  href: '/dashboard/forecast' },
+  { icon: Brain,           label: 'Gợi ý thông minh',   href: '/dashboard/recommendations' },
 
   { type: 'header', label: 'Khách hàng & Dịch vụ' },
   { icon: Users,           label: 'Khách hàng',         href: '/dashboard/customers' },
