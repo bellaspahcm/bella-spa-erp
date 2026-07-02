@@ -56,6 +56,10 @@ const apiNoStoreHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Disable type checking during build (handled by CI/IDE)
+  typescript: {
+    ignoreBuildErrors: false, // Keep enabled for now to catch errors
+  },
   // Strip console.log/info/debug in production builds. Keeps console.error/warn
   // so real errors still surface in Sentry. Saves bundle size + runtime cost.
   compiler: {
