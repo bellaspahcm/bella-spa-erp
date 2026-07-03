@@ -20,7 +20,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getTopPerformingAds } from '@/services/intelligence/marketing/queries';
-import { periodToDateRange, isValidTenantId, formatDate } from '@/services/intelligence/shared/helpers';
+import { periodToDateRange, formatDate } from '@/services/intelligence/shared/helpers';
+import { getTenantIdFromSessionOrParam } from '../../shared/get-tenant-id';
 import type { TimePeriod } from '@/services/intelligence/shared/types';
 import type { DateRange, Platform, PerformanceMetric } from '@/services/intelligence/marketing/types';
 
@@ -28,7 +29,6 @@ export async function GET(request: NextRequest) {
   try {
     // Parse query params
     const { searchParams } = new URL(request.url);
-    const tenantId = searchParams.get('tenantId');
     const metric = searchParams.get('metric') as PerformanceMetric | null;
     const period = searchParams.get('period') as TimePeriod | null;
     const startDate = searchParams.get('startDate');
@@ -36,20 +36,12 @@ export async function GET(request: NextRequest) {
     const platformsParam = searchParams.get('platforms');
     const limitParam = searchParams.get('limit');
 
-    // Validate required params
-    if (!tenantId) {
-      return NextResponse.json(
-        { error: 'Missing required parameter: tenantId' },
-        { status: 400 }
-      );
+    // Auto-fetch tenantId from session or fallback to query param
+    const tenantIdResult = await getTenantIdFromSessionOrParam(searchParams);
+    if (tenantIdResult instanceof NextResponse) {
+      return tenantIdResult;
     }
-
-    if (!isValidTenantId(tenantId)) {
-      return NextResponse.json(
-        { error: 'Invalid tenantId format (must be UUID v4)' },
-        { status: 400 }
-      );
-    }
+    const { tenantId } = tenantIdResult;
 
     if (!metric) {
       return NextResponse.json(

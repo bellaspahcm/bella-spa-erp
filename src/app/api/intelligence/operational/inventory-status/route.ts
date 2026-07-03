@@ -12,29 +12,20 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getOperationalIntelligenceService } from '@/services/intelligence/operational';
-import { isValidTenantId } from '@/services/intelligence/shared/helpers';
+import { getTenantIdFromSessionOrParam } from '../../shared/get-tenant-id';
 
 export async function GET(request: NextRequest) {
   try {
     // Parse query params
     const { searchParams } = new URL(request.url);
-    const tenantId = searchParams.get('tenantId');
     const stockStatus = searchParams.get('stockStatus') as 'out_of_stock' | 'low_stock' | 'medium_stock' | 'high_stock' | null;
 
-    // Validate required params
-    if (!tenantId) {
-      return NextResponse.json(
-        { error: 'Missing required parameter: tenantId' },
-        { status: 400 }
-      );
+    // Auto-fetch tenantId from session or fallback to query param
+    const tenantIdResult = await getTenantIdFromSessionOrParam(searchParams);
+    if (tenantIdResult instanceof NextResponse) {
+      return tenantIdResult;
     }
-
-    if (!isValidTenantId(tenantId)) {
-      return NextResponse.json(
-        { error: 'Invalid tenantId format (must be UUID v4)' },
-        { status: 400 }
-      );
-    }
+    const { tenantId } = tenantIdResult;
 
     // Validate stockStatus if provided
     if (stockStatus && !['out_of_stock', 'low_stock', 'medium_stock', 'high_stock'].includes(stockStatus)) {

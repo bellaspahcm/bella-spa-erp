@@ -16,34 +16,26 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getOperationalIntelligenceService } from '@/services/intelligence/operational';
-import { periodToDateRange, isValidTenantId } from '@/services/intelligence/shared/helpers';
+import { periodToDateRange } from '@/services/intelligence/shared/helpers';
+import { getTenantIdFromSessionOrParam } from '../../shared/get-tenant-id';
 import type { TimePeriod } from '@/services/intelligence/shared/types';
 
 export async function GET(request: NextRequest) {
   try {
     // Parse query params
     const { searchParams } = new URL(request.url);
-    const tenantId = searchParams.get('tenantId');
     const period = (searchParams.get('period') || 'month') as TimePeriod;
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
     const metric = (searchParams.get('metric') || 'revenue') as 'revenue' | 'sessions' | 'rating';
     const limit = parseInt(searchParams.get('limit') || '10', 10);
 
-    // Validate required params
-    if (!tenantId) {
-      return NextResponse.json(
-        { error: 'Missing required parameter: tenantId' },
-        { status: 400 }
-      );
+    // Auto-fetch tenantId from session or fallback to query param
+    const tenantIdResult = await getTenantIdFromSessionOrParam(searchParams);
+    if (tenantIdResult instanceof NextResponse) {
+      return tenantIdResult;
     }
-
-    if (!isValidTenantId(tenantId)) {
-      return NextResponse.json(
-        { error: 'Invalid tenantId format (must be UUID v4)' },
-        { status: 400 }
-      );
-    }
+    const { tenantId } = tenantIdResult;
 
     // Validate metric
     if (!['revenue', 'sessions', 'rating'].includes(metric)) {
