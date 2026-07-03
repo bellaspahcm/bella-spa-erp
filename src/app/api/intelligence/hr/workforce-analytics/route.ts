@@ -16,6 +16,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getHRIntelligenceService } from '@/services/intelligence/hr/service';
 import { isValidTenantId } from '@/services/intelligence/shared/helpers';
 import type { TimePeriod } from '@/services/intelligence/shared/types';
+import { getCurrentUser } from '@/services/user-actions';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -24,19 +25,28 @@ export async function GET(request: NextRequest) {
   try {
     // Parse query params
     const { searchParams } = new URL(request.url);
-    const tenantId = searchParams.get('tenantId');
+    const tenantIdParam = searchParams.get('tenantId');
     const period = searchParams.get('period') as TimePeriod | null;
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
 
-    // Validate required params
-    if (!tenantId) {
-      return NextResponse.json(
-        { error: 'Missing required parameter: tenantId' },
-        { status: 400 }
-      );
+    // Get tenant ID from session or query param
+    let tenantId: string;
+    if (tenantIdParam) {
+      tenantId = tenantIdParam;
+    } else {
+      // Get from session
+      const user = await getCurrentUser();
+      if (!user?.tenant_id) {
+        return NextResponse.json(
+          { error: 'User not authenticated or missing tenant context' },
+          { status: 401 }
+        );
+      }
+      tenantId = user.tenant_id;
     }
 
+    // Validate tenantId
     if (!isValidTenantId(tenantId)) {
       return NextResponse.json(
         { error: 'Invalid tenantId format (must be UUID v4)' },
