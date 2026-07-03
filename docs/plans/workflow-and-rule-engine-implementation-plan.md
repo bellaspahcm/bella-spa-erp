@@ -9,37 +9,41 @@
 
 ---
 
-## 🎯 TẦM NHÌN: 5-ENGINE ARCHITECTURE
+## 🎯 TẦM NHÌN: 5-ENGINE ARCHITECTURE (UPDATED v1.2)
 
 ```
 ┌─────────────────────────────────────────────┐
 │   Business Intelligence Engine (ĐÃ CÓ)     │
 │   - Revenue, Cash Flow, KPI, ROI            │
+│   - KPI Triggers (auto-start workflows)     │
 └──────────────────┬──────────────────────────┘
                    ▼
 ┌─────────────────────────────────────────────┐
-│   Rule Engine (Decision) - PHASE 1         │
-│   - IF Cash Flow < 2 months → Reject        │
+│   Decision Engine - PHASE 1                 │
+│   (Rule → AI → BI → ML → Human Approval)    │
+│   - Rule-based: IF/THEN logic               │
+│   - KPI-triggered: Auto workflow on threshold│
+│   - AI-powered: Recommendations (Phase 3)    │
 └──────────────────┬──────────────────────────┘
                    ▼
 ┌─────────────────────────────────────────────┐
-│   Workflow Engine (Process) - PHASE 1      │
-│   - Move State, Orchestrate                 │
+│   Workflow Engine - PHASE 1                 │
+│   - Template Marketplace (Spa, Clinic, etc) │
+│   - Drag & Drop Designer                     │
 └──────────────────┬──────────────────────────┘
                    ▼
 ┌─────────────────────────────────────────────┐
-│   Event Engine (Integration) - PHASE 2     │
-│   - Publish Events → Workers                │
-└──────────────────┬──────────────────────────┘
-                   ▼
-┌─────────────────────────────────────────────┐
-│   AI Intelligence Engine - PHASE 3         │
-│   - Predictive, Recommendations             │
-└─────────────────────────────────────────────┘
+│   Event Engine - PHASE 2                    │
+│   - Business Events Bus                      │
+└──────────┬──────┬──────┬────────────────────┘
+           ▼      ▼      ▼
+    Notification Webhook AI Agent
 ```
 
 **USP (Unique Selling Point):**
-> Bella không chỉ là ERP. Bella là nền tảng quyết định thông minh dựa trên dữ liệu thực tế của doanh nghiệp.
+> **Bella không chỉ là ERP. Bella là Enterprise Intelligence Platform.**
+> 
+> Các module (CRM, Finance, HR, Inventory) là **ứng dụng sử dụng engines**, không phải trung tâm hệ thống. Bella mở rộng sang nhiều ngành với chi phí thấp và lợi thế cạnh tranh bền vững.
 
 ---
 
@@ -511,8 +515,8 @@ class WorkflowService {
 
 ---
 
-#### **Phase 1.4: Visual Workflow Designer (Tuần 11-12)** ⭐ **USP**
-**Mục tiêu:** Drag & Drop workflow builder (như Power Automate, n8n, Camunda)
+#### **Phase 1.4: Visual Workflow Designer + Marketplace (Tuần 11-12)** ⭐ **USP**
+**Mục tiêu:** Drag & Drop workflow builder + Template Marketplace
 
 **Tasks:**
 - [ ] React Flow / Xyflow integration
@@ -520,116 +524,150 @@ class WorkflowService {
   - Drag states from palette
   - Connect states với arrows
   - Configure state properties (timeout, roles, rules)
-  - Configure transition conditions (Rule Engine rules)
+  - Configure transition conditions (Decision Engine rules)
 - [ ] Save workflow as JSONB config
 - [ ] Version management UI
 - [ ] Preview mode (test with sample data)
 - [ ] Clone workflow template
+- [ ] **NEW: Workflow Template Marketplace** ⭐
+  - Pre-built templates cho industries:
+    - Spa: Leave approval, Salary approval, Booking confirmation, Inventory reorder
+    - Clinic: Patient registration, Appointment scheduling, Prescription approval
+    - Restaurant: Menu approval, Supplier order, Staff scheduling
+    - Manufacturing: Quality check, Purchase requisition
+  - One-click import template
+  - Customize variables (roles, amounts, thresholds)
+  - Rate & review templates
+- [ ] **NEW: Rule Library** ⭐
+  - Pre-built decision rules:
+    - Financial gates (cash flow checks, budget checks)
+    - HR rules (leave eligibility, overtime approval)
+    - Inventory rules (reorder points, expiry alerts)
+    - Customer rules (credit limits, loyalty discounts)
+  - Drag & drop rules into workflows
+  - Customize rule parameters
 
 **Deliverables:**
-- Admin creates workflow visually
-- No code needed
+- Admin creates workflow visually in < 5 minutes
+- Import industry templates in < 30 seconds
+- Reusable rule library với 20+ pre-built rules
 - Real-time preview
 
 **Success Metrics:**
-- Admin creates simple workflow in < 5 minutes
-- Complex workflow in < 20 minutes
-- User satisfaction score > 4.5/5
+- 80% customers use templates (not build from scratch)
+- Template marketplace has 50+ templates
+- Rule library has 100+ reusable rules
+- User satisfaction score > 4.7/5
 
 ---
 
-## 🔧 PHẦN 2: RULE ENGINE (Priority: P0 - Build First)
+## 🔧 PHẦN 2: DECISION ENGINE (RENAMED from Rule Engine)
 
-> **REVIEW NOTE:** Rule Engine mới là phần quan trọng nhất. Workflow chỉ move state. Rule mới quyết định.
+> **NAMING CHANGE:** "Rule Engine" → "Decision Engine"  
+> **Lý do:** Rule chỉ là một kiểu Decision. Decision còn có AI, BI KPI Triggers, ML, Human Approval.
 
-### 2.1 Định Nghĩa & Scope (UPDATED)
+### 2.1 Định Nghĩa & Scope (UPDATED v1.2)
 
-**Rule Engine là gì?**
+**Decision Engine là gì?**
 - **Decision layer** của Enterprise Intelligence Platform
+- **Không chỉ Rules** - còn có AI, KPI Triggers, ML predictions, Human judgment
 - Đọc **Business Intelligence data** để ra quyết định
-- Declarative rules stored in database
-- Versioned, audited, tenant-scoped
+- Version-controlled, audited, tenant-scoped
 - Hot-reload without code deployment
 
-**Kiến trúc mới:**
+**Decision Types (Progressive Enhancement):**
 
 ```
-┌──────────────────────────────────┐
-│  Business Intelligence Engine    │
-│  (Revenue, Cash Flow, KPI, ROI)  │
-└──────────────┬───────────────────┘
-               ▼
-┌──────────────────────────────────┐
-│         Rule Engine              │
-│  - Read BI Metrics               │
-│  - Evaluate Conditions           │
-│  - Return Decision               │
-└──────────────┬───────────────────┘
-               ▼
-┌──────────────────────────────────┐
-│       Workflow Engine            │
-│  - Ask Rule Engine               │
-│  - Move State based on Decision  │
-└──────────────────────────────────┘
+Phase 1: Rule-Based Decisions
+  ├─ IF Cash Flow < 2 months → Reject expense
+  └─ IF Rating ≥ 4.5 AND Revenue > Target → 20% bonus
+
+Phase 2: KPI-Triggered Decisions ⭐ NEW
+  ├─ Revenue < Target → Auto-create CEO alert workflow
+  └─ Inventory < threshold → Auto-purchase order
+
+Phase 3: AI-Powered Decisions
+  ├─ Recommend: "95% approval history → Suggest auto-approve"
+  └─ Predict: "Cash flow will drop in 2 weeks → Alert CFO"
+
+Phase 4: ML-Based Decisions
+  ├─ Customer churn prediction → Retention workflow
+  └─ Demand forecasting → Inventory optimization
+
+Phase 5: Hybrid Decisions
+  └─ Rule + AI + Human Approval = Final Decision
 ```
 
-**Use Cases MVP (với BI Integration):**
+**Use Cases MVP (Phase 1 - Rule-Based):**
 
-| Rule Type | Example | BI Data Source | Priority |
-|-----------|---------|----------------|----------|
+| Decision Type | Example | BI Data Source | Priority |
+|---------------|---------|----------------|----------|
 | Financial Gate | "IF Cash Flow < 2 months → Reject expense" | `cash_flow_analysis` | P0 |
 | Commission | "IF Rating ≥ 4.5 AND Revenue > Target → 20% bonus" | `ktv_performance`, `revenue_breakdown` | P0 |
 | Discount | "IF Customer LTV > 50M AND Debt = 0 → 15% discount" | `customer_ltv`, `customer_segmentation` | P0 |
-| Auto-Approval | "IF 95% historical approval → Auto-approve" | `approval_history_analysis` | P1 |
-| Inventory | "IF Turnover < threshold → Auto-reorder" | `inventory_status`, `inventory_forecast` | P1 |
+| KPI Alert ⭐ | "IF Revenue < 70% Target → Auto-create CEO Task" | `revenue_breakdown` | P0 |
+| Auto-Approval | "IF 95% historical approval → Suggest auto-approve" | `approval_history_analysis` | P1 |
 
 **Out of Scope (Phase 2+):**
-- Machine learning rules (→ AI Intelligence Engine Phase 3)
-- External data source rules (weather, stock market)
-- Real-time streaming rules (CEP)
+- Complex ML models (→ AI Intelligence Engine Phase 3)
+- External data feeds (weather, stock market)
+- Real-time streaming decisions (CEP)
 
 ---
 
-### 2.2 Database Schema (UPDATED - Add BI Integration)
+### 2.2 Database Schema (UPDATED - Rename to decision_*)
 
 ```sql
--- Rule Definition (with BI data sources)
-CREATE TABLE rule_definitions (
+-- Decision Definition (was rule_definitions)
+CREATE TABLE decision_definitions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id UUID NOT NULL REFERENCES tenants(id),
   module_key TEXT NOT NULL,
-  rule_key TEXT NOT NULL,
+  decision_key TEXT NOT NULL,
   name TEXT NOT NULL,
   description TEXT,
   version INTEGER NOT NULL DEFAULT 1,
   is_active BOOLEAN DEFAULT true,
   priority INTEGER DEFAULT 100,
-  conditions JSONB NOT NULL, -- rule expression tree
+  
+  -- Decision Type
+  decision_type TEXT NOT NULL DEFAULT 'rule', -- 'rule', 'kpi_trigger', 'ai_recommendation', 'ml_prediction', 'hybrid'
+  
+  conditions JSONB NOT NULL, -- decision expression tree
   actions JSONB NOT NULL,
   
-  -- NEW: BI Integration
-  bi_data_sources TEXT[], -- ['cash_flow_analysis', 'customer_ltv']
-  cache_ttl INTEGER DEFAULT 300, -- 5 minutes cache cho BI queries
+  -- BI Integration
+  bi_data_sources TEXT[], -- ['cash_flow_analysis', 'customer_ltv', 'revenue_breakdown']
+  cache_ttl INTEGER DEFAULT 300, -- 5 minutes cache
+  
+  -- KPI Trigger Config ⭐ NEW
+  kpi_trigger_config JSONB, -- { metric: 'revenue', operator: 'lt', threshold: 0.7, target_type: 'target' }
+  
+  -- AI Recommendation Config (Phase 3)
+  ai_model_config JSONB,
   
   valid_from TIMESTAMPTZ DEFAULT NOW(),
   valid_until TIMESTAMPTZ,
   created_by UUID REFERENCES users(id),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(tenant_id, module_key, rule_key, version)
+  UNIQUE(tenant_id, module_key, decision_key, version)
 );
 
--- Rule Execution Log (with BI snapshot)
-CREATE TABLE rule_executions (
+-- Decision Execution Log
+CREATE TABLE decision_executions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id UUID NOT NULL,
-  rule_definition_id UUID NOT NULL REFERENCES rule_definitions(id),
+  decision_definition_id UUID NOT NULL REFERENCES decision_definitions(id),
   context_type TEXT NOT NULL,
   context_id UUID NOT NULL,
   input_data JSONB NOT NULL,
   
-  -- NEW: BI Data Snapshot (for audit)
-  bi_data_snapshot JSONB, -- BI metrics tại thời điểm evaluate
+  -- BI Data Snapshot (for audit)
+  bi_data_snapshot JSONB,
+  
+  -- AI Recommendation Snapshot (Phase 3)
+  ai_recommendation JSONB,
   
   output_data JSONB,
   matched BOOLEAN NOT NULL,
@@ -640,18 +678,56 @@ CREATE TABLE rule_executions (
 
 
 -- RLS Policies
-ALTER TABLE rule_definitions ENABLE ROW LEVEL SECURITY;
-CREATE POLICY tenant_isolation ON rule_definitions 
+ALTER TABLE decision_definitions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY tenant_isolation ON decision_definitions 
   FOR ALL USING (tenant_id = get_auth_tenant_id());
 
-ALTER TABLE rule_executions ENABLE ROW LEVEL SECURITY;
-CREATE POLICY tenant_isolation ON rule_executions 
+ALTER TABLE decision_executions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY tenant_isolation ON decision_executions 
   FOR ALL USING (tenant_id = get_auth_tenant_id());
 
 -- Indexes
-CREATE INDEX idx_rule_defs_tenant_module ON rule_definitions(tenant_id, module_key) 
+CREATE INDEX idx_decision_defs_tenant_module ON decision_definitions(tenant_id, module_key) 
   WHERE is_active = true;
-CREATE INDEX idx_rule_execs_context ON rule_executions(tenant_id, context_type, context_id);
+CREATE INDEX idx_decision_defs_type ON decision_definitions(decision_type) 
+  WHERE is_active = true;
+CREATE INDEX idx_decision_execs_context ON decision_executions(tenant_id, context_type, context_id);
+
+-- NEW: Decision Templates for Marketplace ⭐
+CREATE TABLE decision_templates (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  template_key TEXT NOT NULL UNIQUE, -- 'spa_expense_approval', 'clinic_inventory_reorder'
+  industry TEXT NOT NULL, -- 'spa', 'clinic', 'restaurant'
+  category TEXT NOT NULL, -- 'finance', 'hr', 'operations'
+  name TEXT NOT NULL,
+  description TEXT,
+  icon TEXT,
+  config_template JSONB NOT NULL, -- Template decision config
+  variables JSONB NOT NULL, -- Configurable parameters
+  is_public BOOLEAN DEFAULT true,
+  created_by UUID,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  usage_count INTEGER DEFAULT 0
+);
+
+-- NEW: KPI Triggers ⭐
+CREATE TABLE kpi_triggers (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID NOT NULL REFERENCES tenants(id),
+  decision_definition_id UUID NOT NULL REFERENCES decision_definitions(id),
+  kpi_metric TEXT NOT NULL, -- 'revenue', 'cash_flow', 'inventory_level'
+  operator TEXT NOT NULL, -- 'lt', 'gt', 'lte', 'gte', 'eq'
+  threshold NUMERIC NOT NULL,
+  target_type TEXT NOT NULL, -- 'absolute', 'percentage', 'target'
+  check_interval_minutes INTEGER DEFAULT 60, -- Check every hour
+  last_checked_at TIMESTAMPTZ,
+  last_triggered_at TIMESTAMPTZ,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_kpi_triggers_tenant ON kpi_triggers(tenant_id) WHERE is_active = true;
+CREATE INDEX idx_kpi_triggers_check ON kpi_triggers(last_checked_at) WHERE is_active = true;
 ```
 
 ---
@@ -882,82 +958,194 @@ interface RuleResult {
 
 ---
 
-### 2.5 Implementation Roadmap - Rule Engine
+### 2.5 Implementation Roadmap - Decision Engine (UPDATED)
 
 #### **Phase 2.1: Foundation (Tuần 1-2)**
-**Mục tiêu:** Basic rule engine với 1 use case pilot
+**Mục tiêu:** Basic rule-based decisions với BI integration
 
 **Tasks:**
-- [ ] Database schema migration (`rule_definitions`, `rule_executions`)
+- [ ] Database schema migration (`decision_definitions`, `decision_executions`, `decision_templates`, `kpi_triggers`)
 - [ ] RLS policies & grants
-- [ ] Core `RuleEngine` service
-- [ ] `ExpressionEvaluator` với basic operators (and, or, eq, gt, lt)
-- [ ] **Pilot:** KTV Commission Calculation rules
+- [ ] Core `DecisionEngine` service (rename from RuleEngine)
+- [ ] `ExpressionEvaluator` với basic operators
+- [ ] `BIDataResolver` - fetch BI metrics
+- [ ] **Pilot:** KTV Commission Calculation decisions
 - [ ] Integration với `recalculateAndSaveSalaryRecord`
-- [ ] Unit tests for expression evaluation
+- [ ] Unit tests
 
 **Deliverables:**
-- Commission rules evaluated via Rule Engine
-- Existing salary calculation still works
+- Commission calculated via Decision Engine
+- BI metrics cached 5 minutes
 - Tests cover expression evaluation
-
-**Success Metrics:**
-- 100% commission calculations use rules
-- Zero calculation drift vs old logic
-- Rule evaluation < 50ms per rule
 
 ---
 
-#### **Phase 2.2: Advanced Operators (Tuần 3-4)**
-**Mục tiêu:** Support complex conditions
+#### **Phase 2.2: Advanced Operators + Decision Templates (Tuần 3-4)**
+**Mục tiêu:** Complex decisions + Template Marketplace
 
 **Tasks:**
 - [ ] Collection operators (in, contains, any, all)
-- [ ] Math operators (add, subtract, multiply, divide, modulo)
-- [ ] String operators (startsWith, endsWith, matches)
-- [ ] Date operators (before, after, between, age)
-- [ ] Lookup function (fetch related data from DB)
-- [ ] **Pilot:** Discount Eligibility rules
+- [ ] Math operators (add, subtract, multiply, divide)
+- [ ] String/Date operators
+- [ ] Lookup function (fetch related data)
+- [ ] **NEW: Decision Template System** ⭐
+  - Seed 20 pre-built templates:
+    - Spa: Expense approval, Leave approval, Commission rules
+    - Clinic: Patient eligibility, Insurance claims
+    - Restaurant: Menu pricing, Supplier selection
+  - Template import API
+  - Variable substitution engine
+- [ ] **NEW: Rule Library UI** ⭐
+  - Browse by industry/category
+  - One-click import
+  - Customize parameters
+- [ ] **Pilot:** Discount Eligibility + Financial Gate decisions
 
 **Deliverables:**
-- Operators library complete
-- Discount rules evaluated
-- Performance benchmarks
+- Template marketplace với 20+ templates
+- Customers import & customize in < 1 minute
+- Rule library với drag & drop
 
 ---
 
-#### **Phase 2.3: Multi-Module Support (Tuần 5-6)**
-**Mục tiêu:** Generalize to 3 modules
+#### **Phase 2.3: KPI Triggers (Tuần 5-6)** ⭐ **GAME CHANGER**
+**Mục tiêu:** Business Intelligence chủ động kích hoạt workflows
 
 **Tasks:**
-- [ ] Migrate **Attendance Penalty** rules
-- [ ] Migrate **Package Pricing** rules
-- [ ] Migrate **Inventory Reorder** rules
-- [ ] Rule priority & conflict resolution
-- [ ] Rule execution audit log UI
+- [ ] `KPITriggerService` - monitor BI metrics
+- [ ] Cron worker check KPI thresholds (every 1 hour)
+- [ ] Auto-create workflow instances when triggered
+- [ ] **Use Cases:**
+  - Revenue < 70% Target → Auto-create CEO alert task
+  - Cash Flow < 2 months → Alert CFO
+  - Inventory < reorder point → Auto-purchase order
+  - Customer churn risk > 80% → Retention workflow
+  - Late deliveries > 10% → Quality review workflow
+- [ ] KPI Trigger UI:
+  - Select metric from BI Engine
+  - Set threshold & operator
+  - Choose workflow to trigger
+  - Configure notification recipients
+- [ ] Integration tests
 
 **Deliverables:**
-- 3 rule types running in production
-- Priority system prevents conflicts
-- Audit log shows which rules fired
+- 5 KPI triggers running in production
+- BI Engine monitors & auto-starts workflows
+- **KHÔNG CẦN USER** - system tự động hóa
+
+**Success Metrics:**
+- CEO receives proactive alerts (not reactive reports)
+- Business issues detected before they become critical
+- Response time to problems reduced by 80%
+
+**Example:**
+```typescript
+// KPI Trigger Config
+{
+  kpi_metric: 'revenue',
+  operator: 'lt',
+  threshold: 0.7, // 70%
+  target_type: 'target',
+  workflow_key: 'ceo_alert_low_revenue',
+  check_interval_minutes: 60,
+  notification: {
+    recipients: ['ceo', 'cfo'],
+    urgency: 'high'
+  }
+}
+
+// Cron Worker (runs every hour)
+async function checkKPITriggers() {
+  const triggers = await getActiveKPITriggers();
+  
+  for (const trigger of triggers) {
+    // Fetch current metric from BI Engine
+    const currentValue = await biEngine.getMetric(
+      trigger.kpi_metric,
+      { period: 'current_week' }
+    );
+    
+    const target = await biEngine.getTarget(trigger.kpi_metric);
+    const percentage = currentValue / target;
+    
+    // Check threshold
+    if (percentage < trigger.threshold) {
+      // Auto-start workflow
+      await workflowEngine.startWorkflow({
+        workflow_key: trigger.workflow_key,
+        variables: {
+          kpi_metric: trigger.kpi_metric,
+          current_value: currentValue,
+          target_value: target,
+          percentage: percentage,
+          triggered_at: new Date()
+        },
+        triggered_by: 'kpi_trigger',
+        trigger_id: trigger.id
+      });
+      
+      // Send notification
+      await notificationService.send({
+        recipients: trigger.notification.recipients,
+        template: 'kpi_threshold_breach',
+        data: { trigger, currentValue, target }
+      });
+    }
+  }
+}
+```
 
 ---
 
-#### **Phase 2.4: Tenant Configuration UI (Tuần 7-8)**
-**Mục tiêu:** Admin có thể create/edit rules
+#### **Phase 2.4: AI Recommendations (Tuần 7-8)** *(Phase 3 Preview)*
+**Mục tiêu:** Decisions không chỉ True/False - còn có Recommendations
 
 **Tasks:**
-- [ ] Rule Builder UI (visual condition editor)
-- [ ] Expression builder với autocomplete
-- [ ] Test mode với sample data
-- [ ] Version management
-- [ ] Clone rule to new tenant/module
-- [ ] Rule analytics dashboard (hit rate, performance)
+- [ ] `AIRecommendationService` - suggest actions
+- [ ] Integration với existing AI Intelligence Engine
+- [ ] **Use Cases:**
+  - "95% approval history → Recommend auto-approve"
+  - "Customer LTV declining → Recommend retention offer"
+  - "Inventory turnover slow → Recommend discount"
+- [ ] Recommendation UI:
+  - Show AI suggestion
+  - User confirms/rejects
+  - Learn from feedback
+- [ ] A/B testing framework
 
 **Deliverables:**
-- Admin create rules without code
-- Changes versioned & audited
-- Analytics show rule effectiveness
+- AI suggests, Human confirms
+- Feedback loop improves recommendations
+- 50% faster approvals with AI assist
+
+**Example:**
+```typescript
+// AI Recommendation Decision
+{
+  decision_type: 'ai_recommendation',
+  ai_model_config: {
+    model: 'approval_predictor',
+    confidence_threshold: 0.95
+  },
+  conditions: {
+    operator: 'gte',
+    operands: [
+      { type: 'ai_confidence', model: 'approval_predictor' },
+      0.95
+    ]
+  },
+  actions: [
+    { 
+      type: 'recommend', 
+      config: { 
+        recommendation: 'auto_approve',
+        reason: '95% historical approval rate for similar requests',
+        confidence: 0.97
+      } 
+    }
+  ]
+}
+```
 
 ---
 
@@ -1552,196 +1740,181 @@ END OF DOCUMENT
 
 ---
 
-## 🌟 PHẦN 10: TECHNICAL REVIEW NOTES & IMPROVEMENTS
+## 🌟 PHẦN 10: TECHNICAL REVIEW NOTES & IMPROVEMENTS (v1.2)
 
-### 10.1 Điểm Mạnh Của Kế Hoạch Ban Đầu ⭐⭐⭐⭐⭐
+### 10.1 Đánh Giá Tổng Thể (After Second Review)
 
-1. **Tách Workflow và Rule thành Engine độc lập** - Đúng tư duy Platform
-2. **Workflow Definition + Instance pattern** - Chuẩn Enterprise (Camunda, Temporal, Flowable)
-3. **Version Management** - Workflow đang chạy không bị crash khi admin sửa config
-4. **Audit Trail** - CEO biết "Ai duyệt? Lúc nào?"
-5. **Tenant Isolation với RLS** - Bảo mật đúng chuẩn
-6. **JSON Config** - Không hard-code, flexible
+| Tiêu chí | Điểm | Ghi chú |
+|----------|------|---------|
+| Kiến trúc | 9.8/10 | 5-Engine architecture rõ ràng |
+| Clean Architecture | 9.8/10 | Separation of concerns tốt |
+| DDD | 9.6/10 | Bounded contexts rõ ràng |
+| Enterprise-Ready | 9.9/10 | Support enterprise patterns |
+| Khả năng mở rộng | 10/10 | Template Marketplace + Rule Library |
+| Khả năng tái sử dụng | 10/10 | Templates, Rules, Workflows reusable |
+| Modular Monolith | 10/10 | Engines độc lập, loosely coupled |
+| AI Ready | 10/10 | KPI Triggers + AI Recommendations |
 
-### 10.2 Improvements After Technical Review
-
-#### **A. Workflow KHÔNG nên evaluate Rule**
-
-**Before (❌):**
-```
-Workflow → Expression Parser → Eval Condition
-```
-
-**After (✅):**
-```
-Workflow → Ask Rule Engine → Get Decision → Move State
-```
-
-**Lý do:** Hai engines bị dính nhau nếu Workflow tự evaluate.
+**Tổng điểm:** 9.86/10 ⭐⭐⭐⭐⭐
 
 ---
 
-#### **B. Workflow Action → Business Event**
+### 10.2 Kiến Trúc Cuối Cùng (Enterprise Intelligence Platform)
 
-**Before (❌):**
 ```
-Workflow → Execute Actions Directly
-  ├─ Send Notification
-  ├─ Update Record  
-  └─ Create Expense
+┌─────────────────────────────────────────────────────┐
+│       Business Intelligence Engine (ĐÃ CÓ)         │
+│    - Revenue, Cash Flow, KPI, ROI, Forecasting     │
+│    - KPI Monitoring (auto-trigger workflows)        │
+└──────────────────────┬──────────────────────────────┘
+                       ▼
+┌─────────────────────────────────────────────────────┐
+│          Decision Engine (Rule → AI)                │
+│    - Rule-based: IF/THEN logic                      │
+│    - KPI-triggered: Auto workflow on threshold      │
+│    - AI-powered: Recommendations                    │
+│    - ML-based: Predictions (Phase 4)                │
+│    - Hybrid: Rule + AI + Human                      │
+└──────────────────────┬──────────────────────────────┘
+                       ▼
+┌─────────────────────────────────────────────────────┐
+│             Workflow Engine                         │
+│    - Template Marketplace (50+ templates)           │
+│    - Rule Library (100+ reusable rules)             │
+│    - Drag & Drop Designer                           │
+│    - Enterprise States (10 states)                  │
+└──────────────────────┬──────────────────────────────┘
+                       ▼
+┌─────────────────────────────────────────────────────┐
+│             Business Events Bus                     │
+│    - workflow.approved, workflow.rejected           │
+│    - kpi.threshold_breach, decision.recommended     │
+└────┬──────────────┬──────────────┬──────────────────┘
+     ▼              ▼              ▼
+┌─────────┐   ┌──────────┐   ┌──────────┐
+│Notification│   │ Webhook │   │AI Agent │
+└─────────┘   └──────────┘   └──────────┘
 ```
 
-**After (✅):**
-```
-Workflow → Publish Event → Event Bus → Workers
-  ├─ Notification Worker
-  ├─ Webhook Worker
-  ├─ AI Worker
-  ├─ Cache Worker
-  └─ BI Refresh Worker
-```
+**Định Vị Chiến Lược:**
 
-**Lý do:** Event-Driven Architecture = Loose Coupling + Scalability.
+> **Modules (CRM, Finance, HR, Inventory) là ứng dụng sử dụng Engines, không phải trung tâm hệ thống.**
+> 
+> Bella mở rộng sang nhiều ngành với chi phí thấp và lợi thế cạnh tranh bền vững.
 
 ---
 
-#### **C. Visual Workflow Designer là USP**
+### 10.3 Key Improvements After Second Review ⭐⭐⭐⭐⭐
 
-**Before:** JSON config (technical)  
-**After:** Drag & Drop visual builder (business user-friendly)
+#### **A. Rule Engine → Decision Engine** (Naming Change)
 
-**USP (Unique Selling Point):**
-- Giống Power Automate, n8n, Camunda
-- Admin tạo workflow < 5 phút
-- **Đây là thứ khách hàng thấy ngay giá trị**
+**Lý do:** Rule chỉ là một kiểu Decision.
+
+**Decision Types:**
+```
+Rule-Based        → IF/THEN logic
+KPI-Triggered     → Auto workflow on threshold ⭐ NEW
+AI-Powered        → Recommendations
+ML-Based          → Predictions (Phase 4)
+Hybrid            → Rule + AI + Human
+```
 
 ---
 
-#### **D. Enterprise Workflow States**
+#### **B. KPI Triggers - Business Intelligence Proactive** ⭐⭐⭐⭐⭐
 
-**Before:**
+**GAME CHANGER:**
+
 ```
-Pending → Approved → Rejected
+Revenue < Target
+    ↓
+Auto-create CEO Alert Workflow
+    ↓
+KHÔNG CẦN USER
 ```
-
-**After:**
-```
-Pending → Waiting → Suspended → Escalated → 
-Delegated → Expired → Rollback → Compensated → 
-Paused → Approved → Rejected
-```
-
-**Lý do:** Enterprise cần states phức tạp hơn SME workflows.
-
----
-
-#### **E. Workflow Variables (Context)**
-
-**Before:** Implicit context  
-**After:** Explicit variables schema
-
-```typescript
-variables_schema: {
-  salary: { type: 'number', required: true },
-  department: { type: 'string', required: true },
-  leave_days: { type: 'number', required: true }
-}
-```
-
-**Lý do:** Rule Engine cần đọc context để quyết định.
-
----
-
-#### **F. Compensation (Rollback)**
-
-**Before:** Simple rollback  
-**After:** Compensation actions per state
-
-```typescript
-compensation: {
-  approved: [
-    { type: 'restore_inventory', config: {...} },
-    { type: 'refund_payment', config: {...} }
-  ]
-}
-```
-
-**Lý do:** Enterprise transactions cần compensate phức tạp.
-
----
-
-#### **G. Rule Engine + Business Intelligence Integration** ⭐⭐⭐⭐⭐
-
-**ĐÂY LÀ ĐIỂM KHÁC BIỆT LỚN NHẤT:**
-
-Bella đã có **Business Intelligence Engine** (Revenue, Cash Flow, KPI, ROI).  
-Rule Engine có thể đọc BI data để quyết định!
 
 **Example:**
-```typescript
-// Rule: Reject expense if cash flow < 2 months
-{
-  conditions: {
-    operator: 'lt',
-    operands: [
-      { 
-        type: 'bi_metric', 
-        source: 'cash_flow_analysis', 
-        metric: 'months_of_runway' 
-      },
-      2
-    ]
-  },
-  actions: [
-    { type: 'set_value', config: { field: 'can_approve', value: false } }
-  ]
-}
-```
+- Revenue giảm 30% → Tự tạo task cho CEO
+- Cash flow < 2 tháng → Alert CFO
+- Inventory < reorder point → Auto purchase order
+- Customer churn risk > 80% → Retention workflow
 
-**Đây là thứ ERP SME gần như KHÔNG làm được.**
+**Đây chính là Enterprise Intelligence.**
 
 ---
 
-### 10.3 Tầm Nhìn 5-Engine Architecture
+#### **C. Workflow Template Marketplace** ⭐⭐⭐⭐⭐
+
+**USP:**
 
 ```
-Business Intelligence Engine (ĐÃ CÓ)
-    ├─ Revenue, Cash Flow, KPI, ROI
-    │
-    ▼
-Rule Engine (Decision) ◄─── PHASE 1
-    ├─ IF Cash Flow < 2 months → Reject
-    │
-    ▼
-Workflow Engine (Process) ◄─── PHASE 1
-    ├─ Move State, Orchestrate
-    │
-    ▼
-Event Engine (Integration) ◄─── PHASE 2
-    ├─ Publish Events → Workers
-    │
-    ▼
-AI Intelligence Engine ◄─── PHASE 3
-    └─ Predictive, Recommendations
+Spa → Import Workflow Spa (< 30 giây)
+Clinic → Import Workflow Clinic (< 30 giây)
+Restaurant → Import Workflow Restaurant (< 30 giây)
 ```
 
-**USP Final:**
-> Bella không chỉ là ERP. Bella là **Enterprise Intelligence Platform** - quyết định thông minh dựa trên dữ liệu thực tế của doanh nghiệp.
+**Lợi ích:**
+- Không phải tự build từ đầu
+- 50+ pre-built templates
+- One-click import & customize
+- Rate & review templates
 
 ---
 
-### 10.4 Build Order (UPDATED)
+#### **D. Rule Library** ⭐⭐⭐⭐⭐
 
-**KHÔNG build theo thứ tự cũ (Workflow trước, Rule sau).**
+**Drag & Drop Rules:**
 
-**Build theo thứ tự mới:**
+```
+Financial Gates (cash flow, budget)
+HR Rules (leave eligibility, overtime)
+Inventory Rules (reorder points, expiry)
+Customer Rules (credit limits, discounts)
+```
 
-1. **Tuần 1-4: Rule Engine Foundation + BI Integration** (P0)
-2. **Tuần 5-8: Workflow Engine + Rule Integration** (P0)
-3. **Tuần 9-10: Enterprise States + Delegation** (P1)
-4. **Tuần 11-12: Visual Designer** (P0 - USP!)
+**Lợi ích:**
+- 100+ pre-built rules
+- Reusable across workflows
+- Customize parameters
+- Community contributions
 
-**Lý do:** Rule Engine là decision layer, build trước. Workflow chỉ orchestrate.
+---
+
+#### **E. AI Recommendations** ⭐⭐⭐⭐⭐
+
+**Phase 3 Preview:**
+
+```
+Rule: True/False
+    ↓
+AI: Recommend Action
+    ↓
+User: Confirm/Reject
+    ↓
+Learn & Improve
+```
+
+**Example:**
+- "95% approval history → Recommend auto-approve"
+- "Customer LTV declining → Recommend retention offer"
+- "Inventory slow → Recommend 15% discount"
+
+---
+
+### 10.4 So Sánh vs ERP SME Thông Thường
+
+| Tính Năng | ERP SME | Bella EIP | Lợi Thế |
+|-----------|---------|-----------|---------|
+| Decision Logic | Hard-code | Decision Engine | Hot-reload, versioned |
+| BI Integration | Reports only | Real-time decisions | Data-driven |
+| Workflow | Manual approval | Auto-triggered | Proactive |
+| Customization | Code changes | Visual designer | No-code |
+| Templates | None | 50+ templates | Fast onboarding |
+| Rule Reuse | Copy-paste | Rule Library | 100+ rules |
+| AI | None | Recommendations | Faster decisions |
+| Scalability | Add modules | Add engines | Platform thinking |
+
+**Bella EIP = ERP SME × 10**
 
 ---
 
@@ -1752,7 +1925,7 @@ AI Intelligence Engine ◄─── PHASE 3
 - 12 tuần timeline
 - Basic MVP scope
 
-**v1.1** (2026-06-22) ⭐ **After Technical Review**
+**v1.1** (2026-06-22) ⭐ **After Technical Review #1**
 - **MAJOR:** Decoupled Workflow & Rule (Workflow asks, not evaluates)
 - **MAJOR:** Event-Driven Architecture (publish events, not direct actions)
 - **MAJOR:** BI Integration for Rule Engine (data-driven decisions)
@@ -1764,10 +1937,49 @@ AI Intelligence Engine ◄─── PHASE 3
 - **CHANGED:** Build order (Rule first, Workflow second)
 - **EXPANDED:** Timeline to support Phase 2 & 3 planning
 
+**v1.2** (2026-06-22) ⭐⭐⭐⭐⭐ **After Technical Review #2 - MAJOR UPDATE**
+- **BREAKING:** Rule Engine → **Decision Engine** (Rule chỉ là 1 loại Decision)
+- **GAME CHANGER:** **KPI Triggers** - BI Engine tự động kích hoạt workflows
+  - Revenue < Target → Auto-create CEO alert
+  - Cash Flow < 2 months → Alert CFO
+  - Inventory < threshold → Auto purchase order
+  - **KHÔNG CẦN USER** - System proactive, not reactive
+- **USP:** **Workflow Template Marketplace** (50+ pre-built templates)
+  - Spa, Clinic, Restaurant, Manufacturing workflows
+  - One-click import & customize
+  - Rate & review system
+- **USP:** **Rule Library** (100+ reusable rules)
+  - Financial, HR, Inventory, Customer rules
+  - Drag & drop into workflows
+  - Community contributions
+- **PHASE 3 PREVIEW:** **AI Recommendations**
+  - Not just True/False - suggest actions
+  - User confirms/rejects
+  - Learn from feedback
+- **ARCHITECTURE:** Decision types progression:
+  - Phase 1: Rule-Based
+  - Phase 2: KPI-Triggered ⭐
+  - Phase 3: AI-Powered
+  - Phase 4: ML-Based
+  - Phase 5: Hybrid (Rule + AI + Human)
+- **DATABASE:** Added `decision_templates`, `kpi_triggers` tables
+- **SCORE:** 9.86/10 overall architecture rating
+
+**Đánh giá:**
+- Kiến trúc: 9.8/10
+- Clean Architecture: 9.8/10
+- DDD: 9.6/10
+- Enterprise-Ready: 9.9/10
+- Scalability: 10/10
+- Reusability: 10/10
+- Modular Monolith: 10/10
+- AI Ready: 10/10
+
 ---
 
-**Next Review:** After Phase 1 Week 2 (Rule Engine Foundation complete)
+**Next Review:** After Phase 1 Week 2 (Decision Engine Foundation complete)
 
 ---
 
-END OF DOCUMENT (v1.1)
+END OF DOCUMENT (v1.2)
+
