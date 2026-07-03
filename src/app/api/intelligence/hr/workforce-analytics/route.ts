@@ -69,10 +69,22 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
     console.error('[API] Workforce Analytics error:', error);
+    
+    // Log full error details for debugging
+    if (error instanceof Error) {
+      console.error('Error name:', error.name);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+    }
 
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: 'Failed to get workforce analytics', details: errorMessage },
+      { 
+        error: 'Failed to get workforce analytics', 
+        details: errorMessage,
+        errorType: error instanceof Error ? error.name : 'Unknown',
+        timestamp: new Date().toISOString()
+      },
       { status: 500 }
     );
   }
