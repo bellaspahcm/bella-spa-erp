@@ -51,7 +51,7 @@ import {
   getTrainingMetrics as queryTrainingMetrics,
   getRetentionAnalysis as queryRetentionAnalysis,
   getProductivityTrends as queryProductivityTrends,
-} from './queries';
+} from './queries-simple';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HR Intelligence Service
