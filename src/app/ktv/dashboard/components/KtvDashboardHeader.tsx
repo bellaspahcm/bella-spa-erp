@@ -190,7 +190,7 @@ export function KtvDashboardHeader({
                     className="absolute right-0 mt-2 w-80 bg-white rounded-3xl shadow-2xl border border-slate-100 p-5 z-50 overflow-hidden"
                   >
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="font-black uppercase tracking-widest text-xs text-slate-800">Thông báo</h3>
+                      <h3 className="font-black uppercase tracking-widest text-xs text-slate-900">Thông báo</h3>
                       <span className="px-2.5 py-0.5 bg-rose-100 text-rose-600 text-[9px] font-black rounded-full uppercase">
                         {unreadCount} Mới
                       </span>
@@ -219,13 +219,13 @@ export function KtvDashboardHeader({
                                 </div>
                                 <div className="min-w-0 flex-1">
                                   <div className="flex items-center justify-between gap-1 mb-0.5">
-                                    <h4 className="font-bold text-xs text-slate-800 truncate">{notification.title || 'Thông báo'}</h4>
+                                    <h4 className="font-bold text-xs text-slate-900 truncate">{notification.title || 'Thông báo'}</h4>
                                     <span className={`text-[8px] px-1.5 py-0.2 rounded-full font-black uppercase shrink-0 ${meta.badgeStyle}`}>
                                       {meta.badgeLabel}
                                     </span>
                                   </div>
-                                  <p className="text-[10px] text-slate-500 leading-normal line-clamp-2">{notification.message || ''}</p>
-                                  <span className="text-[8px] text-slate-400 mt-1 block">
+                                  <p className="text-[10px] text-slate-700 leading-normal line-clamp-2">{notification.message || ''}</p>
+                                  <span className="text-[8px] text-slate-600 mt-1 block">
                                     {createdAt
                                       ? `${createdAt.toLocaleDateString('vi-VN')} ${createdAt.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`
                                       : 'Chưa có thời gian'}
@@ -266,7 +266,7 @@ export function KtvDashboardHeader({
       </div>
 
       <div className="mb-6">
-        <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-0.5">{vocab.worker.singular}</p>
+        <p className="text-slate-600 text-[10px] font-black uppercase tracking-widest mb-0.5">{vocab.worker.singular}</p>
         <h1 className="text-2xl font-black text-slate-900">{user?.full_name || vocab.worker.singular}</h1>
       </div>
 
