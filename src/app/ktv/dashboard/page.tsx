@@ -613,8 +613,28 @@ export default function KTVDashboard() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#F5F5F0] dark:bg-[#5D1C34] flex items-center justify-center">
-        <RefreshCw className="w-8 h-8 text-white animate-spin" />
+      <div className="min-h-screen bg-[#F5F5F0] dark:bg-[#5D1C34] pb-20">
+        {/* Skeleton Header */}
+        <div className="px-4 pt-4 pb-3 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-white/20 animate-pulse" />
+              <div className="space-y-2">
+                <div className="h-4 w-32 bg-white/20 rounded animate-pulse" />
+                <div className="h-3 w-24 bg-white/15 rounded animate-pulse" />
+              </div>
+            </div>
+            <div className="w-10 h-10 rounded-full bg-white/20 animate-pulse" />
+          </div>
+          <div className="h-3 w-full bg-white/10 rounded animate-pulse" />
+        </div>
+        
+        {/* Skeleton Cards */}
+        <div className="px-4 space-y-4 mt-4">
+          <div className="h-32 bg-white/10 rounded-2xl animate-pulse" />
+          <div className="h-48 bg-white/10 rounded-2xl animate-pulse" />
+          <div className="h-48 bg-white/10 rounded-2xl animate-pulse" />
+        </div>
       </div>
     );
   }
