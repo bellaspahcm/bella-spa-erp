@@ -27,12 +27,15 @@ export default function KtvLayout({
           setIsAuthorized(false);
           return;
         }
+        // Set authorized immediately to prevent white screen
         setIsAuthorized(true);
       } catch (err) {
         console.error('[KtvLayout] Auth check failed:', err);
         router.replace('/login');
       }
     }
+    
+    // Start auth check immediately without setTimeout
     checkAuth();
   }, [router]);
 
@@ -73,8 +76,14 @@ export default function KtvLayout({
 
   if (isAuthorized === null) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center bg-background">
-        <Loader2 className="w-10 h-10 animate-spin text-primary animate-pulse" />
+      <div className="flex h-screen w-screen items-center justify-center bg-gradient-to-br from-[#F5F1EA] to-[#E8E3D8]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative">
+            <Loader2 className="w-12 h-12 animate-spin text-slate-700" />
+            <div className="absolute inset-0 w-12 h-12 rounded-full border-4 border-slate-300 animate-ping" />
+          </div>
+          <p className="text-sm font-bold text-slate-700 animate-pulse">Đang tải...</p>
+        </div>
       </div>
     );
   }
