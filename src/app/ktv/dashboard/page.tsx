@@ -330,8 +330,14 @@ export default function KTVDashboard() {
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
+    const perfStart = performance.now();
+    const perfMarks: Record<string, number> = {};
+    
     try {
+      console.log('[KTV Dashboard] ⏱️ Starting data fetch...');
+      
       // Import cache helpers
+      const cacheImportStart = performance.now();
       const {
         getCachedSessions,
         setCachedSessions,
@@ -340,14 +346,19 @@ export default function KTVDashboard() {
         getCachedNotifications,
         setCachedNotifications,
       } = await import('@/lib/offline-db');
+      perfMarks['cache_import'] = performance.now() - cacheImportStart;
       
       // Priority 1: Critical data for initial render (show UI ASAP)
+      const criticalStart = performance.now();
       const [u, tenant] = await Promise.all([
         getCurrentUser(),
         getTenantSettings(),
       ]);
+      perfMarks['critical_data'] = performance.now() - criticalStart;
+      console.log(`[KTV Dashboard] ✅ Critical data loaded in ${perfMarks['critical_data'].toFixed(0)}ms`);
       
       if (!u) {
+        console.log('[KTV Dashboard] ❌ No user found, aborting');
         setIsLoading(false);
         return;
       }
@@ -356,11 +367,18 @@ export default function KTVDashboard() {
       setTenantModuleKey(getDefaultTenantModuleKey(tenant?.enabled_modules));
       
       // Try to load sessions from cache first
+      const cacheCheckStart = performance.now();
       const cachedSessions = await getCachedSessions(u.id);
+      perfMarks['cache_check'] = performance.now() - cacheCheckStart;
+      
       if (cachedSessions) {
+        console.log(`[KTV Dashboard] 💾 Cache HIT - loaded sessions in ${perfMarks['cache_check'].toFixed(0)}ms`);
         setActiveSessions(cachedSessions.active as KtvDashboardSession[]);
         setUpcomingSessions(cachedSessions.upcoming as KtvDashboardSession[]);
         setIsLoading(false); // Show UI with cached data immediately
+        
+        const totalTime = performance.now() - perfStart;
+        console.log(`[KTV Dashboard] 🎉 UI READY in ${totalTime.toFixed(0)}ms (cached path)`);
         
         // Refresh sessions in background
         Promise.all([
@@ -370,19 +388,28 @@ export default function KTVDashboard() {
           setActiveSessions(active);
           setUpcomingSessions(upcoming);
           void setCachedSessions(u.id, active, upcoming);
+          console.log('[KTV Dashboard] 🔄 Background refresh complete');
         }).catch(() => {
           // Silent fail - cached data still valid
         });
       } else {
+        console.log(`[KTV Dashboard] 💨 Cache MISS - fetching sessions from API...`);
         // Cache miss - fetch from API
+        const sessionsStart = performance.now();
         const [active, upcoming] = await Promise.all([
           getKTVActiveSessions(),
           getKTVUpcomingSessions(),
         ]);
+        perfMarks['sessions_fetch'] = performance.now() - sessionsStart;
+        console.log(`[KTV Dashboard] 📡 Sessions fetched in ${perfMarks['sessions_fetch'].toFixed(0)}ms`);
+        
         setActiveSessions(active);
         setUpcomingSessions(upcoming);
         void setCachedSessions(u.id, active, upcoming);
         setIsLoading(false); // Show UI after fetch
+        
+        const totalTime = performance.now() - perfStart;
+        console.log(`[KTV Dashboard] 🎉 UI READY in ${totalTime.toFixed(0)}ms (API path)`);
       }
       
       // Priority 2: Secondary data (load in background without blocking UI)
@@ -407,11 +434,15 @@ export default function KTVDashboard() {
       }
       
       // Non-blocking: Load earnings, notifications, leaderboard in background
+      const bgStart = performance.now();
       Promise.all([
         getKTVEarnings(monthStr),
         getKTVNotifications(),
         getKTVLeaderboard(monthStr),
       ]).then(([earn, notifs, lb]) => {
+        const bgTime = performance.now() - bgStart;
+        console.log(`[KTV Dashboard] 📊 Background data loaded in ${bgTime.toFixed(0)}ms`);
+        
         setEarnings(earn);
         setNotifications(notifs);
         const myStats = (lb as KtvLeaderboardRow[]).find((k) => k.ktv_id === u.id);
@@ -424,7 +455,18 @@ export default function KTVDashboard() {
         console.error('[KTV Dashboard] Background data fetch failed:', error);
         // Silent fail - don't show toast for background data
       });
+      
+      // Summary log
+      console.log('[KTV Dashboard] ⚡ Performance Summary:', {
+        cache_import: `${perfMarks['cache_import']?.toFixed(0) || 0}ms`,
+        critical_data: `${perfMarks['critical_data']?.toFixed(0) || 0}ms`,
+        cache_check: `${perfMarks['cache_check']?.toFixed(0) || 0}ms`,
+        sessions_fetch: `${perfMarks['sessions_fetch']?.toFixed(0) || 0}ms`,
+        total_to_ui: `${(performance.now() - perfStart).toFixed(0)}ms`,
+      });
     } catch (error) {
+      const errorTime = performance.now() - perfStart;
+      console.error(`[KTV Dashboard] ❌ Error after ${errorTime.toFixed(0)}ms:`, error);
       setIsLoading(false);
       toast.error(getErrorMessage(error, 'Lỗi khi tải dữ liệu'));
     }

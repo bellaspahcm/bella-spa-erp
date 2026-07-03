@@ -115,10 +115,16 @@ interface NotificationRow {
  * Lấy các buổi chăm sóc đang thực hiện của KTV hiện tại
  */
 export async function getKTVActiveSessions() {
+  const perfStart = Date.now();
   const supabase = await createClient();
+  
+  const userStart = Date.now();
   const user = await getCurrentUser();
+  console.log(`[getKTVActiveSessions] getCurrentUser took ${Date.now() - userStart}ms`);
+  
   if (!user || user.role !== 'ktv') return [];
 
+  const queryStart = Date.now();
   const { data, error } = await supabase
     .from('session_logs')
     .select(`
@@ -145,12 +151,14 @@ export async function getKTVActiveSessions() {
     .eq('completed_by_ktv_id', user.id)
     .eq('status', 'in_progress')
     .order('start_time', { ascending: false });
+  console.log(`[getKTVActiveSessions] DB query took ${Date.now() - queryStart}ms`);
 
   if (error) {
     throw new Error(`Failed to fetch KTV active sessions: ${error.message}`);
   }
 
-  return (data as unknown as SessionLogWithBooking[] || [])
+  const processingStart = Date.now();
+  const result = (data as unknown as SessionLogWithBooking[] || [])
     .filter((s) => {
       if (!s.bookings) return true;
       const bookingTotal = s.bookings.total_sessions || 0;
@@ -164,20 +172,30 @@ export async function getKTVActiveSessions() {
         package_name: resolvePackageName(s.bookings)
       } : null
     }));
+  console.log(`[getKTVActiveSessions] Processing took ${Date.now() - processingStart}ms`);
+  console.log(`[getKTVActiveSessions] TOTAL TIME: ${Date.now() - perfStart}ms`);
+  
+  return result;
 }
 
 /**
  * Lấy các buổi chăm sóc được phân công hôm nay
  */
 export async function getKTVUpcomingSessions() {
+  const perfStart = Date.now();
   const supabase = await createClient();
+  
+  const userStart = Date.now();
   const user = await getCurrentUser();
+  console.log(`[getKTVUpcomingSessions] getCurrentUser took ${Date.now() - userStart}ms`);
+  
   if (!user || user.role !== 'ktv') return [];
 
   // Get current date in Vietnam timezone (YYYY-MM-DD)
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
 
   // 1. Fetch sessions originally assigned to this KTV
+  const query1Start = Date.now();
   const { data: originalData, error: originalError } = await supabase
     .from('session_logs')
     .select(`
@@ -204,8 +222,10 @@ export async function getKTVUpcomingSessions() {
       )
     `)
     .eq('bookings.assigned_ktv_id', user.id);
+  console.log(`[getKTVUpcomingSessions] Original sessions query took ${Date.now() - query1Start}ms`);
 
   // 2. Fetch sessions explicitly reassigned to this KTV
+  const query2Start = Date.now();
   const { data: reassignedData, error: reassignedError } = await supabase
     .from('session_logs')
     .select(`
@@ -233,6 +253,7 @@ export async function getKTVUpcomingSessions() {
     `)
     .eq('completed_by_ktv_id', user.id)
     .eq('status', 'scheduled');
+  console.log(`[getKTVUpcomingSessions] Reassigned sessions query took ${Date.now() - query2Start}ms`);
 
   if (originalError) {
     throw new Error(`Failed to fetch originally assigned KTV sessions: ${originalError.message}`);
@@ -242,15 +263,21 @@ export async function getKTVUpcomingSessions() {
     throw new Error(`Failed to fetch reassigned KTV sessions: ${reassignedError.message}`);
   }
 
+  const mergeStart = Date.now();
   // Merge the two arrays and deduplicate by session log ID
   const mergedMap = new Map<string, SessionLogWithInnerBooking>();
   if (originalData) (originalData as unknown as SessionLogWithInnerBooking[]).forEach((s) => mergedMap.set(s.id, s));
   if (reassignedData) (reassignedData as unknown as SessionLogWithInnerBooking[]).forEach((s) => mergedMap.set(s.id, s));
   const sessions = Array.from(mergedMap.values());
   const bookingIds = [...new Set(sessions?.map((s) => s.booking_id) || [])];
+  console.log(`[getKTVUpcomingSessions] Merge & dedup took ${Date.now() - mergeStart}ms`);
 
-  if (bookingIds.length === 0) return [];
+  if (bookingIds.length === 0) {
+    console.log(`[getKTVUpcomingSessions] TOTAL TIME: ${Date.now() - perfStart}ms (no bookings)`);
+    return [];
+  }
 
+  const query3Start = Date.now();
   const { data: allSessionsForBookings, error: allSessionsError } = await supabase
     .from('session_logs')
     .select(`
@@ -279,11 +306,13 @@ export async function getKTVUpcomingSessions() {
     `)
     .in('booking_id', bookingIds)
     .order('session_number', { ascending: true });
+  console.log(`[getKTVUpcomingSessions] All sessions for bookings query took ${Date.now() - query3Start}ms`);
 
   if (allSessionsError) {
     throw new Error(`Failed to fetch all sessions for KTV bookings: ${allSessionsError.message}`);
   }
 
+  const processingStart = Date.now();
   const sessionsByBooking: Record<string, SessionLogWithInnerBooking[]> = {};
   const typedSessions = allSessionsForBookings as unknown as SessionLogWithInnerBooking[];
   typedSessions?.forEach((s) => {
@@ -364,6 +393,8 @@ export async function getKTVUpcomingSessions() {
     const timeB = b.assigned_time || '';
     return timeA.localeCompare(timeB);
   });
+  console.log(`[getKTVUpcomingSessions] Processing took ${Date.now() - processingStart}ms`);
+  console.log(`[getKTVUpcomingSessions] TOTAL TIME: ${Date.now() - perfStart}ms`);
 
   return processedSessionsList;
 }
