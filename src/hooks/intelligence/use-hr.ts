@@ -168,7 +168,7 @@ async function fetchAttendanceInsights(
   year: string
 ): Promise<IntelligenceResponse<AttendanceInsights>> {
   const response = await fetch(
-    `/api/intelligence/hr/attendance-insights?month=${month}&year=${year}`,
+    `/api/intelligence/hr/attendance-report?month=${month}&year=${year}`,
     {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },

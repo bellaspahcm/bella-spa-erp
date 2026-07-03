@@ -160,9 +160,6 @@ export {
   // Churn Risk
   useChurnRisk,
   
-  // Customer Behavior Insights
-  useCustomerBehaviorInsights,
-  
   // Convenience Hooks
   useAllCustomerData,
   

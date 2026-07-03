@@ -152,8 +152,8 @@ async function fetchCustomerCLV(
   customerId?: string
 ): Promise<IntelligenceResponse<CustomerCLV | CustomerCLV[]>> {
   const url = customerId 
-    ? `/api/intelligence/customer/clv-prediction?customerId=${customerId}`
-    : '/api/intelligence/customer/clv-prediction'
+    ? `/api/intelligence/customer/ltv?customerId=${customerId}`
+    : '/api/intelligence/customer/ltv'
 
   const response = await fetch(url, {
     method: 'GET',
@@ -181,27 +181,6 @@ async function fetchChurnRisk(
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
   })
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
-    throw new Error(errorData.error || `API Error: ${response.status}`)
-  }
-
-  return response.json()
-}
-
-async function fetchBehaviorInsights(
-  startDate: string,
-  endDate: string
-): Promise<IntelligenceResponse<CustomerBehaviorInsights>> {
-  const response = await fetch(
-    `/api/intelligence/customer/behavior-insights?startDate=${startDate}&endDate=${endDate}`,
-    {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-    }
-  )
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
@@ -309,39 +288,6 @@ export function useChurnRisk(
 }
 
 /**
- * Hook: Customer Behavior Insights
- * 
- * Fetches aggregated customer behavior insights for a date range.
- * 
- * Cache Strategy:
- * - staleTime: 12 hours (behavior data updates throughout the day)
- * - Matches backend TTL in cache-config.ts
- * 
- * @param startDate - Start date (YYYY-MM-DD)
- * @param endDate - End date (YYYY-MM-DD)
- * @param options - React Query options
- */
-export function useCustomerBehaviorInsights(
-  startDate: string,
-  endDate: string,
-  options?: {
-    enabled?: boolean
-    refetchOnMount?: boolean
-    refetchOnWindowFocus?: boolean
-  }
-): UseQueryResult<IntelligenceResponse<CustomerBehaviorInsights>, Error> {
-  return useQuery({
-    queryKey: customerKeys.behaviorInsights(startDate, endDate),
-    queryFn: () => fetchBehaviorInsights(startDate, endDate),
-    staleTime: 12 * 60 * 60 * 1000, // 12 hours
-    gcTime: 24 * 60 * 60 * 1000, // 24 hours
-    refetchOnMount: options?.refetchOnMount ?? false,
-    refetchOnWindowFocus: options?.refetchOnWindowFocus ?? false,
-    enabled: options?.enabled ?? true,
-  })
-}
-
-/**
  * Hook: Fetch All Customer Data in Parallel
  * 
  * Convenience hook to fetch all customer intelligence data at once.
@@ -353,37 +299,27 @@ export function useAllCustomerData(params: {
   minCustomersPerSegment?: number
   clvCustomerId?: string
   churnThreshold?: number
-  behaviorStartDate: string
-  behaviorEndDate: string
 }) {
   const segmentation = useCustomerSegmentation(params.minCustomersPerSegment)
   const clvPrediction = useCustomerCLV(params.clvCustomerId)
   const churnRisk = useChurnRisk(params.churnThreshold)
-  const behaviorInsights = useCustomerBehaviorInsights(
-    params.behaviorStartDate,
-    params.behaviorEndDate
-  )
 
   return {
     segmentation,
     clvPrediction,
     churnRisk,
-    behaviorInsights,
     isLoading: 
       segmentation.isLoading || 
       clvPrediction.isLoading || 
-      churnRisk.isLoading || 
-      behaviorInsights.isLoading,
+      churnRisk.isLoading,
     isError: 
       segmentation.isError || 
       clvPrediction.isError || 
-      churnRisk.isError || 
-      behaviorInsights.isError,
+      churnRisk.isError,
     errors: {
       segmentation: segmentation.error,
       clvPrediction: clvPrediction.error,
       churnRisk: churnRisk.error,
-      behaviorInsights: behaviorInsights.error,
     },
   }
 }
@@ -405,14 +341,14 @@ export function useAllCustomerData(params: {
 export function useRefreshCustomerData(): UseMutationResult<
   void,
   Error,
-  'all' | 'segmentation' | 'clv-prediction' | 'churn-risk' | 'behavior-insights',
+  'all' | 'segmentation' | 'clv-prediction' | 'churn-risk',
   unknown
 > {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: async (
-      target: 'all' | 'segmentation' | 'clv-prediction' | 'churn-risk' | 'behavior-insights'
+      target: 'all' | 'segmentation' | 'clv-prediction' | 'churn-risk'
     ) => {
       if (target === 'all') {
         await queryClient.invalidateQueries({ queryKey: customerKeys.all })
@@ -456,7 +392,5 @@ export function useCustomerCacheStatus() {
       getQueryCacheStatus(customerKeys.clvPrediction(customerId)),
     churnRisk: (threshold?: number) => 
       getQueryCacheStatus(customerKeys.churnRisk(threshold)),
-    behaviorInsights: (startDate: string, endDate: string) => 
-      getQueryCacheStatus(customerKeys.behaviorInsights(startDate, endDate)),
   }
 }
