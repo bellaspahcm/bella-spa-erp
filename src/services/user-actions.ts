@@ -73,12 +73,15 @@ function assertNonMissingQueryError(error: SupabaseQueryError, context: string) 
 }
 
 export async function getCurrentUser(): Promise<CurrentUser | null> {
+  const perfStart = Date.now();
   const supabase = await createClient();
   
+  const authStart = Date.now();
   const {
     data: { user },
     error: authError,
   } = await supabase.auth.getUser();
+  console.log(`[getCurrentUser] auth.getUser took ${Date.now() - authStart}ms`);
 
   if (authError && !isMissingAuthSessionError(authError)) {
     console.error('[getCurrentUser] Auth user validation failed:', authError);
@@ -136,11 +139,13 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
 
   // Try fetching from 'users' table by ID (primary path)
   let profile: CurrentUser | null = null;
+  const profileStart = Date.now();
   const { data: mainProfile, error: mainProfileError } = await supabase
     .from('users')
     .select('*')
     .eq('id', user.id)
     .single();
+  console.log(`[getCurrentUser] users table query took ${Date.now() - profileStart}ms`);
   assertNonMissingQueryError(
     mainProfileError as SupabaseQueryError,
     '[getCurrentUser] Failed to fetch profile by auth id',
@@ -152,11 +157,13 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
 
   // Fallback 1: lookup by email (handles auth users created separately from public.users)
   if (!profile && user.email) {
+    const emailStart = Date.now();
     const { data: emailProfile, error: emailProfileError } = await supabase
       .from('users')
       .select('*')
       .eq('email', user.email)
       .single();
+    console.log(`[getCurrentUser] email fallback query took ${Date.now() - emailStart}ms`);
     assertNonMissingQueryError(
       emailProfileError as SupabaseQueryError,
       '[getCurrentUser] Failed to fetch profile by email',
@@ -177,11 +184,13 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
 
     // Check if the tenant is suspended
     if (profile.tenant_id) {
+      const tenantStart = Date.now();
       const { data: tenant, error: tenantError } = await supabase
         .from('tenants')
         .select('status, name')
         .eq('id', profile.tenant_id)
         .single();
+      console.log(`[getCurrentUser] tenant status query took ${Date.now() - tenantStart}ms`);
       assertNonMissingQueryError(
         tenantError as SupabaseQueryError,
         '[getCurrentUser] Failed to fetch tenant status',
@@ -194,6 +203,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     }
   }
 
+  console.log(`[getCurrentUser] TOTAL TIME: ${Date.now() - perfStart}ms`);
   return profile || { 
     id: user.id, 
     email: user.email || '', 

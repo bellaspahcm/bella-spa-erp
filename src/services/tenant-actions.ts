@@ -113,8 +113,12 @@ async function rollbackTenantSettings(
 }
 
 export async function getTenantSettings(): Promise<TenantRow | null> {
+  const perfStart = Date.now();
   const supabase = await createClient();
+  const userStart = Date.now();
   const currentUser = await getCurrentUser();
+  console.log(`[getTenantSettings] getCurrentUser took ${Date.now() - userStart}ms`);
+  
   const tenantId = currentUser?.tenant_id;
 
   if (!tenantId) {
@@ -122,11 +126,15 @@ export async function getTenantSettings(): Promise<TenantRow | null> {
     return null;
   }
 
+  const fetchStart = Date.now();
   const { data, error } = await fetchTenantSnapshot(supabase, tenantId);
+  console.log(`[getTenantSettings] fetchTenantSnapshot took ${Date.now() - fetchStart}ms`);
+  
   if (error || !data) {
     throw new Error(`[getTenantSettings] Failed to load tenant settings: ${error || 'Tenant not found'}`);
   }
 
+  console.log(`[getTenantSettings] TOTAL TIME: ${Date.now() - perfStart}ms`);
   return data;
 }
 
