@@ -28,10 +28,33 @@
  * - Cache is automatically invalidated on data updates
  */
 
-import { createClient } from '@/lib/supabase-server';
 import type { Database } from '@/types/database.types';
 import { QueryError } from '../shared/types';
 import { marketingCache, createCacheKey } from './cache';
+import { getSupabaseAdminUrl, getSupabaseAdminKey } from '@/lib/supabase-admin-env';
+
+/**
+ * Create server-side Supabase client with service role key (bypasses RLS).
+ * 
+ * Marketing Intelligence queries need service role access to read materialized views
+ * and aggregate campaign/ad data without RLS restrictions.
+ */
+async function createServiceRoleClient() {
+  const url = getSupabaseAdminUrl();
+  const serviceKey = getSupabaseAdminKey();
+
+  if (!url || !serviceKey) {
+    throw new Error(
+      'Marketing Intelligence requires SUPABASE_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY. ' +
+      'Service role key grants admin access to bypass RLS for analytics queries.'
+    );
+  }
+
+  const { createClient } = await import('@supabase/supabase-js');
+  return createClient<Database>(url, serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
 import type {
   CampaignAnalytics,
   ChannelPerformance,
@@ -187,7 +210,7 @@ export async function getCampaignAnalytics(
 async function _getCampaignAnalyticsUncached(
   params: CampaignAnalyticsParams
 ): Promise<CampaignAnalytics> {
-  const supabase = await createClient();
+  const supabase = await createServiceRoleClient();
   const { campaignId, dateRange, tenantId } = params;
 
   try {
@@ -387,7 +410,7 @@ export async function getChannelPerformance(
 async function _getChannelPerformanceUncached(
   params: ChannelPerformanceParams
 ): Promise<ChannelPerformance[]> {
-  const supabase = await createClient();
+  const supabase = await createServiceRoleClient();
   const { tenantId, dateRange, platforms } = params;
 
   try {
@@ -457,7 +480,7 @@ async function _getChannelPerformanceUncached(
  * - mv_channel_performance (for groupBy='platform' or 'month')
  */
 export async function getROIReport(params: ROIReportParams): Promise<ROIReport> {
-  const supabase = await createClient();
+  const supabase = await createServiceRoleClient();
   const { tenantId, dateRange, groupBy, platforms, minSpend } = params;
 
   try {
@@ -648,7 +671,7 @@ export async function getROIReport(params: ROIReportParams): Promise<ROIReport> 
 export async function getAdSpendSummary(
   params: AdSpendSummaryParams
 ): Promise<AdSpendSummary> {
-  const supabase = await createClient();
+  const supabase = await createServiceRoleClient();
   const { tenantId, dateRange, platforms } = params;
 
   try {
@@ -775,7 +798,7 @@ export async function getAdSpendSummary(
 export async function getTopPerformingAds(
   params: TopPerformingAdsParams
 ): Promise<TopPerformingAdsResult> {
-  const supabase = await createClient();
+  const supabase = await createServiceRoleClient();
   const {
     tenantId,
     metric,

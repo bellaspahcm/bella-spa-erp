@@ -25,11 +25,34 @@
  * - revenue, operating_expenses, salary_expenses, budgets
  */
 
-import { createClient } from '@/lib/supabase-server';
 import type { Database } from '@/types/database.types';
 import type { DateRange, TimePeriod } from '../shared/types';
 import { QueryError } from '../shared/types';
 import { parseDateRange, formatDate } from '../shared/helpers';
+import { getSupabaseAdminUrl, getSupabaseAdminKey } from '@/lib/supabase-admin-env';
+
+/**
+ * Create server-side Supabase client with service role key (bypasses RLS).
+ * 
+ * Finance Intelligence queries need service role access to read materialized views
+ * and aggregate financial data without RLS restrictions.
+ */
+async function createServiceRoleClient() {
+  const url = getSupabaseAdminUrl();
+  const serviceKey = getSupabaseAdminKey();
+
+  if (!url || !serviceKey) {
+    throw new Error(
+      'Finance Intelligence requires SUPABASE_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY. ' +
+      'Service role key grants admin access to bypass RLS for analytics queries.'
+    );
+  }
+
+  const { createClient } = await import('@supabase/supabase-js');
+  return createClient<Database>(url, serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
 
 // ─── Type Definitions ───────────────────────────────────────────────────────
 
@@ -294,7 +317,7 @@ export async function getMonthlyPnL(
   dateRange: DateRange | TimePeriod
 ): Promise<MonthlyPnL[]> {
   try {
-    const supabase = await createClient();
+    const supabase = await createServiceRoleClient();
     
     // Parse date range
     const range = parseDateRange(dateRange);
@@ -370,7 +393,7 @@ export async function getCashFlowAnalysis(
   dateRange: DateRange | TimePeriod
 ): Promise<CashFlowAnalysis[]> {
   try {
-    const supabase = await createClient();
+    const supabase = await createServiceRoleClient();
     
     // Parse date range
     const range = parseDateRange(dateRange);
@@ -443,7 +466,7 @@ export async function getBudgetVariance(
   month: string
 ): Promise<BudgetVariance[]> {
   try {
-    const supabase = await createClient();
+    const supabase = await createServiceRoleClient();
     
     // Query materialized view
     const { data, error } = await supabase
@@ -526,7 +549,7 @@ export async function getExpenseBreakdown(
   dateRange: DateRange | TimePeriod
 ): Promise<ExpenseBreakdown> {
   try {
-    const supabase = await createClient();
+    const supabase = await createServiceRoleClient();
     
     // Parse date range
     const range = parseDateRange(dateRange);
@@ -660,7 +683,7 @@ export async function getRevenueBreakdown(
   dateRange: DateRange | TimePeriod
 ): Promise<RevenueBreakdown> {
   try {
-    const supabase = await createClient();
+    const supabase = await createServiceRoleClient();
     
     // Parse date range
     const range = parseDateRange(dateRange);
@@ -787,7 +810,7 @@ export async function getCashFlowForecast(
   forecastMonths: number = 3
 ): Promise<CashFlowForecast[]> {
   try {
-    const supabase = await createClient();
+    const supabase = await createServiceRoleClient();
     
     // Get historical cash flow data (last 6 months)
     const sixMonthsAgo = new Date();
@@ -876,7 +899,7 @@ export async function getProfitabilityTrends(
   dateRange: DateRange | TimePeriod
 ): Promise<ProfitabilityTrends> {
   try {
-    const supabase = await createClient();
+    const supabase = await createServiceRoleClient();
     
     // Parse date range
     const range = parseDateRange(dateRange);
@@ -994,7 +1017,7 @@ export async function getFinancialRatios(
   month: string
 ): Promise<FinancialRatios> {
   try {
-    const supabase = await createClient();
+    const supabase = await createServiceRoleClient();
     
     // Query P&L data for the month
     const { data: pnlData, error: pnlError } = await supabase
