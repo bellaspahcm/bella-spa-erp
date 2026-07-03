@@ -116,12 +116,12 @@ export const operationalKeys = {
 // API CLIENT FUNCTIONS
 // ============================================================================
 
-async function fetchKTVPerformance(
-  month: string, 
-  year: string
+async function fetchKTVLeaderboard(
+  startDate: string, 
+  endDate: string
 ): Promise<IntelligenceResponse<KTVPerformanceMetrics[]>> {
   const response = await fetch(
-    `/api/intelligence/operational/ktv-performance?month=${month}&year=${year}`,
+    `/api/intelligence/operational/ktv-leaderboard?startDate=${startDate}&endDate=${endDate}`,
     {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
@@ -137,12 +137,12 @@ async function fetchKTVPerformance(
   return response.json()
 }
 
-async function fetchInventoryOptimization(
+async function fetchInventoryStatus(
   threshold?: number
 ): Promise<IntelligenceResponse<InventoryOptimization[]>> {
   const url = threshold 
-    ? `/api/intelligence/operational/inventory-optimization?threshold=${threshold}`
-    : '/api/intelligence/operational/inventory-optimization'
+    ? `/api/intelligence/operational/inventory-status?stockStatus=low_stock`
+    : '/api/intelligence/operational/inventory-status'
 
   const response = await fetch(url, {
     method: 'GET',
@@ -158,12 +158,12 @@ async function fetchInventoryOptimization(
   return response.json()
 }
 
-async function fetchSessionUtilization(
+async function fetchSessionAnalytics(
   startDate: string,
   endDate: string
 ): Promise<IntelligenceResponse<SessionUtilization[]>> {
   const response = await fetch(
-    `/api/intelligence/operational/session-utilization?startDate=${startDate}&endDate=${endDate}`,
+    `/api/intelligence/operational/session-analytics?startDate=${startDate}&endDate=${endDate}`,
     {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
@@ -184,16 +184,16 @@ async function fetchSessionUtilization(
 // ============================================================================
 
 /**
- * Hook: KTV Performance Metrics
+ * Hook: KTV Leaderboard
  * 
- * Fetches performance metrics for all KTVs in a given month/year.
+ * Fetches leaderboard metrics for all KTVs in a date range.
  * 
  * Cache Strategy:
  * - staleTime: 6 hours (KTV performance data updates daily)
  * - Matches backend TTL in cache-config.ts
  * 
- * @param month - Month string (e.g., '01', '12')
- * @param year - Year string (e.g., '2026')
+ * @param startDate - Start date (YYYY-MM-DD)
+ * @param endDate - End date (YYYY-MM-DD)
  * @param options - React Query options
  */
 export function useKTVPerformance(
@@ -205,9 +205,13 @@ export function useKTVPerformance(
     refetchOnWindowFocus?: boolean
   }
 ): UseQueryResult<IntelligenceResponse<KTVPerformanceMetrics[]>, Error> {
+  // Convert month/year to date range
+  const startDate = `${year}-${month}-01`;
+  const endDate = new Date(parseInt(year), parseInt(month), 0).toISOString().split('T')[0];
+  
   return useQuery({
     queryKey: operationalKeys.ktvPerformance(month, year),
-    queryFn: () => fetchKTVPerformance(month, year),
+    queryFn: () => fetchKTVLeaderboard(startDate, endDate),
     staleTime: 6 * 60 * 60 * 1000, // 6 hours
     gcTime: 12 * 60 * 60 * 1000, // 12 hours (cacheTime renamed to gcTime in v5)
     refetchOnMount: options?.refetchOnMount ?? false,
@@ -217,9 +221,9 @@ export function useKTVPerformance(
 }
 
 /**
- * Hook: Inventory Optimization
+ * Hook: Inventory Status
  * 
- * Fetches inventory optimization recommendations (reorder points, optimal stock levels).
+ * Fetches inventory status (stock levels, reorder points).
  * 
  * Cache Strategy:
  * - staleTime: 12 hours (inventory data changes slowly)
@@ -238,7 +242,7 @@ export function useInventoryOptimization(
 ): UseQueryResult<IntelligenceResponse<InventoryOptimization[]>, Error> {
   return useQuery({
     queryKey: operationalKeys.inventoryOptimization(threshold),
-    queryFn: () => fetchInventoryOptimization(threshold),
+    queryFn: () => fetchInventoryStatus(threshold),
     staleTime: 12 * 60 * 60 * 1000, // 12 hours
     gcTime: 24 * 60 * 60 * 1000, // 24 hours
     refetchOnMount: options?.refetchOnMount ?? false,
@@ -248,9 +252,9 @@ export function useInventoryOptimization(
 }
 
 /**
- * Hook: Session Utilization Analytics
+ * Hook: Session Analytics
  * 
- * Fetches session utilization metrics for a date range (booking rates, peak hours).
+ * Fetches session analytics metrics for a date range (booking rates, peak hours).
  * 
  * Cache Strategy:
  * - staleTime: 6 hours (utilization data updates throughout the day)
@@ -271,7 +275,7 @@ export function useSessionUtilization(
 ): UseQueryResult<IntelligenceResponse<SessionUtilization[]>, Error> {
   return useQuery({
     queryKey: operationalKeys.sessionUtilization(startDate, endDate),
-    queryFn: () => fetchSessionUtilization(startDate, endDate),
+    queryFn: () => fetchSessionAnalytics(startDate, endDate),
     staleTime: 6 * 60 * 60 * 1000, // 6 hours
     gcTime: 12 * 60 * 60 * 1000, // 12 hours
     refetchOnMount: options?.refetchOnMount ?? false,
