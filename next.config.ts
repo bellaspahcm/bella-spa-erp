@@ -62,10 +62,9 @@ const nextConfig: NextConfig = {
   },
   // Strip console.log/info/debug in production builds. Keeps console.error/warn
   // so real errors still surface in Sentry. Saves bundle size + runtime cost.
+  // TEMPORARILY DISABLED for performance profiling
   compiler: {
-    removeConsole: process.env.NODE_ENV === 'production'
-      ? { exclude: ['error', 'warn'] }
-      : false,
+    removeConsole: false, // TODO: Re-enable after performance profiling complete
   },
   // Transpile workspace packages for Next.js (mobile + web code sharing)
   transpilePackages: ['@bella/shared'],
