@@ -1,66 +1,158 @@
 # Kế Hoạch Triển Khai Workflow Engine & Rule Engine
-## Bella ERP - Multi-Industry Platform
+## Bella ERP - Enterprise Intelligence Platform
 
 **Ngày lập:** 22/06/2026  
-**Người lập:** AI Assistant (reviewed by Technical Lead)  
-**Mục tiêu:** Xây dựng hai engine core để tự động hóa quy trình nghiệp vụ và business logic cho đa ngành
+**Cập nhật:** 22/06/2026 (v1.1 - after technical review)  
+**Người lập:** AI Assistant  
+**Reviewed by:** Technical Lead ⭐⭐⭐⭐⭐  
+**Mục tiêu:** Xây dựng **5 Engine cốt lõi** để tạo Enterprise Intelligence Platform
 
 ---
 
-## 📋 TÓM TẮT EXECUTIVE
+## 🎯 TẦM NHÌN: 5-ENGINE ARCHITECTURE
 
-### Tại sao cần Workflow Engine & Rule Engine?
+```
+┌─────────────────────────────────────────────┐
+│   Business Intelligence Engine (ĐÃ CÓ)     │
+│   - Revenue, Cash Flow, KPI, ROI            │
+└──────────────────┬──────────────────────────┘
+                   ▼
+┌─────────────────────────────────────────────┐
+│   Rule Engine (Decision) - PHASE 1         │
+│   - IF Cash Flow < 2 months → Reject        │
+└──────────────────┬──────────────────────────┘
+                   ▼
+┌─────────────────────────────────────────────┐
+│   Workflow Engine (Process) - PHASE 1      │
+│   - Move State, Orchestrate                 │
+└──────────────────┬──────────────────────────┘
+                   ▼
+┌─────────────────────────────────────────────┐
+│   Event Engine (Integration) - PHASE 2     │
+│   - Publish Events → Workers                │
+└──────────────────┬──────────────────────────┘
+                   ▼
+┌─────────────────────────────────────────────┐
+│   AI Intelligence Engine - PHASE 3         │
+│   - Predictive, Recommendations             │
+└─────────────────────────────────────────────┘
+```
+
+**USP (Unique Selling Point):**
+> Bella không chỉ là ERP. Bella là nền tảng quyết định thông minh dựa trên dữ liệu thực tế của doanh nghiệp.
+
+---
+
+## 📋 TÓM TẮT EXECUTIVE (UPDATED)
+
+### Tại sao cần 5-Engine Architecture?
 
 **Hiện trạng:**
-- ❌ Approval logic (nghỉ phép, lương, booking) hard-code trong server actions
-- ❌ Business rules (hoa hồng, discount, penalty) trải rác khắp codebase
-- ❌ Mỗi module tự implement logic riêng → khó maintain, dễ drift
-- ❌ Thêm ngành mới phải copy-paste và modify approval flows
-- ❌ Không có audit trail cho decision logic
+- ✅ **Business Intelligence Engine** đã có (revenue, cash flow, KPI, forecasting)
+- ❌ Approval logic hard-code trong server actions
+- ❌ Business rules (hoa hồng, discount) không connect với BI data
+- ❌ Quyết định dựa trên "cảm tính" chứ không phải data
 - ❌ Admin không thể tự config rules mà phải chờ dev
 
-**Giải pháp:**
-1. **Workflow Engine**: Orchestrate multi-step approval flows, state transitions, notifications
-2. **Rule Engine**: Centralize business logic evaluation (pricing, eligibility, calculations)
+**Giải pháp (3 Phases):**
+
+**Phase 1 (12 tuần):** Rule Engine + Workflow Engine
+1. **Rule Engine**: Decision layer - đọc BI data để quyết định
+   - Example: `IF Cash Flow < 2 months → Reject expense approval`
+2. **Workflow Engine**: Process orchestration - move state only, ask Rule Engine for decisions
+
+**Phase 2 (8 tuần):** Event Engine
+3. **Event Engine**: Publish events thay vì direct actions
+   - Workflow → Event → Workers (notification, webhook, AI, cache, BI refresh)
+
+**Phase 3 (12 tuần):** AI Intelligence Engine  
+4. **AI Intelligence Engine**: Predictive & recommendations
+   - Example: "Suggest auto-approve based on 95% historical approval rate"
 
 **Lợi ích:**
-- ✅ Tenant-scoped workflows & rules (mỗi spa tự config)
-- ✅ Module-aware (Baby Care vs Beauty Spa có rules khác nhau)
-- ✅ Version history & audit trail
-- ✅ No-code/Low-code UI cho Admin
-- ✅ Giảm 60% code duplication khi thêm ngành mới
-- ✅ A/B testing business rules dễ dàng
+- ✅ **Data-Driven Decisions**: Rules đọc real-time BI metrics
+- ✅ **Event-Driven Architecture**: Loose coupling, scalable
+- ✅ **Visual Designer**: Drag & Drop (như Power Automate, n8n, Camunda)
+- ✅ **Enterprise States**: Waiting, Suspended, Escalated, Delegated, Compensated
+- ✅ **Workflow Variables**: Context-aware (salary, department, inventory)
+- ✅ **Version Management**: Deploy new version without breaking running instances
+- ✅ **Audit Trail**: CEO biết "Ai duyệt? Lúc nào? Vì sao?"
 
-**Timeline:** 12 tuần (3 tháng)  
-**Resources:** 2 backend devs + 1 frontend dev + 1 QA  
+**Timeline:** 32 tuần (8 tháng) cho cả 3 phases  
+**Phase 1 Focus:** 12 tuần (Rule + Workflow engines)  
 **Risk Level:** Medium-High (affects core business logic)
 
 ---
 
-## 🎯 PHẦN 1: WORKFLOW ENGINE
+## 🎯 PHẦN 1: WORKFLOW ENGINE (Build After Rule Engine)
 
-### 1.1 Định Nghĩa & Scope
+> **REVIEW NOTE:** Workflow KHÔNG evaluate rules. Workflow chỉ hỏi Rule Engine và move state.
+
+### 1.1 Định Nghĩa & Scope (UPDATED)
 
 **Workflow Engine là gì?**
-- Orchestration layer cho quy trình multi-step có approval/rejection
-- State machine với transitions, conditions, actions, timeouts
-- Event-driven architecture với notifications và rollback support
+- **Process orchestration layer** - chỉ move state
+- **KHÔNG** evaluate logic - hỏi Rule Engine
+- State machine với transitions, timeouts, compensation
+- **Event-driven** - publish events thay vì direct actions
+
+**Kiến trúc mới (Decoupled):**
+
+```
+┌──────────────────────────────────┐
+│       Workflow Engine            │
+│  1. Receive transition request   │
+│  2. Ask Rule Engine: Can move?   │ ◄─── KHÔNG tự evaluate
+│  3. If yes, move state           │
+│  4. Publish event                │ ◄─── KHÔNG gọi action trực tiếp
+└──────────────┬───────────────────┘
+               ▼
+┌──────────────────────────────────┐
+│        Event Bus                 │
+│  workflow.approved               │
+│  workflow.rejected               │
+│  workflow.compensated            │
+└──────────────┬───────────────────┘
+               ▼
+┌──────────────────────────────────┐
+│        Event Workers             │
+│  - Notification Worker           │
+│  - Webhook Worker                │
+│  - AI Analysis Worker            │
+│  - Cache Refresh Worker          │
+│  - BI Dashboard Worker           │
+└──────────────────────────────────┘
+```
 
 **Use Cases MVP:**
 
-| Workflow | Module | Steps | Priority | Complexity |
-|----------|--------|-------|----------|------------|
-| Leave Request Approval | HR | Submit → Manager → HR → Approved/Rejected | P0 | Medium |
-| Salary Approval | Finance | Draft → Accounting → CFO → Published | P0 | High |
-| Booking Confirmation | Operations | Pending → Deposit → Confirmed → Completed | P1 | Medium |
-| Package Purchase | Sales | Cart → Payment → KTV Assign → Active | P1 | Low |
-| Expense Approval | Finance | Submit → Manager → Accounting → Paid | P2 | Medium |
+| Workflow | Module | States | Priority | Event-Driven |
+|----------|--------|--------|----------|--------------|
+| Leave Request | HR | Pending → ManagerApproved → HRApproved → Approved | P0 | ✅ |
+| Salary Approval | Finance | Draft → Accounting → CFOApproved → Published | P0 | ✅ |
+| Booking Confirmation | Ops | Pending → Deposit → Confirmed → Completed/Cancelled | P1 | ✅ |
+| Expense Approval | Finance | Submit → Manager → Accounting → Paid/Rejected | P1 | ✅ |
+
+**Enterprise States (NEW):**
+
+```typescript
+type WorkflowState = 
+  | 'pending'      // Chờ action
+  | 'waiting'      // Chờ external event
+  | 'suspended'    // Admin tạm dừng
+  | 'escalated'    // Auto escalate khi timeout
+  | 'delegated'    // Ủy quyền cho người khác
+  | 'approved'     // End state - success
+  | 'rejected'     // End state - failed
+  | 'expired'      // Timeout không action
+  | 'compensated'  // Rollback đã thực hiện
+  | 'cancelled';   // User cancel
+```
 
 **Out of Scope (Phase 2+):**
-- Complex parallel approvals (matrix approval)
+- Parallel approvals (matrix approval)
 - External system integration workflows
 - Long-running workflows (>30 days)
-- Business process mining & optimization
 
 ---
 
@@ -92,13 +184,27 @@ CREATE TABLE workflow_instances (
   reference_type TEXT NOT NULL, -- 'leave_request', 'salary_record', 'booking'
   reference_id UUID NOT NULL,
   current_state TEXT NOT NULL,
-  context JSONB NOT NULL, -- workflow variables, form data
+  
+  -- NEW: Workflow Variables (context data)
+  variables JSONB NOT NULL DEFAULT '{}', -- { salary: 50000000, department: 'Finance' }
+  
+  -- NEW: Enterprise states
+  status TEXT NOT NULL DEFAULT 'running', -- 'running', 'waiting', 'suspended', 'completed', 'cancelled', 'compensated'
+  
   started_at TIMESTAMPTZ DEFAULT NOW(),
   completed_at TIMESTAMPTZ,
   cancelled_at TIMESTAMPTZ,
-  status TEXT NOT NULL DEFAULT 'running', -- 'running', 'completed', 'cancelled', 'failed'
+  
+  -- NEW: Compensation tracking
+  compensation_state TEXT, -- track compensation progress
+  
   error_message TEXT,
   created_by UUID REFERENCES users(id),
+  
+  -- NEW: Delegation
+  delegated_to UUID REFERENCES users(id),
+  delegated_at TIMESTAMPTZ,
+  
   UNIQUE(tenant_id, reference_type, reference_id)
 );
 
@@ -121,10 +227,23 @@ CREATE TABLE workflow_actions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   workflow_instance_id UUID NOT NULL REFERENCES workflow_instances(id),
   transition_id UUID REFERENCES workflow_transitions(id),
-  action_type TEXT NOT NULL, -- 'send_notification', 'update_record', 'create_expense'
-  target_type TEXT,
-  target_id UUID,
-  payload JSONB,
+  
+  -- CHANGED: Event-driven instead of direct action
+  event_type TEXT NOT NULL, -- 'workflow.approved', 'workflow.rejected', 'workflow.compensated'
+  event_payload JSONB NOT NULL,
+  
+  status TEXT NOT NULL DEFAULT 'pending', -- 'pending', 'published', 'failed'
+  published_at TIMESTAMPTZ,
+  error_message TEXT
+);
+
+-- NEW: Workflow Compensation (for rollback)
+CREATE TABLE workflow_compensations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  workflow_instance_id UUID NOT NULL REFERENCES workflow_instances(id),
+  transition_id UUID REFERENCES workflow_transitions(id),
+  compensation_action TEXT NOT NULL, -- 'restore_inventory', 'refund_payment'
+  compensation_data JSONB NOT NULL,
   status TEXT NOT NULL DEFAULT 'pending', -- 'pending', 'completed', 'failed'
   executed_at TIMESTAMPTZ,
   error_message TEXT
@@ -320,132 +439,178 @@ class WorkflowService {
 
 ---
 
-### 1.5 Implementation Roadmap - Workflow Engine
+### 1.5 Implementation Roadmap - Workflow Engine (UPDATED)
 
-#### **Phase 1.1: Foundation (Tuần 1-2)**
-**Mục tiêu:** Basic workflow engine với 1 use case pilot
+> **BUILD ORDER:** Rule Engine first → Workflow Engine second
+
+#### **Phase 1.1: Foundation (Tuần 5-6)** *(sau khi Rule Engine xong)*
+**Mục tiêu:** Basic workflow engine với Rule Engine integration
 
 **Tasks:**
-- [ ] Database schema migration (`workflow_definitions`, `workflow_instances`, `workflow_transitions`, `workflow_actions`)
+- [ ] Database schema migration (with variables, compensation, delegation)
 - [ ] RLS policies & grants
 - [ ] Core `WorkflowEngine` service
-- [ ] `StateManager` with basic transitions
+- [ ] `StateManager` - chỉ move state, KHÔNG evaluate logic
+- [ ] **Integration:** Ask Rule Engine before each transition
 - [ ] **Pilot:** Leave Request Approval workflow
-- [ ] Integration tests với rollback scenarios
-- [ ] Admin UI: View workflow status (read-only)
+- [ ] Integration tests với compensation scenarios
+- [ ] Admin UI: View workflow status & variables (read-only)
 
 **Deliverables:**
-- Leave requests đi qua workflow engine
-- Audit trail visible in admin panel
-- Tests cover happy path + rollback
+- Leave requests ask Rule Engine before state transition
+- Workflow variables tracked in `variables` JSONB
+- Compensation mechanism works
+- Tests cover rollback + compensation
 
 **Success Metrics:**
-- 100% leave approvals tracked in `workflow_transitions`
-- Zero silent failures (all errors logged)
-- Rollback works when side effect fails
+- 100% transitions gated by Rule Engine
+- Zero logic evaluation in Workflow Engine
+- Compensation restores state correctly
 
 ---
 
-#### **Phase 1.2: Actions & Notifications (Tuần 3-4)**
-**Mục tiêu:** Execute side effects reliably
+#### **Phase 1.2: Event-Driven Actions (Tuần 7-8)**
+**Mục tiêu:** Publish events instead of direct actions
 
 **Tasks:**
-- [ ] `ActionExecutor` framework
-- [ ] Implement 5 core actions:
-  - `UpdateRecordAction`
-  - `SendNotificationAction`
-  - `CreateExpenseAction` (uses accounting outbox - theo AGENTS.md)
-  - `CreateAttendanceAction` (cho leave approval)
-  - `AuditLogAction`
-- [ ] Idempotency guards for actions
-- [ ] Retry logic for failed actions
-- [ ] Notification integration với existing service
+- [ ] Event Bus integration (use existing notification/queue system)
+- [ ] `EventPublisher` service
+- [ ] Migrate 3 event types:
+  - `workflow.state_changed`
+  - `workflow.approved`
+  - `workflow.rejected`
+- [ ] Event Workers (stub implementations):
+  - Notification Worker (use existing service)
+  - Audit Log Worker
+  - Cache Refresh Worker
+- [ ] Idempotency guards for event publishing
+- [ ] Retry logic for failed events
 
 **Deliverables:**
-- Actions execute atomically
-- Failed actions trigger rollback
-- Notifications sent reliably
+- Workflows publish events
+- Workers consume events
+- Failed events retry automatically
 
 ---
 
-#### **Phase 1.3: Multi-Workflow Support (Tuần 5-6)**
-**Mục tiêu:** Generalize to 3 workflows
+#### **Phase 1.3: Enterprise States & Delegation (Tuần 9-10)**
+**Mục tiêu:** Support enterprise workflow patterns
 
 **Tasks:**
-- [ ] Migrate **Salary Approval** to workflow engine
-- [ ] Migrate **Booking Confirmation** to workflow engine
-- [ ] `ConditionEvaluator` with Rule Engine integration
-- [ ] Timeout handling for stuck workflows
-- [ ] Admin UI: Workflow definition viewer
+- [ ] Implement 10 enterprise states (waiting, suspended, escalated, delegated, etc.)
+- [ ] Timeout mechanism → auto-escalate
+- [ ] Delegation feature (ủy quyền)
+- [ ] Suspend/Resume workflow
+- [ ] **Pilot:** Salary Approval + Booking Confirmation workflows
+- [ ] Admin UI: Escalation dashboard
 
 **Deliverables:**
-- 3 workflows running in production
-- Conditions evaluated via Rule Engine
-- Timeouts auto-transition stale workflows
+- 3 workflows running with enterprise states
+- Timeout auto-escalates
+- Admins can delegate approvals
 
 ---
 
-#### **Phase 1.4: Tenant Configuration UI (Tuần 7-8)**
-**Mục tiêu:** Admin có thể customize workflows
+#### **Phase 1.4: Visual Workflow Designer (Tuần 11-12)** ⭐ **USP**
+**Mục tiêu:** Drag & Drop workflow builder (như Power Automate, n8n, Camunda)
 
 **Tasks:**
-- [ ] Workflow Designer UI (visual flow builder)
-- [ ] State/Transition editor
-- [ ] Action configurator
-- [ ] Version management
-- [ ] Preview & test mode
-- [ ] Clone workflow to new tenant/module
+- [ ] React Flow / Xyflow integration
+- [ ] Visual canvas:
+  - Drag states from palette
+  - Connect states với arrows
+  - Configure state properties (timeout, roles, rules)
+  - Configure transition conditions (Rule Engine rules)
+- [ ] Save workflow as JSONB config
+- [ ] Version management UI
+- [ ] Preview mode (test with sample data)
+- [ ] Clone workflow template
 
 **Deliverables:**
-- Admin modify workflow without code
-- Changes versioned & audited
-- Test mode không affect production data
+- Admin creates workflow visually
+- No code needed
+- Real-time preview
+
+**Success Metrics:**
+- Admin creates simple workflow in < 5 minutes
+- Complex workflow in < 20 minutes
+- User satisfaction score > 4.5/5
 
 ---
 
-## 🔧 PHẦN 2: RULE ENGINE
+## 🔧 PHẦN 2: RULE ENGINE (Priority: P0 - Build First)
 
-### 2.1 Định Nghĩa & Scope
+> **REVIEW NOTE:** Rule Engine mới là phần quan trọng nhất. Workflow chỉ move state. Rule mới quyết định.
+
+### 2.1 Định Nghĩa & Scope (UPDATED)
 
 **Rule Engine là gì?**
-- Centralized business logic evaluation system
+- **Decision layer** của Enterprise Intelligence Platform
+- Đọc **Business Intelligence data** để ra quyết định
 - Declarative rules stored in database
 - Versioned, audited, tenant-scoped
 - Hot-reload without code deployment
 
-**Use Cases MVP:**
+**Kiến trúc mới:**
 
-| Rule Type | Example | Module | Priority |
-|-----------|---------|--------|----------|
-| Commission | "KTV gets 50k/session if rating ≥ 4.5⭐" | HR/Salary | P0 |
-| Discount | "VIP customers get 15% discount" | Sales | P0 |
-| Eligibility | "Can book if customer has no debt" | Booking | P1 |
-| Penalty | "Late >3 times/month → -200k salary" | HR/Attendance | P1 |
-| Promotion | "Buy 10 sessions get 1 free" | Marketing | P2 |
+```
+┌──────────────────────────────────┐
+│  Business Intelligence Engine    │
+│  (Revenue, Cash Flow, KPI, ROI)  │
+└──────────────┬───────────────────┘
+               ▼
+┌──────────────────────────────────┐
+│         Rule Engine              │
+│  - Read BI Metrics               │
+│  - Evaluate Conditions           │
+│  - Return Decision               │
+└──────────────┬───────────────────┘
+               ▼
+┌──────────────────────────────────┐
+│       Workflow Engine            │
+│  - Ask Rule Engine               │
+│  - Move State based on Decision  │
+└──────────────────────────────────┘
+```
+
+**Use Cases MVP (với BI Integration):**
+
+| Rule Type | Example | BI Data Source | Priority |
+|-----------|---------|----------------|----------|
+| Financial Gate | "IF Cash Flow < 2 months → Reject expense" | `cash_flow_analysis` | P0 |
+| Commission | "IF Rating ≥ 4.5 AND Revenue > Target → 20% bonus" | `ktv_performance`, `revenue_breakdown` | P0 |
+| Discount | "IF Customer LTV > 50M AND Debt = 0 → 15% discount" | `customer_ltv`, `customer_segmentation` | P0 |
+| Auto-Approval | "IF 95% historical approval → Auto-approve" | `approval_history_analysis` | P1 |
+| Inventory | "IF Turnover < threshold → Auto-reorder" | `inventory_status`, `inventory_forecast` | P1 |
 
 **Out of Scope (Phase 2+):**
-- Machine learning rules
-- External data source rules
+- Machine learning rules (→ AI Intelligence Engine Phase 3)
+- External data source rules (weather, stock market)
 - Real-time streaming rules (CEP)
 
 ---
 
-### 2.2 Database Schema
+### 2.2 Database Schema (UPDATED - Add BI Integration)
 
 ```sql
--- Rule Definition
+-- Rule Definition (with BI data sources)
 CREATE TABLE rule_definitions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id UUID NOT NULL REFERENCES tenants(id),
   module_key TEXT NOT NULL,
-  rule_key TEXT NOT NULL, -- 'commission_calculation', 'discount_eligibility'
+  rule_key TEXT NOT NULL,
   name TEXT NOT NULL,
   description TEXT,
   version INTEGER NOT NULL DEFAULT 1,
   is_active BOOLEAN DEFAULT true,
-  priority INTEGER DEFAULT 100, -- lower = higher priority
+  priority INTEGER DEFAULT 100,
   conditions JSONB NOT NULL, -- rule expression tree
-  actions JSONB NOT NULL, -- what to do when matched
+  actions JSONB NOT NULL,
+  
+  -- NEW: BI Integration
+  bi_data_sources TEXT[], -- ['cash_flow_analysis', 'customer_ltv']
+  cache_ttl INTEGER DEFAULT 300, -- 5 minutes cache cho BI queries
+  
   valid_from TIMESTAMPTZ DEFAULT NOW(),
   valid_until TIMESTAMPTZ,
   created_by UUID REFERENCES users(id),
@@ -454,20 +619,25 @@ CREATE TABLE rule_definitions (
   UNIQUE(tenant_id, module_key, rule_key, version)
 );
 
--- Rule Execution Log (audit + debugging)
+-- Rule Execution Log (with BI snapshot)
 CREATE TABLE rule_executions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id UUID NOT NULL,
   rule_definition_id UUID NOT NULL REFERENCES rule_definitions(id),
-  context_type TEXT NOT NULL, -- 'booking', 'salary_calculation', 'payment'
+  context_type TEXT NOT NULL,
   context_id UUID NOT NULL,
   input_data JSONB NOT NULL,
+  
+  -- NEW: BI Data Snapshot (for audit)
+  bi_data_snapshot JSONB, -- BI metrics tại thời điểm evaluate
+  
   output_data JSONB,
   matched BOOLEAN NOT NULL,
   executed_at TIMESTAMPTZ DEFAULT NOW(),
   execution_time_ms INTEGER,
   error_message TEXT
 );
+
 
 -- RLS Policies
 ALTER TABLE rule_definitions ENABLE ROW LEVEL SECURITY;
@@ -486,31 +656,118 @@ CREATE INDEX idx_rule_execs_context ON rule_executions(tenant_id, context_type, 
 
 ---
 
-### 2.3 Rule Expression Format
+### 2.3 Rule Expression Format (UPDATED - với BI Data)
 
 ```typescript
-// Rule Expression Language (JSON Logic đơn giản hóa)
+// Rule Expression với BI Integration
 interface RuleExpression {
   operator: 'and' | 'or' | 'not' | 'eq' | 'gt' | 'lt' | 'gte' | 'lte' | 'in' | 'contains';
-  operands: (RuleExpression | string | number | boolean)[];
+  operands: (RuleExpression | string | number | boolean | BIDataReference)[];
 }
 
-interface RuleAction {
-  type: 'set_value' | 'calculate' | 'lookup' | 'call_function';
-  config: Record<string, unknown>;
+interface BIDataReference {
+  type: 'bi_metric';
+  source: string; // 'cash_flow_analysis', 'customer_ltv'
+  metric: string; // 'current_balance', 'lifetime_value'
+  filters?: Record<string, unknown>;
 }
 
-// Example 1: KTV Commission Rule
-const ktvCommissionRule = {
-  name: 'KTV High Rating Bonus',
+// Example 1: Financial Gate Rule (ĐỌC BI DATA)
+const financialGateRule = {
+  name: 'Expense Approval Financial Gate',
+  bi_data_sources: ['cash_flow_analysis'],
   conditions: {
     operator: 'and',
     operands: [
-      { operator: 'gte', operands: ['$.rating', 4.5] },
-      { operator: 'eq', operands: ['$.package_type', 'vip'] },
-      { operator: 'gte', operands: ['$.completed_sessions', 10] }
+      { 
+        operator: 'gte', 
+        operands: [
+          { 
+            type: 'bi_metric', 
+            source: 'cash_flow_analysis', 
+            metric: 'months_of_runway' 
+          }, 
+          2 // >= 2 months cash flow
+        ] 
+      },
+      { operator: 'lte', operands: ['$.expense.amount', 10000000] } // <= 10M
     ]
   },
+  actions: [
+    { type: 'set_value', config: { field: 'can_approve', value: true } }
+  ]
+};
+
+// Example 2: KTV Commission Rule (ĐỌC BI + CONTEXT)
+const ktvCommissionRule = {
+  name: 'High Performer Bonus',
+  bi_data_sources: ['ktv_performance', 'revenue_breakdown'],
+  conditions: {
+    operator: 'and',
+    operands: [
+      { operator: 'gte', operands: ['$.ktv.rating', 4.5] },
+      { 
+        operator: 'gt', 
+        operands: [
+          { 
+            type: 'bi_metric', 
+            source: 'revenue_breakdown', 
+            metric: 'revenue_by_ktv',
+            filters: { ktv_id: '$.ktv.id', month: '$.month' }
+          },
+          { 
+            type: 'bi_metric', 
+            source: 'revenue_breakdown', 
+            metric: 'average_revenue_per_ktv',
+            filters: { month: '$.month' }
+          }
+        ] // revenue > average
+      }
+    ]
+  },
+  actions: [
+    { 
+      type: 'calculate', 
+      config: { 
+        formula: '$.base_commission * 1.2',
+        output: '$.final_commission' 
+      }
+    }
+  ]
+};
+
+// Example 3: Auto-Approval Rule (ĐỌC LỊCH SỬ)
+const autoApprovalRule = {
+  name: 'Historical Auto-Approval',
+  bi_data_sources: ['approval_history_analysis'],
+  conditions: {
+    operator: 'and',
+    operands: [
+      { 
+        operator: 'gte', 
+        operands: [
+          { 
+            type: 'bi_metric', 
+            source: 'approval_history_analysis', 
+            metric: 'approval_rate',
+            filters: { 
+              requester_id: '$.requester.id', 
+              request_type: '$.type',
+              last_n_requests: 20
+            }
+          },
+          0.95 // 95% approval rate
+        ] 
+      }
+    ]
+  },
+  actions: [
+    { type: 'set_value', config: { field: 'auto_approve_eligible', value: true } }
+  ]
+};
+```
+
+---
   actions: [
     { 
       type: 'calculate', 
@@ -544,15 +801,16 @@ const vipDiscountRule = {
 
 ---
 
-### 2.4 Service Architecture
+### 2.4 Service Architecture (UPDATED - với BI Integration)
 
 ```
 src/services/rules/
 ├── core/
 │   ├── RuleEngine.ts              # Main evaluator
 │   ├── ExpressionEvaluator.ts    # Parse & evaluate conditions
+│   ├── BIDataResolver.ts         # NEW: Fetch BI metrics
 │   ├── ActionExecutor.ts          # Execute rule actions
-│   └── RuleCache.ts               # In-memory cache for hot rules
+│   └── RuleCache.ts               # In-memory cache (5min TTL)
 ├── operators/
 │   ├── LogicalOperators.ts        # and, or, not
 │   ├── ComparisonOperators.ts     # eq, gt, lt, gte, lte
@@ -561,43 +819,64 @@ src/services/rules/
 ├── functions/
 │   ├── lookup.ts                  # Fetch related data
 │   ├── calculate.ts               # Math expressions
-│   └── custom/                    # Tenant-specific functions
+│   └── bi-metrics/                # NEW: BI metric resolvers
+│       ├── cashFlowResolver.ts
+│       ├── customerLTVResolver.ts
+│       ├── ktvPerformanceResolver.ts
+│       └── approvalHistoryResolver.ts
 ├── repository/
 │   ├── RuleDefinitionRepository.ts
 │   └── RuleExecutionRepository.ts
 └── RuleService.ts                 # Public API
 ```
 
-**Core API:**
+**Core API (UPDATED):**
 
 ```typescript
 class RuleService {
-  // Evaluate all rules for context
+  // Evaluate với BI data
   async evaluateRules(
     tenantId: string,
     moduleKey: string,
     contextType: string,
     contextData: Record<string, unknown>
-  ): Promise<RuleResult[]>;
+  ): Promise<RuleResult[]> {
+    // 1. Get active rules
+    const rules = await this.getRules(tenantId, moduleKey);
+    
+    // 2. Resolve BI data (cached 5min)
+    for (const rule of rules) {
+      const biData = await this.resolveBIData(rule.bi_data_sources, contextData);
+      contextData._bi = biData; // Inject BI data vào context
+    }
+    
+    // 3. Evaluate rules
+    return await this.engine.evaluateAll(rules, contextData);
+  }
+  
+  // NEW: Resolve BI metrics
+  async resolveBIData(
+    sources: string[],
+    context: Record<string, unknown>
+  ): Promise<Record<string, unknown>> {
+    const biData = {};
+    
+    for (const source of sources) {
+      const resolver = this.getResolver(source);
+      biData[source] = await resolver.resolve(context);
+    }
+    
+    return biData;
+  }
+}
 
-  // Evaluate specific rule
-  async evaluateRule(
-    ruleId: string,
-    contextData: Record<string, unknown>
-  ): Promise<RuleResult>;
-
-  // Test rule without persisting
-  async testRule(
-    rule: RuleDefinition,
-    contextData: Record<string, unknown>
-  ): Promise<RuleResult>;
-
-  // Get rules for module
-  async getRules(
-    tenantId: string,
-    moduleKey: string,
-    filters?: { isActive?: boolean; ruleKeys?: string[] }
-  ): Promise<RuleDefinition[]>;
+interface RuleResult {
+  ruleId: string;
+  matched: boolean;
+  output: Record<string, unknown>;
+  biDataSnapshot: Record<string, unknown>; // NEW: For audit
+  executionTimeMs: number;
+  error?: string;
 }
 ```
 
@@ -1269,3 +1548,226 @@ Week 12:   Documentation, Training, Go-Live Prep
 ---
 
 END OF DOCUMENT
+
+
+---
+
+## 🌟 PHẦN 10: TECHNICAL REVIEW NOTES & IMPROVEMENTS
+
+### 10.1 Điểm Mạnh Của Kế Hoạch Ban Đầu ⭐⭐⭐⭐⭐
+
+1. **Tách Workflow và Rule thành Engine độc lập** - Đúng tư duy Platform
+2. **Workflow Definition + Instance pattern** - Chuẩn Enterprise (Camunda, Temporal, Flowable)
+3. **Version Management** - Workflow đang chạy không bị crash khi admin sửa config
+4. **Audit Trail** - CEO biết "Ai duyệt? Lúc nào?"
+5. **Tenant Isolation với RLS** - Bảo mật đúng chuẩn
+6. **JSON Config** - Không hard-code, flexible
+
+### 10.2 Improvements After Technical Review
+
+#### **A. Workflow KHÔNG nên evaluate Rule**
+
+**Before (❌):**
+```
+Workflow → Expression Parser → Eval Condition
+```
+
+**After (✅):**
+```
+Workflow → Ask Rule Engine → Get Decision → Move State
+```
+
+**Lý do:** Hai engines bị dính nhau nếu Workflow tự evaluate.
+
+---
+
+#### **B. Workflow Action → Business Event**
+
+**Before (❌):**
+```
+Workflow → Execute Actions Directly
+  ├─ Send Notification
+  ├─ Update Record  
+  └─ Create Expense
+```
+
+**After (✅):**
+```
+Workflow → Publish Event → Event Bus → Workers
+  ├─ Notification Worker
+  ├─ Webhook Worker
+  ├─ AI Worker
+  ├─ Cache Worker
+  └─ BI Refresh Worker
+```
+
+**Lý do:** Event-Driven Architecture = Loose Coupling + Scalability.
+
+---
+
+#### **C. Visual Workflow Designer là USP**
+
+**Before:** JSON config (technical)  
+**After:** Drag & Drop visual builder (business user-friendly)
+
+**USP (Unique Selling Point):**
+- Giống Power Automate, n8n, Camunda
+- Admin tạo workflow < 5 phút
+- **Đây là thứ khách hàng thấy ngay giá trị**
+
+---
+
+#### **D. Enterprise Workflow States**
+
+**Before:**
+```
+Pending → Approved → Rejected
+```
+
+**After:**
+```
+Pending → Waiting → Suspended → Escalated → 
+Delegated → Expired → Rollback → Compensated → 
+Paused → Approved → Rejected
+```
+
+**Lý do:** Enterprise cần states phức tạp hơn SME workflows.
+
+---
+
+#### **E. Workflow Variables (Context)**
+
+**Before:** Implicit context  
+**After:** Explicit variables schema
+
+```typescript
+variables_schema: {
+  salary: { type: 'number', required: true },
+  department: { type: 'string', required: true },
+  leave_days: { type: 'number', required: true }
+}
+```
+
+**Lý do:** Rule Engine cần đọc context để quyết định.
+
+---
+
+#### **F. Compensation (Rollback)**
+
+**Before:** Simple rollback  
+**After:** Compensation actions per state
+
+```typescript
+compensation: {
+  approved: [
+    { type: 'restore_inventory', config: {...} },
+    { type: 'refund_payment', config: {...} }
+  ]
+}
+```
+
+**Lý do:** Enterprise transactions cần compensate phức tạp.
+
+---
+
+#### **G. Rule Engine + Business Intelligence Integration** ⭐⭐⭐⭐⭐
+
+**ĐÂY LÀ ĐIỂM KHÁC BIỆT LỚN NHẤT:**
+
+Bella đã có **Business Intelligence Engine** (Revenue, Cash Flow, KPI, ROI).  
+Rule Engine có thể đọc BI data để quyết định!
+
+**Example:**
+```typescript
+// Rule: Reject expense if cash flow < 2 months
+{
+  conditions: {
+    operator: 'lt',
+    operands: [
+      { 
+        type: 'bi_metric', 
+        source: 'cash_flow_analysis', 
+        metric: 'months_of_runway' 
+      },
+      2
+    ]
+  },
+  actions: [
+    { type: 'set_value', config: { field: 'can_approve', value: false } }
+  ]
+}
+```
+
+**Đây là thứ ERP SME gần như KHÔNG làm được.**
+
+---
+
+### 10.3 Tầm Nhìn 5-Engine Architecture
+
+```
+Business Intelligence Engine (ĐÃ CÓ)
+    ├─ Revenue, Cash Flow, KPI, ROI
+    │
+    ▼
+Rule Engine (Decision) ◄─── PHASE 1
+    ├─ IF Cash Flow < 2 months → Reject
+    │
+    ▼
+Workflow Engine (Process) ◄─── PHASE 1
+    ├─ Move State, Orchestrate
+    │
+    ▼
+Event Engine (Integration) ◄─── PHASE 2
+    ├─ Publish Events → Workers
+    │
+    ▼
+AI Intelligence Engine ◄─── PHASE 3
+    └─ Predictive, Recommendations
+```
+
+**USP Final:**
+> Bella không chỉ là ERP. Bella là **Enterprise Intelligence Platform** - quyết định thông minh dựa trên dữ liệu thực tế của doanh nghiệp.
+
+---
+
+### 10.4 Build Order (UPDATED)
+
+**KHÔNG build theo thứ tự cũ (Workflow trước, Rule sau).**
+
+**Build theo thứ tự mới:**
+
+1. **Tuần 1-4: Rule Engine Foundation + BI Integration** (P0)
+2. **Tuần 5-8: Workflow Engine + Rule Integration** (P0)
+3. **Tuần 9-10: Enterprise States + Delegation** (P1)
+4. **Tuần 11-12: Visual Designer** (P0 - USP!)
+
+**Lý do:** Rule Engine là decision layer, build trước. Workflow chỉ orchestrate.
+
+---
+
+## 📝 CHANGE LOG
+
+**v1.0** (2026-06-22)
+- Initial plan: Workflow + Rule engines
+- 12 tuần timeline
+- Basic MVP scope
+
+**v1.1** (2026-06-22) ⭐ **After Technical Review**
+- **MAJOR:** Decoupled Workflow & Rule (Workflow asks, not evaluates)
+- **MAJOR:** Event-Driven Architecture (publish events, not direct actions)
+- **MAJOR:** BI Integration for Rule Engine (data-driven decisions)
+- **NEW:** Enterprise workflow states (10 states)
+- **NEW:** Workflow variables schema
+- **NEW:** Compensation mechanism
+- **NEW:** Visual Workflow Designer (USP)
+- **NEW:** 5-Engine Architecture vision
+- **CHANGED:** Build order (Rule first, Workflow second)
+- **EXPANDED:** Timeline to support Phase 2 & 3 planning
+
+---
+
+**Next Review:** After Phase 1 Week 2 (Rule Engine Foundation complete)
+
+---
+
+END OF DOCUMENT (v1.1)
