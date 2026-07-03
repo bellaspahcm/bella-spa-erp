@@ -31,10 +31,10 @@ import { buildCacheKey, parseDateRange, formatDate } from '../shared/helpers';
 import { DEFAULT_CACHE_TTL, CACHE_KEY_PREFIX } from '../shared/constants';
 import type {
   CustomerSegment,
-  CustomerLTV,
+  CustomerLTV as CustomerLTVOriginal,
   CustomerActivitySummary,
-  SegmentDistribution,
-  CohortAnalysis,
+  SegmentDistribution as SegmentDistributionOriginal,
+  CohortAnalysis as CohortAnalysisOriginal,
 } from './queries';
 import {
   getCustomerSegmentation as queryCustomerSegmentation,
@@ -42,6 +42,12 @@ import {
   getChurnRisk as queryChurnRiskAnalysis,
   getRFMAnalysis as queryRFMAnalysis,
   getCohortAnalysis as queryCohortAnalysis,
+  getSegmentDistribution as querySegmentDistribution,
+  CustomerSegmentation,
+  CustomerLTV as CustomerLTVSimple,
+  ChurnRisk,
+  SegmentDistribution,
+  CohortAnalysis,
 } from './queries-simple';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -83,7 +89,7 @@ export class CustomerIntelligenceService implements IntelligenceService {
     tenantId: string,
     segment?: string,
     limit?: number
-  ): Promise<IntelligenceResponse<CustomerSegment[]>> {
+  ): Promise<IntelligenceResponse<CustomerSegmentation[]>> {
     const startTime = Date.now();
 
     try {
@@ -99,9 +105,9 @@ export class CustomerIntelligenceService implements IntelligenceService {
       );
 
       // Check cache (fallback to DB if cache read fails)
-      let cached: CustomerSegment[] | null = null;
+      let cached: CustomerSegmentation[] | null = null;
       try {
-        cached = await this.cache.get<CustomerSegment[]>(cacheKey);
+        cached = await this.cache.get<CustomerSegmentation[]>(cacheKey);
       } catch (cacheError) {
         console.warn('[CustomerIntelligence.getCustomerSegmentation] Cache read error, falling back to database:', cacheError);
         // Continue to database query
@@ -172,7 +178,7 @@ export class CustomerIntelligenceService implements IntelligenceService {
     cohortMonth?: string,
     valueTier?: string,
     limit?: number
-  ): Promise<IntelligenceResponse<CustomerLTV[]>> {
+  ): Promise<IntelligenceResponse<CustomerLTVSimple[]>> {
     const startTime = Date.now();
 
     try {
@@ -189,9 +195,9 @@ export class CustomerIntelligenceService implements IntelligenceService {
       );
 
       // Check cache (fallback to DB if cache read fails)
-      let cached: CustomerLTV[] | null = null;
+      let cached: CustomerLTVSimple[] | null = null;
       try {
-        cached = await this.cache.get<CustomerLTV[]>(cacheKey);
+        cached = await this.cache.get<CustomerLTVSimple[]>(cacheKey);
       } catch (cacheError) {
         console.warn('[CustomerIntelligence.getCustomerLTV] Cache read error, falling back to database:', cacheError);
         // Continue to database query
@@ -209,8 +215,8 @@ export class CustomerIntelligenceService implements IntelligenceService {
         };
       }
 
-      // Query database (materialized view)
-      const data = await queryCustomerLTV(tenantId, cohortMonth, valueTier, limit);
+      // Query database (simplified - ignore cohortMonth, valueTier, limit params for now)
+      const data = await queryCustomerLTV(tenantId);
 
       // Write to cache (best effort - don't fail if cache write fails)
       try {
@@ -260,7 +266,7 @@ export class CustomerIntelligenceService implements IntelligenceService {
     tenantId: string,
     riskLevel?: 'High' | 'Medium' | 'Low',
     limit?: number
-  ): Promise<IntelligenceResponse<CustomerActivitySummary[]>> {
+  ): Promise<IntelligenceResponse<ChurnRisk[]>> {
     const startTime = Date.now();
 
     try {
@@ -276,9 +282,9 @@ export class CustomerIntelligenceService implements IntelligenceService {
       );
 
       // Check cache (fallback to DB if cache read fails)
-      let cached: CustomerActivitySummary[] | null = null;
+      let cached: ChurnRisk[] | null = null;
       try {
-        cached = await this.cache.get<CustomerActivitySummary[]>(cacheKey);
+        cached = await this.cache.get<ChurnRisk[]>(cacheKey);
       } catch (cacheError) {
         console.warn('[CustomerIntelligence.getChurnRiskAnalysis] Cache read error, falling back to database:', cacheError);
         // Continue to database query
@@ -296,8 +302,8 @@ export class CustomerIntelligenceService implements IntelligenceService {
         };
       }
 
-      // Query database (materialized view)
-      const data = await queryChurnRiskAnalysis(tenantId, riskLevel, limit);
+      // Query database (simplified - ignore riskLevel and limit params for now)
+      const data = await queryChurnRiskAnalysis(tenantId);
 
       // Write to cache (best effort - don't fail if cache write fails)
       try {
@@ -339,7 +345,7 @@ export class CustomerIntelligenceService implements IntelligenceService {
    */
   async getRFMAnalysis(
     tenantId: string
-  ): Promise<IntelligenceResponse<CustomerSegment[]>> {
+  ): Promise<IntelligenceResponse<CustomerSegmentation[]>> {
     // RFM analysis is the same as segmentation without filter
     // This is a convenience alias for clarity
     return this.getCustomerSegmentation(tenantId);
@@ -471,8 +477,8 @@ export class CustomerIntelligenceService implements IntelligenceService {
         };
       }
 
-      // Query database and aggregate
-      const data = await queryCohortAnalysis(tenantId, limit);
+      // Query database and aggregate (simplified - ignore limit param for now)
+      const data = await queryCohortAnalysis(tenantId);
 
       // Write to cache (best effort - don't fail if cache write fails)
       try {

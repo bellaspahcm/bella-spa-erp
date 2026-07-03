@@ -90,7 +90,10 @@ export async function getAttendanceReport(tenantId: string, month?: string) {
       .select('employee_id, date, status, check_in_time')
       .eq('tenant_id', tenantId)
       .gte('date', `${currentMonth}-01`)
-      .lt('date', `${currentMonth}-32`);
+      .lt('date', `${currentMonth}-32`) as {
+        data: Array<{ employee_id: string; date: string; status: string; check_in_time: string | null }> | null;
+        error: unknown;
+      };
 
     if (error || !attendance || attendance.length === 0) {
       console.error('[HR Intelligence] Attendance query error:', error);
@@ -163,7 +166,7 @@ export async function getPayrollSummary(tenantId: string, month: string) {
       .from('salary_records')
       .select('*')
       .eq('tenant_id', tenantId)
-      .eq('month', month);
+      .eq('month_year', month);
 
     if (error || !salaryRecords || salaryRecords.length === 0) {
       console.error('[HR Intelligence] Payroll query error:', error);
@@ -171,7 +174,7 @@ export async function getPayrollSummary(tenantId: string, month: string) {
     }
 
     // Get user info
-    const userIds = salaryRecords.map(s => s.user_id);
+    const userIds = salaryRecords.map(s => s.ktv_id);
     const { data: users } = await supabase
       .from('users')
       .select('id, full_name, role')
@@ -181,11 +184,11 @@ export async function getPayrollSummary(tenantId: string, month: string) {
 
     // Map to output format
     return salaryRecords.map(record => {
-      const user = userMap.get(record.user_id);
+      const user = userMap.get(record.ktv_id);
       return {
         tenantId,
         month,
-        ktvId: record.user_id,
+        ktvId: record.ktv_id,
         ktvName: user?.full_name || 'Unknown',
         ktvRole: user?.role || 'unknown',
         baseSalary: record.base_salary || 0,
@@ -243,7 +246,10 @@ export async function getEmployeePerformance(tenantId: string, month?: string) {
       .from('kpi_records')
       .select('employee_id, customer_satisfaction_score, kpi_amount')
       .eq('tenant_id', tenantId)
-      .eq('month', currentMonth);
+      .eq('month_year', currentMonth) as {
+        data: Array<{ employee_id: string; customer_satisfaction_score: number | null; kpi_amount: number | null }> | null;
+        error: unknown;
+      };
 
     if (kpiError || !kpiRecords || kpiRecords.length === 0) {
       console.error('[HR Intelligence] KPI query error:', kpiError);
@@ -342,7 +348,7 @@ export async function getProductivityTrends(tenantId: string) {
  * Get Recruitment Metrics - Placeholder
  */
 export async function getRecruitmentMetrics(tenantId: string) {
-  return {
+  return [{
     tenantId,
     month: new Date().toISOString().slice(0, 7),
     openPositions: 0,
@@ -356,14 +362,14 @@ export async function getRecruitmentMetrics(tenantId: string) {
     offerAcceptanceRatePct: 0,
     interviewToOfferRatePct: 0,
     computedAt: new Date().toISOString(),
-  };
+  }];
 }
 
 /**
  * Get Training Metrics - Placeholder
  */
 export async function getTrainingMetrics(tenantId: string) {
-  return {
+  return [{
     tenantId,
     month: new Date().toISOString().slice(0, 7),
     totalTrainingSessions: 0,
@@ -375,7 +381,7 @@ export async function getTrainingMetrics(tenantId: string) {
     trainingCostTotal: 0,
     avgCostPerEmployee: 0,
     computedAt: new Date().toISOString(),
-  };
+  }];
 }
 
 
