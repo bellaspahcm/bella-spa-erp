@@ -31,9 +31,9 @@ async function createServiceRoleClient() {
  * Returns basic headcount by role
  */
 export async function getWorkforceAnalytics(tenantId: string) {
-  const supabase = await createServiceRoleClient();
-
   try {
+    const supabase = await createServiceRoleClient();
+
     // Query users table for basic headcount
     const { data: users, error } = await supabase
       .from('users')
@@ -42,7 +42,6 @@ export async function getWorkforceAnalytics(tenantId: string) {
 
     if (error) {
       console.error('[HR Intelligence] Workforce query error:', error);
-      // Return empty result instead of throwing
       return [];
     }
 
@@ -72,7 +71,6 @@ export async function getWorkforceAnalytics(tenantId: string) {
     }));
   } catch (error) {
     console.error('[HR Intelligence] Workforce analytics error:', error);
-    // Return empty result instead of throwing
     return [];
   }
 }
@@ -82,9 +80,8 @@ export async function getWorkforceAnalytics(tenantId: string) {
  * Returns basic attendance metrics
  */
 export async function getAttendanceReport(tenantId: string, month?: string) {
-  const supabase = await createServiceRoleClient();
-
   try {
+    const supabase = await createServiceRoleClient();
     const currentMonth = month || new Date().toISOString().slice(0, 7);
 
     // Query attendance table
@@ -95,13 +92,8 @@ export async function getAttendanceReport(tenantId: string, month?: string) {
       .gte('date', `${currentMonth}-01`)
       .lt('date', `${currentMonth}-32`);
 
-    if (error) {
+    if (error || !attendance || attendance.length === 0) {
       console.error('[HR Intelligence] Attendance query error:', error);
-      // Return empty result instead of throwing
-      return [];
-    }
-
-    if (!attendance || attendance.length === 0) {
       return [];
     }
 
@@ -154,7 +146,6 @@ export async function getAttendanceReport(tenantId: string, month?: string) {
     });
   } catch (error) {
     console.error('[HR Intelligence] Attendance report error:', error);
-    // Return empty result instead of throwing
     return [];
   }
 }
@@ -164,9 +155,9 @@ export async function getAttendanceReport(tenantId: string, month?: string) {
  * Returns salary data from salary_records table
  */
 export async function getPayrollSummary(tenantId: string, month: string) {
-  const supabase = await createServiceRoleClient();
-
   try {
+    const supabase = await createServiceRoleClient();
+
     // Query salary_records table
     const { data: salaryRecords, error } = await supabase
       .from('salary_records')
@@ -174,13 +165,8 @@ export async function getPayrollSummary(tenantId: string, month: string) {
       .eq('tenant_id', tenantId)
       .eq('month', month);
 
-    if (error) {
+    if (error || !salaryRecords || salaryRecords.length === 0) {
       console.error('[HR Intelligence] Payroll query error:', error);
-      // Return empty result instead of throwing
-      return [];
-    }
-
-    if (!salaryRecords || salaryRecords.length === 0) {
       return [];
     }
 
@@ -239,7 +225,6 @@ export async function getPayrollSummary(tenantId: string, month: string) {
     });
   } catch (error) {
     console.error('[HR Intelligence] Payroll summary error:', error);
-    // Return empty result instead of throwing
     return [];
   }
 }
@@ -249,9 +234,8 @@ export async function getPayrollSummary(tenantId: string, month: string) {
  * Returns basic KPI and session counts
  */
 export async function getEmployeePerformance(tenantId: string, month?: string) {
-  const supabase = await createServiceRoleClient();
-
   try {
+    const supabase = await createServiceRoleClient();
     const currentMonth = month || new Date().toISOString().slice(0, 7);
 
     // Query KPI records
@@ -261,13 +245,8 @@ export async function getEmployeePerformance(tenantId: string, month?: string) {
       .eq('tenant_id', tenantId)
       .eq('month', currentMonth);
 
-    if (kpiError) {
+    if (kpiError || !kpiRecords || kpiRecords.length === 0) {
       console.error('[HR Intelligence] KPI query error:', kpiError);
-      // Return empty result instead of throwing
-      return [];
-    }
-
-    if (!kpiRecords || kpiRecords.length === 0) {
       return [];
     }
 
@@ -316,7 +295,6 @@ export async function getEmployeePerformance(tenantId: string, month?: string) {
     });
   } catch (error) {
     console.error('[HR Intelligence] Employee performance error:', error);
-    // Return empty result instead of throwing
     return [];
   }
 }

@@ -47,7 +47,7 @@ export async function getKTVLeaderboard(tenantId: string, startDate: string, end
     return (ktvs || []).map((ktv, index) => ({
       tenantId,
       ktvId: ktv.id,
-      ktvName: ktv.full_name,
+      ktvName: ktv.full_name || 'Unknown',
       ktvPhone: ktv.phone || '',
       rank: index + 1,
       totalSessions: 0,
@@ -178,7 +178,7 @@ export async function getKTVPerformance(tenantId: string, ktvId: string, startDa
     return {
       tenantId,
       ktvId: ktv.id,
-      ktvName: ktv.full_name,
+      ktvName: ktv.full_name || 'Unknown',
       ktvPhone: ktv.phone || '',
       totalSessions: 0,
       completedSessions: 0,
