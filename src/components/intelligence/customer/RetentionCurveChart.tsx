@@ -6,7 +6,7 @@
  */
 
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import type { CohortAnalysis } from '@/services/intelligence/customer/queries';
+import type { CohortAnalysis } from '@/services/intelligence/customer/queries-simple';
 
 interface RetentionCurveChartProps {
   data: CohortAnalysis[];
@@ -18,7 +18,7 @@ export function RetentionCurveChart({ data, height = 350 }: RetentionCurveChartP
     .sort((a, b) => a.cohortMonth.localeCompare(b.cohortMonth))
     .map(d => ({
       cohort: d.cohortMonth.substring(5, 7) + '/' + d.cohortMonth.substring(2, 4),
-      retention: d.retentionRatePct,
+      retention: d.retentionRate, // Changed from retentionRatePct to retentionRate
       size: d.cohortSize,
     }));
 

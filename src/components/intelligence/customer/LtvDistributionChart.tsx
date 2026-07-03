@@ -6,7 +6,7 @@
  */
 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import type { CustomerLTV } from '@/services/intelligence/customer/queries';
+import type { CustomerLTV } from '@/services/intelligence/customer/queries-simple';
 
 interface LtvDistributionChartProps {
   data: CustomerLTV[];

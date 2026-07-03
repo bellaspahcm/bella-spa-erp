@@ -6,7 +6,7 @@
  */
 
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import type { CohortAnalysis } from '@/services/intelligence/customer/queries';
+import type { CohortAnalysis } from '@/services/intelligence/customer/queries-simple';
 
 interface LtvByCohortChartProps {
   data: CohortAnalysis[];
@@ -18,7 +18,7 @@ export function LtvByCohortChart({ data, height = 350 }: LtvByCohortChartProps) 
     .sort((a, b) => a.cohortMonth.localeCompare(b.cohortMonth))
     .map(d => ({
       cohort: d.cohortMonth.substring(5, 7) + '/' + d.cohortMonth.substring(2, 4),
-      ltv: d.avgLtv,
+      ltv: d.avgLTV, // Changed from avgLtv to avgLTV
       size: d.cohortSize,
     }));
 
