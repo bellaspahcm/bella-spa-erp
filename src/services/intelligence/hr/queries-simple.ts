@@ -28,7 +28,7 @@ async function createServiceRoleClient() {
 
 /**
  * Get Workforce Analytics - Simplified
- * Returns basic headcount by role
+ * Returns aggregated workforce metrics
  */
 export async function getWorkforceAnalytics(tenantId: string) {
   try {
@@ -37,41 +37,42 @@ export async function getWorkforceAnalytics(tenantId: string) {
     // Query users table for basic headcount
     const { data: users, error } = await supabase
       .from('users')
-      .select('id, role, created_at')
+      .select('id, role, created_at, status')
       .eq('tenant_id', tenantId);
 
     if (error) {
       console.error('[HR Intelligence] Workforce query error:', error);
-      return [];
+      throw new QueryError('Failed to query workforce data', error);
     }
 
+    const allUsers = users || [];
+    const activeUsers = allUsers.filter(u => u.status === 'active' || !u.status);
+    
     // Group by role
-    const roleGroups = (users || []).reduce((acc, user) => {
+    const roleGroups = activeUsers.reduce((acc, user) => {
       const role = user.role || 'unknown';
       acc[role] = (acc[role] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
 
-    // Return results
-    const currentMonth = new Date().toISOString().slice(0, 7);
-    const totalHeadcount = users?.length || 0;
-
-    return Object.entries(roleGroups).map(([role, count]) => ({
-      tenantId,
-      month: currentMonth,
-      role,
-      newHires: 0,
-      terminations: 0,
-      currentHeadcount: count,
-      totalEverHired: count,
-      turnoverRatePct: 0,
-      avgTenureMonths: 0,
-      roleDistributionPct: totalHeadcount > 0 ? (count / totalHeadcount) * 100 : 0,
-      computedAt: new Date().toISOString(),
-    }));
+    // Return aggregated metrics
+    return {
+      totalEmployees: activeUsers.length,
+      activeEmployees: activeUsers.length,
+      onLeaveToday: 0,
+      avgAttendanceRate: 0,
+      avgWorkingDaysPerMonth: 0,
+      departmentBreakdown: Object.entries(roleGroups).map(([dept, count]) => ({
+        department: dept,
+        employeeCount: count,
+        avgAttendanceRate: 0,
+      })),
+      contractTypeBreakdown: [],
+      turnoverRate: 0,
+    };
   } catch (error) {
     console.error('[HR Intelligence] Workforce analytics error:', error);
-    return [];
+    throw error;
   }
 }
 
@@ -386,8 +387,25 @@ export async function getTrainingMetrics(tenantId: string) {
 
 
 // Export types for service layer
+export interface WorkforceAnalytics {
+  totalEmployees: number;
+  activeEmployees: number;
+  onLeaveToday: number;
+  avgAttendanceRate: number;
+  avgWorkingDaysPerMonth: number;
+  departmentBreakdown: Array<{
+    department: string;
+    employeeCount: number;
+    avgAttendanceRate: number;
+  }>;
+  contractTypeBreakdown: Array<{
+    contractType: string;
+    employeeCount: number;
+  }>;
+  turnoverRate: number;
+}
+
 export type {
-  WorkforceAnalytics,
   AttendanceReport,
   PayrollSummary,
   EmployeePerformance,
