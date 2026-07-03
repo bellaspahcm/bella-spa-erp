@@ -21,11 +21,34 @@
  * - mv_customer_activity_summary (materialized view)
  */
 
-import { createClient } from '@/lib/supabase-server';
 import type { Database } from '@/types/database.types';
 import type { DateRange, TimePeriod } from '../shared/types';
 import { QueryError } from '../shared/types';
 import { parseDateRange, formatDate } from '../shared/helpers';
+import { getSupabaseAdminUrl, getSupabaseAdminKey } from '@/lib/supabase-admin-env';
+
+/**
+ * Create server-side Supabase client with service role key (bypasses RLS).
+ * 
+ * Customer Intelligence queries need service role access to read materialized views
+ * and aggregate data across customer segments without RLS restrictions.
+ */
+async function createServiceRoleClient() {
+  const url = getSupabaseAdminUrl();
+  const serviceKey = getSupabaseAdminKey();
+
+  if (!url || !serviceKey) {
+    throw new Error(
+      'Customer Intelligence requires SUPABASE_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY. ' +
+      'Service role key grants admin access to bypass RLS for analytics queries.'
+    );
+  }
+
+  const { createClient } = await import('@supabase/supabase-js');
+  return createClient<Database>(url, serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
 
 // ─── Type Definitions ───────────────────────────────────────────────────────
 
@@ -224,7 +247,7 @@ export async function getCustomerSegmentation(
   segment?: string,
   limit?: number
 ): Promise<CustomerSegment[]> {
-  const supabase = await createClient();
+  const supabase = await createServiceRoleClient();
   
   let query = supabase
     .from('mv_customer_segments' as any) // Materialized view not in generated types yet
@@ -268,7 +291,7 @@ export async function getCustomerLTV(
   valueTier?: string,
   limit?: number
 ): Promise<CustomerLTV[]> {
-  const supabase = await createClient();
+  const supabase = await createServiceRoleClient();
   
   let query = supabase
     .from('mv_customer_ltv' as any) // Materialized view not in generated types yet
@@ -315,7 +338,7 @@ export async function getChurnRiskAnalysis(
   riskLevel?: 'High' | 'Medium' | 'Low',
   limit?: number
 ): Promise<CustomerActivitySummary[]> {
-  const supabase = await createClient();
+  const supabase = await createServiceRoleClient();
   
   let query = supabase
     .from('mv_customer_activity_summary' as any) // Materialized view not in generated types yet
@@ -368,7 +391,7 @@ export async function getRFMAnalysis(
 export async function getSegmentDistribution(
   tenantId: string
 ): Promise<SegmentDistribution[]> {
-  const supabase = await createClient();
+  const supabase = await createServiceRoleClient();
   
   // Aggregate from customer segments MV
   const { data, error } = await supabase
@@ -430,7 +453,7 @@ export async function getCohortAnalysis(
   tenantId: string,
   limit: number = 12
 ): Promise<CohortAnalysis[]> {
-  const supabase = await createClient();
+  const supabase = await createServiceRoleClient();
   
   const { data, error } = await supabase
     .from('mv_customer_ltv' as any)

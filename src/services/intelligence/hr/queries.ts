@@ -25,11 +25,34 @@
  * - mv_employee_performance (materialized view)
  */
 
-import { createClient } from '@/lib/supabase-server';
 import type { Database } from '@/types/database.types';
 import type { DateRange, TimePeriod } from '../shared/types';
 import { QueryError } from '../shared/types';
 import { parseDateRange, formatDate } from '../shared/helpers';
+import { getSupabaseAdminUrl, getSupabaseAdminKey } from '@/lib/supabase-admin-env';
+
+/**
+ * Create server-side Supabase client with service role key (bypasses RLS).
+ * 
+ * HR Intelligence queries need service role access to read materialized views
+ * and aggregate workforce data without RLS restrictions.
+ */
+async function createServiceRoleClient() {
+  const url = getSupabaseAdminUrl();
+  const serviceKey = getSupabaseAdminKey();
+
+  if (!url || !serviceKey) {
+    throw new Error(
+      'HR Intelligence requires SUPABASE_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY. ' +
+      'Service role key grants admin access to bypass RLS for analytics queries.'
+    );
+  }
+
+  const { createClient } = await import('@supabase/supabase-js');
+  return createClient<Database>(url, serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
 
 // ─── Type Definitions ───────────────────────────────────────────────────────
 
@@ -284,7 +307,7 @@ export async function getWorkforceAnalytics(
   tenantId: string,
   dateRange?: DateRange | TimePeriod
 ): Promise<WorkforceAnalytics[]> {
-  const supabase = await createClient();
+  const supabase = await createServiceRoleClient();
   
   let query = supabase
     .from('mv_workforce_analytics' as any) // Materialized view not in generated types yet
@@ -332,7 +355,7 @@ export async function getAttendanceReport(
   dateRange?: DateRange | TimePeriod,
   ktvId?: string
 ): Promise<AttendanceReport[]> {
-  const supabase = await createClient();
+  const supabase = await createServiceRoleClient();
   
   let query = supabase
     .from('mv_attendance_summary' as any) // Materialized view not in generated types yet
@@ -383,7 +406,7 @@ export async function getPayrollSummary(
   month: string,
   ktvId?: string
 ): Promise<PayrollSummary[]> {
-  const supabase = await createClient();
+  const supabase = await createServiceRoleClient();
   
   let query = supabase
     .from('mv_payroll_summary' as any) // Materialized view not in generated types yet
@@ -423,7 +446,7 @@ export async function getEmployeePerformance(
   ktvId?: string,
   limit?: number
 ): Promise<EmployeePerformance[]> {
-  const supabase = await createClient();
+  const supabase = await createServiceRoleClient();
   
   let query = supabase
     .from('mv_employee_performance' as any) // Materialized view not in generated types yet
@@ -477,7 +500,7 @@ export async function getRetentionAnalysis(
   tenantId: string,
   dateRange?: DateRange | TimePeriod
 ): Promise<RetentionAnalysis | null> {
-  const supabase = await createClient();
+  const supabase = await createServiceRoleClient();
   
   // Query workforce analytics for retention calculations
   let query = supabase
@@ -544,7 +567,7 @@ export async function getProductivityTrends(
   tenantId: string,
   dateRange?: DateRange | TimePeriod
 ): Promise<ProductivityTrends[]> {
-  const supabase = await createClient();
+  const supabase = await createServiceRoleClient();
   
   // Query employee performance for productivity aggregations
   let query = supabase

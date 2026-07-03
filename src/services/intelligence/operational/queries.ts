@@ -23,7 +23,6 @@
  * - session_logs, bookings, attendance, inventory, products
  */
 
-import { createClient } from '@/lib/supabase-server';
 import type { Database } from '@/types/database.types';
 import type { DateRange, TimePeriod } from '../shared/types';
 import { QueryError } from '../shared/types';
@@ -33,6 +32,30 @@ import type {
   MvInventoryStatus, 
   MvSessionAnalytics 
 } from '@/types/materialized-views.types';
+import { getSupabaseAdminUrl, getSupabaseAdminKey } from '@/lib/supabase-admin-env';
+
+/**
+ * Create server-side Supabase client with service role key (bypasses RLS).
+ * 
+ * Operational Intelligence queries need service role access to read materialized views
+ * and aggregate operational data without RLS restrictions.
+ */
+async function createServiceRoleClient() {
+  const url = getSupabaseAdminUrl();
+  const serviceKey = getSupabaseAdminKey();
+
+  if (!url || !serviceKey) {
+    throw new Error(
+      'Operational Intelligence requires SUPABASE_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY. ' +
+      'Service role key grants admin access to bypass RLS for analytics queries.'
+    );
+  }
+
+  const { createClient } = await import('@supabase/supabase-js');
+  return createClient<Database>(url, serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
 
 // ─── Type Definitions ───────────────────────────────────────────────────────
 
@@ -239,7 +262,7 @@ export async function getKtvPerformance(
   dateRange: DateRange | TimePeriod
 ): Promise<KtvPerformance[]> {
   try {
-    const supabase = await createClient();
+    const supabase = await createServiceRoleClient();
     
     // Parse date range
     const range = parseDateRange(dateRange);
@@ -317,7 +340,7 @@ export async function getKtvLeaderboard(
   limit: number = 10
 ): Promise<KtvLeaderboardEntry[]> {
   try {
-    const supabase = await createClient();
+    const supabase = await createServiceRoleClient();
     
     // Parse date range
     const range = parseDateRange(dateRange);
@@ -419,7 +442,7 @@ export async function getInventoryStatus(
   stockStatus?: 'out_of_stock' | 'low_stock' | 'medium_stock' | 'high_stock'
 ): Promise<InventoryStatus[]> {
   try {
-    const supabase = await createClient();
+    const supabase = await createServiceRoleClient();
     
     // Build query (type-cast needed for MV support)
     let query = supabase
@@ -498,7 +521,7 @@ export async function getInventoryForecast(
   days: number = 30
 ): Promise<InventoryForecast> {
   try {
-    const supabase = await createClient();
+    const supabase = await createServiceRoleClient();
     
     // Query materialized view for product (type-cast needed for MV support)
     const { data, error } = await supabase
@@ -577,7 +600,7 @@ export async function getSessionAnalytics(
   dateRange: DateRange | TimePeriod
 ): Promise<SessionAnalytics[]> {
   try {
-    const supabase = await createClient();
+    const supabase = await createServiceRoleClient();
     
     // Parse date range
     const range = parseDateRange(dateRange);
@@ -657,7 +680,7 @@ export async function getCapacityUtilization(
   dateRange: DateRange | TimePeriod
 ): Promise<CapacityUtilization[]> {
   try {
-    const supabase = await createClient();
+    const supabase = await createServiceRoleClient();
     
     // Parse date range
     const range = parseDateRange(dateRange);
