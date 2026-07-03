@@ -41,7 +41,9 @@ export async function getWorkforceAnalytics(tenantId: string) {
       .eq('tenant_id', tenantId);
 
     if (error) {
-      throw new QueryError(`Database query failed: ${error.message}`, error);
+      console.error('[HR Intelligence] Workforce query error:', error);
+      // Return empty result instead of throwing
+      return [];
     }
 
     // Group by role
@@ -70,7 +72,8 @@ export async function getWorkforceAnalytics(tenantId: string) {
     }));
   } catch (error) {
     console.error('[HR Intelligence] Workforce analytics error:', error);
-    throw error;
+    // Return empty result instead of throwing
+    return [];
   }
 }
 
@@ -93,11 +96,17 @@ export async function getAttendanceReport(tenantId: string, month?: string) {
       .lt('date', `${currentMonth}-32`);
 
     if (error) {
-      throw new QueryError(`Database query failed: ${error.message}`, error);
+      console.error('[HR Intelligence] Attendance query error:', error);
+      // Return empty result instead of throwing
+      return [];
+    }
+
+    if (!attendance || attendance.length === 0) {
+      return [];
     }
 
     // Get user info
-    const userIds = [...new Set((attendance || []).map(a => a.employee_id))];
+    const userIds = [...new Set(attendance.map(a => a.employee_id))];
     const { data: users } = await supabase
       .from('users')
       .select('id, full_name, role, phone')
@@ -106,7 +115,7 @@ export async function getAttendanceReport(tenantId: string, month?: string) {
     const userMap = new Map(users?.map(u => [u.id, u]) || []);
 
     // Group attendance by user
-    const userAttendance = (attendance || []).reduce((acc, record) => {
+    const userAttendance = attendance.reduce((acc, record) => {
       if (!acc[record.employee_id]) {
         acc[record.employee_id] = [];
       }
@@ -145,7 +154,8 @@ export async function getAttendanceReport(tenantId: string, month?: string) {
     });
   } catch (error) {
     console.error('[HR Intelligence] Attendance report error:', error);
-    throw error;
+    // Return empty result instead of throwing
+    return [];
   }
 }
 
@@ -165,11 +175,17 @@ export async function getPayrollSummary(tenantId: string, month: string) {
       .eq('month', month);
 
     if (error) {
-      throw new QueryError(`Database query failed: ${error.message}`, error);
+      console.error('[HR Intelligence] Payroll query error:', error);
+      // Return empty result instead of throwing
+      return [];
+    }
+
+    if (!salaryRecords || salaryRecords.length === 0) {
+      return [];
     }
 
     // Get user info
-    const userIds = (salaryRecords || []).map(s => s.user_id);
+    const userIds = salaryRecords.map(s => s.user_id);
     const { data: users } = await supabase
       .from('users')
       .select('id, full_name, role')
@@ -178,7 +194,7 @@ export async function getPayrollSummary(tenantId: string, month: string) {
     const userMap = new Map(users?.map(u => [u.id, u]) || []);
 
     // Map to output format
-    return (salaryRecords || []).map(record => {
+    return salaryRecords.map(record => {
       const user = userMap.get(record.user_id);
       return {
         tenantId,
@@ -223,7 +239,8 @@ export async function getPayrollSummary(tenantId: string, month: string) {
     });
   } catch (error) {
     console.error('[HR Intelligence] Payroll summary error:', error);
-    throw error;
+    // Return empty result instead of throwing
+    return [];
   }
 }
 
@@ -245,11 +262,17 @@ export async function getEmployeePerformance(tenantId: string, month?: string) {
       .eq('month', currentMonth);
 
     if (kpiError) {
-      throw new QueryError(`KPI query failed: ${kpiError.message}`, kpiError);
+      console.error('[HR Intelligence] KPI query error:', kpiError);
+      // Return empty result instead of throwing
+      return [];
+    }
+
+    if (!kpiRecords || kpiRecords.length === 0) {
+      return [];
     }
 
     // Get user info
-    const userIds = (kpiRecords || []).map(k => k.employee_id);
+    const userIds = kpiRecords.map(k => k.employee_id);
     const { data: users } = await supabase
       .from('users')
       .select('id, full_name, role, phone')
@@ -258,7 +281,7 @@ export async function getEmployeePerformance(tenantId: string, month?: string) {
     const userMap = new Map(users?.map(u => [u.id, u]) || []);
 
     // Map to output format
-    return (kpiRecords || []).map(record => {
+    return kpiRecords.map(record => {
       const user = userMap.get(record.employee_id);
       return {
         tenantId,
@@ -293,7 +316,8 @@ export async function getEmployeePerformance(tenantId: string, month?: string) {
     });
   } catch (error) {
     console.error('[HR Intelligence] Employee performance error:', error);
-    throw error;
+    // Return empty result instead of throwing
+    return [];
   }
 }
 

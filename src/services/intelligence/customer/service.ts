@@ -39,11 +39,10 @@ import type {
 import {
   getCustomerSegmentation as queryCustomerSegmentation,
   getCustomerLTV as queryCustomerLTV,
-  getChurnRiskAnalysis as queryChurnRiskAnalysis,
+  getChurnRisk as queryChurnRiskAnalysis,
   getRFMAnalysis as queryRFMAnalysis,
-  getSegmentDistribution as querySegmentDistribution,
   getCohortAnalysis as queryCohortAnalysis,
-} from './queries';
+} from './queries-simple';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Customer Intelligence Service
