@@ -28,7 +28,7 @@ import {
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase-client';
 import type { IntelligenceResponse } from '@/services/intelligence/shared/types';
-import type { CustomerLTV, CohortAnalysis } from '@/services/intelligence/customer/queries';
+import type { CustomerLTV, CohortAnalysis } from '@/services/intelligence/customer/queries-simple';
 import {
   LtvByCohortChart,
   LtvDistributionChart,
@@ -285,7 +285,7 @@ function CustomerLTVDashboard() {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {ltvData?.data
-                ?.filter(c => c.customerValueTier === 'VIP' || c.customerValueTier === 'High Value')
+                ?.filter(c => c.customerValueTier === 'VIP' || c.customerValueTier === 'Premium')
                 .slice(0, 15)
                 .map((customer) => (
                   <tr key={customer.customerId} className="hover:bg-gray-50">
