@@ -171,7 +171,7 @@ export default function LoginPage() {
               width={1024}
               height={464}
               priority
-              style={{ width: '90%', height: 'auto', filter: 'drop-shadow(0 0 16px rgba(139,92,246,0.45))' }}
+              style={{ width: '63%', height: 'auto', filter: 'drop-shadow(0 0 16px rgba(139,92,246,0.45))' }}
             />
           </div>
 
@@ -257,7 +257,7 @@ export default function LoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@bella.vn"
+                  placeholder="email@company.com"
                   disabled={loading}
                   autoComplete="email"
                   style={inputBase}

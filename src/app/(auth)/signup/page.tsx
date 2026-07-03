@@ -290,7 +290,7 @@ export default function SignupPage() {
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
                           className="block w-full pl-12 pr-4 py-3.5 bg-white/60 border border-border rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all outline-none text-foreground placeholder:text-muted-foreground/30 font-medium"
-                          placeholder="Ví dụ: q7@bellaspa.vn"
+                          placeholder="spa@company.com"
                         />
                       </div>
                     </div>
@@ -358,7 +358,7 @@ export default function SignupPage() {
                           value={adminEmail}
                           onChange={(e) => setAdminEmail(e.target.value)}
                           className="block w-full pl-12 pr-4 py-3.5 bg-white/60 border border-border rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all outline-none text-foreground placeholder:text-muted-foreground/30 font-medium"
-                          placeholder="Ví dụ: vy.nguyen@bellaspa.vn"
+                          placeholder="admin@company.com"
                         />
                       </div>
                     </div>

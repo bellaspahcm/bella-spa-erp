@@ -160,10 +160,10 @@ function ExecutiveDashboardPage() {
       console.error('Failed to fetch metrics:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       
-      // Show user-friendly error without exposing technical details
-      toast.error('Dữ liệu Intelligence đang được khởi tạo. Vui lòng thử lại sau.');
+      // Don't show error toast for no-data scenarios - just set empty state
+      console.info('[Executive Dashboard] No data available for tenant. This is normal for new tenants.');
       
-      // Log detailed error for debugging
+      // Log detailed error for debugging (without showing to user)
       console.error('API Error Details:', {
         tenantId,
         period,
@@ -171,7 +171,7 @@ function ExecutiveDashboardPage() {
         hint: 'This may happen if Intelligence Layer has no data yet. Please ensure demo data is seeded.',
       });
       
-      // Set mock data to prevent blank screen
+      // Set empty data state (no mock data - show "no data" UI instead)
       const mockPeriod = new Date().toISOString().slice(0, 7) + '-01';
       
       setRevenueSummary({
@@ -186,7 +186,7 @@ function ExecutiveDashboardPage() {
           generatedAt: new Date().toISOString(),
           cacheHit: false,
           queryTimeMs: 0,
-          dataSourcesUsed: ['mock'],
+          dataSourcesUsed: ['no-data'],
         },
       });
       
@@ -202,7 +202,7 @@ function ExecutiveDashboardPage() {
           generatedAt: new Date().toISOString(),
           cacheHit: false,
           queryTimeMs: 0,
-          dataSourcesUsed: ['mock'],
+          dataSourcesUsed: ['no-data'],
         },
       });
       
@@ -218,7 +218,7 @@ function ExecutiveDashboardPage() {
           generatedAt: new Date().toISOString(),
           cacheHit: false,
           queryTimeMs: 0,
-          dataSourcesUsed: ['mock'],
+          dataSourcesUsed: ['no-data'],
         },
       });
       
@@ -234,7 +234,7 @@ function ExecutiveDashboardPage() {
           generatedAt: new Date().toISOString(),
           cacheHit: false,
           queryTimeMs: 0,
-          dataSourcesUsed: ['mock'],
+          dataSourcesUsed: ['no-data'],
         },
       });
       
@@ -250,7 +250,7 @@ function ExecutiveDashboardPage() {
           generatedAt: new Date().toISOString(),
           cacheHit: false,
           queryTimeMs: 0,
-          dataSourcesUsed: ['mock'],
+          dataSourcesUsed: ['no-data'],
         },
       });
     } finally {
@@ -385,6 +385,24 @@ function ExecutiveDashboardPage() {
           </button>
         </div>
       </div>
+
+      {/* No Data Banner */}
+      {revenueSummary?.metadata.dataSourcesUsed.includes('no-data') && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6 bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3"
+        >
+          <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <h3 className="text-sm font-bold text-blue-900 mb-1">Chưa có dữ liệu</h3>
+            <p className="text-sm text-blue-700">
+              Hệ thống chưa có đủ dữ liệu để tạo báo cáo Intelligence. 
+              Các chỉ số sẽ tự động cập nhật khi có giao dịch mới (booking, doanh thu, chi phí).
+            </p>
+          </div>
+        </motion.div>
+      )}
 
       {/* Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
