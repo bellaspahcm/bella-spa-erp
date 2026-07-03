@@ -82,6 +82,20 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     error: authError,
   } = await supabase.auth.getUser();
   console.log(`[getCurrentUser] auth.getUser took ${Date.now() - authStart}ms`);
+  
+  // Try Redis cache first (only if authenticated)
+  if (user?.id) {
+    const cacheStart = Date.now();
+    const { getCache, CacheKeys } = await import('@/lib/redis-cache');
+    const cached = await getCache<CurrentUser>(CacheKeys.user(user.id));
+    console.log(`[getCurrentUser] Redis cache check took ${Date.now() - cacheStart}ms`);
+    
+    if (cached) {
+      console.log(`[getCurrentUser] CACHE HIT - returning cached user in ${Date.now() - perfStart}ms`);
+      return cached;
+    }
+    console.log(`[getCurrentUser] Cache MISS - fetching from DB`);
+  }
 
   if (authError && !isMissingAuthSessionError(authError)) {
     console.error('[getCurrentUser] Auth user validation failed:', authError);
@@ -204,6 +218,13 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
   }
 
   console.log(`[getCurrentUser] TOTAL TIME: ${Date.now() - perfStart}ms`);
+  
+  // Cache the result in Redis (60s TTL)
+  if (profile?.id) {
+    const { setCache, CacheKeys, CacheTTL } = await import('@/lib/redis-cache');
+    void setCache(CacheKeys.user(profile.id), profile, CacheTTL.medium);
+  }
+  
   return profile || { 
     id: user.id, 
     email: user.email || '', 
@@ -590,6 +611,11 @@ export async function updateUserStatus(id: string, status: 'active' | 'inactive'
   }
 
   await safeRevalidatePath('/dashboard/settings');
+  
+  // Invalidate Redis cache for this user
+  const { deleteCache, CacheKeys } = await import('@/lib/redis-cache');
+  void deleteCache(CacheKeys.user(id));
+  
   return { success: true };
 }
 

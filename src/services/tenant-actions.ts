@@ -126,6 +126,18 @@ export async function getTenantSettings(): Promise<TenantRow | null> {
     return null;
   }
 
+  // Try Redis cache first
+  const cacheStart = Date.now();
+  const { getCache, setCache, CacheKeys, CacheTTL } = await import('@/lib/redis-cache');
+  const cached = await getCache<TenantRow>(CacheKeys.tenant(tenantId));
+  console.log(`[getTenantSettings] Redis cache check took ${Date.now() - cacheStart}ms`);
+  
+  if (cached) {
+    console.log(`[getTenantSettings] CACHE HIT - returning in ${Date.now() - perfStart}ms`);
+    return cached;
+  }
+  console.log(`[getTenantSettings] Cache MISS - fetching from DB`);
+
   const fetchStart = Date.now();
   const { data, error } = await fetchTenantSnapshot(supabase, tenantId);
   console.log(`[getTenantSettings] fetchTenantSnapshot took ${Date.now() - fetchStart}ms`);
@@ -133,6 +145,9 @@ export async function getTenantSettings(): Promise<TenantRow | null> {
   if (error || !data) {
     throw new Error(`[getTenantSettings] Failed to load tenant settings: ${error || 'Tenant not found'}`);
   }
+
+  // Cache the result (5 minutes TTL - tenant settings change rarely)
+  void setCache(CacheKeys.tenant(tenantId), data, CacheTTL.long);
 
   console.log(`[getTenantSettings] TOTAL TIME: ${Date.now() - perfStart}ms`);
   return data;
@@ -252,6 +267,11 @@ export async function saveTenantSettings(settings: {
     }
 
     revalidatePath('/dashboard/settings');
+    
+    // Invalidate tenant cache
+    const { deleteCache, CacheKeys } = await import('@/lib/redis-cache');
+    void deleteCache(CacheKeys.tenant(tenantId));
+    
     return { success: true, data: updatedTenant };
   } catch (error: unknown) {
     console.error('Exception saving tenant settings:', error);
