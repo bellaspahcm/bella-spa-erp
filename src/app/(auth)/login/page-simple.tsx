@@ -166,7 +166,7 @@ export default function LoginPageSimple() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@bellaspa.vn"
+                placeholder="email@company.com"
                 disabled={loading}
                 style={{
                   width: '100%',

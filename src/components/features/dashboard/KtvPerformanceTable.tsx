@@ -115,7 +115,7 @@ export function KtvPerformanceTable({ topKTVs, isLoading }: KtvPerformanceTableP
             {memoizedKTVs.map((ktv, idx) => (
               <tr key={idx} className="beauty-top-ktv-row group hover:bg-white/40 transition-colors">
                 <td className="px-5 py-6 font-bold text-foreground whitespace-nowrap">{ktv.name}</td>
-                <td className="px-5 py-6 font-bold text-muted-foreground whitespace-nowrap">{ktv.sessions} {vocab.workUnit.plural.toLowerCase()}</td>
+                <td className="px-5 py-6 font-bold text-muted-foreground whitespace-nowrap">{ktv.sessions}</td>
                 <td className="px-5 py-6 font-bold text-muted-foreground whitespace-nowrap">
                   <div className="flex items-center gap-1">
                     {ktv.rating} <Star className="w-4 h-4 text-amber-400 fill-amber-400" />

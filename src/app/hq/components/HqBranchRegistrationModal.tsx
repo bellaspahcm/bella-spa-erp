@@ -297,7 +297,7 @@ export function HqBranchRegistrationModal({
                   value={form.email}
                   onChange={(event) => updateField('email', event.target.value)}
                   className="w-full rounded-2xl border border-slate-200 dark:border-[#3E3A35] bg-white dark:bg-[#11100F] pl-11 pr-4 py-3 text-sm font-bold outline-none focus:border-primary"
-                  placeholder="branch@bellaspa.vn"
+                  placeholder="branch@company.com"
                 />
               </div>
             </label>
@@ -328,7 +328,7 @@ export function HqBranchRegistrationModal({
                   value={form.adminEmail}
                   onChange={(event) => updateField('adminEmail', event.target.value)}
                   className="w-full rounded-2xl border border-slate-200 dark:border-[#3E3A35] bg-white dark:bg-[#11100F] pl-11 pr-4 py-3 text-sm font-bold outline-none focus:border-primary"
-                  placeholder="admin.branch@bellaspa.vn"
+                  placeholder="admin@company.com"
                 />
               </div>
             </label>

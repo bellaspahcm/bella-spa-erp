@@ -177,7 +177,7 @@ export function RevenueChart({ performanceData, userRole, isLoading }: RevenueCh
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.5 }}
-        className="luxury-card-pink rounded-[3rem] p-10 relative overflow-hidden shadow-2xl group flex flex-col justify-between h-[450px]"
+        className="luxury-card-pink rounded-[3rem] p-10 pb-3 relative overflow-hidden shadow-2xl group flex flex-col justify-between h-[450px]"
       >
         <div className="relative z-10">
           <h2 className="text-xs font-semibold mb-1 text-white/70 uppercase tracking-[0.2em]">Hiệu suất tháng</h2>
@@ -190,8 +190,8 @@ export function RevenueChart({ performanceData, userRole, isLoading }: RevenueCh
             </div>
           </div>
           
-          <MeasuredChartFrame className="h-40 w-full relative mb-6">
-              <AreaChart data={performanceData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+          <MeasuredChartFrame className="h-52 w-full relative mb-2">
+              <AreaChart data={performanceData} margin={{ top: 0, right: 0, left: 0, bottom: -10 }}>
                 <defs>
                   <linearGradient id="colorPerf" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#ffffff" stopOpacity={0.6}/>
@@ -214,7 +214,7 @@ export function RevenueChart({ performanceData, userRole, isLoading }: RevenueCh
                   axisLine={{ stroke: '#7d123e', strokeWidth: 2 }}
                   tickLine={false}
                   tick={{ fill: 'rgba(255, 255, 255, 0.6)', fontSize: 10, fontWeight: 800 }}
-                  dy={10}
+                  dy={5}
                 />
                 <YAxis hide domain={['dataMin - 10', 'dataMax + 10']} />
                 <Area 
@@ -249,7 +249,7 @@ export function RevenueChart({ performanceData, userRole, isLoading }: RevenueCh
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.6 }}
-          className="glass-pink luxury-box-hover rounded-[3rem] p-8 shadow-sm border border-white relative overflow-hidden h-[400px]"
+          className="glass-pink luxury-box-hover rounded-[3rem] p-8 pb-2 shadow-sm border border-white relative overflow-hidden h-[400px]"
         >
           <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-emerald-400/30 via-primary/30 to-rose-400/30" />
           <div className="flex items-center justify-between mb-6">
@@ -261,14 +261,15 @@ export function RevenueChart({ performanceData, userRole, isLoading }: RevenueCh
             </div>
           </div>
           
-          <MeasuredChartFrame className="h-56 w-full">
-              <BarChart data={performanceData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
+          <MeasuredChartFrame className="h-72 w-full">
+              <BarChart data={performanceData} margin={{ top: 10, right: 0, left: -20, bottom: -10 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
                 <XAxis 
                   dataKey="name" 
                   axisLine={false}
                   tickLine={false}
                   tick={{ fill: '#888', fontSize: 10, fontWeight: 700 }}
+                  dy={5}
                 />
                 <YAxis 
                   axisLine={false}
@@ -298,7 +299,7 @@ export function RevenueChart({ performanceData, userRole, isLoading }: RevenueCh
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.7 }}
-        className="glass-pink luxury-box-hover rounded-[3rem] p-8 shadow-sm border border-white relative overflow-hidden h-[350px] flex flex-col"
+        className="glass-pink luxury-box-hover rounded-[3rem] p-8 pb-2 shadow-sm border border-white relative overflow-hidden h-[350px] flex flex-col"
       >
         <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-amber-400/30 to-orange-400/30" />
         <div className="flex items-center gap-3 mb-6">
@@ -327,8 +328,8 @@ export function RevenueChart({ performanceData, userRole, isLoading }: RevenueCh
             </div>
           </div>
 
-          <MeasuredChartFrame className="h-28 w-full">
-              <AreaChart data={performanceData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+          <MeasuredChartFrame className="h-36 w-full">
+              <AreaChart data={performanceData} margin={{ top: 0, right: 0, left: 0, bottom: -10 }}>
                 <defs>
                   <linearGradient id="colorRating" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3}/>
