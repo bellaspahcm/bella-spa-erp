@@ -336,9 +336,10 @@ let multiTierCacheInstance: MultiTierCache | null = null;
  */
 export function getCache(config?: MultiTierCacheConfig): MultiTierCache {
   if (!multiTierCacheInstance) {
+    const isTestEnv = process.env.NODE_ENV === 'test';
     multiTierCacheInstance = new MultiTierCache({
       enableMemory: true,
-      enableRedis: true,
+      enableRedis: !isTestEnv, // Disable Redis in test environment
       ...config,
     });
   }
