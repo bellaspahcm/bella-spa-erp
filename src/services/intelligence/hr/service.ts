@@ -33,7 +33,6 @@ import { getCache } from '../cache';
 import { buildCacheKey, parseDateRange, formatDate } from '../shared/helpers';
 import { DEFAULT_CACHE_TTL, CACHE_KEY_PREFIX } from '../shared/constants';
 import type {
-  WorkforceAnalytics,
   AttendanceReport,
   PayrollSummary,
   EmployeePerformance,
@@ -51,6 +50,7 @@ import {
   getProductivityTrends as queryProductivityTrends,
   RecruitmentMetrics,
   TrainingMetrics,
+  WorkforceAnalytics,
 } from './queries-simple';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -86,7 +86,7 @@ export class HRIntelligenceService implements IntelligenceService {
   async getWorkforceAnalytics(
     tenantId: string,
     dateRange?: DateRange | TimePeriod
-  ): Promise<IntelligenceResponse<WorkforceAnalytics[]>> {
+  ): Promise<IntelligenceResponse<WorkforceAnalytics>> {
     const startTime = Date.now();
     const parsedRange = dateRange ? parseDateRange(dateRange as any) : undefined;
 
@@ -103,9 +103,9 @@ export class HRIntelligenceService implements IntelligenceService {
       );
 
       // Check cache (fallback to DB if cache read fails)
-      let cached: WorkforceAnalytics[] | null = null;
+      let cached: WorkforceAnalytics | null = null;
       try {
-        cached = await this.cache.get<WorkforceAnalytics[]>(cacheKey);
+        cached = await this.cache.get<WorkforceAnalytics>(cacheKey);
       } catch (cacheError) {
         console.warn('[HRIntelligence.getWorkforceAnalytics] Cache read error, falling back to database:', cacheError);
         // Continue to database query
