@@ -116,9 +116,17 @@ function AttendancePayrollDashboard() {
 
     try {
       const baseUrl = `/api/intelligence/hr`;
+      
+      // Convert month (YYYY-MM) to date range for custom period
+      const startDate = `${month}-01`;
+      const lastDay = new Date(parseInt(month.split('-')[0]), parseInt(month.split('-')[1]), 0).getDate();
+      const endDate = `${month}-${String(lastDay).padStart(2, '0')}`;
+      
       const attendanceParams = new URLSearchParams({ 
-        tenantId, 
-        period: month 
+        tenantId,
+        period: 'custom',
+        startDate,
+        endDate
       });
       const payrollParams = new URLSearchParams({ 
         tenantId, 
@@ -293,7 +301,7 @@ function AttendancePayrollDashboard() {
   // ───────────────────────────────────────────────────────────────────────────
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="px-4 sm:px-6 lg:px-8 py-8 space-y-6 max-w-[1400px] mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
