@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getCurrentUser } from '@/services/user-actions';
-import { Loader2 } from 'lucide-react';
 
 export default function KtvLayout({
   children,
@@ -74,18 +73,9 @@ export default function KtvLayout({
     );
   }
 
+  // REMOVED full-page loading spinner - let dashboard page show its own skeleton
   if (isAuthorized === null) {
-    return (
-      <div className="flex h-screen w-screen items-center justify-center bg-gradient-to-br from-[#F5F1EA] to-[#E8E3D8]">
-        <div className="flex flex-col items-center gap-4">
-          <div className="relative">
-            <Loader2 className="w-12 h-12 animate-spin text-slate-700" />
-            <div className="absolute inset-0 w-12 h-12 rounded-full border-4 border-slate-300 animate-ping" />
-          </div>
-          <p className="text-sm font-bold text-slate-700 animate-pulse">Đang tải...</p>
-        </div>
-      </div>
-    );
+    return null; // Render nothing while checking auth (instant transition)
   }
 
   return <>{children}</>;
