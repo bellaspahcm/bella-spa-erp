@@ -296,6 +296,7 @@ export default function KTVDashboard() {
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
+      // Priority 1: Critical data for initial render (show UI ASAP)
       const [u, active, upcoming, tenant] = await Promise.all([
         getCurrentUser(),
         getKTVActiveSessions(),
@@ -308,24 +309,35 @@ export default function KTVDashboard() {
       setUpcomingSessions(upcoming);
       setTenantModuleKey(getDefaultTenantModuleKey(tenant?.enabled_modules));
       
+      // Show UI immediately after critical data loads
+      setIsLoading(false);
+      
+      // Priority 2: Secondary data (load in background without blocking UI)
       if (u) {
         const now = new Date();
         const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-        const [earn, notifs, lb] = await Promise.all([
+        
+        // Non-blocking: Load attendance immediately (high priority)
+        void fetchAttendance();
+        
+        // Non-blocking: Load earnings, notifications, leaderboard in background
+        Promise.all([
           getKTVEarnings(monthStr),
           getKTVNotifications(),
           getKTVLeaderboard(monthStr),
-        ]);
-        void fetchAttendance();
-        setEarnings(earn);
-        setNotifications(notifs);
-        const myStats = (lb as KtvLeaderboardRow[]).find((k) => k.ktv_id === u.id);
-        setMyRating(myStats?.average_rating ?? null);
+        ]).then(([earn, notifs, lb]) => {
+          setEarnings(earn);
+          setNotifications(notifs);
+          const myStats = (lb as KtvLeaderboardRow[]).find((k) => k.ktv_id === u.id);
+          setMyRating(myStats?.average_rating ?? null);
+        }).catch((error) => {
+          console.error('[KTV Dashboard] Background data fetch failed:', error);
+          // Silent fail - don't show toast for background data
+        });
       }
     } catch (error) {
-      toast.error(getErrorMessage(error, 'Lỗi khi tải dữ liệu'));
-    } finally {
       setIsLoading(false);
+      toast.error(getErrorMessage(error, 'Lỗi khi tải dữ liệu'));
     }
   }, [fetchAttendance]);
 
