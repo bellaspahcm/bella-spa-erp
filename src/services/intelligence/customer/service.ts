@@ -29,25 +29,19 @@ import { IntelligenceError, QueryError } from '../shared/types';
 import { getCache } from '../cache';
 import { buildCacheKey, parseDateRange, formatDate } from '../shared/helpers';
 import { DEFAULT_CACHE_TTL, CACHE_KEY_PREFIX } from '../shared/constants';
-import type {
-  CustomerSegment,
-  CustomerLTV as CustomerLTVOriginal,
-  CustomerActivitySummary,
-  SegmentDistribution as SegmentDistributionOriginal,
-  CohortAnalysis as CohortAnalysisOriginal,
-} from './queries';
 import {
   getCustomerSegmentation as queryCustomerSegmentation,
   getCustomerLTV as queryCustomerLTV,
-  getChurnRisk as queryChurnRiskAnalysis,
+  getChurnRiskAnalysis as queryChurnRiskAnalysis,
   getRFMAnalysis as queryRFMAnalysis,
   getCohortAnalysis as queryCohortAnalysis,
   getSegmentDistribution as querySegmentDistribution,
   CustomerSegmentation,
-  CustomerLTV as CustomerLTVSimple,
-  ChurnRisk,
-  SegmentDistribution,
+  CustomerLTV,
+  ChurnRiskAnalysis,
   CohortAnalysis,
+  RFMAnalysis,
+  SegmentDistribution,
 } from './queries-simple';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -178,7 +172,7 @@ export class CustomerIntelligenceService implements IntelligenceService {
     cohortMonth?: string,
     valueTier?: string,
     limit?: number
-  ): Promise<IntelligenceResponse<CustomerLTVSimple[]>> {
+  ): Promise<IntelligenceResponse<CustomerLTV[]>> {
     const startTime = Date.now();
 
     try {
@@ -195,9 +189,9 @@ export class CustomerIntelligenceService implements IntelligenceService {
       );
 
       // Check cache (fallback to DB if cache read fails)
-      let cached: CustomerLTVSimple[] | null = null;
+      let cached: CustomerLTV[] | null = null;
       try {
-        cached = await this.cache.get<CustomerLTVSimple[]>(cacheKey);
+        cached = await this.cache.get<CustomerLTV[]>(cacheKey);
       } catch (cacheError) {
         console.warn('[CustomerIntelligence.getCustomerLTV] Cache read error, falling back to database:', cacheError);
         // Continue to database query
@@ -266,7 +260,7 @@ export class CustomerIntelligenceService implements IntelligenceService {
     tenantId: string,
     riskLevel?: 'High' | 'Medium' | 'Low',
     limit?: number
-  ): Promise<IntelligenceResponse<ChurnRisk[]>> {
+  ): Promise<IntelligenceResponse<ChurnRiskAnalysis[]>> {
     const startTime = Date.now();
 
     try {
@@ -282,9 +276,9 @@ export class CustomerIntelligenceService implements IntelligenceService {
       );
 
       // Check cache (fallback to DB if cache read fails)
-      let cached: ChurnRisk[] | null = null;
+      let cached: ChurnRiskAnalysis[] | null = null;
       try {
-        cached = await this.cache.get<ChurnRisk[]>(cacheKey);
+        cached = await this.cache.get<ChurnRiskAnalysis[]>(cacheKey);
       } catch (cacheError) {
         console.warn('[CustomerIntelligence.getChurnRiskAnalysis] Cache read error, falling back to database:', cacheError);
         // Continue to database query
