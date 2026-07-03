@@ -166,7 +166,9 @@ export default function KTVDashboard() {
     }, 0);
 
     return () => window.clearTimeout(timeout);
-  }, [fetchOfflineActions, pendingCount, isProfileOpen]);
+  // Re-fetch when profile opens or pending count changes, but don't depend on fetchOfflineActions itself
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingCount, isProfileOpen]);
 
   const handleLogout = async () => {
     try {
@@ -478,7 +480,8 @@ export default function KTVDashboard() {
     }, 0);
 
     return () => window.clearTimeout(timeout);
-  }, [fetchData]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only ONCE on mount - fetchData is stable
 
   const handleCheckIn = async () => {
     setIsAttendanceLoading(true);
