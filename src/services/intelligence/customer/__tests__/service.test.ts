@@ -37,7 +37,7 @@ const mockCache = {
   healthCheck: jest.fn().mockResolvedValue({ healthy: true }),
 };
 
-jest.mock('../cache', () => ({
+jest.mock('../../cache', () => ({
   getCache: jest.fn(() => mockCache),
 }));
 
