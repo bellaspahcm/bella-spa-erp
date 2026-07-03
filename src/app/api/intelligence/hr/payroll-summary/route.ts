@@ -14,6 +14,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getHRIntelligenceService } from '@/services/intelligence/hr/service';
 import { isValidTenantId } from '@/services/intelligence/shared/helpers';
+import { getTenantIdFromSessionOrParam } from '../../shared/get-tenant-id';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -22,28 +23,21 @@ export async function GET(request: NextRequest) {
   try {
     // Parse query params
     const { searchParams } = new URL(request.url);
-    const tenantId = searchParams.get('tenantId');
+    
+    // Get tenant ID from session or query param
+    const tenantIdResult = await getTenantIdFromSessionOrParam(searchParams);
+    if (tenantIdResult instanceof NextResponse) {
+      return tenantIdResult; // Return error response
+    }
+    const { tenantId } = tenantIdResult;
+    
     const month = searchParams.get('month');
     const ktvId = searchParams.get('ktvId') || undefined;
 
     // Validate required params
-    if (!tenantId) {
-      return NextResponse.json(
-        { error: 'Missing required parameter: tenantId' },
-        { status: 400 }
-      );
-    }
-
     if (!month) {
       return NextResponse.json(
         { error: 'Missing required parameter: month (format: YYYY-MM)' },
-        { status: 400 }
-      );
-    }
-
-    if (!isValidTenantId(tenantId)) {
-      return NextResponse.json(
-        { error: 'Invalid tenantId format (must be UUID v4)' },
         { status: 400 }
       );
     }
