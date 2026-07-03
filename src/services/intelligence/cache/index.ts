@@ -336,11 +336,9 @@ let multiTierCacheInstance: MultiTierCache | null = null;
  */
 export function getCache(config?: MultiTierCacheConfig): MultiTierCache {
   if (!multiTierCacheInstance) {
-    // Disable Redis cache for Intelligence Layer (Redis connection issues)
-    // Use Memory cache only for faster, more reliable caching
     multiTierCacheInstance = new MultiTierCache({
       enableMemory: true,
-      enableRedis: false, // Disabled due to connection issues
+      enableRedis: true,
       ...config,
     });
   }
