@@ -244,9 +244,9 @@ export function FinancePnLSummary({ pnl, performance, selectedMonth, onMonthChan
   if (!pnl) return (
     <div className="flex flex-col items-center justify-center p-20 bg-white rounded-[40px] border border-dashed border-slate-200">
       <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-        <Activity className="w-8 h-8 text-slate-300" />
+        <Activity className="w-8 h-8 text-slate-400" />
       </div>
-      <p className="text-slate-500 font-bold">Chưa có dữ liệu tài chính cho tháng này</p>
+      <p className="text-slate-700 font-bold">Chưa có dữ liệu tài chính cho tháng này</p>
       <div className="mt-6 flex items-center gap-2">
         <div className="w-32">
           <PremiumSelect
@@ -281,7 +281,7 @@ export function FinancePnLSummary({ pnl, performance, selectedMonth, onMonthChan
       {/* Month Selection Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-3">
-           <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest">Chi tiết báo cáo tháng</h3>
+           <h3 className="text-sm font-black text-slate-600 uppercase tracking-widest">Chi tiết báo cáo tháng</h3>
            {pnl.is_locked ? (
               <div className="flex items-center gap-2">
                 <span className="flex items-center gap-1.5 bg-emerald-50 text-emerald-600 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-100 animate-in fade-in zoom-in">
@@ -349,7 +349,7 @@ export function FinancePnLSummary({ pnl, performance, selectedMonth, onMonthChan
               </div>
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2 mb-1">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                  <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">
                     Preflight khóa tháng {selectedMonthLabel}
                   </p>
                   <span className={`px-2.5 py-1 rounded-full border text-[10px] font-black uppercase tracking-widest ${preflightStatus.className}`}>
@@ -386,7 +386,7 @@ export function FinancePnLSummary({ pnl, performance, selectedMonth, onMonthChan
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:bg-white hover:text-slate-900 transition-all"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-[10px] font-black uppercase tracking-widest text-slate-700 hover:bg-white hover:text-slate-900 transition-all"
                 >
                   {item.label}
                   <ExternalLink className="w-3 h-3" />
@@ -455,10 +455,10 @@ export function FinancePnLSummary({ pnl, performance, selectedMonth, onMonthChan
             <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center">
               <TrendingUp className="w-5 h-5 text-emerald-600" />
             </div>
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Doanh thu ròng</span>
+            <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Doanh thu ròng</span>
           </div>
           <h4 className="text-2xl font-black text-slate-900">{Number(pnl.total_revenue).toLocaleString()}đ</h4>
-          <p className="text-[10px] font-bold text-slate-500 mt-2">Dựa trên các giao dịch đã xác nhận</p>
+          <p className="text-[10px] font-bold text-slate-700 mt-2">Dựa trên các giao dịch đã xác nhận</p>
         </motion.div>
 
         <motion.div 
@@ -471,10 +471,10 @@ export function FinancePnLSummary({ pnl, performance, selectedMonth, onMonthChan
             <div className="w-10 h-10 bg-rose-50 rounded-xl flex items-center justify-center">
               <TrendingDown className="w-5 h-5 text-rose-600" />
             </div>
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Chi phí vận hành</span>
+            <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Chi phí vận hành</span>
           </div>
           <h4 className="text-2xl font-black text-slate-900">{Number(pnl.total_operating_expenses).toLocaleString()}đ</h4>
-          <p className="text-[10px] font-bold text-slate-500 mt-2">Marketing, mặt bằng, điện nước...</p>
+          <p className="text-[10px] font-bold text-slate-700 mt-2">Marketing, mặt bằng, điện nước...</p>
         </motion.div>
 
         <motion.div 
@@ -489,7 +489,7 @@ export function FinancePnLSummary({ pnl, performance, selectedMonth, onMonthChan
                 <Activity className="w-5 h-5 text-amber-600" />
               </div>
               <div className="flex flex-col">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Quỹ lương {vocab.worker.plural}</span>
+                <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Quỹ lương {vocab.worker.plural}</span>
                 {!pnl.is_locked && (
                   <span className="text-[8px] font-black text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-full w-fit mt-0.5 animate-pulse border border-amber-100">
                     Real-time (Tạm tính)
@@ -498,7 +498,7 @@ export function FinancePnLSummary({ pnl, performance, selectedMonth, onMonthChan
               </div>
             </div>
             <h4 className="text-2xl font-black text-slate-900">{Number(pnl.total_ktv_salaries).toLocaleString()}đ</h4>
-            <p className="text-[10px] font-bold text-slate-500 mt-2">
+            <p className="text-[10px] font-bold text-slate-700 mt-2">
               {!pnl.is_locked 
                 ? `Cộng dồn hoa hồng ${vocab.workUnit.singular.toLowerCase()} + lương cứng đến nay`
                 : "Lương cứng + Hoa hồng + Thưởng (Đã chốt)"}
@@ -543,7 +543,7 @@ export function FinancePnLSummary({ pnl, performance, selectedMonth, onMonthChan
             <PieChart className="w-6 h-6 text-primary" />
             Hiệu quả kinh doanh theo Gói dịch vụ
           </h2>
-          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-white px-4 py-2 rounded-full border border-slate-100">
+          <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest bg-white px-4 py-2 rounded-full border border-slate-100">
             Phân tích ROI & Margin
           </span>
         </div>
@@ -551,12 +551,12 @@ export function FinancePnLSummary({ pnl, performance, selectedMonth, onMonthChan
           <table className="bella-data-table min-w-[72rem] text-left">
             <thead>
               <tr className="bg-slate-50/50">
-                <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Gói dịch vụ</th>
-                <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Số lượng</th>
-                <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Doanh thu</th>
-                <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Chi phí {vocab.worker.plural}</th>
-                <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Lợi nhuận gộp</th>
-                <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Biên lợi nhuận</th>
+                <th className="px-8 py-4 text-[10px] font-black text-slate-600 uppercase tracking-widest">Gói dịch vụ</th>
+                <th className="px-8 py-4 text-[10px] font-black text-slate-600 uppercase tracking-widest text-center">Số lượng</th>
+                <th className="px-8 py-4 text-[10px] font-black text-slate-600 uppercase tracking-widest">Doanh thu</th>
+                <th className="px-8 py-4 text-[10px] font-black text-slate-600 uppercase tracking-widest">Chi phí {vocab.worker.plural}</th>
+                <th className="px-8 py-4 text-[10px] font-black text-slate-600 uppercase tracking-widest">Lợi nhuận gộp</th>
+                <th className="px-8 py-4 text-[10px] font-black text-slate-600 uppercase tracking-widest">Biên lợi nhuận</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
