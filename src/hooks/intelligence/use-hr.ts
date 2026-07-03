@@ -168,7 +168,7 @@ async function fetchAttendanceInsights(
   year: string
 ): Promise<IntelligenceResponse<AttendanceInsights>> {
   const response = await fetch(
-    `/api/intelligence/hr/attendance-report?month=${month}&year=${year}`,
+    `/api/intelligence/hr/attendance-report?period=current_month`,
     {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
@@ -189,7 +189,7 @@ async function fetchPayrollSummary(
   year: string
 ): Promise<IntelligenceResponse<PayrollSummary>> {
   const response = await fetch(
-    `/api/intelligence/hr/payroll-summary?month=${month}&year=${year}`,
+    `/api/intelligence/hr/payroll-summary?period=current_month`,
     {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
