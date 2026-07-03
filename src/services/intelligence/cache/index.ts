@@ -26,8 +26,8 @@
 
 import type { CacheService, CacheOptions, CacheStats } from '../shared/types';
 import { CacheError } from '../shared/types';
-import { MemoryCache, getMemoryCache } from './memory-cache';
-import { RedisCache, getRedisCache } from './redis-cache';
+import { MemoryCache, getMemoryCache, resetMemoryCache } from './memory-cache';
+import { RedisCache, getRedisCache, resetRedisCache } from './redis-cache';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types

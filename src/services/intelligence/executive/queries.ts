@@ -11,13 +11,38 @@
  * 4. Date range filtering (for period comparisons)
  */
 
-import { createClient } from '@/lib/supabase-client';
 import type { Database } from '@/types/database.types';
 import { QueryError } from '../shared/types';
 import type { DateRange } from '../shared/types';
 import { formatDate, calculatePercentageChange, roundNumber } from '../shared/helpers';
 import { DEFAULT_KTV_SESSION_COMMISSION } from '@/lib/business-rules/salary';
 import { BUSINESS_RULES } from '@bella/shared';
+import { getSupabaseAdminUrl, getSupabaseAdminKey } from '@/lib/supabase-admin-env';
+
+/**
+ * Create server-side Supabase client with service role key (bypasses RLS).
+ * 
+ * Intelligence Layer MUST use service role client to bypass RLS policies
+ * and access cross-tenant aggregated data for CEO dashboard.
+ * 
+ * @throws {Error} If SUPABASE_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY is not configured
+ */
+async function createServiceRoleClient() {
+  const url = getSupabaseAdminUrl();
+  const serviceKey = getSupabaseAdminKey();
+
+  if (!url || !serviceKey) {
+    throw new Error(
+      'Intelligence Layer requires SUPABASE_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY to be configured. ' +
+      'This is a server-side environment variable that grants admin access to bypass RLS policies.'
+    );
+  }
+
+  const { createClient } = await import('@supabase/supabase-js');
+  return createClient<Database>(url, serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -117,9 +142,11 @@ export async function getMonthlyRevenueSummary(
   dateRange: DateRange
 ): Promise<MonthlyRevenueSummary> {
   try {
-    const supabase = createClient();
+    const supabase = await createServiceRoleClient();
     const startDate = formatDate(dateRange.startDate);
     const endDate = formatDate(dateRange.endDate);
+
+    console.log(`[Intelligence] Revenue query - Tenant: ${tenantId}, Range: ${startDate} → ${endDate}`);
 
     // Fetch current period revenue
     const { data: revenues, error: revenueError } = await supabase
@@ -133,13 +160,19 @@ export async function getMonthlyRevenueSummary(
       throw new QueryError(`Failed to fetch revenue data: ${revenueError.message}`, revenueError);
     }
 
+    console.log(`[Intelligence] Found ${revenues?.length || 0} revenue records`);
+
     // Filter only confirmed revenue (business rule)
     const confirmedRevenues = (revenues || [])
       .filter(r => r.status === 'confirmed')
       .map(r => r as RevenueRow);
 
+    console.log(`[Intelligence] Confirmed: ${confirmedRevenues.length} records`);
+
     // Calculate total revenue
     const totalRevenue = confirmedRevenues.reduce((sum, r) => sum + Number(r.amount || 0), 0);
+
+    console.log(`[Intelligence] Total revenue: ${totalRevenue}`);
 
     // Calculate previous period revenue for growth comparison
     const periodDays = Math.ceil(
@@ -225,7 +258,7 @@ export async function getOperationalEfficiency(
   dateRange: DateRange
 ): Promise<OperationalEfficiency> {
   try {
-    const supabase = createClient();
+    const supabase = await createServiceRoleClient();
     const startDate = formatDate(dateRange.startDate);
     const endDate = formatDate(dateRange.endDate);
 
@@ -335,7 +368,7 @@ export async function getCustomerMetrics(
   dateRange: DateRange
 ): Promise<CustomerMetrics> {
   try {
-    const supabase = createClient();
+    const supabase = await createServiceRoleClient();
     const startDate = formatDate(dateRange.startDate);
     const endDate = formatDate(dateRange.endDate);
 
@@ -431,7 +464,7 @@ export async function getFinancialHealth(
   dateRange: DateRange
 ): Promise<FinancialHealth> {
   try {
-    const supabase = createClient();
+    const supabase = await createServiceRoleClient();
     const startDate = formatDate(dateRange.startDate);
     const endDate = formatDate(dateRange.endDate);
 
@@ -535,7 +568,7 @@ export async function getGrowthIndicators(
   dateRange: DateRange
 ): Promise<GrowthIndicators> {
   try {
-    const supabase = createClient();
+    const supabase = await createServiceRoleClient();
     const startDate = formatDate(dateRange.startDate);
     const endDate = formatDate(dateRange.endDate);
 
