@@ -72,7 +72,7 @@ function CustomerLTVDashboard() {
     else setIsLoading(true);
 
     try {
-      const params = new URLSearchParams({ tenantId, limit: '50' });
+      const params = new URLSearchParams({ tenantId, limit: '36' }); // Changed from 50 to 36 (max allowed)
       const [ltvRes, cohortRes] = await Promise.all([
         fetch(`/api/intelligence/customer/ltv?${params}`),
         fetch(`/api/intelligence/customer/cohort-analysis?${params}`),
