@@ -35,13 +35,13 @@ import type {
   CapacityUtilization,
 } from './queries';
 import {
-  getKtvPerformance as queryKtvPerformance,
-  getKtvLeaderboard as queryKtvLeaderboard,
+  getKTVPerformance as queryKtvPerformance,
+  getKTVLeaderboard as queryKtvLeaderboard,
   getInventoryStatus as queryInventoryStatus,
   getInventoryForecast as queryInventoryForecast,
   getSessionAnalytics as querySessionAnalytics,
   getCapacityUtilization as queryCapacityUtilization,
-} from './queries';
+} from './queries-simple';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Operational Intelligence Service
