@@ -13,11 +13,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getOperationalIntelligenceService } from '@/services/intelligence/operational';
 import { isValidTenantId } from '@/services/intelligence/shared/helpers';
+import { getTenantIdFromSessionOrParam } from '../../shared/get-tenant-id';
 
 export async function GET(request: NextRequest) {
   try {
     // Parse query params
     const { searchParams } = new URL(request.url);
+    
+    // Get tenantId from session
+    const result = await getTenantIdFromSessionOrParam(searchParams);
+    if (result instanceof NextResponse) {
+      return result; // Return error response
+    }
+    const { tenantId } = result;
+
     const productId = searchParams.get('productId');
     const days = parseInt(searchParams.get('days') || '30', 10);
 
@@ -46,9 +55,9 @@ export async function GET(request: NextRequest) {
 
     // Call service
     const service = getOperationalIntelligenceService();
-    const result = await service.getInventoryForecast(productId, days);
+    const serviceResult = await service.getInventoryForecast(tenantId, productId, days);
 
-    return NextResponse.json(result, { status: 200 });
+    return NextResponse.json(serviceResult, { status: 200 });
   } catch (error) {
     console.error('[API] Inventory Forecast error:', error);
 

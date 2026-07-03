@@ -27,7 +27,7 @@ async function createServiceRoleClient() {
 /**
  * Get KTV Leaderboard - Simplified
  */
-export async function getKTVLeaderboard(tenantId: string, startDate: string, endDate: string) {
+export async function getKTVLeaderboard(tenantId: string) {
   const supabase = await createServiceRoleClient();
 
   try {
@@ -67,8 +67,11 @@ export async function getKTVLeaderboard(tenantId: string, startDate: string, end
 /**
  * Get Session Analytics - Simplified
  */
-export async function getSessionAnalytics(tenantId: string, startDate: string, endDate: string) {
+export async function getSessionAnalytics(tenantId: string) {
   const supabase = await createServiceRoleClient();
+  const now = new Date();
+  const startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+  const endDate = now.toISOString();
 
   try {
     // Query session_logs table
@@ -129,7 +132,8 @@ export async function getInventoryStatus(tenantId: string, stockStatus?: string)
 /**
  * Get Capacity Utilization - Simplified
  */
-export async function getCapacityUtilization(tenantId: string, startDate: string, endDate: string) {
+export async function getCapacityUtilization(tenantId: string) {
+  const startDate = new Date().toISOString().slice(0, 10);
   return [{
     tenantId,
     date: startDate,
@@ -145,7 +149,7 @@ export async function getCapacityUtilization(tenantId: string, startDate: string
 /**
  * Get KTV Performance - Simplified (for single KTV detail)
  */
-export async function getKTVPerformance(tenantId: string, ktvId: string, startDate: string, endDate: string) {
+export async function getKTVPerformance(tenantId: string, ktvId: string) {
   const supabase = await createServiceRoleClient();
 
   try {
@@ -158,10 +162,10 @@ export async function getKTVPerformance(tenantId: string, ktvId: string, startDa
 
     if (error) {
       console.error('[Operations Intelligence] KTV performance query error:', error);
-      return null;
+      return [];
     }
 
-    return {
+    return [{
       tenantId,
       ktvId: ktv.id,
       ktvName: ktv.full_name || 'Unknown',
@@ -174,10 +178,10 @@ export async function getKTVPerformance(tenantId: string, ktvId: string, startDa
       kpiScore: 0,
       performanceScore: 0,
       computedAt: new Date().toISOString(),
-    };
+    }];
   } catch (error) {
     console.error('[Operations Intelligence] KTV performance error:', error);
-    return null;
+    return [];
   }
 }
 
@@ -228,3 +232,46 @@ export interface InventoryStatus {
   recommendedOrderQuantity: number;
   computedAt: string;
 }
+
+export interface KTVPerformanceSimple {
+  tenantId: string;
+  ktvId: string;
+  ktvName: string;
+  ktvPhone: string;
+  totalSessions: number;
+  completedSessions: number;
+  totalRevenue: number;
+  avgRating: number;
+  customerSatisfactionScore: number;
+  kpiScore: number;
+  performanceScore: number;
+  computedAt: string;
+}
+
+export interface KTVLeaderboardSimple {
+  tenantId: string;
+  ktvId: string;
+  ktvName: string;
+  ktvPhone: string;
+  rank: number;
+  totalSessions: number;
+  totalRevenue: number;
+  avgRating: number;
+  customerSatisfactionScore: number;
+  kpiScore: number;
+  performanceScore: number;
+  computedAt: string;
+}
+
+export interface CapacityUtilizationSimple {
+  tenantId: string;
+  date: string;
+  totalCapacity: number;
+  usedCapacity: number;
+  availableCapacity: number;
+  utilizationRate: number;
+  peakUtilization: number;
+  computedAt: string;
+}
+
+export type CapacityUtilization = CapacityUtilizationSimple;
