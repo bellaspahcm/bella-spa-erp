@@ -16,11 +16,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getOperationalIntelligenceService } from '@/services/intelligence/operational';
 import { periodToDateRange, isValidTenantId } from '@/services/intelligence/shared/helpers';
 import type { TimePeriod } from '@/services/intelligence/shared/types';
+import { getTenantIdFromSessionOrParam } from '../../shared/get-tenant-id';
 
 export async function GET(request: NextRequest) {
   try {
     // Parse query params
     const { searchParams } = new URL(request.url);
+    
+    // Get tenantId from session
+    const result = await getTenantIdFromSessionOrParam(searchParams);
+    if (result instanceof NextResponse) {
+      return result; // Return error response
+    }
+    const { tenantId } = result;
+
     const ktvId = searchParams.get('ktvId');
     const period = (searchParams.get('period') || 'month') as TimePeriod;
     const startDate = searchParams.get('startDate');
@@ -53,9 +62,9 @@ export async function GET(request: NextRequest) {
 
     // Call service
     const service = getOperationalIntelligenceService();
-    const result = await service.getKtvPerformance(ktvId, dateRange);
+    const serviceResult = await service.getKtvPerformance(tenantId, ktvId, dateRange);
 
-    return NextResponse.json(result, { status: 200 });
+    return NextResponse.json(serviceResult, { status: 200 });
   } catch (error) {
     console.error('[API] KTV Performance error:', error);
 
