@@ -34,7 +34,7 @@ export async function getCustomerSegmentation(tenantId: string) {
     // Query customers table
     const { data: customers, error } = await supabase
       .from('customers')
-      .select('id, full_name, phone, created_at')
+      .select('id, name, phone')
       .eq('tenant_id', tenantId)
       .limit(100);
 
@@ -43,29 +43,14 @@ export async function getCustomerSegmentation(tenantId: string) {
       return [];
     }
 
-    // Basic segmentation by registration date
+    // Basic segmentation
     const totalCustomers = customers?.length || 0;
-    const newCustomers = (customers || []).filter(c => {
-      const created = new Date(c.created_at);
-      const monthAgo = new Date();
-      monthAgo.setMonth(monthAgo.getMonth() - 1);
-      return created > monthAgo;
-    }).length;
 
     return [{
       tenantId,
       segmentName: 'All Customers',
       customerCount: totalCustomers,
       segmentPercentage: 100,
-      avgLifetimeValue: 0,
-      avgTransactionValue: 0,
-      totalRevenue: 0,
-      computedAt: new Date().toISOString(),
-    }, {
-      tenantId,
-      segmentName: 'New Customers (Last 30 Days)',
-      customerCount: newCustomers,
-      segmentPercentage: totalCustomers > 0 ? (newCustomers / totalCustomers) * 100 : 0,
       avgLifetimeValue: 0,
       avgTransactionValue: 0,
       totalRevenue: 0,
@@ -86,7 +71,7 @@ export async function getCustomerLTV(tenantId: string, customerId?: string) {
   try {
     let query = supabase
       .from('customers')
-      .select('id, full_name, phone, created_at')
+      .select('id, name, phone')
       .eq('tenant_id', tenantId);
 
     if (customerId) {
@@ -103,14 +88,14 @@ export async function getCustomerLTV(tenantId: string, customerId?: string) {
     return (customers || []).map(customer => ({
       tenantId,
       customerId: customer.id,
-      customerName: customer.full_name,
+      customerName: customer.name,
       customerPhone: customer.phone || '',
       lifetimeValue: 0,
       totalBookings: 0,
       totalRevenue: 0,
       avgBookingValue: 0,
-      firstBookingDate: customer.created_at,
-      lastBookingDate: customer.created_at,
+      firstBookingDate: new Date().toISOString(),
+      lastBookingDate: new Date().toISOString(),
       customerTenureDays: 0,
       predictedLTV: 0,
       clvSegment: 'medium' as const,
@@ -131,7 +116,7 @@ export async function getChurnRisk(tenantId: string, threshold?: number) {
   try {
     const { data: customers, error } = await supabase
       .from('customers')
-      .select('id, full_name, phone, created_at')
+      .select('id, name, phone')
       .eq('tenant_id', tenantId)
       .limit(50);
 
@@ -143,14 +128,14 @@ export async function getChurnRisk(tenantId: string, threshold?: number) {
     return (customers || []).map(customer => ({
       tenantId,
       customerId: customer.id,
-      customerName: customer.full_name,
+      customerName: customer.name,
       customerPhone: customer.phone || '',
       churnRiskScore: 0,
       riskLevel: 'low' as const,
       daysSinceLastBooking: 0,
       totalBookings: 0,
       avgBookingFrequency: 0,
-      lastBookingDate: customer.created_at,
+      lastBookingDate: new Date().toISOString(),
       predictedChurnDate: null as string | null,
       recommendedAction: 'Monitor',
       computedAt: new Date().toISOString(),
