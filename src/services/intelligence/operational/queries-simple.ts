@@ -112,28 +112,14 @@ export async function getInventoryStatus(tenantId: string, stockStatus?: string)
   const supabase = await createServiceRoleClient();
 
   try {
-    // Query products table
-    const { data: products, error } = await supabase
-      .from('products')
-      .select('id, name, stock_quantity, reorder_level')
-      .eq('tenant_id', tenantId);
+    // Query products table (table doesn't exist yet - return empty for now)
+    // const { data: products, error } = await supabase
+    //   .from('products')
+    //   .select('id, name, stock_quantity, reorder_level')
+    //   .eq('tenant_id', tenantId);
 
-    if (error) {
-      console.error('[Operations Intelligence] Inventory status query error:', error);
-      return [];
-    }
-
-    return (products || []).map(product => ({
-      tenantId,
-      productId: product.id,
-      productName: product.name,
-      currentStock: product.stock_quantity || 0,
-      reorderLevel: product.reorder_level || 0,
-      stockStatus: (product.stock_quantity || 0) <= (product.reorder_level || 0) ? 'low_stock' : 'in_stock',
-      daysUntilStockout: 0,
-      recommendedOrderQuantity: 0,
-      computedAt: new Date().toISOString(),
-    }));
+    // Return placeholder data
+    return [];
   } catch (error) {
     console.error('[Operations Intelligence] Inventory status error:', error);
     return [];

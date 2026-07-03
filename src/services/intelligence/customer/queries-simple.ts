@@ -156,7 +156,14 @@ export async function getRFMAnalysis(tenantId: string) {
 /**
  * Get Cohort Analysis - Placeholder
  */
-export async function getCohortAnalysis(tenantId: string) {
+export async function getCohortAnalysis(tenantId: string, limit?: number) {
+  return [];
+}
+
+/**
+ * Get Segment Distribution - Placeholder
+ */
+export async function getSegmentDistribution(tenantId: string) {
   return [];
 }
 
@@ -203,4 +210,22 @@ export interface ChurnRisk {
   predictedChurnDate: string | null;
   recommendedAction: string;
   computedAt: string;
+}
+
+export interface SegmentDistribution {
+  tenantId: string;
+  segmentName: string;
+  customerCount: number;
+  totalRevenue: number;
+  avgLTV: number;
+  percentageOfTotal: number;
+}
+
+export interface CohortAnalysis {
+  tenantId: string;
+  cohortMonth: string;
+  customerCount: number;
+  totalRevenue: number;
+  avgLTV: number;
+  retentionRate: number;
 }
