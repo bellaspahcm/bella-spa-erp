@@ -336,7 +336,13 @@ let multiTierCacheInstance: MultiTierCache | null = null;
  */
 export function getCache(config?: MultiTierCacheConfig): MultiTierCache {
   if (!multiTierCacheInstance) {
-    multiTierCacheInstance = new MultiTierCache(config);
+    // Disable Redis cache for Intelligence Layer (Redis connection issues)
+    // Use Memory cache only for faster, more reliable caching
+    multiTierCacheInstance = new MultiTierCache({
+      enableMemory: true,
+      enableRedis: false, // Disabled due to connection issues
+      ...config,
+    });
   }
   return multiTierCacheInstance;
 }
@@ -346,7 +352,18 @@ export function getCache(config?: MultiTierCacheConfig): MultiTierCache {
  * Used in testing or when changing configuration.
  */
 export function resetCache(): void {
+  // Also reset Memory and Redis cache singletons
+  if (multiTierCacheInstance) {
+    try {
+      multiTierCacheInstance.clear();
+    } catch (e) {
+      // Ignore errors during cleanup
+    }
+  }
+  
   multiTierCacheInstance = null;
+  resetMemoryCache();
+  resetRedisCache();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
