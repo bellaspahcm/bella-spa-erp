@@ -34,7 +34,7 @@ export async function getCustomerSegmentation(tenantId: string) {
     // Query customers table
     const { data: customers, error } = await supabase
       .from('customers')
-      .select('id, name, phone')
+      .select('id, name_mother, phone')
       .eq('tenant_id', tenantId)
       .limit(100);
 
@@ -71,7 +71,7 @@ export async function getCustomerLTV(tenantId: string, customerId?: string) {
   try {
     let query = supabase
       .from('customers')
-      .select('id, name, phone')
+      .select('id, name_mother, phone')
       .eq('tenant_id', tenantId);
 
     if (customerId) {
@@ -88,7 +88,7 @@ export async function getCustomerLTV(tenantId: string, customerId?: string) {
     return (customers || []).map(customer => ({
       tenantId,
       customerId: customer.id,
-      customerName: customer.name,
+      customerName: customer.name_mother || 'Unknown',
       customerPhone: customer.phone || '',
       lifetimeValue: 0,
       totalBookings: 0,
@@ -116,7 +116,7 @@ export async function getChurnRisk(tenantId: string, threshold?: number) {
   try {
     const { data: customers, error } = await supabase
       .from('customers')
-      .select('id, name, phone')
+      .select('id, name_mother, phone')
       .eq('tenant_id', tenantId)
       .limit(50);
 
@@ -128,7 +128,7 @@ export async function getChurnRisk(tenantId: string, threshold?: number) {
     return (customers || []).map(customer => ({
       tenantId,
       customerId: customer.id,
-      customerName: customer.name,
+      customerName: customer.name_mother || 'Unknown',
       customerPhone: customer.phone || '',
       churnRiskScore: 0,
       riskLevel: 'low' as const,
