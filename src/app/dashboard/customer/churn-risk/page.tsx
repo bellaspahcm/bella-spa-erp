@@ -30,7 +30,7 @@ import {
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase-client';
 import type { IntelligenceResponse } from '@/services/intelligence/shared/types';
-import type { CustomerActivitySummary } from '@/services/intelligence/customer/queries';
+import type { ChurnRiskAnalysis } from '@/services/intelligence/customer/queries-simple';
 import {
   ChurnRiskChart,
   CustomerActivityChart,
@@ -44,7 +44,7 @@ function ChurnRiskDashboard() {
   const [riskFilter, setRiskFilter] = useState<RiskFilter>('all');
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [churnData, setChurnData] = useState<IntelligenceResponse<CustomerActivitySummary[]> | null>(null);
+  const [churnData, setChurnData] = useState<IntelligenceResponse<ChurnRiskAnalysis[]> | null>(null);
 
   useEffect(() => {
     async function initTenant() {
@@ -325,7 +325,7 @@ function ChurnRiskDashboard() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex flex-col gap-1">
-                      {customer.recommendedRetentionActions.slice(0, 2).map((action, idx) => (
+                      {customer.recommendedActions.slice(0, 2).map((action, idx) => (
                         <div key={idx} className="flex items-center gap-1 text-xs text-gray-600">
                           {getActionIcon(action)}
                           <span>{action}</span>

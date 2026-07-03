@@ -6,10 +6,10 @@
  */
 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import type { CustomerActivitySummary } from '@/services/intelligence/customer/queries';
+import type { ChurnRiskAnalysis } from '@/services/intelligence/customer/queries-simple';
 
 interface ChurnRiskChartProps {
-  data: CustomerActivitySummary[];
+  data: ChurnRiskAnalysis[];
   height?: number;
 }
 
