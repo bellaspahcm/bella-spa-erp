@@ -119,8 +119,8 @@ export class CustomerIntelligenceService implements IntelligenceService {
         };
       }
 
-      // Query database (materialized view)
-      const data = await queryCustomerSegmentation(tenantId, segment, limit);
+      // Query database (simplified - ignore segment and limit params for now)
+      const data = await queryCustomerSegmentation(tenantId);
 
       // Write to cache (best effort - don't fail if cache write fails)
       try {
