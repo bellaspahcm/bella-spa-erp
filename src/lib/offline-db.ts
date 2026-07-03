@@ -195,7 +195,10 @@ export async function getCachedEarnings(
     
     const now = Date.now();
     if (now > cached.expiresAt) {
-      await offlineDB.cachedEarnings.delete([userId, month]);
+      await offlineDB.cachedEarnings
+        .where('[userId+month]')
+        .equals([userId, month])
+        .delete();
       return null;
     }
     
@@ -249,7 +252,10 @@ export async function getCachedAttendance(
     
     const now = Date.now();
     if (now > cached.expiresAt) {
-      await offlineDB.cachedAttendance.delete([userId, date]);
+      await offlineDB.cachedAttendance
+        .where('[userId+date]')
+        .equals([userId, date])
+        .delete();
       return null;
     }
     
