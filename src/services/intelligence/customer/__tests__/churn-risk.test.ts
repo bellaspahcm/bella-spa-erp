@@ -30,7 +30,7 @@ describe('Churn Risk Constants', () => {
       CHURN_RISK_WEIGHTS.REVENUE_DECLINE +
       CHURN_RISK_WEIGHTS.SATISFACTION;
 
-    expect(sum).toBe(1.0);
+    expect(sum).toBeCloseTo(1.0, 10);
   });
 
   it('thresholds should be properly ordered', () => {
