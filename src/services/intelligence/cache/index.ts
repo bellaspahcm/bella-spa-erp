@@ -103,17 +103,23 @@ export class MultiTierCache implements CacheService {
         }
       }
 
-      // L2: Check Redis Cache
+      // L2: Check Redis Cache (with error handling)
       if (this.redis) {
-        const redisValue = await this.redis.get<T>(key);
-        if (redisValue !== null) {
-          // Backfill Memory Cache
-          if (this.memory) {
-            await this.memory.set(key, redisValue, {
-              ttl: 150, // Memory cache has shorter TTL
-            });
+        try {
+          const redisValue = await this.redis.get<T>(key);
+          if (redisValue !== null) {
+            // Backfill Memory Cache
+            if (this.memory) {
+              await this.memory.set(key, redisValue, {
+                ttl: 150, // Memory cache has shorter TTL
+              });
+            }
+            return redisValue;
           }
-          return redisValue;
+        } catch (redisError) {
+          // Redis error: log but don't fail entire request
+          console.warn(`[MultiTierCache] Redis cache error for key "${key}":`, redisError instanceof Error ? redisError.message : 'Unknown');
+          // Continue to return null (cache miss) rather than throwing
         }
       }
 
@@ -128,36 +134,35 @@ export class MultiTierCache implements CacheService {
   }
 
   async set<T>(key: string, value: T, options?: CacheOptions): Promise<void> {
-    try {
-      const promises: Promise<void>[] = [];
+    const promises: Promise<void>[] = [];
 
-      // Write to Memory Cache (if enabled)
-      if (this.memory) {
-        const memoryTTL = options?.ttl
-          ? Math.floor(options.ttl * this.memoryTTLMultiplier)
-          : undefined;
+    // Write to Memory Cache (if enabled)
+    if (this.memory) {
+      const memoryTTL = options?.ttl
+        ? Math.floor(options.ttl * this.memoryTTLMultiplier)
+        : undefined;
 
-        promises.push(
-          this.memory.set(key, value, {
-            ...options,
-            ttl: memoryTTL,
-          })
-        );
-      }
-
-      // Write to Redis Cache (if enabled)
-      if (this.redis) {
-        promises.push(this.redis.set(key, value, options));
-      }
-
-      // Wait for all writes to complete
-      await Promise.all(promises);
-    } catch (error) {
-      throw new CacheError(
-        `Failed to set key "${key}" in multi-tier cache`,
-        error instanceof Error ? error : undefined
+      promises.push(
+        this.memory.set(key, value, {
+          ...options,
+          ttl: memoryTTL,
+        })
       );
     }
+
+    // Write to Redis Cache (if enabled) - with error handling
+    if (this.redis) {
+      promises.push(
+        this.redis.set(key, value, options).catch(redisError => {
+          // Redis error: log but don't fail entire request
+          console.warn(`[MultiTierCache] Redis cache write error for key "${key}":`, redisError instanceof Error ? redisError.message : 'Unknown');
+          // Don't re-throw - allow request to continue with Memory cache only
+        })
+      );
+    }
+
+    // Wait for all writes to complete (Redis errors are caught above)
+    await Promise.all(promises);
   }
 
   async delete(key: string): Promise<void> {
