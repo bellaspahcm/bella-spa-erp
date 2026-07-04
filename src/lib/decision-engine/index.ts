@@ -97,6 +97,44 @@ export {
 
 export type { BootstrapOptions, DecisionEngineInstance } from './bootstrap';
 
+// ============ Cache Layer ============
+export type {
+  ICache,
+  CacheStats,
+  CacheConfig,
+  CacheEntry,
+  ICacheStrategy,
+} from './cache';
+
+export {
+  createCacheConfig,
+  InMemoryCache,
+  createInMemoryCache,
+  RedisCache,
+  createRedisCache,
+  createRedisCacheFromUrl,
+  DefaultCacheStrategy,
+  ConservativeCacheStrategy,
+  AggressiveCacheStrategy,
+  NoCacheStrategy,
+  RuleBasedCacheStrategy,
+  createCacheStrategy,
+  generateDecisionCacheKey,
+  generateRuleCacheKey,
+  generateBIQueryCacheKey,
+  generateMLModelCacheKey,
+  generateInvalidationPattern,
+  generateTimedCacheKey,
+  hashObject,
+  sortObjectKeys,
+  parseCacheKey,
+  matchesCachePattern,
+  calculateValueSize,
+  formatBytes,
+} from './cache';
+
+export type { RedisCacheConfig } from './cache/RedisCache';
+
 // ============ Re-exports (for convenience) ============
 
 /**
