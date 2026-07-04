@@ -472,7 +472,8 @@ export default function KTVDashboard() {
       setIsLoading(false);
       toast.error(getErrorMessage(error, 'Lỗi khi tải dữ liệu'));
     }
-  }, [fetchAttendance]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run once on mount - don't depend on fetchAttendance to avoid infinite loop
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
