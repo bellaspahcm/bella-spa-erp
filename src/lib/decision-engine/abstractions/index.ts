@@ -13,4 +13,4 @@ export type {
   ProviderRegistrationOptions,
 } from './IDecisionProvider';
 
-export { BaseDecisionProvider } from './IDecisionProvider';
+export { BaseDecisionProvider } from './BaseDecisionProvider';

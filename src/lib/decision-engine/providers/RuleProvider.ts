@@ -184,6 +184,7 @@ export class RuleProvider extends BaseDecisionProvider {
       const result = this.createSuccessResult(matched, 1.0, {
         reason: this.buildReason(rule, matched),
         matchedRules: matched && rule.id ? [rule.id] : undefined,
+        action: matched ? rule.action : undefined, // Include action if matched
         metadata: {
           rule: {
             id: rule.id,
