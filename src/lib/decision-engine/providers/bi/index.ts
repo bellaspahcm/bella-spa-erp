@@ -44,3 +44,26 @@ export {
   timeSeries,
   threshold,
 } from './QueryBuilder';
+
+// BI Client Interface
+export type {
+  DatabaseConfig,
+  ConnectionHealth,
+  QueryStats,
+  ITransaction,
+  IBIClient,
+  DatabaseSchema,
+  TableSchema,
+  ColumnSchema,
+  IndexSchema,
+} from './IBIClient';
+
+export {
+  BIClientError,
+  ConnectionError,
+  QueryError,
+  QueryTimeoutError,
+  TransactionError,
+  BaseBIClient,
+  createBIClient,
+} from './IBIClient';
