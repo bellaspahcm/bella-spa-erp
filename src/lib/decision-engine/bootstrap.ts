@@ -11,6 +11,8 @@ import type { IEventPublisher } from '@/lib/events/abstractions/IEventPublisher'
 import { InMemoryEventPublisher } from '@/lib/events/publishers/InMemoryEventPublisher';
 import { ConsoleLogger, NoOpLogger, type ILogger } from '@/lib/logger';
 import type { IDecisionProvider } from './abstractions';
+import type { ICache } from './cache/ICache';
+import type { ICacheStrategy } from './cache/ICacheStrategy';
 import {
   DecisionEngine,
   DecisionProviderRegistry,
@@ -37,6 +39,16 @@ export interface BootstrapOptions {
    * Providers to register (defaults to [RuleProvider])
    */
   providers?: IDecisionProvider[];
+
+  /**
+   * Cache instance (optional, for caching decision results)
+   */
+  cache?: ICache;
+
+  /**
+   * Cache strategy (optional, determines caching behavior)
+   */
+  cacheStrategy?: ICacheStrategy;
 
   /**
    * Enable debug logging
@@ -67,6 +79,16 @@ export interface DecisionEngineInstance {
    * Logger (for custom logging)
    */
   logger: ILogger;
+
+  /**
+   * Cache instance (if caching is enabled)
+   */
+  cache?: ICache;
+
+  /**
+   * Cache strategy (if caching is enabled)
+   */
+  cacheStrategy?: ICacheStrategy;
 }
 
 /**
@@ -99,6 +121,21 @@ export interface DecisionEngineInstance {
  *   debug: true
  * });
  * ```
+ * 
+ * @example With Cache
+ * ```typescript
+ * import {
+ *   bootstrapDecisionEngine,
+ *   createInMemoryCache,
+ *   DefaultCacheStrategy,
+ * } from '@/lib/decision-engine';
+ * 
+ * const { engine } = bootstrapDecisionEngine({
+ *   cache: createInMemoryCache({ maxKeys: 10000 }),
+ *   cacheStrategy: new DefaultCacheStrategy(),
+ *   debug: true
+ * });
+ * ```
  */
 export function bootstrapDecisionEngine(
   options: BootstrapOptions = {}
@@ -121,6 +158,8 @@ export function bootstrapDecisionEngine(
     registry,
     eventPublisher,
     logger,
+    cache: options.cache,
+    cacheStrategy: options.cacheStrategy,
   });
 
   // Log bootstrap info
@@ -128,6 +167,8 @@ export function bootstrapDecisionEngine(
     logger.info('Decision Engine bootstrapped', {
       providers: registry.listProviders(),
       ruleTypes: registry.listRuleTypes(),
+      cacheEnabled: !!options.cache,
+      cacheStrategy: options.cacheStrategy?.constructor.name,
     });
   }
 
@@ -136,6 +177,8 @@ export function bootstrapDecisionEngine(
     registry,
     eventPublisher,
     logger,
+    cache: options.cache,
+    cacheStrategy: options.cacheStrategy,
   };
 }
 
