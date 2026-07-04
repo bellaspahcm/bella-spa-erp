@@ -17,4 +17,5 @@ export {
   DecisionEngine,
   TimeoutError,
   createDecisionEngine,
+  type DecisionEngineConfig,
 } from './DecisionEngine';

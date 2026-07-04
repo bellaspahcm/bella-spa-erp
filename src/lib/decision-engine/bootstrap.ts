@@ -117,7 +117,11 @@ export function bootstrapDecisionEngine(
   }
 
   // Create engine
-  const engine = createDecisionEngine(registry, eventPublisher, logger);
+  const engine = createDecisionEngine({
+    registry,
+    eventPublisher,
+    logger,
+  });
 
   // Log bootstrap info
   if (options.debug) {
@@ -295,7 +299,11 @@ export function createDecisionEngineManual(
   eventPublisher: IEventPublisher,
   logger: ILogger
 ): DecisionEngine {
-  return createDecisionEngine(registry, eventPublisher, logger);
+  return createDecisionEngine({
+    registry,
+    eventPublisher,
+    logger,
+  });
 }
 
 /**
