@@ -176,12 +176,14 @@ export const RULE_REQUIRE_DEPOSIT_LARGE: IfThenRule = {
  * **Action:**
  * - approved: false (requires manual review)
  * - requiresManualReview: true
+ * 
+ * **Priority:** 95 (High - check after suspicious but before VIP auto-approve)
  */
 export const RULE_MANUAL_REVIEW_NEW_CUSTOMER_LARGE: IfThenRule = {
   id: 'booking-manual-review-new-large',
   name: 'Manual review for new customers with large bookings',
   description: 'New customers booking >= 10M require manager approval',
-  priority: 60,
+  priority: 95, // High priority - check before auto-approvals
   condition: {
     and: [
       {
@@ -261,12 +263,14 @@ export const RULE_AUTO_APPROVE_LOYAL: IfThenRule = {
  * **Action:**
  * - approved: false
  * - requiresVerification: true
+ * 
+ * **Priority:** 110 (HIGHEST - must check before any approvals)
  */
 export const RULE_REJECT_SUSPICIOUS: IfThenRule = {
   id: 'booking-reject-suspicious',
   name: 'Reject suspicious large bookings',
   description: 'Bookings >= 50M require full verification',
-  priority: 50,
+  priority: 110, // HIGHEST priority - check before approvals
   condition: {
     field: 'totalAmount',
     operator: '>=',
@@ -280,17 +284,32 @@ export const RULE_REJECT_SUSPICIOUS: IfThenRule = {
 };
 
 /**
- * All booking approval rules (sorted by priority)
+ * All booking approval rules (sorted by priority DESC - highest first)
+ * 
+ * **Evaluation Order:**
+ * 1. Priority 110: Reject suspicious bookings (>=50M) - SECURITY CHECK
+ * 2. Priority 100: Auto-approve small bookings (<5M)
+ * 3. Priority 95: Manual review for new customers + large bookings (>=10M) - RISK CHECK
+ * 4. Priority 90: Auto-approve VIP customers (<20M)
+ * 5. Priority 85: Auto-approve loyal customers (<15M, 20% deposit)
+ * 6. Priority 80: Require 30% deposit for medium bookings (5M-10M)
+ * 7. Priority 70: Require 50% deposit for large bookings (>=10M)
+ * 
+ * **Note:** Higher priority rules are evaluated first. If a rule matches,
+ * evaluation stops and that rule's action is returned.
+ * 
+ * **Design Pattern:** Rejection/security checks have highest priority (110, 95),
+ * then auto-approvals (100, 90, 85), then deposit requirements (80, 70).
  */
 export const BOOKING_APPROVAL_RULES: IfThenRule[] = [
+  RULE_REJECT_SUSPICIOUS, // Priority 110 - SECURITY CHECK FIRST
   RULE_AUTO_APPROVE_SMALL_BOOKING, // Priority 100
+  RULE_MANUAL_REVIEW_NEW_CUSTOMER_LARGE, // Priority 95 - RISK CHECK
   RULE_AUTO_APPROVE_VIP, // Priority 90
   RULE_AUTO_APPROVE_LOYAL, // Priority 85
   RULE_REQUIRE_DEPOSIT_MEDIUM, // Priority 80
   RULE_REQUIRE_DEPOSIT_LARGE, // Priority 70
-  RULE_MANUAL_REVIEW_NEW_CUSTOMER_LARGE, // Priority 60
-  RULE_REJECT_SUSPICIOUS, // Priority 50
-];
+].sort((a, b) => (b.priority || 0) - (a.priority || 0)); // Sort by priority DESC
 
 /**
  * Get booking approval rules for Decision Engine
