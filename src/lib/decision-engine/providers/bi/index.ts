@@ -72,3 +72,11 @@ export {
 export type { BIProviderConfig } from './BIProvider';
 
 export { BIProvider, createBIProvider } from './BIProvider';
+
+// BI Clients
+export {
+  MockBIClient,
+  createMockBIClient,
+  PostgreSQLClient,
+  createPostgreSQLClient,
+} from './clients';
