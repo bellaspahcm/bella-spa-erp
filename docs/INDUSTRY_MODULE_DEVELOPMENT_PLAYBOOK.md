@@ -87,6 +87,15 @@ Bang nay la nhat ky bai hoc thuc te. Khi lam nganh moi, bat buoc doi chieu tung 
 | Dev/mock RLS read path | E2E mock-auth khong doc duoc bang RLS chat nhu `booking_resources`, lam UI khong hien du lieu dung | Mock-auth khong tao Supabase auth session that, nen client public bi xem nhu anon | Server action tenant-scoped trong dev/mock duoc dung `createDevelopmentBypassClient`, nhung phai lay tenant tu current user va filter `tenant_id`; khong mo grant anon |
 | Data vocabulary | Form khach Beauty con truong "Ho ten me", "Ho ten be", lich co "Combo Me Be" | Dung lai giao dien cu chua audit toan bo text | Truoc khi release module moi phai `rg` toan bo thuat ngu nganh cu va map sang dictionary module |
 | Hidden onboarding copy | Beauty admin van thay tour/huong dan "Bat dau cung Bella Spa" sau khi F5 | Chi audit cac trang chinh, bo sot onboarding/help/empty-state copy an | Moi module moi phai audit ca onboarding tour, tooltip, empty state, help text va first-run modal; copy phai nhan brand/module context |
+| **Performance & Loading** | | | |
+| Infinite loop useEffect | KTV Dashboard load rat cham (20-30s), Network tab hien 100+ duplicate requests `dashboard` | useEffect dependencies chua `useCallback` functions, tao vong lap vo han: useEffect → fetchData() → setState → re-render → fetchData moi → useEffect chay lai | useEffect chi nen chay 1 lan khi mount: `useEffect(() => { fetchData(); }, [])` KHONG dung `[fetchData]`; eslint-disable-next-line neu can |
+| Dependency chain loop | useEffect phụ thuộc `fetchData`, `fetchData` phụ thuộc `fetchAttendance`, `fetchAttendance` phụ thuộc `user?.id` → vòng lặp khi set user state | useCallback dependencies tạo chain phụ thuộc tuần hoàn | Loại bỏ function dependencies khỏi useCallback: `useCallback(async () => { ... }, [])` thay vì `[fetchAttendance]` |
+| Duplicate API calls từ Layout + Page | Mỗi lần load page, `getCurrentUser()` bị gọi 2 lần (1 từ layout auth check, 1 từ page data fetch) → tăng gấp đôi requests | Layout và Page đều kiểm tra auth riêng, không share state | Xóa auth check khỏi Layout nếu Page tự kiểm tra; hoặc dùng Context để share user giữa Layout và Page |
+| Double render với vocabulary khác nhau | UI render 2 lần với text khác nhau: lần 1 "Kỹ thuật viên"/"Buổi", lần 2 "Nhân viên"/"Ca làm việc" → nhấp nháy, confuse người dùng | `tenantModuleKey` load sau khi `setIsLoading(false)` → render với vocab mặc định trước | Đợi có `tenantModuleKey` mới render: `if (isLoading \|\| !tenantModuleKey \|\| !user) return skeleton;` |
+| Skeleton loading màu trùng background | Spinner loading "biến mất" giữa chừng, người dùng thấy màn hình trắng/đơ 3-4s, nghĩ app bị lỗi | Skeleton `bg-white/20` trên nền `#F5F5F0` (be nhạt) → gần như trong suốt, không thấy được | Light mode dùng màu tương phản: `bg-rose-200/60` thay vì `bg-white/20`; Dark mode giữ nguyên `bg-white/20` |
+| **Cache & Redis** | | | |
+| Redis cache không tăng tốc như kỳ vọng | Đã setup Redis (Upstash) và cache `getCurrentUser()`, `getTenantSettings()` nhưng thời gian load không giảm nhiều | Redis đúng nhưng data vẫn phải load từ database do queries phức tạp, hoặc cache TTL quá ngắn | Tăng TTL từ 60s lên 5-10 phút cho stable data; Profile queries tìm bottleneck thực sự (thường là missing indexes, không phải cache) |
+| Database missing indexes | Queries chậm 5-11s dù đã có Redis cache | Full table scans trên `users`, `session_logs`, `bookings` do thiếu composite indexes | Thêm indexes: `idx_users_tenant`, `idx_session_logs_ktv_status`, `idx_bookings_assigned_ktv`, etc. Chạy EXPLAIN ANALYZE để verify |
 | Demo tenant | Can tao demo Beauty de test nhung phai xoa sach | Demo seed ban dau chua co marker/cleanup chuan | Demo data phai co `DEMO_MARKER`, fixed ids/email, cleanup requires `--confirm`, khong delete bang filter rong |
 | Accounting demo | Posting finance demo loi do thieu ma tai khoan 111/5111/6421... | Tenant demo chua seed chart of accounts | Demo script phai goi `seed_default_coa` va verify accounts truoc khi tao journal/revenue |
 | RLS/grants | Permission denied khi doc/xoa bang moi hoac bang token | Migration tao bang nhung chua grant/RLS policy du cho role thuc te | Moi bang moi phai co RLS, grant, policy va test permission/grant |
@@ -256,6 +265,183 @@ Quy tac truoc khi de xuat hoac thuc hien toi uu:
 - Neu la Beauty theme-only, CSS/UI phai scope theo `html[data-tenant-module="beauty_spa"]` hoac class module rieng; khong de anh huong Bella ERP.
 - Moi toi uu performance nen ghi lai: route, muc tieu, cach lam, commit, test/build da chay, va pham vi anh huong.
 - Khong tao engine, abstraction hoac refactor lon chi de toi uu cam giac. Uu tien: lazy load, load theo tab, limit ban dau, background chunk, debounce realtime, va bo refresh thua.
+
+### Phase 4c - Performance Optimization Best Practices
+
+**KTV Dashboard Performance Case Study (2026-06-22)**
+
+Khi tối ưu KTV Dashboard, đã phát hiện và sửa **5 vấn đề nghiêm trọng** làm tăng load time từ 20-30s → 5-6s (cải thiện 70-80%):
+
+#### 1. Infinite Loop trong useEffect
+
+**Dấu hiệu**: Network tab hiện 100+ duplicate requests giống hệt nhau, mỗi request ~2s.
+
+**Nguyên nhân**:
+```typescript
+const fetchData = useCallback(async () => {
+  // ...
+}, [fetchAttendance]); // ← fetchAttendance thay đổi mỗi lần render
+
+useEffect(() => {
+  fetchData();
+}, [fetchData]); // ← fetchData thay đổi → useEffect chạy lại
+```
+
+**Vòng lặp**: useEffect → fetchData() → setState → re-render → fetchData mới → useEffect chạy lại → **LẶP LẠI VÔ HẠN**
+
+**Cách sửa**:
+```typescript
+useEffect(() => {
+  fetchData();
+// eslint-disable-next-line react-hooks/exhaustive-deps
+}, []); // CHỈ chạy 1 lần khi mount
+```
+
+**Guard test**: Kiểm tra Network tab, đếm số requests `dashboard` - phải CHỈ CÓ 1-2 requests, không phải 100+.
+
+#### 2. Dependency Chain Loop
+
+**Dấu hiệu**: Sau khi sửa loop trên vẫn còn ~15-20 duplicate requests.
+
+**Nguyên nhân**:
+```typescript
+const fetchAttendance = useCallback(() => {}, [user?.id]);
+const fetchData = useCallback(() => {
+  // ... gọi fetchAttendance()
+}, [fetchAttendance]); // ← Phụ thuộc fetchAttendance
+```
+
+**Chain**: fetchData → fetchAttendance → user?.id → set user → fetchAttendance mới → fetchData mới → useEffect lại
+
+**Cách sửa**:
+```typescript
+const fetchData = useCallback(async () => {
+  // ...
+// eslint-disable-next-line react-hooks/exhaustive-deps
+}, []); // Bỏ [fetchAttendance], capture từ closure
+```
+
+#### 3. Duplicate getCurrentUser() Calls
+
+**Dấu hiệu**: Mỗi page load, `getCurrentUser()` bị gọi 2 lần.
+
+**Nguyên nhân**:
+- `KtvLayout` gọi `getCurrentUser()` để check auth
+- `dashboard/page.tsx` cũng gọi `getCurrentUser()` để load data
+
+**Cách sửa**: Xóa auth check khỏi `KtvLayout` (mỗi page tự check auth). Hoặc dùng React Context share user state.
+
+#### 4. Double Render với Vocabulary khác nhau
+
+**Dấu hiệu**: UI nhấp nháy text 2 lần:
+- Lần 1: "Kỹ thuật viên", "Buổi" 
+- Lần 2: "Nhân viên", "Ca làm việc"
+
+**Nguyên nhân**:
+```typescript
+setIsLoading(false); // UI render với tenantModuleKey = null
+setTenantModuleKey(moduleKey); // Sau đó mới set → render lại
+```
+
+**Cách sửa**:
+```typescript
+if (isLoading || !tenantModuleKey || !user) {
+  return skeleton; // Đợi ĐỦ data mới render
+}
+```
+
+#### 5. Skeleton màu trùng background
+
+**Dấu hiệu**: Người dùng báo "spinner biến mất giữa chừng", màn hình trắng 3-4s.
+
+**Nguyên nhân**:
+- Background: `#F5F5F0` (màu be nhạt)
+- Skeleton: `bg-white/20` (trắng 20% opacity)
+- **GẦN NHƯ TRONG SUỐT** → không thấy được!
+
+**Cách sửa**:
+```typescript
+// Light mode: dùng màu tương phản
+<div className="bg-rose-200/60 dark:bg-white/20 animate-pulse" />
+
+// Dark mode: giữ nguyên bg-white/20
+```
+
+#### Checklist Performance Optimization
+
+Trước khi tối ưu, kiểm tra:
+- [ ] `git log` xem đã tối ưu chưa
+- [ ] Profile thực tế: Network tab, Performance tab, Console logs timing
+- [ ] Xác định bottleneck: Database? API calls? Rendering? JavaScript?
+
+**Database bottlenecks** (hay gặp nhất):
+- [ ] Missing indexes → thêm composite indexes
+- [ ] N+1 queries → dùng `Promise.all()` hoặc JOIN
+- [ ] Full table scans → thêm WHERE `tenant_id`
+
+**API/Network bottlenecks**:
+- [ ] Duplicate requests → fix useEffect dependencies
+- [ ] Waterfall requests → dùng `Promise.all()`
+- [ ] Cache miss → implement Redis/IndexedDB cache
+
+**Rendering bottlenecks**:
+- [ ] Unnecessary re-renders → memoize với `useMemo`, `useCallback`
+- [ ] Large lists → virtualize với `react-window`
+- [ ] Heavy components → lazy load với `dynamic()`
+
+**Best practices**:
+- ✅ Load critical data first (user, tenant, permissions) → show UI
+- ✅ Load secondary data (earnings, notifications) in background
+- ✅ Show loading indicators cho từng section đang load
+- ✅ Cache stable data (user, tenant settings) 5-10 phút
+- ✅ Database indexes cho mọi query lớn hơn 1s
+- ❌ KHÔNG swallow errors (console.error → fail loudly)
+- ❌ KHÔNG batch quá nhiều requests (max 3-5 parallel)
+- ❌ KHÔNG cache data thường xuyên thay đổi
+
+**Commits tham khảo KTV Dashboard optimization**:
+- `a5d95893` - Fix infinite loop useEffect
+- `2062ad4b` - Fix dependency chain loop  
+- `14abc58e` - Remove duplicate getCurrentUser()
+- `ae0957e3` - Fix double render vocabulary
+- `4147ebf6` - Ensure skeleton visible until ready
+- `2da08645` - Change skeleton colors for visibility
+
+### Phase 4d - UI/UX Color Contrast & Visibility
+
+**Nguyên tắc tương phản màu**:
+
+1. **Loading indicators PHẢI thấy rõ trên mọi background**
+   - Light mode: Dùng màu đậm (rose-200/60, gray-300) KHÔNG dùng white/20
+   - Dark mode: Dùng màu sáng (white/20, gray-700)
+   - Test: Chụp ảnh màn hình và zoom out → vẫn thấy rõ skeleton
+
+2. **Text contrast ratio tối thiểu**
+   - Heading/body text: 4.5:1 (WCAG AA)
+   - Large text (18px+): 3:1
+   - Disabled text: 3:1
+
+3. **Button/CTA states**
+   - Normal: Màu brand rõ ràng
+   - Hover: Tăng brightness/saturation, KHÔNG giảm opacity
+   - Disabled: Gray nhưng vẫn đọc được text
+   - Active/Selected: Border + background change, không chỉ dựa màu
+
+4. **Data tables/cards**
+   - Row hover: Subtle background change
+   - Selected row: Rõ ràng khác với hover
+   - Dark mode: Card background đậm hơn page background ít nhất 10%
+
+**Common mistakes**:
+- ❌ `bg-white/10` trên nền `#F5F5F0` → trong suốt
+- ❌ `animate-pulse` giảm opacity → CTA biến mất
+- ❌ Pink text on pink background → không đọc được
+- ❌ Gray-400 text on gray-100 background → quá nhạt
+
+**Tools kiểm tra**:
+- Chrome DevTools → Accessibility → Contrast ratio
+- https://webaim.org/resources/contrastchecker/
+- Take screenshot → convert to grayscale → vẫn thấy rõ hierarchy
 
 ### Phase 5 - Demo Data Va Cleanup
 

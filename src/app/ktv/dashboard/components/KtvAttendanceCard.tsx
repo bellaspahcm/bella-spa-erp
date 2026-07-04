@@ -67,8 +67,8 @@ export function KtvAttendanceCard({
       <div className="bg-white rounded-[32px] p-6 shadow-sm border border-slate-100/50 relative overflow-hidden">
         <div className="flex justify-between items-center mb-4">
           <div>
-            <h4 className="text-xs font-black text-slate-700 uppercase tracking-widest">Điểm danh hôm nay</h4>
-            <p className="text-sm font-bold text-slate-700 mt-0.5">Thời gian vào ca tiêu chuẩn: 08:30 sáng</p>
+            <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">Điểm danh hôm nay</h4>
+            <p className="text-sm font-bold text-slate-800 mt-0.5">Thời gian vào ca tiêu chuẩn: 08:30 sáng</p>
           </div>
 
           {todayAttendance && (
@@ -80,13 +80,13 @@ export function KtvAttendanceCard({
 
         <div className="grid grid-cols-2 gap-4 mb-6">
           <div className="bg-slate-100 rounded-2xl p-4 text-center border border-slate-200">
-            <span className="text-[10px] font-black text-slate-700 uppercase tracking-wider block mb-1">Giờ Check-in</span>
+            <span className="text-[10px] font-black text-slate-800 uppercase tracking-wider block mb-1">Giờ Check-in</span>
             <span className="text-lg font-black text-slate-900">
               {formatAttendanceTime(todayAttendance?.checkin_time)}
             </span>
           </div>
           <div className="bg-slate-100 rounded-2xl p-4 text-center border border-slate-200">
-            <span className="text-[10px] font-black text-slate-700 uppercase tracking-wider block mb-1">Giờ Check-out</span>
+            <span className="text-[10px] font-black text-slate-800 uppercase tracking-wider block mb-1">Giờ Check-out</span>
             <span className="text-lg font-black text-slate-900">
               {formatAttendanceTime(todayAttendance?.checkout_time)}
             </span>
