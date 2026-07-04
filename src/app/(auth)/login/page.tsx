@@ -96,7 +96,11 @@ export default function LoginPage() {
               width={1024}
               height={464}
               priority
-              style={{ width: '60%', height: 'auto' }}
+              style={{ 
+                width: '60%', 
+                height: 'auto',
+                filter: 'drop-shadow(0 4px 20px rgba(124, 58, 237, 0.25)) drop-shadow(0 2px 8px rgba(124, 58, 237, 0.15))'
+              }}
             />
           </div>
 
