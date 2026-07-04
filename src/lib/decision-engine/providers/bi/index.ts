@@ -67,3 +67,8 @@ export {
   BaseBIClient,
   createBIClient,
 } from './IBIClient';
+
+// BI Provider
+export type { BIProviderConfig } from './BIProvider';
+
+export { BIProvider, createBIProvider } from './BIProvider';
