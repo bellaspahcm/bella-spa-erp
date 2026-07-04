@@ -185,11 +185,6 @@ export async function evaluateBookingApproval(
       // Evaluate decision
       const result = await engine.evaluate(context);
       
-      // Debug logging (remove in production)
-      if (process.env.NODE_ENV === 'test') {
-        console.log(`[DEBUG] Rule ${rule.id}: confidence=${result.confidence}, approved=${result.approved}, reason=${result.reason}`);
-      }
-      
       // If rule matched (confidence > 0), use this decision
       if (result.confidence > 0 && result.action) {
         const action = result.action as Record<string, unknown>;
