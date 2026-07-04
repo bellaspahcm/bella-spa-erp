@@ -62,6 +62,7 @@ export default function KTVDashboard() {
   const [earnings, setEarnings] = useState({ total: 0, sessions: 0 });
   const [myRating, setMyRating] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isBackgroundLoading, setIsBackgroundLoading] = useState(false); // Track background data loading
   const [isActionLoading, setIsActionLoading] = useState<string | null>(null);
   const [systemTime, setSystemTime] = useState<string>('');
   const [isNotifOpen, setIsNotifOpen] = useState(false);
@@ -370,6 +371,9 @@ export default function KTVDashboard() {
       setUser(u as KtvUser | null);
       setTenantModuleKey(moduleKey);
       
+      // IMPORTANT: Don't set isLoading=false until we have moduleKey!
+      // Otherwise UI will try to render without tenantModuleKey and show blank screen
+      
       // Try to load sessions from cache first
       const cacheCheckStart = performance.now();
       const cachedSessions = await getCachedSessions(u.id);
@@ -379,6 +383,8 @@ export default function KTVDashboard() {
         console.log(`[KTV Dashboard] 💾 Cache HIT - loaded sessions in ${perfMarks['cache_check'].toFixed(0)}ms`);
         setActiveSessions(cachedSessions.active as KtvDashboardSession[]);
         setUpcomingSessions(cachedSessions.upcoming as KtvDashboardSession[]);
+        
+        // Only set isLoading=false after we have ALL critical data (user, tenant, moduleKey, sessions)
         setIsLoading(false); // Show UI with cached data immediately
         
         const totalTime = performance.now() - perfStart;
@@ -438,6 +444,7 @@ export default function KTVDashboard() {
       }
       
       // Non-blocking: Load earnings, notifications, leaderboard in background
+      setIsBackgroundLoading(true); // Show loading indicator
       const bgStart = performance.now();
       Promise.all([
         getKTVEarnings(monthStr),
@@ -458,6 +465,8 @@ export default function KTVDashboard() {
       }).catch((error) => {
         console.error('[KTV Dashboard] Background data fetch failed:', error);
         // Silent fail - don't show toast for background data
+      }).finally(() => {
+        setIsBackgroundLoading(false); // Hide loading indicator
       });
       
       // Summary log
@@ -659,7 +668,8 @@ export default function KTVDashboard() {
   };
 
 
-  if (isLoading || !tenantModuleKey) {
+  // Show skeleton if loading OR missing critical data
+  if (isLoading || !tenantModuleKey || !user) {
     return (
       <div className="min-h-screen bg-[#F5F5F0] dark:bg-[#5D1C34] pb-20">
         {/* Skeleton Header */}
@@ -691,6 +701,18 @@ export default function KTVDashboard() {
 
   return (
     <div className="min-h-screen bg-[#F5F5F0] dark:bg-[#5D1C34] pb-20">
+      {/* Background loading indicator - sticky at top */}
+      {isBackgroundLoading && (
+        <div className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-pink-500 via-rose-500 to-pink-500 h-1 animate-pulse">
+          <div className="h-full bg-white/30 animate-[shimmer_1.5s_ease-in-out_infinite]" 
+               style={{
+                 background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent)',
+                 backgroundSize: '200% 100%',
+                 animation: 'shimmer 1.5s ease-in-out infinite'
+               }} />
+        </div>
+      )}
+      
       <KtvDashboardHeader
         user={user}
         earnings={earnings}
