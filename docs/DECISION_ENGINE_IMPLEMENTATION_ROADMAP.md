@@ -15,9 +15,221 @@
 
 #### Phase 0.5: Principles Document
 - **File**: `docs/DECISION_ENGINE_PRINCIPLES.md`
-- **Lines**: 478 lines
-- **Content**: The "Constitution" - 10 immutable principles with detailed explanations, examples, and enforcement strategies
+- **Lines**: 478 lines (updated to 550+ with Platform Development Rule)
+- **Content**: The "Constitution" - 10 immutable principles + Meta-Principle (Platform Development Lifecycle) with detailed explanations, examples, and enforcement strategies
 - **Purpose**: Establish architectural guardrails before implementation
+
+---
+
+### Phase 0.5: Production Integration & Architecture Validation ⭐ **NEXT - MANDATORY**
+
+**Duration**: 5-7 days  
+**Status**: 📅 **Required before any new Platform Capability**
+
+> **Objective:** Validate the Decision Engine architecture in a real production context before expanding the platform.
+
+#### Goals
+- Integrate Decision Engine into Bella Spa production flows
+- Replace hard-coded business decisions with Decision Engine
+- Validate architecture using real business scenarios
+- Collect feedback for API, Context, and Result improvements
+- Stabilize the platform before adding more Providers
+
+#### Scope
+
+##### 1. Booking Flow Integration ✅ Priority
+**Replace**: `if/else` and `switch` statements  
+**With**: `Booking → DecisionEngine → DecisionResult`
+
+**Use Cases**:
+- Auto-approval rules (amount thresholds, customer tier, history)
+- Deposit requirements
+- Cancellation policy decisions
+- Overbooking management
+
+##### 2. Discount Rules Migration ✅ Priority
+**Move**: All discount decision logic to Rule Provider
+
+**Use Cases**:
+- Membership tier discounts
+- First-time customer discounts
+- Campaign-based promotions
+- Package bundle discounts
+- Seasonal/holiday discounts
+
+##### 3. KTV Assignment Automation 
+**Use Decision Engine for**:
+- Auto-assign eligibility
+- Capacity checks (max sessions per day)
+- Priority scoring (rating, availability, specialty)
+- Workload balancing
+
+##### 4. Membership Upgrade Decisions
+**Decision Engine evaluates**:
+- Upgrade eligibility (revenue threshold, visit frequency)
+- VIP qualification (LTV, loyalty score)
+- Campaign qualification (special promotions)
+- Downgrade triggers (inactivity, negative balance)
+
+##### 5. Promotion Eligibility
+**Flow**: `Promotion Rules → Decision Engine → Qualified/Not Qualified`
+
+**Use Cases**:
+- New customer promotions
+- Referral program eligibility
+- Birthday/anniversary specials
+- Loyalty rewards qualification
+
+##### 6. Customer Classification
+**Flow**: `Customer → DecisionEngine → Segment (VIP/Loyal/New/At-Risk)`
+
+**Use Cases**:
+- VIP identification (high LTV, frequent visits)
+- Churn risk detection (declining frequency)
+- High-value customer alerts
+- Re-engagement targets
+
+##### 7. Business Intelligence Integration
+**BI Provider Integration**:
+- Decision Provider should consume BI metrics where appropriate
+- No duplicated KPI calculation logic
+- Use BIProvider for data-driven decisions (historical patterns, trends)
+
+**Example**: "Approve discount if customer's average booking value > 5M (from BI)"
+
+##### 8. Event Validation
+**Decision events should publish**:
+- `decision.evaluated` - Every decision made
+- `decision.failed` - Provider evaluation failed
+- `decision.fallback` - Fallback strategy used
+- `decision.timeout` - Evaluation timeout
+
+**Consumers**:
+- Audit log system
+- Analytics dashboard
+- Alerting system
+
+##### 9. Performance Validation
+**Measure**:
+- Execution Time (p50, p95, p99)
+- Cache Hit Ratio (target: >80% for repeated decisions)
+- Provider Latency (per provider type)
+- Memory Usage (baseline vs peak)
+- Throughput (decisions per second)
+
+**Targets** (from Architecture):
+- Latency: <50ms (p95), <100ms (p99) without cache
+- Latency: <10ms (p95), <20ms (p99) with cache
+- Throughput: 1000+ decisions/sec per instance
+- Error Rate: <0.1%
+
+##### 10. Architecture Validation Checklist
+**Validate** (The 10 Commandments):
+- [x] Engine does NOT know business modules
+- [x] Engine IS provider-based
+- [x] Providers ARE replaceable
+- [x] Engine IS stateless
+- [x] Business logic IS in Providers
+- [x] Providers CAN use BI/AI/External sources
+- [x] Engine ONLY returns DecisionResult
+- [x] Engine NEVER accesses database directly
+- [x] Engine NEVER calls business modules
+- [x] All decisions ARE auditable
+
+**Validate** (Architecture Quality):
+- [ ] Dependency rules respected (one-way: Business → Engine → Provider)
+- [ ] SOLID principles applied
+- [ ] Open/Closed Principle (add providers without changing Engine)
+- [ ] Provider isolation (failures don't cascade)
+- [ ] Extension architecture working
+- [ ] Error strategies effective (fallback, timeout, recovery)
+- [ ] Cache strategies effective (hit rate, invalidation)
+
+#### Deliverables
+
+1. **Production Integration Code**
+   - Booking flow using Decision Engine
+   - Discount rules migrated to Rule Provider
+   - At least 2-3 more business flows integrated
+
+2. **Performance Report**
+   - Latency metrics (p50, p95, p99)
+   - Cache performance (hit rate, memory usage)
+   - Throughput measurements
+   - Resource utilization
+
+3. **Architecture Validation Report**
+   - Principles compliance verification
+   - Dependency graph analysis
+   - Provider isolation validation
+   - Extension points tested
+
+4. **Refactoring Recommendations**
+   - API improvements (if needed)
+   - Context/Result contract enhancements (if needed)
+   - Provider interface refinements (if needed)
+   - Performance optimizations
+
+5. **Production Runbook**
+   - Deployment checklist
+   - Monitoring setup
+   - Alerting rules
+   - Troubleshooting guide
+   - Rollback procedure
+
+#### Success Criteria (Exit Gates)
+
+Proceed to next Platform Capability (Workflow Engine, AI/ML Provider, etc.) **ONLY** when:
+
+- ✅ **Integration Complete**: Core business flows use Decision Engine
+- ✅ **No Critical Issues**: No architectural flaws discovered
+- ✅ **Provider Model Proven**: Successfully added/replaced providers without Engine changes
+- ✅ **Performance Targets Met**: Latency, throughput, error rate within targets
+- ✅ **API Stable**: No breaking changes needed to Context/Result contracts
+- ✅ **Production Ready**: Monitoring, alerting, runbook in place
+- ✅ **Refactoring Complete**: Any necessary improvements implemented
+- ✅ **Team Confidence High**: Dev team comfortable with architecture
+
+#### Tasks (Estimated)
+
+1. **Days 1-2**: Booking flow + Discount rules integration
+2. **Days 3-4**: KTV assignment + Membership upgrade + Promotions
+3. **Day 5**: BI integration + Event validation
+4. **Day 6**: Performance testing + metrics collection
+5. **Day 7**: Architecture validation + report + refinements
+
+#### Why Phase 0.5 is Mandatory
+
+**This is NOT "testing"** - this is **architecture validation**.
+
+**Enterprise Precedents**:
+- AWS: S3 → production → EC2 (not all services at once)
+- Stripe: Payments → production → Billing → production
+- Shopify: Store → production → Checkout → production
+
+**Benefits**:
+1. **Catch Issues Early**: Architectural problems found when codebase is small
+2. **Real Feedback**: Production data > theoretical design
+3. **Avoid Over-Engineering**: Only build what's proven necessary
+4. **Reduce Technical Debt**: Fix issues before adding complexity
+5. **Risk Management**: Critical for 1-person dev teams
+6. **Immediate Value**: Platform capabilities deliver business value, not just technical capability
+
+**Without Phase 0.5**:
+- ❌ Decision Engine → Workflow Engine → Integration Engine → AI Engine
+- ❌ No production validation
+- ❌ Architectural issues compound
+- ❌ Refactoring becomes massive
+- ❌ Technical debt accumulates
+- ❌ Risk increases exponentially
+
+**With Phase 0.5**:
+- ✅ Decision Engine → Production → Validated → Stable
+- ✅ Only then → Next Capability
+- ✅ Issues caught and fixed early
+- ✅ Architecture proven in real scenarios
+- ✅ Confidence in platform foundation
+- ✅ Sustainable development pace
 
 ---
 
@@ -519,24 +731,25 @@ Production-ready deployment and operational excellence.
 | Phase | Duration | Status |
 |-------|----------|--------|
 | Phase 0: Foundation | 1 day | ✅ Complete |
+| Phase 0.5: **Production Integration & Validation** ⭐ | **5-7 days** | **📅 NEXT - MANDATORY** |
 | Phase 1: Architecture | 2 days | ✅ Complete |
 | Phase 2: Core Platform | 5 days | ✅ Complete |
 | Phase 3: Cache Layer | 3-4 days | ✅ Complete |
 | Phase 4: BI Provider | 5-7 days | ✅ Complete |
-| Phase 5: AI/ML Provider | 7-10 days | 📅 Next |
-| Phase 6: External Provider | 4-5 days | 📅 Future |
-| Phase 7: Manual Provider | 3-4 days | 📅 Future |
-| Phase 8: Composite Provider | 5-6 days | 📅 Future |
-| Phase 9: Observability | 4-5 days | 📅 Future |
-| Phase 10: Production Hardening | 3-4 days | 📅 Future |
-| **Total** | **42-57 days** | **16-19 days done, 26-38 days remaining** |
+| Phase 5: AI/ML Provider | 7-10 days | 🔒 Blocked (awaiting Phase 0.5) |
+| Phase 6: External Provider | 4-5 days | 🔒 Blocked (awaiting Phase 0.5) |
+| Phase 7: Manual Provider | 3-4 days | 🔒 Blocked (awaiting Phase 0.5) |
+| Phase 8: Composite Provider | 5-6 days | 🔒 Blocked (awaiting Phase 0.5) |
+| Phase 9: Observability | 4-5 days | 🔒 Blocked (awaiting Phase 0.5) |
+| Phase 10: Production Hardening | 3-4 days | 🔒 Blocked (awaiting Phase 0.5) |
+| **Total** | **47-64 days** | **16-19 days done, Phase 0.5 NEXT (5-7 days), then 26-38 days remaining** |
 
 ---
 
 ## Current Status Summary
 
 ### ✅ Completed (Phase 0-4)
-- ✅ Principles document (478 lines)
+- ✅ Principles document (550+ lines with Platform Development Rule)
 - ✅ Architecture document (2,600+ lines)
 - ✅ Core Platform implementation (~4,200 lines production code)
 - ✅ Comprehensive test suite (177 tests Phase 2, 110 tests Phase 3, 60+ tests Phase 4 = 347+ total, 100% passing)
@@ -558,18 +771,22 @@ Production-ready deployment and operational excellence.
   - ✅ 60+ comprehensive tests
   - ✅ Complete documentation guide
 
-### ⏳ Next Up (Phase 5)
-- 📅 AI/ML Provider implementation
-- 📅 Model versioning and registry
-- 📅 Feature engineering utilities
-- 📅 Prediction confidence scoring
-- 📅 Model explainability
-- 📅 AI integration tests
+### ⭐ MANDATORY NEXT (Phase 0.5)
+- 📅 **Production Integration & Architecture Validation** (5-7 days)
+  - Integrate Decision Engine into Bella Spa business flows
+  - Replace hard-coded decisions with Decision Engine
+  - Validate architecture with real scenarios
+  - Performance measurement & optimization
+  - Architecture validation report
+  - **ALL FUTURE PHASES BLOCKED** until Phase 0.5 complete
 
-### 📅 Future Phases (Phase 5-10)
-- Multi-provider ecosystem (AI, External, Manual, Composite)
-- Observability and monitoring
-- Production hardening and optimization
+### 🔒 Blocked Until Phase 0.5 Complete (Phase 5-10)
+- 🔒 AI/ML Provider (blocked - awaiting validation)
+- 🔒 External Provider (blocked - awaiting validation)
+- 🔒 Manual Provider (blocked - awaiting validation)
+- 🔒 Composite Provider (blocked - awaiting validation)
+- 🔒 Observability (blocked - awaiting validation)
+- 🔒 Production Hardening (blocked - awaiting validation)
 
 ---
 
@@ -608,4 +825,6 @@ Production-ready deployment and operational excellence.
 
 **Last Updated**: 2026-06-22  
 **Phase 4 Completed**: 2026-06-22  
-**Next Review**: Before starting Phase 5 (AI/ML Provider implementation)
+**Platform Development Rule Added**: 2026-06-22  
+**Next Phase**: Phase 0.5 - Production Integration & Architecture Validation (MANDATORY before any new capabilities)  
+**Status**: All future phases blocked until Phase 0.5 validation complete

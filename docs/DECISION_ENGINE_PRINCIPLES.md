@@ -398,6 +398,83 @@ interface DecisionAudit {
 
 ---
 
+---
+
+## 🌟 Platform Development Rule (Meta-Principle)
+
+**Principle**: Every new Platform Capability MUST be validated in production before the next capability begins.
+
+**Lifecycle**:
+```
+Architecture
+    ↓
+Implementation
+    ↓
+Production Integration
+    ↓
+Architecture Validation
+    ↓
+Performance Validation
+    ↓
+Stabilization
+    ↓
+Only then may the next Platform Capability begin
+```
+
+**Rules**:
+- ❌ KHÔNG được xây liên tục Engine này sang Engine khác
+- ❌ KHÔNG được ship Platform Capability chưa được kiểm chứng trong production
+- ✅ Mỗi Platform Capability phải integrate vào sản phẩm thực tế
+- ✅ Phải có real user feedback và production metrics
+- ✅ Phải ổn định hoàn toàn trước khi mở rộng
+- ✅ Architecture phải được validate với real business scenarios
+
+**Example - WRONG**:
+```
+❌ BAD: Build all engines continuously
+Decision Engine → Workflow Engine → Integration Engine → AI Engine
+(Không có engine nào được kiểm chứng trong production)
+```
+
+**Example - CORRECT**:
+```
+✅ GOOD: Validate each capability before next
+Decision Engine
+    ↓
+Production Integration (Bella Spa booking flow)
+    ↓
+Architecture Validation (metrics, performance, real feedback)
+    ↓
+Stabilization (bug fixes, optimizations)
+    ↓
+Only then → Workflow Engine
+```
+
+**Why This Matters**:
+
+1. **Avoid Over-Engineering**: Không build thừa features chưa cần dùng
+2. **Reduce Technical Debt**: Catch architectural issues sớm khi codebase còn nhỏ
+3. **Validate Architecture**: Real production data > theoretical design
+4. **Risk Management**: Với 1-person dev team, đây là cách quản lý rủi ro hiệu quả nhất
+5. **Immediate Value**: Mỗi Platform Capability đều proven và delivering value
+
+**Enterprise Examples**:
+- **AWS**: S3 → EC2 → RDS (each validated before next)
+- **Stripe**: Payments → Billing → Connect (each production-proven)
+- **Shopify**: Store → Checkout → Shipping (each stabilized before expansion)
+
+**Bella EIP Roadmap**:
+```
+Phase 0-4: Decision Engine ✅ Complete
+    ↓
+Phase 0.5: Production Integration & Architecture Validation ⭐ NEXT (MANDATORY)
+    ↓
+Only after validation complete →
+Phase 5+: Workflow Engine, AI/ML Provider, etc.
+```
+
+---
+
 ## Principles Summary Table
 
 | # | Principle | Impact | Enforcement |
@@ -412,6 +489,7 @@ interface DecisionAudit {
 | 8 | Engine never accesses DB directly | Separation of concerns | No DB imports |
 | 9 | Engine never calls business modules | One-way dependency | Import analysis |
 | 10 | All decisions are auditable | Compliance | Event emission |
+| **Meta** | **Platform Development Lifecycle** | **Validation-before-expansion** | **Mandatory Phase 0.5 before next capabilities** |
 
 ---
 
