@@ -30,6 +30,9 @@ export {
   createCacheStrategy,
 } from './ICacheStrategy';
 
+// Cache implementations
+export { InMemoryCache, createInMemoryCache } from './InMemoryCache';
+
 // Cache utilities
 export {
   generateDecisionCacheKey,
