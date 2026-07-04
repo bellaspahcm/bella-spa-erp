@@ -51,8 +51,65 @@ export {
 export { RuleProvider } from './providers';
 export type { IfThenRule } from './providers';
 
+// BI Provider (Phase 4)
+export {
+  BIProvider,
+  createBIProvider,
+  MockBIClient,
+  createMockBIClient,
+  PostgreSQLClient,
+  createPostgreSQLClient,
+  sql,
+  aggregation,
+  timeSeries,
+  threshold,
+  QueryBuilder,
+  SQLQueryBuilder,
+  AggregationQueryBuilder,
+  TimeSeriesQueryBuilder,
+  ThresholdBuilder,
+  BIClientError,
+  ConnectionError,
+  QueryError,
+  QueryTimeoutError,
+  TransactionError,
+  BaseBIClient,
+  createBIClient,
+  validateQueryParameters,
+  evaluateThreshold,
+  parseTimeRange,
+  buildWhereClause,
+} from './providers/bi';
+
+export type {
+  BIProviderConfig,
+  BIQueryType,
+  ComparisonOperator,
+  AggregationFunction,
+  TimeRange,
+  SQLQuery,
+  AggregationQuery,
+  TimeSeriesQuery,
+  MetricQuery,
+  BIQuery,
+  BIQueryResult,
+  Threshold,
+  BIQueryWithThreshold,
+  QueryParameterSchema,
+  QueryValidationResult,
+  BIQueryOptions,
+  DatabaseConfig,
+  ConnectionHealth,
+  QueryStats,
+  ITransaction,
+  IBIClient,
+  DatabaseSchema,
+  TableSchema,
+  ColumnSchema,
+  IndexSchema,
+} from './providers/bi';
+
 // Future providers (commented out for now)
-// export { BIProvider } from './providers';
 // export { AIProvider } from './providers';
 // export { ExternalProvider } from './providers';
 // export { ManualProvider } from './providers';
