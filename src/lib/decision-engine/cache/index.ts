@@ -33,6 +33,14 @@ export {
 // Cache implementations
 export { InMemoryCache, createInMemoryCache } from './InMemoryCache';
 
+export {
+  RedisCache,
+  createRedisCache,
+  createRedisCacheFromUrl,
+} from './RedisCache';
+
+export type { RedisCacheConfig } from './RedisCache';
+
 // Cache utilities
 export {
   generateDecisionCacheKey,
