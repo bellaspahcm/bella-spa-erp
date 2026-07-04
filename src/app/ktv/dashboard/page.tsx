@@ -365,8 +365,10 @@ export default function KTVDashboard() {
         return;
       }
       
+      // Set user and tenantModuleKey together to avoid double render
+      const moduleKey = getDefaultTenantModuleKey(tenant?.enabled_modules);
       setUser(u as KtvUser | null);
-      setTenantModuleKey(getDefaultTenantModuleKey(tenant?.enabled_modules));
+      setTenantModuleKey(moduleKey);
       
       // Try to load sessions from cache first
       const cacheCheckStart = performance.now();
@@ -657,7 +659,7 @@ export default function KTVDashboard() {
   };
 
 
-  if (isLoading) {
+  if (isLoading || !tenantModuleKey) {
     return (
       <div className="min-h-screen bg-[#F5F5F0] dark:bg-[#5D1C34] pb-20">
         {/* Skeleton Header */}
