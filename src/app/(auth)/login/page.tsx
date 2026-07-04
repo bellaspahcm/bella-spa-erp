@@ -10,30 +10,31 @@ import { Mail, Lock, Loader2, AlertTriangle, Shield, Smartphone } from 'lucide-r
  * Features:
  * - Email/Password authentication
  * - 2FA/MFA TOTP support
- * - High-tech glassmorphism design (dark, indigo/violet/cyan palette)
+ * - Light, clean design (rose/pink palette) - UNIFIED FOR ALL BUSINESSES
  * - No framer-motion (iOS Safari compatible)
  * - Vanilla JavaScript animations
  * - Progressive enhancement
+ * - Mobile zoom locked (viewport in layout)
  */
 
 type LoginStage = 'credentials' | 'mfa';
 
-// ── Design tokens ──────────────────────────────────────────────────────────────
-const ACCENT   = '#6366f1';       // indigo-500
-const ACCENT2  = '#8b5cf6';       // violet-500
-const CYAN     = '#06b6d4';       // cyan-500
-const FOCUS_RING = 'rgba(99,102,241,0.35)';
+// ── Design tokens (LIGHT THEME) ────────────────────────────────────────────────
+const ACCENT   = '#ec4899';       // pink-500
+const ACCENT2  = '#db2777';       // pink-600
+const ROSE     = '#f43f5e';       // rose-500
+const FOCUS_RING = 'rgba(236,72,153,0.25)';
 
 const glassCard: React.CSSProperties = {
-  background:   'rgba(255,255,255,0.04)',
+  background:   'rgba(255,255,255,0.85)',
   backdropFilter: 'blur(24px)',
   WebkitBackdropFilter: 'blur(24px)',
-  border: '1px solid rgba(255,255,255,0.09)',
+  border: '2px solid rgba(236,72,153,0.15)',
   borderRadius: '1.75rem',
   boxShadow:
-    '0 0 0 1px rgba(99,102,241,0.12), ' +
-    '0 32px 64px -12px rgba(0,0,0,0.7), ' +
-    'inset 0 1px 0 rgba(255,255,255,0.08)',
+    '0 0 0 1px rgba(236,72,153,0.08), ' +
+    '0 32px 64px -12px rgba(236,72,153,0.15), ' +
+    'inset 0 1px 0 rgba(255,255,255,0.6)',
 };
 
 const inputBase: React.CSSProperties = {
@@ -42,12 +43,12 @@ const inputBase: React.CSSProperties = {
   paddingRight: '1rem',
   paddingTop: '0.9rem',
   paddingBottom: '0.9rem',
-  background: 'rgba(255,255,255,0.06)',
-  border: '1px solid rgba(255,255,255,0.1)',
+  background: 'rgba(255,255,255,0.95)',
+  border: '2px solid rgba(236,72,153,0.15)',
   borderRadius: '0.875rem',
   fontSize: '1rem',
   fontWeight: '500',
-  color: '#f1f5f9',
+  color: '#1f2937',
   outline: 'none',
   transition: 'all 0.2s',
 };
@@ -55,7 +56,7 @@ const inputBase: React.CSSProperties = {
 const labelStyle: React.CSSProperties = {
   fontSize: '0.6875rem',
   fontWeight: '700',
-  color: '#64748b',
+  color: '#6b7280',
   textTransform: 'uppercase',
   letterSpacing: '0.08em',
 };
@@ -66,7 +67,7 @@ const iconWrap: React.CSSProperties = {
   top: '50%',
   transform: 'translateY(-50%)',
   pointerEvents: 'none',
-  color: '#475569',
+  color: '#9ca3af',
 };
 
 function GlowDot({ color, style }: { color: string; style: React.CSSProperties }) {
@@ -77,7 +78,7 @@ function GlowDot({ color, style }: { color: string; style: React.CSSProperties }
         position: 'absolute',
         borderRadius: '50%',
         filter: 'blur(60px)',
-        opacity: 0.35,
+        opacity: 0.15,
         background: color,
         ...style,
       }}
@@ -154,10 +155,10 @@ export default function LoginPage() {
       position: 'relative',
       minHeight: '100dvh',
     }}>
-      {/* Ambient glow blobs */}
-      <GlowDot color="#6366f1" style={{ width: 360, height: 360, top: '5%', left: '-8%' }} />
-      <GlowDot color="#8b5cf6" style={{ width: 280, height: 280, bottom: '8%', right: '-6%' }} />
-      <GlowDot color="#06b6d4" style={{ width: 200, height: 200, bottom: '20%', left: '15%', opacity: 0.2 }} />
+      {/* Ambient glow blobs - light theme */}
+      <GlowDot color="#ec4899" style={{ width: 360, height: 360, top: '5%', left: '-8%' }} />
+      <GlowDot color="#f43f5e" style={{ width: 280, height: 280, bottom: '8%', right: '-6%' }} />
+      <GlowDot color="#fb923c" style={{ width: 200, height: 200, bottom: '20%', left: '15%', opacity: 0.12 }} />
 
       {/* Glass card */}
       <div style={{ ...glassCard, width: '100%', maxWidth: '26rem', padding: '2.5rem', position: 'relative', zIndex: 10 }}>
@@ -180,8 +181,8 @@ export default function LoginPage() {
             display: 'inline-flex',
             alignItems: 'center',
             gap: '0.375rem',
-            background: 'rgba(99,102,241,0.12)',
-            border: '1px solid rgba(99,102,241,0.25)',
+            background: 'rgba(236,72,153,0.08)',
+            border: '1px solid rgba(236,72,153,0.2)',
             borderRadius: '999px',
             padding: '0.25rem 0.75rem',
             marginBottom: '0.25rem',
@@ -189,16 +190,16 @@ export default function LoginPage() {
             <span style={{
               width: 6, height: 6,
               borderRadius: '50%',
-              background: CYAN,
+              background: ROSE,
               display: 'inline-block',
-              boxShadow: `0 0 6px ${CYAN}`,
+              boxShadow: `0 0 6px ${ROSE}`,
             }} />
             <span style={{
               fontSize: '0.625rem',
               fontWeight: '700',
               letterSpacing: '0.2em',
               textTransform: 'uppercase',
-              color: CYAN,
+              color: ACCENT,
             }}>MULTI-SERVICE ERP</span>
           </div>
 
@@ -206,7 +207,7 @@ export default function LoginPage() {
           <p style={{
             fontSize: '0.8125rem',
             fontWeight: '500',
-            color: '#64748b',
+            color: '#6b7280',
             marginTop: '0.375rem',
           }}>
             {stage === 'mfa'
@@ -219,15 +220,15 @@ export default function LoginPage() {
             marginTop: '1.25rem',
             width: '100%',
             height: '1px',
-            background: 'linear-gradient(90deg, transparent, rgba(99,102,241,0.4), transparent)',
+            background: 'linear-gradient(90deg, transparent, rgba(236,72,153,0.3), transparent)',
           }} />
         </div>
 
         {/* Error */}
         {error && (
           <div style={{
-            background: 'rgba(239,68,68,0.1)',
-            border: '1px solid rgba(239,68,68,0.3)',
+            background: 'rgba(239,68,68,0.08)',
+            border: '2px solid rgba(239,68,68,0.25)',
             borderRadius: '0.875rem',
             padding: '0.875rem 1rem',
             marginBottom: '1.25rem',
@@ -235,8 +236,8 @@ export default function LoginPage() {
             alignItems: 'center',
             gap: '0.75rem',
           }}>
-            <AlertTriangle size={18} style={{ color: '#f87171', flexShrink: 0 }} />
-            <span style={{ color: '#fca5a5', fontSize: '0.875rem', fontWeight: '600' }}>
+            <AlertTriangle size={18} style={{ color: '#dc2626', flexShrink: 0 }} />
+            <span style={{ color: '#dc2626', fontSize: '0.875rem', fontWeight: '600' }}>
               {error}
             </span>
           </div>
@@ -359,20 +360,20 @@ export default function LoginPage() {
 
             {/* Info card */}
             <div style={{
-              background: 'rgba(6,182,212,0.08)',
-              border: '1px solid rgba(6,182,212,0.25)',
+              background: 'rgba(236,72,153,0.06)',
+              border: '2px solid rgba(236,72,153,0.2)',
               borderRadius: '0.875rem',
               padding: '1rem',
               display: 'flex',
               alignItems: 'flex-start',
               gap: '0.75rem',
             }}>
-              <Smartphone size={22} style={{ color: CYAN, flexShrink: 0, marginTop: 2 }} />
+              <Smartphone size={22} style={{ color: ACCENT, flexShrink: 0, marginTop: 2 }} />
               <div>
-                <p style={{ fontSize: '0.875rem', fontWeight: '700', color: '#67e8f9', marginBottom: '0.25rem' }}>
+                <p style={{ fontSize: '0.875rem', fontWeight: '700', color: '#db2777', marginBottom: '0.25rem' }}>
                   Xác minh 2 lớp bảo mật
                 </p>
-                <p style={{ fontSize: '0.8125rem', color: '#94a3b8', lineHeight: 1.5 }}>
+                <p style={{ fontSize: '0.8125rem', color: '#6b7280', lineHeight: 1.5 }}>
                   Mở ứng dụng Authenticator trên điện thoại và nhập mã 6 số đang hiển thị.
                 </p>
               </div>
@@ -462,15 +463,15 @@ export default function LoginPage() {
                 width: '100%',
                 padding: '0.625rem',
                 background: 'transparent',
-                color: '#475569',
+                color: '#6b7280',
                 fontWeight: '600',
                 fontSize: '0.875rem',
                 border: 'none',
                 cursor: loading ? 'not-allowed' : 'pointer',
                 transition: 'color 0.2s',
               }}
-              onMouseEnter={(e) => { if (!loading) e.currentTarget.style.color = '#94a3b8'; }}
-              onMouseLeave={(e) => { if (!loading) e.currentTarget.style.color = '#475569'; }}
+              onMouseEnter={(e) => { if (!loading) e.currentTarget.style.color = '#4b5563'; }}
+              onMouseLeave={(e) => { if (!loading) e.currentTarget.style.color = '#6b7280'; }}
             >
               ← Huỷ &amp; đăng nhập lại
             </button>
@@ -481,10 +482,10 @@ export default function LoginPage() {
         <div style={{
           marginTop: '2rem',
           paddingTop: '1.25rem',
-          borderTop: '1px solid rgba(255,255,255,0.06)',
+          borderTop: '1px solid rgba(236,72,153,0.1)',
           textAlign: 'center',
         }}>
-          <p style={{ fontSize: '0.8125rem', color: '#475569', fontWeight: '500' }}>
+          <p style={{ fontSize: '0.8125rem', color: '#6b7280', fontWeight: '500' }}>
             Gặp sự cố?{' '}
             <span style={{ color: ACCENT, fontWeight: '700', cursor: 'pointer' }}>
               Liên hệ kỹ thuật
@@ -497,7 +498,7 @@ export default function LoginPage() {
       <p style={{
         marginTop: '2rem',
         textAlign: 'center',
-        color: '#1e293b',
+        color: '#9ca3af',
         fontSize: '0.6875rem',
         fontWeight: '700',
         textTransform: 'uppercase',
