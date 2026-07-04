@@ -283,12 +283,62 @@ export async function buildBookingPayload(params: {
     }
   }
   
+  // Phase 0.5: Use Decision Engine for booking approval logic
+  let bookingStatus: string;
+  let requiredDepositAmount = 0;
+  
+  try {
+    const { evaluateBookingApproval, getSuggestedBookingStatus } = await import('@/services/booking-decision-service');
+    const { createClient } = await import('@/lib/supabase-server');
+    const supabase = await createClient();
+    
+    // Fetch customer info for decision context
+    const { data: customerData } = await supabase
+      .from('customers')
+      .select('status, id')
+      .eq('id', customerId)
+      .single();
+    
+    // Count completed bookings for customer tier
+    const { count: completedCount } = await supabase
+      .from('bookings')
+      .select('*', { count: 'exact', head: true })
+      .eq('customer_id', customerId)
+      .eq('status', 'completed');
+    
+    // Evaluate booking approval using Decision Engine
+    const decision = await evaluateBookingApproval({
+      totalAmount: finalPrice,
+      customer: {
+        id: customerId,
+        status: customerData?.status || 'new',
+        completedBookingsCount: completedCount || 0,
+      },
+      tenantId,
+      metadata: {
+        packageId: validatedData.package_id,
+        discountPercent: normalizeDiscountPercent(validatedData.discount_percent),
+      },
+    });
+    
+    // Get suggested status from decision
+    bookingStatus = getSuggestedBookingStatus(decision);
+    requiredDepositAmount = decision.depositAmount;
+    
+    console.log(`[buildBookingPayload] Decision Engine: approved=${decision.approved}, requiresDeposit=${decision.requiresDeposit}, depositAmount=${decision.depositAmount}, status=${bookingStatus}`);
+    
+  } catch (error) {
+    console.error('[buildBookingPayload] Decision Engine failed, falling back to legacy logic:', error);
+    // Fallback to legacy logic if Decision Engine fails
+    bookingStatus = hasConfirmedDeposit ? 'booked' : 'deposit_pending';
+  }
+  
   const payload: BookingInsert = {
     customer_id: customerId,
     booking_number: existingBooking?.booking_number || `BK-${new Date().getTime()}`,
     package_id: validatedData.package_id || null,
     package_name: validatedData.package_name || null,
-    status: hasConfirmedDeposit ? 'booked' : 'deposit_pending',
+    status: bookingStatus, // Phase 0.5: Decision Engine determines status
     full_price: finalPrice,
     deposit_amount: confirmedDepositAmount,
     total_sessions: validatedData.total_sessions,
