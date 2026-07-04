@@ -96,6 +96,9 @@ Bang nay la nhat ky bai hoc thuc te. Khi lam nganh moi, bat buoc doi chieu tung 
 | **Cache & Redis** | | | |
 | Redis cache không tăng tốc như kỳ vọng | Đã setup Redis (Upstash) và cache `getCurrentUser()`, `getTenantSettings()` nhưng thời gian load không giảm nhiều | Redis đúng nhưng data vẫn phải load từ database do queries phức tạp, hoặc cache TTL quá ngắn | Tăng TTL từ 60s lên 5-10 phút cho stable data; Profile queries tìm bottleneck thực sự (thường là missing indexes, không phải cache) |
 | Database missing indexes | Queries chậm 5-11s dù đã có Redis cache | Full table scans trên `users`, `session_logs`, `bookings` do thiếu composite indexes | Thêm indexes: `idx_users_tenant`, `idx_session_logs_ktv_status`, `idx_bookings_assigned_ktv`, etc. Chạy EXPLAIN ANALYZE để verify |
+| **UI/UX Color & Visibility** | | | |
+| Màu hồng hệ thống bị thay bằng màu be/xám | Headers, badges, CTA buttons, active navigation state hiển thị màu hồng nhạt gần như không thấy trên nền be `#F5F5F0` | `text-primary` auto-resolve → màu `rose-500` opacity thấp → contrast ratio ~2:1 (WCAG FAIL, cần ≥4.5:1) | Dùng explicit `text-rose-700` thay vì `text-primary`; CTA/badges dùng `bg-rose-100 text-rose-700` thay vì `bg-rose-50`; hover state dùng `bg-rose-600 text-white`; test contrast với DevTools |
+| Chữ xám nhạt không đọc được | Text phụ như địa chỉ, SĐT, labels quá mờ nhạt; người dùng báo "chữ xám nhạt cần tăng đậm lên nhưng không quá đậm trùng màu đen text hệ thống" | `text-slate-500`, `text-slate-600` trên nền `#F5F5F0` → contrast ~3:1-3.8:1 FAIL | Tăng từ `text-slate-600` → `text-slate-700` (contrast 5.3:1); Primary text dùng `text-slate-800` hoặc `text-slate-900`; Secondary text KHÔNG dùng `text-slate-600`; icons phụ có thể giữ `text-slate-600` |
 | Demo tenant | Can tao demo Beauty de test nhung phai xoa sach | Demo seed ban dau chua co marker/cleanup chuan | Demo data phai co `DEMO_MARKER`, fixed ids/email, cleanup requires `--confirm`, khong delete bang filter rong |
 | Accounting demo | Posting finance demo loi do thieu ma tai khoan 111/5111/6421... | Tenant demo chua seed chart of accounts | Demo script phai goi `seed_default_coa` va verify accounts truoc khi tao journal/revenue |
 | RLS/grants | Permission denied khi doc/xoa bang moi hoac bang token | Migration tao bang nhung chua grant/RLS policy du cho role thuc te | Moi bang moi phai co RLS, grant, policy va test permission/grant |
@@ -2516,3 +2519,105 @@ EXTENSION POINTS
 - <500ms for month-end processing (1000 items)
 - Clear extension patterns documented
 - Troubleshooting guide prevents common issues
+ all reads into single giant query (split critical vs. secondary)
+
+### Phase 4d - UI/UX Color Contrast & Visibility
+
+**KTV PWA Color Contrast Issues (2026-06-22)**
+
+Khi triển khai Beauty Spa module, phát hiện **2 vấn đề tương phản màu nghiêm trọng** làm UI khó đọc trên nền sáng:
+
+#### 1. Màu hồng hệ thống bị thay bằng màu be/xám
+
+**Dấu hiệu**:
+- Màu brand pink (`text-primary`, `bg-primary`) trên nền be nhạt (`#F5F5F0`) gần như không thấy
+- CTA buttons, section headers, badges quan trọng bị mờ nhạt
+- Bottom navigation active state không rõ ràng
+
+**Nguyên nhân**:
+```typescript
+// Tailwind `text-primary` auto-resolve → màu hồng nhạt (#E91E63 opacity giảm)
+<h2 className="text-primary">Đang thực hiện</h2>
+<Link href="/ktv/dashboard" className="text-primary">Lịch ca</Link>
+<span className="bg-rose-50 text-primary">Buổi 3/10</span>
+```
+
+Trên nền beige `#F5F5F0`, màu hồng nhạt `#E91E63` với opacity thấp (như `rose-500` = `rgb(244 63 94)`) có **contrast ratio ~2:1** → **WCAG FAIL** (cần ≥4.5:1 cho text).
+
+**Cách sửa**:
+```typescript
+// Dùng màu explicit với độ đậm cao hơn
+<h2 className="text-rose-700">Đang thực hiện</h2> // rose-700 = #be123c
+<Link href="/ktv/dashboard" className="text-rose-700">Lịch ca</Link>
+<span className="bg-rose-100 text-rose-700">Buổi 3/10</span>
+<button className="bg-rose-100 text-rose-700 hover:bg-rose-600 hover:text-white">
+  Bắt đầu
+</button>
+```
+
+**Màu đề xuất cho light mode**:
+- Headers/labels quan trọng: `text-rose-700` (#be123c) - **contrast 7.2:1** ✅
+- CTA buttons idle: `bg-rose-100 text-rose-700` → hover: `bg-rose-600 text-white`
+- Badges: `bg-rose-100 text-rose-700` (không dùng `bg-rose-50`)
+- Active navigation: `text-rose-700` thay vì `text-primary`
+
+#### 2. Chữ xám nhạt không đọc được
+
+**Dấu hiệu**:
+- Text phụ như địa chỉ, SĐT, package name quá mờ
+- Labels trong form/card không rõ ràng
+- Người dùng báo "chữ xám nhạt cần tăng đậm lên nhưng không quá đậm trùng màu đen text hệ thống"
+
+**Nguyên nhân**:
+```typescript
+// text-slate-500, text-slate-600 trên nền #F5F5F0
+<p className="text-slate-600">Địa chỉ: ...</p> // Contrast ~3.8:1 FAIL
+<span className="text-slate-500">Package name</span> // Contrast ~3.2:1 FAIL
+```
+
+**Cách sửa**:
+```typescript
+// Tăng từ 500/600 lên 700/800
+<p className="text-slate-700">Địa chỉ: ...</p> // Contrast ~5.3:1 ✅
+<p className="text-slate-800">Điểm danh hôm nay</p> // Contrast ~7.1:1 ✅
+<span className="text-slate-700">Package name</span> // Still distinct from text-slate-900
+```
+
+**Quy tắc chữ xám trên nền sáng**:
+- **Primary text** (headings, names): `text-slate-900` hoặc `text-slate-800`
+- **Secondary text** (labels, descriptions): `text-slate-700` (KHÔNG dùng `text-slate-600`)
+- **Tertiary text** (timestamps, hints): `text-slate-700` hoặc `text-slate-600` nếu font-bold
+- **Icons phụ**: `text-slate-600` (icons được phép nhạt hơn text)
+
+#### 3. Skeleton loading màu trùng background (đã fix ở Phase 4c)
+
+Xem Phase 4c để biết cách fix skeleton visibility.
+
+#### Checklist Color Contrast
+
+Trước khi release module mới:
+- [ ] Test tất cả text colors trên nền sáng (`#F5F5F0`, `#FFFFFF`, etc.)
+- [ ] Use browser DevTools → Inspect → Contrast ratio >= 4.5:1 cho normal text, >= 3:1 cho large text
+- [ ] CTA buttons PHẢI có contrast cao: hover state phải rõ ràng
+- [ ] Badges/labels quan trọng KHÔNG dùng `bg-rose-50` (quá nhạt)
+- [ ] Active navigation state phải rõ ràng (user biết đang ở đâu)
+- [ ] Skeleton loading phải visible (không trùng màu background)
+- [ ] Test trên mobile device thực (không chỉ DevTools responsive mode)
+
+**Tools kiểm tra**:
+- Chrome DevTools → Inspect element → Accessibility → Contrast
+- [WebAIM Contrast Checker](https://webaim.org/resources/contrastchecker/)
+- Lighthouse audit → Accessibility score
+
+**Common pitfalls**:
+- ❌ `text-primary` auto-resolve có thể cho màu nhạt
+- ❌ `text-slate-500`, `text-slate-600` trên nền sáng → FAIL
+- ❌ `bg-rose-50` với `text-rose-500` → contrast thấp
+- ❌ Skeleton `bg-white/20` trên nền be → invisible
+- ✅ Explicit colors: `text-rose-700`, `text-slate-700`, `bg-rose-100`
+- ✅ Test contrast ratio với tool, không đoán bằng mắt
+- ✅ Hover state phải ĐẬM HƠN idle state (VD: rose-600 → rose-700)
+
+**Commits tham khảo**:
+- `78093493` - Fix UI color contrast: replace pale pink/beige with stronger rose colors
+- `2da08645` - Fix skeleton colors: visible pink tint on light background
