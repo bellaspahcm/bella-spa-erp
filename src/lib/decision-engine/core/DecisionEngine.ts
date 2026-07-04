@@ -241,7 +241,11 @@ export class DecisionEngine {
       // 7. Return result
       return enrichedResult;
     } catch (error) {
-      // Catastrophic error (shouldn't happen if provider implements error handling)
+      // Catastrophic error - handle based on fallback strategy
+      if (this.fallbackStrategy === 'RETHROW') {
+        throw error;
+      }
+
       return this.handleCatastrophicError(
         context,
         error as Error,
@@ -394,6 +398,9 @@ export class DecisionEngine {
       return;
     }
 
+    // Sanitize context data before publishing
+    const sanitizedContext = sanitizeDecisionContext(context);
+
     // Publish asynchronously (don't await)
     const event: DecisionEvaluatedEvent = {
       id: `decision-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -406,9 +413,9 @@ export class DecisionEngine {
         decisionType: context.decisionType,
         correlationId: context.correlationId || '',
 
-        // Input
+        // Input (sanitized)
         ruleType: context.ruleType,
-        inputData: context.data,
+        inputData: sanitizedContext.data || {},
 
         // Output
         approved: result.approved,
@@ -456,6 +463,9 @@ export class DecisionEngine {
       ? 'Decision evaluated (fallback)'
       : 'Decision evaluated';
 
+    // Sanitize context data before logging
+    const sanitizedContext = sanitizeDecisionContext(context);
+
     this.logger[logLevel](message, {
       // Identification
       correlationId: context.correlationId,
@@ -465,6 +475,7 @@ export class DecisionEngine {
 
       // Input (sanitized)
       ruleType: context.ruleType,
+      data: sanitizedContext.data,
 
       // Output
       approved: result.approved,

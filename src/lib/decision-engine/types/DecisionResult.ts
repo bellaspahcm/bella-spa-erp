@@ -260,6 +260,7 @@ export function createFallbackResult(
     approved: false, // Safe default: reject when uncertain
     confidence: 0.0,
     reason: `Decision evaluation failed: ${error.message}. Safe default applied (reject).`,
+    recommendations: ['Manual review required due to system error'],
     error: {
       message: error.message,
       code: error.name || 'UNKNOWN_ERROR',
@@ -395,6 +396,8 @@ export function validateDecisionResult(result: DecisionResult): void {
 export function sanitizeDecisionResult(
   result: DecisionResult
 ): Partial<DecisionResult> {
+  const sensitiveFields = ['credentials', 'token', 'apikey'];
+  
   return {
     ...result,
     metadata: result.metadata
@@ -403,7 +406,7 @@ export function sanitizeDecisionResult(
           ...Object.fromEntries(
             Object.entries(result.metadata).filter(
               ([key]) =>
-                !['credentials', 'token', 'apiKey'].some((s) =>
+                !sensitiveFields.some((s) =>
                   key.toLowerCase().includes(s)
                 )
             )

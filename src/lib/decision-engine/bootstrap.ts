@@ -178,12 +178,31 @@ function createDefaultLogger(debug?: boolean): ILogger {
 export function bootstrapForTesting(
   providers?: IDecisionProvider[]
 ): DecisionEngineInstance {
-  return bootstrapDecisionEngine({
-    eventPublisher: new InMemoryEventPublisher(),
-    logger: new NoOpLogger(),
-    providers: providers || [new RuleProvider()],
-    debug: false,
+  const registry = createProviderRegistry();
+
+  // Register providers
+  const testProviders = providers || [new RuleProvider()];
+  for (const provider of testProviders) {
+    registry.register(provider);
+  }
+
+  const eventPublisher = new InMemoryEventPublisher();
+  const logger = new NoOpLogger();
+
+  // Create engine with SAFE_DEFAULT fallback for testing
+  const engine = createDecisionEngine({
+    registry,
+    eventPublisher,
+    logger,
+    fallbackStrategy: 'SAFE_DEFAULT', // Return fallback results instead of throwing
   });
+
+  return {
+    engine,
+    registry,
+    eventPublisher,
+    logger,
+  };
 }
 
 /**
