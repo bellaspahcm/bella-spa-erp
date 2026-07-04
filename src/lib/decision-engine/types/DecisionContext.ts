@@ -284,7 +284,7 @@ export function validateDecisionContext(context: DecisionContext): void {
 export function sanitizeDecisionContext(
   context: DecisionContext
 ): Partial<DecisionContext> {
-  const sensitiveFields = ['password', 'token', 'apiKey', 'ssn', 'creditCard'];
+  const sensitiveFields = ['password', 'token', 'apikey', 'ssn', 'creditcard'];
 
   return {
     ...context,
