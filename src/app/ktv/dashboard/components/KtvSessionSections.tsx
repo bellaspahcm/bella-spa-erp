@@ -75,7 +75,7 @@ export function KtvSessionSections({
     <div className="px-6 mt-8 space-y-8">
       <section>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xs font-black text-primary dark:text-[#A67D44] uppercase tracking-widest">Đang thực hiện</h2>
+          <h2 className="text-xs font-black text-rose-700 dark:text-[#A67D44] uppercase tracking-widest">Đang thực hiện</h2>
           <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
         </div>
 
@@ -151,7 +151,7 @@ export function KtvSessionSections({
       </section>
 
       <section>
-        <h2 className="text-xs font-black text-primary dark:text-[#A67D44] uppercase tracking-widest mb-4">Lịch hôm nay</h2>
+        <h2 className="text-xs font-black text-rose-700 dark:text-[#A67D44] uppercase tracking-widest mb-4">Lịch hôm nay</h2>
 
         {upcomingSessions.length === 0 ? (
           <div className="bg-white dark:bg-[#1C1B19] p-8 rounded-[32px] border border-rose-100 dark:border-[#5D1C34] text-center">
@@ -173,7 +173,7 @@ export function KtvSessionSections({
                       </div>
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-1.5 mb-1">
-                          <span className="bg-rose-50 dark:bg-[#5D1C34]/30 text-primary dark:text-[#A67D44] px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider">
+                          <span className="bg-rose-100 dark:bg-[#5D1C34]/30 text-rose-700 dark:text-[#A67D44] px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider">
                             Buổi {session.session_number}/{session.bookings?.total_sessions || '--'}
                           </span>
                           {session.is_reassigned && (
@@ -182,14 +182,14 @@ export function KtvSessionSections({
                             </span>
                           )}
                         </div>
-                        <p className="text-xs font-bold text-slate-600 dark:text-[#D4C5B6] truncate">{session.bookings?.package_name}</p>
+                        <p className="text-xs font-bold text-slate-700 dark:text-[#D4C5B6] truncate">{session.bookings?.package_name}</p>
                       </div>
                     </div>
 
                     <button
                       onClick={() => onOpenCheckin(session)}
                       disabled={isActionLoading !== null}
-                      className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center hover:bg-primary hover:text-white transition-all active:scale-95 disabled:opacity-50 shrink-0"
+                      className="w-12 h-12 bg-rose-100 text-rose-700 rounded-2xl flex items-center justify-center hover:bg-rose-600 hover:text-white transition-all active:scale-95 disabled:opacity-50 shrink-0"
                     >
                       <Play className="w-5 h-5 fill-current" />
                     </button>
@@ -208,22 +208,22 @@ export function KtvSessionSections({
                     <div>
                       <h4 className="text-base font-black text-slate-800 dark:text-[#EFE9E1]">{customer?.name_mother}</h4>
                       {customer?.name_baby && (
-                        <p className="text-[11px] text-rose-500 dark:text-[#A67D44] font-bold mt-0.5 flex items-center gap-1">
+                        <p className="text-[11px] text-rose-600 dark:text-[#A67D44] font-bold mt-0.5 flex items-center gap-1">
                           <SecondaryIcon className="w-3.5 h-3.5 shrink-0" />
                           <span>{customerLabels.secondaryPrefix}: {customer.name_baby}</span>
                         </p>
                       )}
                     </div>
 
-                    <div className="space-y-1.5 text-xs text-slate-600 dark:text-[#D4C5B6]">
+                    <div className="space-y-1.5 text-xs text-slate-700 dark:text-[#D4C5B6]">
                       <div className="flex items-start gap-2">
-                        <MapPin className="w-4 h-4 text-slate-500 dark:text-[#D4C5B6] shrink-0 mt-0.5" />
+                        <MapPin className="w-4 h-4 text-slate-600 dark:text-[#D4C5B6] shrink-0 mt-0.5" />
                         <span className="leading-relaxed font-medium">{getSessionAddress(session)}</span>
                       </div>
                       {customer?.phone && !isHotline && (
                         <div className="flex items-center gap-2">
-                          <Phone className="w-4 h-4 text-slate-500 dark:text-[#D4C5B6] shrink-0" />
-                          <a href={`tel:${customer.phone}`} className="hover:text-primary dark:hover:text-[#A67D44] font-bold transition-colors">
+                          <Phone className="w-4 h-4 text-slate-600 dark:text-[#D4C5B6] shrink-0" />
+                          <a href={`tel:${customer.phone}`} className="hover:text-rose-700 dark:hover:text-[#A67D44] font-bold transition-colors">
                             {customer.phone}
                           </a>
                         </div>

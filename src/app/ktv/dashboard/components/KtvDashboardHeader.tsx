@@ -224,8 +224,8 @@ export function KtvDashboardHeader({
                                       {meta.badgeLabel}
                                     </span>
                                   </div>
-                                  <p className="text-[10px] text-slate-700 leading-normal line-clamp-2">{notification.message || ''}</p>
-                                  <span className="text-[8px] text-slate-600 mt-1 block">
+                                  <p className="text-[10px] text-slate-800 leading-normal line-clamp-2">{notification.message || ''}</p>
+                                  <span className="text-[8px] text-slate-700 mt-1 block">
                                     {createdAt
                                       ? `${createdAt.toLocaleDateString('vi-VN')} ${createdAt.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`
                                       : 'Chưa có thời gian'}
@@ -266,7 +266,7 @@ export function KtvDashboardHeader({
       </div>
 
       <div className="mb-6">
-        <p className="text-slate-600 text-[10px] font-black uppercase tracking-widest mb-0.5">{vocab.worker.singular}</p>
+        <p className="text-slate-700 text-[10px] font-black uppercase tracking-widest mb-0.5">{vocab.worker.singular}</p>
         <h1 className="text-2xl font-black text-slate-900">{user?.full_name || vocab.worker.singular}</h1>
       </div>
 
