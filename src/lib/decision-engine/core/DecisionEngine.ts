@@ -24,6 +24,7 @@ import { ProviderNotFoundError } from './DecisionProviderRegistry';
  * Decision evaluation event
  */
 interface DecisionEvaluatedEvent {
+  id: string;
   type: 'decision.evaluated';
   timestamp: Date;
   data: {
@@ -67,6 +68,24 @@ export class TimeoutError extends Error {
 }
 
 /**
+ * Configuration for DecisionEngine
+ */
+export interface DecisionEngineConfig {
+  /** Provider registry (required) */
+  registry: DecisionProviderRegistry;
+  /** Event publisher (optional) */
+  eventPublisher?: {
+    publish(event: DecisionEvaluatedEvent): Promise<void>;
+  };
+  /** Logger (optional) */
+  logger?: ILogger;
+  /** Default timeout in ms (optional, default: 5000) */
+  timeoutMs?: number;
+  /** Fallback strategy on error (optional, default: RETHROW) */
+  fallbackStrategy?: 'SAFE_DEFAULT' | 'MANUAL_REVIEW' | 'RETHROW';
+}
+
+/**
  * DecisionEngine - Stateless orchestrator
  * 
  * Core responsibilities:
@@ -86,7 +105,11 @@ export class TimeoutError extends Error {
  * 
  * @example Basic Usage
  * ```typescript
- * const engine = new DecisionEngine(registry, eventPublisher, logger);
+ * const engine = new DecisionEngine({
+ *   registry,
+ *   eventPublisher,
+ *   logger
+ * });
  * 
  * const context: DecisionContext = {
  *   tenantId: 'bella-spa-vn',
@@ -123,18 +146,26 @@ export class TimeoutError extends Error {
  * ```
  */
 export class DecisionEngine {
+  private readonly registry: DecisionProviderRegistry;
+  private readonly eventPublisher?: {
+    publish(event: DecisionEvaluatedEvent): Promise<void>;
+  };
+  private readonly logger?: ILogger;
+  private readonly defaultTimeoutMs: number;
+  private readonly fallbackStrategy: 'SAFE_DEFAULT' | 'MANUAL_REVIEW' | 'RETHROW';
+
   /**
    * Create DecisionEngine instance
    * 
-   * @param registry - Provider registry (for provider selection)
-   * @param eventPublisher - Event publisher (for decision events)
-   * @param logger - Logger (for observability)
+   * @param config - Configuration object
    */
-  constructor(
-    private readonly registry: DecisionProviderRegistry,
-    private readonly eventPublisher: IEventPublisher,
-    private readonly logger: ILogger
-  ) {}
+  constructor(config: DecisionEngineConfig) {
+    this.registry = config.registry;
+    this.eventPublisher = config.eventPublisher;
+    this.logger = config.logger;
+    this.defaultTimeoutMs = config.timeoutMs || 5000;
+    this.fallbackStrategy = config.fallbackStrategy || 'RETHROW';
+  }
 
   /**
    * Evaluate decision based on context
@@ -190,7 +221,7 @@ export class DecisionEngine {
       const provider = this.selectProvider(context);
 
       // 3. Delegate to provider (with timeout)
-      const timeout = context.options?.timeout || 5000;
+      const timeout = context.options?.timeout || this.defaultTimeoutMs;
       const result = await this.evaluateWithTimeout(
         provider,
         context,
@@ -199,7 +230,7 @@ export class DecisionEngine {
       );
 
       // 4. Enrich result with execution metadata
-      const enrichedResult = this.enrichResult(result, startTime);
+      const enrichedResult = this.enrichResult(result, startTime, context);
 
       // 5. Publish event (fire-and-forget, non-blocking)
       this.publishEvent(context, enrichedResult);
@@ -273,31 +304,44 @@ export class DecisionEngine {
     } catch (error) {
       if (error instanceof TimeoutError) {
         // Provider timeout - return fallback
-        this.logger.warn('Provider evaluation timeout', {
+        this.logger?.warn('Provider evaluation timeout', {
           provider: provider.name,
           timeout: timeoutMs,
           context: sanitizeDecisionContext(context),
         });
 
-        return createFallbackResult(
+        const fallbackResult = createFallbackResult(
           error,
           provider.name,
           Date.now() - startTime
         );
+        fallbackResult.error = { code: 'EVALUATION_TIMEOUT', message: error.message };
+        
+        return fallbackResult;
       }
 
-      // Provider evaluation error - return fallback
-      this.logger.error('Provider evaluation failed', {
+      // Provider evaluation error - return fallback if strategy allows
+      if (this.fallbackStrategy === 'RETHROW') {
+        throw error;
+      }
+
+      this.logger?.error('Provider evaluation failed', {
         provider: provider.name,
         error: (error as Error).message,
         context: sanitizeDecisionContext(context),
       });
 
-      return createFallbackResult(
+      const fallbackResult = createFallbackResult(
         error as Error,
         provider.name,
         Date.now() - startTime
       );
+
+      if (this.fallbackStrategy === 'MANUAL_REVIEW') {
+        fallbackResult.action = 'MANUAL_REVIEW';
+      }
+
+      return fallbackResult;
     }
   }
 
@@ -320,12 +364,14 @@ export class DecisionEngine {
    */
   private enrichResult(
     result: DecisionResult,
-    startTime: number
+    startTime: number,
+    context: DecisionContext
   ): DecisionResult {
     return {
       ...result,
       executionTime: Date.now() - startTime,
       timestamp: new Date(),
+      correlationId: context.correlationId,
     };
   }
 
@@ -344,8 +390,13 @@ export class DecisionEngine {
     context: DecisionContext,
     result: DecisionResult
   ): void {
+    if (!this.eventPublisher) {
+      return;
+    }
+
     // Publish asynchronously (don't await)
     const event: DecisionEvaluatedEvent = {
+      id: `decision-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       type: 'decision.evaluated',
       timestamp: new Date(),
       data: {
@@ -381,7 +432,7 @@ export class DecisionEngine {
     // Fire-and-forget
     this.eventPublisher.publish(event).catch((error) => {
       // Log event publishing failure (shouldn't block decision)
-      this.logger.error('Failed to publish decision event', {
+      this.logger?.error('Failed to publish decision event', {
         error: error.message,
         event: event,
       });
@@ -396,6 +447,10 @@ export class DecisionEngine {
     context: DecisionContext,
     result: DecisionResult
   ): void {
+    if (!this.logger) {
+      return;
+    }
+
     const logLevel = result.isFallback ? 'warn' : 'info';
     const message = result.isFallback
       ? 'Decision evaluated (fallback)'
@@ -440,7 +495,7 @@ export class DecisionEngine {
     startTime: number
   ): DecisionResult {
     // Log catastrophic error
-    this.logger.error('Catastrophic decision engine error', {
+    this.logger?.error('Catastrophic decision engine error', {
       error: error.message,
       stack: error.stack,
       context: sanitizeDecisionContext(context),
@@ -464,9 +519,7 @@ export class DecisionEngine {
  * 
  * Factory function for convenience.
  * 
- * @param registry - Provider registry
- * @param eventPublisher - Event publisher
- * @param logger - Logger
+ * @param config - Configuration object
  * @returns DecisionEngine instance
  * 
  * @example
@@ -478,17 +531,15 @@ export class DecisionEngine {
  * const registry = createProviderRegistry();
  * registry.register(new RuleProvider());
  * 
- * const engine = createDecisionEngine(
+ * const engine = createDecisionEngine({
  *   registry,
- *   new InMemoryEventPublisher(),
- *   new ConsoleLogger()
- * );
+ *   eventPublisher: new InMemoryEventPublisher(),
+ *   logger: new ConsoleLogger()
+ * });
  * ```
  */
 export function createDecisionEngine(
-  registry: DecisionProviderRegistry,
-  eventPublisher: IEventPublisher,
-  logger: ILogger
+  config: DecisionEngineConfig
 ): DecisionEngine {
-  return new DecisionEngine(registry, eventPublisher, logger);
+  return new DecisionEngine(config);
 }
