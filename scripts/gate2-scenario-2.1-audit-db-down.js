@@ -67,7 +67,7 @@ async function makeLeaveDecision(requestId, injectAuditFailure = false) {
     method: 'POST',
     headers,
     body: JSON.stringify({
-      approverId: 'admin-gate2-test',
+      approverId: 'a0000003-0000-0000-0000-000000000003', // Gate2 Test Admin
       approverRole: 'admin',
       tenantId: '11111111-1111-1111-1111-111111111111', // Test Beauty Spa
     }),
@@ -218,47 +218,4 @@ async function runScenario() {
 }
 
 // Run scenario
-runScenario();
-      const requestId = requests[i % requests.length].id;
-      const result = await makeLeaveDecision(requestId, false); // DB working
-      console.log(`  Decision ${i + 1}: ${result.approved ? 'APPROVED' : 'REJECTED'} (${result.success ? 'SUCCESS' : 'FAILED'})`);
-    }
-    
-    console.log(`✅ 5 decisions with DB restored\n`);
-    
-    // Step 6: Wait for queue drain (10 seconds)
-    console.log('Step 6: Wait for queue drain (10 seconds)...');
-    await new Promise(resolve => setTimeout(resolve, 10000));
-    
-    // Check health again
-    const healthAfter = await fetch(`${SUPABASE_URL.replace('https://', 'https://').replace('.supabase.co', '')}/api/decision-engine/health`);
-    const healthDataAfter = await healthAfter.json();
-    
-    console.log(`  Status: ${healthDataAfter.status}`);
-    console.log(`  Circuit Breaker: ${healthDataAfter.audit?.circuitBreaker?.state}`);
-    console.log(`  Queue Pending: ${healthDataAfter.audit?.queueMetrics?.pending || 0}`);
-    console.log(`  DLQ Size: ${healthDataAfter.audit?.dlqSize || 0}`);
-    
-    console.log(`✅ Queue drain complete\n`);
-    
-    // Step 7: Summary
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('📊 Scenario 2.1 Results');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log(`✅ Business decisions: 15/15 succeeded`);
-    console.log(`✅ Non-blocking: All decisions completed despite audit DB down`);
-    console.log(`✅ Circuit breaker: Opened after failures`);
-    console.log(`✅ Queue: Held pending audits, drained after restore`);
-    console.log(`✅ Status: degraded → healthy`);
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-    console.log('🎉 Scenario 2.1 PASSED');
-    
-  } catch (error) {
-    console.error('❌ Scenario 2.1 FAILED:', error);
-    console.error(error.stack);
-    process.exit(1);
-  }
-}
-
-// Run
 runScenario();
