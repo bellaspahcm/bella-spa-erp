@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient();
     
     // Get monitoring window (last 72 hours)
-    const { data: snapshots, error } = await (supabase as any)
+    const { data: snapshots, error } = await supabase
       .from('gate3_monitoring_snapshots')
       .select('*')
       .gte('timestamp', new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString())
