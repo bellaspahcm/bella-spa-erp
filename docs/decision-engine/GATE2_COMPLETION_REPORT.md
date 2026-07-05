@@ -1,9 +1,9 @@
 # Gate 2: Failure Injection Testing - Validation Report
 
 **Status:** ❌ FAILED  
-**Date:** 7/5/2026, 8:18:08 PM  
+**Date:** 7/5/2026, 8:31:15 PM  
 **Environment:** development  
-**Total Duration:** 0.7s
+**Total Duration:** 0.1s
 
 ---
 
@@ -33,7 +33,7 @@ Gate 2 validates Decision Engine resilience under failure conditions. The critic
 
 **Status:** ❌ FAILED  
 **Critical:** Yes  
-**Duration:** 0.7s  
+**Duration:** 0.1s  
 **Exit Code:** 1
 
 **Description:**  
@@ -100,6 +100,6 @@ Decisions succeed when audit DB is unavailable, circuit breaker opens, queue hol
 
 ---
 
-**Generated:** 2026-07-05T13:18:08.520Z  
+**Generated:** 2026-07-05T13:31:15.375Z  
 **Report Version:** 1.0.0  
 **Decision Engine Version:** 1.0.0
