@@ -19,8 +19,8 @@ VALUES (
   'req-gate1-success',
   'a3a4f261-506e-4fb7-bd38-d245a3a1fea7', -- Employee high balance
   'annual',
-  CURRENT_DATE + INTERVAL '7 days',
-  CURRENT_DATE + INTERVAL '11 days',
+  CURRENT_DATE + INTERVAL '180 days', -- Move to November (out of high season)
+  CURRENT_DATE + INTERVAL '184 days',
   5,
   'Family vacation - Gate 1 test',
   'pending',
@@ -46,8 +46,8 @@ VALUES (
   'req-gate1-reject',
   'f3e5e94b-8683-4832-ad39-383c8804751c', -- Employee low balance
   'annual',
-  CURRENT_DATE + INTERVAL '14 days',
-  CURRENT_DATE + INTERVAL '18 days',
+  CURRENT_DATE + INTERVAL '200 days', -- Move to December (out of high season)
+  CURRENT_DATE + INTERVAL '204 days',
   5,
   'Personal matter - Gate 1 test',
   'pending',
