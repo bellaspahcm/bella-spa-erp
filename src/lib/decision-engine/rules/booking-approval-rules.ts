@@ -26,9 +26,7 @@ import type { IfThenRule } from '@/lib/decision-engine';
  */
 export const RULE_AUTO_APPROVE_SMALL_BOOKING: IfThenRule = {
   id: 'booking-auto-approve-small',
-  name: 'Auto-approve small bookings',
   description: 'Auto-approve bookings under 5M VND without deposit requirement',
-  priority: 100,
   condition: {
     field: 'totalAmount',
     operator: '<',
@@ -59,9 +57,7 @@ export const RULE_AUTO_APPROVE_SMALL_BOOKING: IfThenRule = {
  */
 export const RULE_AUTO_APPROVE_VIP: IfThenRule = {
   id: 'booking-auto-approve-vip',
-  name: 'Auto-approve VIP customer bookings',
   description: 'Auto-approve bookings from VIP customers up to 20M VND',
-  priority: 90,
   condition: {
     and: [
       {
@@ -102,9 +98,7 @@ export const RULE_AUTO_APPROVE_VIP: IfThenRule = {
  */
 export const RULE_REQUIRE_DEPOSIT_MEDIUM: IfThenRule = {
   id: 'booking-deposit-medium',
-  name: 'Require deposit for medium bookings',
   description: 'Bookings 5M-10M require 30% deposit',
-  priority: 80,
   condition: {
     and: [
       {
@@ -145,9 +139,7 @@ export const RULE_REQUIRE_DEPOSIT_MEDIUM: IfThenRule = {
  */
 export const RULE_REQUIRE_DEPOSIT_LARGE: IfThenRule = {
   id: 'booking-deposit-large',
-  name: 'Require deposit for large bookings',
   description: 'Bookings >= 10M require 50% deposit',
-  priority: 70,
   condition: {
     field: 'totalAmount',
     operator: '>=',
@@ -181,9 +173,7 @@ export const RULE_REQUIRE_DEPOSIT_LARGE: IfThenRule = {
  */
 export const RULE_MANUAL_REVIEW_NEW_CUSTOMER_LARGE: IfThenRule = {
   id: 'booking-manual-review-new-large',
-  name: 'Manual review for new customers with large bookings',
   description: 'New customers booking >= 10M require manager approval',
-  priority: 95, // High priority - check before auto-approvals
   condition: {
     and: [
       {
@@ -224,9 +214,7 @@ export const RULE_MANUAL_REVIEW_NEW_CUSTOMER_LARGE: IfThenRule = {
  */
 export const RULE_AUTO_APPROVE_LOYAL: IfThenRule = {
   id: 'booking-auto-approve-loyal',
-  name: 'Auto-approve loyal customer bookings',
   description: 'Auto-approve loyal customers up to 15M with reduced deposit',
-  priority: 85,
   condition: {
     and: [
       {
@@ -268,9 +256,7 @@ export const RULE_AUTO_APPROVE_LOYAL: IfThenRule = {
  */
 export const RULE_REJECT_SUSPICIOUS: IfThenRule = {
   id: 'booking-reject-suspicious',
-  name: 'Reject suspicious large bookings',
   description: 'Bookings >= 50M require full verification',
-  priority: 110, // HIGHEST priority - check before approvals
   condition: {
     field: 'totalAmount',
     operator: '>=',
@@ -309,7 +295,19 @@ export const BOOKING_APPROVAL_RULES: IfThenRule[] = [
   RULE_AUTO_APPROVE_LOYAL, // Priority 85
   RULE_REQUIRE_DEPOSIT_MEDIUM, // Priority 80
   RULE_REQUIRE_DEPOSIT_LARGE, // Priority 70
-].sort((a, b) => (b.priority || 0) - (a.priority || 0)); // Sort by priority DESC
+].sort((a, b) => {
+  // Sort by rule order (already ordered by priority in comments)
+  const ruleOrder = [
+    'booking-reject-suspicious', // Priority 110
+    'booking-auto-approve-small', // Priority 100
+    'booking-manual-review-new-large', // Priority 95
+    'booking-auto-approve-vip', // Priority 90
+    'booking-auto-approve-loyal', // Priority 85
+    'booking-deposit-medium', // Priority 80
+    'booking-deposit-large', // Priority 70
+  ];
+  return ruleOrder.indexOf(a.id!) - ruleOrder.indexOf(b.id!);
+});
 
 /**
  * Get booking approval rules for Decision Engine

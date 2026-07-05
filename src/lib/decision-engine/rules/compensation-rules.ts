@@ -26,12 +26,15 @@
  * @see docs/decision-engine/COMPENSATION_POLICY_DESIGN.md
  */
 
-import type { Rule } from '../core/rule-provider';
-
 /**
  * Decision Type for Compensation Rules
  */
 export const COMPENSATION_DECISION_TYPE = 'compensation-eligibility';
+
+/**
+ * @deprecated This file uses legacy rule format and is not actively used.
+ * See src/services/providers/ for current implementation.
+ */
 
 /**
  * Compensation Rules
@@ -48,7 +51,7 @@ export const COMPENSATION_DECISION_TYPE = 'compensation-eligibility';
  * - P140: Compensation cap (max per period)
  * - P135: Individual item cap (max per transaction)
  */
-export const compensationRules: Rule[] = [
+export const compensationRules: any[] = [
   /**
    * Rule P180: Activity-Based Reward
    * 

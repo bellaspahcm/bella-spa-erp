@@ -243,7 +243,6 @@ export class MockBIClient extends BaseBIClient implements IBIClient {
         rowCount: 0,
         database: this.config.database,
         queryHash: this.createQueryHash(sql),
-        cached: false,
       },
     };
   }
