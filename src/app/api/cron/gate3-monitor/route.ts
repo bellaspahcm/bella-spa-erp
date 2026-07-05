@@ -8,7 +8,20 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase-server';
+import { getSupabaseAdminUrl, getSupabaseAdminKey } from '@/lib/supabase-admin-env';
+import type { Database } from '@/types/database.types';
+
+async function createServiceRoleClient() {
+  const url = getSupabaseAdminUrl();
+  const serviceKey = getSupabaseAdminKey();
+  if (!url || !serviceKey) {
+    throw new Error('Missing Supabase service role credentials');
+  }
+  const { createClient } = await import('@supabase/supabase-js');
+  return createClient<Database>(url, serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
 
 // Thresholds
 const THRESHOLDS = {
@@ -35,7 +48,7 @@ async function fetchHealthMetrics() {
  * Store metrics snapshot in database
  */
 async function storeMetrics(health: any) {
-  const supabase = await createClient();
+  const supabase = await createServiceRoleClient();
   
   const snapshot = {
     timestamp: new Date().toISOString(),
