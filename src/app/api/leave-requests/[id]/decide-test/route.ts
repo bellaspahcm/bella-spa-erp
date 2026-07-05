@@ -48,7 +48,26 @@ export async function POST(
 
     // Create admin Supabase client with service role
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabase = createClient(supabaseUrl, serviceRoleKey!);
+    const supabase = createClient(supabaseUrl, serviceRoleKey!, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    });
+
+    console.log('[Gate1 Test] Request ID:', params.id);
+    console.log('[Gate1 Test] Supabase URL:', supabaseUrl);
+    console.log('[Gate1 Test] Service role key present:', !!serviceRoleKey);
+
+    // Quick test: can we query leave_requests?
+    const { data: testQuery, error: testError } = await supabase
+      .from('leave_requests')
+      .select('id')
+      .eq('id', params.id)
+      .single();
+    
+    console.log('[Gate1 Test] Test query result:', testQuery);
+    console.log('[Gate1 Test] Test query error:', testError);
 
     // Use Decision Engine for approval
     const integration = new LeaveApprovalIntegration(supabase);
