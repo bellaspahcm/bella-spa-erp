@@ -11,7 +11,7 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/supabase';
+import type { Database } from '@/types/database.types';
 import type { DecisionContext, DecisionResult } from '../types';
 
 /**
@@ -174,31 +174,33 @@ export class DecisionAuditLogger {
       const versionSnapshot = options?.versionSnapshot || this.buildVersionSnapshot(result);
 
       // Insert into decision_audit_log table
+      const insertData: any = {
+        decision_id: decisionId,
+        decision_type: context.decisionType,
+        provider: result.provider,
+        execution_time_ms: result.executionTime,
+        status,
+        input_context: context.data || {},
+        policies_executed: policiesExecuted,
+        matched_rules: matchedRules,
+        output: this.sanitizeOutput(result),
+        audit_log: auditLog,
+        tenant_id: context.tenantId,
+        user_id: context.user?.id || null,
+        confidence_score: result.confidence,
+        correlation_id: options?.correlation?.correlationId || context.correlationId || null,
+        trace_id: options?.correlation?.traceId || null,
+        span_id: options?.correlation?.spanId || null,
+        parent_span_id: options?.correlation?.parentSpanId || null,
+        version_snapshot: versionSnapshot,
+        resource_metrics: options?.resourceMetrics || {},
+        business_outcome: options?.businessOutcome || {},
+        ai_metadata: options?.aiMetadata || {},
+      };
+      
       const { error } = await this.supabase
         .from('decision_audit_log')
-        .insert({
-          decision_id: decisionId,
-          decision_type: context.decisionType,
-          provider: result.provider,
-          execution_time_ms: result.executionTime,
-          status,
-          input_context: context.data || {},
-          policies_executed: policiesExecuted,
-          matched_rules: matchedRules,
-          output: this.sanitizeOutput(result),
-          audit_log: auditLog,
-          tenant_id: context.tenantId,
-          user_id: context.user?.id || null,
-          confidence_score: result.confidence,
-          correlation_id: options?.correlation?.correlationId || context.correlationId || null,
-          trace_id: options?.correlation?.traceId || null,
-          span_id: options?.correlation?.spanId || null,
-          parent_span_id: options?.correlation?.parentSpanId || null,
-          version_snapshot: versionSnapshot,
-          resource_metrics: options?.resourceMetrics || {},
-          business_outcome: options?.businessOutcome || {},
-          ai_metadata: options?.aiMetadata || {},
-        });
+        .insert(insertData);
 
       if (error) {
         // Log error but don't throw (audit logging failure shouldn't break decision flow)
@@ -226,7 +228,8 @@ export class DecisionAuditLogger {
     if (result.error) {
       return 'error';
     }
-    if (result.metadata?.warnings && result.metadata.warnings.length > 0) {
+    const warnings = result.metadata?.warnings as any[];
+    if (warnings && Array.isArray(warnings) && warnings.length > 0) {
       return 'warning';
     }
     return 'success';
@@ -250,12 +253,15 @@ export class DecisionAuditLogger {
 
     // Add warnings
     if (result.metadata?.warnings) {
-      for (const warning of result.metadata.warnings) {
-        logs.push({
-          timestamp: result.timestamp.toISOString(),
-          level: 'warn',
-          message: warning,
-        });
+      const warnings = result.metadata.warnings as any[];
+      if (Array.isArray(warnings)) {
+        for (const warning of warnings) {
+          logs.push({
+            timestamp: result.timestamp.toISOString(),
+            level: 'warn',
+            message: warning,
+          });
+        }
       }
     }
 
@@ -280,13 +286,13 @@ export class DecisionAuditLogger {
   private buildVersionSnapshot(result: DecisionResult): VersionSnapshot {
     return {
       engineVersion: this.engineVersion,
-      policyVersions: result.metadata?.policyVersions || {
+      policyVersions: (result.metadata?.policyVersions as Record<string, string>) || {
         // Default to policy ID if not provided by provider
         'default': '1.0.0'
       },
-      ruleVersions: result.metadata?.ruleVersions || {},
+      ruleVersions: (result.metadata?.ruleVersions as Record<string, string>) || {},
       providerVersions: {
-        [result.provider]: result.metadata?.providerVersion || '1.0.0',
+        [result.provider]: ((result.metadata?.providerVersion as any) || '1.0.0') as string,
       },
     };
   }
@@ -362,7 +368,7 @@ export class DecisionAuditLogger {
         return null;
       }
 
-      return data?.definition || null;
+      return (data?.definition as Record<string, any>) || null;
     } catch (error) {
       console.error('[DecisionAuditLogger] Exception getting policy version:', error);
       return null;

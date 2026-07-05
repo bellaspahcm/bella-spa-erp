@@ -32,6 +32,7 @@ interface AuditLogEntry {
 
 interface AuditResponse {
   success: boolean;
+  error?: string;
   data: AuditLogEntry[];
   pagination: {
     page: number;
