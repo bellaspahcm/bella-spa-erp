@@ -151,7 +151,7 @@ function processHealth(health) {
   // SQL queries reminder
   console.log('\n📝 Manual SQL Checks Required:');
   console.log('  - Retry Rate: SELECT COUNT(*) FILTER (WHERE retry_count > 0) ... FROM decision_audit_log');
-  console.log('  - Error Rate: SELECT COUNT(*) FILTER (WHERE status = \\'error\\') ... FROM decision_audit_log');
+  console.log('  - Error Rate: SELECT COUNT(*) FILTER (WHERE status = \'error\') ... FROM decision_audit_log');
   console.log('  - p95/p99 Latency: SELECT PERCENTILE_CONT(0.95) ... FROM decision_audit_log');
   console.log('  - See: docs/decision-engine/GATE3_MONITORING_GUIDE.md');
 }
