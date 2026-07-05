@@ -87,7 +87,8 @@ export class ResilientDecisionAuditLogger {
     context: DecisionContext,
     result: DecisionResult
   ): any {
-    const decisionId = context.decisionId || this.generateDecisionId();
+    // Generate decision ID (DecisionContext doesn't have decisionId field)
+    const decisionId = this.generateDecisionId();
 
     // Determine status
     let status: 'success' | 'error' | 'warning';
@@ -100,37 +101,53 @@ export class ResilientDecisionAuditLogger {
     }
 
     // Extract metadata
-    const provider = result.metadata?.provider || 'unknown';
+    const provider = (result.metadata?.provider as string) || 'unknown';
     const executionTimeMs = result.metadata?.executionTimeMs || 0;
     const policiesExecuted = result.metadata?.policiesExecuted || [];
     const auditLog = result.metadata?.auditLog || [];
 
     // Build version snapshot (MANDATORY for Time Machine)
-    const versionSnapshot = context.versionSnapshot || {
+    // Build from result.metadata since DecisionContext doesn't have versionSnapshot
+    const providerVersions: Record<string, string> = {};
+    providerVersions[provider] = '1.0.0';
+    
+    const versionSnapshot = {
       engineVersion: '1.0.0',
-      policyVersions: result.metadata?.policyVersions || { 'default': '1.0.0' },
-      ruleVersions: result.metadata?.ruleVersions || {},
-      providerVersions: { [provider]: '1.0.0' },
+      policyVersions: (result.metadata?.policyVersions as Record<string, string>) || { 'default': '1.0.0' },
+      ruleVersions: (result.metadata?.ruleVersions as Record<string, string>) || {},
+      providerVersions,
     };
 
     // Build correlation context
-    const correlationId =
-      context.correlationContext?.correlationId || this.generateCorrelationId();
-    const traceId = context.correlationContext?.traceId;
-    const spanId = context.correlationContext?.spanId;
-    const parentSpanId = context.correlationContext?.parentSpanId;
+    // Use correlationId from DecisionContext (which does exist)
+    const correlationId = context.correlationId || this.generateCorrelationId();
+    const traceId = (result.metadata as any)?.traceId;
+    const spanId = (result.metadata as any)?.spanId;
+    const parentSpanId = (result.metadata as any)?.parentSpanId;
+
+    // Build output from DecisionResult fields
+    const output = {
+      approved: result.approved,
+      confidence: result.confidence,
+      reason: result.reason,
+      action: result.action,
+      recommendations: result.recommendations,
+      nextActions: result.nextActions,
+      error: result.error,
+      isFallback: result.isFallback,
+    };
 
     return {
       decision_id: decisionId,
       decision_type: context.decisionType,
       provider,
       tenant_id: context.tenantId,
-      user_id: context.userId,
+      user_id: context.user?.id || null,
       status,
-      input_context: context.input,
+      input_context: context.data || {},
       policies_executed: policiesExecuted,
       matched_rules: result.matchedRules || [],
-      output: result.output,
+      output,
       confidence_score: result.confidence,
       execution_time_ms: executionTimeMs,
       audit_log: auditLog,
@@ -139,9 +156,9 @@ export class ResilientDecisionAuditLogger {
       span_id: spanId,
       parent_span_id: parentSpanId,
       version_snapshot: versionSnapshot,
-      resource_metrics: context.resourceMetrics || {},
-      business_outcome: context.businessOutcome || {},
-      ai_metadata: context.aiMetadata || {},
+      resource_metrics: (result.metadata?.resourceMetrics as Record<string, unknown>) || {},
+      business_outcome: (result.metadata?.businessOutcome as Record<string, unknown>) || {},
+      ai_metadata: (result.metadata?.aiMetadata as Record<string, unknown>) || {},
     };
   }
 

@@ -53,14 +53,12 @@ export class LeaveDecisionService {
   private engine: DecisionEngine;
 
   constructor() {
-    const supabase = createClient();
-    const auditLogger = new ResilientDecisionAuditLogger(supabase);
-
+    // Don't pass auditLogger to constructor (it requires async supabase client)
+    // Audit logging will be enabled later via setAuditLogger if needed
     this.engine = new DecisionEngine({
       policies: {
         'leave-approval': [leaveApprovalPolicy],
       },
-      auditLogger,
     });
   }
 
