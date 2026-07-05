@@ -9,9 +9,9 @@ import { createClient } from '@supabase/supabase-js';
 export async function GET() {
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+    const secretKey = process.env.SUPABASE_SECRET_KEY!;
 
-    const supabase = createClient(supabaseUrl, serviceRoleKey, {
+    const supabase = createClient(supabaseUrl, secretKey, {
       auth: {
         autoRefreshToken: false,
         persistSession: false
@@ -32,8 +32,8 @@ export async function GET() {
 
     return NextResponse.json({
       supabaseUrl,
-      hasServiceRoleKey: !!serviceRoleKey,
-      serviceRoleKeyPreview: `${serviceRoleKey.substring(0, 10)}...${serviceRoleKey.substring(serviceRoleKey.length - 10)}`,
+      hasSecretKey: !!secretKey,
+      secretKeyPreview: `${secretKey.substring(0, 10)}...${secretKey.substring(secretKey.length - 10)}`,
       allRequests: {
         count: allRequests?.length || 0,
         data: allRequests,
