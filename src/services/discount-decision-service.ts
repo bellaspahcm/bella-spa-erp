@@ -291,7 +291,7 @@ export async function evaluateDiscountEligibility(
         executionTime,
         confidence: result.confidence,
         actions: result.action ? [result.action] : [],
-        reason: result.reason,
+        reason: result.reason || 'No reason provided',
         context,
         result,
         cacheHit: false,
@@ -302,7 +302,7 @@ export async function evaluateDiscountEligibility(
       
       // If rule matched (confidence > 0), use this decision
       if (result.confidence > 0 && result.action) {
-        const action = result.action as Record<string, unknown>;
+        const action = result.action.data as Record<string, unknown>;
         const eligible = Boolean(action.eligible);
         const discountPercent = Number(action.discountPercent || 0);
         const discountType = (action.discountType || 'none') as DiscountType;
@@ -318,7 +318,7 @@ export async function evaluateDiscountEligibility(
           discountAmount,
           discountType,
           finalAmount,
-          reason: result.reason,
+          reason: result.reason || 'No reason provided',
           matchedRules: [rule.id],
           restrictions,
           campaignCode,
@@ -353,12 +353,10 @@ export async function evaluateDiscountEligibility(
     customerTier,
     _raw: {
       approved: false,
-      requiresManualReview: false,
-      requiresDeposit: false,
-      depositAmount: 0,
       confidence: 0,
       reason: 'No discount rules matched (fallback)',
-      actions: [],
+      executionTime: fallbackExecutionTime,
+      provider: 'RuleProvider',
       timestamp: new Date(),
     },
   };

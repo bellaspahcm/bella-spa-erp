@@ -12,12 +12,12 @@
  */
 
 import {
-  type PayrollDecisionContext,
   type SalaryComponent,
   type ProviderEvaluationOptions,
   type PayrollProvider,
   createSalaryComponent,
 } from '@/lib/decision-engine/types/payroll-types';
+import type { PayrollDecisionContext } from '@/lib/decision-engine/types/decision-context';
 import {
   baseSalaryRules,
   BASE_SALARY_DECISION_TYPE,

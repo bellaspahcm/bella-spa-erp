@@ -22,17 +22,16 @@
  */
 
 import {
-  type PayrollDecisionContext,
   type SalaryComponent,
   type ProviderEvaluationOptions,
   type PayrollProvider,
   createSalaryComponent,
 } from '@/lib/decision-engine/types/payroll-types';
+import type { PayrollDecisionContext } from '@/lib/decision-engine/types/decision-context';
 import {
   compensationRules,
   COMPENSATION_DECISION_TYPE,
 } from '@/lib/decision-engine/rules/compensation-rules';
-import { evaluateRuleSet } from '@/lib/decision-engine/evaluate-rule';
 
 /**
  * Compensation Provider

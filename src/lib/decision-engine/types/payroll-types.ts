@@ -10,7 +10,7 @@
  * - PolicyMapping enables policy-based rules (one rule, multiple thresholds)
  */
 
-import type { DecisionResult } from '../core/rule-provider';
+import type { DecisionResult } from '../types';
 
 /**
  * Salary Component Type
@@ -94,8 +94,8 @@ export interface SalaryComponent {
   /** Rules that matched (from DecisionResult) */
   matchedRules?: DecisionResult['matchedRules'];
   
-  /** Observability data (from DecisionResult) */
-  observability?: DecisionResult['observability'];
+  /** Additional observability/debugging data */
+  observability?: Record<string, any>;
 }
 
 /**
@@ -135,8 +135,8 @@ export interface SalaryDeduction {
   /** Rules that matched (from DecisionResult) */
   matchedRules?: DecisionResult['matchedRules'];
   
-  /** Observability data (from DecisionResult) */
-  observability?: DecisionResult['observability'];
+  /** Additional observability/debugging data */
+  observability?: Record<string, any>;
 }
 
 /**
