@@ -8,12 +8,15 @@
  * Priority Range: P200-P165 (highest priority in payroll)
  */
 
-import type { Rule } from '../core/rule-provider';
-
 /**
  * Decision Type for Base Salary Rules
  */
 export const BASE_SALARY_DECISION_TYPE = 'base-salary-eligibility';
+
+/**
+ * @deprecated This file uses legacy rule format and is not actively used.
+ * See src/services/providers/ for current implementation.
+ */
 
 /**
  * Base Salary Rules
@@ -28,7 +31,7 @@ export const BASE_SALARY_DECISION_TYPE = 'base-salary-eligibility';
  * - P170: Probation period discount (e.g., 85% during probation)
  * - P165: Max base salary cap (if applicable)
  */
-export const baseSalaryRules: Rule[] = [
+export const baseSalaryRules: any[] = [
   /**
    * Rule P200: Full Month Base Salary
    * 
