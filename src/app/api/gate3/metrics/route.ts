@@ -7,11 +7,24 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase-server';
+import { getSupabaseAdminUrl, getSupabaseAdminKey } from '@/lib/supabase-admin-env';
+import type { Database } from '@/types/database.types';
+
+async function createServiceRoleClient() {
+  const url = getSupabaseAdminUrl();
+  const serviceKey = getSupabaseAdminKey();
+  if (!url || !serviceKey) {
+    throw new Error('Missing Supabase service role credentials');
+  }
+  const { createClient } = await import('@supabase/supabase-js');
+  return createClient<Database>(url, serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient();
+    const supabase = await createServiceRoleClient();
     
     // Get monitoring window (last 72 hours)
     const { data: snapshots, error } = await supabase
