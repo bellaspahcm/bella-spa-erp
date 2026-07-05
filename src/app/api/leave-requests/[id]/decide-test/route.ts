@@ -24,13 +24,13 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Verify service role key
+    // Verify secret key (new Supabase API key format)
     const authHeader = request.headers.get('authorization');
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const secretKey = process.env.SUPABASE_SECRET_KEY;
 
-    if (!authHeader || !authHeader.includes(serviceRoleKey || '')) {
+    if (!authHeader || !authHeader.includes(secretKey || '')) {
       return NextResponse.json(
-        { success: false, error: 'Unauthorized - Invalid service role key' },
+        { success: false, error: 'Unauthorized - Invalid secret key' },
         { status: 401 }
       );
     }
@@ -46,9 +46,9 @@ export async function POST(
       );
     }
 
-    // Create admin Supabase client with service role
+    // Create admin Supabase client with secret key
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabase = createClient(supabaseUrl, serviceRoleKey!, {
+    const supabase = createClient(supabaseUrl, secretKey!, {
       auth: {
         autoRefreshToken: false,
         persistSession: false
@@ -57,7 +57,7 @@ export async function POST(
 
     console.log('[Gate1 Test] Request ID:', params.id);
     console.log('[Gate1 Test] Supabase URL:', supabaseUrl);
-    console.log('[Gate1 Test] Service role key present:', !!serviceRoleKey);
+    console.log('[Gate1 Test] Secret key present:', !!secretKey);
 
     // Quick test: can we query leave_requests?
     const { data: testQuery, error: testError } = await supabase

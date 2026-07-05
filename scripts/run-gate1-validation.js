@@ -5,7 +5,7 @@
  */
 
 const baseUrl = process.env.PRODUCTION_URL || 'https://bella-spa-erp.vercel.app';
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const secretKey = process.env.SUPABASE_SECRET_KEY;
 
 const scenarios = [
   {
@@ -57,7 +57,7 @@ async function runScenario(scenario) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${serviceRoleKey}`
+        'Authorization': `Bearer ${secretKey}`
       },
       body: JSON.stringify(body)
     });
