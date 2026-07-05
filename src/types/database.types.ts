@@ -1580,6 +1580,158 @@ export type Database = {
           },
         ]
       }
+      decision_audit_log: {
+        Row: {
+          ai_metadata: Json
+          audit_log: Json
+          business_outcome: Json
+          confidence_score: number | null
+          correlation_id: string | null
+          created_at: string
+          decision_id: string
+          decision_type: string
+          execution_time_ms: number
+          id: string
+          input_context: Json
+          matched_rules: Json
+          output: Json
+          parent_span_id: string | null
+          policies_executed: string[]
+          provider: string
+          resource_metrics: Json
+          span_id: string | null
+          status: string
+          tenant_id: string
+          trace_id: string | null
+          user_id: string | null
+          version_snapshot: Json
+        }
+        Insert: {
+          ai_metadata?: Json
+          audit_log?: Json
+          business_outcome?: Json
+          confidence_score?: number | null
+          correlation_id?: string | null
+          created_at?: string
+          decision_id: string
+          decision_type: string
+          execution_time_ms: number
+          id?: string
+          input_context?: Json
+          matched_rules?: Json
+          output?: Json
+          parent_span_id?: string | null
+          policies_executed?: string[]
+          provider: string
+          resource_metrics?: Json
+          span_id?: string | null
+          status: string
+          tenant_id: string
+          trace_id?: string | null
+          user_id?: string | null
+          version_snapshot?: Json
+        }
+        Update: {
+          ai_metadata?: Json
+          audit_log?: Json
+          business_outcome?: Json
+          confidence_score?: number | null
+          correlation_id?: string | null
+          created_at?: string
+          decision_id?: string
+          decision_type?: string
+          execution_time_ms?: number
+          id?: string
+          input_context?: Json
+          matched_rules?: Json
+          output?: Json
+          parent_span_id?: string | null
+          policies_executed?: string[]
+          provider?: string
+          resource_metrics?: Json
+          span_id?: string | null
+          status?: string
+          tenant_id?: string
+          trace_id?: string | null
+          user_id?: string | null
+          version_snapshot?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "decision_audit_log_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "decision_audit_log_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "decision_audit_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "mv_ktv_performance_summary"
+            referencedColumns: ["ktv_id"]
+          },
+          {
+            foreignKeyName: "decision_audit_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      policy_versions: {
+        Row: {
+          changelog: string | null
+          created_at: string
+          created_by: string | null
+          definition: Json
+          id: string
+          policy_id: string
+          version: string
+        }
+        Insert: {
+          changelog?: string | null
+          created_at?: string
+          created_by?: string | null
+          definition: Json
+          id?: string
+          policy_id: string
+          version: string
+        }
+        Update: {
+          changelog?: string | null
+          created_at?: string
+          created_by?: string | null
+          definition?: Json
+          id?: string
+          policy_id?: string
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "policy_versions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "mv_ktv_performance_summary"
+            referencedColumns: ["ktv_id"]
+          },
+          {
+            foreignKeyName: "policy_versions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       expenses: {
         Row: {
           accounting_metadata: Json
@@ -6214,6 +6366,49 @@ export type Database = {
         }[]
       }
       get_dashboard_summary: { Args: { p_tenant_id: string }; Returns: Json }
+      get_decision_history_for_entity: {
+        Args: {
+          p_entity_id: string
+          p_entity_type: string
+          p_tenant_id: string
+        }
+        Returns: {
+          confidence_score: number | null
+          created_at: string
+          decision_id: string
+          decision_type: string
+          execution_time_ms: number
+          id: string
+          output: Json
+          provider: string
+          status: string
+        }[]
+      }
+      get_decisions_by_trace: {
+        Args: {
+          p_tenant_id?: string
+          p_trace_id: string
+        }
+        Returns: {
+          created_at: string
+          decision_id: string
+          decision_type: string
+          execution_time_ms: number
+          id: string
+          output: Json
+          parent_span_id: string | null
+          provider: string
+          span_id: string | null
+          status: string
+        }[]
+      }
+      get_policy_version: {
+        Args: {
+          p_policy_id: string
+          p_version: string
+        }
+        Returns: Json
+      }
       get_effective_subscription_entitlements: {
         Args: { p_tenant_id: string }
         Returns: {

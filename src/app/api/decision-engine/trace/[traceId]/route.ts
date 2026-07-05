@@ -10,7 +10,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -62,7 +62,7 @@ export async function GET(
     // Call database function to get decisions by trace
     const { data, error } = await supabase.rpc('get_decisions_by_trace', {
       p_trace_id: traceId,
-      p_tenant_id: tenantId || null,
+      p_tenant_id: tenantId || undefined,
     });
 
     if (error) {

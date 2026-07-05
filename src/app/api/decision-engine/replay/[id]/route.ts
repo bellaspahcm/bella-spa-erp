@@ -12,7 +12,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase-server';
 import { bootstrapDecisionEngine } from '@/lib/decision-engine/bootstrap';
 import type { DecisionContext } from '@/lib/decision-engine/types';
 
@@ -98,10 +98,12 @@ export async function POST(
       module: extractModuleFromType(originalDecision.decision_type),
       decisionType: originalDecision.decision_type,
       ruleType: 'if-then', // TODO: Extract from original context if available
-      data: originalDecision.input_context || {},
+      rule: {}, // Placeholder - will be loaded from provider
+      data: (originalDecision.input_context as Record<string, unknown>) || {},
       user: originalDecision.user_id
         ? {
             id: originalDecision.user_id,
+            role: 'user', // Placeholder role for replay
             // Other user fields would need to be fetched or stored in original context
           }
         : undefined,
@@ -140,13 +142,16 @@ export async function POST(
     }
 
     // Build response
+    const outputData = originalDecision.output as Record<string, any> | null;
+    const versionSnapshot = originalDecision.version_snapshot as Record<string, any> | null;
+    
     return NextResponse.json({
       success: true,
       decisionId: originalDecision.decision_id,
       originalResult: {
-        approved: originalDecision.output?.approved,
+        approved: outputData?.approved,
         confidence: originalDecision.confidence_score,
-        reason: originalDecision.output?.reason,
+        reason: outputData?.reason,
         provider: originalDecision.provider,
         executionTimeMs: originalDecision.execution_time_ms,
         status: originalDecision.status,
@@ -168,10 +173,10 @@ export async function POST(
       diff,
       snapshot: {
         originalPolicyVersion:
-          originalDecision.version_snapshot?.policyVersions || {},
+          versionSnapshot?.policyVersions || {},
         replayedPolicyVersion: policyVersion || 'current',
         originalEngineVersion:
-          originalDecision.version_snapshot?.engineVersion || 'unknown',
+          versionSnapshot?.engineVersion || 'unknown',
         replayedEngineVersion: '1.0.0', // Current engine version
       },
       replayMetadata: {

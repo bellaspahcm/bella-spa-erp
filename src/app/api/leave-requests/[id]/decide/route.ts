@@ -32,7 +32,7 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // 1. Get current user
     const {
@@ -58,6 +58,13 @@ export async function POST(
       return NextResponse.json(
         { success: false, error: 'User profile not found' },
         { status: 404 }
+      );
+    }
+
+    if (!profile.tenant_id) {
+      return NextResponse.json(
+        { success: false, error: 'Tenant ID not found' },
+        { status: 400 }
       );
     }
 

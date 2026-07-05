@@ -140,7 +140,7 @@ export async function GET(request: NextRequest) {
 /**
  * Get queue metrics from global audit logger instance
  */
-async function getQueueMetrics() {
+async function getQueueMetrics(): Promise<{ status: string; pending: number; [key: string]: any } | null> {
   try {
     // TODO: Access global ResilientDecisionAuditLogger instance
     // For now, return placeholder

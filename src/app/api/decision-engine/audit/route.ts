@@ -10,8 +10,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import type { Database } from '@/types/supabase';
+import { createClient } from '@/lib/supabase-server';
+import type { Database } from '@/types/database.types';
 
 export const dynamic = 'force-dynamic';
 
