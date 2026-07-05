@@ -26,9 +26,9 @@ export const leaveApprovalRules: IfThenRule[] = [
     id: 'leave-balance-check',
     description: 'Reject if insufficient leave balance',
     condition: {
-      field: 'employeeLeaveBalance',
-      operator: '<',
-      value: { field: 'requestedDays' }, // Will need custom handling
+      field: 'insufficientBalance',
+      operator: '==',
+      value: true,
     },
     action: {
       approve: false,
