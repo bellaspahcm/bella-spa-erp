@@ -14,18 +14,19 @@ export const colors = {
   // BRAND COLORS (Pink Theme)
   // ═══════════════════════════════════════════════════════════════
   
-  /** Primary brand color - Soft pink for headers and primary actions
-   *  - Was: #E91E63 (too harsh, vibrant magenta)
-   *  - Now: #EC407A (medium pink - softer, more elegant)
-   *  - Contrast on white: 4.76:1 (WCAG AA pass for large text)
+  /** Primary brand color - Vibrant pink for headers and primary actions
+   *  - Restored: #E91E63 (vibrant magenta - Bella brand identity)
+   *  - Previous soft pink #EC407A was too washed out and appeared beige on some devices
+   *  - Contrast on white: 4.73:1 (WCAG AA pass for large text)
+   *  - NEVER replace with beige, gray, or muted tones (per AGENTS.md)
    */
-  primary: '#EC407A',
+  primary: '#E91E63',
   
-  /** Primary hover/pressed state - Slightly darker pink */
-  primaryDark: '#D81B60',
+  /** Primary hover/pressed state - Darker vibrant pink */
+  primaryDark: '#C2185B',
   
   /** Primary light - For backgrounds and subtle accents */
-  primaryLight: '#F06292',
+  primaryLight: '#F48FB1',
   
   /** Primary ultra light - For very subtle backgrounds */
   primaryUltraLight: '#FCE4EC',
@@ -45,21 +46,23 @@ export const colors = {
    */
   text: '#333333',
   
-  /** Secondary text - Medium-dark gray for better readability
-   *  - Was: #555555 (8.59:1)
-   *  - Now: #4b5563 (7.14:1 - matches web app gray-600)
+  /** Secondary text - Darker gray for improved readability
+   *  - Was: #555555 (8.59:1 - good but could be better)
+   *  - Was: #4b5563 (7.14:1 - matched web but still too light for some contexts)
+   *  - Now: #374151 (9.74:1 - gray-700, excellent contrast)
    *  - Used for labels, placeholders, secondary info
-   *  - Ensures consistency between web and mobile apps
+   *  - NEVER use #999 (2.85:1) or #888 (3.54:1) for normal-sized text
    */
-  textSecondary: '#4b5563',
+  textSecondary: '#374151',
   
-  /** Disabled/muted text - Medium gray (improved for readability)
-   *  - Was: #999999 (2.85:1 - too light)
-   *  - Now: #6b7280 (4.56:1 - WCAG AA pass)
-   *  - Can be used for normal-sized text, not just large text
-   *  - Better for disabled states and tertiary information
+  /** Disabled/muted text - Medium-dark gray for better readability
+   *  - Was: #999999 (2.85:1 - too light, WCAG fail)
+   *  - Was: #6b7280 (4.56:1 - WCAG AA pass but still light)
+   *  - Now: #4b5563 (7.14:1 - gray-600, excellent contrast)
+   *  - Can be used for normal-sized text, disabled states, and tertiary information
+   *  - Provides much better readability while still appearing "muted"
    */
-  textMuted: '#6b7280',
+  textMuted: '#4b5563',
   
   /** White text - For use on dark backgrounds */
   textWhite: '#FFFFFF',

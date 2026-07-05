@@ -1,0 +1,237 @@
+/**
+ * Leave Decision Service
+ * 
+ * Integrates Decision Engine with leave approval workflow.
+ * 
+ * Responsibilities:
+ * - Fetch employee leave balance
+ * - Build decision context
+ * - Execute decision via engine
+ * - Map decision output to database update
+ */
+
+import { createClient } from '@/lib/supabase-server';
+import { DecisionEngine } from '@/lib/decision-engine/core/DecisionEngine';
+import { ResilientDecisionAuditLogger } from '@/lib/decision-engine/audit/ResilientDecisionAuditLogger';
+import { leaveApprovalPolicy } from '@/lib/decision-engine/policies/leave-approval-policy';
+import type { DecisionContext, DecisionResult } from '@/lib/decision-engine/types';
+
+export interface LeaveRequest {
+  id: string;
+  employee_id: string;
+  leave_type: 'annual' | 'sick' | 'unpaid' | 'maternity' | 'paternity';
+  start_date: string;
+  end_date: string;
+  days: number;
+  reason: string;
+  status: 'pending' | 'approved' | 'rejected';
+  tenant_id: string;
+}
+
+export interface LeaveApprovalInput {
+  requestId: string;
+  approverId: string;
+  approverRole: string;
+  tenantId: string;
+}
+
+export interface LeaveApprovalResult {
+  success: boolean;
+  approved: boolean;
+  reason: string;
+  decisionId?: string;
+  metadata?: {
+    confidence: number;
+    executionTimeMs: number;
+    autoApproved?: boolean;
+    requiresEscalation?: boolean;
+    blackoutPeriod?: string;
+  };
+}
+
+export class LeaveDecisionService {
+  private engine: DecisionEngine;
+
+  constructor() {
+    const supabase = createClient();
+    const auditLogger = new ResilientDecisionAuditLogger(supabase);
+
+    this.engine = new DecisionEngine({
+      policies: {
+        'leave-approval': [leaveApprovalPolicy],
+      },
+      auditLogger,
+    });
+  }
+
+  /**
+   * Evaluate leave request approval decision
+   */
+  async evaluateLeaveApproval(
+    input: LeaveApprovalInput
+  ): Promise<LeaveApprovalResult> {
+    try {
+      const supabase = await createClient();
+
+      // 1. Fetch leave request
+      const { data: request, error: requestError} = await supabase
+        .from('leave_requests')
+        .select('*')
+        .eq('id', input.requestId)
+        .single();
+
+      if (requestError || !request) {
+        return {
+          success: false,
+          approved: false,
+          reason: 'Leave request not found',
+        };
+      }
+
+      // 2. Fetch employee leave balance
+      const { data: employee, error: employeeError } = await supabase
+        .from('users')
+        .select('id, full_name, leave_balance')
+        .eq('id', request.employee_id)
+        .single();
+
+      if (employeeError || !employee) {
+        return {
+          success: false,
+          approved: false,
+          reason: 'Employee not found',
+        };
+      }
+
+      // 3. Build decision context
+      const context: DecisionContext = {
+        decisionType: 'leave-request-approval',
+        input: {
+          requestId: request.id,
+          employeeId: request.employee_id,
+          employeeName: employee.full_name,
+          employeeLeaveBalance: employee.leave_balance || 0,
+          leaveType: request.leave_type,
+          requestedDays: request.days,
+          startDate: request.start_date,
+          endDate: request.end_date,
+          reason: request.reason,
+          approverRole: input.approverRole,
+        },
+        tenantId: input.tenantId,
+        userId: input.approverId,
+        correlationContext: {
+          correlationId: `leave-${request.id}`,
+          traceId: `trace-${Date.now()}`,
+          spanId: `span-approval-${Date.now()}`,
+        },
+      };
+
+      // 4. Execute decision
+      const decision = await this.engine.evaluate(context);
+
+      // 5. Return result
+      return {
+        success: true,
+        approved: decision.approved || false,
+        reason: decision.output.reason || 'No reason provided',
+        decisionId: context.decisionId,
+        metadata: {
+          confidence: decision.confidence || 0,
+          executionTimeMs: decision.metadata?.executionTimeMs || 0,
+          autoApproved: decision.output.autoApproved,
+          requiresEscalation: decision.output.requiresEscalation,
+          blackoutPeriod: decision.output.blackoutPeriod,
+        },
+      };
+    } catch (error) {
+      console.error('Leave approval decision failed:', error);
+      return {
+        success: false,
+        approved: false,
+        reason: 'Decision engine error: ' + (error instanceof Error ? error.message : 'Unknown'),
+      };
+    }
+  }
+
+  /**
+   * Apply decision result to database
+   */
+  async applyDecision(
+    requestId: string,
+    decision: LeaveApprovalResult,
+    approverId: string
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      const supabase = await createClient();
+
+      if (!decision.success) {
+        return {
+          success: false,
+          error: decision.reason,
+        };
+      }
+
+      // Update leave request status
+      const { error: updateError } = await supabase
+        .from('leave_requests')
+        .update({
+          status: decision.approved ? 'approved' : 'rejected',
+          approved_by: approverId,
+          approval_reason: decision.reason,
+          approved_at: new Date().toISOString(),
+          decision_id: decision.decisionId,
+          decision_confidence: decision.metadata?.confidence,
+        })
+        .eq('id', requestId);
+
+      if (updateError) {
+        return {
+          success: false,
+          error: `Database update failed: ${updateError.message}`,
+        };
+      }
+
+      // TODO: If approved, create attendance record (side effect)
+      // TODO: If approved, send notification (side effect)
+
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+
+  /**
+   * Full workflow: Evaluate + Apply
+   */
+  async approveLeaveRequest(
+    input: LeaveApprovalInput
+  ): Promise<LeaveApprovalResult> {
+    // 1. Evaluate decision
+    const decision = await this.evaluateLeaveApproval(input);
+
+    if (!decision.success) {
+      return decision;
+    }
+
+    // 2. Apply decision
+    const applyResult = await this.applyDecision(
+      input.requestId,
+      decision,
+      input.approverId
+    );
+
+    if (!applyResult.success) {
+      return {
+        ...decision,
+        success: false,
+        reason: applyResult.error || 'Failed to apply decision',
+      };
+    }
+
+    return decision;
+  }
+}

@@ -47,6 +47,22 @@ export {
   createProviderRegistry,
 } from './core';
 
+// ============ Audit & Compliance (Sprint 1) ============
+export {
+  DecisionAuditLogger,
+  generateTraceId,
+  generateSpanId,
+} from './audit/DecisionAuditLogger';
+
+export type {
+  CorrelationContext,
+  VersionSnapshot,
+  ResourceMetrics,
+  BusinessOutcome,
+  AIMetadata,
+  AuditLogEntry,
+} from './audit/DecisionAuditLogger';
+
 // ============ Providers ============
 export { RuleProvider } from './providers';
 export type { IfThenRule } from './providers';
