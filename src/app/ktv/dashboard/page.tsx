@@ -506,6 +506,14 @@ export default function KTVDashboard() {
         });
       } else if (res && res.success) {
         toast.success(res.data?.status === 'late' ? 'Check-in thành công (Trễ giờ)!' : 'Check-in thành công!');
+        
+        // Invalidate attendance cache first, then fetch fresh data
+        if (user?.id) {
+          const { clearAttendanceCache } = await import('@/lib/offline-db');
+          const today = new Date().toISOString().slice(0, 10);
+          await clearAttendanceCache(user.id, today);
+        }
+        
         void fetchAttendance();
       } else {
         toast.error((res && res.error) || 'Check-in thất bại');
@@ -533,6 +541,14 @@ export default function KTVDashboard() {
         }));
       } else if (res && res.success) {
         toast.success('Check-out thành công!');
+        
+        // Invalidate attendance cache first, then fetch fresh data
+        if (user?.id) {
+          const { clearAttendanceCache } = await import('@/lib/offline-db');
+          const today = new Date().toISOString().slice(0, 10);
+          await clearAttendanceCache(user.id, today);
+        }
+        
         void fetchAttendance();
       } else {
         toast.error((res && res.error) || 'Check-out thất bại');
