@@ -1,6 +1,6 @@
 {
   "gate": "Gate 2: Failure Injection Testing",
-  "timestamp": "2026-07-05T13:01:12.178Z",
+  "timestamp": "2026-07-05T13:18:08.501Z",
   "environment": "development",
   "summary": {
     "totalScenarios": 1,
@@ -9,7 +9,7 @@
     "criticalPassed": 0,
     "criticalFailed": 1,
     "overallPass": false,
-    "totalDuration": 626
+    "totalDuration": 716
   },
   "scenarios": [
     {
@@ -19,7 +19,7 @@
       "critical": true,
       "passed": false,
       "exitCode": 1,
-      "duration": 626,
+      "duration": 716,
       "error": null
     }
   ],
