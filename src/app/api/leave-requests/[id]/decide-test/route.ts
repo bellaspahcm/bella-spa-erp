@@ -21,9 +21,12 @@ import { LeaveApprovalIntegration } from '@/lib/decision-engine/integrations/lea
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Await params in Next.js 15+
+    const params = await context.params;
+    
     // Verify secret key (new Supabase API key format)
     const authHeader = request.headers.get('authorization');
     const secretKey = process.env.SUPABASE_SECRET_KEY;
