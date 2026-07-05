@@ -25,23 +25,13 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
-// import { LeaveDecisionService } from '@/services/leave/leave-decision-service'; // Legacy - moved to .legacy
+import { LeaveApprovalIntegration } from '@/lib/decision-engine/integrations/leave-approval/LeaveApprovalIntegration';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    // Legacy code - Decision Engine integration disabled temporarily
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Decision Engine integration in maintenance. Please use manual approval.',
-      },
-      { status: 503 }
-    );
-    
-    /* LEGACY CODE - TO BE REFACTORED
     const supabase = await createClient();
 
     // 1. Get current user
@@ -78,28 +68,17 @@ export async function POST(
       );
     }
 
-    // 3. Parse request body
-    const body = await request.json();
-    const { action } = body;
+    // 3. Use Decision Engine for approval
+    const integration = new LeaveApprovalIntegration(supabase);
 
-    if (action !== 'approve' && action !== 'reject') {
-      return NextResponse.json(
-        { success: false, error: 'Invalid action. Must be "approve" or "reject"' },
-        { status: 400 }
-      );
-    }
-
-    // 4. Use Decision Engine for approval
-    const service = new LeaveDecisionService();
-    
-    const result = await service.approveLeaveRequest({
+    const result = await integration.approveLeaveRequest({
       requestId: params.id,
       approverId: user.id,
       approverRole: profile.role,
       tenantId: profile.tenant_id,
     });
 
-    // 5. Return result
+    // 4. Return result
     if (!result.success) {
       return NextResponse.json(
         {
@@ -117,7 +96,6 @@ export async function POST(
       decisionId: result.decisionId,
       metadata: result.metadata,
     });
-    */
   } catch (error) {
     console.error('Leave decision API error:', error);
     return NextResponse.json(
