@@ -25,13 +25,23 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
-import { LeaveDecisionService } from '@/services/leave/leave-decision-service';
+// import { LeaveDecisionService } from '@/services/leave/leave-decision-service'; // Legacy - moved to .legacy
 
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
+    // Legacy code - Decision Engine integration disabled temporarily
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Decision Engine integration in maintenance. Please use manual approval.',
+      },
+      { status: 503 }
+    );
+    
+    /* LEGACY CODE - TO BE REFACTORED
     const supabase = await createClient();
 
     // 1. Get current user
@@ -107,6 +117,7 @@ export async function POST(
       decisionId: result.decisionId,
       metadata: result.metadata,
     });
+    */
   } catch (error) {
     console.error('Leave decision API error:', error);
     return NextResponse.json(

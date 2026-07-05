@@ -9,11 +9,14 @@
  * 3. Check approver authorization level
  * 4. Validate business days (no negative days)
  * 5. Check blackout periods (Tet, high season)
+ * 
+ * NOTE: This is a legacy example file. Production policies are defined
+ * in the Rule Provider configuration.
  */
 
-import type { Policy } from '../types';
+// import type { Policy } from '../types'; // TODO: Define Policy type or remove this file
 
-export const leaveApprovalPolicy: Policy = {
+export const leaveApprovalPolicy: any = {
   name: 'Leave Approval Policy',
   version: '1.0.0',
   description: 'Business rules for employee leave request approval',

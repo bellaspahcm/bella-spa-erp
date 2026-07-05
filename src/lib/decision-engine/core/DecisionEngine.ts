@@ -655,9 +655,9 @@ export class DecisionEngine {
     const correlation: CorrelationContext | undefined = context.correlationId
       ? {
           correlationId: context.correlationId,
-          traceId: context.metadata?.traceId,
-          spanId: context.metadata?.spanId,
-          parentSpanId: context.metadata?.parentSpanId,
+          traceId: context.metadata?.traceId as string | undefined,
+          spanId: context.metadata?.spanId as string | undefined,
+          parentSpanId: context.metadata?.parentSpanId as string | undefined,
         }
       : undefined;
 
