@@ -235,26 +235,36 @@ export async function ktvCheckOut() {
 /** Admin Action: Get all KTVs with their attendance count for a given month */
 export async function getMonthlyAttendanceSummary(monthStr: string) {
   const supabase = await createClient();
+  
+  // Get current user's tenant to ensure proper isolation
+  const currentUser = await getCurrentUser();
+  const tenantId = currentUser?.tenant_id;
+  if (!tenantId) {
+    throw new Error('[getMonthlyAttendanceSummary] Missing tenantId for current user');
+  }
+  
   const startOfMonth = `${monthStr}-01`;
   const endOfMonth = getLocalDateString(new Date(new Date(startOfMonth).getFullYear(), new Date(startOfMonth).getMonth() + 1, 1));
 
-  // 1. Fetch all KTVs
+  // 1. Fetch all KTVs (filtered by tenant)
   const { data: ktvs, error: ktvsError } = await supabase
     .from('users')
     .select('id, full_name, base_salary, hire_date, resignation_date, status')
-    .eq('role', 'ktv');
+    .eq('role', 'ktv')
+    .eq('tenant_id', tenantId); // ✅ FIX: Add tenant filter
 
   if (ktvsError) {
     throw new Error(`Failed to fetch KTVs for monthly attendance summary: ${ktvsError.message}`);
   }
   if (!ktvs) return [];
 
-  // 2. Fetch all attendance logs this month
+  // 2. Fetch all attendance logs this month (filtered by tenant)
   const { data: logs, error: logsError } = await supabase
     .from('attendance')
     .select('*')
     .gte('date', startOfMonth)
-    .lt('date', endOfMonth);
+    .lt('date', endOfMonth)
+    .eq('tenant_id', tenantId); // ✅ FIX: Add tenant filter
 
   if (logsError) {
     throw new Error(`Failed to fetch monthly attendance logs: ${logsError.message}`);
