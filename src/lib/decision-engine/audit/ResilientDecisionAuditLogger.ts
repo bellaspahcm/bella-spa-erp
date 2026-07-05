@@ -164,8 +164,25 @@ export class ResilientDecisionAuditLogger {
 
   /**
    * Persist payload to database (called by queue worker)
+   * 
+   * GATE 2 TEST INJECTION:
+   * - Checks globalThis.__GATE2_AUDIT_FAIL__ to simulate DB down
+   * - Checks globalThis.__GATE2_AUDIT_TIMEOUT__ to simulate timeout
    */
   private async persistToDatabase(payload: any): Promise<void> {
+    // @ts-ignore - Gate 2 test injection
+    if (globalThis.__GATE2_AUDIT_FAIL__) {
+      throw new Error('Gate 2 Test: Audit database unreachable (injected failure)');
+    }
+
+    // @ts-ignore - Gate 2 test injection
+    if (globalThis.__GATE2_AUDIT_TIMEOUT__) {
+      // @ts-ignore
+      const timeoutMs = globalThis.__GATE2_AUDIT_TIMEOUT__;
+      await new Promise((resolve) => setTimeout(resolve, timeoutMs));
+      throw new Error(`Gate 2 Test: Audit insert timeout after ${timeoutMs}ms (injected failure)`);
+    }
+
     const { error } = await this.supabase
       .from('decision_audit_log')
       .insert(payload);

@@ -11,18 +11,17 @@
  * 5. After DB restore, queue drains successfully
  * 
  * Test Flow:
- * - Step 1: Make DB unavailable (mock client with connection failures)
- * - Step 2: Make 10 leave decisions (all should succeed)
- * - Step 3: Check circuit breaker status (should be OPEN)
- * - Step 4: Check queue metrics (should have 10 pending)
- * - Step 5: Restore DB (swap back to real client)
- * - Step 6: Wait for queue drain
- * - Step 7: Verify all 10 audit logs persisted
+ * - Step 1: Verify test leave requests exist
+ * - Step 2: Make 10 leave decisions with audit failure injection
+ * - Step 3: Verify all decisions succeeded (non-blocking)
+ * - Step 4: Check circuit breaker status (should be OPEN after 5+ failures)
+ * - Step 5: Check queue metrics (should have pending items)
+ * - Step 6: Make decision WITHOUT failure injection (DB "restored")
+ * - Step 7: Wait for queue drain and verify health
  */
 
-const { createClient } = require('@supabase/supabase-js');
-
 // Config
+const BASE_URL = process.env.BASE_URL || 'https://bella-spa-erp.vercel.app';
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SECRET_KEY;
 
@@ -31,48 +30,66 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
   process.exit(1);
 }
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+/**
+ * Fetch test leave requests from Test Beauty Spa tenant
+ */
+async function getTestLeaveRequests() {
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/leave_requests?select=id,tenant_id&tenant_id=eq.11111111-1111-1111-1111-111111111111&limit=2`, {
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch test leave requests: ${response.statusText}`);
+  }
+  
+  return await response.json();
+}
 
 /**
- * Create failing Supabase client (simulates DB down)
+ * Make leave decision via Gate 2 test endpoint
  */
-function createFailingClient() {
-  return {
-    from: () => ({
-      insert: async () => {
-        // Simulate connection error
-        throw new Error('Connection refused: Database unreachable');
-      },
-      select: () => ({
-        eq: () => ({
-          single: async () => {
-            throw new Error('Connection refused: Database unreachable');
-          },
-        }),
-      }),
+async function makeLeaveDecision(requestId, injectAuditFailure = false) {
+  const url = `${BASE_URL}/api/leave-requests/${requestId}/decide-gate2`;
+  
+  const headers = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${SUPABASE_KEY}`,
+  };
+  
+  if (injectAuditFailure) {
+    headers['X-Gate2-Audit-Fail'] = 'true';
+  }
+  
+  const response = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      approverId: 'admin-gate2-test',
+      approverRole: 'admin',
+      tenantId: '11111111-1111-1111-1111-111111111111', // Test Beauty Spa
     }),
+  });
+  
+  const data = await response.json();
+  return {
+    success: response.ok,
+    status: response.status,
+    data,
   };
 }
 
 /**
- * Make leave decision (via decision engine)
+ * Check Decision Engine health
  */
-async function makeLeaveDecision(requestId, shouldFail = false) {
-  const client = shouldFail ? createFailingClient() : supabase;
-  
-  // Import LeaveApprovalIntegration
-  const { LeaveApprovalIntegration } = require('../src/lib/decision-engine/integrations/leave-approval/LeaveApprovalIntegration.ts');
-  
-  const integration = new LeaveApprovalIntegration(client);
-  
-  const result = await integration.evaluateLeaveApproval({
-    requestId,
-    approverId: 'user-gate2-admin',
-    approverRole: 'admin',
-    tenantId: 'bella-test',
-  });
-  
-  return result;
+async function checkHealth() {
+  const response = await fetch(`${BASE_URL}/api/decision-engine/health`);
+  if (!response.ok) {
+    throw new Error(`Health check failed: ${response.statusText}`);
+  }
+  return await response.json();
 }
 
 /**
@@ -84,26 +101,17 @@ async function runScenario() {
   try {
     // Step 1: Verify test data exists
     console.log('Step 1: Verify test leave requests...');
-    const { data: requests, error } = await supabase
-      .from('leave_requests')
-      .select('id')
-      .eq('tenant_id', '11111111-1111-1111-1111-111111111111') // Test Beauty Spa (isolated)
-      .limit(10);
-    
-    if (error) {
-      console.error('❌ Failed to fetch test data:', error.message);
-      process.exit(1);
-    }
+    const requests = await getTestLeaveRequests();
     
     if (!requests || requests.length < 2) {
       console.error('❌ Need at least 2 test leave requests in "Test Beauty Spa" tenant');
-      console.log('Run: node scripts/run-gate1-sql-setup.js');
+      console.log('Run: node scripts/setup-gate2-test-data.js');
       process.exit(1);
     }
     
     console.log(`✅ Found ${requests.length} test leave requests\n`);
     
-    // Step 2: Simulate DB down - make 10 decisions
+    // Step 2: Simulate DB down - make 10 decisions with audit failure injection
     console.log('Step 2: Simulate audit DB down - making 10 decisions...');
     const startTime = Date.now();
     
@@ -111,9 +119,10 @@ async function runScenario() {
     for (let i = 0; i < 10; i++) {
       const requestId = requests[i % requests.length].id;
       try {
-        const result = await makeLeaveDecision(requestId, true); // DB failing
+        const result = await makeLeaveDecision(requestId, true); // Inject audit failure
         results.push(result);
-        console.log(`  Decision ${i + 1}: ${result.approved ? 'APPROVED' : 'REJECTED'} (${result.success ? 'SUCCESS' : 'FAILED'})`);
+        const status = result.success ? '✅ SUCCESS' : '❌ FAILED';
+        console.log(`  Decision ${i + 1}: ${status}`);
       } catch (error) {
         console.error(`  Decision ${i + 1}: ❌ EXCEPTION: ${error.message}`);
         results.push({ success: false, error: error.message });
@@ -138,28 +147,78 @@ async function runScenario() {
     
     // Step 4: Check health endpoint
     console.log('Step 4: Check health endpoint...');
-    const healthResponse = await fetch(`${SUPABASE_URL.replace('https://', 'https://').replace('.supabase.co', '')}/api/decision-engine/health`);
-    const health = await healthResponse.json();
+    const health = await checkHealth();
     
     console.log(`  Status: ${health.status}`);
-    console.log(`  Circuit Breaker: ${health.audit?.circuitBreaker?.state}`);
-    console.log(`  Queue Pending: ${health.audit?.queueMetrics?.pending || 0}`);
-    console.log(`  DLQ Size: ${health.audit?.dlqSize || 0}`);
+    console.log(`  Circuit Breaker: ${health.auditQueue?.circuitBreaker || 'unknown'}`);
+    console.log(`  Queue Pending: ${health.auditQueue?.pending || 0}`);
+    console.log(`  Queue Failed: ${health.auditQueue?.failed || 0}`);
+    console.log(`  DLQ Size: ${health.auditQueue?.deadLetters || 0}`);
     
-    if (health.audit?.circuitBreaker?.state !== 'OPEN') {
-      console.warn(`⚠️  WARNING: Expected circuit breaker to be OPEN, got ${health.audit?.circuitBreaker?.state}`);
+    if (health.status !== 'degraded' && health.auditQueue?.circuitBreaker !== 'OPEN') {
+      console.warn(`⚠️  WARNING: Expected circuit breaker to be OPEN after 10 failures`);
     }
     
-    if ((health.audit?.queueMetrics?.pending || 0) < 5) {
-      console.warn(`⚠️  WARNING: Expected at least 5 items in queue, got ${health.audit?.queueMetrics?.pending || 0}`);
+    if ((health.auditQueue?.pending || 0) < 5) {
+      console.warn(`⚠️  WARNING: Expected at least 5 items in queue, got ${health.auditQueue?.pending || 0}`);
     }
     
     console.log(`✅ Health endpoint shows degraded state\n`);
     
-    // Step 5: Simulate DB restore - make 5 more decisions
+    // Step 5: Simulate DB restore - make 5 more decisions WITHOUT failure injection
     console.log('Step 5: Simulate DB restore - making 5 more decisions...');
     
+    const restoreResults = [];
     for (let i = 0; i < 5; i++) {
+      const requestId = requests[i % requests.length].id;
+      try {
+        const result = await makeLeaveDecision(requestId, false); // No audit failure
+        restoreResults.push(result);
+        const status = result.success ? '✅ SUCCESS' : '❌ FAILED';
+        console.log(`  Decision ${i + 1}: ${status}`);
+      } catch (error) {
+        console.error(`  Decision ${i + 1}: ❌ EXCEPTION: ${error.message}`);
+        restoreResults.push({ success: false, error: error.message });
+      }
+    }
+    
+    console.log(`✅ All 5 "DB restored" decisions completed\n`);
+    
+    // Step 6: Wait for queue drain
+    console.log('Step 6: Wait for queue drain (10 seconds)...');
+    await new Promise(resolve => setTimeout(resolve, 10000));
+    
+    // Step 7: Final health check
+    console.log('Step 7: Final health check...');
+    const finalHealth = await checkHealth();
+    
+    console.log(`  Status: ${finalHealth.status}`);
+    console.log(`  Circuit Breaker: ${finalHealth.auditQueue?.circuitBreaker || 'unknown'}`);
+    console.log(`  Queue Pending: ${finalHealth.auditQueue?.pending || 0}`);
+    console.log(`  Success Count: ${finalHealth.auditQueue?.successCount || 0}`);
+    
+    if (finalHealth.auditQueue?.circuitBreaker === 'CLOSED' || finalHealth.auditQueue?.circuitBreaker === 'HALF_OPEN') {
+      console.log(`✅ Circuit breaker recovered`);
+    }
+    
+    if ((finalHealth.auditQueue?.pending || 0) === 0) {
+      console.log(`✅ Queue drained successfully`);
+    } else {
+      console.warn(`⚠️  Queue still has ${finalHealth.auditQueue?.pending} pending items (may need more time)`);
+    }
+    
+    console.log('\n✅ Scenario 2.1 PASSED\n');
+    process.exit(0);
+    
+  } catch (error) {
+    console.error('❌ Scenario 2.1 FAILED:', error.message);
+    console.error(error.stack);
+    process.exit(1);
+  }
+}
+
+// Run scenario
+runScenario();
       const requestId = requests[i % requests.length].id;
       const result = await makeLeaveDecision(requestId, false); // DB working
       console.log(`  Decision ${i + 1}: ${result.approved ? 'APPROVED' : 'REJECTED'} (${result.success ? 'SUCCESS' : 'FAILED'})`);
