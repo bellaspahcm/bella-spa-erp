@@ -5,6 +5,10 @@
     {
       "path": "/api/cron/sync-external-ads",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/gate3-monitor",
+      "schedule": "*/5 * * * *"
     }
   ]
 }
