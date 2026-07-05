@@ -8,7 +8,7 @@
  */
 
 import type { IDecisionProvider } from './IDecisionProvider';
-import type { DecisionContext, DecisionResult } from '../types';
+import type { DecisionContext, DecisionResult, DecisionAction } from '../types';
 
 /**
  * Base abstract class for Decision Providers
@@ -107,7 +107,7 @@ export abstract class BaseDecisionProvider implements IDecisionProvider {
       reason?: string;
       matchedRules?: string[];
       metadata?: Record<string, unknown>;
-      action?: Record<string, unknown>;
+      action?: DecisionAction;
     } = {}
   ): DecisionResult {
     return {

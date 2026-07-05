@@ -6,6 +6,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import type { TodaySession } from '../services/dashboard/fetchTodaySessions';
+import colors from '../theme/colors';
 
 interface SessionCardProps {
   session: TodaySession;
@@ -55,13 +56,13 @@ export function SessionCard({ session, showKtvName = true }: SessionCardProps) {
 function getStatusColor(status: string): string {
   switch (status.toLowerCase()) {
     case 'in_progress':
-      return '#4CAF50'; // Green
+      return colors.success;
     case 'pending':
-      return '#FF9800'; // Orange
+      return colors.warning;
     case 'scheduled':
-      return '#2196F3'; // Blue
+      return colors.info;
     default:
-      return '#9E9E9E'; // Gray
+      return colors.textMuted;
   }
 }
 
@@ -80,12 +81,12 @@ function getStatusLabel(status: string): string {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#FFF',
+    backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 16,
     marginVertical: 8,
     marginHorizontal: 16,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -100,7 +101,7 @@ const styles = StyleSheet.create({
   time: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
+    color: colors.text,
   },
   statusBadge: {
     paddingHorizontal: 12,
@@ -108,7 +109,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   statusText: {
-    color: '#FFF',
+    color: colors.textWhite,
     fontSize: 12,
     fontWeight: '600',
   },
@@ -118,17 +119,17 @@ const styles = StyleSheet.create({
   customerName: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#000',
+    color: colors.text,
     marginBottom: 4,
   },
   babyName: {
     fontSize: 14,
-    color: '#555',  // FIXED: Improved from #666 to #555 for better contrast
+    color: colors.textSecondary,
     marginBottom: 4,
   },
   packageName: {
     fontSize: 14,
-    color: '#E91E63',
+    color: colors.primary,
     marginTop: 4,
   },
   footer: {
@@ -137,15 +138,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#EEE',
+    borderTopColor: colors.divider,
   },
   progress: {
     fontSize: 14,
-    color: '#555',  // FIXED: Improved from #666 to #555 for better contrast (8.59:1)
+    color: colors.textSecondary,
     fontWeight: '500',
   },
   ktvName: {
     fontSize: 14,
-    color: '#555',  // FIXED: Improved from #666 to #555 for better contrast (8.59:1)
+    color: colors.textSecondary,
   },
 });

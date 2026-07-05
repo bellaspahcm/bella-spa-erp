@@ -33,13 +33,14 @@ export {
 // Cache implementations
 export { InMemoryCache, createInMemoryCache } from './InMemoryCache';
 
-export {
-  RedisCache,
-  createRedisCache,
-  createRedisCacheFromUrl,
-} from './RedisCache';
-
-export type { RedisCacheConfig } from './RedisCache';
+// ⚠️ RedisCache is server-only - use dynamic import in server components/API routes
+// export {
+//   RedisCache,
+//   createRedisCache,
+//   createRedisCacheFromUrl,
+// } from './RedisCache';
+// 
+// export type { RedisCacheConfig } from './RedisCache';
 
 // Cache utilities
 export {

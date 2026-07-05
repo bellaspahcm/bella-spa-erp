@@ -123,7 +123,7 @@ export class BIProvider extends BaseDecisionProvider implements IDecisionProvide
    * @param config - Provider configuration
    */
   constructor(config: BIProviderConfig) {
-    super();
+    super('BIProvider', ['bi-query', 'bi-threshold', 'bi-aggregation']);
     
     this.client = config.client;
     this.config = {
@@ -172,19 +172,14 @@ export class BIProvider extends BaseDecisionProvider implements IDecisionProvide
       const confidence = this.calculateConfidence(queryResult, rule.threshold);
       const reason = this.buildReason(approved, queryResult, rule);
 
-      return createSuccessResult({
-        approved,
-        confidence,
+      return this.createSuccessResult(approved, confidence, {
         reason,
         metadata: {
           biResult: queryResult.value,
           queryExecutionTime: queryResult.metadata?.executionTime,
           queryHash: queryResult.metadata?.queryHash,
-          cached: queryResult.metadata?.cached,
           threshold: rule.threshold,
         },
-        provider: this.name,
-        executionTime: Date.now() - startTime,
       });
     } catch (error) {
       return this.handleError(error as Error, startTime);
@@ -316,11 +311,6 @@ export class BIProvider extends BaseDecisionProvider implements IDecisionProvide
     // Base confidence: 0.9
     let confidence = 0.9;
 
-    // Reduce confidence if result is cached (data may be stale)
-    if (queryResult.metadata?.cached) {
-      confidence -= 0.05;
-    }
-
     // Reduce confidence if query execution time is high (may indicate data issues)
     if (queryResult.metadata?.executionTime && queryResult.metadata.executionTime > 10000) {
       confidence -= 0.05;
@@ -361,12 +351,7 @@ export class BIProvider extends BaseDecisionProvider implements IDecisionProvide
     // Log error (would use logger in production)
     console.error('[BIProvider] Error:', error.message);
 
-    return createErrorResult(
-      'BI_QUERY_ERROR',
-      error.message,
-      this.name,
-      executionTime
-    );
+    return this.createErrorResult(error, executionTime);
   }
 
   /**

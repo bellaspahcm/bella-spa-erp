@@ -1,0 +1,72 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "date": "2026-07-04T11:38:02.290Z",
+    "platform": "win32",
+    "nodeVersion": "v25.7.0"
+  },
+  "benchmarks": {
+    "small": {
+      "count": 100,
+      "totalTime": 78,
+      "average": 0.77596,
+      "p50": 0.7527000000000044,
+      "p95": 1.5859000000000378,
+      "p99": 3.4721000000000686,
+      "min": 0.20839999999998327,
+      "max": 3.4721000000000686,
+      "throughput": 1282.051282051282,
+      "autoApprovalRate": 0.17482517482517482,
+      "rejectionRate": 0.8251748251748252,
+      "manualReviewRate": 0,
+      "averageConfidence": 1,
+      "errorRate": 0,
+      "targetsMet": true
+    },
+    "medium": {
+      "count": 500,
+      "totalTime": 324,
+      "average": 0.6476425999999978,
+      "p50": 0.6493000000000393,
+      "p95": 1.0833999999999833,
+      "p99": 1.9879000000000815,
+      "min": 0.18080000000009022,
+      "max": 4.178199999999833,
+      "throughput": 1543.20987654321,
+      "autoApprovalRate": 0.17142857142857143,
+      "rejectionRate": 0.8285714285714286,
+      "manualReviewRate": 0,
+      "averageConfidence": 1,
+      "errorRate": 0,
+      "targetsMet": true
+    },
+    "large": {
+      "count": 1000,
+      "totalTime": 604,
+      "average": 0.6029570000000074,
+      "p50": 0.6275000000000546,
+      "p95": 1.0148999999998978,
+      "p99": 1.4058999999999742,
+      "min": 0.16020000000003165,
+      "max": 4.144999999999982,
+      "throughput": 1655.6291390728477,
+      "autoApprovalRate": 0.17206151199053663,
+      "rejectionRate": 0.8279384880094633,
+      "manualReviewRate": 0,
+      "averageConfidence": 1,
+      "errorRate": 0,
+      "targetsMet": true
+    }
+  },
+  "memory": {
+    "baselineHeapMB": 55.047950744628906,
+    "peakHeapMB": 64.60379791259766,
+    "heapIncreaseMB": 9.55584716796875,
+    "rssIncreaseMB": 21.90625,
+    "memoryPerDecisionKB": 9.7851875,
+    "targetMet": true
+  },
+  "summary": {
+    "allTargetsMet": true
+  }
+}

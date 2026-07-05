@@ -14,7 +14,7 @@
 import { BaseBusinessProcess } from './executor';
 import type { ProcessConfig, PayrollProcessResult, PolicyExecutionResult } from './types';
 import type { PayrollDecisionContext } from '@/lib/decision-engine/types/decision-context';
-import type { PayrollProvider, SalaryComponent } from '@/lib/decision-engine/types/payroll-types';
+import type { PayrollProvider, SalaryComponent, SalaryComponentType, SalaryDeductionType } from '@/lib/decision-engine/types/payroll-types';
 import { BaseSalaryProvider } from '@/services/providers/base-salary-provider';
 import { CompensationProvider } from '@/services/providers/compensation-provider';
 
@@ -86,7 +86,8 @@ export class PayrollProcess extends BaseBusinessProcess<
 
         // Categorize by component type (not policyType!)
         // component.type comes from createSalaryComponent('xxx', ...)
-        switch (component.type) {
+        // Note: TypeScript narrowing - deduction types vs earning types
+        switch (component.type as SalaryComponentType | SalaryDeductionType) {
           case 'base-salary':
             baseSalary += component.amount;
             break;
@@ -95,15 +96,18 @@ export class PayrollProcess extends BaseBusinessProcess<
           case 'product-commission':
             compensation += component.amount;
             break;
-          case 'late-deduction':
-          case 'absent-deduction':
+          case 'late-penalty':
+          case 'absent-penalty':
           case 'violation-deduction':
             penalties += component.amount;
             break;
-          case 'manual-adjustment':
-          case 'bonus':
-          case 'allowance':
+          case 'manual-bonus':
+          case 'position-bonus':
+          case 'kpi-bonus':
             adjustments += component.amount;
+            break;
+          case 'manual-deduction':
+            adjustments -= component.amount; // Subtract deductions from adjustments
             break;
         }
       }

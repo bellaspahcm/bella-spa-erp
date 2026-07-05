@@ -33,12 +33,13 @@ interface DecisionEvaluatedEvent {
   id: string;
   type: 'decision.evaluated';
   timestamp: Date;
+  tenantId: string; // Top-level for DomainEvent compatibility
+  userId?: string;
+  correlationId?: string;
   data: {
     // Context
-    tenantId: string;
     module: string;
     decisionType: string;
-    correlationId: string;
 
     // Input
     ruleType: string;
@@ -54,7 +55,6 @@ interface DecisionEvaluatedEvent {
     executionTime: number;
 
     // User (optional)
-    userId?: string;
     userRole?: string;
 
     // Error (if any)
@@ -307,14 +307,7 @@ export class DecisionEngine {
    * @private
    */
   private generateCacheKey(context: DecisionContext): string {
-    return generateDecisionCacheKey(
-      context.tenantId,
-      context.module,
-      context.decisionType,
-      context.ruleType,
-      context.rule,
-      context.data
-    );
+    return generateDecisionCacheKey(context);
   }
 
   /**
@@ -369,16 +362,11 @@ export class DecisionEngine {
         return;
       }
 
-      // Check if result should be cached
-      if (!this.cacheStrategy.shouldCacheResult(result)) {
-        return;
-      }
-
       // Generate cache key
       const cacheKey = this.generateCacheKey(context);
 
       // Get TTL from strategy
-      const ttl = this.cacheStrategy.getTTL(context);
+      const ttl = this.cacheStrategy.getTTL(context, result);
 
       // Store in cache
       await this.cache.set(cacheKey, result, ttl);
@@ -479,7 +467,13 @@ export class DecisionEngine {
       );
 
       if (this.fallbackStrategy === 'MANUAL_REVIEW') {
-        fallbackResult.action = 'MANUAL_REVIEW';
+        fallbackResult.action = {
+          type: 'MANUAL_REVIEW',
+          data: {
+            reason: 'Provider evaluation failed',
+            error: (error as Error).message,
+          },
+        };
       }
 
       return fallbackResult;
@@ -512,7 +506,6 @@ export class DecisionEngine {
       ...result,
       executionTime: Date.now() - startTime,
       timestamp: new Date(),
-      correlationId: context.correlationId,
     };
   }
 
@@ -543,12 +536,13 @@ export class DecisionEngine {
       id: `decision-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       type: 'decision.evaluated',
       timestamp: new Date(),
+      tenantId: context.tenantId,
+      userId: context.user?.id,
+      correlationId: context.correlationId,
       data: {
         // Context
-        tenantId: context.tenantId,
         module: context.module,
         decisionType: context.decisionType,
-        correlationId: context.correlationId || '',
 
         // Input (sanitized)
         ruleType: context.ruleType,
@@ -564,7 +558,6 @@ export class DecisionEngine {
         executionTime: result.executionTime,
 
         // User (optional)
-        userId: context.user?.id,
         userRole: context.user?.role,
 
         // Error (if any)
@@ -730,7 +723,7 @@ export class DecisionEngine {
 
     try {
       // Generate invalidation pattern
-      const pattern = generateInvalidationPattern(tenantId, module, decisionType);
+      const pattern = generateInvalidationPattern(tenantId, decisionType);
 
       // Delete matching keys
       const deletedCount = await this.cache.delete(pattern);

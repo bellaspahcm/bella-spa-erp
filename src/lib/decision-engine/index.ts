@@ -167,9 +167,9 @@ export {
   createCacheConfig,
   InMemoryCache,
   createInMemoryCache,
-  RedisCache,
-  createRedisCache,
-  createRedisCacheFromUrl,
+  // RedisCache, // ⚠️ Server-only - use dynamic import
+  // createRedisCache, // ⚠️ Server-only - use dynamic import
+  // createRedisCacheFromUrl, // ⚠️ Server-only - use dynamic import
   DefaultCacheStrategy,
   ConservativeCacheStrategy,
   AggressiveCacheStrategy,
@@ -190,7 +190,34 @@ export {
   formatBytes,
 } from './cache';
 
-export type { RedisCacheConfig } from './cache/RedisCache';
+// export type { RedisCacheConfig } from './cache/RedisCache'; // ⚠️ Server-only
+
+// ============ Observability ============
+export type {
+  DecisionMetric,
+  AggregatedMetrics,
+  MetricsQuery,
+  AuditRecord,
+  AuditQuery,
+  DecisionEventType,
+  DecisionEventPayload,
+  DecisionEventHandler,
+  ObservabilityOptions,
+} from './observability';
+
+export {
+  MetricsCollector,
+  metricsCollector,
+  AuditTrail,
+  auditTrail,
+  DecisionEventEmitter,
+  eventEmitter,
+  generateEventId,
+  generateDecisionId,
+  ObservabilityInterceptor,
+  observabilityInterceptor,
+  withObservability,
+} from './observability';
 
 // ============ Re-exports (for convenience) ============
 
