@@ -70,7 +70,7 @@ export class PolicyRegistry {
     const now = new Date().toISOString();
     const fullMetadata: PolicyMetadata = {
       ...metadata,
-      createdAt: metadata.createdAt || now,
+      createdAt: now,
       updatedAt: now,
     };
     

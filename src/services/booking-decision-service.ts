@@ -15,15 +15,15 @@ import {
   createDecisionContext,
   type DecisionResult,
   type DecisionContext,
+  type IfThenRule,
 } from '@/lib/decision-engine';
 import { metricsCollector, auditTrail, type DecisionMetric, type AuditRecord, generateDecisionId } from '@/lib/decision-engine/observability';
 import {
   getBookingApprovalRules,
   mapCustomerTier,
   calculateDepositAmount,
-  type IfThenRule,
 } from '@/lib/decision-engine/rules/booking-approval-rules';
-import type { Database } from '@/types/supabase';
+import type { Database } from '@/types/database.types';
 
 type CustomerRow = Database['public']['Tables']['customers']['Row'];
 
@@ -201,7 +201,7 @@ export async function evaluateBookingApproval(
         provider: 'RuleProvider',
         rulesMatched: result.confidence > 0 ? 1 : 0,
         approved: result.approved,
-        requiresManualReview: result.requiresManualReview || false,
+        requiresManualReview: Boolean(result.action && (result.action as any).requiresManualReview),
         cacheHit: false,
         failed: false,
         usedFallback: false,
@@ -217,15 +217,15 @@ export async function evaluateBookingApproval(
         tenantId: input.tenantId || 'bella-spa-vn',
         provider: 'RuleProvider',
         matchedRules: result.confidence > 0 ? [{
-          ruleId: rule.id,
-          priority: rule.priority,
+          ruleId: rule.id || 'unknown',
+          priority: 0,
           condition: JSON.stringify(rule.condition),
           action: result.action,
         }] : [],
         executionTime,
         confidence: result.confidence,
         actions: result.action ? [result.action] : [],
-        reason: result.reason,
+        reason: result.reason || 'No reason provided',
         context,
         result,
         cacheHit: false,
@@ -236,7 +236,7 @@ export async function evaluateBookingApproval(
       
       // If rule matched (confidence > 0), use this decision
       if (result.confidence > 0 && result.action) {
-        const action = result.action as Record<string, unknown>;
+        const action = result.action.data as Record<string, unknown>;
         const approved = Boolean(action.approved);
         const requiresDeposit = Boolean(action.requiresDeposit);
         const depositPercent = Number(action.depositPercent || 0);
@@ -252,7 +252,7 @@ export async function evaluateBookingApproval(
           requiresManualReview: Boolean(action.requiresManualReview),
           requiresVerification: Boolean(action.requiresVerification),
           reason: result.reason || 'No reason provided',
-          matchedRules: result.matchedRules || [rule.id],
+          matchedRules: result.matchedRules || (rule.id ? [rule.id] : []),
           confidence: result.confidence,
           executionTime: Date.now() - startTime,
           provider: result.provider,
