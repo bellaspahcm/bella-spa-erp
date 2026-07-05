@@ -1,0 +1,28 @@
+{
+  "gate": "Gate 2: Failure Injection Testing",
+  "timestamp": "2026-07-05T13:01:12.178Z",
+  "environment": "development",
+  "summary": {
+    "totalScenarios": 1,
+    "passed": 0,
+    "failed": 1,
+    "criticalPassed": 0,
+    "criticalFailed": 1,
+    "overallPass": false,
+    "totalDuration": 626
+  },
+  "scenarios": [
+    {
+      "id": "2.1",
+      "name": "Audit Database Down",
+      "description": "Decisions succeed when audit DB is unavailable, circuit breaker opens, queue holds pending audits",
+      "critical": true,
+      "passed": false,
+      "exitCode": 1,
+      "duration": 626,
+      "error": null
+    }
+  ],
+  "assertion": "Business decisions NEVER block on audit failures",
+  "assertionVerified": false
+}

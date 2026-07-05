@@ -87,7 +87,7 @@ async function runScenario() {
     const { data: requests, error } = await supabase
       .from('leave_requests')
       .select('id')
-      .eq('tenant_id', 'bella-test')
+      .eq('tenant_id', '11111111-1111-1111-1111-111111111111') // Test Beauty Spa (isolated)
       .limit(10);
     
     if (error) {
@@ -96,7 +96,7 @@ async function runScenario() {
     }
     
     if (!requests || requests.length < 2) {
-      console.error('❌ Need at least 2 test leave requests in "bella-test" tenant');
+      console.error('❌ Need at least 2 test leave requests in "Test Beauty Spa" tenant');
       console.log('Run: node scripts/run-gate1-sql-setup.js');
       process.exit(1);
     }
