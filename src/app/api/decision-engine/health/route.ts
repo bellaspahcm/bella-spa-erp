@@ -142,11 +142,42 @@ export async function GET(request: NextRequest) {
  */
 async function getQueueMetrics(): Promise<{ status: string; pending: number; [key: string]: any } | null> {
   try {
-    // TODO: Access global ResilientDecisionAuditLogger instance
-    // For now, return placeholder
-    // In real implementation, this would be injected or accessed from a singleton
-    return null;
+    // Access global audit logger via registry
+    const { auditLoggerRegistry } = await import('@/lib/decision-engine/audit/AuditLoggerRegistry');
+    const health = auditLoggerRegistry.getHealth();
+    
+    if (!health || health.status === 'not-initialized' || health.status === 'error') {
+      return {
+        status: health?.status || 'not-available',
+        pending: 0,
+        processing: 0,
+        failed: 0,
+        deadLetters: 0,
+        retrying: 0,
+        successCount: 0,
+        failureCount: 0,
+        circuitBreaker: 'unknown',
+      };
+    }
+    
+    // Map health metrics to queue metrics
+    const queueMetrics = health.queueMetrics || {};
+    const circuitBreaker = health.circuitBreaker || {};
+    
+    return {
+      status: health.status,
+      pending: queueMetrics.pending || 0,
+      processing: queueMetrics.processing || 0,
+      failed: queueMetrics.failed || 0,
+      deadLetters: health.dlqSize || 0,
+      retrying: queueMetrics.retrying || 0,
+      successCount: queueMetrics.successCount || 0,
+      failureCount: queueMetrics.failureCount || 0,
+      circuitBreaker: circuitBreaker.state || 'unknown',
+      circuitBreakerHealthy: circuitBreaker.healthy || false,
+    };
   } catch (error) {
+    console.error('Failed to get queue metrics:', error);
     return null;
   }
 }
