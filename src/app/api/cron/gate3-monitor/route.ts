@@ -49,7 +49,7 @@ async function storeMetrics(health: any) {
     raw_health_data: health,
   };
   
-  const { error } = await (supabase as any)
+  const { error } = await supabase
     .from('gate3_monitoring_snapshots')
     .insert(snapshot);
   
