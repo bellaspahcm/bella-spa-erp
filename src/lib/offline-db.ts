@@ -291,6 +291,26 @@ export async function setCachedAttendance(
 }
 
 /**
+ * Clear cached attendance for user and date (force fresh fetch)
+ */
+export async function clearAttendanceCache(
+  userId: string,
+  date: string
+): Promise<void> {
+  if (!offlineDB) return;
+  
+  try {
+    await offlineDB.cachedAttendance
+      .where('[userId+date]')
+      .equals([userId, date])
+      .delete();
+    console.log(`[Cache] Cleared attendance cache for user ${userId} on ${date}`);
+  } catch (error) {
+    console.error('[Cache] Failed to clear attendance cache:', error);
+  }
+}
+
+/**
  * Get cached notifications for user
  */
 export async function getCachedNotifications(userId: string): Promise<unknown[] | null> {
