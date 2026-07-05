@@ -118,6 +118,14 @@ export class LeaveApprovalIntegration {
         approverRole: input.approverRole,
       });
 
+      console.log('[LeaveApproval] Rule data prepared:', {
+        employeeLeaveBalance: employee.leave_balance,
+        requestedDays: request.days,
+        insufficientBalance: ruleData.insufficientBalance,
+        leaveType: request.leave_type,
+        startDate: request.start_date,
+      });
+
       // 4. Execute decision through each rule until one matches
       let finalResult: DecisionResult | null = null;
 

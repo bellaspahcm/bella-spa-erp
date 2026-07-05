@@ -202,6 +202,7 @@ export function prepareLeaveApprovalData(input: {
   return {
     ...input,
     // Computed fields
+    insufficientBalance: input.employeeLeaveBalance < input.requestedDays,
     duringTetPeriod: isDuringTetPeriod(input.startDate),
     duringHighSeason: isDuringHighSeason(input.startDate),
     _always: true, // For default rule
