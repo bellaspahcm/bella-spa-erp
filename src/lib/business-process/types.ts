@@ -127,8 +127,12 @@ export interface ProcessConfig {
  * Business Process Interface
  * 
  * A business process composes multiple policy providers into a single workflow.
+ * 
+ * NOTE: TContext does NOT need to extend DecisionContext.
+ * This allows domain-specific contexts (e.g., BookingDecisionContext)
+ * that have their own fields without forcing standard Decision Engine fields.
  */
-export interface BusinessProcess<TContext extends DecisionContext, TResult> {
+export interface BusinessProcess<TContext, TResult> {
   /** Process configuration */
   config: ProcessConfig;
   
@@ -138,7 +142,7 @@ export interface BusinessProcess<TContext extends DecisionContext, TResult> {
   /**
    * Execute the business process
    * 
-   * @param context - Decision context
+   * @param context - Decision context (domain-specific)
    * @returns Process result with aggregated policy outputs
    */
   execute(context: TContext): Promise<ProcessResult<TResult>>;

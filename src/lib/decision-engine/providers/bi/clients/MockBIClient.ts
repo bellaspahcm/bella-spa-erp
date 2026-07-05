@@ -214,7 +214,6 @@ export class MockBIClient extends BaseBIClient implements IBIClient {
         rowCount: Array.isArray(value) ? value.length : 1,
         database: this.config.database,
         queryHash: this.createQueryHash(query),
-        cached: false,
       },
     };
   }

@@ -16,6 +16,7 @@ import { useAuth } from '../../src/contexts/AuthContext';
 import { useTenant } from '../../src/contexts/TenantContext';
 import { RoleBadge } from '../../src/components/RoleBadge';
 import { testSentry } from '../../src/lib/sentry';
+import colors from '../../src/theme/colors';
 
 export default function ProfileScreen() {
   const auth = useAuth();
@@ -164,23 +165,23 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: colors.background,
   },
   header: {
-    backgroundColor: '#E91E63',
+    backgroundColor: colors.primary,
     padding: 24,
     paddingTop: 48,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#FFF',
+    color: colors.textWhite,
   },
   content: {
     padding: 16,
   },
   warningBox: {
-    backgroundColor: '#FFF3CD',
+    backgroundColor: colors.warningLight,
     margin: 16,
     marginTop: 16,
     borderRadius: 8,
@@ -189,16 +190,16 @@ const styles = StyleSheet.create({
     borderColor: '#FFECB5',
   },
   warningText: {
-    color: '#856404',
+    color: colors.warningText,
     fontSize: 14,
     fontWeight: '600',
   },
   card: {
-    backgroundColor: '#FFF',
+    backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 20,
     marginBottom: 16,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -208,24 +209,24 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 16,
-    color: '#333',
+    color: colors.text,
   },
   infoRow: {
     marginBottom: 16,
   },
   label: {
     fontSize: 14,
-    color: '#555',  // FIXED: Improved from #666 to #555 for better contrast (8.59:1)
+    color: colors.textSecondary,
     marginBottom: 4,
   },
   value: {
     fontSize: 16,
-    color: '#333',
+    color: colors.text,
     fontWeight: '500',
   },
   placeholderText: {
     fontSize: 14,
-    color: '#555',  // FIXED: Improved from #666 to #555 for better contrast (8.59:1)
+    color: colors.textSecondary,
     marginBottom: 12,
   },
   featureList: {
@@ -235,7 +236,7 @@ const styles = StyleSheet.create({
   },
   featureItem: {
     fontSize: 14,
-    color: '#555',  // FIXED: Improved from #666 to #555 for better contrast (8.59:1)
+    color: colors.textSecondary,
     marginBottom: 8,
   },
   debugRow: {
@@ -245,15 +246,15 @@ const styles = StyleSheet.create({
   },
   debugLabel: {
     fontSize: 12,
-    color: '#555',  // FIXED: Improved from #666 to #555 for better contrast (8.59:1)
+    color: colors.textSecondary,
   },
   debugValue: {
     fontSize: 12,
-    color: '#555',  // FIXED: Improved from #666 to #555 for better contrast (8.59:1)
+    color: colors.textSecondary,
     fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
   },
   signOutButton: {
-    backgroundColor: '#E91E63',
+    backgroundColor: colors.primary,
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
@@ -261,7 +262,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   signOutButtonText: {
-    color: '#FFF',
+    color: colors.textWhite,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -273,14 +274,14 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   testSentryButtonText: {
-    color: '#FFF',
+    color: colors.textWhite,
     fontSize: 14,
     fontWeight: '600',
   },
   footer: {
     textAlign: 'center',
     fontSize: 12,
-    color: '#555',  // FIXED: Improved from #666 to #555 for better contrast (8.59:1)
+    color: colors.textSecondary,
     marginTop: 8,
     marginBottom: 32,
   },

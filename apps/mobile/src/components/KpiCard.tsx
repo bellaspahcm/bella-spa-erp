@@ -5,6 +5,7 @@
 
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import colors from '../theme/colors';
 
 interface KpiCardProps {
   label: string;
@@ -29,18 +30,18 @@ export function KpiCard({ label, value, icon, variant = 'default' }: KpiCardProp
 function getBackgroundColor(variant: string): string {
   switch (variant) {
     case 'primary':
-      return '#E91E63'; // Pink (primary color)
+      return colors.primary;
     case 'success':
-      return '#4CAF50'; // Green
+      return colors.success;
     case 'warning':
-      return '#FF9800'; // Orange
+      return colors.warning;
     default:
-      return '#F5F5F5'; // Light gray
+      return colors.background;
   }
 }
 
 function getTextColor(variant: string): string {
-  return variant === 'default' ? '#333' : '#FFF';
+  return variant === 'default' ? colors.text : colors.textWhite;
 }
 
 const styles = StyleSheet.create({
@@ -52,7 +53,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     margin: 8,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,

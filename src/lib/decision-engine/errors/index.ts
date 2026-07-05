@@ -304,7 +304,6 @@ export type ErrorRecoveryStrategy =
 export function getRecoveryStrategy(error: unknown): ErrorRecoveryStrategy {
   // Provider not found → Use safe default
   if (
-    isErrorOfType(error, ProviderNotFoundError) ||
     getErrorCode(error) === DecisionEngineErrorCode.PROVIDER_NOT_FOUND
   ) {
     return ErrorRecoveryStrategies.SAFE_DEFAULT;
@@ -312,7 +311,6 @@ export function getRecoveryStrategy(error: unknown): ErrorRecoveryStrategy {
 
   // Timeout → Retry
   if (
-    isErrorOfType(error, TimeoutError) ||
     getErrorCode(error) === DecisionEngineErrorCode.PROVIDER_TIMEOUT
   ) {
     return ErrorRecoveryStrategies.RETRY;
@@ -320,7 +318,6 @@ export function getRecoveryStrategy(error: unknown): ErrorRecoveryStrategy {
 
   // Provider evaluation error → Fallback provider
   if (
-    isErrorOfType(error, ProviderEvaluationError) ||
     getErrorCode(error) === DecisionEngineErrorCode.PROVIDER_EVALUATION_ERROR
   ) {
     return ErrorRecoveryStrategies.FALLBACK_PROVIDER;
@@ -328,8 +325,8 @@ export function getRecoveryStrategy(error: unknown): ErrorRecoveryStrategy {
 
   // Validation/parsing error → Safe default
   if (
-    isErrorOfType(error, ValidationError) ||
-    isErrorOfType(error, RuleParsingError)
+    getErrorCode(error) === DecisionEngineErrorCode.VALIDATION_ERROR ||
+    getErrorCode(error) === DecisionEngineErrorCode.RULE_PARSING_ERROR
   ) {
     return ErrorRecoveryStrategies.SAFE_DEFAULT;
   }

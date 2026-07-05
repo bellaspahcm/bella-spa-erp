@@ -16,6 +16,7 @@ import {
   type DecisionResult,
   type DecisionContext,
 } from '@/lib/decision-engine';
+import { metricsCollector, auditTrail, type DecisionMetric, type AuditRecord, generateDecisionId } from '@/lib/decision-engine/observability';
 import {
   getBookingApprovalRules,
   mapCustomerTier,
@@ -150,6 +151,8 @@ export async function evaluateBookingApproval(
   input: BookingDecisionInput
 ): Promise<BookingDecisionOutput> {
   const startTime = Date.now();
+  const decisionId = generateDecisionId();
+  const decisionStartTime = performance.now();
   
   // Bootstrap Decision Engine with testing mode (no events to avoid validation errors)
   const { engine } = bootstrapForTesting();
@@ -184,6 +187,52 @@ export async function evaluateBookingApproval(
       
       // Evaluate decision
       const result = await engine.evaluate(context);
+      
+      // Collect observability data
+      const decisionEndTime = performance.now();
+      const executionTime = decisionEndTime - decisionStartTime;
+      
+      // Record metrics
+      const metric: DecisionMetric = {
+        timestamp: new Date(startTime),
+        decisionType: 'booking_approval',
+        executionTime,
+        confidence: result.confidence,
+        provider: 'RuleProvider',
+        rulesMatched: result.confidence > 0 ? 1 : 0,
+        approved: result.approved,
+        requiresManualReview: result.requiresManualReview || false,
+        cacheHit: false,
+        failed: false,
+        usedFallback: false,
+        tenantId: input.tenantId || 'bella-spa-vn',
+      };
+      metricsCollector.record(metric);
+      
+      // Record audit trail
+      const auditRecord: AuditRecord = {
+        decisionId,
+        decisionType: 'booking_approval',
+        timestamp: new Date(startTime),
+        tenantId: input.tenantId || 'bella-spa-vn',
+        provider: 'RuleProvider',
+        matchedRules: result.confidence > 0 ? [{
+          ruleId: rule.id,
+          priority: rule.priority,
+          condition: JSON.stringify(rule.condition),
+          action: result.action,
+        }] : [],
+        executionTime,
+        confidence: result.confidence,
+        actions: result.action ? [result.action] : [],
+        reason: result.reason,
+        context,
+        result,
+        cacheHit: false,
+        failed: false,
+        usedFallback: false,
+      };
+      auditTrail.record(auditRecord);
       
       // If rule matched (confidence > 0), use this decision
       if (result.confidence > 0 && result.action) {

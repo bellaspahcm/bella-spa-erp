@@ -18,6 +18,7 @@ import { DashboardErrorState } from '../../src/components/DashboardErrorState';
 import { KpiCard } from '../../src/components/KpiCard';
 import { RoleBadge } from '../../src/components/RoleBadge';
 import { SessionCard } from '../../src/components/SessionCard';
+import colors from '../../src/theme/colors';
 
 // Inline utils (copied from @bella/shared for mobile-only build)
 function isTechnicianRole(role: string): boolean {
@@ -206,10 +207,10 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: colors.background,
   },
   header: {
-    backgroundColor: '#E91E63',
+    backgroundColor: colors.primary,
     padding: 24,
     paddingTop: 48,
     flexDirection: 'row',
@@ -219,12 +220,12 @@ const styles = StyleSheet.create({
   greeting: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#FFF',
+    color: colors.textWhite,
     marginBottom: 4,
   },
   tenantName: {
     fontSize: 16,
-    color: '#FFF',
+    color: colors.textWhite,
     opacity: 0.9,
   },
   staleIndicator: {
@@ -237,7 +238,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
+    color: colors.text,
     marginBottom: 12,
     paddingHorizontal: 16,
   },
@@ -247,7 +248,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     textAlign: 'center',
-    color: '#555',  // FIXED: Improved from #666 to #555 for better contrast (8.59:1)
+    color: colors.textSecondary,
     fontSize: 14,
     padding: 24,
   },
@@ -261,14 +262,14 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: '#555',  // FIXED: Improved from #666 to #555 for better contrast
+    color: colors.textSecondary,
   },
   inlineError: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: '#FEF2F2',
+    backgroundColor: colors.errorLight,
     borderLeftWidth: 4,
-    borderLeftColor: '#EF4444',
+    borderLeftColor: colors.error,
     marginHorizontal: 16,
     padding: 16,
     borderRadius: 8,
@@ -283,12 +284,12 @@ const styles = StyleSheet.create({
   inlineErrorTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#991B1B',
+    color: colors.errorText,
     marginBottom: 4,
   },
   inlineErrorMessage: {
     fontSize: 12,
-    color: '#7F1D1D',
+    color: colors.errorText,
     lineHeight: 18,
   },
   footer: {
@@ -297,7 +298,7 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 12,
-    color: '#555',  // FIXED: Improved from #666 to #555 for better contrast
+    color: colors.textSecondary,
     textAlign: 'center',
   },
 });

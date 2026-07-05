@@ -24,7 +24,7 @@ import type {
  * 
  * Provides common execution logic for all business processes.
  */
-export abstract class BaseBusinessProcess<TContext extends DecisionContext, TResult>
+export abstract class BaseBusinessProcess<TContext, TResult>
   implements BusinessProcess<TContext, TResult>
 {
   abstract config: ProcessConfig;
