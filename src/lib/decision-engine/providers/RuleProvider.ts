@@ -184,7 +184,7 @@ export class RuleProvider extends BaseDecisionProvider {
       const result = this.createSuccessResult(matched, 1.0, {
         reason: this.buildReason(rule, matched),
         matchedRules: matched && rule.id ? [rule.id] : undefined,
-        action: matched ? rule.action : undefined, // Include action if matched
+        action: matched ? { type: 'rule-action', data: rule.action } : { type: 'no-action', data: {} },
         metadata: {
           rule: {
             id: rule.id,
@@ -284,7 +284,7 @@ export class RuleProvider extends BaseDecisionProvider {
     const { field, operator, value } = condition;
 
     // Get field value from data
-    const fieldValue = this.getFieldValue(field, data);
+    const fieldValue = this.extractFieldValue(field, data);
 
     // Evaluate based on operator
     switch (operator) {
@@ -326,13 +326,13 @@ export class RuleProvider extends BaseDecisionProvider {
    * 
    * @example
    * ```typescript
-   * getFieldValue('amount', { amount: 5000000 }) // 5000000
-   * getFieldValue('customer.tier', { customer: { tier: 'vip' } }) // 'vip'
+   * extractFieldValue('amount', { amount: 5000000 }) // 5000000
+   * extractFieldValue('customer.tier', { customer: { tier: 'vip' } }) // 'vip'
    * ```
    * 
    * @private
    */
-  private getFieldValue(
+  private extractFieldValue(
     field: string,
     data: Record<string, unknown>
   ): unknown {
