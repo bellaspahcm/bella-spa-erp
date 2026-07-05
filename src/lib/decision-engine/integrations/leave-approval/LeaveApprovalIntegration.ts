@@ -16,7 +16,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { DecisionEngine } from '../../core/DecisionEngine';
 import { DecisionProviderRegistry } from '../../core/DecisionProviderRegistry';
 import { RuleProvider } from '../../providers/RuleProvider';
-import { DecisionAuditLogger } from '../../audit/DecisionAuditLogger';
+import { ResilientDecisionAuditLoggerBridge } from '../../audit/ResilientDecisionAuditLoggerBridge';
 import { createDecisionContext } from '../../types/DecisionContext';
 import type { DecisionResult } from '../../types';
 import { leaveApprovalRules, prepareLeaveApprovalData } from './rules';
@@ -52,8 +52,8 @@ export class LeaveApprovalIntegration {
   private registry: DecisionProviderRegistry;
 
   constructor(private supabase: SupabaseClient) {
-    // 1. Create audit logger
-    const auditLogger = new DecisionAuditLogger(supabase, '1.0.0');
+    // 1. Create audit logger (RESILIENT version with circuit breaker, retry queue, DLQ)
+    const auditLogger = new ResilientDecisionAuditLoggerBridge(supabase);
 
     // 2. Create provider registry
     this.registry = new DecisionProviderRegistry();
