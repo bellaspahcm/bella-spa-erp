@@ -25,6 +25,7 @@ import {
 } from '../types';
 import type { DecisionProviderRegistry } from './DecisionProviderRegistry';
 import { ProviderNotFoundError } from './DecisionProviderRegistry';
+import type { DecisionAuditLogger, CorrelationContext } from '../audit/DecisionAuditLogger';
 
 /**
  * Decision evaluation event
@@ -93,6 +94,8 @@ export interface DecisionEngineConfig {
   cache?: ICache;
   /** Cache strategy (optional, determines caching behavior) */
   cacheStrategy?: ICacheStrategy;
+  /** Audit logger (optional, for decision audit trail - Sprint 1) */
+  auditLogger?: DecisionAuditLogger;
 }
 
 /**
@@ -165,6 +168,7 @@ export class DecisionEngine {
   private readonly fallbackStrategy: 'SAFE_DEFAULT' | 'MANUAL_REVIEW' | 'RETHROW';
   private readonly cache?: ICache;
   private readonly cacheStrategy?: ICacheStrategy;
+  private readonly auditLogger?: DecisionAuditLogger;
 
   // Cache statistics (NOT instance state, just counters for observability)
   private cacheHits: number = 0;
@@ -183,6 +187,7 @@ export class DecisionEngine {
     this.fallbackStrategy = config.fallbackStrategy || 'RETHROW';
     this.cache = config.cache;
     this.cacheStrategy = config.cacheStrategy;
+    this.auditLogger = config.auditLogger;
   }
 
   /**
@@ -286,7 +291,10 @@ export class DecisionEngine {
       // 8. Log for observability
       this.logDecision(context, enrichedResult);
 
-      // 9. Return result
+      // 9. NEW (Sprint 1): Persist to audit trail (fire-and-forget)
+      this.logToAuditTrail(context, enrichedResult);
+
+      // 10. Return result
       return enrichedResult;
     } catch (error) {
       // Catastrophic error - handle based on fallback strategy
@@ -620,6 +628,53 @@ export class DecisionEngine {
       error: result.error?.message,
       isFallback: result.isFallback,
     });
+  }
+
+  /**
+   * Log to audit trail (Sprint 1: NEW)
+   * 
+   * Persists decision to decision_audit_log table for:
+   * - Compliance and audit trail
+   * - Decision replay & Time Machine
+   * - Distributed tracing
+   * - Resource cost tracking
+   * 
+   * Fire-and-forget (non-blocking). Audit logging failures don't break decision flow.
+   * 
+   * @private
+   */
+  private logToAuditTrail(
+    context: DecisionContext,
+    result: DecisionResult
+  ): void {
+    if (!this.auditLogger) {
+      return;
+    }
+
+    // Extract correlation context from DecisionContext
+    const correlation: CorrelationContext | undefined = context.correlationId
+      ? {
+          correlationId: context.correlationId,
+          traceId: context.metadata?.traceId,
+          spanId: context.metadata?.spanId,
+          parentSpanId: context.metadata?.parentSpanId,
+        }
+      : undefined;
+
+    // Fire-and-forget: Don't await, don't block decision flow
+    this.auditLogger
+      .logDecision(context, result, {
+        correlation,
+        // versionSnapshot, resourceMetrics, businessOutcome, aiMetadata
+        // will be added in future sprints when those features are implemented
+      })
+      .catch((error) => {
+        // Log audit failure (shouldn't block decision)
+        this.logger?.error('Failed to persist decision to audit trail', {
+          error: error.message,
+          correlationId: context.correlationId,
+        });
+      });
   }
 
   /**
