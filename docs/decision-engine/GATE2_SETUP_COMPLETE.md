@@ -14,6 +14,20 @@ Gate 2 validates Decision Engine resilience under failure conditions. The critic
 
 All infrastructure and test scenarios have been implemented. The system is ready for validation testing.
 
+**Context:** Gate 2 is part of Bella's [Engineering Standard](./ENGINEERING_STANDARD.md) - a repeatable quality assurance process for all engines.
+
+### Success Criteria
+
+| KPI | Target | Critical |
+|-----|--------|----------|
+| Decision latency (during failures) | <1s | ✅ |
+| Queue success rate | >99% | ✅ |
+| Retry success rate | >95% | ✅ |
+| Memory growth under load | <100MB | ✅ |
+| Business operation failure rate | 0% | ✅ |
+| Circuit breaker recovery | <30s | ✅ |
+| DLQ overflow protection | Active | ✅ |
+
 ---
 
 ## What Was Completed
@@ -297,6 +311,96 @@ See GATE2_COMPLETION_REPORT.md for detailed analysis.
 - `docs/decision-engine/GATE2_SETUP_COMPLETE.md` - This file
 - `docs/decision-engine/GATE2_VALIDATION_REPORT.json` - Generated after test run
 - `docs/decision-engine/GATE2_COMPLETION_REPORT.md` - Generated after test run
+
+---
+
+## Looking Ahead: Gate 3 & Gate 4
+
+### Gate 3: Operational Monitoring (72 hours)
+
+**Timeline:** After Gate 2 passes
+
+**Metrics to Monitor:**
+
+#### System Resources
+- CPU usage (target: <70%, critical: >90%)
+- Memory usage (target: <70%, critical: >90%)
+- Heap growth (warning: >50MB/hour, critical: >100MB/hour)
+
+#### Performance
+- Decision latency: <50ms avg, <100ms p95, <200ms p99
+- Queue processing: <10ms avg, <50ms p95
+- DB query time: <20ms avg, <50ms p95
+- Cache hit rate: >90%
+
+#### Reliability
+- Availability: >99.9%
+- Error rate: <0.1%
+- Retry success: >95%
+- DLQ size: <10 items
+- Circuit breaker: CLOSED
+
+#### Business
+- Decision throughput: >100/sec
+- Decision confidence: >0.95 avg
+- Policy coverage: 100%
+- Unknown cases: <1%
+
+**Pass Criteria:**
+- No critical alerts for 72 hours
+- All metrics within target ranges
+- System stable under production load
+
+### Gate 4: Real Data Validation (1-2 weeks)
+
+**Timeline:** After Gate 3 passes
+
+**Data Collection:**
+- 500-1000 real production decisions
+- All decision types covered
+- 50+ unique users
+- All policies triggered at least once
+
+**Analysis Requirements:**
+1. **Coverage:** Rule hit rate, unknown cases, confidence distribution
+2. **Decision Frequency:** Peak hours, seasonal patterns, user behavior
+3. **Top Policies:** Most triggered rules, rejection patterns, escalations
+4. **Top Exceptions:** Common errors, edge cases, unknown scenarios
+5. **Business KPIs:** Approval time improvement, error reduction, cost savings
+
+**Pass Criteria:**
+- 500+ real decisions collected
+- <1% error rate
+- >99% decision accuracy
+- Business KPIs improved vs manual baseline
+
+---
+
+## Production Certification Path
+
+After passing all 4 gates, Decision Engine will receive **Production Certification**:
+
+```
+✅ Gate 1: Functional Validation (PASSED)
+         ↓
+🚧 Gate 2: Failure Injection (IN PROGRESS)
+         ↓
+⏳ Gate 3: Operational Monitoring (72 hours)
+         ↓
+⏳ Gate 4: Real Data Validation (1-2 weeks)
+         ↓
+🎯 Production Certification
+         ↓
+🚀 Sprint 2: Observability Dashboard
+         ↓
+🚀 Sprint 3: Policy Registry
+         ↓
+🚀 Sprint 4: Advanced Features (Workflow, AI Advisor)
+```
+
+**Maturity Level:** Currently Level 4 (Resilient) → Target: Level 6 (Governed)
+
+See [Engineering Standard](./ENGINEERING_STANDARD.md) for complete maturity model and certification checklist.
 
 ---
 
