@@ -6,7 +6,7 @@ import { Mail, Lock, Loader2, AlertTriangle, Shield, Smartphone } from 'lucide-r
 
 /**
  * Login Page - Bella Multi-Service ERP
- * Design: Clean, minimal với gradient pastel background
+ * Design: High-fidelity Premium Glassmorphism with background depth-of-field blur blobs
  */
 
 type LoginStage = 'credentials' | 'mfa';
@@ -76,20 +76,53 @@ export default function LoginPage() {
       justifyContent: 'center',
       padding: '2rem 1.5rem',
       minHeight: '100dvh',
+      position: 'relative',
+      overflow: 'hidden',
     }}>
-      {/* White card */}
+      {/* Dynamic Background Blur Blobs for luxurious depth-of-field */}
       <div style={{
-        background: 'white',
-        borderRadius: '2rem',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.08), 0 0 1px rgba(0,0,0,0.1)',
+        position: 'absolute',
+        width: '400px',
+        height: '400px',
+        borderRadius: '50%',
+        background: 'rgba(168, 85, 247, 0.22)',
+        filter: 'blur(100px)',
+        top: '10%',
+        left: 'calc(50% - 320px)',
+        zIndex: 0,
+        pointerEvents: 'none',
+      }} />
+      <div style={{
+        position: 'absolute',
+        width: '350px',
+        height: '350px',
+        borderRadius: '50%',
+        background: 'rgba(6, 182, 212, 0.18)',
+        filter: 'blur(90px)',
+        bottom: '15%',
+        right: 'calc(50% - 280px)',
+        zIndex: 0,
+        pointerEvents: 'none',
+      }} />
+
+      {/* Premium Glassmorphic card */}
+      <div style={{
+        background: 'rgba(255, 255, 255, 0.72)',
+        backdropFilter: 'blur(24px)',
+        WebkitBackdropFilter: 'blur(24px)',
+        borderRadius: '2.5rem',
+        border: '1px solid rgba(255, 255, 255, 0.45)',
+        boxShadow: '0 25px 55px rgba(124, 58, 237, 0.06), 0 8px 24px rgba(0, 0, 0, 0.03)',
         width: '100%',
-        maxWidth: '26rem',
-        padding: '3rem 2.5rem',
+        maxWidth: '26.5rem',
+        padding: '3.5rem 2.75rem',
+        zIndex: 1,
+        transition: 'all 0.3s ease',
       }}>
 
         {/* Logo & Header */}
         <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
-          <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'center' }}>
+          <div style={{ marginBottom: '1.75rem', display: 'flex', justifyContent: 'center' }}>
             <Image
               src="/bella-erp-logo.png"
               alt="Bella ERP"
@@ -97,9 +130,9 @@ export default function LoginPage() {
               height={464}
               priority
               style={{ 
-                width: '60%', 
+                width: '62%', 
                 height: 'auto',
-                filter: 'drop-shadow(0 4px 20px rgba(124, 58, 237, 0.25)) drop-shadow(0 2px 8px rgba(124, 58, 237, 0.15))'
+                filter: 'drop-shadow(0 8px 24px rgba(124, 58, 237, 0.22))'
               }}
             />
           </div>
@@ -108,22 +141,25 @@ export default function LoginPage() {
           <div style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: '0.375rem',
-            background: '#e0f2fe',
+            gap: '0.4rem',
+            background: 'rgba(224, 242, 254, 0.8)',
+            border: '1px solid rgba(14, 165, 233, 0.15)',
             borderRadius: '999px',
             padding: '0.375rem 0.875rem',
-            marginBottom: '0.625rem',
+            marginBottom: '0.75rem',
+            backdropFilter: 'blur(4px)',
           }}>
             <div style={{
               width: 6,
               height: 6,
               borderRadius: '50%',
               background: '#0ea5e9',
+              boxShadow: '0 0 8px #0ea5e9',
             }} />
             <span style={{
               fontSize: '0.625rem',
               fontWeight: '800',
-              letterSpacing: '0.1em',
+              letterSpacing: '0.12em',
               textTransform: 'uppercase',
               color: '#0369a1',
             }}>
@@ -135,7 +171,7 @@ export default function LoginPage() {
           <p style={{
             fontSize: '0.875rem',
             color: '#64748b',
-            fontWeight: '500',
+            fontWeight: '600',
             marginTop: '0.5rem',
           }}>
             {stage === 'mfa' ? 'Xác minh 2 lớp bảo mật' : 'Hệ thống quản trị ALL in ONE'}
@@ -145,17 +181,18 @@ export default function LoginPage() {
         {/* Error */}
         {error && (
           <div style={{
-            background: '#fef2f2',
-            border: '1px solid #fecaca',
-            borderRadius: '0.75rem',
-            padding: '0.875rem 1rem',
-            marginBottom: '1.5rem',
+            background: 'rgba(254, 242, 242, 0.9)',
+            border: '1px solid rgba(239, 68, 68, 0.2)',
+            borderRadius: '1rem',
+            padding: '1rem 1.125rem',
+            marginBottom: '1.75rem',
             display: 'flex',
             alignItems: 'center',
             gap: '0.75rem',
+            backdropFilter: 'blur(4px)',
           }}>
-            <AlertTriangle size={18} style={{ color: '#dc2626', flexShrink: 0 }} />
-            <span style={{ color: '#dc2626', fontSize: '0.875rem', fontWeight: '600' }}>
+            <AlertTriangle size={18} style={{ color: '#ef4444', flexShrink: 0 }} />
+            <span style={{ color: '#b91c1c', fontSize: '0.875rem', fontWeight: '600', lineHeight: 1.4 }}>
               {error}
             </span>
           </div>
@@ -163,7 +200,7 @@ export default function LoginPage() {
 
         {/* Credentials Form */}
         {stage === 'credentials' && (
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.35rem' }}>
             {/* Email */}
             <div>
               <label style={{
@@ -172,18 +209,20 @@ export default function LoginPage() {
                 fontWeight: '700',
                 color: '#64748b',
                 textTransform: 'uppercase',
-                letterSpacing: '0.05em',
+                letterSpacing: '0.06em',
                 marginBottom: '0.5rem',
+                marginLeft: '0.25rem',
               }}>
                 Email công việc
               </label>
               <div style={{ position: 'relative' }}>
                 <Mail size={18} style={{
                   position: 'absolute',
-                  left: '1rem',
+                  left: '1.25rem',
                   top: '50%',
                   transform: 'translateY(-50%)',
                   color: '#94a3b8',
+                  transition: 'color 0.2s',
                 }} />
                 <input
                   type="email"
@@ -195,23 +234,36 @@ export default function LoginPage() {
                   autoComplete="email"
                   style={{
                     width: '100%',
-                    padding: '0.875rem 1rem 0.875rem 3rem',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '0.75rem',
+                    padding: '0.9375rem 1.25rem 0.9375rem 3.25rem',
+                    border: '1px solid rgba(226, 232, 240, 0.8)',
+                    borderRadius: '1rem',
                     fontSize: '0.9375rem',
                     fontWeight: '500',
                     color: '#1e293b',
                     outline: 'none',
-                    transition: 'all 0.2s',
-                    background: 'white',
+                    transition: 'all 0.2s ease',
+                    background: 'rgba(255, 255, 255, 0.85)',
+                    boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.01)',
                   }}
                   onFocus={(e) => {
                     e.target.style.borderColor = '#7c3aed';
-                    e.target.style.boxShadow = '0 0 0 3px rgba(124,58,237,0.1)';
+                    e.target.style.background = 'white';
+                    e.target.style.boxShadow = '0 0 0 4px rgba(124,58,237,0.15)';
+                    const parent = e.target.parentElement;
+                    if (parent) {
+                      const icon = parent.querySelector('svg');
+                      if (icon) icon.style.color = '#7c3aed';
+                    }
                   }}
                   onBlur={(e) => {
-                    e.target.style.borderColor = '#e2e8f0';
+                    e.target.style.borderColor = 'rgba(226, 232, 240, 0.8)';
+                    e.target.style.background = 'rgba(255, 255, 255, 0.85)';
                     e.target.style.boxShadow = 'none';
+                    const parent = e.target.parentElement;
+                    if (parent) {
+                      const icon = parent.querySelector('svg');
+                      if (icon) icon.style.color = '#94a3b8';
+                    }
                   }}
                 />
               </div>
@@ -225,18 +277,20 @@ export default function LoginPage() {
                 fontWeight: '700',
                 color: '#64748b',
                 textTransform: 'uppercase',
-                letterSpacing: '0.05em',
+                letterSpacing: '0.06em',
                 marginBottom: '0.5rem',
+                marginLeft: '0.25rem',
               }}>
                 Mật khẩu
               </label>
               <div style={{ position: 'relative' }}>
                 <Lock size={18} style={{
                   position: 'absolute',
-                  left: '1rem',
+                  left: '1.25rem',
                   top: '50%',
                   transform: 'translateY(-50%)',
                   color: '#94a3b8',
+                  transition: 'color 0.2s',
                 }} />
                 <input
                   type="password"
@@ -248,23 +302,36 @@ export default function LoginPage() {
                   autoComplete="current-password"
                   style={{
                     width: '100%',
-                    padding: '0.875rem 1rem 0.875rem 3rem',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '0.75rem',
+                    padding: '0.9375rem 1.25rem 0.9375rem 3.25rem',
+                    border: '1px solid rgba(226, 232, 240, 0.8)',
+                    borderRadius: '1rem',
                     fontSize: '0.9375rem',
                     fontWeight: '500',
                     color: '#1e293b',
                     outline: 'none',
-                    transition: 'all 0.2s',
-                    background: 'white',
+                    transition: 'all 0.2s ease',
+                    background: 'rgba(255, 255, 255, 0.85)',
+                    boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.01)',
                   }}
                   onFocus={(e) => {
                     e.target.style.borderColor = '#7c3aed';
-                    e.target.style.boxShadow = '0 0 0 3px rgba(124,58,237,0.1)';
+                    e.target.style.background = 'white';
+                    e.target.style.boxShadow = '0 0 0 4px rgba(124,58,237,0.15)';
+                    const parent = e.target.parentElement;
+                    if (parent) {
+                      const icon = parent.querySelector('svg');
+                      if (icon) icon.style.color = '#7c3aed';
+                    }
                   }}
                   onBlur={(e) => {
-                    e.target.style.borderColor = '#e2e8f0';
+                    e.target.style.borderColor = 'rgba(226, 232, 240, 0.8)';
+                    e.target.style.background = 'rgba(255, 255, 255, 0.85)';
                     e.target.style.boxShadow = 'none';
+                    const parent = e.target.parentElement;
+                    if (parent) {
+                      const icon = parent.querySelector('svg');
+                      if (icon) icon.style.color = '#94a3b8';
+                    }
                   }}
                 />
               </div>
@@ -282,26 +349,26 @@ export default function LoginPage() {
                   : 'linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)',
                 color: loading ? '#94a3b8' : 'white',
                 border: 'none',
-                borderRadius: '0.75rem',
+                borderRadius: '1.25rem',
                 fontSize: '0.9375rem',
                 fontWeight: '800',
                 textTransform: 'uppercase',
-                letterSpacing: '0.05em',
+                letterSpacing: '0.08em',
                 cursor: loading ? 'not-allowed' : 'pointer',
-                boxShadow: loading ? 'none' : '0 10px 25px rgba(124,58,237,0.3)',
-                transition: 'all 0.2s',
-                marginTop: '0.5rem',
+                boxShadow: loading ? 'none' : '0 10px 30px rgba(124, 58, 237, 0.3)',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                marginTop: '0.625rem',
               }}
               onMouseEnter={(e) => {
                 if (!loading) {
                   e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 15px 35px rgba(124,58,237,0.4)';
+                  e.currentTarget.style.boxShadow = '0 15px 35px rgba(124, 58, 237, 0.42)';
                 }
               }}
               onMouseLeave={(e) => {
                 if (!loading) {
                   e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 10px 25px rgba(124,58,237,0.3)';
+                  e.currentTarget.style.boxShadow = '0 10px 30px rgba(124, 58, 237, 0.3)';
                 }
               }}
             >
@@ -319,22 +386,23 @@ export default function LoginPage() {
 
         {/* MFA Form */}
         {stage === 'mfa' && (
-          <form onSubmit={handleMfaSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <form onSubmit={handleMfaSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.35rem' }}>
             {/* Info */}
             <div style={{
-              background: '#f0f9ff',
-              border: '1px solid #bae6fd',
-              borderRadius: '0.75rem',
-              padding: '1rem',
+              background: 'rgba(240, 249, 255, 0.9)',
+              border: '1px solid rgba(186, 230, 253, 0.4)',
+              borderRadius: '1rem',
+              padding: '1.125rem',
               display: 'flex',
               gap: '0.75rem',
+              backdropFilter: 'blur(4px)',
             }}>
-              <Smartphone size={20} style={{ color: '#0284c7', flexShrink: 0 }} />
+              <Smartphone size={20} style={{ color: '#0284c7', flexShrink: 0, marginTop: '0.125rem' }} />
               <div>
-                <p style={{ fontSize: '0.875rem', fontWeight: '700', color: '#0369a1', marginBottom: '0.25rem' }}>
+                <p style={{ fontSize: '0.875rem', fontWeight: '750', color: '#0369a1', marginBottom: '0.25rem' }}>
                   Xác minh 2 lớp bảo mật
                 </p>
-                <p style={{ fontSize: '0.8125rem', color: '#64748b', lineHeight: 1.5 }}>
+                <p style={{ fontSize: '0.8125rem', color: '#64748b', lineHeight: 1.5, fontWeight: '500' }}>
                   Mở ứng dụng Authenticator và nhập mã 6 số đang hiển thị.
                 </p>
               </div>
@@ -350,8 +418,9 @@ export default function LoginPage() {
                 fontWeight: '700',
                 color: '#64748b',
                 textTransform: 'uppercase',
-                letterSpacing: '0.05em',
+                letterSpacing: '0.06em',
                 marginBottom: '0.5rem',
+                marginLeft: '0.25rem',
               }}>
                 <Shield size={13} style={{ color: '#7c3aed' }} />
                 Mã xác minh
@@ -370,8 +439,8 @@ export default function LoginPage() {
                 style={{
                   width: '100%',
                   padding: '1rem',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '0.75rem',
+                  border: '1px solid rgba(226, 232, 240, 0.8)',
+                  borderRadius: '1rem',
                   fontSize: '2rem',
                   fontWeight: '900',
                   textAlign: 'center',
@@ -379,14 +448,17 @@ export default function LoginPage() {
                   fontFamily: 'monospace',
                   color: '#1e293b',
                   outline: 'none',
-                  transition: 'all 0.2s',
+                  transition: 'all 0.2s ease',
+                  background: 'rgba(255, 255, 255, 0.85)',
                 }}
                 onFocus={(e) => {
                   e.target.style.borderColor = '#7c3aed';
-                  e.target.style.boxShadow = '0 0 0 3px rgba(124,58,237,0.1)';
+                  e.target.style.background = 'white';
+                  e.target.style.boxShadow = '0 0 0 4px rgba(124,58,237,0.15)';
                 }}
                 onBlur={(e) => {
-                  e.target.style.borderColor = '#e2e8f0';
+                  e.target.style.borderColor = 'rgba(226, 232, 240, 0.8)';
+                  e.target.style.background = 'rgba(255, 255, 255, 0.85)';
                   e.target.style.boxShadow = 'none';
                 }}
               />
@@ -404,14 +476,26 @@ export default function LoginPage() {
                   : 'linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)',
                 color: (loading || mfaCode.length !== 6) ? '#94a3b8' : 'white',
                 border: 'none',
-                borderRadius: '0.75rem',
+                borderRadius: '1.25rem',
                 fontSize: '0.9375rem',
                 fontWeight: '800',
                 textTransform: 'uppercase',
-                letterSpacing: '0.05em',
+                letterSpacing: '0.08em',
                 cursor: (loading || mfaCode.length !== 6) ? 'not-allowed' : 'pointer',
-                boxShadow: (loading || mfaCode.length !== 6) ? 'none' : '0 10px 25px rgba(124,58,237,0.3)',
-                transition: 'all 0.2s',
+                boxShadow: (loading || mfaCode.length !== 6) ? 'none' : '0 10px 30px rgba(124, 58, 237, 0.3)',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              }}
+              onMouseEnter={(e) => {
+                if (!loading && mfaCode.length === 6) {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 15px 35px rgba(124, 58, 237, 0.42)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!loading && mfaCode.length === 6) {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 10px 30px rgba(124, 58, 237, 0.3)';
+                }
               }}
             >
               {loading ? (
@@ -453,14 +537,14 @@ export default function LoginPage() {
 
         {/* Footer */}
         <div style={{
-          marginTop: '2rem',
+          marginTop: '2.5rem',
           paddingTop: '1.5rem',
-          borderTop: '1px solid #f1f5f9',
+          borderTop: '1px solid rgba(226, 232, 240, 0.6)',
           textAlign: 'center',
         }}>
           <p style={{ fontSize: '0.8125rem', color: '#64748b', fontWeight: '500' }}>
             Gặp sự cố?{' '}
-            <a href="mailto:support@bella.vn" style={{ color: '#7c3aed', fontWeight: '700', textDecoration: 'none' }}>
+            <a href="mailto:support@bella.vn" style={{ color: '#7c3aed', fontWeight: '750', textDecoration: 'none' }}>
               Liên hệ kỹ thuật
             </a>
           </p>
@@ -474,6 +558,7 @@ export default function LoginPage() {
         color: '#64748b',
         fontSize: '0.75rem',
         fontWeight: '600',
+        zIndex: 1,
       }}>
         © {new Date().getFullYear()} Bella Group — All rights reserved
       </p>
