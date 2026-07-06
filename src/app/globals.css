@@ -232,21 +232,24 @@ html[data-tenant-module="beauty_spa"] .active-booking-panel .customer-detail-ktv
 }
 
 /* 1c. Dropdown container background must be white */
-html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select .absolute.z-50,
-html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select div[class*="z-50"] {
+html[data-tenant-module="beauty_spa"] .absolute.z-50,
+html[data-tenant-module="beauty_spa"] div[class*="z-50"] {
   background-color: #ffffff !important;
 }
 
-/* 1d. Remove grey background on unselected KTV rows */
-html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select div[class*="z-50"] button:not(.bg-rose-50) {
+/* 1d. Remove grey background on unselected options */
+html[data-tenant-module="beauty_spa"] .absolute.z-50 button:not([class*="bg-primary/"]):not(.bg-rose-50):not([class*="bg-rose-50"]),
+html[data-tenant-module="beauty_spa"] div[class*="z-50"] button:not([class*="bg-primary/"]):not(.bg-rose-50):not([class*="bg-rose-50"]) {
   background-color: transparent !important;
 }
-html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select div[class*="z-50"] button:not(.bg-rose-50):hover {
+html[data-tenant-module="beauty_spa"] .absolute.z-50 button:not([class*="bg-primary/"]):not(.bg-rose-50):not([class*="bg-rose-50"]):hover,
+html[data-tenant-module="beauty_spa"] div[class*="z-50"] button:not([class*="bg-primary/"]):not(.bg-rose-50):not([class*="bg-rose-50"]):hover {
   background-color: rgb(241 245 249) !important; /* slate-100 on hover */
 }
 
-/* 1e. Selected KTV row background (emerald-100 instead of light green emerald-50) */
-html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select div[class*="z-50"] button.bg-rose-50 {
+/* 1e. Selected option background (emerald-100 / d1fae5) */
+html[data-tenant-module="beauty_spa"] .absolute.z-50 button.bg-rose-50,
+html[data-tenant-module="beauty_spa"] div[class*="z-50"] button.bg-rose-50 {
   background-color: #d1fae5 !important; /* emerald-100 */
 }
 
@@ -1161,8 +1164,7 @@ html[data-tenant-module="beauty_spa"] .text-rose-600 {
 }
 
 /* Beauty Spa: Override all pink shades system-wide */
-html[data-tenant-module="beauty_spa"] .bg-pink-50,
-html[data-tenant-module="beauty_spa"] *[class*="bg-pink-50"] {
+html[data-tenant-module="beauty_spa"] .bg-pink-50 {
   background-color: #ecfdf5 !important; /* emerald-50 */
 }
 
@@ -1170,8 +1172,7 @@ html[data-tenant-module="beauty_spa"] .bg-pink-50\/40 {
   background-color: rgba(236, 253, 245, 0.4) !important; /* emerald-50/40 */
 }
 
-html[data-tenant-module="beauty_spa"] .bg-pink-100,
-html[data-tenant-module="beauty_spa"] *[class*="bg-pink-100"] {
+html[data-tenant-module="beauty_spa"] .bg-pink-100 {
   background-color: #d1fae5 !important; /* emerald-100 */
 }
 
@@ -1669,12 +1670,12 @@ html[data-tenant-module="beauty_spa"] [class*="shadow-rose-"] {
 }
 
 /* Stronger slate backgrounds for better visibility in leaderboard podiums */
-html[data-tenant-module="beauty_spa"] [class*="bg-slate-200"],
-html[data-tenant-module="beauty_spa"] [class*="bg-slate-100"] {
+html[data-tenant-module="beauty_spa"] .bg-slate-200,
+html[data-tenant-module="beauty_spa"] .bg-slate-100 {
   background-color: rgba(226, 232, 240, 1) !important; /* Slate-200 with full opacity */
 }
 
-html[data-tenant-module="beauty_spa"] [class*="bg-slate-50"] {
+html[data-tenant-module="beauty_spa"] .bg-slate-50 {
   background-color: rgba(248, 250, 252, 1) !important; /* Slate-50 with full opacity */
 }
 
@@ -1967,13 +1968,13 @@ html.dark[data-tenant-module="beauty_spa"] .luxury-card-white,
 html.dark[data-tenant-module="beauty_spa"] .luxury-box-hover,
 html.dark[data-tenant-module="beauty_spa"] .bg-white,
 html.dark[data-tenant-module="beauty_spa"] [class*="bg-white"],
-html.dark[data-tenant-module="beauty_spa"] [class*="bg-slate-50"],
+html.dark[data-tenant-module="beauty_spa"] .bg-slate-50,
 html.dark[data-tenant-module="pending"] .glass-pink,
 html.dark[data-tenant-module="pending"] .luxury-card-white,
 html.dark[data-tenant-module="pending"] .luxury-box-hover,
 html.dark[data-tenant-module="pending"] .bg-white,
 html.dark[data-tenant-module="pending"] [class*="bg-white"],
-html.dark[data-tenant-module="pending"] [class*="bg-slate-50"] {
+html.dark[data-tenant-module="pending"] .bg-slate-50 {
   background:
     linear-gradient(180deg, rgba(20, 58, 81, 0.84), rgba(11, 31, 58, 0.78)) !important;
   border-color: rgba(196, 154, 104, 0.28) !important;
@@ -2167,13 +2168,13 @@ html.dark[data-tenant-module="pending"] .flex.h-screen.w-screen[class*="bg-backg
 html.dark[data-tenant-module="beauty_spa"] [class*="from-white"],
 html.dark[data-tenant-module="beauty_spa"] [class*="via-white"],
 html.dark[data-tenant-module="beauty_spa"] [class*="to-white"],
-html.dark[data-tenant-module="beauty_spa"] [class*="bg-slate-100"],
-html.dark[data-tenant-module="beauty_spa"] [class*="bg-slate-200"],
+html.dark[data-tenant-module="beauty_spa"] .bg-slate-100,
+html.dark[data-tenant-module="beauty_spa"] .bg-slate-200,
 html.dark[data-tenant-module="pending"] [class*="from-white"],
 html.dark[data-tenant-module="pending"] [class*="via-white"],
 html.dark[data-tenant-module="pending"] [class*="to-white"],
-html.dark[data-tenant-module="pending"] [class*="bg-slate-100"],
-html.dark[data-tenant-module="pending"] [class*="bg-slate-200"] {
+html.dark[data-tenant-module="pending"] .bg-slate-100,
+html.dark[data-tenant-module="pending"] .bg-slate-200 {
   background:
     linear-gradient(180deg, rgba(20, 58, 81, 0.86), rgba(11, 31, 58, 0.8)) !important;
   border-color: rgba(196, 154, 104, 0.28) !important;
