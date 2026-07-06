@@ -1,14 +1,4 @@
-# Ignore mobile app workspace to prevent dependency conflicts
-apps/mobile
-apps/mobile/**
-
-# Ignore other non-web build artifacts
-*.log
-.DS_Store
-.env*.local
-coverage/
+# Force clean build - ignore build cache
 .next/
-out/
-build/
-dist/
+.turbo/
 node_modules/.cache/
