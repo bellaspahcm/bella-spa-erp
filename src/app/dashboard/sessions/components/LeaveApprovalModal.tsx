@@ -101,10 +101,17 @@ export function LeaveApprovalModal({ isOpen, onClose, onSuccess, userRole }: Lea
       
       // Load Decision Engine recommendation
       setIsLoadingRecommendation(true);
-      const decision = await getLeaveDecisionRecommendation(leave.id);
-      setRecommendation(decision);
+      try {
+        const decision = await getLeaveDecisionRecommendation(leave.id);
+        console.log('[LeaveApprovalModal] Decision recommendation:', decision);
+        setRecommendation(decision);
+      } catch (decisionErr) {
+        console.error('[LeaveApprovalModal] Failed to load decision recommendation:', decisionErr);
+        // Non-blocking - continue even if recommendation fails
+        setRecommendation({ error: true, message: decisionErr instanceof Error ? decisionErr.message : 'Unknown error' });
+      }
     } catch (err) {
-      console.error("Failed to load conflict sessions or recommendation:", err);
+      console.error("Failed to load conflict sessions:", err);
       toast.error("Không thể tải đầy đủ thông tin đơn nghỉ phép");
     } finally {
       setIsLoadingRecommendation(false);
@@ -291,6 +298,15 @@ export function LeaveApprovalModal({ isOpen, onClose, onSuccess, userRole }: Lea
                             <div>
                               <p className="text-xs font-black text-slate-700 uppercase">Đang phân tích...</p>
                               <p className="text-[11px] text-slate-500 mt-0.5">Decision Engine đang đánh giá đơn nghỉ phép</p>
+                            </div>
+                          </div>
+                        ) : recommendation?.error ? (
+                          <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex gap-3">
+                            <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                            <div>
+                              <p className="text-xs font-black text-amber-800 uppercase">⚠️ Decision Engine không khả dụng</p>
+                              <p className="text-[11px] text-amber-700 mt-0.5">Lỗi: {recommendation.message || 'Không thể tải khuyến nghị tự động'}</p>
+                              <p className="text-[10px] text-amber-600 mt-1 italic">Bạn vẫn có thể phê duyệt/từ chối thủ công.</p>
                             </div>
                           </div>
                         ) : recommendation ? (
