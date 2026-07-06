@@ -4,7 +4,18 @@
  * Multi-version support, audit trail, governance fields
  */
 
-import type { Policy } from '../types';
+// ============================================================================
+// POLICY TYPE (Temporary - should be imported from decision engine)
+// ============================================================================
+
+export interface Policy {
+  id: string;
+  version: string;
+  name: string;
+  description?: string;
+  rules: any[]; // Decision rules
+  config?: Record<string, any>;
+}
 
 // ============================================================================
 // ENUMS & CONSTANTS

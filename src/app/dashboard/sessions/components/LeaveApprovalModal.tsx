@@ -20,6 +20,7 @@ import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { getPendingLeaveRequests, getKTVConflictSessions, approveLeaveRequest, rejectLeaveRequest } from '@/services/attendance-actions';
 import { getUsers } from '@/services/user-actions';
 import { LeaveRequest, ConflictSession, KtvUser } from '../types';
+import { getLeaveDecisionRecommendation } from '../actions';
 
 function getErrorMessage(error: unknown, fallback = 'Da xay ra loi') {
   if (error instanceof Error) return error.message || fallback;
@@ -48,6 +49,8 @@ export function LeaveApprovalModal({ isOpen, onClose, onSuccess, userRole }: Lea
   const [isApprovingLeave, setIsApprovingLeave] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
   const [isRejectingLeave, setIsRejectingLeave] = useState(false);
+  const [recommendation, setRecommendation] = useState<any>(null);
+  const [isLoadingRecommendation, setIsLoadingRecommendation] = useState(false);
 
   const loadPendingLeaves = async () => {
     try {
@@ -81,6 +84,7 @@ export function LeaveApprovalModal({ isOpen, onClose, onSuccess, userRole }: Lea
       setConflictSessions([]);
       setReassignmentMapping({});
       setRejectionReason('');
+      setRecommendation(null);
     }
   }, [isOpen, userRole]);
 
@@ -88,13 +92,22 @@ export function LeaveApprovalModal({ isOpen, onClose, onSuccess, userRole }: Lea
     setSelectedLeave(leave);
     setReassignmentMapping({});
     setRejectionReason('');
+    setRecommendation(null);
     
     try {
+      // Load conflict sessions
       const conflicts = (await getKTVConflictSessions(leave.user_id, leave.leave_date, leave.leave_type)) as unknown as ConflictSession[];
       setConflictSessions(conflicts);
+      
+      // Load Decision Engine recommendation
+      setIsLoadingRecommendation(true);
+      const decision = await getLeaveDecisionRecommendation(leave.id);
+      setRecommendation(decision);
     } catch (err) {
-      console.error("Failed to load conflict sessions:", err);
-      toast.error("Không thể tải các ca trùng lịch");
+      console.error("Failed to load conflict sessions or recommendation:", err);
+      toast.error("Không thể tải đầy đủ thông tin đơn nghỉ phép");
+    } finally {
+      setIsLoadingRecommendation(false);
     }
   };
 
@@ -270,6 +283,58 @@ export function LeaveApprovalModal({ isOpen, onClose, onSuccess, userRole }: Lea
                     {selectedLeave && (
                       <div className="md:col-span-7 space-y-4 border-l border-slate-100 pl-0 md:pl-6">
                         <h3 className="text-xs font-black uppercase text-slate-400 tracking-wider">Chi tiết & Xử lý trùng lịch</h3>
+                        
+                        {/* Decision Engine Recommendation Panel */}
+                        {isLoadingRecommendation ? (
+                          <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex items-center gap-3">
+                            <Loader2 className="w-5 h-5 text-slate-400 animate-spin flex-shrink-0" />
+                            <div>
+                              <p className="text-xs font-black text-slate-700 uppercase">Đang phân tích...</p>
+                              <p className="text-[11px] text-slate-500 mt-0.5">Decision Engine đang đánh giá đơn nghỉ phép</p>
+                            </div>
+                          </div>
+                        ) : recommendation ? (
+                          <div className={cn(
+                            "p-4 border rounded-2xl flex gap-3",
+                            recommendation.outcome === 'APPROVE' && "bg-emerald-50 border-emerald-200",
+                            recommendation.outcome === 'REJECT' && "bg-rose-50 border-rose-200",
+                            recommendation.outcome === 'ESCALATE' && "bg-amber-50 border-amber-200"
+                          )}>
+                            {recommendation.outcome === 'APPROVE' && <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />}
+                            {recommendation.outcome === 'REJECT' && <XCircle className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" />}
+                            {recommendation.outcome === 'ESCALATE' && <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />}
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between">
+                                <p className={cn(
+                                  "text-xs font-black uppercase tracking-tight",
+                                  recommendation.outcome === 'APPROVE' && "text-emerald-800",
+                                  recommendation.outcome === 'REJECT' && "text-rose-800",
+                                  recommendation.outcome === 'ESCALATE' && "text-amber-800"
+                                )}>
+                                  {recommendation.outcome === 'APPROVE' && '✅ Khuyến nghị: PHÊ DUYỆT'}
+                                  {recommendation.outcome === 'REJECT' && '❌ Khuyến nghị: TỪ CHỐI'}
+                                  {recommendation.outcome === 'ESCALATE' && '⚠️ Khuyến nghị: CẦN XEM XÉT'}
+                                </p>
+                                <span className="text-[9px] font-bold text-slate-400 uppercase">
+                                  {recommendation.executionTime}ms
+                                </span>
+                              </div>
+                              <p className={cn(
+                                "text-[11px] mt-1.5 leading-relaxed",
+                                recommendation.outcome === 'APPROVE' && "text-emerald-700",
+                                recommendation.outcome === 'REJECT' && "text-rose-700",
+                                recommendation.outcome === 'ESCALATE' && "text-amber-700"
+                              )}>
+                                {recommendation.explanation}
+                              </p>
+                              <div className="mt-2 pt-2 border-t border-dashed border-slate-200/50">
+                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                                  🤖 AI Decision Engine • Policy: {recommendation.policyId} v{recommendation.policyVersion}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ) : null}
                         
                         <div className="bg-slate-50 border border-slate-200/60 rounded-2xl p-4 space-y-3">
                           <div className="flex justify-between items-center">
