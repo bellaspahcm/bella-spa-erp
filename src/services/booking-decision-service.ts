@@ -322,28 +322,32 @@ export async function evaluateBookingApprovalBatch(
  * Helper: Get suggested booking status based on decision
  * 
  * **Status Mapping:**
- * - approved=false, requiresManualReview=true → 'pending' (awaiting manager)
+ * - approved=false, requiresManualReview=true → 'inquiry' (awaiting manager review)
  * - approved=false, requiresVerification=true → 'inquiry' (need verification)
  * - approved=true, requiresDeposit=true → 'deposit_pending' (awaiting deposit)
- * - approved=true, requiresDeposit=false → 'confirmed' (ready to go)
+ * - approved=true, requiresDeposit=false → 'booked' (ready to go)
+ * 
+ * **Valid Database Status Values:**
+ * 'inquiry', 'deposit_pending', 'booked', 'in_progress', 'completed', 'cancelled'
  * 
  * @param decision - Booking decision output
- * @returns Suggested booking status
+ * @returns Suggested booking status (one of valid database status values)
  */
 export function getSuggestedBookingStatus(
   decision: BookingDecisionOutput
-): 'inquiry' | 'pending' | 'deposit_pending' | 'confirmed' {
+): 'inquiry' | 'deposit_pending' | 'booked' {
   if (!decision.approved) {
-    if (decision.requiresManualReview) return 'pending';
-    if (decision.requiresVerification) return 'inquiry';
-    return 'pending'; // Default for not approved
+    // Not approved → inquiry (manager will review and change status)
+    return 'inquiry';
   }
   
   if (decision.requiresDeposit) {
+    // Approved but needs deposit → deposit_pending
     return 'deposit_pending';
   }
   
-  return 'confirmed';
+  // Approved without deposit → booked (ready for service)
+  return 'booked';
 }
 
 /**
