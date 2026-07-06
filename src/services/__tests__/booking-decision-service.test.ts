@@ -283,7 +283,7 @@ describe('Booking Decision Service', () => {
   });
 
   describe('getSuggestedBookingStatus()', () => {
-    it('should suggest "confirmed" for approved without deposit', () => {
+    it('should suggest "booked" for approved without deposit', () => {
       const status = getSuggestedBookingStatus({
         approved: true,
         requiresDeposit: false,
@@ -299,7 +299,7 @@ describe('Booking Decision Service', () => {
         _raw: {} as any,
       });
 
-      expect(status).toBe('confirmed');
+      expect(status).toBe('booked');
     });
 
     it('should suggest "deposit_pending" for approved with deposit', () => {
@@ -321,7 +321,7 @@ describe('Booking Decision Service', () => {
       expect(status).toBe('deposit_pending');
     });
 
-    it('should suggest "pending" for manual review', () => {
+    it('should suggest "inquiry" for manual review', () => {
       const status = getSuggestedBookingStatus({
         approved: false,
         requiresDeposit: false,
@@ -337,7 +337,7 @@ describe('Booking Decision Service', () => {
         _raw: {} as any,
       });
 
-      expect(status).toBe('pending');
+      expect(status).toBe('inquiry');
     });
 
     it('should suggest "inquiry" for verification required', () => {
