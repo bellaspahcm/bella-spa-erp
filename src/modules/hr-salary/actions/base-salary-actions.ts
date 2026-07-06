@@ -379,10 +379,10 @@ export async function ktvDisputeSalary(salaryRecordId: string, reason: string) {
  * @see {@link ktvConfirmSalary} to confirm salary after review
  * @see {@link ktvDisputeSalary} to dispute salary if incorrect
  */
-export async function getKtvSalaryForConfirmation(month?: string): Promise<KtvSalaryConfirmation | null> {
+export async function getKtvSalaryForConfirmation(month?: string, currentUser?: any): Promise<KtvSalaryConfirmation | null> {
   const supabase = await createClient();
-  const currentUser = await getCurrentUser();
-  if (!currentUser) return null;
+  const user = currentUser || await getCurrentUser();
+  if (!user) return null;
 
   const now = new Date();
   const monthStr = month || getMonthStart(now);
@@ -394,7 +394,7 @@ export async function getKtvSalaryForConfirmation(month?: string): Promise<KtvSa
   const { data: record, error: recordError } = await supabase
     .from('salary_records')
     .select('*')
-    .eq('ktv_id', currentUser.id)
+    .eq('ktv_id', user.id)
     .eq('month_year', monthStr)
     .maybeSingle();
 
@@ -403,14 +403,29 @@ export async function getKtvSalaryForConfirmation(month?: string): Promise<KtvSa
   }
 
   let resolvedRecord = record;
-  // Note: If no saved record exists, we return null instead of creating a temporary record
-  // The UI should handle null gracefully and show "no salary data available" message
+  if (record) {
+    if (!user.tenant_id) {
+      throw new Error('Cannot fetch central KTV salary sheet without tenant context');
+    }
+
+    const centralSalaryRow = await getCentralSalarySheetRecordForKtv({
+      ktvId: user.id,
+      tenantId: user.tenant_id,
+      monthYear: monthStr,
+    });
+
+    if (!centralSalaryRow) {
+      throw new Error(`Central KTV salary sheet row not found for ${user.id} in ${monthStr}`);
+    }
+
+    resolvedRecord = mergeSalarySheetIntoRecord(record, centralSalaryRow);
+  }
 
   // Get session details for KTV to cross-check
   const { data: sessions, error: sessionsError } = await supabase
     .from('session_logs')
     .select(`id, completed_date, session_number, bookings(package_name, ktv_commission, customers(name_mother))`)
-    .eq('completed_by_ktv_id', currentUser.id)
+    .eq('completed_by_ktv_id', user.id)
     .eq('status', 'completed')
     .gte('completed_date', startOfMonth)
     .lt('completed_date', endOfMonth)

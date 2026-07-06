@@ -8,6 +8,9 @@ import type { CurrentUser } from '@/types/domain';
 import { resolvePackageName, getLocalDateString } from '@bella/shared';;
 import type { Database } from '@/types/database.types';
 import { processSessionCompletion } from '@/core/services/order/session-completion-engine';
+import { getTenantSettings } from './tenant-actions';
+import { getDefaultTenantModuleKey } from '@/lib/business-rules/tenant-modules';
+import { getKtvSalaryForConfirmation } from '@/modules/hr-salary/actions/base-salary-actions';
 
 type SessionLogUpdate = Database['public']['Tables']['session_logs']['Update'];
 
@@ -845,6 +848,61 @@ export async function getKTVDashboardData(monthStr: string) {
     earnings,
     notifications,
     leaderboard
+  };
+}
+
+export async function getKTVEarningsPageData(selectedMonth: string) {
+  const user = await getCurrentUser();
+  if (!user || user.role !== 'ktv') {
+    return {
+      user: null,
+      earnings: { total: 0, sessions: 0 },
+      sessions: [],
+      leaderboardData: null,
+      salaryData: null,
+      tenantModuleKey: null,
+    };
+  }
+
+  const tenantSettings = await getTenantSettings();
+  const tenantModuleKey = getDefaultTenantModuleKey(tenantSettings?.enabled_modules);
+
+  const startOfMonth = `${selectedMonth}-01`;
+  const nextMonth = getLocalDateString(new Date(new Date(startOfMonth).setMonth(new Date(startOfMonth).getMonth() + 1)));
+
+  const [
+    earnings,
+    sessionsResult,
+    leaderboard,
+    salaryData
+  ] = await Promise.all([
+    getKTVEarnings(selectedMonth, user),
+    createClient().then(supabase => supabase
+      .from('session_logs')
+      .select(`id, completed_date, session_number, completed_by_ktv_id, bookings(package_name, ktv_commission, assigned_ktv_id, customers(name_mother))`)
+      .eq('completed_by_ktv_id', user.id)
+      .eq('status', 'completed')
+      .gte('completed_date', startOfMonth)
+      .lt('completed_date', nextMonth)
+      .order('completed_date', { ascending: false })
+    ),
+    getKTVLeaderboard(selectedMonth, user),
+    getKtvSalaryForConfirmation(`${selectedMonth}-01`, user),
+  ]);
+
+  if (sessionsResult.error) {
+    throw new Error(`Failed to fetch sessions: ${sessionsResult.error.message}`);
+  }
+
+  const myStats = leaderboard.find((k: any) => k.ktv_id === user.id) || null;
+
+  return {
+    user,
+    earnings,
+    sessions: sessionsResult.data || [],
+    leaderboardData: myStats,
+    salaryData,
+    tenantModuleKey,
   };
 }
 

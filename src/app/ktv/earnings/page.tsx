@@ -7,18 +7,19 @@ import {
   ChevronLeft, ChevronRight, RefreshCw, Award, Star,
   Clock, CheckCircle2, AlertCircle, Send, X
 } from 'lucide-react';
-import { getKTVEarnings, getKTVLeaderboard } from '@/services/ktv-actions';
-import { getKtvSalaryForConfirmation, ktvConfirmSalary, ktvDisputeSalary } from '@/modules/hr-salary/actions/base-salary-actions';
-import { createClient } from '@/lib/supabase-client';
-import { formatCurrency, getLocalDateString } from '@bella/shared';;
+import { getKTVEarningsPageData } from '@/services/ktv-actions';
+import { ktvConfirmSalary, ktvDisputeSalary } from '@/modules/hr-salary/actions/base-salary-actions';
+import { formatCurrency } from '@bella/shared';;
 import { toast } from 'sonner';
 import Link from 'next/link';
-import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
+import { getModuleVocabulary } from '@/lib/business-rules/module-vocabulary';
+import type { TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 import type { Database } from '@/types/database.types';
 
-type KTVEarnings = Awaited<ReturnType<typeof getKTVEarnings>>;
-type KTVLeaderboardEntry = Awaited<ReturnType<typeof getKTVLeaderboard>>[number];
-type KtvSalaryData = NonNullable<Awaited<ReturnType<typeof getKtvSalaryForConfirmation>>>;
+type PageData = Awaited<ReturnType<typeof getKTVEarningsPageData>>;
+type KTVEarnings = NonNullable<PageData>['earnings'];
+type KTVLeaderboardEntry = NonNullable<PageData>['leaderboardData'];
+type KtvSalaryData = NonNullable<PageData>['salaryData'];
 type SessionLogRow = Database['public']['Tables']['session_logs']['Row'];
 type EarningsSessionDetail = Pick<
   SessionLogRow,
@@ -71,7 +72,8 @@ function StatusBadge({ status }: { status: string }) {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function KTVEarningsPage() {
-  const vocab = useModuleVocabulary();
+  const [tenantModuleKey, setTenantModuleKey] = useState<TenantModuleKey | null>(null);
+  const vocab = getModuleVocabulary(tenantModuleKey);
   const [earnings, setEarnings] = useState<KTVEarnings | null>(null);
   const [details, setDetails] = useState<EarningsSessionDetail[]>([]);
   const [leaderboardData, setLeaderboardData] = useState<KTVLeaderboardEntry | null>(null);
@@ -90,32 +92,13 @@ export default function KTVEarningsPage() {
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const earn = await getKTVEarnings(selectedMonth);
-      setEarnings(earn);
-
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-
-      if (user) {
-        const startOfMonth = `${selectedMonth}-01`;
-        const nextMonth = getLocalDateString(new Date(new Date(startOfMonth).setMonth(new Date(startOfMonth).getMonth() + 1)));
-
-        const { data: sessions } = await supabase
-          .from('session_logs')
-          .select(`id, completed_date, session_number, completed_by_ktv_id, bookings(package_name, ktv_commission, assigned_ktv_id, customers(name_mother))`)
-          .eq('completed_by_ktv_id', user.id)
-          .eq('status', 'completed')
-          .gte('completed_date', startOfMonth)
-          .lt('completed_date', nextMonth)
-          .order('completed_date', { ascending: false });
-        setDetails((sessions || []) as unknown as EarningsSessionDetail[]);
-
-        const lb = await getKTVLeaderboard(selectedMonth);
-        const myStats = lb.find((k) => k.ktv_id === user.id) || null;
-        setLeaderboardData(myStats);
-
-        const salary = await getKtvSalaryForConfirmation(`${selectedMonth}-01`);
-        setSalaryData(salary);
+      const data = await getKTVEarningsPageData(selectedMonth);
+      if (data) {
+        setEarnings(data.earnings);
+        setDetails(data.sessions as unknown as EarningsSessionDetail[]);
+        setLeaderboardData(data.leaderboardData);
+        setSalaryData(data.salaryData);
+        setTenantModuleKey(data.tenantModuleKey);
       }
     } catch (err) {
       console.error('[KTVEarnings] Error loading data:', err);
