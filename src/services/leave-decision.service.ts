@@ -9,7 +9,7 @@ import { RuleReasoner } from '@/lib/decision-engine/RuleReasoner';
 import { leaveApprovalPolicyV1 } from '@/lib/decision-engine/policies/leave-approval-v1';
 import type { Knowledge, DecisionResult } from '@/lib/decision-engine/types';
 import { differenceInHours } from 'date-fns';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@/lib/supabase-server';
 
 /**
  * Build knowledge from leave request for decision engine.

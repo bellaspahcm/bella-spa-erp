@@ -5,7 +5,7 @@
 'use server';
 
 import { evaluateLeaveRequest, getDecisionMessage } from '@/services/leave-decision.service';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@/lib/supabase-server';
 
 /**
  * Get automated decision recommendation for leave request.
