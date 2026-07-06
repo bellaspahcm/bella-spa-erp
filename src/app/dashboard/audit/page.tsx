@@ -833,10 +833,80 @@ export default function AuditPage() {
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="bg-white border border-slate-100 rounded-3xl shadow-sm"
+        className="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden"
       >
-        <div className="w-full overflow-x-auto overscroll-x-contain custom-scrollbar rounded-3xl">
-          <table className="bella-data-table min-w-[1100px] w-full text-left">
+        {/* Mobile View (stacked cards) */}
+        <div className="block md:hidden divide-y divide-slate-100">
+          {isLoading ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="p-5 animate-pulse space-y-3">
+                <div className="flex justify-between items-center">
+                  <div className="h-4 bg-slate-100 rounded w-1/3" />
+                  <div className="h-5 bg-slate-100 rounded w-16" />
+                </div>
+                <div className="h-3 bg-slate-100 rounded w-1/2" />
+                <div className="h-12 bg-slate-100 rounded w-full" />
+              </div>
+            ))
+          ) : authNotice ? (
+            <div className="p-8 text-center">
+              <div className="mx-auto flex max-w-md flex-col items-center gap-3 text-slate-500">
+                <AlertCircle className="w-12 h-12 text-amber-500" />
+                <p className="text-sm font-semibold text-slate-700">Chưa thể tải nhật ký</p>
+                <p className="text-xs leading-relaxed">{authNotice}</p>
+              </div>
+            </div>
+          ) : paginatedLogs.length > 0 ? (
+            paginatedLogs.map((log) => (
+              <div key={log.id} className="p-5 hover:bg-slate-50/50 transition-colors space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <UserIcon className="w-4 h-4 text-slate-400 shrink-0" />
+                    <span className="text-sm font-semibold text-slate-700">{log.user_name}</span>
+                  </div>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap ${getActionColor(log.action)}`}>
+                    {getActionLabel(log.action)}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between text-xs text-slate-500">
+                  <div className="flex items-center gap-1">
+                    <Clock className="w-3.5 h-3.5 shrink-0 text-slate-400" />
+                    <span>{new Date(log.created_at).toLocaleString('vi-VN')}</span>
+                  </div>
+                  <div className="flex items-center gap-1 font-mono text-[10px] text-slate-500 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
+                    {TABLE_TRANSLATIONS[log.table_name] || log.table_name}
+                  </div>
+                </div>
+
+                <div className="bg-slate-50/50 rounded-xl p-3.5 border border-slate-100/50 text-sm text-slate-600 leading-relaxed break-words">
+                  {renderReadableChanges(log)}
+                </div>
+
+                <div className="flex justify-end pt-1">
+                  <button 
+                    onClick={() => setSelectedLog(log)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-xl transition-all"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    Chi tiết
+                  </button>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="p-8 text-center text-slate-400">
+              <div className="flex flex-col items-center gap-2 opacity-40">
+                <AlertCircle className="w-10 h-10" />
+                <p className="text-sm">Không có dữ liệu nhật ký nào.</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Desktop View (horizontal scrollable table) */}
+        <div className="hidden md:block w-full overflow-x-auto overscroll-x-contain custom-scrollbar shadow-[inset_-18px_0_18px_-18px_rgba(15,23,42,0.12)]">
+          <table className="bella-data-table w-full text-left" style={{ minWidth: '1100px' }}>
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-100">
                 <th className="px-6 py-4 text-sm font-semibold text-slate-600 w-[180px] whitespace-nowrap">Thời gian</th>
