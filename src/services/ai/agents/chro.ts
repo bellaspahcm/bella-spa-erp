@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database.types';
 import type { SubAgentResponse } from '../types';
 import { AI_THRESHOLDS } from '@/config/ai-constants';
+import { calculateKtvSalarySheet } from '@/modules/hr-salary/actions/base-salary-actions';
 
 interface AttendanceKpiItem {
   ktv_id: string;
@@ -41,12 +42,11 @@ export async function runCHROAgent(
     throw rpcError;
   }
 
-  const { data: salarySheet, error: salaryError } = await supabase.rpc("calculate_ktv_salary_sheet", {
-    p_month_year: formattedDate
-  });
-
-  if (salaryError) {
-    console.error("[CHRO Agent] Lỗi khi gọi RPC calculate_ktv_salary_sheet:", salaryError);
+  let salarySheet;
+  try {
+    salarySheet = await calculateKtvSalarySheet(tenantId, formattedDate);
+  } catch (salaryError) {
+    console.error("[CHRO Agent] Lỗi khi gọi calculateKtvSalarySheet:", salaryError);
     throw salaryError;
   }
 
