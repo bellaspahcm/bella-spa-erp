@@ -128,8 +128,8 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
                         className={cn(
                           "w-full flex items-center justify-between px-5 py-3 text-left text-sm transition-colors",
                           value === option.value
-                            ? "bg-rose-50 text-rose-700 font-bold dark:bg-[#5D1C34]/30 dark:text-[#EFE9E1]"
-                            : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-[#CDBCAB] dark:hover:bg-[#11100F] dark:hover:text-[#EFE9E1]"
+                            ? "bg-rose-50 text-rose-800 font-bold dark:bg-[#5D1C34]/30 dark:text-[#EFE9E1]"
+                            : "text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-[#CDBCAB] dark:hover:bg-[#11100F] dark:hover:text-[#EFE9E1]"
                         )}
                       >
                         <div className="flex items-center gap-3 min-w-0">
@@ -162,8 +162,8 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
                     className={cn(
                       "w-full flex items-center justify-between px-5 py-3 text-left text-sm transition-colors",
                       value === option.value
-                        ? "bg-rose-50 text-rose-700 font-bold dark:bg-[#5D1C34]/30 dark:text-[#EFE9E1]"
-                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-[#CDBCAB] dark:hover:bg-[#11100F] dark:hover:text-[#EFE9E1]"
+                        ? "bg-rose-50 text-rose-800 font-bold dark:bg-[#5D1C34]/30 dark:text-[#EFE9E1]"
+                        : "text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-[#CDBCAB] dark:hover:bg-[#11100F] dark:hover:text-[#EFE9E1]"
                     )}
                   >
                     <div className="flex items-center gap-3 min-w-0">
