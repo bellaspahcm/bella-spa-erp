@@ -218,6 +218,7 @@ h1, h2, h3, h4, h5, h6 {
    BEAUTY SPA MODULE - DROPDOWN TEXT COLOR FIX
    Target both trigger button and dropdown menu items
    Dropdown is portaled, so must use global selectors
+   CRITICAL: Text must be dark/visible on white dropdown background
    ============================================ */
 
 /* 1. Dropdown trigger button (inside .customer-detail-ktv-select) */
@@ -230,24 +231,29 @@ html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select button[type="b
   color: rgb(51 65 85) !important; /* slate-700 - readable placeholder */
 }
 
-/* 2. Dropdown menu items (portaled outside, absolute positioned) */
-html[data-tenant-module="beauty_spa"] .absolute.z-50 button[type="button"] span.truncate {
+/* 2. CRITICAL: Dropdown menu items - MUST be visible on white background */
+html[data-tenant-module="beauty_spa"] div[class*="absolute"][class*="z-50"] button[type="button"] span {
+  color: rgb(30 41 59) !important; /* slate-800 - FORCE visible text */
+}
+
+html[data-tenant-module="beauty_spa"] div[class*="absolute"][class*="z-50"] button[type="button"] span.truncate {
   color: rgb(30 41 59) !important; /* slate-800 - readable on white dropdown background */
 }
 
 /* 3. Selected item (darker for emphasis) */
-html[data-tenant-module="beauty_spa"] .absolute.z-50 button[type="button"].bg-rose-50 span.truncate,
-html[data-tenant-module="beauty_spa"] .absolute.z-50 button[type="button"].font-bold span.truncate {
+html[data-tenant-module="beauty_spa"] div[class*="absolute"][class*="z-50"] button[type="button"][class*="bg-rose-50"] span,
+html[data-tenant-module="beauty_spa"] div[class*="absolute"][class*="z-50"] button[type="button"][class*="font-bold"] span {
   color: rgb(15 23 42) !important; /* slate-900 - maximum contrast for selected */
 }
 
-/* 4. Dark mode overrides (if dropdown has dark: classes, prevent them from applying) */
-html[data-tenant-module="beauty_spa"] .absolute.z-50 button[type="button"] {
-  /* Override dark:text-[#CDBCAB] and other dark mode classes */
+/* 4. Empty option (Chưa phân công) - slightly lighter but still visible */
+html[data-tenant-module="beauty_spa"] div[class*="absolute"][class*="z-50"] button[type="button"] span[class*="text-slate-500"] {
+  color: rgb(100 116 139) !important; /* slate-500 - visible placeholder */
 }
 
-html[data-tenant-module="beauty_spa"] .absolute.z-50 button[type="button"] span.truncate {
-  /* Force light mode colors even if dark: classes try to apply */
+/* 5. NUCLEAR OPTION: Force all dropdown text to be visible */
+html[data-tenant-module="beauty_spa"] div.absolute.z-50 button span,
+html[data-tenant-module="beauty_spa"] .absolute.z-50 button span {
   color: rgb(30 41 59) !important;
 }
 
