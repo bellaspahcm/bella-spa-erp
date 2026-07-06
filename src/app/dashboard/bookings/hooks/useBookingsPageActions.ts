@@ -14,6 +14,7 @@ import {
 } from '@/core/services/order/invoice-print-actions';
 import { createSessionLog, rescheduleSession, updateSessionLog } from '@/core/services/order';
 import { getBookingDetailsWithPayment, updateBooking } from '@/core/services/order';
+import { checkBookingConflicts } from '@/services/decision-actions/booking-decisions';
 
 import type { BookingModalData } from '../components/BookingDayDetailModal';
 import type { BookingThermalInvoiceData } from '../components/BookingThermalInvoicePrint';
@@ -343,6 +344,53 @@ export function useBookingsPageActions({
         return;
       }
 
+      // Fetch booking data to get assigned KTV
+      const bookingResult = await getBookingDetailsWithPayment(bookingId);
+      if (bookingResult.error || !bookingResult.data) {
+        toast.error('Không thể tải thông tin booking: ' + (bookingResult.error || 'Lỗi không xác định'));
+        return;
+      }
+
+      const booking = bookingResult.data;
+      const assignedKtvId = booking.assigned_ktv_id || null;
+
+      // Check for booking conflicts using Decision Engine
+      const conflictCheck = await checkBookingConflicts({
+        bookingId,
+        ktvId: assignedKtvId,
+        bookingResourceId: typeof bookingResourceId === 'string' && bookingResourceId ? bookingResourceId : null,
+        assignedDate: typeof date === 'string' ? date : null,
+        assignedTime: createTimeRange.start,
+        durationMinutes: 90, // Default duration, TODO: get from package
+      });
+
+      // Handle conflict check result
+      if (conflictCheck.decision === 'REJECT') {
+        toast.error(conflictCheck.message || 'Không thể tạo lịch hẹn do xung đột');
+        if (conflictCheck.context?.conflicts && Array.isArray(conflictCheck.context.conflicts)) {
+          const conflicts = conflictCheck.context.conflicts as Array<{
+            type: string;
+            time: string;
+            customer?: string;
+            room?: string;
+          }>;
+          conflicts.forEach((conflict) => {
+            if (conflict.type === 'ktv_double_booking') {
+              toast.error(`⚠️ KTV đã có lịch lúc ${conflict.time} với khách ${conflict.customer}`);
+            } else if (conflict.type === 'room_double_booking') {
+              toast.error(`⚠️ Phòng ${conflict.room} đã có lịch lúc ${conflict.time}`);
+            }
+          });
+        }
+        return; // Block creation
+      }
+
+      if (conflictCheck.decision === 'APPROVE_WITH_WARNING') {
+        toast.warning(conflictCheck.message || 'Cảnh báo: Vượt quá số ca khuyến nghị');
+        // Continue to creation (soft warning)
+      }
+
+      // Proceed with session creation
       const result = await createSessionLog({
         booking_id: bookingId,
         assigned_date: typeof date === 'string' ? date : null,
@@ -359,8 +407,9 @@ export function useBookingsPageActions({
         await fetchSessions();
         closeCreateModal();
       }
-    } catch {
-      toast.error('Có lỗi xảy ra');
+    } catch (err) {
+      console.error('Error creating schedule:', err);
+      toast.error('Có lỗi xảy ra khi tạo lịch hẹn');
     } finally {
       setIsUpdating(false);
     }
