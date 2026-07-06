@@ -157,31 +157,444 @@ Replay success: 99.98%
 
 ---
 
-### Phase E: Rule Management ⭐ (Feb-Mar 2027)
+### Phase E: Policy Governance ⭐⭐⭐ (Feb-Apr 2027)
 
-**Objective:** Enable business users to manage rules without developers
+**Objective:** Enterprise-grade policy lifecycle management with approval flows, versioning, and compliance
+
+**Why Critical:** This is what separates "a system with rules" from "an Enterprise Intelligence Platform"
+
+#### E.1: Policy Lifecycle Management (Feb 2027)
+
+**6-State Lifecycle:**
+```
+Draft → Under Review → Approved → Published → Deprecated → Archived
+```
 
 **Features:**
-- **Policy Registry UI:** View all policies/rules
-- **Rule Versioning:** Track rule changes over time
-- **Rule Simulator:** Test rule impact before deploying
-- **Conflict Detector:** Identify conflicting rules
-- **Effectivity Management:** Schedule rule activation/expiration
-- **Tenant-Specific Rules:** Override system rules per tenant
+- **Draft Mode:** HR/Business can create policies without affecting production
+- **Review Queue:** Policies pending approval with diff viewer
+- **Approval Workflow:** Manager → Director → Publish (configurable)
+- **Published:** Live in production with immutable history
+- **Deprecation:** Mark old policies as deprecated (stop new usages)
+- **Archive:** Move old policies to cold storage (keep for compliance)
+
+**Approval Rules:**
+- Policy creation: Requires manager approval
+- Policy edit: Requires director approval if > 1000 decisions/month affected
+- Policy deletion: Requires CEO approval
+- Emergency bypass: CTO can publish immediately (logged)
 
 **Success Metrics:**
-- ✅ Business users can view all active rules
-- ✅ Rule changes tracked with full audit
-- ✅ Zero production rule conflicts
-- ✅ Simulator accuracy > 95%
+- ✅ 100% policies go through approval
+- ✅ Zero unauthorized policy changes
+- ✅ Audit trail of all approvals
 
-**Timeline:** 2 months (Feb-Mar 2027)
+#### E.2: Rule Versioning & Time Travel (Feb 2027)
 
-**Deliverable:** Rule Management Console
+**Version Control for Policies:**
+```
+Leave Policy v1.0.0 (Jan 2026)
+  ↓
+Leave Policy v1.1.0 (Mar 2026) — Added remote work clause
+  ↓
+Leave Policy v2.0.0 (Jun 2026) — Breaking: Changed balance calculation
+  ↓
+Leave Policy v2.1.0 (Sep 2026) — Added holiday bonus rule
+```
+
+**Time Travel Replay:**
+- Decision made in March 2026 → Replay with Policy v1.1.0 (not latest v2.1.0)
+- Required for audit compliance (SOC 2, GDPR)
+- Decision context must include `policyVersion` + `engineVersion`
+
+**Audit Trail Enhancement:**
+```typescript
+interface EnhancedDecisionAudit {
+  decisionId: string;
+  timestamp: string;
+  
+  // ✅ NEW: Version tracking
+  policyId: string;
+  policyVersion: string; // "2.1.0"
+  engineVersion: string; // "1.3.2"
+  
+  // ✅ NEW: Input/Output snapshot
+  inputContext: Record<string, any>; // Full input at decision time
+  matchedRules: Array<{
+    ruleId: string;
+    ruleVersion: string;
+    priority: number;
+    result: 'approve' | 'reject';
+  }>;
+  
+  // ✅ NEW: Actor tracking
+  actorId: string; // Who triggered the decision
+  actorRole: string; // 'system' | 'user' | 'api'
+  
+  // ✅ NEW: Correlation
+  correlationId: string; // Link related decisions
+  workflowId?: string; // If part of workflow
+  
+  // Existing fields
+  decision: 'approve' | 'reject';
+  reason: string;
+  confidence: number;
+}
+```
+
+**Success Metrics:**
+- ✅ 100% decisions include version info
+- ✅ Replay works for decisions from 3 years ago
+- ✅ Policy changes never break old replays
+
+#### E.3: Policy Testing & Simulation (Mar 2027)
+
+**Pre-Deployment Validation:**
+
+**Workflow:**
+```
+1. HR uploads new "Leave Policy v3.0.0" (draft)
+2. System runs simulation:
+   - Pull last 1,000 leave requests
+   - Re-run with new policy
+   - Compare results vs current policy
+3. Show impact report:
+   - Pass rate: 92% → 88% (4% more rejections)
+   - 42 decisions changed outcome
+   - 3 conflicts detected (Rule 5 vs Rule 7)
+4. HR reviews, adjusts rules
+5. Re-run simulation until satisfied
+6. Submit for approval
+```
+
+**Conflict Detection:**
+- Rule A: Approve if `leaveBalance > 5`
+- Rule B: Reject if `leaveBalance < 10`
+- System detects: When balance = 7, both rules match → CONFLICT
+- Prevents publishing until resolved
+
+**Shadow Mode (Canary Testing):**
+- Run new policy in parallel (shadow) without affecting decisions
+- Collect 100 shadow decisions
+- Compare shadow vs production outcomes
+- If < 5% difference → Safe to promote
+- If > 5% difference → Flag for review
+
+**Success Metrics:**
+- ✅ Zero production policy conflicts
+- ✅ 100% policies simulated before publish
+- ✅ Shadow mode catches 95%+ breaking changes
+
+#### E.4: Sandbox & Multi-Environment (Mar 2027)
+
+**4 Environments:**
+
+```
+Production        → Real decisions, real data
+  ↓
+Staging           → Pre-production testing (copy of production data)
+  ↓
+Sandbox           → HR playground (test policies with fake data)
+  ↓
+Preview           → Individual preview (per user, ephemeral)
+```
+
+**Sandbox Use Cases:**
+- HR tests "What if we change leave policy?"
+- Run 1,000 simulated decisions
+- See impact without touching production
+- Share sandbox URL with manager for review
+
+**Promotion Flow:**
+```
+HR creates policy in Sandbox
+  ↓
+Runs simulation (1,000 decisions)
+  ↓
+Promotes to Preview (share with team)
+  ↓
+Team reviews and approves
+  ↓
+Promotes to Staging (integration testing)
+  ↓
+QA validates
+  ↓
+Promotes to Production (with approval)
+```
+
+**Success Metrics:**
+- ✅ 100% policy changes tested in sandbox first
+- ✅ Zero direct production edits
+- ✅ Sandbox usage > 50 tests/week
+
+#### E.5: Rollback & Emergency Controls (Apr 2027)
+
+**Instant Rollback:**
+```
+Policy v3.0 deployed
+  ↓
+Bug discovered (100% rejections)
+  ↓
+Admin clicks "Rollback to v2.1"
+  ↓
+5 seconds
+  ↓
+System reverted to v2.1
+  ↓
+All new decisions use v2.1
+  ↓
+No deployment needed
+```
+
+**Emergency Override:**
+- CTO can bypass approval workflow
+- Reason required (logged)
+- Automatic Slack notification to team
+- 24-hour review required next day
+
+**Circuit Breaker for Policies:**
+- If policy causes > 5% error rate → Auto-disable
+- Fallback to previous version
+- Alert operations team
+- Requires manual review to re-enable
+
+**Success Metrics:**
+- ✅ Rollback time < 10 seconds
+- ✅ Zero downtime during rollback
+- ✅ All emergency overrides audited
+
+#### E.6: Policy Dependency Graph (Apr 2027)
+
+**Visual Dependency Tracking:**
+
+```
+Leave Policy
+  ├─ affects → Payroll Policy
+  ├─ affects → Attendance Policy
+  ├─ affects → KPI Policy
+  └─ affects → Bonus Policy
+
+Payroll Policy
+  ├─ depends on → Leave Policy
+  ├─ depends on → Commission Policy
+  └─ affects → Tax Policy
+```
+
+**Impact Analysis:**
+- HR edits "Leave Policy"
+- System shows: "⚠️ This change affects 4 downstream policies"
+- List impacted policies with decision volume
+- Suggest testing all impacted policies in sandbox
+
+**Circular Dependency Detection:**
+- Policy A depends on Policy B
+- Policy B depends on Policy C
+- Policy C depends on Policy A
+- System detects circular reference → Block publish
+
+**Success Metrics:**
+- ✅ 100% policies have dependency metadata
+- ✅ Zero circular dependencies
+- ✅ Impact analysis shown before every change
+
+#### E.7: Rule Coverage Analysis (Apr 2027)
+
+**Dead Rule Detection:**
+
+```
+Policy: Leave Approval (10 rules)
+
+Rule 1: Used 5,000 times/month  ✅ Active
+Rule 2: Used 0 times/month      ⚠️ DEAD
+Rule 3: Used 2 times/month      ⚠️ Rarely used
+Rule 4: Used 500 times/month    ✅ Active
+Rule 5: Used 3,000 times/month  ✅ Active
+...
+```
+
+**Auto-Cleanup Suggestions:**
+- Rule 2 never triggered in 6 months → Suggest removal
+- Rule 3 triggered < 10 times → Low priority, consider consolidation
+- Rule overlap: Rule 4 and Rule 8 always match together → Suggest merge
+
+**Coverage Report (Monthly):**
+- Total rules: 250
+- Active rules (>100 uses/month): 180 (72%)
+- Low-usage rules (<10 uses/month): 40 (16%)
+- Dead rules (0 uses): 30 (12%)
+- Recommendation: Archive 30 dead rules
+
+**Success Metrics:**
+- ✅ Rule coverage > 90%
+- ✅ Dead rule count < 5%
+- ✅ Monthly cleanup report generated
+
+#### E.8: Explainability for Business Users (Apr 2027)
+
+**Decision Breakdown (CEO-Friendly):**
+
+**Before (Technical):**
+```
+Decision: false
+Policy: leave_approval_v2
+```
+
+**After (Explainable):**
+```
+Decision: Rejected ❌
+
+Why:
+  1. Annual leave balance exceeded
+     • Current balance: 15 days
+     • Policy limit: 12 days
+     • Exceeded by: 3 days
+
+  2. Matched Rule: "Max Annual Leave"
+     • Rule ID: leave_policy_v2.rule_05
+     • Priority: 80
+     • Version: 2.1.0
+
+  3. Input Context:
+     • Employee: John Doe (ID: emp-123)
+     • Requested: 5 days (Dec 20-24, 2026)
+     • Leave type: Annual
+     • Current balance: 15 days
+     • Leave taken this year: 15 days
+
+  4. Policy Details:
+     • Policy: Leave Approval Policy
+     • Version: v2.1.0
+     • Published: Sep 15, 2026
+     • Published by: HR Manager (jane@bella.com)
+
+  5. Alternative:
+     • Employee can apply for unpaid leave
+     • Or wait until Jan 2027 (balance resets)
+```
+
+**Explanation API:**
+```typescript
+GET /api/decision-engine/explain/:decisionId
+
+Response:
+{
+  "decision": "reject",
+  "summary": "Annual leave balance exceeded",
+  "explanation": {
+    "humanReadable": "John has used 15 days of annual leave this year...",
+    "matchedRules": [...],
+    "inputValues": {...},
+    "alternatives": ["Apply for unpaid leave", "Wait until balance resets"]
+  },
+  "timeline": [
+    { "step": 1, "rule": "Check balance", "result": "15 > 12", "outcome": "reject" },
+    { "step": 2, "rule": "Check approval chain", "result": "skipped", "outcome": "N/A" }
+  ]
+}
+```
+
+**Success Metrics:**
+- ✅ 100% decisions have human-readable explanation
+- ✅ Non-technical users understand 90%+ explanations
+- ✅ Average explanation length < 200 words
+
+#### E.9: Compliance & Audit Reports (Apr 2027)
+
+**Automated Compliance Reports:**
+
+**SOC 2 Compliance:**
+- All policy changes require approval ✅
+- All decisions logged with full context ✅
+- Replay capability for 7 years ✅
+- Audit trail immutable ✅
+
+**GDPR Compliance:**
+- Decision transparency (Article 13) ✅
+- Right to explanation (Article 22) ✅
+- Data retention policies ✅
+- Anonymization after retention period ✅
+
+**Monthly Report (Auto-Generated):**
+```
+Bella ERP - Decision Engine Compliance Report
+Period: March 2027
+
+Total Decisions: 145,382
+Policy Changes: 12
+  - Approved: 11
+  - Rejected: 1 (insufficient testing)
+  - Emergency overrides: 0
+
+Rule Coverage: 94%
+Dead Rules Removed: 5
+Policy Conflicts Detected: 0
+
+Audit Trail Completeness: 100%
+Replay Success Rate: 99.98%
+
+Compliance Status: ✅ PASS
+```
+
+**Success Metrics:**
+- ✅ 100% compliance reports generated monthly
+- ✅ Zero compliance violations
+- ✅ Audit-ready at all times
 
 ---
 
-### Phase F: Workflow Engine 🔄 (Apr-Jun 2027)
+### Timeline Adjustment (New Phase Order):
+
+**OLD:**
+```
+D. Operations Console (Dec 2026)
+E. Rule Management (Feb-Mar 2027)
+F. Workflow Engine (Apr-Jun 2027)
+```
+
+**NEW:**
+```
+D. Operations Console (Dec 2026 - Jan 2027)
+E. Policy Governance (Feb-Apr 2027) ← NEW (3 months)
+F. Rule Management UI (May 2027) ← Simplified (1 month)
+G. Workflow Engine (Jun-Aug 2027)
+```
+
+**Deliverable:** Enterprise Policy Governance Platform
+
+**Success Metrics:**
+- ✅ 100% policy changes go through approval
+- ✅ Zero unauthorized changes
+- ✅ Replay works for 3+ years of history
+- ✅ Simulation prevents 95% breaking changes
+- ✅ Rollback time < 10 seconds
+- ✅ Dead rule detection automated
+- ✅ Business users understand 90% decisions
+- ✅ SOC 2 / GDPR compliant
+
+**Timeline:** 3 months (Feb-Apr 2027)
+
+---
+
+### Phase F: Rule Management UI (May 2027)
+
+**Objective:** User-friendly interface for business users to view and manage policies
+
+**Simplified Scope** (after Governance layer is complete):
+- **View-Only Policy Registry:** Browse all policies
+- **Visual Rule Builder:** Drag-and-drop rule conditions (no-code)
+- **Tenant-Specific Overrides:** Per-tenant policy customization
+
+**Success Metrics:**
+- ✅ Business users can navigate policies without dev help
+- ✅ Visual builder used for 50%+ new rules
+
+**Timeline:** 1 month (May 2027)
+
+**Deliverable:** Rule Management UI
+
+---
+
+### Phase G: Workflow Engine 🔄 (Jun-Aug 2027)
 
 **Objective:** Orchestrate multi-step business processes
 
@@ -222,7 +635,7 @@ Send Confirmation (Notification Engine)
 
 ---
 
-### Phase G: Event Engine ⭐⭐⭐ (Jul-Aug 2027)
+### Phase H: Event Engine ⭐⭐⭐ (Sep-Oct 2027)
 
 **Objective:** Decouple modules through event-driven architecture
 
@@ -274,7 +687,7 @@ Module A → Event Bus → Module B
 
 ---
 
-### Phase H: Notification Engine 📧 (Sep 2027)
+### Phase I: Notification Engine 📧 (Nov 2027)
 
 **Objective:** Unified notification delivery across all channels
 
@@ -316,13 +729,13 @@ Multi-Channel Delivery
 
 ---
 
-### Phase I: AI Engine ⭐⭐⭐⭐ (Oct 2027 - Mar 2028)
+### Phase J: AI Engine ⭐⭐⭐⭐ (Dec 2027 - May 2028)
 
 **Objective:** Transform from "rule-based decisions" to "intelligent recommendations"
 
 **AI Capabilities:**
 
-#### 1. Decision Prediction (Oct 2027)
+#### 1. Decision Prediction (Dec 2027)
 **Use case:** Predict decision outcome before execution
 ```
 Input: Leave request data
@@ -330,35 +743,35 @@ Output: 95% likely to be approved (AI prediction)
 Then: Run actual Decision Engine to confirm
 ```
 
-#### 2. Rule Recommendation (Nov 2027)
+#### 2. Rule Recommendation (Jan 2028)
 **Use case:** Suggest new rules based on patterns
 ```
 AI detects: "90% of bookings at 19:00-20:00 are VIP customers"
 Suggestion: "Add rule: Auto-upgrade 19:00-20:00 slots to VIP pricing"
 ```
 
-#### 3. Anomaly Detection (Dec 2027)
+#### 3. Anomaly Detection (Feb 2028)
 **Use case:** Flag unusual patterns
 ```
 AI alert: "Customer booking 5 sessions in 1 day (unusual behavior)"
 AI alert: "Rule X rejected 100% of requests last week (possible bug)"
 ```
 
-#### 4. Demand Forecasting (Jan 2028)
+#### 4. Demand Forecasting (Mar 2028)
 **Use case:** Predict future demand
 ```
 AI forecast: "Expect 300% booking increase next weekend (holiday)"
 Recommendation: "Increase inventory, add extra staff, adjust pricing"
 ```
 
-#### 5. Churn Prediction (Feb 2028)
+#### 5. Churn Prediction (Apr 2028)
 **Use case:** Identify customers at risk
 ```
 AI score: "Customer A has 80% churn probability (last visit 60 days ago)"
 Action: Trigger retention workflow (send discount, call customer)
 ```
 
-#### 6. Natural Language Policy (Mar 2028)
+#### 6. Natural Language Policy (May 2028)
 **Use case:** Write rules in plain language
 ```
 Business user types: "Approve leave if balance > 5 days and no conflict"
@@ -371,18 +784,29 @@ AI converts to: Policy rule with conditions + actions
 - ✅ Anomaly detection precision > 80%
 - ✅ Forecast accuracy > 85%
 
-**Timeline:** 6 months (Oct 2027 - Mar 2028)
+**Timeline:** 6 months (Dec 2027 - May 2028)
 
 **Deliverable:** AI-Powered Intelligence Layer
 
 ---
 
-## 🏗️ The 5 Core Engines (Final Architecture)
+## 🏗️ The 5 Core Engines + Governance Layer (Final Architecture)
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                     Bella Enterprise Intelligence Platform      │
+│                Bella Enterprise Intelligence Platform            │
 └─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+                ┌──────────────────────────┐
+                │   Policy Governance      │ ⭐ NEW
+                │                          │
+                │  • Lifecycle Management  │
+                │  • Approval Workflow     │
+                │  • Versioning & Rollback │
+                │  • Simulation & Testing  │
+                │  • Compliance Reporting  │
+                └──────────────────────────┘
           │                     │                      │
           ▼                     ▼                      ▼
 ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐
@@ -427,11 +851,12 @@ AI converts to: Policy rule with conditions + actions
 | **B: Integration** | Business processes integrated | 5-10 | ⏳ Pending |
 | **C: Data Collection** | Real decisions collected | 100,000+ | ⏳ Pending |
 | **D: Operations Console** | Dashboard demo-ready | Yes | ⏳ Pending |
-| **E: Rule Management** | Business users self-serve | Yes | ⏳ Pending |
-| **F: Workflow Engine** | Workflows deployed | 10+ | ⏳ Pending |
-| **G: Event Engine** | Event throughput | 100k/day | ⏳ Pending |
-| **H: Notification Engine** | Delivery rate | > 99% | ⏳ Pending |
-| **I: AI Engine** | AI prediction accuracy | > 90% | ⏳ Pending |
+| **E: Policy Governance** | Approval workflow live | Yes | ⏳ Pending |
+| **F: Rule Management UI** | Business users self-serve | Yes | ⏳ Pending |
+| **G: Workflow Engine** | Workflows deployed | 10+ | ⏳ Pending |
+| **H: Event Engine** | Event throughput | 100k/day | ⏳ Pending |
+| **I: Notification Engine** | Delivery rate | > 99% | ⏳ Pending |
+| **J: AI Engine** | AI prediction accuracy | > 90% | ⏳ Pending |
 
 ---
 
