@@ -261,20 +261,20 @@ export function KtvProfileDrawer({
               <Link
                 href="/ktv/guides"
                 onClick={onClose}
-                className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all active:scale-95 border border-slate-200/80 text-center"
+                className="w-full ktv-profile-btn-secondary py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all active:scale-95 text-center"
               >
                 📖 Sổ tay & Hướng dẫn
               </Link>
               <button
                 onClick={onOpenPassword}
-                className="w-full bg-slate-900 hover:bg-slate-800 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-slate-100 dark:shadow-none"
+                className="w-full ktv-profile-btn-primary py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-slate-100/50 dark:shadow-none"
               >
                 <KeyRound className="w-4 h-4" />
                 Đổi mật khẩu
               </button>
               <button
                 onClick={onLogout}
-                className="w-full bg-slate-900 hover:bg-slate-800 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-slate-200 dark:shadow-none"
+                className="w-full ktv-profile-btn-primary py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-slate-200/50 dark:shadow-none"
               >
                 <LogOut className="w-4 h-4" />
                 Đăng xuất tài khoản

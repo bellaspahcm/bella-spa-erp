@@ -320,6 +320,57 @@ h1, h2, h3, h4, h5, h6 {
 
 /* END BEAUTY SPA DROPDOWN FIX */
 
+/* ============================================
+   KTV PROFILE DRAWER BUTTONS - CONTRAST FIX
+   ============================================ */
+.ktv-profile-btn-primary {
+  background-color: #0f172a !important; /* default slate-900 */
+  color: #ffffff !important;
+  transition: all 0.2s ease !important;
+}
+
+.ktv-profile-btn-primary svg {
+  color: #ffffff !important;
+}
+
+.ktv-profile-btn-primary:hover {
+  background-color: #1e293b !important;
+}
+
+/* Tenant specific primary action colors */
+html[data-tenant-module="beauty_spa"] .ktv-profile-btn-primary {
+  background-color: #074e44 !important; /* Emerald primary */
+  color: #ffffff !important;
+}
+html[data-tenant-module="beauty_spa"] .ktv-profile-btn-primary:hover {
+  background-color: #0a6357 !important;
+}
+
+html[data-tenant-module="baby_care"] .ktv-profile-btn-primary,
+html[data-tenant-module="babycare"] .ktv-profile-btn-primary,
+html[data-tenant-module="pending"] .ktv-profile-btn-primary {
+  background-color: #be123c !important; /* Rose-700 primary for Bella */
+  color: #ffffff !important;
+}
+html[data-tenant-module="baby_care"] .ktv-profile-btn-primary:hover,
+html[data-tenant-module="babycare"] .ktv-profile-btn-primary:hover,
+html[data-tenant-module="pending"] .ktv-profile-btn-primary:hover {
+  background-color: #9f1239 !important;
+}
+
+/* Secondary Button styling */
+.ktv-profile-btn-secondary {
+  background-color: #f1f5f9 !important; /* slate-100 */
+  color: #334155 !important; /* slate-700 */
+  border: 1px solid rgba(226, 232, 240, 0.8) !important;
+  transition: all 0.2s ease !important;
+}
+.ktv-profile-btn-secondary:hover {
+  background-color: #e2e8f0 !important; /* slate-200 */
+  color: #0f172a !important; /* slate-900 */
+}
+
+
 /* Luxury Utilities */
 .luxury-card-dark {
   background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
