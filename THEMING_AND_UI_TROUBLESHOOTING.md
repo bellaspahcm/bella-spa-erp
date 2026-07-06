@@ -123,7 +123,62 @@ Thay vì cố gắng hiển thị một bảng 6-7 cột trên màn hình điệ
 Nếu bắt buộc phải dùng bảng trên mobile, hãy đảm bảo cấu trúc HTML luôn tuân thủ:
 1. Thẻ bọc bảng phải có class: `w-full overflow-x-auto overscroll-x-contain custom-scrollbar shadow-[inset_-18px_0_18px_-18px_rgba(0,0,0,0.15)]`. Bộ bóng đổ này sẽ tạo vệt mờ trực quan bên phải báo hiệu có dữ liệu ẩn phía sau.
 2. Thẻ `<table>` phải được gán cứng độ rộng tối thiểu thông qua inline style `style={{ minWidth: '1100px' }}` (hoặc rem tương đương) để ngăn trình duyệt tự động co cột.
-3. Đảm bảo toàn bộ các thẻ cha của khối này (lên đến thẻ `<main>`) đều có thuộc tính `min-w-0` hoặc `max-w-full` để ngăn việc tự động giãn rộng cây DOM vượt quá màn hình.
+3. Đảm bảo toàn bộ các thẻ cha của khối này (lên đến thẻ `<main>`) đều có thuộc tính `min-w-0` or `max-w-full` để ngăn việc tự động giãn rộng cây DOM vượt quá màn hình.
+
+---
+
+### Lỗi 2.3: Thẻ thống kê, tiêu đề, và biểu đồ bị nén cột hoặc chồng chéo chữ trên điện thoại (Dashboard Card & Grid Overlaps)
+
+#### Mô tả lỗi:
+Khi hiển thị trên màn hình nhỏ (Mobile):
+* Tiêu đề trang và các nút bộ lọc/nút bấm bị ép nằm ngang, làm cho chữ tiêu đề bị ngắt dòng bất thường (ví dụ: `Executive\nDashboard`) hoặc đẩy nút bấm ra ngoài biên màn hình.
+* Các nhóm chỉ số phụ (ví dụ: danh sách Top nguồn doanh thu, hay các ô thống kê nhỏ) hiển thị ở dạng cột hẹp (2 hoặc 3 cột), dẫn đến việc chữ và số bị dính sát vào nhau, mất khoảng cách trắng, hoặc chồng chéo đè lên nhau gây khó đọc (ví dụ: `remaining_payment9.100.000đ`).
+* Biểu đồ đường hay biểu đồ cột bị cố định một màu sắc riêng lẻ (như màu xanh lục mặc định), không tự động điều chỉnh theo dải màu của tenant đang chạy.
+
+#### Nguyên nhân kỹ thuật:
+1. **Sử dụng grid số cột cố định (`grid-cols-2`, `grid-cols-3`):**
+   Khi màn hình hẹp lại còn 320px - 390px, nếu chia làm 2 hoặc 3 cột thì mỗi cột chỉ còn khoảng 90px - 150px. Kích thước này quá hẹp để chứa các dòng văn bản dài (như tên phương thức thanh toán hoặc số tiền tệ định dạng dạng VND đầy đủ chữ `đ`).
+2. **Khóa cứng Header bằng `flex-row` hoặc `justify-between` mà không có wrap:**
+   Thanh công cụ tiêu đề trang thường được xếp bằng `flex items-center justify-between`. Trên thiết bị di động, chiều ngang không đủ cho cả tiêu đề dài và các dropdown lọc dữ liệu cùng hiển thị trên một hàng.
+3. **Mã hóa cứng màu sắc trong biểu đồ Recharts:**
+   Các thẻ vẽ biểu đồ `<Line>` hay `<Area>` có thuộc tính màu sắc nét vẽ (`stroke`) hoặc màu tô nền (`fill`) bị gán cứng giá trị hex (ví dụ: `#10b981`).
+
+#### Cách khắc phục triệt để:
+1. **Thiết lập cột thích ứng linh hoạt (Responsive Grid):**
+   Thay đổi các class phân chia cột cố định thành dạng tự co giãn theo kích thước màn hình. Trên di động xếp chồng 1 cột, trên màn hình máy tính hiển thị nhiều cột:
+   * Sử dụng: `grid grid-cols-1 sm:grid-cols-2 gap-6` (cho các panel hai cột) hoặc `grid grid-cols-1 sm:grid-cols-3 gap-4` (cho các thẻ thông số).
+2. **Cho phép Header tự động ngắt dòng và xếp dọc:**
+   Sử dụng cấu trúc flexbox xếp dọc trên mobile và chuyển sang hàng ngang trên máy tính:
+   ```tsx
+   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8">
+     <div>
+       <h1 className="text-2xl sm:text-3xl font-bold ...">Tiêu đề</h1>
+     </div>
+     <div className="flex items-center gap-3 w-full sm:w-auto">
+       {/* Ô chọn và nút bấm sẽ chiếm trọn chiều rộng hàng mới trên mobile */}
+     </div>
+   </div>
+   ```
+3. **Sử dụng các nhãn chữ hiển thị đã được định dạng và dịch thuật:**
+   Với các giá trị khóa hệ thống từ API (ví dụ: `remaining_payment`), hãy tạo đối tượng map ngôn ngữ để chuyển thành tiếng Việt có dấu ngắn gọn trước khi render, giúp tiết kiệm không gian ngang và tăng tính chuyên nghiệp:
+   ```tsx
+   const REVENUE_SOURCE_LABELS: Record<string, string> = {
+     remaining_payment: 'Thanh toán còn lại',
+     deposit: 'Tiền đặt cọc',
+     package_payment: 'Thanh toán trọn gói',
+   };
+   ```
+4. **Liên kết biểu đồ với biến CSS động của Tenant:**
+   Trong các tệp biểu đồ Recharts, thay thế mã hex màu sắc cứng bằng biến CSS chủ đạo:
+   ```tsx
+   <Line
+     type="monotone"
+     dataKey="revenue"
+     stroke="var(--primary)" // Lấy động màu hồng, xanh lục hoặc xanh dương tùy phân hệ
+     strokeWidth={2.5}
+     dot={{ fill: "var(--primary)", r: 4 }}
+   />
+   ```
 
 ---
 
