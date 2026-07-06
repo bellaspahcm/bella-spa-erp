@@ -8,44 +8,54 @@
  */
 
 // ============ Types ============
-export type {
-  DecisionContext,
-  DecisionUser,
-  DecisionOptions,
-  DecisionResult,
-  DecisionAction,
-  DecisionError,
-} from './types';
+// Sprint 2: Using simplified types from types.ts
+export type { Knowledge, DecisionOutcome, DecisionResult } from './types';
 
-export {
-  createDecisionContext,
-  validateDecisionContext,
-  sanitizeDecisionContext,
-  createSuccessResult,
-  createFallbackResult,
-  createErrorResult,
-  interpretResult,
-  validateDecisionResult,
-  sanitizeDecisionResult,
-} from './types';
+// Sprint 2: Core Components
+export { RuleReasoner } from './RuleReasoner';
+export type { Policy, Rule } from './types';
+
+// Old types (commented out - not used in Sprint 2)
+// export type {
+//   DecisionContext,
+//   DecisionUser,
+//   DecisionOptions,
+//   DecisionResult,
+//   DecisionAction,
+//   DecisionError,
+// } from './types';
+
+// export {
+//   createDecisionContext,
+//   validateDecisionContext,
+//   sanitizeDecisionContext,
+//   createSuccessResult,
+//   createFallbackResult,
+//   createErrorResult,
+//   interpretResult,
+//   validateDecisionResult,
+//   sanitizeDecisionResult,
+// } from './types';
 
 // ============ Abstractions ============
-export type {
-  IDecisionProvider,
-  IDecisionProviderMetadata,
-  ProviderFactory,
-  ProviderRegistrationOptions,
-} from './abstractions';
+// Old abstractions (not used in Sprint 2)
+// export type {
+//   IDecisionProvider,
+//   IDecisionProviderMetadata,
+//   ProviderFactory,
+//   ProviderRegistrationOptions,
+// } from './abstractions';
 
-export { BaseDecisionProvider } from './abstractions';
+// export { BaseDecisionProvider } from './abstractions';
 
 // ============ Core Components ============
-export {
-  DecisionEngine,
-  DecisionProviderRegistry,
-  createDecisionEngine,
-  createProviderRegistry,
-} from './core';
+// Old core (not used in Sprint 2)
+// export {
+//   DecisionEngine,
+//   DecisionProviderRegistry,
+//   createDecisionEngine,
+//   createProviderRegistry,
+// } from './core';
 
 // ============ Audit & Compliance (Sprint 1) ============
 export {
