@@ -168,12 +168,36 @@ export function useCustomerDetailController() {
 
   const fetchKtvs = useCallback(async () => {
     try {
-      const data = await getUsers();
-      setKtvs(data.filter((user) => user.role?.toLowerCase() === 'ktv'));
+      const allUsers = await getUsers();
+      const allKtvs = allUsers.filter((user) => user.role?.toLowerCase() === 'ktv');
+      
+      // Filter out KTVs already assigned to other active bookings
+      if (customer?.allBookings) {
+        const otherActiveBookings = customer.allBookings.filter((booking) => 
+          booking.id !== activeBooking?.id && 
+          (booking.status === 'in_progress' || booking.status === 'booked')
+        );
+        
+        const assignedKtvIds = new Set(
+          otherActiveBookings
+            .map(b => b.assigned_ktv_id)
+            .filter((id): id is string => Boolean(id))
+        );
+        
+        // Only filter if there are assigned KTVs in other active bookings
+        if (assignedKtvIds.size > 0) {
+          const availableKtvs = allKtvs.filter(ktv => !assignedKtvIds.has(ktv.id));
+          setKtvs(availableKtvs);
+        } else {
+          setKtvs(allKtvs);
+        }
+      } else {
+        setKtvs(allKtvs);
+      }
     } catch (error) {
       console.error('Error fetching KTVs:', error);
     }
-  }, []);
+  }, [customer?.allBookings, activeBooking?.id]);
 
   const scheduleDataReload = useCallback(() => {
     if (reloadTimerRef.current) {
