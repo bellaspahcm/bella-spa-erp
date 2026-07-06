@@ -448,7 +448,28 @@ Once Operations Console is complete, consider:
 
 ---
 
-**Document Version:** 1.0  
+**Document Version:** 1.1  
 **Last Updated:** June 22, 2026  
 **Owner:** Bella Platform Team  
-**Status:** 🟡 Draft (Ready for Review)
+**Status:** ⏸️ DEFERRED to Phase D (Dec 2026)
+
+---
+
+## ⚠️ IMPORTANT: This Roadmap is DEFERRED
+
+**Reason:** Operations Console needs real data to be valuable.
+
+**New Timeline:**
+- **Phase B (Jul-Sep 2026):** Integrate Decision Engine into 5-10 business processes
+- **Phase C (Oct-Nov 2026):** Collect 100,000+ real decisions at scale
+- **Phase D (Dec 2026):** Build Operations Console with meaningful data
+
+**Rationale:**
+```
+Dashboard now:  15 decisions/day, 2ms latency, 0% errors
+Dashboard later: 145,382 decisions/day, proven intelligence, real patterns
+```
+
+See [BELLA_EIP_STRATEGIC_ROADMAP.md](./BELLA_EIP_STRATEGIC_ROADMAP.md) for full strategic direction.
+
+---

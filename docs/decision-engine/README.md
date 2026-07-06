@@ -241,6 +241,20 @@ All scripts located in `../../scripts/`:
 
 ---
 
+## 📖 Strategic Roadmap
+
+**⚠️ IMPORTANT:** Before diving into details, read the strategic direction:
+
+👉 **[BELLA_EIP_STRATEGIC_ROADMAP.md](./BELLA_EIP_STRATEGIC_ROADMAP.md)** ⭐ **MUST READ**
+
+**Key Insight:**
+- Operations Console is deferred to Phase D (Dec 2026)
+- Focus now: Integrate Decision Engine into 5-10 business processes (Phase B)
+- Goal: Collect 100,000+ real decisions before building dashboard
+- Principle: "Dashboard without data = Pretty UI, Dashboard with real scale = Intelligence"
+
+---
+
 ## 🚀 Quick Start Guide
 
 ### For New Team Members:
