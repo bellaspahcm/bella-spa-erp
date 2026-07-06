@@ -132,8 +132,15 @@ export function useCustomerDetailController() {
   const quotationRef = useRef<HTMLDivElement>(null);
   const customerBookingIdsRef = useRef<Set<string>>(new Set());
   const reloadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const activeBookingIdRef = useRef<string | null>(null); // Track user-selected booking
+  
+  // Wrapper to update both state and ref when user manually changes booking
+  const setActiveBookingWithTracking = useCallback((booking: CustomerDetailBooking | null) => {
+    setActiveBooking(booking);
+    activeBookingIdRef.current = booking?.id || null;
+  }, []);
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (options?: { preserveSelection?: boolean }) => {
     if (!id) return;
 
     try {
@@ -156,17 +163,25 @@ export function useCustomerDetailController() {
 
       if (customerRecord) {
         setCustomer(customerRecord);
-        // Preserve current active booking if it still exists, otherwise pick default
-        const currentActiveBookingId = activeBooking?.id;
-        const currentBookingStillExists = currentActiveBookingId && bookings.some(b => b.id === currentActiveBookingId);
         
-        if (currentBookingStillExists) {
-          // Keep current selection, but update with fresh data
-          const updatedActiveBooking = bookings.find(b => b.id === currentActiveBookingId) || null;
-          setActiveBooking(updatedActiveBooking);
+        // Preserve selection only during background reload
+        if (options?.preserveSelection && activeBookingIdRef.current) {
+          const currentBookingStillExists = bookings.some(b => b.id === activeBookingIdRef.current);
+          
+          if (currentBookingStillExists) {
+            const updatedActiveBooking = bookings.find(b => b.id === activeBookingIdRef.current) || null;
+            setActiveBooking(updatedActiveBooking);
+          } else {
+            // Current booking deleted, pick default
+            const defaultBooking = bookings.length > 0 ? pickDefaultBooking(bookings, targetBookingId) : null;
+            setActiveBooking(defaultBooking);
+            activeBookingIdRef.current = defaultBooking?.id || null;
+          }
         } else {
-          // Current booking no longer exists or not set, pick default
-          setActiveBooking(bookings.length > 0 ? pickDefaultBooking(bookings, targetBookingId) : null);
+          // Initial load or user action - pick default
+          const defaultBooking = bookings.length > 0 ? pickDefaultBooking(bookings, targetBookingId) : null;
+          setActiveBooking(defaultBooking);
+          activeBookingIdRef.current = defaultBooking?.id || null;
         }
       }
     } catch (error) {
@@ -175,7 +190,7 @@ export function useCustomerDetailController() {
     } finally {
       setLoading(false);
     }
-  }, [id, targetBookingId, activeBooking?.id]);
+  }, [id, targetBookingId]);
 
   const fetchKtvs = useCallback(async () => {
     try {
@@ -216,7 +231,7 @@ export function useCustomerDetailController() {
     }
 
     reloadTimerRef.current = setTimeout(() => {
-      void loadData();
+      void loadData({ preserveSelection: true }); // Preserve selection during background reload
     }, 400);
   }, [loadData]);
 
@@ -641,7 +656,7 @@ export function useCustomerDetailController() {
     paymentFile,
     quotationRef,
     receiptData,
-    setActiveBooking,
+    setActiveBooking: setActiveBookingWithTracking, // Export wrapper instead of direct setter
     setEditBookingData,
     setEditData,
     setIsBookingModalOpen,
