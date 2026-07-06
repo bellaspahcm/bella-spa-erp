@@ -1,0 +1,20 @@
+# Only Keep These Docs for Decision Engine Sprint 2
+
+Essential (Keep):
+1. README.md - Main documentation
+2. MANUAL_TEST_GUIDE.md - For QA/testing
+3. PRODUCTION_READINESS_CHECKLIST.md - Gate before Sprint 3
+4. PHASE_B_PLATFORM_FOUNDATION_PLAN.md - Original plan reference
+
+Archive (Move to /archive or delete):
+- SPRINT2_COMPLETION_SUMMARY.md (redundant with README)
+- LEAVE_APPROVAL_INTEGRATION_SUMMARY.md (redundant with README)
+- INTEGRATION_COMPLETE_CHECKLIST.md (redundant with PRODUCTION_READINESS_CHECKLIST)
+- REAL_DATA_INTEGRATION.md (details now in README)
+- SPRINT_1_COMPLETION_SUMMARY.md (Sprint 1 already done)
+- DECISION_ENGINE_SPRINT2_IMPLEMENTATION.md (if exists, redundant)
+
+Keep for reference but not actively maintain:
+- DAY_10-11_MIGRATION_SCRIPT_SUMMARY.md (historical, for Week 2)
+- POLICY_MIGRATION_GUIDE.md (will need in Week 2)
+- INTEGRATION_TESTS_STATUS.md (blocked until DB deployment)
