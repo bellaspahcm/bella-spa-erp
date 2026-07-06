@@ -220,7 +220,7 @@ export function ActiveBookingPanel({
                       <User className="w-4 h-4" />
                       <span className="text-[10px] font-black uppercase tracking-widest">{vocab.worker.short} Phụ trách chính</span>
                     </div>
-                    <div className="relative">
+                    <div className="relative customer-detail-ktv-select">
                       <PremiumSelect
                         value={activeBooking.assigned_ktv_id || ''}
                         options={[
@@ -232,6 +232,17 @@ export function ActiveBookingPanel({
                         className="w-full"
                         dropdownClassName="!bg-white !shadow-[0_20px_50px_rgba(0,0,0,0.3)]"
                       />
+                      <style jsx global>{`
+                        .customer-detail-ktv-select [class*="text-rose-800"] {
+                          color: rgb(31 41 55) !important;
+                        }
+                        .customer-detail-ktv-select [class*="text-slate-700"] {
+                          color: rgb(31 41 55) !important;
+                        }
+                        .customer-detail-ktv-select [class*="bg-rose-50"] {
+                          background-color: rgb(243 244 246) !important;
+                        }
+                      `}</style>
                     </div>
                   </div>
 
