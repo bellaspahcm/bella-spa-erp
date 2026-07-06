@@ -138,7 +138,9 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
                           "w-full flex items-center justify-between px-5 py-3 text-left text-sm transition-colors",
                           value === option.value
                             ? selectedItemClassName || "bg-rose-50 font-bold"
-                            : itemClassName || "hover:bg-slate-100"
+                            : option.value === ''
+                              ? "hover:bg-transparent text-slate-500 italic"
+                              : itemClassName || "hover:bg-slate-100"
                         )}
                       >
                         <div className="flex items-center gap-3 min-w-0">
@@ -150,7 +152,16 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
                               {option.icon}
                             </div>
                           )}
-                          <span className="truncate" style={{ color: value === option.value ? '#0f172a' : '#1e293b' }}>
+                          <span 
+                            className="truncate" 
+                            style={{ 
+                              color: value === option.value 
+                                ? '#0f172a' 
+                                : option.value === '' 
+                                  ? '#64748b'  // slate-500 for empty option
+                                  : '#1e293b' 
+                            }}
+                          >
                             {option.label}
                           </span>
                         </div>
@@ -174,7 +185,9 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
                       "w-full flex items-center justify-between px-5 py-3 text-left text-sm transition-colors",
                       value === option.value
                         ? selectedItemClassName || "bg-rose-50 font-bold"
-                        : itemClassName || "hover:bg-slate-100"
+                        : option.value === ''
+                          ? "hover:bg-transparent text-slate-500 italic"
+                          : itemClassName || "hover:bg-slate-100"
                     )}
                   >
                     <div className="flex items-center gap-3 min-w-0">
@@ -186,7 +199,16 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
                           {option.icon}
                         </div>
                       )}
-                      <span className="truncate" style={{ color: value === option.value ? '#0f172a' : '#1e293b' }}>
+                      <span 
+                        className="truncate" 
+                        style={{ 
+                          color: value === option.value 
+                            ? '#0f172a' 
+                            : option.value === '' 
+                              ? '#64748b'  // slate-500 for empty option
+                              : '#1e293b' 
+                        }}
+                      >
                         {option.label}
                       </span>
                     </div>

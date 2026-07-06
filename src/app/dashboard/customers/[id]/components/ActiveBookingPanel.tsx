@@ -229,6 +229,7 @@ export function ActiveBookingPanel({
                         ]}
                         onChange={onUpdateKtv}
                         disabled={isUpdatingKtv}
+                        placeholder="Chưa phân công"
                         className="w-full"
                         dropdownClassName="bg-white shadow-[0_20px_50px_rgba(0,0,0,0.3)] [&_button]:!text-slate-900"
                       />
