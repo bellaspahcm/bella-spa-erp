@@ -1909,15 +1909,23 @@ html.dark[data-tenant-module="pending"] main [class*="text-slate-700"] {
 }
 
 /* Light mode: Make text-slate-700/600/500 darker for better contrast */
+html[data-tenant-module="beauty_spa"] [class*="text-slate-900"] {
+  color: rgb(15, 23, 42) !important; /* slate-900 - Maximum contrast for labels and headings */
+}
+
+html[data-tenant-module="beauty_spa"] [class*="text-slate-800"] {
+  color: rgb(30, 41, 59) !important; /* slate-800 - For body text */
+}
+
 html[data-tenant-module="beauty_spa"] [class*="text-slate-700"],
 html[data-tenant-module="beauty_spa"] [class*="text-slate-600"],
 html[data-tenant-module="beauty_spa"] [class*="text-slate-500"] {
-  color: rgb(51, 65, 85) !important; /* Darker gray (slate-700) but not black */
+  color: rgb(51, 65, 85) !important; /* slate-700 - Darker gray but not black */
 }
 
 html[data-tenant-module="beauty_spa"] [class*="text-slate-400"],
 html[data-tenant-module="beauty_spa"] [class*="text-slate-300"] {
-  color: rgb(100, 116, 139) !important; /* Medium gray (slate-500) for secondary text */
+  color: rgb(100, 116, 139) !important; /* slate-500 - Medium gray for secondary text */
 }
 
 html.dark[data-tenant-module="beauty_spa"] p,
