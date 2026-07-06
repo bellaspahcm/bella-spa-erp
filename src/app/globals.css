@@ -214,13 +214,15 @@ h1, h2, h3, h4, h5, h6 {
   line-height: 1.2;
 }
 
-/* Force dark text in all PremiumSelect dropdowns for readability */
-.customer-detail-ktv-select button[type="button"] {
-  color: rgb(15 23 42) !important; /* slate-900 */
+/* Beauty Spa module - Force dropdown text dark on teal background */
+html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select button[type="button"],
+html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select button[type="button"] span,
+html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select button[type="button"] * {
+  color: rgb(15 23 42) !important; /* slate-900 for maximum contrast */
 }
 
-.customer-detail-ktv-select button[type="button"]:hover {
-  color: rgb(15 23 42) !important; /* slate-900 */
+html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select button[type="button"]:hover {
+  color: rgb(15 23 42) !important;
 }
 
 /* Luxury Utilities */
