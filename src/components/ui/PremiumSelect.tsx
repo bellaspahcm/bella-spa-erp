@@ -134,11 +134,16 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
                           onChange(option.value);
                           setIsOpen(false);
                         }}
+                        style={
+                          value === option.value
+                            ? { color: 'rgb(15 23 42)', backgroundColor: 'rgb(226 232 240)' } // slate-900 text, slate-200 bg
+                            : { color: 'rgb(30 41 59)' } // slate-800 text
+                        }
                         className={cn(
                           "w-full flex items-center justify-between px-5 py-3 text-left text-sm transition-colors",
                           value === option.value
-                            ? selectedItemClassName || "bg-rose-50 text-rose-800 font-bold dark:bg-[#5D1C34]/30 dark:text-[#EFE9E1]"
-                            : itemClassName || "text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-[#CDBCAB] dark:hover:bg-[#11100F] dark:hover:text-[#EFE9E1]"
+                            ? selectedItemClassName || "font-bold dark:bg-[#5D1C34]/30 dark:text-[#EFE9E1]"
+                            : itemClassName || "hover:bg-slate-100 dark:text-[#CDBCAB] dark:hover:bg-[#11100F] dark:hover:text-[#EFE9E1]"
                         )}
                       >
                         <div className="flex items-center gap-3 min-w-0">
@@ -168,11 +173,16 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
                       onChange(option.value);
                       setIsOpen(false);
                     }}
+                    style={
+                      value === option.value
+                        ? { color: 'rgb(15 23 42)', backgroundColor: 'rgb(226 232 240)' } // slate-900 text, slate-200 bg
+                        : { color: 'rgb(30 41 59)' } // slate-800 text
+                    }
                     className={cn(
                       "w-full flex items-center justify-between px-5 py-3 text-left text-sm transition-colors",
                       value === option.value
-                        ? selectedItemClassName || "bg-rose-50 text-rose-800 font-bold dark:bg-[#5D1C34]/30 dark:text-[#EFE9E1]"
-                        : itemClassName || "text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-[#CDBCAB] dark:hover:bg-[#11100F] dark:hover:text-[#EFE9E1]"
+                        ? selectedItemClassName || "font-bold dark:bg-[#5D1C34]/30 dark:text-[#EFE9E1]"
+                        : itemClassName || "hover:bg-slate-100 dark:text-[#CDBCAB] dark:hover:bg-[#11100F] dark:hover:text-[#EFE9E1]"
                     )}
                   >
                     <div className="flex items-center gap-3 min-w-0">

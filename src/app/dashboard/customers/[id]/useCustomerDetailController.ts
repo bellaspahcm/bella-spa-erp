@@ -136,12 +136,15 @@ export function useCustomerDetailController() {
   
   // Wrapper to update both state and ref when user manually changes booking
   const setActiveBookingWithTracking = useCallback((booking: CustomerDetailBooking | null) => {
+    console.log('[setActiveBooking] User selected:', booking?.id, booking?.package_name);
     setActiveBooking(booking);
     activeBookingIdRef.current = booking?.id || null;
   }, []);
 
   const loadData = useCallback(async (options?: { preserveSelection?: boolean }) => {
     if (!id) return;
+
+    console.log('[loadData] Starting, preserveSelection:', options?.preserveSelection, 'activeBookingIdRef:', activeBookingIdRef.current);
 
     try {
       const [tenant, data, bookings] = await Promise.all([
@@ -168,18 +171,23 @@ export function useCustomerDetailController() {
         if (options?.preserveSelection && activeBookingIdRef.current) {
           const currentBookingStillExists = bookings.some(b => b.id === activeBookingIdRef.current);
           
+          console.log('[loadData] Preserve mode - currentBooking exists?', currentBookingStillExists);
+          
           if (currentBookingStillExists) {
             const updatedActiveBooking = bookings.find(b => b.id === activeBookingIdRef.current) || null;
+            console.log('[loadData] Keeping current booking:', updatedActiveBooking?.id, updatedActiveBooking?.package_name);
             setActiveBooking(updatedActiveBooking);
           } else {
             // Current booking deleted, pick default
             const defaultBooking = bookings.length > 0 ? pickDefaultBooking(bookings, targetBookingId) : null;
+            console.log('[loadData] Current booking deleted, fallback to default:', defaultBooking?.id, defaultBooking?.package_name);
             setActiveBooking(defaultBooking);
             activeBookingIdRef.current = defaultBooking?.id || null;
           }
         } else {
           // Initial load or user action - pick default
           const defaultBooking = bookings.length > 0 ? pickDefaultBooking(bookings, targetBookingId) : null;
+          console.log('[loadData] Initial load, pick default:', defaultBooking?.id, defaultBooking?.package_name);
           setActiveBooking(defaultBooking);
           activeBookingIdRef.current = defaultBooking?.id || null;
         }
