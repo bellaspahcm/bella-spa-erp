@@ -19,74 +19,64 @@ import { PolicyRegistryError } from './types';
 
 /**
  * Validate policy structure
+ * Returns validation result object instead of throwing
  */
-export function validatePolicy(policy: Policy): void {
+export function validatePolicy(policy: Policy): { valid: boolean; errors: string[] } {
+  const errors: string[] = [];
+
   // Required fields
   if (!policy.id) {
-    throw new PolicyRegistryError(
-      'Policy ID is required',
-      ERROR_CODES.MISSING_REQUIRED_FIELD,
-      { field: 'id' }
-    );
+    errors.push('Policy ID is required');
+  } else {
+    // Validate policy ID format
+    if (!VALIDATION_RULES.policyId.pattern.test(policy.id)) {
+      errors.push(`Invalid policy ID format: ${policy.id}. Must contain only alphanumeric characters, hyphens, and underscores`);
+    }
+
+    // Validate length
+    if (policy.id.length < VALIDATION_RULES.policyId.minLength) {
+      errors.push(`Policy ID must be at least ${VALIDATION_RULES.policyId.minLength} characters (max ${VALIDATION_RULES.policyId.maxLength})`);
+    }
+
+    if (policy.id.length > VALIDATION_RULES.policyId.maxLength) {
+      errors.push(`Policy ID must not exceed ${VALIDATION_RULES.policyId.maxLength} characters (min ${VALIDATION_RULES.policyId.minLength})`);
+    }
   }
 
   if (!policy.name) {
-    throw new PolicyRegistryError(
-      'Policy name is required',
-      ERROR_CODES.MISSING_REQUIRED_FIELD,
-      { field: 'name' }
-    );
-  }
+    errors.push('Policy name is required');
+  } else {
+    // Validate name length
+    if (policy.name.length < VALIDATION_RULES.name.minLength) {
+      errors.push(`Policy name must be at least ${VALIDATION_RULES.name.minLength} characters (max ${VALIDATION_RULES.name.maxLength})`);
+    }
 
-  // Validate policy ID format
-  if (!VALIDATION_RULES.policyId.pattern.test(policy.id)) {
-    throw new PolicyRegistryError(
-      `Invalid policy ID format: ${policy.id}. Must contain only alphanumeric characters, hyphens, and underscores`,
-      ERROR_CODES.INVALID_VERSION_FORMAT,
-      { policyId: policy.id, pattern: VALIDATION_RULES.policyId.pattern.source }
-    );
-  }
-
-  // Validate length
-  if (policy.id.length < VALIDATION_RULES.policyId.minLength) {
-    throw new PolicyRegistryError(
-      `Policy ID must be at least ${VALIDATION_RULES.policyId.minLength} characters`,
-      ERROR_CODES.INVALID_VERSION_FORMAT,
-      { policyId: policy.id, minLength: VALIDATION_RULES.policyId.minLength }
-    );
-  }
-
-  if (policy.id.length > VALIDATION_RULES.policyId.maxLength) {
-    throw new PolicyRegistryError(
-      `Policy ID must not exceed ${VALIDATION_RULES.policyId.maxLength} characters`,
-      ERROR_CODES.INVALID_VERSION_FORMAT,
-      { policyId: policy.id, maxLength: VALIDATION_RULES.policyId.maxLength }
-    );
-  }
-
-  // Validate name length
-  if (policy.name.length < VALIDATION_RULES.name.minLength) {
-    throw new PolicyRegistryError(
-      `Policy name must be at least ${VALIDATION_RULES.name.minLength} characters`,
-      ERROR_CODES.MISSING_REQUIRED_FIELD,
-      { field: 'name', minLength: VALIDATION_RULES.name.minLength }
-    );
-  }
-
-  if (policy.name.length > VALIDATION_RULES.name.maxLength) {
-    throw new PolicyRegistryError(
-      `Policy name must not exceed ${VALIDATION_RULES.name.maxLength} characters`,
-      ERROR_CODES.MISSING_REQUIRED_FIELD,
-      { field: 'name', maxLength: VALIDATION_RULES.name.maxLength }
-    );
+    if (policy.name.length > VALIDATION_RULES.name.maxLength) {
+      errors.push(`Policy name must not exceed ${VALIDATION_RULES.name.maxLength} characters (min ${VALIDATION_RULES.name.minLength})`);
+    }
   }
 
   // Validate description length (optional)
   if (policy.description && policy.description.length > VALIDATION_RULES.description.maxLength) {
+    errors.push(`Policy description must not exceed ${VALIDATION_RULES.description.maxLength} characters`);
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors
+  };
+}
+
+/**
+ * Validate policy structure (throws on error - for internal use)
+ */
+export function validatePolicyOrThrow(policy: Policy): void {
+  const result = validatePolicy(policy);
+  if (!result.valid) {
     throw new PolicyRegistryError(
-      `Policy description must not exceed ${VALIDATION_RULES.description.maxLength} characters`,
+      `Policy validation failed: ${result.errors.join('; ')}`,
       ERROR_CODES.MISSING_REQUIRED_FIELD,
-      { field: 'description', maxLength: VALIDATION_RULES.description.maxLength }
+      { errors: result.errors }
     );
   }
 }
@@ -97,11 +87,29 @@ export function validatePolicy(policy: Policy): void {
 
 /**
  * Validate Semver version format
+ * Returns validation result object instead of throwing
  */
-export function validateVersion(version: string): void {
+export function validateVersion(version: string): { valid: boolean; errors: string[] } {
+  const errors: string[] = [];
+
   if (!VALIDATION_RULES.version.pattern.test(version)) {
+    errors.push(`Invalid version format: ${version}. Expected Semver format (e.g., "1.0.0", "1.1.0", "2.0.0")`);
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors
+  };
+}
+
+/**
+ * Validate Semver version format (throws on error - for internal use)
+ */
+export function validateVersionOrThrow(version: string): void {
+  const result = validateVersion(version);
+  if (!result.valid) {
     throw new PolicyRegistryError(
-      `Invalid version format: ${version}. Expected Semver format (e.g., "1.0.0", "1.1.0", "2.0.0")`,
+      result.errors[0],
       ERROR_CODES.INVALID_VERSION_FORMAT,
       { 
         version, 
@@ -141,8 +149,27 @@ export function isNewerVersion(v1: string, v2: string): boolean {
 
 /**
  * Validate email format
+ * Returns true if valid, false if invalid
  */
-export function validateEmail(email: string): void {
+export function validateEmail(email: string): boolean {
+  // Empty string should return false (email is invalid if provided but empty)
+  if (!email || email.trim().length === 0) return false;
+
+  if (!VALIDATION_RULES.email.pattern.test(email)) {
+    return false;
+  }
+
+  if (email.length > VALIDATION_RULES.email.maxLength) {
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Validate email format (throws on error - for internal use)
+ */
+export function validateEmailOrThrow(email: string): void {
   if (!email) return; // Email is optional
 
   if (!VALIDATION_RULES.email.pattern.test(email)) {
@@ -163,13 +190,57 @@ export function validateEmail(email: string): void {
 }
 
 // ============================================================================
+// ISO DATE VALIDATION
+// ============================================================================
+
+/**
+ * Validate ISO 8601 date/datetime format
+ * Returns true if valid, false if invalid
+ */
+export function validateISODate(dateString: string): boolean {
+  if (!dateString) return false;
+
+  const date = new Date(dateString);
+  
+  // Check if date is valid
+  if (isNaN(date.getTime())) {
+    return false;
+  }
+
+  // Check if date string is in ISO format by parsing and converting back
+  // This ensures "2024-13-01" (invalid month) returns false
+  const isoString = date.toISOString();
+  const dateOnly = dateString.split('T')[0];
+  
+  // For date-only strings, check if the date part matches
+  if (!dateString.includes('T')) {
+    return isoString.startsWith(dateOnly);
+  }
+
+  // For datetime strings, more lenient check
+  return true;
+}
+
+// ============================================================================
 // STATUS TRANSITION VALIDATION
 // ============================================================================
 
 /**
  * Validate status transition
+ * Returns true if valid, false if invalid
  */
 export function validateStatusTransition(
+  currentStatus: PolicyStatus,
+  newStatus: PolicyStatus
+): boolean {
+  const allowedTransitions = VALID_STATUS_TRANSITIONS[currentStatus] || [];
+  return allowedTransitions.includes(newStatus);
+}
+
+/**
+ * Validate status transition (throws on error - for internal use)
+ */
+export function validateStatusTransitionOrThrow(
   currentStatus: PolicyStatus,
   newStatus: PolicyStatus
 ): void {
@@ -311,7 +382,7 @@ export function validateGovernance(governance: {
   // Validate emails
   try {
     if (governance.businessOwnerEmail) {
-      validateEmail(governance.businessOwnerEmail);
+      validateEmailOrThrow(governance.businessOwnerEmail);
     }
   } catch (error) {
     warnings.push(`Business owner email: ${error.message}`);
@@ -319,7 +390,7 @@ export function validateGovernance(governance: {
 
   try {
     if (governance.technicalOwnerEmail) {
-      validateEmail(governance.technicalOwnerEmail);
+      validateEmailOrThrow(governance.technicalOwnerEmail);
     }
   } catch (error) {
     warnings.push(`Technical owner email: ${error.message}`);
