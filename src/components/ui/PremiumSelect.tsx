@@ -137,8 +137,8 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
                         className={cn(
                           "w-full flex items-center justify-between px-5 py-3 text-left text-sm transition-colors",
                           value === option.value
-                            ? selectedItemClassName || "bg-rose-50 font-bold dark:bg-[#5D1C34]/30 dark:text-[#EFE9E1]"
-                            : itemClassName || "hover:bg-slate-100 dark:text-[#CDBCAB] dark:hover:bg-[#11100F] dark:hover:text-[#EFE9E1]"
+                            ? selectedItemClassName || "bg-rose-50 font-bold"
+                            : itemClassName || "hover:bg-slate-100"
                         )}
                       >
                         <div className="flex items-center gap-3 min-w-0">
@@ -173,10 +173,9 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
                     className={cn(
                       "w-full flex items-center justify-between px-5 py-3 text-left text-sm transition-colors",
                       value === option.value
-                        ? selectedItemClassName || "bg-rose-50 font-bold dark:bg-[#5D1C34]/30 dark:text-[#EFE9E1]"
-                        : itemClassName || "hover:bg-slate-100 dark:text-[#CDBCAB] dark:hover:bg-[#11100F] dark:hover:text-[#EFE9E1]"
+                        ? selectedItemClassName || "bg-rose-50 font-bold"
+                        : itemClassName || "hover:bg-slate-100"
                     )}
-                    style={{ color: value === option.value ? '#0f172a' : '#1e293b' }}
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       {option.icon && (
@@ -187,7 +186,9 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
                           {option.icon}
                         </div>
                       )}
-                      <span className="truncate">{option.label}</span>
+                      <span className="truncate" style={{ color: value === option.value ? '#0f172a' : '#1e293b' }}>
+                        {option.label}
+                      </span>
                     </div>
                     {value === option.value && (
                       <Check className="w-4 h-4 text-rose-500 shrink-0" />

@@ -214,16 +214,39 @@ h1, h2, h3, h4, h5, h6 {
   line-height: 1.2;
 }
 
-/* Beauty Spa module - Force dropdown text dark on teal background */
-html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select button[type="button"],
-html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select button[type="button"] span,
-html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select button[type="button"] * {
+/* ============================================
+   BEAUTY SPA MODULE - DROPDOWN TEXT COLOR FIX
+   Target both trigger button and dropdown menu items
+   Dropdown is portaled, so must use global selectors
+   ============================================ */
+
+/* 1. Dropdown trigger button (inside .customer-detail-ktv-select) */
+html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select button[type="button"] span {
   color: rgb(15 23 42) !important; /* slate-900 for maximum contrast */
 }
 
-html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select button[type="button"]:hover {
-  color: rgb(15 23 42) !important;
+/* 2. Dropdown menu items (portaled outside, absolute positioned) */
+html[data-tenant-module="beauty_spa"] .absolute.z-50 button[type="button"] span.truncate {
+  color: rgb(30 41 59) !important; /* slate-800 - readable on white dropdown background */
 }
+
+/* 3. Selected item (darker for emphasis) */
+html[data-tenant-module="beauty_spa"] .absolute.z-50 button[type="button"].bg-rose-50 span.truncate,
+html[data-tenant-module="beauty_spa"] .absolute.z-50 button[type="button"].font-bold span.truncate {
+  color: rgb(15 23 42) !important; /* slate-900 - maximum contrast for selected */
+}
+
+/* 4. Dark mode overrides (if dropdown has dark: classes, prevent them from applying) */
+html[data-tenant-module="beauty_spa"] .absolute.z-50 button[type="button"] {
+  /* Override dark:text-[#CDBCAB] and other dark mode classes */
+}
+
+html[data-tenant-module="beauty_spa"] .absolute.z-50 button[type="button"] span.truncate {
+  /* Force light mode colors even if dark: classes try to apply */
+  color: rgb(30 41 59) !important;
+}
+
+/* END BEAUTY SPA DROPDOWN FIX */
 
 /* Luxury Utilities */
 .luxury-card-dark {
