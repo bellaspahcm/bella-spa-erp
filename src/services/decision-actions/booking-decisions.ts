@@ -12,162 +12,137 @@
 
 'use server';
 
-import { makeDecision } from '@/lib/decision-engine/decision-engine';
 import { 
   overbookingDetectionPolicy,
   type OverbookingContext 
 } from '@/policies/booking/overbooking-detection';
-import { recordAuditLog } from '@/services/audit-actions';
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────────────────────────────────────
-
-export interface CheckBookingConflictsInput {
-  ktvId: string;
-  roomId?: string;
-  preferredTime: string; // HH:MM
-  preferredDate: string; // YYYY-MM-DD
-  duration: number; // minutes
-  tenantId: string;
-  bookingId?: string; // when editing existing booking
-}
-
-export interface BookingConflictResult {
-  success: boolean;
-  canProceed: boolean;
-  conflicts: Array<{
-    type: 'ktv' | 'room';
-    bookingId: string;
-    time: string;
-    customer?: string;
-  }>;
-  warnings: string[];
-  reason: string;
-  decisionId?: string; // for audit trail
-  confidence: number;
-}
+import { createClient } from '@/lib/supabase-server';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Decision Actions
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Check for booking conflicts using Decision Engine
+ * Check for booking conflicts using Overbooking Detection Policy
  * 
- * @returns BookingConflictResult with decision and details
+ * Evaluates 4 rules:
+ * 1. KTV double-booking (BLOCK)
+ * 2. Room double-booking (BLOCK)
+ * 3. Soft limit >8 sessions (WARNING)
+ * 4. Hard limit ≥10 sessions (BLOCK)
+ * 
+ * @returns Simplified decision result
  * 
  * @example
  * ```typescript
  * const result = await checkBookingConflicts({
+ *   bookingId: 'booking-123',
  *   ktvId: 'ktv-123',
- *   roomId: 'room-1',
- *   preferredTime: '14:00',
- *   preferredDate: '2026-07-06',
- *   duration: 90,
- *   tenantId: 'tenant-123',
+ *   bookingResourceId: 'room-1',
+ *   assignedDate: '2026-07-06',
+ *   assignedTime: '14:00',
+ *   durationMinutes: 90,
  * });
  * 
- * if (!result.canProceed) {
- *   console.log('Conflict:', result.reason);
- *   console.log('Conflicts:', result.conflicts);
+ * if (result.decision === 'REJECT') {
+ *   console.log('Blocked:', result.message);
  * }
  * ```
  */
-export async function checkBookingConflicts(
-  input: CheckBookingConflictsInput
-): Promise<BookingConflictResult> {
+export async function checkBookingConflicts(input: {
+  bookingId: string;
+  ktvId: string | null;
+  bookingResourceId: string | null;
+  assignedDate: string | null;
+  assignedTime: string;
+  durationMinutes: number;
+}): Promise<{
+  decision: 'APPROVE' | 'REJECT' | 'APPROVE_WITH_WARNING';
+  message: string;
+  context?: Record<string, unknown>;
+}> {
   try {
-    // Build decision context
+    // Get current user for tenant context
+    const supabase = await createClient();
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError || !user) {
+      console.warn('[checkBookingConflicts] No user session, allowing booking');
+      return {
+        decision: 'APPROVE',
+        message: 'Booking approved (no user session)',
+      };
+    }
+
+    // Get user profile with tenant_id
+    const { data: profile } = await supabase
+      .from('users')
+      .select('tenant_id')
+      .eq('id', user.id)
+      .single();
+
+    const tenantId = profile?.tenant_id;
+
+    if (!tenantId) {
+      console.warn('[checkBookingConflicts] No tenant context, allowing booking');
+      return {
+        decision: 'APPROVE',
+        message: 'Booking approved (no tenant context)',
+      };
+    }
+
+    // Skip check if no KTV or date assigned yet
+    if (!input.ktvId || !input.assignedDate) {
+      return {
+        decision: 'APPROVE',
+        message: 'Booking approved (no KTV or date assigned yet)',
+      };
+    }
+
+    // Build policy context
     const context: OverbookingContext = {
       ktvId: input.ktvId,
-      roomId: input.roomId,
-      preferredTime: input.preferredTime,
-      preferredDate: input.preferredDate,
-      duration: input.duration,
-      tenantId: input.tenantId,
+      roomId: input.bookingResourceId || undefined,
+      preferredTime: input.assignedTime,
+      preferredDate: input.assignedDate,
+      duration: input.durationMinutes,
+      tenantId,
       bookingId: input.bookingId,
     };
 
-    // Make decision
-    const decision = await makeDecision({
-      decisionType: 'booking.overbooking-check',
-      tenantId: input.tenantId,
-      context,
-      policy: overbookingDetectionPolicy,
-      provider: 'RuleProvider',
-    });
+    // Evaluate policy directly
+    const policyResult = await overbookingDetectionPolicy.evaluate(context);
 
-    // Extract conflicts and warnings from metadata
-    const conflicts = decision.metadata?.conflicts || [];
-    const warnings: string[] = [];
-    const sessionCount = decision.metadata?.sessionCount;
-
-    // Check for soft limit warning
-    if (decision.metadata?.isWarning && sessionCount) {
-      warnings.push(
-        `KTV đã có ${sessionCount} ca trong ngày (khuyến nghị tối đa 8 ca)`
-      );
+    // Map policy result to simplified decision
+    if (policyResult.decision === 'reject') {
+      return {
+        decision: 'REJECT',
+        message: policyResult.reason || 'Không thể tạo lịch hẹn do xung đột',
+        context: policyResult.metadata,
+      };
     }
 
-    // Log audit for future analysis
-    await recordAuditLog({
-      action: 'DECISION',
-      table_name: 'bookings',
-      record_id: input.bookingId || 'new-booking',
-      new_data: {
-        decision: decision.decision,
-        decisionType: 'overbooking-check',
-        confidence: decision.confidence,
-        conflictCount: decision.metadata?.conflictCount || 0,
-      },
-    });
+    if (policyResult.metadata?.isWarning) {
+      return {
+        decision: 'APPROVE_WITH_WARNING',
+        message: policyResult.reason || 'Cảnh báo: Vượt quá số ca khuyến nghị',
+        context: policyResult.metadata,
+      };
+    }
 
     return {
-      success: true,
-      canProceed: decision.decision === 'approve',
-      conflicts: conflicts.map((c: any) => ({
-        type: c.type || 'ktv',
-        bookingId: c.bookingId,
-        time: c.time,
-        customer: c.customer,
-      })),
-      warnings,
-      reason: decision.reason,
-      decisionId: decision.decisionId,
-      confidence: decision.confidence,
+      decision: 'APPROVE',
+      message: policyResult.reason || 'Không phát hiện xung đột',
+      context: policyResult.metadata,
     };
   } catch (error) {
     console.error('[checkBookingConflicts] Unexpected error:', error);
     
     // Fail-open: allow booking if Decision Engine fails
     return {
-      success: false,
-      canProceed: true, // Allow booking despite error
-      conflicts: [],
-      warnings: [
-        'Không thể kiểm tra xung đột lịch. Hệ thống tạm thời cho phép đặt lịch.',
-      ],
-      reason: 'Lỗi hệ thống khi kiểm tra xung đột',
-      confidence: 0.1,
+      decision: 'APPROVE',
+      message: 'Booking approved (fail-open on error)',
+      context: { error: String(error) },
     };
   }
-}
-
-/**
- * Get suggested alternative time slots when conflicts are found
- * 
- * @returns Array of available time slots
- * 
- * @todo Implement in Week 2 (requires more complex logic)
- */
-export async function getSuggestedTimeSlots(
-  input: CheckBookingConflictsInput
-): Promise<string[]> {
-  // TODO: Implement smart time slot suggestions
-  // 1. Find gaps in KTV schedule
-  // 2. Check room availability for those gaps
-  // 3. Return top 3 closest available slots
-  
-  return [];
 }
