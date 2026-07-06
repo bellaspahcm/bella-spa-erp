@@ -151,10 +151,10 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
                             </div>
                           )}
                           <span 
-                            className="truncate" 
-                            style={{ 
-                              color: value === option.value ? '#0f172a' : '#1e293b'
-                            }}
+                            className={cn(
+                              "truncate",
+                              value === option.value ? "!text-slate-900" : "!text-slate-800"
+                            )}
                           >
                             {option.label}
                           </span>
@@ -192,10 +192,10 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
                         </div>
                       )}
                       <span 
-                        className="truncate" 
-                        style={{ 
-                          color: value === option.value ? '#0f172a' : '#1e293b'
-                        }}
+                        className={cn(
+                          "truncate",
+                          value === option.value ? "!text-slate-900" : "!text-slate-800"
+                        )}
                       >
                         {option.label}
                       </span>
