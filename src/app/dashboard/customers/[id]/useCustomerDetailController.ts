@@ -156,7 +156,18 @@ export function useCustomerDetailController() {
 
       if (customerRecord) {
         setCustomer(customerRecord);
-        setActiveBooking(bookings.length > 0 ? pickDefaultBooking(bookings, targetBookingId) : null);
+        // Preserve current active booking if it still exists, otherwise pick default
+        const currentActiveBookingId = activeBooking?.id;
+        const currentBookingStillExists = currentActiveBookingId && bookings.some(b => b.id === currentActiveBookingId);
+        
+        if (currentBookingStillExists) {
+          // Keep current selection, but update with fresh data
+          const updatedActiveBooking = bookings.find(b => b.id === currentActiveBookingId) || null;
+          setActiveBooking(updatedActiveBooking);
+        } else {
+          // Current booking no longer exists or not set, pick default
+          setActiveBooking(bookings.length > 0 ? pickDefaultBooking(bookings, targetBookingId) : null);
+        }
       }
     } catch (error) {
       console.error('Error loading customer:', error);
@@ -164,7 +175,7 @@ export function useCustomerDetailController() {
     } finally {
       setLoading(false);
     }
-  }, [id, targetBookingId]);
+  }, [id, targetBookingId, activeBooking?.id]);
 
   const fetchKtvs = useCallback(async () => {
     try {
