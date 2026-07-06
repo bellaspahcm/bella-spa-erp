@@ -61,9 +61,9 @@ export function RevenueTrendChart({ data, height = 200 }: RevenueTrendChartProps
         <Line
           type="monotone"
           dataKey="revenue"
-          stroke="#10b981"
-          strokeWidth={2}
-          dot={{ fill: '#10b981', r: 4 }}
+          stroke="var(--primary)"
+          strokeWidth={2.5}
+          dot={{ fill: "var(--primary)", r: 4 }}
           activeDot={{ r: 6 }}
         />
       </LineChart>
