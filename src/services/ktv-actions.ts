@@ -3,6 +3,8 @@
 import { createClient } from '@/lib/supabase-server';
 import { revalidatePath } from 'next/cache';
 import { getCurrentUser } from './user-actions';
+import { getKTVTodayAttendance } from './attendance-actions';
+import type { CurrentUser } from '@/types/domain';
 import { resolvePackageName, getLocalDateString } from '@bella/shared';;
 import type { Database } from '@/types/database.types';
 import { processSessionCompletion } from '@/core/services/order/session-completion-engine';
@@ -114,12 +116,12 @@ interface NotificationRow {
 /**
  * Lấy các buổi chăm sóc đang thực hiện của KTV hiện tại
  */
-export async function getKTVActiveSessions() {
+export async function getKTVActiveSessions(currentUser?: CurrentUser) {
   const perfStart = Date.now();
   const supabase = await createClient();
   
   const userStart = Date.now();
-  const user = await getCurrentUser();
+  const user = currentUser || await getCurrentUser();
   console.log(`[getKTVActiveSessions] getCurrentUser took ${Date.now() - userStart}ms`);
   
   if (!user || user.role !== 'ktv') return [];
@@ -181,12 +183,12 @@ export async function getKTVActiveSessions() {
 /**
  * Lấy các buổi chăm sóc được phân công hôm nay
  */
-export async function getKTVUpcomingSessions() {
+export async function getKTVUpcomingSessions(currentUser?: CurrentUser) {
   const perfStart = Date.now();
   const supabase = await createClient();
   
   const userStart = Date.now();
-  const user = await getCurrentUser();
+  const user = currentUser || await getCurrentUser();
   console.log(`[getKTVUpcomingSessions] getCurrentUser took ${Date.now() - userStart}ms`);
   
   if (!user || user.role !== 'ktv') return [];
@@ -705,9 +707,9 @@ export async function completeKTVSession(sessionId: string, notes: string = '', 
 /**
  * Lấy thu nhập hoa hồng của KTV trong tháng
  */
-export async function getKTVEarnings(month: string) {
+export async function getKTVEarnings(month: string, currentUser?: CurrentUser) {
   const supabase = await createClient();
-  const user = await getCurrentUser();
+  const user = currentUser || await getCurrentUser();
   if (!user || user.role !== 'ktv') return { total: 0, sessions: 0 };
 
   const startOfMonth = `${month}-01`;
@@ -738,9 +740,9 @@ export async function getKTVEarnings(month: string) {
   };
 }
 
-export async function getKTVLeaderboard(month: string) {
+export async function getKTVLeaderboard(month: string, currentUser?: CurrentUser) {
   const supabase = await createClient();
-  const user = await getCurrentUser();
+  const user = currentUser || await getCurrentUser();
   const tenantId = user?.tenant_id;
   if (!tenantId) return [];
 
@@ -759,9 +761,9 @@ export async function getKTVLeaderboard(month: string) {
 /**
  * Lấy danh sách thông báo của KTV hiện tại (Đã lọc bỏ thông tin đánh giá/sao để bảo mật)
  */
-export async function getKTVNotifications() {
+export async function getKTVNotifications(currentUser?: CurrentUser) {
   const supabase = await createClient();
-  const user = await getCurrentUser();
+  const user = currentUser || await getCurrentUser();
   if (!user) return [];
 
   // Truy vấn từ DB: Loại bỏ trực tiếp các thông báo có type là 'review' để bảo mật
@@ -809,5 +811,40 @@ export async function markNotificationAsRead(id: string) {
   }
 
   return { success: true };
+}
+
+/**
+ * Batches all dashboard calls into one request to drastically improve KTV UX
+ */
+export async function getKTVDashboardData(monthStr: string) {
+  const user = await getCurrentUser();
+  if (!user || user.role !== 'ktv') {
+    return null;
+  }
+
+  const [
+    active,
+    upcoming,
+    attendance,
+    earnings,
+    notifications,
+    leaderboard
+  ] = await Promise.all([
+    getKTVActiveSessions(user),
+    getKTVUpcomingSessions(user),
+    getKTVTodayAttendance(user),
+    getKTVEarnings(monthStr, user),
+    getKTVNotifications(user),
+    getKTVLeaderboard(monthStr, user),
+  ]);
+
+  return {
+    active,
+    upcoming,
+    attendance,
+    earnings,
+    notifications,
+    leaderboard
+  };
 }
 
