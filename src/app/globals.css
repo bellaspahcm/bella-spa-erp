@@ -34,7 +34,7 @@
   --card-foreground: oklch(0.145 0 0);
 
   --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.439 0 0); /* Darker for better contrast (was 0.556) */
+  --muted-foreground: oklch(0.371 0 0); /* Darker for better contrast (was 0.439) - WCAG AAA ✅ 10.4:1 */
 
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
@@ -232,41 +232,41 @@ html[data-tenant-module="beauty_spa"] .active-booking-panel .customer-detail-ktv
 }
 
 /* 1c. Dropdown container background must be white */
-html[data-tenant-module="beauty_spa"] .absolute.z-50,
-html[data-tenant-module="beauty_spa"] div[class*="z-50"] {
+html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select .absolute.z-50,
+html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select div[class*="z-50"] {
   background-color: #ffffff !important;
 }
 
 /* 1d. Remove grey background on unselected options */
-html[data-tenant-module="beauty_spa"] .absolute.z-50 button:not([class*="bg-primary/"]):not(.bg-rose-50):not([class*="bg-rose-50"]),
-html[data-tenant-module="beauty_spa"] div[class*="z-50"] button:not([class*="bg-primary/"]):not(.bg-rose-50):not([class*="bg-rose-50"]) {
+html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select .absolute.z-50 button:not([class*="bg-primary/"]):not(.bg-rose-50):not([class*="bg-rose-50"]),
+html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select div[class*="z-50"] button:not([class*="bg-primary/"]):not(.bg-rose-50):not([class*="bg-rose-50"]) {
   background-color: transparent !important;
 }
-html[data-tenant-module="beauty_spa"] .absolute.z-50 button:not([class*="bg-primary/"]):not(.bg-rose-50):not([class*="bg-rose-50"]):hover,
-html[data-tenant-module="beauty_spa"] div[class*="z-50"] button:not([class*="bg-primary/"]):not(.bg-rose-50):not([class*="bg-rose-50"]):hover {
+html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select .absolute.z-50 button:not([class*="bg-primary/"]):not(.bg-rose-50):not([class*="bg-rose-50"]):hover,
+html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select div[class*="z-50"] button:not([class*="bg-primary/"]):not(.bg-rose-50):not([class*="bg-rose-50"]):hover {
   background-color: rgb(241 245 249) !important; /* slate-100 on hover */
 }
 
 /* 1e. Selected option background (emerald-100 / d1fae5) */
-html[data-tenant-module="beauty_spa"] .absolute.z-50 button.bg-rose-50,
-html[data-tenant-module="beauty_spa"] div[class*="z-50"] button.bg-rose-50 {
+html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select .absolute.z-50 button.bg-rose-50,
+html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select div[class*="z-50"] button.bg-rose-50 {
   background-color: #d1fae5 !important; /* emerald-100 */
 }
 
 /* 2. CRITICAL: Force Tailwind !text-slate-800 and !text-slate-900 to work */
-html[data-tenant-module="beauty_spa"] .absolute.z-50 span.\!text-slate-800,
-html[data-tenant-module="beauty_spa"] div[class*="z-50"] span.\!text-slate-800 {
+html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select .absolute.z-50 span.\!text-slate-800,
+html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select div[class*="z-50"] span.\!text-slate-800 {
   color: rgb(30 41 59) !important; /* slate-800 */
 }
 
-html[data-tenant-module="beauty_spa"] .absolute.z-50 span.\!text-slate-900,
-html[data-tenant-module="beauty_spa"] div[class*="z-50"] span.\!text-slate-900 {
+html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select .absolute.z-50 span.\!text-slate-900,
+html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select div[class*="z-50"] span.\!text-slate-900 {
   color: rgb(15 23 42) !important; /* slate-900 */
 }
 
 /* 3. NUCLEAR: All spans in dropdown must be visible */
-html[data-tenant-module="beauty_spa"] .absolute.z-50 button span,
-html[data-tenant-module="beauty_spa"] div.absolute.z-50 button span {
+html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select .absolute.z-50 button span,
+html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select div.absolute.z-50 button span {
   color: rgb(30 41 59) !important; /* Force slate-800 */
 }
 
