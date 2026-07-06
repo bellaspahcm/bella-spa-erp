@@ -19,7 +19,7 @@ const SUPABASE_KEY = process.env.SUPABASE_SECRET_KEY;
 const DRY_RUN = process.env.DRY_RUN !== 'false'; // Default: true (safe mode)
 
 // Bella Spa tenant ID (production - needs cleanup)
-const BELLA_SPA_TENANT_ID = 'f2d7c8e0-8b3a-4f1e-9d6c-5a4b3c2d1e0f'; // Replace with actual Bella Spa ID
+const BELLA_SPA_TENANT_ID = '0e66365b-42b0-420e-acca-f7d7692e125e'; // ✅ From create-admin.js
 
 // Demo KTV patterns to remove
 const DEMO_PATTERNS = [

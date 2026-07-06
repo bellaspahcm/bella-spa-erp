@@ -12,7 +12,7 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SECRET_KEY;
 
 // Tenant IDs
-const BELLA_SPA_TENANT_ID = 'f2d7c8e0-8b3a-4f1e-9d6c-5a4b3c2d1e0f'; // Production - MUST BE CLEAN
+const BELLA_SPA_TENANT_ID = '0e66365b-42b0-420e-acca-f7d7692e125e'; // ✅ Production - MUST BE CLEAN (from create-admin.js)
 const TEST_BEAUTY_SPA_TENANT_ID = '11111111-1111-1111-1111-111111111111'; // Test - Can have demo data
 
 // Demo/Test patterns (should NEVER be in Bella Spa)

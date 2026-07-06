@@ -8,16 +8,25 @@
  */
 
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+
+// Mock modules BEFORE importing the function under test
+jest.mock('@/lib/supabase-server', () => ({
+  createClient: jest.fn(),
+}));
+
+jest.mock('@/policies/booking/overbooking-detection', () => ({
+  overbookingDetectionPolicy: {
+    evaluate: jest.fn(),
+  },
+}));
+
+// NOW import after mocks are set up
 import { checkBookingConflicts } from '../booking-decisions';
 import { overbookingDetectionPolicy } from '@/policies/booking/overbooking-detection';
 import { createClient } from '@/lib/supabase-server';
 
-// Mock dependencies
-jest.mock('@/lib/supabase-server');
-jest.mock('@/policies/booking/overbooking-detection');
-
-const mockCreateClient = createClient as jest.MockedFunction<typeof createClient>;
-const mockPolicy = overbookingDetectionPolicy as jest.Mocked<typeof overbookingDetectionPolicy>;
+const mockCreateClient = createClient as jest.Mock;
+const mockEvaluate = overbookingDetectionPolicy.evaluate as jest.Mock;
 
 describe('checkBookingConflicts', () => {
   // Mock user and tenant context
@@ -32,7 +41,7 @@ describe('checkBookingConflicts', () => {
           error: null,
         }),
       },
-      from: jest.fn((table: string) => ({
+      from: jest.fn(() => ({
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
         single: jest.fn().mockResolvedValue({
@@ -51,7 +60,7 @@ describe('checkBookingConflicts', () => {
 
   it('should APPROVE when no conflicts exist', async () => {
     // Mock policy returns approve
-    mockPolicy.evaluate.mockResolvedValue({
+    mockEvaluate.mockResolvedValue({
       decision: 'approve',
       reason: 'Không phát hiện xung đột',
       confidence: 1.0,
@@ -69,7 +78,7 @@ describe('checkBookingConflicts', () => {
 
     expect(result.decision).toBe('APPROVE');
     expect(result.message).toContain('Không phát hiện xung đột');
-    expect(mockPolicy.evaluate).toHaveBeenCalledWith({
+    expect(mockEvaluate).toHaveBeenCalledWith({
       ktvId: 'ktv-1',
       roomId: 'room-1',
       preferredTime: '09:00',
@@ -86,7 +95,7 @@ describe('checkBookingConflicts', () => {
 
   it('should REJECT when KTV has conflicting booking', async () => {
     // Mock policy returns reject with conflict details
-    mockPolicy.evaluate.mockResolvedValue({
+    mockEvaluate.mockResolvedValue({
       decision: 'reject',
       reason: 'KTV đã có lịch trùng thời gian',
       confidence: 1.0,
@@ -122,7 +131,7 @@ describe('checkBookingConflicts', () => {
   // ─────────────────────────────────────────────────────────────────────────
 
   it('should REJECT when room has conflicting booking', async () => {
-    mockPolicy.evaluate.mockResolvedValue({
+    mockEvaluate.mockResolvedValue({
       decision: 'reject',
       reason: 'Phòng đã có lịch trùng thời gian',
       confidence: 1.0,
@@ -157,7 +166,7 @@ describe('checkBookingConflicts', () => {
   // ─────────────────────────────────────────────────────────────────────────
 
   it('should APPROVE_WITH_WARNING when KTV has >8 sessions', async () => {
-    mockPolicy.evaluate.mockResolvedValue({
+    mockEvaluate.mockResolvedValue({
       decision: 'approve',
       reason: 'KTV đã có 9 ca trong ngày (khuyến nghị tối đa 8 ca)',
       confidence: 0.7,
@@ -186,7 +195,7 @@ describe('checkBookingConflicts', () => {
   // ─────────────────────────────────────────────────────────────────────────
 
   it('should REJECT when KTV has ≥10 sessions', async () => {
-    mockPolicy.evaluate.mockResolvedValue({
+    mockEvaluate.mockResolvedValue({
       decision: 'reject',
       reason: 'KTV đã đạt giới hạn tối đa 10 ca/ngày',
       confidence: 1.0,
@@ -252,7 +261,7 @@ describe('checkBookingConflicts', () => {
 
   it('should APPROVE (fail-open) when policy throws error', async () => {
     // Mock policy throws error
-    mockPolicy.evaluate.mockRejectedValue(new Error('Database connection failed'));
+    mockEvaluate.mockRejectedValue(new Error('Database connection failed'));
 
     const result = await checkBookingConflicts({
       bookingId: 'booking-error',
@@ -311,7 +320,7 @@ describe('checkBookingConflicts', () => {
   // ─────────────────────────────────────────────────────────────────────────
 
   it('should APPROVE when time slots are adjacent (no overlap)', async () => {
-    mockPolicy.evaluate.mockResolvedValue({
+    mockEvaluate.mockResolvedValue({
       decision: 'approve',
       reason: 'Không phát hiện xung đột',
       confidence: 1.0,
