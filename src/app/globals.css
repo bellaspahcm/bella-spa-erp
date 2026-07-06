@@ -221,53 +221,101 @@ h1, h2, h3, h4, h5, h6 {
    CRITICAL: Text must be dark/visible on white dropdown background
    ============================================ */
 
-/* 1. Dropdown trigger button (inside .customer-detail-ktv-select & .active-booking-panel) */
-html[data-tenant-module="beauty_spa"] .active-booking-panel .customer-detail-ktv-select button[type="button"] span {
+/* ============================================
+   KTV SELECT DROPDOWN - COLOR CONTRAST & VISIBILITY FIX
+   Target the custom dropdown in customer detail booking panel
+   ============================================ */
+
+/* 1. Dropdown trigger button styling */
+.customer-detail-ktv-select button[type="button"] span {
   color: rgb(15 23 42) !important; /* slate-900 for maximum contrast */
 }
-
-/* 1b. Placeholder text when no option selected (strengthen gray) */
-html[data-tenant-module="beauty_spa"] .active-booking-panel .customer-detail-ktv-select button[type="button"] span.text-slate-700 {
-  color: rgb(51 65 85) !important; /* slate-700 - readable placeholder */
+.customer-detail-ktv-select button[type="button"] span.text-slate-700 {
+  color: rgb(71 85 105) !important; /* slate-700 - readable placeholder */
 }
 
-/* 1c. Dropdown container background must be white */
-html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select .absolute.z-50,
-html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select div[class*="z-50"] {
+/* 2. Dropdown container background - Light Mode */
+.customer-detail-ktv-select .absolute.z-50,
+.customer-detail-ktv-select div[class*="z-50"] {
   background-color: #ffffff !important;
+  border: 1px solid rgb(241 245 249) !important;
 }
 
-/* 1d. Remove grey background on unselected options */
-html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select .absolute.z-50 button:not([class*="bg-primary/"]):not(.bg-rose-50):not([class*="bg-rose-50"]),
-html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select div[class*="z-50"] button:not([class*="bg-primary/"]):not(.bg-rose-50):not([class*="bg-rose-50"]) {
+/* 3. Dropdown option items - Light Mode */
+.customer-detail-ktv-select .absolute.z-50 button:not(.bg-rose-50):not([class*="bg-rose-50"]):not([class*="bg-primary/"]),
+.customer-detail-ktv-select div[class*="z-50"] button:not(.bg-rose-50):not([class*="bg-rose-50"]):not([class*="bg-primary/"]) {
   background-color: transparent !important;
 }
-html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select .absolute.z-50 button:not([class*="bg-primary/"]):not(.bg-rose-50):not([class*="bg-rose-50"]):hover,
-html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select div[class*="z-50"] button:not([class*="bg-primary/"]):not(.bg-rose-50):not([class*="bg-rose-50"]):hover {
-  background-color: rgb(241 245 249) !important; /* slate-100 on hover */
+
+.customer-detail-ktv-select .absolute.z-50 button span,
+.customer-detail-ktv-select div[class*="z-50"] button span {
+  color: rgb(30 41 59) !important; /* slate-800 text */
 }
 
-/* 1e. Selected option background (emerald-100 / d1fae5) */
-html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select .absolute.z-50 button.bg-rose-50,
-html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select div[class*="z-50"] button.bg-rose-50 {
+/* Hover state - Light Mode */
+.customer-detail-ktv-select .absolute.z-50 button:hover,
+.customer-detail-ktv-select div[class*="z-50"] button:hover {
+  background-color: rgb(241 245 249) !important; /* slate-100 on hover */
+}
+.customer-detail-ktv-select .absolute.z-50 button:hover span,
+.customer-detail-ktv-select div[class*="z-50"] button:hover span {
+  color: rgb(15 23 42) !important; /* slate-900 on hover */
+}
+
+/* Selected option style - Light Mode (emerald-100 background, dark green/black text) */
+.customer-detail-ktv-select .absolute.z-50 button.bg-rose-50,
+.customer-detail-ktv-select .absolute.z-50 button[class*="bg-primary/"],
+.customer-detail-ktv-select div[class*="z-50"] button.bg-rose-50,
+.customer-detail-ktv-select div[class*="z-50"] button[class*="bg-primary/"] {
   background-color: #d1fae5 !important; /* emerald-100 */
 }
 
-/* 2. CRITICAL: Force Tailwind !text-slate-800 and !text-slate-900 to work */
-html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select .absolute.z-50 span.\!text-slate-800,
-html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select div[class*="z-50"] span.\!text-slate-800 {
-  color: rgb(30 41 59) !important; /* slate-800 */
+.customer-detail-ktv-select .absolute.z-50 button.bg-rose-50 span,
+.customer-detail-ktv-select .absolute.z-50 button[class*="bg-primary/"] span,
+.customer-detail-ktv-select div[class*="z-50"] button.bg-rose-50 span,
+.customer-detail-ktv-select div[class*="z-50"] button[class*="bg-primary/"] span {
+  color: #065f46 !important; /* emerald-800 for high contrast */
+  font-weight: 700 !important;
 }
 
-html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select .absolute.z-50 span.\!text-slate-900,
-html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select div[class*="z-50"] span.\!text-slate-900 {
-  color: rgb(15 23 42) !important; /* slate-900 */
+
+/* ============================================
+   DARK MODE OVERRIDES (using .dark class)
+   ============================================ */
+.dark .customer-detail-ktv-select .absolute.z-50,
+.dark .customer-detail-ktv-select div[class*="z-50"] {
+  background-color: #1C1B19 !important;
+  border-color: rgba(205, 188, 171, 0.15) !important;
 }
 
-/* 3. NUCLEAR: All spans in dropdown must be visible */
-html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select .absolute.z-50 button span,
-html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select div.absolute.z-50 button span {
-  color: rgb(30 41 59) !important; /* Force slate-800 */
+.dark .customer-detail-ktv-select .absolute.z-50 button span,
+.dark .customer-detail-ktv-select div[class*="z-50"] button span {
+  color: #EFE9E1 !important; /* light cream text */
+}
+
+.dark .customer-detail-ktv-select .absolute.z-50 button:hover,
+.dark .customer-detail-ktv-select div[class*="z-50"] button:hover {
+  background-color: #292623 !important;
+}
+
+.dark .customer-detail-ktv-select .absolute.z-50 button:hover span,
+.dark .customer-detail-ktv-select div[class*="z-50"] button:hover span {
+  color: #ffffff !important;
+}
+
+/* Selected option style - Dark Mode (burgundy background, white text) */
+.dark .customer-detail-ktv-select .absolute.z-50 button.bg-rose-50,
+.dark .customer-detail-ktv-select .absolute.z-50 button[class*="bg-primary/"],
+.dark .customer-detail-ktv-select div[class*="z-50"] button.bg-rose-50,
+.dark .customer-detail-ktv-select div[class*="z-50"] button[class*="bg-primary/"] {
+  background-color: #5D1C34 !important; /* primary dark */
+}
+
+.dark .customer-detail-ktv-select .absolute.z-50 button.bg-rose-50 span,
+.dark .customer-detail-ktv-select .absolute.z-50 button[class*="bg-primary/"] span,
+.dark .customer-detail-ktv-select div[class*="z-50"] button.bg-rose-50 span,
+.dark .customer-detail-ktv-select div[class*="z-50"] button[class*="bg-primary/"] span {
+  color: #ffffff !important;
 }
 
 /* END BEAUTY SPA DROPDOWN FIX */

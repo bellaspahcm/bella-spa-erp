@@ -141,8 +141,9 @@ export function KtvProfileDrawer({
             </div>
 
             <div className="bg-gradient-to-br from-slate-900 to-slate-950 text-white p-6 rounded-[32px] mb-6 relative overflow-hidden border border-white/5 shadow-xl shrink-0">
+              <div className="absolute top-[-20%] right-[-10%] w-32 h-32 bg-rose-500/20 rounded-full blur-[40px]" />
               <div className="flex items-center gap-4 relative z-10">
-                <div className="w-16 h-16 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20 text-white font-black text-2xl">
+                <div className="w-16 h-16 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20 text-white font-black text-2xl">
                   {user?.full_name?.charAt(0) || 'K'}
                 </div>
                 <div>
