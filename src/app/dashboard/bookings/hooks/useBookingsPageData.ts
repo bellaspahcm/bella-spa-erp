@@ -85,11 +85,7 @@ export function useBookingsPageData(currentMonth: Date) {
   }, []);
 
   const fetchBookingResources = useCallback(async (options: { force?: boolean } = {}) => {
-    if (tenantModuleKey !== 'beauty_spa') {
-      setBookingResources([]);
-      return;
-    }
-
+    // Fetch booking resources for all modules that need resource management
     const result = await getCachedBookingPageResources(options);
     if (result.success) {
       setBookingResources(result.data);
@@ -98,7 +94,7 @@ export function useBookingsPageData(currentMonth: Date) {
 
     console.error('Error fetching booking resources:', result.error);
     setBookingResources([]);
-  }, [tenantModuleKey]);
+  }, []);
 
   const fetchSessionHistory = useCallback(async (bookingId: string) => {
     const data = await getSessionLogs(bookingId);
