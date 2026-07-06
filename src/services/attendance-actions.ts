@@ -104,9 +104,9 @@ export async function getVNTodayString(): Promise<string> {
 }
 
 /** Get KTV's attendance status for today */
-export async function getKTVTodayAttendance() {
+export async function getKTVTodayAttendance(currentUser?: any) {
   const supabase = await createClient();
-  const user = await getCurrentUser();
+  const user = currentUser || await getCurrentUser();
   if (!user || user.role !== 'ktv') return null;
 
   const todayStr = await getVNTodayString();
