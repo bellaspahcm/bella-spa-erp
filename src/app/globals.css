@@ -49,6 +49,16 @@
   --popover: oklch(1 0 0);
 
   --popover-foreground: oklch(0.145 0 0);
+}
+
+/* Force dark text in all PremiumSelect dropdowns for readability */
+.customer-detail-ktv-select button[type="button"] {
+  color: rgb(15 23 42) !important; /* slate-900 */
+}
+
+.customer-detail-ktv-select button[type="button"]:hover {
+  color: rgb(15 23 42) !important; /* slate-900 */
+}
 
   --destructive: oklch(0.577 0.245 27.325);
 
