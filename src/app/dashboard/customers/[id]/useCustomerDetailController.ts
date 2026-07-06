@@ -256,7 +256,7 @@ export function useCustomerDetailController() {
   }, []);
 
   useEffect(() => {
-    void loadData();
+    void loadData(); // Initial load only
     void fetchKtvs();
 
     const supabase = createClient();
@@ -280,7 +280,16 @@ export function useCustomerDetailController() {
       }
       void supabase.removeChannel(channel);
     };
-  }, [fetchKtvs, id, loadData, scheduleDataReload]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]); // Only re-run when customer ID changes, not when callbacks change
+
+  // Separate effect to refresh KTV list when active booking or customer bookings change
+  useEffect(() => {
+    if (customer) {
+      void fetchKtvs();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeBooking?.id, customer?.allBookings?.length]);
 
   const refreshPageData = useCallback(async () => {
     await Promise.all([loadData(), fetchKtvs()]);
