@@ -12,6 +12,7 @@ import {
   Calendar as CalendarIcon
 } from 'lucide-react';
 import { getKTVLeaderboard } from '@/services/ktv-actions';
+import { getTenantSettings } from '@/services/tenant-actions';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase-client';
@@ -23,11 +24,24 @@ type SessionLogRow = Database['public']['Tables']['session_logs']['Row'];
 
 export default function KTVLeaderboardPage() {
   const [leaderboard, setLeaderboard] = useState<KTVLeaderboardEntry[]>([]);
+  const [tenantName, setTenantName] = useState<string>('');
   const [selectedMonth] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
   const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    getTenantSettings()
+      .then((tenant) => {
+        if (tenant?.name) {
+          setTenantName(tenant.name);
+        }
+      })
+      .catch((err) => {
+        console.error('Lỗi khi tải thông tin chi nhánh:', err);
+      });
+  }, []);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -87,7 +101,7 @@ export default function KTVLeaderboardPage() {
           <div className="inline-flex items-center justify-center w-20 h-20 bg-white/20 rounded-[32px] backdrop-blur-md border border-white/30 mb-4 shadow-xl">
              <Trophy className="w-10 h-10 text-white" />
           </div>
-          <div className="text-2xl font-black text-white mb-1">Top Ngôi sao Bella</div>
+          <div className="text-2xl font-black text-white mb-1">Top Ngôi sao {tenantName || 'Spa'}</div>
           <p className="text-white/60 text-[10px] font-black uppercase tracking-widest">Tháng {selectedMonth.split('-')[1]} / {selectedMonth.split('-')[0]}</p>
         </div>
       </div>
