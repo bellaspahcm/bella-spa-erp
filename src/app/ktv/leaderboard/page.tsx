@@ -18,6 +18,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase-client';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import type { Database } from '@/types/database.types';
+import { KtvBottomNav } from '../dashboard/components/KtvBottomNav';
 
 type KTVLeaderboardEntry = Awaited<ReturnType<typeof getKTVLeaderboard>>[number];
 type SessionLogRow = Database['public']['Tables']['session_logs']['Row'];
@@ -101,7 +102,7 @@ export default function KTVLeaderboardPage() {
           <div className="inline-flex items-center justify-center w-20 h-20 bg-white/20 rounded-[32px] backdrop-blur-md border border-white/30 mb-4 shadow-xl">
              <Trophy className="w-10 h-10 text-white" />
           </div>
-          <div className="text-2xl font-black text-white mb-1">Top Ngôi sao {tenantName || 'Spa'}</div>
+          <div className="text-2xl font-black text-white mb-1">Top Ngôi sao {tenantName || 'Bella'}</div>
           <p className="text-white/60 text-[10px] font-black uppercase tracking-widest">Tháng {selectedMonth.split('-')[1]} / {selectedMonth.split('-')[0]}</p>
         </div>
       </div>
@@ -192,21 +193,7 @@ export default function KTVLeaderboardPage() {
          </div>
       </div>
 
-      {/* Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-[#1C1B19]/95 backdrop-blur-xl border-t border-slate-100 dark:border-[#3E3A35] px-8 py-4 flex justify-between items-center z-50">
-        <Link href="/ktv/dashboard" className="text-slate-500 dark:text-[#D4C5B6] hover:text-primary dark:hover:text-[#A67D44] flex flex-col items-center gap-1 transition-colors">
-          <Clock className="w-6 h-6" />
-          <span className="text-[10px] font-black uppercase">Lịch ca</span>
-        </Link>
-        <Link href="/ktv/earnings" className="text-slate-500 dark:text-[#D4C5B6] hover:text-primary dark:hover:text-[#A67D44] flex flex-col items-center gap-1 transition-colors">
-          <DollarSign className="w-6 h-6" />
-          <span className="text-[10px] font-black uppercase">Thu nhập</span>
-        </Link>
-        <Link href="/ktv/leaderboard" className="text-primary dark:text-[#A67D44] flex flex-col items-center gap-1">
-          <CalendarIcon className="w-6 h-6" />
-          <span className="text-[10px] font-black uppercase">Cá nhân</span>
-        </Link>
-      </div>
+      <KtvBottomNav />
     </div>
   );
 }

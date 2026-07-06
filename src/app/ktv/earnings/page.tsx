@@ -12,6 +12,7 @@ import { ktvConfirmSalary, ktvDisputeSalary } from '@/modules/hr-salary/actions/
 import { formatCurrency } from '@bella/shared';;
 import { toast } from 'sonner';
 import Link from 'next/link';
+import { KtvBottomNav } from '../dashboard/components/KtvBottomNav';
 import { getModuleVocabulary } from '@/lib/business-rules/module-vocabulary';
 import type { TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 import type { Database } from '@/types/database.types';
@@ -515,21 +516,7 @@ export default function KTVEarningsPage() {
         )}
       </AnimatePresence>
 
-      {/* ── BOTTOM NAV ─────────────────────────────────────────────────────── */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-t border-slate-100 px-8 py-4 flex justify-between items-center z-40">
-        <Link href="/ktv/dashboard" className="text-slate-300 hover:text-primary flex flex-col items-center gap-1 transition-colors">
-          <Clock className="w-6 h-6" />
-          <span className="text-[10px] font-black uppercase">Lịch ca</span>
-        </Link>
-        <Link href="/ktv/earnings" className="text-primary flex flex-col items-center gap-1">
-          <DollarSign className="w-6 h-6" />
-          <span className="text-[10px] font-black uppercase">Thu nhập</span>
-        </Link>
-        <Link href="/ktv/leaderboard" className="text-slate-300 hover:text-primary flex flex-col items-center gap-1 transition-colors">
-          <CalendarIcon className="w-6 h-6" />
-          <span className="text-[10px] font-black uppercase">Cá nhân</span>
-        </Link>
-      </div>
+      <KtvBottomNav />
     </div>
   );
 }
