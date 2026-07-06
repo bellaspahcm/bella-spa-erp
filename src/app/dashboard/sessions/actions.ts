@@ -25,8 +25,8 @@ export async function getLeaveDecisionRecommendation(leaveId: string) {
     
     if (error || !leave) {
       return {
-        success: false,
-        error: 'Không tìm thấy đơn nghỉ phép'
+        error: true,
+        message: 'Không tìm thấy đơn nghỉ phép'
       };
     }
     
@@ -37,20 +37,19 @@ export async function getLeaveDecisionRecommendation(leaveId: string) {
     const message = getDecisionMessage(decision);
     
     return {
-      success: true,
-      recommendation: {
-        outcome: decision.outcome,
-        explanation: decision.explanation,
-        message,
-        executionTimeMs,
-        knowledge // For debugging/audit
-      }
+      outcome: decision.outcome,
+      explanation: decision.explanation,
+      executionTime: Math.round(executionTimeMs),
+      policyId: 'leave-approval-v1',
+      policyVersion: '1.0.0',
+      message,
+      knowledge // For debugging/audit
     };
   } catch (error) {
     console.error('[getLeaveDecisionRecommendation] Error:', error);
     return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Lỗi khi đánh giá đơn nghỉ phép'
+      error: true,
+      message: error instanceof Error ? error.message : 'Lỗi khi đánh giá đơn nghỉ phép'
     };
   }
 }

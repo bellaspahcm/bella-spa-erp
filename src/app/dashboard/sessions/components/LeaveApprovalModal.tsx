@@ -102,13 +102,33 @@ export function LeaveApprovalModal({ isOpen, onClose, onSuccess, userRole }: Lea
       // Load Decision Engine recommendation
       setIsLoadingRecommendation(true);
       try {
-        const decision = await getLeaveDecisionRecommendation(leave.id);
-        console.log('[LeaveApprovalModal] Decision recommendation:', decision);
-        setRecommendation(decision);
+        const response = await getLeaveDecisionRecommendation(leave.id);
+        console.log('[LeaveApprovalModal] Decision response:', response);
+        
+        if (response.success && response.recommendation) {
+          // Extract recommendation from response
+          const rec = response.recommendation;
+          setRecommendation({
+            outcome: rec.outcome,
+            explanation: rec.explanation || rec.message?.description || 'Không có giải thích',
+            executionTime: Math.round(rec.executionTimeMs || 0),
+            policyId: 'leave-approval-v1',
+            policyVersion: '1.0.0'
+          });
+        } else {
+          // Server returned error
+          setRecommendation({ 
+            error: true, 
+            message: response.error || 'Không thể tải khuyến nghị' 
+          });
+        }
       } catch (decisionErr) {
         console.error('[LeaveApprovalModal] Failed to load decision recommendation:', decisionErr);
         // Non-blocking - continue even if recommendation fails
-        setRecommendation({ error: true, message: decisionErr instanceof Error ? decisionErr.message : 'Unknown error' });
+        setRecommendation({ 
+          error: true, 
+          message: decisionErr instanceof Error ? decisionErr.message : 'Unknown error' 
+        });
       }
     } catch (err) {
       console.error("Failed to load conflict sessions:", err);
