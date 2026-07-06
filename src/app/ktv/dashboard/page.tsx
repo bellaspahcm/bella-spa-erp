@@ -34,6 +34,7 @@ import { KtvOfflineSyncBanner } from './components/KtvOfflineSyncBanner';
 import { KtvProfileDrawer, type KtvOfflineAction, type KtvProfileUser } from './components/KtvProfileDrawer';
 import { KtvSessionSections, type KtvDashboardSession } from './components/KtvSessionSections';
 import { getTenantSettings } from '@/services/tenant-actions';
+import { getLocalDateString } from '@/lib/utils';
 
 type KtvUser = NonNullable<KtvProfileUser> & {
   id: string;
@@ -276,22 +277,23 @@ export default function KTVDashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  const fetchAttendance = useCallback(async () => {
-    if (!user?.id) return;
+  const fetchAttendance = useCallback(async (userId?: string) => {
+    const targetUserId = userId || user?.id;
+    if (!targetUserId) return;
     
     try {
-      const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+      const today = getLocalDateString(); // YYYY-MM-DD in Asia/Ho_Chi_Minh timezone
       
       // Try cache first
       const { getCachedAttendance, setCachedAttendance } = await import('@/lib/offline-db');
-      const cached = await getCachedAttendance(user.id, today);
+      const cached = await getCachedAttendance(targetUserId, today);
       
       if (cached) {
         setTodayAttendance(cached);
         // Refresh in background
         getKTVTodayAttendance().then(fresh => {
           setTodayAttendance(fresh);
-          void setCachedAttendance(user.id, today, fresh);
+          void setCachedAttendance(targetUserId, today, fresh);
         }).catch(() => {
           // Silent fail - cached data still valid
         });
@@ -301,7 +303,7 @@ export default function KTVDashboard() {
       // Cache miss - fetch from API
       const att = await getKTVTodayAttendance();
       setTodayAttendance(att);
-      void setCachedAttendance(user.id, today, att);
+      void setCachedAttendance(targetUserId, today, att);
     } catch (error) {
       toast.error(getErrorMessage(error, 'Lỗi khi tải chấm công hôm nay'));
     }
@@ -426,8 +428,8 @@ export default function KTVDashboard() {
       const now = new Date();
       const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
       
-      // Non-blocking: Load attendance immediately (high priority)
-      void fetchAttendance();
+      // Non-blocking: Load attendance immediately (high priority) using fetched user ID to bypass React state batching delay
+      void fetchAttendance(u.id);
       
       // Try to load earnings and notifications from cache
       const [cachedEarnings, cachedNotifs] = await Promise.all([
@@ -510,7 +512,7 @@ export default function KTVDashboard() {
         // Invalidate attendance cache first, then fetch fresh data
         if (user?.id) {
           const { clearAttendanceCache } = await import('@/lib/offline-db');
-          const today = new Date().toISOString().slice(0, 10);
+          const today = getLocalDateString();
           await clearAttendanceCache(user.id, today);
         }
         
@@ -545,7 +547,7 @@ export default function KTVDashboard() {
         // Invalidate attendance cache first, then fetch fresh data
         if (user?.id) {
           const { clearAttendanceCache } = await import('@/lib/offline-db');
-          const today = new Date().toISOString().slice(0, 10);
+          const today = getLocalDateString();
           await clearAttendanceCache(user.id, today);
         }
         
