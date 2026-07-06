@@ -225,6 +225,11 @@ html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select button[type="b
   color: rgb(15 23 42) !important; /* slate-900 for maximum contrast */
 }
 
+/* 1b. Placeholder text when no option selected (strengthen gray) */
+html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select button[type="button"] span.text-slate-700 {
+  color: rgb(51 65 85) !important; /* slate-700 - readable placeholder */
+}
+
 /* 2. Dropdown menu items (portaled outside, absolute positioned) */
 html[data-tenant-module="beauty_spa"] .absolute.z-50 button[type="button"] span.truncate {
   color: rgb(30 41 59) !important; /* slate-800 - readable on white dropdown background */
