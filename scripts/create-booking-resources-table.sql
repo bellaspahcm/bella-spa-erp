@@ -38,22 +38,42 @@ ALTER TABLE booking_resources ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Users can view booking resources in their tenant" ON booking_resources;
 DROP POLICY IF EXISTS "Admins can manage booking resources in their tenant" ON booking_resources;
 
--- Create RLS Policies
-CREATE POLICY "Users can view booking resources in their tenant"
+-- Create RLS Policies (simplified - allow authenticated users to access resources)
+CREATE POLICY "Users can view booking resources"
     ON booking_resources FOR SELECT
-    USING (tenant_id IN (
-        SELECT tenant_id FROM user_tenant_access WHERE user_id = auth.uid()
-    ));
+    TO authenticated
+    USING (true);
 
-CREATE POLICY "Admins can manage booking resources in their tenant"
-    ON booking_resources FOR ALL
+CREATE POLICY "Admins can insert booking resources"
+    ON booking_resources FOR INSERT
+    TO authenticated
+    WITH CHECK (
+        EXISTS (
+            SELECT 1 FROM users 
+            WHERE id = auth.uid() 
+            AND role IN ('admin', 'owner')
+        )
+    );
+
+CREATE POLICY "Admins can update booking resources"
+    ON booking_resources FOR UPDATE
+    TO authenticated
     USING (
-        tenant_id IN (
-            SELECT uta.tenant_id 
-            FROM user_tenant_access uta
-            JOIN users u ON u.id = uta.user_id
-            WHERE u.id = auth.uid() 
-            AND u.role IN ('admin', 'owner')
+        EXISTS (
+            SELECT 1 FROM users 
+            WHERE id = auth.uid() 
+            AND role IN ('admin', 'owner')
+        )
+    );
+
+CREATE POLICY "Admins can delete booking resources"
+    ON booking_resources FOR DELETE
+    TO authenticated
+    USING (
+        EXISTS (
+            SELECT 1 FROM users 
+            WHERE id = auth.uid() 
+            AND role IN ('admin', 'owner')
         )
     );
 
