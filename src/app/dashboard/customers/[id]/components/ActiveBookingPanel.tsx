@@ -230,12 +230,11 @@ export function ActiveBookingPanel({
                         onChange={onUpdateKtv}
                         disabled={isUpdatingKtv}
                         className="w-full"
-                        dropdownClassName="!bg-white !shadow-[0_20px_50px_rgba(0,0,0,0.3)]"
-                        itemClassName="!text-slate-800 hover:!bg-slate-100 hover:!text-slate-900"
-                        selectedItemClassName="!bg-slate-100 !text-slate-900 font-bold"
+                        dropdownClassName="[&]:!bg-white [&]:!shadow-[0_20px_50px_rgba(0,0,0,0.3)]"
+                        itemClassName="text-slate-900 hover:bg-slate-100"
+                        selectedItemClassName="bg-slate-200 text-slate-900 font-bold"
                       />
                     </div>
-                    {/* Removed dangerouslySetInnerHTML style tag */}
                   </div>
 
                   <div className="bg-white/5 rounded-3xl p-5 border border-white/10 flex flex-col justify-center">
