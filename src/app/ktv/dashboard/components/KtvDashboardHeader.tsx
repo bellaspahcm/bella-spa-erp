@@ -13,7 +13,8 @@ import {
 import type { ReactNode } from 'react';
 
 import { formatCurrency } from '@bella/shared';;
-import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
+import { getModuleVocabulary } from '@/lib/business-rules/module-vocabulary';
+import type { TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 
 export type KtvDashboardNotification = {
   id: string;
@@ -47,6 +48,7 @@ type KtvDashboardHeaderProps = {
   onTriggerSync: () => void | Promise<void>;
   onMarkAsRead: (notifId: string) => void | Promise<void>;
   onSelectNotification: (notification: KtvDashboardNotification) => void;
+  tenantModuleKey: TenantModuleKey | null;
 };
 
 type NotificationMeta = {
@@ -123,8 +125,9 @@ export function KtvDashboardHeader({
   onTriggerSync,
   onMarkAsRead,
   onSelectNotification,
+  tenantModuleKey,
 }: KtvDashboardHeaderProps) {
-  const vocab = useModuleVocabulary();
+  const vocab = getModuleVocabulary(tenantModuleKey);
   
   return (
     <div className="bg-white px-6 pt-8 pb-6 rounded-b-[40px] shadow-sm border-b border-slate-100">

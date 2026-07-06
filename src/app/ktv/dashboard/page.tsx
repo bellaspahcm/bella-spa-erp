@@ -736,6 +736,7 @@ export default function KTVDashboard() {
         onTriggerSync={triggerSync}
         onMarkAsRead={handleMarkAsRead}
         onSelectNotification={setSelectedNotif}
+        tenantModuleKey={tenantModuleKey}
       />
 
       <KtvOfflineSyncBanner
