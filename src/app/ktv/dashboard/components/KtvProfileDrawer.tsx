@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import Link from 'next/link';
 import { KeyRound, LogOut, Mail, X } from 'lucide-react';
@@ -109,6 +110,23 @@ export function KtvProfileDrawer({
   onTriggerSync,
 }: KtvProfileDrawerProps) {
   const vocab = useModuleVocabulary();
+  const [moduleKey, setModuleKey] = useState<string>('pending');
+
+  useEffect(() => {
+    if (isOpen) {
+      const key = document.documentElement.getAttribute('data-tenant-module') || 'pending';
+      setModuleKey(key);
+    }
+  }, [isOpen]);
+
+  const primaryBtnStyle = {
+    backgroundColor: moduleKey === 'beauty_spa' 
+      ? '#074e44' 
+      : moduleKey === 'baby_care' 
+      ? '#be123c' 
+      : '#0f172a',
+    color: '#ffffff',
+  };
   
   return (
     <AnimatePresence>
@@ -267,17 +285,19 @@ export function KtvProfileDrawer({
               </Link>
               <button
                 onClick={onOpenPassword}
-                className="w-full ktv-profile-btn-primary py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-slate-100/50 dark:shadow-none"
+                style={primaryBtnStyle}
+                className="w-full py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-slate-100/50 dark:shadow-none"
               >
-                <KeyRound className="w-4 h-4" />
-                Đổi mật khẩu
+                <KeyRound className="w-4 h-4 text-white" style={{ color: '#ffffff' }} />
+                <span className="text-white" style={{ color: '#ffffff' }}>Đổi mật khẩu</span>
               </button>
               <button
                 onClick={onLogout}
-                className="w-full ktv-profile-btn-primary py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-slate-200/50 dark:shadow-none"
+                style={primaryBtnStyle}
+                className="w-full py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-slate-200/50 dark:shadow-none"
               >
-                <LogOut className="w-4 h-4" />
-                Đăng xuất tài khoản
+                <LogOut className="w-4 h-4 text-white" style={{ color: '#ffffff' }} />
+                <span className="text-white" style={{ color: '#ffffff' }}>Đăng xuất tài khoản</span>
               </button>
             </div>
           </motion.div>
