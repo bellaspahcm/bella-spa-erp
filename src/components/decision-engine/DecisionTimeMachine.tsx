@@ -194,7 +194,7 @@ ${JSON.stringify(replayResult.replayedResult.output, null, 2)}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-pink-50 to-purple-50">
+          <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-primary/5 to-accent/5">
             <div>
               <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
                 🔄 Decision Time Machine
@@ -239,9 +239,9 @@ ${JSON.stringify(replayResult.replayedResult.output, null, 2)}
                   <button
                     key={version.version}
                     onClick={() => setSelectedVersion(version.version)}
-                    className={`text-left p-4 rounded-lg border-2 transition-all ${
+                    className={`text-left p-4 rounded-xl border-2 transition-all ${
                       selectedVersion === version.version
-                        ? 'border-pink-500 bg-pink-50 shadow-md'
+                        ? 'border-primary bg-primary/5 shadow-md'
                         : 'border-gray-200 bg-white hover:border-gray-300'
                     }`}
                   >
@@ -269,7 +269,7 @@ ${JSON.stringify(replayResult.replayedResult.output, null, 2)}
               <button
                 onClick={handleReplay}
                 disabled={loading || selectedVersion === originalVersion}
-                className="mt-4 w-full px-6 py-3 bg-pink-600 text-white rounded-lg hover:bg-pink-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium text-lg"
+                className="mt-4 w-full px-6 py-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary-hover disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed transition-all font-semibold text-lg active:scale-[0.98]"
               >
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
@@ -492,9 +492,9 @@ function ResultPanel({
 }) {
   return (
     <div
-      className={`border-2 rounded-lg p-5 ${
+      className={`border-2 rounded-xl p-5 ${
         highlight
-          ? 'border-pink-300 bg-pink-50'
+          ? 'border-primary/30 bg-primary/5'
           : 'border-gray-200 bg-white'
       }`}
     >

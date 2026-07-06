@@ -159,7 +159,7 @@ export default function DecisionDetailDrawer({
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-4 border-pink-500 border-t-transparent"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"></div>
             </div>
           ) : error ? (
             <div className="text-center py-12">
@@ -249,11 +249,10 @@ export default function DecisionDetailDrawer({
                 <MetadataGrid data={data} />
               </Section>
 
-              {/* Actions */}
               <div className="flex gap-3 pt-4 border-t border-gray-200">
                 <button
                   onClick={() => setShowTimeMachine(true)}
-                  className="flex-1 px-4 py-2 bg-pink-600 text-white rounded-md hover:bg-pink-700 transition-colors font-medium"
+                  className="flex-1 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl hover:bg-primary-hover active:scale-[0.98] transition-all font-semibold text-sm"
                 >
                   🔄 Replay Decision (Time Machine)
                 </button>
@@ -263,7 +262,7 @@ export default function DecisionDetailDrawer({
                       // TODO: Navigate to trace viewer (Task #11)
                       window.location.href = `/dashboard/decision-engine/trace/${data.traceId}`;
                     }}
-                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
+                    className="flex-1 px-5 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 active:scale-[0.98] transition-all font-semibold text-sm"
                   >
                     🔍 View Full Trace
                   </button>
@@ -322,11 +321,11 @@ function Section({
  */
 function SummaryCard({ data }: { data: DecisionDetail }) {
   return (
-    <div className="bg-gradient-to-r from-pink-50 to-blue-50 border border-gray-200 rounded-lg p-5">
+    <div className="bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20 rounded-2xl p-5">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div>
           <p className="text-xs text-gray-600 mb-1">Type</p>
-          <span className="px-2 py-1 text-sm font-medium bg-blue-100 text-blue-800 rounded">
+          <span className="px-2.5 py-1 text-sm font-bold bg-primary/10 text-primary border border-primary/20 rounded-lg">
             {data.decisionType}
           </span>
         </div>

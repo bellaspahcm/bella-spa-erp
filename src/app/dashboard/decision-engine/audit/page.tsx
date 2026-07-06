@@ -17,6 +17,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import DecisionDetailDrawer from '@/components/decision-engine/DecisionDetailDrawer';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 interface AuditLogEntry {
   id: string;
@@ -51,6 +52,33 @@ interface AuditResponse {
     search?: string;
   };
 }
+
+const decisionTypeOptions = [
+  { value: '', label: 'All Types' },
+  { value: 'payroll', label: 'Payroll' },
+  { value: 'booking', label: 'Booking' },
+  { value: 'procurement', label: 'Procurement' },
+  { value: 'eligibility', label: 'Eligibility' },
+  { value: 'discount', label: 'Discount' },
+  { value: 'approval', label: 'Approval' },
+  { value: 'pricing', label: 'Pricing' },
+  { value: 'recommendation', label: 'Recommendation' },
+];
+
+const providerOptions = [
+  { value: '', label: 'All Providers' },
+  { value: 'RuleProvider', label: 'Rule Provider' },
+  { value: 'BIProvider', label: 'BI Provider' },
+  { value: 'AIProvider', label: 'AI Provider' },
+  { value: 'CompositeProvider', label: 'Composite Provider' },
+];
+
+const statusOptions = [
+  { value: '', label: 'All Statuses' },
+  { value: 'success', label: 'Success' },
+  { value: 'error', label: 'Error' },
+  { value: 'warning', label: 'Warning' },
+];
 
 export default function DecisionAuditTrailPage() {
   const router = useRouter();
@@ -168,65 +196,47 @@ export default function DecisionAuditTrailPage() {
               value={tenantId}
               onChange={(e) => setTenantId(e.target.value)}
               placeholder="Enter tenant ID"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary focus:outline-none"
             />
           </div>
 
           {/* Decision Type */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+          <div className="flex flex-col space-y-1.5">
+            <label className="block text-sm font-semibold text-slate-700">
               Decision Type
             </label>
-            <select
+            <PremiumSelect
+              options={decisionTypeOptions}
               value={decisionType}
-              onChange={(e) => setDecisionType(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
-            >
-              <option value="">All</option>
-              <option value="payroll">Payroll</option>
-              <option value="booking">Booking</option>
-              <option value="procurement">Procurement</option>
-              <option value="eligibility">Eligibility</option>
-              <option value="discount">Discount</option>
-              <option value="approval">Approval</option>
-              <option value="pricing">Pricing</option>
-              <option value="recommendation">Recommendation</option>
-            </select>
+              onChange={setDecisionType}
+              placeholder="All Types"
+            />
           </div>
 
           {/* Provider */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+          <div className="flex flex-col space-y-1.5">
+            <label className="block text-sm font-semibold text-slate-700">
               Provider
             </label>
-            <select
+            <PremiumSelect
+              options={providerOptions}
               value={provider}
-              onChange={(e) => setProvider(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
-            >
-              <option value="">All</option>
-              <option value="RuleProvider">Rule Provider</option>
-              <option value="BIProvider">BI Provider</option>
-              <option value="AIProvider">AI Provider</option>
-              <option value="CompositeProvider">Composite Provider</option>
-            </select>
+              onChange={setProvider}
+              placeholder="All Providers"
+            />
           </div>
 
           {/* Status */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+          <div className="flex flex-col space-y-1.5">
+            <label className="block text-sm font-semibold text-slate-700">
               Status
             </label>
-            <select
+            <PremiumSelect
+              options={statusOptions}
               value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
-            >
-              <option value="">All</option>
-              <option value="success">Success</option>
-              <option value="error">Error</option>
-              <option value="warning">Warning</option>
-            </select>
+              onChange={setStatus}
+              placeholder="All Statuses"
+            />
           </div>
 
           {/* Date From */}
@@ -238,7 +248,7 @@ export default function DecisionAuditTrailPage() {
               type="date"
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary focus:outline-none"
             />
           </div>
 
@@ -251,7 +261,7 @@ export default function DecisionAuditTrailPage() {
               type="date"
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary focus:outline-none"
             />
           </div>
 
@@ -265,7 +275,7 @@ export default function DecisionAuditTrailPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by decision ID..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary focus:outline-none"
             />
           </div>
         </div>
@@ -275,13 +285,13 @@ export default function DecisionAuditTrailPage() {
           <button
             onClick={handleApplyFilters}
             disabled={!tenantId}
-            className="px-4 py-2 bg-pink-600 text-white rounded-md hover:bg-pink-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+            className="px-5 py-2.5 bg-primary text-primary-foreground rounded-xl hover:bg-primary-hover disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed transition-all font-semibold shadow-sm text-sm active:scale-[0.98]"
           >
             Apply Filters
           </button>
           <button
             onClick={handleResetFilters}
-            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
+            className="px-5 py-2.5 bg-gray-150 text-gray-700 rounded-xl hover:bg-gray-200 transition-all font-semibold text-sm active:scale-[0.98]"
           >
             Reset
           </button>
@@ -289,11 +299,11 @@ export default function DecisionAuditTrailPage() {
       </div>
 
       {/* Results */}
-      <div className="bg-white rounded-lg shadow">
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
         {/* Summary */}
         {!loading && data.length > 0 && (
-          <div className="px-6 py-4 border-b border-gray-200">
-            <p className="text-sm text-gray-600">
+          <div className="px-6 py-4 border-b border-gray-100 bg-slate-50/50">
+            <p className="text-sm font-medium text-slate-600">
               Showing {data.length} of {pagination.total} decisions (Page{' '}
               {pagination.page} of {pagination.totalPages})
             </p>
@@ -303,15 +313,15 @@ export default function DecisionAuditTrailPage() {
         {/* Table */}
         {loading ? (
           <div className="p-12 text-center">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-pink-500 border-t-transparent"></div>
-            <p className="mt-4 text-gray-600">Loading audit log...</p>
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-primary border-t-transparent"></div>
+            <p className="mt-4 text-gray-600 font-medium">Loading audit log...</p>
           </div>
         ) : error ? (
           <div className="p-12 text-center">
-            <p className="text-red-600 mb-4">⚠️ {error}</p>
+            <p className="text-red-600 mb-4 font-semibold">⚠️ {error}</p>
             <button
               onClick={fetchAuditLog}
-              className="px-4 py-2 bg-pink-600 text-white rounded-md hover:bg-pink-700"
+              className="px-5 py-2.5 bg-primary text-primary-foreground rounded-xl hover:bg-primary-hover transition-all font-semibold active:scale-[0.98]"
             >
               Retry
             </button>
@@ -330,44 +340,44 @@ export default function DecisionAuditTrailPage() {
         ) : (
           <>
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-gray-100">
+                <thead className="bg-slate-50/70">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
                       Decision ID
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
                       Type
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
                       Provider
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
                       Status
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
                       Execution Time
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
                       Confidence
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
                       Created At
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white divide-y divide-gray-100">
                   {data.map((entry) => (
                     <tr
                       key={entry.id}
                       onClick={() => handleRowClick(entry.id)}
-                      className="hover:bg-gray-50 cursor-pointer transition-colors"
+                      className="hover:bg-slate-50/50 cursor-pointer transition-colors"
                     >
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-slate-900 font-semibold">
                         {entry.decision_id}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded">
+                        <span className="px-2.5 py-1 text-xs font-bold bg-primary/10 text-primary border border-primary/20 rounded-lg">
                           {entry.decision_type}
                         </span>
                       </td>

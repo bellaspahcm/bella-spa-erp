@@ -221,14 +221,33 @@ h1, h2, h3, h4, h5, h6 {
    CRITICAL: Text must be dark/visible on white dropdown background
    ============================================ */
 
-/* 1. Dropdown trigger button (inside .customer-detail-ktv-select) */
-html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select button[type="button"] span {
+/* 1. Dropdown trigger button (inside .customer-detail-ktv-select & .active-booking-panel) */
+html[data-tenant-module="beauty_spa"] .active-booking-panel .customer-detail-ktv-select button[type="button"] span {
   color: rgb(15 23 42) !important; /* slate-900 for maximum contrast */
 }
 
 /* 1b. Placeholder text when no option selected (strengthen gray) */
-html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select button[type="button"] span.text-slate-700 {
+html[data-tenant-module="beauty_spa"] .active-booking-panel .customer-detail-ktv-select button[type="button"] span.text-slate-700 {
   color: rgb(51 65 85) !important; /* slate-700 - readable placeholder */
+}
+
+/* 1c. Dropdown container background must be white */
+html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select .absolute.z-50,
+html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select div[class*="z-50"] {
+  background-color: #ffffff !important;
+}
+
+/* 1d. Remove grey background on unselected KTV rows */
+html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select div[class*="z-50"] button:not(.bg-rose-50) {
+  background-color: transparent !important;
+}
+html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select div[class*="z-50"] button:not(.bg-rose-50):hover {
+  background-color: rgb(241 245 249) !important; /* slate-100 on hover */
+}
+
+/* 1e. Selected KTV row background (emerald-100 instead of light green emerald-50) */
+html[data-tenant-module="beauty_spa"] .customer-detail-ktv-select div[class*="z-50"] button.bg-rose-50 {
+  background-color: #d1fae5 !important; /* emerald-100 */
 }
 
 /* 2. CRITICAL: Force Tailwind !text-slate-800 and !text-slate-900 to work */
