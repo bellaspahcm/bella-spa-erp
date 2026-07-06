@@ -82,7 +82,7 @@ export default function DecisionHistoryTimeline({
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-4 border-pink-500 border-t-transparent"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-4 border-primary border-t-transparent"></div>
       </div>
     );
   }
@@ -110,7 +110,7 @@ export default function DecisionHistoryTimeline({
       </h3>
       <p className="text-sm text-gray-600 mb-6">
         {timeline.length} decision{timeline.length !== 1 ? 's' : ''} for {entityType}{' '}
-        <code className="text-pink-600 font-mono">{entityId}</code>
+        <code className="text-primary font-mono font-bold">{entityId}</code>
       </p>
 
       {/* Timeline */}
@@ -187,7 +187,7 @@ function TimelineNode({
         {/* Header */}
         <div className="flex items-start justify-between mb-2">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded">
+            <span className="px-2.5 py-1 text-xs font-bold bg-primary/10 text-primary border border-primary/20 rounded-lg">
               {entry.decisionType}
             </span>
             <span className="text-sm text-gray-600">{entry.provider}</span>

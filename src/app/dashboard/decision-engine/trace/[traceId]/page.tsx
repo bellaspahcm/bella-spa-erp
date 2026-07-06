@@ -148,8 +148,8 @@ ${traceData.timeline
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-pink-500 border-t-transparent mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading trace data...</p>
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary border-t-transparent mx-auto mb-4"></div>
+          <p className="text-gray-600 font-medium">Loading trace data...</p>
         </div>
       </div>
     );
@@ -164,7 +164,7 @@ ${traceData.timeline
           <p className="text-red-600 mb-4">{error}</p>
           <button
             onClick={() => router.back()}
-            className="px-4 py-2 bg-pink-600 text-white rounded-md hover:bg-pink-700 transition-colors"
+            className="px-5 py-2.5 bg-primary text-primary-foreground rounded-xl hover:bg-primary-hover transition-all font-semibold active:scale-[0.98]"
           >
             ← Go Back
           </button>
@@ -182,7 +182,7 @@ ${traceData.timeline
           <p className="text-gray-600 mb-4">This trace has no decisions recorded</p>
           <button
             onClick={() => router.back()}
-            className="px-4 py-2 bg-pink-600 text-white rounded-md hover:bg-pink-700 transition-colors"
+            className="px-5 py-2.5 bg-primary text-primary-foreground rounded-xl hover:bg-primary-hover transition-all font-semibold active:scale-[0.98]"
           >
             ← Go Back
           </button>
@@ -224,7 +224,7 @@ ${traceData.timeline
       {/* Content */}
       <div className="max-w-7xl mx-auto px-6 py-6 space-y-6">
         {/* Trace Info Card */}
-        <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg p-6">
+        <div className="bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20 rounded-2xl p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
               <p className="text-sm text-gray-600 mb-1">Trace ID</p>
@@ -237,7 +237,7 @@ ${traceData.timeline
                 <p className="text-sm text-gray-600 mb-1">Root Entity</p>
                 <p className="text-lg font-semibold text-gray-900">
                   {traceData.rootEntity.type}
-                  <span className="text-pink-600 font-mono ml-2">
+                  <span className="text-primary font-mono font-bold ml-2">
                     {traceData.rootEntity.id}
                   </span>
                 </p>
@@ -505,7 +505,7 @@ function DecisionCard({
           <div>
             <div className="flex items-center gap-2">
               <span className="text-sm font-mono text-gray-500">#{index + 1}</span>
-              <span className="px-2 py-0.5 text-xs font-semibold bg-blue-100 text-blue-800 rounded">
+              <span className="px-2.5 py-0.5 text-xs font-bold bg-primary/10 text-primary border border-primary/20 rounded-md">
                 {decision.decisionType}
               </span>
               <span className="text-sm text-gray-600">{decision.provider}</span>
@@ -535,7 +535,7 @@ function DecisionCard({
         <span className="font-mono">Duration: {decision.executionTimeMs}ms</span>
         <span className="font-mono">Depth: {decision.depth}</span>
         {decision.parentSpanId && (
-          <span className="font-mono text-purple-600">
+          <span className="font-mono text-slate-500">
             Parent: {decision.parentSpanId.slice(0, 8)}...
           </span>
         )}

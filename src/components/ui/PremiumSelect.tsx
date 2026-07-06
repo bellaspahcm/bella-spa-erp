@@ -77,14 +77,14 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
           "w-full min-w-0 max-w-full overflow-hidden flex items-center justify-between px-5 py-3.5 rounded-2xl border transition-all duration-300",
           "bg-white shadow-sm hover:shadow-md active:scale-[0.98]",
           isOpen 
-            ? "border-rose-300 ring-4 ring-rose-50 ring-offset-0 shadow-rose-100/50 dark:shadow-none" 
-            : "border-slate-100 hover:border-rose-200",
+            ? "border-primary/35 ring-4 ring-primary/10 ring-offset-0 shadow-primary/5 dark:shadow-none" 
+            : "border-slate-100 hover:border-primary/20",
           disabled && "opacity-50 cursor-not-allowed bg-slate-50 grayscale-[0.5]"
         )}
       >
         <div className="flex items-center gap-3 min-w-0">
           {selectedOption?.icon && (
-            <div className="text-rose-500 shrink-0">
+            <div className="text-primary shrink-0">
               {selectedOption.icon}
             </div>
           )}
@@ -97,7 +97,7 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
         </div>
         <ChevronDown className={cn(
           "w-4 h-4 text-slate-400 transition-transform duration-300 shrink-0",
-          isOpen && "rotate-180 text-rose-400"
+          isOpen && "rotate-180 text-primary/70"
         )} />
       </button>
 
@@ -137,7 +137,7 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
                         className={cn(
                           "w-full flex items-center justify-between px-5 py-3 text-left text-sm transition-colors",
                           value === option.value
-                            ? selectedItemClassName || "bg-rose-50 font-bold"
+                            ? selectedItemClassName || "bg-primary/10 font-bold"
                             : itemClassName || "hover:bg-slate-100"
                         )}
                       >
@@ -145,22 +145,22 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
                           {option.icon && (
                             <div className={cn(
                               "transition-colors shrink-0",
-                              value === option.value ? "text-rose-500" : "text-slate-400"
+                              value === option.value ? "text-primary" : "text-slate-400"
                             )}>
                               {option.icon}
                             </div>
                           )}
                           <span 
-                            className={cn(
-                              "truncate",
-                              value === option.value ? "!text-slate-900" : "!text-slate-800"
-                            )}
+                            className="truncate"
+                            style={{ 
+                              color: value === option.value ? 'var(--primary)' : '#1e293b'
+                            }}
                           >
                             {option.label}
                           </span>
                         </div>
                         {value === option.value && (
-                          <Check className="w-4 h-4 text-rose-500 shrink-0" />
+                          <Check className="w-4 h-4 text-primary shrink-0" />
                         )}
                       </button>
                     ))}
@@ -178,7 +178,7 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
                     className={cn(
                       "w-full flex items-center justify-between px-5 py-3 text-left text-sm transition-colors",
                       value === option.value
-                        ? selectedItemClassName || "bg-rose-50 font-bold"
+                        ? selectedItemClassName || "bg-primary/10 font-bold"
                         : itemClassName || "hover:bg-slate-100"
                     )}
                   >
@@ -186,7 +186,7 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
                       {option.icon && (
                         <div className={cn(
                           "transition-colors shrink-0",
-                          value === option.value ? "text-rose-500" : "text-slate-400"
+                          value === option.value ? "text-primary" : "text-slate-400"
                         )}>
                           {option.icon}
                         </div>
@@ -194,14 +194,14 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
                       <span 
                         className={cn(
                           "truncate",
-                          value === option.value ? "!text-slate-900" : "!text-slate-800"
+                          value === option.value ? "!text-slate-900 font-semibold" : "!text-slate-800"
                         )}
                       >
                         {option.label}
                       </span>
                     </div>
                     {value === option.value && (
-                      <Check className="w-4 h-4 text-rose-500 shrink-0" />
+                      <Check className="w-4 h-4 text-primary shrink-0" />
                     )}
                   </button>
                 ))
