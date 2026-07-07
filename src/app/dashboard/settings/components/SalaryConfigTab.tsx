@@ -158,7 +158,7 @@ export default function SalaryConfigTab({
     }
 
     loadConfigs();
-  }, [tenantId, generalSettings.salary_config]);
+  }, [tenantId]); // Removed generalSettings.salary_config to prevent re-load after save
 
   // Save configurations
   const handleSave = async () => {
@@ -308,32 +308,143 @@ export default function SalaryConfigTab({
           </label>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="text-xs font-black text-slate-600 dark:text-[#CDBCAB] uppercase tracking-wider mb-3 block">
-              Mục tiêu (số ca)
-            </label>
-            <input
-              type="number"
-              value={kpiTarget}
-              onChange={(e) => setKpiTarget(parseIntegerInput(e.target.value, { min: 1, max: 500 }))}
-              disabled={!kpiEnabled}
-              className="w-full h-14 rounded-2xl border-2 border-slate-100 dark:border-[#3E3A35] bg-slate-50 dark:bg-[#11100F] px-5 text-base font-bold text-slate-900 dark:text-[#EFE9E1] focus:outline-none focus:border-primary dark:focus:border-[#A67D44] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-black text-slate-600 dark:text-[#CDBCAB] uppercase tracking-wider mb-3 block">
-              Thưởng (VNĐ)
-            </label>
-            <input
-              type="number"
-              value={kpiBonus}
-              onChange={(e) => setKpiBonus(parseIntegerInput(e.target.value, { min: 0 }))}
-              disabled={!kpiEnabled}
-              className="w-full h-14 rounded-2xl border-2 border-slate-100 dark:border-[#3E3A35] bg-slate-50 dark:bg-[#11100F] px-5 text-base font-bold text-slate-900 dark:text-[#EFE9E1] focus:outline-none focus:border-primary dark:focus:border-[#A67D44] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            />
-          </div>
+        {/* Strategy Selector */}
+        <div>
+          <label className="text-xs font-black text-slate-600 dark:text-[#CDBCAB] uppercase tracking-wider mb-3 block">
+            Chiến lược tính thưởng
+          </label>
+          <select
+            value={kpiStrategy}
+            onChange={(e) => setKpiStrategy(e.target.value as any)}
+            disabled={!kpiEnabled}
+            className="w-full h-14 rounded-2xl border-2 border-slate-100 dark:border-[#3E3A35] bg-slate-50 dark:bg-[#11100F] px-5 text-base font-bold text-slate-900 dark:text-[#EFE9E1] focus:outline-none focus:border-primary dark:focus:border-[#A67D44] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <option value="threshold">Ngưỡng đơn (đạt X ca → nhận Y thưởng)</option>
+            <option value="linear">Tuyến tính (mỗi ca thêm → +Z đồng)</option>
+            <option value="tier">Bậc thang (nhiều mức 20/30/40 ca)</option>
+          </select>
         </div>
+
+        {/* Conditional forms based on strategy */}
+        {kpiStrategy === 'threshold' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="text-xs font-black text-slate-600 dark:text-[#CDBCAB] uppercase tracking-wider mb-3 block">
+                Mục tiêu (số ca)
+              </label>
+              <input
+                type="number"
+                value={kpiTarget}
+                onChange={(e) => setKpiTarget(parseIntegerInput(e.target.value, { min: 1, max: 500 }))}
+                disabled={!kpiEnabled}
+                className="w-full h-14 rounded-2xl border-2 border-slate-100 dark:border-[#3E3A35] bg-slate-50 dark:bg-[#11100F] px-5 text-base font-bold text-slate-900 dark:text-[#EFE9E1] focus:outline-none focus:border-primary dark:focus:border-[#A67D44] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-black text-slate-600 dark:text-[#CDBCAB] uppercase tracking-wider mb-3 block">
+                Thưởng (VNĐ)
+              </label>
+              <input
+                type="number"
+                value={kpiBonus}
+                onChange={(e) => setKpiBonus(parseIntegerInput(e.target.value, { min: 0 }))}
+                disabled={!kpiEnabled}
+                className="w-full h-14 rounded-2xl border-2 border-slate-100 dark:border-[#3E3A35] bg-slate-50 dark:bg-[#11100F] px-5 text-base font-bold text-slate-900 dark:text-[#EFE9E1] focus:outline-none focus:border-primary dark:focus:border-[#A67D44] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+            </div>
+          </div>
+        )}
+
+        {kpiStrategy === 'linear' && (
+          <div>
+            <label className="text-xs font-black text-slate-600 dark:text-[#CDBCAB] uppercase tracking-wider mb-3 block">
+              Thưởng mỗi ca (VNĐ)
+            </label>
+            <input
+              type="number"
+              value={kpiRatePerSession}
+              onChange={(e) => setKpiRatePerSession(parseIntegerInput(e.target.value, { min: 0 }))}
+              disabled={!kpiEnabled}
+              className="w-full h-14 rounded-2xl border-2 border-slate-100 dark:border-[#3E3A35] bg-slate-50 dark:bg-[#11100F] px-5 text-base font-bold text-slate-900 dark:text-[#EFE9E1] focus:outline-none focus:border-primary dark:focus:border-[#A67D44] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              placeholder="Ví dụ: 50000 (50k mỗi ca)"
+            />
+          </div>
+        )}
+
+        {kpiStrategy === 'tier' && (
+          <div className="space-y-4">
+            <label className="text-xs font-black text-slate-600 dark:text-[#CDBCAB] uppercase tracking-wider mb-3 block">
+              Các mức thưởng theo bậc
+            </label>
+            {kpiTiers.map((tier, index) => (
+              <div key={index} className="grid grid-cols-4 gap-4 items-end">
+                <div>
+                  <label className="text-xs text-slate-500 dark:text-[#CDBCAB] mb-2 block">Từ ca</label>
+                  <input
+                    type="number"
+                    value={tier.min}
+                    onChange={(e) => {
+                      const newTiers = [...kpiTiers];
+                      newTiers[index].min = parseIntegerInput(e.target.value, { min: 0, max: 999 });
+                      setKpiTiers(newTiers);
+                    }}
+                    disabled={!kpiEnabled}
+                    className="w-full h-12 rounded-xl border-2 border-slate-100 dark:border-[#3E3A35] bg-slate-50 dark:bg-[#11100F] px-4 text-sm font-bold text-slate-900 dark:text-[#EFE9E1] focus:outline-none focus:border-primary dark:focus:border-[#A67D44] transition-colors disabled:opacity-50"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-slate-500 dark:text-[#CDBCAB] mb-2 block">Đến ca</label>
+                  <input
+                    type="number"
+                    value={tier.max}
+                    onChange={(e) => {
+                      const newTiers = [...kpiTiers];
+                      newTiers[index].max = parseIntegerInput(e.target.value, { min: 0, max: 999 });
+                      setKpiTiers(newTiers);
+                    }}
+                    disabled={!kpiEnabled}
+                    className="w-full h-12 rounded-xl border-2 border-slate-100 dark:border-[#3E3A35] bg-slate-50 dark:bg-[#11100F] px-4 text-sm font-bold text-slate-900 dark:text-[#EFE9E1] focus:outline-none focus:border-primary dark:focus:border-[#A67D44] transition-colors disabled:opacity-50"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-slate-500 dark:text-[#CDBCAB] mb-2 block">Thưởng (VNĐ)</label>
+                  <input
+                    type="number"
+                    value={tier.bonus}
+                    onChange={(e) => {
+                      const newTiers = [...kpiTiers];
+                      newTiers[index].bonus = parseIntegerInput(e.target.value, { min: 0 });
+                      setKpiTiers(newTiers);
+                    }}
+                    disabled={!kpiEnabled}
+                    className="w-full h-12 rounded-xl border-2 border-slate-100 dark:border-[#3E3A35] bg-slate-50 dark:bg-[#11100F] px-4 text-sm font-bold text-slate-900 dark:text-[#EFE9E1] focus:outline-none focus:border-primary dark:focus:border-[#A67D44] transition-colors disabled:opacity-50"
+                  />
+                </div>
+                <button
+                  onClick={() => {
+                    const newTiers = kpiTiers.filter((_, i) => i !== index);
+                    setKpiTiers(newTiers);
+                  }}
+                  disabled={!kpiEnabled || kpiTiers.length <= 1}
+                  className="h-12 px-4 rounded-xl bg-rose-50 dark:bg-[#5D1C34]/20 text-rose-600 dark:text-[#EFE9E1] font-bold hover:bg-rose-100 dark:hover:bg-[#5D1C34]/40 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  Xóa
+                </button>
+              </div>
+            ))}
+            <button
+              onClick={() => {
+                const lastTier = kpiTiers[kpiTiers.length - 1];
+                const newMin = lastTier.max + 1;
+                setKpiTiers([...kpiTiers, { min: newMin, max: newMin + 9, bonus: 0 }]);
+              }}
+              disabled={!kpiEnabled}
+              className="w-full h-12 rounded-xl border-2 border-dashed border-slate-300 dark:border-[#3E3A35] text-slate-600 dark:text-[#CDBCAB] font-bold hover:border-primary dark:hover:border-[#A67D44] hover:text-primary dark:hover:text-[#A67D44] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              + Thêm mức thưởng
+            </button>
+          </div>
+        )}
 
         {!kpiEnabled && (
           <div className="bg-slate-50 dark:bg-[#11100F] border border-slate-100 dark:border-[#3E3A35] rounded-xl px-4 py-3 text-xs text-slate-500 dark:text-[#CDBCAB] font-medium">
@@ -442,33 +553,146 @@ export default function SalaryConfigTab({
           </label>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="text-xs font-black text-slate-600 dark:text-[#CDBCAB] uppercase tracking-wider mb-3 block">
-              Đánh giá tối thiểu (⭐)
-            </label>
-            <input
-              type="number"
-              step="0.1"
-              value={minRating}
-              onChange={(e) => setMinRating(parseFloatInput(e.target.value, { min: 0, max: 5 }))}
-              disabled={!ratingEnabled}
-              className="w-full h-14 rounded-2xl border-2 border-slate-100 dark:border-[#3E3A35] bg-slate-50 dark:bg-[#11100F] px-5 text-base font-bold text-slate-900 dark:text-[#EFE9E1] focus:outline-none focus:border-amber-500 dark:focus:border-[#A67D44] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-black text-slate-600 dark:text-[#CDBCAB] uppercase tracking-wider mb-3 block">
-              Thưởng (VNĐ)
-            </label>
-            <input
-              type="number"
-              value={ratingBonus}
-              onChange={(e) => setRatingBonus(parseIntegerInput(e.target.value, { min: 0 }))}
-              disabled={!ratingEnabled}
-              className="w-full h-14 rounded-2xl border-2 border-slate-100 dark:border-[#3E3A35] bg-slate-50 dark:bg-[#11100F] px-5 text-base font-bold text-slate-900 dark:text-[#EFE9E1] focus:outline-none focus:border-amber-500 dark:focus:border-[#A67D44] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            />
-          </div>
+        {/* Strategy Selector */}
+        <div>
+          <label className="text-xs font-black text-slate-600 dark:text-[#CDBCAB] uppercase tracking-wider mb-3 block">
+            Chiến lược tính thưởng
+          </label>
+          <select
+            value={ratingStrategy}
+            onChange={(e) => setRatingStrategy(e.target.value as any)}
+            disabled={!ratingEnabled}
+            className="w-full h-14 rounded-2xl border-2 border-slate-100 dark:border-[#3E3A35] bg-slate-50 dark:bg-[#11100F] px-5 text-base font-bold text-slate-900 dark:text-[#EFE9E1] focus:outline-none focus:border-amber-500 dark:focus:border-[#A67D44] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <option value="threshold">Ngưỡng đơn (≥ X sao → nhận Y thưởng)</option>
+            <option value="linear">Tuyến tính (mỗi 0.1 sao thêm → +Z đồng)</option>
+            <option value="tier">Bậc thang (4.0-4.4 / 4.5-4.9 / 5.0)</option>
+          </select>
         </div>
+
+        {/* Conditional forms based on strategy */}
+        {ratingStrategy === 'threshold' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="text-xs font-black text-slate-600 dark:text-[#CDBCAB] uppercase tracking-wider mb-3 block">
+                Đánh giá tối thiểu (⭐)
+              </label>
+              <input
+                type="number"
+                step="0.1"
+                value={minRating}
+                onChange={(e) => setMinRating(parseFloatInput(e.target.value, { min: 0, max: 5 }))}
+                disabled={!ratingEnabled}
+                className="w-full h-14 rounded-2xl border-2 border-slate-100 dark:border-[#3E3A35] bg-slate-50 dark:bg-[#11100F] px-5 text-base font-bold text-slate-900 dark:text-[#EFE9E1] focus:outline-none focus:border-amber-500 dark:focus:border-[#A67D44] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-black text-slate-600 dark:text-[#CDBCAB] uppercase tracking-wider mb-3 block">
+                Thưởng (VNĐ)
+              </label>
+              <input
+                type="number"
+                value={ratingBonus}
+                onChange={(e) => setRatingBonus(parseIntegerInput(e.target.value, { min: 0 }))}
+                disabled={!ratingEnabled}
+                className="w-full h-14 rounded-2xl border-2 border-slate-100 dark:border-[#3E3A35] bg-slate-50 dark:bg-[#11100F] px-5 text-base font-bold text-slate-900 dark:text-[#EFE9E1] focus:outline-none focus:border-amber-500 dark:focus:border-[#A67D44] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+            </div>
+          </div>
+        )}
+
+        {ratingStrategy === 'linear' && (
+          <div>
+            <label className="text-xs font-black text-slate-600 dark:text-[#CDBCAB] uppercase tracking-wider mb-3 block">
+              Thưởng mỗi 0.1 sao (VNĐ)
+            </label>
+            <input
+              type="number"
+              value={ratingRatePerStar}
+              onChange={(e) => setRatingRatePerStar(parseIntegerInput(e.target.value, { min: 0 }))}
+              disabled={!ratingEnabled}
+              className="w-full h-14 rounded-2xl border-2 border-slate-100 dark:border-[#3E3A35] bg-slate-50 dark:bg-[#11100F] px-5 text-base font-bold text-slate-900 dark:text-[#EFE9E1] focus:outline-none focus:border-amber-500 dark:focus:border-[#A67D44] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              placeholder="Ví dụ: 10000 (10k mỗi 0.1 sao)"
+            />
+          </div>
+        )}
+
+        {ratingStrategy === 'tier' && (
+          <div className="space-y-4">
+            <label className="text-xs font-black text-slate-600 dark:text-[#CDBCAB] uppercase tracking-wider mb-3 block">
+              Các mức thưởng theo đánh giá
+            </label>
+            {ratingTiers.map((tier, index) => (
+              <div key={index} className="grid grid-cols-4 gap-4 items-end">
+                <div>
+                  <label className="text-xs text-slate-500 dark:text-[#CDBCAB] mb-2 block">Từ (⭐)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={tier.min}
+                    onChange={(e) => {
+                      const newTiers = [...ratingTiers];
+                      newTiers[index].min = parseFloatInput(e.target.value, { min: 0, max: 5 });
+                      setRatingTiers(newTiers);
+                    }}
+                    disabled={!ratingEnabled}
+                    className="w-full h-12 rounded-xl border-2 border-slate-100 dark:border-[#3E3A35] bg-slate-50 dark:bg-[#11100F] px-4 text-sm font-bold text-slate-900 dark:text-[#EFE9E1] focus:outline-none focus:border-amber-500 dark:focus:border-[#A67D44] transition-colors disabled:opacity-50"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-slate-500 dark:text-[#CDBCAB] mb-2 block">Đến (⭐)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={tier.max}
+                    onChange={(e) => {
+                      const newTiers = [...ratingTiers];
+                      newTiers[index].max = parseFloatInput(e.target.value, { min: 0, max: 5 });
+                      setRatingTiers(newTiers);
+                    }}
+                    disabled={!ratingEnabled}
+                    className="w-full h-12 rounded-xl border-2 border-slate-100 dark:border-[#3E3A35] bg-slate-50 dark:bg-[#11100F] px-4 text-sm font-bold text-slate-900 dark:text-[#EFE9E1] focus:outline-none focus:border-amber-500 dark:focus:border-[#A67D44] transition-colors disabled:opacity-50"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-slate-500 dark:text-[#CDBCAB] mb-2 block">Thưởng (VNĐ)</label>
+                  <input
+                    type="number"
+                    value={tier.bonus}
+                    onChange={(e) => {
+                      const newTiers = [...ratingTiers];
+                      newTiers[index].bonus = parseIntegerInput(e.target.value, { min: 0 });
+                      setRatingTiers(newTiers);
+                    }}
+                    disabled={!ratingEnabled}
+                    className="w-full h-12 rounded-xl border-2 border-slate-100 dark:border-[#3E3A35] bg-slate-50 dark:bg-[#11100F] px-4 text-sm font-bold text-slate-900 dark:text-[#EFE9E1] focus:outline-none focus:border-amber-500 dark:focus:border-[#A67D44] transition-colors disabled:opacity-50"
+                  />
+                </div>
+                <button
+                  onClick={() => {
+                    const newTiers = ratingTiers.filter((_, i) => i !== index);
+                    setRatingTiers(newTiers);
+                  }}
+                  disabled={!ratingEnabled || ratingTiers.length <= 1}
+                  className="h-12 px-4 rounded-xl bg-rose-50 dark:bg-[#5D1C34]/20 text-rose-600 dark:text-[#EFE9E1] font-bold hover:bg-rose-100 dark:hover:bg-[#5D1C34]/40 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  Xóa
+                </button>
+              </div>
+            ))}
+            <button
+              onClick={() => {
+                const lastTier = ratingTiers[ratingTiers.length - 1];
+                const newMin = Math.min(lastTier.max + 0.1, 5);
+                setRatingTiers([...ratingTiers, { min: newMin, max: 5.0, bonus: 0 }]);
+              }}
+              disabled={!ratingEnabled}
+              className="w-full h-12 rounded-xl border-2 border-dashed border-slate-300 dark:border-[#3E3A35] text-slate-600 dark:text-[#CDBCAB] font-bold hover:border-amber-500 dark:hover:border-[#A67D44] hover:text-amber-500 dark:hover:text-[#A67D44] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              + Thêm mức đánh giá
+            </button>
+          </div>
+        )}
 
         {!ratingEnabled && (
           <div className="bg-amber-50 dark:bg-[#A67D44]/20 border border-amber-100 dark:border-[#A67D44] rounded-xl px-4 py-3 text-xs text-amber-700 dark:text-[#EFE9E1] font-medium">
