@@ -92,6 +92,7 @@ if (typeof window !== 'undefined') {
 function ForecastDashboard() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('revenue');
+  const [themeColor, setThemeColor] = useState('#E91E63');
   const [revenueHorizon, setRevenueHorizon] = useState(12);
   const [churnHorizon, setChurnHorizon] = useState(30);
   const [demandHorizon, setDemandHorizon] = useState(2);
@@ -100,6 +101,33 @@ function ForecastDashboard() {
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [chartKey, setChartKey] = useState(0);
   const [isChartReady, setIsChartReady] = useState(false);
+
+  // Read computed primary color from document.documentElement
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const color = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
+      if (color) {
+        setThemeColor(color);
+      }
+    }
+  }, []);
+
+  const themeRgba = (alpha: number) => {
+    const cleanHex = themeColor.replace('#', '');
+    let r = 0, g = 0, b = 0;
+    if (cleanHex.length === 3) {
+      r = parseInt(cleanHex[0] + cleanHex[0], 16);
+      g = parseInt(cleanHex[1] + cleanHex[1], 16);
+      b = parseInt(cleanHex[2] + cleanHex[2], 16);
+    } else if (cleanHex.length === 6) {
+      r = parseInt(cleanHex.substring(0, 2), 16);
+      g = parseInt(cleanHex.substring(2, 4), 16);
+      b = parseInt(cleanHex.substring(4, 6), 16);
+    } else {
+      return `rgba(233, 30, 99, ${alpha})`;
+    }
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  };
 
   // Register Chart.js on client-side mount
   useEffect(() => {
@@ -126,7 +154,7 @@ function ForecastDashboard() {
     if (isChartReady) {
       setChartKey(prev => prev + 1);
     }
-  }, [activeTab, revenueHorizon, churnHorizon, demandHorizon, revenueModel, isChartReady]);
+  }, [activeTab, revenueHorizon, churnHorizon, demandHorizon, revenueModel, themeColor, isChartReady]);
 
   // Get current user's tenant ID
   useEffect(() => {
@@ -458,16 +486,16 @@ function ForecastDashboard() {
                             {
                               label: 'Dự Báo',
                               data: forecastData.map((f: any) => f.forecasted_value),
-                              borderColor: 'rgb(233, 30, 99)',
-                              backgroundColor: 'rgba(233, 30, 99, 0.1)',
+                              borderColor: themeColor,
+                              backgroundColor: themeRgba(0.1),
                               fill: false,
                               tension: 0.4
                             },
                             {
                               label: 'Upper Bound (95%)',
                               data: forecastData.map((f: any) => f.confidence_upper),
-                              borderColor: 'rgb(233, 30, 99)',
-                              backgroundColor: 'rgba(233, 30, 99, 0.05)',
+                              borderColor: themeColor,
+                              backgroundColor: themeRgba(0.05),
                               borderDash: [5, 5],
                               fill: '+1',
                               tension: 0.4
@@ -475,8 +503,8 @@ function ForecastDashboard() {
                             {
                               label: 'Lower Bound (95%)',
                               data: forecastData.map((f: any) => f.confidence_lower),
-                              borderColor: 'rgb(233, 30, 99)',
-                              backgroundColor: 'rgba(233, 30, 99, 0.05)',
+                              borderColor: themeColor,
+                              backgroundColor: themeRgba(0.05),
                               borderDash: [5, 5],
                               fill: false,
                               tension: 0.4
@@ -758,8 +786,8 @@ function ForecastDashboard() {
                             {
                               label: 'Dự Báo Nhu Cầu',
                               data: forecastData.map((f: any) => f.forecasted_value),
-                              backgroundColor: 'rgba(233, 30, 99, 0.4)',
-                              borderColor: 'rgb(233, 30, 99)',
+                              backgroundColor: themeRgba(0.4),
+                              borderColor: themeColor,
                               borderWidth: 2,
                               borderRadius: 8
                             }
