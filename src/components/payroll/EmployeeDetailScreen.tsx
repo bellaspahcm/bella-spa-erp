@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   ArrowLeft, 
   TrendingDown, 
@@ -15,69 +16,70 @@ import {
   Star,
   AlertCircle,
   CreditCard,
-  ClipboardList
+  ClipboardList,
+  Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 
-// Mock data - sẽ thay bằng real API sau
-const MOCK_EMPLOYEE_DATA = {
+// Type definitions matching API response
+interface EmployeeDetailData {
   employee: {
-    id: 'emp001',
-    name: 'Nguyễn Văn A',
-    position: 'Senior KTV',
-    hireDate: '2024-01-15',
-    yearsOfService: 2.5,
-  },
-  month: '2026-06',
+    id: string;
+    name: string;
+    position: string;
+    hireDate: string;
+    yearsOfService: number;
+  };
+  month: string;
   salary: {
-    total: 8650000,
-    totalLastMonth: 9100000,
-    changePercent: -4.9,
-  },
+    total: number;
+    totalLastMonth: number;
+    changePercent: number;
+  };
   breakdown: {
     baseSalary: {
-      amount: 5538462,
-      contractSalary: 6000000,
-      workingDays: 24,
-      standardDays: 26,
-      absentDates: ['2026-06-10', '2026-06-15'],
-    },
+      amount: number;
+      contractSalary: number;
+      workingDays: number;
+      standardDays: number;
+      absentDates: string[];
+    };
     serviceCommission: {
-      amount: 2250000,
-      sessions: 15,
-      ratePerSession: 150000,
-      sessionBreakdown: [
-        { packageName: 'Combo Mẹ & Bé Tiết Kiệm', count: 8, multiplier: 1.0, weighted: 8.0 },
-        { packageName: 'Combo Mẹ & Bé Hạnh Phúc', count: 3, multiplier: 1.5, weighted: 4.5 },
-        { packageName: 'Combo Mẹ & Bé VIP Toàn Diện', count: 1, multiplier: 2.0, weighted: 2.0 },
-        { packageName: 'Dịch vụ lẻ', count: 0.5, multiplier: 1.0, weighted: 0.5 },
-      ],
-    },
+      amount: number;
+      sessions: number;
+      ratePerSession: number;
+      sessionBreakdown: Array<{
+        packageName: string;
+        count: number;
+        multiplier: number;
+        weighted: number;
+      }>;
+    };
     positionBonus: {
-      amount: 450000,
-      baseCommission: 2250000,
-      multiplier: 1.2,
-      positionTier: 'Senior',
-    },
+      amount: number;
+      baseCommission: number;
+      multiplier: number;
+      positionTier: string;
+    };
     ratingBonus: {
-      amount: 465000,
-      weightedSessions: 15.5,
-      bonusPerSession: 30000,
-      averageRating: 4.7,
-    },
+      amount: number;
+      weightedSessions: number;
+      bonusPerSession: number;
+      averageRating: number | null;
+    };
     attendancePenalty: {
-      amount: -50000,
-      lateDays: 1,
-      lateAmount: 50000,
-      lateDates: [{ date: '2026-06-12', minutes: 15 }],
-    },
+      amount: number;
+      lateDays: number;
+      lateAmount: number;
+      lateDates: Array<{ date: string; minutes: number }>;
+    };
     advances: {
-      amount: -500000,
-      records: [{ date: '2026-06-15', amount: 500000, reason: 'Chi phí cá nhân' }],
-    },
-  },
-};
+      amount: number;
+      records: Array<{ date: string; amount: number; reason: string }>;
+    };
+  };
+}
 
 interface BreakdownCardProps {
   title: string;
@@ -161,14 +163,75 @@ function BreakdownCard({
   );
 }
 
-export function EmployeeDetailScreen() {
-  const data = MOCK_EMPLOYEE_DATA;
+export function EmployeeDetailScreen({ employeeId, month }: { employeeId: string; month?: string }) {
+  const router = useRouter();
+  const [data, setData] = useState<EmployeeDetailData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showComparison, setShowComparison] = useState(false);
+
+  useEffect(() => {
+    async function fetchData() {
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        const queryParams = new URLSearchParams();
+        if (month) {
+          queryParams.append('month', month);
+        }
+        
+        const response = await fetch(`/api/payroll/employees/${employeeId}/detail?${queryParams}`);
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch employee data: ${response.statusText}`);
+        }
+        
+        const result = await response.json();
+        setData(result);
+      } catch (err) {
+        console.error('Error fetching employee detail:', err);
+        setError(err instanceof Error ? err.message : 'Unknown error occurred');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchData();
+  }, [employeeId, month]);
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
     return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
+          <p className="text-gray-600">Đang tải dữ liệu lương...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error || !data) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Card className="p-8 max-w-md text-center">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Lỗi tải dữ liệu</h2>
+          <p className="text-gray-600 mb-4">{error || 'Không tìm thấy dữ liệu nhân viên'}</p>
+          <Button onClick={() => window.location.reload()}>
+            Thử lại
+          </Button>
+        </Card>
+      </div>
+    );
+  }
 
   const changeIcon = data.salary.changePercent >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />;
   const changeColor = data.salary.changePercent >= 0 ? 'text-green-600' : 'text-red-600';
@@ -180,7 +243,7 @@ export function EmployeeDetailScreen() {
         <div className="max-w-4xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Button variant="ghost" size="sm">
+              <Button variant="ghost" size="sm" onClick={() => router.back()}>
                 <ArrowLeft size={20} />
                 <span className="ml-2">Quay lại</span>
               </Button>
