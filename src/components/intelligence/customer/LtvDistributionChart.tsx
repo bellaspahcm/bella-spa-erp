@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * LTV Distribution Chart (Histogram)
- * Shows distribution of customers across LTV value ranges
+ * LTV Distribution Chart (Premium Bar Chart)
+ * Shows distribution of customers across LTV value ranges with modern gradients
  */
 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -34,27 +34,54 @@ export function LtvDistributionChart({ data, height = 350 }: LtvDistributionChar
     count: b.count,
   }));
 
+  const total = data.length;
+
+  // Custom tooltips matching glassmorphism
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const entry = payload[0];
+      const percent = total > 0 ? ((entry.value / total) * 100).toFixed(1) : '0.0';
+      return (
+        <div className="bg-white/90 backdrop-blur-md px-4 py-3 rounded-2xl border border-slate-200/50 shadow-xl text-xs font-bold text-slate-800">
+          <p className="text-slate-500 mb-1 uppercase tracking-wider">Khoảng: {entry.payload.range}</p>
+          <p className="text-sm font-black text-slate-900">
+            Số lượng: <span className="text-[#3b82f6]">{entry.value} KH</span> <span className="text-slate-400 font-normal">({percent}%)</span>
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <BarChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+      <BarChart data={chartData} margin={{ top: 15, right: 10, left: 10, bottom: 5 }}>
+        <defs>
+          <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.9} />
+            <stop offset="100%" stopColor="#60a5fa" stopOpacity={0.4} />
+          </linearGradient>
+        </defs>
+        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
         <XAxis
           dataKey="range"
-          tick={{ fill: '#64748b', fontSize: 12 }}
-          label={{ value: 'Khoảng LTV', position: 'insideBottom', offset: -5 }}
+          tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: '700' }}
+          axisLine={false}
+          tickLine={false}
         />
         <YAxis
-          tick={{ fill: '#64748b', fontSize: 12 }}
-          label={{ value: 'Số KH', angle: -90, position: 'insideLeft' }}
+          tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: '700' }}
+          axisLine={false}
+          tickLine={false}
         />
-        <Tooltip
-          contentStyle={{
-            backgroundColor: '#fff',
-            border: '1px solid #e2e8f0',
-            borderRadius: '8px',
-          }}
+        <Tooltip content={<CustomTooltip />} />
+        <Bar 
+          dataKey="count" 
+          name="Số khách hàng" 
+          fill="url(#barGradient)" 
+          radius={[10, 10, 0, 0]}
+          maxBarSize={50}
         />
-        <Bar dataKey="count" name="Số khách hàng" fill="#3b82f6" radius={[8, 8, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );
