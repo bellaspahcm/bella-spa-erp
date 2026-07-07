@@ -34,19 +34,38 @@ export default function SalaryConfigTab({
 
   // KPI Config
   const [kpiEnabled, setKpiEnabled] = useState(false);
+  const [kpiStrategy, setKpiStrategy] = useState<'threshold' | 'linear' | 'tier'>('threshold');
   const [kpiTarget, setKpiTarget] = useState(30);
   const [kpiBonus, setKpiBonus] = useState(1000000);
+  // For linear strategy
+  const [kpiRatePerSession, setKpiRatePerSession] = useState(50000);
+  // For tier strategy
+  const [kpiTiers, setKpiTiers] = useState<Array<{ min: number; max: number; bonus: number }>>([
+    { min: 0, max: 29, bonus: 0 },
+    { min: 30, max: 49, bonus: 1000000 },
+    { min: 50, max: 999, bonus: 2000000 }
+  ]);
 
   // Attendance Config
   const [attendanceEnabled, setAttendanceEnabled] = useState(true);
+  const [attendanceStrategy, setAttendanceStrategy] = useState<'late_deduction' | 'absent_deduction' | 'combined'>('combined');
   const [latePenalty, setLatePenalty] = useState(50000);
   const [absentPenalty, setAbsentPenalty] = useState(200000);
   const [lateGracePeriod, setLateGracePeriod] = useState(15);
 
   // Rating Config
   const [ratingEnabled, setRatingEnabled] = useState(false);
+  const [ratingStrategy, setRatingStrategy] = useState<'threshold' | 'linear' | 'tier'>('threshold');
   const [minRating, setMinRating] = useState(4.5);
   const [ratingBonus, setRatingBonus] = useState(50000);
+  // For linear strategy
+  const [ratingRatePerStar, setRatingRatePerStar] = useState(10000);
+  // For tier strategy
+  const [ratingTiers, setRatingTiers] = useState<Array<{ min: number; max: number; bonus: number }>>([
+    { min: 4.0, max: 4.4, bonus: 30000 },
+    { min: 4.5, max: 4.9, bonus: 50000 },
+    { min: 5.0, max: 5.0, bonus: 100000 }
+  ]);
 
   // Legacy fallback: Load from generalSettings.salary_config if new config not available
   const [tenantId, setTenantId] = useState<string | null>(null);
@@ -88,9 +107,17 @@ export default function SalaryConfigTab({
         const kpiResult = await loadKPIConfig(tenantId!);
         if (kpiResult.success && kpiResult.data) {
           setKpiEnabled(kpiResult.data.enabled);
-          const config = kpiResult.data.config as KPIThresholdConfig;
-          setKpiTarget(config.target || 30);
-          setKpiBonus(config.bonus || 1000000);
+          setKpiStrategy(kpiResult.data.strategy as any || 'threshold');
+          const config = kpiResult.data.config as any;
+          
+          if (kpiResult.data.strategy === 'threshold') {
+            setKpiTarget(config.target || 30);
+            setKpiBonus(config.bonus || 1000000);
+          } else if (kpiResult.data.strategy === 'linear') {
+            setKpiRatePerSession(config.ratePerSession || 50000);
+          } else if (kpiResult.data.strategy === 'tier') {
+            setKpiTiers(config.tiers || kpiTiers);
+          }
         } else {
           // Fallback to legacy generalSettings
           setKpiTarget(generalSettings.salary_config?.kpi_target_sessions || 30);
@@ -143,15 +170,20 @@ export default function SalaryConfigTab({
     setIsSaving(true);
     try {
       // Save KPI
+      let kpiConfig: any;
+      if (kpiStrategy === 'threshold') {
+        kpiConfig = { target: kpiTarget, bonus: kpiBonus, metric: 'sessions' };
+      } else if (kpiStrategy === 'linear') {
+        kpiConfig = { ratePerSession: kpiRatePerSession, metric: 'sessions' };
+      } else if (kpiStrategy === 'tier') {
+        kpiConfig = { tiers: kpiTiers, metric: 'sessions' };
+      }
+      
       const kpiResult = await saveKPIConfig(
         tenantId,
         kpiEnabled,
-        'threshold',
-        {
-          target: kpiTarget,
-          bonus: kpiBonus,
-          metric: 'sessions',
-        }
+        kpiStrategy,
+        kpiConfig
       );
       if (!kpiResult.success) {
         throw new Error(`KPI: ${kpiResult.error}`);
@@ -161,7 +193,7 @@ export default function SalaryConfigTab({
       const attendanceResult = await saveAttendanceConfig(
         tenantId,
         attendanceEnabled,
-        'combined',
+        attendanceStrategy,
         {
           latePenalty,
           absentPenalty,
@@ -173,14 +205,20 @@ export default function SalaryConfigTab({
       }
 
       // Save Rating
+      let ratingConfig: any;
+      if (ratingStrategy === 'threshold') {
+        ratingConfig = { minRating, bonus: ratingBonus };
+      } else if (ratingStrategy === 'linear') {
+        ratingConfig = { ratePerStar: ratingRatePerStar };
+      } else if (ratingStrategy === 'tier') {
+        ratingConfig = { tiers: ratingTiers };
+      }
+      
       const ratingResult = await saveRatingConfig(
         tenantId,
         ratingEnabled,
-        'threshold',
-        {
-          minRating,
-          bonus: ratingBonus,
-        }
+        ratingStrategy,
+        ratingConfig
       );
       if (!ratingResult.success) {
         throw new Error(`Rating: ${ratingResult.error}`);
