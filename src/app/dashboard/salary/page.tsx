@@ -52,6 +52,8 @@ import SessionMatrixTable from './components/SessionMatrixTable';
 import AttendanceSummaryTable from './components/AttendanceSummaryTable';
 import HrProfileTable from './components/HrProfileTable';
 import ConfirmModal from './components/ConfirmModal';
+import { PayrollHealthCheck } from '@/components/payroll/PayrollHealthCheck';
+import { PublishConfirmModal } from '@/components/payroll/PublishConfirmModal';
 
 type SalaryRefreshOptions = {
   includeAttendance?: boolean;
@@ -138,6 +140,9 @@ export default function SalaryPage() {
   // HR Profile Editor States
   const [isHrModalOpen, setIsHrModalOpen] = useState(false);
   const [hrKtvProfile, setHrKtvProfile] = useState<KtvSalaryRecord | null>(null);
+  
+  // Publish Modal State (replaces old confirm modal for publish action)
+  const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
 
   // Centered Confirmation Modal State
   const [confirmModal, setConfirmModal] = useState<{
@@ -367,27 +372,29 @@ export default function SalaryPage() {
   };
 
   const handlePublishAll = () => {
-    showConfirm({
-      title: 'Gửi đối soát tất cả',
-      message: `Bạn có chắc chắn muốn gửi bảng lương dự thảo đến tất cả ${vocab.worker.plural} để họ xác nhận không?`,
-      confirmText: 'Gửi tất cả',
-      onConfirm: async () => {
-        setIsLoading(true);
-        const res = await publishAllSalaryRecords();
-        if (res.success) {
-          toast.success(`Đã gửi đối soát cho ${res.count} ${vocab.worker.short}`);
+    // Open new modal instead of old confirm dialog
+    setIsPublishModalOpen(true);
+  };
+  
+  const handleConfirmPublish = async () => {
+    // Called from PublishConfirmModal
+    setIsLoading(true);
+    try {
+      const res = await publishAllSalaryRecords();
+      if (res.success) {
+        toast.success(`Đã gửi đối soát cho ${res.count} ${vocab.worker.short}`);
+        await refreshSalaryData();
+        void loadMatrixData({ force: true });
+      } else {
+        toast.error(res.error || 'Lỗi khi gửi đối soát');
+        if (res.count > 0) {
           await refreshSalaryData();
           void loadMatrixData({ force: true });
-        } else {
-          toast.error(res.error || 'Lỗi khi gửi đối soát');
-          if (res.count > 0) {
-            await refreshSalaryData();
-            void loadMatrixData({ force: true });
-          }
         }
-        setIsLoading(false);
       }
-    });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleFinalizeAll = () => {
@@ -654,6 +661,14 @@ export default function SalaryPage() {
       {/* Salary Table (Realtime Payroll) */}
       {(activeTab === 'payroll' || currentUser?.role?.toLowerCase() === 'ktv') && (
         <>
+          {/* Health Check - Only for Admin/HR */}
+          {!isLoading && currentUser?.role?.toLowerCase() !== 'ktv' && (
+            <PayrollHealthCheck 
+              salaries={ktvSalaries} 
+              currentMonth={currentMonthYear}
+            />
+          )}
+        
           {isLoading ? (
             <div className="mb-6 rounded-[2rem] border border-slate-100 bg-white/80 p-4 shadow-sm dark:border-slate-800/60 dark:bg-zinc-900/60 sm:p-6 md:mb-10 md:rounded-[2.5rem] md:p-8">
               <SkeletonTable />
@@ -800,6 +815,15 @@ export default function SalaryPage() {
         isLoading={confirmModal.isLoading}
         onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
         onConfirm={confirmModal.onConfirm}
+      />
+
+      {/* Publish Confirmation Modal (with Exception Blocking) */}
+      <PublishConfirmModal
+        isOpen={isPublishModalOpen}
+        onClose={() => setIsPublishModalOpen(false)}
+        onConfirm={handleConfirmPublish}
+        salaries={ktvSalaries}
+        currentMonth={currentMonthYear}
       />
     </div>
   );
