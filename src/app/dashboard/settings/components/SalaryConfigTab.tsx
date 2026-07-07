@@ -304,7 +304,7 @@ export default function SalaryConfigTab({
               onChange={(e) => setKpiEnabled(e.target.checked)}
               className="sr-only peer"
             />
-            <div className="w-14 h-7 bg-slate-200 dark:bg-[#3E3A35] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 dark:after:border-[#2E2B27] after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-primary dark:peer-checked:bg-[#A67D44]"></div>
+            <div className="w-14 h-7 bg-slate-300 border border-slate-400/20 dark:bg-[#3E3A35] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 dark:after:border-[#2E2B27] after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-primary dark:peer-checked:bg-[#A67D44]"></div>
           </label>
         </div>
 
@@ -365,7 +365,7 @@ export default function SalaryConfigTab({
               onChange={(e) => setAttendanceEnabled(e.target.checked)}
               className="sr-only peer"
             />
-            <div className="w-14 h-7 bg-slate-200 dark:bg-[#3E3A35] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 dark:after:border-[#2E2B27] after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-rose-500 dark:peer-checked:bg-[#5D1C34]"></div>
+            <div className="w-14 h-7 bg-slate-300 border border-slate-400/20 dark:bg-[#3E3A35] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 dark:after:border-[#2E2B27] after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-rose-500 dark:peer-checked:bg-[#5D1C34]"></div>
           </label>
         </div>
 
@@ -438,7 +438,7 @@ export default function SalaryConfigTab({
               onChange={(e) => setRatingEnabled(e.target.checked)}
               className="sr-only peer"
             />
-            <div className="w-14 h-7 bg-slate-200 dark:bg-[#3E3A35] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 dark:after:border-[#2E2B27] after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-amber-500 dark:peer-checked:bg-[#A67D44]"></div>
+            <div className="w-14 h-7 bg-slate-300 border border-slate-400/20 dark:bg-[#3E3A35] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 dark:after:border-[#2E2B27] after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-amber-500 dark:peer-checked:bg-[#A67D44]"></div>
           </label>
         </div>
 
