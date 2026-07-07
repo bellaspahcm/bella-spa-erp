@@ -24,58 +24,208 @@
 
 ### Định Nghĩa Ngắn Gọn
 
-**Bella EIP (Enterprise Integration Platform)** là một **Business Operating Platform** - nền tảng vận hành nghiệp vụ có thể chạy nhiều ngành nghề khác nhau.
+**Bella ERP** là một **Configuration-driven Business Operating Platform** - nền tảng vận hành nghiệp vụ có thể chạy nhiều ngành nghề khác nhau thông qua cấu hình, không cần viết code mới.
 
 ### Giải Thích Đơn Giản
 
 Tưởng tượng bạn có:
 - Một **động cơ ô tô** (Decision Engine)
 - Có thể lắp vào **xe con, xe tải, xe bus** (các ngành khác nhau)
-- Chỉ cần **thay bánh xe và ghế ngồi** (policies khác nhau)
+- Chỉ cần **thay bánh xe và ghế ngồi** (cấu hình khác nhau)
 - **Không cần thiết kế lại động cơ** mỗi lần
 
 Bella cũng vậy:
-- Cùng một **engine** (Decision Engine + Rule Engine)
+- Cùng một **Core Platform** (Decision Engine + Business Process Framework + Configuration System)
 - Có thể chạy **Spa, Bệnh viện, Bán lẻ, Sản xuất**
-- Chỉ cần **thay policies** (rules nghiệp vụ)
+- Chỉ cần **thay config** (bật/tắt providers, chọn strategy, nhập tham số)
 - **Không cần viết lại code** mỗi lần
+
+### Cấu Trúc Tổng Thể
+
+```
+Bella ERP
+├── Core Platform ⭐⭐⭐⭐⭐ (NỀN TẢNG - QUAN TRỌNG NHẤT)
+│   ├── Decision Engine       ← Bộ não quyết định
+│   ├── Business Process Framework ← Khung quy trình chuẩn
+│   ├── Configuration System  ← Hệ thống cấu hình động
+│   ├── Tenant Management     ← Quản lý đa chi nhánh
+│   ├── Auth & Permission     ← Bảo mật
+│   ├── Event Bus             ← Giao tiếp giữa modules
+│   ├── Notification          ← Thông báo
+│   └── Audit Trail           ← Truy vết
+│
+├── Master Data ⭐⭐⭐⭐⭐ (DỮ LIỆU DÙNG CHUNG)
+│   ├── Customer              ← Khách hàng
+│   ├── Employee              ← Nhân viên
+│   ├── Service               ← Dịch vụ
+│   ├── Product               ← Sản phẩm
+│   ├── Room                  ← Phòng
+│   └── Branch                ← Chi nhánh
+│
+├── Business Processes ⭐⭐⭐⭐ (CÁC MODULE NGHIỆP VỤ - NGANG HÀNG)
+│   ├── Booking               ← Đặt lịch
+│   ├── Check-in              ← Nhận khách
+│   ├── Treatment             ← Điều trị/Dịch vụ
+│   ├── POS                   ← Bán hàng
+│   ├── Inventory             ← Kho
+│   ├── CRM                   ← Quản lý khách hàng
+│   ├── Payroll               ← Tính lương
+│   ├── Commission            ← Hoa hồng
+│   └── Accounting            ← Kế toán
+│
+├── Reports & Analytics ⭐⭐⭐ (BÁO CÁO)
+│   ├── Financial Reports
+│   ├── Performance Dashboard
+│   └── Custom Reports
+│
+└── AI & Automation ⭐⭐⭐ (TRÍ TUỆ NHÂN TẠO)
+    ├── AI Recommendations
+    ├── Predictive Analytics
+    └── Process Automation
+```
+
+### Thứ Tự Ưu Tiên Phát Triển
+
+**Phase 1: Core Platform (Nền tảng - 3 tháng)**
+1. ⭐⭐⭐⭐⭐ Decision Engine (HOÀN THÀNH)
+2. ⭐⭐⭐⭐⭐ Business Process Framework (HOÀN THÀNH)
+3. ⭐⭐⭐⭐⭐ Configuration System (ĐANG LÀM)
+
+**Phase 2: Critical Business Processes (6 tháng)**
+4. ⭐⭐⭐⭐ Booking (chưa làm)
+5. ⭐⭐⭐⭐ POS (chưa làm)
+6. ⭐⭐⭐⭐ Inventory (chưa làm)
+7. ⭐⭐⭐⭐ CRM (chưa làm)
+8. ⭐⭐⭐⭐ Payroll (đang làm - 40% complete)
+
+**Phase 3: Advanced Features (3 tháng)**
+9. ⭐⭐⭐ Reports & Analytics
+10. ⭐⭐⭐ AI & Automation
+
+**Lý do Payroll đi trước các module khác:**
+- Payroll là use case tốt nhất để **chứng minh** kiến trúc Configuration-driven
+- Logic phức tạp: nhiều rules, nhiều strategies, nhiều tenants khác nhau
+- Sau khi làm xong Payroll, các module khác (Booking, POS, CRM...) sẽ dễ dàng hơn vì đã có template
 
 ---
 
 ## 🌟 TẠI SAO BELLA ĐẶC BIỆT?
 
+### Nguyên Tắc Thiết Kế Cốt Lõi
+
+**Bella không phải là "No-code Platform". Bella là "Configuration-driven Platform".**
+
+#### 1. **Configuration > Code > No-code**
+
+| Approach | Khi Nào Dùng | Ví Dụ |
+|----------|--------------|-------|
+| **Configuration** (95%) | Thay đổi tham số, bật/tắt tính năng | Hoa hồng 120k → 150k, bật KPI |
+| **Code** (4%) | Thêm strategy mới, logic hoàn toàn mới | Thêm "Commission by Tier" |
+| **No-code** (1%) | Khách hàng với yêu cầu siêu phức tạp | IF VIP + Senior + Weekend + Birthday... |
+
+**Tại sao không làm No-code Rule Builder?**
+- 95% khách hàng chỉ cần **thay số** (120k → 150k), không phát minh ra logic mới
+- No-code Builder phức tạp, khó maintain, dễ tạo ra rules không tối ưu
+- Configuration đơn giản hơn, nhanh hơn, dễ debug hơn
+
+#### 2. **Provider + Strategy Pattern**
+
+**Ví dụ: Commission Provider**
+
+```
+CommissionProvider
+├── FixedStrategy        ← 120k/session (cố định)
+├── PercentageStrategy   ← 5% revenue (% doanh thu)
+├── ServiceStrategy      ← Khác nhau theo dịch vụ
+├── CategoryStrategy     ← Khác nhau theo loại khách
+├── RevenueStrategy      ← % theo tổng doanh thu
+└── TierStrategy         ← Bậc thang (0-10: 100k, 11-20: 120k, 21+: 150k)
+```
+
+**3 Spa khác nhau:**
+- **Spa A**: Chọn `FixedStrategy`, nhập `120000`
+- **Spa B**: Chọn `FixedStrategy`, nhập `150000`
+- **Spa C**: Chọn `TierStrategy`, nhập `[[0,10,100000],[11,20,120000],[21,999,150000]]`
+
+→ **Cùng 1 Provider, khác Strategy, khác Config**
+
+#### 3. **Quy Trình Chuẩn: Settings → Config → Provider → Strategy → Result**
+
+```
+1. Admin vào Settings > Payroll
+
+2. Bật/Tắt modules
+   ✓ Base Salary
+   ✓ Commission
+   ✓ Attendance
+   ✗ KPI (không dùng)
+   ✓ Bonus
+
+3. Chọn Commission → Chọn Strategy
+   ○ Fixed
+   ○ Percentage
+   ○ Service
+   ● Tier (chọn cái này)
+
+4. UI hiển thị Form tương ứng
+   Tier 1: Sessions 0-10   → 100,000đ
+   Tier 2: Sessions 11-20  → 120,000đ
+   Tier 3: Sessions 21+    → 150,000đ
+
+5. Lưu → JSON config theo tenant
+   {
+     "commission": {
+       "enabled": true,
+       "strategy": "tier",
+       "config": {
+         "tiers": [
+           {"min": 0, "max": 10, "rate": 100000},
+           {"min": 11, "max": 20, "rate": 120000},
+           {"min": 21, "max": 999, "rate": 150000}
+         ]
+       }
+     }
+   }
+
+6. Payroll Engine chạy
+   → Load config
+   → CommissionProvider.evaluate()
+   → TierStrategy.calculate(sessions=15, config)
+   → Return: 120,000đ
+```
+
 ### So Sánh: Cách Làm Cũ vs Bella
 
-
-| Yêu Cầu | Cách Làm Cũ | Bella EIP |
+| Yêu Cầu | Cách Làm Cũ | Bella Configuration-Driven |
 |---------|-------------|-----------|
-| Thêm quy tắc tính lương mới | 2 tuần code + test + deploy | 30 phút config policy |
-| Đổi logic phê duyệt | 1 tuần code + test | 5 phút thay đổi rule |
-| Mở rộng sang ngành mới | 6 tháng phát triển lại | 2 tuần config policies |
+| Thêm spa mới với hoa hồng 150k | 2 tuần code SpaB.ts | 5 phút vào Settings |
+| Đổi hoa hồng 120k → 150k | 1 tuần code + test + deploy | 30 giây sửa config |
+| Thêm logic bậc thang (tier) | 3 tuần phát triển | Chọn Strategy "Tier" + nhập bậc |
+| Bật/tắt KPI | 1 tuần sửa code | Toggle switch |
+| Mở rộng sang ngành mới | 6 tháng phát triển lại | 2 tuần config providers mới |
 | Fix bug tính toán sai | 2 giờ debug + hotfix | 10 phút xem audit trail |
 | A/B test quy tắc mới | Không thể (quá rủi ro) | 1 giờ setup parallel run |
 
 ### Lợi Ích Cụ Thể
 
-#### 1. **Tốc Độ Phát Triển Nhanh 28x**
-- **Trước**: Thêm quy tắc khuyến mãi mới = 2 tuần
-- **Sau**: Thêm quy tắc khuyến mãi mới = 30 phút
-- **ROI**: Tiết kiệm ~70 giờ/tháng = ~$10,000/tháng
+#### 1. **Không Cần Code Cho 95% Thay Đổi**
+- **Trước**: Mỗi spa = 1 codebase riêng
+- **Sau**: 1 codebase + nhiều config
 
-#### 2. **Không Có Bug Tính Toán**
-- Mọi quyết định đều có **audit trail** (ai, làm gì, khi nào, tại sao)
-- Type-safe với TypeScript (lỗi phát hiện lúc compile, không phải runtime)
-- 66 tests tự động (regression-proof)
+#### 2. **Onboard Khách Hàng Mới < 1 Giờ**
+- Không cần developer
+- Admin vào Settings, config, done
+- Payroll chạy ngay
 
-#### 3. **Mở Rộng Dễ Dàng**
-- Thêm ngành mới = thêm policies mới
-- **Không cần sửa engine** (đã proven với 3 domains)
-- Plugin architecture (policies độc lập)
+#### 3. **Không Có Bug Do Sửa Code**
+- Config chỉ thay số, không thay logic
+- Logic đã test kỹ trong Providers
+- Type-safe với JSON schema validation
 
-#### 4. **Dễ Bảo Trì**
-- Rules là data (configuration), không phải code
-- Có thể thay đổi không cần deploy
-- Dễ debug (audit trail + structured logs)
+#### 4. **Dễ Mở Rộng Theo Chiều Dọc (Strategies)**
+- Cần thêm logic mới? → Thêm Strategy class
+- Các strategy cũ không bị ảnh hưởng
+- Khách hàng cũ không bị break
 
 ---
 
@@ -163,6 +313,81 @@ Bella cũng vậy:
 
 ## 🔧 4 THÀNH PHẦN CỐT LÕI
 
+### Kiến Trúc 3 Lớp: Engine → Provider → Configuration
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ LAYER 1: DECISION ENGINE (Universal - Không đổi)           │
+├─────────────────────────────────────────────────────────────┤
+│ • Đánh giá conditions                                       │
+│ • Thực thi actions                                          │
+│ • Tạo audit trail                                           │
+│ • < 10ms per rule                                           │
+└─────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│ LAYER 2: PROVIDERS (Building Blocks - 20-30 providers)     │
+├─────────────────────────────────────────────────────────────┤
+│ BaseSalaryProvider                                          │
+│ ├─ ProRataStrategy                                          │
+│ └─ FullMonthStrategy                                        │
+│                                                             │
+│ CommissionProvider                                          │
+│ ├─ FixedStrategy         ← 120k/session                    │
+│ ├─ PercentageStrategy    ← 5% revenue                      │
+│ ├─ ServiceStrategy       ← Khác nhau theo dịch vụ          │
+│ ├─ CategoryStrategy      ← Khác nhau theo loại khách       │
+│ ├─ RevenueStrategy       ← % theo tổng doanh thu           │
+│ └─ TierStrategy          ← Bậc thang                        │
+│                                                             │
+│ AttendanceProvider                                          │
+│ ├─ LateDeductionStrategy                                    │
+│ ├─ AbsentDeductionStrategy                                  │
+│ └─ LeaveDeductionStrategy                                   │
+│                                                             │
+│ KPIProvider                                                 │
+│ ├─ ThresholdStrategy     ← Đạt 30 ca → 1M                  │
+│ ├─ LinearStrategy        ← Mỗi ca +33k                     │
+│ └─ TierStrategy          ← Bậc thang                        │
+│                                                             │
+│ ... (15+ providers khác)                                    │
+└─────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│ LAYER 3: TENANT CONFIG (Per-tenant - Khác nhau)            │
+├─────────────────────────────────────────────────────────────┤
+│ Spa A:                                                      │
+│ {                                                           │
+│   "commission": {                                           │
+│     "enabled": true,                                        │
+│     "strategy": "fixed",                                    │
+│     "config": { "rate": 120000 }                            │
+│   },                                                        │
+│   "kpi": { "enabled": false }                               │
+│ }                                                           │
+│                                                             │
+│ Spa B:                                                      │
+│ {                                                           │
+│   "commission": {                                           │
+│     "enabled": true,                                        │
+│     "strategy": "tier",                                     │
+│     "config": {                                             │
+│       "tiers": [                                            │
+│         {"min":0,"max":10,"rate":100000},                   │
+│         {"min":11,"max":20,"rate":120000},                  │
+│         {"min":21,"max":999,"rate":150000}                  │
+│       ]                                                     │
+│     }                                                       │
+│   },                                                        │
+│   "kpi": {                                                  │
+│     "enabled": true,                                        │
+│     "strategy": "threshold",                                │
+│     "config": {"target": 30, "bonus": 1000000}             │
+│   }                                                         │
+│ }                                                           │
+└─────────────────────────────────────────────────────────────┘
+```
+
 ### 1. Decision Engine (Động Cơ Quyết Định) ⭐⭐⭐⭐⭐
 
 #### Là Gì?
@@ -211,7 +436,274 @@ const result = engine.evaluate(context, [rule]);
 
 ---
 
-### 2. Rule Engine (Công Cụ Luật Nghiệp Vụ) ⭐⭐⭐⭐⭐
+### 2. Configuration System ⭐⭐⭐⭐⭐
+
+#### Là Gì?
+Hệ thống quản lý cấu hình theo tenant, cho phép mỗi spa có config riêng mà không cần viết code mới.
+
+#### Database Schema
+
+```sql
+-- Bảng config chính
+CREATE TABLE tenant_payroll_config (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID NOT NULL REFERENCES tenants(id),
+  provider_key TEXT NOT NULL,  -- 'commission', 'kpi', 'attendance'...
+  enabled BOOLEAN DEFAULT true,
+  strategy TEXT,              -- 'fixed', 'tier', 'percentage'...
+  config JSONB NOT NULL,      -- Parameters cho strategy
+  version INTEGER DEFAULT 1,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_by UUID REFERENCES users(id),
+  UNIQUE(tenant_id, provider_key)
+);
+
+-- Index for fast lookup
+CREATE INDEX idx_tenant_config ON tenant_payroll_config(tenant_id, provider_key, enabled);
+
+-- Audit log
+CREATE TABLE tenant_payroll_config_history (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  config_id UUID REFERENCES tenant_payroll_config(id),
+  tenant_id UUID NOT NULL,
+  provider_key TEXT NOT NULL,
+  old_value JSONB,
+  new_value JSONB,
+  changed_by UUID REFERENCES users(id),
+  changed_at TIMESTAMPTZ DEFAULT NOW(),
+  reason TEXT
+);
+```
+
+#### Ví Dụ Data
+
+**Spa A: Fixed Commission 120k**
+```json
+{
+  "tenant_id": "spa-a-uuid",
+  "provider_key": "commission",
+  "enabled": true,
+  "strategy": "fixed",
+  "config": {
+    "rate": 120000,
+    "minSessions": 0
+  }
+}
+```
+
+**Spa B: Tier Commission**
+```json
+{
+  "tenant_id": "spa-b-uuid",
+  "provider_key": "commission",
+  "enabled": true,
+  "strategy": "tier",
+  "config": {
+    "tiers": [
+      {"min": 0, "max": 10, "rate": 100000},
+      {"min": 11, "max": 20, "rate": 120000},
+      {"min": 21, "max": 999, "rate": 150000}
+    ]
+  }
+}
+```
+
+**Spa C: KPI Disabled**
+```json
+{
+  "tenant_id": "spa-c-uuid",
+  "provider_key": "kpi",
+  "enabled": false,
+  "strategy": null,
+  "config": {}
+}
+```
+
+#### Config Service
+
+```typescript
+// src/services/payroll-config.service.ts
+export class PayrollConfigService {
+  private cache = new Map<string, any>();
+  
+  /**
+   * Load config for provider
+   */
+  async getProviderConfig(
+    tenantId: string, 
+    providerKey: string
+  ): Promise<ProviderConfig> {
+    const cacheKey = `${tenantId}:${providerKey}`;
+    
+    // Check cache (5 min TTL)
+    if (this.cache.has(cacheKey)) {
+      return this.cache.get(cacheKey);
+    }
+    
+    // Load from DB
+    const { data } = await supabase
+      .from('tenant_payroll_config')
+      .select('*')
+      .eq('tenant_id', tenantId)
+      .eq('provider_key', providerKey)
+      .eq('enabled', true)
+      .single();
+    
+    if (!data) {
+      return this.getDefaultConfig(providerKey);
+    }
+    
+    const config = {
+      enabled: data.enabled,
+      strategy: data.strategy,
+      config: data.config
+    };
+    
+    // Cache for 5 minutes
+    this.cache.set(cacheKey, config);
+    setTimeout(() => this.cache.delete(cacheKey), 5 * 60 * 1000);
+    
+    return config;
+  }
+  
+  /**
+   * Update config
+   */
+  async updateProviderConfig(
+    tenantId: string,
+    providerKey: string,
+    strategy: string,
+    config: any,
+    userId: string
+  ) {
+    // Save old value for audit
+    const { data: oldConfig } = await supabase
+      .from('tenant_payroll_config')
+      .select('*')
+      .eq('tenant_id', tenantId)
+      .eq('provider_key', providerKey)
+      .single();
+    
+    // Upsert new config
+    const { data: newConfig } = await supabase
+      .from('tenant_payroll_config')
+      .upsert({
+        tenant_id: tenantId,
+        provider_key: providerKey,
+        enabled: true,
+        strategy: strategy,
+        config: config,
+        updated_at: new Date().toISOString(),
+        updated_by: userId
+      })
+      .select()
+      .single();
+    
+    // Log to history
+    await supabase
+      .from('tenant_payroll_config_history')
+      .insert({
+        config_id: newConfig.id,
+        tenant_id: tenantId,
+        provider_key: providerKey,
+        old_value: oldConfig?.config || {},
+        new_value: config,
+        changed_by: userId,
+        reason: 'Updated via Settings UI'
+      });
+    
+    // Invalidate cache
+    this.cache.delete(`${tenantId}:${providerKey}`);
+  }
+}
+```
+
+#### Provider Sử Dụng Config
+
+```typescript
+// src/lib/decision-engine/providers/commission.provider.ts
+export class CommissionProvider extends BaseDecisionProvider {
+  async evaluate(context: PayrollContext) {
+    // Load config cho tenant này
+    const config = await configService.getProviderConfig(
+      context.tenantId,
+      'commission'
+    );
+    
+    // Nếu disabled → skip
+    if (!config.enabled) {
+      return {
+        commission: 0,
+        reason: 'Commission provider disabled for this tenant'
+      };
+    }
+    
+    // Chọn strategy dựa trên config
+    const strategy = this.getStrategy(config.strategy);
+    
+    // Strategy tính toán
+    const result = await strategy.calculate(
+      context.metrics.sessionsQuyDoi,
+      config.config
+    );
+    
+    return result;
+  }
+  
+  private getStrategy(strategyName: string): CommissionStrategy {
+    const strategies: Record<string, CommissionStrategy> = {
+      'fixed': new FixedCommissionStrategy(),
+      'tier': new TierCommissionStrategy(),
+      'percentage': new PercentageCommissionStrategy(),
+      'service': new ServiceCommissionStrategy()
+    };
+    
+    return strategies[strategyName] || strategies['fixed'];
+  }
+}
+
+// Strategy pattern
+interface CommissionStrategy {
+  calculate(sessions: number, config: any): Promise<CommissionResult>;
+}
+
+class FixedCommissionStrategy implements CommissionStrategy {
+  async calculate(sessions: number, config: { rate: number }) {
+    return {
+      commission: sessions * config.rate,
+      formula: `${sessions} sessions × ${config.rate}đ`
+    };
+  }
+}
+
+class TierCommissionStrategy implements CommissionStrategy {
+  async calculate(sessions: number, config: { tiers: Tier[] }) {
+    const tier = config.tiers.find(
+      t => sessions >= t.min && sessions <= t.max
+    );
+    
+    if (!tier) {
+      return { commission: 0, formula: 'No matching tier' };
+    }
+    
+    return {
+      commission: sessions * tier.rate,
+      formula: `${sessions} sessions × ${tier.rate}đ (Tier ${tier.min}-${tier.max})`
+    };
+  }
+}
+```
+
+#### Tại Sao Quan Trọng?
+- **No-code for 95% use cases**: Chỉ cần config, không cần viết code
+- **Multi-tenant**: Mỗi spa có config riêng
+- **Versioning**: Track changes, rollback được
+- **Type-safe**: JSON Schema validation
+
+---
+
+### 3. Rule Engine (Công Cụ Luật Nghiệp Vụ) ⭐⭐⭐⭐⭐
 
 #### Là Gì?
 Ngôn ngữ định nghĩa business logic dưới dạng declarative rules.
@@ -263,7 +755,7 @@ Ngôn ngữ định nghĩa business logic dưới dạng declarative rules.
 
 ---
 
-### 3. Business Process Layer (Lớp Quy Trình) ⭐⭐⭐⭐⭐
+### 4. Business Process Layer (Lớp Quy Trình) ⭐⭐⭐⭐⭐
 
 #### Là Gì?
 Compose nhiều policies thành quy trình nghiệp vụ hoàn chỉnh.
@@ -347,7 +839,7 @@ class PayrollProcess extends BaseBusinessProcess {
 
 ---
 
-### 4. Policy Registry (Kho Chính Sách) ⭐⭐⭐⭐⭐
+### 5. Policy Registry (Kho Chính Sách) ⭐⭐⭐⭐
 
 #### Là Gì?
 Hệ thống quản lý và discover policies động.
