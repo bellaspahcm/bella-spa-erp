@@ -93,7 +93,14 @@ export default function KTVEarningsPage() {
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
+      console.log('[KTVEarnings] Fetching data for month:', selectedMonth);
       const data = await getKTVEarningsPageData(selectedMonth);
+      console.log('[KTVEarnings] Data loaded successfully:', {
+        hasEarnings: !!data?.earnings,
+        sessionsCount: data?.sessions?.length || 0,
+        hasLeaderboard: !!data?.leaderboardData,
+        hasSalaryData: !!data?.salaryData,
+      });
       if (data) {
         setEarnings(data.earnings);
         setDetails(data.sessions as unknown as EarningsSessionDetail[]);
@@ -103,6 +110,11 @@ export default function KTVEarningsPage() {
       }
     } catch (err) {
       console.error('[KTVEarnings] Error loading data:', err);
+      console.error('[KTVEarnings] Error stack:', err instanceof Error ? err.stack : 'No stack');
+      console.error('[KTVEarnings] Error details:', {
+        message: err instanceof Error ? err.message : String(err),
+        selectedMonth,
+      });
       toast.error('Lỗi khi tải dữ liệu thu nhập');
     } finally {
       setIsLoading(false);
