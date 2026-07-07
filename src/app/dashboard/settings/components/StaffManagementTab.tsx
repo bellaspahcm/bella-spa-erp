@@ -326,8 +326,8 @@ export default function StaffManagementTab() {
                       <div
                         onClick={() => handleToggleStatus(user.id, user.status)}
                         className={cn(
-                          "w-12 h-6 rounded-full p-1 transition-all cursor-pointer mx-auto",
-                          user.status === "active" ? "bg-emerald-500" : "bg-slate-200",
+                          "w-12 h-6 rounded-full p-1 transition-all cursor-pointer mx-auto border border-transparent",
+                          user.status === "active" ? "bg-emerald-500" : "bg-slate-300 border-slate-400/20",
                         )}
                       >
                         <div

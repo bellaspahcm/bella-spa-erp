@@ -204,7 +204,7 @@ function SettingsContent() {
             Cấu hình hệ thống {settingsBrandName}
           </p>
         </div>
-        {(activeTab === "general" || activeTab === "salary") && (
+        {activeTab === "general" && (
           <button
             onClick={handleSave}
             disabled={isSaving || isLoadingSettings}

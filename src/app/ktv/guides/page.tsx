@@ -14,6 +14,7 @@ Loader2
 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect,useState } from 'react';
+import { KtvBottomNav } from '../dashboard/components/KtvBottomNav';
 
 export default function KtvGuidesPage() {
   const [guides, setGuides] = useState<GuideListItem[]>([]);
@@ -101,21 +102,7 @@ export default function KtvGuidesPage() {
               ))}
             </div>
 
-            {/* Bottom Nav inside Hub view */}
-            <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-t border-slate-100 px-8 py-4 flex justify-between items-center z-40">
-              <Link href="/ktv/dashboard" className="text-slate-300 hover:text-primary flex flex-col items-center gap-1 transition-colors">
-                <Clock className="w-6 h-6" />
-                <span className="text-[10px] font-black uppercase">Lịch ca</span>
-              </Link>
-              <Link href="/ktv/earnings" className="text-slate-300 hover:text-primary flex flex-col items-center gap-1 transition-colors">
-                <DollarSign className="w-6 h-6" />
-                <span className="text-[10px] font-black uppercase">Thu nhập</span>
-              </Link>
-              <Link href="/ktv/leaderboard" className="text-slate-300 hover:text-primary flex flex-col items-center gap-1 transition-colors">
-                <CalendarIcon className="w-6 h-6" />
-                <span className="text-[10px] font-black uppercase">Cá nhân</span>
-              </Link>
-            </div>
+            <KtvBottomNav />
           </motion.div>
         ) : (
           // ─── READER VIEW ────────────────────────────────────────────────────

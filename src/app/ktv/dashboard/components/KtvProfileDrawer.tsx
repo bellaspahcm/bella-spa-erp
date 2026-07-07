@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import Link from 'next/link';
 import { KeyRound, LogOut, Mail, X } from 'lucide-react';
@@ -109,6 +110,23 @@ export function KtvProfileDrawer({
   onTriggerSync,
 }: KtvProfileDrawerProps) {
   const vocab = useModuleVocabulary();
+  const [moduleKey, setModuleKey] = useState<string>('pending');
+
+  useEffect(() => {
+    if (isOpen) {
+      const key = document.documentElement.getAttribute('data-tenant-module') || 'pending';
+      setModuleKey(key);
+    }
+  }, [isOpen]);
+
+  const primaryBtnStyle = {
+    backgroundColor: moduleKey === 'beauty_spa' 
+      ? '#074e44' 
+      : moduleKey === 'baby_care' 
+      ? '#be123c' 
+      : '#0f172a',
+    color: '#ffffff',
+  };
   
   return (
     <AnimatePresence>
@@ -116,17 +134,17 @@ export function KtvProfileDrawer({
         <>
           <motion.div
             initial={{ opacity: 0 }}
-            animate={{ opacity: 0.5 }}
+            animate={{ opacity: 0.7 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50"
+            className="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-[90]"
           />
           <motion.div
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed bottom-0 left-0 right-0 bg-white rounded-t-[40px] shadow-2xl p-6 z-50 max-h-[85vh] overflow-y-auto border-t border-slate-100 flex flex-col"
+            className="fixed bottom-0 left-0 right-0 bg-white rounded-t-[40px] shadow-2xl p-6 z-[95] max-h-[85vh] overflow-y-auto border-t border-slate-100 flex flex-col"
           >
             <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-6" />
 
@@ -140,7 +158,7 @@ export function KtvProfileDrawer({
               </button>
             </div>
 
-            <div className="bg-slate-900 text-white p-6 rounded-[32px] mb-6 relative overflow-hidden shadow-xl shadow-slate-200 shrink-0">
+            <div className="bg-gradient-to-br from-slate-900 to-slate-950 text-white p-6 rounded-[32px] mb-6 relative overflow-hidden border border-white/5 shadow-xl shrink-0">
               <div className="absolute top-[-20%] right-[-10%] w-32 h-32 bg-rose-500/20 rounded-full blur-[40px]" />
               <div className="flex items-center gap-4 relative z-10">
                 <div className="w-16 h-16 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20 text-white font-black text-2xl">
@@ -148,7 +166,7 @@ export function KtvProfileDrawer({
                 </div>
                 <div>
                   <h3 className="font-black text-xl">{user?.full_name || vocab.worker.singular}</h3>
-                  <span className="bg-rose-500 text-white text-[9px] font-black px-2.5 py-1 rounded-full uppercase tracking-widest mt-1.5 inline-block">
+                  <span className="bg-rose-600 text-white text-[9px] font-black px-2.5 py-1 rounded-full uppercase tracking-widest mt-1.5 inline-block">
                     {user?.role === 'ktv' ? vocab.worker.singular : user?.role || vocab.worker.singular}
                   </span>
                 </div>
@@ -261,23 +279,25 @@ export function KtvProfileDrawer({
               <Link
                 href="/ktv/guides"
                 onClick={onClose}
-                className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all active:scale-95 border border-slate-200/80 text-center"
+                className="w-full ktv-profile-btn-secondary py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all active:scale-95 text-center"
               >
                 📖 Sổ tay & Hướng dẫn
               </Link>
               <button
                 onClick={onOpenPassword}
-                className="w-full bg-slate-900 hover:bg-slate-800 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-slate-100 dark:shadow-none"
+                style={primaryBtnStyle}
+                className="w-full py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-slate-100/50 dark:shadow-none"
               >
-                <KeyRound className="w-4 h-4" />
-                Đổi mật khẩu
+                <KeyRound className="w-4 h-4 text-white" style={{ color: '#ffffff' }} />
+                <span className="text-white" style={{ color: '#ffffff' }}>Đổi mật khẩu</span>
               </button>
               <button
                 onClick={onLogout}
-                className="w-full bg-slate-900 hover:bg-slate-800 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-slate-200 dark:shadow-none"
+                style={primaryBtnStyle}
+                className="w-full py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-slate-200/50 dark:shadow-none"
               >
-                <LogOut className="w-4 h-4" />
-                Đăng xuất tài khoản
+                <LogOut className="w-4 h-4 text-white" style={{ color: '#ffffff' }} />
+                <span className="text-white" style={{ color: '#ffffff' }}>Đăng xuất tài khoản</span>
               </button>
             </div>
           </motion.div>

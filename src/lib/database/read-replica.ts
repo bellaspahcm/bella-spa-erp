@@ -15,8 +15,8 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database.types';
 
 // Connection strings từ environment
-const PRIMARY_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const PRIMARY_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
+const PRIMARY_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const PRIMARY_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const REPLICA_URL = process.env.SUPABASE_READ_REPLICA_URL;
 const REPLICA_KEY = process.env.SUPABASE_READ_REPLICA_KEY;
 
@@ -34,6 +34,11 @@ let replicaClient: SupabaseClient<Database> | null = null;
  */
 export function getPrimaryClient(): SupabaseClient<Database> {
   if (!primaryClient) {
+    if (!PRIMARY_URL || !PRIMARY_KEY) {
+      throw new Error(
+        'Missing Supabase credentials. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY (or NEXT_PUBLIC_SUPABASE_ANON_KEY) environment variables.'
+      );
+    }
     primaryClient = createClient<Database>(PRIMARY_URL, PRIMARY_KEY, {
       auth: {
         persistSession: false, // Server-side, no session persistence
@@ -74,6 +79,9 @@ export function getReplicaClient(): SupabaseClient<Database> {
 /**
  * Query routing utility
  * Automatically route queries to appropriate database
+ * 
+ * Note: Using getter functions instead of direct properties to lazy-initialize clients
+ * This prevents build-time crashes when env vars are not available yet
  */
 export const db = {
   /**
@@ -83,7 +91,9 @@ export const db = {
    * - Transactional queries
    * - Time-sensitive reads
    */
-  primary: getPrimaryClient(),
+  get primary() {
+    return getPrimaryClient();
+  },
 
   /**
    * Read replica - Use for:
@@ -95,7 +105,9 @@ export const db = {
    * 
    * Note: Replica has ~100ms replication lag from primary
    */
-  replica: getReplicaClient(),
+  get replica() {
+    return getReplicaClient();
+  },
 };
 
 /**

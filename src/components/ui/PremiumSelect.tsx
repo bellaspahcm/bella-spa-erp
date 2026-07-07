@@ -91,9 +91,8 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
           <span 
             className={cn(
               "text-sm font-semibold truncate",
-              selectedOption ? "text-slate-800" : "text-slate-700"
+              selectedOption ? "text-slate-800" : "text-slate-500"
             )}
-            style={{ color: '#1e293b' }}
           >
             {selectedOption ? selectedOption.label : placeholder}
           </span>
@@ -103,7 +102,6 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
             "w-4 h-4 text-slate-400 transition-transform duration-300 shrink-0",
             isOpen && "rotate-180 text-primary/70"
           )} 
-          style={{ color: '#94a3b8' }}
         />
       </button>
 

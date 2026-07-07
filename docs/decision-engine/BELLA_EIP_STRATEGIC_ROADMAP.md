@@ -71,69 +71,171 @@ Replay success: 99.98%
 
 ---
 
-### Phase B: Business Integration ⭐⭐⭐ (Priority 1 - Jul-Sep 2026)
+### Phase B: Platform Foundation ⭐⭐⭐⭐⭐ (Priority 1 - Jul-Oct 2026)
 
-**Objective:** Integrate Decision Engine into 5-10 core business processes to collect **real production data**
+**Objective:** Complete Decision Engine foundation before scaling to multiple business domains
 
-**Target Integrations:**
+**Revised Assessment (9/10):**
+> Roadmap is no longer just "Decision Engine" - it's a **Business Rules Management System (BRMS) + Decision Intelligence Platform**.  
+> This is **correct direction** for long-term, but we must prioritize **foundation** before **polish**.
 
-| # | Business Process | Decision Type | Expected Volume/Day | Priority |
+**3-Tier Priority System:**
+
+#### Priority 1: Core Foundation (Week 1-10) ⭐⭐⭐⭐⭐ MUST-HAVE
+**Timeline:** Jul-Sep 2026
+
+Components that are **non-negotiable** for a functioning Decision Platform:
+
+| # | Component | Why Critical | Timeline |
+|---|-----------|--------------|----------|
+| 1 | **Policy Registry** | Centralized policy management with governance | Week 1-2 |
+| 2 | **Rule Registry** | Track rule usage, identify dead rules | Week 2-3 |
+| 3 | **Policy Versioning** | Git-like time-travel replay | Week 3-4 |
+| 4 | **Shadow Mode** | Test new policies without affecting production | Week 4-5 |
+| 5 | **Explainability** | Human-readable decision reasons | Week 5-6 |
+| 6 | **Decision Context** | Auto-inject business context | Week 6-8 |
+| 7 | **Action Engine** | Separate decisions from side-effects | Week 8-10 |
+
+**Success Metrics:**
+- ✅ All policies centralized in registry with governance metadata
+- ✅ Policy versioning with Git-like snapshots
+- ✅ Shadow mode tested with Leave Policy v2.0
+- ✅ 100% decisions have human-readable explanations
+- ✅ Context auto-injected (zero manual queries in policies)
+- ✅ All side-effects moved to Action Engine
+
+**Deliverable:** Functional Decision Platform (60-70% complete)
+
+#### Priority 2: Business Foundation (Week 11-14) ⭐⭐⭐⭐ SHOULD-HAVE
+**Timeline:** Sep-Oct 2026
+
+Components needed when **multiple policies** start interacting:
+
+| # | Component | Why Needed | Timeline |
+|---|-----------|------------|----------|
+| 1 | **Decision Pipeline** | Orchestrate: Input → Normalize → Context → Policy → Merge → Action | Week 11 |
+| 2 | **Composite Policy** | Combine multiple policies (Pricing + Promotion + Capacity) | Week 11-12 |
+| 3 | **Conflict Resolver** | Handle overlapping discounts/rules | Week 12-13 |
+| 4 | **Decision Flow** | Configurable policy chains (VIP flow vs Regular flow) | Week 13-14 |
+| 5 | **Decision Cache** | Cache context & results for performance | Week 14 |
+
+**Success Metrics:**
+- ✅ Clean pipeline with pluggable steps
+- ✅ Composite policies used for complex flows
+- ✅ Conflict resolution working (max, stack, priority strategies)
+- ✅ Multiple flows configurable without code changes
+- ✅ Cache hit rate > 80%, latency reduced 50%+
+
+**Deliverable:** Complete Decision Platform (90-95% complete)
+
+#### Priority 3: Enterprise Enhancement ⭐⭐⭐ NICE-TO-HAVE
+**Timeline:** Phase D+ (Jan 2027+)
+
+**Deferred to Phase D+ (after business integration):**
+- Rule Coverage Dashboard
+- Decision Simulator
+- Decision Graph (CEO visual)
+- Rule DSL (compiler-level complexity)
+- Expression Engine
+- Visual Rule Builder
+- Event Bus (only if microservices)
+- AI Rule Recommendation
+
+**Why defer:** These are **visualization/UX enhancements**, not core capability. Build substance first, polish later.
+
+**Timeline:** 14 weeks (Jul-Oct 2026)
+
+**After Phase B, Adding New Policies Becomes Easy:**
+```typescript
+// Example: Adding Pricing Policy (after foundation)
+const pricingPolicy: Policy = {
+  id: 'pricing_v1',
+  name: 'Dynamic Pricing Policy',
+  version: '1.0.0',
+  rules: [
+    {
+      id: 'vip_discount',
+      businessName: 'Giảm giá khách VIP',
+      businessDescription: 'Khách VIP trên 100 triệu được giảm 10%',
+      condition: 'customer.tier == "VIP"',
+      action: { discount: 10 },
+      priority: 90,
+      riskLevel: 'low'
+    }
+  ]
+};
+
+// That's it! Registry, versioning, shadow mode, explainability all work automatically
+```
+
+---
+
+### Phase C: Business Integration (Oct-Dec 2026)
+
+**Objective:** NOW integrate into 5-10 business processes (after foundation is ready)
+
+**Why Wait Until Phase C:**
+> With Policy Registry + Versioning + Shadow Mode complete, adding new policies is just configuration, not architecture work.
+
+**Quick Policy Addition (after foundation):**
+```typescript
+// Week 1: Add Pricing Policy
+registerPolicy(pricingPolicyV1);
+testInShadowMode(pricingPolicyV1, days: 7);
+promoteToProduction(pricingPolicyV1);
+
+// Week 2: Add Discount Policy  
+registerPolicy(discountPolicyV1);
+testInShadowMode(discountPolicyV1, days: 7);
+promoteToProduction(discountPolicyV1);
+
+// Week 3: Add Inventory Policy
+// ... same pattern
+```
+
+**Target Integrations (Same as Original Phase B):**
+
+| # | Business Process | Decision Type | Expected Volume/Day | Timeline |
 |---|------------------|---------------|---------------------|----------|
-| 1 | **Leave Approval** | Approve/Reject leave requests | 50-100 | ✅ DONE |
-| 2 | **Booking Pricing** | Dynamic pricing based on demand | 200-500 | 🔵 HIGH |
-| 3 | **Discount Approval** | Multi-tier discount validation | 100-200 | 🔵 HIGH |
-| 4 | **Payroll Calculation** | Salary component calculation | 2,000-5,000 (monthly) | 🔵 HIGH |
-| 5 | **Commission Calculation** | KTV commission rules | 1,000-2,000 (monthly) | 🟡 MEDIUM |
-| 6 | **KPI Evaluation** | Performance scoring | 500-1,000 (monthly) | 🟡 MEDIUM |
-| 7 | **Inventory Reorder** | Auto-reorder decision | 50-100 | 🟡 MEDIUM |
-| 8 | **Procurement Approval** | Purchase order approval | 20-50 | ⚪ LOW |
-| 9 | **CRM Scoring** | Customer tier classification | 100-200 | ⚪ LOW |
-| 10 | **Overbooking Detection** | Prevent double-booking | 500-1,000 | 🔵 HIGH |
+| 1 | **Leave Approval** | Approve/Reject leave requests | 50-100 | ✅ DONE (Phase A) |
+| 2 | **Booking Pricing** | Dynamic pricing based on demand | 200-500 | Week 1-2 |
+| 3 | **Discount Approval** | Multi-tier discount validation | 100-200 | Week 2-3 |
+| 4 | **Payroll Calculation** | Salary component calculation | 2,000-5,000 (monthly) | Week 3-4 |
+| 5 | **Commission Calculation** | KTV commission rules | 1,000-2,000 (monthly) | Week 4-5 |
+| 6 | **KPI Evaluation** | Performance scoring | 500-1,000 (monthly) | Week 5-6 |
+| 7 | **Inventory Reorder** | Auto-reorder decision | 50-100 | Week 6-7 |
+| 8 | **Procurement Approval** | Purchase order approval | 20-50 | Week 7-8 |
+| 9 | **CRM Scoring** | Customer tier classification | 100-200 | Week 8-9 |
+| 10 | **Overbooking Detection** | Prevent double-booking | 500-1,000 | Week 9-10 |
+
+**With Foundation Complete:**
+- Each integration: 1 week (not 3 weeks)
+- Shadow test: 2-3 days (automated)
+- Zero architecture changes
+- All policies use same Registry, Versioning, Shadow Mode
 
 **Success Metrics:**
-- ✅ 5 integrations complete (minimum)
-- ✅ 10,000+ decisions/month collected
-- ✅ Zero business logic blocked by audit failures
-- ✅ Policy coverage > 80%
+- ✅ 10 policies deployed in 10 weeks (vs 6 months without foundation)
+- ✅ 100,000+ decisions/month collected
+- ✅ Policy coverage > 90% (tracked by Rule Coverage Dashboard)
+- ✅ All decisions explainable to CEO
 
-**Timeline:** 3 months (Jul-Sep 2026)
+**Timeline:** 3 months (Oct-Dec 2026)
 
-**Estimated Total Volume:** 20,000-50,000 decisions/day after full integration
+**Estimated Total Volume:** 50,000-100,000 decisions/day
 
 ---
 
-### Phase C: Data Collection & Baseline (Oct-Nov 2026)
+### Phase D: Operations Console 📊 (Jan 2027)
 
-**Objective:** Operate at scale and establish baseline metrics
+**Objective:** Build "Evidence Console" with 100k+ real decisions to prove intelligence
 
-**Activities:**
-- Run all 10 integrations in production for 2 months
-- Collect 100,000+ real decisions
-- Monitor error patterns
-- Identify slow rules
-- Detect policy conflicts
-- Measure confidence distribution
-- Track replay determinism
-
-**Success Metrics:**
-- ✅ 100,000+ decisions collected
-- ✅ Baseline metrics documented
-- ✅ Rule coverage > 90%
-- ✅ Identified top 10 slow rules
-- ✅ Zero critical errors
-
-**Timeline:** 2 months (Oct-Nov 2026)
-
-**Deliverable:** Baseline Report with real production data
-
----
-
-### Phase D: Operations Console 📊 (Dec 2026 - Jan 2027)
-
-**Objective:** Build "Evidence Console" with real data to prove intelligence
+**Why Phase D (not sooner):**
+> Dashboard without data = Pretty UI  
+> Dashboard with 100k decisions = Intelligence Platform
 
 **Now the dashboard shows:**
-- 145,382 decisions/day (real data)
+- 145,382 decisions/day (real data from 10 policies)
 - Policy coverage 98% (proven)
 - Confidence trends (observable)
 - Rule performance (measurable)
@@ -151,7 +253,7 @@ Replay success: 99.98%
 - ✅ Operations team can debug without developers
 - ✅ Every metric backed by 100k+ real decisions
 
-**Timeline:** 1 month (Dec 2026 - Jan 2027)
+**Timeline:** 1 month (Jan 2027)
 
 **Deliverable:** Production Operations Console with real intelligence
 

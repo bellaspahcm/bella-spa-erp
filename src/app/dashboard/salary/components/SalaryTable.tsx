@@ -16,6 +16,7 @@ Star
 import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
 import { useState } from 'react';
 import { SalaryDetailModal } from '@/components/salary/SalaryDetailModal';
+import { useRouter } from 'next/navigation';
 
 interface SalaryTableProps {
   filteredSalaries: KtvSalaryRecord[];
@@ -42,6 +43,7 @@ export default function SalaryTable({
   handleExport,
   currentMonth,
 }: SalaryTableProps) {
+  const router = useRouter();
   const vocab = useModuleVocabulary();
   const isNotKtv = currentUser?.role?.toLowerCase() !== 'ktv';
   
@@ -177,7 +179,7 @@ export default function SalaryTable({
                   {isNotKtv && s.status !== 'approved' && (
                     <div className="flex gap-2">
                       <button 
-                        onClick={() => setViewingSalary(s)}
+                        onClick={() => router.push(`/dashboard/payroll/employees/${s.id}/detail?month=${currentMonth}`)}
                         className="p-3 bg-blue-50 text-blue-500 hover:bg-blue-500 hover:text-white rounded-xl transition-all shadow-sm"
                         title="Xem chi tiết lương"
                       >
@@ -213,7 +215,7 @@ export default function SalaryTable({
                   {!isNotKtv && (
                     <div className="flex gap-2">
                       <button 
-                        onClick={() => setViewingSalary(s)}
+                        onClick={() => router.push(`/dashboard/payroll/employees/${s.id}/detail?month=${currentMonth}`)}
                         className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white rounded-xl transition-all font-bold text-xs"
                         title="Xem chi tiết lương"
                       >
