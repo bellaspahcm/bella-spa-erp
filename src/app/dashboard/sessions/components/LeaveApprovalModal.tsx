@@ -105,21 +105,20 @@ export function LeaveApprovalModal({ isOpen, onClose, onSuccess, userRole }: Lea
         const response = await getLeaveDecisionRecommendation(leave.id);
         console.log('[LeaveApprovalModal] Decision response:', response);
         
-        if (response.success && response.recommendation) {
-          // Extract recommendation from response
-          const rec = response.recommendation;
-          setRecommendation({
-            outcome: rec.outcome,
-            explanation: rec.explanation || rec.message?.description || 'Không có giải thích',
-            executionTime: Math.round(rec.executionTimeMs || 0),
-            policyId: 'leave-approval-v1',
-            policyVersion: '1.0.0'
-          });
-        } else {
-          // Server returned error
+        // Check if response has error
+        if (response.error) {
           setRecommendation({ 
             error: true, 
-            message: response.error || 'Không thể tải khuyến nghị' 
+            message: response.message || 'Không thể tải khuyến nghị' 
+          });
+        } else if (response.outcome) {
+          // Success - response is already in correct format
+          setRecommendation(response);
+        } else {
+          // Unknown format
+          setRecommendation({ 
+            error: true, 
+            message: 'Định dạng response không hợp lệ' 
           });
         }
       } catch (decisionErr) {
