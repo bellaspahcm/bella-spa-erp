@@ -281,6 +281,10 @@ SELECT
 FROM tenants
 ON CONFLICT (tenant_id, provider_key) DO NOTHING;
 
+-- Grant permissions to authenticated role (for app access)
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.tenant_payroll_config TO authenticated, service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.tenant_payroll_config_history TO authenticated, service_role;
+
 -- =====================================================
 -- VERIFICATION QUERY
 -- =====================================================
