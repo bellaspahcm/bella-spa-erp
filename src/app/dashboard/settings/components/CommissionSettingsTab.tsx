@@ -13,12 +13,13 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Loader2, Save, DollarSign, Percent, Users, Clock } from 'lucide-react';
+import { Loader2, Save, DollarSign, Percent, Users, Clock, Coins } from 'lucide-react';
 import { toast } from 'sonner';
 import { saveTenantSettings, getTenantSettings } from '@/services/tenant-actions';
 import { cn } from '@/lib/utils';
 import type { CommissionConfig } from '@/lib/business-rules/commission';
 import { DEFAULT_COMMISSION_CONFIG } from '@/lib/business-rules/commission';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 interface CommissionSettingsTabProps {
   className?: string;
@@ -139,22 +140,25 @@ export default function CommissionSettingsTab({ className }: CommissionSettingsT
   }
 
   return (
-    <div className={cn('space-y-6', className)}>
+    <div className={cn('space-y-8', className)}>
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-semibold text-slate-900">Cấu hình hoa hồng</h2>
-          <p className="text-sm text-slate-500 mt-1">
-            Thiết lập mức hoa hồng mặc định cho Beauty Spa
-          </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-2">
+        <div className="flex items-center gap-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <Coins className="h-6 w-6" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-foreground">Cấu hình hoa hồng</h2>
+            <p className="text-sm font-semibold text-muted-foreground">
+              Thiết lập mức hoa hồng mặc định cho Beauty Spa
+            </p>
+          </div>
         </div>
         <button
           onClick={handleSave}
           disabled={isSaving}
           className={cn(
-            'flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors',
-            'bg-blue-600 text-white hover:bg-blue-700',
-            'disabled:opacity-50 disabled:cursor-not-allowed'
+            'inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-3 text-sm font-black uppercase tracking-wider text-white shadow-lg shadow-primary/20 hover:bg-primary-hover active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed'
           )}
         >
           {isSaving ? (
@@ -172,27 +176,34 @@ export default function CommissionSettingsTab({ className }: CommissionSettingsT
       </div>
 
       {/* Service Commission Section */}
-      <div className="bg-white rounded-lg border border-slate-200 p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <DollarSign className="h-5 w-5 text-blue-600" />
-          <h3 className="font-semibold text-slate-900">Hoa hồng dịch vụ</h3>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Loại hoa hồng
-            </label>
-            <select
-              value={serviceType}
-              onChange={(e) => setServiceType(e.target.value as CommissionType)}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="fixed">Số tiền cố định (VND)</option>
-              <option value="percentage">Phần trăm (%)</option>
-            </select>
+      <div className="border border-slate-100/70 bg-white/60 p-6 rounded-[2rem] shadow-sm backdrop-blur-sm space-y-6">
+        <div className="flex items-center gap-3 pb-2 border-b border-slate-100/50">
+          <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
+            <DollarSign className="h-5 w-5" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
+            <h3 className="text-base font-black text-slate-900 uppercase tracking-wide">Hoa hồng dịch vụ</h3>
+            <p className="text-xs text-slate-500 font-semibold">Cấu hình mức hoa hồng mặc định cho các dịch vụ spa</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
+              Loại hoa hồng
+            </label>
+            <PremiumSelect
+              value={serviceType}
+              onChange={(val) => setServiceType(val as CommissionType)}
+              options={[
+                { value: 'fixed', label: 'Số tiền cố định (VND)' },
+                { value: 'percentage', label: 'Phần trăm (%)' },
+              ]}
+              placeholder="Chọn loại hoa hồng"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
               Giá trị
             </label>
             <div className="relative">
@@ -200,16 +211,16 @@ export default function CommissionSettingsTab({ className }: CommissionSettingsT
                 type="number"
                 value={serviceValue}
                 onChange={(e) => setServiceValue(e.target.value)}
-                className="w-full px-3 py-2 pr-10 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-2xl border border-slate-100 bg-slate-50/60 px-5 py-3.5 pr-14 text-sm font-bold text-slate-900 outline-none transition focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/10"
                 placeholder={serviceType === 'fixed' ? '150000' : '10'}
               />
-              <span className="absolute right-3 top-2.5 text-slate-400 text-sm">
+              <span className="absolute right-5 top-1/2 -translate-y-1/2 font-black text-slate-400 text-sm">
                 {serviceType === 'fixed' ? 'đ' : '%'}
               </span>
             </div>
           </div>
         </div>
-        <p className="text-xs text-slate-500 mt-2">
+        <p className="text-xs font-semibold text-slate-500 mt-2">
           Ví dụ: {serviceType === 'fixed' 
             ? `${Number(serviceValue).toLocaleString('vi-VN')}đ mỗi dịch vụ` 
             : `${serviceValue}% trên giá trị dịch vụ`}
@@ -217,27 +228,34 @@ export default function CommissionSettingsTab({ className }: CommissionSettingsT
       </div>
 
       {/* Product Sales Commission Section */}
-      <div className="bg-white rounded-lg border border-slate-200 p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Percent className="h-5 w-5 text-green-600" />
-          <h3 className="font-semibold text-slate-900">Hoa hồng bán sản phẩm</h3>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Loại hoa hồng
-            </label>
-            <select
-              value={productType}
-              onChange={(e) => setProductType(e.target.value as CommissionType)}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-            >
-              <option value="fixed">Số tiền cố định (VND)</option>
-              <option value="percentage">Phần trăm (%)</option>
-            </select>
+      <div className="border border-slate-100/70 bg-white/60 p-6 rounded-[2rem] shadow-sm backdrop-blur-sm space-y-6">
+        <div className="flex items-center gap-3 pb-2 border-b border-slate-100/50">
+          <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
+            <Percent className="h-5 w-5" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
+            <h3 className="text-base font-black text-slate-900 uppercase tracking-wide">Hoa hồng bán sản phẩm</h3>
+            <p className="text-xs text-slate-500 font-semibold">Cấu hình mức hoa hồng mặc định cho việc bán các sản phẩm spa</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
+              Loại hoa hồng
+            </label>
+            <PremiumSelect
+              value={productType}
+              onChange={(val) => setProductType(val as CommissionType)}
+              options={[
+                { value: 'fixed', label: 'Số tiền cố định (VND)' },
+                { value: 'percentage', label: 'Phần trăm (%)' },
+              ]}
+              placeholder="Chọn loại hoa hồng"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
               Giá trị
             </label>
             <div className="relative">
@@ -245,16 +263,16 @@ export default function CommissionSettingsTab({ className }: CommissionSettingsT
                 type="number"
                 value={productValue}
                 onChange={(e) => setProductValue(e.target.value)}
-                className="w-full px-3 py-2 pr-10 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full rounded-2xl border border-slate-100 bg-slate-50/60 px-5 py-3.5 pr-14 text-sm font-bold text-slate-900 outline-none transition focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/10"
                 placeholder={productType === 'fixed' ? '50000' : '10'}
               />
-              <span className="absolute right-3 top-2.5 text-slate-400 text-sm">
+              <span className="absolute right-5 top-1/2 -translate-y-1/2 font-black text-slate-400 text-sm">
                 {productType === 'fixed' ? 'đ' : '%'}
               </span>
             </div>
           </div>
         </div>
-        <p className="text-xs text-slate-500 mt-2">
+        <p className="text-xs font-semibold text-slate-500 mt-2">
           Ví dụ: {productType === 'fixed' 
             ? `${Number(productValue).toLocaleString('vi-VN')}đ mỗi sản phẩm` 
             : `${productValue}% trên doanh số bán hàng`}
@@ -262,14 +280,20 @@ export default function CommissionSettingsTab({ className }: CommissionSettingsT
       </div>
 
       {/* Position Multipliers Section */}
-      <div className="bg-white rounded-lg border border-slate-200 p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Users className="h-5 w-5 text-purple-600" />
-          <h3 className="font-semibold text-slate-900">Hệ số vị trí</h3>
-        </div>
-        <div className="grid grid-cols-3 gap-4">
+      <div className="border border-slate-100/70 bg-white/60 p-6 rounded-[2rem] shadow-sm backdrop-blur-sm space-y-6">
+        <div className="flex items-center gap-3 pb-2 border-b border-slate-100/50">
+          <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
+            <Users className="h-5 w-5" />
+          </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
+            <h3 className="text-base font-black text-slate-900 uppercase tracking-wide">Hệ số vị trí</h3>
+            <p className="text-xs text-slate-500 font-semibold">Điều chỉnh hệ số nhân hoa hồng dựa theo cấp bậc chức vụ</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <div className="space-y-2">
+            <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
               Junior (Nhân viên mới)
             </label>
             <input
@@ -277,11 +301,11 @@ export default function CommissionSettingsTab({ className }: CommissionSettingsT
               step="0.1"
               value={juniorMultiplier}
               onChange={(e) => setJuniorMultiplier(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full rounded-2xl border border-slate-100 bg-slate-50/60 px-5 py-3.5 text-sm font-bold text-slate-900 outline-none transition focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/10"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
+          <div className="space-y-2">
+            <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
               Senior (Chính thức)
             </label>
             <input
@@ -289,11 +313,11 @@ export default function CommissionSettingsTab({ className }: CommissionSettingsT
               step="0.1"
               value={seniorMultiplier}
               onChange={(e) => setSeniorMultiplier(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full rounded-2xl border border-slate-100 bg-slate-50/60 px-5 py-3.5 text-sm font-bold text-slate-900 outline-none transition focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/10"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
+          <div className="space-y-2">
+            <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
               Lead (Trưởng ca)
             </label>
             <input
@@ -301,24 +325,30 @@ export default function CommissionSettingsTab({ className }: CommissionSettingsT
               step="0.1"
               value={leadMultiplier}
               onChange={(e) => setLeadMultiplier(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full rounded-2xl border border-slate-100 bg-slate-50/60 px-5 py-3.5 text-sm font-bold text-slate-900 outline-none transition focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/10"
             />
           </div>
         </div>
-        <p className="text-xs text-slate-500 mt-2">
+        <p className="text-xs font-semibold text-slate-500 mt-2">
           Hệ số nhân hoa hồng theo vị trí. Junior: {juniorMultiplier}x, Senior: {seniorMultiplier}x (+{Math.round((Number(seniorMultiplier) - 1) * 100)}%), Lead: {leadMultiplier}x (+{Math.round((Number(leadMultiplier) - 1) * 100)}%)
         </p>
       </div>
 
       {/* Seniority Bonus Section */}
-      <div className="bg-white rounded-lg border border-slate-200 p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Clock className="h-5 w-5 text-orange-600" />
-          <h3 className="font-semibold text-slate-900">Thưởng thâm niên (%)</h3>
-        </div>
-        <div className="grid grid-cols-4 gap-4">
+      <div className="border border-slate-100/70 bg-white/60 p-6 rounded-[2rem] shadow-sm backdrop-blur-sm space-y-6">
+        <div className="flex items-center gap-3 pb-2 border-b border-slate-100/50">
+          <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
+            <Clock className="h-5 w-5" />
+          </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
+            <h3 className="text-base font-black text-slate-900 uppercase tracking-wide">Thưởng thâm niên (%)</h3>
+            <p className="text-xs text-slate-500 font-semibold">Tự động cộng thưởng theo thời gian làm việc</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="space-y-2">
+            <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
               0-1 năm
             </label>
             <div className="relative">
@@ -327,13 +357,13 @@ export default function CommissionSettingsTab({ className }: CommissionSettingsT
                 step="1"
                 value={seniority0to1}
                 onChange={(e) => setSeniority0to1(e.target.value)}
-                className="w-full px-3 py-2 pr-8 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full rounded-2xl border border-slate-100 bg-slate-50/60 px-5 py-3.5 pr-12 text-sm font-bold text-slate-900 outline-none transition focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/10"
               />
-              <span className="absolute right-3 top-2.5 text-slate-400 text-sm">%</span>
+              <span className="absolute right-5 top-1/2 -translate-y-1/2 font-black text-slate-400 text-sm">%</span>
             </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
+          <div className="space-y-2">
+            <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
               1-3 năm
             </label>
             <div className="relative">
@@ -342,13 +372,13 @@ export default function CommissionSettingsTab({ className }: CommissionSettingsT
                 step="1"
                 value={seniority1to3}
                 onChange={(e) => setSeniority1to3(e.target.value)}
-                className="w-full px-3 py-2 pr-8 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full rounded-2xl border border-slate-100 bg-slate-50/60 px-5 py-3.5 pr-12 text-sm font-bold text-slate-900 outline-none transition focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/10"
               />
-              <span className="absolute right-3 top-2.5 text-slate-400 text-sm">%</span>
+              <span className="absolute right-5 top-1/2 -translate-y-1/2 font-black text-slate-400 text-sm">%</span>
             </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
+          <div className="space-y-2">
+            <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
               3-5 năm
             </label>
             <div className="relative">
@@ -357,13 +387,13 @@ export default function CommissionSettingsTab({ className }: CommissionSettingsT
                 step="1"
                 value={seniority3to5}
                 onChange={(e) => setSeniority3to5(e.target.value)}
-                className="w-full px-3 py-2 pr-8 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full rounded-2xl border border-slate-100 bg-slate-50/60 px-5 py-3.5 pr-12 text-sm font-bold text-slate-900 outline-none transition focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/10"
               />
-              <span className="absolute right-3 top-2.5 text-slate-400 text-sm">%</span>
+              <span className="absolute right-5 top-1/2 -translate-y-1/2 font-black text-slate-400 text-sm">%</span>
             </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
+          <div className="space-y-2">
+            <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
               5+ năm
             </label>
             <div className="relative">
@@ -372,13 +402,13 @@ export default function CommissionSettingsTab({ className }: CommissionSettingsT
                 step="1"
                 value={seniority5plus}
                 onChange={(e) => setSeniority5plus(e.target.value)}
-                className="w-full px-3 py-2 pr-8 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full rounded-2xl border border-slate-100 bg-slate-50/60 px-5 py-3.5 pr-12 text-sm font-bold text-slate-900 outline-none transition focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/10"
               />
-              <span className="absolute right-3 top-2.5 text-slate-400 text-sm">%</span>
+              <span className="absolute right-5 top-1/2 -translate-y-1/2 font-black text-slate-400 text-sm">%</span>
             </div>
           </div>
         </div>
-        <p className="text-xs text-slate-500 mt-2">
+        <p className="text-xs font-semibold text-slate-500 mt-2">
           Thưởng thâm niên tính trên lương cơ bản. Áp dụng tự động theo số năm làm việc của KTV.
         </p>
       </div>
