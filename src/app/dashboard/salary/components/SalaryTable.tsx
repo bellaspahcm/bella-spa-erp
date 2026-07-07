@@ -11,8 +11,7 @@ Filter,
 Loader2,
 Search,
 ShieldCheck,
-Star,
-BarChart3
+Star
 } from 'lucide-react';
 import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
 import { useState } from 'react';
@@ -181,15 +180,8 @@ export default function SalaryTable({
                     <div className="flex gap-2">
                       <button 
                         onClick={() => router.push(`/dashboard/payroll/employees/${s.id}/detail?month=${currentMonth}`)}
-                        className="p-3 bg-purple-50 text-purple-500 hover:bg-purple-500 hover:text-white rounded-xl transition-all shadow-sm"
-                        title="Xem phân tích lương chi tiết"
-                      >
-                        <BarChart3 className="w-5 h-5" />
-                      </button>
-                      <button 
-                        onClick={() => setViewingSalary(s)}
                         className="p-3 bg-blue-50 text-blue-500 hover:bg-blue-500 hover:text-white rounded-xl transition-all shadow-sm"
-                        title="Xem tóm tắt"
+                        title="Xem chi tiết lương"
                       >
                         <Eye className="w-5 h-5" />
                       </button>
@@ -224,19 +216,11 @@ export default function SalaryTable({
                     <div className="flex gap-2">
                       <button 
                         onClick={() => router.push(`/dashboard/payroll/employees/${s.id}/detail?month=${currentMonth}`)}
-                        className="flex items-center gap-2 px-4 py-2 bg-purple-50 text-purple-600 hover:bg-purple-600 hover:text-white rounded-xl transition-all font-bold text-xs"
-                        title="Xem phân tích lương chi tiết"
-                      >
-                        <BarChart3 className="w-4 h-4" />
-                        Phân tích
-                      </button>
-                      <button 
-                        onClick={() => setViewingSalary(s)}
                         className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white rounded-xl transition-all font-bold text-xs"
-                        title="Xem tóm tắt"
+                        title="Xem chi tiết lương"
                       >
                         <Eye className="w-4 h-4" />
-                        Tóm tắt
+                        Chi tiết
                       </button>
                       <button 
                         onClick={() => handleExport(s)}
