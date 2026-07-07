@@ -3,7 +3,8 @@
 
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { Coins, Award, Calendar, Star, Save, Loader2 } from 'lucide-react';
+import { Coins, Award, Calendar, Star, Save, Loader2, Target, TrendingUp, BarChart3 } from 'lucide-react';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import {
   loadKPIConfig,
   saveKPIConfig,
@@ -310,19 +311,30 @@ export default function SalaryConfigTab({
 
         {/* Strategy Selector */}
         <div>
-          <label className="text-xs font-black text-slate-600 dark:text-[#CDBCAB] uppercase tracking-wider mb-3 block">
-            Chiến lược tính thưởng
-          </label>
-          <select
+          <PremiumSelect
+            label="Chiến lược tính thưởng"
             value={kpiStrategy}
-            onChange={(e) => setKpiStrategy(e.target.value as any)}
+            onChange={(value) => setKpiStrategy(value as any)}
             disabled={!kpiEnabled}
-            className="w-full h-14 rounded-2xl border-2 border-slate-100 dark:border-[#3E3A35] bg-slate-50 dark:bg-[#11100F] px-5 text-base font-bold text-slate-900 dark:text-[#EFE9E1] focus:outline-none focus:border-primary dark:focus:border-[#A67D44] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <option value="threshold">Ngưỡng đơn (đạt X ca → nhận Y thưởng)</option>
-            <option value="linear">Tuyến tính (mỗi ca thêm → +Z đồng)</option>
-            <option value="tier">Bậc thang (nhiều mức 20/30/40 ca)</option>
-          </select>
+            options={[
+              { 
+                value: 'threshold', 
+                label: 'Ngưỡng đơn (đạt X ca → nhận Y thưởng)',
+                icon: <Target className="w-4 h-4" />
+              },
+              { 
+                value: 'linear', 
+                label: 'Tuyến tính (mỗi ca thêm → +Z đồng)',
+                icon: <TrendingUp className="w-4 h-4" />
+              },
+              { 
+                value: 'tier', 
+                label: 'Bậc thang (nhiều mức 20/30/40 ca)',
+                icon: <BarChart3 className="w-4 h-4" />
+              }
+            ]}
+            placeholder="Chọn chiến lược..."
+          />
         </div>
 
         {/* Conditional forms based on strategy */}
@@ -555,19 +567,30 @@ export default function SalaryConfigTab({
 
         {/* Strategy Selector */}
         <div>
-          <label className="text-xs font-black text-slate-600 dark:text-[#CDBCAB] uppercase tracking-wider mb-3 block">
-            Chiến lược tính thưởng
-          </label>
-          <select
+          <PremiumSelect
+            label="Chiến lược tính thưởng"
             value={ratingStrategy}
-            onChange={(e) => setRatingStrategy(e.target.value as any)}
+            onChange={(value) => setRatingStrategy(value as any)}
             disabled={!ratingEnabled}
-            className="w-full h-14 rounded-2xl border-2 border-slate-100 dark:border-[#3E3A35] bg-slate-50 dark:bg-[#11100F] px-5 text-base font-bold text-slate-900 dark:text-[#EFE9E1] focus:outline-none focus:border-amber-500 dark:focus:border-[#A67D44] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <option value="threshold">Ngưỡng đơn (≥ X sao → nhận Y thưởng)</option>
-            <option value="linear">Tuyến tính (mỗi 0.1 sao thêm → +Z đồng)</option>
-            <option value="tier">Bậc thang (4.0-4.4 / 4.5-4.9 / 5.0)</option>
-          </select>
+            options={[
+              { 
+                value: 'threshold', 
+                label: 'Ngưỡng đơn (≥ X sao → nhận Y thưởng)',
+                icon: <Target className="w-4 h-4" />
+              },
+              { 
+                value: 'linear', 
+                label: 'Tuyến tính (mỗi 0.1 sao thêm → +Z đồng)',
+                icon: <TrendingUp className="w-4 h-4" />
+              },
+              { 
+                value: 'tier', 
+                label: 'Bậc thang (4.0-4.4 / 4.5-4.9 / 5.0)',
+                icon: <BarChart3 className="w-4 h-4" />
+              }
+            ]}
+            placeholder="Chọn chiến lược..."
+          />
         </div>
 
         {/* Conditional forms based on strategy */}
