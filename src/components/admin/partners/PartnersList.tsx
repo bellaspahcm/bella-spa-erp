@@ -11,9 +11,9 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Plus, Search, Filter, Download, RefreshCw, Key, Shield, AlertCircle } from 'lucide-react';
+import { Plus, Search, Download, RefreshCw, Key, Shield, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -64,7 +64,7 @@ export function PartnersList() {
   );
 
   // Fetch partners
-  const fetchPartners = async () => {
+  const fetchPartners = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams({
@@ -94,12 +94,12 @@ export function PartnersList() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [pagination.limit, pagination.offset, search, typeFilter, statusFilter, sandboxFilter]);
 
   // Effects
   useEffect(() => {
     fetchPartners();
-  }, [search, typeFilter, statusFilter, sandboxFilter, pagination.offset]);
+  }, [fetchPartners]);
 
   // Handlers
   const handleSearch = (value: string) => {
@@ -125,7 +125,8 @@ export function PartnersList() {
       document.body.removeChild(a);
 
       toast.success('Partners list exported to CSV');
-    } catch (error) {
+    } catch (err) {
+      console.error('Failed to export partners:', err);
       toast.error('Failed to export partners list');
     }
   };
@@ -137,58 +138,62 @@ export function PartnersList() {
 
   return (
     <div className="space-y-6">
-      {/* Stats Cards - Bella ERP Style */}
+      {/* Stats Cards - Premium Spa Style */}
       <div className="grid gap-4 md:grid-cols-4">
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-rose-50 to-pink-50 dark:from-rose-950/20 dark:to-pink-950/20 border border-rose-200 dark:border-rose-900 p-6 shadow-sm hover:shadow-md transition-all">
+        {/* Total Partners */}
+        <div className="relative overflow-hidden rounded-[2rem] bg-white border border-slate-200/60 p-6 shadow-sm hover:shadow-md hover:border-emerald-500/20 transition-all duration-300 group">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Tổng Partners</p>
-              <p className="text-3xl font-bold text-primary dark:text-rose-400 mt-1">{pagination.total}</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Tổng Partners</p>
+              <p className="text-3xl font-extrabold font-serif text-slate-900 mt-1.5 tabular-nums">{pagination.total}</p>
             </div>
-            <div className="w-12 h-12 rounded-xl bg-primary/10 dark:bg-rose-500/10 flex items-center justify-center">
-              <Key className="w-6 h-6 text-primary dark:text-rose-400" />
+            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-800 flex items-center justify-center transition-transform group-hover:scale-105">
+              <Key className="w-5 h-5" />
             </div>
           </div>
         </div>
 
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border border-green-200 dark:border-green-900 p-6 shadow-sm hover:shadow-md transition-all">
+        {/* Active Partners */}
+        <div className="relative overflow-hidden rounded-[2rem] bg-white border border-slate-200/60 p-6 shadow-sm hover:shadow-md hover:border-emerald-500/20 transition-all duration-300 group">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Đang hoạt động</p>
-              <p className="text-3xl font-bold text-green-600 dark:text-green-400 mt-1">
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Đang hoạt động</p>
+              <p className="text-3xl font-extrabold font-serif text-slate-900 mt-1.5 tabular-nums">
                 {partners.filter((p) => p.is_active).length}
               </p>
             </div>
-            <div className="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center">
-              <Shield className="w-6 h-6 text-green-600 dark:text-green-400" />
+            <div className="w-12 h-12 rounded-2xl bg-teal-50 text-teal-800 flex items-center justify-center transition-transform group-hover:scale-105">
+              <Shield className="w-5 h-5" />
             </div>
           </div>
         </div>
 
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/20 dark:to-amber-950/20 border border-orange-200 dark:border-orange-900 p-6 shadow-sm hover:shadow-md transition-all">
+        {/* Sandbox Partners */}
+        <div className="relative overflow-hidden rounded-[2rem] bg-white border border-slate-200/60 p-6 shadow-sm hover:shadow-md hover:border-emerald-500/20 transition-all duration-300 group">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Sandbox</p>
-              <p className="text-3xl font-bold text-orange-600 dark:text-orange-400 mt-1">
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Sandbox</p>
+              <p className="text-3xl font-extrabold font-serif text-slate-900 mt-1.5 tabular-nums">
                 {partners.filter((p) => p.is_sandbox).length}
               </p>
             </div>
-            <div className="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center">
-              <AlertCircle className="w-6 h-6 text-orange-600 dark:text-orange-400" />
+            <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-800 flex items-center justify-center transition-transform group-hover:scale-105">
+              <AlertCircle className="w-5 h-5" />
             </div>
           </div>
         </div>
 
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border border-blue-200 dark:border-blue-900 p-6 shadow-sm hover:shadow-md transition-all">
+        {/* Production Partners */}
+        <div className="relative overflow-hidden rounded-[2rem] bg-white border border-slate-200/60 p-6 shadow-sm hover:shadow-md hover:border-emerald-500/20 transition-all duration-300 group">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Production</p>
-              <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 mt-1">
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Production</p>
+              <p className="text-3xl font-extrabold font-serif text-slate-900 mt-1.5 tabular-nums">
                 {partners.filter((p) => !p.is_sandbox).length}
               </p>
             </div>
-            <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center">
-              <Shield className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-800 flex items-center justify-center transition-transform group-hover:scale-105">
+              <Shield className="w-5 h-5" />
             </div>
           </div>
         </div>

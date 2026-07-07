@@ -1,15 +1,15 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { DollarSign, Plus, Download, Filter, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { DollarSign, Plus, Download, Filter, CheckCircle2, XCircle, Loader2, ChevronRight, ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 import { AdjustmentRow } from './AdjustmentRow';
 import { AdjustmentsAdvancedFilters } from './AdjustmentsAdvancedFilters';
 import { AddAdjustmentModal } from './AddAdjustmentModal';
 import { useTenantContext } from '@/core/hooks/useTenantContext';
 import { useKTVList } from '@/hooks/useKTVList';
+import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
 import { createClient } from '@/lib/supabase-client';
-import type { Database } from '@/types/database.types';
 import { toast } from 'sonner';
 
 type SalaryAdjustment = {
@@ -47,7 +47,9 @@ interface AdvancedFilters {
 
 export function AdjustmentsListPage() {
   const tenantContext = useTenantContext();
-  const { ktvList, isLoading: isLoadingKTV } = useKTVList(tenantContext?.tenantId);
+  const tenantId = tenantContext?.tenantId;
+  const { ktvList } = useKTVList(tenantId);
+  const { tenantModuleKey } = useTenantModuleKey();
   
   const [adjustments, setAdjustments] = useState<SalaryAdjustment[]>([]);
   const [filteredAdjustments, setFilteredAdjustments] = useState<SalaryAdjustment[]>([]);
@@ -58,6 +60,45 @@ export function AdjustmentsListPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedAdjustments, setSelectedAdjustments] = useState<Set<string>>(new Set());
   const [isExporting, setIsExporting] = useState(false);
+
+  const getThemeStyles = () => {
+    switch (tenantModuleKey) {
+      case 'beauty_spa':
+        return {
+          titleFont: 'font-serif text-slate-900',
+          btnPrimary: 'bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200',
+          btnOutline: 'border border-slate-200 bg-white text-slate-650 hover:text-emerald-800 hover:border-emerald-800/30 rounded-xl',
+          iconBg: 'bg-emerald-50 text-emerald-800',
+          cardBg: 'bg-white rounded-[2rem] border border-slate-200/60 shadow-sm p-6 hover:shadow-md transition-all duration-300',
+          tableWrapper: 'bg-white rounded-[2rem] border border-slate-200/60 overflow-hidden shadow-sm',
+          tableHeaderBg: 'bg-slate-50/70 border-b border-slate-100',
+          tableHeaderCell: 'px-4 py-3 text-left text-[10px] font-bold text-slate-500 uppercase tracking-wider',
+          tableHeaderCellRight: 'px-4 py-3 text-right text-[10px] font-bold text-slate-500 uppercase tracking-wider',
+          bulkPanelBg: 'bg-emerald-50/50 border border-emerald-100/60 rounded-[2rem] p-4',
+          bulkBtnApprove: 'bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl shadow-md transition-colors',
+          bulkBtnReject: 'bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow-md transition-colors',
+          paginationBg: 'bg-white border border-slate-200/60 rounded-[2rem] p-4 shadow-sm',
+        };
+      default: // baby_care, industrial_cleaning, etc.
+        return {
+          titleFont: 'font-bold text-gray-900 dark:text-gray-100',
+          btnPrimary: 'bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors',
+          btnOutline: 'bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors',
+          iconBg: 'bg-indigo-100 text-indigo-600 dark:bg-indigo-950/20 dark:text-indigo-400',
+          cardBg: 'bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4',
+          tableWrapper: 'bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden',
+          tableHeaderBg: 'bg-gray-50 dark:bg-gray-900',
+          tableHeaderCell: 'px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider',
+          tableHeaderCellRight: 'px-4 py-3 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider',
+          bulkPanelBg: 'bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700 rounded-lg p-4',
+          bulkBtnApprove: 'bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors',
+          bulkBtnReject: 'bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors',
+          paginationBg: 'bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4',
+        };
+    }
+  };
+
+  const theme = getThemeStyles();
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -87,14 +128,14 @@ export function AdjustmentsListPage() {
   // Fetch users list for "Created By" filter
   useEffect(() => {
     async function fetchUsers() {
-      if (!tenantContext?.tenantId) return;
+      if (!tenantId) return;
 
       try {
         const supabase = createClient();
         const { data, error } = await supabase
           .from('users')
           .select('id, full_name')
-          .eq('tenant_id', tenantContext.tenantId)
+          .eq('tenant_id', tenantId)
           .order('full_name');
 
         if (!error && data) {
@@ -106,11 +147,11 @@ export function AdjustmentsListPage() {
     }
 
     fetchUsers();
-  }, [tenantContext?.tenantId]);
+  }, [tenantId]);
 
   // Fetch adjustments
   const fetchAdjustments = useCallback(async () => {
-    if (!tenantContext?.tenantId) return;
+    if (!tenantId) return;
 
     setIsLoading(true);
     setError(null);
@@ -118,6 +159,7 @@ export function AdjustmentsListPage() {
     try {
       const supabase = createClient();
       
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let query = (supabase as any)
         .from('salary_adjustments')
         .select(`
@@ -126,7 +168,7 @@ export function AdjustmentsListPage() {
           created_by:users!created_by_id(full_name),
           approved_by:users!approved_by_id(full_name)
         `)
-        .eq('tenant_id', tenantContext.tenantId)
+        .eq('tenant_id', tenantId)
         .order('created_at', { ascending: false });
 
       // Apply advanced filters
@@ -175,6 +217,7 @@ export function AdjustmentsListPage() {
       }
 
       // Transform data
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const adjustmentsData: SalaryAdjustment[] = (data || []).map((adj: any) => ({
         id: adj.id,
         ktv_id: adj.ktv_id,
@@ -215,7 +258,7 @@ export function AdjustmentsListPage() {
       setIsLoading(false);
     }
   }, [
-    tenantContext?.tenantId,
+    tenantId,
     filters.ktvIds,
     filters.statuses,
     filters.types,
@@ -490,52 +533,49 @@ export function AdjustmentsListPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 max-w-7xl">
-      <div className="space-y-6">
-        {/* Back Button + Header */}
-        <div className="flex items-center gap-4 mb-4">
-          <button
-            onClick={() => window.history.back()}
-            className="flex items-center gap-2 px-4 py-2 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-            aria-label="Quay lại"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fillRule="evenodd"
-                d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"
-                clipRule="evenodd"
-              />
-            </svg>
-            <span className="hidden sm:inline">Quay lại</span>
-          </button>
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 max-w-7xl space-y-6">
+      {/* Breadcrumbs & Navigation */}
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-emerald-950/5 pb-4">
+        <div className="flex items-center gap-2 text-xs font-semibold tracking-wider text-slate-500 uppercase">
+          <Link href="/dashboard" className="hover:text-emerald-800 transition-colors">
+            Tổng quan
+          </Link>
+          <ChevronRight size={12} className="opacity-40" />
+          <Link href="/dashboard/salary" className="hover:text-emerald-800 transition-colors">
+            Bảng lương
+          </Link>
+          <ChevronRight size={12} className="opacity-40" />
+          <span className="text-emerald-800 font-bold">Thưởng/Phạt lương</span>
+        </div>
+        
+        <Link
+          href="/dashboard/salary"
+          className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-1.5 text-xs font-bold text-slate-655 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:text-emerald-800 hover:border-emerald-800/30 group"
+        >
+          <ArrowLeft size={14} className="transition-transform group-hover:-translate-x-1" />
+          <span>Trở về bảng lương</span>
+        </Link>
+      </div>
 
-          <div className="flex-1">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-lg bg-indigo-100 flex items-center justify-center">
-                <DollarSign className="w-6 h-6 text-indigo-600" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                  Thưởng/Phạt lương
-                </h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Quản lý điều chỉnh thủ công lương KTV
-                </p>
-              </div>
-            </div>
-          </div>
+      {/* Header Title & Actions */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-1.5">
+          <span className="text-xs font-bold text-emerald-800 uppercase tracking-widest block">
+            Tài chính & Đối soát
+          </span>
+          <h1 className={`${theme.titleFont} text-3xl md:text-4xl font-extrabold tracking-tight`}>
+            Thưởng/Phạt lương
+          </h1>
+          <p className="text-sm text-slate-600 font-medium max-w-xl">
+            Quản lý điều chỉnh thủ công lương KTV
+          </p>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center justify-end gap-3">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-2 px-4 py-2 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            className={`flex items-center gap-2 px-4 h-11 text-xs font-bold uppercase tracking-wider ${theme.btnOutline}`}
           >
             <Filter className="w-4 h-4" />
             <span>Lọc</span>
@@ -544,7 +584,7 @@ export function AdjustmentsListPage() {
           <button
             onClick={handleExportCSV}
             disabled={filteredAdjustments.length === 0 || isExporting}
-            className="flex items-center gap-2 px-4 py-2 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className={`flex items-center gap-2 px-4 h-11 text-xs font-bold uppercase tracking-wider ${theme.btnOutline} disabled:opacity-50 disabled:cursor-not-allowed`}
           >
             {isExporting ? (
               <>
@@ -561,7 +601,7 @@ export function AdjustmentsListPage() {
 
           <button
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors"
+            className={`flex items-center gap-2 px-4 h-11 text-xs font-bold uppercase tracking-wider ${theme.btnPrimary}`}
           >
             <Plus className="w-4 h-4" />
             <span>Thêm điều chỉnh</span>
@@ -569,36 +609,51 @@ export function AdjustmentsListPage() {
         </div>
       </div>
 
-      {/* Stats Cards - Using hard-coded pixel values */}
-      <div className="mt-6 flex flex-col md:flex-row">
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 flex-1" style={{ marginRight: '24px', marginBottom: '24px' }}>
-          <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 mb-1">
-            <Plus className="w-4 h-4" />
-            <p className="text-sm font-medium">Tổng thưởng (đã duyệt)</p>
+      {/* Stats Cards - Premium Spa Style */}
+      <div className="grid gap-4 md:grid-cols-3">
+        {/* Total Bonuses */}
+        <div className={theme.cardBg}>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Tổng thưởng (đã duyệt)</p>
+              <p className="text-3xl font-extrabold font-serif text-emerald-800 mt-1.5 tabular-nums">
+                {stats.totalBonuses.toLocaleString('vi-VN')} đ
+              </p>
+            </div>
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-transform ${tenantModuleKey === 'beauty_spa' ? 'bg-emerald-50 text-emerald-800' : 'bg-emerald-100 text-emerald-600'}`}>
+              <Plus className="w-5 h-5" />
+            </div>
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-            {stats.totalBonuses.toLocaleString('vi-VN')} đ
-          </p>
         </div>
         
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 flex-1" style={{ marginRight: '24px', marginBottom: '24px' }}>
-          <div className="flex items-center gap-2 text-red-600 dark:text-red-400 mb-1">
-            <XCircle className="w-4 h-4" />
-            <p className="text-sm font-medium">Tổng phạt (đã duyệt)</p>
+        {/* Total Deductions */}
+        <div className={theme.cardBg}>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Tổng phạt (đã duyệt)</p>
+              <p className="text-3xl font-extrabold font-serif text-rose-650 mt-1.5 tabular-nums">
+                {stats.totalDeductions.toLocaleString('vi-VN')} đ
+              </p>
+            </div>
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-transform ${tenantModuleKey === 'beauty_spa' ? 'bg-rose-50 text-rose-800' : 'bg-red-100 text-red-600'}`}>
+              <XCircle className="w-5 h-5" />
+            </div>
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-            {stats.totalDeductions.toLocaleString('vi-VN')} đ
-          </p>
         </div>
         
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 flex-1" style={{ marginBottom: '24px' }}>
-          <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 mb-1">
-            <CheckCircle2 className="w-4 h-4" />
-            <p className="text-sm font-medium">Chờ duyệt</p>
+        {/* Pending Count */}
+        <div className={theme.cardBg}>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Chờ duyệt</p>
+              <p className="text-3xl font-extrabold font-serif text-amber-600 mt-1.5 tabular-nums">
+                {stats.pendingCount}
+              </p>
+            </div>
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-transform ${tenantModuleKey === 'beauty_spa' ? 'bg-amber-50 text-amber-800' : 'bg-amber-100 text-amber-600'}`}>
+              <CheckCircle2 className="w-5 h-5" />
+            </div>
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-            {stats.pendingCount}
-          </p>
         </div>
       </div>
 
@@ -616,26 +671,26 @@ export function AdjustmentsListPage() {
 
       {/* Bulk Actions */}
       {selectedAdjustments.size > 0 && (
-        <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700 rounded-lg p-4 flex items-center justify-between">
-          <p className="text-sm font-medium text-indigo-900 dark:text-indigo-100">
+        <div className={`flex items-center justify-between p-4 ${theme.bulkPanelBg}`}>
+          <p className="text-sm font-medium text-slate-700">
             Đã chọn {selectedAdjustments.size} bản ghi
           </p>
           <div className="flex items-center gap-3">
             <button
               onClick={handleBulkApprove}
-              className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors"
+              className={`px-4 py-2 text-sm font-medium ${theme.bulkBtnApprove}`}
             >
               Duyệt đã chọn
             </button>
             <button
               onClick={handleBulkReject}
-              className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
+              className={`px-4 py-2 text-sm font-medium ${theme.bulkBtnReject}`}
             >
               Từ chối đã chọn
             </button>
             <button
               onClick={() => setSelectedAdjustments(new Set())}
-              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              className={`px-4 py-2 text-sm font-medium ${theme.btnOutline}`}
             >
               Bỏ chọn
             </button>
@@ -653,16 +708,16 @@ export function AdjustmentsListPage() {
           <p className="text-red-600 dark:text-red-400">{error}</p>
         </div>
       ) : currentAdjustments.length === 0 ? (
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-12 text-center">
-          <DollarSign className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-          <p className="text-gray-500 dark:text-gray-400 mb-4">
+        <div className={`${theme.cardBg} p-12 text-center`}>
+          <DollarSign className="w-16 h-16 text-slate-350 dark:text-slate-600 mx-auto mb-4" />
+          <p className="text-slate-500 dark:text-slate-400 mb-4 font-medium">
             {filters.search || filters.statuses || filters.startDate || filters.ktvIds
               ? 'Không tìm thấy bản ghi nào phù hợp'
               : 'Chưa có điều chỉnh lương nào'}
           </p>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors"
+            className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs font-bold uppercase tracking-wider ${theme.btnPrimary}`}
           >
             <Plus className="w-4 h-4" />
             <span>Thêm điều chỉnh đầu tiên</span>
@@ -671,52 +726,52 @@ export function AdjustmentsListPage() {
       ) : (
         <div className="space-y-4">
           {/* Table Header */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className={theme.tableWrapper}>
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50 dark:bg-gray-900">
+                <thead className={theme.tableHeaderBg}>
                   <tr>
                     <th className="px-4 py-3 text-left">
                       <input
                         type="checkbox"
                         checked={selectedAdjustments.size === currentAdjustments.length}
                         onChange={handleSelectAll}
-                        className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+                        className="w-4 h-4 text-emerald-800 rounded border-slate-200 focus:ring-emerald-800"
                       />
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                    <th className={theme.tableHeaderCell}>
                       Tháng
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                    <th className={theme.tableHeaderCell}>
                       KTV
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                    <th className={theme.tableHeaderCell}>
                       Loại
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                    <th className={theme.tableHeaderCell}>
                       Danh mục
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                    <th className={theme.tableHeaderCellRight}>
                       Số tiền
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                    <th className={theme.tableHeaderCell}>
                       Lý do
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                    <th className={theme.tableHeaderCell}>
                       Trạng thái
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                    <th className={theme.tableHeaderCell}>
                       Người tạo
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                    <th className={theme.tableHeaderCell}>
                       Ngày tạo
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                    <th className={theme.tableHeaderCellRight}>
                       Hành động
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                <tbody className="divide-y divide-slate-100 dark:divide-gray-700 bg-white">
                   {currentAdjustments.map((adjustment) => (
                     <AdjustmentRow
                       key={adjustment.id}
@@ -733,8 +788,8 @@ export function AdjustmentsListPage() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+            <div className={`flex items-center justify-between p-4 ${theme.paginationBg}`}>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
                 Hiển thị {startIndex + 1}-{Math.min(endIndex, filteredAdjustments.length)} trong tổng số{' '}
                 {filteredAdjustments.length} bản ghi
               </p>
@@ -743,19 +798,19 @@ export function AdjustmentsListPage() {
                 <button
                   onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                   disabled={currentPage === 1}
-                  className="px-3 py-1 text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className={`px-3 py-1 text-sm ${theme.btnOutline} disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                   Trước
                 </button>
 
-                <span className="text-sm text-gray-600 dark:text-gray-400">
+                <span className="text-sm text-slate-600 dark:text-gray-400">
                   Trang {currentPage} / {totalPages}
                 </span>
 
                 <button
                   onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
                   disabled={currentPage === totalPages}
-                  className="px-3 py-1 text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className={`px-3 py-1 text-sm ${theme.btnOutline} disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                   Sau
                 </button>

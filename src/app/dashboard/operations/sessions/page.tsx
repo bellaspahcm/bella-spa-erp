@@ -12,24 +12,20 @@
  * Data flows through Operational Intelligence Layer with automatic caching.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { 
-  TrendingUp, 
-  TrendingDown, 
   CheckCircle,
-  XCircle,
   Clock,
   Activity, 
-  BarChart3,
-  Calendar,
   RefreshCw,
-  AlertCircle,
   Star,
-  Users,
   Award,
-  Zap
+  Zap,
+  ArrowLeft,
+  ChevronRight
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase-client';
@@ -142,7 +138,7 @@ export default function SessionAnalyticsDashboardPage() {
   // Fetch session analytics
   // ───────────────────────────────────────────────────────────────────────────
 
-  const fetchAnalytics = async (refresh = false) => {
+  const fetchAnalytics = useCallback(async (refresh = false) => {
     if (!tenantId) return;
 
     if (refresh) setIsRefreshing(true);
@@ -170,13 +166,11 @@ export default function SessionAnalyticsDashboardPage() {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  };
+  }, [tenantId, period]);
 
   useEffect(() => {
-    if (tenantId) {
-      fetchAnalytics();
-    }
-  }, [tenantId, period]);
+    fetchAnalytics();
+  }, [fetchAnalytics]);
 
   // ───────────────────────────────────────────────────────────────────────────
   // Handlers
@@ -194,21 +188,37 @@ export default function SessionAnalyticsDashboardPage() {
   // Computed values
   // ───────────────────────────────────────────────────────────────────────────
 
-  const totals = analytics?.data.reduce((acc, day) => ({
-    totalSessions: acc.totalSessions + day.totalSessions,
-    completedSessions: acc.completedSessions + day.completedSessions,
-    cancelledSessions: acc.cancelledSessions + day.cancelledSessions,
-    noShowSessions: acc.noShowSessions + day.noShowSessions,
-    totalRevenue: acc.totalRevenue + day.totalRevenue,
-    totalRatings: acc.totalRatings + day.totalRatings,
-    avgSatisfactionRating: acc.avgSatisfactionRating + day.avgSatisfactionRating,
-    morningSessions: acc.morningSessions + day.morningSessions,
-    afternoonSessions: acc.afternoonSessions + day.afternoonSessions,
-    eveningSessions: acc.eveningSessions + day.eveningSessions,
-    basicPackageSessions: acc.basicPackageSessions + day.basicPackageSessions,
-    premiumPackageSessions: acc.premiumPackageSessions + day.premiumPackageSessions,
-    vipPackageSessions: acc.vipPackageSessions + day.vipPackageSessions,
-  }), {
+  const totals = analytics?.data.reduce((acc, day) => {
+    const totalSessions = day.totalSessions || 0;
+    const completedSessions = day.completedSessions || 0;
+    const cancelledSessions = day.cancelledSessions || 0;
+    const noShowSessions = day.noShowSessions || 0;
+    const totalRevenue = day.totalRevenue || 0;
+    const totalRatings = day.totalRatings || 0;
+    const avgSatisfactionRating = isNaN(day.avgSatisfactionRating) || !day.avgSatisfactionRating ? 0 : day.avgSatisfactionRating;
+    const morningSessions = day.morningSessions || 0;
+    const afternoonSessions = day.afternoonSessions || 0;
+    const eveningSessions = day.eveningSessions || 0;
+    const basicPackageSessions = day.basicPackageSessions || 0;
+    const premiumPackageSessions = day.premiumPackageSessions || 0;
+    const vipPackageSessions = day.vipPackageSessions || 0;
+
+    return {
+      totalSessions: acc.totalSessions + totalSessions,
+      completedSessions: acc.completedSessions + completedSessions,
+      cancelledSessions: acc.cancelledSessions + cancelledSessions,
+      noShowSessions: acc.noShowSessions + noShowSessions,
+      totalRevenue: acc.totalRevenue + totalRevenue,
+      totalRatings: acc.totalRatings + totalRatings,
+      avgSatisfactionRating: acc.avgSatisfactionRating + avgSatisfactionRating,
+      morningSessions: acc.morningSessions + morningSessions,
+      afternoonSessions: acc.afternoonSessions + afternoonSessions,
+      eveningSessions: acc.eveningSessions + eveningSessions,
+      basicPackageSessions: acc.basicPackageSessions + basicPackageSessions,
+      premiumPackageSessions: acc.premiumPackageSessions + premiumPackageSessions,
+      vipPackageSessions: acc.vipPackageSessions + vipPackageSessions,
+    };
+  }, {
     totalSessions: 0,
     completedSessions: 0,
     cancelledSessions: 0,
@@ -228,28 +238,37 @@ export default function SessionAnalyticsDashboardPage() {
     ? (totals.completedSessions / totals.totalSessions) * 100 
     : 0;
 
-  const avgRating = totals && analytics?.data.length 
-    ? totals.avgSatisfactionRating / analytics.data.length 
+  const ratedDaysCount = analytics?.data.filter(day => (day.avgSatisfactionRating || 0) > 0).length || 0;
+  const avgRating = totals && ratedDaysCount > 0 
+    ? totals.avgSatisfactionRating / ratedDaysCount 
     : 0;
 
-  const peakTimeSlot = totals && Math.max(totals.morningSessions, totals.afternoonSessions, totals.eveningSessions) === totals.morningSessions 
-    ? 'Buổi sáng (8-11h)' 
-    : totals && Math.max(totals.morningSessions, totals.afternoonSessions, totals.eveningSessions) === totals.afternoonSessions
-    ? 'Buổi chiều (12-16h)'
-    : 'Buổi tối (17-21h)';
+  const peakTimeSlot = totals && (totals.morningSessions > 0 || totals.afternoonSessions > 0 || totals.eveningSessions > 0)
+    ? (Math.max(totals.morningSessions, totals.afternoonSessions, totals.eveningSessions) === totals.morningSessions 
+      ? 'Buổi sáng (8-11h)' 
+      : Math.max(totals.morningSessions, totals.afternoonSessions, totals.eveningSessions) === totals.afternoonSessions
+      ? 'Buổi chiều (12-16h)'
+      : 'Buổi tối (17-21h)')
+    : 'Chưa có dữ liệu';
 
   // ───────────────────────────────────────────────────────────────────────────
   // Render helpers
   // ───────────────────────────────────────────────────────────────────────────
 
-  const formatCurrency = (value: number) => {
+  const formatCurrency = (value: number | null | undefined) => {
+    if (value === null || value === undefined || isNaN(value)) {
+      return '0 đ';
+    }
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: 'VND',
     }).format(value);
   };
 
-  const formatNumber = (value: number, decimals = 0) => {
+  const formatNumber = (value: number | null | undefined, decimals = 0) => {
+    if (value === null || value === undefined || isNaN(value)) {
+      return '0';
+    }
     return new Intl.NumberFormat('vi-VN', {
       minimumFractionDigits: decimals,
       maximumFractionDigits: decimals,
@@ -285,30 +304,54 @@ export default function SessionAnalyticsDashboardPage() {
   // ───────────────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900">Phân Tích Phiên Dịch Vụ</h1>
-        <p className="mt-2 text-slate-600">
-          Thống kê tỷ lệ hoàn thành, giờ cao điểm, và đánh giá khách hàng
-        </p>
+    <div className="min-h-screen bg-slate-50/50 p-6 md:p-8 space-y-8">
+      {/* Breadcrumbs & Navigation */}
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-emerald-950/5 pb-4">
+        <div className="flex items-center gap-2 text-xs font-semibold tracking-wider text-slate-500 uppercase">
+          <Link href="/dashboard" className="hover:text-emerald-800 transition-colors">
+            Tổng quan
+          </Link>
+          <ChevronRight size={12} className="opacity-40" />
+          <Link href="/dashboard/operations" className="hover:text-emerald-800 transition-colors">
+            Phân tích vận hành
+          </Link>
+          <ChevronRight size={12} className="opacity-40" />
+          <span className="text-emerald-800 font-bold">Phân Tích Phiên Dịch Vụ</span>
+        </div>
+        
+        <button
+          onClick={() => router.back()}
+          className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-1.5 text-xs font-bold text-slate-600 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:text-emerald-800 hover:border-emerald-800/30 group"
+        >
+          <ArrowLeft size={14} className="transition-transform group-hover:-translate-x-1" />
+          <span>Trở về trang gần nhất</span>
+        </button>
       </div>
 
-      {/* Controls */}
-      <div className="mb-6 flex flex-wrap items-center gap-4">
-        {/* Period Selector */}
-        <div className="flex items-center gap-2">
-          <Calendar className="h-5 w-5 text-slate-600" />
-          <span className="text-sm font-medium text-slate-700">Thời gian:</span>
-          <div className="flex gap-2">
+      {/* Header & Period Selectors */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="space-y-1.5">
+          <span className="text-xs font-bold text-emerald-800 uppercase tracking-widest block">
+            Báo cáo vận hành
+          </span>
+          <h1 className="font-serif text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
+            Phân Tích Phiên Dịch Vụ
+          </h1>
+          <p className="text-sm text-slate-600 font-medium max-w-xl">
+            Thống kê tỷ lệ hoàn thành, giờ cao điểm, và đánh giá khách hàng
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="flex gap-1.5 bg-slate-200/60 p-1 rounded-2xl border border-slate-200/20">
             {(['week', 'month', 'quarter'] as TimePeriod[]).map((p) => (
               <button
                 key={p}
                 onClick={() => handlePeriodChange(p)}
-                className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                className={`rounded-xl px-4 py-2 text-xs font-bold transition-all duration-200 ${
                   period === p
-                    ? 'bg-primary text-white'
-                    : 'bg-white text-slate-700 hover:bg-slate-100'
+                    ? 'bg-emerald-800 text-white shadow-md shadow-emerald-800/20'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
                 }`}
               >
                 {p === 'week' && 'Tuần này'}
@@ -317,104 +360,126 @@ export default function SessionAnalyticsDashboardPage() {
               </button>
             ))}
           </div>
-        </div>
 
-        {/* Refresh Button */}
-        <button
-          onClick={handleRefresh}
-          disabled={isRefreshing}
-          className="ml-auto rounded-lg bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-100 disabled:opacity-50"
-        >
-          <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-        </button>
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-slate-600 border border-slate-200 shadow-sm hover:bg-slate-50 transition-all active:scale-95 disabled:opacity-50"
+            title="Làm mới dữ liệu"
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
       </div>
 
       {/* Cache Status */}
       {analytics?.metadata && (
-        <div className="mb-4 flex items-center gap-2 rounded-lg bg-blue-50 px-4 py-2 text-sm text-blue-800">
-          <AlertCircle className="h-4 w-4" />
-          <span>
-            {analytics.metadata.cacheHit ? '✓ Dữ liệu từ cache' : '⚡ Dữ liệu mới'}
-            {' • '}
-            Thời gian truy vấn: {analytics.metadata.queryTimeMs}ms
-          </span>
+        <div className="flex items-center justify-between rounded-2xl bg-emerald-50/50 border border-emerald-100/50 px-5 py-3 text-xs font-medium text-emerald-800 backdrop-blur-sm shadow-sm shadow-emerald-50/10">
+          <div className="flex items-center gap-2">
+            <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>
+              {analytics.metadata.cacheHit ? '✓ Dữ liệu được tải từ bộ nhớ đệm (Cache Hit)' : '⚡ Dữ liệu mới được tổng hợp thời gian thực'}
+            </span>
+          </div>
+          <div className="opacity-80">
+            Thời gian phản hồi: <span className="font-bold">{analytics.metadata.queryTimeMs}ms</span>
+          </div>
         </div>
       )}
 
       {/* Metrics Overview Cards */}
-      <div className="mb-6 grid gap-4 md:grid-cols-4">
+      <div className="grid gap-5 md:grid-cols-4">
         {/* Total Sessions */}
-        <div className="rounded-lg bg-white p-6 shadow-sm">
+        <div className="group relative overflow-hidden rounded-[2rem] bg-white border border-slate-200/50 p-6 shadow-sm shadow-slate-100/50 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-emerald-800/20">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-slate-600">Tổng phiên</p>
-              <p className="mt-2 text-3xl font-bold text-slate-900">
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tổng phiên</p>
+              <p className="font-serif mt-3 text-4xl font-extrabold text-slate-900">
                 {formatNumber(totals?.totalSessions || 0)}
               </p>
             </div>
-            <Activity className="h-10 w-10 text-blue-500" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 transition-transform group-hover:scale-110">
+              <Activity className="h-6 w-6" />
+            </div>
           </div>
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-300 to-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity" />
         </div>
 
         {/* Completion Rate */}
-        <div className="rounded-lg bg-white p-6 shadow-sm">
+        <div className="group relative overflow-hidden rounded-[2rem] bg-white border border-slate-200/50 p-6 shadow-sm shadow-slate-100/50 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-emerald-800/20">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-slate-600">Tỷ lệ hoàn thành</p>
-              <p className="mt-2 text-3xl font-bold text-green-600">
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tỷ lệ hoàn thành</p>
+              <p className="font-serif mt-3 text-4xl font-extrabold text-emerald-800">
                 {formatNumber(avgCompletionRate, 1)}%
               </p>
             </div>
-            <CheckCircle className="h-10 w-10 text-green-500" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 transition-transform group-hover:scale-110">
+              <CheckCircle className="h-6 w-6" />
+            </div>
           </div>
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-350 to-teal-400 opacity-0 group-hover:opacity-100 transition-opacity" />
         </div>
 
         {/* Avg Rating */}
-        <div className="rounded-lg bg-white p-6 shadow-sm">
+        <div className="group relative overflow-hidden rounded-[2rem] bg-white border border-slate-200/50 p-6 shadow-sm shadow-slate-100/50 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-emerald-800/20">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-slate-600">Đánh giá TB</p>
-              <div className="mt-2 flex items-center gap-2">
-                <p className="text-3xl font-bold text-amber-500">
-                  {formatNumber(avgRating, 1)}
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Đánh giá TB</p>
+              <div className="mt-3 flex items-baseline gap-1">
+                <p className="font-serif text-4xl font-extrabold text-amber-500">
+                  {avgRating > 0 ? formatNumber(avgRating, 1) : '—'}
                 </p>
-                <Star className="h-6 w-6 fill-amber-400 text-amber-400" />
+                {avgRating > 0 && <span className="text-xs font-bold text-slate-400">/ 5.0</span>}
               </div>
             </div>
-            <Award className="h-10 w-10 text-amber-500" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 transition-transform group-hover:scale-110">
+              <Star className="h-6 w-6 fill-amber-400 text-amber-400" />
+            </div>
           </div>
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-300 to-yellow-400 opacity-0 group-hover:opacity-100 transition-opacity" />
         </div>
 
         {/* Peak Hour */}
-        <div className="rounded-lg bg-white p-6 shadow-sm">
+        <div className="group relative overflow-hidden rounded-[2rem] bg-white border border-slate-200/50 p-6 shadow-sm shadow-slate-100/50 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-emerald-800/20">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-slate-600">Giờ cao điểm</p>
-              <p className="mt-2 text-lg font-bold text-slate-900">
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Giờ cao điểm</p>
+              <p className="mt-3 text-lg font-bold text-slate-900 line-clamp-1">
                 {peakTimeSlot}
               </p>
             </div>
-            <Zap className="h-10 w-10 text-orange-500" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-50 text-orange-600 transition-transform group-hover:scale-110">
+              <Zap className="h-6 w-6" />
+            </div>
           </div>
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-300 to-amber-400 opacity-0 group-hover:opacity-100 transition-opacity" />
         </div>
       </div>
 
       {/* Peak Hours Distribution */}
-      <div className="mb-6 rounded-lg bg-white p-6 shadow-sm">
-        <h2 className="mb-4 text-lg font-bold text-slate-900">Phân bố theo giờ</h2>
-        <div className="grid gap-4 md:grid-cols-3">
+      <div className="rounded-[2rem] bg-white border border-slate-200/50 p-8 shadow-sm shadow-slate-100/50">
+        <div className="flex items-center gap-2.5 mb-6">
+          <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-800">
+            <Clock className="h-5 w-5" />
+          </div>
+          <h2 className="font-serif text-xl font-bold text-slate-900">Phân bố theo giờ</h2>
+        </div>
+        <div className="grid gap-6 md:grid-cols-3">
           {/* Morning */}
-          <div className="rounded-lg border border-slate-200 p-4">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-medium text-slate-600">Buổi sáng (8-11h)</p>
-              <Clock className="h-5 w-5 text-slate-400" />
+          <div className="relative overflow-hidden rounded-2xl border border-slate-100 bg-slate-50/50 p-5 transition-all duration-200 hover:border-emerald-800/10">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Buổi sáng (8-11h)</p>
+              <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+                {totals && totals.totalSessions > 0 ? Math.round((totals.morningSessions / totals.totalSessions) * 100) : 0}%
+              </span>
             </div>
-            <p className="text-2xl font-bold text-slate-900">
-              {formatNumber(totals?.morningSessions || 0)}
+            <p className="font-serif text-3xl font-extrabold text-slate-900">
+              {formatNumber(totals?.morningSessions || 0)} <span className="text-xs font-normal text-slate-400">phiên</span>
             </p>
-            <div className="mt-2 h-2 w-full rounded-full bg-slate-100">
+            <div className="mt-4 h-2 w-full rounded-full bg-slate-100">
               <div 
-                className="h-2 rounded-full bg-blue-500"
+                className="h-2 rounded-full bg-gradient-to-r from-blue-400 to-indigo-500 transition-all duration-500"
                 style={{ 
                   width: `${totals && totals.totalSessions > 0 ? (totals.morningSessions / totals.totalSessions) * 100 : 0}%` 
                 }}
@@ -423,17 +488,19 @@ export default function SessionAnalyticsDashboardPage() {
           </div>
 
           {/* Afternoon */}
-          <div className="rounded-lg border border-slate-200 p-4">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-medium text-slate-600">Buổi chiều (12-16h)</p>
-              <Clock className="h-5 w-5 text-slate-400" />
+          <div className="relative overflow-hidden rounded-2xl border border-slate-100 bg-slate-50/50 p-5 transition-all duration-200 hover:border-emerald-800/10">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Buổi chiều (12-16h)</p>
+              <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                {totals && totals.totalSessions > 0 ? Math.round((totals.afternoonSessions / totals.totalSessions) * 100) : 0}%
+              </span>
             </div>
-            <p className="text-2xl font-bold text-slate-900">
-              {formatNumber(totals?.afternoonSessions || 0)}
+            <p className="font-serif text-3xl font-extrabold text-slate-900">
+              {formatNumber(totals?.afternoonSessions || 0)} <span className="text-xs font-normal text-slate-400">phiên</span>
             </p>
-            <div className="mt-2 h-2 w-full rounded-full bg-slate-100">
+            <div className="mt-4 h-2 w-full rounded-full bg-slate-100">
               <div 
-                className="h-2 rounded-full bg-green-500"
+                className="h-2 rounded-full bg-gradient-to-r from-emerald-400 to-teal-500 transition-all duration-500"
                 style={{ 
                   width: `${totals && totals.totalSessions > 0 ? (totals.afternoonSessions / totals.totalSessions) * 100 : 0}%` 
                 }}
@@ -442,17 +509,19 @@ export default function SessionAnalyticsDashboardPage() {
           </div>
 
           {/* Evening */}
-          <div className="rounded-lg border border-slate-200 p-4">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-medium text-slate-600">Buổi tối (17-21h)</p>
-              <Clock className="h-5 w-5 text-slate-400" />
+          <div className="relative overflow-hidden rounded-2xl border border-slate-100 bg-slate-50/50 p-5 transition-all duration-200 hover:border-emerald-800/10">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Buổi tối (17-21h)</p>
+              <span className="text-xs font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">
+                {totals && totals.totalSessions > 0 ? Math.round((totals.eveningSessions / totals.totalSessions) * 100) : 0}%
+              </span>
             </div>
-            <p className="text-2xl font-bold text-slate-900">
-              {formatNumber(totals?.eveningSessions || 0)}
+            <p className="font-serif text-3xl font-extrabold text-slate-900">
+              {formatNumber(totals?.eveningSessions || 0)} <span className="text-xs font-normal text-slate-400">phiên</span>
             </p>
-            <div className="mt-2 h-2 w-full rounded-full bg-slate-100">
+            <div className="mt-4 h-2 w-full rounded-full bg-slate-100">
               <div 
-                className="h-2 rounded-full bg-purple-500"
+                className="h-2 rounded-full bg-gradient-to-r from-purple-400 to-fuchsia-500 transition-all duration-500"
                 style={{ 
                   width: `${totals && totals.totalSessions > 0 ? (totals.eveningSessions / totals.totalSessions) * 100 : 0}%` 
                 }}
@@ -463,133 +532,146 @@ export default function SessionAnalyticsDashboardPage() {
       </div>
 
       {/* Package Distribution */}
-      <div className="mb-6 rounded-lg bg-white p-6 shadow-sm">
-        <h2 className="mb-4 text-lg font-bold text-slate-900">Phân bố theo gói dịch vụ</h2>
-        <div className="grid gap-4 md:grid-cols-3">
+      <div className="rounded-[2rem] bg-white border border-slate-200/50 p-8 shadow-sm shadow-slate-100/50">
+        <div className="flex items-center gap-2.5 mb-6">
+          <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-800">
+            <Award className="h-5 w-5" />
+          </div>
+          <h2 className="font-serif text-xl font-bold text-slate-900">Phân bố theo gói dịch vụ</h2>
+        </div>
+        <div className="grid gap-6 md:grid-cols-3">
           {/* Basic */}
-          <div className="rounded-lg border border-slate-200 p-4">
-            <p className="text-sm font-medium text-slate-600">Gói Tiết Kiệm</p>
-            <p className="mt-2 text-2xl font-bold text-slate-900">
-              {formatNumber(totals?.basicPackageSessions || 0)}
+          <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-5 transition-all duration-200 hover:border-emerald-800/10">
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Gói Tiết Kiệm</p>
+            <p className="font-serif mt-3 text-3xl font-extrabold text-slate-900">
+              {formatNumber(totals?.basicPackageSessions || 0)} <span className="text-xs font-normal text-slate-400">phiên</span>
             </p>
-            <p className="mt-1 text-sm text-slate-500">
-              {totals && totals.totalSessions > 0 
-                ? formatNumber((totals.basicPackageSessions / totals.totalSessions) * 100, 1) 
-                : 0}% tổng số
-            </p>
+            <div className="mt-4 flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-400">Tỷ lệ thị phần</span>
+              <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full">
+                {totals && totals.totalSessions > 0 
+                  ? formatNumber((totals.basicPackageSessions / totals.totalSessions) * 100, 1) 
+                  : 0}%
+              </span>
+            </div>
           </div>
 
           {/* Premium */}
-          <div className="rounded-lg border border-slate-200 p-4">
-            <p className="text-sm font-medium text-slate-600">Gói Hạnh Phúc</p>
-            <p className="mt-2 text-2xl font-bold text-slate-900">
-              {formatNumber(totals?.premiumPackageSessions || 0)}
+          <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-5 transition-all duration-200 hover:border-emerald-800/10">
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Gói Hạnh Phúc</p>
+            <p className="font-serif mt-3 text-3xl font-extrabold text-slate-900">
+              {formatNumber(totals?.premiumPackageSessions || 0)} <span className="text-xs font-normal text-slate-400">phiên</span>
             </p>
-            <p className="mt-1 text-sm text-slate-500">
-              {totals && totals.totalSessions > 0 
-                ? formatNumber((totals.premiumPackageSessions / totals.totalSessions) * 100, 1) 
-                : 0}% tổng số
-            </p>
+            <div className="mt-4 flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-400">Tỷ lệ thị phần</span>
+              <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full">
+                {totals && totals.totalSessions > 0 
+                  ? formatNumber((totals.premiumPackageSessions / totals.totalSessions) * 100, 1) 
+                  : 0}%
+              </span>
+            </div>
           </div>
 
           {/* VIP */}
-          <div className="rounded-lg border border-slate-200 p-4">
-            <p className="text-sm font-medium text-slate-600">Gói VIP Toàn Diện</p>
-            <p className="mt-2 text-2xl font-bold text-slate-900">
-              {formatNumber(totals?.vipPackageSessions || 0)}
+          <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-5 transition-all duration-200 hover:border-emerald-800/10">
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Gói VIP Toàn Diện</p>
+            <p className="font-serif mt-3 text-3xl font-extrabold text-slate-900">
+              {formatNumber(totals?.vipPackageSessions || 0)} <span className="text-xs font-normal text-slate-400">phiên</span>
             </p>
-            <p className="mt-1 text-sm text-slate-500">
-              {totals && totals.totalSessions > 0 
-                ? formatNumber((totals.vipPackageSessions / totals.totalSessions) * 100, 1) 
-                : 0}% tổng số
-            </p>
+            <div className="mt-4 flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-400">Tỷ lệ thị phần</span>
+              <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full">
+                {totals && totals.totalSessions > 0 
+                  ? formatNumber((totals.vipPackageSessions / totals.totalSessions) * 100, 1) 
+                  : 0}%
+              </span>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Daily Breakdown Table */}
-      <div className="rounded-lg bg-white shadow-sm">
-        <div className="border-b border-slate-200 px-6 py-4">
-          <h2 className="text-lg font-bold text-slate-900">Chi tiết theo ngày</h2>
+      <div className="overflow-hidden rounded-[2rem] bg-white border border-slate-200/50 shadow-sm shadow-slate-100/50">
+        <div className="border-b border-slate-100 px-8 py-5 flex items-center justify-between bg-slate-50/50">
+          <h2 className="font-serif text-lg font-bold text-slate-900">Chi tiết theo ngày</h2>
+          <span className="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
+            {formatNumber(analytics?.data.length || 0)} ngày ghi nhận
+          </span>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="border-b border-slate-200 bg-slate-50">
-              <tr>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-slate-900">
-                  Ngày
-                </th>
-                <th className="px-6 py-4 text-right text-sm font-semibold text-slate-900">
-                  Tổng ca
-                </th>
-                <th className="px-6 py-4 text-right text-sm font-semibold text-slate-900">
-                  Hoàn thành
-                </th>
-                <th className="px-6 py-4 text-right text-sm font-semibold text-slate-900">
-                  Tỷ lệ
-                </th>
-                <th className="px-6 py-4 text-right text-sm font-semibold text-slate-900">
-                  Đánh giá
-                </th>
-                <th className="px-6 py-4 text-right text-sm font-semibold text-slate-900">
-                  Doanh thu
-                </th>
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="border-b border-slate-100 bg-slate-50/30 text-left text-xs font-bold uppercase tracking-wider text-slate-400">
+                <th className="px-8 py-4">Ngày</th>
+                <th className="px-6 py-4 text-right">Tổng ca</th>
+                <th className="px-6 py-4 text-right">Hoàn thành</th>
+                <th className="px-6 py-4 text-right">Tỷ lệ hoàn thành</th>
+                <th className="px-6 py-4 text-right">Đánh giá trung bình</th>
+                <th className="px-8 py-4 text-right">Doanh thu</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200">
-              {analytics?.data.map((day) => (
-                <motion.tr
-                  key={day.date}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="transition-colors hover:bg-slate-50"
-                >
-                  <td className="px-6 py-4">
-                    <div className="font-medium text-slate-900">{formatDate(day.date)}</div>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <span className="text-slate-900">{formatNumber(day.totalSessions)}</span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-500" />
-                      <span className="text-slate-900">{formatNumber(day.completedSessions)}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <span className={`font-medium ${
-                      day.completionRatePct >= 90 
-                        ? 'text-green-600' 
-                        : day.completionRatePct >= 70 
-                        ? 'text-yellow-600' 
-                        : 'text-red-600'
-                    }`}>
-                      {formatNumber(day.completionRatePct, 1)}%
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-                      <span className="text-slate-900">{formatNumber(day.avgSatisfactionRating, 1)}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <span className="font-medium text-slate-900">
-                      {formatCurrency(day.totalRevenue)}
-                    </span>
-                  </td>
-                </motion.tr>
-              ))}
+            <tbody className="divide-y divide-slate-100 text-sm font-medium text-slate-700">
+              {analytics?.data.map((day) => {
+                const completionRate = isNaN(day.completionRatePct) || day.completionRatePct === null ? 0 : day.completionRatePct;
+                const avgSatisfaction = isNaN(day.avgSatisfactionRating) || !day.avgSatisfactionRating ? 0 : day.avgSatisfactionRating;
+                const totalRev = isNaN(day.totalRevenue) || day.totalRevenue === null ? 0 : day.totalRevenue;
+
+                return (
+                  <motion.tr
+                    key={day.date}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="transition-colors hover:bg-slate-50/50"
+                  >
+                    <td className="px-8 py-4">
+                      <div className="font-semibold text-slate-900">{formatDate(day.date)}</div>
+                    </td>
+                    <td className="px-6 py-4 text-right text-slate-600">
+                      {formatNumber(day.totalSessions)}
+                    </td>
+                    <td className="px-6 py-4 text-right text-slate-600">
+                      <div className="inline-flex items-center gap-1.5 justify-end">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                        <span>{formatNumber(day.completedSessions)}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${
+                        completionRate >= 90 
+                          ? 'bg-emerald-50 text-emerald-700' 
+                          : completionRate >= 70 
+                          ? 'bg-amber-50 text-amber-700' 
+                          : 'bg-rose-50 text-rose-700'
+                      }`}>
+                        {formatNumber(completionRate, 1)}%
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      {avgSatisfaction > 0 ? (
+                        <div className="inline-flex items-center gap-1 justify-end text-amber-600 font-bold">
+                          <Star className="h-3.5 w-3.5 fill-current animate-pulse" />
+                          <span>{formatNumber(avgSatisfaction, 1)}</span>
+                        </div>
+                      ) : (
+                        <span className="text-slate-400 font-normal">—</span>
+                      )}
+                    </td>
+                    <td className="px-8 py-4 text-right font-semibold text-slate-900">
+                      {formatCurrency(totalRev)}
+                    </td>
+                  </motion.tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
 
         {/* Empty State */}
-        {analytics && analytics.data.length === 0 && (
-          <div className="py-12 text-center">
-            <Activity className="mx-auto h-12 w-12 text-slate-400" />
-            <p className="mt-4 text-slate-600">Không có dữ liệu</p>
+        {(!analytics || analytics.data.length === 0) && (
+          <div className="py-16 text-center">
+            <Activity className="mx-auto h-12 w-12 text-slate-300 stroke-1" />
+            <p className="mt-4 text-sm text-slate-400 font-medium">Không tìm thấy dữ liệu vận hành trong khoảng thời gian này</p>
           </div>
         )}
       </div>

@@ -12,24 +12,20 @@
  * Data flows through Operational Intelligence Layer with automatic caching.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { 
-  TrendingUp, 
-  TrendingDown, 
   Package,
   AlertTriangle, 
   Activity, 
-  BarChart3,
-  Calendar,
   RefreshCw,
-  AlertCircle,
   CheckCircle,
   XCircle,
-  Clock,
-  ShoppingCart,
-  Truck
+  Truck,
+  ChevronRight,
+  ArrowLeft
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase-client';
@@ -133,11 +129,7 @@ export default function InventoryDashboardPage() {
     initTenant();
   }, [router]);
 
-  // ───────────────────────────────────────────────────────────────────────────
-  // Fetch inventory
-  // ───────────────────────────────────────────────────────────────────────────
-
-  const fetchInventory = async (refresh = false) => {
+  const fetchInventory = useCallback(async (refresh = false) => {
     if (!tenantId) return;
 
     if (refresh) setIsRefreshing(true);
@@ -168,17 +160,13 @@ export default function InventoryDashboardPage() {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  };
+  }, [tenantId, statusFilter]);
 
   useEffect(() => {
     if (tenantId) {
       fetchInventory();
     }
-  }, [tenantId, statusFilter]);
-
-  // ───────────────────────────────────────────────────────────────────────────
-  // Handlers
-  // ───────────────────────────────────────────────────────────────────────────
+  }, [tenantId, fetchInventory]);
 
   const handleRefresh = () => {
     fetchInventory(true);
@@ -187,10 +175,6 @@ export default function InventoryDashboardPage() {
   const handleStatusFilterChange = (status: StockStatusFilter) => {
     setStatusFilter(status);
   };
-
-  // ───────────────────────────────────────────────────────────────────────────
-  // Computed values
-  // ───────────────────────────────────────────────────────────────────────────
 
   const statusCounts = inventory ? {
     out_of_stock: inventory.data.filter(p => p.stockStatus === 'out_of_stock').length,
@@ -201,32 +185,12 @@ export default function InventoryDashboardPage() {
 
   const urgentReorders = inventory?.data.filter(p => p.reorderRecommendation === 'urgent') || [];
 
-  // ───────────────────────────────────────────────────────────────────────────
-  // Render helpers
-  // ───────────────────────────────────────────────────────────────────────────
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-    }).format(value);
-  };
-
-  const formatNumber = (value: number, decimals = 0) => {
+  const formatNumber = (value: number | null | undefined, decimals = 0) => {
+    if (value === null || value === undefined || isNaN(Number(value))) return '0';
     return new Intl.NumberFormat('vi-VN', {
       minimumFractionDigits: decimals,
       maximumFractionDigits: decimals,
-    }).format(value);
-  };
-
-  const getStockStatusColor = (status: string) => {
-    switch (status) {
-      case 'out_of_stock': return 'bg-red-100 text-red-800 border-red-200';
-      case 'low_stock': return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'medium_stock': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'high_stock': return 'bg-green-100 text-green-800 border-green-200';
-      default: return 'bg-slate-100 text-slate-800 border-slate-200';
-    }
+    }).format(Number(value));
   };
 
   const getStockStatusLabel = (status: string) => {
@@ -236,16 +200,6 @@ export default function InventoryDashboardPage() {
       case 'medium_stock': return 'Vừa phải';
       case 'high_stock': return 'Đầy đủ';
       default: return status;
-    }
-  };
-
-  const getReorderBadgeColor = (recommendation: string) => {
-    switch (recommendation) {
-      case 'urgent': return 'bg-red-500 text-white';
-      case 'recommended': return 'bg-orange-500 text-white';
-      case 'suggested': return 'bg-yellow-500 text-slate-900';
-      case 'not_needed': return 'bg-slate-200 text-slate-600';
-      default: return 'bg-slate-200 text-slate-600';
     }
   };
 
@@ -269,163 +223,213 @@ export default function InventoryDashboardPage() {
   // ───────────────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900">Quản Lý Kho Hàng</h1>
-        <p className="mt-2 text-slate-600">
-          Theo dõi tồn kho, cảnh báo hết hàng, và đề xuất nhập hàng
-        </p>
+    <div className="min-h-screen bg-slate-50/50 p-6 md:p-8 space-y-8">
+      {/* Breadcrumbs & Navigation */}
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-emerald-950/5 pb-4">
+        <div className="flex items-center gap-2 text-xs font-semibold tracking-wider text-slate-500 uppercase">
+          <Link href="/dashboard" className="hover:text-emerald-800 transition-colors">
+            Tổng quan
+          </Link>
+          <ChevronRight size={12} className="opacity-40" />
+          <Link href="/dashboard/operations" className="hover:text-emerald-800 transition-colors">
+            Phân tích vận hành
+          </Link>
+          <ChevronRight size={12} className="opacity-40" />
+          <span className="text-emerald-800 font-bold">Quản Lý Kho Hàng</span>
+        </div>
+        
+        <button
+          onClick={() => router.back()}
+          className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-1.5 text-xs font-bold text-slate-600 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:text-emerald-800 hover:border-emerald-800/30 group"
+        >
+          <ArrowLeft size={14} className="transition-transform group-hover:-translate-x-1" />
+          <span>Trở về trang gần nhất</span>
+        </button>
       </div>
 
+      {/* Header & Controls */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+        <div className="space-y-1.5">
+          <span className="text-xs font-bold text-emerald-800 uppercase tracking-widest block">
+            Báo cáo vận hành
+          </span>
+          <h1 className="font-serif text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
+            Quản Lý Kho Hàng
+          </h1>
+          <p className="text-sm text-slate-600 font-medium max-w-xl">
+            Theo dõi lượng hàng tồn kho thực tế, cảnh báo mức tối thiểu và đề xuất nhà cung cấp
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {statusFilter !== 'all' && (
+            <button
+              onClick={() => handleStatusFilterChange('all')}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 shadow-sm hover:bg-slate-50 transition-all active:scale-95"
+            >
+              <span>✕ Xóa bộ lọc</span>
+            </button>
+          )}
+
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-slate-600 border border-slate-200 shadow-sm hover:bg-slate-50 transition-all active:scale-95 disabled:opacity-50"
+            title="Làm mới dữ liệu"
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
+      </div>
+
+      {/* Cache Status */}
+      {inventory?.metadata && (
+        <div className="flex items-center justify-between rounded-2xl bg-emerald-50/50 border border-emerald-100/50 px-5 py-3 text-xs font-medium text-emerald-800 backdrop-blur-sm shadow-sm shadow-emerald-50/10">
+          <div className="flex items-center gap-2">
+            <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>
+              {inventory.metadata.cacheHit ? '✓ Dữ liệu được tải từ bộ nhớ đệm (Cache Hit)' : '⚡ Dữ liệu mới được tổng hợp thời gian thực'}
+            </span>
+          </div>
+          <div className="opacity-80">
+            Thời gian phản hồi: <span className="font-bold">{inventory.metadata.queryTimeMs}ms</span>
+          </div>
+        </div>
+      )}
+
       {/* Stock Status Overview Cards */}
-      <div className="mb-6 grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-4">
         {/* Out of Stock */}
         <button
           onClick={() => handleStatusFilterChange('out_of_stock')}
-          className={`rounded-lg p-6 text-left shadow-sm transition-all hover:shadow-md ${
+          className={`group relative overflow-hidden rounded-[2rem] p-6 text-left shadow-sm shadow-slate-100/50 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 ${
             statusFilter === 'out_of_stock' 
-              ? 'bg-red-500 text-white ring-2 ring-red-600' 
-              : 'bg-white text-slate-900'
+              ? 'bg-gradient-to-br from-red-500 to-red-600 text-white shadow-red-500/20 ring-1 ring-red-400/20' 
+              : 'bg-white border border-slate-200/50 text-slate-900 hover:border-red-500/20'
           }`}
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className={`text-sm font-medium ${statusFilter === 'out_of_stock' ? 'text-white/80' : 'text-slate-600'}`}>
+              <p className={`text-xs font-bold uppercase tracking-wider ${statusFilter === 'out_of_stock' ? 'text-white/80' : 'text-slate-500'}`}>
                 Hết hàng
               </p>
-              <p className="mt-2 text-3xl font-bold">{statusCounts.out_of_stock}</p>
+              <p className="mt-2 text-3xl font-extrabold font-serif">{statusCounts.out_of_stock}</p>
             </div>
-            <XCircle className={`h-10 w-10 ${statusFilter === 'out_of_stock' ? 'text-white/50' : 'text-red-500'}`} />
+            <div className={`flex h-12 w-12 items-center justify-center rounded-2xl transition-transform group-hover:scale-110 ${
+              statusFilter === 'out_of_stock' ? 'bg-white/15 text-white' : 'bg-red-50 text-red-500'
+            }`}>
+              <XCircle className="h-6 w-6" />
+            </div>
           </div>
         </button>
 
         {/* Low Stock */}
         <button
           onClick={() => handleStatusFilterChange('low_stock')}
-          className={`rounded-lg p-6 text-left shadow-sm transition-all hover:shadow-md ${
+          className={`group relative overflow-hidden rounded-[2rem] p-6 text-left shadow-sm shadow-slate-100/50 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 ${
             statusFilter === 'low_stock' 
-              ? 'bg-orange-500 text-white ring-2 ring-orange-600' 
-              : 'bg-white text-slate-900'
+              ? 'bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-orange-500/20 ring-1 ring-orange-400/20' 
+              : 'bg-white border border-slate-200/50 text-slate-900 hover:border-orange-500/20'
           }`}
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className={`text-sm font-medium ${statusFilter === 'low_stock' ? 'text-white/80' : 'text-slate-600'}`}>
+              <p className={`text-xs font-bold uppercase tracking-wider ${statusFilter === 'low_stock' ? 'text-white/80' : 'text-slate-500'}`}>
                 Sắp hết
               </p>
-              <p className="mt-2 text-3xl font-bold">{statusCounts.low_stock}</p>
+              <p className="mt-2 text-3xl font-extrabold font-serif">{statusCounts.low_stock}</p>
             </div>
-            <AlertTriangle className={`h-10 w-10 ${statusFilter === 'low_stock' ? 'text-white/50' : 'text-orange-500'}`} />
+            <div className={`flex h-12 w-12 items-center justify-center rounded-2xl transition-transform group-hover:scale-110 ${
+              statusFilter === 'low_stock' ? 'bg-white/15 text-white' : 'bg-orange-50 text-orange-500'
+            }`}>
+              <AlertTriangle className="h-6 w-6" />
+            </div>
           </div>
         </button>
 
         {/* Medium Stock */}
         <button
           onClick={() => handleStatusFilterChange('medium_stock')}
-          className={`rounded-lg p-6 text-left shadow-sm transition-all hover:shadow-md ${
+          className={`group relative overflow-hidden rounded-[2rem] p-6 text-left shadow-sm shadow-slate-100/50 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 ${
             statusFilter === 'medium_stock' 
-              ? 'bg-yellow-500 text-white ring-2 ring-yellow-600' 
-              : 'bg-white text-slate-900'
+              ? 'bg-gradient-to-br from-amber-500 to-amber-600 text-white shadow-amber-500/20 ring-1 ring-amber-400/20' 
+              : 'bg-white border border-slate-200/50 text-slate-900 hover:border-amber-500/20'
           }`}
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className={`text-sm font-medium ${statusFilter === 'medium_stock' ? 'text-white/80' : 'text-slate-600'}`}>
+              <p className={`text-xs font-bold uppercase tracking-wider ${statusFilter === 'medium_stock' ? 'text-white/80' : 'text-slate-500'}`}>
                 Vừa phải
               </p>
-              <p className="mt-2 text-3xl font-bold">{statusCounts.medium_stock}</p>
+              <p className="mt-2 text-3xl font-extrabold font-serif">{statusCounts.medium_stock}</p>
             </div>
-            <Activity className={`h-10 w-10 ${statusFilter === 'medium_stock' ? 'text-white/50' : 'text-yellow-500'}`} />
+            <div className={`flex h-12 w-12 items-center justify-center rounded-2xl transition-transform group-hover:scale-110 ${
+              statusFilter === 'medium_stock' ? 'bg-white/15 text-white' : 'bg-amber-50 text-amber-600'
+            }`}>
+              <Activity className="h-6 w-6" />
+            </div>
           </div>
         </button>
 
         {/* High Stock */}
         <button
           onClick={() => handleStatusFilterChange('high_stock')}
-          className={`rounded-lg p-6 text-left shadow-sm transition-all hover:shadow-md ${
+          className={`group relative overflow-hidden rounded-[2rem] p-6 text-left shadow-sm shadow-slate-100/50 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 ${
             statusFilter === 'high_stock' 
-              ? 'bg-green-500 text-white ring-2 ring-green-600' 
-              : 'bg-white text-slate-900'
+              ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-emerald-500/20 ring-1 ring-emerald-400/20' 
+              : 'bg-white border border-slate-200/50 text-slate-900 hover:border-emerald-500/20'
           }`}
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className={`text-sm font-medium ${statusFilter === 'high_stock' ? 'text-white/80' : 'text-slate-600'}`}>
+              <p className={`text-xs font-bold uppercase tracking-wider ${statusFilter === 'high_stock' ? 'text-white/80' : 'text-slate-500'}`}>
                 Đầy đủ
               </p>
-              <p className="mt-2 text-3xl font-bold">{statusCounts.high_stock}</p>
+              <p className="mt-2 text-3xl font-extrabold font-serif">{statusCounts.high_stock}</p>
             </div>
-            <CheckCircle className={`h-10 w-10 ${statusFilter === 'high_stock' ? 'text-white/50' : 'text-green-500'}`} />
+            <div className={`flex h-12 w-12 items-center justify-center rounded-2xl transition-transform group-hover:scale-110 ${
+              statusFilter === 'high_stock' ? 'bg-white/15 text-white' : 'bg-emerald-50 text-emerald-600'
+            }`}>
+              <CheckCircle className="h-6 w-6" />
+            </div>
           </div>
         </button>
       </div>
-
-      {/* Controls */}
-      <div className="mb-6 flex flex-wrap items-center gap-4">
-        {/* Clear Filter Button */}
-        {statusFilter !== 'all' && (
-          <button
-            onClick={() => handleStatusFilterChange('all')}
-            className="rounded-lg bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-100"
-          >
-            ✕ Xóa bộ lọc
-          </button>
-        )}
-
-        {/* Refresh Button */}
-        <button
-          onClick={handleRefresh}
-          disabled={isRefreshing}
-          className="ml-auto rounded-lg bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-100 disabled:opacity-50"
-        >
-          <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-        </button>
-      </div>
-
-      {/* Cache Status */}
-      {inventory?.metadata && (
-        <div className="mb-4 flex items-center gap-2 rounded-lg bg-blue-50 px-4 py-2 text-sm text-blue-800">
-          <AlertCircle className="h-4 w-4" />
-          <span>
-            {inventory.metadata.cacheHit ? '✓ Dữ liệu từ cache' : '⚡ Dữ liệu mới'}
-            {' • '}
-            Thời gian truy vấn: {inventory.metadata.queryTimeMs}ms
-          </span>
-        </div>
-      )}
 
       {/* Urgent Reorder Alerts */}
       {urgentReorders.length > 0 && (
-        <div className="mb-6 rounded-lg bg-red-50 border border-red-200 p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <AlertTriangle className="h-6 w-6 text-red-600" />
-            <h2 className="text-lg font-bold text-red-900">
-              Cảnh báo: {urgentReorders.length} sản phẩm cần nhập hàng khẩn cấp
-            </h2>
+        <div className="rounded-[2rem] border border-red-200/50 bg-red-50/40 p-6 md:p-8 backdrop-blur-sm shadow-sm shadow-red-50/10 space-y-6">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-100 text-red-600">
+              <AlertTriangle className="h-5 w-5 animate-pulse" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-red-950 font-serif">Cảnh báo nhập hàng khẩn cấp</h2>
+              <p className="text-xs text-red-700 font-medium">Hiện có {urgentReorders.length} sản phẩm sắp chạm đáy tồn kho</p>
+            </div>
           </div>
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2">
             {urgentReorders.slice(0, 4).map((product) => (
-              <div key={product.productId} className="rounded-lg bg-white p-4 border border-red-200">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <p className="font-semibold text-slate-900">{product.productName}</p>
-                    <p className="text-sm text-slate-600">{product.category}</p>
+              <div key={product.productId} className="rounded-2xl border border-red-100 bg-white p-5 shadow-sm transition-all duration-300 hover:shadow-md">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-slate-850 truncate">{product.productName}</p>
+                    <p className="text-xs font-semibold text-slate-400 mt-0.5">{product.category}</p>
                   </div>
-                  <span className="rounded-full bg-red-500 px-3 py-1 text-xs font-bold text-white">
+                  <span className="shrink-0 rounded-lg bg-red-50 border border-red-100 px-2.5 py-1 text-xs font-bold text-red-600">
                     {product.daysUntilStockout !== null 
                       ? `${product.daysUntilStockout} ngày` 
                       : 'Hết hàng'}
                   </span>
                 </div>
-                <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+                <div className="mt-4 grid grid-cols-2 gap-4 text-xs border-t border-slate-50 pt-3">
                   <div>
-                    <p className="text-slate-600">Tồn kho hiện tại:</p>
-                    <p className="font-medium text-slate-900">{formatNumber(product.currentStock)}</p>
+                    <p className="text-slate-500 font-medium">Tồn hiện tại:</p>
+                    <p className="font-bold text-slate-850 text-sm mt-0.5">{formatNumber(product.currentStock)}</p>
                   </div>
                   <div>
-                    <p className="text-slate-600">Điểm nhập hàng:</p>
-                    <p className="font-medium text-slate-900">{formatNumber(product.reorderPoint)}</p>
+                    <p className="text-slate-500 font-medium">Điểm reorder:</p>
+                    <p className="font-bold text-slate-850 text-sm mt-0.5">{formatNumber(product.reorderPoint)}</p>
                   </div>
                 </div>
               </div>
@@ -435,98 +439,109 @@ export default function InventoryDashboardPage() {
       )}
 
       {/* Inventory Table */}
-      <div className="rounded-lg bg-white shadow-sm">
+      <div className="rounded-[2rem] border border-slate-200/50 bg-white shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="border-b border-slate-200 bg-slate-50">
-              <tr>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-slate-900">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-slate-100 bg-slate-50/50">
+                <th className="px-6 py-4.5 text-xs font-bold uppercase tracking-wider text-slate-500">
                   Sản phẩm
                 </th>
-                <th className="px-6 py-4 text-right text-sm font-semibold text-slate-900">
+                <th className="px-6 py-4.5 text-right text-xs font-bold uppercase tracking-wider text-slate-500">
                   Tồn kho
                 </th>
-                <th className="px-6 py-4 text-right text-sm font-semibold text-slate-900">
+                <th className="px-6 py-4.5 text-right text-xs font-bold uppercase tracking-wider text-slate-500">
                   Điểm nhập
                 </th>
-                <th className="px-6 py-4 text-center text-sm font-semibold text-slate-900">
+                <th className="px-6 py-4.5 text-center text-xs font-bold uppercase tracking-wider text-slate-500">
                   Trạng thái
                 </th>
-                <th className="px-6 py-4 text-right text-sm font-semibold text-slate-900">
+                <th className="px-6 py-4.5 text-right text-xs font-bold uppercase tracking-wider text-slate-500">
                   Hết hàng sau
                 </th>
-                <th className="px-6 py-4 text-center text-sm font-semibold text-slate-900">
+                <th className="px-6 py-4.5 text-center text-xs font-bold uppercase tracking-wider text-slate-500">
                   Đề xuất
                 </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-slate-900">
+                <th className="px-6 py-4.5 text-left text-xs font-bold uppercase tracking-wider text-slate-500">
                   Nhà cung cấp
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200">
+            <tbody className="divide-y divide-slate-100">
               {inventory?.data.map((product) => (
                 <motion.tr
                   key={product.productId}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="transition-colors hover:bg-slate-50"
+                  transition={{ duration: 0.2 }}
+                  className="transition-colors hover:bg-slate-50/40"
                 >
                   {/* Product Name */}
                   <td className="px-6 py-4">
-                    <div>
-                      <div className="font-medium text-slate-900">{product.productName}</div>
-                      <div className="text-sm text-slate-600">{product.category}</div>
-                      {product.sku && (
-                        <div className="text-xs text-slate-500">SKU: {product.sku}</div>
-                      )}
+                    <div className="space-y-0.5">
+                      <div className="font-semibold text-slate-850">{product.productName}</div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-slate-400 font-medium">{product.category}</span>
+                        {product.sku && (
+                          <>
+                            <span className="h-1 w-1 rounded-full bg-slate-200" />
+                            <span className="text-xs text-slate-400 font-mono">SKU: {product.sku}</span>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </td>
 
                   {/* Current Stock */}
                   <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <Package className="h-4 w-4 text-slate-400" />
-                      <span className="font-medium text-slate-900">
+                    <div className="flex items-center justify-end gap-1.5">
+                      <span className="font-semibold text-slate-850">
                         {formatNumber(product.currentStock)}
                       </span>
                       {product.unitOfMeasure && (
-                        <span className="text-sm text-slate-500">{product.unitOfMeasure}</span>
+                        <span className="text-xs text-slate-400 font-medium">{product.unitOfMeasure}</span>
                       )}
                     </div>
                   </td>
 
                   {/* Reorder Point */}
                   <td className="px-6 py-4 text-right">
-                    <span className="text-slate-900">{formatNumber(product.reorderPoint)}</span>
+                    <span className="font-medium text-slate-700">{formatNumber(product.reorderPoint)}</span>
                   </td>
 
                   {/* Stock Status */}
                   <td className="px-6 py-4 text-center">
-                    <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-medium ${getStockStatusColor(product.stockStatus)}`}>
+                    <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-bold ${
+                      product.stockStatus === 'out_of_stock' ? 'bg-red-50 text-red-700 border-red-100' :
+                      product.stockStatus === 'low_stock' ? 'bg-orange-50 text-orange-700 border-orange-100' :
+                      product.stockStatus === 'medium_stock' ? 'bg-amber-50/60 text-amber-800 border-amber-100' :
+                      'bg-emerald-50 text-emerald-700 border-emerald-100'
+                    }`}>
                       {getStockStatusLabel(product.stockStatus)}
                     </span>
                   </td>
 
                   {/* Days Until Stockout */}
                   <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <Clock className="h-4 w-4 text-slate-400" />
-                      <span className={`font-medium ${
-                        product.daysUntilStockout !== null && product.daysUntilStockout < 7 
-                          ? 'text-red-600' 
-                          : 'text-slate-900'
-                      }`}>
-                        {product.daysUntilStockout !== null 
-                          ? `${product.daysUntilStockout} ngày` 
-                          : 'N/A'}
-                      </span>
-                    </div>
+                    <span className={`font-semibold ${
+                      product.daysUntilStockout !== null && product.daysUntilStockout < 7 
+                        ? 'text-red-600 font-bold' 
+                        : 'text-slate-700'
+                    }`}>
+                      {product.daysUntilStockout !== null 
+                        ? `${product.daysUntilStockout} ngày` 
+                        : 'N/A'}
+                    </span>
                   </td>
 
                   {/* Reorder Recommendation */}
                   <td className="px-6 py-4 text-center">
-                    <span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${getReorderBadgeColor(product.reorderRecommendation)}`}>
+                    <span className={`inline-flex rounded-lg px-2.5 py-1 text-xs font-bold ${
+                      product.reorderRecommendation === 'urgent' ? 'bg-red-600 text-white' :
+                      product.reorderRecommendation === 'recommended' ? 'bg-orange-500 text-white' :
+                      product.reorderRecommendation === 'suggested' ? 'bg-amber-50 text-amber-800 border border-amber-200/50' :
+                      'bg-slate-100 text-slate-500'
+                    }`}>
                       {product.reorderRecommendation === 'urgent' && 'Khẩn cấp'}
                       {product.reorderRecommendation === 'recommended' && 'Nên nhập'}
                       {product.reorderRecommendation === 'suggested' && 'Đề xuất'}
@@ -537,17 +552,17 @@ export default function InventoryDashboardPage() {
                   {/* Supplier */}
                   <td className="px-6 py-4">
                     {product.supplierName ? (
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <Truck className="h-4 w-4 text-slate-400" />
-                          <span className="font-medium text-slate-900">{product.supplierName}</span>
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-1.5">
+                          <Truck className="h-3.5 w-3.5 text-slate-400" />
+                          <span className="font-semibold text-slate-800 text-sm">{product.supplierName}</span>
                         </div>
-                        <div className="text-xs text-slate-600 mt-1">
+                        <div className="text-xs text-slate-450 font-medium pl-5">
                           Lead time: {product.supplierLeadTimeDays} ngày
                         </div>
                       </div>
                     ) : (
-                      <span className="text-slate-400">Chưa có</span>
+                      <span className="text-xs text-slate-400 font-medium">Chưa có</span>
                     )}
                   </td>
                 </motion.tr>
@@ -558,9 +573,9 @@ export default function InventoryDashboardPage() {
 
         {/* Empty State */}
         {inventory && inventory.data.length === 0 && (
-          <div className="py-12 text-center">
-            <Package className="mx-auto h-12 w-12 text-slate-400" />
-            <p className="mt-4 text-slate-600">Không có sản phẩm nào</p>
+          <div className="py-16 text-center">
+            <Package className="mx-auto h-12 w-12 text-slate-300" />
+            <p className="mt-4 text-slate-500 font-medium">Không có sản phẩm nào</p>
           </div>
         )}
       </div>

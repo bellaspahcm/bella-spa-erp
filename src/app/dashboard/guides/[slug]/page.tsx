@@ -2,6 +2,7 @@
 
 import { getCurrentUser } from '@/services/user-actions';
 import { ALL_GUIDES,isManualPermitted } from '@/services/user-manuals-utils';
+import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
 import {
 ChevronLeft,
 Loader2,
@@ -21,6 +22,7 @@ interface PageProps {
 export default function GuideReader({ params }: PageProps) {
   const router = useRouter();
   const { slug } = use(params);
+  const { tenantModuleKey } = useTenantModuleKey();
   
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -62,16 +64,54 @@ export default function GuideReader({ params }: PageProps) {
     setIsFullscreen(!isFullscreen);
   };
 
+  // Define dynamic style mapping based on tenantModuleKey
+  const getThemeStyles = () => {
+    switch (tenantModuleKey) {
+      case 'beauty_spa':
+        return {
+          wrapperBg: 'bg-[#FAF9F5] dark:bg-[#11100F]',
+          loaderColor: 'text-emerald-800 dark:text-emerald-400',
+          navBg: 'bg-white/80 dark:bg-[#1C1B19]/80 border border-slate-200/70 dark:border-[#3E3A35]',
+          backBtnBg: 'bg-emerald-50 hover:bg-emerald-100/80 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 text-emerald-850 dark:text-[#A67D44]',
+          headerTag: 'text-emerald-800 dark:text-[#A67D44]',
+          iframeBorder: 'border-slate-200/60 dark:border-[#3E3A35]',
+          iframeShadow: 'shadow-sm',
+        };
+      case 'baby_care':
+        return {
+          wrapperBg: 'bg-[#FFF5F7] dark:bg-[#11100F]',
+          loaderColor: 'text-primary dark:text-[#A67D44]',
+          navBg: 'bg-white/80 dark:bg-[#1C1B19]/80 border border-pink-100 dark:border-[#3E3A35]',
+          backBtnBg: 'bg-pink-50 hover:bg-pink-100 dark:bg-[#5D1C34]/40 dark:hover:bg-[#5D1C34]/60 text-primary dark:text-[#A67D44]',
+          headerTag: 'text-primary dark:text-[#A67D44]',
+          iframeBorder: 'border border-pink-100 dark:border-[#3E3A35]',
+          iframeShadow: 'shadow-[0_12px_40px_rgba(219,39,119,0.04)]',
+        };
+      default: // industrial_cleaning or others
+        return {
+          wrapperBg: 'bg-slate-50 dark:bg-[#11100F]',
+          loaderColor: 'text-slate-700 dark:text-[#A67D44]',
+          navBg: 'bg-white dark:bg-[#1C1B19] border border-slate-200 dark:border-[#3E3A35]',
+          backBtnBg: 'bg-slate-100 hover:bg-slate-200 dark:bg-[#3E3A35] dark:hover:bg-[#4E4941] text-slate-700 dark:text-[#A67D44]',
+          headerTag: 'text-slate-650 dark:text-[#A67D44]',
+          iframeBorder: 'border border-slate-200 dark:border-[#3E3A35]',
+          iframeShadow: 'shadow-sm',
+        };
+    }
+  };
+
+  const theme = getThemeStyles();
+
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[#FFF5F7] dark:bg-[#11100F]">
-        <Loader2 className="w-10 h-10 animate-spin text-primary animate-pulse" />
+      <div className={`flex h-screen items-center justify-center dark:bg-[#11100F] ${theme.wrapperBg}`}>
+        <Loader2 className={`w-10 h-10 animate-spin animate-pulse ${theme.loaderColor}`} />
       </div>
     );
   }
 
   return (
-    <div className={`min-h-screen bg-[#FFF5F7] dark:bg-[#11100F] transition-colors duration-300 ${
+    <div className={`min-h-screen dark:bg-[#11100F] transition-colors duration-300 ${theme.wrapperBg} ${
       isFullscreen ? 'p-0 z-50 fixed inset-0' : 'py-8 px-6 lg:px-12'
     }`}>
       <div className={`max-w-7xl mx-auto h-full flex flex-col ${
@@ -80,16 +120,16 @@ export default function GuideReader({ params }: PageProps) {
         
         {/* Navigation / Header Bar */}
         {!isFullscreen && (
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/80 dark:bg-[#1C1B19]/80 border border-pink-100 dark:border-[#3E3A35] rounded-3xl p-4 shadow-sm backdrop-blur-md">
+          <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-3xl p-4 shadow-sm backdrop-blur-md ${theme.navBg}`}>
             <div className="flex items-center gap-3">
               <Link
                 href="/dashboard/guides"
-                className="w-10 h-10 rounded-2xl bg-pink-50 hover:bg-pink-100 dark:bg-[#5D1C34]/40 dark:hover:bg-[#5D1C34]/60 text-primary dark:text-[#A67D44] flex items-center justify-center transition-colors active:scale-95"
+                className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-colors active:scale-95 ${theme.backBtnBg}`}
               >
                 <ChevronLeft className="w-6 h-6" />
               </Link>
               <div>
-                <span className="text-[9px] font-black text-primary dark:text-[#A67D44] uppercase tracking-widest block mb-0.5">
+                <span className={`text-[9px] font-black uppercase tracking-widest block mb-0.5 ${theme.headerTag}`}>
                   Tài liệu Hướng dẫn
                 </span>
                 <h1 className="text-lg font-black text-slate-800 dark:text-[#EFE9E1]">
@@ -121,7 +161,7 @@ export default function GuideReader({ params }: PageProps) {
         )}
 
         {/* Dynamic Iframe Content Frame */}
-        <div className={`relative bg-white dark:bg-[#1C1B19] border border-pink-100 dark:border-[#3E3A35] shadow-[0_12px_40px_rgba(219,39,119,0.04)] dark:shadow-none transition-all duration-300 flex-grow ${
+        <div className={`relative bg-white dark:bg-[#1C1B19] transition-all duration-300 flex-grow ${theme.iframeBorder} ${theme.iframeShadow} ${
           isFullscreen 
             ? 'w-screen h-screen border-none rounded-none shadow-none' 
             : 'rounded-[2rem] overflow-hidden h-[80vh]'
@@ -140,7 +180,6 @@ export default function GuideReader({ params }: PageProps) {
             id="guide-frame"
             src={`/user-manuals/${slug}.html`}
             className="w-full h-full border-none"
-            title={guideTitle}
           />
         </div>
 

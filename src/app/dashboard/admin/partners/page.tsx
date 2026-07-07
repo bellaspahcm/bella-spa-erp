@@ -10,6 +10,8 @@
 
 import { Suspense } from 'react';
 import { Metadata } from 'next';
+import Link from 'next/link';
+import { ChevronRight, ArrowLeft } from 'lucide-react';
 import { PartnersList } from '@/components/admin/partners/PartnersList';
 import { PartnersListSkeleton } from '@/components/admin/partners/PartnersListSkeleton';
 
@@ -20,30 +22,37 @@ export const metadata: Metadata = {
 
 export default function PartnersPage() {
   return (
-    <div className="p-6 md:p-8 lg:p-10 space-y-6">
-      {/* Header - Bella ERP Style */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50 dark:from-rose-950/20 dark:via-pink-950/20 dark:to-purple-950/20 border border-rose-200 dark:border-rose-900 p-8 shadow-sm">
-        {/* Decorative elements */}
-        <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/10 dark:bg-rose-500/5 rounded-full blur-[100px]" />
-        <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-purple-300/20 dark:bg-purple-500/5 rounded-full blur-[100px]" />
-        
-        <div className="relative flex items-start justify-between">
-          <div className="flex items-start gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-pink-600 dark:from-rose-600 dark:to-pink-600 flex items-center justify-center shadow-lg shadow-primary/20 dark:shadow-rose-500/20">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-              </svg>
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
-                API Partners
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-1">
-                Quản lý đối tác API, authentication keys và phân quyền truy cập
-              </p>
-            </div>
-          </div>
+    <div className="p-6 md:p-8 lg:p-10 space-y-8">
+      {/* Breadcrumbs & Navigation */}
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-emerald-950/5 pb-4">
+        <div className="flex items-center gap-2 text-xs font-semibold tracking-wider text-slate-500 uppercase">
+          <Link href="/dashboard" className="hover:text-emerald-800 transition-colors">
+            Tổng quan
+          </Link>
+          <ChevronRight size={12} className="opacity-40" />
+          <span className="text-emerald-800 font-bold">API Partners</span>
         </div>
+        
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-1.5 text-xs font-bold text-slate-600 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:text-emerald-800 hover:border-emerald-800/30 group"
+        >
+          <ArrowLeft size={14} className="transition-transform group-hover:-translate-x-1" />
+          <span>Trở về tổng quan</span>
+        </Link>
+      </div>
+
+      {/* Header & Title */}
+      <div className="space-y-1.5">
+        <span className="text-xs font-bold text-emerald-800 uppercase tracking-widest block">
+          Hệ thống quản trị
+        </span>
+        <h1 className="font-serif text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
+          API Partners
+        </h1>
+        <p className="text-sm text-slate-600 font-medium max-w-xl">
+          Quản lý đối tác API, authentication keys và phân quyền truy cập
+        </p>
       </div>
 
       {/* Partners List */}

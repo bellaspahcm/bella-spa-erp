@@ -6,15 +6,17 @@ import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
 import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
 import { motion } from 'framer-motion';
 import {
-ArrowRight,
-Bookmark,
-HelpCircle,
-Loader2,
-Search,
-Sparkles
+  ArrowRight,
+  Bookmark,
+  HelpCircle,
+  Loader2,
+  Search,
+  Sparkles,
+  ChevronRight,
+  ArrowLeft
 } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect,useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function UserManualsHub() {
   const { tenantModuleKey } = useTenantModuleKey();
@@ -53,29 +55,114 @@ export default function UserManualsHub() {
     );
   }
 
-  return (
-    <div className={`min-h-screen py-12 px-6 lg:px-12 relative overflow-hidden transition-colors duration-300 ${
-      tenantModuleKey === 'industrial_cleaning' 
-        ? 'bg-slate-50 dark:bg-[#11100F]'
-        : 'bg-[#FFF5F7] dark:bg-[#11100F]'
-    }`}>
-      {/* Decorative Blur Background elements - only for Bella/Beauty Spa */}
-      {tenantModuleKey !== 'industrial_cleaning' && (
-        <>
-          <div className="absolute top-[-100px] right-[-100px] w-[400px] h-[400px] bg-pink-300/30 dark:bg-[#5D1C34]/15 rounded-full blur-[100px] pointer-events-none" />
-          <div className="absolute bottom-[-100px] left-[-100px] w-[500px] h-[500px] bg-rose-300/20 dark:bg-[#A67D44]/5 rounded-full blur-[120px] pointer-events-none" />
-        </>
-      )}
+  // Define dynamic style mapping based on tenantModuleKey
+  const getThemeStyles = () => {
+    switch (tenantModuleKey) {
+      case 'beauty_spa':
+        return {
+          wrapperBg: 'bg-[#FAF9F5] dark:bg-[#11100F]',
+          glowTop: 'bg-emerald-500/10 dark:bg-[#064e3b]/5',
+          glowBottom: 'bg-teal-500/5 dark:bg-[#115e59]/5',
+          tagBg: 'bg-emerald-50/50 border-emerald-100/60 dark:bg-emerald-950/20 dark:border-emerald-900/30',
+          tagText: 'text-emerald-800 dark:text-emerald-300',
+          titleFont: 'font-serif text-emerald-850 dark:text-emerald-400',
+          searchGlow: 'bg-emerald-500/5 dark:bg-emerald-900/5',
+          searchBorder: 'border-slate-200/70 focus-within:border-emerald-500/50 dark:border-[#3E3A35] dark:focus-within:border-emerald-800',
+          cardBgGlow: 'bg-emerald-100/20 dark:bg-emerald-950/5',
+          cardBorder: 'border-slate-200/60 dark:border-[#3E3A35]',
+          cardHoverBorder: 'hover:border-emerald-500/30 dark:hover:border-emerald-800',
+          cardIconBg: 'bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100/50 dark:border-emerald-900/30 text-emerald-850',
+          cardSubtitle: 'text-emerald-800 dark:text-emerald-400',
+          cardTitle: 'text-slate-800 group-hover:text-emerald-800 dark:text-[#EFE9E1] dark:group-hover:text-emerald-400',
+          cardDivider: 'border-slate-100 dark:border-[#3E3A35]',
+          readLink: 'text-emerald-850 dark:text-emerald-400',
+          emptyStateBorder: 'border-slate-200/60 dark:border-[#3E3A35]',
+          footerBorder: 'border-slate-200/50 dark:border-[#3E3A35]/30',
+          footerLink: 'text-emerald-800 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300',
+        };
+      case 'baby_care':
+        return {
+          wrapperBg: 'bg-[#FFF5F7] dark:bg-[#11100F]',
+          glowTop: 'bg-pink-300/30 dark:bg-[#5D1C34]/15',
+          glowBottom: 'bg-rose-300/20 dark:bg-[#A67D44]/5',
+          tagBg: 'bg-white/80 border-pink-100 dark:bg-[#1C1B19]/80 dark:border-[#3E3A35]',
+          tagText: 'text-primary dark:text-[#CDBCAB]',
+          titleFont: 'font-handwriting text-[#BE185D] dark:text-[#A67D44]',
+          searchGlow: 'bg-primary/10 dark:bg-[#A67D44]/10',
+          searchBorder: 'border-pink-100 focus-within:border-primary/50 dark:border-[#3E3A35] dark:focus-within:border-[#A67D44]/50',
+          cardBgGlow: 'bg-pink-100/30 dark:bg-[#5D1C34]/5',
+          cardBorder: 'border-pink-100 dark:border-[#3E3A35]',
+          cardHoverBorder: 'hover:border-primary dark:hover:border-[#A67D44]',
+          cardIconBg: 'bg-pink-50 dark:bg-[#5D1C34]/40 border border-pink-100/50 dark:border-[#3E3A35]/50 text-[#BE185D]',
+          cardSubtitle: 'text-primary dark:text-[#A67D44]',
+          cardTitle: 'text-slate-800 group-hover:text-primary dark:text-[#EFE9E1] dark:group-hover:text-[#A67D44]',
+          cardDivider: 'border-slate-50 dark:border-[#3E3A35]',
+          readLink: 'text-primary dark:text-[#A67D44]',
+          emptyStateBorder: 'border-pink-100 dark:border-[#3E3A35]',
+          footerBorder: 'border-pink-100/50 dark:border-[#3E3A35]/30',
+          footerLink: 'text-primary dark:text-[#A67D44]',
+        };
+      default: // industrial_cleaning or others
+        return {
+          wrapperBg: 'bg-slate-50 dark:bg-[#11100F]',
+          glowTop: 'bg-slate-300/20 dark:bg-slate-900/10',
+          glowBottom: 'bg-slate-200/10 dark:bg-slate-900/5',
+          tagBg: 'bg-slate-100 border-slate-200 dark:bg-[#1C1B19] dark:border-[#3E3A35]',
+          tagText: 'text-slate-650 dark:text-[#CDBCAB]',
+          titleFont: 'font-serif text-slate-850 dark:text-[#A67D44]',
+          searchGlow: 'bg-slate-500/5 dark:bg-slate-800/5',
+          searchBorder: 'border-slate-200 focus-within:border-slate-400 dark:border-[#3E3A35] dark:focus-within:border-slate-700',
+          cardBgGlow: 'bg-slate-100/30 dark:bg-slate-900/5',
+          cardBorder: 'border-slate-200 dark:border-[#3E3A35]',
+          cardHoverBorder: 'hover:border-slate-300 dark:hover:border-slate-700',
+          cardIconBg: 'bg-slate-100 border border-slate-200/50 dark:border-[#3E3A35]/50 text-slate-700',
+          cardSubtitle: 'text-slate-650 dark:text-[#A67D44]',
+          cardTitle: 'text-slate-800 group-hover:text-slate-900 dark:text-[#EFE9E1] dark:group-hover:text-[#A67D44]',
+          cardDivider: 'border-slate-100 dark:border-[#3E3A35]',
+          readLink: 'text-slate-700 dark:text-[#A67D44]',
+          emptyStateBorder: 'border-slate-200 dark:border-[#3E3A35]',
+          footerBorder: 'border-slate-200/50 dark:border-[#3E3A35]/30',
+          footerLink: 'text-slate-700 hover:text-slate-600 dark:text-[#A67D44] dark:hover:text-[#CDBCAB]',
+        };
+    }
+  };
 
-      <div className="max-w-7xl mx-auto relative z-10 space-y-12">
+  const theme = getThemeStyles();
+
+  return (
+    <div className={`min-h-screen py-10 px-6 lg:px-12 relative overflow-hidden transition-colors duration-300 ${theme.wrapperBg}`}>
+      {/* Decorative Blur Background elements */}
+      <div className={`absolute top-[-100px] right-[-100px] w-[400px] h-[400px] rounded-full blur-[100px] pointer-events-none ${theme.glowTop}`} />
+      <div className={`absolute bottom-[-100px] left-[-100px] w-[500px] h-[500px] rounded-full blur-[120px] pointer-events-none ${theme.glowBottom}`} />
+
+      <div className="max-w-7xl mx-auto relative z-10 space-y-8">
+        {/* Breadcrumbs & Navigation */}
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-emerald-950/5 pb-4">
+          <div className="flex items-center gap-2 text-xs font-semibold tracking-wider text-slate-500 uppercase">
+            <Link href="/dashboard" className="hover:text-emerald-800 transition-colors">
+              Tổng quan
+            </Link>
+            <ChevronRight size={12} className="opacity-40" />
+            <span className="text-emerald-850 font-bold">Hướng dẫn sử dụng</span>
+          </div>
+
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-1.5 text-xs font-bold text-slate-600 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:text-emerald-800 hover:border-emerald-800/30 group"
+          >
+            <ArrowLeft size={14} className="transition-transform group-hover:-translate-x-1" />
+            <span>Trở về tổng quan</span>
+          </Link>
+        </div>
+
         {/* Header Section */}
-        <header className="text-center max-w-3xl mx-auto space-y-4">
-          <div className="inline-flex items-center gap-2 bg-white/80 dark:bg-[#1C1B19]/80 border border-pink-100 dark:border-[#3E3A35] px-4 py-1.5 rounded-full shadow-sm">
-            <Sparkles className="w-4 h-4 text-primary dark:text-[#A67D44]" />
-            <span className="text-[10px] font-black text-primary dark:text-[#CDBCAB] uppercase tracking-[0.2em]">Trung tâm tài liệu</span>
+        <header className="text-center max-w-3xl mx-auto space-y-4 pt-4">
+          <div className={`inline-flex items-center gap-2 border px-4 py-1.5 rounded-full shadow-sm ${theme.tagBg}`}>
+            <Sparkles className={`w-4 h-4 ${theme.tagText}`} />
+            <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${theme.tagText}`}>Trung tâm tài liệu</span>
           </div>
           
-          <h1 className="font-handwriting text-5xl md:text-7xl text-[#BE185D] dark:text-[#A67D44] leading-tight">
+          <h1 className={`text-5xl md:text-6.5xl leading-tight font-extrabold tracking-tight ${theme.titleFont}`}>
             Sổ tay hướng dẫn
           </h1>
           <p className="text-sm font-medium text-slate-500 dark:text-[#CDBCAB] leading-relaxed max-w-2xl mx-auto">
@@ -86,8 +173,8 @@ export default function UserManualsHub() {
         {/* Search Bar Block */}
         <div className="max-w-md mx-auto">
           <div className="relative group">
-            <div className="absolute inset-0 bg-primary/10 dark:bg-[#A67D44]/10 blur-xl rounded-full scale-95 opacity-50 group-hover:opacity-100 transition-opacity duration-300" />
-            <div className="relative bg-white dark:bg-[#1C1B19] border border-pink-100 dark:border-[#3E3A35] rounded-2xl flex items-center px-4 py-3 shadow-[0_8px_30px_rgba(219,39,119,0.04)] dark:shadow-none focus-within:border-primary/50 dark:focus-within:border-[#A67D44]/50 transition-all duration-300">
+            <div className={`absolute inset-0 blur-xl rounded-full scale-95 opacity-50 group-hover:opacity-100 transition-opacity duration-300 ${theme.searchGlow}`} />
+            <div className={`relative bg-white dark:bg-[#1C1B19] border rounded-2xl flex items-center px-4 py-3 shadow-sm focus-within:shadow transition-all duration-300 ${theme.searchBorder}`}>
               <Search className="w-5 h-5 text-slate-400 dark:text-[#CDBCAB] mr-3" />
               <input
                 type="text"
@@ -106,27 +193,27 @@ export default function UserManualsHub() {
             filteredGuides.map((guide, idx) => (
               <motion.div
                 key={guide.slug}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: idx * 0.05 }}
+                transition={{ duration: 0.35, delay: idx * 0.05 }}
               >
                 <Link
                   href={`/dashboard/guides/${guide.slug}`}
-                  className="group block h-full bg-white dark:bg-[#1C1B19] rounded-[2rem] border border-pink-100 dark:border-[#3E3A35] p-8 shadow-[0_12px_40px_rgba(219,39,119,0.04)] dark:shadow-none hover:shadow-[0_20px_50px_rgba(219,39,119,0.12)] hover:border-primary dark:hover:border-[#A67D44] transition-all duration-300 hover:-translate-y-1.5 relative overflow-hidden"
+                  className={`group block h-full bg-white dark:bg-[#1C1B19] rounded-[2rem] border p-8 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 relative overflow-hidden ${theme.cardBorder} ${theme.cardHoverBorder}`}
                 >
                   {/* Decorative faint glow inside card */}
-                  <div className="absolute top-0 right-0 w-24 h-24 bg-pink-100/30 dark:bg-[#5D1C34]/5 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500" />
+                  <div className={`absolute top-0 right-0 w-24 h-24 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500 ${theme.cardBgGlow}`} />
                   
                   {/* Icon section */}
-                  <div className="w-14 h-14 bg-pink-50 dark:bg-[#5D1C34]/40 rounded-2xl flex items-center justify-center text-3xl mb-6 border border-pink-100/50 dark:border-[#3E3A35]/50 group-hover:scale-105 group-hover:rotate-[-3deg] transition-all duration-300">
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-3xl mb-6 group-hover:scale-105 group-hover:rotate-[-3deg] transition-all duration-300 ${theme.cardIconBg}`}>
                     {guide.icon}
                   </div>
 
-                  <span className="text-[10px] font-extrabold text-primary dark:text-[#A67D44] uppercase tracking-wider block mb-2">
+                  <span className={`text-[10px] font-extrabold uppercase tracking-wider block mb-2 ${theme.cardSubtitle}`}>
                     {guide.subtitle}
                   </span>
                   
-                  <h3 className="text-xl font-extrabold text-slate-800 dark:text-[#EFE9E1] mb-3 group-hover:text-primary dark:group-hover:text-[#A67D44] transition-colors leading-tight">
+                  <h3 className={`text-xl font-extrabold mb-3 transition-colors leading-tight ${theme.cardTitle}`}>
                     {guide.title}
                   </h3>
                   
@@ -134,18 +221,18 @@ export default function UserManualsHub() {
                     {guide.description}
                   </p>
 
-                  <div className="pt-4 border-t border-slate-50 dark:border-[#3E3A35] flex items-center justify-between mt-auto">
-                    <span className="inline-flex items-center gap-1.5 text-xs font-bold text-primary dark:text-[#A67D44]">
+                  <div className={`pt-4 border-t flex items-center justify-between mt-auto ${theme.cardDivider}`}>
+                    <span className={`inline-flex items-center gap-1.5 text-xs font-bold ${theme.readLink}`}>
                       Đọc tài liệu
                       <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform duration-300" />
                     </span>
-                    <Bookmark className="w-4 h-4 text-slate-300 group-hover:text-primary dark:group-hover:text-[#A67D44] transition-colors" />
+                    <Bookmark className="w-4 h-4 text-slate-350 group-hover:text-emerald-800 transition-colors" />
                   </div>
                 </Link>
               </motion.div>
             ))
           ) : (
-            <div className="col-span-full py-16 text-center bg-white dark:bg-[#1C1B19] rounded-[2rem] border border-pink-100 dark:border-[#3E3A35]">
+            <div className={`col-span-full py-16 text-center bg-white dark:bg-[#1C1B19] rounded-[2rem] border ${theme.emptyStateBorder}`}>
               <HelpCircle className="w-12 h-12 text-slate-300 dark:text-[#CDBCAB] mx-auto mb-4 animate-bounce" />
               <h3 className="text-lg font-bold text-slate-700 dark:text-[#EFE9E1]">Không tìm thấy tài liệu phù hợp</h3>
               <p className="text-xs text-slate-400 mt-1">Vui lòng kiểm tra lại từ khóa tìm kiếm hoặc quyền hạn tài khoản của bạn.</p>
@@ -154,12 +241,12 @@ export default function UserManualsHub() {
         </div>
 
         {/* Footer Support Information */}
-        <footer className="text-center pt-16 border-t border-pink-100/50 dark:border-[#3E3A35]/30">
+        <footer className={`text-center pt-12 border-t ${theme.footerBorder}`}>
           <p className="text-xs text-slate-400 dark:text-[#CDBCAB] font-bold uppercase tracking-widest">Bella Spa Group · Hỗ trợ kỹ thuật</p>
-          <div className="flex justify-center gap-6 mt-4 text-xs font-bold text-primary dark:text-[#A67D44]">
-            <a href="mailto:support@bellaspa.vn" className="hover:underline">support@bellaspa.vn</a>
-            <span>•</span>
-            <a href="tel:02899999999" className="hover:underline">(028) 9999 9999</a>
+          <div className="flex justify-center gap-6 mt-4 text-xs font-bold">
+            <a href="mailto:support@bellaspa.vn" className={`hover:underline ${theme.footerLink}`}>support@bellaspa.vn</a>
+            <span className="text-slate-300">•</span>
+            <a href="tel:02899999999" className={`hover:underline ${theme.footerLink}`}>(028) 9999 9999</a>
           </div>
         </footer>
       </div>

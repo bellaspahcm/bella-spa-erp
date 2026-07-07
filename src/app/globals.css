@@ -1796,6 +1796,15 @@ html[data-tenant-module="beauty_spa"] [class*="to-pink-"] {
   --tw-gradient-to: var(--beauty-em-2) !important;
 }
 
+html[data-tenant-module="beauty_spa"] [class*="from-rose-"] [class*="text-pink-"],
+html[data-tenant-module="beauty_spa"] [class*="from-rose-"] [class*="text-rose-"],
+html[data-tenant-module="beauty_spa"] [class*="to-pink-"] [class*="text-pink-"],
+html[data-tenant-module="beauty_spa"] [class*="to-pink-"] [class*="text-rose-"],
+html[data-tenant-module="beauty_spa"] [class*="from-rose-"] svg,
+html[data-tenant-module="beauty_spa"] [class*="to-pink-"] svg {
+  color: #ffffff !important;
+}
+
 html[data-tenant-module="beauty_spa"] .active-booking-panel {
   color: #f8f6f2;
 }
