@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase-client';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { IntelligenceResponse } from '@/services/intelligence/shared/types';
 import type { ChurnRiskAnalysis } from '@/services/intelligence/customer/queries-simple';
 import {
@@ -317,16 +318,17 @@ function ChurnRiskDashboard() {
           <h2 className="text-lg font-black text-slate-900 uppercase tracking-wider">Khách Hàng Có Rủi Ro</h2>
           <div className="flex items-center gap-2">
             <Filter className="w-4 h-4 text-slate-400" />
-            <select
-              value={riskFilter}
-              onChange={(e) => setRiskFilter(e.target.value as RiskFilter)}
-              className="px-4 py-2 border border-slate-200/80 rounded-xl text-xs font-bold bg-white/80 backdrop-blur-sm shadow-sm focus:outline-none focus:border-primary/50 text-slate-700"
-            >
-              <option value="all">Tất cả</option>
-              <option value="High">Rủi ro cao</option>
-              <option value="Medium">Rủi ro trung bình</option>
-              <option value="Low">Rủi ro thấp</option>
-            </select>
+            <Select value={riskFilter} onValueChange={(value) => value && setRiskFilter(value as RiskFilter)}>
+              <SelectTrigger className="px-4 py-2 border border-slate-200/80 rounded-xl text-xs font-bold bg-white/80 backdrop-blur-sm shadow-sm focus:outline-none focus:border-primary/50 text-slate-700 h-9">
+                <SelectValue placeholder="Chọn mức rủi ro" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả</SelectItem>
+                <SelectItem value="High">Rủi ro cao</SelectItem>
+                <SelectItem value="Medium">Rủi ro trung bình</SelectItem>
+                <SelectItem value="Low">Rủi ro thấp</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
         <div className="overflow-x-auto">
