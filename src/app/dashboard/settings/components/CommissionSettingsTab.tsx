@@ -176,7 +176,7 @@ export default function CommissionSettingsTab({ className }: CommissionSettingsT
       </div>
 
       {/* Service Commission Section */}
-      <div className="border border-slate-100/70 bg-white/60 p-6 rounded-[2rem] shadow-sm backdrop-blur-sm space-y-6">
+      <div className="relative z-40 border border-slate-100/70 bg-white/60 p-6 rounded-[2rem] shadow-sm backdrop-blur-sm space-y-6">
         <div className="flex items-center gap-3 pb-2 border-b border-slate-100/50">
           <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
             <DollarSign className="h-5 w-5" />
@@ -200,6 +200,7 @@ export default function CommissionSettingsTab({ className }: CommissionSettingsT
                 { value: 'percentage', label: 'Phần trăm (%)' },
               ]}
               placeholder="Chọn loại hoa hồng"
+              dropdownClassName="shadow-[0_12px_40px_rgba(0,0,0,0.12)] border-slate-200/80"
             />
           </div>
           <div className="space-y-2">
@@ -228,7 +229,7 @@ export default function CommissionSettingsTab({ className }: CommissionSettingsT
       </div>
 
       {/* Product Sales Commission Section */}
-      <div className="border border-slate-100/70 bg-white/60 p-6 rounded-[2rem] shadow-sm backdrop-blur-sm space-y-6">
+      <div className="relative z-30 border border-slate-100/70 bg-white/60 p-6 rounded-[2rem] shadow-sm backdrop-blur-sm space-y-6">
         <div className="flex items-center gap-3 pb-2 border-b border-slate-100/50">
           <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
             <Percent className="h-5 w-5" />
@@ -252,6 +253,7 @@ export default function CommissionSettingsTab({ className }: CommissionSettingsT
                 { value: 'percentage', label: 'Phần trăm (%)' },
               ]}
               placeholder="Chọn loại hoa hồng"
+              dropdownClassName="shadow-[0_12px_40px_rgba(0,0,0,0.12)] border-slate-200/80"
             />
           </div>
           <div className="space-y-2">
@@ -280,7 +282,7 @@ export default function CommissionSettingsTab({ className }: CommissionSettingsT
       </div>
 
       {/* Position Multipliers Section */}
-      <div className="border border-slate-100/70 bg-white/60 p-6 rounded-[2rem] shadow-sm backdrop-blur-sm space-y-6">
+      <div className="relative z-20 border border-slate-100/70 bg-white/60 p-6 rounded-[2rem] shadow-sm backdrop-blur-sm space-y-6">
         <div className="flex items-center gap-3 pb-2 border-b border-slate-100/50">
           <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
             <Users className="h-5 w-5" />
@@ -335,7 +337,7 @@ export default function CommissionSettingsTab({ className }: CommissionSettingsT
       </div>
 
       {/* Seniority Bonus Section */}
-      <div className="border border-slate-100/70 bg-white/60 p-6 rounded-[2rem] shadow-sm backdrop-blur-sm space-y-6">
+      <div className="relative z-10 border border-slate-100/70 bg-white/60 p-6 rounded-[2rem] shadow-sm backdrop-blur-sm space-y-6">
         <div className="flex items-center gap-3 pb-2 border-b border-slate-100/50">
           <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
             <Clock className="h-5 w-5" />
