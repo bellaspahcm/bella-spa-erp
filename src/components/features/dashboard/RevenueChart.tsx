@@ -329,7 +329,7 @@ export function RevenueChart({ performanceData, userRole, isLoading }: RevenueCh
           </div>
 
           <MeasuredChartFrame className="h-36 w-full">
-              <AreaChart data={performanceData} margin={{ top: 0, right: 0, left: 0, bottom: -10 }}>
+              <AreaChart data={performanceData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
                 <defs>
                   <linearGradient id="colorRating" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3}/>
@@ -337,8 +337,8 @@ export function RevenueChart({ performanceData, userRole, isLoading }: RevenueCh
                   </linearGradient>
                 </defs>
                 <XAxis dataKey="name" hide />
-                <YAxis hide domain={[4, 5]} />
-                <Area type="monotone" dataKey="rating" stroke="#f59e0b" strokeWidth={3} fillOpacity={1} fill="url(#colorRating)" />
+                <YAxis hide domain={['dataMin - 0.2', 'dataMax + 0.2']} />
+                <Area type="monotone" dataKey="rating" stroke="#f59e0b" strokeWidth={3} fillOpacity={1} fill="url(#colorRating)" connectNulls={true} />
               </AreaChart>
           </MeasuredChartFrame>
         </div>
