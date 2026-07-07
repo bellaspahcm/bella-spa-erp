@@ -1,11 +1,11 @@
 'use client';
 
 /**
- * Customer Activity Chart (Line Chart)
- * Shows customer activity trends (simplified version for basic churn data)
+ * Customer Activity Chart (Premium Composed Chart)
+ * Shows correlation between customer risk volume (Bars) and average risk score (Line)
  */
 
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import type { ChurnRiskAnalysis } from '@/services/intelligence/customer/queries-simple';
 
 interface CustomerActivityChartProps {
@@ -14,7 +14,6 @@ interface CustomerActivityChartProps {
 }
 
 export function CustomerActivityChart({ data, height = 350 }: CustomerActivityChartProps) {
-  // For simplified version, show basic metrics by risk level
   const aggregated = data.reduce((acc, customer) => {
     const level = customer.churnRiskLevel;
     if (!acc[level]) {
@@ -35,73 +34,99 @@ export function CustomerActivityChart({ data, height = 350 }: CustomerActivityCh
 
   const chartData = [
     { 
-      level: 'Rủi ro thấp', 
+      level: 'Thấp', 
       customers: aggregated['Low']?.count || 0,
-      avgScore: aggregated['Low']?.avgRiskScore || 0,
+      avgScore: Math.round(aggregated['Low']?.avgRiskScore || 0),
     },
     { 
-      level: 'Rủi ro trung bình', 
+      level: 'Trung bình', 
       customers: aggregated['Medium']?.count || 0,
-      avgScore: aggregated['Medium']?.avgRiskScore || 0,
+      avgScore: Math.round(aggregated['Medium']?.avgRiskScore || 0),
     },
     { 
-      level: 'Rủi ro cao', 
+      level: 'Cao', 
       customers: aggregated['High']?.count || 0,
-      avgScore: aggregated['High']?.avgRiskScore || 0,
+      avgScore: Math.round(aggregated['High']?.avgRiskScore || 0),
     },
   ];
 
+  // Custom tooltips matching glassmorphism
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white/90 backdrop-blur-md px-4 py-3 rounded-2xl border border-slate-200/50 shadow-xl text-xs font-bold text-slate-800 space-y-1.5">
+          <p className="text-slate-400 uppercase tracking-wider mb-1">Rủi ro: {payload[0].payload.level}</p>
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#3b82f6]" />
+            <span className="text-slate-600">Số khách hàng:</span>
+            <span className="text-slate-900 font-black">{payload[0].payload.customers} KH</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#f43f5e]" />
+            <span className="text-slate-600">Điểm rủi ro TB:</span>
+            <span className="text-slate-900 font-black">{payload[0].payload.avgScore}</span>
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+      <ComposedChart data={chartData} margin={{ top: 15, right: 10, left: 10, bottom: 5 }}>
+        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
         <XAxis
           dataKey="level"
-          tick={{ fill: '#64748b', fontSize: 12 }}
-          tickLine={{ stroke: '#e2e8f0' }}
+          tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: '700' }}
+          axisLine={false}
+          tickLine={false}
         />
         <YAxis
           yAxisId="left"
-          tick={{ fill: '#64748b', fontSize: 12 }}
-          tickLine={{ stroke: '#e2e8f0' }}
-          label={{ value: 'Số KH', angle: -90, position: 'insideLeft' }}
+          tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: '700' }}
+          axisLine={false}
+          tickLine={false}
+          label={{ value: 'Số KH', angle: -90, position: 'insideLeft', offset: -5, style: { fill: '#94a3b8', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em' } }}
         />
         <YAxis
           yAxisId="right"
           orientation="right"
-          tick={{ fill: '#64748b', fontSize: 12 }}
-          tickLine={{ stroke: '#e2e8f0' }}
-          label={{ value: 'Điểm rủi ro TB', angle: 90, position: 'insideRight' }}
+          tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: '700' }}
+          axisLine={false}
+          tickLine={false}
+          label={{ value: 'Điểm rủi ro TB', angle: 90, position: 'insideRight', offset: -5, style: { fill: '#94a3b8', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em' } }}
         />
-        <Tooltip
-          contentStyle={{
-            backgroundColor: '#fff',
-            border: '1px solid #e2e8f0',
-            borderRadius: '8px',
-          }}
+        <Tooltip content={<CustomTooltip />} />
+        <Legend 
+          wrapperStyle={{ paddingTop: '20px' }} 
+          iconType="circle"
+          iconSize={8}
+          formatter={(value) => <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{value}</span>}
         />
-        <Legend wrapperStyle={{ paddingTop: '20px' }} />
-        <Line
+        
+        {/* Count represented as beautiful custom rounded bar */}
+        <Bar
           yAxisId="left"
-          type="monotone"
           dataKey="customers"
           name="Số khách hàng"
-          stroke="#3b82f6"
-          strokeWidth={3}
-          dot={{ fill: '#3b82f6', r: 5 }}
-          activeDot={{ r: 7 }}
+          fill="#3b82f6"
+          radius={[10, 10, 0, 0]}
+          maxBarSize={45}
         />
+
+        {/* Score represented as glowing trending line */}
         <Line
           yAxisId="right"
           type="monotone"
           dataKey="avgScore"
           name="Điểm rủi ro trung bình"
-          stroke="#ef4444"
+          stroke="#f43f5e"
           strokeWidth={3}
-          dot={{ fill: '#ef4444', r: 5 }}
-          activeDot={{ r: 7 }}
+          dot={{ fill: '#f43f5e', stroke: '#fff', strokeWidth: 2, r: 6 }}
+          activeDot={{ r: 8, stroke: '#fff', strokeWidth: 2 }}
         />
-      </LineChart>
+      </ComposedChart>
     </ResponsiveContainer>
   );
 }
