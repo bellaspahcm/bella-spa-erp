@@ -88,6 +88,7 @@ export default function DecisionAuditTrailPage() {
   const [data, setData] = useState<AuditLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ tenant_id: string | null } | null>(null);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 25,
@@ -96,8 +97,8 @@ export default function DecisionAuditTrailPage() {
     hasMore: false,
   });
 
-  // Filters
-  const [tenantId, setTenantId] = useState(searchParams.get('tenantId') || '');
+  // Filters - tenantId auto-filled from current user
+  const [tenantId, setTenantId] = useState('');
   const [decisionType, setDecisionType] = useState(searchParams.get('decisionType') || '');
   const [provider, setProvider] = useState(searchParams.get('provider') || '');
   const [status, setStatus] = useState(searchParams.get('status') || '');
@@ -107,6 +108,27 @@ export default function DecisionAuditTrailPage() {
 
   // Selected decision for detail drawer
   const [selectedDecision, setSelectedDecision] = useState<string | null>(null);
+
+  // Fetch current user and set tenant ID
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const response = await fetch('/api/tenant/context');
+        const result = await response.json();
+        if (result.success && result.data?.tenant_id) {
+          setCurrentUser(result.data);
+          setTenantId(result.data.tenant_id);
+        } else {
+          setError('Unable to determine your tenant. Please contact support.');
+          setLoading(false);
+        }
+      } catch (err) {
+        setError('Failed to fetch user context: ' + (err instanceof Error ? err.message : 'Unknown error'));
+        setLoading(false);
+      }
+    };
+    fetchCurrentUser();
+  }, []);
 
   // Fetch data
   const fetchAuditLog = async () => {
@@ -192,20 +214,6 @@ export default function DecisionAuditTrailPage() {
       <div className="bg-white rounded-lg shadow p-6 mb-6">
         <h2 className="text-lg font-semibold mb-4">Filters</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {/* Tenant ID */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Tenant ID *
-            </label>
-            <input
-              type="text"
-              value={tenantId}
-              onChange={(e) => setTenantId(e.target.value)}
-              placeholder="Enter tenant ID"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary focus:outline-none"
-            />
-          </div>
-
           {/* Decision Type */}
           <div className="flex flex-col space-y-1.5">
             <label className="block text-sm font-semibold text-slate-700">
@@ -290,7 +298,7 @@ export default function DecisionAuditTrailPage() {
         <div className="flex gap-3 mt-4">
           <button
             onClick={handleApplyFilters}
-            disabled={!tenantId}
+            disabled={loading || !tenantId}
             className="px-5 py-2.5 bg-primary text-primary-foreground rounded-xl hover:bg-primary-hover disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed transition-all font-semibold shadow-sm text-sm active:scale-[0.98]"
           >
             Apply Filters
@@ -337,11 +345,9 @@ export default function DecisionAuditTrailPage() {
             <p className="text-gray-600 mb-4">
               📭 No decisions found matching your filters
             </p>
-            {!tenantId && (
-              <p className="text-sm text-gray-500">
-                Please select a tenant to view audit logs
-              </p>
-            )}
+            <p className="text-sm text-gray-500">
+              Try adjusting your filters or date range
+            </p>
           </div>
         ) : (
           <>
