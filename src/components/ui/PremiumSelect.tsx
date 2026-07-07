@@ -91,7 +91,7 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
           <span 
             className={cn(
               "text-sm font-semibold truncate",
-              selectedOption ? "text-slate-800" : "text-slate-600"
+              selectedOption ? "text-slate-800" : "text-slate-500"
             )}
           >
             {selectedOption ? selectedOption.label : placeholder}

@@ -230,8 +230,10 @@ h1, h2, h3, h4, h5, h6 {
 .customer-detail-ktv-select button[type="button"] span {
   color: rgb(15 23 42) !important; /* slate-900 for maximum contrast */
 }
+.customer-detail-ktv-select button[type="button"] span.text-slate-500,
+.customer-detail-ktv-select button[type="button"] span.text-slate-600,
 .customer-detail-ktv-select button[type="button"] span.text-slate-700 {
-  color: rgb(71 85 105) !important; /* slate-700 - readable placeholder */
+  color: rgb(51 65 85) !important; /* slate-700 - readable placeholder - DARKER */
 }
 
 /* 2. Dropdown container background - Light Mode */
