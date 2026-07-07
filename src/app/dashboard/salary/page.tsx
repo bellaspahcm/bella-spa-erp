@@ -624,7 +624,7 @@ export default function SalaryPage() {
                 "flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap",
                 activeTab === 'payroll'
                   ? "bg-slate-900 text-white shadow-lg shadow-slate-950/10"
-                  : "text-slate-500 hover:text-slate-950 hover:bg-slate-50"
+                  : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
               )}
             >
               <DollarSign className="w-4 h-4" />
@@ -636,7 +636,7 @@ export default function SalaryPage() {
                 "flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap",
                 activeTab === 'attendance'
                   ? "bg-slate-900 text-white shadow-lg shadow-slate-950/10"
-                  : "text-slate-500 hover:text-slate-950 hover:bg-slate-50"
+                  : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
               )}
             >
               <CalendarDays className="w-4 h-4" />
@@ -648,7 +648,7 @@ export default function SalaryPage() {
                 "flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap",
                 activeTab === 'hr_profile'
                   ? "bg-slate-900 text-white shadow-lg shadow-slate-950/10"
-                  : "text-slate-500 hover:text-slate-950 hover:bg-slate-50"
+                  : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
               )}
             >
               <UserCog className="w-4 h-4" />

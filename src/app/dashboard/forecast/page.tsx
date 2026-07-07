@@ -303,21 +303,21 @@ function ForecastDashboard() {
           <TabsList className="grid w-full grid-cols-3 bg-transparent p-0 gap-2 h-auto">
             <TabsTrigger 
               value="revenue" 
-              className="flex items-center justify-center gap-2 rounded-2xl px-6 py-4 text-xs font-black uppercase tracking-wider transition-all border data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:border-primary data-[state=inactive]:bg-slate-50 data-[state=inactive]:text-slate-500 data-[state=inactive]:border-slate-200 hover:bg-white hover:text-slate-950 hover:border-rose-200"
+              className="flex items-center justify-center gap-2 rounded-2xl px-6 py-4 text-xs font-black uppercase tracking-wider transition-all border data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:border-primary data-[state=inactive]:bg-slate-50 data-[state=inactive]:text-slate-500 data-[state=inactive]:border-slate-200 hover:bg-white hover:text-primary hover:border-primary/30 data-[state=active]:hover:bg-primary/85 data-[state=active]:hover:text-white"
             >
               <DollarSign className="w-5 h-5" />
               <span>Doanh Thu</span>
             </TabsTrigger>
             <TabsTrigger 
               value="churn" 
-              className="flex items-center justify-center gap-2 rounded-2xl px-6 py-4 text-xs font-black uppercase tracking-wider transition-all border data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:border-primary data-[state=inactive]:bg-slate-50 data-[state=inactive]:text-slate-500 data-[state=inactive]:border-slate-200 hover:bg-white hover:text-slate-950 hover:border-rose-200"
+              className="flex items-center justify-center gap-2 rounded-2xl px-6 py-4 text-xs font-black uppercase tracking-wider transition-all border data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:border-primary data-[state=inactive]:bg-slate-50 data-[state=inactive]:text-slate-500 data-[state=inactive]:border-slate-200 hover:bg-white hover:text-primary hover:border-primary/30 data-[state=active]:hover:bg-primary/85 data-[state=active]:hover:text-white"
             >
               <Users className="w-5 h-5" />
               <span>Khách Rời Đi</span>
             </TabsTrigger>
             <TabsTrigger 
               value="demand" 
-              className="flex items-center justify-center gap-2 rounded-2xl px-6 py-4 text-xs font-black uppercase tracking-wider transition-all border data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:border-primary data-[state=inactive]:bg-slate-50 data-[state=inactive]:text-slate-500 data-[state=inactive]:border-slate-200 hover:bg-white hover:text-slate-950 hover:border-rose-200"
+              className="flex items-center justify-center gap-2 rounded-2xl px-6 py-4 text-xs font-black uppercase tracking-wider transition-all border data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:border-primary data-[state=inactive]:bg-slate-50 data-[state=inactive]:text-slate-500 data-[state=inactive]:border-slate-200 hover:bg-white hover:text-primary hover:border-primary/30 data-[state=active]:hover:bg-primary/85 data-[state=active]:hover:text-white"
             >
               <Calendar className="w-5 h-5" />
               <span>Nhu Cầu</span>

@@ -198,36 +198,21 @@ function RecommendationsPage() {
             <TabsList className="grid w-full grid-cols-3 bg-transparent p-0 gap-2 h-auto">
               <TabsTrigger 
                 value="service"
-                style={{
-                  backgroundColor: activeTab === 'service' ? '#E91E63' : '#f8fafc',
-                  color: activeTab === 'service' ? 'white' : '#64748b',
-                  borderColor: activeTab === 'service' ? '#E91E63' : '#e2e8f0'
-                }}
-                className="flex items-center justify-center gap-2 rounded-2xl px-6 py-4 text-sm font-black uppercase tracking-wider transition-all border hover:bg-white hover:text-slate-950 hover:border-rose-200"
+                className="flex items-center justify-center gap-2 rounded-2xl px-6 py-4 text-sm font-black uppercase tracking-wider transition-all border data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:border-primary data-[state=inactive]:bg-slate-50 data-[state=inactive]:text-slate-500 data-[state=inactive]:border-slate-200 hover:bg-white hover:text-primary hover:border-primary/30 data-[state=active]:hover:bg-primary/85 data-[state=active]:hover:text-white"
               >
                 <Star className="w-5 h-5" />
                 Dịch Vụ
               </TabsTrigger>
               <TabsTrigger 
                 value="package"
-                style={{
-                  backgroundColor: activeTab === 'package' ? '#E91E63' : '#f8fafc',
-                  color: activeTab === 'package' ? 'white' : '#64748b',
-                  borderColor: activeTab === 'package' ? '#E91E63' : '#e2e8f0'
-                }}
-                className="flex items-center justify-center gap-2 rounded-2xl px-6 py-4 text-sm font-black uppercase tracking-wider transition-all border hover:bg-white hover:text-slate-950 hover:border-rose-200"
+                className="flex items-center justify-center gap-2 rounded-2xl px-6 py-4 text-sm font-black uppercase tracking-wider transition-all border data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:border-primary data-[state=inactive]:bg-slate-50 data-[state=inactive]:text-slate-500 data-[state=inactive]:border-slate-200 hover:bg-white hover:text-primary hover:border-primary/30 data-[state=active]:hover:bg-primary/85 data-[state=active]:hover:text-white"
               >
                 <Package className="w-5 h-5" />
                 Gói Combo
               </TabsTrigger>
               <TabsTrigger 
                 value="upsell"
-                style={{
-                  backgroundColor: activeTab === 'upsell' ? '#E91E63' : '#f8fafc',
-                  color: activeTab === 'upsell' ? 'white' : '#64748b',
-                  borderColor: activeTab === 'upsell' ? '#E91E63' : '#e2e8f0'
-                }}
-                className="flex items-center justify-center gap-2 rounded-2xl px-6 py-4 text-sm font-black uppercase tracking-wider transition-all border hover:bg-white hover:text-slate-950 hover:border-rose-200"
+                className="flex items-center justify-center gap-2 rounded-2xl px-6 py-4 text-sm font-black uppercase tracking-wider transition-all border data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:border-primary data-[state=inactive]:bg-slate-50 data-[state=inactive]:text-slate-500 data-[state=inactive]:border-slate-200 hover:bg-white hover:text-primary hover:border-primary/30 data-[state=active]:hover:bg-primary/85 data-[state=active]:hover:text-white"
               >
                 <TrendingUp className="w-5 h-5" />
                 Bán Kèm
