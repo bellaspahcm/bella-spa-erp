@@ -6,7 +6,7 @@
  * Displays profit margin, cash flow, and receivables using bar chart
  */
 
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LabelList } from 'recharts';
 
 interface FinancialHealthChartProps {
   profitMargin: number;
@@ -33,7 +33,7 @@ export function FinancialHealthChart({
       name: 'Biên LN',
       value: profitMargin,
       unit: '%',
-      color: '#f97316',
+      color: 'var(--primary, #db2777)',
     },
     {
       name: 'Dòng tiền',
@@ -51,37 +51,54 @@ export function FinancialHealthChart({
 
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <BarChart data={data} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-        <XAxis 
-          dataKey="name" 
-          stroke="#64748b"
-          style={{ fontSize: '12px' }}
-        />
-        <YAxis 
-          stroke="#64748b"
-          style={{ fontSize: '12px' }}
+      <BarChart
+        layout="vertical"
+        data={data}
+        margin={{ top: 15, right: 45, left: 10, bottom: 5 }}
+      >
+        <XAxis type="number" hide />
+        <YAxis
+          dataKey="name"
+          type="category"
+          axisLine={false}
+          tickLine={false}
+          stroke="#94a3b8"
+          style={{ fontSize: '12px', fontWeight: 700 }}
+          width={80}
         />
         <Tooltip
           contentStyle={{
             backgroundColor: '#fff',
-            border: '1px solid #e2e8f0',
-            borderRadius: '8px',
+            border: 'none',
+            borderRadius: '12px',
             fontSize: '12px',
+            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.05)',
           }}
           formatter={(value, name, props: any) => {
             if (typeof value !== 'number') return ['', name];
             const unit = props.payload.unit;
             if (unit === '%') {
-              return [`${value.toFixed(1)}%`, name];
+              return [`${value.toFixed(1)}%`, 'Giá trị'];
             }
-            return [`${value.toFixed(1)}M`, name];
+            return [`${value.toFixed(1)}M ₫`, 'Giá trị'];
           }}
         />
-        <Bar dataKey="value" radius={[8, 8, 0, 0]}>
+        <Bar dataKey="value" radius={[0, 8, 8, 0]} barSize={16}>
           {data.map((entry, index) => (
             <Cell key={`cell-${index}`} fill={entry.color} />
           ))}
+          <LabelList
+            dataKey="value"
+            position="right"
+            formatter={(value: any, entry: any) => {
+              const unit = entry.payload.unit;
+              if (unit === '%') {
+                return `${value.toFixed(1)}%`;
+              }
+              return `${value.toFixed(1)}M ₫`;
+            }}
+            style={{ fill: '#475569', fontSize: '11px', fontWeight: 800 }}
+          />
         </Bar>
       </BarChart>
     </ResponsiveContainer>
