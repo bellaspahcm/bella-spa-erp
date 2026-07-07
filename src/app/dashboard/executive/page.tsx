@@ -314,7 +314,8 @@ function ExecutiveDashboardPage() {
     if (!revenueSummary) return [];
     
     const current = revenueSummary.data.totalRevenue;
-    const growth = revenueSummary.data.revenueGrowth / 100;
+    // Cap growth factor for the trend visualization to prevent negative values on extreme growth rates
+    const growth = Math.min(0.7, revenueSummary.data.revenueGrowth / 100);
     
     // Generate last 7 days data
     return Array.from({ length: 7 }, (_, i) => {
@@ -322,8 +323,10 @@ function ExecutiveDashboardPage() {
       const date = new Date();
       date.setDate(date.getDate() - daysAgo);
       
-      // Calculate revenue with growth trend
-      const revenue = current * (1 - growth * (daysAgo / 7));
+      // Calculate revenue with growth trend and daily fluctuation
+      const baseRatio = 1 - growth * (daysAgo / 7);
+      const randomFluctuation = 0.95 + (Math.sin(i) * 0.05); // +/- 5% stability
+      const revenue = current * Math.max(0.15, baseRatio) * randomFluctuation;
       
       return {
         date: date.toLocaleDateString('vi-VN', { month: 'short', day: 'numeric' }),
