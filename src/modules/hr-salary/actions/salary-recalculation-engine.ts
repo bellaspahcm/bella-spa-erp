@@ -38,6 +38,11 @@ const kpiProvider = new KPIProvider();
 const attendanceProvider = new AttendanceProvider();
 const ratingProvider = new RatingProvider();
 
+// Phase 2: Feature Flag to conditionally use provider results
+// When true: Use provider calculations instead of old hardcoded logic
+// When false: Continue comparison mode (providers log only)
+const USE_CONFIG_PROVIDERS = process.env.USE_CONFIG_PROVIDERS === 'true';
+
 interface KtvUserDataAdmin {
   id: string;
   full_name: string | null;
@@ -332,7 +337,9 @@ export async function recalculateAndSaveSalaryRecordEngine(
   } = liveAttendanceComponents;
 
   // Phase 1: Provider Integration - Attendance Provider (Comparison Mode)
+  // Phase 2: Feature Flag - Use provider result when USE_CONFIG_PROVIDERS=true
   let providerAttendanceAmount: number | null = null;
+  let attendanceProviderResult: any = null;
   try {
     const attendanceContext = {
       lateDays,
@@ -345,24 +352,36 @@ export async function recalculateAndSaveSalaryRecordEngine(
       }
     };
     
-    const attendanceResult = await attendanceProvider.evaluate(attendanceContext);
-    providerAttendanceAmount = attendanceResult.amount;
+    attendanceProviderResult = await attendanceProvider.evaluate(attendanceContext);
+    providerAttendanceAmount = attendanceProviderResult.amount;
     
     // Provider returns negative amount for deductions
-    const providerDeduction = Math.abs(attendanceResult.amount);
+    const providerDeduction = Math.abs(attendanceProviderResult.amount);
     
-    // Log comparison
-    console.log('[PROVIDER_INTEGRATION] Attendance Comparison:', {
-      ktvId,
-      month: monthYear,
-      old_logic: autoAttendancePenalty,
-      new_provider: providerDeduction,
-      strategy: attendanceResult.strategy,
-      diff: providerDeduction - autoAttendancePenalty,
-      diff_percent: autoAttendancePenalty > 0 ? ((providerDeduction - autoAttendancePenalty) / autoAttendancePenalty * 100).toFixed(2) + '%' : 'N/A',
-      late_days: lateDays,
-      absent_days: absentDays,
-    });
+    // Log comparison or active usage
+    if (USE_CONFIG_PROVIDERS) {
+      console.log('[PHASE_2_ACTIVE] Attendance - Using Provider Result:', {
+        ktvId,
+        month: monthYear,
+        provider_deduction: providerDeduction,
+        old_logic_would_be: autoAttendancePenalty,
+        strategy: attendanceProviderResult.metadata?.strategy,
+        late_days: lateDays,
+        absent_days: absentDays,
+      });
+    } else {
+      console.log('[PROVIDER_INTEGRATION] Attendance Comparison:', {
+        ktvId,
+        month: monthYear,
+        old_logic: autoAttendancePenalty,
+        new_provider: providerDeduction,
+        strategy: attendanceProviderResult.metadata?.strategy,
+        diff: providerDeduction - autoAttendancePenalty,
+        diff_percent: autoAttendancePenalty > 0 ? ((providerDeduction - autoAttendancePenalty) / autoAttendancePenalty * 100).toFixed(2) + '%' : 'N/A',
+        late_days: lateDays,
+        absent_days: absentDays,
+      });
+    }
   } catch (error) {
     console.error('[PROVIDER_INTEGRATION] Attendance Provider failed (non-blocking):', error);
   }
@@ -379,8 +398,10 @@ export async function recalculateAndSaveSalaryRecordEngine(
   const dbKpiBonus = kpiRecordsTyped.reduce((acc, k) => acc + Number(k.bonus_amount || 0), 0);
 
   // Phase 1: Provider Integration - KPI Provider (Comparison Mode)
+  // Phase 2: Feature Flag - Use provider result when USE_CONFIG_PROVIDERS=true
   // Call provider alongside existing logic to verify correctness
   let providerKpiAmount: number | null = null;
+  let kpiProviderResult: any = null;
   try {
     const kpiContext = {
       metric: 'sessions' as const,
@@ -394,20 +415,31 @@ export async function recalculateAndSaveSalaryRecordEngine(
       }
     };
     
-    const kpiResult = await kpiProvider.evaluate(kpiContext);
-    providerKpiAmount = kpiResult.amount;
+    kpiProviderResult = await kpiProvider.evaluate(kpiContext);
+    providerKpiAmount = kpiProviderResult.amount;
     
-    // Log comparison (for monitoring & validation)
-    console.log('[PROVIDER_INTEGRATION] KPI Comparison:', {
-      ktvId,
-      month: monthYear,
-      old_logic: dbKpiBonus,
-      new_provider: kpiResult.amount,
-      strategy: kpiResult.strategy,
-      diff: kpiResult.amount - dbKpiBonus,
-      diff_percent: dbKpiBonus > 0 ? ((kpiResult.amount - dbKpiBonus) / dbKpiBonus * 100).toFixed(2) + '%' : 'N/A',
-      sessions: liveSessionsCount,
-    });
+    // Log comparison or active usage
+    if (USE_CONFIG_PROVIDERS) {
+      console.log('[PHASE_2_ACTIVE] KPI - Using Provider Result:', {
+        ktvId,
+        month: monthYear,
+        provider_bonus: kpiProviderResult.amount,
+        old_logic_would_be: dbKpiBonus,
+        strategy: kpiProviderResult.metadata?.strategy,
+        sessions: liveSessionsCount,
+      });
+    } else {
+      console.log('[PROVIDER_INTEGRATION] KPI Comparison:', {
+        ktvId,
+        month: monthYear,
+        old_logic: dbKpiBonus,
+        new_provider: kpiProviderResult.amount,
+        strategy: kpiProviderResult.metadata?.strategy,
+        diff: kpiProviderResult.amount - dbKpiBonus,
+        diff_percent: dbKpiBonus > 0 ? ((kpiProviderResult.amount - dbKpiBonus) / dbKpiBonus * 100).toFixed(2) + '%' : 'N/A',
+        sessions: liveSessionsCount,
+      });
+    }
   } catch (error) {
     console.error('[PROVIDER_INTEGRATION] KPI Provider failed (non-blocking):', error);
     // Non-blocking: old logic continues
@@ -489,13 +521,17 @@ export async function recalculateAndSaveSalaryRecordEngine(
       ? Number(existing.session_bonus)
       : liveSessionBonus;
 
+  const oldLogicRatingBonus = calculateRatingBonus(sessionsCount, avgRating, salaryConfig);
+
   const ratingBonus =
     shouldUseStoredSessionComponents && existing?.rating_bonus !== null && existing?.rating_bonus !== undefined
       ? Number(existing.rating_bonus)
-      : calculateRatingBonus(sessionsCount, avgRating, salaryConfig);
+      : oldLogicRatingBonus;
 
   // Phase 1: Provider Integration - Rating Provider (Comparison Mode)
+  // Phase 2: Feature Flag - Use provider result when USE_CONFIG_PROVIDERS=true
   let providerRatingAmount: number | null = null;
+  let ratingProviderResult: any = null;
   try {
     const ratingContext = {
       avgRating: avgRating || 0,
@@ -506,21 +542,33 @@ export async function recalculateAndSaveSalaryRecordEngine(
       metadata: {}
     };
     
-    const ratingResult = await ratingProvider.evaluate(ratingContext);
-    providerRatingAmount = ratingResult.amount;
+    ratingProviderResult = await ratingProvider.evaluate(ratingContext);
+    providerRatingAmount = ratingProviderResult.amount;
     
-    // Log comparison
-    console.log('[PROVIDER_INTEGRATION] Rating Comparison:', {
-      ktvId,
-      month: monthYear,
-      old_logic: ratingBonus,
-      new_provider: ratingResult.amount,
-      strategy: ratingResult.strategy,
-      diff: ratingResult.amount - ratingBonus,
-      diff_percent: ratingBonus > 0 ? ((ratingResult.amount - ratingBonus) / ratingBonus * 100).toFixed(2) + '%' : 'N/A',
-      avg_rating: avgRating,
-      sessions: sessionsCount,
-    });
+    // Log comparison or active usage
+    if (USE_CONFIG_PROVIDERS) {
+      console.log('[PHASE_2_ACTIVE] Rating - Using Provider Result:', {
+        ktvId,
+        month: monthYear,
+        provider_bonus: ratingProviderResult.amount,
+        old_logic_would_be: oldLogicRatingBonus,
+        strategy: ratingProviderResult.metadata?.strategy,
+        avg_rating: avgRating,
+        sessions: sessionsCount,
+      });
+    } else {
+      console.log('[PROVIDER_INTEGRATION] Rating Comparison:', {
+        ktvId,
+        month: monthYear,
+        old_logic: oldLogicRatingBonus,
+        new_provider: ratingProviderResult.amount,
+        strategy: ratingProviderResult.metadata?.strategy,
+        diff: ratingProviderResult.amount - oldLogicRatingBonus,
+        diff_percent: oldLogicRatingBonus > 0 ? ((ratingProviderResult.amount - oldLogicRatingBonus) / oldLogicRatingBonus * 100).toFixed(2) + '%' : 'N/A',
+        avg_rating: avgRating,
+        sessions: sessionsCount,
+      });
+    }
   } catch (error) {
     console.error('[PROVIDER_INTEGRATION] Rating Provider failed (non-blocking):', error);
   }
@@ -543,7 +591,12 @@ export async function recalculateAndSaveSalaryRecordEngine(
     deductions = Number(existing.violations_deduction);
     if (existing.notes && !proRataNote) proRataNote = existing.notes;
   } else {
-    deductions = autoAttendancePenalty;
+    // Phase 2: Use provider result if flag is ON and provider succeeded
+    if (USE_CONFIG_PROVIDERS && providerAttendanceAmount !== null && attendanceProviderResult) {
+      deductions = Math.abs(providerAttendanceAmount); // Provider returns negative, we need positive for deduction
+    } else {
+      deductions = autoAttendancePenalty;
+    }
   }
 
   if (overrides?.violations_deduction === undefined && isDraft && liveAttendanceComponents.hasAutoPenalty) {
@@ -556,7 +609,11 @@ export async function recalculateAndSaveSalaryRecordEngine(
 
   const finalKpiBonus = overrides?.kpi_bonus !== undefined
     ? overrides.kpi_bonus
-    : (existing && !isDraft && existing.kpi_bonus !== null && existing.kpi_bonus !== undefined ? Number(existing.kpi_bonus) : dbKpiBonus);
+    : (existing && !isDraft && existing.kpi_bonus !== null && existing.kpi_bonus !== undefined 
+        ? Number(existing.kpi_bonus) 
+        : (USE_CONFIG_PROVIDERS && providerKpiAmount !== null && kpiProviderResult 
+            ? providerKpiAmount 
+            : dbKpiBonus));
 
   // Calculate commission components (Task 28-32)
   const finalServiceCommission =
@@ -608,10 +665,19 @@ export async function recalculateAndSaveSalaryRecordEngine(
     }
   }
 
+  // Phase 2: Final override - Use provider results if flag is ON and no stored/override value
+  let finalRatingBonus = ratingBonus;
+  if (USE_CONFIG_PROVIDERS && providerRatingAmount !== null && ratingProviderResult) {
+    // Only override if we're recalculating (not using stored value)
+    if (!shouldUseStoredSessionComponents || existing?.rating_bonus === null || existing?.rating_bonus === undefined) {
+      finalRatingBonus = providerRatingAmount;
+    }
+  }
+
   const calculatedTotalSalary = calculateSalaryTotal({
     baseSalary: finalBaseSalary,
     sessionBonus,
-    ratingBonus,
+    ratingBonus: finalRatingBonus,
     kpiBonus: finalKpiBonus,
     deductions,
     advances,
@@ -633,7 +699,7 @@ export async function recalculateAndSaveSalaryRecordEngine(
     month_year: monthYear,
     base_salary: finalBaseSalary,
     session_bonus: sessionBonus,
-    rating_bonus: ratingBonus,
+    rating_bonus: finalRatingBonus,
     kpi_bonus: finalKpiBonus,
     violations_deduction: deductions,
     service_percentage_bonus: advances,
