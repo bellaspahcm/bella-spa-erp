@@ -27,6 +27,7 @@ import {
   Download,
   PieChart,
   BarChart3,
+  ArrowLeft,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase-client';
@@ -260,9 +261,18 @@ function CustomerSegmentationDashboard() {
     <div className="p-4 sm:p-6 md:p-10 bg-background/30 overflow-auto relative space-y-8">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-12">
-        <div>
-          <h1 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-[#EFE9E1] tracking-tight uppercase">Phân Đoạn Khách Hàng</h1>
-          <p className="text-xs font-black text-slate-400 dark:text-[#CDBCAB] uppercase tracking-[0.25em] mt-1">Phân tích RFM và chiến lược chăm sóc khách hàng</p>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => router.push('/dashboard')}
+            className="w-12 h-12 bg-white/60 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-slate-200/60 text-slate-600 hover:text-primary hover:border-primary/30 active:scale-95 transition-all shadow-sm shrink-0"
+            title="Quay lại Dashboard"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div>
+            <h1 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-[#EFE9E1] tracking-tight uppercase">Phân Đoạn Khách Hàng</h1>
+            <p className="text-xs font-black text-slate-400 dark:text-[#CDBCAB] uppercase tracking-[0.25em] mt-1">Phân tích RFM và chiến lược chăm sóc khách hàng</p>
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <button
