@@ -218,54 +218,54 @@ export function PayrollHealthCheck({ salaries, currentMonth }: PayrollHealthChec
     <Card className={`p-5 ${statusConfig.bgColor} border-2 ${statusConfig.borderColor} mb-6`}>
       {/* Header - Always Visible */}
       <div 
-        className="flex items-center justify-between cursor-pointer"
+        className="flex items-start justify-between cursor-pointer gap-4"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <div className="flex items-center gap-4 flex-1">
-          <div className={`p-3 ${statusConfig.iconBg} rounded-xl ${statusConfig.iconColor}`}>
+        <div className="flex items-start gap-4 flex-1">
+          <div className={`p-3 ${statusConfig.iconBg} rounded-xl ${statusConfig.iconColor} shrink-0`}>
             {statusConfig.icon}
           </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-1">
-              <h3 className={`text-sm font-black uppercase tracking-wider ${statusConfig.textColor}`}>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-2">
+              <h3 className={`text-xs font-black uppercase tracking-wider ${statusConfig.textColor}`}>
                 🏥 HEALTH CHECK: {statusConfig.label}
               </h3>
               {!isHealthy && (
-                <span className="px-2 py-0.5 bg-white rounded-full text-xs font-bold">
+                <span className={`px-2 py-1 ${statusConfig.iconBg} ${statusConfig.textColor} rounded-full text-[10px] font-black uppercase tracking-wide shrink-0`}>
                   {affectedKtvCount}/{salaries.length} KTV
                 </span>
               )}
             </div>
-            <p className={`text-sm font-medium ${statusConfig.textColor}/80`}>
+            <p className={`text-sm font-medium ${statusConfig.textColor}/80 leading-relaxed`}>
               {statusConfig.description}
             </p>
+            {!isHealthy && (
+              <div className="flex flex-wrap gap-2 mt-3">
+                {criticalAnomalies.length > 0 && (
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 bg-red-100 text-red-700 rounded-lg text-xs font-bold">
+                    <span className="w-2 h-2 bg-red-600 rounded-full animate-pulse"></span>
+                    {criticalAnomalies.length} Critical
+                  </div>
+                )}
+                {warningAnomalies.length > 0 && (
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-100 text-amber-700 rounded-lg text-xs font-bold">
+                    <span className="w-2 h-2 bg-amber-600 rounded-full"></span>
+                    {warningAnomalies.length} Warning
+                  </div>
+                )}
+                {infoAnomalies.length > 0 && (
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-100 text-blue-700 rounded-lg text-xs font-bold">
+                    <span className="w-2 h-2 bg-blue-600 rounded-full"></span>
+                    {infoAnomalies.length} Info
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
         
-        <div className="flex items-center gap-4">
-          {!isHealthy && (
-            <div className="flex gap-2">
-              {criticalAnomalies.length > 0 && (
-                <div className="px-3 py-1.5 bg-red-100 text-red-700 rounded-lg text-xs font-bold">
-                  🔴 {criticalAnomalies.length} Critical
-                </div>
-              )}
-              {warningAnomalies.length > 0 && (
-                <div className="px-3 py-1.5 bg-amber-100 text-amber-700 rounded-lg text-xs font-bold">
-                  ⚠️ {warningAnomalies.length} Warning
-                </div>
-              )}
-              {infoAnomalies.length > 0 && (
-                <div className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-xs font-bold">
-                  ℹ️ {infoAnomalies.length} Info
-                </div>
-              )}
-            </div>
-          )}
-          
-          <div className={statusConfig.textColor}>
-            {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-          </div>
+        <div className={`${statusConfig.textColor} shrink-0 mt-1`}>
+          {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
         </div>
       </div>
 
@@ -283,22 +283,29 @@ export function PayrollHealthCheck({ salaries, currentMonth }: PayrollHealthChec
                   {criticalAnomalies.map(anomaly => (
                     <div 
                       key={anomaly.id}
-                      className={`flex items-start gap-3 p-3 bg-white rounded-lg border-2 ${getSeverityColor(anomaly.severity)}`}
+                      className={`flex flex-col sm:flex-row sm:items-center gap-3 p-4 bg-white rounded-lg border-2 ${getSeverityColor(anomaly.severity)} hover:shadow-sm transition-shadow`}
                     >
-                      <div className="mt-0.5">
-                        {getAnomalyIcon(anomaly.type)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-bold text-sm">{anomaly.ktvName}</span>
-                          <span className="text-xs text-gray-500">→</span>
-                          <span className="text-xs font-semibold">{anomaly.message}</span>
+                      <div className="flex items-start gap-3 flex-1 min-w-0">
+                        <div className={`mt-0.5 shrink-0 p-2 rounded-lg ${getSeverityColor(anomaly.severity)}`}>
+                          {getAnomalyIcon(anomaly.type)}
                         </div>
-                        <p className="text-xs text-gray-600">{anomaly.details}</p>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-bold text-sm text-gray-900 mb-1">
+                            {anomaly.ktvName}
+                          </div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs font-semibold text-red-700">
+                              → {anomaly.message}
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-600 leading-relaxed">
+                            {anomaly.details}
+                          </p>
+                        </div>
                       </div>
                       {anomaly.value !== undefined && (
-                        <div className="text-right">
-                          <span className="text-sm font-bold">
+                        <div className="sm:text-right shrink-0">
+                          <span className="text-sm font-bold text-gray-900 bg-gray-100 px-3 py-1.5 rounded-lg inline-block">
                             {anomaly.value.toLocaleString()}đ
                           </span>
                         </div>
@@ -319,22 +326,29 @@ export function PayrollHealthCheck({ salaries, currentMonth }: PayrollHealthChec
                   {warningAnomalies.map(anomaly => (
                     <div 
                       key={anomaly.id}
-                      className={`flex items-start gap-3 p-3 bg-white rounded-lg border ${getSeverityColor(anomaly.severity)}`}
+                      className={`flex flex-col sm:flex-row sm:items-center gap-3 p-4 bg-white rounded-lg border ${getSeverityColor(anomaly.severity)} hover:shadow-sm transition-shadow`}
                     >
-                      <div className="mt-0.5">
-                        {getAnomalyIcon(anomaly.type)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-bold text-sm">{anomaly.ktvName}</span>
-                          <span className="text-xs text-gray-500">→</span>
-                          <span className="text-xs font-semibold">{anomaly.message}</span>
+                      <div className="flex items-start gap-3 flex-1 min-w-0">
+                        <div className={`mt-0.5 shrink-0 p-2 rounded-lg ${getSeverityColor(anomaly.severity)}`}>
+                          {getAnomalyIcon(anomaly.type)}
                         </div>
-                        <p className="text-xs text-gray-600">{anomaly.details}</p>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-bold text-sm text-gray-900 mb-1">
+                            {anomaly.ktvName}
+                          </div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs font-semibold text-amber-700">
+                              → {anomaly.message}
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-600 leading-relaxed">
+                            {anomaly.details}
+                          </p>
+                        </div>
                       </div>
                       {anomaly.value !== undefined && (
-                        <div className="text-right">
-                          <span className="text-sm font-bold">
+                        <div className="sm:text-right shrink-0">
+                          <span className="text-sm font-bold text-gray-900 bg-gray-100 px-3 py-1.5 rounded-lg inline-block">
                             {anomaly.value.toLocaleString()}đ
                           </span>
                         </div>
@@ -355,18 +369,25 @@ export function PayrollHealthCheck({ salaries, currentMonth }: PayrollHealthChec
                   {infoAnomalies.map(anomaly => (
                     <div 
                       key={anomaly.id}
-                      className={`flex items-start gap-3 p-3 bg-white rounded-lg border ${getSeverityColor(anomaly.severity)}`}
+                      className={`flex flex-col sm:flex-row sm:items-center gap-3 p-4 bg-white rounded-lg border ${getSeverityColor(anomaly.severity)} hover:shadow-sm transition-shadow`}
                     >
-                      <div className="mt-0.5">
-                        {getAnomalyIcon(anomaly.type)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-bold text-sm">{anomaly.ktvName}</span>
-                          <span className="text-xs text-gray-500">→</span>
-                          <span className="text-xs font-semibold">{anomaly.message}</span>
+                      <div className="flex items-start gap-3 flex-1 min-w-0">
+                        <div className={`mt-0.5 shrink-0 p-2 rounded-lg ${getSeverityColor(anomaly.severity)}`}>
+                          {getAnomalyIcon(anomaly.type)}
                         </div>
-                        <p className="text-xs text-gray-600">{anomaly.details}</p>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-bold text-sm text-gray-900 mb-1">
+                            {anomaly.ktvName}
+                          </div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs font-semibold text-blue-700">
+                              → {anomaly.message}
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-600 leading-relaxed">
+                            {anomaly.details}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   ))}
