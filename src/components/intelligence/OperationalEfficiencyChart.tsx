@@ -35,7 +35,7 @@ export function OperationalEfficiencyChart({
     {
       name: 'Hoàn thành',
       value: completionRate,
-      fill: '#3b82f6',
+      fill: 'var(--primary, #db2777)',
     },
   ];
 

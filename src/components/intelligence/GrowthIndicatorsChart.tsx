@@ -41,34 +41,41 @@ export function GrowthIndicatorsChart({
 
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <BarChart data={data} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+      <BarChart data={data} margin={{ top: 15, right: 5, left: -20, bottom: 0 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.03)" vertical={false} />
         <XAxis 
           dataKey="name" 
-          stroke="#64748b"
-          style={{ fontSize: '12px' }}
+          stroke="#94a3b8"
+          axisLine={false}
+          tickLine={false}
+          style={{ fontSize: '11px', fontWeight: 600 }}
+          dy={8}
         />
         <YAxis 
-          stroke="#64748b"
-          style={{ fontSize: '12px' }}
+          stroke="#94a3b8"
+          axisLine={false}
+          tickLine={false}
+          style={{ fontSize: '11px', fontWeight: 600 }}
           tickFormatter={(value) => `${value}%`}
         />
         <Tooltip
           contentStyle={{
             backgroundColor: '#fff',
-            border: '1px solid #e2e8f0',
-            borderRadius: '8px',
+            border: 'none',
+            borderRadius: '12px',
             fontSize: '12px',
+            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.05)',
           }}
           formatter={(value) => {
             if (typeof value !== 'number') return ['', 'Tăng trưởng'];
             return [`${value >= 0 ? '+' : ''}${value.toFixed(1)}%`, 'Tăng trưởng'];
           }}
         />
-        <Bar dataKey="value" radius={[8, 8, 0, 0]}>
-          {data.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={entry.color} />
-          ))}
+        <Bar dataKey="value" radius={[8, 8, 0, 0]} barSize={28}>
+          {data.map((entry, index) => {
+            const fill = entry.name === 'Dự báo' ? 'var(--primary, #db2777)' : entry.color;
+            return <Cell key={`cell-${index}`} fill={fill} />;
+          })}
         </Bar>
       </BarChart>
     </ResponsiveContainer>
