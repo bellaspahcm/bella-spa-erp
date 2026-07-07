@@ -24,7 +24,80 @@
 
 ### Định Nghĩa Ngắn Gọn
 
-**Bella ERP** là một **Configuration-driven Business Operating Platform** - nền tảng vận hành nghiệp vụ có thể chạy nhiều ngành nghề khác nhau thông qua cấu hình, không cần viết code mới.
+**Bella ERP** là một **Business Operating System** - hệ điều hành cho doanh nghiệp dịch vụ.
+
+Giống như Windows/macOS là nền tảng cho các ứng dụng (Word, Excel, Chrome...), Bella là nền tảng cho các nghiệp vụ (Booking, POS, Payroll, CRM...).
+
+### So Sánh: Bella vs Traditional ERP
+
+| | Traditional ERP | Bella Platform |
+|---|---|---|
+| **Định vị** | Phần mềm cho 1 ngành | Business Operating System |
+| **Mở rộng** | Fork code cho mỗi ngành | Thêm Providers/Business Process |
+| **Customize** | Sửa code | Config + Strategy |
+| **Onboard** | 2 tuần customize | 1 giờ config |
+| **Giá trị 10 năm** | Technical debt cao | Kiến trúc ổn định |
+
+### Cấu Trúc: Business Operating System
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ BELLA BUSINESS OPERATING SYSTEM                             │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│ ┌─── CORE PLATFORM (Hệ điều hành) ────────────────────┐    │
+│ │ • Decision Engine     ← Bộ não quyết định           │    │
+│ │ • Business Process    ← Khung quy trình chuẩn       │    │
+│ │ • Configuration       ← Hệ thống cấu hình động      │    │
+│ │ • Tenant Management   ← Quản lý đa chi nhánh        │    │
+│ │ • Event Bus           ← Giao tiếp giữa modules      │    │
+│ │ • Audit Trail         ← Truy vết                    │    │
+│ └───────────────────────────────────────────────────────┘    │
+│                           │                                 │
+│ ┌─────────────────────────┼─────────────────────────────┐   │
+│ │ BUSINESS PROCESSES (Ứng dụng)                        │   │
+│ ├─────────────────────────────────────────────────────┤   │
+│ │                                                       │   │
+│ │  Beauty Spa          Dental Clinic      Gym          │   │
+│ │  ├── Booking         ├── Appointment    ├── Member   │   │
+│ │  ├── Treatment       ├── Treatment      ├── Booking  │   │
+│ │  ├── POS             ├── Lab            ├── Access   │   │
+│ │  ├── CRM             ├── Prescription   ├── POS      │   │
+│ │  ├── Payroll         ├── Payroll        ├── Payroll  │   │
+│ │  └── Inventory       └── CRM            └── CRM      │   │
+│ │                                                       │   │
+│ │  Restaurant          Salon               Hotel        │   │
+│ │  ├── Reservation     ├── Booking        ├── Booking  │   │
+│ │  ├── Kitchen         ├── Treatment      ├── Checkin  │   │
+│ │  ├── POS             ├── POS            ├── POS      │   │
+│ │  └── Inventory       ├── Payroll        ├── Payroll  │   │
+│ │                      └── CRM            └── CRM      │   │
+│ └─────────────────────────────────────────────────────────┘   │
+│                           │                                 │
+│ ┌─────────────────────────┼─────────────────────────────┐   │
+│ │ PROVIDERS (Plugins nghiệp vụ)                         │   │
+│ ├─────────────────────────────────────────────────────┤   │
+│ │ Commission  Attendance  KPI  Bonus  Tax  Insurance  │   │
+│ │ Booking     Inventory   CRM  POS    Loyalty         │   │
+│ │ ... (100+ providers)                                 │   │
+│ └─────────────────────────────────────────────────────────┘   │
+│                           │                                 │
+│ ┌─────────────────────────┼─────────────────────────────┐   │
+│ │ STRATEGIES (Thuật toán)                               │   │
+│ ├─────────────────────────────────────────────────────┤   │
+│ │ Fixed  Tier  Percentage  Revenue  Service  Category │   │
+│ └─────────────────────────────────────────────────────────┘   │
+│                           │                                 │
+│ ┌─────────────────────────┼─────────────────────────────┐   │
+│ │ CONFIGURATION (Cấu hình mỗi doanh nghiệp)            │   │
+│ ├─────────────────────────────────────────────────────┤   │
+│ │ Spa A: Fixed 120k                                    │   │
+│ │ Dental B: Percentage 15%                             │   │
+│ │ Gym C: Tier [100k, 120k, 150k]                       │   │
+│ │ Restaurant D: Revenue Share 5%                       │   │
+│ └─────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ### Giải Thích Đơn Giản
 
@@ -110,6 +183,297 @@ Bella ERP
 ---
 
 ## 🌟 TẠI SAO BELLA ĐẶC BIỆT?
+
+### Lý Do Chiến Lược: Giải Quyết Bài Toán 5-10 Năm Tới
+
+**Bella không chỉ là ERP cho spa. Bella là "Business Operating System" cho mọi ngành dịch vụ.**
+
+#### 🎯 10 Lý Do Kiến Trúc Này Là Đúng Đắn
+
+##### 1. **Không Bị Phụ Thuộc Vào Một Ngành**
+
+**❌ Nếu viết riêng cho từng ngành:**
+```
+PayrollSpa/
+  ├── CommissionSpa.ts
+  ├── KPISpa.ts
+  └── SessionSpa.ts
+
+PayrollDental/      ← Fork code, maintain 2 nơi
+  ├── CommissionDental.ts
+  └── ...
+
+PayrollGym/         ← Fork lần 2, maintain 3 nơi
+PayrollClinic/      ← Fork lần 3, maintain 4 nơi
+```
+→ **Sau 5 năm: Maintain 10+ codebases khác nhau, bug ở spa này không fix ở spa kia**
+
+**✅ Với Provider + Strategy + Config:**
+```
+Payroll/              ← 1 codebase duy nhất
+  ├── CommissionProvider
+  ├── AttendanceProvider
+  ├── BonusProvider
+  └── KPIProvider
+
+Spa A: Fixed 120k
+Dental: Percentage 15%
+Gym: Tier [100k, 120k, 150k]
+Clinic: Revenue Share 5%
+```
+→ **Sau 10 năm: Vẫn 1 codebase, fix bug 1 lần là tất cả ngành đều được fix**
+
+---
+
+##### 2. **Engine Sống 10 Năm Không Đổi**
+
+**Engine chỉ biết:**
+```typescript
+execute(providers: Provider[], context: Context)
+```
+
+**Engine KHÔNG biết:**
+- Đây là spa hay dental
+- Commission tính theo session hay revenue
+- KPI có bật hay không
+
+→ **Core Platform có thể không sửa code trong 10 năm**
+→ **Chỉ thêm Providers mới, không đụng Engine**
+
+---
+
+##### 3. **Onboard Khách Hàng Mới < 1 Giờ**
+
+**Spa A:** Fixed 120k/session
+**Spa B:** Percentage 15%
+**Spa C:** Tier-based
+**Spa D:** Revenue share + KPI
+
+→ **Không cần developer**
+→ **Admin vào Settings, config, done**
+→ **Scale từ 10 spa → 1000 spa không cần thêm developer**
+
+---
+
+##### 4. **Mở Rộng Ngành Mới Rất Nhanh**
+
+**Scenario: Bella mở sang Salon Tóc (tháng 1/2027)**
+
+| Module | Salon | Spa | Có thể dùng lại? |
+|--------|-------|-----|------------------|
+| Booking | ✓ (khác logic) | ✓ | ⚠️ 70% providers |
+| POS | ✓ | ✓ | ✅ 100% |
+| CRM | ✓ | ✓ | ✅ 100% |
+| Payroll | ✓ | ✓ | ✅ 90% providers |
+| Inventory | ✓ | ✓ | ✅ 100% |
+
+→ **Chỉ cần thêm 10-20% providers mới**
+→ **2-3 tuần go-live, thay vì 6 tháng phát triển lại**
+
+**Scenario: Bella mở sang Phòng khám (tháng 6/2027)**
+
+```
+Payroll Clinic = Payroll Spa + thêm:
+  ├── InsuranceProvider (BHYT cao hơn)
+  ├── DoctorCommissionProvider (có hệ số bác sĩ)
+  └── ShiftProvider (ca đêm phụ cấp cao)
+```
+
+→ **Core Platform không sửa**
+→ **90% providers dùng lại**
+→ **Chỉ thêm 3 providers mới**
+
+---
+
+##### 5. **Business Process Độc Lập (Modular ERP Thực Sự)**
+
+```
+┌─────────┐     ┌──────────┐     ┌──────┐
+│ Booking │     │ Payroll  │     │ CRM  │
+└────┬────┘     └────┬─────┘     └───┬──┘
+     │               │                │
+     ↓               ↓                ↓
+  Providers      Providers       Providers
+     ↓               ↓                ↓
+  Config         Config           Config
+```
+
+**Lợi ích:**
+- Booking crash không ảnh hưởng Payroll
+- Update Payroll không test lại Inventory
+- Deploy từng module độc lập
+
+---
+
+##### 6. **Bán Từng Module (Tăng Revenue)**
+
+**Khách hàng A:**
+```
+✓ Booking
+✓ POS
+✗ Payroll (dùng Excel)
+✗ CRM
+```
+→ **$50/tháng**
+
+**Khách hàng B:**
+```
+✓ CRM
+✓ Payroll
+✗ Booking (không cần)
+✗ POS
+```
+→ **$40/tháng**
+
+**Khách hàng C:**
+```
+✓ Booking
+✓ POS
+✓ CRM
+✓ Payroll
+✓ Inventory
+```
+→ **$120/tháng**
+
+→ **Flexible pricing, không bắt mua toàn bộ**
+→ **Upsell dễ dàng (thêm module sau)**
+
+---
+
+##### 7. **Developer Mới Onboard < 1 Ngày**
+
+**Task: Thêm "Thưởng sinh nhật 500k"**
+
+**❌ Monolithic ERP cũ:**
+- Đọc toàn bộ Payroll (5000 lines)
+- Hiểu toàn bộ logic (2-3 ngày)
+- Sợ break code khác
+- PR review lâu
+
+**✅ Bella Provider Architecture:**
+- Chỉ tạo `BirthdayBonusProvider` (50 lines)
+- Không đụng code khác
+- Test riêng provider này
+- PR review 10 phút
+
+→ **Junior dev có thể contribute ngay**
+→ **Team scale từ 1 → 10 dev dễ dàng**
+
+---
+
+##### 8. **Provider Marketplace (Tương Lai)**
+
+```
+┌─────────────────────────────────────┐
+│ BELLA PROVIDER MARKETPLACE          │
+├─────────────────────────────────────┤
+│                                     │
+│ [Commission Provider]     $10/mo   │
+│ [Attendance Provider]     $10/mo   │
+│ [KPI Provider]            $15/mo   │
+│ [Insurance Provider]      $20/mo   │
+│ [Tax Provider]            $25/mo   │
+│ [OT Provider]             $15/mo   │
+│                                     │
+│ Community Providers:                │
+│ [Zalo Integration]        Free     │
+│ [Birthday Bonus]          Free     │
+│ [Google Review Bonus]     Free     │
+└─────────────────────────────────────┘
+```
+
+**Model:**
+- Bella cung cấp core providers (free)
+- Advanced providers (paid)
+- Community contributes providers
+- 3rd party developers bán providers
+
+→ **Ecosystem, không chỉ là product**
+
+---
+
+##### 9. **AI Dễ Sinh Code**
+
+**User yêu cầu:**
+> "Thêm provider tính thưởng theo đánh giá Google Review: 5 sao = 200k, 4 sao = 100k"
+
+**AI chỉ cần:**
+```typescript
+class GoogleReviewBonusProvider extends BaseDecisionProvider {
+  async evaluate(context: PayrollContext) {
+    const config = await this.loadConfig(context.tenantId);
+    const avgRating = await getGoogleRating(context.employeeId);
+    
+    const bonus = avgRating >= 5 ? 200000 :
+                  avgRating >= 4 ? 100000 : 0;
+    
+    return { bonus, reason: `Google rating: ${avgRating}` };
+  }
+}
+
+// Register
+registry.register(new GoogleReviewBonusProvider(), {
+  domain: 'payroll',
+  category: 'bonus'
+});
+```
+
+→ **Không đụng Engine**
+→ **Không đụng providers khác**
+→ **AI có thể gen code an toàn**
+
+---
+
+##### 10. **Mở Rộng Sang Ngành Khác Chỉ Thay Business Process**
+
+**Beauty Spa:**
+```
+Booking → Treatment → POS → CRM → Payroll → Inventory
+```
+
+**Dental Clinic:**
+```
+Appointment → Treatment → Prescription → Lab → Payroll → CRM
+```
+
+**Restaurant:**
+```
+Reservation → Kitchen → POS → Inventory → Payroll → Loyalty
+```
+
+**Gym:**
+```
+Membership → Booking → Access Control → Payroll → CRM
+```
+
+**Điểm chung:**
+- Core Platform giống nhau 100%
+- Cách tổ chức: `Business Process → Providers → Strategies → Config` giống nhau 100%
+- Chỉ khác Business Process và tập Providers
+
+→ **Bella = Business Operating System**
+→ **Không phải ERP cho spa, mà là platform cho mọi ngành dịch vụ**
+
+---
+
+### Giá Trị Dài Hạn
+
+#### So Sánh: Kiến Trúc Monolithic vs Bella
+
+| Tiêu chí | Monolithic ERP | Bella Platform |
+|----------|----------------|----------------|
+| **Mở rộng sang ngành mới** | 6-12 tháng phát triển lại | 2-4 tuần config + thêm providers |
+| **Onboard khách hàng mới** | 2 tuần customize code | 1 giờ config |
+| **Maintain nhiều khách** | Bug ở spa A không fix ở spa B | Fix 1 lần, tất cả khách đều fix |
+| **Team scale** | Junior dev sợ break code | Junior dev contribute dễ dàng |
+| **Pricing flexibility** | Phải mua toàn bộ | Chọn từng module |
+| **Developer productivity** | 1 feature = 2 tuần | 1 provider = 1 ngày |
+| **Time-to-market** | 6 tháng cho ngành mới | 1 tháng cho ngành mới |
+| **Technical debt** | Tăng nhanh sau 2-3 năm | Kiểm soát được |
+| **AI integration** | Khó (AI không dám gen code) | Dễ (AI gen providers an toàn) |
+| **Exit strategy** | Khó bán (code rối) | Dễ bán (architecture sạch) |
+
+---
 
 ### Nguyên Tắc Thiết Kế Cốt Lõi
 
