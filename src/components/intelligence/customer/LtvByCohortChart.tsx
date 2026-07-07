@@ -47,7 +47,7 @@ export function LtvByCohortChart({ data, height = 350 }: LtvByCohortChartProps) 
         <div className="bg-white/90 backdrop-blur-md px-4 py-3 rounded-2xl border border-slate-200/50 shadow-xl text-xs font-bold text-slate-800">
           <p className="text-slate-500 mb-1 uppercase tracking-wider">Cohort: {entry.payload.cohort}</p>
           <p className="text-sm font-black text-slate-900 mb-1">
-            LTV TB: <span className="text-[#8b5cf6]">{formatCurrencyFull(entry.value)}</span>
+            LTV TB: <span className="text-primary">{formatCurrencyFull(entry.value)}</span>
           </p>
           <p className="text-[10px] text-slate-400 font-normal">
             Quy mô cohort: {entry.payload.size} KH
@@ -63,8 +63,8 @@ export function LtvByCohortChart({ data, height = 350 }: LtvByCohortChartProps) 
       <AreaChart data={chartData} margin={{ top: 15, right: 10, left: 10, bottom: 5 }}>
         <defs>
           <linearGradient id="ltvGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.25} />
-            <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.0} />
+            <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.25} />
+            <stop offset="95%" stopColor="var(--primary)" stopOpacity={0.0} />
           </linearGradient>
         </defs>
         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -85,11 +85,11 @@ export function LtvByCohortChart({ data, height = 350 }: LtvByCohortChartProps) 
           type="monotone"
           dataKey="ltv"
           name="LTV Trung Bình"
-          stroke="#8b5cf6"
+          stroke="var(--primary)"
           strokeWidth={3}
           fillOpacity={1}
           fill="url(#ltvGradient)"
-          dot={{ fill: '#8b5cf6', stroke: '#fff', strokeWidth: 2, r: 6 }}
+          dot={{ fill: 'var(--primary)', stroke: '#fff', strokeWidth: 2, r: 6 }}
           activeDot={{ r: 8, stroke: '#fff', strokeWidth: 2 }}
         />
       </AreaChart>

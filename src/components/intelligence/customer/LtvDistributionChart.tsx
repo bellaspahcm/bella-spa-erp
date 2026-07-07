@@ -45,7 +45,7 @@ export function LtvDistributionChart({ data, height = 350 }: LtvDistributionChar
         <div className="bg-white/90 backdrop-blur-md px-4 py-3 rounded-2xl border border-slate-200/50 shadow-xl text-xs font-bold text-slate-800">
           <p className="text-slate-500 mb-1 uppercase tracking-wider">Khoảng: {entry.payload.range}</p>
           <p className="text-sm font-black text-slate-900">
-            Số lượng: <span className="text-[#3b82f6]">{entry.value} KH</span> <span className="text-slate-400 font-normal">({percent}%)</span>
+            Số lượng: <span className="text-primary">{entry.value} KH</span> <span className="text-slate-400 font-normal">({percent}%)</span>
           </p>
         </div>
       );
@@ -58,8 +58,8 @@ export function LtvDistributionChart({ data, height = 350 }: LtvDistributionChar
       <BarChart data={chartData} margin={{ top: 15, right: 10, left: 10, bottom: 5 }}>
         <defs>
           <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.9} />
-            <stop offset="100%" stopColor="#60a5fa" stopOpacity={0.4} />
+            <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.9} />
+            <stop offset="100%" stopColor="var(--primary)" stopOpacity={0.4} />
           </linearGradient>
         </defs>
         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />

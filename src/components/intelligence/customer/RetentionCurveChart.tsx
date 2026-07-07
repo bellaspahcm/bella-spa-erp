@@ -30,7 +30,7 @@ export function RetentionCurveChart({ data, height = 350 }: RetentionCurveChartP
         <div className="bg-white/90 backdrop-blur-md px-4 py-3 rounded-2xl border border-slate-200/50 shadow-xl text-xs font-bold text-slate-800">
           <p className="text-slate-500 mb-1 uppercase tracking-wider">Cohort: {entry.payload.cohort}</p>
           <p className="text-sm font-black text-slate-900 mb-1">
-            Giữ chân: <span className="text-[#10b981]">{entry.value.toFixed(1)}%</span>
+            Giữ chân: <span className="text-primary">{entry.value.toFixed(1)}%</span>
           </p>
           <p className="text-[10px] text-slate-400 font-normal">
             Quy mô ban đầu: {entry.payload.size} KH
@@ -46,8 +46,8 @@ export function RetentionCurveChart({ data, height = 350 }: RetentionCurveChartP
       <AreaChart data={chartData} margin={{ top: 15, right: 10, left: 10, bottom: 5 }}>
         <defs>
           <linearGradient id="retentionGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#10b981" stopOpacity={0.25} />
-            <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
+            <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.25} />
+            <stop offset="95%" stopColor="var(--primary)" stopOpacity={0.0} />
           </linearGradient>
         </defs>
         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -75,11 +75,11 @@ export function RetentionCurveChart({ data, height = 350 }: RetentionCurveChartP
           type="monotone"
           dataKey="retention"
           name="Tỷ lệ giữ chân (%)"
-          stroke="#10b981"
+          stroke="var(--primary)"
           strokeWidth={3}
           fillOpacity={1}
           fill="url(#retentionGradient)"
-          dot={{ fill: '#10b981', stroke: '#fff', strokeWidth: 2, r: 6 }}
+          dot={{ fill: 'var(--primary)', stroke: '#fff', strokeWidth: 2, r: 6 }}
           activeDot={{ r: 8, stroke: '#fff', strokeWidth: 2 }}
         />
       </AreaChart>
