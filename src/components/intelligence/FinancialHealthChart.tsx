@@ -74,9 +74,9 @@ export function FinancialHealthChart({
             fontSize: '12px',
             boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.05)',
           }}
-          formatter={(value, name, props: any) => {
+          formatter={(value, name, entry: any) => {
             if (typeof value !== 'number') return ['', name];
-            const unit = props.payload.unit;
+            const unit = entry?.payload?.unit;
             if (unit === '%') {
               return [`${value.toFixed(1)}%`, 'Giá trị'];
             }
@@ -91,7 +91,8 @@ export function FinancialHealthChart({
             dataKey="value"
             position="right"
             formatter={(value: any, entry: any) => {
-              const unit = entry.payload.unit;
+              if (typeof value !== 'number') return value;
+              const unit = entry?.payload?.unit;
               if (unit === '%') {
                 return `${value.toFixed(1)}%`;
               }
