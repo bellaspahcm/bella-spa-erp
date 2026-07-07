@@ -263,9 +263,9 @@ function CustomerSegmentationDashboard() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-12">
         <div className="flex items-center gap-4">
           <button
-            onClick={() => router.push('/dashboard')}
+            onClick={() => router.back()}
             className="w-12 h-12 bg-white/60 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-slate-200/60 text-slate-600 hover:text-primary hover:border-primary/30 active:scale-95 transition-all shadow-sm shrink-0"
-            title="Quay lại Dashboard"
+            title="Quay lại trang trước"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
