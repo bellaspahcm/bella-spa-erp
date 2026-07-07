@@ -143,9 +143,15 @@ export default function DecisionAuditTrailPage() {
 
   // Fetch on mount and when filters change
   useEffect(() => {
-    if (tenantId) {
-      fetchAuditLog();
+    // If no tenant ID, show "please enter tenant" message instead of loading spinner
+    if (!tenantId) {
+      setLoading(false);
+      setData([]);
+      setError(null);
+      return;
     }
+    
+    fetchAuditLog();
   }, [tenantId, decisionType, provider, status, dateFrom, dateTo, search, pagination.page]);
 
   // Handle row click
