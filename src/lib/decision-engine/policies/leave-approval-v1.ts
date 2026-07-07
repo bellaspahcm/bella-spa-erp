@@ -13,11 +13,11 @@ import type { Policy } from '../types';
 export const leaveApprovalPolicyV1: Policy = {
   id: 'leave-approval-v1',
   version: '1.0.0',
-  name: 'Leave Approval Policy',
-  description: 'Automated leave request approval based on advance notice and attendance',
+  name: 'Chính sách phê duyệt nghỉ phép',
+  description: 'Tự động phê duyệt đơn nghỉ phép dựa trên thời gian báo trước và hồ sơ chuyên cần',
   
   rules: [
-    // Rule 1: Auto-approve if ≥24h notice + good record
+    // Rule 1: Tự động phê duyệt nếu báo trước ≥24h + hồ sơ tốt
     {
       id: 'advance-notice-24h',
       priority: 1,
@@ -53,11 +53,11 @@ export const leaveApprovalPolicyV1: Policy = {
       },
       action: {
         outcome: 'APPROVE',
-        reason: 'Leave approved: ≥24h advance notice, sufficient balance, no violations'
+        reason: 'Đơn nghỉ phép đạt yêu cầu: báo trước ≥24 giờ, còn số ngày phép, không có vi phạm chuyên cần'
       }
     },
     
-    // Rule 2: Auto-reject if <24h notice
+    // Rule 2: Tự động từ chối nếu báo trước <24h
     {
       id: 'same-day-reject',
       priority: 2,
@@ -69,11 +69,11 @@ export const leaveApprovalPolicyV1: Policy = {
       },
       action: {
         outcome: 'REJECT',
-        reason: 'Leave rejected: Less than 24h advance notice required'
+        reason: 'Đơn nghỉ phép bị từ chối: cần báo trước tối thiểu 24 giờ'
       }
     },
     
-    // Rule 3: Auto-reject if no leave balance
+    // Rule 3: Tự động từ chối nếu hết số ngày phép
     {
       id: 'no-balance-reject',
       priority: 3,
@@ -85,11 +85,11 @@ export const leaveApprovalPolicyV1: Policy = {
       },
       action: {
         outcome: 'REJECT',
-        reason: 'Leave rejected: Insufficient leave balance'
+        reason: 'Đơn nghỉ phép bị từ chối: không còn số ngày phép (số dư: 0 ngày)'
       }
     },
     
-    // Rule 4: Escalate if has conflicts
+    // Rule 4: Chuyển quản lý xem xét nếu có ca trùng lịch
     {
       id: 'conflict-escalate',
       priority: 4,
@@ -101,11 +101,11 @@ export const leaveApprovalPolicyV1: Policy = {
       },
       action: {
         outcome: 'ESCALATE',
-        reason: 'Manual review required: Conflicts with existing bookings'
+        reason: 'Cần quản lý xem xét: có ca liệu trình trùng lịch với ngày xin nghỉ, cần điều động KTV thay thế'
       }
     },
     
-    // Rule 5: Escalate if has attendance violations
+    // Rule 5: Chuyển quản lý xem xét nếu có vi phạm chuyên cần
     {
       id: 'violations-escalate',
       priority: 5,
@@ -117,11 +117,11 @@ export const leaveApprovalPolicyV1: Policy = {
       },
       action: {
         outcome: 'ESCALATE',
-        reason: 'Manual review required: Employee has attendance violations'
+        reason: 'Cần quản lý xem xét: nhân viên có vi phạm chuyên cần (vắng mặt hoặc đi muộn) trong 90 ngày gần đây'
       }
     },
     
-    // Rule 6: Default escalate (safety fallback)
+    // Rule 6: Mặc định chuyển quản lý (safety fallback)
     {
       id: 'default-escalate',
       priority: 100,
@@ -132,7 +132,7 @@ export const leaveApprovalPolicyV1: Policy = {
       },
       action: {
         outcome: 'ESCALATE',
-        reason: 'Manual review required: Unhandled case'
+        reason: 'Cần quản lý xem xét: trường hợp đặc biệt chưa được định nghĩa trong chính sách tự động'
       }
     }
   ]
