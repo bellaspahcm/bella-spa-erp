@@ -18,7 +18,7 @@
  * @see src/types/payroll-config.ts
  */
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase-server';
 import type {
   ProviderKey,
   ProviderConfig,
