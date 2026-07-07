@@ -70,8 +70,8 @@ export default function NotificationsTab() {
               type="button"
               onClick={() => toggleActive(idx)}
               className={cn(
-                "w-14 h-8 rounded-full p-1 transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20",
-                item.active ? 'bg-primary' : 'bg-slate-200'
+                "w-14 h-8 rounded-full p-1 transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20 border border-transparent",
+                item.active ? 'bg-primary' : 'bg-slate-300 border-slate-400/20'
               )}
             >
               <div
