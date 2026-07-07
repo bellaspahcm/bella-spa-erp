@@ -34,6 +34,7 @@
     "test:intelligence": "jest src/services/intelligence/__tests__/ --coverage --collectCoverageFrom='src/services/intelligence/**/*.ts' --collectCoverageFrom='!src/services/intelligence/**/*.test.ts'",
     "test:coverage": "jest --coverage",
     "test:report": "jest --json --outputFile=test-results.json && node generate-report.js",
+    "config:migrate": "tsx scripts/run-config-migrations.ts",
     "policy:migrate": "tsx scripts/migrate-policies-to-registry.ts",
     "policy:migrate:dry-run": "tsx scripts/migrate-policies-to-registry.ts --dry-run",
     "policy:migrate:force": "tsx scripts/migrate-policies-to-registry.ts --force",
