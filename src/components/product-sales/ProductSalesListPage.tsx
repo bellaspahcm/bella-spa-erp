@@ -290,13 +290,14 @@ export function ProductSalesListPage() {
     link.click();
   };
 
-  // Module check
+  // Module check - Allow both 'spa' and 'beauty_spa' modules
   if (tenantContext?.enabledModules && 
-      !tenantContext.enabledModules.includes('spa')) {
+      !tenantContext.enabledModules.includes('spa') &&
+      !tenantContext.enabledModules.includes('beauty_spa')) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
-          <p className="text-gray-500">Tính năng này chỉ khả dụng cho Spa module</p>
+          <p className="text-gray-500">Tính năng này chỉ khả dụng cho Spa và Beauty Spa module</p>
         </div>
       </div>
     );
