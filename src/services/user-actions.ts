@@ -763,6 +763,58 @@ export async function deleteUser(id: string) {
 
   const staffLeaveRestorePayloads = (previousStaffLeaves || []).map(toStaffLeaveInsertSnapshot);
   
+  // Check if user has any bookings (foreign key constraint)
+  const { data: userBookings, error: bookingsCheckError } = await supabase
+    .from('bookings')
+    .select('id')
+    .eq('assigned_ktv_id', id)
+    .eq('tenant_id', tenantId)
+    .limit(1);
+  
+  if (bookingsCheckError) {
+    console.error('Error checking user bookings:', bookingsCheckError);
+    return { error: 'Không thể kiểm tra dữ liệu liên quan. Vui lòng thử lại.' };
+  }
+  
+  // If user has bookings, prevent hard delete - use soft delete instead
+  if (userBookings && userBookings.length > 0) {
+    // Soft delete: Set resignation_date to mark as inactive
+    const { error: softDeleteError } = await supabase
+      .from('users')
+      .update({ 
+        resignation_date: new Date().toISOString().split('T')[0],
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .eq('tenant_id', tenantId);
+    
+    if (softDeleteError) {
+      console.error('Error soft deleting user:', softDeleteError);
+      return { error: 'Không thể xóa nhân sự: ' + softDeleteError.message };
+    }
+    
+    // Record audit log for soft delete
+    try {
+      await recordAuditLog({
+        action: 'UPDATE',
+        table_name: 'users',
+        record_id: id,
+        old_data: toUserAuditSnapshot(previousUser),
+        new_data: { resignation_date: new Date().toISOString().split('T')[0] }
+      });
+    } catch (auditError: unknown) {
+      console.warn('Failed to record soft delete audit log:', auditError);
+      // Don't rollback soft delete if audit fails
+    }
+    
+    await safeRevalidatePath('/dashboard/settings');
+    return { 
+      success: true,
+      message: 'Nhân sự đã được đánh dấu nghỉ việc (không thể xóa hoàn toàn vì có dữ liệu liên quan).'
+    };
+  }
+  
+  // Hard delete if no bookings exist
   const { error } = await supabase
     .from('users')
     .delete()
@@ -771,7 +823,7 @@ export async function deleteUser(id: string) {
 
   if (error) {
     console.error('Error deleting user:', error);
-    return { error: error.message };
+    return { error: 'Không thể xóa nhân sự: ' + error.message };
   }
 
   // Record Audit Log
