@@ -102,7 +102,11 @@ export default function KTVLeaderboardPage() {
           <div className="inline-flex items-center justify-center w-20 h-20 bg-white/20 rounded-[32px] backdrop-blur-md border border-white/30 mb-4 shadow-xl">
              <Trophy className="w-10 h-10 text-white" />
           </div>
-          <div className="text-2xl font-black text-white mb-1">Top Ngôi sao {tenantName || 'Bella'}</div>
+          {tenantName ? (
+            <div className="text-2xl font-black text-white mb-1">Top Ngôi sao {tenantName}</div>
+          ) : (
+            <div className="h-8 bg-white/20 rounded-xl animate-pulse mx-auto mb-1" style={{ width: '280px' }} />
+          )}
           <p className="text-white/60 text-[10px] font-black uppercase tracking-widest">Tháng {selectedMonth.split('-')[1]} / {selectedMonth.split('-')[0]}</p>
         </div>
       </div>
