@@ -295,15 +295,15 @@ export default function KTVEarningsPage() {
             <div className="w-10 h-10 bg-rose-500/20 text-rose-400 dark:text-rose-300 rounded-2xl flex items-center justify-center mb-3 border border-rose-500/30">
               <Award className="w-5 h-5" />
             </div>
-            <p className="text-[10px] font-black text-white/60 dark:text-white/50 uppercase tracking-widest mb-1">Thưởng KPI</p>
-            <p className="text-lg font-black text-white">{formatCurrency(leaderboardData?.total_kpi_bonus || 0)}</p>
+            <p className="text-[10px] font-black uppercase tracking-widest mb-1" style={{ color: 'rgba(255, 255, 255, 0.6)' }}>Thưởng KPI</p>
+            <p className="text-lg font-black" style={{ color: 'white' }}>{formatCurrency(leaderboardData?.total_kpi_bonus || 0)}</p>
           </div>
           <div className="bg-gradient-to-br from-rose-500 to-rose-600 dark:from-rose-600 dark:to-rose-700 p-5 rounded-[32px] shadow-lg border border-rose-400 dark:border-rose-600">
             <div className="w-10 h-10 bg-white/20 text-white rounded-2xl flex items-center justify-center mb-3 border border-white/30">
               <Star className="w-5 h-5" />
             </div>
-            <p className="text-[10px] font-black text-white/80 uppercase tracking-widest mb-1">Đánh giá TB</p>
-            <p className="text-lg font-black text-white">{Number(leaderboardData?.average_rating || 0).toFixed(1)} ⭐</p>
+            <p className="text-[10px] font-black uppercase tracking-widest mb-1" style={{ color: 'rgba(255, 255, 255, 0.8)' }}>Đánh giá TB</p>
+            <p className="text-lg font-black" style={{ color: 'white' }}>{Number(leaderboardData?.average_rating || 0).toFixed(1)} ⭐</p>
           </div>
         </div>
 
