@@ -326,3 +326,237 @@ Environment: localhost:3000 / production
 **Last Updated:** June 22, 2026  
 **Owner:** AI Agent (Kiro)  
 **Reviewers:** Quang (Product Owner)
+
+
+---
+
+## **Test Case 7: Commission Provider - Fixed Strategy** (Task #9)
+**Goal:** Verify CommissionProvider applies fixed rate per session correctly
+
+**Steps:**
+1. Navigate to **Settings > Salary Config > Commission Settings**
+2. Verify "Hoa Hồng Ca" toggle is ON (emerald green)
+3. Select strategy: **"Cố định (mỗi ca cố định X đồng)"**
+4. Set: Hoa hồng mỗi ca = `120,000 VNĐ`, Số ca tối thiểu = `0`
+5. Save config
+6. Trigger salary recalculation (via Payroll Wizard)
+7. Check console log: `[PHASE_2_ACTIVE] Commission - Using Provider Result: { provider_commission: XXX, strategy: 'fixed', sessions: N }`
+8. Verify `session_bonus` = sessionsCount × 120,000
+
+**Expected Result:**
+- Commission calculated as: sessions × fixed rate (e.g., 10 sessions → 1,200,000đ)
+- Old `calculateSessionCommissionBonus()` NOT used
+- Log shows `strategy: 'fixed'`
+
+---
+
+## **Test Case 8: Commission Provider - Tier Strategy** (Task #9)
+**Goal:** Verify tiered commission rates work correctly
+
+**Steps:**
+1. Select strategy: **"Bậc thang (0-10ca→100k, 11-20ca→120k)"**
+2. Configure tiers:
+   - 0-10 sessions → 100k/session
+   - 11-20 sessions → 120k/session
+   - 21+ sessions → 150k/session
+3. Save config
+4. Test with KTVs having different session counts:
+   - KTV A: 5 sessions → 500,000đ (5 × 100k)
+   - KTV B: 15 sessions → 1,800,000đ (15 × 120k)
+   - KTV C: 25 sessions → 3,750,000đ (25 × 150k)
+5. Verify logs show correct tier matching
+
+**Expected Result:**
+- Commission uses rate from matching tier
+- Tier boundaries work correctly (10→11 transitions properly)
+- Log shows `strategy: 'tier'` and matched tier details
+
+---
+
+## **Test Case 9: Commission Provider - Percentage Strategy** (Task #9)
+**Goal:** Verify percentage-based commission on service revenue
+
+**Steps:**
+1. Select strategy: **"Phần trăm doanh thu (% giá trị booking)"**
+2. Set: Phần trăm = `15%`, Doanh thu tối thiểu = `0`
+3. Save config
+4. Find KTV with known total session revenue (e.g., 5,000,000đ from bookings)
+5. Trigger recalculation
+6. Verify commission = totalRevenue × 15% = 750,000đ
+7. Check log: `[PHASE_2_ACTIVE] Commission ... total_revenue: 5000000`
+
+**Expected Result:**
+- Commission = totalRevenue × percentage
+- Revenue correctly summed from all sessions
+- Log shows `strategy: 'percentage'` and total_revenue
+
+---
+
+## **Test Case 10: Commission Provider - Service Strategy** (Task #9)
+**Goal:** Verify different rates per service type
+
+**Steps:**
+1. Select strategy: **"Theo dịch vụ (massage→150k, facial→100k)"**
+2. Configure service rates:
+   - massage → 150,000đ
+   - facial → 100,000đ
+   - waxing → 80,000đ
+3. Save config
+4. Find KTV with mixed service sessions:
+   - 3 massage sessions → 450,000đ
+   - 2 facial sessions → 200,000đ
+   - 1 waxing session → 80,000đ
+   - **Total:** 730,000đ
+5. Verify commission matches sum of service-specific rates
+
+**Expected Result:**
+- Each session uses its service type's commission rate
+- Unknown service types fallback to 0 or default
+- Log shows `strategy: 'service'` and service breakdown
+
+---
+
+## **Test Case 11: All 4 Providers Active (Complete System Test)** (Task #10)
+**Goal:** Verify all providers (KPI, Attendance, Rating, Commission) work together
+
+**Configuration:**
+- **KPI:** Threshold (30 sessions → 1M)
+- **Attendance:** Combined (late: 50k, absent: 200k)
+- **Rating:** Threshold (≥4.5⭐ → 50k)
+- **Commission:** Fixed (120k/session)
+
+**Test Profile:**
+- KTV: "Quang"
+- Sessions: 35 (exceeds KPI)
+- Late days: 2, Absent days: 1
+- Avg rating: 4.7⭐
+- Base salary: 6,000,000đ
+
+**Expected Calculation:**
+- Base: 6,000,000đ
+- Commission (35 × 120k): 4,200,000đ
+- KPI (hit target): 1,000,000đ
+- Rating (4.7 ≥ 4.5): 50,000đ
+- Deductions (2×50k + 1×200k): -300,000đ
+- **Total:** 10,950,000đ
+
+**Verification:**
+1. Check console for all 4 provider logs:
+   ```
+   [PHASE_2_ACTIVE] Commission - Using Provider Result: { provider_commission: 4200000, ... }
+   [PHASE_2_ACTIVE] KPI - Using Provider Result: { provider_bonus: 1000000, ... }
+   [PHASE_2_ACTIVE] Rating - Using Provider Result: { provider_bonus: 50000, ... }
+   [PHASE_2_ACTIVE] Attendance - Using Provider Result: { provider_deduction: 300000, ... }
+   ```
+2. Verify database record matches expected total
+3. UI displays all components correctly
+4. No discrepancies in AI Copilot Salary Reconciliation
+
+**Expected Result:**
+- ✅ All 4 providers execute successfully
+- ✅ Total salary = 10,950,000đ (exact match)
+- ✅ Each component logged with `[PHASE_2_ACTIVE]`
+- ✅ No errors in console
+- ✅ UI reflects all provider-calculated values
+
+---
+
+## **Test Case 12: Commission Provider OFF (Disable Test)** (Task #10)
+**Goal:** Verify commission can be disabled without breaking salary calculation
+
+**Steps:**
+1. Navigate to Commission Settings
+2. Toggle "Hoa Hồng Ca" OFF (switch turns gray)
+3. Verify warning: "⚠️ Hoa hồng ca hiện đang **tắt**"
+4. Save config
+5. Trigger recalculation
+6. Verify `session_bonus = 0` in salary record
+7. Check log: `Commission provider disabled, returning 0`
+
+**Expected Result:**
+- KTV receives 0 commission (session_bonus = 0)
+- Other providers (KPI, Rating) still work normally
+- No errors or crashes
+- Old `calculateSessionCommissionBonus()` NOT called
+
+---
+
+## 📋 Complete Test Matrix (All 12 Scenarios)
+
+| # | Test Case | Provider | Status | Priority |
+|---|-----------|----------|--------|----------|
+| 1 | KPI Bonus Calculation | KPI | ⏳ Pending | High |
+| 2 | Attendance Deductions | Attendance | ⏳ Pending | High |
+| 3 | Rating Bonus | Rating | ⏳ Pending | High |
+| 4 | Combined Salary (KPI+Att+Rating) | All 3 | ⏳ Pending | High |
+| 5 | Draft vs Non-Draft Status | All | ⏳ Pending | High |
+| 6 | Provider Config Changes | All | ⏳ Pending | Medium |
+| 7 | Commission - Fixed Strategy | Commission | ⏳ Pending | High |
+| 8 | Commission - Tier Strategy | Commission | ⏳ Pending | High |
+| 9 | Commission - Percentage Strategy | Commission | ⏳ Pending | Medium |
+| 10 | Commission - Service Strategy | Commission | ⏳ Pending | Medium |
+| 11 | **All 4 Providers Active** | **All 4** | ⏳ Pending | **Critical** |
+| 12 | Commission Provider OFF | Commission | ⏳ Pending | Low |
+
+**Testing Priority:**
+1. **Critical (Test #11):** All 4 providers working together - this is the ultimate integration test
+2. **High (Tests #1-5, #7-8):** Core functionality per provider
+3. **Medium (Tests #6, #9-10):** Config changes and alternative strategies
+4. **Low (Test #12):** Edge case (disabled provider)
+
+---
+
+## 🚀 Deployment Decision Matrix
+
+### ✅ **Deploy to Production IF:**
+- [ ] All HIGH priority tests (1-5, 7-8) pass
+- [ ] Test #11 (Critical - all 4 providers) passes
+- [ ] No console errors or warnings during testing
+- [ ] UI displays match backend calculations (no discrepancies)
+- [ ] Rollback procedure verified (toggle flag OFF works)
+- [ ] At least 1 production-like salary cycle tested (full month)
+
+### ⚠️ **Deploy with Caution IF:**
+- [ ] 1-2 MEDIUM priority tests fail (can fix post-deploy)
+- [ ] Minor UI inconsistencies found (display-only issues)
+- [ ] Performance acceptable but not optimal (<500ms per KTV)
+
+### 🚨 **DO NOT Deploy IF:**
+- [ ] Any HIGH priority test fails
+- [ ] Test #11 (Critical) fails
+- [ ] Data corruption observed in test records
+- [ ] Silent failures detected (no error logs but wrong calculations)
+- [ ] Rollback procedure doesn't work
+- [ ] Total salary calculations have discrepancies >1% from expected
+
+---
+
+## 📊 Task #10 Success Criteria Checklist
+
+**End-to-End Testing Complete:**
+- [ ] Commission Settings UI tested (all 4 strategies)
+- [ ] CommissionProvider integration tested (salary engine)
+- [ ] Combined provider test passed (all 4 active together)
+- [ ] Edge cases handled (disabled, invalid config, errors)
+- [ ] Documentation complete (this plan + test guide)
+
+**Production Readiness:**
+- [ ] Feature flag verified in production environment
+- [ ] Database migration applied to production
+- [ ] Monitoring in place (logs, error tracking)
+- [ ] Rollback plan communicated to team
+- [ ] User acceptance testing (UAT) completed
+
+**Code Quality:**
+- [ ] No TypeScript errors
+- [ ] All providers follow same pattern (consistency)
+- [ ] Error handling is non-blocking (no silent failures)
+- [ ] Logging is comprehensive (PHASE_2_ACTIVE tags present)
+
+---
+
+**Task #10 Status:** 🟡 Testing Documentation Complete, Awaiting Execution  
+**Next Action:** User needs to execute all 12 test scenarios manually  
+**Estimated Test Time:** 2-3 hours for complete test suite  
+**Related Docs:** `COMMISSION_SETTINGS_TEST_GUIDE.md`, `ROADMAP_NEXT_STEPS.md`
+
