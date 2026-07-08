@@ -184,7 +184,9 @@ export async function runCOOOrchestrator(
   monthYear?: string
 ): Promise<COOAnalysisResult> {
   const activeDate = monthYear ? new Date(monthYear) : new Date();
-  const formattedDate = activeDate.toISOString().split('T')[0];
+  const formattedDate = activeDate.toISOString().split('T')[0]; // YYYY-MM-DD for internal use
+  // Format date for Vietnamese display: DD/MM/YYYY
+  const vietnameseDate = `${String(activeDate.getDate()).padStart(2, '0')}/${String(activeDate.getMonth() + 1).padStart(2, '0')}/${activeDate.getFullYear()}`;
   const firstDayOfMonth = new Date(activeDate.getFullYear(), activeDate.getMonth(), 1).toISOString().split('T')[0];
   const lowerCommand = command.toLowerCase();
 
@@ -273,8 +275,8 @@ export async function runCOOOrchestrator(
 
       const actionType = routedTo === 'chro' ? 'attendance_warning' : routedTo === 'cpo' ? 'inventory_restock' : routedTo === 'cmo' ? 'customer_apology' : routedTo === 'franchise' ? 'royalty_payment_reminder' : 'reconciliation_audit';
 
-      const prompt = `Bạn là AI COO (trợ lý điều phối vận hành cấp cao) của hệ thống ERP spa.
-Nhiệm vụ của bạn là nhận câu lệnh ngôn ngữ tự nhiên của Ban điều hành, kết hợp với bộ dữ liệu thô vừa truy xuất từ hệ thống ERP chi nhánh để viết báo cáo tóm tắt phân tích sâu sắc, chính xác số liệu và đề xuất các quyết định thực tế.
+      const prompt = `Bạn là AI COO (trợ lý điều phối vận hành cấp cao) của hệ thống EIP spa.
+Nhiệm vụ của bạn là nhận câu lệnh ngôn ngữ tự nhiên của Ban điều hành, kết hợp với bộ dữ liệu thô vừa truy xuất từ hệ thống EIP chi nhánh để viết báo cáo tóm tắt phân tích sâu sắc, chính xác số liệu và đề xuất các quyết định thực tế.
 
 CÔNG THỨC & NGUYÊN TẮC PHÂN TÍCH NGHIỆP VỤ BẮT BUỘC:
 1. Nguyên tắc Đánh giá CSAT:
@@ -296,8 +298,8 @@ CÔNG THỨC & NGUYÊN TẮC PHÂN TÍCH NGHIỆP VỤ BẮT BUỘC:
 Thông tin ngữ cảnh:
 - Câu lệnh của Ban điều hành: "${command}"
 - Bộ trợ lý chuyên môn đang phân tích: ${assistantName}
-- Kỳ báo cáo: ${formattedDate}
-- Dữ liệu thô từ Hệ thống ERP chi nhánh:
+- Kỳ báo cáo: ${vietnameseDate}
+- Dữ liệu thô từ Hệ thống EIP chi nhánh:
 ${JSON.stringify(subAgentResponse.data, null, 2)}
 
 Yêu cầu định dạng phản hồi:

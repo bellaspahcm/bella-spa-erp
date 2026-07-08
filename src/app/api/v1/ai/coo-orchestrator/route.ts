@@ -46,7 +46,7 @@ export const POST = withTenantContext(async (request: NextRequestWithContext) =>
 
     if (userError || !userData) {
       console.error("[AI COO Orchestrator] Không tìm thấy hồ sơ người dùng trong hệ thống:", userError);
-      return NextResponse.json({ error: "Tài khoản của bạn không tồn tại trong hệ thống Bella ERP." }, { status: 403 });
+      return NextResponse.json({ error: "Tài khoản của bạn không tồn tại trong hệ thống Bella EIP." }, { status: 403 });
     }
 
     // 4. Validate user has permission to use AI COO
