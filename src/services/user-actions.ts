@@ -767,7 +767,35 @@ export async function deleteUser(id: string) {
   // Always use soft delete to prevent foreign key constraint violations
   // Many tables reference users: bookings, attendance, sessions, salary_records, 
   // expenses, audit_logs, kpi_records, leave_requests, product_sales, etc.
-  // Soft delete: Set resignation_date + modify email to free it for reuse
+  
+  // IMPORTANT: Delete from Supabase Auth first to free email for reuse
+  const serviceRoleKey = getSupabaseAdminKey();
+  const supabaseUrl = getSupabaseAdminUrl();
+  
+  if (serviceRoleKey && supabaseUrl) {
+    try {
+      const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
+      const supabaseAdmin = createSupabaseClient(
+        supabaseUrl,
+        serviceRoleKey,
+        { auth: { persistSession: false, autoRefreshToken: false } }
+      );
+      
+      // Delete from auth.users to free the email
+      const { error: authDeleteError } = await supabaseAdmin.auth.admin.deleteUser(id);
+      if (authDeleteError) {
+        console.warn('[deleteUser] Failed to delete from auth.users:', authDeleteError);
+        // Continue anyway - auth delete is best-effort
+      } else {
+        console.log('[deleteUser] Successfully deleted from auth.users');
+      }
+    } catch (authError) {
+      console.warn('[deleteUser] Auth deletion error:', authError);
+      // Continue anyway
+    }
+  }
+  
+  // Soft delete in public.users: Set resignation_date + archive email
   const timestamp = Date.now();
   const originalEmail = previousUser.email;
   const archivedEmail = originalEmail ? `${timestamp}.deleted.${originalEmail}` : `${timestamp}.deleted@archived.local`;
