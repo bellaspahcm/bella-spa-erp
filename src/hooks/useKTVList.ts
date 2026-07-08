@@ -47,7 +47,8 @@ export function useKTVList(tenantId?: string) {
       const validKtvs = (data || []).filter(ktv => 
         ktv.email && 
         ktv.email.trim() !== '' &&
-        !ktv.email.includes('deleted_') // Common soft-delete pattern
+        !ktv.email.includes('deleted_') &&     // Pattern: deleted_xxx@system
+        !ktv.email.includes('.deleted.')       // Pattern: xxx.deleted.yyy@domain
       );
 
       setKtvList(validKtvs);
