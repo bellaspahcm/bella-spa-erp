@@ -763,7 +763,8 @@ export async function deleteUser(id: string) {
 
   const staffLeaveRestorePayloads = (previousStaffLeaves || []).map(toStaffLeaveInsertSnapshot);
   
-  // Check if user has any bookings (foreign key constraint)
+  // Check if user has any related data (foreign key constraints)
+  // 1. Check bookings
   const { data: userBookings, error: bookingsCheckError } = await supabase
     .from('bookings')
     .select('id')
@@ -776,8 +777,53 @@ export async function deleteUser(id: string) {
     return { error: 'Không thể kiểm tra dữ liệu liên quan. Vui lòng thử lại.' };
   }
   
-  // If user has bookings, prevent hard delete - use soft delete instead
-  if (userBookings && userBookings.length > 0) {
+  // 2. Check attendance records
+  const { data: userAttendance, error: attendanceCheckError } = await supabase
+    .from('attendance')
+    .select('id')
+    .eq('user_id', id)
+    .eq('tenant_id', tenantId)
+    .limit(1);
+  
+  if (attendanceCheckError) {
+    console.error('Error checking user attendance:', attendanceCheckError);
+    return { error: 'Không thể kiểm tra dữ liệu chấm công. Vui lòng thử lại.' };
+  }
+  
+  // 3. Check sessions (completed by KTV)
+  const { data: userSessions, error: sessionsCheckError } = await supabase
+    .from('sessions')
+    .select('id')
+    .eq('completed_by_ktv_id', id)
+    .eq('tenant_id', tenantId)
+    .limit(1);
+  
+  if (sessionsCheckError) {
+    console.error('Error checking user sessions:', sessionsCheckError);
+    return { error: 'Không thể kiểm tra dữ liệu buổi làm. Vui lòng thử lại.' };
+  }
+  
+  // 4. Check salary records
+  const { data: userSalaryRecords, error: salaryCheckError } = await supabase
+    .from('salary_records')
+    .select('id')
+    .eq('ktv_id', id)
+    .eq('tenant_id', tenantId)
+    .limit(1);
+  
+  if (salaryCheckError) {
+    console.error('Error checking user salary records:', salaryCheckError);
+    return { error: 'Không thể kiểm tra dữ liệu lương. Vui lòng thử lại.' };
+  }
+  
+  const hasRelatedData = 
+    (userBookings && userBookings.length > 0) ||
+    (userAttendance && userAttendance.length > 0) ||
+    (userSessions && userSessions.length > 0) ||
+    (userSalaryRecords && userSalaryRecords.length > 0);
+  
+  // If user has any related data, prevent hard delete - use soft delete instead
+  if (hasRelatedData) {
     // Soft delete: Set resignation_date to mark as inactive
     const { error: softDeleteError } = await supabase
       .from('users')
