@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingCart, Plus, Download, Filter, X } from 'lucide-react';
+import { ShoppingCart, Plus, Download, Filter, X, CheckCircle2, TrendingUp, DollarSign, ArrowLeft } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { ProductSaleRow } from './ProductSaleRow';
 import { ProductSaleModal } from './ProductSaleModal';
 import { useTenantContext } from '@/core/hooks/useTenantContext';
@@ -50,6 +52,7 @@ interface ProductSalesFilters {
 
 export function ProductSalesListPage() {
   const tenantContext = useTenantContext();
+  const router = useRouter();
   
   // Fetch KTV list and customers for modal
   const { ktvList, isLoading: isLoadingKTV } = useKTVList(tenantContext?.tenantId);
@@ -104,7 +107,15 @@ export function ProductSalesListPage() {
       });
 
       if (result.success && result.data) {
-        const salesData = result.data.sales as ProductSale[];
+        // Transform data to match ProductSale interface
+        const salesData = (result.data.sales as any[]).map((sale) => ({
+          ...sale,
+          ktv_name: sale.users?.full_name || 'Unknown KTV',
+          customer_name: sale.customers
+            ? `${sale.customers.name_mother}${sale.customers.name_baby ? ` (${sale.customers.name_baby})` : ''}`
+            : 'Khách lẻ',
+        })) as ProductSale[];
+        
         setSales(salesData);
         
         // Calculate stats
@@ -304,40 +315,53 @@ export function ProductSalesListPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-lg bg-emerald-100 flex items-center justify-center">
-            <ShoppingCart className="w-6 h-6 text-emerald-600" />
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 pb-6 border-b border-slate-100/80">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center shadow-inner">
+            <ShoppingCart className="w-7 h-7 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Bán hàng sản phẩm</h1>
-            <p className="text-sm text-gray-500">Quản lý bán hàng và hoa hồng</p>
+            {/* Back Button */}
+            <button
+              onClick={() => router.back()}
+              className="group mb-1.5 inline-flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-primary transition-colors duration-200"
+            >
+              <ArrowLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" />
+              <span>Quay lại</span>
+            </button>
+            <h1 className="text-2xl sm:text-3xl font-serif font-semibold text-slate-900 tracking-wide">Bán hàng sản phẩm</h1>
+            <p className="text-sm text-slate-400 font-medium mt-0.5">Quản lý các giao dịch bán sản phẩm và tính toán hoa hồng cho Kỹ thuật viên</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 w-full sm:w-auto">
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-2 px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            className={cn(
+              "flex flex-1 sm:flex-none items-center justify-center gap-2 px-5 py-3 text-sm font-bold rounded-2xl border transition-all duration-200 active:scale-[0.98]",
+              showFilters 
+                ? "bg-slate-100 border-slate-200 text-slate-800" 
+                : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300"
+            )}
           >
             <Filter className="w-4 h-4" />
-            <span>Lọc</span>
+            <span>Bộ lọc</span>
           </button>
 
           <button
             onClick={handleExportCSV}
             disabled={filteredSales.length === 0}
-            className="flex items-center gap-2 px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+            className="flex flex-1 sm:flex-none items-center justify-center gap-2 px-5 py-3 text-sm font-bold bg-white border border-slate-200 rounded-2xl text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 active:scale-[0.98] disabled:opacity-50"
           >
             <Download className="w-4 h-4" />
-            <span>Export CSV</span>
+            <span>Xuất CSV</span>
           </button>
 
           <button
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors"
+            className="flex flex-1 sm:flex-none items-center justify-center gap-2 px-5 py-3 text-sm font-black text-white bg-primary rounded-2xl hover:bg-primary-hover shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all duration-200 active:scale-[0.98]"
           >
             <Plus className="w-4 h-4" />
             <span>Thêm bán hàng</span>
@@ -346,26 +370,73 @@ export function ProductSalesListPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <p className="text-sm text-gray-500">Tổng bán hàng</p>
-          <p className="text-2xl font-bold text-gray-900">{stats.totalSales}</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+        {/* Total Sales Card */}
+        <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)] hover:shadow-[0_8px_30px_rgba(7,78,68,0.04)] hover:-translate-y-1 transition-all duration-300">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-xs font-black uppercase tracking-widest text-slate-400">Tổng bán hàng</p>
+              <p className="text-3xl font-black text-slate-800 mt-2">{stats.totalSales}</p>
+            </div>
+            <div className="p-3.5 bg-primary/10 rounded-2xl border border-primary/20 text-primary">
+              <ShoppingCart className="w-5 h-5" />
+            </div>
+          </div>
+          <div className="text-xs text-slate-400 font-medium mt-4">
+            Đơn hàng phát sinh
+          </div>
         </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <p className="text-sm text-gray-500">Hoàn thành</p>
-          <p className="text-2xl font-bold text-emerald-600">{stats.completedCount}</p>
+
+        {/* Completed Card */}
+        <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)] hover:shadow-[0_8px_30px_rgba(7,78,68,0.04)] hover:-translate-y-1 transition-all duration-300">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-xs font-black uppercase tracking-widest text-slate-400">Hoàn thành</p>
+              <p className="text-3xl font-black text-primary mt-2">{stats.completedCount}</p>
+            </div>
+            <div className="p-3.5 bg-emerald-50 text-emerald-600 rounded-2xl border border-emerald-100">
+              <CheckCircle2 className="w-5 h-5" />
+            </div>
+          </div>
+          <div className="text-xs text-slate-400 font-medium mt-4">
+            Đã thanh toán & giao hàng
+          </div>
         </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <p className="text-sm text-gray-500">Tổng doanh thu</p>
-          <p className="text-2xl font-bold text-gray-900">
-            {stats.totalRevenue.toLocaleString('vi-VN')} đ
-          </p>
+
+        {/* Revenue Card */}
+        <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)] hover:shadow-[0_8px_30px_rgba(7,78,68,0.04)] hover:-translate-y-1 transition-all duration-300">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-xs font-black uppercase tracking-widest text-slate-400">Tổng doanh thu</p>
+              <p className="text-2xl font-black text-slate-800 mt-2.5">
+                {stats.totalRevenue.toLocaleString('vi-VN')} đ
+              </p>
+            </div>
+            <div className="p-3.5 bg-primary/10 rounded-2xl border border-primary/20 text-primary">
+              <TrendingUp className="w-5 h-5" />
+            </div>
+          </div>
+          <div className="text-xs text-slate-400 font-medium mt-4">
+            Doanh số từ sản phẩm
+          </div>
         </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <p className="text-sm text-gray-500">Tổng hoa hồng</p>
-          <p className="text-2xl font-bold text-emerald-600">
-            {stats.totalCommission.toLocaleString('vi-VN')} đ
-          </p>
+
+        {/* Commission Card */}
+        <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)] hover:shadow-[0_8px_30px_rgba(7,78,68,0.04)] hover:-translate-y-1 transition-all duration-300">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-xs font-black uppercase tracking-widest text-slate-400">Tổng hoa hồng</p>
+              <p className="text-2xl font-black text-primary mt-2.5">
+                {stats.totalCommission.toLocaleString('vi-VN')} đ
+              </p>
+            </div>
+            <div className="p-3.5 bg-primary/10 rounded-2xl border border-primary/20 text-primary">
+              <DollarSign className="w-5 h-5" />
+            </div>
+          </div>
+          <div className="text-xs text-slate-400 font-medium mt-4">
+            Đã cộng vào quỹ lương KTV
+          </div>
         </div>
       </div>
 
@@ -373,27 +444,27 @@ export function ProductSalesListPage() {
       <AnimatePresence>
         {showFilters && (
           <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
+            initial={{ height: 0, opacity: 0, y: -10 }}
+            animate={{ height: 'auto', opacity: 1, y: 0 }}
+            exit={{ height: 0, opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-gray-900">Bộ lọc</h3>
+            <div className="bg-white rounded-3xl border border-slate-100 p-6 space-y-5 shadow-sm">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 className="font-serif font-bold text-slate-800 text-lg">Bộ lọc tìm kiếm</h3>
                 <button
                   onClick={handleClearFilters}
-                  className="text-sm text-gray-600 hover:text-gray-900"
+                  className="text-sm font-bold text-slate-500 hover:text-primary transition-colors"
                 >
                   Xóa bộ lọc
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                 {/* Search */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-black text-slate-700 uppercase tracking-widest block ml-1">
                     Tìm kiếm
                   </label>
                   <input
@@ -401,21 +472,21 @@ export function ProductSalesListPage() {
                     value={filters.search}
                     onChange={(e) => handleFilterChange('search', e.target.value)}
                     placeholder="Tên sản phẩm, SKU, KTV..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:border-primary/50 focus:ring-4 focus:ring-primary/10 focus:outline-none transition-all duration-300 font-bold"
                   />
                 </div>
 
                 {/* Status */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-black text-slate-700 uppercase tracking-widest block ml-1">
                     Trạng thái
                   </label>
                   <select
                     value={filters.status}
                     onChange={(e) => handleFilterChange('status', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-slate-800 focus:border-primary/50 focus:ring-4 focus:ring-primary/10 focus:outline-none transition-all duration-300 font-bold"
                   >
-                    <option value="">Tất cả</option>
+                    <option value="">Tất cả trạng thái</option>
                     <option value="completed">Hoàn thành</option>
                     <option value="pending">Chờ xử lý</option>
                     <option value="cancelled">Đã hủy</option>
@@ -424,27 +495,27 @@ export function ProductSalesListPage() {
                 </div>
 
                 {/* Date Range */}
-                <div className="md:col-span-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-black text-slate-700 uppercase tracking-widest block ml-1">
                     Từ ngày
                   </label>
                   <input
                     type="date"
                     value={filters.startDate}
                     onChange={(e) => handleFilterChange('startDate', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-800 focus:border-primary/50 focus:ring-4 focus:ring-primary/10 focus:outline-none transition-all duration-300 font-bold"
                   />
                 </div>
 
-                <div className="md:col-span-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-black text-slate-700 uppercase tracking-widest block ml-1">
                     Đến ngày
                   </label>
                   <input
                     type="date"
                     value={filters.endDate}
                     onChange={(e) => handleFilterChange('endDate', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-800 focus:border-primary/50 focus:ring-4 focus:ring-primary/10 focus:outline-none transition-all duration-300 font-bold"
                   />
                 </div>
               </div>
@@ -456,26 +527,33 @@ export function ProductSalesListPage() {
       {/* Sales List */}
       {isLoading ? (
         <div className="flex items-center justify-center h-64">
-          <div className="animate-pulse text-gray-500">Đang tải...</div>
+          <div className="animate-pulse text-slate-400 font-medium">Đang tải danh sách...</div>
         </div>
       ) : error ? (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-600">{error}</p>
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-5 flex items-start gap-3">
+          <ShoppingCart className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold text-red-800">Không thể tải danh sách bán hàng</p>
+            <p className="text-xs text-red-600 mt-1">{error}</p>
+          </div>
         </div>
       ) : currentSales.length === 0 ? (
-        <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-          <ShoppingCart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-500 mb-4">
+        <div className="bg-white rounded-3xl border border-slate-100 p-16 text-center shadow-sm">
+          <div className="w-20 h-20 bg-primary/10 border border-primary/20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner text-primary">
+            <ShoppingCart className="w-10 h-10" />
+          </div>
+          <h3 className="text-lg font-serif font-bold text-slate-800 mb-2">Chưa có giao dịch bán hàng</h3>
+          <p className="text-sm text-slate-500 max-w-sm mx-auto mb-6">
             {filters.search || filters.status || filters.startDate
-              ? 'Không tìm thấy bản ghi nào phù hợp'
-              : 'Chưa có bán hàng nào'}
+              ? 'Không tìm thấy bản ghi nào khớp với điều kiện tìm kiếm hiện tại. Thử xóa bộ lọc.'
+              : 'Chưa có bản ghi bán hàng sản phẩm nào được ghi nhận cho chi nhánh này.'}
           </p>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors"
+            className="inline-flex items-center gap-2 px-5 py-3 text-sm font-black text-white bg-primary rounded-2xl hover:bg-primary-hover shadow-lg shadow-primary/20 transition-all duration-200 active:scale-[0.98]"
           >
             <Plus className="w-4 h-4" />
-            <span>Thêm bán hàng đầu tiên</span>
+            <span>Thêm giao dịch đầu tiên</span>
           </button>
         </div>
       ) : (
@@ -491,29 +569,29 @@ export function ProductSalesListPage() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between bg-white rounded-lg border border-gray-200 p-4">
-              <p className="text-sm text-gray-600">
-                Hiển thị {startIndex + 1}-{Math.min(endIndex, filteredSales.length)} trong tổng số{' '}
-                {filteredSales.length} bản ghi
+            <div className="flex flex-col sm:flex-row items-center justify-between bg-white rounded-3xl border border-slate-100 p-5 gap-4 shadow-sm">
+              <p className="text-sm text-slate-500 font-medium">
+                Hiển thị <span className="font-bold text-slate-700">{startIndex + 1}</span> - <span className="font-bold text-slate-700">{Math.min(endIndex, filteredSales.length)}</span> trong tổng số{' '}
+                <span className="font-bold text-slate-700">{filteredSales.length}</span> bản ghi
               </p>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <button
                   onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                   disabled={currentPage === 1}
-                  className="px-3 py-1 text-sm text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2 text-sm font-bold text-slate-700 bg-white border border-slate-200 rounded-2xl hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                 >
                   Trước
                 </button>
 
-                <span className="text-sm text-gray-600">
+                <span className="text-sm font-bold text-slate-600">
                   Trang {currentPage} / {totalPages}
                 </span>
 
                 <button
                   onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
                   disabled={currentPage === totalPages}
-                  className="px-3 py-1 text-sm text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2 text-sm font-bold text-slate-700 bg-white border border-slate-200 rounded-2xl hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                 >
                   Sau
                 </button>

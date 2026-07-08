@@ -328,7 +328,7 @@ export async function getProductSales(filters?: {
 
     let query = (supabase as any)
       .from('product_sales')
-      .select('*, users!inner(full_name, role), customers(name)', { count: 'exact' });
+      .select('*, users!inner(full_name, role), customers(name_mother, name_baby)', { count: 'exact' });
 
     if (filters?.tenantId) {
       query = query.eq('tenant_id', filters.tenantId);
@@ -390,7 +390,7 @@ export async function getProductSaleById(id: string): Promise<ActionResult<unkno
 
     const { data, error } = await (supabase as any)
       .from('product_sales')
-      .select('*, users!inner(full_name, role), customers(name)')
+      .select('*, users!inner(full_name, role), customers(name_mother, name_baby)')
       .eq('id', id)
       .single();
 
