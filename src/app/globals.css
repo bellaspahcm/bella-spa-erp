@@ -1319,34 +1319,6 @@ html[data-tenant-module="beauty_spa"] .text-rose-600 {
   color: #059669 !important; /* emerald-600 */
 }
 
-/* Beauty Spa: Override gradient colors for podiums and other gradient elements */
-html[data-tenant-module="beauty_spa"] .from-pink-400 {
-  --tw-gradient-from: #10b981 var(--tw-gradient-from-position) !important; /* emerald-500 */
-  --tw-gradient-to: rgb(16 185 129 / 0) var(--tw-gradient-to-position) !important;
-  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
-}
-
-html[data-tenant-module="beauty_spa"] .via-rose-400 {
-  --tw-gradient-to: rgb(5 150 105 / 0) var(--tw-gradient-to-position) !important;
-  --tw-gradient-stops: var(--tw-gradient-from), #059669 var(--tw-gradient-via-position), var(--tw-gradient-to) !important; /* emerald-600 */
-}
-
-html[data-tenant-module="beauty_spa"] .to-pink-500 {
-  --tw-gradient-to: #047857 var(--tw-gradient-to-position) !important; /* emerald-700 */
-}
-
-html[data-tenant-module="beauty_spa"] .bg-rose-200 {
-  background-color: #a7f3d0 !important; /* emerald-200 */
-}
-
-html[data-tenant-module="beauty_spa"] .bg-rose-400 {
-  background-color: #34d399 !important; /* emerald-400 */
-}
-
-html[data-tenant-module="beauty_spa"] .text-rose-400 {
-  color: #34d399 !important; /* emerald-400 */
-}
-
 /* Beauty Spa: Override menu icon hover background */
 html[data-tenant-module="beauty_spa"] .hover\:bg-rose-50:hover {
   background-color: #ecfdf5 !important; /* emerald-50 */
