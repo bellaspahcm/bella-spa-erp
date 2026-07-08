@@ -1,7 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
 import { SalaryReconciliationRefreshHandler } from './salary-reconciliation-refresh-handler';
+import { SalaryDetailModal } from '@/components/salary/SalaryDetailModal';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -13,6 +15,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { fmt, fmtPct, STATUS_META } from './page';
+import type { KtvSalaryRecord } from '@/types/domain';
 
 interface SalaryReconciliationRow {
   ktv_id: string;
@@ -35,6 +38,8 @@ interface SalaryReconciliationClientProps {
   minorCount: number;
   majorCount: number;
   totalDiffAbs: number;
+  tenantId: string; // Added for modal
+  fullSalaryData: KtvSalaryRecord[]; // Added for modal
 }
 
 const ICON_MAP = {
@@ -54,8 +59,11 @@ export function SalaryReconciliationClient({
   minorCount,
   majorCount,
   totalDiffAbs,
+  tenantId,
+  fullSalaryData,
 }: SalaryReconciliationClientProps) {
   const vocab = useModuleVocabulary();
+  const [selectedKtv, setSelectedKtv] = useState<KtvSalaryRecord | null>(null);
 
   return (
     <div className="space-y-8 p-6">
@@ -167,9 +175,14 @@ export function SalaryReconciliationClient({
                   const meta = STATUS_META[row.status];
                   const IconComponent = ICON_MAP[meta.icon as keyof typeof ICON_MAP];
                   const diffPositive = row.diff_amount >= 0;
+                  const ktvData = fullSalaryData.find((s) => s.id === row.ktv_id);
 
                   return (
-                    <tr key={row.ktv_id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                    <tr 
+                      key={row.ktv_id} 
+                      className="border-b border-border/50 hover:bg-muted/30 transition-colors cursor-pointer"
+                      onClick={() => ktvData && setSelectedKtv(ktvData)}
+                    >
                       <td className="px-4 py-3 font-bold text-foreground">{row.ktv_name}</td>
                       <td className="px-4 py-3 font-mono font-bold text-foreground">{fmt(row.ai_total)}</td>
                       <td className="px-4 py-3 font-mono text-muted-foreground">
@@ -225,6 +238,17 @@ export function SalaryReconciliationClient({
           );
         })}
       </div>
+
+      {/* Salary Detail Modal */}
+      {selectedKtv && (
+        <SalaryDetailModal
+          isOpen={!!selectedKtv}
+          onClose={() => setSelectedKtv(null)}
+          salary={selectedKtv}
+          tenantId={tenantId}
+          currentMonth={month.substring(0, 7)} // YYYY-MM format
+        />
+      )}
     </div>
   );
 }

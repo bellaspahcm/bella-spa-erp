@@ -1,4 +1,6 @@
 import { getSalaryReconciliation } from '@/services/salary-reconciliation-actions';
+import { getSalaryData } from '@/modules/hr-salary/actions/query-salary-actions';
+import { getCurrentUser } from '@/services/user-actions';
 import { SalaryReconciliationRefreshHandler } from './salary-reconciliation-refresh-handler';
 import { SalaryReconciliationClient } from './salary-reconciliation-client';
 
@@ -34,7 +36,11 @@ export default async function SalaryReconciliationPage({
   const params = await searchParams;
   const month = params.month ?? currentMonthParam();
 
-  const { data, error } = await getSalaryReconciliation(month);
+  const [{ data, error }, fullSalaryData, currentUser] = await Promise.all([
+    getSalaryReconciliation(month),
+    getSalaryData(),
+    getCurrentUser(),
+  ]);
 
   if (error || !data) {
     return (
@@ -45,6 +51,7 @@ export default async function SalaryReconciliationPage({
     );
   }
 
+  const tenantId = currentUser?.tenant_id || '';
   const { rows, totalKtv, matchCount, minorCount, majorCount, totalDiffAbs } = data;
   const displayMonth = new Date(month).toLocaleDateString('vi-VN', { month: 'long', year: 'numeric' });
 
@@ -58,6 +65,8 @@ export default async function SalaryReconciliationPage({
       minorCount={minorCount}
       majorCount={majorCount}
       totalDiffAbs={totalDiffAbs}
+      tenantId={tenantId}
+      fullSalaryData={fullSalaryData}
     />
   );
 }
