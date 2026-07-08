@@ -82,7 +82,7 @@ const centralSalarySheetRow = {
 };
 
 type Filter = {
-  kind: 'eq' | 'gte' | 'lt';
+  kind: 'eq' | 'gte' | 'lt' | 'in';
   field: string;
   value: unknown;
 };
@@ -101,6 +101,10 @@ function applyFilters(rows: unknown[], filters: Filter[]) {
     const value = getPath(row, filter.field);
     if (filter.kind === 'eq') return value === filter.value;
     if (filter.kind === 'gte') return String(value) >= String(filter.value);
+    if (filter.kind === 'in') {
+      const arr = Array.isArray(filter.value) ? filter.value : [filter.value];
+      return arr.includes(value);
+    }
     return String(value) < String(filter.value);
   }));
 }
@@ -120,6 +124,11 @@ class StoreQueryBuilder {
 
   eq(field: string, value: unknown) {
     this.filters.push({ kind: 'eq', field, value });
+    return this;
+  }
+
+  in(field: string, value: unknown) {
+    this.filters.push({ kind: 'in', field, value });
     return this;
   }
 

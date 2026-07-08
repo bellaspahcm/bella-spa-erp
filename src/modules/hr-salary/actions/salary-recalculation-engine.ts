@@ -657,9 +657,11 @@ export async function recalculateAndSaveSalaryRecordEngine(
   if (overrides?.violations_deduction !== undefined) {
     deductions = overrides.violations_deduction;
   } else if (existing && !isDraft && existing.violations_deduction !== null && existing.violations_deduction !== undefined) {
+    // ONLY use saved deductions for non-draft records
     deductions = Number(existing.violations_deduction);
     if (existing.notes && !proRataNote) proRataNote = existing.notes;
   } else {
+    // For draft records OR records without saved deductions, always recalculate from live data
     // Phase 2: Use provider result if flag is ON and provider succeeded
     if (USE_CONFIG_PROVIDERS && providerAttendanceAmount !== null && attendanceProviderResult) {
       deductions = Math.abs(providerAttendanceAmount); // Provider returns negative, we need positive for deduction

@@ -312,10 +312,11 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
     });
 
     // Fetch product sales commission for all KTVs this month
+    // Include both 'completed' and 'pending' to match SalaryDetailModal filter
     const { data: productSalesData, error: productSalesError } = await (supabase as any)
       .from('product_sales')
       .select('ktv_id, calculated_commission')
-      .eq('status', 'completed')
+      .in('status', ['completed', 'pending'])
       .gte('sale_date', startOfMonthStr)
       .lt('sale_date', endOfMonthStr)
       .eq('tenant_id', tenantId);

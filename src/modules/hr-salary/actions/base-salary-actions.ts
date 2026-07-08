@@ -22,6 +22,7 @@ type SalarySheetRow = {
   kpi_bonus: number | null;
   deductions: number | null;
   advances: number | null;
+  product_sales_commission: number | null;
   total_salary: number | null;
   total_sessions: number | null;
   status: string | null;
@@ -53,6 +54,7 @@ function mergeSalarySheetIntoRecord(record: SalaryRecordRow, sheetRow: SalaryShe
     kpi_bonus: sheetRow.kpi_bonus ?? record.kpi_bonus,
     violations_deduction: sheetRow.deductions ?? record.violations_deduction,
     service_percentage_bonus: sheetRow.advances ?? record.service_percentage_bonus,
+    product_sales_commission: sheetRow.product_sales_commission ?? record.product_sales_commission,
     total_salary: sheetRow.total_salary ?? record.total_salary,
     total_sessions: sheetRow.total_sessions ?? record.total_sessions,
   };
@@ -94,7 +96,7 @@ export async function calculateKtvSalarySheet(
         await client.query("SELECT set_config('request.jwt.claim.role', 'service_role', true)");
         await client.query("SELECT set_config('app.current_tenant_id', $1, true)", [tenantId]);
         const res = await client.query(
-          'SELECT ktv_id, ktv_name, base_salary::numeric, session_bonus::numeric, rating_bonus::numeric, kpi_bonus::numeric, deductions::numeric, advances::numeric, total_salary::numeric, total_sessions::numeric, status FROM calculate_ktv_salary_sheet($1)',
+          'SELECT ktv_id, ktv_name, base_salary::numeric, session_bonus::numeric, rating_bonus::numeric, kpi_bonus::numeric, deductions::numeric, advances::numeric, product_sales_commission::numeric, total_salary::numeric, total_sessions::numeric, status FROM calculate_ktv_salary_sheet($1)',
           [monthYear]
         );
         await client.query('COMMIT');
@@ -108,6 +110,7 @@ export async function calculateKtvSalarySheet(
           kpi_bonus: row.kpi_bonus ? Number(row.kpi_bonus) : 0,
           deductions: row.deductions ? Number(row.deductions) : 0,
           advances: row.advances ? Number(row.advances) : 0,
+          product_sales_commission: row.product_sales_commission ? Number(row.product_sales_commission) : 0,
           total_salary: row.total_salary ? Number(row.total_salary) : 0,
           total_sessions: row.total_sessions ? Number(row.total_sessions) : 0,
           status: row.status

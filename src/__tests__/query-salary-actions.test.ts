@@ -60,6 +60,11 @@ class ScriptedQueryBuilder {
     return this;
   }
 
+  in(field: string, value: unknown) {
+    this.call?.filters.push({ field, value });
+    return this;
+  }
+
   gte(field: string, value: unknown) {
     this.call?.filters.push({ field, value });
     return this;
@@ -158,6 +163,7 @@ describe('getSalaryData query errors', () => {
       },
       { table: 'packages', op: 'select', data: [{ name: 'Combo VIP', session_multiplier: 1.5 }] },
       { table: 'kpi_records', op: 'select', data: [{ ktv_id: 'ktv-1', bonus_amount: 123000 }] },
+      { table: 'product_sales', op: 'select', data: [] },
     ]);
 
     const result = await getSalaryData();
@@ -206,6 +212,7 @@ describe('getSalaryData query errors', () => {
       { table: 'attendance', op: 'select', data: [] },
       { table: 'packages', op: 'select', data: [] },
       { table: 'kpi_records', op: 'select', data: [] },
+      { table: 'product_sales', op: 'select', data: [] },
     ]);
 
     const result = await getSalaryData();
@@ -255,6 +262,7 @@ describe('getSalaryData query errors', () => {
       { table: 'attendance', op: 'select', data: [] },
       { table: 'packages', op: 'select', data: [] },
       { table: 'kpi_records', op: 'select', data: [] },
+      { table: 'product_sales', op: 'select', data: [] },
     ]);
 
     const result = await getSalaryData();

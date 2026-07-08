@@ -80,6 +80,10 @@ interface EmployeeDetailData {
       amount: number;
       records: Array<{ date: string; amount: number; reason: string }>;
     };
+    productSalesCommission?: {
+      amount: number;
+      records: Array<{ productName: string; quantity: number; amount: number; date: string; status: string }>;
+    };
   };
 }
 
@@ -321,8 +325,16 @@ export function EmployeeDetailScreen({ employeeId, month }: { employeeId: string
                 <Wallet size={24} className="text-emerald-100" />
               </div>
               <div>
-                <p className="text-xs text-emerald-200/90 font-bold uppercase tracking-wider">Tổng lương nhận thực tế</p>
-                <p className="text-3.5xl font-extrabold font-serif tracking-tight mt-1 tabular-nums">
+                <p 
+                  className="text-xs font-bold uppercase tracking-wider"
+                  style={{ color: 'rgba(255, 255, 255, 0.85)' }}
+                >
+                  Tổng lương nhận thực tế
+                </p>
+                <p 
+                  className="text-3.5xl font-extrabold font-serif tracking-tight mt-1 tabular-nums"
+                  style={{ color: '#ffffff' }}
+                >
                   {formatCurrency(data.salary.total)}
                 </p>
                 <div className="inline-flex items-center gap-1.5 mt-2 bg-white/10 text-white/90 rounded-lg px-2.5 py-1 text-xs backdrop-blur-sm">
@@ -411,6 +423,31 @@ export function EmployeeDetailScreen({ employeeId, month }: { employeeId: string
             }
             actionLabel="Xem danh sách ca dịch vụ"
           />
+
+          {/* Product Sales Commission */}
+          {data.breakdown.productSalesCommission && data.breakdown.productSalesCommission.amount > 0 && (
+            <BreakdownCard
+              title="HOA HỒNG BÁN HÀNG"
+              amount={data.breakdown.productSalesCommission.amount}
+              type="earning"
+              icon={<TrendingUp size={20} className="text-emerald-800" />}
+              description="Hoa hồng từ bán sản phẩm"
+              details={
+                <div className="space-y-2">
+                  <p className="font-semibold text-slate-700 text-sm">Chi tiết đơn hàng bán sản phẩm:</p>
+                  <ul className="space-y-2 bg-slate-50 border border-slate-100 p-3 rounded-xl">
+                    {data.breakdown.productSalesCommission.records.map((sale, idx) => (
+                      <li key={idx} className="text-xs font-medium text-slate-650 flex justify-between">
+                        <span>{sale.productName} × {sale.quantity} ({new Date(sale.date).toLocaleDateString('vi-VN')})</span>
+                        <span className="font-bold text-slate-800">{formatCurrency(sale.amount)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              }
+              actionLabel="Xem lịch sử bán sản phẩm"
+            />
+          )}
 
           {/* Position Bonus */}
           <BreakdownCard
@@ -522,7 +559,8 @@ export function EmployeeDetailScreen({ employeeId, month }: { employeeId: string
                   data.breakdown.baseSalary.amount +
                   data.breakdown.serviceCommission.amount +
                   data.breakdown.positionBonus.amount +
-                  data.breakdown.ratingBonus.amount
+                  data.breakdown.ratingBonus.amount +
+                  (data.breakdown.productSalesCommission?.amount || 0)
                 )}
               </span>
             </div>

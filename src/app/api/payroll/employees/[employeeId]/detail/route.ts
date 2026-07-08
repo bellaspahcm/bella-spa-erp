@@ -190,7 +190,23 @@ export async function GET(
       ? reviewsList.reduce((sum, r) => sum + (r.rating || 0), 0) / reviewsList.length
       : null;
 
-    // 11. Get tenant salary config for calculations
+    // 11. Fetch product sales commission for the month
+    const { data: productSales } = await supabase
+      .from('product_sales')
+      .select('product_name, quantity, calculated_commission, sale_date, status')
+      .eq('ktv_id', employeeId)
+      .in('status', ['completed', 'pending'])
+      .gte('sale_date', startOfMonth)
+      .lt('sale_date', endOfMonth)
+      .eq('tenant_id', tenantId);
+
+    const productSalesList = productSales || [];
+    const liveProductSalesCommission = productSalesList.reduce((sum, sale) => sum + Number(sale.calculated_commission || 0), 0);
+    const productSalesCommission = salaryRecord?.product_sales_commission !== null && salaryRecord?.product_sales_commission !== undefined
+      ? Number(salaryRecord.product_sales_commission)
+      : liveProductSalesCommission;
+
+    // 12. Get tenant salary config for calculations
     const { data: tenant } = await supabase
       .from('tenants')
       .select('salary_config')
@@ -202,7 +218,7 @@ export async function GET(
     const penaltyAbsentPerDay = salaryConfig.penalty_absent_per_day || 200000;
     const ratePerSession = 150000; // TODO: Make this configurable
 
-    // 12. Calculate salary components
+    // 13. Calculate salary components
     const contractSalary = employee.base_salary || 6000000;
     const standardDays = 26;
     const baseSalary = Math.round((contractSalary / standardDays) * workingDays);
@@ -225,9 +241,9 @@ export async function GET(
     // Attendance penalty
     const attendancePenalty = -(lateDays * penaltyLatePerDay + absentDates.length * penaltyAbsentPerDay);
 
-    const totalSalary = baseSalary + serviceCommission + positionBonus + ratingBonus + attendancePenalty - totalAdvances;
+    const totalSalary = baseSalary + serviceCommission + positionBonus + ratingBonus + productSalesCommission + attendancePenalty - totalAdvances;
 
-    // 13. Fetch previous month for comparison
+    // 14. Fetch previous month for comparison
     const prevMonth = new Date(year, month - 2, 1);
     const prevMonthYear = `${prevMonth.getFullYear()}-${String(prevMonth.getMonth() + 1).padStart(2, '0')}-01`;
     
@@ -304,6 +320,16 @@ export async function GET(
             date: adv.advance_date,
             amount: adv.amount,
             reason: adv.reason || 'Không có lý do',
+          })),
+        },
+        productSalesCommission: {
+          amount: productSalesCommission,
+          records: productSalesList.map(sale => ({
+            productName: sale.product_name,
+            quantity: sale.quantity,
+            amount: sale.calculated_commission,
+            date: sale.sale_date,
+            status: sale.status,
           })),
         },
       },
