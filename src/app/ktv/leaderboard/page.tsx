@@ -12,7 +12,7 @@ import {
   Calendar as CalendarIcon
 } from 'lucide-react';
 import { getKTVLeaderboard } from '@/services/ktv-actions';
-import { getTenantSettings } from '@/services/tenant-actions';
+import { useTenantName } from '@/hooks/useTenantName';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase-client';
@@ -24,25 +24,16 @@ type KTVLeaderboardEntry = Awaited<ReturnType<typeof getKTVLeaderboard>>[number]
 type SessionLogRow = Database['public']['Tables']['session_logs']['Row'];
 
 export default function KTVLeaderboardPage() {
+  const { tenantName, TenantNameSkeleton } = useTenantName({ 
+    skeletonWidth: 280,
+    skeletonClassName: 'h-8 bg-white/20 rounded-xl animate-pulse mx-auto'
+  });
   const [leaderboard, setLeaderboard] = useState<KTVLeaderboardEntry[]>([]);
-  const [tenantName, setTenantName] = useState<string>('');
   const [selectedMonth] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
   const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    getTenantSettings()
-      .then((tenant) => {
-        if (tenant?.name) {
-          setTenantName(tenant.name);
-        }
-      })
-      .catch((err) => {
-        console.error('Lỗi khi tải thông tin chi nhánh:', err);
-      });
-  }, []);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -105,7 +96,7 @@ export default function KTVLeaderboardPage() {
           {tenantName ? (
             <div className="text-2xl font-black text-white mb-1">Top Ngôi sao {tenantName}</div>
           ) : (
-            <div className="h-8 bg-white/20 rounded-xl animate-pulse mx-auto mb-1" style={{ width: '280px' }} />
+            <TenantNameSkeleton />
           )}
           <p className="text-white/60 text-[10px] font-black uppercase tracking-widest">Tháng {selectedMonth.split('-')[1]} / {selectedMonth.split('-')[0]}</p>
         </div>
