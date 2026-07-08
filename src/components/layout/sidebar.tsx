@@ -34,7 +34,8 @@ import {
   BarChart3,
   Activity,
   UserCheck,
-  Building2
+  Building2,
+  ShoppingCart
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -286,6 +287,7 @@ const menuItems: SidebarMenuItem[] = [
   { icon: Banknote,        label: 'Bảng lương',          href: '/dashboard/salary' },
   { icon: Wallet,          label: 'Kế toán sổ cái',      href: '/dashboard/accounting' },
   { icon: Scale,           label: 'Đối soát Lương (AI)', href: '/dashboard/ai-copilot/salary-reconciliation' },
+  { icon: ShoppingCart,    label: 'Bán hàng sản phẩm',   href: '/dashboard/product-sales' },
   { icon: Package,         label: 'Kho hàng',            href: '/dashboard/inventory' },
 
   { type: 'header', label: 'Hệ thống' },
