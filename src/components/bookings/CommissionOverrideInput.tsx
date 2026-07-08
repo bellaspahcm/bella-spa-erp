@@ -10,7 +10,7 @@
  */
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { BeautySpaSelect } from '@/components/ui/BeautySpaSelect';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { cn } from '@/lib/utils';
 
 interface CommissionOverrideInputProps {
@@ -36,7 +36,7 @@ export function CommissionOverrideInput({
 }: CommissionOverrideInputProps) {
   return (
     <div
-      className={cn('space-y-3 rounded-lg border p-4', className)}
+      className={cn('space-y-4 rounded-2xl border border-slate-100 bg-slate-50/30 p-5 dark:border-[#3E3A35]/30 dark:bg-[#1C1B19]/20 transition-all duration-300 overflow-visible', className)}
       role="group"
       aria-label="Commission override settings"
     >
@@ -70,7 +70,7 @@ export function CommissionOverrideInput({
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2, ease: 'easeInOut' }}
-            className="overflow-hidden"
+            className="overflow-visible relative z-10"
           >
             <div className="grid gap-4 pt-2 md:grid-cols-2">
               {/* Type Selector */}
@@ -78,7 +78,7 @@ export function CommissionOverrideInput({
                 <label htmlFor="override-type" className="text-sm font-medium">
                   Loại hoa hồng
                 </label>
-                <BeautySpaSelect
+                <PremiumSelect
                   options={[
                     { value: 'fixed', label: 'Cố định (đ)' },
                     { value: 'percentage', label: 'Phần trăm (%)' },
@@ -86,7 +86,7 @@ export function CommissionOverrideInput({
                   value={overrideType}
                   onChange={(type) => onTypeChange(type as 'fixed' | 'percentage')}
                   disabled={disabled}
-                  aria-label="Commission override type"
+                  placeholder="Chọn loại hoa hồng"
                 />
               </div>
 
@@ -106,10 +106,10 @@ export function CommissionOverrideInput({
                     }}
                     disabled={disabled}
                     placeholder="0"
-                    className="w-full rounded-lg border bg-background px-3 py-2 pr-8 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 pr-10 font-bold text-slate-800 focus:border-primary/50 focus:ring-4 focus:ring-primary/10 focus:outline-none transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50"
                     aria-label={`Commission override value in ${overrideType === 'fixed' ? 'VND' : 'percentage'}`}
                   />
-                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                  <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-500">
                     {overrideType === 'fixed' ? 'đ' : '%'}
                   </span>
                 </div>
