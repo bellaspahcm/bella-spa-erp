@@ -86,13 +86,9 @@ export default function SalaryTable({
               <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[150px]">Hoa hồng {vocab.workUnit.singular}</th>
               <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[150px]">Thưởng chất lượng</th>
               <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[150px]">Thưởng KPI</th>
-              {/* Advanced commission columns - show if any KTV has commission data */}
-              {filteredSalaries.some(s => (s.productSalesCommission || 0) > 0) && (
-                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[150px]">Hoa hồng bán hàng</th>
-              )}
-              {filteredSalaries.some(s => (s.serviceCommission || 0) > 0) && (
-                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[150px]">Hoa hồng dịch vụ</th>
-              )}
+              {/* Advanced commission columns - always show for Beauty Spa */}
+              <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[150px]">Hoa hồng bán hàng</th>
+              <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[150px]">Hoa hồng dịch vụ</th>
               <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[150px]">Phạt</th>
               <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[150px]">Tạm ứng</th>
               <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[160px]">Tổng nhận</th>
@@ -157,17 +153,13 @@ export default function SalaryTable({
                 <td className="px-8 py-6 font-bold text-emerald-600 whitespace-nowrap">+{s.sessionBonus.toLocaleString()}đ</td>
                 <td className="px-8 py-6 font-bold text-amber-600 whitespace-nowrap">+{s.ratingBonus?.toLocaleString() || 0}đ</td>
                 <td className="px-8 py-6 font-bold text-primary whitespace-nowrap">+{s.kpiBonus.toLocaleString()}đ</td>
-                {/* Advanced commission columns - show if any KTV has commission data */}
-                {filteredSalaries.some(ktv => (ktv.productSalesCommission || 0) > 0) && (
-                  <td className="px-8 py-6 font-bold text-emerald-600 whitespace-nowrap">
-                    +{(s.productSalesCommission || 0).toLocaleString()}đ
-                  </td>
-                )}
-                {filteredSalaries.some(ktv => (ktv.serviceCommission || 0) > 0) && (
-                  <td className="px-8 py-6 font-bold text-emerald-600 whitespace-nowrap">
-                    +{(s.serviceCommission || 0).toLocaleString()}đ
-                  </td>
-                )}
+                {/* Advanced commission columns - always show for Beauty Spa */}
+                <td className="px-8 py-6 font-bold text-emerald-600 whitespace-nowrap">
+                  +{(s.productSalesCommission || 0).toLocaleString()}đ
+                </td>
+                <td className="px-8 py-6 font-bold text-emerald-600 whitespace-nowrap">
+                  +{(s.serviceCommission || 0).toLocaleString()}đ
+                </td>
                 <td className="px-8 py-6 font-bold text-rose-500 whitespace-nowrap">-{s.deductions.toLocaleString()}đ</td>
                 <td className="px-8 py-6 font-bold text-rose-500 whitespace-nowrap">-{s.advances.toLocaleString()}đ</td>
                 <td className="px-8 py-6 whitespace-nowrap">
