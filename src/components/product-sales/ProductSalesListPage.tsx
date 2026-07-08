@@ -107,38 +107,62 @@ export function ProductSalesListPage() {
       });
 
       if (result.success && result.data) {
+        console.log('[ProductSalesListPage] Raw data from API:', result.data);
+        
         // Transform data to match ProductSale interface with safety checks
-        const salesData = (result.data.sales as any[]).map((sale) => {
-          // Safely extract KTV name
-          const ktvName = sale.users?.full_name || 'Unknown KTV';
-          
-          // Safely extract customer name
-          let customerName = 'Khách lẻ';
-          if (sale.customers && sale.customers.name_mother) {
-            customerName = sale.customers.name_mother;
-            if (sale.customers.name_baby) {
-              customerName += ` (${sale.customers.name_baby})`;
+        const salesData = (result.data.sales as any[]).map((sale, index) => {
+          try {
+            // Safely extract KTV name
+            const ktvName = sale.users?.full_name || 'Unknown KTV';
+            
+            // Safely extract customer name
+            let customerName = 'Khách lẻ';
+            if (sale.customers && sale.customers.name_mother) {
+              customerName = sale.customers.name_mother;
+              if (sale.customers.name_baby) {
+                customerName += ` (${sale.customers.name_baby})`;
+              }
             }
+            
+            return {
+              ...sale,
+              ktv_name: ktvName,
+              customer_name: customerName,
+            };
+          } catch (transformError) {
+            console.error(`[ProductSalesListPage] Error transforming sale at index ${index}:`, transformError, sale);
+            // Return a safe fallback object
+            return {
+              ...sale,
+              ktv_name: 'Error',
+              customer_name: 'Error',
+            };
           }
-          
-          return {
-            ...sale,
-            ktv_name: ktvName,
-            customer_name: customerName,
-          };
         }) as ProductSale[];
         
+        console.log('[ProductSalesListPage] Transformed sales data:', salesData);
         setSales(salesData);
         
-        // Calculate stats
-        const completed = salesData.filter(s => s.status === 'completed');
-        setStats({
-          totalSales: salesData.length,
-          totalRevenue: completed.reduce((sum, s) => sum + (s.total_amount || 0), 0),
-          totalCommission: completed.reduce((sum, s) => sum + (s.commission_amount || 0), 0),
-          completedCount: completed.length,
-        });
+        // Calculate stats with extra safety
+        try {
+          const completed = salesData.filter(s => s && s.status === 'completed');
+          setStats({
+            totalSales: salesData.length,
+            totalRevenue: completed.reduce((sum, s) => sum + (s?.total_amount || 0), 0),
+            totalCommission: completed.reduce((sum, s) => sum + (s?.commission_amount || 0), 0),
+            completedCount: completed.length,
+          });
+        } catch (statsError) {
+          console.error('[ProductSalesListPage] Error calculating stats:', statsError);
+          setStats({
+            totalSales: 0,
+            totalRevenue: 0,
+            totalCommission: 0,
+            completedCount: 0,
+          });
+        }
       } else {
+        console.error('[ProductSalesListPage] API returned error:', result.error);
         setError(result.error || 'Không thể tải danh sách bán hàng');
       }
     } catch (err) {
