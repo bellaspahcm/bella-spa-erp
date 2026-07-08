@@ -72,7 +72,7 @@ export default function SalaryConfigTab({
 
   // Commission Config
   const [commissionEnabled, setCommissionEnabled] = useState(true);
-  const [commissionStrategy, setCommissionStrategy] = useState<'fixed' | 'tier' | 'percentage' | 'service'>('fixed');
+  const [commissionStrategy, setCommissionStrategy] = useState<'fixed' | 'tier' | 'percentage' | 'service' | 'product_sales' | 'total_revenue'>('fixed');
   // For fixed strategy
   const [commissionRate, setCommissionRate] = useState(120000);
   const [commissionMinSessions, setCommissionMinSessions] = useState(0);
@@ -91,6 +91,14 @@ export default function SalaryConfigTab({
     'facial': 100000,
     'waxing': 80000
   });
+  // For product_sales strategy
+  const [productSalesPercentage, setProductSalesPercentage] = useState(15);
+  const [productSalesMinSales, setProductSalesMinSales] = useState(0);
+  // For total_revenue strategy
+  const [totalRevenuePercentage, setTotalRevenuePercentage] = useState(10);
+  const [totalRevenueMinRevenue, setTotalRevenueMinRevenue] = useState(0);
+  const [serviceWeight, setServiceWeight] = useState(1.0);
+  const [productWeight, setProductWeight] = useState(1.0);
 
   // Legacy fallback: Load from generalSettings.salary_config if new config not available
   const [tenantId, setTenantId] = useState<string | null>(null);
@@ -192,6 +200,14 @@ export default function SalaryConfigTab({
             setCommissionMinRevenue(config.minRevenue || 0);
           } else if (commissionResult.data.strategy === 'service') {
             setCommissionServiceRates(config.rates || commissionServiceRates);
+          } else if (commissionResult.data.strategy === 'product_sales') {
+            setProductSalesPercentage(config.percentage || 15);
+            setProductSalesMinSales(config.minSales || 0);
+          } else if (commissionResult.data.strategy === 'total_revenue') {
+            setTotalRevenuePercentage(config.percentage || 10);
+            setTotalRevenueMinRevenue(config.minRevenue || 0);
+            setServiceWeight(config.serviceWeight || 1.0);
+            setProductWeight(config.productWeight || 1.0);
           }
         } else {
           // Default to fixed strategy if no config
@@ -283,6 +299,15 @@ export default function SalaryConfigTab({
         commissionConfig = { percentage: commissionPercentage, minRevenue: commissionMinRevenue };
       } else if (commissionStrategy === 'service') {
         commissionConfig = { rates: commissionServiceRates };
+      } else if (commissionStrategy === 'product_sales') {
+        commissionConfig = { percentage: productSalesPercentage, minSales: productSalesMinSales };
+      } else if (commissionStrategy === 'total_revenue') {
+        commissionConfig = { 
+          percentage: totalRevenuePercentage, 
+          minRevenue: totalRevenueMinRevenue,
+          serviceWeight,
+          productWeight
+        };
       }
       
       const commissionResult = await saveCommissionConfig(
@@ -848,6 +873,16 @@ export default function SalaryConfigTab({
                 value: 'service', 
                 label: 'Theo dịch vụ (massage→150k, facial→100k)',
                 icon: <Target className="w-4 h-4" />
+              },
+              { 
+                value: 'product_sales', 
+                label: 'Phần trăm bán hàng (% doanh số mỹ phẩm)',
+                icon: <Coins className="w-4 h-4" />
+              },
+              { 
+                value: 'total_revenue', 
+                label: 'Tổng doanh thu (% dịch vụ + bán hàng)',
+                icon: <TrendingUp className="w-4 h-4" />
               }
             ]}
             placeholder="Chọn chiến lược..."
@@ -1053,6 +1088,118 @@ export default function SalaryConfigTab({
             >
               + Thêm dịch vụ
             </button>
+          </div>
+        )}
+
+        {commissionStrategy === 'product_sales' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="text-xs font-black text-slate-600 dark:text-[#CDBCAB] uppercase tracking-wider mb-3 block">
+                Phần trăm doanh số bán mỹ phẩm (%)
+              </label>
+              <input
+                type="number"
+                step="0.1"
+                value={productSalesPercentage}
+                onChange={(e) => setProductSalesPercentage(parseFloatInput(e.target.value, { min: 0, max: 100, decimals: 1 }))}
+                disabled={!commissionEnabled}
+                className="w-full h-14 rounded-2xl border-2 border-slate-100 dark:border-[#3E3A35] bg-slate-50 dark:bg-[#11100F] px-5 text-base font-bold text-slate-900 dark:text-[#EFE9E1] focus:outline-none focus:border-emerald-600 dark:focus:border-[#2E5D3E] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                placeholder="Ví dụ: 10 (10% doanh số bán hàng)"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-black text-slate-600 dark:text-[#CDBCAB] uppercase tracking-wider mb-3 block">
+                Doanh số tối thiểu (VNĐ, không bắt buộc)
+              </label>
+              <input
+                type="number"
+                value={productSalesMinSales}
+                onChange={(e) => setProductSalesMinSales(parseIntegerInput(e.target.value, { min: 0 }))}
+                disabled={!commissionEnabled}
+                className="w-full h-14 rounded-2xl border-2 border-slate-100 dark:border-[#3E3A35] bg-slate-50 dark:bg-[#11100F] px-5 text-base font-bold text-slate-900 dark:text-[#EFE9E1] focus:outline-none focus:border-emerald-600 dark:focus:border-[#2E5D3E] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                placeholder="Ví dụ: 0 (không giới hạn)"
+              />
+            </div>
+          </div>
+        )}
+
+        {commissionStrategy === 'total_revenue' && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="text-xs font-black text-slate-600 dark:text-[#CDBCAB] uppercase tracking-wider mb-3 block">
+                  Phần trăm tổng doanh thu (%)
+                </label>
+                <input
+                  type="number"
+                  step="0.1"
+                  value={totalRevenuePercentage}
+                  onChange={(e) => setTotalRevenuePercentage(parseFloatInput(e.target.value, { min: 0, max: 100, decimals: 1 }))}
+                  disabled={!commissionEnabled}
+                  className="w-full h-14 rounded-2xl border-2 border-slate-100 dark:border-[#3E3A35] bg-slate-50 dark:bg-[#11100F] px-5 text-base font-bold text-slate-900 dark:text-[#EFE9E1] focus:outline-none focus:border-emerald-600 dark:focus:border-[#2E5D3E] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  placeholder="Ví dụ: 12 (12% tổng doanh thu)"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-black text-slate-600 dark:text-[#CDBCAB] uppercase tracking-wider mb-3 block">
+                  Doanh thu tối thiểu (VNĐ, không bắt buộc)
+                </label>
+                <input
+                  type="number"
+                  value={totalRevenueMinRevenue}
+                  onChange={(e) => setTotalRevenueMinRevenue(parseIntegerInput(e.target.value, { min: 0 }))}
+                  disabled={!commissionEnabled}
+                  className="w-full h-14 rounded-2xl border-2 border-slate-100 dark:border-[#3E3A35] bg-slate-50 dark:bg-[#11100F] px-5 text-base font-bold text-slate-900 dark:text-[#EFE9E1] focus:outline-none focus:border-emerald-600 dark:focus:border-[#2E5D3E] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  placeholder="Ví dụ: 0 (không giới hạn)"
+                />
+              </div>
+            </div>
+
+            {/* Weight configuration (optional advanced feature) */}
+            <div className="bg-blue-50 dark:bg-[#11100F] border-2 border-blue-100 dark:border-[#3E3A35] rounded-2xl p-5">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="w-8 h-8 bg-blue-500 dark:bg-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <span className="text-white text-sm font-black">💡</span>
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-blue-800 dark:text-[#EFE9E1] mb-1">Tùy chỉnh trọng số (nâng cao)</h4>
+                  <p className="text-xs text-blue-600 dark:text-[#CDBCAB] leading-relaxed">
+                    Điều chỉnh trọng số để ưu tiên doanh thu dịch vụ hoặc bán hàng. Mặc định: cả hai đồng đều (1.0).
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-blue-700 dark:text-[#CDBCAB] mb-2 block">
+                    Trọng số dịch vụ
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={serviceWeight}
+                    onChange={(e) => setServiceWeight(parseFloatInput(e.target.value, { min: 0, max: 10, decimals: 1 }))}
+                    disabled={!commissionEnabled}
+                    className="w-full h-12 rounded-xl border-2 border-blue-200 dark:border-[#3E3A35] bg-white dark:bg-[#11100F] px-4 text-sm font-bold text-slate-900 dark:text-[#EFE9E1] focus:outline-none focus:border-blue-500 dark:focus:border-blue-600 transition-colors disabled:opacity-50"
+                    placeholder="1.0"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-blue-700 dark:text-[#CDBCAB] mb-2 block">
+                    Trọng số bán hàng
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={productWeight}
+                    onChange={(e) => setProductWeight(parseFloatInput(e.target.value, { min: 0, max: 10, decimals: 1 }))}
+                    disabled={!commissionEnabled}
+                    className="w-full h-12 rounded-xl border-2 border-blue-200 dark:border-[#3E3A35] bg-white dark:bg-[#11100F] px-4 text-sm font-bold text-slate-900 dark:text-[#EFE9E1] focus:outline-none focus:border-blue-500 dark:focus:border-blue-600 transition-colors disabled:opacity-50"
+                    placeholder="1.0"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
