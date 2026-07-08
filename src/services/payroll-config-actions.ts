@@ -268,3 +268,32 @@ export async function saveRatingConfig(
     config
   });
 }
+
+// =====================================================
+// COMMISSION PROVIDER
+// =====================================================
+
+/**
+ * Load Commission configuration
+ */
+export async function loadCommissionConfig(tenantId: string) {
+  return loadProviderConfig<Record<string, any>>(tenantId, 'commission');
+}
+
+/**
+ * Save Commission configuration
+ */
+export async function saveCommissionConfig(
+  tenantId: string,
+  enabled: boolean,
+  strategy: 'fixed' | 'tier' | 'percentage' | 'service',
+  config: Record<string, any>
+) {
+  return saveProviderConfig({
+    tenantId,
+    providerKey: 'commission',
+    enabled,
+    strategy,
+    config
+  });
+}

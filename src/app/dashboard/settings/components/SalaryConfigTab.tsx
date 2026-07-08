@@ -12,6 +12,8 @@ import {
   saveAttendanceConfig,
   loadRatingConfig,
   saveRatingConfig,
+  loadCommissionConfig,
+  saveCommissionConfig,
 } from '@/services/payroll-config-actions';
 import type { TenantGeneralSettings } from '@/types/domain';
 import type {
@@ -67,6 +69,28 @@ export default function SalaryConfigTab({
     { min: 4.5, max: 4.9, bonus: 50000 },
     { min: 5.0, max: 5.0, bonus: 100000 }
   ]);
+
+  // Commission Config
+  const [commissionEnabled, setCommissionEnabled] = useState(true);
+  const [commissionStrategy, setCommissionStrategy] = useState<'fixed' | 'tier' | 'percentage' | 'service'>('fixed');
+  // For fixed strategy
+  const [commissionRate, setCommissionRate] = useState(120000);
+  const [commissionMinSessions, setCommissionMinSessions] = useState(0);
+  // For tier strategy
+  const [commissionTiers, setCommissionTiers] = useState<Array<{ min: number; max: number; rate: number }>>([
+    { min: 0, max: 10, rate: 100000 },
+    { min: 11, max: 20, rate: 120000 },
+    { min: 21, max: 999, rate: 150000 }
+  ]);
+  // For percentage strategy
+  const [commissionPercentage, setCommissionPercentage] = useState(15);
+  const [commissionMinRevenue, setCommissionMinRevenue] = useState(0);
+  // For service strategy
+  const [commissionServiceRates, setCommissionServiceRates] = useState<Record<string, number>>({
+    'massage': 150000,
+    'facial': 100000,
+    'waxing': 80000
+  });
 
   // Legacy fallback: Load from generalSettings.salary_config if new config not available
   const [tenantId, setTenantId] = useState<string | null>(null);
@@ -150,6 +174,30 @@ export default function SalaryConfigTab({
           // Fallback to legacy generalSettings
           setRatingBonus(generalSettings.salary_config?.bonus_5_star || 50000);
         }
+
+        // Load Commission
+        const commissionResult = await loadCommissionConfig(tenantId!);
+        if (commissionResult.success && commissionResult.data) {
+          setCommissionEnabled(commissionResult.data.enabled);
+          setCommissionStrategy(commissionResult.data.strategy as any || 'fixed');
+          const config = commissionResult.data.config as any;
+          
+          if (commissionResult.data.strategy === 'fixed') {
+            setCommissionRate(config.rate || 120000);
+            setCommissionMinSessions(config.minSessions || 0);
+          } else if (commissionResult.data.strategy === 'tier') {
+            setCommissionTiers(config.tiers || commissionTiers);
+          } else if (commissionResult.data.strategy === 'percentage') {
+            setCommissionPercentage(config.percentage || 15);
+            setCommissionMinRevenue(config.minRevenue || 0);
+          } else if (commissionResult.data.strategy === 'service') {
+            setCommissionServiceRates(config.rates || commissionServiceRates);
+          }
+        } else {
+          // Default to fixed strategy if no config
+          setCommissionEnabled(true);
+          setCommissionRate(120000);
+        }
       } catch (error) {
         console.error('[SalaryConfigTab] Error loading configs:', error);
         toast.error('Không thể tải cấu hình lương');
@@ -223,6 +271,28 @@ export default function SalaryConfigTab({
       );
       if (!ratingResult.success) {
         throw new Error(`Rating: ${ratingResult.error}`);
+      }
+
+      // Save Commission
+      let commissionConfig: any;
+      if (commissionStrategy === 'fixed') {
+        commissionConfig = { rate: commissionRate, minSessions: commissionMinSessions };
+      } else if (commissionStrategy === 'tier') {
+        commissionConfig = { tiers: commissionTiers };
+      } else if (commissionStrategy === 'percentage') {
+        commissionConfig = { percentage: commissionPercentage, minRevenue: commissionMinRevenue };
+      } else if (commissionStrategy === 'service') {
+        commissionConfig = { rates: commissionServiceRates };
+      }
+      
+      const commissionResult = await saveCommissionConfig(
+        tenantId,
+        commissionEnabled,
+        commissionStrategy,
+        commissionConfig
+      );
+      if (!commissionResult.success) {
+        throw new Error(`Commission: ${commissionResult.error}`);
       }
 
       // Also update legacy generalSettings for backward compatibility
@@ -720,6 +790,275 @@ export default function SalaryConfigTab({
         {!ratingEnabled && (
           <div className="bg-amber-50 dark:bg-[#A67D44]/20 border border-amber-100 dark:border-[#A67D44] rounded-xl px-4 py-3 text-xs text-amber-700 dark:text-[#EFE9E1] font-medium">
             ⚠️ Thưởng chất lượng hiện đang <strong>tắt</strong>. KTV sẽ không nhận thưởng khi có đánh giá cao.
+          </div>
+        )}
+      </section>
+
+      {/* Commission Section */}
+      <section className="bg-white dark:bg-[#1C1B19] rounded-3xl border border-slate-100 dark:border-[#3E3A35] p-8 space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-emerald-50 dark:bg-[#2E5D3E]/30 rounded-2xl flex items-center justify-center">
+              <Coins className="w-6 h-6 text-emerald-600 dark:text-[#A67D44]" />
+            </div>
+            <div>
+              <h3 className="text-lg font-black text-slate-900 dark:text-[#EFE9E1] uppercase">
+                Hoa Hồng Ca
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-[#CDBCAB] font-medium">
+                Làm ca → Nhận hoa hồng theo chiến lược
+              </p>
+            </div>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={commissionEnabled}
+              onChange={(e) => setCommissionEnabled(e.target.checked)}
+              className="sr-only peer"
+            />
+            <div className="w-14 h-7 bg-slate-300 border border-slate-400/20 dark:bg-[#3E3A35] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 dark:after:border-[#2E2B27] after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-emerald-600 dark:peer-checked:bg-[#2E5D3E]"></div>
+          </label>
+        </div>
+
+        {/* Strategy Selector */}
+        <div>
+          <PremiumSelect
+            label="Chiến lược tính hoa hồng"
+            value={commissionStrategy}
+            onChange={(value) => setCommissionStrategy(value as any)}
+            disabled={!commissionEnabled}
+            options={[
+              { 
+                value: 'fixed', 
+                label: 'Cố định (mỗi ca cố định X đồng)',
+                icon: <Coins className="w-4 h-4" />
+              },
+              { 
+                value: 'tier', 
+                label: 'Bậc thang (0-10ca→100k, 11-20ca→120k)',
+                icon: <BarChart3 className="w-4 h-4" />
+              },
+              { 
+                value: 'percentage', 
+                label: 'Phần trăm doanh thu (% giá trị booking)',
+                icon: <TrendingUp className="w-4 h-4" />
+              },
+              { 
+                value: 'service', 
+                label: 'Theo dịch vụ (massage→150k, facial→100k)',
+                icon: <Target className="w-4 h-4" />
+              }
+            ]}
+            placeholder="Chọn chiến lược..."
+          />
+        </div>
+
+        {/* Conditional forms based on strategy */}
+        {commissionStrategy === 'fixed' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="text-xs font-black text-slate-600 dark:text-[#CDBCAB] uppercase tracking-wider mb-3 block">
+                Hoa hồng mỗi ca (VNĐ)
+              </label>
+              <input
+                type="number"
+                value={commissionRate}
+                onChange={(e) => setCommissionRate(parseIntegerInput(e.target.value, { min: 0 }))}
+                disabled={!commissionEnabled}
+                className="w-full h-14 rounded-2xl border-2 border-slate-100 dark:border-[#3E3A35] bg-slate-50 dark:bg-[#11100F] px-5 text-base font-bold text-slate-900 dark:text-[#EFE9E1] focus:outline-none focus:border-emerald-600 dark:focus:border-[#2E5D3E] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                placeholder="Ví dụ: 120000"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-black text-slate-600 dark:text-[#CDBCAB] uppercase tracking-wider mb-3 block">
+                Số ca tối thiểu (không bắt buộc)
+              </label>
+              <input
+                type="number"
+                value={commissionMinSessions}
+                onChange={(e) => setCommissionMinSessions(parseIntegerInput(e.target.value, { min: 0, max: 100 }))}
+                disabled={!commissionEnabled}
+                className="w-full h-14 rounded-2xl border-2 border-slate-100 dark:border-[#3E3A35] bg-slate-50 dark:bg-[#11100F] px-5 text-base font-bold text-slate-900 dark:text-[#EFE9E1] focus:outline-none focus:border-emerald-600 dark:focus:border-[#2E5D3E] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                placeholder="Ví dụ: 0 (không giới hạn)"
+              />
+            </div>
+          </div>
+        )}
+
+        {commissionStrategy === 'tier' && (
+          <div className="space-y-4">
+            <label className="text-xs font-black text-slate-600 dark:text-[#CDBCAB] uppercase tracking-wider mb-3 block">
+              Các mức hoa hồng theo số ca
+            </label>
+            {commissionTiers.map((tier, index) => (
+              <div key={index} className="grid grid-cols-4 gap-4 items-end">
+                <div>
+                  <label className="text-xs text-slate-500 dark:text-[#CDBCAB] mb-2 block">Từ ca</label>
+                  <input
+                    type="number"
+                    value={tier.min}
+                    onChange={(e) => {
+                      const newTiers = [...commissionTiers];
+                      newTiers[index].min = parseIntegerInput(e.target.value, { min: 0, max: 999 });
+                      setCommissionTiers(newTiers);
+                    }}
+                    disabled={!commissionEnabled}
+                    className="w-full h-12 rounded-xl border-2 border-slate-100 dark:border-[#3E3A35] bg-slate-50 dark:bg-[#11100F] px-4 text-sm font-bold text-slate-900 dark:text-[#EFE9E1] focus:outline-none focus:border-emerald-600 dark:focus:border-[#2E5D3E] transition-colors disabled:opacity-50"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-slate-500 dark:text-[#CDBCAB] mb-2 block">Đến ca</label>
+                  <input
+                    type="number"
+                    value={tier.max}
+                    onChange={(e) => {
+                      const newTiers = [...commissionTiers];
+                      newTiers[index].max = parseIntegerInput(e.target.value, { min: 0, max: 999 });
+                      setCommissionTiers(newTiers);
+                    }}
+                    disabled={!commissionEnabled}
+                    className="w-full h-12 rounded-xl border-2 border-slate-100 dark:border-[#3E3A35] bg-slate-50 dark:bg-[#11100F] px-4 text-sm font-bold text-slate-900 dark:text-[#EFE9E1] focus:outline-none focus:border-emerald-600 dark:focus:border-[#2E5D3E] transition-colors disabled:opacity-50"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-slate-500 dark:text-[#CDBCAB] mb-2 block">Hoa hồng (VNĐ)</label>
+                  <input
+                    type="number"
+                    value={tier.rate}
+                    onChange={(e) => {
+                      const newTiers = [...commissionTiers];
+                      newTiers[index].rate = parseIntegerInput(e.target.value, { min: 0 });
+                      setCommissionTiers(newTiers);
+                    }}
+                    disabled={!commissionEnabled}
+                    className="w-full h-12 rounded-xl border-2 border-slate-100 dark:border-[#3E3A35] bg-slate-50 dark:bg-[#11100F] px-4 text-sm font-bold text-slate-900 dark:text-[#EFE9E1] focus:outline-none focus:border-emerald-600 dark:focus:border-[#2E5D3E] transition-colors disabled:opacity-50"
+                  />
+                </div>
+                <button
+                  onClick={() => {
+                    const newTiers = commissionTiers.filter((_, i) => i !== index);
+                    setCommissionTiers(newTiers);
+                  }}
+                  disabled={!commissionEnabled || commissionTiers.length <= 1}
+                  className="h-12 px-4 rounded-xl bg-rose-50 dark:bg-[#5D1C34]/20 text-rose-600 dark:text-[#EFE9E1] font-bold hover:bg-rose-100 dark:hover:bg-[#5D1C34]/40 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  Xóa
+                </button>
+              </div>
+            ))}
+            <button
+              onClick={() => {
+                const lastTier = commissionTiers[commissionTiers.length - 1];
+                const newMin = lastTier.max + 1;
+                setCommissionTiers([...commissionTiers, { min: newMin, max: newMin + 9, rate: 0 }]);
+              }}
+              disabled={!commissionEnabled}
+              className="w-full h-12 rounded-xl border-2 border-dashed border-slate-300 dark:border-[#3E3A35] text-slate-600 dark:text-[#CDBCAB] font-bold hover:border-emerald-600 dark:hover:border-[#2E5D3E] hover:text-emerald-600 dark:hover:text-[#A67D44] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              + Thêm mức hoa hồng
+            </button>
+          </div>
+        )}
+
+        {commissionStrategy === 'percentage' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="text-xs font-black text-slate-600 dark:text-[#CDBCAB] uppercase tracking-wider mb-3 block">
+                Phần trăm doanh thu (%)
+              </label>
+              <input
+                type="number"
+                step="0.1"
+                value={commissionPercentage}
+                onChange={(e) => setCommissionPercentage(parseFloatInput(e.target.value, { min: 0, max: 100, decimals: 1 }))}
+                disabled={!commissionEnabled}
+                className="w-full h-14 rounded-2xl border-2 border-slate-100 dark:border-[#3E3A35] bg-slate-50 dark:bg-[#11100F] px-5 text-base font-bold text-slate-900 dark:text-[#EFE9E1] focus:outline-none focus:border-emerald-600 dark:focus:border-[#2E5D3E] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                placeholder="Ví dụ: 15 (15% doanh thu)"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-black text-slate-600 dark:text-[#CDBCAB] uppercase tracking-wider mb-3 block">
+                Doanh thu tối thiểu (VNĐ, không bắt buộc)
+              </label>
+              <input
+                type="number"
+                value={commissionMinRevenue}
+                onChange={(e) => setCommissionMinRevenue(parseIntegerInput(e.target.value, { min: 0 }))}
+                disabled={!commissionEnabled}
+                className="w-full h-14 rounded-2xl border-2 border-slate-100 dark:border-[#3E3A35] bg-slate-50 dark:bg-[#11100F] px-5 text-base font-bold text-slate-900 dark:text-[#EFE9E1] focus:outline-none focus:border-emerald-600 dark:focus:border-[#2E5D3E] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                placeholder="Ví dụ: 0 (không giới hạn)"
+              />
+            </div>
+          </div>
+        )}
+
+        {commissionStrategy === 'service' && (
+          <div className="space-y-4">
+            <label className="text-xs font-black text-slate-600 dark:text-[#CDBCAB] uppercase tracking-wider mb-3 block">
+              Hoa hồng theo loại dịch vụ
+            </label>
+            {Object.entries(commissionServiceRates).map(([serviceKey, rate]) => (
+              <div key={serviceKey} className="grid grid-cols-3 gap-4 items-end">
+                <div className="col-span-1">
+                  <label className="text-xs text-slate-500 dark:text-[#CDBCAB] mb-2 block">Loại dịch vụ</label>
+                  <input
+                    type="text"
+                    value={serviceKey}
+                    onChange={(e) => {
+                      const newRates = { ...commissionServiceRates };
+                      delete newRates[serviceKey];
+                      newRates[e.target.value] = rate;
+                      setCommissionServiceRates(newRates);
+                    }}
+                    disabled={!commissionEnabled}
+                    className="w-full h-12 rounded-xl border-2 border-slate-100 dark:border-[#3E3A35] bg-slate-50 dark:bg-[#11100F] px-4 text-sm font-bold text-slate-900 dark:text-[#EFE9E1] focus:outline-none focus:border-emerald-600 dark:focus:border-[#2E5D3E] transition-colors disabled:opacity-50"
+                    placeholder="massage, facial..."
+                  />
+                </div>
+                <div className="col-span-1">
+                  <label className="text-xs text-slate-500 dark:text-[#CDBCAB] mb-2 block">Hoa hồng (VNĐ)</label>
+                  <input
+                    type="number"
+                    value={rate}
+                    onChange={(e) => {
+                      const newRates = { ...commissionServiceRates };
+                      newRates[serviceKey] = parseIntegerInput(e.target.value, { min: 0 });
+                      setCommissionServiceRates(newRates);
+                    }}
+                    disabled={!commissionEnabled}
+                    className="w-full h-12 rounded-xl border-2 border-slate-100 dark:border-[#3E3A35] bg-slate-50 dark:bg-[#11100F] px-4 text-sm font-bold text-slate-900 dark:text-[#EFE9E1] focus:outline-none focus:border-emerald-600 dark:focus:border-[#2E5D3E] transition-colors disabled:opacity-50"
+                  />
+                </div>
+                <button
+                  onClick={() => {
+                    const newRates = { ...commissionServiceRates };
+                    delete newRates[serviceKey];
+                    setCommissionServiceRates(newRates);
+                  }}
+                  disabled={!commissionEnabled || Object.keys(commissionServiceRates).length <= 1}
+                  className="h-12 px-4 rounded-xl bg-rose-50 dark:bg-[#5D1C34]/20 text-rose-600 dark:text-[#EFE9E1] font-bold hover:bg-rose-100 dark:hover:bg-[#5D1C34]/40 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  Xóa
+                </button>
+              </div>
+            ))}
+            <button
+              onClick={() => {
+                const newKey = `service_${Object.keys(commissionServiceRates).length + 1}`;
+                setCommissionServiceRates({ ...commissionServiceRates, [newKey]: 100000 });
+              }}
+              disabled={!commissionEnabled}
+              className="w-full h-12 rounded-xl border-2 border-dashed border-slate-300 dark:border-[#3E3A35] text-slate-600 dark:text-[#CDBCAB] font-bold hover:border-emerald-600 dark:hover:border-[#2E5D3E] hover:text-emerald-600 dark:hover:text-[#A67D44] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              + Thêm dịch vụ
+            </button>
+          </div>
+        )}
+
+        {!commissionEnabled && (
+          <div className="bg-emerald-50 dark:bg-[#2E5D3E]/20 border border-emerald-100 dark:border-[#2E5D3E] rounded-xl px-4 py-3 text-xs text-emerald-700 dark:text-[#EFE9E1] font-medium">
+            ⚠️ Hoa hồng ca hiện đang <strong>tắt</strong>. KTV sẽ không nhận hoa hồng khi làm ca.
           </div>
         )}
       </section>
