@@ -62,15 +62,15 @@ function getRatingClass(myRating: number | null) {
     return 'bg-slate-100 text-slate-400';
   }
   if (myRating >= 4.5) {
-    return 'bg-emerald-50 text-emerald-600';
+    return 'bg-emerald-600 text-white';
   }
   if (myRating >= 3.5) {
-    return 'bg-blue-50 text-blue-600';
+    return 'bg-blue-600 text-white';
   }
   if (myRating >= 2.5) {
-    return 'bg-amber-50 text-amber-600';
+    return 'bg-amber-600 text-white';
   }
-  return 'bg-rose-50 text-rose-600';
+  return 'bg-rose-600 text-white';
 }
 
 function getActionName(actionType?: string | null) {
@@ -165,8 +165,8 @@ export function KtvProfileDrawer({
                   {user?.full_name?.charAt(0) || 'K'}
                 </div>
                 <div>
-                  <h3 className="font-black text-xl">{user?.full_name || vocab.worker.singular}</h3>
-                  <span className="bg-rose-600 text-white text-[9px] font-black px-2.5 py-1 rounded-full uppercase tracking-widest mt-1.5 inline-block">
+                  <h3 className="font-black text-xl" style={{ color: 'white' }}>{user?.full_name || vocab.worker.singular}</h3>
+                  <span className="bg-rose-600 text-white text-[9px] font-black px-2.5 py-1 rounded-full uppercase tracking-widest mt-1.5 inline-block" style={{ color: 'white' }}>
                     {user?.role === 'ktv' ? vocab.worker.singular : user?.role || vocab.worker.singular}
                   </span>
                 </div>
@@ -179,7 +179,7 @@ export function KtvProfileDrawer({
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 animate-pulse" />
-                  <span>Trạng thái hoạt động: <strong className="text-emerald-400 capitalize">{user?.status || 'Active'}</strong></span>
+                  <span>Trạng thái hoạt động: <strong style={{ color: 'white' }} className="capitalize">{user?.status || 'Active'}</strong></span>
                 </div>
               </div>
             </div>
@@ -238,7 +238,7 @@ export function KtvProfileDrawer({
 
                         <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider shrink-0 ${
                           action.status === 'pending' ? 'bg-amber-50 text-amber-600 border border-amber-100' :
-                          action.status === 'syncing' ? 'bg-blue-50 text-blue-600 border border-blue-100' :
+                          action.status === 'syncing' ? 'bg-blue-600 text-white border border-blue-700' :
                           'bg-rose-50 text-rose-600 border border-rose-100'
                         }`}>
                           {action.status === 'pending' ? 'Chờ đồng bộ' :
