@@ -178,22 +178,32 @@ export function AdjustmentsAdvancedFilters({
                   KTV ({filters.ktvIds?.length || 0} đã chọn)
                 </label>
                 <div className="max-h-40 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded-lg p-2 space-y-1">
-                  {ktvList.map((ktv) => (
-                    <label
-                      key={ktv.id}
-                      className="flex items-center gap-2 px-2 py-1 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={filters.ktvIds?.includes(ktv.id) || false}
-                        onChange={() => toggleArrayValue('ktvIds', ktv.id)}
-                        className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
-                      />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">
-                        {ktv.full_name} ({ktv.email})
-                      </span>
-                    </label>
-                  ))}
+                  {ktvList.map((ktv) => {
+                    let displayLabel = ktv.full_name;
+                    
+                    if (ktv.employee_code) {
+                      displayLabel += ` (${ktv.employee_code})`;
+                    } else if (ktv.email) {
+                      displayLabel += ` (${ktv.email})`;
+                    }
+                    
+                    return (
+                      <label
+                        key={ktv.id}
+                        className="flex items-center gap-2 px-2 py-1 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={filters.ktvIds?.includes(ktv.id) || false}
+                          onChange={() => toggleArrayValue('ktvIds', ktv.id)}
+                          className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+                        />
+                        <span className="text-sm text-gray-700 dark:text-gray-300">
+                          {displayLabel}
+                        </span>
+                      </label>
+                    );
+                  })}
                 </div>
               </div>
 

@@ -319,10 +319,28 @@ export function ProductSaleModal({
                     KTV phụ trách <span className="text-rose-500 font-normal">*</span>
                   </label>
                   <PremiumSelect
-                    options={ktvList.map((ktv) => ({
-                      value: ktv.id,
-                      label: `${ktv.full_name} (${ktv.email})`,
-                    }))}
+                    options={ktvList.map((ktv) => {
+                      // Build display label with available identifiers
+                      let label = ktv.full_name;
+                      
+                      // Prefer employee_code if available
+                      if (ktv.employee_code) {
+                        label += ` (${ktv.employee_code})`;
+                      } 
+                      // Otherwise use email (should always exist after filter)
+                      else if (ktv.email) {
+                        label += ` (${ktv.email})`;
+                      }
+                      // Fallback to ID if somehow neither exists
+                      else {
+                        label += ` (ID: ${ktv.id.slice(0, 8)})`;
+                      }
+                      
+                      return {
+                        value: ktv.id,
+                        label,
+                      };
+                    })}
                     value={formData.ktvId}
                     onChange={(ktvId) => setFormData((prev) => ({ ...prev, ktvId }))}
                     placeholder="-- Chọn kỹ thuật viên --"

@@ -14,6 +14,8 @@ export interface KTVOption {
   id: string;
   full_name: string;
   email: string;
+  employee_code?: string | null;
+  status?: string | null;
 }
 
 export function useKTVList(tenantId?: string) {
@@ -30,10 +32,10 @@ export function useKTVList(tenantId?: string) {
       
       const { data, error: queryError } = await supabase
         .from('users')
-        .select('id, full_name, email')
+        .select('id, full_name, email, employee_code, status')
         .eq('tenant_id', tenant)
         .eq('role', 'ktv')
-        .eq('status', 'active')
+        .eq('status', 'active') // Only active KTVs
         .order('full_name', { ascending: true });
 
       if (queryError) {
@@ -43,7 +45,14 @@ export function useKTVList(tenantId?: string) {
         return;
       }
 
-      setKtvList(data || []);
+      // Filter out users with null/empty email (deleted accounts)
+      const validKtvs = (data || []).filter(ktv => 
+        ktv.email && 
+        ktv.email.trim() !== '' &&
+        !ktv.email.includes('deleted_') // Common soft-delete pattern
+      );
+
+      setKtvList(validKtvs);
     } catch (err) {
       console.error('[useKTVList] Unexpected error:', err);
       setError('Không thể tải danh sách KTV');
