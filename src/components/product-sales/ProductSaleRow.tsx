@@ -141,7 +141,7 @@ export function ProductSaleRow({
           <p className="text-sm text-gray-500">Số lượng</p>
           <p className="font-semibold text-gray-900">{sale.quantity}</p>
           <p className="text-xs text-gray-400">
-            {sale.unit_price.toLocaleString('vi-VN')} đ/sp
+            {(sale.unit_price || 0).toLocaleString('vi-VN')} đ/sp
           </p>
         </div>
 
@@ -149,7 +149,7 @@ export function ProductSaleRow({
         <div className="text-right">
           <p className="text-sm text-gray-500">Tổng tiền</p>
           <p className="font-semibold text-gray-900">
-            {sale.total_amount.toLocaleString('vi-VN')} đ
+            {(sale.total_amount || 0).toLocaleString('vi-VN')} đ
           </p>
         </div>
 
@@ -157,7 +157,7 @@ export function ProductSaleRow({
         <div className="text-right">
           <p className="text-sm text-gray-500">Hoa hồng</p>
           <p className="font-semibold text-emerald-600">
-            {sale.commission_amount.toLocaleString('vi-VN')} đ
+            {(sale.commission_amount || 0).toLocaleString('vi-VN')} đ
           </p>
           {sale.override_commission_enabled && (
             <p className="text-xs text-amber-600">Tùy chỉnh</p>
@@ -240,13 +240,13 @@ export function ProductSaleRow({
           <div className="text-right">
             <p className="text-xs text-gray-500">Tổng tiền</p>
             <p className="font-semibold text-gray-900">
-              {sale.total_amount.toLocaleString('vi-VN')} đ
+              {(sale.total_amount || 0).toLocaleString('vi-VN')} đ
             </p>
           </div>
           <div>
             <p className="text-xs text-gray-500">Hoa hồng</p>
             <p className="font-semibold text-emerald-600">
-              {sale.commission_amount.toLocaleString('vi-VN')} đ
+              {(sale.commission_amount || 0).toLocaleString('vi-VN')} đ
             </p>
           </div>
           <div className="text-right">
@@ -349,7 +349,7 @@ export function ProductSaleRow({
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-900">
-                      {sale.quantity} x {sale.unit_price.toLocaleString('vi-VN')} đ
+                      {sale.quantity} x {(sale.unit_price || 0).toLocaleString('vi-VN')} đ
                     </p>
                     <p className="text-xs text-gray-500">Đơn giá x Số lượng</p>
                   </div>
@@ -362,13 +362,13 @@ export function ProductSaleRow({
                   </div>
                   <div>
                     <p className="text-sm font-medium text-emerald-600">
-                      {sale.commission_amount.toLocaleString('vi-VN')} đ
+                      {(sale.commission_amount || 0).toLocaleString('vi-VN')} đ
                     </p>
                     {sale.override_commission_enabled && sale.override_commission_type && (
                       <p className="text-xs text-amber-600">
                         Tùy chỉnh:{' '}
                         {sale.override_commission_type === 'fixed'
-                          ? `${sale.override_commission_value?.toLocaleString('vi-VN')} đ`
+                          ? `${(sale.override_commission_value || 0).toLocaleString('vi-VN')} đ`
                           : `${sale.override_commission_value}%`}
                       </p>
                     )}
