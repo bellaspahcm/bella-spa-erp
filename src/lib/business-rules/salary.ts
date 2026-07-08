@@ -80,6 +80,12 @@ export type SalaryDisplayComponentsInput = {
   liveKpiBonus: number | string | null | undefined;
   liveDeductions: number | string | null | undefined;
   liveAdvances?: number | string | null;
+  // Advanced commission components (Task 28-32)
+  liveServiceCommission?: number | string | null;
+  liveProductSalesCommission?: number | string | null;
+  livePositionBonus?: number | string | null;
+  liveSeniorityBonus?: number | string | null;
+  liveManualAdjustments?: number | string | null;
 };
 
 /**
@@ -1185,6 +1191,34 @@ export function buildSalaryDisplayComponents(input: SalaryDisplayComponentsInput
   const advances = record?.service_percentage_bonus !== null && record?.service_percentage_bonus !== undefined
     ? asFiniteNumber(record.service_percentage_bonus)
     : asFiniteNumber(input.liveAdvances);
+  
+  // Advanced commission components (Task 28-32)
+  const serviceCommission = selectSavedOrLive(
+    useSavedFinancials,
+    (record as any)?.service_commission,
+    input.liveServiceCommission
+  );
+  const productSalesCommission = selectSavedOrLive(
+    useSavedFinancials,
+    (record as any)?.product_sales_commission,
+    input.liveProductSalesCommission
+  );
+  const positionBonus = selectSavedOrLive(
+    useSavedFinancials,
+    (record as any)?.position_bonus,
+    input.livePositionBonus
+  );
+  const seniorityBonus = selectSavedOrLive(
+    useSavedFinancials,
+    (record as any)?.seniority_bonus,
+    input.liveSeniorityBonus
+  );
+  const manualAdjustments = selectSavedOrLive(
+    useSavedFinancials,
+    (record as any)?.manual_adjustments,
+    input.liveManualAdjustments
+  );
+  
   const calculatedTotalSalary = calculateSalaryTotal({
     baseSalary,
     sessionBonus,
@@ -1192,6 +1226,11 @@ export function buildSalaryDisplayComponents(input: SalaryDisplayComponentsInput
     kpiBonus,
     deductions,
     advances,
+    serviceCommission,
+    productSalesCommission,
+    positionBonus,
+    seniorityBonus,
+    manualAdjustments,
   });
   const totalSalary = useSavedFinancials && record?.total_salary !== null && record?.total_salary !== undefined
     ? asFiniteNumber(record.total_salary)
@@ -1208,6 +1247,11 @@ export function buildSalaryDisplayComponents(input: SalaryDisplayComponentsInput
     kpiBonus,
     deductions,
     advances,
+    serviceCommission,
+    productSalesCommission,
+    positionBonus,
+    seniorityBonus,
+    manualAdjustments,
     calculatedTotalSalary,
     totalSalary,
   };

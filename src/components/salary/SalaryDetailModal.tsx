@@ -205,19 +205,42 @@ export function SalaryDetailModal({
           </SalaryComponentCard>
 
           {/* Product Sales Commission */}
-          {/* TODO: Product sales commission not yet tracked in salary_records table */}
-          <SalaryComponentCard
-            title="Hoa Hồng Bán Hàng"
-            amount={0}
-            icon={<TrendingUp className="w-5 h-5 text-gray-400" />}
-            variant="neutral"
-            tooltip="Hoa hồng từ bán sản phẩm (chưa có dữ liệu)"
-            badge="Chưa có dữ liệu"
-          >
-            <div className="text-sm text-gray-500 dark:text-gray-400 py-2">
-              Tính năng đang được phát triển
-            </div>
-          </SalaryComponentCard>
+          {(salary.productSalesCommission || 0) > 0 && (
+            <SalaryComponentCard
+              title="Hoa Hồng Bán Hàng"
+              amount={salary.productSalesCommission || 0}
+              icon={<TrendingUp className="w-5 h-5 text-emerald-600" />}
+              variant="income"
+              tooltip="Hoa hồng từ bán sản phẩm"
+            >
+              {productSales.length > 0 && (
+                <div className="mt-3 space-y-2 border-t border-gray-200 dark:border-gray-700 pt-3">
+                  <p className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                    Chi Tiết Bán Hàng
+                  </p>
+                  {isLoadingProducts ? (
+                    <p className="text-sm text-gray-500">Đang tải...</p>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {productSales.map((product, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-300 py-1 border-b border-gray-100 dark:border-gray-800 last:border-0"
+                        >
+                          <span className="flex-1 truncate">
+                            {product.product_name} × {product.quantity}
+                          </span>
+                          <span className="font-medium text-emerald-600">
+                            {product.calculated_commission.toLocaleString('vi-VN')} đ
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </SalaryComponentCard>
+          )}
 
           {/* Position Bonus - TODO: Not yet implemented */}
           {/* Will show position-based bonus (Junior/Senior/Lead) when backend is ready */}

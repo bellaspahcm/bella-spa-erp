@@ -24,6 +24,12 @@ export interface KtvSalaryRecord {
   /** Actual attendance-based work days for pro-rata base salary calculation */
   actualDays?: number;
   ktvStatus?: string;
+  // Advanced commission system (Task 28-32)
+  serviceCommission?: number;
+  productSalesCommission?: number;
+  positionBonus?: number;
+  seniorityBonus?: number;
+  manualAdjustments?: number;
 }
 
 export interface KtvAttendanceLog {

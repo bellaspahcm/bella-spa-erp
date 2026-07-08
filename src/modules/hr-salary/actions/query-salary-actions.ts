@@ -97,6 +97,7 @@ interface MatrixSessionLogDb {
 interface MatrixKtvUser {
   id: string;
   full_name: string | null;
+  resignation_date: string | null;
 }
 
 /**
@@ -205,7 +206,7 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
     if (ktvsError) {
       throw new Error(`[getSalaryData] users query failed: ${ktvsError.message}`);
     }
-    const realKtvs = (ktvs || []) as KtvUserData[];
+    const rawKtvs = (ktvs || []) as KtvUserData[];
 
     const startOfMonthStr = currentMonthYear;
     const endOfMonthStr = getLocalDateString(new Date(now.getFullYear(), now.getMonth() + 1, 1));
@@ -220,6 +221,20 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
     }
     
     const salaryRecords = (salaryRecordsData || []) as SalaryRecordDb[];
+
+    // Filter out users who resigned before the start of the current month
+    // but keep them if a salary record has already been saved for this month (history/audit)
+    const realKtvs = rawKtvs.filter((ktv) => {
+      const hasRecord = salaryRecords.some((r) => r.ktv_id === ktv.id);
+      if (hasRecord) return true;
+
+      if (ktv.resignation_date) {
+        const resignDate = new Date(ktv.resignation_date);
+        const monthDate = new Date(currentMonthYear);
+        return resignDate >= monthDate;
+      }
+      return true;
+    });
 
     // Fetch completed sessions with booking details + rating fallback
     const { data: sessionsData, error: sessionsError } = await supabase
@@ -347,6 +362,12 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
           liveKpiBonus: kpiBonusByKtv.get(ktv.id) ?? 0,
           liveDeductions: autoAttendancePenalty,
           liveAdvances: 0,
+          // Advanced commission components (Task 28-32) - will be queried and added later
+          liveServiceCommission: 0,
+          liveProductSalesCommission: 0,
+          livePositionBonus: 0,
+          liveSeniorityBonus: 0,
+          liveManualAdjustments: 0,
         });
 
         return {
@@ -367,6 +388,12 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
           resignationDate: ktv.resignation_date,
           ktvStatus: ktv.status || 'active',
           actualDays,
+          // Advanced commission components (Task 28-32)
+          serviceCommission: salaryDisplay.serviceCommission,
+          productSalesCommission: salaryDisplay.productSalesCommission,
+          positionBonus: salaryDisplay.positionBonus,
+          seniorityBonus: salaryDisplay.seniorityBonus,
+          manualAdjustments: salaryDisplay.manualAdjustments,
         };
     }));
 
@@ -463,7 +490,7 @@ export async function getKtvSessionMatrix(): Promise<KtvSessionMatrix> {
     // 1. Fetch all KTVs
     const ktvQuery = supabase
       .from('users')
-      .select('id, full_name')
+      .select('id, full_name, resignation_date')
       .eq('role', 'ktv')
       .eq('tenant_id', tenantId);
 
@@ -476,7 +503,7 @@ export async function getKtvSessionMatrix(): Promise<KtvSessionMatrix> {
       throw new Error(`getKtvSessionMatrix users query failed: ${ktvsError.message}`);
     }
 
-    const realKtvs = (ktvs || []) as MatrixKtvUser[];
+    const rawKtvs = (ktvs || []) as MatrixKtvUser[];
 
     const now = new Date();
     const currentMonthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
@@ -493,6 +520,20 @@ export async function getKtvSessionMatrix(): Promise<KtvSessionMatrix> {
     }
 
     const salaryRecords = (salaryRecordsData || []) as SalaryRecordDb[];
+
+    // Filter out users who resigned before the start of the current month
+    // but keep them if a salary record has already been saved for this month (history/audit)
+    const realKtvs = rawKtvs.filter((ktv) => {
+      const hasRecord = salaryRecords.some((r) => r.ktv_id === ktv.id);
+      if (hasRecord) return true;
+
+      if (ktv.resignation_date) {
+        const resignDate = new Date(ktv.resignation_date);
+        const monthDate = new Date(currentMonthYear);
+        return resignDate >= monthDate;
+      }
+      return true;
+    });
 
     // 3. Fetch completed sessions with booking details
     const { data: sessions, error: sessionsError } = await supabase
