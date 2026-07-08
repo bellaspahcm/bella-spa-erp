@@ -32,11 +32,13 @@ import {
 import { KPIProvider } from '@/services/providers/kpi-provider';
 import { AttendanceProvider } from '@/services/providers/attendance-provider';
 import { RatingProvider } from '@/services/providers/rating-provider';
+import { CommissionProvider } from '@/services/providers/commission-provider';
 
 // Initialize provider instances
 const kpiProvider = new KPIProvider();
 const attendanceProvider = new AttendanceProvider();
 const ratingProvider = new RatingProvider();
+const commissionProvider = new CommissionProvider();
 
 // Phase 2: Feature Flag to conditionally use provider results
 // When true: Use provider calculations instead of old hardcoded logic
@@ -307,6 +309,63 @@ export async function recalculateAndSaveSalaryRecordEngine(
   const liveSessionsCount = calculateWeightedSessionCount(sessionsTyped, packageMultiplierMap);
   const liveSessionBonus = calculateSessionCommissionBonus(sessionsTyped);
 
+  // Phase 1: Provider Integration - Commission Provider (Comparison Mode)
+  // Phase 2: Feature Flag - Use provider result when USE_CONFIG_PROVIDERS=true
+  let providerCommissionAmount: number | null = null;
+  let commissionProviderResult: any = null;
+  try {
+    // Prepare session data for commission calculation
+    const sessionsWithRevenue = sessionsTyped.map(session => ({
+      id: session.id,
+      service_type: session.bookings?.package_name || 'unknown',
+      revenue: session.bookings?.ktv_commission || 0,
+      commission: session.bookings?.ktv_commission || 0,
+    }));
+
+    const commissionContext = {
+      sessions: sessionsWithRevenue,
+      sessionsCount: liveSessionsCount,
+      totalRevenue: sessionsWithRevenue.reduce((sum, s) => sum + s.revenue, 0),
+      tenantId,
+      userId: ktvId,
+      period: monthYear,
+      metadata: {
+        avgRating,
+        attendanceDays: attendanceListTyped.length,
+      }
+    };
+    
+    commissionProviderResult = await commissionProvider.evaluate(commissionContext);
+    providerCommissionAmount = commissionProviderResult.amount;
+    
+    // Log comparison or active usage
+    if (USE_CONFIG_PROVIDERS) {
+      console.log('[PHASE_2_ACTIVE] Commission - Using Provider Result:', {
+        ktvId,
+        month: monthYear,
+        provider_commission: commissionProviderResult.amount,
+        old_logic_would_be: liveSessionBonus,
+        strategy: commissionProviderResult.metadata?.strategy,
+        sessions: liveSessionsCount,
+        total_revenue: commissionContext.totalRevenue,
+      });
+    } else {
+      console.log('[PROVIDER_INTEGRATION] Commission Comparison:', {
+        ktvId,
+        month: monthYear,
+        old_logic: liveSessionBonus,
+        new_provider: commissionProviderResult.amount,
+        strategy: commissionProviderResult.metadata?.strategy,
+        diff: commissionProviderResult.amount - liveSessionBonus,
+        diff_percent: liveSessionBonus > 0 ? ((commissionProviderResult.amount - liveSessionBonus) / liveSessionBonus * 100).toFixed(2) + '%' : 'N/A',
+        sessions: liveSessionsCount,
+        total_revenue: commissionContext.totalRevenue,
+      });
+    }
+  } catch (error) {
+    console.error('[PROVIDER_INTEGRATION] Commission Provider failed (non-blocking):', error);
+  }
+
   const { data: leaderboardData, error: leaderboardError } = await supabase.rpc(
     'get_ktv_leaderboard',
     { p_tenant_id: tenantId, p_month: monthYear }
@@ -516,10 +575,20 @@ export async function recalculateAndSaveSalaryRecordEngine(
         ? Number(existing.total_sessions)
         : liveSessionsCount);
 
-  const sessionBonus =
-    shouldUseStoredSessionComponents && existing?.session_bonus !== null && existing?.session_bonus !== undefined
-      ? Number(existing.session_bonus)
-      : liveSessionBonus;
+  // Phase 2: Use Commission Provider result if flag is ON and provider succeeded
+  let finalSessionBonus: number;
+  if (shouldUseStoredSessionComponents && existing?.session_bonus !== null && existing?.session_bonus !== undefined) {
+    // Use stored value for non-draft records
+    finalSessionBonus = Number(existing.session_bonus);
+  } else if (USE_CONFIG_PROVIDERS && providerCommissionAmount !== null && commissionProviderResult) {
+    // Use provider result if flag is ON
+    finalSessionBonus = providerCommissionAmount;
+  } else {
+    // Fallback to old hardcoded logic
+    finalSessionBonus = liveSessionBonus;
+  }
+
+  const sessionBonus = finalSessionBonus;
 
   const oldLogicRatingBonus = calculateRatingBonus(sessionsCount, avgRating, salaryConfig);
 
