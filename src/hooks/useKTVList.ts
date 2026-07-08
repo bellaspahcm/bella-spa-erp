@@ -14,8 +14,6 @@ export interface KTVOption {
   id: string;
   full_name: string;
   email: string;
-  employee_code?: string | null;
-  status?: string | null;
 }
 
 export function useKTVList(tenantId?: string) {
@@ -32,7 +30,7 @@ export function useKTVList(tenantId?: string) {
       
       const { data, error: queryError } = await supabase
         .from('users')
-        .select('id, full_name, email, employee_code, status')
+        .select('id, full_name, email')
         .eq('tenant_id', tenant)
         .eq('role', 'ktv')
         .eq('status', 'active') // Only active KTVs

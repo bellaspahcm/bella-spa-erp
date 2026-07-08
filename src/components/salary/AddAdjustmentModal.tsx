@@ -205,22 +205,10 @@ export function AddAdjustmentModal({
                   <BeautySpaSelect
                     options={[
                       { value: '', label: '-- Chọn KTV --' },
-                      ...ktvList.map((ktv) => {
-                        let label = ktv.full_name;
-                        
-                        if (ktv.employee_code) {
-                          label += ` (${ktv.employee_code})`;
-                        } else if (ktv.email) {
-                          label += ` (${ktv.email})`;
-                        } else {
-                          label += ` (ID: ${ktv.id.slice(0, 8)})`;
-                        }
-                        
-                        return {
-                          value: ktv.id,
-                          label,
-                        };
-                      }),
+                      ...ktvList.map((ktv) => ({
+                        value: ktv.id,
+                        label: ktv.email ? `${ktv.full_name} (${ktv.email})` : ktv.full_name,
+                      })),
                     ]}
                     value={formData.ktvId}
                     onChange={(ktvId) => setFormData((prev) => ({ ...prev, ktvId }))}
