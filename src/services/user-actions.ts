@@ -253,6 +253,7 @@ export async function getUsers(): Promise<StaffRecord[]> {
       session_reviews(rating)
     `)
     .eq('tenant_id', tenantId)
+    .is('resignation_date', null) // Only show active employees (not resigned)
     .order('created_at', { ascending: false });
 
   if (error) {
