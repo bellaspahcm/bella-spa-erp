@@ -275,12 +275,12 @@ export function KtvDashboardHeader({
 
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-slate-900 p-4 rounded-3xl text-white shadow-lg">
-          <p className="text-[10px] font-black uppercase tracking-widest opacity-70 mb-1">Thu nhập tháng</p>
-          <p className="text-lg font-black">{formatCurrency(earnings.total)}</p>
+          <p className="text-[10px] font-black uppercase tracking-widest mb-1" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Thu nhập tháng</p>
+          <p className="text-lg font-black" style={{ color: 'white' }}>{formatCurrency(earnings.total)}</p>
         </div>
         <div className="bg-rose-600 p-4 rounded-3xl text-white shadow-lg">
-          <p className="text-[10px] font-black uppercase tracking-widest opacity-70 mb-1">Số {vocab.workUnit.plural} đã xong</p>
-          <p className="text-lg font-black">{earnings.sessions} {vocab.workUnit.singular}</p>
+          <p className="text-[10px] font-black uppercase tracking-widest mb-1" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Số {vocab.workUnit.plural} đã xong</p>
+          <p className="text-lg font-black" style={{ color: 'white' }}>{earnings.sessions} {vocab.workUnit.singular}</p>
         </div>
       </div>
     </div>
