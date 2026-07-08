@@ -81,7 +81,7 @@ export function AdjustmentFilters({
             <option value="">Tất cả KTV</option>
             {ktvList.map((ktv) => (
               <option key={ktv.id} value={ktv.id}>
-                {ktv.full_name}
+                {ktv.full_name} ({ktv.email})
               </option>
             ))}
           </select>

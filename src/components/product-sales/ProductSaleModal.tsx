@@ -17,7 +17,7 @@ import {
   createProductSale, 
   updateProductSale 
 } from '@/modules/product-sales/actions/product-sales-actions';
-import { BeautySpaSelect } from '@/components/ui/BeautySpaSelect';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { CommissionOverrideInput } from '@/components/bookings/CommissionOverrideInput';
 import { calculateProductSalesCommission } from '@/lib/business-rules/commission';
 import type { CommissionType } from '@/lib/business-rules/commission';
@@ -256,25 +256,25 @@ export function ProductSaleModal({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-3 sm:p-4 backdrop-blur-sm">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
           transition={{ duration: 0.2 }}
-          className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-[24px] bg-white shadow-2xl"
+          className="relative w-full max-w-3xl max-h-[92vh] overflow-y-auto rounded-[28px] sm:rounded-[32px] bg-white shadow-2xl border border-slate-100/50"
         >
           {/* Header */}
-          <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-white px-6 py-4 rounded-t-[24px]">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100">
-                <ShoppingCart className="h-5 w-5 text-emerald-600" />
+          <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white/95 backdrop-blur-md px-6 py-5 rounded-t-[28px] sm:rounded-t-[32px]">
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 shadow-inner">
+                <ShoppingCart className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-slate-900">
+                <h2 className="text-lg sm:text-xl font-serif font-semibold text-slate-900 tracking-wide">
                   {isEditMode ? 'Chỉnh sửa bán hàng' : 'Ghi nhận bán hàng'}
                 </h2>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-slate-400 font-medium">
                   {isEditMode ? 'Cập nhật thông tin giao dịch' : 'Thêm giao dịch bán sản phẩm'}
                 </p>
               </div>
@@ -283,7 +283,7 @@ export function ProductSaleModal({
               type="button"
               onClick={handleClose}
               disabled={isSubmitting}
-              className="rounded-full p-2 hover:bg-slate-100 disabled:opacity-50"
+              className="rounded-full p-2.5 hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-all duration-200 disabled:opacity-50"
               aria-label="Đóng"
             >
               <X className="h-5 w-5" />
@@ -297,57 +297,51 @@ export function ProductSaleModal({
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex items-start gap-3 rounded-lg bg-red-50 border border-red-200 p-4"
+                className="flex items-start gap-3 rounded-2xl bg-red-50 border border-red-200 p-4"
               >
                 <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-red-900">Lỗi</p>
+                  <p className="text-sm font-semibold text-red-900">Lỗi</p>
                   <p className="text-sm text-red-700">{error}</p>
                 </div>
               </motion.div>
             )}
 
             {/* Section 1: KTV & Customer */}
-            <div className="space-y-4">
-              <h3 className="text-xs font-black uppercase tracking-widest text-emerald-600">
+            <div className="p-5 sm:p-6 rounded-2xl border border-slate-100/80 bg-slate-50/30 dark:border-[#3E3A35]/30 dark:bg-[#1C1B19]/20 space-y-4">
+              <h3 className="text-xs font-black uppercase tracking-widest text-primary">
                 Người bán & Khách hàng
               </h3>
               <div className="grid gap-4 md:grid-cols-2">
                 {/* KTV Selection */}
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700">
-                    KTV phụ trách <span className="text-red-500">*</span>
+                  <label className="text-xs font-black text-slate-700 uppercase tracking-widest block ml-1">
+                    KTV phụ trách <span className="text-rose-500 font-normal">*</span>
                   </label>
-                  <BeautySpaSelect
-                    options={[
-                      { value: '', label: '-- Chọn KTV --' },
-                      ...ktvList.map((ktv) => ({
-                        value: ktv.id,
-                        label: ktv.full_name,
-                      })),
-                    ]}
+                  <PremiumSelect
+                    options={ktvList.map((ktv) => ({
+                      value: ktv.id,
+                      label: `${ktv.full_name} (${ktv.email})`,
+                    }))}
                     value={formData.ktvId}
                     onChange={(ktvId) => setFormData((prev) => ({ ...prev, ktvId }))}
-                    placeholder="-- Chọn KTV --"
+                    placeholder="-- Chọn kỹ thuật viên --"
                     disabled={isSubmitting}
                   />
                 </div>
 
                 {/* Customer Selection (Optional) */}
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700">
-                    Khách hàng <span className="text-slate-400 font-normal">(tùy chọn)</span>
+                  <label className="text-xs font-black text-slate-700 uppercase tracking-widest block ml-1">
+                    Khách hàng <span className="text-slate-400 font-normal font-sans">(tùy chọn)</span>
                   </label>
-                  <BeautySpaSelect
-                    options={[
-                      { value: '', label: '-- Chọn khách hàng --' },
-                      ...customers.map((customer) => ({
-                        value: customer.id,
-                        label: customer.name_baby 
-                          ? `${customer.name_mother} (${customer.name_baby})`
-                          : customer.name_mother,
-                      })),
-                    ]}
+                  <PremiumSelect
+                    options={customers.map((customer) => ({
+                      value: customer.id,
+                      label: customer.name_baby 
+                        ? `${customer.name_mother} (${customer.name_baby})`
+                        : customer.name_mother,
+                    }))}
                     value={formData.customerId}
                     onChange={(customerId) =>
                       setFormData((prev) => ({ ...prev, customerId }))
@@ -360,15 +354,15 @@ export function ProductSaleModal({
             </div>
 
             {/* Section 2: Product Details */}
-            <div className="space-y-4">
-              <h3 className="text-xs font-black uppercase tracking-widest text-emerald-600">
+            <div className="p-5 sm:p-6 rounded-2xl border border-slate-100/80 bg-slate-50/30 dark:border-[#3E3A35]/30 dark:bg-[#1C1B19]/20 space-y-4">
+              <h3 className="text-xs font-black uppercase tracking-widest text-primary">
                 Thông tin sản phẩm
               </h3>
               <div className="grid gap-4 md:grid-cols-2">
                 {/* Product Name */}
                 <div className="space-y-2 md:col-span-2">
-                  <label className="text-sm font-bold text-slate-700">
-                    Tên sản phẩm <span className="text-red-500">*</span>
+                  <label className="text-xs font-black text-slate-700 uppercase tracking-widest block ml-1">
+                    Tên sản phẩm <span className="text-rose-500 font-normal">*</span>
                   </label>
                   <input
                     type="text"
@@ -379,14 +373,14 @@ export function ProductSaleModal({
                     }
                     placeholder="Nhập tên sản phẩm"
                     disabled={isSubmitting}
-                    className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-50"
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-slate-800 placeholder:text-slate-400 focus:border-primary/50 focus:ring-4 focus:ring-primary/10 focus:outline-none transition-all duration-300 disabled:opacity-50 font-bold"
                   />
                 </div>
 
                 {/* Product Category */}
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700">
-                    Danh mục <span className="text-slate-400 font-normal">(tùy chọn)</span>
+                  <label className="text-xs font-black text-slate-700 uppercase tracking-widest block ml-1">
+                    Danh mục <span className="text-slate-400 font-normal font-sans">(tùy chọn)</span>
                   </label>
                   <input
                     type="text"
@@ -396,14 +390,14 @@ export function ProductSaleModal({
                     }
                     placeholder="VD: Mỹ phẩm, Sữa tắm..."
                     disabled={isSubmitting}
-                    className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-50"
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-slate-800 placeholder:text-slate-400 focus:border-primary/50 focus:ring-4 focus:ring-primary/10 focus:outline-none transition-all duration-300 disabled:opacity-50 font-bold"
                   />
                 </div>
 
                 {/* Product SKU */}
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700">
-                    Mã SKU <span className="text-slate-400 font-normal">(tùy chọn)</span>
+                  <label className="text-xs font-black text-slate-700 uppercase tracking-widest block ml-1">
+                    Mã SKU <span className="text-slate-400 font-normal font-sans">(tùy chọn)</span>
                   </label>
                   <input
                     type="text"
@@ -413,14 +407,14 @@ export function ProductSaleModal({
                     }
                     placeholder="VD: PRD-001"
                     disabled={isSubmitting}
-                    className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-50"
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-slate-800 placeholder:text-slate-400 focus:border-primary/50 focus:ring-4 focus:ring-primary/10 focus:outline-none transition-all duration-300 disabled:opacity-50 font-bold font-mono"
                   />
                 </div>
 
                 {/* Quantity */}
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700">
-                    Số lượng <span className="text-red-500">*</span>
+                  <label className="text-xs font-black text-slate-700 uppercase tracking-widest block ml-1">
+                    Số lượng <span className="text-rose-500 font-normal">*</span>
                   </label>
                   <input
                     type="number"
@@ -435,14 +429,14 @@ export function ProductSaleModal({
                       }))
                     }
                     disabled={isSubmitting}
-                    className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-50"
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-slate-800 focus:border-primary/50 focus:ring-4 focus:ring-primary/10 focus:outline-none transition-all duration-300 disabled:opacity-50 font-bold"
                   />
                 </div>
 
                 {/* Unit Price */}
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700">
-                    Đơn giá <span className="text-red-500">*</span>
+                  <label className="text-xs font-black text-slate-700 uppercase tracking-widest block ml-1">
+                    Đơn giá <span className="text-rose-500 font-normal">*</span>
                   </label>
                   <input
                     type="text"
@@ -461,16 +455,17 @@ export function ProductSaleModal({
                     }}
                     placeholder="0"
                     disabled={isSubmitting}
-                    className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-50"
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-slate-800 placeholder:text-slate-400 focus:border-primary/50 focus:ring-4 focus:ring-primary/10 focus:outline-none transition-all duration-300 disabled:opacity-50 font-bold"
                   />
                 </div>
 
                 {/* Total Sales Amount (readonly) */}
                 <div className="space-y-2 md:col-span-2">
-                  <label className="text-sm font-bold text-slate-700">Tổng tiền</label>
-                  <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2.5">
-                    <span className="text-lg font-black text-emerald-700">
-                      {formData.totalSalesAmount.toLocaleString('vi-VN')}đ
+                  <label className="text-xs font-black text-slate-700 uppercase tracking-widest block ml-1">Tổng tiền</label>
+                  <div className="flex items-center justify-between rounded-2xl border border-primary/20 bg-primary/5 px-6 py-4 shadow-sm">
+                    <span className="text-sm font-semibold text-slate-600 dark:text-[#E5D5C8]">Thành tiền (VND):</span>
+                    <span className="text-2xl font-black text-primary">
+                      {formData.totalSalesAmount.toLocaleString('vi-VN')} đ
                     </span>
                   </div>
                 </div>
@@ -478,8 +473,8 @@ export function ProductSaleModal({
             </div>
 
             {/* Section 3: Commission Override */}
-            <div className="space-y-4">
-              <h3 className="text-xs font-black uppercase tracking-widest text-emerald-600">
+            <div className="p-5 sm:p-6 rounded-2xl border border-slate-100/80 bg-slate-50/30 dark:border-[#3E3A35]/30 dark:bg-[#1C1B19]/20 space-y-4">
+              <h3 className="text-xs font-black uppercase tracking-widest text-primary">
                 Cài đặt hoa hồng
               </h3>
               <CommissionOverrideInput
@@ -511,20 +506,20 @@ export function ProductSaleModal({
               />
 
               {/* Commission Preview */}
-              <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+              <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5 shadow-sm space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-bold text-emerald-900">
-                    Hoa hồng dự kiến:
+                  <span className="text-sm font-bold text-slate-700 dark:text-[#E5D5C8]">
+                    Hoa hồng dự kiến cho KTV:
                   </span>
-                  <span className="text-lg font-black text-emerald-700">
-                    {calculatedCommission.toLocaleString('vi-VN')}đ
+                  <span className="text-xl font-black text-primary">
+                    {calculatedCommission.toLocaleString('vi-VN')} đ
                   </span>
                 </div>
-                <p className="mt-2 text-[10px] leading-relaxed text-emerald-700">
-                  Hoa hồng này sẽ được tính vào lương tháng của KTV.
+                <p className="text-xs leading-relaxed text-slate-500 dark:text-[#D4C5B6] border-t border-primary/10 pt-2.5">
+                  💡 Hoa hồng này sẽ được tính trực tiếp vào tổng thu nhập tháng của Kỹ thuật viên.
                   {formData.overrideType
-                    ? ' Đang sử dụng cài đặt tùy chỉnh.'
-                    : ` Đang sử dụng mặc định hệ thống (${
+                    ? ' Đang áp dụng thiết lập hoa hồng tùy chỉnh.'
+                    : ` Đang sử dụng hoa hồng mặc định của hệ thống (${
                         defaultType === 'fixed'
                           ? `${defaultValue.toLocaleString('vi-VN')}đ`
                           : `${defaultValue}%`
@@ -534,17 +529,17 @@ export function ProductSaleModal({
             </div>
 
             {/* Section 4: Payment & Date */}
-            <div className="space-y-4">
-              <h3 className="text-xs font-black uppercase tracking-widest text-emerald-600">
-                Thanh toán
+            <div className="p-5 sm:p-6 rounded-2xl border border-slate-100/80 bg-slate-50/30 dark:border-[#3E3A35]/30 dark:bg-[#1C1B19]/20 space-y-4">
+              <h3 className="text-xs font-black uppercase tracking-widest text-primary">
+                Thông tin thanh toán
               </h3>
               <div className="grid gap-4 md:grid-cols-2">
                 {/* Payment Method */}
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700">
-                    Phương thức <span className="text-red-500">*</span>
+                  <label className="text-xs font-black text-slate-700 uppercase tracking-widest block ml-1">
+                    Phương thức <span className="text-rose-500 font-normal">*</span>
                   </label>
-                  <BeautySpaSelect
+                  <PremiumSelect
                     options={[
                       { value: 'cash', label: 'Tiền mặt' },
                       { value: 'bank_transfer', label: 'Chuyển khoản' },
@@ -565,8 +560,8 @@ export function ProductSaleModal({
 
                 {/* Sale Date */}
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700">
-                    Ngày bán <span className="text-red-500">*</span>
+                  <label className="text-xs font-black text-slate-700 uppercase tracking-widest block ml-1">
+                    Ngày bán <span className="text-rose-500 font-normal">*</span>
                   </label>
                   <input
                     type="date"
@@ -576,16 +571,16 @@ export function ProductSaleModal({
                       setFormData((prev) => ({ ...prev, saleDate: e.target.value }))
                     }
                     disabled={isSubmitting}
-                    className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-50"
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-slate-800 focus:border-primary/50 focus:ring-4 focus:ring-primary/10 focus:outline-none transition-all duration-300 disabled:opacity-50 font-bold"
                   />
                 </div>
               </div>
             </div>
 
             {/* Section 5: Notes */}
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-700">
-                Ghi chú <span className="text-slate-400 font-normal">(tùy chọn)</span>
+            <div className="p-5 sm:p-6 rounded-2xl border border-slate-100/80 bg-slate-50/30 dark:border-[#3E3A35]/30 dark:bg-[#1C1B19]/20 space-y-2">
+              <label className="text-xs font-black text-slate-700 uppercase tracking-widest block ml-1">
+                Ghi chú <span className="text-slate-400 font-normal font-sans">(tùy chọn)</span>
               </label>
               <textarea
                 rows={3}
@@ -595,33 +590,33 @@ export function ProductSaleModal({
                 }
                 placeholder="Thêm ghi chú về giao dịch..."
                 disabled={isSubmitting}
-                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-50 resize-none"
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-slate-800 placeholder:text-slate-400 focus:border-primary/50 focus:ring-4 focus:ring-primary/10 focus:outline-none transition-all duration-300 disabled:opacity-50 resize-none font-medium"
               />
             </div>
 
             {/* Actions */}
-            <div className="flex gap-3 pt-4 border-t">
+            <div className="flex gap-4 pt-6 border-t border-slate-100 bg-slate-50/50 p-6 -mx-6 -mb-6 rounded-b-[28px] sm:rounded-b-[32px]">
               <button
                 type="button"
                 onClick={handleClose}
                 disabled={isSubmitting}
-                className="flex-1 rounded-lg border border-slate-300 bg-white px-4 py-2.5 font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50 transition-colors"
+                className="flex-1 rounded-2xl border border-slate-200 bg-white px-5 py-4 font-bold text-slate-700 hover:bg-slate-50 transition-all duration-200 active:scale-[0.98]"
               >
                 Hủy
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting || !formData.ktvId || !formData.productName}
-                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 font-bold text-white hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+                className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-primary px-5 py-4 font-black text-white hover:bg-primary-hover shadow-lg shadow-primary/20 dark:shadow-none transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
               >
                 {isSubmitting ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Loader2 className="h-5 w-5 animate-spin" />
                     {isEditMode ? 'Đang cập nhật...' : 'Đang lưu...'}
                   </>
                 ) : (
                   <>
-                    <Plus className="h-4 w-4" />
+                    <Plus className="h-5 w-5" />
                     {isEditMode ? 'Cập nhật' : 'Lưu bán hàng'}
                   </>
                 )}

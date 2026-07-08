@@ -188,7 +188,7 @@ export function AddServiceItemForm({
               { value: '', label: '-- Chọn KTV --' },
               ...ktvList.map(ktv => ({
                 value: ktv.id,
-                label: ktv.full_name
+                label: `${ktv.full_name} (${ktv.email})`
               }))
             ]}
             value={formData.ktvId}

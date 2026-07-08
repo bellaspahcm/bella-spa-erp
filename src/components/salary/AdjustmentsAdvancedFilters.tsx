@@ -190,7 +190,7 @@ export function AdjustmentsAdvancedFilters({
                         className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
                       />
                       <span className="text-sm text-gray-700 dark:text-gray-300">
-                        {ktv.full_name}
+                        {ktv.full_name} ({ktv.email})
                       </span>
                     </label>
                   ))}
