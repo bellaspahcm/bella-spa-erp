@@ -107,14 +107,26 @@ export function ProductSalesListPage() {
       });
 
       if (result.success && result.data) {
-        // Transform data to match ProductSale interface
-        const salesData = (result.data.sales as any[]).map((sale) => ({
-          ...sale,
-          ktv_name: sale.users?.full_name || 'Unknown KTV',
-          customer_name: sale.customers
-            ? `${sale.customers.name_mother}${sale.customers.name_baby ? ` (${sale.customers.name_baby})` : ''}`
-            : 'Khách lẻ',
-        })) as ProductSale[];
+        // Transform data to match ProductSale interface with safety checks
+        const salesData = (result.data.sales as any[]).map((sale) => {
+          // Safely extract KTV name
+          const ktvName = sale.users?.full_name || 'Unknown KTV';
+          
+          // Safely extract customer name
+          let customerName = 'Khách lẻ';
+          if (sale.customers && sale.customers.name_mother) {
+            customerName = sale.customers.name_mother;
+            if (sale.customers.name_baby) {
+              customerName += ` (${sale.customers.name_baby})`;
+            }
+          }
+          
+          return {
+            ...sale,
+            ktv_name: ktvName,
+            customer_name: customerName,
+          };
+        }) as ProductSale[];
         
         setSales(salesData);
         
@@ -122,8 +134,8 @@ export function ProductSalesListPage() {
         const completed = salesData.filter(s => s.status === 'completed');
         setStats({
           totalSales: salesData.length,
-          totalRevenue: completed.reduce((sum, s) => sum + s.total_amount, 0),
-          totalCommission: completed.reduce((sum, s) => sum + s.commission_amount, 0),
+          totalRevenue: completed.reduce((sum, s) => sum + (s.total_amount || 0), 0),
+          totalCommission: completed.reduce((sum, s) => sum + (s.commission_amount || 0), 0),
           completedCount: completed.length,
         });
       } else {
