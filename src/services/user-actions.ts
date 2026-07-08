@@ -781,7 +781,7 @@ export async function deleteUser(id: string) {
   const { data: userAttendance, error: attendanceCheckError } = await supabase
     .from('attendance')
     .select('id')
-    .eq('user_id', id)
+    .eq('ktv_id', id)
     .eq('tenant_id', tenantId)
     .limit(1);
   
