@@ -767,11 +767,16 @@ export async function deleteUser(id: string) {
   // Always use soft delete to prevent foreign key constraint violations
   // Many tables reference users: bookings, attendance, sessions, salary_records, 
   // expenses, audit_logs, kpi_records, leave_requests, product_sales, etc.
-  // Soft delete: Set resignation_date to mark as inactive instead of hard delete
+  // Soft delete: Set resignation_date + modify email to free it for reuse
+  const timestamp = Date.now();
+  const originalEmail = previousUser.email;
+  const archivedEmail = originalEmail ? `${timestamp}.deleted.${originalEmail}` : `${timestamp}.deleted@archived.local`;
+  
   const { error: softDeleteError } = await supabase
     .from('users')
     .update({ 
       resignation_date: new Date().toISOString().split('T')[0],
+      email: archivedEmail, // Archive email to free it for reuse
       updated_at: new Date().toISOString()
     })
     .eq('id', id)
