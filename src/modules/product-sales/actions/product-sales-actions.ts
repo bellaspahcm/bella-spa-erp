@@ -160,6 +160,24 @@ export async function createProductSale(
       commission: calculatedCommission,
     });
 
+    // 5. Auto-recalculate salary to include new commission (non-blocking)
+    const monthYear = `${input.saleDate.substring(0, 7)}-01`;
+    try {
+      const { recalculateAndSaveSalaryRecord } = await import('@/modules/hr-salary/actions/admin-salary-actions');
+      await recalculateAndSaveSalaryRecord(supabase, input.ktvId, monthYear, input.tenantId);
+      console.log('[createProductSale] Salary recalculated successfully for KTV:', input.ktvId);
+    } catch (salaryError) {
+      console.error('[createProductSale] Failed to recalculate salary (non-blocking):', salaryError);
+      // Non-blocking: sale was created successfully, salary will be recalculated on next load
+    }
+
+    // 6. Revalidate UI cache to show updated commission
+    const { safeRevalidatePath } = await import('@/lib/revalidate');
+    await Promise.all([
+      safeRevalidatePath('/dashboard/product-sales'),
+      safeRevalidatePath('/dashboard/salary'),
+    ]);
+
     return {
       success: true,
       data: {
@@ -266,6 +284,23 @@ export async function updateProductSale(
       };
     }
 
+    // Auto-recalculate salary after update (non-blocking)
+    const monthYear = `${updated.sale_date.substring(0, 7)}-01`;
+    try {
+      const { recalculateAndSaveSalaryRecord } = await import('@/modules/hr-salary/actions/admin-salary-actions');
+      await recalculateAndSaveSalaryRecord(supabase, existing.ktv_id, monthYear, existing.tenant_id);
+      console.log('[updateProductSale] Salary recalculated successfully for KTV:', existing.ktv_id);
+    } catch (salaryError) {
+      console.error('[updateProductSale] Failed to recalculate salary (non-blocking):', salaryError);
+    }
+
+    // Revalidate UI cache
+    const { safeRevalidatePath } = await import('@/lib/revalidate');
+    await Promise.all([
+      safeRevalidatePath('/dashboard/product-sales'),
+      safeRevalidatePath('/dashboard/salary'),
+    ]);
+
     return { success: true };
   } catch (error) {
     console.error('Unexpected error in updateProductSale:', error);
@@ -286,6 +321,20 @@ export async function deleteProductSale(id: string): Promise<ActionResult> {
   try {
     const supabase = await createClient();
 
+    // Get existing record to extract ktv_id, sale_date, tenant_id for salary recalculation
+    const { data: existing, error: fetchError } = await (supabase as any)
+      .from('product_sales')
+      .select('ktv_id, sale_date, tenant_id')
+      .eq('id', id)
+      .single();
+
+    if (fetchError || !existing) {
+      return {
+        success: false,
+        error: 'Không tìm thấy bán hàng',
+      };
+    }
+
     // Soft delete by setting status to 'cancelled'
     const { error } = await (supabase as any)
       .from('product_sales')
@@ -302,6 +351,23 @@ export async function deleteProductSale(id: string): Promise<ActionResult> {
         error: 'Không thể xóa bán hàng',
       };
     }
+
+    // Auto-recalculate salary after cancellation (non-blocking)
+    const monthYear = `${existing.sale_date.substring(0, 7)}-01`;
+    try {
+      const { recalculateAndSaveSalaryRecord } = await import('@/modules/hr-salary/actions/admin-salary-actions');
+      await recalculateAndSaveSalaryRecord(supabase, existing.ktv_id, monthYear, existing.tenant_id);
+      console.log('[deleteProductSale] Salary recalculated successfully for KTV:', existing.ktv_id);
+    } catch (salaryError) {
+      console.error('[deleteProductSale] Failed to recalculate salary (non-blocking):', salaryError);
+    }
+
+    // Revalidate UI cache
+    const { safeRevalidatePath } = await import('@/lib/revalidate');
+    await Promise.all([
+      safeRevalidatePath('/dashboard/product-sales'),
+      safeRevalidatePath('/dashboard/salary'),
+    ]);
 
     return { success: true };
   } catch (error) {

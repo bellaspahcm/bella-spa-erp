@@ -311,6 +311,26 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
       kpiBonusByKtv.set(record.ktv_id, (kpiBonusByKtv.get(record.ktv_id) ?? 0) + Number(record.bonus_amount || 0));
     });
 
+    // Fetch product sales commission for all KTVs this month
+    const { data: productSalesData, error: productSalesError } = await (supabase as any)
+      .from('product_sales')
+      .select('ktv_id, calculated_commission')
+      .eq('status', 'completed')
+      .gte('sale_date', startOfMonthStr)
+      .lt('sale_date', endOfMonthStr)
+      .eq('tenant_id', tenantId);
+    
+    if (productSalesError) {
+      console.error('[getSalaryData] product_sales query failed:', productSalesError);
+      // Non-blocking: continue with 0 commission
+    }
+
+    const productSalesCommissionByKtv = new Map<string, number>();
+    ((productSalesData || []) as { ktv_id: string; calculated_commission: number }[]).forEach((sale) => {
+      const current = productSalesCommissionByKtv.get(sale.ktv_id) ?? 0;
+      productSalesCommissionByKtv.set(sale.ktv_id, current + Number(sale.calculated_commission || 0));
+    });
+
     const ktvSalaries = await Promise.all(realKtvs.map(async (ktv) => {
         const record = salaryRecords.find((r) => r.ktv_id === ktv.id);
         
@@ -362,9 +382,9 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
           liveKpiBonus: kpiBonusByKtv.get(ktv.id) ?? 0,
           liveDeductions: autoAttendancePenalty,
           liveAdvances: 0,
-          // Advanced commission components (Task 28-32) - will be queried and added later
+          // Advanced commission components (Task 28-32)
           liveServiceCommission: 0,
-          liveProductSalesCommission: 0,
+          liveProductSalesCommission: productSalesCommissionByKtv.get(ktv.id) ?? 0,
           livePositionBonus: 0,
           liveSeniorityBonus: 0,
           liveManualAdjustments: 0,
