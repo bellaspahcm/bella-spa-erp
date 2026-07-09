@@ -45,6 +45,16 @@ const commissionProvider = new CommissionProvider();
 // When false: Continue comparison mode (providers log only)
 const USE_CONFIG_PROVIDERS = process.env.USE_CONFIG_PROVIDERS === 'true';
 
+// Phase 3: Unified Payroll Provider (Task 5 - Decision Engine)
+// Replaces individual providers with unified calculation engine
+import { getPayrollProviderAdapter } from '@/adapters/payroll-provider-adapter';
+const USE_PAYROLL_PROVIDER = process.env.FEATURE_PAYROLL_PROVIDER === 'true';
+
+// Phase 4: Commission Provider Adapter (Task 6 - Decision Engine)
+// Replaces hardcoded commission logic with rule-based engine
+import { getCommissionProviderAdapter } from '@/adapters/commission-provider-adapter';
+const USE_COMMISSION_PROVIDER = process.env.FEATURE_COMMISSION_PROVIDER === 'true';
+
 interface KtvUserDataAdmin {
   id: string;
   full_name: string | null;
@@ -569,6 +579,96 @@ export async function recalculateAndSaveSalaryRecordEngine(
   const shouldUseStoredSessionComponents = Boolean(existing && !isDraft && overrides?.total_sessions === undefined);
   const shouldUseStoredTotalSalary = Boolean(existing && !isDraft && !hasFinancialOverrides);
 
+  // ================================================================
+  // Phase 3: Unified Payroll Provider Integration (Decision Engine)
+  // ================================================================
+  let payrollProviderResult: any = null;
+  if (USE_PAYROLL_PROVIDER) {
+    try {
+      const adapter = getPayrollProviderAdapter();
+      
+      // Transform current data to PayrollDecisionInput format
+      const payrollContext: SalaryCalculationContext = {
+        tenantId,
+        employeeId: ktvId,
+        monthYear,
+        sessions: sessionsTyped.map(s => ({
+          id: s.id,
+          status: 'completed' as const,
+          rating: s.rating,
+          total_amount: s.bookings?.ktv_commission || 0,
+          package_name: s.bookings?.package_name,
+        })),
+        attendance: attendanceListTyped.map(a => ({
+          id: `${ktvId}-${a.date}`,
+          ktv_id: ktvId,
+          date: a.date,
+          status: a.status,
+          tenant_id: tenantId,
+        })),
+        employee: {
+          id: ktv?.id || ktvId,
+          base_salary: ktv?.base_salary || 6000000,
+          position: positionTier,
+          hired_date: hireDate,
+          tenant_id: tenantId,
+        },
+        config: {
+          kpi: {
+            enabled: true,
+            strategy: 'threshold',
+            config: {
+              target: salaryConfig.kpi_target_sessions,
+              bonus: salaryConfig.kpi_bonus_amount,
+            },
+          },
+          attendance: {
+            enabled: true,
+            strategy: 'combined',
+            config: {
+              latePenalty: salaryConfig.penalty_late_per_day,
+              absentPenalty: salaryConfig.penalty_absent_per_day,
+            },
+          },
+          rating: {
+            enabled: true,
+            strategy: 'threshold',
+            config: {
+              minRating: 4.5,
+              bonus: salaryConfig.bonus_4_5_star,
+            },
+          },
+          commission: {
+            enabled: true,
+            strategy: 'fixed',
+            config: {
+              rate: 120000, // Default session commission rate
+            },
+          },
+        },
+      };
+
+      // Calculate via unified provider
+      payrollProviderResult = await adapter.calculateSalaryComponents(payrollContext);
+
+      console.log('[PAYROLL_PROVIDER] Unified calculation complete:', {
+        ktvId,
+        month: monthYear,
+        kpi_bonus: payrollProviderResult.kpi_bonus,
+        violations_deduction: payrollProviderResult.violations_deduction,
+        rating_bonus: payrollProviderResult.rating_bonus,
+        session_bonus: payrollProviderResult.session_bonus,
+        total_bonuses: payrollProviderResult.total_bonuses,
+        total_deductions: payrollProviderResult.total_deductions,
+        net_adjustment: payrollProviderResult.net_adjustment,
+        execution_time: payrollProviderResult.calculation_metadata.executionTime,
+      });
+    } catch (error) {
+      console.error('[PAYROLL_PROVIDER] Unified provider failed (non-blocking):', error);
+      // Non-blocking: fallback to old logic
+    }
+  }
+
   const sessionsCount = overrides?.total_sessions !== undefined
     ? overrides.total_sessions
     : (shouldUseStoredSessionComponents && existing?.total_sessions !== null && existing?.total_sessions !== undefined
@@ -576,12 +676,16 @@ export async function recalculateAndSaveSalaryRecordEngine(
         : liveSessionsCount);
 
   // Phase 2: Use Commission Provider result if flag is ON and provider succeeded
+  // Phase 3: Use Unified Payroll Provider if FEATURE_PAYROLL_PROVIDER=true
   let finalSessionBonus: number;
   if (shouldUseStoredSessionComponents && existing?.session_bonus !== null && existing?.session_bonus !== undefined) {
     // Use stored value for non-draft records
     finalSessionBonus = Number(existing.session_bonus);
+  } else if (USE_PAYROLL_PROVIDER && payrollProviderResult) {
+    // Phase 3: Use unified provider result
+    finalSessionBonus = payrollProviderResult.session_bonus;
   } else if (USE_CONFIG_PROVIDERS && providerCommissionAmount !== null && commissionProviderResult) {
-    // Use provider result if flag is ON
+    // Phase 2: Use individual provider result if flag is ON
     finalSessionBonus = providerCommissionAmount;
   } else {
     // Fallback to old hardcoded logic
@@ -592,10 +696,13 @@ export async function recalculateAndSaveSalaryRecordEngine(
 
   const oldLogicRatingBonus = calculateRatingBonus(sessionsCount, avgRating, salaryConfig);
 
+  // Phase 3: Use Unified Payroll Provider for rating if enabled
   const ratingBonus =
     shouldUseStoredSessionComponents && existing?.rating_bonus !== null && existing?.rating_bonus !== undefined
       ? Number(existing.rating_bonus)
-      : oldLogicRatingBonus;
+      : (USE_PAYROLL_PROVIDER && payrollProviderResult
+          ? payrollProviderResult.rating_bonus
+          : oldLogicRatingBonus);
 
   // Phase 1: Provider Integration - Rating Provider (Comparison Mode)
   // Phase 2: Feature Flag - Use provider result when USE_CONFIG_PROVIDERS=true
@@ -662,8 +769,11 @@ export async function recalculateAndSaveSalaryRecordEngine(
     if (existing.notes && !proRataNote) proRataNote = existing.notes;
   } else {
     // For draft records OR records without saved deductions, always recalculate from live data
-    // Phase 2: Use provider result if flag is ON and provider succeeded
-    if (USE_CONFIG_PROVIDERS && providerAttendanceAmount !== null && attendanceProviderResult) {
+    // Phase 3: Use Unified Payroll Provider if enabled
+    // Phase 2: Use individual provider result if flag is ON and provider succeeded
+    if (USE_PAYROLL_PROVIDER && payrollProviderResult) {
+      deductions = payrollProviderResult.total_deductions; // Payroll Provider returns positive deduction amount
+    } else if (USE_CONFIG_PROVIDERS && providerAttendanceAmount !== null && attendanceProviderResult) {
       deductions = Math.abs(providerAttendanceAmount); // Provider returns negative, we need positive for deduction
     } else {
       deductions = autoAttendancePenalty;
@@ -682,46 +792,148 @@ export async function recalculateAndSaveSalaryRecordEngine(
     ? overrides.kpi_bonus
     : (existing && !isDraft && existing.kpi_bonus !== null && existing.kpi_bonus !== undefined 
         ? Number(existing.kpi_bonus) 
-        : (USE_CONFIG_PROVIDERS && providerKpiAmount !== null && kpiProviderResult 
-            ? providerKpiAmount 
-            : dbKpiBonus));
+        : (USE_PAYROLL_PROVIDER && payrollProviderResult
+            ? payrollProviderResult.kpi_bonus
+            : (USE_CONFIG_PROVIDERS && providerKpiAmount !== null && kpiProviderResult 
+                ? providerKpiAmount 
+                : dbKpiBonus)));
 
   // Calculate commission components (Task 28-32)
+  // Phase 4: Commission Provider Integration (Task 6 - Decision Engine)
+  let commissionAdapterResult: any = null;
+  if (USE_COMMISSION_PROVIDER) {
+    try {
+      const adapter = getCommissionProviderAdapter();
+      
+      // Query full service items and product sales for Decision Engine
+      const { data: fullServiceItems } = await (supabase as any)
+        .from('booking_service_items')
+        .select('id, ktv_id, subtotal, calculated_commission, override_commission_type, override_commission_value, status, completed_date')
+        .eq('ktv_id', ktvId)
+        .eq('tenant_id', tenantId)
+        .eq('status', 'completed')
+        .gte('completed_date', startOfMonthStr)
+        .lt('completed_date', endOfMonthStr);
+
+      const { data: fullProductSales } = await (supabase as any)
+        .from('product_sales')
+        .select('id, ktv_id, sales_amount, calculated_commission, override_commission_type, override_commission_value, status, sale_date')
+        .eq('ktv_id', ktvId)
+        .eq('tenant_id', tenantId)
+        .eq('status', 'completed')
+        .gte('sale_date', startOfMonthStr)
+        .lt('sale_date', endOfMonthStr);
+
+      // Transform to CommissionCalculationContext
+      const commissionContext = {
+        tenantId,
+        employeeId: ktvId,
+        monthYear,
+        serviceItems: fullServiceItems || [],
+        productSales: fullProductSales || [],
+        sessions: sessionsTyped.map(s => ({
+          id: s.id,
+          rating: s.rating,
+          status: 'completed',
+          package_multiplier: packageMultiplierMap[s.bookings?.package_name || ''] || 1.0,
+        })),
+        employee: {
+          id: ktvId,
+          position_tier: positionTier,
+          hire_date: hireDate,
+          tenant_id: tenantId,
+        },
+        manualAdjustments: adjustmentsTyped,
+        config: {
+          commissionStrategy: serviceCommissionDefault.type,
+          serviceCommissionFixed: serviceCommissionDefault.type === 'fixed' ? serviceCommissionDefault.value : undefined,
+          serviceCommissionRate: serviceCommissionDefault.type === 'percentage' ? serviceCommissionDefault.value : undefined,
+          productCommissionFixed: productCommissionDefault.type === 'fixed' ? productCommissionDefault.value : undefined,
+          productCommissionRate: productCommissionDefault.type === 'percentage' ? productCommissionDefault.value : undefined,
+          positionMultipliers,
+          seniorityBonusRates,
+          // Volume and performance tiers (optional, use defaults if not configured)
+          enableVolumeTiers: commissionConfig.enableVolumeTiers ?? true,
+          volumeTierThresholds: commissionConfig.volumeTierThresholds,
+          volumeTierMultipliers: commissionConfig.volumeTierMultipliers,
+          enablePerformanceMultipliers: commissionConfig.enablePerformanceMultipliers ?? true,
+          performanceTierThresholds: commissionConfig.performanceTierThresholds,
+          performanceTierMultipliers: commissionConfig.performanceTierMultipliers,
+          // Gates (disabled by default)
+          enableMinSessionsGate: commissionConfig.enableMinSessionsGate ?? false,
+          minSessionsForCommission: commissionConfig.minSessionsForCommission,
+          enableQualityGate: commissionConfig.enableQualityGate ?? false,
+          minRatingForCommission: commissionConfig.minRatingForCommission,
+        },
+      };
+
+      // Calculate via unified commission provider
+      commissionAdapterResult = await adapter.calculateCommission(commissionContext);
+
+      console.log('[COMMISSION_PROVIDER] Unified calculation complete:', {
+        ktvId,
+        month: monthYear,
+        service_commission: commissionAdapterResult.serviceCommission,
+        product_sales_commission: commissionAdapterResult.productSalesCommission,
+        position_bonus: commissionAdapterResult.positionBonus,
+        seniority_bonus: commissionAdapterResult.seniorityBonus,
+        manual_adjustments: commissionAdapterResult.manualAdjustments,
+        total_commission: commissionAdapterResult.totalCommission,
+        volume_tier: commissionAdapterResult.calculation_metadata.volumeTier,
+        performance_tier: commissionAdapterResult.calculation_metadata.performanceTier,
+        execution_time: commissionAdapterResult.calculation_metadata.executionTime,
+      });
+    } catch (error) {
+      console.error('[COMMISSION_PROVIDER] Unified provider failed (non-blocking):', error);
+      // Non-blocking: fallback to old logic
+    }
+  }
+
   const finalServiceCommission =
     existing && !isDraft && existing.service_commission !== null && existing.service_commission !== undefined
       ? Number(existing.service_commission)
-      : liveServiceCommission;
+      : (USE_COMMISSION_PROVIDER && commissionAdapterResult
+          ? commissionAdapterResult.serviceCommission
+          : liveServiceCommission);
 
   const finalProductCommission =
     existing && !isDraft && existing.product_sales_commission !== null && existing.product_sales_commission !== undefined
       ? Number(existing.product_sales_commission)
-      : liveProductCommission;
+      : (USE_COMMISSION_PROVIDER && commissionAdapterResult
+          ? commissionAdapterResult.productSalesCommission
+          : liveProductCommission);
 
   // Position bonus: applied on service commission
   const finalPositionBonus =
     existing && !isDraft && existing.position_bonus !== null && existing.position_bonus !== undefined
       ? Number(existing.position_bonus)
-      : calculatePositionBonus({
-          baseCommission: finalServiceCommission,
-          positionTier,
-          multipliers: positionMultipliers,
-        });
+      : (USE_COMMISSION_PROVIDER && commissionAdapterResult
+          ? commissionAdapterResult.positionBonus
+          : calculatePositionBonus({
+              baseCommission: finalServiceCommission,
+              positionTier,
+              multipliers: positionMultipliers,
+            }));
 
   // Seniority bonus: applied on base salary
   const finalSeniorityBonus =
     existing && !isDraft && existing.seniority_bonus !== null && existing.seniority_bonus !== undefined
       ? Number(existing.seniority_bonus)
-      : calculateSeniorityBonus({
-          baseSalary: finalBaseSalary,
-          hireDate,
-          bonusRates: seniorityBonusRates,
-        });
+      : (USE_COMMISSION_PROVIDER && commissionAdapterResult
+          ? commissionAdapterResult.seniorityBonus
+          : calculateSeniorityBonus({
+              baseSalary: finalBaseSalary,
+              hireDate,
+              bonusRates: seniorityBonusRates,
+            }));
 
   // Manual adjustments: net amount (can be negative)
   const finalManualAdjustments =
     existing && !isDraft && existing.manual_adjustments !== null && existing.manual_adjustments !== undefined
       ? Number(existing.manual_adjustments)
-      : liveManualAdjustments;
+      : (USE_COMMISSION_PROVIDER && commissionAdapterResult
+          ? commissionAdapterResult.manualAdjustments
+          : liveManualAdjustments);
 
   if (ktv?.resignation_date) {
     const resignDate = new Date(ktv.resignation_date);
