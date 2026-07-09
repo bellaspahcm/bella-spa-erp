@@ -33,6 +33,7 @@ export type { IWorkflowExecutor } from './workflow-executor';
 
 // ============ State Management ============
 export { InMemoryStateManager } from './state-manager';
+export { SupabaseStateManager } from './supabase-state-manager';
 export type { IStateManager } from './state-manager';
 
 // ============ Step Types ============
