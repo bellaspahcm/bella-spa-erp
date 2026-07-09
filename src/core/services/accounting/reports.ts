@@ -686,9 +686,20 @@ export async function getSalaryReconciliationReport(monthYear: string): Promise<
     throw new Error('Unauthorized: chỉ admin/kế toán mới được xem báo cáo đối soát lương.');
   }
 
-  // The RPC sets tenant context internally when called via service-role.
-  // Jest keeps using the mocked user client via createAccountingDataClient().
+  // Set tenant context before calling RPC (required for service-role client)
+  console.log('[getSalaryReconciliationReport] BEFORE set_session_tenant - tenant_id:', user.tenant_id);
   const supabase = await createAccountingDataClient();
+  
+  const { error: tenantContextError } = await supabase.rpc('set_session_tenant', {
+    p_tenant_id: user.tenant_id,
+  });
+  console.log('[getSalaryReconciliationReport] AFTER set_session_tenant - error:', tenantContextError);
+  
+  if (tenantContextError) {
+    console.error('[getSalaryReconciliationReport] Failed to set tenant context:', tenantContextError);
+    throw new Error('Failed to set tenant context for salary reconciliation');
+  }
+  
   const { data, error } = await callSalaryReconciliationReportRpc(supabase, {
     p_tenant_id: user.tenant_id,
     p_month_year: monthYear,

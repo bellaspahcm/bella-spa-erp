@@ -8,6 +8,8 @@ import type { LucideIcon } from 'lucide-react';
 import {
 AlertTriangle,
 CheckCircle2,
+ChevronDown,
+ChevronRight,
 Clock,
 HelpCircle,
 RefreshCw,
@@ -70,11 +72,24 @@ export default function SalaryReconciliationPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [rows, setRows] = useState<SalaryReconciliationRow[]>([]);
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
   const [monthYear, setMonthYear] = useState(() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
   });
+
+  const toggleRowExpanded = useCallback((ktvId: string) => {
+    setExpandedRows((prev) => {
+      const next = new Set(prev);
+      if (next.has(ktvId)) {
+        next.delete(ktvId);
+      } else {
+        next.add(ktvId);
+      }
+      return next;
+    });
+  }, []);
 
   const fetchData = useCallback(async (options: { force?: boolean } = {}) => {
     setRefreshing(true);
@@ -222,35 +237,133 @@ export default function SalaryReconciliationPage() {
                   const diffPercent = row.diff_percent === null || row.diff_percent === undefined
                     ? null
                     : Number(row.diff_percent);
+                  const isExpanded = expandedRows.has(row.ktv_id);
+                  
                   return (
-                    <motion.tr
-                      key={row.ktv_id}
-                      whileHover={{ backgroundColor: 'rgba(244,63,94,0.02)' }}
-                      className="transition-colors"
-                    >
-                      <td className={`${stickyBodyCellClassName} px-3 py-3 font-bold text-slate-900 dark:text-[#EFE9E1]`}>
-                        {row.ktv_name}
-                        <p className="text-3xs text-slate-400 mt-0.5">Status: {row.legacy_status}</p>
-                      </td>
-                      <td className="px-3 py-3 text-right font-mono font-bold text-blue-700 dark:text-blue-300">
-                        {fmtVND(row.legacy_total)}
-                      </td>
-                      <td className="px-3 py-3 text-right font-mono font-bold text-pink-700 dark:text-pink-300">
-                        {fmtVND(row.ai_total)}
-                      </td>
-                      <td className={`px-3 py-3 text-right font-mono font-black ${!rowHasLegacyRecord ? 'text-slate-400' : Math.abs(diffTotal) < 5000 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
-                        {rowHasLegacyRecord ? `${diffTotal > 0 ? '+' : ''}${fmtVND(diffTotal)}` : '—'}
-                      </td>
-                      <td className={`px-3 py-3 text-right font-mono font-bold ${!rowHasLegacyRecord ? 'text-slate-400' : diffPercent !== null && diffPercent < 5 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                        {rowHasLegacyRecord && diffPercent !== null ? `${diffPercent.toFixed(2)}%` : '—'}
-                      </td>
-                      <td className="px-3 py-3 text-center">
-                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-4xs font-black uppercase tracking-wider border ${cfg.bg} ${cfg.text} ${cfg.border}`}>
-                          <StatusIcon className="w-3 h-3" />
-                          {cfg.label}
-                        </span>
-                      </td>
-                    </motion.tr>
+                    <>
+                      {/* Main row */}
+                      <motion.tr
+                        key={row.ktv_id}
+                        whileHover={{ backgroundColor: 'rgba(244,63,94,0.02)' }}
+                        className="transition-colors cursor-pointer"
+                        onClick={() => toggleRowExpanded(row.ktv_id)}
+                      >
+                        <td className={`${stickyBodyCellClassName} px-3 py-3 font-bold text-slate-900 dark:text-[#EFE9E1]`}>
+                          <div className="flex items-center gap-2">
+                            {isExpanded ? (
+                              <ChevronDown className="w-4 h-4 text-primary dark:text-[#A67D44]" />
+                            ) : (
+                              <ChevronRight className="w-4 h-4 text-slate-400" />
+                            )}
+                            <div>
+                              {row.ktv_name}
+                              <p className="text-3xs text-slate-400 mt-0.5">Status: {row.legacy_status}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-3 py-3 text-right font-mono font-bold text-blue-700 dark:text-blue-300">
+                          {fmtVND(row.legacy_total)}
+                        </td>
+                        <td className="px-3 py-3 text-right font-mono font-bold text-pink-700 dark:text-pink-300">
+                          {fmtVND(row.ai_total)}
+                        </td>
+                        <td className={`px-3 py-3 text-right font-mono font-black ${!rowHasLegacyRecord ? 'text-slate-400' : Math.abs(diffTotal) < 5000 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                          {rowHasLegacyRecord ? `${diffTotal > 0 ? '+' : ''}${fmtVND(diffTotal)}` : '—'}
+                        </td>
+                        <td className={`px-3 py-3 text-right font-mono font-bold ${!rowHasLegacyRecord ? 'text-slate-400' : diffPercent !== null && diffPercent < 5 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                          {rowHasLegacyRecord && diffPercent !== null ? `${diffPercent.toFixed(2)}%` : '—'}
+                        </td>
+                        <td className="px-3 py-3 text-center">
+                          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-4xs font-black uppercase tracking-wider border ${cfg.bg} ${cfg.text} ${cfg.border}`}>
+                            <StatusIcon className="w-3 h-3" />
+                            {cfg.label}
+                          </span>
+                        </td>
+                      </motion.tr>
+                      
+                      {/* Expandable breakdown row */}
+                      {isExpanded && (
+                        <tr className="bg-slate-50/50 dark:bg-[#11100F]/20">
+                          <td colSpan={6} className="px-3 py-4">
+                            <div className="grid grid-cols-2 gap-6 pl-8">
+                              {/* Legacy breakdown */}
+                              <div>
+                                <h5 className="text-3xs font-black text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                  <div className="w-2 h-2 rounded-full bg-blue-500" />
+                                  Kế toán chốt (Legacy)
+                                </h5>
+                                <div className="space-y-2 text-2xs">
+                                  <div className="flex items-center justify-between py-1.5 px-3 bg-white dark:bg-[#1C1B19] rounded-lg border border-slate-100 dark:border-[#3E3A35]/30">
+                                    <span className="text-slate-600 dark:text-[#CDBCAB]/70">Lương cơ bản</span>
+                                    <span className="font-mono font-bold text-slate-900 dark:text-[#EFE9E1]">{fmtVND(row.legacy_base_salary)}</span>
+                                  </div>
+                                  <div className="flex items-center justify-between py-1.5 px-3 bg-white dark:bg-[#1C1B19] rounded-lg border border-slate-100 dark:border-[#3E3A35]/30">
+                                    <span className="text-slate-600 dark:text-[#CDBCAB]/70">Hoa hồng ca</span>
+                                    <span className="font-mono font-bold text-slate-900 dark:text-[#EFE9E1]">{fmtVND(row.legacy_session_bonus)}</span>
+                                  </div>
+                                  <div className="flex items-center justify-between py-1.5 px-3 bg-white dark:bg-[#1C1B19] rounded-lg border border-slate-100 dark:border-[#3E3A35]/30">
+                                    <span className="text-slate-600 dark:text-[#CDBCAB]/70">KPI bonus</span>
+                                    <span className="font-mono font-bold text-slate-900 dark:text-[#EFE9E1]">{fmtVND(row.legacy_kpi_bonus)}</span>
+                                  </div>
+                                  <div className="flex items-center justify-between py-1.5 px-3 bg-amber-50 dark:bg-amber-500/10 rounded-lg border border-amber-200 dark:border-amber-500/30">
+                                    <span className="text-amber-700 dark:text-amber-400 font-semibold flex items-center gap-1.5">
+                                      <span className="text-xs">⭐</span>
+                                      Hoa hồng bán hàng
+                                    </span>
+                                    <span className="font-mono font-black text-amber-800 dark:text-amber-300">{fmtVND(row.legacy_product_sales_commission)}</span>
+                                  </div>
+                                  <div className="flex items-center justify-between py-1.5 px-3 bg-rose-50 dark:bg-rose-500/10 rounded-lg border border-rose-200 dark:border-rose-500/30">
+                                    <span className="text-rose-600 dark:text-rose-400">Khấu trừ</span>
+                                    <span className="font-mono font-bold text-rose-700 dark:text-rose-300">-{fmtVND(row.legacy_deductions)}</span>
+                                  </div>
+                                  <div className="flex items-center justify-between py-2 px-3 bg-blue-100 dark:bg-blue-500/20 rounded-lg border-2 border-blue-300 dark:border-blue-500/40 mt-3">
+                                    <span className="font-black text-blue-800 dark:text-blue-300 uppercase text-xs">Tổng</span>
+                                    <span className="font-mono font-black text-blue-900 dark:text-blue-200 text-sm">{fmtVND(row.legacy_total)}</span>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              {/* AI breakdown */}
+                              <div>
+                                <h5 className="text-3xs font-black text-pink-600 dark:text-pink-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                  <div className="w-2 h-2 rounded-full bg-pink-500" />
+                                  AI tính (Computed)
+                                </h5>
+                                <div className="space-y-2 text-2xs">
+                                  <div className="flex items-center justify-between py-1.5 px-3 bg-white dark:bg-[#1C1B19] rounded-lg border border-slate-100 dark:border-[#3E3A35]/30">
+                                    <span className="text-slate-600 dark:text-[#CDBCAB]/70">Lương cơ bản</span>
+                                    <span className="font-mono font-bold text-slate-900 dark:text-[#EFE9E1]">{fmtVND(row.ai_base_salary)}</span>
+                                  </div>
+                                  <div className="flex items-center justify-between py-1.5 px-3 bg-white dark:bg-[#1C1B19] rounded-lg border border-slate-100 dark:border-[#3E3A35]/30">
+                                    <span className="text-slate-600 dark:text-[#CDBCAB]/70">Hoa hồng ca</span>
+                                    <span className="font-mono font-bold text-slate-900 dark:text-[#EFE9E1]">{fmtVND(row.ai_session_bonus)}</span>
+                                  </div>
+                                  <div className="flex items-center justify-between py-1.5 px-3 bg-white dark:bg-[#1C1B19] rounded-lg border border-slate-100 dark:border-[#3E3A35]/30">
+                                    <span className="text-slate-600 dark:text-[#CDBCAB]/70">KPI bonus</span>
+                                    <span className="font-mono font-bold text-slate-900 dark:text-[#EFE9E1]">{fmtVND(row.ai_kpi_bonus)}</span>
+                                  </div>
+                                  <div className="flex items-center justify-between py-1.5 px-3 bg-amber-50 dark:bg-amber-500/10 rounded-lg border border-amber-200 dark:border-amber-500/30">
+                                    <span className="text-amber-700 dark:text-amber-400 font-semibold flex items-center gap-1.5">
+                                      <span className="text-xs">⭐</span>
+                                      Hoa hồng bán hàng
+                                    </span>
+                                    <span className="font-mono font-black text-amber-800 dark:text-amber-300">{fmtVND(row.ai_product_sales_commission)}</span>
+                                  </div>
+                                  <div className="flex items-center justify-between py-1.5 px-3 bg-rose-50 dark:bg-rose-500/10 rounded-lg border border-rose-200 dark:border-rose-500/30">
+                                    <span className="text-rose-600 dark:text-rose-400">Khấu trừ</span>
+                                    <span className="font-mono font-bold text-rose-700 dark:text-rose-300">-{fmtVND(row.ai_deductions)}</span>
+                                  </div>
+                                  <div className="flex items-center justify-between py-2 px-3 bg-pink-100 dark:bg-pink-500/20 rounded-lg border-2 border-pink-300 dark:border-pink-500/40 mt-3">
+                                    <span className="font-black text-pink-800 dark:text-pink-300 uppercase text-xs">Tổng</span>
+                                    <span className="font-mono font-black text-pink-900 dark:text-pink-200 text-sm">{fmtVND(row.ai_total)}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </>
                   );
                 })}
               </tbody>

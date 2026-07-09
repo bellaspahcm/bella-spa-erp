@@ -266,7 +266,49 @@ You must strictly adhere to the following rules when working on this codebase to
 
 ---
 
-## 11. Module Theme Color Override (NEW - 22/06/2026)
+## 11. Adding New Salary Field (NEW - 22/06/2026)
+- **MANDATORY checklist when adding ANY new salary component field** (e.g., `product_sales_commission`, `overtime_bonus`, `transportation_allowance`): Follow `docs/development/SALARY_FIELD_ADDITION_CHECKLIST.md` **EXACTLY**.
+- **8 layers MUST be updated** in correct order:
+  1. Database schema migration (`ALTER TABLE salary_records ADD COLUMN ...`)
+  2. Database RPC functions (`calculate_ktv_salary_sheet`, `get_salary_reconciliation_report`) - add CTE, JOIN, SELECT field, update total_salary formula
+  3. TypeScript database types (`SalaryRecordRow`, `SalarySheetRow`)
+  4. Backend RPC mapping (`base-salary-actions.ts` - add field to `mergeSalarySheetIntoRecord`)
+  5. Backend query functions (`query-salary-actions.ts` - fetch source data, aggregate, map to salary record)
+  6. Backend recalculation engine (`salary-recalculation-engine.ts` - calculate live value, handle draft vs non-draft, upsert)
+  7. Frontend UI (`/api/payroll/employees/[id]/detail/route.ts` + `EmployeeDetailScreen.tsx` - fetch, calculate, render BreakdownCard, update summary)
+  8. Test mocks (`*.test.ts` - add `.in()` method if needed, seed mock data, add query to script queue)
+- **NEVER skip any layer** - This will cause:
+  - Reconciliation RPC missing field → AI tính sai
+  - Detail page missing field → UI hiển thị thiếu
+  - Test mocks incomplete → Tests fail with "No scripted result" or "Expected X, got Y"
+  - TypeScript types not updated → Runtime errors, hard to debug
+- **Common mistakes:**
+  - ❌ Forgot to add field to `total_salary` formula in RPC → Total sai
+  - ❌ Forgot to handle NULL values → NaN in calculations
+  - ❌ Test mock query order wrong → Test fails with table mismatch
+  - ❌ Draft vs non-draft logic wrong → Saved values overwritten incorrectly
+  - ❌ Status filter wrong → Count rejected/pending records incorrectly
+- **Verification matrix:** After implementation, run ALL verifications:
+  - `\d salary_records` in SQL Editor → Column exists
+  - `SELECT [field] FROM calculate_ktv_salary_sheet(...)` → RPC returns field
+  - `npm run build` → No TypeScript errors
+  - `npm run test:critical` → All tests pass
+  - Load detail page → Card displays correctly
+  - Compare "AI tính" vs "Kế toán chốt" → Field included in both
+
+**Real-world incident (22/06/2026):**
+- Added `product_sales_commission` field but incomplete implementation
+- Reconciliation showed wrong "AI tính" (missing product sales)
+- Detail page showed wrong total (missing commission card)
+- Tests failed: "No scripted result for product_sales.select"
+- Root cause: Forgot to update RPC, detail API route, UI component, test mocks
+- **Resolution:** Followed 8-layer checklist, fixed all layers systematically
+- **Time lost:** ~6 hours debugging piecemeal fixes
+- **Lesson:** ALWAYS follow `SALARY_FIELD_ADDITION_CHECKLIST.md` when adding salary fields. Saves 5+ hours of debugging.
+
+---
+
+## 12. Module Theme Color Override (NEW - 22/06/2026)
 - **MANDATORY when adding new industry modules**: Read `docs/MODULE_THEME_COLOR_OVERRIDE_GUIDE.md` BEFORE implementing any UI for new module
 - **API Route MUST parse JSONB correctly**: `{beauty_spa: true}` → `['beauty_spa']` (array of strings), NOT `[{beauty_spa: true}]` (array of objects)
 - **TenantContextProvider MUST check array format FIRST**: `if (Array.isArray(enabledModules))` before `typeof enabledModules === 'object'`

@@ -283,6 +283,29 @@ export async function buildBookingPayload(params: {
     }
   }
   
+  // Phase 0.5: Use Decision Engine for discount calculation (Task 4)
+  // Calculate server-side discount to prevent client manipulation
+  let serverCalculatedDiscount = validatedData.discount_percent || 0;
+  
+  try {
+    const { calculateServerDiscount } = await import('./discount-integration');
+    
+    serverCalculatedDiscount = await calculateServerDiscount({
+      tenantId,
+      customerId,
+      totalAmount: finalPrice,
+      serviceCount: validatedData.total_sessions || 1,
+      // TODO: Add referral/campaign support when available
+    });
+    
+    console.log(
+      `[buildBookingPayload] Discount: client=${validatedData.discount_percent}%, server=${serverCalculatedDiscount}% (enforced)`
+    );
+  } catch (error) {
+    console.error('[buildBookingPayload] Discount calculation failed, using client value:', error);
+    // Fallback to client-submitted discount if server calculation fails
+  }
+  
   // Phase 0.5: Use Decision Engine for booking approval logic
   // TODO: Restore booking-decision-service after provider integration is complete
   // File was moved to archive during refactor, will re-integrate in Phase 2
@@ -348,7 +371,7 @@ export async function buildBookingPayload(params: {
     deposit_amount: confirmedDepositAmount,
     total_sessions: validatedData.total_sessions,
     ktv_commission: lockedCommission,
-    discount_percent: normalizeDiscountPercent(validatedData.discount_percent),
+    discount_percent: serverCalculatedDiscount, // Phase 0.5: Server-enforced discount
     start_date: validatedData.start_date || null,
     assigned_ktv_id: validatedData.assigned_ktv_id || null,
     preferred_time: validatedData.preferred_time || null,

@@ -81,11 +81,37 @@ BEGIN
                     WHEN attendance.status = 'half_day' THEN 0.5
                     ELSE 0.0
                 END
-            ) AS work_days
+            ) AS work_days,
+            -- ⭐ Đếm số ngày trễ
+            COUNT(CASE WHEN attendance.status = 'late' THEN 1 END) AS late_days,
+            -- ⭐ Đếm số ngày vắng KHÔNG có phép approved (nghỉ không phép)
+            COUNT(CASE 
+                WHEN attendance.status = 'absent' 
+                AND NOT EXISTS (
+                    SELECT 1 FROM public.leave_requests lr
+                    WHERE lr.staff_id = attendance.ktv_id
+                      AND lr.tenant_id = attendance.tenant_id
+                      AND lr.status = 'approved'
+                      AND attendance.date >= lr.start_date
+                      AND attendance.date <= lr.end_date
+                )
+                THEN 1 
+            END) AS unauthorized_absent_days
         FROM public.attendance
         WHERE attendance.tenant_id = v_tenant_id
           AND date_trunc('month', attendance.date) = date_trunc('month', p_month_year)
         GROUP BY attendance.ktv_id
+    ),
+    auto_attendance_penalties AS (
+        -- ⭐ PHẦN MỚI: Tính khấu trừ tự động từ vi phạm chấm công
+        -- Phạt late + absent không phép (không có leave approved)
+        SELECT
+            aw.ktv_id,
+            (
+                COALESCE((SELECT (tenants.salary_config->>'penalty_late_per_day')::NUMERIC FROM public.tenants WHERE tenants.id = v_tenant_id), 50000) * aw.late_days +
+                COALESCE((SELECT (tenants.salary_config->>'penalty_absent_per_day')::NUMERIC FROM public.tenants WHERE tenants.id = v_tenant_id), 200000) * aw.unauthorized_absent_days
+            )::NUMERIC AS auto_penalty
+        FROM actual_work_days aw
     ),
     completed_sessions AS (
         -- Lấy toàn bộ buổi đã làm và hoa hồng tương ứng
@@ -179,15 +205,19 @@ BEGIN
             0
         )::NUMERIC AS product_sales_commission,
         
-        -- Khấu trừ lỗi vi phạm (đi trễ, vi phạm GPS)
-        COALESCE(er.saved_deductions, 0)::NUMERIC AS deductions,
+        -- ⭐ CẬP NHẬT: Khấu trừ vi phạm (ưu tiên saved, fallback về auto-calculated)
+        COALESCE(
+            er.saved_deductions,
+            ap.auto_penalty,
+            0
+        )::NUMERIC AS deductions,
         
         -- Các điều chỉnh/tạm ứng khác
         COALESCE(er.saved_advances, 0)::NUMERIC AS advances,
         
         -- ⭐ CẬP NHẬT: Tổng thu thực lĩnh thực tế (THÊM product_sales_commission)
         (
-            -- Lương cứng
+            -- ⭐ CẬP NHẬT: THÊM auto_penalty vào total_salary
             COALESCE(er.saved_base_salary::NUMERIC, ROUND((u.raw_base_salary / 26.0) * COALESCE(aw.work_days, 26.0))::NUMERIC) +
             -- Hoa hồng ca làm
             COALESCE(er.saved_session_bonus::NUMERIC, cs.total_commissions, 0)::NUMERIC +
@@ -206,8 +236,8 @@ BEGIN
             COALESCE(er.saved_kpi_bonus::NUMERIC, CASE WHEN COALESCE(cs.sessions_count, 0) > v_kpi_target_sessions THEN v_kpi_bonus_amount ELSE 0 END::NUMERIC) +
             -- ⭐ THÊM: Hoa hồng bán hàng sản phẩm
             COALESCE(er.saved_product_sales_commission::NUMERIC, psc.total_product_commission, 0)::NUMERIC -
-            -- Khấu trừ
-            COALESCE(er.saved_deductions, 0)::NUMERIC -
+            -- ⭐ CẬP NHẬT: Khấu trừ (ưu tiên saved, fallback về auto)
+            COALESCE(er.saved_deductions, ap.auto_penalty, 0)::NUMERIC -
             -- Tạm ứng
             COALESCE(er.saved_advances, 0)::NUMERIC
         ) AS total_salary,
@@ -219,6 +249,7 @@ BEGIN
         COALESCE(er.record_status, 'draft') AS status
     FROM ktv_users u
     LEFT JOIN actual_work_days aw ON u.id = aw.ktv_id
+    LEFT JOIN auto_attendance_penalties ap ON u.id = ap.ktv_id  -- ⭐ THÊM JOIN
     LEFT JOIN completed_sessions cs ON u.id = cs.ktv_id
     LEFT JOIN product_sales_commissions psc ON u.id = psc.ktv_id  -- ⭐ THÊM JOIN
     LEFT JOIN existing_salary_records er ON u.id = er.ktv_id

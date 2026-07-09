@@ -3,6 +3,9 @@
  * Ultra-minimal. Production-ready.
  */
 
+// Re-export extended Rule type for providers
+export type { Rule } from './rule';
+
 /**
  * Knowledge: Simple key-value dictionary.
  * No abstraction. No interface. Just data.

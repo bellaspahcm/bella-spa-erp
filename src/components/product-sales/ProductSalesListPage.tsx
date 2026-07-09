@@ -126,6 +126,11 @@ export function ProductSalesListPage() {
             
             return {
               ...sale,
+              total_amount: Number(sale.total_sales_amount || 0),
+              commission_amount: Number(sale.calculated_commission || 0),
+              unit_price: Number(sale.unit_price || 0),
+              override_commission_value: sale.override_commission_value !== null && sale.override_commission_value !== undefined ? Number(sale.override_commission_value) : null,
+              override_commission_enabled: sale.override_commission_type !== null && sale.override_commission_type !== undefined,
               ktv_name: ktvName,
               customer_name: customerName,
             };
@@ -134,6 +139,11 @@ export function ProductSalesListPage() {
             // Return a safe fallback object
             return {
               ...sale,
+              total_amount: 0,
+              commission_amount: 0,
+              unit_price: 0,
+              override_commission_value: null,
+              override_commission_enabled: false,
               ktv_name: 'Error',
               customer_name: 'Error',
             };
