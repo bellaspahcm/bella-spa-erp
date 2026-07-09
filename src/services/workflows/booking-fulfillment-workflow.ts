@@ -5,7 +5,7 @@
  * Integrates with actual business services (booking, inventory, KTV, notifications).
  * 
  * Features:
- * - Decision Engine integration (auto-approval)
+ * - Auto-approval check (simplified logic)
  * - Conditional branching (approved vs pending)
  * - Parallel notifications (customer + KTV)
  * - Compensation logic (rollback on failure)
@@ -13,9 +13,39 @@
  */
 
 import type { WorkflowDefinition } from '@/lib/workflow-engine';
-import { DecisionStep, ActionStep, ConditionStep, ParallelStep } from '@/lib/workflow-engine';
-import { DecisionEngine } from '@/lib/decision-engine';
-import { createClient } from '@/lib/supabase/server';
+import { ActionStep, ConditionStep, ParallelStep } from '@/lib/workflow-engine';
+import { createClient } from '@/lib/supabase-client';
+
+/**
+ * Simple auto-approval check (replaces Decision Engine for now)
+ * TODO: Integrate with Decision Engine Platform when Booking Provider is ready
+ */
+async function checkAutoApproval(params: {
+  totalAmount: number;
+  membershipTier: string;
+  tenantId: string;
+}): Promise<{ approved: boolean; reason: string }> {
+  // Simple rule: VIP customers with amount < 5M are auto-approved
+  if (params.membershipTier === 'vip' && params.totalAmount < 5000000) {
+    return {
+      approved: true,
+      reason: 'VIP customer with amount below threshold'
+    };
+  }
+
+  // Loyal customers with amount < 3M are auto-approved
+  if (params.membershipTier === 'loyal' && params.totalAmount < 3000000) {
+    return {
+      approved: true,
+      reason: 'Loyal customer with amount below threshold'
+    };
+  }
+
+  return {
+    approved: false,
+    reason: 'Requires manager approval'
+  };
+}
 
 /**
  * Booking workflow services (real implementations)
@@ -209,7 +239,6 @@ class BookingWorkflowServices {
  * Create Booking Fulfillment Workflow (Production)
  */
 export function createBookingFulfillmentWorkflow(): WorkflowDefinition {
-  const decisionEngine = new DecisionEngine();
   const services = new BookingWorkflowServices();
 
   return {
@@ -220,18 +249,23 @@ export function createBookingFulfillmentWorkflow(): WorkflowDefinition {
 
     steps: [
       // ============================================================
-      // Step 1: Check auto-approval eligibility (Decision Engine)
+      // Step 1: Check auto-approval eligibility (Simple business logic)
       // ============================================================
-      new DecisionStep(
+      new ActionStep(
         'check-auto-approval',
-        decisionEngine,
-        {
-          decisionType: 'booking_approval',
-          ruleType: 'booking-approval',
-          rule: {}, // Rules from BookingProvider
-          outputKey: 'approvalResult'
+        async (ctx) => {
+          const booking = ctx.data.booking as any;
+          const customer = ctx.data.customer as any;
+
+          const result = await checkAutoApproval({
+            totalAmount: booking.totalAmount,
+            membershipTier: customer.membershipTier || 'new',
+            tenantId: ctx.tenantId
+          });
+
+          return { approvalResult: result };
         },
-        'Check if booking qualifies for auto-approval using Decision Engine',
+        'Check if booking qualifies for auto-approval based on amount and customer tier',
         {
           maxAttempts: 3,
           delayMs: 1000,
@@ -246,8 +280,8 @@ export function createBookingFulfillmentWorkflow(): WorkflowDefinition {
         'approval-branch',
         (ctx) => {
           const result = ctx.data.approvalResult as any;
-          // Check if Decision Engine approved the booking
-          return result?.outcome === 'APPROVE' || result?.approved === true;
+          // Check if approved
+          return result?.approved === true;
         },
         'reserve-inventory',         // True branch: Continue to fulfillment
         'notify-pending-approval',   // False branch: Notify pending approval
@@ -394,7 +428,7 @@ export function createBookingFulfillmentWorkflow(): WorkflowDefinition {
           await services.sendPendingApprovalNotification({
             customerEmail: booking.customerEmail,
             bookingId: booking.id,
-            reason: approvalResult?.explanation || 'Booking requires manager approval'
+            reason: approvalResult?.reason || 'Booking requires manager approval'
           });
 
           return {

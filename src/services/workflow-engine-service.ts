@@ -12,7 +12,7 @@
 
 import { WorkflowEngine, SupabaseStateManager } from '@/lib/workflow-engine';
 import type { WorkflowDefinition, WorkflowContext, WorkflowExecutionResult } from '@/lib/workflow-engine';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase-client';
 
 /**
  * Feature flags for workflow engine

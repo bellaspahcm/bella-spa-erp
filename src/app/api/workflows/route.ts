@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getWorkflowEngineService, WORKFLOW_ENGINE_FEATURE_FLAGS } from '@/services/workflow-engine-service';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase-client';
 
 /**
  * GET /api/workflows
