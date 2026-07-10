@@ -11,9 +11,9 @@ import { createClient } from '@/lib/supabase-client';
 import type { UpdateWorkflowRequest } from '@/types/rule-management.types';
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     workflowId: string;
-  };
+  }>;
 }
 
 /**
@@ -25,7 +25,7 @@ export async function GET(
   { params }: RouteParams
 ) {
   try {
-    const { workflowId } = params;
+    const { workflowId } = await params;
 
     // Authenticate user
     const supabase = await createClient();
@@ -115,7 +115,7 @@ export async function PATCH(
   { params }: RouteParams
 ) {
   try {
-    const { workflowId } = params;
+    const { workflowId } = await params;
 
     // Authenticate user
     const supabase = await createClient();
@@ -268,7 +268,7 @@ export async function DELETE(
   { params }: RouteParams
 ) {
   try {
-    const { workflowId } = params;
+    const { workflowId } = await params;
 
     // Authenticate user
     const supabase = await createClient();

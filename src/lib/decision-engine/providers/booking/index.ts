@@ -3,8 +3,8 @@
  * 
  * Phase 1: Auto-Assignment Provider (COMPLETE)
  * Phase 2: Capacity Management Provider (COMPLETE)
- * Task 2: Conflict Detection Provider (COMPLETE)
- * Phase 4: Waitlist Management Provider (TODO)
+ * Phase 3: Conflict Detection Provider (COMPLETE)
+ * Phase 4: Waitlist Management Provider (IN PROGRESS)
  * Phase 5: Dynamic Pricing Provider (TODO)
  * Phase 6: Cancellation Logic Provider (TODO)
  * 
@@ -17,8 +17,11 @@ export { AutoAssignmentProvider } from './auto-assignment-provider';
 // Phase 2: Capacity Management Provider
 export { CapacityManagementProvider } from './capacity-management-provider';
 
-// Task 2: Conflict Detection Provider
+// Phase 3: Conflict Detection Provider
 export { ConflictDetectionProvider } from './conflict-detection-provider';
+
+// Phase 4: Waitlist Management Provider
+export { WaitlistManagementProvider, waitlistManagementProvider } from './waitlist-management-provider';
 
 // Types
 export type {
@@ -35,7 +38,7 @@ export type {
   CapacitySnapshot,
   CapacityKnowledge,
   CapacityEvaluationOptions,
-  // Task 2 types
+  // Phase 3 types
   ConflictDetectionInput,
   ConflictDetectionOutput,
   ConflictDetail,
@@ -43,6 +46,16 @@ export type {
   ConflictType,
   ConflictDetectionKnowledge,
   ConflictDetectionEvaluationOptions,
+  // Phase 4 types
+  WaitlistManagementInput,
+  WaitlistManagementOutput,
+  WaitlistEntry,
+  WaitlistPriorityFactors,
+  WaitlistNotification,
+  WaitlistSlotMatch,
+  WaitlistKnowledge,
+  WaitlistEvaluationOptions,
+  WaitlistStatistics,
 } from './types';
 
 // Rules
@@ -68,7 +81,7 @@ export {
   workingHoursCheckRule,
   bufferSlotManagementRule,
   peakHourManagementRule,
-  // Task 2 rules
+  // Phase 3 rules
   CONFLICT_DETECTION_RULES,
   RULE_CUSTOMER_DOUBLE_BOOKING,
   RULE_CUSTOMER_CLOSE_BOOKINGS,
@@ -83,4 +96,19 @@ export {
   getConflictRulesByCategory,
   getBlockingConflictRules,
   getWarningConflictRules,
+  // Phase 4 rules
+  waitlistRules,
+  waitlistRuleCategories,
+  defaultWaitlistConfig,
+  calculatePriorityScore,
+  vipFastTrack,
+  autoNotifyOnSlotAvailable,
+  expireOldEntries,
+  reserveSlotOnNotification,
+  enforceWaitlistCapacity,
+  preferredTimeMatchBonus,
+  highValueBookingPriority,
+  notifyBeforeExpiry,
+  positionUpdateNotification,
 } from './rules';
+

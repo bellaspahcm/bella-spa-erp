@@ -1,40 +1,48 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr';
+/**
+ * Supabase Server Client
+ * 
+ * Server-side Supabase client for use in:
+ * - Server Components
+ * - Server Actions
+ * - Route Handlers
+ * 
+ * This client uses cookies for authentication and should only be used server-side.
+ */
+
+import { cookies } from 'next/headers';
+import { createServerClient as createSupabaseServerClient } from '@supabase/ssr';
 import { Database } from '@/types/database.types';
-import { requireSupabasePublicEnv } from '@/lib/supabase-public-env';
 
-export async function createClient() {
-  const { cookies } = await import('next/headers');
-  const cookieStore = await cookies();
-  const { url, publicKey } = requireSupabasePublicEnv();
-
-  return createServerClient<Database>(
-    url,
-    publicKey,
+export function createServerClient() {
+  return createSupabaseServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          const val = cookieStore.get(name)?.value;
-          return val;
+        async get(name: string) {
+          const cookieStore = await cookies();
+          return cookieStore.get(name)?.value;
         },
-        set(name: string, value: string, options: CookieOptions) {
+        async set(name: string, value: string, options) {
           try {
+            const cookieStore = await cookies();
             cookieStore.set({ name, value, ...options });
-          } catch {
-            // The `set` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing
-            // user sessions.
+          } catch (error) {
+            // Handle cookie setting errors in middleware
           }
         },
-        remove(name: string, options: CookieOptions) {
+        async remove(name: string, options) {
           try {
+            const cookieStore = await cookies();
             cookieStore.set({ name, value: '', ...options });
-          } catch {
-            // The `remove` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing
-            // user sessions.
+          } catch (error) {
+            // Handle cookie removal errors in middleware
           }
         },
       },
     }
   );
 }
+
+// Backward compatibility alias
+export const createClient = createServerClient;

@@ -35,7 +35,8 @@ import {
   Activity,
   UserCheck,
   Building2,
-  ShoppingCart
+  ShoppingCart,
+  FileText
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -293,6 +294,7 @@ const menuItems: SidebarMenuItem[] = [
   { type: 'header', label: 'Hệ thống' },
   { icon: Key,             label: 'API Partners',        href: '/dashboard/admin/partners' },
   { icon: Brain,           label: 'Decision Engine',     href: '/dashboard/decision-engine/audit' },
+  { icon: FileText,        label: 'Rule Management',     href: '/dashboard/rules' },
   { icon: Activity,        label: 'Booking Engine',      href: '/dashboard/admin/booking-engine' },
   { icon: MonitorDot,      label: 'Trung tâm giám sát', href: '/dashboard/system-monitor' },
   { icon: History,         label: 'Nhật ký hệ thống',    href: '/dashboard/audit' },

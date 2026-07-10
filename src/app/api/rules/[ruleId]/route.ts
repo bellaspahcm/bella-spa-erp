@@ -1,14 +1,13 @@
 /**
- * Workflow Rule Detail API
+ * Rule Management UI - Rule Detail API
  * 
- * GET    /api/rule-management/rules/[ruleId] - Get rule
- * PATCH  /api/rule-management/rules/[ruleId] - Update rule
- * DELETE /api/rule-management/rules/[ruleId] - Delete rule
+ * GET    /api/rules/[ruleId] - Get rule with history
+ * PATCH  /api/rules/[ruleId] - Update rule
+ * DELETE /api/rules/[ruleId] - Archive rule
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase-client';
-import type { UpdateRuleRequest } from '@/types/rule-management.types';
+import { createClient } from '@/lib/supabase-server';
 
 interface RouteParams {
   params: Promise<{
@@ -16,8 +15,29 @@ interface RouteParams {
   }>;
 }
 
+export interface UpdateRuleRequest {
+  name?: string;
+  description?: string;
+  category?: string;
+  conditions?: Array<{
+    field: string;
+    operator: string;
+    value: unknown;
+    logicalOperator?: 'AND' | 'OR';
+  }>;
+  actions?: Array<{
+    type: string;
+    field?: string;
+    operation?: string;
+    value?: unknown;
+    reason?: string;
+  }>;
+  priority?: number;
+  status?: 'draft' | 'pending_approval' | 'approved' | 'active' | 'disabled' | 'archived';
+}
+
 /**
- * GET /api/rule-management/rules/[ruleId]
+ * GET /api/rules/[ruleId]
  * Get rule by ID
  */
 export async function GET(
@@ -58,9 +78,9 @@ export async function GET(
       );
     }
 
-    // Get rule
+    // Get rule directly from table
     const { data, error } = await supabase
-      .from('workflow_rules')
+      .from('rules')
       .select('*')
       .eq('id', ruleId)
       .eq('tenant_id', userData.tenant_id)
@@ -79,13 +99,23 @@ export async function GET(
       throw new Error(`Failed to get rule: ${error.message}`);
     }
 
+    if (!data) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Rule not found'
+        },
+        { status: 404 }
+      );
+    }
+
     return NextResponse.json({
       success: true,
       data
     });
 
   } catch (error) {
-    console.error('[API] Get rule failed:', error);
+    console.error('[API] Get rule failed:', error instanceof Error ? error.message : 'Unknown error');
 
     return NextResponse.json(
       {
@@ -98,17 +128,17 @@ export async function GET(
 }
 
 /**
- * PATCH /api/rule-management/rules/[ruleId]
- * Update rule
+ * PATCH /api/rules/[ruleId]
+ * Update rule (increments version, creates version snapshot)
  * 
  * Body (all optional):
  * - name: string
  * - description: string
- * - ruleType: string
+ * - category: string
+ * - conditions: array
+ * - actions: array
  * - priority: number
- * - config: object
- * - metadata: object
- * - isActive: boolean
+ * - status: string
  */
 export async function PATCH(
   request: NextRequest,
@@ -151,36 +181,63 @@ export async function PATCH(
     // Parse request body
     const body: UpdateRuleRequest = await request.json();
 
-    // Validate rule type if provided
-    if (body.ruleType) {
-      const validRuleTypes = ['condition', 'action', 'decision'];
-      if (!validRuleTypes.includes(body.ruleType)) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: `Invalid rule type. Must be one of: ${validRuleTypes.join(', ')}`
-          },
-          { status: 400 }
-        );
-      }
+    // Get current rule
+    const { data: currentRule, error: getRuleError } = await supabase
+      .from('rules')
+      .select('*')
+      .eq('id', ruleId)
+      .eq('tenant_id', userData.tenant_id)
+      .single();
+
+    if (getRuleError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Rule not found'
+        },
+        { status: 404 }
+      );
     }
 
     // Build update payload
     const updatePayload: Record<string, unknown> = {
+      updated_by: user.id,
       updated_at: new Date().toISOString()
     };
 
+    // Check if any significant fields changed (requires version increment)
+    let versionChanged = false;
+
+    if (body.conditions !== undefined) {
+      updatePayload.conditions = body.conditions;
+      versionChanged = true;
+    }
+    if (body.actions !== undefined) {
+      updatePayload.actions = body.actions;
+      versionChanged = true;
+    }
+    if (body.priority !== undefined && body.priority !== currentRule.priority) {
+      updatePayload.priority = body.priority;
+      versionChanged = true;
+    }
+    if (body.status !== undefined && body.status !== currentRule.status) {
+      updatePayload.status = body.status;
+      versionChanged = true;
+    }
+
+    // Metadata changes don't require version increment
     if (body.name !== undefined) updatePayload.name = body.name;
     if (body.description !== undefined) updatePayload.description = body.description;
-    if (body.ruleType !== undefined) updatePayload.rule_type = body.ruleType;
-    if (body.priority !== undefined) updatePayload.priority = body.priority;
-    if (body.config !== undefined) updatePayload.config = body.config;
-    if (body.metadata !== undefined) updatePayload.metadata = body.metadata;
-    if (body.isActive !== undefined) updatePayload.is_active = body.isActive;
+    if (body.category !== undefined) updatePayload.category = body.category;
+
+    // Increment version if significant changes
+    if (versionChanged) {
+      updatePayload.version = currentRule.version + 1;
+    }
 
     // Update rule
     const { data, error } = await supabase
-      .from('workflow_rules')
+      .from('rules')
       .update(updatePayload)
       .eq('id', ruleId)
       .eq('tenant_id', userData.tenant_id)
@@ -188,25 +245,20 @@ export async function PATCH(
       .single();
 
     if (error) {
-      if (error.code === 'PGRST116') {
-        return NextResponse.json(
-          {
-            success: false,
-            error: 'Rule not found'
-          },
-          { status: 404 }
-        );
-      }
       throw new Error(`Failed to update rule: ${error.message}`);
     }
 
     return NextResponse.json({
       success: true,
-      data
+      data,
+      meta: {
+        versionIncremented: versionChanged,
+        newVersion: versionChanged ? currentRule.version + 1 : currentRule.version
+      }
     });
 
   } catch (error) {
-    console.error('[API] Update rule failed:', error);
+    console.error('[API] Update rule failed:', error instanceof Error ? error.message : 'Unknown error');
 
     return NextResponse.json(
       {
@@ -219,8 +271,8 @@ export async function PATCH(
 }
 
 /**
- * DELETE /api/rule-management/rules/[ruleId]
- * Delete rule (hard delete)
+ * DELETE /api/rules/[ruleId]
+ * Archive rule (soft delete - sets status to 'archived')
  */
 export async function DELETE(
   request: NextRequest,
@@ -260,12 +312,18 @@ export async function DELETE(
       );
     }
 
-    // Delete rule (hard delete)
-    const { error } = await supabase
-      .from('workflow_rules')
-      .delete()
+    // Soft delete by setting status to archived
+    const { data, error } = await supabase
+      .from('rules')
+      .update({
+        status: 'archived',
+        updated_by: user.id,
+        updated_at: new Date().toISOString()
+      })
       .eq('id', ruleId)
-      .eq('tenant_id', userData.tenant_id);
+      .eq('tenant_id', userData.tenant_id)
+      .select()
+      .single();
 
     if (error) {
       if (error.code === 'PGRST116') {
@@ -277,19 +335,20 @@ export async function DELETE(
           { status: 404 }
         );
       }
-      throw new Error(`Failed to delete rule: ${error.message}`);
+      throw new Error(`Failed to archive rule: ${error.message}`);
     }
 
     return NextResponse.json({
       success: true,
       data: {
         id: ruleId,
-        deleted: true
+        archived: true,
+        archivedAt: new Date().toISOString()
       }
     });
 
   } catch (error) {
-    console.error('[API] Delete rule failed:', error);
+    console.error('[API] Archive rule failed:', error instanceof Error ? error.message : 'Unknown error');
 
     return NextResponse.json(
       {

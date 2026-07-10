@@ -44,7 +44,9 @@ export {
   getCalendarSessions,
 } from './session-actions';
 
-export { processSessionCompletion } from './session-completion-engine';
+// processSessionCompletion is intentionally NOT re-exported here.
+// It's a server-only engine used directly by server action files (complete-session-action.ts, ktv-actions.ts).
+// Exporting it from this barrel would pull next/headers into the client bundle via page.tsx.
 
 // Task 4.1D: Payment & Commission Files (Migrated)
 // Note: recordRemainingPayment, generateShareToken, getBookingDetailsWithPayment 

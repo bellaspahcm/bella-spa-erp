@@ -1,0 +1,73 @@
+/**
+ * Rule Provider Badge Component
+ * 
+ * Provider-specific badges with icons:
+ * - booking: 📅
+ * - discount: 💰
+ * - payroll: 💵
+ * - commission: 💸
+ * - inventory: 📦
+ */
+
+import { Badge } from '@/components/ui/badge';
+import { 
+  Calendar,
+  Tag,
+  Wallet,
+  TrendingUp,
+  Package,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+interface RuleProviderBadgeProps {
+  provider: string;
+  className?: string;
+}
+
+const PROVIDER_CONFIG = {
+  booking: {
+    label: 'Booking',
+    icon: Calendar,
+    className: 'bg-blue-50 text-blue-700 border-blue-200',
+  },
+  discount: {
+    label: 'Discount',
+    icon: Tag,
+    className: 'bg-purple-50 text-purple-700 border-purple-200',
+  },
+  payroll: {
+    label: 'Payroll',
+    icon: Wallet,
+    className: 'bg-green-50 text-green-700 border-green-200',
+  },
+  commission: {
+    label: 'Commission',
+    icon: TrendingUp,
+    className: 'bg-orange-50 text-orange-700 border-orange-200',
+  },
+  inventory: {
+    label: 'Inventory',
+    icon: Package,
+    className: 'bg-amber-50 text-amber-700 border-amber-200',
+  },
+} as const;
+
+export function RuleProviderBadge({ provider, className }: RuleProviderBadgeProps) {
+  const config = PROVIDER_CONFIG[provider as keyof typeof PROVIDER_CONFIG] || {
+    label: provider,
+    icon: Package,
+    className: 'bg-gray-50 text-gray-700 border-gray-200',
+  };
+
+  const Icon = config.icon;
+
+  return (
+    <Badge
+      variant="outline"
+      className={cn('flex items-center gap-1.5 w-fit', config.className, className)}
+    >
+      <Icon className="h-3 w-3" />
+      <span>{config.label}</span>
+    </Badge>
+  );
+}

@@ -15,7 +15,7 @@ import { createClient } from '@/lib/supabase-client';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { executionId: string } }
+  { params }: { params: Promise<{ executionId: string }> }
 ) {
   try {
     // Check if workflow engine is enabled
@@ -29,7 +29,7 @@ export async function GET(
       );
     }
 
-    const { executionId } = params;
+    const { executionId } = await params;
 
     // Authenticate user
     const supabase = await createClient();
@@ -84,7 +84,7 @@ export async function GET(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { executionId: string } }
+  { params }: { params: Promise<{ executionId: string }> }
 ) {
   try {
     // Check if workflow engine is enabled
@@ -98,7 +98,7 @@ export async function DELETE(
       );
     }
 
-    const { executionId } = params;
+    const { executionId } = await params;
 
     // Parse request body
     const body = await request.json();

@@ -1,316 +1,298 @@
 /**
- * Workflow Engine Core Types
+ * @fileoverview Workflow Engine Types
  * 
- * Type definitions for Workflow Engine Platform following Decision Engine patterns.
- * Stateful orchestration layer for multi-step business processes.
+ * Type definitions for the Workflow Engine that orchestrates multi-step
+ * business processes with Decision Engine integration.
  * 
- * @see docs/WORKFLOW_ENGINE_ARCHITECTURE.md
+ * @module lib/workflow-engine/types
  */
+
+import type { DecisionResult } from '../decision-engine/types';
+
+/**
+ * Workflow step types
+ */
+export type WorkflowStepType = 
+  | 'decision'      // Execute a Decision Engine provider
+  | 'action'        // Execute a business action (DB update, API call, etc.)
+  | 'conditional'   // Branch based on conditions
+  | 'parallel'      // Execute multiple steps in parallel
+  | 'wait';         // Wait for external event or human approval
 
 /**
  * Workflow execution status
  */
-export type WorkflowExecutionStatus =
-  | 'pending'
-  | 'running'
-  | 'paused'
-  | 'completed'
-  | 'failed'
-  | 'cancelled';
+export type WorkflowStatus = 
+  | 'pending'       // Workflow created but not started
+  | 'running'       // Currently executing
+  | 'waiting'       // Waiting for external event/approval
+  | 'completed'     // Successfully completed all steps
+  | 'failed'        // Execution failed
+  | 'cancelled';    // Manually cancelled
 
 /**
  * Step execution status
  */
-export type StepExecutionStatus =
-  | 'pending'
-  | 'running'
-  | 'completed'
-  | 'failed'
-  | 'skipped';
+export type StepStatus = 
+  | 'pending'       // Not yet executed
+  | 'running'       // Currently executing
+  | 'completed'     // Successfully completed
+  | 'failed'        // Execution failed
+  | 'skipped';      // Skipped due to conditional logic
 
 /**
- * Workflow context (execution state + shared data)
+ * Condition operators for branching logic
  */
-export interface WorkflowContext {
-  /** Unique workflow execution ID */
-  executionId: string;
-  
-  /** Workflow definition ID */
-  workflowId: string;
-  
-  /** Workflow version */
-  workflowVersion: string;
-  
-  /** Tenant context */
-  tenantId: string;
-  
-  /** User who triggered workflow */
-  userId?: string;
-  
-  /** Correlation ID for tracing */
-  correlationId: string;
-  
-  /** Current step index */
-  currentStepIndex: number;
-  
-  /** Shared data (mutable, passed between steps) */
-  data: Record<string, unknown>;
-  
-  /** Step execution results (immutable history) */
-  stepResults: StepExecutionResult[];
-  
-  /** Additional metadata */
-  metadata?: Record<string, unknown>;
+export type ConditionOperator = 
+  | 'equals'
+  | 'notEquals'
+  | 'greaterThan'
+  | 'lessThan'
+  | 'greaterThanOrEqual'
+  | 'lessThanOrEqual'
+  | 'contains'
+  | 'notContains'
+  | 'in'
+  | 'notIn';
+
+/**
+ * Condition definition for branching
+ */
+export interface WorkflowCondition {
+  field: string;              // Field path in workflow context (e.g., 'decision.status')
+  operator: ConditionOperator;
+  value: any;                 // Value to compare against
 }
 
 /**
- * Step output (returned by IStep.execute())
+ * Decision step configuration
  */
-export interface StepOutput {
-  /** Output data to merge into workflow context */
-  [key: string]: unknown;
-  
-  /** Special control flags (optional) */
-  _control?: {
-    /** Pause workflow after this step */
-    pause?: boolean;
-    
-    /** Skip remaining steps */
-    skipRemaining?: boolean;
-    
-    /** Jump to specific step by name */
-    nextStepName?: string;
-  };
+export interface DecisionStepConfig {
+  providerType: string;       // e.g., 'booking_approval', 'discount_eligibility'
+  input: Record<string, any> | string; // Input context or reference to workflow variables
+  outputVariable?: string;    // Store result in this variable (default: step.id)
 }
 
 /**
- * Step execution result (stored in context.stepResults)
+ * Action step configuration
  */
-export interface StepExecutionResult {
-  /** Step name */
-  stepName: string;
-  
-  /** Execution status */
-  status: StepExecutionStatus;
-  
-  /** Output data (if completed) */
-  output?: Record<string, unknown>;
-  
-  /** Error message (if failed) */
-  error?: string;
-  
-  /** Execution time in milliseconds */
-  executionTime?: number;
-  
-  /** Retry count */
-  retryCount?: number;
-  
-  /** Whether step should pause workflow */
-  shouldPause?: boolean;
-  
-  /** Next step name (for conditional branching) */
-  nextStepName?: string;
-  
-  /** Whether to skip remaining steps */
-  shouldSkipRemainingSteps?: boolean;
+export interface ActionStepConfig {
+  actionType: string;         // e.g., 'update_booking', 'send_notification'
+  input: Record<string, any> | string;
+  outputVariable?: string;
 }
 
 /**
- * Workflow execution result (returned by WorkflowEngine.execute())
+ * Conditional step configuration
  */
-export interface WorkflowExecutionResult {
-  /** Execution ID */
-  executionId: string;
-  
-  /** Execution status */
-  status: WorkflowExecutionStatus;
-  
-  /** Output data (final context.data) */
-  output?: Record<string, unknown>;
-  
-  /** Error message (if failed) */
-  error?: string;
-  
-  /** Step execution results */
-  steps: StepExecutionResult[];
-  
-  /** Total execution time in milliseconds */
-  executionTime?: number;
+export interface ConditionalStepConfig {
+  conditions: WorkflowCondition[];
+  matchAll?: boolean;         // AND (true) vs OR (false) logic
+  thenSteps: string[];        // Step IDs to execute if condition passes
+  elseSteps?: string[];       // Step IDs to execute if condition fails
 }
 
 /**
- * Retry policy for step execution
+ * Parallel step configuration
  */
-export interface RetryPolicy {
-  /** Maximum retry attempts */
-  maxAttempts: number;
-  
-  /** Initial delay in milliseconds */
-  delayMs: number;
-  
-  /** Backoff strategy */
-  backoff?: 'linear' | 'exponential';
-  
-  /** Maximum delay cap (for exponential backoff) */
-  maxDelayMs?: number;
-  
-  /** Retry only on specific error types */
-  retryOn?: (error: Error) => boolean;
+export interface ParallelStepConfig {
+  steps: string[];            // Step IDs to execute in parallel
+  waitForAll?: boolean;       // Wait for all (true) vs any (false)
 }
 
 /**
- * Step interface (base abstraction for all workflow steps)
+ * Wait step configuration
  */
-export interface IStep {
-  /** Unique step name */
+export interface WaitStepConfig {
+  eventType?: string;         // Wait for specific event type
+  timeout?: number;           // Timeout in milliseconds
+  condition?: WorkflowCondition; // Optional condition to proceed
+}
+
+/**
+ * Workflow step definition
+ */
+export interface WorkflowStep {
+  id: string;
+  type: WorkflowStepType;
   name: string;
-  
-  /** Step type (for logging/debugging) */
-  type: 'decision' | 'action' | 'condition' | 'parallel';
-  
-  /** Step description (optional) */
   description?: string;
   
-  /** Retry policy (optional) */
-  retryPolicy?: RetryPolicy;
+  // Type-specific configuration
+  decision?: DecisionStepConfig;
+  action?: ActionStepConfig;
+  conditional?: ConditionalStepConfig;
+  parallel?: ParallelStepConfig;
+  wait?: WaitStepConfig;
   
-  /** Continue workflow even if this step fails */
-  continueOnError?: boolean;
+  // Execution behavior
+  retryStrategy?: RetryStrategy;
+  timeout?: number;           // Step-level timeout (ms)
   
-  /** Execute the step logic */
-  execute(context: WorkflowContext): Promise<StepOutput>;
-  
-  /** Compensation logic (rollback) - optional */
-  compensate?(context: WorkflowContext): Promise<void>;
+  // Error handling
+  onError?: 'fail' | 'continue' | 'retry';
+  fallbackStep?: string;      // Step ID to execute on error
 }
 
 /**
- * Workflow definition (declarative DSL)
+ * Retry strategy configuration
+ */
+export interface RetryStrategy {
+  maxAttempts: number;
+  delayMs: number;
+  backoffMultiplier?: number; // Exponential backoff (default: 1.0 = no backoff)
+}
+
+/**
+ * Workflow definition
  */
 export interface WorkflowDefinition {
-  /** Unique workflow ID */
   id: string;
-  
-  /** Workflow version (semver) */
+  name: string;
+  description?: string;
   version: string;
   
-  /** Human-readable name */
-  name: string;
+  // Workflow metadata
+  tags?: string[];
+  createdBy?: string;
+  createdAt?: Date;
   
-  /** Description */
-  description?: string;
+  // Workflow structure
+  steps: WorkflowStep[];
+  initialStep: string;        // ID of first step to execute
   
-  /** Workflow steps (executed in order) */
-  steps: IStep[];
+  // Global configuration
+  timeout?: number;           // Workflow-level timeout (ms)
+  retryStrategy?: RetryStrategy;
   
-  /** Default retry policy for all steps */
-  defaultRetryPolicy?: RetryPolicy;
-  
-  /** Workflow timeout (ms) */
-  timeout?: number;
-  
-  /** Metadata */
-  metadata?: Record<string, unknown>;
+  // Variables and context
+  inputSchema?: Record<string, any>; // JSON Schema for input validation
+  outputSchema?: Record<string, any>; // JSON Schema for output validation
 }
 
 /**
- * Workflow execution record (stored in database)
+ * Step execution result
  */
-export interface WorkflowExecution {
-  /** Unique execution ID */
-  id: string;
-  
-  /** Tenant ID */
-  tenantId: string;
-  
-  /** Workflow definition ID */
-  workflowId: string;
-  
-  /** Workflow version */
-  workflowVersion: string;
-  
-  /** Execution status */
-  status: WorkflowExecutionStatus;
-  
-  /** Workflow context */
-  context: WorkflowContext;
-  
-  /** Started timestamp */
+export interface StepExecutionResult {
+  stepId: string;
+  status: StepStatus;
+  output?: any;               // Step output data
+  error?: Error;
   startedAt: Date;
-  
-  /** Completed timestamp */
   completedAt?: Date;
-  
-  /** Error message (if failed) */
-  errorMessage?: string;
-  
-  /** Created timestamp */
-  createdAt: Date;
-  
-  /** Updated timestamp */
-  updatedAt: Date;
+  executionTimeMs?: number;
+  retryCount?: number;
 }
 
 /**
- * Step execution record (stored in database)
+ * Workflow execution context
  */
-export interface StepExecution {
-  /** Unique step execution ID */
-  id: string;
+export interface WorkflowContext {
+  workflowId: string;
+  executionId: string;
   
-  /** Workflow execution ID (FK) */
-  workflowExecutionId: string;
+  // Execution state
+  status: WorkflowStatus;
+  currentStep?: string;
+  variables: Record<string, any>; // Workflow variables
   
-  /** Step name */
-  stepName: string;
+  // Execution history
+  stepResults: StepExecutionResult[];
   
-  /** Step index */
-  stepIndex: number;
-  
-  /** Execution status */
-  status: StepExecutionStatus;
-  
-  /** Input data */
-  inputData?: Record<string, unknown>;
-  
-  /** Output data */
-  outputData?: Record<string, unknown>;
-  
-  /** Error message (if failed) */
-  errorMessage?: string;
-  
-  /** Retry count */
-  retryCount: number;
-  
-  /** Started timestamp */
-  startedAt?: Date;
-  
-  /** Completed timestamp */
+  // Metadata
+  startedAt: Date;
   completedAt?: Date;
-  
-  /** Execution time in milliseconds */
   executionTimeMs?: number;
   
-  /** Created timestamp */
-  createdAt: Date;
+  // Error tracking
+  errors?: Error[];
+  
+  // Tenant isolation
+  tenantId: string;
+  userId?: string;
 }
 
 /**
- * Helper: Create initial workflow context
+ * Workflow execution options
  */
-export function createWorkflowContext(
-  partial: Partial<WorkflowContext> & Pick<WorkflowContext, 'workflowId' | 'tenantId'>
-): WorkflowContext {
-  return {
-    executionId: partial.executionId ?? crypto.randomUUID(),
-    workflowId: partial.workflowId,
-    workflowVersion: partial.workflowVersion ?? '1.0.0',
-    tenantId: partial.tenantId,
-    userId: partial.userId,
-    correlationId: partial.correlationId ?? crypto.randomUUID(),
-    currentStepIndex: partial.currentStepIndex ?? 0,
-    data: partial.data ?? {},
-    stepResults: partial.stepResults ?? [],
-    metadata: partial.metadata
-  };
+export interface WorkflowExecutionOptions {
+  tenantId: string;
+  userId?: string;
+  input: Record<string, any>;
+  
+  // Execution behavior
+  async?: boolean;            // Run asynchronously (default: true)
+  timeout?: number;           // Override workflow timeout
+  
+  // Observability
+  traceId?: string;
+  metadata?: Record<string, any>;
+}
+
+/**
+ * Workflow event types
+ */
+export type WorkflowEventType =
+  | 'workflow.started'
+  | 'workflow.completed'
+  | 'workflow.failed'
+  | 'workflow.cancelled'
+  | 'step.started'
+  | 'step.completed'
+  | 'step.failed'
+  | 'step.skipped';
+
+/**
+ * Workflow event payload
+ */
+export interface WorkflowEvent {
+  type: WorkflowEventType;
+  workflowId: string;
+  executionId: string;
+  stepId?: string;
+  timestamp: Date;
+  payload: any;
+  tenantId: string;
+  userId?: string;
+}
+
+/**
+ * Workflow action handler
+ */
+export type ActionHandler = (
+  config: ActionStepConfig,
+  context: WorkflowContext
+) => Promise<any>;
+
+/**
+ * Workflow action registry
+ */
+export interface ActionRegistry {
+  register(actionType: string, handler: ActionHandler): void;
+  get(actionType: string): ActionHandler | undefined;
+  has(actionType: string): boolean;
+}
+
+/**
+ * Workflow engine configuration
+ */
+export interface WorkflowEngineConfig {
+  // Storage backend (in-memory for now, DB later)
+  storage?: 'memory' | 'database';
+  
+  // Default timeouts
+  defaultWorkflowTimeout?: number;
+  defaultStepTimeout?: number;
+  
+  // Retry defaults
+  defaultRetryStrategy?: RetryStrategy;
+  
+  // Observability
+  enableMetrics?: boolean;
+  enableAuditTrail?: boolean;
+  enableEvents?: boolean;
+  
+  // Performance
+  maxConcurrentWorkflows?: number;
+  maxParallelSteps?: number;
 }

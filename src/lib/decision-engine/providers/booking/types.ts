@@ -726,3 +726,469 @@ export interface ConflictDetectionEvaluationOptions {
   /** Dry run (don't modify state) */
   dryRun?: boolean;
 }
+
+// ============================================================================
+// WAITLIST MANAGEMENT PROVIDER TYPES (Phase 4)
+// ============================================================================
+
+/**
+ * Waitlist Management Input
+ * 
+ * Context required to add customer to waitlist and manage waitlist entries.
+ */
+export interface WaitlistManagementInput {
+  /** Tenant identifier */
+  tenantId: string;
+
+  /** Customer information */
+  customer: {
+    /** Customer identifier */
+    id: string;
+    /** Customer name */
+    name: string;
+    /** Customer tier (affects priority) */
+    tier: 'vip' | 'loyal' | 'new';
+    /** Customer email (for notifications) */
+    email: string;
+    /** Customer phone (for notifications) */
+    phone: string;
+    /** Contact preferences */
+    contactPreferences: {
+      /** Preferred notification channel */
+      preferredChannel: 'email' | 'sms' | 'app';
+      /** Accepts marketing communications */
+      acceptsMarketing: boolean;
+    };
+  };
+
+  /** Booking request details */
+  booking: {
+    /** Service/package identifier */
+    serviceId: string;
+    /** Service name */
+    serviceName: string;
+    /** Service type */
+    serviceType: string;
+    /** Booking value (for priority calculation) */
+    bookingValue: number;
+    /** Preferred KTV ID (if any) */
+    preferredKtvId?: string;
+    /** Preferred date (ISO format YYYY-MM-DD) */
+    preferredDate: string;
+    /** Preferred start time (HH:mm format) */
+    preferredStartTime: string;
+    /** Expected duration (minutes) */
+    durationMinutes: number;
+    /** Flexible with timing? */
+    isFlexible: boolean;
+    /** Alternative times acceptable (if flexible) */
+    alternativeTimes?: Array<{
+      date: string;
+      startTime: string;
+    }>;
+  };
+
+  /** Waitlist configuration */
+  config: {
+    /** Enable priority-based ranking */
+    enablePriorityRanking: boolean;
+    /** Enable auto-notification on slot availability */
+    enableAutoNotification: boolean;
+    /** Slot reservation duration (minutes) */
+    slotReservationMinutes: number;
+    /** Waitlist expiry duration (hours) */
+    waitlistExpiryHours: number;
+    /** Maximum waitlist size per time slot */
+    maxWaitlistSize: number;
+  };
+
+  /** Existing waitlist entries for requested slot */
+  existingWaitlist: WaitlistEntry[];
+
+  /** Additional metadata */
+  metadata?: Record<string, unknown>;
+}
+
+/**
+ * Waitlist Management Output
+ * 
+ * Result of waitlist management decision.
+ */
+export interface WaitlistManagementOutput {
+  /** Was operation successful? */
+  success: boolean;
+
+  /** Operation type performed */
+  operation: 'added' | 'updated' | 'removed' | 'notified' | 'expired' | 'rejected';
+
+  /** Waitlist entry details */
+  entry: {
+    /** Waitlist entry ID */
+    id: string;
+    /** Customer ID */
+    customerId: string;
+    /** Booking request ID */
+    bookingRequestId: string;
+    /** Priority score (0-100) */
+    priorityScore: number;
+    /** Position in waitlist (1-based) */
+    position: number;
+    /** Estimated wait time (minutes) */
+    estimatedWaitMinutes: number;
+    /** Entry status */
+    status: 'active' | 'notified' | 'reserved' | 'expired' | 'converted';
+    /** Created at timestamp */
+    createdAt: string;
+    /** Expires at timestamp */
+    expiresAt: string;
+  };
+
+  /** Reason for result */
+  reason: string;
+
+  /** Matched rules */
+  matchedRules: string[];
+
+  /** Notification details (if notification sent) */
+  notification?: {
+    /** Was notification sent? */
+    sent: boolean;
+    /** Notification channel used */
+    channel: 'email' | 'sms' | 'app';
+    /** Notification message */
+    message: string;
+    /** Sent at timestamp */
+    sentAt: string;
+  };
+
+  /** Waitlist statistics */
+  stats: {
+    /** Total entries in waitlist */
+    totalEntries: number;
+    /** Current position */
+    currentPosition: number;
+    /** Average wait time (minutes) */
+    avgWaitMinutes: number;
+    /** Waitlist capacity remaining */
+    capacityRemaining: number;
+  };
+
+  /** Execution time (ms) */
+  executionTime: number;
+
+  /** Provider identifier */
+  provider: 'WaitlistManagementProvider';
+
+  /** Confidence score (0-1) */
+  confidence: number;
+}
+
+/**
+ * Waitlist Entry
+ * 
+ * Represents a single waitlist entry.
+ */
+export interface WaitlistEntry {
+  /** Entry ID */
+  id: string;
+
+  /** Tenant ID */
+  tenantId: string;
+
+  /** Customer ID */
+  customerId: string;
+
+  /** Customer name */
+  customerName: string;
+
+  /** Customer tier */
+  customerTier: 'vip' | 'loyal' | 'new';
+
+  /** Booking request ID */
+  bookingRequestId: string;
+
+  /** Service ID */
+  serviceId: string;
+
+  /** Service name */
+  serviceName: string;
+
+  /** Booking value */
+  bookingValue: number;
+
+  /** Preferred date */
+  preferredDate: string;
+
+  /** Preferred start time */
+  preferredStartTime: string;
+
+  /** Duration (minutes) */
+  durationMinutes: number;
+
+  /** Priority score (0-100) */
+  priorityScore: number;
+
+  /** Position in waitlist (1-based) */
+  position: number;
+
+  /** Wait time so far (minutes) */
+  waitMinutes: number;
+
+  /** Entry status */
+  status: 'active' | 'notified' | 'reserved' | 'expired' | 'converted';
+
+  /** Notification status */
+  notificationStatus?: {
+    /** Times notified */
+    timesNotified: number;
+    /** Last notified at */
+    lastNotifiedAt: string;
+    /** Notification response */
+    response?: 'accepted' | 'declined' | 'no_response';
+  };
+
+  /** Slot reservation (if notified) */
+  slotReservation?: {
+    /** Reservation start time */
+    reservedAt: string;
+    /** Reservation expires at */
+    expiresAt: string;
+    /** Slot details */
+    slot: {
+      date: string;
+      startTime: string;
+      ktvId?: string;
+    };
+  };
+
+  /** Created at timestamp */
+  createdAt: string;
+
+  /** Expires at timestamp */
+  expiresAt: string;
+
+  /** Last updated at */
+  updatedAt: string;
+}
+
+/**
+ * Waitlist Priority Factors
+ * 
+ * Factors contributing to priority calculation.
+ */
+export interface WaitlistPriorityFactors {
+  /** Base priority by customer tier */
+  tierScore: number; // VIP: 40, Loyal: 25, New: 10
+
+  /** Priority by booking value */
+  valueScore: number; // 0-30 based on booking value
+
+  /** Priority by wait time */
+  waitTimeScore: number; // 0-20 based on minutes waiting
+
+  /** Bonus for flexibility */
+  flexibilityBonus: number; // 0-10 if customer is flexible with timing
+
+  /** Total priority score */
+  totalScore: number; // Sum of all factors (0-100)
+}
+
+/**
+ * Waitlist Notification
+ * 
+ * Notification details for slot availability.
+ */
+export interface WaitlistNotification {
+  /** Notification ID */
+  id: string;
+
+  /** Waitlist entry ID */
+  waitlistEntryId: string;
+
+  /** Customer ID */
+  customerId: string;
+
+  /** Notification channel */
+  channel: 'email' | 'sms' | 'app';
+
+  /** Notification type */
+  type: 'slot_available' | 'position_updated' | 'expiring_soon' | 'expired';
+
+  /** Notification message */
+  message: string;
+
+  /** Available slot details (if slot_available) */
+  slot?: {
+    date: string;
+    startTime: string;
+    ktvId?: string;
+    reservationExpiresAt: string;
+  };
+
+  /** Notification status */
+  status: 'pending' | 'sent' | 'failed' | 'read';
+
+  /** Sent at timestamp */
+  sentAt?: string;
+
+  /** Read at timestamp */
+  readAt?: string;
+
+  /** Customer response */
+  response?: {
+    /** Response type */
+    type: 'accepted' | 'declined';
+    /** Responded at */
+    respondedAt: string;
+    /** Decline reason (if declined) */
+    reason?: string;
+  };
+}
+
+/**
+ * Waitlist Slot Match
+ * 
+ * Details of slot that became available.
+ */
+export interface WaitlistSlotMatch {
+  /** Slot date */
+  date: string;
+
+  /** Slot start time */
+  startTime: string;
+
+  /** Slot duration (minutes) */
+  durationMinutes: number;
+
+  /** KTV ID (if specific KTV) */
+  ktvId?: string;
+
+  /** KTV name */
+  ktvName?: string;
+
+  /** Match score (0-100) */
+  matchScore: number;
+
+  /** Match factors */
+  matchFactors: {
+    /** Matches preferred date? */
+    matchesPreferredDate: boolean;
+    /** Matches preferred time? */
+    matchesPreferredTime: boolean;
+    /** Matches preferred KTV? */
+    matchesPreferredKtv: boolean;
+    /** Time difference (minutes from preferred) */
+    timeDifference: number;
+  };
+
+  /** Slot became available at */
+  availableAt: string;
+}
+
+/**
+ * Waitlist Knowledge (for rule evaluation)
+ */
+export interface WaitlistKnowledge {
+  tenantId: string;
+  customerId: string;
+  'customer.tier': string;
+  'customer.name': string;
+  serviceId: string;
+  serviceName: string;
+  bookingValue: number;
+  preferredDate: string;
+  preferredStartTime: string;
+  durationMinutes: number;
+  isFlexible: boolean;
+  'config.enablePriorityRanking': boolean;
+  'config.enableAutoNotification': boolean;
+  'config.maxWaitlistSize': number;
+  'config.waitlistExpiryHours': number;
+  currentWaitlistSize: number;
+  waitMinutes: number;
+  priorityScore: number;
+  position: number;
+  isWaitlistFull: boolean;
+  isExpired: boolean;
+  [key: string]: unknown;
+}
+
+/**
+ * Waitlist Evaluation Options
+ */
+export interface WaitlistEvaluationOptions {
+  /** Enable debug logging */
+  debug?: boolean;
+
+  /** Skip notification (just add to waitlist) */
+  skipNotification?: boolean;
+
+  /** Force priority override */
+  forcePriority?: number;
+
+  /** Dry run (don't modify state) */
+  dryRun?: boolean;
+
+  /** Include detailed priority breakdown */
+  includeDetailedBreakdown?: boolean;
+}
+
+/**
+ * Waitlist Statistics
+ * 
+ * Aggregated waitlist metrics for reporting.
+ */
+export interface WaitlistStatistics {
+  /** Total entries currently in waitlist */
+  totalEntries: number;
+
+  /** Entries by status */
+  entriesByStatus: {
+    active: number;
+    notified: number;
+    reserved: number;
+    expired: number;
+    converted: number;
+  };
+
+  /** Average wait time (minutes) */
+  avgWaitMinutes: number;
+
+  /** Median wait time (minutes) */
+  medianWaitMinutes: number;
+
+  /** Max wait time (minutes) */
+  maxWaitMinutes: number;
+
+  /** Conversion rate (converted / total) */
+  conversionRate: number;
+
+  /** Average position in queue */
+  avgPosition: number;
+
+  /** Expiry rate (expired / total) */
+  expiryRate: number;
+
+  /** Most popular time slots */
+  popularTimeSlots: Array<{
+    date: string;
+    startTime: string;
+    entriesCount: number;
+  }>;
+
+  /** Entries by customer tier */
+  entriesByTier: {
+    vip: number;
+    loyal: number;
+    new: number;
+  };
+
+  /** Period start */
+  periodStart: string;
+
+  /** Period end */
+  periodEnd: string;
+
+  /** Last updated */
+  lastUpdated: string;
+}

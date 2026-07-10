@@ -3,10 +3,14 @@
  * 
  * Phase 1: Assignment Rules (7 rules)
  * Phase 2: Capacity Rules (7 rules)
+ * Phase 3: Conflict Detection Rules (10 rules)
+ * Phase 4: Waitlist Management Rules (10 rules)
  * 
  * Priority Ranges:
  * - Assignment: 100-170
  * - Capacity: 200-260
+ * - Conflict: 300-390
+ * - Waitlist: 400-500
  * 
  * @module decision-engine/providers/booking/rules
  */
@@ -38,7 +42,7 @@ export {
   capacityRulesSummary,
 } from './capacity-rules';
 
-// Task 2: Conflict Detection Rules (10 rules)
+// Phase 3: Conflict Detection Rules (10 rules)
 export {
   RULE_CUSTOMER_DOUBLE_BOOKING,
   RULE_CUSTOMER_CLOSE_BOOKINGS,
@@ -55,3 +59,20 @@ export {
   getBlockingConflictRules,
   getWarningConflictRules,
 } from './conflict-rules';
+
+// Phase 4: Waitlist Management Rules (10 rules)
+export {
+  calculatePriorityScore,
+  vipFastTrack,
+  autoNotifyOnSlotAvailable,
+  expireOldEntries,
+  reserveSlotOnNotification,
+  enforceWaitlistCapacity,
+  preferredTimeMatchBonus,
+  highValueBookingPriority,
+  notifyBeforeExpiry,
+  positionUpdateNotification,
+  waitlistRules,
+  waitlistRuleCategories,
+  defaultWaitlistConfig,
+} from './waitlist-rules';
