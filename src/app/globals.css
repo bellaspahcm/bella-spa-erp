@@ -3496,3 +3496,9 @@ html[data-tenant-module="beauty_spa"] .border-rose-100\/50 {
   table-layout: fixed !important;
 }
 
+/* Salary Reconciliation Table Full Width Fix */
+.salary-reconciliation-table {
+  width: 100% !important;
+  min-width: 64rem !important;
+}
+

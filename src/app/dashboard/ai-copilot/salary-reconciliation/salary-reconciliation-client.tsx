@@ -153,7 +153,7 @@ export function SalaryReconciliationClient({
         </div>
 
         <div className="overflow-x-auto overscroll-x-contain custom-scrollbar">
-          <table className="bella-data-table min-w-[64rem] w-full text-xs">
+          <table className="bella-data-table salary-reconciliation-table min-w-[64rem] w-full text-xs">
             <thead>
               <tr className="border-b border-border bg-muted/40">
                 {[vocab.worker.short, 'AI tính (đ)', 'Kế toán chốt (đ)', 'Chênh lệch (đ)', 'Chênh lệch %', 'Trạng thái chốt', 'Kết quả'].map((h) => (
