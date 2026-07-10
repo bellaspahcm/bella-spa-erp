@@ -439,3 +439,290 @@ export interface CapacityEvaluationOptions {
   /** Generate capacity snapshot after check */
   generateSnapshot?: boolean;
 }
+
+
+// ============================================================================
+// CONFLICT DETECTION PROVIDER TYPES (Task 2)
+// ============================================================================
+
+/**
+ * Conflict Detection Input
+ * 
+ * Context required to detect conflicts for booking request.
+ */
+export interface ConflictDetectionInput {
+  /** Tenant identifier */
+  tenantId: string;
+
+  /** Booking request details */
+  booking: {
+    /** Customer identifier */
+    customerId: string;
+    /** KTV identifier (if assigned) */
+    ktvId?: string;
+    /** Room/bed identifier (if applicable) */
+    roomId?: string;
+    /** Equipment IDs required (if applicable) */
+    equipmentIds?: string[];
+    /** Package ID (if part of package) */
+    packageId?: string;
+    /** Session number in package (if applicable) */
+    sessionNumber?: number;
+    /** Requested date (ISO format YYYY-MM-DD) */
+    requestedDate: string;
+    /** Requested start time (HH:mm format) */
+    requestedStartTime: string;
+    /** Requested end time (HH:mm format) */
+    requestedEndTime: string;
+    /** Expected duration (minutes) */
+    durationMinutes: number;
+    /** Service type */
+    serviceType: string;
+    /** Customer tier (for VIP slot protection) */
+    customerTier: 'vip' | 'loyal' | 'new';
+  };
+
+  /** Existing bookings to check against */
+  existingBookings: {
+    /** Customer's existing bookings */
+    customerBookings: Array<{
+      id: string;
+      date: string;
+      startTime: string;
+      endTime: string;
+      status: string;
+    }>;
+
+    /** Room/bed bookings (if applicable) */
+    roomBookings?: Array<{
+      id: string;
+      roomId: string;
+      date: string;
+      startTime: string;
+      endTime: string;
+      status: string;
+    }>;
+
+    /** Equipment bookings (if applicable) */
+    equipmentBookings?: Array<{
+      id: string;
+      equipmentId: string;
+      date: string;
+      startTime: string;
+      endTime: string;
+      status: string;
+    }>;
+
+    /** Package session history (if part of package) */
+    packageSessions?: Array<{
+      id: string;
+      packageId: string;
+      sessionNumber: number;
+      date: string;
+      status: string;
+    }>;
+
+    /** VIP slot reservations (if VIP slot protection enabled) */
+    vipSlots?: Array<{
+      date: string;
+      startTime: string;
+      endTime: string;
+      reservedFor: 'vip' | 'any';
+    }>;
+  };
+
+  /** Conflict detection configuration */
+  config: {
+    /** Enable customer double-booking detection */
+    detectCustomerDoubleBooking: boolean;
+    /** Enable room/bed conflict detection */
+    detectRoomConflicts: boolean;
+    /** Enable equipment conflict detection */
+    detectEquipmentConflicts: boolean;
+    /** Enable package sequence validation */
+    validatePackageSequence: boolean;
+    /** Enable VIP slot protection */
+    enforceVipSlotProtection: boolean;
+    /** Allow override for emergency bookings */
+    allowEmergencyOverride: boolean;
+  };
+
+  /** Additional metadata */
+  metadata?: Record<string, unknown>;
+}
+
+/**
+ * Conflict Detection Output
+ * 
+ * Result of conflict detection check.
+ */
+export interface ConflictDetectionOutput {
+  /** Were conflicts detected? */
+  hasConflicts: boolean;
+
+  /** Success status (false if conflicts detected) */
+  success: boolean;
+
+  /** List of detected conflicts */
+  conflicts: ConflictDetail[];
+
+  /** Conflict severity */
+  severity: 'blocking' | 'warning' | 'info';
+
+  /** Conflict resolution suggestions */
+  suggestions: ConflictResolution[];
+
+  /** Matched conflict rules */
+  matchedRules: string[];
+
+  /** Execution time (ms) */
+  executionTime: number;
+
+  /** Provider identifier */
+  provider: 'ConflictDetectionProvider';
+}
+
+/**
+ * Conflict Detail
+ * 
+ * Detailed information about a specific conflict.
+ */
+export interface ConflictDetail {
+  /** Conflict type */
+  type: ConflictType;
+
+  /** Conflict severity */
+  severity: 'blocking' | 'warning' | 'info';
+
+  /** Human-readable conflict message */
+  message: string;
+
+  /** Conflicting resource details */
+  resource: {
+    /** Resource type (customer, room, equipment, package, vip_slot) */
+    type: 'customer' | 'room' | 'equipment' | 'package' | 'vip_slot';
+    /** Resource identifier */
+    id: string;
+    /** Resource name/description */
+    name: string;
+  };
+
+  /** Conflicting booking details */
+  conflictingBooking: {
+    /** Booking ID causing conflict */
+    id: string;
+    /** Date */
+    date: string;
+    /** Start time */
+    startTime: string;
+    /** End time */
+    endTime: string;
+    /** Status */
+    status: string;
+  };
+
+  /** Rule that detected this conflict */
+  rule: string;
+
+  /** Additional conflict context */
+  context?: Record<string, unknown>;
+}
+
+/**
+ * Conflict Type Enum
+ * 
+ * All possible conflict types.
+ */
+export type ConflictType =
+  | 'customer_double_booking'  // Customer has overlapping booking
+  | 'room_unavailable'         // Room/bed already booked
+  | 'equipment_unavailable'    // Equipment already in use
+  | 'package_sequence_violation' // Wrong session order in package
+  | 'vip_slot_protected'       // Non-VIP trying to book VIP slot
+  | 'time_slot_blocked';       // Slot blocked for maintenance/etc
+
+/**
+ * Conflict Resolution
+ * 
+ * Suggested resolution for detected conflict.
+ */
+export interface ConflictResolution {
+  /** Resolution type */
+  type: 'reschedule' | 'change_resource' | 'cancel_conflicting' | 'override';
+
+  /** Human-readable suggestion */
+  message: string;
+
+  /** Specific resolution action */
+  action: {
+    /** Action type */
+    type: 'reschedule' | 'change_ktv' | 'change_room' | 'change_equipment' | 'override';
+
+    /** Action parameters */
+    parameters?: {
+      /** Suggested new date (YYYY-MM-DD) */
+      newDate?: string;
+      /** Suggested new time (HH:mm) */
+      newTime?: string;
+      /** Alternative KTV ID */
+      alternativeKtvId?: string;
+      /** Alternative room ID */
+      alternativeRoomId?: string;
+      /** Alternative equipment ID */
+      alternativeEquipmentId?: string;
+      /** Override reason */
+      overrideReason?: string;
+    };
+  };
+
+  /** Priority (1-10, higher = more recommended) */
+  priority: number;
+
+  /** Is this an automatic suggestion? */
+  automatic: boolean;
+
+  /** Additional resolution context */
+  context?: Record<string, unknown>;
+}
+
+/**
+ * Conflict Detection Knowledge (for rule evaluation)
+ */
+export interface ConflictDetectionKnowledge {
+  tenantId: string;
+  customerId: string;
+  ktvId?: string;
+  roomId?: string;
+  equipmentIds?: string[];
+  packageId?: string;
+  sessionNumber?: number;
+  requestedDate: string;
+  requestedStartTime: string;
+  requestedEndTime: string;
+  durationMinutes: number;
+  serviceType: string;
+  'customer.tier': string;
+  'config.detectCustomerDoubleBooking': boolean;
+  'config.detectRoomConflicts': boolean;
+  'config.detectEquipmentConflicts': boolean;
+  'config.validatePackageSequence': boolean;
+  'config.enforceVipSlotProtection': boolean;
+  [key: string]: unknown;
+}
+
+/**
+ * Conflict Detection Evaluation Options
+ */
+export interface ConflictDetectionEvaluationOptions {
+  /** Enable debug logging */
+  debug?: boolean;
+
+  /** Allow emergency override (skip blocking conflicts) */
+  emergencyOverride?: boolean;
+
+  /** Return all suggestions (not just top recommendations) */
+  allSuggestions?: boolean;
+
+  /** Dry run (don't modify state) */
+  dryRun?: boolean;
+}

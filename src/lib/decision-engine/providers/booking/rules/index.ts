@@ -37,3 +37,21 @@ export {
   capacityRules,
   capacityRulesSummary,
 } from './capacity-rules';
+
+// Task 2: Conflict Detection Rules (10 rules)
+export {
+  RULE_CUSTOMER_DOUBLE_BOOKING,
+  RULE_CUSTOMER_CLOSE_BOOKINGS,
+  RULE_ROOM_CONFLICT,
+  RULE_ROOM_TURNOVER,
+  RULE_EQUIPMENT_CONFLICT,
+  RULE_EQUIPMENT_MAINTENANCE,
+  RULE_PACKAGE_SEQUENCE,
+  RULE_PACKAGE_MIN_INTERVAL,
+  RULE_VIP_SLOT_PROTECTION,
+  RULE_PRIME_TIME_VIP_PRIORITY,
+  CONFLICT_DETECTION_RULES,
+  getConflictRulesByCategory,
+  getBlockingConflictRules,
+  getWarningConflictRules,
+} from './conflict-rules';
