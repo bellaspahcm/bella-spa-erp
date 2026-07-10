@@ -11,7 +11,7 @@ import {
   HelpCircle,
 } from 'lucide-react';
 import Link from 'next/link';
-import { getAccountingMode, syncLegacyToLedger, type ReconciliationRow } from '@/services/accounting-actions';
+import { getAccountingMode, syncLegacyToLedger, createSalaryAccrualJournals, type ReconciliationRow } from '@/services/accounting-actions';
 import { toast } from 'sonner';
 import { SkeletonTable } from '@/components/ui/SkeletonLoader';
 import { getAccountingErrorMessage as getErrorMessage } from '@/lib/accounting-error-message';
@@ -118,6 +118,7 @@ export default function ReconciliationPage() {
   const [syncing, setSyncing] = useState(false);
   const [showSyncModal, setShowSyncModal] = useState(false);
   const [postSyncSummary, setPostSyncSummary] = useState<PostSyncSummary | null>(null);
+  const [syncingSalaryAccrual, setSyncingSalaryAccrual] = useState(false);
 
   // Khởi tạo ngày tháng an toàn sau khi mount ở Client để tránh Hydration Mismatch về múi giờ
   useEffect(() => {
@@ -206,6 +207,34 @@ export default function ReconciliationPage() {
     }
   };
 
+  const handleSyncSalaryAccrual = async () => {
+    if (!fromDate || !toDate) {
+      toast.warning('Vui lòng chọn kỳ đối soát trước khi đồng bộ bút toán lương.');
+      return;
+    }
+    setSyncingSalaryAccrual(true);
+    try {
+      const res = await createSalaryAccrualJournals(fromDate, toDate);
+      if (res.created === 0 && res.skipped === 0) {
+        toast.info('Không có bảng lương nào cần đồng bộ bút toán trong kỳ này.');
+      } else {
+        toast.success(
+          `Đã tạo ${res.created} bút toán lương cố định${
+            res.skipped > 0 ? ` (bỏ qua ${res.skipped} bảng lương = 0đ)` : ''
+          }.`
+        );
+        await fetchData(fromDate, toDate, { force: true });
+      }
+    } catch (err: unknown) {
+      console.error('Error syncing salary accrual:', err);
+      toast.error(
+        err instanceof Error ? err.message : 'Có lỗi khi tạo bút toán lương cố định.'
+      );
+    } finally {
+      setSyncingSalaryAccrual(false);
+    }
+  };
+
   useEffect(() => {
     if (fromDate && toDate) {
       Promise.resolve()
@@ -285,13 +314,24 @@ export default function ReconciliationPage() {
           </button>
         </div>
       ) : (
-        <div className="px-6 py-4 bg-emerald-50/40 dark:bg-emerald-500/10 rounded-2xl border border-emerald-200 dark:border-emerald-500/30 flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 animate-pulse" />
-          <span className="text-3xs font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-widest">
-            Đã kích hoạt chế độ Kế toán Chuyên nghiệp (Thông tư 133)
-          </span>
+        <div className="px-6 py-4 bg-emerald-50/40 dark:bg-emerald-500/10 rounded-2xl border border-emerald-200 dark:border-emerald-500/30 flex flex-col sm:flex-row items-start sm:items-center gap-3">
+          <div className="flex items-center gap-2 flex-1">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 animate-pulse shrink-0" />
+            <span className="text-3xs font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-widest">
+              Đã kích hoạt chế độ Kế toán Chuyên nghiệp (Thông tư 133)
+            </span>
+          </div>
+          <button
+            onClick={handleSyncSalaryAccrual}
+            disabled={syncingSalaryAccrual}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed text-white text-3xs font-black uppercase tracking-widest transition-all shadow-sm shrink-0 cursor-pointer"
+          >
+            <RefreshCw className={`w-3 h-3 ${syncingSalaryAccrual ? 'animate-spin' : ''}`} />
+            {syncingSalaryAccrual ? 'Đang đồng bộ…' : 'Đồng bộ bút toán lương'}
+          </button>
         </div>
       )}
+
 
       {/* ── FILTER + SUMMARY ── */}
       {postSyncSummary && (

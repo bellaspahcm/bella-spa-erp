@@ -84,3 +84,9 @@ export {
   getBusinessHealthSummary,
   runBusinessHealthRepairAction,
 } from '../core/services/accounting/business-health';
+
+export {
+  createSalaryAccrualJournals,
+} from '../core/services/accounting/salary-accrual';
+
+export type { SalaryAccrualResult } from '../core/services/accounting/salary-accrual';
