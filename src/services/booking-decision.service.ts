@@ -24,6 +24,7 @@ import type {
   ConflictDetectionInput,
   ConflictDetectionOutput,
 } from '@/lib/decision-engine/providers/booking/types';
+import { DecisionEngineContext } from '@/lib/decision-engine/DecisionEngineContext';
 
 /**
  * Build knowledge from booking request for decision engine.
@@ -392,9 +393,40 @@ export async function checkBookingCapacity(input: {
     },
   };
 
-  // 6. Call Capacity Management Provider
+  // 6. Call Capacity Management Provider (with automatic metrics instrumentation)
   const provider = new CapacityManagementProvider({ debug: false });
-  const result: CapacityCheckOutput = await provider.checkCapacity(capacityInput);
+  
+  // Create Decision Engine Context (platform-level instrumentation)
+  const context = DecisionEngineContext.create({
+    providerType: 'capacity_management',
+    operation: 'checkCapacity',
+    tenantId: input.tenantId,
+    context: {
+      entityId: undefined, // No booking ID yet (checking before creation)
+      ktvId: input.ktvId,
+      customerId: undefined,
+    },
+    metadata: {
+      requested_date: input.requestedDate,
+      requested_start_time: input.requestedStartTime,
+      customer_tier: input.customerTier,
+      service_type: input.serviceType,
+    },
+  });
+  
+  // Execute provider with automatic metrics emission
+  const result: CapacityCheckOutput = await context.executeWithOutcome(
+    () => provider.checkCapacity(capacityInput),
+    (result) => ({
+      success: result.available,
+      outcome: result.available ? 'available' : 'full',
+      metadata: {
+        utilization_percent: result.capacityDetails.utilizationPercentage,
+        buffer_used_percent: (result.capacityDetails.bufferSlotsUsed / (result.capacityDetails.bufferSlotsAvailable || 1)) * 100,
+        conflicts_count: result.conflicts?.length || 0,
+      },
+    })
+  );
 
   // 7. Map alternatives if available
   const mappedAlternatives = result.alternatives?.map(alt => ({
@@ -565,9 +597,41 @@ export async function autoAssignKtv(input: {
     },
   };
 
-  // 5. Call Auto-Assignment Provider
+  // 5. Call Auto-Assignment Provider (with automatic metrics instrumentation)
   const provider = new AutoAssignmentProvider({ debug: false });
-  const result: AutoAssignmentOutput = await provider.evaluate(assignmentInput, candidates);
+  
+  // Create Decision Engine Context (platform-level instrumentation)
+  const context = DecisionEngineContext.create({
+    providerType: 'auto_assignment',
+    operation: 'assignKtv',
+    tenantId: input.tenantId,
+    context: {
+      entityId: undefined, // No booking ID yet
+      customerId: input.customerId,
+      ktvId: undefined, // Will be assigned
+    },
+    metadata: {
+      requested_date: input.requestedDate,
+      requested_start_time: input.requestedStartTime,
+      customer_tier: input.customerTier,
+      service_type: input.serviceType,
+      preferred_ktv_id: input.preferredKtvId,
+    },
+  });
+  
+  // Execute provider with automatic metrics emission
+  const result: AutoAssignmentOutput = await context.executeWithOutcome(
+    () => provider.evaluate(assignmentInput, candidates),
+    (result) => ({
+      success: result.assignedKtvId !== null,
+      outcome: result.assignedKtvId ? 'assigned' : 'no_assignment',
+      metadata: {
+        confidence: result.confidence,
+        assigned_ktv_id: result.assignedKtvId,
+        alternatives_count: result.alternatives?.length || 0,
+      },
+    })
+  );
 
   // 6. Get assigned KTV name
   const assignedKtv = result.assignedKtvId
@@ -792,9 +856,46 @@ export async function checkBookingConflicts(input: {
     },
   };
 
-  // 7. Call Conflict Detection Provider
+  // 7. Call Conflict Detection Provider (with automatic metrics instrumentation)
   const provider = new ConflictDetectionProvider();
-  const result: ConflictDetectionOutput = await provider.detectConflicts(conflictInput);
+  
+  // Create Decision Engine Context (platform-level instrumentation)
+  const context = DecisionEngineContext.create({
+    providerType: 'conflict_detection',
+    operation: 'detectConflicts',
+    tenantId: input.tenantId,
+    context: {
+      entityId: undefined, // No booking ID yet
+      customerId: input.customerId,
+      ktvId: input.ktvId,
+    },
+    metadata: {
+      requested_date: input.requestedDate,
+      requested_start_time: input.requestedStartTime,
+      customer_tier: input.customerTier,
+      service_type: input.serviceType,
+      room_id: input.roomId,
+      equipment_ids: input.equipmentIds,
+      package_id: input.packageId,
+      session_number: input.sessionNumber,
+    },
+  });
+  
+  // Execute provider with automatic metrics emission
+  const result: ConflictDetectionOutput = await context.executeWithOutcome(
+    () => provider.detectConflicts(conflictInput),
+    (result) => ({
+      success: !result.hasConflicts || result.severity !== 'blocking',
+      outcome: !result.hasConflicts ? 'no_conflicts' : `conflict_${result.severity}`,
+      metadata: {
+        conflicts_count: result.conflicts.length,
+        severity: result.severity,
+        blocking_conflicts: result.conflicts.filter(c => c.severity === 'blocking').length,
+        warning_conflicts: result.conflicts.filter(c => c.severity === 'warning').length,
+        conflicts: result.conflicts.map(c => ({ type: c.type, severity: c.severity })),
+      },
+    })
+  );
 
   // 8. Return standardized result
   return {

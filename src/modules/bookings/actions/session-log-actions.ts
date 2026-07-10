@@ -24,6 +24,7 @@ import {
   autoAssignKtv,
   checkBookingConflicts,
 } from '@/services/booking-decision.service';
+import { DecisionEngineContext } from '@/lib/decision-engine/DecisionEngineContext';
 
 // ============================================================================
 // TYPES
@@ -224,16 +225,37 @@ export async function createBookingWithValidation(
         time: `${input.assignedTime} - ${endTime}`,
       });
 
-      const capacityResult = await checkBookingCapacity({
+      // Create DecisionEngineContext for capacity check
+      const capacityContext = new DecisionEngineContext({
+        providerType: 'capacity_management',
+        operation: 'checkBookingCapacity',
         tenantId: input.tenantId,
+        bookingId: input.bookingId,
+        customerId: input.customerId,
         ktvId: finalKtvId,
-        requestedDate: input.assignedDate,
-        requestedStartTime: input.assignedTime,
-        requestedEndTime: endTime,
-        durationMinutes: input.durationMinutes,
-        customerTier: input.customerTier,
-        serviceType: input.serviceType,
       });
+
+      const capacityResult = await capacityContext.executeWithOutcome(
+        () => checkBookingCapacity({
+          tenantId: input.tenantId,
+          ktvId: finalKtvId,
+          requestedDate: input.assignedDate,
+          requestedStartTime: input.assignedTime,
+          requestedEndTime: endTime,
+          durationMinutes: input.durationMinutes,
+          customerTier: input.customerTier,
+          serviceType: input.serviceType,
+        }),
+        (result) => ({
+          success: result.available,
+          outcome: result.available ? 'available' : 'full',
+          metadata: {
+            utilization_percent: result.capacityDetails.utilizationPercentage,
+            buffer_used_percent: (result.capacityDetails.bufferSlotsUsed / result.capacityDetails.bufferSlots) * 100,
+            conflicts_count: result.conflicts?.length || 0,
+          },
+        })
+      );
 
       // If capacity not available, return conflicts
       if (!capacityResult.available) {
@@ -274,21 +296,54 @@ export async function createBookingWithValidation(
         time: `${input.assignedTime} - ${endTime}`,
       });
 
-      const conflictResult = await checkBookingConflicts({
+      // Create DecisionEngineContext for conflict check
+      const conflictContext = new DecisionEngineContext({
+        providerType: 'conflict_detection',
+        operation: 'checkBookingConflicts',
         tenantId: input.tenantId,
+        bookingId: input.bookingId,
         customerId: input.customerId,
         ktvId: finalKtvId,
-        roomId: input.roomId,
-        equipmentIds: input.equipmentIds,
-        packageId: input.packageId,
-        sessionNumber: input.sessionNumber,
-        requestedDate: input.assignedDate,
-        requestedStartTime: input.assignedTime,
-        requestedEndTime: endTime,
-        durationMinutes: input.durationMinutes,
-        serviceType: input.serviceType,
-        customerTier: input.customerTier,
       });
+
+      const conflictResult = await conflictContext.executeWithOutcome(
+        () => checkBookingConflicts({
+          tenantId: input.tenantId,
+          customerId: input.customerId,
+          ktvId: finalKtvId,
+          roomId: input.roomId,
+          equipmentIds: input.equipmentIds,
+          packageId: input.packageId,
+          sessionNumber: input.sessionNumber,
+          requestedDate: input.assignedDate,
+          requestedStartTime: input.assignedTime,
+          requestedEndTime: endTime,
+          durationMinutes: input.durationMinutes,
+          serviceType: input.serviceType,
+          customerTier: input.customerTier,
+        }),
+        (result) => {
+          const blockingConflicts = result.conflicts.filter(c => c.severity === 'blocking');
+          const warningConflicts = result.conflicts.filter(c => c.severity === 'warning');
+          return {
+            success: blockingConflicts.length === 0,
+            outcome: blockingConflicts.length > 0 ? 'conflict_blocked' : 
+                     warningConflicts.length > 0 ? 'conflict_warning' : 'no_conflict',
+            metadata: {
+              conflicts_count: result.conflicts.length,
+              blocking_count: blockingConflicts.length,
+              warning_count: warningConflicts.length,
+              severity: blockingConflicts.length > 0 ? 'blocking' : 
+                       warningConflicts.length > 0 ? 'warning' : 'none',
+              conflicts: result.conflicts.map(c => ({
+                type: c.type,
+                severity: c.severity,
+                message: c.message,
+              })),
+            },
+          };
+        }
+      );
 
       // If blocking conflicts found, return error
       const blockingConflicts = conflictResult.conflicts.filter(c => c.severity === 'blocking');
@@ -331,16 +386,37 @@ export async function createBookingWithValidation(
         customerTier: input.customerTier,
       });
 
-      const assignmentResult = await autoAssignKtv({
+      // Create DecisionEngineContext for auto-assignment
+      const assignmentContext = new DecisionEngineContext({
+        providerType: 'auto_assignment',
+        operation: 'autoAssignKtv',
         tenantId: input.tenantId,
+        bookingId: input.bookingId,
         customerId: input.customerId,
-        serviceId: input.serviceId || 'unknown',
-        serviceType: input.serviceType,
-        requestedDate: input.assignedDate,
-        requestedStartTime: input.assignedTime,
-        durationMinutes: input.durationMinutes,
-        customerTier: input.customerTier,
       });
+
+      const assignmentResult = await assignmentContext.executeWithOutcome(
+        () => autoAssignKtv({
+          tenantId: input.tenantId,
+          customerId: input.customerId,
+          serviceId: input.serviceId || 'unknown',
+          serviceType: input.serviceType,
+          requestedDate: input.assignedDate,
+          requestedStartTime: input.assignedTime,
+          durationMinutes: input.durationMinutes,
+          customerTier: input.customerTier,
+        }),
+        (result) => ({
+          success: !!result.assignedKtvId,
+          outcome: result.assignedKtvId ? 'assigned' : 'no_ktv_found',
+          metadata: {
+            confidence: result.confidence,
+            reason: result.reason,
+            assigned_ktv_id: result.assignedKtvId,
+            assigned_ktv_name: result.assignedKtvName,
+          },
+        })
+      );
 
       if (!assignmentResult.assignedKtvId) {
         console.log('[CreateBooking] Auto-assignment failed', {

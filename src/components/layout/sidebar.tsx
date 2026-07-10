@@ -293,6 +293,7 @@ const menuItems: SidebarMenuItem[] = [
   { type: 'header', label: 'Hệ thống' },
   { icon: Key,             label: 'API Partners',        href: '/dashboard/admin/partners' },
   { icon: Brain,           label: 'Decision Engine',     href: '/dashboard/decision-engine/audit' },
+  { icon: Activity,        label: 'Booking Engine',      href: '/dashboard/admin/booking-engine' },
   { icon: MonitorDot,      label: 'Trung tâm giám sát', href: '/dashboard/system-monitor' },
   { icon: History,         label: 'Nhật ký hệ thống',    href: '/dashboard/audit' },
   { icon: HelpCircle,      label: 'Hướng dẫn sử dụng',   href: '/dashboard/guides' },

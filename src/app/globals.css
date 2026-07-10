@@ -3486,3 +3486,13 @@ html[data-tenant-module="beauty_spa"] .border-rose-100\/50 {
   color: white !important;
   border-color: #E91E63 !important;
 }
+
+/* KTV Performance Table Full Width Fix */
+.beauty-top-ktv-table-wrap {
+  width: 100% !important;
+}
+.beauty-top-ktv-table {
+  width: 100% !important;
+  table-layout: fixed !important;
+}
+
