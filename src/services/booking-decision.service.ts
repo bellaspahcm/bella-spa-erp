@@ -12,6 +12,18 @@ import { RuleReasoner } from '@/lib/decision-engine/RuleReasoner';
 import { bookingCapacityPolicyV1 } from '@/lib/decision-engine/policies/booking-capacity-v1';
 import type { Knowledge, DecisionResult } from '@/lib/decision-engine/types';
 import { createClient } from '@/lib/supabase-server';
+import { CapacityManagementProvider } from '@/lib/decision-engine/providers/booking/capacity-management-provider';
+import { AutoAssignmentProvider } from '@/lib/decision-engine/providers/booking/auto-assignment-provider';
+import { ConflictDetectionProvider } from '@/lib/decision-engine/providers/booking/conflict-detection-provider';
+import type {
+  CapacityCheckInput,
+  CapacityCheckOutput,
+  AutoAssignmentInput,
+  AutoAssignmentOutput,
+  KtvCandidate,
+  ConflictDetectionInput,
+  ConflictDetectionOutput,
+} from '@/lib/decision-engine/providers/booking/types';
 
 /**
  * Build knowledge from booking request for decision engine.
@@ -225,16 +237,6 @@ export function getBookingDecisionMessage(decision: DecisionResult): {
 // ============================================================================
 // PHASE 1+2 INTEGRATION: Capacity Management & Auto-Assignment
 // ============================================================================
-
-import { CapacityManagementProvider } from '@/lib/decision-engine/providers/booking/capacity-management-provider';
-import { AutoAssignmentProvider } from '@/lib/decision-engine/providers/booking/auto-assignment-provider';
-import type {
-  CapacityCheckInput,
-  CapacityCheckOutput,
-  AutoAssignmentInput,
-  AutoAssignmentOutput,
-  KtvCandidate,
-} from '@/lib/decision-engine/providers/booking/types';
 
 /**
  * Check booking capacity using Phase 2 Capacity Management Provider
@@ -592,4 +594,234 @@ export async function autoAssignKtv(input: {
     alternatives: mappedAlternatives,
     executionTime: result.executionTime,
   };
+}
+
+/**
+ * Check booking conflicts using Conflict Detection Provider
+ * 
+ * Detects 5 types of conflicts:
+ * - Customer double-booking (blocking)
+ * - Room/bed conflicts (blocking)
+ * - Equipment conflicts (blocking)
+ * - Package sequence violations (blocking)
+ * - VIP slot protection (blocking/warning)
+ * 
+ * @param input - Conflict check parameters
+ * @returns Conflict detection result with details and suggestions
+ * 
+ * @example
+ * ```typescript
+ * const result = await checkBookingConflicts({
+ *   tenantId: 'tenant-001',
+ *   customerId: 'customer-123',
+ *   ktvId: 'ktv-456',
+ *   roomId: 'room-001',
+ *   equipmentIds: ['equipment-001'],
+ *   packageId: 'package-789',
+ *   sessionNumber: 2,
+ *   requestedDate: '2026-07-15',
+ *   requestedStartTime: '14:00',
+ *   requestedEndTime: '15:30',
+ *   durationMinutes: 90,
+ *   serviceType: 'Massage',
+ *   customerTier: 'loyal',
+ * });
+ * 
+ * if (result.hasConflicts) {
+ *   const blocking = result.conflicts.filter(c => c.severity === 'blocking');
+ *   if (blocking.length > 0) {
+ *     console.error('Booking blocked:', blocking[0].message);
+ *   }
+ * }
+ * ```
+ */
+export async function checkBookingConflicts(input: {
+  tenantId: string;
+  customerId: string;
+  ktvId?: string;
+  roomId?: string;
+  equipmentIds?: string[];
+  packageId?: string;
+  sessionNumber?: number;
+  requestedDate: string;
+  requestedStartTime: string;
+  requestedEndTime: string;
+  durationMinutes: number;
+  serviceType: string;
+  customerTier: 'vip' | 'loyal' | 'new';
+}): Promise<{
+  hasConflicts: boolean;
+  severity: 'blocking' | 'warning' | 'info';
+  conflicts: Array<{
+    type: string;
+    severity: 'blocking' | 'warning' | 'info';
+    message: string;
+    resource: {
+      type: string;
+      id: string;
+      name: string;
+    };
+  }>;
+  suggestions: Array<{
+    type: string;
+    message: string;
+    priority: number;
+  }>;
+  executionTime: number;
+}> {
+  const supabase = await createClient();
+
+  // 1. Fetch existing customer bookings
+  const { data: customerBookings } = await supabase
+    .from('session_logs')
+    .select('id, assigned_date, assigned_time, duration_minutes, status')
+    .eq('tenant_id', input.tenantId)
+    .eq('customer_id', input.customerId)
+    .eq('assigned_date', input.requestedDate)
+    .in('status', ['pending', 'confirmed', 'in_progress']);
+
+  // 2. Fetch existing room bookings (if room specified)
+  let roomBookings: any[] = [];
+  if (input.roomId) {
+    const { data } = await supabase
+      .from('booking_resources')
+      .select('id, booking_id, assigned_time, duration_minutes, status')
+      .eq('tenant_id', input.tenantId)
+      .eq('resource_type', 'room')
+      .eq('resource_id', input.roomId)
+      .eq('assigned_date', input.requestedDate)
+      .in('status', ['pending', 'confirmed']);
+
+    roomBookings = data || [];
+  }
+
+  // 3. Fetch existing equipment bookings (if equipment specified)
+  let equipmentBookings: any[] = [];
+  if (input.equipmentIds && input.equipmentIds.length > 0) {
+    const { data } = await supabase
+      .from('booking_resources')
+      .select('id, booking_id, resource_id, assigned_time, duration_minutes, status')
+      .eq('tenant_id', input.tenantId)
+      .eq('resource_type', 'equipment')
+      .in('resource_id', input.equipmentIds)
+      .eq('assigned_date', input.requestedDate)
+      .in('status', ['pending', 'confirmed']);
+
+    equipmentBookings = data || [];
+  }
+
+  // 4. Fetch package sessions (if package specified)
+  let packageSessions: any[] = [];
+  if (input.packageId) {
+    const { data } = await supabase
+      .from('session_logs')
+      .select('id, session_number, assigned_date, status')
+      .eq('tenant_id', input.tenantId)
+      .eq('package_id', input.packageId)
+      .eq('customer_id', input.customerId)
+      .order('session_number', { ascending: true });
+
+    packageSessions = data || [];
+  }
+
+  // 5. Fetch VIP slots
+  const { data: vipSlots } = await supabase
+    .from('vip_slots')
+    .select('id, date, start_time, end_time, reserved_for')
+    .eq('tenant_id', input.tenantId)
+    .eq('date', input.requestedDate);
+
+  // 6. Build Conflict Detection input
+  const conflictInput: ConflictDetectionInput = {
+    tenantId: input.tenantId,
+    booking: {
+      customerId: input.customerId,
+      ktvId: input.ktvId,
+      roomId: input.roomId,
+      equipmentIds: input.equipmentIds,
+      packageId: input.packageId,
+      sessionNumber: input.sessionNumber,
+      requestedDate: input.requestedDate,
+      requestedStartTime: input.requestedStartTime,
+      requestedEndTime: input.requestedEndTime,
+      durationMinutes: input.durationMinutes,
+      serviceType: input.serviceType,
+      customerTier: input.customerTier,
+    },
+    existingBookings: {
+      customerBookings: (customerBookings || []).map(b => ({
+        id: b.id,
+        customerId: input.customerId,
+        startTime: b.assigned_time || '00:00',
+        endTime: calculateEndTime(b.assigned_time || '00:00', b.duration_minutes || 90),
+        status: b.status as 'confirmed' | 'pending' | 'cancelled',
+      })),
+      roomBookings: roomBookings.map(b => ({
+        id: b.id,
+        roomId: input.roomId!,
+        startTime: b.assigned_time || '00:00',
+        endTime: calculateEndTime(b.assigned_time || '00:00', b.duration_minutes || 90),
+        status: b.status as 'confirmed' | 'pending' | 'cancelled',
+      })),
+      equipmentBookings: equipmentBookings.map(b => ({
+        id: b.id,
+        equipmentId: b.resource_id,
+        startTime: b.assigned_time || '00:00',
+        endTime: calculateEndTime(b.assigned_time || '00:00', b.duration_minutes || 90),
+        status: b.status as 'confirmed' | 'pending' | 'cancelled',
+      })),
+      packageSessions: packageSessions.map(s => ({
+        packageId: input.packageId!,
+        sessionNumber: s.session_number || 0,
+        status: s.status as 'completed' | 'pending' | 'cancelled',
+        date: s.assigned_date || '',
+      })),
+      vipSlots: (vipSlots || []).map(slot => ({
+        date: slot.date,
+        startTime: slot.start_time,
+        endTime: slot.end_time,
+        reservedFor: slot.reserved_for as 'vip',
+      })),
+    },
+    config: {
+      detectCustomerDoubleBooking: true,
+      detectRoomConflicts: true,
+      detectEquipmentConflicts: true,
+      validatePackageSequence: true,
+      enforceVipSlotProtection: true,
+    },
+  };
+
+  // 7. Call Conflict Detection Provider
+  const provider = new ConflictDetectionProvider();
+  const result: ConflictDetectionOutput = await provider.detectConflicts(conflictInput);
+
+  // 8. Return standardized result
+  return {
+    hasConflicts: result.hasConflicts,
+    severity: result.severity,
+    conflicts: result.conflicts.map(c => ({
+      type: c.type,
+      severity: c.severity,
+      message: c.message,
+      resource: c.resource,
+    })),
+    suggestions: result.suggestions.map(s => ({
+      type: s.type,
+      message: s.message,
+      priority: s.priority,
+    })),
+    executionTime: result.executionTime,
+  };
+}
+
+/**
+ * Helper: Calculate end time from start time and duration
+ */
+function calculateEndTime(startTime: string, durationMinutes: number): string {
+  const [hours, minutes] = startTime.split(':').map(Number);
+  const totalMinutes = hours * 60 + minutes + durationMinutes;
+  const endHours = Math.floor(totalMinutes / 60);
+  const endMinutes = totalMinutes % 60;
+  return `${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`;
 }

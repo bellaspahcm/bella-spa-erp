@@ -22,6 +22,7 @@ import { revalidatePath } from 'next/cache';
 import {
   checkBookingCapacity,
   autoAssignKtv,
+  checkBookingConflicts,
 } from '@/services/booking-decision.service';
 
 // ============================================================================
@@ -59,8 +60,23 @@ export interface CreateBookingInput {
   /** Service/Package ID (for auto-assignment) */
   serviceId?: string;
   
+  /** Room ID (for conflict detection) */
+  roomId?: string;
+  
+  /** Equipment IDs (for conflict detection) */
+  equipmentIds?: string[];
+  
+  /** Package ID (for sequence validation) */
+  packageId?: string;
+  
+  /** Session number (for package sequence validation) */
+  sessionNumber?: number;
+  
   /** Skip capacity check (manager override) */
   skipCapacityCheck?: boolean;
+  
+  /** Skip conflict check (manager override) */
+  skipConflictCheck?: boolean;
   
   /** Skip auto-assignment (KTV manually selected) */
   skipAutoAssignment?: boolean;
@@ -82,12 +98,21 @@ export interface CreateBookingResult {
   /** Capacity conflicts (if validation failed) */
   conflicts?: Array<{
     type: string;
-    reason: string;
+    severity?: 'blocking' | 'warning' | 'info';
+    reason?: string;
+    message?: string;
     conflictingBooking?: {
       id: string;
       startTime: string;
       endTime: string;
     };
+  }>;
+  
+  /** Resolution suggestions (if conflicts detected) */
+  suggestions?: Array<{
+    type: string;
+    message: string;
+    priority?: number;
   }>;
   
   /** Alternative time suggestions (if conflicts detected) */
@@ -228,6 +253,73 @@ export async function createBookingWithValidation(
       console.log('[CreateBooking] Capacity check passed', {
         utilization: capacityResult.capacityDetails.utilizationPercentage,
         bufferUsed: capacityResult.capacityDetails.bufferSlotsUsed,
+      });
+    }
+
+    // Step 4.5: Conflict Detection (unless skipped)
+    if (!input.skipConflictCheck && finalKtvId) {
+      // Calculate end time
+      const startHour = parseInt(input.assignedTime.split(':')[0] || '0', 10);
+      const startMinute = parseInt(input.assignedTime.split(':')[1] || '0', 10);
+      const endTotalMinutes = startHour * 60 + startMinute + input.durationMinutes;
+      const endHour = Math.floor(endTotalMinutes / 60);
+      const endMinute = endTotalMinutes % 60;
+      const endTime = `${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`;
+
+      console.log('[CreateBooking] Checking conflicts...', {
+        bookingId: input.bookingId,
+        customerId: input.customerId,
+        ktvId: finalKtvId,
+        date: input.assignedDate,
+        time: `${input.assignedTime} - ${endTime}`,
+      });
+
+      const conflictResult = await checkBookingConflicts({
+        tenantId: input.tenantId,
+        customerId: input.customerId,
+        ktvId: finalKtvId,
+        roomId: input.roomId,
+        equipmentIds: input.equipmentIds,
+        packageId: input.packageId,
+        sessionNumber: input.sessionNumber,
+        requestedDate: input.assignedDate,
+        requestedStartTime: input.assignedTime,
+        requestedEndTime: endTime,
+        durationMinutes: input.durationMinutes,
+        serviceType: input.serviceType,
+        customerTier: input.customerTier,
+      });
+
+      // If blocking conflicts found, return error
+      const blockingConflicts = conflictResult.conflicts.filter(c => c.severity === 'blocking');
+      if (blockingConflicts.length > 0) {
+        console.log('[CreateBooking] Conflict check failed', {
+          blockingConflicts: blockingConflicts.length,
+          warningConflicts: conflictResult.conflicts.filter(c => c.severity === 'warning').length,
+        });
+
+        return {
+          success: false,
+          error: 'Không thể tạo lịch hẹn do xung đột',
+          conflicts: conflictResult.conflicts.map(c => ({
+            type: c.type,
+            severity: c.severity,
+            message: c.message,
+          })),
+          suggestions: conflictResult.suggestions,
+        };
+      }
+
+      // Log warning conflicts but allow booking
+      const warningConflicts = conflictResult.conflicts.filter(c => c.severity === 'warning');
+      if (warningConflicts.length > 0) {
+        console.log('[CreateBooking] Warning conflicts detected (allowing booking)', {
+          warnings: warningConflicts.map(c => c.message),
+        });
+      }
+
+      console.log('[CreateBooking] Conflict check passed', {
+        executionTime: conflictResult.executionTime,
       });
     }
 
