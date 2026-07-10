@@ -11,7 +11,6 @@
  * @module decision-engine/providers/booking
  */
 
-import { RuleReasoner } from '@/lib/decision-engine/rule-reasoner';
 import { CONFLICT_DETECTION_RULES } from './rules/conflict-rules';
 import type {
   ConflictDetectionInput,
@@ -29,10 +28,8 @@ import type {
  * Detects conflicts before booking creation.
  */
 export class ConflictDetectionProvider {
-  private readonly reasoner: RuleReasoner;
-
   constructor() {
-    this.reasoner = new RuleReasoner();
+    // No reasoner needed - detect conflicts directly
   }
 
   /**
@@ -49,20 +46,11 @@ export class ConflictDetectionProvider {
     const startTime = performance.now();
 
     try {
-      // Build knowledge base from input
-      const knowledge = this.buildKnowledge(input);
+      // Enrich knowledge with computed facts
+      const enriched = await this.enrichKnowledge(input);
 
-      // Add computed facts
-      const enrichedKnowledge = await this.enrichKnowledge(knowledge, input);
-
-      // Evaluate rules
-      const ruleResults = await this.reasoner.evaluate(
-        enrichedKnowledge,
-        CONFLICT_DETECTION_RULES
-      );
-
-      // Extract conflicts from triggered rules
-      const conflicts = this.extractConflicts(ruleResults, input);
+      // Detect all conflicts manually
+      const conflicts = this.detectAllConflicts(enriched, input);
 
       // Determine overall severity
       const severity = this.determineSeverity(conflicts);
@@ -70,10 +58,8 @@ export class ConflictDetectionProvider {
       // Generate resolution suggestions
       const suggestions = this.generateResolutions(conflicts, input);
 
-      // Get matched rule IDs
-      const matchedRules = ruleResults
-        .filter((r) => r.triggered)
-        .map((r) => r.rule.id);
+      // Get matched rule IDs from conflicts
+      const matchedRules = this.buildMatchedRules(conflicts);
 
       const executionTime = performance.now() - startTime;
 
@@ -105,76 +91,258 @@ export class ConflictDetectionProvider {
   }
 
   /**
-   * Build knowledge base from input
-   */
-  private buildKnowledge(input: ConflictDetectionInput): ConflictDetectionKnowledge {
-    return {
-      tenantId: input.tenantId,
-      customerId: input.booking.customerId,
-      ktvId: input.booking.ktvId,
-      roomId: input.booking.roomId,
-      equipmentIds: input.booking.equipmentIds || [],
-      packageId: input.booking.packageId,
-      sessionNumber: input.booking.sessionNumber,
-      requestedDate: input.booking.requestedDate,
-      requestedStartTime: input.booking.requestedStartTime,
-      requestedEndTime: input.booking.requestedEndTime,
-      durationMinutes: input.booking.durationMinutes,
-      serviceType: input.booking.serviceType,
-      'customer.tier': input.booking.customerTier,
-      'config.detectCustomerDoubleBooking': input.config.detectCustomerDoubleBooking,
-      'config.detectRoomConflicts': input.config.detectRoomConflicts,
-      'config.detectEquipmentConflicts': input.config.detectEquipmentConflicts,
-      'config.validatePackageSequence': input.config.validatePackageSequence,
-      'config.enforceVipSlotProtection': input.config.enforceVipSlotProtection,
-    };
-  }
-
-  /**
    * Enrich knowledge with computed facts
    */
   private async enrichKnowledge(
-    knowledge: ConflictDetectionKnowledge,
     input: ConflictDetectionInput
-  ): Promise<ConflictDetectionKnowledge> {
-    const enriched = { ...knowledge };
+  ): Promise<ConflictDetectionInput> {
+    // Just return input with computed checks
+    return input;
+  }
 
-    // Add existing bookings for rule evaluation
-    enriched.existingCustomerBookings = input.existingBookings.customerBookings || [];
-    enriched.existingRoomBookings = input.existingBookings.roomBookings || [];
-    enriched.existingEquipmentBookings = input.existingBookings.equipmentBookings || [];
-    enriched.existingPackageSessions = input.existingBookings.packageSessions || [];
-    enriched.existingVipSlots = input.existingBookings.vipSlots || [];
+  /**
+   * Detect all conflicts based on enriched data
+   */
+  private detectAllConflicts(
+    enriched: ConflictDetectionInput,
+    input: ConflictDetectionInput
+  ): ConflictDetail[] {
+    const conflicts: ConflictDetail[] = [];
 
-    // Check for customer time overlaps
-    enriched.hasCustomerTimeOverlap = this.checkCustomerTimeOverlap(input);
+    // Check customer double-booking (Rule 200)
+    if (input.config.detectCustomerDoubleBooking) {
+      if (this.checkCustomerTimeOverlap(input)) {
+        conflicts.push({
+          type: 'customer_double_booking',
+          severity: 'blocking',
+          message: 'Customer đã có lịch hẹn trùng thời gian',
+          resource: {
+            type: 'customer',
+            id: input.booking.customerId,
+            name: 'Customer',
+          },
+          conflictingBooking: this.findCustomerConflictingBooking(input),
+          rule: 'conflict-200-customer-double-booking',
+          context: {
+            ruleDescription: 'Customer must not have overlapping bookings at the same time',
+            rulePriority: 200,
+          },
+        });
+      }
 
-    // Check for close bookings (within 30 minutes)
-    enriched.hasCloseBookings = this.checkCloseBookings(input);
-
-    // Check for room conflicts
-    if (input.booking.roomId) {
-      enriched.hasRoomConflict = this.checkRoomConflict(input);
-      enriched.hasInsufficientTurnoverTime = this.checkRoomTurnoverTime(input);
+      // Check close bookings (Rule 201)
+      if (this.checkCloseBookings(input)) {
+        conflicts.push({
+          type: 'customer_double_booking',
+          severity: 'warning',
+          message: 'Customer có lịch hẹn gần nhau (trong vòng 30 phút)',
+          resource: {
+            type: 'customer',
+            id: input.booking.customerId,
+            name: 'Customer',
+          },
+          conflictingBooking: this.findCustomerConflictingBooking(input),
+          rule: 'conflict-201-customer-close-bookings',
+          context: {
+            ruleDescription: 'Warn if customer has bookings within 30 minutes of each other',
+            rulePriority: 201,
+          },
+        });
+      }
     }
 
-    // Check for equipment conflicts
-    if (input.booking.equipmentIds && input.booking.equipmentIds.length > 0) {
-      enriched.hasEquipmentConflict = this.checkEquipmentConflict(input);
-      enriched.isMaintenanceWindow = this.checkMaintenanceWindow(input);
+    // Check room conflicts (Rule 210-211)
+    if (input.config.detectRoomConflicts && input.booking.roomId) {
+      if (this.checkRoomConflict(input)) {
+        conflicts.push({
+          type: 'room_unavailable',
+          severity: 'blocking',
+          message: 'Phòng/giường đã được đặt cho khung giờ này',
+          resource: {
+            type: 'room',
+            id: input.booking.roomId,
+            name: `Room ${input.booking.roomId}`,
+          },
+          conflictingBooking: this.findRoomConflictingBooking(input),
+          rule: 'conflict-210-room-double-booking',
+          context: {
+            ruleDescription: 'Room/bed must be available at requested time',
+            rulePriority: 210,
+          },
+        });
+      }
+
+      if (this.checkRoomTurnoverTime(input)) {
+        conflicts.push({
+          type: 'room_unavailable',
+          severity: 'warning',
+          message: 'Phòng cần thời gian dọn dẹp (15 phút) trước lịch hẹn tiếp theo',
+          resource: {
+            type: 'room',
+            id: input.booking.roomId,
+            name: `Room ${input.booking.roomId}`,
+          },
+          conflictingBooking: this.findRoomConflictingBooking(input),
+          rule: 'conflict-211-room-turnover-time',
+          context: {
+            ruleDescription: 'Room requires 15-minute turnover time between bookings',
+            rulePriority: 211,
+          },
+        });
+      }
     }
 
-    // Check for package sequence violations
-    if (input.booking.packageId) {
-      enriched.hasSequenceViolation = this.checkPackageSequence(input);
-      enriched.hasInsufficientInterval = this.checkPackageInterval(input);
+    // Check equipment conflicts (Rule 220-221)
+    if (input.config.detectEquipmentConflicts && input.booking.equipmentIds && input.booking.equipmentIds.length > 0) {
+      if (this.checkEquipmentConflict(input)) {
+        conflicts.push({
+          type: 'equipment_unavailable',
+          severity: 'blocking',
+          message: 'Thiết bị chuyên dụng đã được sử dụng cho khung giờ này',
+          resource: {
+            type: 'equipment',
+            id: input.booking.equipmentIds[0],
+            name: `Equipment ${input.booking.equipmentIds[0]}`,
+          },
+          conflictingBooking: this.findEquipmentConflictingBooking(input),
+          rule: 'conflict-220-equipment-unavailable',
+          context: {
+            ruleDescription: 'Specialized equipment must not be in use at requested time',
+            rulePriority: 220,
+          },
+        });
+      }
     }
 
-    // Check for VIP slot protection
-    enriched.isVipSlot = this.checkVipSlot(input);
-    enriched.isPrimeTimeSlot = this.checkPrimeTimeSlot(input);
+    // Check package sequence (Rule 230-231)
+    if (input.config.validatePackageSequence && input.booking.packageId) {
+      if (this.checkPackageSequence(input)) {
+        conflicts.push({
+          type: 'package_sequence_violation',
+          severity: 'blocking',
+          message: 'Phải hoàn thành các ca trước mới được đặt ca này',
+          resource: {
+            type: 'package',
+            id: input.booking.packageId,
+            name: `Package ${input.booking.packageId}`,
+          },
+          conflictingBooking: this.findPackageConflictingSession(input),
+          rule: 'conflict-230-package-sequence-violation',
+          context: {
+            ruleDescription: 'Package sessions must be completed in order (session 1 before 2, etc.)',
+            rulePriority: 230,
+          },
+        });
+      }
 
-    return enriched;
+      if (this.checkPackageInterval(input)) {
+        conflicts.push({
+          type: 'package_sequence_violation',
+          severity: 'warning',
+          message: 'Nên cách ít nhất 24 giờ giữa các ca trong gói',
+          resource: {
+            type: 'package',
+            id: input.booking.packageId,
+            name: `Package ${input.booking.packageId}`,
+          },
+          conflictingBooking: this.findPackageConflictingSession(input),
+          rule: 'conflict-231-package-min-interval',
+          context: {
+            ruleDescription: 'Minimum 24 hours required between package sessions',
+            rulePriority: 231,
+          },
+        });
+      }
+    }
+
+    // Check VIP slot protection (Rule 240-241)
+    if (input.config.enforceVipSlotProtection) {
+      if (input.booking.customerTier !== 'vip' && this.checkVipSlot(input)) {
+        conflicts.push({
+          type: 'vip_slot_protected',
+          severity: 'blocking',
+          message: 'Khung giờ này dành riêng cho khách hàng VIP',
+          resource: {
+            type: 'vip_slot',
+            id: 'vip-slot',
+            name: 'VIP Slot',
+          },
+          conflictingBooking: { id: 'vip-slot', date: input.booking.requestedDate, startTime: input.booking.requestedStartTime, endTime: input.booking.requestedEndTime, status: 'reserved' },
+          rule: 'conflict-240-vip-slot-protected',
+          context: {
+            ruleDescription: 'Certain time slots are reserved for VIP customers only',
+            rulePriority: 240,
+          },
+        });
+      }
+
+      if (input.booking.customerTier === 'new' && this.checkPrimeTimeSlot(input)) {
+        conflicts.push({
+          type: 'vip_slot_protected',
+          severity: 'warning',
+          message: 'Khung giờ vàng này ưu tiên cho khách hàng VIP và Loyal',
+          resource: {
+            type: 'vip_slot',
+            id: 'prime-time',
+            name: 'Prime Time Slot',
+          },
+          conflictingBooking: { id: 'prime-time', date: input.booking.requestedDate, startTime: input.booking.requestedStartTime, endTime: input.booking.requestedEndTime, status: 'reserved' },
+          rule: 'conflict-241-prime-time-vip-priority',
+          context: {
+            ruleDescription: 'VIP customers get priority for prime time slots',
+            rulePriority: 241,
+          },
+        });
+      }
+    }
+
+    return conflicts;
+  }
+
+  /**
+   * Build matched rule IDs from conflicts
+   */
+  private buildMatchedRules(conflicts: ConflictDetail[]): string[] {
+    return conflicts.map(c => c.rule);
+  }
+
+  /**
+   * Find customer conflicting booking
+   */
+  private findCustomerConflictingBooking(input: ConflictDetectionInput): any {
+    const { requestedStartTime, requestedEndTime } = input.booking;
+    return input.existingBookings.customerBookings?.find((b) =>
+      this.hasTimeOverlap(requestedStartTime, requestedEndTime, b.startTime, b.endTime)
+    );
+  }
+
+  /**
+   * Find room conflicting booking
+   */
+  private findRoomConflictingBooking(input: ConflictDetectionInput): any {
+    const { roomId, requestedStartTime, requestedEndTime } = input.booking;
+    return input.existingBookings.roomBookings?.find((b) =>
+      b.roomId === roomId &&
+      this.hasTimeOverlap(requestedStartTime, requestedEndTime, b.startTime, b.endTime)
+    );
+  }
+
+  /**
+   * Find equipment conflicting booking
+   */
+  private findEquipmentConflictingBooking(input: ConflictDetectionInput): any {
+    const { equipmentIds, requestedStartTime, requestedEndTime } = input.booking;
+    return input.existingBookings.equipmentBookings?.find((b) =>
+      equipmentIds?.includes(b.equipmentId) &&
+      this.hasTimeOverlap(requestedStartTime, requestedEndTime, b.startTime, b.endTime)
+    );
+  }
+
+  /**
+   * Find package conflicting session
+   */
+  private findPackageConflictingSession(input: ConflictDetectionInput): any {
+    return input.existingBookings.packageSessions?.[0];
   }
 
   /**
@@ -217,12 +385,13 @@ export class ConflictDetectionProvider {
       const bookingEnd = this.timeToMinutes(booking.endTime);
 
       // Check if within 30 minutes before or after (but not overlapping)
+      // Gap LESS THAN 30 minutes (not equal to 30)
       const gapBefore = requestedStart - bookingEnd;
       const gapAfter = bookingStart - requestedEnd;
 
       return (
-        (gapBefore > 0 && gapBefore <= 30) ||
-        (gapAfter > 0 && gapAfter <= 30)
+        (gapBefore > 0 && gapBefore < 30) ||
+        (gapAfter > 0 && gapAfter < 30)
       );
     });
   }
@@ -419,153 +588,6 @@ export class ConflictDetectionProvider {
   private timeToMinutes(time: string): number {
     const [hours, minutes] = time.split(':').map(Number);
     return hours * 60 + minutes;
-  }
-
-  /**
-   * Extract conflicts from rule results
-   */
-  private extractConflicts(
-    ruleResults: Array<{ rule: any; triggered: boolean; event?: any }>,
-    input: ConflictDetectionInput
-  ): ConflictDetail[] {
-    const conflicts: ConflictDetail[] = [];
-
-    for (const result of ruleResults) {
-      if (!result.triggered || !result.event) continue;
-
-      const { type, params } = result.event;
-      if (type !== 'conflict-detected' && type !== 'conflict-warning') continue;
-
-      const conflict = this.buildConflictDetail(result.rule, params, input);
-      if (conflict) {
-        conflicts.push(conflict);
-      }
-    }
-
-    return conflicts;
-  }
-
-  /**
-   * Build conflict detail from rule and params
-   */
-  private buildConflictDetail(
-    rule: any,
-    params: any,
-    input: ConflictDetectionInput
-  ): ConflictDetail | null {
-    const conflictType = params.conflictType as ConflictType;
-    const severity = params.severity as 'blocking' | 'warning' | 'info';
-    const message = params.message;
-
-    // Find conflicting booking based on conflict type
-    const conflictingBooking = this.findConflictingBooking(conflictType, input);
-    if (!conflictingBooking) return null;
-
-    // Determine resource details
-    const resource = this.getResourceDetails(conflictType, input);
-
-    return {
-      type: conflictType,
-      severity,
-      message,
-      resource,
-      conflictingBooking,
-      rule: rule.id,
-      context: {
-        ruleDescription: rule.description,
-        rulePriority: rule.priority,
-      },
-    };
-  }
-
-  /**
-   * Find conflicting booking based on conflict type
-   */
-  private findConflictingBooking(
-    conflictType: ConflictType,
-    input: ConflictDetectionInput
-  ): any {
-    const { requestedStartTime, requestedEndTime } = input.booking;
-
-    switch (conflictType) {
-      case 'customer_double_booking':
-        return input.existingBookings.customerBookings?.find((b) =>
-          this.hasTimeOverlap(requestedStartTime, requestedEndTime, b.startTime, b.endTime)
-        );
-
-      case 'room_unavailable':
-        return input.existingBookings.roomBookings?.find((b) =>
-          b.roomId === input.booking.roomId &&
-          this.hasTimeOverlap(requestedStartTime, requestedEndTime, b.startTime, b.endTime)
-        );
-
-      case 'equipment_unavailable':
-        return input.existingBookings.equipmentBookings?.find((b) =>
-          input.booking.equipmentIds?.includes(b.equipmentId) &&
-          this.hasTimeOverlap(requestedStartTime, requestedEndTime, b.startTime, b.endTime)
-        );
-
-      case 'package_sequence_violation':
-        return input.existingBookings.packageSessions?.[0];
-
-      case 'vip_slot_protected':
-        return { id: 'vip-slot', date: input.booking.requestedDate, startTime: requestedStartTime, endTime: requestedEndTime, status: 'reserved' };
-
-      default:
-        return null;
-    }
-  }
-
-  /**
-   * Get resource details based on conflict type
-   */
-  private getResourceDetails(
-    conflictType: ConflictType,
-    input: ConflictDetectionInput
-  ): ConflictDetail['resource'] {
-    switch (conflictType) {
-      case 'customer_double_booking':
-        return {
-          type: 'customer',
-          id: input.booking.customerId,
-          name: 'Customer',
-        };
-
-      case 'room_unavailable':
-        return {
-          type: 'room',
-          id: input.booking.roomId || '',
-          name: `Room ${input.booking.roomId}`,
-        };
-
-      case 'equipment_unavailable':
-        return {
-          type: 'equipment',
-          id: input.booking.equipmentIds?.[0] || '',
-          name: `Equipment ${input.booking.equipmentIds?.[0]}`,
-        };
-
-      case 'package_sequence_violation':
-        return {
-          type: 'package',
-          id: input.booking.packageId || '',
-          name: `Package ${input.booking.packageId}`,
-        };
-
-      case 'vip_slot_protected':
-        return {
-          type: 'vip_slot',
-          id: 'vip-slot',
-          name: 'VIP Slot',
-        };
-
-      default:
-        return {
-          type: 'customer',
-          id: input.booking.customerId,
-          name: 'Unknown Resource',
-        };
-    }
   }
 
   /**
