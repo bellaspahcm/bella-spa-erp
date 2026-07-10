@@ -71,7 +71,7 @@ BEGIN
     UPDATE public.salary_records
     SET is_locked = true
     WHERE tenant_id = v_tenant_id
-      AND month_year = to_char(v_period_start, 'YYYY-MM')
+      AND month_year = date_trunc('month', v_period_start)::date
       AND COALESCE(is_locked, false) = false;
     GET DIAGNOSTICS v_locked_sal = ROW_COUNT;
 
