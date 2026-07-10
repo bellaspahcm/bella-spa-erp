@@ -1087,6 +1087,37 @@ html[data-tenant-module="babycare"] aside .bg-rose-300\/25 {
   display: none !important;
 }
 
+/* Thin decorative box border around sidebar menu for babycare/baby_care */
+/* z-index: 20 to render above nav (z-index: 10) while pointer-events: none prevents blocking clicks */
+html[data-tenant-module="baby_care"] .beauty-erp-sidebar::before,
+html[data-tenant-module="babycare"] .beauty-erp-sidebar::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 22px !important;
+  pointer-events: none !important;
+  border: 1px solid rgba(219, 39, 119, 0.25) !important;
+  border-radius: 30px !important;
+  z-index: 20 !important;
+}
+
+html.dark[data-tenant-module="baby_care"] .beauty-erp-sidebar::before,
+html.dark[data-tenant-module="babycare"] .beauty-erp-sidebar::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 22px !important;
+  pointer-events: none !important;
+  border: 1px solid rgba(166, 125, 68, 0.25) !important;
+  border-radius: 30px !important;
+  z-index: 20 !important;
+}
+
+/* Profile/logout card must render above the decorative border (z-index: 25 > border z-index: 20) */
+html[data-tenant-module="baby_care"] .beauty-erp-sidebar > div:last-child,
+html[data-tenant-module="babycare"] .beauty-erp-sidebar > div:last-child {
+  position: relative !important;
+  z-index: 25 !important;
+}
+
 /* Dark mode Baby Care sidebar */
 html.dark[data-tenant-module="baby_care"] .beauty-erp-sidebar,
 html.dark[data-tenant-module="babycare"] .beauty-erp-sidebar,

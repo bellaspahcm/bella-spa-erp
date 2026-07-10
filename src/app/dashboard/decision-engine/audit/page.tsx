@@ -308,7 +308,7 @@ export default function DecisionAuditTrailPage() {
           <button
             onClick={handleApplyFilters}
             disabled={loading || !tenantId}
-            className="px-5 py-2.5 bg-primary text-primary-foreground rounded-xl hover:bg-primary-hover disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed transition-all font-semibold shadow-sm text-sm active:scale-[0.98]"
+            className="px-5 py-2.5 bg-primary text-white rounded-xl hover:bg-primary-hover disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed transition-all font-semibold shadow-sm text-sm active:scale-[0.98]"
           >
             Apply Filters
           </button>
