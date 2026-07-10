@@ -773,8 +773,15 @@ function checkBookingFinancialIntegrity(dataset) {
       portalMode: paymentRequest.effectiveTab,
     };
 
+    // booking_payment_amount_drift: fires only when the customer has NOT fully paid
+    // (remainingDebt > 0) AND the booking's deposit_amount field (used as a
+    // denormalised "required deposit" hint) drifts from confirmed revenue total.
+    // Skip when remainingDebt = 0 because the customer already paid the correct
+    // discounted amount (priceAfterDiscount), even if deposit_amount was set to
+    // full_price before the discount was applied.
     if (
       paymentRequest.totalPaid > MONEY_TOLERANCE &&
+      paymentRequest.remainingDebt > MONEY_TOLERANCE &&
       Math.abs(bookingPaidAmount - paymentRequest.totalPaid) > MONEY_TOLERANCE
     ) {
       addFinding(findings, CRITICAL, 'booking_payment_amount_drift', 'Booking paid amount must match confirmed revenue total.', baseDetails);
