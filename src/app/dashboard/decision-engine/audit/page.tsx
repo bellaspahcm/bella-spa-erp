@@ -110,14 +110,23 @@ export default function DecisionAuditTrailPage() {
   const [selectedDecision, setSelectedDecision] = useState<string | null>(null);
 
   // Fetch current user and set tenant ID
+  // NOTE: /api/tenant/context returns TenantContext directly: { tenantId, tenantName, ... }
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
         const response = await fetch('/api/tenant/context');
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          setError('Unable to determine your tenant: ' + (errData.error || `HTTP ${response.status}`));
+          setLoading(false);
+          return;
+        }
         const result = await response.json();
-        if (result.success && result.data?.tenant_id) {
-          setCurrentUser(result.data);
-          setTenantId(result.data.tenant_id);
+        // API returns TenantContext directly with camelCase `tenantId`
+        const tenantIdValue = result.tenantId || result.tenant_id || result.data?.tenantId || result.data?.tenant_id;
+        if (tenantIdValue) {
+          setCurrentUser({ tenant_id: tenantIdValue });
+          setTenantId(tenantIdValue);
         } else {
           setError('Unable to determine your tenant. Please contact support.');
           setLoading(false);
