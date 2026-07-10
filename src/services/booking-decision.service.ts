@@ -221,3 +221,375 @@ export function getBookingDecisionMessage(decision: DecisionResult): {
       };
   }
 }
+
+// ============================================================================
+// PHASE 1+2 INTEGRATION: Capacity Management & Auto-Assignment
+// ============================================================================
+
+import { CapacityManagementProvider } from '@/lib/decision-engine/providers/booking/capacity-management-provider';
+import { AutoAssignmentProvider } from '@/lib/decision-engine/providers/booking/auto-assignment-provider';
+import type {
+  CapacityCheckInput,
+  CapacityCheckOutput,
+  AutoAssignmentInput,
+  AutoAssignmentOutput,
+  KtvCandidate,
+} from '@/lib/decision-engine/providers/booking/types';
+
+/**
+ * Check booking capacity using Phase 2 Capacity Management Provider
+ * 
+ * Validates:
+ * - Daily booking limits
+ * - Time overlaps with existing bookings
+ * - Concurrent session limits
+ * - Break time requirements
+ * - Working hours constraints
+ * - Buffer slot availability (VIP vs non-VIP)
+ * - Peak hour capacity limits
+ * 
+ * @param input - Capacity check parameters
+ * @returns Capacity availability result with conflicts and alternatives
+ * 
+ * @example
+ * ```typescript
+ * const result = await checkBookingCapacity({
+ *   tenantId: 'tenant-001',
+ *   ktvId: 'ktv-123',
+ *   requestedDate: '2026-07-15',
+ *   requestedStartTime: '14:00',
+ *   requestedEndTime: '15:30',
+ *   durationMinutes: 90,
+ *   customerTier: 'vip',
+ *   serviceType: 'Massage',
+ * });
+ * 
+ * if (!result.available) {
+ *   console.log('Conflicts:', result.conflicts);
+ *   console.log('Alternatives:', result.alternatives);
+ * }
+ * ```
+ */
+export async function checkBookingCapacity(input: {
+  tenantId: string;
+  ktvId: string;
+  requestedDate: string;
+  requestedStartTime: string;
+  requestedEndTime: string;
+  durationMinutes: number;
+  customerTier: 'vip' | 'loyal' | 'new';
+  serviceType: string;
+}): Promise<{
+  available: boolean;
+  capacityDetails: {
+    currentBookings: number;
+    maxBookings: number;
+    utilizationPercentage: number;
+    bufferSlotsUsed: number;
+    bufferSlotsAvailable: number;
+    isPeakHour: boolean;
+  };
+  conflicts?: Array<{
+    type: string;
+    reason: string;
+    conflictingBooking?: {
+      id: string;
+      startTime: string;
+      endTime: string;
+    };
+  }>;
+  alternatives?: Array<{
+    suggestedDate: string;
+    suggestedTime: string;
+    reason: string;
+  }>;
+  executionTime: number;
+}> {
+  const supabase = await createClient();
+
+  // 1. Fetch KTV capacity configuration
+  const { data: ktvProfile } = await supabase
+    .from('users')
+    .select('id, full_name, position, max_daily_bookings')
+    .eq('id', input.ktvId)
+    .eq('role', 'ktv')
+    .single();
+
+  if (!ktvProfile) {
+    throw new Error(`KTV not found: ${input.ktvId}`);
+  }
+
+  // 2. Fetch tenant capacity configuration
+  const { data: tenantConfig } = await supabase
+    .from('tenants')
+    .select('id, capacity_config')
+    .eq('id', input.tenantId)
+    .single();
+
+  const capacityConfig = (tenantConfig?.capacity_config as any) || {};
+
+  // 3. Fetch existing bookings for KTV on requested date
+  const { data: existingBookings } = await supabase
+    .from('session_logs')
+    .select('id, assigned_time, duration_minutes, status')
+    .eq('completed_by_ktv_id', input.ktvId)
+    .eq('assigned_date', input.requestedDate)
+    .in('status', ['pending', 'confirmed', 'in_progress', 'completed']);
+
+  // 4. Map existing bookings to provider format
+  const mappedBookings = (existingBookings || []).map(booking => {
+    const startTime = booking.assigned_time || '00:00';
+    const durationMins = booking.duration_minutes || 90;
+    const startHour = parseInt(startTime.split(':')[0] || '0', 10);
+    const startMinute = parseInt(startTime.split(':')[1] || '0', 10);
+    const endTotalMinutes = startHour * 60 + startMinute + durationMins;
+    const endHour = Math.floor(endTotalMinutes / 60);
+    const endMinute = endTotalMinutes % 60;
+    const endTime = `${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`;
+
+    return {
+      id: booking.id,
+      startTime,
+      endTime,
+      durationMinutes: durationMins,
+      status: booking.status as 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled',
+    };
+  });
+
+  // 5. Build capacity check input
+  const capacityInput: CapacityCheckInput = {
+    tenantId: input.tenantId,
+    ktvId: input.ktvId,
+    booking: {
+      requestedDate: input.requestedDate,
+      requestedStartTime: input.requestedStartTime,
+      requestedEndTime: input.requestedEndTime,
+      durationMinutes: input.durationMinutes,
+      serviceType: input.serviceType,
+      customerTier: input.customerTier,
+    },
+    ktvCapacity: {
+      maxDailyBookings: ktvProfile.max_daily_bookings || 8,
+      maxConcurrentSessions: 1, // Default: 1 session at a time
+      minBreakMinutes: capacityConfig.minBreakMinutes || 15,
+      workingHours: {
+        start: capacityConfig.workingHoursStart || '08:00',
+        end: capacityConfig.workingHoursEnd || '20:00',
+      },
+      peakHours: capacityConfig.enablePeakHours ? {
+        start: capacityConfig.peakHoursStart || '12:00',
+        end: capacityConfig.peakHoursEnd || '18:00',
+        maxBookings: capacityConfig.peakHoursMaxBookings || 6,
+      } : undefined,
+    },
+    existingBookings: mappedBookings,
+    tenantCapacity: {
+      bufferPercentage: capacityConfig.bufferPercentage || 10,
+      enablePeakHourManagement: capacityConfig.enablePeakHours || false,
+      enforceBreakTimes: capacityConfig.enforceBreakTimes !== false, // Default: true
+    },
+  };
+
+  // 6. Call Capacity Management Provider
+  const provider = new CapacityManagementProvider({ debug: false });
+  const result: CapacityCheckOutput = await provider.checkCapacity(capacityInput);
+
+  // 7. Map alternatives if available
+  const mappedAlternatives = result.alternatives?.map(alt => ({
+    suggestedDate: alt.suggestedDate || input.requestedDate,
+    suggestedTime: alt.suggestedTime,
+    reason: alt.reason,
+  }));
+
+  // 8. Return standardized result
+  return {
+    available: result.available,
+    capacityDetails: result.capacityDetails,
+    conflicts: result.conflicts,
+    alternatives: mappedAlternatives,
+    executionTime: result.executionTime,
+  };
+}
+
+/**
+ * Auto-assign optimal KTV using Phase 1 Auto-Assignment Provider
+ * 
+ * Scoring factors:
+ * - Skill matching (25 points)
+ * - Availability (20 points)
+ * - Workload balance (20 points)
+ * - Performance rating (15 points)
+ * - Customer preference (10 points)
+ * - Specialization match (10 points)
+ * 
+ * @param input - Assignment parameters
+ * @returns Assignment result with assigned KTV and alternatives
+ * 
+ * @example
+ * ```typescript
+ * const result = await autoAssignKtv({
+ *   tenantId: 'tenant-001',
+ *   customerId: 'customer-123',
+ *   serviceId: 'service-456',
+ *   serviceType: 'Massage',
+ *   requestedDate: '2026-07-15',
+ *   requestedStartTime: '14:00',
+ *   durationMinutes: 90,
+ *   customerTier: 'vip',
+ *   preferredKtvId: 'ktv-789', // Optional
+ * });
+ * 
+ * if (result.assignedKtvId) {
+ *   console.log('Assigned to:', result.assignedKtvName);
+ *   console.log('Confidence:', result.confidence);
+ * }
+ * ```
+ */
+export async function autoAssignKtv(input: {
+  tenantId: string;
+  customerId: string;
+  serviceId: string;
+  serviceType: string;
+  requestedDate: string;
+  requestedStartTime: string;
+  durationMinutes: number;
+  customerTier: 'vip' | 'loyal' | 'new';
+  preferredKtvId?: string;
+}): Promise<{
+  assignedKtvId: string | null;
+  assignedKtvName?: string;
+  confidence: number;
+  reason: string;
+  alternatives?: Array<{
+    ktvId: string;
+    ktvName: string;
+    score: number;
+    reason: string;
+  }>;
+  executionTime: number;
+}> {
+  const supabase = await createClient();
+
+  // 1. Fetch available KTV candidates
+  const { data: ktvList } = await supabase
+    .from('users')
+    .select('id, full_name, position, skills, specializations, avg_rating, years_of_service, max_daily_bookings')
+    .eq('tenant_id', input.tenantId)
+    .eq('role', 'ktv')
+    .eq('is_active', true);
+
+  if (!ktvList || ktvList.length === 0) {
+    return {
+      assignedKtvId: null,
+      confidence: 0,
+      reason: 'Không có KTV nào khả dụng',
+      executionTime: 0,
+    };
+  }
+
+  // 2. Fetch customer history with KTVs
+  const { data: customerHistory } = await supabase
+    .from('bookings')
+    .select('assigned_ktv_id')
+    .eq('customer_id', input.customerId)
+    .eq('tenant_id', input.tenantId)
+    .not('assigned_ktv_id', 'is', null);
+
+  const ktvHistory: Record<string, number> = {};
+  (customerHistory || []).forEach(booking => {
+    const ktvId = booking.assigned_ktv_id;
+    if (ktvId) {
+      ktvHistory[ktvId] = (ktvHistory[ktvId] || 0) + 1;
+    }
+  });
+
+  // 3. For each KTV, fetch today's workload and check availability
+  const candidatesPromises = ktvList.map(async (ktv) => {
+    // Count bookings today
+    const { data: todayBookings } = await supabase
+      .from('session_logs')
+      .select('id')
+      .eq('completed_by_ktv_id', ktv.id)
+      .eq('assigned_date', input.requestedDate)
+      .in('status', ['pending', 'confirmed', 'in_progress']);
+
+    const currentWorkload = todayBookings?.length || 0;
+    const maxDailyBookings = ktv.max_daily_bookings || 8;
+
+    // Check availability at requested time (simple check: not overloaded)
+    const isAvailable = currentWorkload < maxDailyBookings;
+
+    const candidate: KtvCandidate = {
+      id: ktv.id,
+      name: ktv.full_name || 'Unknown',
+      position: ktv.position || 'KTV',
+      yearsOfService: ktv.years_of_service || 0,
+      skills: (ktv.skills as string[]) || [],
+      specializations: (ktv.specializations as string[]) || [],
+      avgRating: ktv.avg_rating || 0,
+      currentWorkload,
+      maxDailyBookings,
+      availability: {
+        isAvailable,
+        nextAvailableSlot: undefined, // TODO: Implement slot calculation
+      },
+      isPreferredByCustomer: ktv.id === input.preferredKtvId,
+      customerBookingCount: ktvHistory[ktv.id] || 0,
+    };
+
+    return candidate;
+  });
+
+  const candidates = await Promise.all(candidatesPromises);
+
+  // 4. Build assignment input
+  const assignmentInput: AutoAssignmentInput = {
+    tenantId: input.tenantId,
+    booking: {
+      customerId: input.customerId,
+      serviceId: input.serviceId,
+      serviceType: input.serviceType,
+      requestedDate: input.requestedDate,
+      requestedStartTime: input.requestedStartTime,
+      durationMinutes: input.durationMinutes,
+    },
+    customer: {
+      tier: input.customerTier,
+      preferredKtvId: input.preferredKtvId,
+      ktvHistory,
+    },
+    constraints: {
+      minRating: input.customerTier === 'vip' ? 4.0 : undefined,
+    },
+  };
+
+  // 5. Call Auto-Assignment Provider
+  const provider = new AutoAssignmentProvider({ debug: false });
+  const result: AutoAssignmentOutput = await provider.evaluate(assignmentInput, candidates);
+
+  // 6. Get assigned KTV name
+  const assignedKtv = result.assignedKtvId
+    ? candidates.find(c => c.id === result.assignedKtvId)
+    : null;
+
+  // 7. Map alternatives with KTV names
+  const mappedAlternatives = result.alternatives?.map(alt => {
+    const ktvCandidate = candidates.find(c => c.id === alt.ktvId);
+    return {
+      ktvId: alt.ktvId,
+      ktvName: ktvCandidate?.name || 'Unknown',
+      score: alt.score,
+      reason: alt.reason,
+    };
+  });
+
+  // 8. Return standardized result
+  return {
+    assignedKtvId: result.assignedKtvId,
+    assignedKtvName: assignedKtv?.name,
+    confidence: result.confidence,
+    reason: result.reason,
+    alternatives: mappedAlternatives,
+    executionTime: result.executionTime,
+  };
+}

@@ -139,7 +139,19 @@ export class WorkflowEngine implements IWorkflowEngine {
         correlationId: context.correlationId
       });
       
-      throw error;
+      // Return failed result instead of throwing (tests expect result object)
+      // WorkflowExecutionError contains step results
+      const steps = error instanceof Error && 'stepResult' in error
+        ? (error as any).stepResult ? [(error as any).stepResult] : []
+        : [];
+      
+      return {
+        executionId: execution.id,
+        status: 'failed',
+        error: error instanceof Error ? error.message : 'Unknown error',
+        steps: context.stepResults.length > 0 ? context.stepResults : steps,
+        executionTime: Date.now() - execution.startedAt.getTime()
+      };
     }
   }
 

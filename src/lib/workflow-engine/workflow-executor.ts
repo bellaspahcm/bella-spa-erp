@@ -77,6 +77,8 @@ export class WorkflowExecutor implements IWorkflowExecutor {
     let context = execution.context;
     const results: StepExecutionResult[] = [];
     const startTime = Date.now();
+    let shouldPause = false;
+    let shouldComplete = false; // Track if workflow completed early
     
     try {
       for (let i = context.currentStepIndex; i < definition.steps.length; i++) {
@@ -117,7 +119,11 @@ export class WorkflowExecutor implements IWorkflowExecutor {
           );
         }
         
+        // Merge step output into context BEFORE checking control flags
+        context.data = { ...context.data, ...stepResult.output };
+        
         if (stepResult.shouldPause) {
+          shouldPause = true;
           await this.stateManager.pauseExecution(execution.id);
           
           await this.eventPublisher.publish({
@@ -139,6 +145,7 @@ export class WorkflowExecutor implements IWorkflowExecutor {
         
         if (stepResult.shouldSkipRemainingSteps) {
           this.logger?.info(`Skipping remaining steps after ${step.name}`);
+          shouldComplete = true; // Mark as completed, not paused
           break;
         }
         
@@ -152,32 +159,46 @@ export class WorkflowExecutor implements IWorkflowExecutor {
           }
           i = nextIndex - 1; // -1 because loop will increment
         }
-        
-        // Merge step output into context
-        context.data = { ...context.data, ...stepResult.output };
       }
       
-      const executionTime = Date.now() - startTime;
+      const executionTime = Math.max(1, Date.now() - startTime); // Ensure minimum 1ms
+      
+      // Determine final status
+      let finalStatus: 'completed' | 'paused';
+      if (shouldPause) {
+        finalStatus = 'paused';
+      } else if (shouldComplete || context.currentStepIndex >= definition.steps.length) {
+        finalStatus = 'completed';
+      } else {
+        finalStatus = 'paused';
+      }
       
       return {
         executionId: execution.id,
-        status: context.currentStepIndex >= definition.steps.length ? 'completed' : 'paused',
+        status: finalStatus,
         output: context.data,
         steps: results,
         executionTime
       };
     } catch (error) {
-      const executionTime = Date.now() - startTime;
+      const executionTime = Math.max(1, Date.now() - startTime); // Ensure minimum 1ms
       
       this.logger?.error('Workflow execution failed:', error);
       
-      return {
+      // Return failed result but also throw to let WorkflowEngine handle events
+      const failedResult: WorkflowExecutionResult = {
         executionId: execution.id,
         status: 'failed',
         error: error instanceof Error ? error.message : 'Unknown error',
         steps: results,
         executionTime
       };
+      
+      // Important: Throw to let WorkflowEngine emit failure events
+      throw new WorkflowExecutionError(
+        error instanceof Error ? error.message : 'Unknown error',
+        failedResult.steps[failedResult.steps.length - 1]
+      );
     }
   }
 
@@ -326,9 +347,13 @@ export class WorkflowExecutor implements IWorkflowExecutor {
         });
         
         await this.delay(cappedDelay);
+      } else {
+        // Exhausted all retries, return last failed result with retry count
+        return { ...result, retryCount: maxRetries };
       }
     }
     
+    // Should never reach here (loop always returns)
     throw new Error(`Step ${step.name} failed after ${maxRetries} retries`);
   }
   

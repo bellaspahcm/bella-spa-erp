@@ -1,0 +1,160 @@
+
+> bella-spa-erp@0.1.0 test
+> jest capacity-management-provider.test.ts --no-coverage
+
+  console.log
+    Γùç injected env (8) from .env.local // tip: Γîÿ multiple files { path: ['.env.local', '.env'] }
+
+      at _log (node_modules/dotenv/lib/main.js:131:11)
+
+  console.log
+    [Jest Setup] SUPABASE_SERVICE_ROLE_KEY loaded: sb_secret_Dm... (41 chars)
+
+      at Object.log (jest.setup.ts:10:9)
+
+FAIL src/lib/decision-engine/providers/booking/__tests__/capacity-management-provider.test.ts
+  CapacityManagementProvider
+    1. Daily Limit Enforcement
+      ├ù should allow booking when under daily limit (5 ms)
+      ΓêÜ should reject booking when at daily limit (2 ms)
+      ├ù should exclude cancelled bookings from count (1 ms)
+    2. Time Overlap Detection
+      ΓêÜ should detect exact time overlap (1 ms)
+      ΓêÜ should detect partial overlap (start during existing) (1 ms)
+      ΓêÜ should detect partial overlap (end during existing)
+      ΓêÜ should allow booking if no overlap (1 ms)
+    3. Concurrent Session Limits
+      ΓêÜ should reject if concurrent limit exceeded
+      ├ù should allow if within concurrent limit (3 ms)
+    4. Break Time Violations
+      ΓêÜ should enforce minimum break time between bookings (1 ms)
+      ΓêÜ should allow booking with sufficient break time
+      ΓêÜ should skip break time check if not enforced
+    5. Working Hours Validation
+      ΓêÜ should reject booking outside working hours (too early)
+      ΓêÜ should reject booking outside working hours (too late) (1 ms)
+      ΓêÜ should allow booking within working hours
+    6. Buffer Slot Management (VIP vs Non-VIP)
+      ΓêÜ should calculate buffer slots correctly (1 ms)
+      ΓêÜ should track buffer slot usage as capacity fills
+      ΓêÜ should allow VIP booking in buffer zone
+    7. Peak Hour Management
+      ΓêÜ should detect peak hour correctly
+      ΓêÜ should apply peak hour capacity limit
+      ├ù should use normal capacity outside peak hours (1 ms)
+    8. Alternative Time Suggestions
+      ΓêÜ should suggest next day when at daily limit (1 ms)
+      ΓêÜ should suggest next available slot on time overlap
+      ΓêÜ should suggest off-peak hours when utilization high (1 ms)
+      ΓêÜ should limit alternatives to 3 max
+    9. Capacity Snapshot Generation
+      ΓêÜ should generate correct capacity snapshot (2 ms)
+      ΓêÜ should include buffer and peak hour info in snapshot
+    10. Multiple Conflicts Handling
+      ΓêÜ should detect multiple conflict types simultaneously
+      ΓêÜ should combine all conflict reasons in rejection message
+    11. Edge Cases
+      ├ù should handle exact time boundary (no overlap)
+      ΓêÜ should handle empty existing bookings
+      ΓêÜ should handle all cancelled bookings (1 ms)
+      ΓêÜ should handle midnight crossing bookings
+    12. Performance
+      ΓêÜ should complete capacity check in < 50ms (1 ms)
+      ΓêÜ should handle many existing bookings efficiently
+      ΓêÜ should perform snapshot generation quickly
+    13. Input Validation
+      ΓêÜ should throw error for missing tenantId (6 ms)
+      ΓêÜ should throw error for missing ktvId
+      ΓêÜ should throw error for missing booking date (1 ms)
+      ΓêÜ should throw error for missing capacity config
+
+  ΓùÅ CapacityManagementProvider ΓÇ║ 1. Daily Limit Enforcement ΓÇ║ should allow booking when under daily limit
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      88 |
+      89 |       expect(result.success).toBe(true);
+    > 90 |       expect(result.available).toBe(true);
+         |                                ^
+      91 |       expect(result.capacityDetails.currentBookings).toBe(6);
+      92 |       expect(result.capacityDetails.maxBookings).toBe(8);
+      93 |       expect(result.capacityDetails.utilizationPercentage).toBe(75);
+
+      at Object.toBe (src/lib/decision-engine/providers/booking/__tests__/capacity-management-provider.test.ts:90:32)
+
+  ΓùÅ CapacityManagementProvider ΓÇ║ 1. Daily Limit Enforcement ΓÇ║ should exclude cancelled bookings from count
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      120 |       // Should count 7, not 8 (cancelled excluded)
+      121 |       expect(result.capacityDetails.currentBookings).toBe(7);
+    > 122 |       expect(result.available).toBe(true);
+          |                                ^
+      123 |     });
+      124 |   });
+      125 |
+
+      at Object.toBe (src/lib/decision-engine/providers/booking/__tests__/capacity-management-provider.test.ts:122:32)
+
+  ΓùÅ CapacityManagementProvider ΓÇ║ 3. Concurrent Session Limits ΓÇ║ should allow if within concurrent limit
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      261 |       const result = await provider.checkCapacity(input);
+      262 |
+    > 263 |       expect(result.available).toBe(true);
+          |                                ^
+      264 |     });
+      265 |   });
+      266 |
+
+      at Object.toBe (src/lib/decision-engine/providers/booking/__tests__/capacity-management-provider.test.ts:263:32)
+
+  ΓùÅ CapacityManagementProvider ΓÇ║ 7. Peak Hour Management ΓÇ║ should use normal capacity outside peak hours
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      556 |       expect(result.capacityDetails.isPeakHour).toBe(false);
+      557 |       expect(result.capacityDetails.maxBookings).toBe(8); // Normal limit
+    > 558 |       expect(result.available).toBe(true);
+          |                                ^
+      559 |     });
+      560 |   });
+      561 |
+
+      at Object.toBe (src/lib/decision-engine/providers/booking/__tests__/capacity-management-provider.test.ts:558:32)
+
+  ΓùÅ CapacityManagementProvider ΓÇ║ 11. Edge Cases ΓÇ║ should handle exact time boundary (no overlap)
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      730 |
+      731 |       // Exact boundary should not count as overlap
+    > 732 |       expect(result.available).toBe(true);
+          |                                ^
+      733 |     });
+      734 |
+      735 |     it('should handle empty existing bookings', async () => {
+
+      at Object.toBe (src/lib/decision-engine/providers/booking/__tests__/capacity-management-provider.test.ts:732:32)
+
+Test Suites: 1 failed, 1 total
+Tests:       5 failed, 35 passed, 40 total
+Snapshots:   0 total
+Time:        0.679 s, estimated 1 s
+Ran all test suites matching capacity-management-provider.test.ts.
