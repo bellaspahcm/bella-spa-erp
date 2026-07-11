@@ -115,6 +115,7 @@ export function useDashboardStats(params: {
   }, [tenantId, userId, role]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void load();
   }, [load]);
 

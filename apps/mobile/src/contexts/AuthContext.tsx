@@ -1,9 +1,9 @@
 // apps/mobile/src/contexts/AuthContext.tsx
 // 4-state auth flow: loading → loading-profile → authenticated/unauthenticated
 
-import type { AuthState, CurrentUser } from '../lib/shared-utils';
+import type { AuthState } from '../lib/shared-utils';
 import type { Session } from '@supabase/supabase-js';
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { fetchUserProfile } from '../services/auth/fetchUserProfile';
 import { getMobileSupabase } from '../lib/supabase';
 
@@ -17,25 +17,8 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AuthState>({ status: 'loading' });
 
-  useEffect(() => {
-    const supabase = getMobileSupabase();
-
-    // Restore session from AsyncStorage on app startup
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      handleSession(session);
-    });
-
-    // Listen for auth state changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      handleSession(session);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  async function handleSession(session: Session | null) {
+  // Declare handleSession before useEffect so it is available when the effect runs
+  const handleSession = useCallback(async (session: Session | null) => {
     if (!session?.user) {
       setState({ status: 'unauthenticated' });
       return;
@@ -63,7 +46,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     setState({ status: 'authenticated', user: result.user });
-  }
+  }, []);
+
+  useEffect(() => {
+    const supabase = getMobileSupabase();
+
+    // Restore session from AsyncStorage on app startup
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      void handleSession(session);
+    });
+
+    // Listen for auth state changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      void handleSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [handleSession]);
 
   async function signIn(email: string, password: string) {
     const supabase = getMobileSupabase();

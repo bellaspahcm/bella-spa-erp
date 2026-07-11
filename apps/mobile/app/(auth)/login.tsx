@@ -1,7 +1,6 @@
 // apps/mobile/app/(auth)/login.tsx
 // Login screen with inline validation
 
-import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,

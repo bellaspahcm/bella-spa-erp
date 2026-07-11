@@ -333,7 +333,6 @@ describe('Booking Flow Integration Tests', () => {
       console.log('--- ✅ Scenario 2c: PASSED ---\n');
     }, 15000);
   });
-});
 
   // ============================================================================
   // SCENARIO 3: Alternative Time Acceptance Flow

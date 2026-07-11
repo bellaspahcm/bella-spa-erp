@@ -11,7 +11,6 @@ import React, {
   createContext,
   useContext,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -81,11 +80,16 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
 
   // Use ref to avoid stale closure in async callback
   const tenantIdRef = useRef(tenantId);
-  tenantIdRef.current = tenantId;
+
+  // Sync ref value in an effect to avoid updating ref during render
+  useEffect(() => {
+    tenantIdRef.current = tenantId;
+  });
 
   useEffect(() => {
     // ── Case 1: No session or no tenant_id ──────────────────────────────
     if (auth.status !== 'authenticated' || !tenantId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setState({ status: 'none' });
       return;
     }
@@ -133,7 +137,6 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     // ── FIX: Correct dependency array ─────────────────────────────────
     // auth.status changes: loading → authenticated (need to load)
     // tenantId changes: switch tenant (need to reload)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [auth.status, tenantId]);
 
   return <TenantCtx.Provider value={state}>{children}</TenantCtx.Provider>;
