@@ -116,7 +116,7 @@ export class BookingProcess extends BaseBusinessProcess<
     }
 
     // Calculate deposit if required
-    if (requiresDeposit && context.rules.requiresDeposit) {
+    if (requiresDeposit && context.rules?.requiresDeposit) {
       // In real system, would fetch service price and calculate deposit
       // For demo, use fixed amount
       depositAmount = 500000; // 500k VND deposit

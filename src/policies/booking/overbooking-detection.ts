@@ -19,6 +19,35 @@
 import type { Policy } from '@/lib/decision-engine/types';
 import { createClient } from '@/lib/supabase-server';
 
+export interface BookingPolicyRule<T> {
+  id: string;
+  name: string;
+  description: string;
+  priority: number;
+  conditions: Record<string, unknown>;
+  action: (context: T) => Promise<{
+    decision: 'approve' | 'reject';
+    reason: string;
+    confidence: number;
+    metadata?: Record<string, unknown>;
+  }>;
+}
+
+export interface BookingPolicy<T> {
+  id: string;
+  name: string;
+  domain: string;
+  category: string;
+  version: string;
+  description: string;
+  rules: BookingPolicyRule<T>[];
+  evaluate: (context: T) => Promise<{
+    decision: 'approve' | 'reject';
+    reason?: string;
+    metadata?: Record<string, unknown>;
+  }>;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────────────────────────────────────
@@ -100,17 +129,17 @@ async function checkKTVConflicts(
   const endTime = calculateEndTime(time, duration);
   const requestedSlot: TimeSlot = { startTime: time, endTime };
 
-  // Query all bookings for this KTV on this date
+  // Query all active session logs for this KTV on this date
   let query = supabase
-    .from('bookings')
-    .select('id, preferred_time, duration, customer_id, customers(name_mother)')
-    .eq('assigned_ktv_id', ktvId)
-    .eq('preferred_date', date)
+    .from('session_logs')
+    .select('id, assigned_time, standard_duration, booking_id, bookings(customer_id, customers(name_mother))')
+    .eq('completed_by_ktv_id', ktvId)
+    .eq('assigned_date', date)
     .eq('tenant_id', tenantId)
-    .in('status', ['confirmed', 'in_progress']); // only check active bookings
+    .in('status', ['pending', 'confirmed', 'in_progress']);
 
   if (excludeBookingId) {
-    query = query.neq('id', excludeBookingId);
+    query = query.neq('booking_id', excludeBookingId);
   }
 
   const { data: existingBookings, error } = await query;
@@ -123,18 +152,22 @@ async function checkKTVConflicts(
   const conflicts: Conflict[] = [];
 
   for (const booking of existingBookings || []) {
-    const bookingEndTime = calculateEndTime(booking.preferred_time, booking.duration);
+    const assignedTime = booking.assigned_time || '00:00';
+    const durationMins = booking.standard_duration || 90;
+    const bookingEndTime = calculateEndTime(assignedTime, durationMins);
     const bookingSlot: TimeSlot = {
-      startTime: booking.preferred_time,
+      startTime: assignedTime,
       endTime: bookingEndTime,
     };
 
     if (timeSlotsOverlap(requestedSlot, bookingSlot)) {
+      const bookingsData = booking.bookings as unknown as { customer_id: string; customers?: { name_mother?: string } } | null;
+      const nameMother = bookingsData?.customers?.name_mother || 'N/A';
       conflicts.push({
         type: 'ktv',
-        conflictingBookingId: booking.id,
-        conflictingTime: booking.preferred_time,
-        conflictingCustomer: booking.customers?.name_mother,
+        conflictingBookingId: booking.booking_id || '',
+        conflictingTime: assignedTime,
+        conflictingCustomer: nameMother,
       });
     }
   }
@@ -158,17 +191,17 @@ async function checkRoomConflicts(
   const endTime = calculateEndTime(time, duration);
   const requestedSlot: TimeSlot = { startTime: time, endTime };
 
-  // Query all bookings for this room on this date
+  // Query all active session logs for this room on this date
   let query = supabase
-    .from('bookings')
-    .select('id, preferred_time, duration, customer_id, customers(name_mother)')
-    .eq('room_id', roomId)
-    .eq('preferred_date', date)
+    .from('session_logs')
+    .select('id, assigned_time, standard_duration, booking_id, bookings(customer_id, customers(name_mother))')
+    .eq('booking_resource_id', roomId)
+    .eq('assigned_date', date)
     .eq('tenant_id', tenantId)
-    .in('status', ['confirmed', 'in_progress']);
+    .in('status', ['pending', 'confirmed', 'in_progress']);
 
   if (excludeBookingId) {
-    query = query.neq('id', excludeBookingId);
+    query = query.neq('booking_id', excludeBookingId);
   }
 
   const { data: existingBookings, error } = await query;
@@ -181,18 +214,22 @@ async function checkRoomConflicts(
   const conflicts: Conflict[] = [];
 
   for (const booking of existingBookings || []) {
-    const bookingEndTime = calculateEndTime(booking.preferred_time, booking.duration);
+    const assignedTime = booking.assigned_time || '00:00';
+    const durationMins = booking.standard_duration || 90;
+    const bookingEndTime = calculateEndTime(assignedTime, durationMins);
     const bookingSlot: TimeSlot = {
-      startTime: booking.preferred_time,
+      startTime: assignedTime,
       endTime: bookingEndTime,
     };
 
     if (timeSlotsOverlap(requestedSlot, bookingSlot)) {
+      const bookingsData = booking.bookings as unknown as { customer_id: string; customers?: { name_mother?: string } } | null;
+      const nameMother = bookingsData?.customers?.name_mother || 'N/A';
       conflicts.push({
         type: 'room',
-        conflictingBookingId: booking.id,
-        conflictingTime: booking.preferred_time,
-        conflictingCustomer: booking.customers?.name_mother,
+        conflictingBookingId: booking.booking_id || '',
+        conflictingTime: assignedTime,
+        conflictingCustomer: nameMother,
       });
     }
   }
@@ -211,12 +248,12 @@ async function countKTVSessionsOnDate(
   const supabase = await createClient();
 
   const { count, error } = await supabase
-    .from('bookings')
+    .from('session_logs')
     .select('id', { count: 'exact', head: true })
-    .eq('assigned_ktv_id', ktvId)
-    .eq('preferred_date', date)
+    .eq('completed_by_ktv_id', ktvId)
+    .eq('assigned_date', date)
     .eq('tenant_id', tenantId)
-    .in('status', ['confirmed', 'in_progress']);
+    .in('status', ['pending', 'confirmed', 'in_progress']);
 
   if (error) {
     console.error('[overbooking-detection] Error counting KTV sessions:', error);
@@ -230,7 +267,7 @@ async function countKTVSessionsOnDate(
 // Policy Definition
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const overbookingDetectionPolicy: Policy<OverbookingContext> = {
+export const overbookingDetectionPolicy: BookingPolicy<OverbookingContext> = {
   id: 'booking.overbooking-detection',
   name: 'Overbooking Detection Policy',
   domain: 'booking',
@@ -514,4 +551,37 @@ export const overbookingDetectionPolicy: Policy<OverbookingContext> = {
       },
     },
   ],
+  async evaluate(context: OverbookingContext) {
+    // Run rules in order of priority (highest first)
+    const sortedRules = [...this.rules].sort((a, b) => b.priority - a.priority);
+    
+    let warningResult: { decision: 'approve'; reason: string; metadata: Record<string, unknown> } | null = null;
+    
+    for (const rule of sortedRules) {
+      const result = await rule.action(context);
+      if (result.decision === 'reject') {
+        return {
+          decision: 'reject' as const,
+          reason: result.reason,
+          metadata: result.metadata,
+        };
+      }
+      if (result.metadata?.isWarning) {
+        warningResult = {
+          decision: 'approve' as const,
+          reason: result.reason,
+          metadata: result.metadata as Record<string, unknown>,
+        };
+      }
+    }
+    
+    if (warningResult) {
+      return warningResult;
+    }
+    
+    return {
+      decision: 'approve' as const,
+      reason: 'All checks passed',
+    };
+  }
 };

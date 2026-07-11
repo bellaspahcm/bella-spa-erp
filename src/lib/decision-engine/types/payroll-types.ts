@@ -90,13 +90,13 @@ export interface SalaryComponent {
   breakdown?: Record<string, number>;
   
   /** Additional metadata for audit/debugging */
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   
   /** Rules that matched (from DecisionResult) */
-  matchedRules?: DecisionResult['matchedRules'];
+  matchedRules?: string[];
   
   /** Additional observability/debugging data */
-  observability?: Record<string, any>;
+  observability?: Record<string, unknown>;
 }
 
 /**
@@ -131,13 +131,13 @@ export interface SalaryDeduction {
   breakdown?: Record<string, number>;
   
   /** Additional metadata for audit/debugging */
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   
-  /** Rules that matched (from DecisionResult) */
-  matchedRules?: DecisionResult['matchedRules'];
+  /** Rules that matched */
+  matchedRules?: string[];
   
   /** Additional observability/debugging data */
-  observability?: Record<string, any>;
+  observability?: Record<string, unknown>;
 }
 
 /**
@@ -321,7 +321,7 @@ export interface PayrollProvider<T = SalaryComponent | SalaryDeduction> {
    * @returns Component or deduction result
    */
   evaluate(
-    context: any, // Using any here to allow flexibility, will be PayrollDecisionContext in practice
+    context: unknown, // Using unknown to allow flexibility, will be PayrollDecisionContext in practice
     options?: ProviderEvaluationOptions
   ): Promise<T>;
   

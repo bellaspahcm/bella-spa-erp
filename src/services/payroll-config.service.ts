@@ -28,6 +28,7 @@ import type {
   DEFAULT_CONFIGS
 } from '@/types/payroll-config';
 import { DEFAULT_CONFIGS as DEFAULT_CONFIG_MAP } from '@/types/payroll-config';
+import type { Database } from '@/types/database.types';
 
 // =====================================================
 // CACHE CONFIGURATION
@@ -116,7 +117,7 @@ export class PayrollConfigService {
       const config: ProviderConfig = {
         enabled: data.enabled,
         strategy: data.strategy,
-        config: data.config || {}
+        config: (data.config as unknown as Record<string, unknown>) || {}
       };
 
       // Cache for TTL
@@ -156,7 +157,7 @@ export class PayrollConfigService {
         configMap[row.provider_key] = {
           enabled: row.enabled,
           strategy: row.strategy,
-          config: row.config || {}
+          config: (row.config as unknown as Record<string, unknown>) || {}
         };
       });
 
@@ -215,7 +216,7 @@ export class PayrollConfigService {
       // Upsert (insert or update)
       const { data, error } = await supabase
         .from('tenant_payroll_config')
-        .upsert(payload, {
+        .upsert(payload as unknown as Database['public']['Tables']['tenant_payroll_config']['Insert'], {
           onConflict: 'tenant_id,provider_key'
         })
         .select('enabled, strategy, config')
@@ -226,7 +227,7 @@ export class PayrollConfigService {
       const config: ProviderConfig = {
         enabled: data.enabled,
         strategy: data.strategy,
-        config: data.config || {}
+        config: (data.config as unknown as Record<string, unknown>) || {}
       };
 
       // Invalidate cache
@@ -298,10 +299,8 @@ export class PayrollConfigService {
       }
 
       const { data, error } = await query;
-
       if (error) throw error;
-
-      return data || [];
+      return (data || []) as unknown as TenantPayrollConfigHistory[];
     } catch (error) {
       console.error(`[PayrollConfigService] Error loading config history:`, error);
       throw error;
@@ -397,7 +396,7 @@ export class PayrollConfigService {
    * @returns Default config
    */
   private getDefaultConfig(providerKey: ProviderKey): ProviderConfig {
-    const defaultConfig = DEFAULT_CONFIG_MAP[providerKey];
+    const defaultConfig = (DEFAULT_CONFIG_MAP as Record<string, ProviderConfig | undefined>)[providerKey];
 
     if (defaultConfig) {
       return defaultConfig;

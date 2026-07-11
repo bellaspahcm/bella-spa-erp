@@ -38,12 +38,14 @@ export interface SalaryReconciliationRow {
   legacy_session_bonus: number;
   legacy_kpi_bonus: number;
   legacy_deductions: number;
+  legacy_product_sales_commission?: number;
   legacy_total: number;
   legacy_status: string;
   ai_base_salary: number;
   ai_session_bonus: number;
   ai_kpi_bonus: number;
   ai_deductions: number;
+  ai_product_sales_commission?: number;
   ai_total: number;
   diff_total: number | null;
   diff_percent: number | null;

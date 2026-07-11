@@ -61,8 +61,10 @@ export function RulesTablePagination({
     navigateToPage(totalPages);
   };
 
-  const handlePageSelect = (value: string) => {
-    navigateToPage(Number(value));
+  const handlePageSelect = (value: string | null) => {
+    if (value) {
+      navigateToPage(Number(value));
+    }
   };
 
   // Generate page options (show max 100 pages in dropdown)

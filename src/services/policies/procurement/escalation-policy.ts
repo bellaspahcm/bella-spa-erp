@@ -23,7 +23,10 @@ export class EscalationPolicy implements ProcurementPolicy<EscalationResult> {
   async evaluate(
     context: ProcurementDecisionContext
   ): Promise<EscalationResult> {
-    const { requisition, rules, metadata } = context;
+    const requisition = context.requisition;
+    const rules = context.rules || {};
+    const metadata = context.metadata;
+    const maxRejections = rules.maxRejections ?? 3;
     const matchedRules: string[] = [];
 
     // Rule 1: Critical urgency → escalate immediately
@@ -40,7 +43,7 @@ export class EscalationPolicy implements ProcurementPolicy<EscalationResult> {
 
     // Rule 2: Multiple rejections → escalate
     const rejectionCount = (metadata?.rejectionCount as number) || 0;
-    if (rejectionCount >= rules.maxRejections) {
+    if (rejectionCount >= maxRejections) {
       matchedRules.push('max-rejections-escalation');
       return {
         shouldEscalate: true,

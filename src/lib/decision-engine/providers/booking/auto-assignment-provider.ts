@@ -68,9 +68,11 @@ export class AutoAssignmentProvider {
           priority: rule.priority,
           conditions: this.convertConditionToReasoner(rule.condition),
           action: {
-            outcome: rule.action.type === 'approve' ? 'APPROVE' : 'MODIFY',
+            outcome: typeof rule.action === 'function'
+              ? 'APPROVE'
+              : rule.action.type === 'approve' ? 'APPROVE' : 'ESCALATE',
             reason: rule.name,
-            metadata: rule.action.data,
+            metadata: typeof rule.action === 'function' ? undefined : rule.action.data,
           },
         })),
     };

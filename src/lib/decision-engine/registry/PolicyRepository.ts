@@ -6,14 +6,36 @@
  */
 
 import { createClient } from '@/lib/supabase-server';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import type {
   PolicyRegistryEntry,
   PolicyRegistryFilters,
   PolicyListResult,
   PolicyVersionsResult,
+  PolicyStatus,
+  PolicyMetadata,
 } from './types';
 import { PolicyNotFoundError, PolicyVersionConflictError } from './types';
 import { PAGINATION_DEFAULTS } from './constants';
+import type { PolicyRegistryDatabase, PolicyRegistryDbRow } from './database-types';
+
+/**
+ * Return a base SupabaseClient for querying tables not in the generated schema.
+ * Results are type-asserted to PolicyRegistryDbRow in each method.
+ */
+function typedClient(raw: Awaited<ReturnType<typeof createClient>>): SupabaseClient {
+  return raw as unknown as SupabaseClient;
+}
+
+/** Type-assert Supabase query result to PolicyRegistryDbRow */
+function asDbRow(data: unknown): PolicyRegistryDbRow {
+  return data as PolicyRegistryDbRow;
+}
+
+/** Type-assert Supabase query results to PolicyRegistryDbRow array */
+function asDbRows(data: unknown): PolicyRegistryDbRow[] {
+  return (data as PolicyRegistryDbRow[]) ?? [];
+}
 
 export class PolicyRepository {
   /**
@@ -22,7 +44,8 @@ export class PolicyRepository {
   static async create(
     data: Omit<PolicyRegistryEntry, 'id' | 'createdAt' | 'updatedAt'>
   ): Promise<PolicyRegistryEntry> {
-    const supabase = await createClient();
+    const rawSupabase = await createClient();
+    const supabase = typedClient(rawSupabase);
 
     // Check for duplicate (policy_id, version)
     const existing = await this.findByIdAndVersion(data.policyId, data.version);
@@ -61,7 +84,8 @@ export class PolicyRepository {
       .single();
 
     if (error) throw error;
-    return mapDbToEntry(policy);
+    const dbRow = policy as unknown as PolicyRegistryDbRow;
+    return mapDbToEntry(dbRow);
   }
 
   /**
@@ -71,7 +95,8 @@ export class PolicyRepository {
     policyId: string,
     version: string
   ): Promise<PolicyRegistryEntry | null> {
-    const supabase = await createClient();
+    const rawSupabase = await createClient();
+    const supabase = typedClient(rawSupabase);
 
     const { data, error } = await supabase
       .from('policy_registry')
@@ -82,14 +107,17 @@ export class PolicyRepository {
       .single();
 
     if (error && error.code !== 'PGRST116') throw error; // PGRST116 = not found
-    return data ? mapDbToEntry(data) : null;
+    if (!data) return null;
+    const dbRow = data as unknown as PolicyRegistryDbRow;
+    return mapDbToEntry(dbRow);
   }
 
   /**
    * Find latest version of a policy
    */
   static async findLatestVersion(policyId: string): Promise<PolicyRegistryEntry | null> {
-    const supabase = await createClient();
+    const rawSupabase = await createClient();
+    const supabase = typedClient(rawSupabase);
 
     const { data, error } = await supabase
       .from('policy_registry')
@@ -101,14 +129,17 @@ export class PolicyRepository {
       .single();
 
     if (error && error.code !== 'PGRST116') throw error;
-    return data ? mapDbToEntry(data) : null;
+    if (!data) return null;
+    const dbRow = data as unknown as PolicyRegistryDbRow;
+    return mapDbToEntry(dbRow);
   }
 
   /**
    * Find active version of a policy
    */
   static async findActiveVersion(policyId: string): Promise<PolicyRegistryEntry | null> {
-    const supabase = await createClient();
+    const rawSupabase = await createClient();
+    const supabase = typedClient(rawSupabase);
 
     const { data, error } = await supabase
       .from('policy_registry')
@@ -119,14 +150,17 @@ export class PolicyRepository {
       .single();
 
     if (error && error.code !== 'PGRST116') throw error;
-    return data ? mapDbToEntry(data) : null;
+    if (!data) return null;
+    const dbRow = data as unknown as PolicyRegistryDbRow;
+    return mapDbToEntry(dbRow);
   }
 
   /**
    * Find all versions of a policy
    */
   static async findAllVersions(policyId: string): Promise<PolicyVersionsResult> {
-    const supabase = await createClient();
+    const rawSupabase = await createClient();
+    const supabase = typedClient(rawSupabase);
 
     const { data, error } = await supabase
       .from('policy_registry')
@@ -137,7 +171,8 @@ export class PolicyRepository {
 
     if (error) throw error;
 
-    const versions = data.map(mapDbToEntry);
+    const dbRows = (data || []) as unknown as PolicyRegistryDbRow[];
+    const versions = dbRows.map(mapDbToEntry);
     const activeVersion = versions.find(v => v.isActive)?.version;
     const latestVersion = versions[0]?.version;
 
@@ -153,7 +188,8 @@ export class PolicyRepository {
    * Find all policies with filters
    */
   static async findAll(filters?: PolicyRegistryFilters): Promise<PolicyListResult> {
-    const supabase = await createClient();
+    const rawSupabase = await createClient();
+    const supabase = typedClient(rawSupabase);
 
     let query = supabase
       .from('policy_registry')
@@ -215,7 +251,8 @@ export class PolicyRepository {
     const { data, error, count } = await query;
     if (error) throw error;
 
-    const policies = (data || []).map(mapDbToEntry);
+    const dbRows = (data || []) as unknown as PolicyRegistryDbRow[];
+    const policies = dbRows.map(mapDbToEntry);
     const total = count || 0;
     const page = Math.floor(offset / limit) + 1;
     const hasMore = offset + limit < total;
@@ -237,9 +274,10 @@ export class PolicyRepository {
     version: string,
     updates: Partial<PolicyRegistryEntry>
   ): Promise<PolicyRegistryEntry> {
-    const supabase = await createClient();
+    const rawSupabase = await createClient();
+    const supabase = typedClient(rawSupabase);
 
-    const dbUpdates: any = {
+    const dbUpdates: Record<string, unknown> = {
       updated_at: new Date().toISOString(),
     };
 
@@ -251,7 +289,7 @@ export class PolicyRepository {
     if (updates.isActive !== undefined) dbUpdates.is_active = updates.isActive;
     if (updates.publishedAt) dbUpdates.published_at = updates.publishedAt;
     if (updates.publishedBy) dbUpdates.published_by = updates.publishedBy;
-    if (updates.deprecatedAt) dbUpdates.deprecated_at = updates.deprecatedAt;
+    if (updates.deprecatedAt !== undefined) dbUpdates.deprecated_at = updates.deprecatedAt;
     if (updates.archivedAt) dbUpdates.archived_at = updates.archivedAt;
     if (updates.deletedAt) dbUpdates.deleted_at = updates.deletedAt;
     if (updates.deletedBy) dbUpdates.deleted_by = updates.deletedBy;
@@ -279,14 +317,16 @@ export class PolicyRepository {
     if (error) throw error;
     if (!data) throw new PolicyNotFoundError(policyId, version);
 
-    return mapDbToEntry(data);
+    const dbRow = data as unknown as PolicyRegistryDbRow;
+    return mapDbToEntry(dbRow);
   }
 
   /**
    * Set active version (deactivate all others)
    */
   static async setActive(policyId: string, version: string): Promise<void> {
-    const supabase = await createClient();
+    const rawSupabase = await createClient();
+    const supabase = typedClient(rawSupabase);
 
     // Deactivate all versions
     await supabase
@@ -314,7 +354,8 @@ export class PolicyRepository {
     version: string,
     deletedBy: string
   ): Promise<void> {
-    const supabase = await createClient();
+    const rawSupabase = await createClient();
+    const supabase = typedClient(rawSupabase);
 
     const { error } = await supabase
       .from('policy_registry')
@@ -339,37 +380,37 @@ export class PolicyRepository {
 /**
  * Map database snake_case to TypeScript camelCase
  */
-function mapDbToEntry(dbRow: any): PolicyRegistryEntry {
+function mapDbToEntry(dbRow: PolicyRegistryDbRow): PolicyRegistryEntry {
   return {
     id: dbRow.id,
     policyId: dbRow.policy_id,
     version: dbRow.version,
     name: dbRow.name,
-    description: dbRow.description,
+    description: dbRow.description ?? undefined,
     status: dbRow.status,
-    category: dbRow.category,
-    tenantId: dbRow.tenant_id,
+    category: dbRow.category ?? undefined,
+    tenantId: dbRow.tenant_id ?? undefined,
     isActive: dbRow.is_active,
-    parentVersion: dbRow.parent_version,
+    parentVersion: dbRow.parent_version ?? undefined,
     createdAt: dbRow.created_at,
     createdBy: dbRow.created_by,
     updatedAt: dbRow.updated_at,
     updatedBy: dbRow.updated_by,
-    publishedAt: dbRow.published_at,
-    publishedBy: dbRow.published_by,
-    deprecatedAt: dbRow.deprecated_at,
-    archivedAt: dbRow.archived_at,
-    deletedAt: dbRow.deleted_at,
-    deletedBy: dbRow.deleted_by,
-    ownerDepartment: dbRow.owner_department,
-    businessOwner: dbRow.business_owner,
-    businessOwnerEmail: dbRow.business_owner_email,
-    technicalOwner: dbRow.technical_owner,
-    technicalOwnerEmail: dbRow.technical_owner_email,
-    reviewDate: dbRow.review_date,
-    effectiveDate: dbRow.effective_date,
-    expireDate: dbRow.expire_date,
-    config: dbRow.config,
-    metadata: dbRow.metadata,
+    publishedAt: dbRow.published_at ?? undefined,
+    publishedBy: dbRow.published_by ?? undefined,
+    deprecatedAt: dbRow.deprecated_at ?? undefined,
+    archivedAt: dbRow.archived_at ?? undefined,
+    deletedAt: dbRow.deleted_at ?? undefined,
+    deletedBy: dbRow.deleted_by ?? undefined,
+    ownerDepartment: dbRow.owner_department ?? undefined,
+    businessOwner: dbRow.business_owner ?? undefined,
+    businessOwnerEmail: dbRow.business_owner_email ?? undefined,
+    technicalOwner: dbRow.technical_owner ?? undefined,
+    technicalOwnerEmail: dbRow.technical_owner_email ?? undefined,
+    reviewDate: dbRow.review_date ?? undefined,
+    effectiveDate: dbRow.effective_date ?? undefined,
+    expireDate: dbRow.expire_date ?? undefined,
+    config: dbRow.config as Record<string, unknown> | undefined,
+    metadata: dbRow.metadata as PolicyMetadata | undefined,
   };
 }

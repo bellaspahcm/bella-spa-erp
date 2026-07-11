@@ -8,13 +8,10 @@
 // POLICY TYPE (Temporary - should be imported from decision engine)
 // ============================================================================
 
-export interface Policy {
-  id: string;
-  version: string;
-  name: string;
-  description?: string;
-  rules: any[]; // Decision rules
-  config?: Record<string, any>;
+import type { Policy as EnginePolicy } from '../types';
+
+export interface Policy extends EnginePolicy {
+  config?: Record<string, unknown>;
 }
 
 // ============================================================================
@@ -81,7 +78,7 @@ export interface PolicyRegistryEntry {
   expireDate?: string;
   
   // Config
-  config?: Record<string, any>;
+  config?: Record<string, unknown>;
   metadata?: PolicyMetadata;
 }
 
@@ -105,8 +102,8 @@ export interface PolicyHistoryEntry {
   version: string;
   action: PolicyAction;
   fieldChanged?: string; // 'status', 'business_owner', etc.
-  oldValue?: any; // JSONB
-  newValue?: any; // JSONB
+  oldValue?: unknown; // JSONB
+  newValue?: unknown; // JSONB
   reason?: string;
   createdAt: string;
   createdBy: string;
@@ -187,8 +184,8 @@ export interface LogAuditInput {
   version: string;
   action: PolicyAction;
   fieldChanged?: string;
-  oldValue?: any;
-  newValue?: any;
+  oldValue?: unknown;
+  newValue?: unknown;
   reason?: string;
   userId: string;
   ipAddress?: string;
@@ -275,7 +272,7 @@ export class PolicyRegistryError extends Error {
   constructor(
     message: string,
     public code: string,
-    public details?: any
+    public details?: unknown
   ) {
     super(message);
     this.name = 'PolicyRegistryError';

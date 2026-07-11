@@ -6,7 +6,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-client';
-import type { SimulateRulesRequest } from '@/types/rule-management.types';
+import type { SimulateRuleRequest } from '@/types/rule-management.types';
+import type { Json } from '@/types/database.types';
 
 /**
  * POST /api/rule-management/simulate
@@ -41,7 +42,7 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    if (userError || !userData) {
+    if (userError || !userData || !userData.tenant_id) {
       return NextResponse.json(
         {
           success: false,
@@ -52,7 +53,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse request body
-    const body: SimulateRulesRequest = await request.json();
+    const body: SimulateRuleRequest = await request.json();
 
     // Validate required fields
     if (!body.workflowId || !body.testData) {
@@ -128,13 +129,13 @@ export async function POST(request: NextRequest) {
         // Execute rule based on type
         switch (rule.rule_type) {
           case 'condition':
-            result = evaluateCondition(rule.config, body.testData);
+            result = evaluateCondition(rule.config as Record<string, unknown>, body.testData);
             break;
           case 'action':
-            result = evaluateAction(rule.config, body.testData);
+            result = evaluateAction(rule.config as Record<string, unknown>, body.testData);
             break;
           case 'decision':
-            result = evaluateDecision(rule.config, body.testData);
+            result = evaluateDecision(rule.config as Record<string, unknown>, body.testData);
             break;
           default:
             error = `Unknown rule type: ${rule.rule_type}`;
@@ -180,9 +181,9 @@ export async function POST(request: NextRequest) {
         .insert({
           workflow_id: body.workflowId,
           tenant_id: userData.tenant_id,
-          test_data: body.testData,
-          results: simulationResult.results,
-          summary: simulationResult.summary,
+          test_data: body.testData as unknown as Json,
+          results: simulationResult.results as unknown as Json,
+          summary: simulationResult.summary as unknown as Json,
           created_by: user.id
         });
 

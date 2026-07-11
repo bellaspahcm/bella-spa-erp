@@ -95,7 +95,9 @@ export type CommissionStrategy =
   | 'percentage'        // % doanh thu: 5%
   | 'revenue'           // % doanh thu theo tổng
   | 'service'           // Khác nhau theo dịch vụ
-  | 'category';         // Khác nhau theo loại khách (VIP, regular)
+  | 'category'          // Khác nhau theo loại khách (VIP, regular)
+  | 'product_sales'     // % hoa hồng bán sản phẩm
+  | 'total_revenue';    // % tổng doanh thu (dịch vụ + sản phẩm)
 
 export interface CommissionFixedConfig {
   rate: number;                 // Hoa hồng/session (VD: 120000)
@@ -294,7 +296,7 @@ export const DEFAULT_CONFIGS: Partial<TenantPayrollConfigMap> = {
   kpi: {
     enabled: false,  // Off by default
     strategy: null,
-    config: {}
+    config: {} as KPIConfig
   },
   attendance: {
     enabled: true,
@@ -308,7 +310,7 @@ export const DEFAULT_CONFIGS: Partial<TenantPayrollConfigMap> = {
   rating: {
     enabled: false,  // Off by default
     strategy: null,
-    config: {}
+    config: {} as RatingConfig
   }
 };
 

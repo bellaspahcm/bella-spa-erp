@@ -10,9 +10,10 @@
  * - Monitoring integration
  */
 
-import { WorkflowEngine, SupabaseStateManager } from '@/lib/workflow-engine';
+import { WorkflowEngine, SupabaseStateManager, WorkflowExecutor, createWorkflowContext } from '@/lib/workflow-engine';
 import type { WorkflowDefinition, WorkflowContext, WorkflowExecutionResult } from '@/lib/workflow-engine';
 import { createClient } from '@/lib/supabase-client';
+import { InMemoryEventPublisher } from '@/lib/events/publishers/InMemoryEventPublisher';
 
 /**
  * Feature flags for workflow engine
@@ -61,11 +62,22 @@ export class WorkflowEngineService {
         this.config.supabaseServiceRoleKey
       );
 
-      // Create workflow engine
-      this.engine = new WorkflowEngine(this.stateManager, {
-        enableLogging: this.config.enableLogging ?? true,
-        enableMetrics: this.config.enableMetrics ?? true
+      // Create event publisher
+      const eventPublisher = new InMemoryEventPublisher({
+        debug: this.config.enableLogging ?? true,
       });
+
+      // Create executor
+      const executor = new WorkflowExecutor(this.stateManager, eventPublisher);
+
+      // Create workflow engine
+      this.engine = new WorkflowEngine(
+        executor,
+        this.stateManager,
+        eventPublisher,
+        (this.config.enableLogging ?? true) ? console : undefined,
+        createWorkflowContext
+      );
 
       console.log('[WorkflowEngine] Initialized successfully');
     } catch (error) {
@@ -188,7 +200,13 @@ export class WorkflowEngineService {
 
     const supabase = await createClient();
 
-    const { data, error } = await supabase.rpc('get_workflow_execution_detail', {
+    // NOTE: get_workflow_execution_detail RPC exists in DB but not in generated types yet.
+    // Cast via unknown to bypass schema enforcement until next types regeneration.
+    const rpcFn = (supabase.rpc as unknown) as (
+      fn: string,
+      args: Record<string, unknown>
+    ) => Promise<{ data: unknown; error: { message: string } | null }>;
+    const { data, error } = await rpcFn('get_workflow_execution_detail', {
       p_execution_id: executionId
     });
 
@@ -217,7 +235,13 @@ export class WorkflowEngineService {
   ) {
     const supabase = await createClient();
 
-    const { data, error } = await supabase.rpc('get_workflow_executions', {
+    // NOTE: get_workflow_executions RPC exists in DB but not in generated types yet.
+    // Cast via unknown to bypass schema enforcement until next types regeneration.
+    const rpcFn = (supabase.rpc as unknown) as (
+      fn: string,
+      args: Record<string, unknown>
+    ) => Promise<{ data: unknown; error: { message: string } | null }>;
+    const { data, error } = await rpcFn('get_workflow_executions', {
       p_tenant_id: tenantId,
       p_workflow_id: options?.workflowId ?? null,
       p_status: options?.status ?? null,

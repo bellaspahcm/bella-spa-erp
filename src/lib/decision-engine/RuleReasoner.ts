@@ -79,12 +79,39 @@ export class RuleReasoner {
   /**
    * Compare values using operator.
    */
-  private compare(left: any, operator: string, right: any): boolean {
+  private compare(left: unknown, operator: string, right: unknown): boolean {
+    // If comparing numbers, perform arithmetic comparison
+    if (typeof left === 'number' && typeof right === 'number') {
+      switch (operator) {
+        case '>=': return left >= right;
+        case '>': return left > right;
+        case '<=': return left <= right;
+        case '<': return left < right;
+        case '==': return left == right;
+        case '===': return left === right;
+        case '!=': return left != right;
+        case '!==': return left !== right;
+        default: return false;
+      }
+    }
+
+    // If comparing strings, perform lexicographical comparison or equality
+    if (typeof left === 'string' && typeof right === 'string') {
+      switch (operator) {
+        case '>=': return left >= right;
+        case '>': return left > right;
+        case '<=': return left <= right;
+        case '<': return left < right;
+        case '==': return left == right;
+        case '===': return left === right;
+        case '!=': return left != right;
+        case '!==': return left !== right;
+        default: return false;
+      }
+    }
+
+    // Fallback standard checks for other types
     switch (operator) {
-      case '>=': return left >= right;
-      case '>': return left > right;
-      case '<=': return left <= right;
-      case '<': return left < right;
       case '==': return left == right;
       case '===': return left === right;
       case '!=': return left != right;

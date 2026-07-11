@@ -77,7 +77,7 @@ export default function GuideReader({ params }: PageProps) {
           iframeBorder: 'border-slate-200/60 dark:border-[#3E3A35]',
           iframeShadow: 'shadow-sm',
         };
-      case 'baby_care':
+      case 'babycare':
         return {
           wrapperBg: 'bg-[#FFF5F7] dark:bg-[#11100F]',
           loaderColor: 'text-primary dark:text-[#A67D44]',

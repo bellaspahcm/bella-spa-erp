@@ -60,13 +60,13 @@ import type {
   ExpiryDecision,
   TransferDecision,
   InventoryRuleContext,
-  _ProductStock,
+  ProductStock,
   DemandTrend,
-  _AllocationRequest,
+  AllocationRequest,
   LocationStock,
 } from './types';
 import { INVENTORY_THRESHOLDS } from './types';
-import { _allInventoryRules, _inventoryRulesByCategory } from './rules';
+import { allInventoryRules, inventoryRulesByCategory } from './rules';
 
 /**
  * InventoryProvider Options

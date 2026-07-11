@@ -177,7 +177,11 @@ export class KPIProvider implements PayrollProvider<SalaryComponent> {
     }
 
     // Step 1: Load tenant configuration
-    const config = await this.configService.getProviderConfig<KPIConfig>(tenantId, 'kpi');
+    const config = (await this.configService.getProviderConfig(tenantId, 'kpi')) as unknown as {
+      enabled: boolean;
+      strategy: string | null;
+      config: KPIConfig & { metric?: string };
+    };
 
     // Step 2: Check if KPI provider is enabled
     if (!config.enabled) {
@@ -206,7 +210,7 @@ export class KPIProvider implements PayrollProvider<SalaryComponent> {
     }
 
     // Step 4: Select strategy and calculate bonus
-    const result = this.calculateBonus(config.strategy, config.config, activityMetric);
+    const result = this.calculateBonus(config.strategy || 'linear', config.config, activityMetric);
 
     return createSalaryComponent('kpi-bonus', {
       eligible: result.eligible,
@@ -227,23 +231,12 @@ export class KPIProvider implements PayrollProvider<SalaryComponent> {
    */
   private extractActivityMetric(
     config: { config: KPIConfig },
-    sessions: any,
-    sales: any
+    sessions: PayrollDecisionContext['sessions'],
+    sales: PayrollDecisionContext['sales']
   ): number | null {
-    const metric = config.config.metric || 'sessions';
-
-    switch (metric) {
-      case 'sessions':
-        return sessions?.count ?? null;
-      case 'revenue':
-        return sales?.totalRevenue ?? sales?.serviceSales ?? null;
-      case 'sales':
-        return sales?.serviceCount ?? null;
-      case 'deals':
-        return sales?.productCount ?? null;
-      default:
-        return sessions?.count ?? null;
-    }
+    // All KPI strategies use session count as the default metric.
+    // Sales-based metrics fall back to session count.
+    return sessions?.count ?? sales?.serviceCount ?? null;
   }
 
   /**
@@ -252,13 +245,13 @@ export class KPIProvider implements PayrollProvider<SalaryComponent> {
    */
   private calculateBonus(
     strategy: string,
-    config: any,
+    config: KPIConfig,
     activityMetric: number
   ): {
     eligible: boolean;
     amount: number;
     reason: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
   } {
     switch (strategy) {
       case 'threshold':
@@ -289,7 +282,7 @@ export class KPIProvider implements PayrollProvider<SalaryComponent> {
     eligible: boolean;
     amount: number;
     reason: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
   } {
     const { target, bonus } = config;
 
@@ -297,7 +290,7 @@ export class KPIProvider implements PayrollProvider<SalaryComponent> {
       return {
         eligible: true,
         amount: bonus,
-        reason: `KPI target met: ${activityMetric}/${target} ${config.metric || 'sessions'} (Threshold strategy) → ${bonus.toLocaleString('vi-VN')}đ`,
+        reason: `KPI target met: ${activityMetric}/${target} sessions (Threshold) → ${bonus.toLocaleString('vi-VN')}đ`,
         metadata: {
           target,
           actual: activityMetric,
@@ -309,7 +302,7 @@ export class KPIProvider implements PayrollProvider<SalaryComponent> {
     return {
       eligible: false,
       amount: 0,
-      reason: `KPI target not met: ${activityMetric}/${target} ${config.metric || 'sessions'} (need ${target - activityMetric} more)`,
+      reason: `KPI target not met: ${activityMetric}/${target} sessions (need ${target - activityMetric} more)`,
       metadata: {
         target,
         actual: activityMetric,
@@ -330,15 +323,16 @@ export class KPIProvider implements PayrollProvider<SalaryComponent> {
     eligible: boolean;
     amount: number;
     reason: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
   } {
-    const { baseline, bonusPerUnit, maxBonus } = config;
+    const { bonusPerSession, minSessions } = config;
+    const baseline = minSessions ?? 0;
 
     if (activityMetric <= baseline) {
       return {
         eligible: false,
         amount: 0,
-        reason: `KPI below baseline: ${activityMetric}/${baseline} ${config.metric || 'sessions'} (need ${baseline - activityMetric} more)`,
+        reason: `KPI below minimum: ${activityMetric}/${baseline} sessions`,
         metadata: {
           baseline,
           actual: activityMetric,
@@ -348,24 +342,17 @@ export class KPIProvider implements PayrollProvider<SalaryComponent> {
     }
 
     const unitsAboveBaseline = activityMetric - baseline;
-    let bonus = unitsAboveBaseline * bonusPerUnit;
-
-    // Apply max cap if configured
-    if (maxBonus && bonus > maxBonus) {
-      bonus = maxBonus;
-    }
+    const bonus = unitsAboveBaseline * bonusPerSession;
 
     return {
       eligible: true,
       amount: Math.round(bonus),
-      reason: `KPI linear bonus: (${activityMetric} - ${baseline}) × ${bonusPerUnit.toLocaleString('vi-VN')}đ = ${bonus.toLocaleString('vi-VN')}đ${maxBonus && bonus >= maxBonus ? ' (capped)' : ''}`,
+      reason: `KPI linear bonus: (${activityMetric} - ${baseline}) × ${bonusPerSession.toLocaleString('vi-VN')}đ/session = ${bonus.toLocaleString('vi-VN')}đ`,
       metadata: {
         baseline,
         actual: activityMetric,
         unitsAboveBaseline,
-        bonusPerUnit,
-        maxBonus,
-        capped: maxBonus && bonus >= maxBonus,
+        bonusPerSession,
       },
     };
   }
@@ -382,11 +369,10 @@ export class KPIProvider implements PayrollProvider<SalaryComponent> {
     eligible: boolean;
     amount: number;
     reason: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
   } {
     const { tiers } = config;
 
-    // Find matching tier
     const matchedTier = tiers.find(
       (tier) => activityMetric >= tier.min && activityMetric <= tier.max
     );
@@ -396,10 +382,7 @@ export class KPIProvider implements PayrollProvider<SalaryComponent> {
         eligible: false,
         amount: 0,
         reason: `KPI metric ${activityMetric} does not match any configured tier`,
-        metadata: {
-          actual: activityMetric,
-          availableTiers: tiers,
-        },
+        metadata: { actual: activityMetric },
       };
     }
 
@@ -407,11 +390,10 @@ export class KPIProvider implements PayrollProvider<SalaryComponent> {
       return {
         eligible: false,
         amount: 0,
-        reason: `KPI tier bonus: ${activityMetric} ${config.metric || 'sessions'} → Tier ${matchedTier.min}-${matchedTier.max} (no bonus)`,
+        reason: `KPI tier: ${activityMetric} sessions → Tier ${matchedTier.min}-${matchedTier.max} (no bonus)`,
         metadata: {
           actual: activityMetric,
           tier: `${matchedTier.min}-${matchedTier.max}`,
-          tierIndex: tiers.indexOf(matchedTier) + 1,
         },
       };
     }
@@ -419,7 +401,7 @@ export class KPIProvider implements PayrollProvider<SalaryComponent> {
     return {
       eligible: true,
       amount: matchedTier.bonus,
-      reason: `KPI tier bonus: ${activityMetric} ${config.metric || 'sessions'} → Tier ${matchedTier.min}-${matchedTier.max} = ${matchedTier.bonus.toLocaleString('vi-VN')}đ`,
+      reason: `KPI tier bonus: ${activityMetric} sessions → Tier ${matchedTier.min}-${matchedTier.max} = ${matchedTier.bonus.toLocaleString('vi-VN')}đ`,
       metadata: {
         actual: activityMetric,
         tier: `${matchedTier.min}-${matchedTier.max}`,

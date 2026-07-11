@@ -22,7 +22,7 @@ interface AdjustmentsAdvancedFiltersProps {
   onFilterChange: (filters: AdvancedFilters) => void;
   onApply: () => void;
   onReset: () => void;
-  ktvList: Array<{ id: string; full_name: string }>;
+  ktvList: Array<{ id: string; full_name: string; email?: string | null }>;
   userList: Array<{ id: string; full_name: string }>;
 }
 

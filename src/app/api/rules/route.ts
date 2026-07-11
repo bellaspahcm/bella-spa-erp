@@ -7,6 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
+import type { Database, Json } from '@/types/database.types';
 
 export interface CreateRuleRequest {
   name: string;
@@ -64,7 +65,7 @@ export async function GET(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    if (userError || !userData) {
+    if (userError || !userData || !userData.tenant_id) {
       return NextResponse.json(
         {
           success: false,
@@ -169,7 +170,7 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    if (userError || !userData) {
+    if (userError || !userData || !userData.tenant_id) {
       return NextResponse.json(
         {
           success: false,
@@ -236,8 +237,8 @@ export async function POST(request: NextRequest) {
         description: body.description || null,
         provider: body.provider,
         category: body.category || null,
-        conditions: body.conditions,
-        actions: body.actions,
+        conditions: body.conditions as unknown as Json,
+        actions: body.actions as unknown as Json,
         priority: body.priority || 100,
         approval_required: body.approvalRequired || false,
         status: 'draft', // New rules start as draft

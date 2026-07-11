@@ -49,8 +49,14 @@ export function LeaveApprovalModal({ isOpen, onClose, onSuccess, userRole }: Lea
   const [isApprovingLeave, setIsApprovingLeave] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
   const [isRejectingLeave, setIsRejectingLeave] = useState(false);
-  const [recommendation, setRecommendation] = useState<any>(null);
+  const [recommendation, setRecommendation] = useState<
+    | { outcome: string; explanation: string; executionTime: number; policyId: string; policyVersion: string; message: { title: string; description: string; color: string }; knowledge: unknown }
+    | { error: true; message: string }
+    | null
+  >(null);
   const [isLoadingRecommendation, setIsLoadingRecommendation] = useState(false);
+  const isRecError = recommendation && 'error' in recommendation ? recommendation : null;
+  const successRec = recommendation && !('error' in recommendation) ? recommendation : null;
 
   const loadPendingLeaves = async () => {
     try {
@@ -106,14 +112,21 @@ export function LeaveApprovalModal({ isOpen, onClose, onSuccess, userRole }: Lea
         console.log('[LeaveApprovalModal] Decision response:', response);
         
         // Check if response has error
-        if (response.error) {
+        if ('error' in response) {
           setRecommendation({ 
             error: true, 
             message: response.message || 'Không thể tải khuyến nghị' 
           });
         } else if (response.outcome) {
-          // Success - response is already in correct format
-          setRecommendation(response);
+          setRecommendation({
+            outcome: response.outcome,
+            explanation: response.explanation ?? '',
+            executionTime: response.executionTime,
+            policyId: response.policyId,
+            policyVersion: response.policyVersion,
+            message: response.message,
+            knowledge: response.knowledge,
+          });
         } else {
           // Unknown format
           setRecommendation({ 
@@ -319,52 +332,52 @@ export function LeaveApprovalModal({ isOpen, onClose, onSuccess, userRole }: Lea
                               <p className="text-[11px] text-slate-500 mt-0.5">Decision Engine đang đánh giá đơn nghỉ phép</p>
                             </div>
                           </div>
-                        ) : recommendation?.error ? (
+                        ) : isRecError ? (
                           <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex gap-3">
                             <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
                             <div>
                               <p className="text-xs font-black text-amber-800 uppercase">⚠️ Decision Engine không khả dụng</p>
-                              <p className="text-[11px] text-amber-700 mt-0.5">Lỗi: {recommendation.message || 'Không thể tải khuyến nghị tự động'}</p>
+                              <p className="text-[11px] text-amber-700 mt-0.5">Lỗi: {isRecError.message || 'Không thể tải khuyến nghị tự động'}</p>
                               <p className="text-[10px] text-amber-600 mt-1 italic">Bạn vẫn có thể phê duyệt/từ chối thủ công.</p>
                             </div>
                           </div>
-                        ) : recommendation ? (
+                        ) : successRec ? (
                           <div className={cn(
                             "p-4 border rounded-2xl flex gap-3",
-                            recommendation.outcome === 'APPROVE' && "bg-emerald-50 border-emerald-200",
-                            recommendation.outcome === 'REJECT' && "bg-rose-50 border-rose-200",
-                            recommendation.outcome === 'ESCALATE' && "bg-amber-50 border-amber-200"
+                            successRec.outcome === 'APPROVE' && "bg-emerald-50 border-emerald-200",
+                            successRec.outcome === 'REJECT' && "bg-rose-50 border-rose-200",
+                            successRec.outcome === 'ESCALATE' && "bg-amber-50 border-amber-200"
                           )}>
-                            {recommendation.outcome === 'APPROVE' && <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />}
-                            {recommendation.outcome === 'REJECT' && <XCircle className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" />}
-                            {recommendation.outcome === 'ESCALATE' && <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />}
+                            {successRec.outcome === 'APPROVE' && <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />}
+                            {successRec.outcome === 'REJECT' && <XCircle className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" />}
+                            {successRec.outcome === 'ESCALATE' && <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />}
                             <div className="flex-1">
                               <div className="flex items-center justify-between">
                                 <p className={cn(
                                   "text-xs font-black uppercase tracking-tight",
-                                  recommendation.outcome === 'APPROVE' && "text-emerald-800",
-                                  recommendation.outcome === 'REJECT' && "text-rose-800",
-                                  recommendation.outcome === 'ESCALATE' && "text-amber-800"
+                                  successRec.outcome === 'APPROVE' && "text-emerald-800",
+                                  successRec.outcome === 'REJECT' && "text-rose-800",
+                                  successRec.outcome === 'ESCALATE' && "text-amber-800"
                                 )}>
-                                  {recommendation.outcome === 'APPROVE' && '✅ Khuyến nghị: PHÊ DUYỆT'}
-                                  {recommendation.outcome === 'REJECT' && '❌ Khuyến nghị: TỪ CHỐI'}
-                                  {recommendation.outcome === 'ESCALATE' && '⚠️ Khuyến nghị: CẦN XEM XÉT'}
+                                  {successRec.outcome === 'APPROVE' && '✅ Khuyến nghị: PHÊ DUYỆT'}
+                                  {successRec.outcome === 'REJECT' && '❌ Khuyến nghị: TỪ CHỐI'}
+                                  {successRec.outcome === 'ESCALATE' && '⚠️ Khuyến nghị: CẦN XEM XÉT'}
                                 </p>
                                 <span className="text-[9px] font-bold text-slate-400 uppercase">
-                                  {recommendation.executionTime}ms
+                                  {successRec.executionTime}ms
                                 </span>
                               </div>
                               <p className={cn(
                                 "text-[11px] mt-1.5 leading-relaxed",
-                                recommendation.outcome === 'APPROVE' && "text-emerald-700",
-                                recommendation.outcome === 'REJECT' && "text-rose-700",
-                                recommendation.outcome === 'ESCALATE' && "text-amber-700"
+                                successRec.outcome === 'APPROVE' && "text-emerald-700",
+                                successRec.outcome === 'REJECT' && "text-rose-700",
+                                successRec.outcome === 'ESCALATE' && "text-amber-700"
                               )}>
-                                {recommendation.explanation}
+                                {successRec.explanation}
                               </p>
                               <div className="mt-2 pt-2 border-t border-dashed border-slate-200/50">
                                 <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
-                                  🤖 AI Decision Engine • Policy: {recommendation.policyId} v{recommendation.policyVersion}
+                                  🤖 AI Decision Engine • Policy: {successRec.policyId} v{successRec.policyVersion}
                                 </p>
                               </div>
                             </div>

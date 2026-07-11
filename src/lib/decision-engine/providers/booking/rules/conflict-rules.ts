@@ -13,7 +13,21 @@
  * @module decision-engine/providers/booking/rules
  */
 
-import type { Rule } from '@/lib/decision-engine/rule-reasoner';
+/** Local Rule type for json-rules-engine style conflict detection rules */
+interface Rule {
+  id: string;
+  name: string;
+  description?: string;
+  category?: string;
+  priority?: number;
+  enabled: boolean;
+  conditions: Array<{ fact: string; operator: string; value: unknown }>;
+  event: {
+    type: string;
+    params: Record<string, unknown>;
+  };
+}
+
 
 // ============================================================================
 // CATEGORY 1: CUSTOMER DOUBLE-BOOKING (200-209)

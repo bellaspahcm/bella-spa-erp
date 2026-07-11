@@ -217,6 +217,7 @@ export interface CreateWorkflowRequest {
   description?: string;
   category: WorkflowCategory;
   config: WorkflowConfig;
+  metadata?: Record<string, unknown>;
 }
 
 export interface CreateWorkflowResponse {
@@ -230,6 +231,9 @@ export interface UpdateWorkflowRequest {
   description?: string;
   config?: WorkflowConfig;
   status?: WorkflowStatus;
+  category?: WorkflowCategory;
+  metadata?: Record<string, unknown>;
+  changeSummary?: string;
 }
 
 export interface UpdateWorkflowResponse {
@@ -250,12 +254,13 @@ export interface PublishWorkflowResponse {
 // Create rule
 export interface CreateRuleRequest {
   workflowId: string;
-  ruleName: string;
+  name: string;
   ruleType: RuleType;
-  ruleConfig: RuleConfig;
+  config: RuleConfig;
   priority?: number;
-  enabled?: boolean;
+  isActive?: boolean;
   description?: string;
+  metadata?: Record<string, unknown>;
 }
 
 export interface CreateRuleResponse {
@@ -265,10 +270,13 @@ export interface CreateRuleResponse {
 
 // Update rule
 export interface UpdateRuleRequest {
-  ruleConfig?: RuleConfig;
-  priority?: number;
-  enabled?: boolean;
+  name?: string;
   description?: string;
+  ruleType?: RuleType;
+  priority?: number;
+  config?: RuleConfig;
+  metadata?: Record<string, unknown>;
+  isActive?: boolean;
 }
 
 export interface UpdateRuleResponse {
@@ -277,7 +285,10 @@ export interface UpdateRuleResponse {
 
 // Simulate rule
 export interface SimulateRuleRequest {
-  inputData: Record<string, unknown>;
+  workflowId: string;
+  ruleIds?: string[];
+  testData: Record<string, unknown>;
+  saveResult?: boolean;
 }
 
 export interface SimulateRuleResponse {

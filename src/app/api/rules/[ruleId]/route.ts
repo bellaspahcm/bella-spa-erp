@@ -8,6 +8,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
+import type { Database } from '@/types/database.types';
+import type { Json } from '@/types/database.types';
 
 interface RouteParams {
   params: Promise<{
@@ -68,7 +70,7 @@ export async function GET(
       .eq('id', user.id)
       .single();
 
-    if (userError || !userData) {
+    if (userError || !userData || !userData.tenant_id) {
       return NextResponse.json(
         {
           success: false,
@@ -168,7 +170,7 @@ export async function PATCH(
       .eq('id', user.id)
       .single();
 
-    if (userError || !userData) {
+    if (userError || !userData || !userData.tenant_id) {
       return NextResponse.json(
         {
           success: false,
@@ -200,7 +202,7 @@ export async function PATCH(
     }
 
     // Build update payload
-    const updatePayload: Record<string, unknown> = {
+    const updatePayload: Database['public']['Tables']['rules']['Update'] = {
       updated_by: user.id,
       updated_at: new Date().toISOString()
     };
@@ -209,11 +211,11 @@ export async function PATCH(
     let versionChanged = false;
 
     if (body.conditions !== undefined) {
-      updatePayload.conditions = body.conditions;
+      updatePayload.conditions = body.conditions as unknown as Json;
       versionChanged = true;
     }
     if (body.actions !== undefined) {
-      updatePayload.actions = body.actions;
+      updatePayload.actions = body.actions as unknown as Json;
       versionChanged = true;
     }
     if (body.priority !== undefined && body.priority !== currentRule.priority) {
@@ -302,7 +304,7 @@ export async function DELETE(
       .eq('id', user.id)
       .single();
 
-    if (userError || !userData) {
+    if (userError || !userData || !userData.tenant_id) {
       return NextResponse.json(
         {
           success: false,

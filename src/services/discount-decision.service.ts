@@ -118,11 +118,21 @@ export async function calculateTierDiscount(
     const supabase = await createClient();
 
     // Step 1: Query tier discount rules
-    const { data: rules, error: rulesError } = await supabase
-      .rpc('get_customer_tier_discounts', {
-        p_tenant_id: request.tenantId,
-        p_customer_tier: request.customerTier,
-      });
+    const rpcFn = (supabase.rpc as unknown) as (
+      fn: string,
+      args: Record<string, unknown>
+    ) => Promise<{ data: unknown; error: { message: string } | null }>;
+    const { data: rulesRaw, error: rulesError } = await rpcFn('get_customer_tier_discounts', {
+      p_tenant_id: request.tenantId,
+      p_customer_tier: request.customerTier,
+    });
+    const rules = rulesRaw as unknown as Array<{
+      discount_type: string;
+      discount_value: number;
+      rule_name: string;
+      rule_id: string;
+      applies_to: string[];
+    }> | null;
 
     if (rulesError) {
       console.error('[CalculateTierDiscount] Failed to fetch rules:', rulesError);
@@ -238,11 +248,24 @@ export async function applyCampaignPromotion(
     const supabase = await createClient();
 
     // Step 1: Query active campaigns
-    const { data: campaigns, error: campaignsError } = await supabase
-      .rpc('get_active_campaigns', {
-        p_tenant_id: request.tenantId,
-        p_check_date: request.orderDate,
-      });
+    const rpcFn = (supabase.rpc as unknown) as (
+      fn: string,
+      args: Record<string, unknown>
+    ) => Promise<{ data: unknown; error: { message: string } | null }>;
+    const { data: campaignsRaw, error: campaignsError } = await rpcFn('get_active_campaigns', {
+      p_tenant_id: request.tenantId,
+      p_check_date: request.orderDate,
+    });
+    const campaigns = campaignsRaw as unknown as Array<{
+      campaign_id: string;
+      campaign_name: string;
+      discount_type: 'percentage' | 'fixed_amount' | 'bundle' | 'gift';
+      discount_value: number;
+      min_purchase_amount?: number | null;
+      max_uses_per_customer?: number | null;
+      end_date?: string | null;
+      [key: string]: unknown;
+    }> | null;
 
     if (campaignsError) {
       console.error('[ApplyCampaignPromotion] Failed to fetch campaigns:', campaignsError);
@@ -275,11 +298,15 @@ export async function applyCampaignPromotion(
 
       // Check customer usage limit
       if (campaign.max_uses_per_customer) {
-        const { data: usage } = await supabase
-          .rpc('check_customer_campaign_usage', {
-            p_customer_id: request.customerId,
-            p_campaign_id: campaign.campaign_id,
-          });
+        const usageRpcFn = (supabase.rpc as unknown) as (
+          fn: string,
+          args: Record<string, unknown>
+        ) => Promise<{ data: unknown; error: { message: string } | null }>;
+        const { data: usageRaw } = await usageRpcFn('check_customer_campaign_usage', {
+          p_customer_id: request.customerId,
+          p_campaign_id: campaign.campaign_id,
+        });
+        const usage = usageRaw as unknown as Array<{ can_use: boolean }> | null;
 
         if (usage && usage.length > 0 && !usage[0].can_use) {
           continue; // Customer exceeded usage limit
@@ -403,11 +430,24 @@ export async function checkDiscountEligibility(
     // For now, assume eligible
 
     // Get active campaigns
-    const { data: campaigns } = await supabase
-      .rpc('get_active_campaigns', {
-        p_tenant_id: request.tenantId,
-        p_check_date: request.orderDate,
-      });
+    const rpcFn = (supabase.rpc as unknown) as (
+      fn: string,
+      args: Record<string, unknown>
+    ) => Promise<{ data: unknown; error: { message: string } | null }>;
+    const { data: campaignsRaw } = await rpcFn('get_active_campaigns', {
+      p_tenant_id: request.tenantId,
+      p_check_date: request.orderDate,
+    });
+    const campaigns = campaignsRaw as unknown as Array<{
+      campaign_id: string;
+      campaign_name: string;
+      discount_type: 'percentage' | 'fixed_amount' | 'bundle' | 'gift';
+      discount_value: number;
+      min_purchase_amount?: number | null;
+      max_uses_per_customer?: number | null;
+      end_date?: string | null;
+      [key: string]: unknown;
+    }> | null;
 
     if (campaigns && campaigns.length > 0) {
       for (const campaign of campaigns) {
@@ -485,7 +525,13 @@ export async function trackDiscountUsage(params: {
   try {
     const supabase = await createClient();
 
-    const { error } = await supabase.from('discount_usage').insert({
+    const rawClient = (supabase as unknown) as {
+      from: (table: string) => {
+        insert: (data: Record<string, unknown>) => Promise<{ error: { message: string } | null }>;
+      };
+    };
+
+    const { error } = await rawClient.from('discount_usage').insert({
       tenant_id: params.tenantId,
       customer_id: params.customerId,
       discount_rule_id: params.discountRuleId || null,
@@ -496,7 +542,7 @@ export async function trackDiscountUsage(params: {
       discount_amount: params.discountAmount,
       original_amount: params.originalAmount,
       final_amount: params.finalAmount,
-      metadata: params.metadata || {},
+      metadata: (params.metadata || {}) as Record<string, unknown>,
     });
 
     if (error) {
@@ -506,7 +552,11 @@ export async function trackDiscountUsage(params: {
 
     // Increment campaign usage count (if campaign discount)
     if (params.discountCampaignId) {
-      await supabase.rpc('increment_campaign_usage', {
+      const rpcFn = (supabase.rpc as unknown) as (
+        fn: string,
+        args: Record<string, unknown>
+      ) => Promise<{ error: { message: string } | null }>;
+      await rpcFn('increment_campaign_usage', {
         p_campaign_id: params.discountCampaignId,
       });
     }

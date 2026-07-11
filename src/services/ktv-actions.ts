@@ -870,6 +870,8 @@ export async function getKTVEarningsPageData(selectedMonth: string) {
   const startOfMonth = `${selectedMonth}-01`;
   const nextMonth = getLocalDateString(new Date(new Date(startOfMonth).setMonth(new Date(startOfMonth).getMonth() + 1)));
 
+  const supabase = createClient();
+
   const [
     earnings,
     sessionsResult,
@@ -877,15 +879,14 @@ export async function getKTVEarningsPageData(selectedMonth: string) {
     salaryData
   ] = await Promise.all([
     getKTVEarnings(selectedMonth, user),
-    createClient().then(supabase => supabase
+    supabase
       .from('session_logs')
       .select(`id, completed_date, session_number, completed_by_ktv_id, bookings(package_name, ktv_commission, assigned_ktv_id, customers(name_mother))`)
       .eq('completed_by_ktv_id', user.id)
       .eq('status', 'completed')
       .gte('completed_date', startOfMonth)
       .lt('completed_date', nextMonth)
-      .order('completed_date', { ascending: false })
-    ),
+      .order('completed_date', { ascending: false }),
     getKTVLeaderboard(selectedMonth, user),
     getKtvSalaryForConfirmation(`${selectedMonth}-01`, user),
   ]);

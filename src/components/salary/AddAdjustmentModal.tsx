@@ -12,7 +12,7 @@ interface AddAdjustmentModalProps {
   onClose: () => void;
   onSuccess: () => void;
   tenantId: string;
-  ktvList: Array<{ id: string; full_name: string }>;
+  ktvList: Array<{ id: string; full_name: string; email?: string | null }>;
 }
 
 interface FormData {

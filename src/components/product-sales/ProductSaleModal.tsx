@@ -26,6 +26,7 @@ import type { CommissionConfig } from '@/types/commission-types';
 interface KTV {
   id: string;
   full_name: string;
+  email?: string | null;
 }
 
 interface Customer {

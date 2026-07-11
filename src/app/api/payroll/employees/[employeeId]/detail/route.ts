@@ -3,6 +3,17 @@ import { createClient } from '@/lib/supabase-server';
 import { getCurrentUser } from '@/services/user-actions';
 import { buildPackageMultiplierMap, calculateWeightedSessionCount } from '@/modules/hr-salary/actions/salary-attendance-calculation';
 import { getLocalDateString } from '@bella/shared';
+import type { SupabaseClient } from '@supabase/supabase-js';
+
+interface SalaryAdvanceRow {
+  id: string;
+  ktv_id: string;
+  tenant_id: string;
+  advance_date: string;
+  amount: number;
+  reason: string | null;
+  created_at?: string;
+}
 
 interface RouteContext {
   params: Promise<{
@@ -167,13 +178,13 @@ export async function GET(
       .map(a => ({ date: a.date, minutes: 15 })); // TODO: Store actual late minutes
 
     // 9. Fetch salary advances for the month
-    const { data: advances } = await supabase
+    const { data: advances } = await (supabase as unknown as SupabaseClient)
       .from('salary_advances')
       .select('*')
       .eq('ktv_id', employeeId)
       .gte('advance_date', startOfMonth)
       .lt('advance_date', endOfMonth)
-      .eq('tenant_id', tenantId);
+      .eq('tenant_id', tenantId) as unknown as { data: SalaryAdvanceRow[] | null };
 
     const advancesList = advances || [];
     const totalAdvances = advancesList.reduce((sum, adv) => sum + Number(adv.amount || 0), 0);

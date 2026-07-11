@@ -12,6 +12,7 @@
  */
 
 import { createClient } from '@/lib/supabase-server';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import type { PolicyAction, PolicyHistoryEntry } from './types';
 
 // ============================================================================
@@ -23,12 +24,27 @@ export interface WriteAuditInput {
   version: string;
   action: PolicyAction;
   fieldChanged?: string;
-  oldValue?: any;
-  newValue?: any;
+  oldValue?: unknown;
+  newValue?: unknown;
   reason?: string;
   userId: string;
   ipAddress?: string;
   userAgent?: string;
+}
+
+interface PolicyHistoryDbRow {
+  id: string;
+  policy_id: string;
+  version: string;
+  action: PolicyAction;
+  field_changed: string | null;
+  old_value: unknown;
+  new_value: unknown;
+  reason: string | null;
+  created_at: string;
+  created_by: string;
+  ip_address: string | null;
+  user_agent: string | null;
 }
 
 /**
@@ -37,7 +53,8 @@ export interface WriteAuditInput {
  * All policy changes must be logged for compliance (SOC 2, GDPR)
  */
 export async function writeAudit(input: WriteAuditInput): Promise<void> {
-  const supabase = await createClient();
+  const rawSupabase = await createClient();
+  const supabase = rawSupabase as unknown as SupabaseClient;
 
   const { error } = await supabase.from('policy_history').insert({
     policy_id: input.policyId,
@@ -75,7 +92,8 @@ export interface GetHistoryOptions {
 export async function getHistory(
   options: GetHistoryOptions
 ): Promise<PolicyHistoryEntry[]> {
-  const supabase = await createClient();
+  const rawSupabase = await createClient();
+  const supabase = rawSupabase as unknown as SupabaseClient;
 
   let query = supabase
     .from('policy_history')
@@ -97,7 +115,8 @@ export async function getHistory(
 
   if (error) throw error;
 
-  return (data || []).map(mapDbToHistoryEntry);
+  const rows = (data || []) as unknown as PolicyHistoryDbRow[];
+  return rows.map(mapDbToHistoryEntry);
 }
 
 export interface QueryHistoryOptions {
@@ -117,7 +136,8 @@ export interface QueryHistoryOptions {
 export async function queryHistory(
   options: QueryHistoryOptions
 ): Promise<{ history: PolicyHistoryEntry[]; total: number }> {
-  const supabase = await createClient();
+  const rawSupabase = await createClient();
+  const supabase = rawSupabase as unknown as SupabaseClient;
 
   let query = supabase
     .from('policy_history')
@@ -154,8 +174,9 @@ export async function queryHistory(
 
   if (error) throw error;
 
+  const rows = (data || []) as unknown as PolicyHistoryDbRow[];
   return {
-    history: (data || []).map(mapDbToHistoryEntry),
+    history: rows.map(mapDbToHistoryEntry),
     total: count || 0,
   };
 }
@@ -164,7 +185,8 @@ export async function queryHistory(
  * Get recent changes (last N changes)
  */
 export async function getRecentChanges(limit: number = 50): Promise<PolicyHistoryEntry[]> {
-  const supabase = await createClient();
+  const rawSupabase = await createClient();
+  const supabase = rawSupabase as unknown as SupabaseClient;
 
   const { data, error } = await supabase
     .from('policy_history')
@@ -174,26 +196,27 @@ export async function getRecentChanges(limit: number = 50): Promise<PolicyHistor
 
   if (error) throw error;
 
-  return (data || []).map(mapDbToHistoryEntry);
+  const rows = (data || []) as unknown as PolicyHistoryDbRow[];
+  return rows.map(mapDbToHistoryEntry);
 }
 
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
 
-function mapDbToHistoryEntry(dbRow: any): PolicyHistoryEntry {
+function mapDbToHistoryEntry(dbRow: PolicyHistoryDbRow): PolicyHistoryEntry {
   return {
     id: dbRow.id,
     policyId: dbRow.policy_id,
     version: dbRow.version,
     action: dbRow.action,
-    fieldChanged: dbRow.field_changed,
+    fieldChanged: dbRow.field_changed ?? undefined,
     oldValue: dbRow.old_value,
     newValue: dbRow.new_value,
-    reason: dbRow.reason,
+    reason: dbRow.reason ?? undefined,
     createdAt: dbRow.created_at,
     createdBy: dbRow.created_by,
-    ipAddress: dbRow.ip_address,
-    userAgent: dbRow.user_agent,
+    ipAddress: dbRow.ip_address ?? undefined,
+    userAgent: dbRow.user_agent ?? undefined,
   };
 }

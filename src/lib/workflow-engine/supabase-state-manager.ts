@@ -12,8 +12,8 @@
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import type { IStateManager } from './state-manager';
 import type {
-  IStateManager,
   WorkflowExecution,
   WorkflowContext,
   WorkflowExecutionStatus,
@@ -22,7 +22,9 @@ import type {
 } from './types';
 
 /**
- * Database row types (matching schema)
+ * Database row types for workflow engine tables.
+ * These tables are not in the auto-generated schema types, so we
+ * define them here and type-assert query results to these interfaces.
  */
 interface WorkflowExecutionRow {
   id: string;
@@ -57,12 +59,27 @@ interface StepExecutionRow {
   updated_at: string;
 }
 
+/** Helper: type-assert raw Supabase result to our typed row */
+function asWorkflowRow(data: unknown): WorkflowExecutionRow {
+  return data as WorkflowExecutionRow;
+}
+
+function asStepRow(data: unknown): StepExecutionRow {
+  return data as StepExecutionRow;
+}
+
 /**
  * Supabase State Manager
- * 
+ *
  * Production-ready state persistence using Supabase PostgreSQL.
+ * Uses base SupabaseClient (without generated schema generics) since the
+ * workflow_executions and workflow_step_executions tables are not yet
+ * in the auto-generated database types. Results are type-asserted to
+ * the WorkflowExecutionRow / StepExecutionRow interfaces above.
  */
 export class SupabaseStateManager implements IStateManager {
+  // SupabaseClient without schema generic — library default handles table typing.
+  // We type-assert results instead of relying on generated schema types.
   private client: SupabaseClient;
 
   constructor(supabaseUrl: string, supabaseKey: string) {
@@ -103,7 +120,7 @@ export class SupabaseStateManager implements IStateManager {
       throw new Error(`Failed to create workflow execution: ${error.message}`);
     }
 
-    return this.mapRowToExecution(data);
+    return this.mapRowToExecution(asWorkflowRow(data));
   }
 
   /**
@@ -125,7 +142,7 @@ export class SupabaseStateManager implements IStateManager {
       throw new Error(`Workflow execution not found: ${executionId}`);
     }
 
-    return this.mapRowToExecution(data);
+    return this.mapRowToExecution(asWorkflowRow(data));
   }
 
   /**
@@ -148,7 +165,7 @@ export class SupabaseStateManager implements IStateManager {
       throw new Error(`Failed to find workflow execution: ${error.message}`);
     }
 
-    return data ? this.mapRowToExecution(data) : null;
+    return data ? this.mapRowToExecution(asWorkflowRow(data)) : null;
   }
 
   /**
@@ -236,10 +253,11 @@ export class SupabaseStateManager implements IStateManager {
 
     if (existing) {
       // Update existing
+      const existingRow = asStepRow(existing);
       const { error } = await this.client
         .from('workflow_step_executions')
         .update(row)
-        .eq('id', existing.id);
+        .eq('id', existingRow.id);
 
       if (error) {
         throw new Error(`Failed to update step execution: ${error.message}`);

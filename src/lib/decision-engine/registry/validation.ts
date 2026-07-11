@@ -385,7 +385,8 @@ export function validateGovernance(governance: {
       validateEmailOrThrow(governance.businessOwnerEmail);
     }
   } catch (error) {
-    warnings.push(`Business owner email: ${error.message}`);
+    const msg = error instanceof Error ? error.message : String(error);
+    warnings.push(`Business owner email: ${msg}`);
   }
 
   try {
@@ -393,7 +394,8 @@ export function validateGovernance(governance: {
       validateEmailOrThrow(governance.technicalOwnerEmail);
     }
   } catch (error) {
-    warnings.push(`Technical owner email: ${error.message}`);
+    const msg = error instanceof Error ? error.message : String(error);
+    warnings.push(`Technical owner email: ${msg}`);
   }
 
   // Check review date
@@ -411,7 +413,8 @@ export function validateGovernance(governance: {
         warnings.push(`Policy expires soon: ${governance.expireDate}`);
       }
     } catch (error) {
-      warnings.push(`Expiry date: ${error.message}`);
+      const msg = error instanceof Error ? error.message : String(error);
+      warnings.push(`Expiry date: ${msg}`);
     }
   }
 

@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
         executionId: result.executionId,
         status: result.status,
         output: result.output,
-        steps: result.steps?.map(step => ({
+        steps: (result.steps as Array<{ stepName: string; status: string; executionTime: number }>)?.map(step => ({
           name: step.stepName,
           status: step.status,
           executionTime: step.executionTime

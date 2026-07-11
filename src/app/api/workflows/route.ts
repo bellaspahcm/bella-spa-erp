@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    if (userError || !userData) {
+    if (userError || !userData || !userData.tenant_id) {
       return NextResponse.json(
         {
           success: false,
@@ -72,12 +72,12 @@ export async function GET(request: NextRequest) {
 
     // List workflow executions
     const workflowService = getWorkflowEngineService();
-    const executions = await workflowService.listExecutions(userData.tenant_id, {
+    const executions = (await workflowService.listExecutions(userData.tenant_id, {
       workflowId,
       status,
       limit,
       offset
-    });
+    })) as unknown[];
 
     return NextResponse.json({
       success: true,

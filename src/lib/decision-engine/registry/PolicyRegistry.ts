@@ -2,28 +2,6 @@
  * PolicyRegistry - Policy Management Façade (Modular Monolith)
  * 
  * Orchestrates policy lifecycle, governance, and statistics.
- * 
- * Architecture:
- * - Façade pattern for public API
- * - Repository for data access
- * - Audit utilities for trail logging
- * - Private methods for Lifecycle, Governance, Statistics
- * 
- * Logical Boundaries (not yet services):
- * - Lifecycle → private methods (publish, deprecate, archive, activate)
- * - Governance → private methods (checkGovernance, validatePublishEligibility)
- * - Statistics → private methods (updateStatistics)
- * 
- * Extraction Rule (Rule of Three):
- * Extract to separate service when:
- * 1. Module exceeds ~300 LOC, OR
- * 2. Module is reused by multiple other modules, OR
- * 3. Module has independent lifecycle/scaling needs
- * 
- * Extension Points:
- * - EventBus integration (TODO)
- * - Cache layer (TODO)
- * - External policy engine integration (TODO)
  */
 
 import type {
@@ -54,8 +32,10 @@ import {
   validateISODate,
   validateStatusTransition,
 } from './validation';
-import { VALID_STATUS_TRANSITIONS, GOVERNANCE_DEFAULTS } from './constants';
+import { GOVERNANCE_DEFAULTS } from './constants';
 import { createClient } from '@/lib/supabase-server';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { PolicyRegistryDatabase } from './database-types';
 
 /**
  * PolicyRegistry
@@ -105,27 +85,32 @@ export class PolicyRegistry {
     }
 
     // Create policy via repository
-    const policy = await PolicyRepository.create(
-      {
-        policy: input.policy,
-        category: input.category,
-        tenantId: input.tenantId,
-        parentVersion: input.parentVersion,
-        ownerDepartment: input.ownerDepartment,
-        businessOwner: input.businessOwner,
-        businessOwnerEmail: input.businessOwnerEmail,
-        technicalOwner: input.technicalOwner,
-        technicalOwnerEmail: input.technicalOwnerEmail,
-        reviewDate: input.reviewDate,
-        effectiveDate: input.effectiveDate,
-        expireDate: input.expireDate,
-        metadata: {
-          tags: input.tags,
-          documentation: input.documentation,
-        },
+    const policy = await PolicyRepository.create({
+      policyId: input.policy.id,
+      version: version,
+      name: input.policy.name,
+      description: input.policy.description,
+      status: 'draft', // Initial status is always draft
+      category: input.category,
+      tenantId: input.tenantId,
+      isActive: false,
+      parentVersion: input.parentVersion,
+      createdBy: userId,
+      updatedBy: userId,
+      ownerDepartment: input.ownerDepartment,
+      businessOwner: input.businessOwner,
+      businessOwnerEmail: input.businessOwnerEmail,
+      technicalOwner: input.technicalOwner,
+      technicalOwnerEmail: input.technicalOwnerEmail,
+      reviewDate: input.reviewDate,
+      effectiveDate: input.effectiveDate,
+      expireDate: input.expireDate,
+      config: input.policy.config,
+      metadata: {
+        tags: input.tags,
+        documentation: input.documentation,
       },
-      userId
-    );
+    });
 
     // Log creation
     await writeAudit({
@@ -149,7 +134,11 @@ export class PolicyRegistry {
    */
   static async get(policyId: string, version?: string): Promise<PolicyRegistryEntry> {
     if (version) {
-      return PolicyRepository.findByIdAndVersion(policyId, version);
+      const entry = await PolicyRepository.findByIdAndVersion(policyId, version);
+      if (!entry) {
+        throw new PolicyNotFoundError(policyId, version);
+      }
+      return entry;
     } else {
       const active = await PolicyRepository.findActiveVersion(policyId);
       if (!active) {
@@ -177,16 +166,8 @@ export class PolicyRegistry {
    * Get all versions of a policy
    */
   static async getVersions(policyId: string): Promise<PolicyVersionsResult> {
-    const versions = await PolicyRepository.findAllVersions(policyId);
-    const active = versions.find((v) => v.isActive);
-    const latest = await PolicyRepository.findLatestVersion(policyId);
-
-    return {
-      policyId,
-      versions,
-      activeVersion: active?.version,
-      latestVersion: latest?.version,
-    };
+    const versionsResult = await PolicyRepository.findAllVersions(policyId);
+    return versionsResult;
   }
 
   /**
@@ -213,6 +194,9 @@ export class PolicyRegistry {
     await this.requirePermission(userId, 'policy:publish');
 
     const policy = await PolicyRepository.findByIdAndVersion(policyId, version);
+    if (!policy) {
+      throw new PolicyNotFoundError(policyId, version);
+    }
 
     // Validate transition
     if (!validateStatusTransition(policy.status, 'active')) {
@@ -232,14 +216,15 @@ export class PolicyRegistry {
     await this.deactivateOtherVersions(policyId, version, userId);
 
     // Update status to active
-    const updates: any = {
+    const updates: Partial<PolicyRegistryEntry> = {
       status: 'active',
       publishedAt: new Date().toISOString(),
       publishedBy: userId,
+      updatedBy: userId,
     };
 
-    const updated = await PolicyRepository.update(policyId, version, updates, userId);
-    await PolicyRepository.setActive(policyId, version, true);
+    const updated = await PolicyRepository.update(policyId, version, updates);
+    await PolicyRepository.setActive(policyId, version);
 
     // Log status change
     await writeAudit({
@@ -281,6 +266,9 @@ export class PolicyRegistry {
     await this.requirePermission(userId, 'policy:deprecate');
 
     const policy = await PolicyRepository.findByIdAndVersion(policyId, version);
+    if (!policy) {
+      throw new PolicyNotFoundError(policyId, version);
+    }
 
     // Validate transition
     if (!validateStatusTransition(policy.status, 'deprecated')) {
@@ -296,16 +284,19 @@ export class PolicyRegistry {
     }
 
     // Update status
-    const updates: any = {
+    const updates: Partial<PolicyRegistryEntry> = {
       status: 'deprecated',
       deprecatedAt: new Date().toISOString(),
+      updatedBy: userId,
     };
 
-    const updated = await PolicyRepository.update(policyId, version, updates, userId);
+    const updated = await PolicyRepository.update(policyId, version, updates);
 
     // Deactivate if currently active
     if (policy.isActive) {
-      await PolicyRepository.setActive(policyId, version, false);
+      // Set active to false (setActive updates all versions matching policyId, but here we just deactivate)
+      // Actually Repository's setActive activates one and deactivates others. To deactivate all, we use repository softDelete or updates
+      await PolicyRepository.update(policyId, version, { isActive: false });
     }
 
     // Log status change
@@ -344,6 +335,9 @@ export class PolicyRegistry {
     await this.requirePermission(userId, 'policy:activate');
 
     const policy = await PolicyRepository.findByIdAndVersion(policyId, version);
+    if (!policy) {
+      throw new PolicyNotFoundError(policyId, version);
+    }
 
     // Validate transition
     if (!validateStatusTransition(policy.status, 'active')) {
@@ -363,15 +357,16 @@ export class PolicyRegistry {
     await this.deactivateOtherVersions(policyId, version, userId);
 
     // Update status
-    const updates: any = {
+    const updates: Partial<PolicyRegistryEntry> = {
       status: 'active',
-      deprecatedAt: null, // Clear deprecation timestamp
+      deprecatedAt: undefined, // Clear deprecation timestamp in DB (mapped to null in update helper)
+      updatedBy: userId,
     };
 
-    const updated = await PolicyRepository.update(policyId, version, updates, userId);
+    const updated = await PolicyRepository.update(policyId, version, updates);
 
     // Activate this version
-    await PolicyRepository.setActive(policyId, version, true);
+    await PolicyRepository.setActive(policyId, version);
 
     // Log status change
     await writeAudit({
@@ -391,7 +386,7 @@ export class PolicyRegistry {
     return {
       ...updated,
       status: 'active',
-      deprecatedAt: null,
+      deprecatedAt: undefined,
       isActive: true,
     };
   }
@@ -409,6 +404,9 @@ export class PolicyRegistry {
     await this.requirePermission(userId, 'policy:archive');
 
     const policy = await PolicyRepository.findByIdAndVersion(policyId, version);
+    if (!policy) {
+      throw new PolicyNotFoundError(policyId, version);
+    }
 
     // Validate transition
     if (!validateStatusTransition(policy.status, 'archived')) {
@@ -424,16 +422,17 @@ export class PolicyRegistry {
     }
 
     // Update status
-    const updates: any = {
+    const updates: Partial<PolicyRegistryEntry> = {
       status: 'archived',
       archivedAt: new Date().toISOString(),
+      updatedBy: userId,
     };
 
-    const updated = await PolicyRepository.update(policyId, version, updates, userId);
+    const updated = await PolicyRepository.update(policyId, version, updates);
 
     // Deactivate if currently active
     if (policy.isActive) {
-      await PolicyRepository.setActive(policyId, version, false);
+      await PolicyRepository.update(policyId, version, { isActive: false });
     }
 
     // Log status change
@@ -460,69 +459,6 @@ export class PolicyRegistry {
   }
 
   /**
-   * Activate a deprecated policy (deprecated → active)
-   */
-  static async activate(
-    policyId: string,
-    version: string,
-    userId: string,
-    reason?: string
-  ): Promise<PolicyRegistryEntry> {
-    // Check permission
-    await this.requirePermission(userId, 'policy:publish');
-
-    const policy = await PolicyRepository.findByIdAndVersion(policyId, version);
-
-    // Validate transition
-    if (!validateStatusTransition(policy.status, 'active')) {
-      throw new InvalidStatusTransitionError(policy.status, 'active');
-    }
-
-    // Check governance before reactivating
-    const governanceCheck = await this.checkPublishEligibility(policyId, version);
-    if (!governanceCheck.passed) {
-      throw new GovernanceValidationError(
-        'Policy does not meet governance requirements for activation',
-        governanceCheck.errors
-      );
-    }
-
-    // Deactivate other versions
-    await this.deactivateOtherVersions(policyId, version, userId);
-
-    // Update status to active
-    const updates: any = {
-      status: 'active',
-      publishedAt: policy.publishedAt || new Date().toISOString(),
-      publishedBy: policy.publishedBy || userId,
-    };
-
-    const updated = await PolicyRepository.update(policyId, version, updates, userId);
-    await PolicyRepository.setActive(policyId, version, true);
-
-    // Log status change
-    await writeAudit({
-      policyId,
-      version,
-      action: 'restored',
-      fieldChanged: 'status',
-      oldValue: { status: policy.status },
-      newValue: { status: 'active', is_active: true },
-      reason: reason || `Reactivated policy v${version}`,
-      userId,
-    });
-
-    // Emit event
-    await this.emitPolicyEvent('PolicyActivated', { policyId, version });
-
-    return {
-      ...updated,
-      status: 'active',
-      isActive: true,
-    };
-  }
-
-  /**
    * Soft delete a policy
    */
   static async delete(
@@ -535,6 +471,9 @@ export class PolicyRegistry {
     await this.requirePermission(userId, 'policy:delete');
 
     const policy = await PolicyRepository.findByIdAndVersion(policyId, version);
+    if (!policy) {
+      throw new PolicyNotFoundError(policyId, version);
+    }
 
     // Validate reason
     if (!reason || reason.trim().length < 10) {
@@ -546,7 +485,7 @@ export class PolicyRegistry {
 
     // Deactivate if currently active
     if (policy.isActive) {
-      await PolicyRepository.setActive(policyId, version, false);
+      await PolicyRepository.update(policyId, version, { isActive: false });
     }
 
     // Soft delete
@@ -585,6 +524,9 @@ export class PolicyRegistry {
     await this.requirePermission(userId, 'policy:update');
 
     const policy = await PolicyRepository.findByIdAndVersion(policyId, version);
+    if (!policy) {
+      throw new PolicyNotFoundError(policyId, version);
+    }
 
     // Validate governance updates
     const governanceValidation = this.validateGovernanceInput(updates);
@@ -595,8 +537,29 @@ export class PolicyRegistry {
       );
     }
 
+    // Map Updates input to entry fields
+    const registryUpdates: Partial<PolicyRegistryEntry> = {
+      name: updates.name,
+      description: updates.description,
+      ownerDepartment: updates.ownerDepartment,
+      businessOwner: updates.businessOwner,
+      businessOwnerEmail: updates.businessOwnerEmail,
+      technicalOwner: updates.technicalOwner,
+      technicalOwnerEmail: updates.technicalOwnerEmail,
+      reviewDate: updates.reviewDate,
+      effectiveDate: updates.effectiveDate,
+      expireDate: updates.expireDate,
+      metadata: updates.metadata ? {
+        tags: updates.metadata.tags,
+        documentation: updates.metadata.documentation,
+        changelog: updates.metadata.changelog,
+        sla: updates.metadata.sla,
+      } : undefined,
+      updatedBy: userId,
+    };
+
     // Update policy
-    const updated = await PolicyRepository.update(policyId, version, updates, userId);
+    const updated = await PolicyRepository.update(policyId, version, registryUpdates);
 
     // Log changes (simplified - log all updates as single audit entry)
     await writeAudit({
@@ -627,10 +590,11 @@ export class PolicyRegistry {
    * Get policies needing review
    */
   static async getPoliciesNeedingReview(): Promise<PolicyRegistryEntry[]> {
-    return PolicyRepository.findAll({
+    const result = await PolicyRepository.findAll({
       status: 'active',
       needsReview: true,
     });
+    return result.policies;
   }
 
   /**
@@ -639,10 +603,11 @@ export class PolicyRegistry {
   static async getExpiringPolicies(
     daysThreshold: number = GOVERNANCE_DEFAULTS.expiryWarningDays
   ): Promise<PolicyRegistryEntry[]> {
-    return PolicyRepository.findAll({
+    const result = await PolicyRepository.findAll({
       status: 'active',
       expiringSoon: true,
     });
+    return result.policies;
   }
 
   // ==========================================================================
@@ -684,9 +649,6 @@ export class PolicyRegistry {
     policyId: string,
     version?: string
   ): Promise<PolicyStatistics | null> {
-    // Extension Point: Authorization
-    // if (userId) await AuthService.requirePermission(userId, 'policy:view_statistics');
-
     const policy = version
       ? await PolicyRepository.findByIdAndVersion(policyId, version)
       : await PolicyRepository.findActiveVersion(policyId);
@@ -696,23 +658,23 @@ export class PolicyRegistry {
     return {
       policyId: policy.policyId,
       version: policy.version,
-      totalDecisions: policy.config?.total_decisions || 0,
-      totalApprovals: policy.config?.total_approvals || 0,
-      totalRejections: policy.config?.total_rejections || 0,
+      totalDecisions: policy.config?.total_decisions as number || 0,
+      totalApprovals: policy.config?.total_approvals as number || 0,
+      totalRejections: policy.config?.total_rejections as number || 0,
       approvalRate:
-        (policy.config?.total_decisions || 0) > 0
+        (policy.config?.total_decisions as number || 0) > 0
           ? Math.round(
-              ((policy.config?.total_approvals || 0) / policy.config.total_decisions) * 10000
+              ((policy.config?.total_approvals as number || 0) / (policy.config?.total_decisions as number)) * 10000
             ) / 100
           : 0,
       rejectionRate:
-        (policy.config?.total_decisions || 0) > 0
+        (policy.config?.total_decisions as number || 0) > 0
           ? Math.round(
-              ((policy.config?.total_rejections || 0) / policy.config.total_decisions) * 10000
+              ((policy.config?.total_rejections as number || 0) / (policy.config?.total_decisions as number)) * 10000
             ) / 100
           : 0,
-      avgConfidence: policy.config?.avg_confidence,
-      lastDecisionAt: policy.config?.last_decision_at,
+      avgConfidence: policy.config?.avg_confidence as number,
+      lastDecisionAt: policy.config?.last_decision_at as string,
       createdAt: policy.createdAt,
       updatedAt: policy.updatedAt,
     };
@@ -729,9 +691,6 @@ export class PolicyRegistry {
     policyId: string,
     version?: string
   ): Promise<PolicyHistoryEntry[]> {
-    // Extension Point: Authorization
-    // if (userId) await AuthService.requirePermission(userId, 'policy:view_history');
-
     return getHistory({ policyId, version });
   }
 
@@ -752,12 +711,12 @@ export class PolicyRegistry {
   static async exists(policyId: string, version?: string): Promise<boolean> {
     try {
       if (version) {
-        await PolicyRepository.findByIdAndVersion(policyId, version);
+        const found = await PolicyRepository.findByIdAndVersion(policyId, version);
+        return found !== null;
       } else {
-        const versions = await PolicyRepository.findAllVersions(policyId);
-        return versions.length > 0;
+        const versionsResult = await PolicyRepository.findAllVersions(policyId);
+        return versionsResult.versions.length > 0;
       }
-      return true;
     } catch (error) {
       if (error instanceof PolicyNotFoundError) {
         return false;
@@ -774,7 +733,7 @@ export class PolicyRegistry {
     if (!entry) {
       throw new PolicyNotFoundError(policyId);
     }
-    return entry.config as Policy;
+    return entry.config as unknown as Policy;
   }
 
   // ==========================================================================
@@ -783,22 +742,17 @@ export class PolicyRegistry {
 
   /**
    * Deactivate other versions of the same policy
-   * 
-   * Extension Point: Extract to PolicyLifecycleService when:
-   * - Lifecycle logic exceeds 300 LOC
-   * - Requires workflow engine integration
-   * - Needs complex approval workflows
    */
   private static async deactivateOtherVersions(
     policyId: string,
     currentVersion: string,
     userId: string
   ): Promise<void> {
-    const existingVersions = await PolicyRepository.findAllVersions(policyId);
+    const versionsResult = await PolicyRepository.findAllVersions(policyId);
     
-    for (const existingVersion of existingVersions) {
+    for (const existingVersion of versionsResult.versions) {
       if (existingVersion.isActive && existingVersion.version !== currentVersion) {
-        await PolicyRepository.setActive(policyId, existingVersion.version, false);
+        await PolicyRepository.update(policyId, existingVersion.version, { isActive: false });
         
         await writeAudit({
           policyId,
@@ -820,17 +774,15 @@ export class PolicyRegistry {
 
   /**
    * Perform governance compliance check
-   * 
-   * Extension Point: Extract to PolicyGovernanceService when:
-   * - Governance rules exceed 300 LOC
-   * - Requires integration with external policy engines
-   * - Needs complex approval workflows
    */
   private static async performGovernanceCheck(
     policyId: string,
     version: string
   ): Promise<GovernanceCheckResult> {
     const policy = await PolicyRepository.findByIdAndVersion(policyId, version);
+    if (!policy) {
+      throw new PolicyNotFoundError(policyId, version);
+    }
 
     const warnings: string[] = [];
     const errors: string[] = [];
@@ -907,6 +859,9 @@ export class PolicyRegistry {
   ): Promise<GovernanceCheckResult> {
     const result = await this.performGovernanceCheck(policyId, version);
     const policy = await PolicyRepository.findByIdAndVersion(policyId, version);
+    if (!policy) {
+      throw new PolicyNotFoundError(policyId, version);
+    }
 
     // Add strict publish checks
     if (!policy.businessOwner || !policy.businessOwnerEmail) {
@@ -982,14 +937,6 @@ export class PolicyRegistry {
 
   /**
    * Update decision statistics
-   * 
-   * Simple direct UPDATE - no SQL function needed at current scale (<1M decisions/month).
-   * 
-   * Extension Point: Extract to PolicyStatisticsService when:
-   * - Decision volume exceeds ~1M/month
-   * - Requires real-time aggregation or complex queries
-   * - Needs separate scaling/optimization
-   * - Migration path: Extract to policy_statistics table with partitioning
    */
   private static async updateStatistics(
     policyId: string,
@@ -997,10 +944,20 @@ export class PolicyRegistry {
     outcome: DecisionOutcome,
     confidence?: number
   ): Promise<void> {
-    const supabase = await createClient();
+    // Use base SupabaseClient (no schema generic) since policy_registry is not
+    // in the auto-generated database types. Results are type-asserted below.
+    const supabase = (await createClient()) as unknown as SupabaseClient;
+
+    /** Shape of the stats columns we SELECT */
+    interface PolicyStatsRow {
+      total_decisions: number;
+      total_approvals: number;
+      total_rejections: number;
+      avg_confidence: number;
+    }
 
     // Get current policy to calculate new average confidence
-    const { data: currentPolicy } = await supabase
+    const { data: rawPolicy } = await supabase
       .from('policy_registry')
       .select('total_decisions, avg_confidence')
       .eq('policy_id', policyId)
@@ -1008,16 +965,17 @@ export class PolicyRegistry {
       .is('deleted_at', null)
       .single();
 
+    const currentPolicy = rawPolicy as PolicyStatsRow | null;
+
     // Calculate new average confidence (if provided)
-    let newAvgConfidence = currentPolicy?.avg_confidence;
+    let newAvgConfidence: number | undefined = currentPolicy?.avg_confidence;
     if (confidence !== undefined && confidence !== null) {
       const currentTotal = currentPolicy?.total_decisions || 0;
       const currentSum = (currentPolicy?.avg_confidence || 0) * currentTotal;
       newAvgConfidence = Math.round(((currentSum + confidence) / (currentTotal + 1)) * 100) / 100;
     }
 
-    // Simple direct UPDATE - sufficient for Phase 1 scale
-    const updates: any = {
+    const updates: Record<string, unknown> = {
       last_decision_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
@@ -1080,68 +1038,36 @@ export class PolicyRegistry {
 
   /**
    * Check user permission
-   * 
-   * Extension Point: AuthService integration
-   * Currently: No-op (tests can mock this)
-   * Future: await AuthService.requirePermission(userId, permission)
    */
   private static async requirePermission(userId: string, permission: string): Promise<void> {
-    // Extension Point: Authorization
-    // TODO: Integrate with AuthService when available
-    // Example: await AuthService.requirePermission(userId, permission);
-    
     // For now, no-op (always allow in development)
     return Promise.resolve();
   }
 
   /**
    * Emit policy event
-   * 
-   * Extension Point: EventBus integration
-   * Currently: No-op
-   * Future: await EventBus.emit(eventName, payload)
    */
-  private static async emitPolicyEvent(eventName: string, payload: any): Promise<void> {
-    // Extension Point: Event Bus
-    // TODO: Integrate with EventBus when available
-    // Example: await EventBus.emit(eventName, payload);
-    
+  private static async emitPolicyEvent(eventName: string, payload: unknown): Promise<void> {
     // For now, no-op
     return Promise.resolve();
   }
 
   /**
    * Invalidate policy cache
-   * 
-   * Extension Point: Cache layer integration
-   * Currently: No-op
-   * Future: await CacheService.invalidate(`policy:${policyId}`)
    */
   private static async invalidatePolicyCache(policyId: string): Promise<void> {
-    // Extension Point: Cache Layer
-    // TODO: Integrate with CacheService when available
-    // Example: await CacheService.invalidate(`policy:${policyId}`);
-    
     // For now, no-op
     return Promise.resolve();
   }
 
   /**
    * Publish metric
-   * 
-   * Extension Point: Metrics/observability integration
-   * Currently: No-op
-   * Future: await MetricsService.publish(metricName, value, tags)
    */
   private static async publishMetric(
     metricName: string,
     value: number,
     tags?: Record<string, string>
   ): Promise<void> {
-    // Extension Point: Metrics/Observability
-    // TODO: Integrate with MetricsService when available
-    // Example: await MetricsService.publish(metricName, value, tags);
-    
     // For now, no-op
     return Promise.resolve();
   }

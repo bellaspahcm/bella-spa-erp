@@ -27,7 +27,8 @@ import type {
   WaitlistPriorityFactors,
   WaitlistSlotMatch,
 } from './types';
-import type { DecisionResult } from '../../core/types';
+
+
 import { waitlistRules, defaultWaitlistConfig } from './rules/waitlist-rules';
 
 /**

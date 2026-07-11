@@ -249,13 +249,43 @@ export interface BookingDecisionContext extends DecisionContext {
     status: 'new' | 'active' | 'loyal' | 'vip';
     totalSpending: number;
     completedBookingsCount: number;
+    paymentStatus?: string;
+    noShowCount?: number;
+    membershipTier?: string;
+    totalBookings?: number;
+    cancelledBookings?: number;
   };
   
   /** Booking details */
-  booking: {
+  booking?: {
     serviceCount: number;
     totalAmount: number;
     bookingDate: string;
+  };
+
+  /** Request details */
+  request: {
+    preferredDate: string;
+    preferredTime?: string;
+    preferredStaff?: string;
+  };
+
+  /** Availability data */
+  availability: {
+    slots: Array<{
+      date: string;
+      time: string;
+      staffId: string;
+      resourceId: string;
+      available: boolean;
+    }>;
+  };
+
+  /** Rules configuration */
+  rules: {
+    requiresDeposit?: boolean;
+    advanceBookingDays: Record<string, number>;
+    [key: string]: unknown;
   };
 }
 

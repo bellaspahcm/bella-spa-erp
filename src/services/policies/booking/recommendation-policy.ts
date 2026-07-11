@@ -126,7 +126,7 @@ export class RecommendationPolicy
   private scoreSlot(
     slot: BookingSlot,
     request: { preferredDate: string; preferredTime?: string; preferredStaff?: string },
-    customer: { membershipTier: string }
+    customer: { membershipTier?: string }
   ): number {
     let score = 0.5; // Base score
 

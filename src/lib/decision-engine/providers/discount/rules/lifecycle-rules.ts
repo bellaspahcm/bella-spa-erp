@@ -130,7 +130,7 @@ export const noDiscountRule: Rule = {
       {
         type: 'simple',
         field: 'totalAmount',
-        operator: 'greater_than',
+        operator: 'greaterThan',
         value: 0,
       },
     ],

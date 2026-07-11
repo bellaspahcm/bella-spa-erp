@@ -66,7 +66,7 @@ describe('API Gateway Security Testing', () => {
         rate_limit_per_day: 1000,
       };
 
-      const response = requireScope(request, 'partner:admin');
+      const response = requireScope(request, 'partner:admin' as APIScope);
 
       expect(response?.status).toBe(403);
     });

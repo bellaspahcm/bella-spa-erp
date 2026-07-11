@@ -18,7 +18,8 @@ import type {
   WorkflowExecution,
   WorkflowExecutionResult,
   StepExecutionResult,
-  StepOutput
+  StepOutput,
+  RetryStrategy
 } from './types';
 
 /**
@@ -101,7 +102,9 @@ export class WorkflowExecutor implements IWorkflowExecutor {
           stepName: step.name,
           stepIndex: i,
           status: stepResult.status,
-          outputData: stepResult.output,
+          outputData: (typeof stepResult.output === 'object' && stepResult.output !== null)
+            ? (stepResult.output as Record<string, unknown>)
+            : undefined,
           errorMessage: stepResult.error,
           retryCount: stepResult.retryCount ?? 0,
           completedAt: new Date(),
@@ -120,7 +123,9 @@ export class WorkflowExecutor implements IWorkflowExecutor {
         }
         
         // Merge step output into context BEFORE checking control flags
-        context.data = { ...context.data, ...stepResult.output };
+        if (typeof stepResult.output === 'object' && stepResult.output !== null) {
+          context.data = { ...context.data, ...(stepResult.output as Record<string, unknown>) };
+        }
         
         if (stepResult.shouldPause) {
           shouldPause = true;
@@ -197,7 +202,7 @@ export class WorkflowExecutor implements IWorkflowExecutor {
       // Important: Throw to let WorkflowEngine emit failure events
       throw new WorkflowExecutionError(
         error instanceof Error ? error.message : 'Unknown error',
-        failedResult.steps[failedResult.steps.length - 1]
+        results.length > 0 ? results[results.length - 1] : undefined
       );
     }
   }
@@ -303,9 +308,9 @@ export class WorkflowExecutor implements IWorkflowExecutor {
   private async executeStepWithRetry(
     step: IStep,
     context: WorkflowContext,
-    defaultRetryPolicy?: { maxAttempts: number; delayMs: number }
+    defaultRetryPolicy?: RetryStrategy
   ): Promise<StepExecutionResult> {
-    const retryPolicy = step.retryPolicy ?? defaultRetryPolicy;
+    const retryPolicy = (step.retryPolicy ?? defaultRetryPolicy) as RetryStrategy | undefined;
     const maxRetries = retryPolicy?.maxAttempts ?? 0;
     const retryDelay = retryPolicy?.delayMs ?? 1000;
     const backoff = retryPolicy?.backoff ?? 'exponential';

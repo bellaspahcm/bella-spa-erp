@@ -52,7 +52,7 @@ export async function POST(
       .eq('id', user.id)
       .single();
 
-    if (userError || !userData) {
+    if (userError || !userData || !userData.tenant_id) {
       return NextResponse.json(
         {
           success: false,

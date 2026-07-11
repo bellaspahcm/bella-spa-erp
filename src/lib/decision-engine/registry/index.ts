@@ -5,7 +5,7 @@
  */
 
 // Main Registry Façade
-export { PolicyRegistry } from './PolicyRegistry.v2';
+export { PolicyRegistry } from './PolicyRegistry';
 
 // Repository (Infrastructure boundary - keep separate)
 export { PolicyRepository } from './PolicyRepository';

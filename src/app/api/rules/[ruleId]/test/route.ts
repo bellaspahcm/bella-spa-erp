@@ -6,7 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
-import { DecisionEngine } from '@/lib/decision-engine/decision-engine';
+import type { Json } from '@/types/database.types';
 
 interface RouteParams {
   params: Promise<{
@@ -59,7 +59,7 @@ export async function POST(
       .eq('id', user.id)
       .single();
 
-    if (userError || !userData) {
+    if (userError || !userData || !userData.tenant_id) {
       return NextResponse.json(
         {
           success: false,
@@ -224,15 +224,15 @@ export async function POST(
         rule_id: ruleId,
         test_type: 'single',
         test_name: body.testName || `Test ${new Date().toISOString()}`,
-        input_data: body.inputData,
-        expected_output: body.expectedOutput || null,
-        actual_output: actualOutput,
+        input_data: body.inputData as unknown as Json,
+        expected_output: (body.expectedOutput || null) as unknown as Json,
+        actual_output: actualOutput as unknown as Json,
         passed,
         error_message: errorMessage,
         execution_time_ms: executionTime,
-        trace,
-        matched_conditions: matchedConditions,
-        executed_actions: executedActions,
+        trace: trace as unknown as Json,
+        matched_conditions: matchedConditions as unknown as Json,
+        executed_actions: executedActions as unknown as Json,
         tested_by: user.id,
         tested_at: new Date().toISOString()
       });

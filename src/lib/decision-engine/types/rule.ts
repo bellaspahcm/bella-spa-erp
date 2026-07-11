@@ -4,8 +4,19 @@
  * This type extends the basic DecisionRule with additional fields
  * for enterprise-grade rule management (name, description, enabled, metadata).
  * 
- * Used by Providers (Discount, Booking, Payroll) for declarative rule definitions.
+ * Used by Providers (Discount, Booking, Payroll, Commission) for declarative rule definitions.
  */
+
+/**
+ * Context passed to function-based rule conditions and actions.
+ * Used by CommissionProvider rules.
+ */
+export interface RuleContext {
+  /** The primary input data for this rule evaluation */
+  input: unknown;
+  /** Additional context data */
+  metadata?: Record<string, unknown>;
+}
 
 /**
  * Simple condition (field comparison)
@@ -13,8 +24,8 @@
 export interface SimpleCondition {
   type: 'simple';
   field: string;
-  operator: 'equals' | 'notEquals' | 'greaterThan' | 'greaterThanOrEqual' | 'lessThan' | 'lessThanOrEqual' | 'contains' | 'in';
-  value: any;
+  operator: 'equals' | 'notEquals' | 'greaterThan' | 'greaterThanOrEqual' | 'lessThan' | 'lessThanOrEqual' | 'contains' | 'in' | 'exists';
+  value: unknown;
 }
 
 /**
@@ -26,18 +37,28 @@ export interface CompositeCondition {
 }
 
 /**
- * Rule condition (can be simple or composite)
+ * Rule condition — can be a declarative object OR a predicate function.
  */
-export type RuleCondition = SimpleCondition | CompositeCondition;
+export type RuleCondition =
+  | SimpleCondition
+  | CompositeCondition
+  | ((context: RuleContext) => boolean);
 
 /**
- * Rule action (what happens when rule matches)
+ * Rule action object (declarative style)
  */
-export interface RuleAction {
+export interface RuleActionObject {
   type: 'approve' | 'reject' | 'escalate' | 'modify';
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
   message?: string;
 }
+
+/**
+ * Rule action — can be a declarative object OR an action function.
+ */
+export type RuleAction =
+  | RuleActionObject
+  | ((context: RuleContext) => Record<string, unknown>);
 
 /**
  * Extended Rule with full metadata
@@ -61,6 +82,7 @@ export interface Rule {
   /**
    * Rule priority (higher = evaluated first)
    * Discount Provider uses priority 10-110
+   * Commission Provider uses priority 195-240
    * Payroll Provider will use 200-280
    */
   priority: number;
@@ -71,9 +93,9 @@ export interface Rule {
   enabled: boolean;
 
   /**
-   * Rule version (for auditing)
+   * Rule version (for auditing) — optional
    */
-  version: number;
+  version?: number;
 
   /**
    * Rule condition (when to apply this rule)
@@ -86,9 +108,14 @@ export interface Rule {
   action: RuleAction;
 
   /**
-   * Rule metadata (tags, owner, category, etc.)
+   * Rule category (for grouping/filtering)
    */
-  metadata?: Record<string, any>;
+  category?: string;
+
+  /**
+   * Rule metadata (tags, owner, etc.)
+   */
+  metadata?: Record<string, unknown>;
 }
 
 /**

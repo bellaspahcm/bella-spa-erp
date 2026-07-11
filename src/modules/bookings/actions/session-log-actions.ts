@@ -226,19 +226,21 @@ export async function createBookingWithValidation(
       });
 
       // Create DecisionEngineContext for capacity check
-      const capacityContext = new DecisionEngineContext({
+      const capacityContext = DecisionEngineContext.create({
         providerType: 'capacity_management',
         operation: 'checkBookingCapacity',
         tenantId: input.tenantId,
-        bookingId: input.bookingId,
-        customerId: input.customerId,
-        ktvId: finalKtvId,
+        context: {
+          entityId: input.bookingId,
+          customerId: input.customerId,
+          ktvId: finalKtvId,
+        },
       });
 
       const capacityResult = await capacityContext.executeWithOutcome(
         () => checkBookingCapacity({
           tenantId: input.tenantId,
-          ktvId: finalKtvId,
+          ktvId: finalKtvId as string,
           requestedDate: input.assignedDate,
           requestedStartTime: input.assignedTime,
           requestedEndTime: endTime,
@@ -246,12 +248,12 @@ export async function createBookingWithValidation(
           customerTier: input.customerTier,
           serviceType: input.serviceType,
         }),
-        (result) => ({
+        (result: Awaited<ReturnType<typeof checkBookingCapacity>>) => ({
           success: result.available,
           outcome: result.available ? 'available' : 'full',
           metadata: {
             utilization_percent: result.capacityDetails.utilizationPercentage,
-            buffer_used_percent: (result.capacityDetails.bufferSlotsUsed / result.capacityDetails.bufferSlots) * 100,
+            buffer_used_percent: (result.capacityDetails.bufferSlotsUsed / (result.capacityDetails.bufferSlotsAvailable || 1)) * 100,
             conflicts_count: result.conflicts?.length || 0,
           },
         })
@@ -297,20 +299,22 @@ export async function createBookingWithValidation(
       });
 
       // Create DecisionEngineContext for conflict check
-      const conflictContext = new DecisionEngineContext({
+      const conflictContext = DecisionEngineContext.create({
         providerType: 'conflict_detection',
         operation: 'checkBookingConflicts',
         tenantId: input.tenantId,
-        bookingId: input.bookingId,
-        customerId: input.customerId,
-        ktvId: finalKtvId,
+        context: {
+          entityId: input.bookingId,
+          customerId: input.customerId,
+          ktvId: finalKtvId,
+        },
       });
 
       const conflictResult = await conflictContext.executeWithOutcome(
         () => checkBookingConflicts({
           tenantId: input.tenantId,
           customerId: input.customerId,
-          ktvId: finalKtvId,
+          ktvId: finalKtvId as string,
           roomId: input.roomId,
           equipmentIds: input.equipmentIds,
           packageId: input.packageId,
@@ -322,9 +326,9 @@ export async function createBookingWithValidation(
           serviceType: input.serviceType,
           customerTier: input.customerTier,
         }),
-        (result) => {
-          const blockingConflicts = result.conflicts.filter(c => c.severity === 'blocking');
-          const warningConflicts = result.conflicts.filter(c => c.severity === 'warning');
+        (result: Awaited<ReturnType<typeof checkBookingConflicts>>) => {
+          const blockingConflicts = result.conflicts.filter((c: { severity: string }) => c.severity === 'blocking');
+          const warningConflicts = result.conflicts.filter((c: { severity: string }) => c.severity === 'warning');
           return {
             success: blockingConflicts.length === 0,
             outcome: blockingConflicts.length > 0 ? 'conflict_blocked' : 
@@ -335,7 +339,7 @@ export async function createBookingWithValidation(
               warning_count: warningConflicts.length,
               severity: blockingConflicts.length > 0 ? 'blocking' : 
                        warningConflicts.length > 0 ? 'warning' : 'none',
-              conflicts: result.conflicts.map(c => ({
+              conflicts: result.conflicts.map((c: { type: string; severity: string; message: string }) => ({
                 type: c.type,
                 severity: c.severity,
                 message: c.message,
@@ -387,12 +391,14 @@ export async function createBookingWithValidation(
       });
 
       // Create DecisionEngineContext for auto-assignment
-      const assignmentContext = new DecisionEngineContext({
+      const assignmentContext = DecisionEngineContext.create({
         providerType: 'auto_assignment',
         operation: 'autoAssignKtv',
         tenantId: input.tenantId,
-        bookingId: input.bookingId,
-        customerId: input.customerId,
+        context: {
+          entityId: input.bookingId,
+          customerId: input.customerId,
+        },
       });
 
       const assignmentResult = await assignmentContext.executeWithOutcome(
@@ -406,7 +412,7 @@ export async function createBookingWithValidation(
           durationMinutes: input.durationMinutes,
           customerTier: input.customerTier,
         }),
-        (result) => ({
+        (result: Awaited<ReturnType<typeof autoAssignKtv>>) => ({
           success: !!result.assignedKtvId,
           outcome: result.assignedKtvId ? 'assigned' : 'no_ktv_found',
           metadata: {
@@ -453,10 +459,9 @@ export async function createBookingWithValidation(
         assigned_date: input.assignedDate,
         assigned_time: input.assignedTime,
         completed_by_ktv_id: finalKtvId || null,
-        duration_minutes: input.durationMinutes,
         status: 'pending',
         notes: input.notes || null,
-        created_by: user.id,
+        session_number: input.sessionNumber || 1,
       })
       .select('id')
       .single();
@@ -589,10 +594,8 @@ export async function updateSessionLog(
         assigned_date: updates.assignedDate,
         assigned_time: updates.assignedTime,
         completed_by_ktv_id: updates.assignedKtvId,
-        duration_minutes: updates.durationMinutes,
         status: updates.status,
         notes: updates.notes,
-        updated_at: new Date().toISOString(),
       })
       .eq('id', sessionId)
       .eq('tenant_id', tenantId);

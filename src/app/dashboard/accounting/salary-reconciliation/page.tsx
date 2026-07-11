@@ -310,7 +310,7 @@ export default function SalaryReconciliationPage() {
                                       <span className="text-xs">⭐</span>
                                       Hoa hồng bán hàng
                                     </span>
-                                    <span className="font-mono font-black text-amber-800 dark:text-amber-300">{fmtVND(row.legacy_product_sales_commission)}</span>
+                                    <span className="font-mono font-black text-amber-800 dark:text-amber-300">{fmtVND(row.legacy_product_sales_commission ?? 0)}</span>
                                   </div>
                                   <div className="flex items-center justify-between py-1.5 px-3 bg-rose-50 dark:bg-rose-500/10 rounded-lg border border-rose-200 dark:border-rose-500/30">
                                     <span className="text-rose-600 dark:text-rose-400">Khấu trừ</span>
@@ -347,7 +347,7 @@ export default function SalaryReconciliationPage() {
                                       <span className="text-xs">⭐</span>
                                       Hoa hồng bán hàng
                                     </span>
-                                    <span className="font-mono font-black text-amber-800 dark:text-amber-300">{fmtVND(row.ai_product_sales_commission)}</span>
+                                    <span className="font-mono font-black text-amber-800 dark:text-amber-300">{fmtVND(row.ai_product_sales_commission ?? 0)}</span>
                                   </div>
                                   <div className="flex items-center justify-between py-1.5 px-3 bg-rose-50 dark:bg-rose-500/10 rounded-lg border border-rose-200 dark:border-rose-500/30">
                                     <span className="text-rose-600 dark:text-rose-400">Khấu trừ</span>

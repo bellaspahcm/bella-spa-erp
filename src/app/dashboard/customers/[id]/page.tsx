@@ -75,7 +75,6 @@ export default function CustomerDetailPage() {
     setPaymentFile,
     sortedSessions,
     tenantModuleKey,
-    tenantHotline, // NEW: Destruct tenant hotline
     userRole,
   } = useCustomerDetailController();
 
@@ -162,7 +161,6 @@ export default function CustomerDetailPage() {
             onOpenBookingSessions={handleOpenBookingSessions}
             onReusePackage={handleReuseActivePackage}
             tenantModuleKey={tenantModuleKey}
-            tenantHotline={tenantHotline}
           />
 
           <PaymentHistoryPanel activeBooking={activeBooking} userRole={userRole} />

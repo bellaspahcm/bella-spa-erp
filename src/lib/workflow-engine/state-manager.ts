@@ -119,7 +119,7 @@ export interface IStateManager {
  */
 export class InMemoryStateManager implements IStateManager {
   private executions: Map<string, WorkflowExecution> = new Map();
-  private stepExecutions: Map<string, Array<any>> = new Map();
+  private stepExecutions: Map<string, Array<Record<string, unknown>>> = new Map();
   
   async createExecution(params: {
     workflowId: string;

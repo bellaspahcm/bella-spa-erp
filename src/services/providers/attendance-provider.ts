@@ -34,7 +34,7 @@ import {
 } from '@/lib/decision-engine/types/payroll-types';
 import type { PayrollDecisionContext } from '@/lib/decision-engine/types/decision-context';
 import { PayrollConfigService } from '@/services/payroll-config.service';
-import type { AttendanceConfig, AttendanceLateDeductionConfig, AttendanceAbsentDeductionConfig, AttendanceCombinedConfig } from '@/types/payroll-config';
+import type { AttendanceConfig, AttendanceDeductionConfig, ProviderConfig } from '@/types/payroll-config';
 
 /**
  * Attendance Provider
@@ -114,7 +114,7 @@ export class AttendanceProvider implements PayrollProvider<SalaryComponent> {
     }
 
     // Step 1: Load tenant configuration
-    const config = await this.configService.getProviderConfig<AttendanceConfig>(tenantId, 'attendance');
+    const config = (await this.configService.getProviderConfig(tenantId, 'attendance')) as unknown as ProviderConfig<AttendanceConfig>;
 
     // Step 2: Check if attendance provider is enabled
     if (!config.enabled) {
@@ -154,7 +154,7 @@ export class AttendanceProvider implements PayrollProvider<SalaryComponent> {
     }
 
     // Step 4: Select strategy and calculate deduction
-    const result = this.calculateDeduction(config.strategy, config.config, lateDays, absentDays);
+    const result = this.calculateDeduction(config.strategy || 'combined', config.config, lateDays, absentDays);
 
     return createSalaryComponent('attendance-deduction', {
       eligible: result.eligible,
@@ -175,23 +175,23 @@ export class AttendanceProvider implements PayrollProvider<SalaryComponent> {
    */
   private calculateDeduction(
     strategy: string,
-    config: any,
+    config: AttendanceDeductionConfig,
     lateDays: number,
     absentDays: number
   ): {
     eligible: boolean;
     amount: number;
     reason: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
   } {
     switch (strategy) {
       case 'late_deduction':
       case 'combined': // Default behavior includes both
-        return this.calculateCombinedDeduction(config as AttendanceCombinedConfig, lateDays, absentDays);
+        return this.calculateCombinedDeduction(config, lateDays, absentDays);
       case 'absent_deduction':
-        return this.calculateAbsentOnly(config as AttendanceAbsentDeductionConfig, absentDays);
+        return this.calculateAbsentOnly(config, absentDays);
       default:
-        return this.calculateCombinedDeduction(config as AttendanceCombinedConfig, lateDays, absentDays);
+        return this.calculateCombinedDeduction(config, lateDays, absentDays);
     }
   }
 
@@ -201,14 +201,14 @@ export class AttendanceProvider implements PayrollProvider<SalaryComponent> {
    * @private
    */
   private calculateCombinedDeduction(
-    config: AttendanceCombinedConfig,
+    config: AttendanceDeductionConfig,
     lateDays: number,
     absentDays: number
   ): {
     eligible: boolean;
     amount: number;
     reason: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
   } {
     const { latePenalty, absentPenalty, lateGracePeriod } = config;
 
@@ -263,13 +263,13 @@ export class AttendanceProvider implements PayrollProvider<SalaryComponent> {
    * @private
    */
   private calculateAbsentOnly(
-    config: AttendanceAbsentDeductionConfig,
+    config: AttendanceDeductionConfig,
     absentDays: number
   ): {
     eligible: boolean;
     amount: number;
     reason: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
   } {
     const { absentPenalty } = config;
 

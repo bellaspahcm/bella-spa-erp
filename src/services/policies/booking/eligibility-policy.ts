@@ -31,10 +31,14 @@ export class EligibilityPolicy implements BookingPolicy<EligibilityResult> {
 
   async evaluate(context: BookingDecisionContext): Promise<EligibilityResult> {
     const { customer, request, rules } = context;
+    const membershipTier = customer.membershipTier || 'new';
+    const paymentStatus = customer.paymentStatus || 'good';
+    const totalBookings = customer.totalBookings ?? 0;
+    const noShowCount = customer.noShowCount ?? 0;
     const matchedRules: string[] = [];
 
     // Rule 1: Check payment status
-    if (customer.paymentStatus === 'overdue') {
+    if (paymentStatus === 'overdue') {
       return {
         eligible: false,
         reason: 'Customer has overdue payments',
@@ -45,11 +49,11 @@ export class EligibilityPolicy implements BookingPolicy<EligibilityResult> {
     }
 
     // Rule 2: Check no-show history
-    if (customer.noShowCount > 3) {
+    if (noShowCount > 3) {
       matchedRules.push('no-show-restriction');
       return {
         eligible: false,
-        reason: `Customer has ${customer.noShowCount} no-shows (max 3)`,
+        reason: `Customer has ${noShowCount} no-shows (max 3)`,
         requiresApproval: false,
         requiresDeposit: false,
         matchedRules,
@@ -57,7 +61,8 @@ export class EligibilityPolicy implements BookingPolicy<EligibilityResult> {
     }
 
     // Rule 3: Check advance booking window based on membership tier
-    const maxAdvanceDays = rules.advanceBookingDays[customer.membershipTier] || 14;
+    const advanceBookingDays = rules?.advanceBookingDays || {};
+    const maxAdvanceDays = (advanceBookingDays as Record<string, number>)[membershipTier] || 14;
     const requestedDate = new Date(request.preferredDate);
     const today = new Date();
     const daysDifference = Math.ceil(
@@ -68,9 +73,9 @@ export class EligibilityPolicy implements BookingPolicy<EligibilityResult> {
       matchedRules.push('advance-booking-window');
       return {
         eligible: false,
-        reason: `${customer.membershipTier.toUpperCase()} customers can book up to ${maxAdvanceDays} days in advance`,
+        reason: `${membershipTier.toUpperCase()} customers can book up to ${maxAdvanceDays} days in advance`,
         maxAdvanceDays,
-        requiresApproval: customer.membershipTier === 'vip', // VIP can request manual approval
+        requiresApproval: membershipTier === 'vip', // VIP can request manual approval
         requiresDeposit: false,
         matchedRules,
       };
@@ -78,9 +83,9 @@ export class EligibilityPolicy implements BookingPolicy<EligibilityResult> {
 
     // Rule 4: Check if deposit required for new customers
     const requiresDeposit = 
-      customer.membershipTier === 'new' && 
-      customer.totalBookings < 3 &&
-      rules.requiresDeposit;
+      membershipTier === 'new' && 
+      totalBookings < 3 &&
+      !!rules?.requiresDeposit;
 
     matchedRules.push('eligibility-approved');
     if (requiresDeposit) {
@@ -89,7 +94,7 @@ export class EligibilityPolicy implements BookingPolicy<EligibilityResult> {
 
     return {
       eligible: true,
-      reason: `${customer.membershipTier.toUpperCase()} customer eligible to book`,
+      reason: `${membershipTier.toUpperCase()} customer eligible to book`,
       maxAdvanceDays,
       requiresApproval: false,
       requiresDeposit,

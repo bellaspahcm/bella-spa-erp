@@ -166,18 +166,14 @@ export class DiscountProvider {
     );
 
     const eligible = Boolean(matchedRule && decisionResult.outcome === 'APPROVE');
-    const discountPercent = eligible
-      ? ((matchedRule?.action.data as Record<string, unknown>)?.discountPercent as number) || 0
-      : 0;
-    const discountType = eligible
-      ? ((matchedRule?.action.data as Record<string, unknown>)?.discountType as DiscountType) || 'none'
-      : 'none';
-    const restrictions = eligible
-      ? ((matchedRule?.action.data as Record<string, unknown>)?.restrictions as string[]) || []
-      : [];
-    const campaignCode = eligible
-      ? ((matchedRule?.action.data as Record<string, unknown>)?.campaignCode as string)
-      : undefined;
+    // Discount rules use declarative object actions — narrow RuleAction to RuleActionObject
+    const actionData = (matchedRule && typeof matchedRule.action === 'object' && !Array.isArray(matchedRule.action) && typeof matchedRule.action !== 'function')
+      ? ((matchedRule.action as { data?: Record<string, unknown> }).data ?? {})
+      : ({} as Record<string, unknown>);
+    const discountPercent = eligible ? ((actionData?.discountPercent as number) || 0) : 0;
+    const discountType = eligible ? ((actionData?.discountType as DiscountType) || 'none') : 'none';
+    const restrictions = eligible ? ((actionData?.restrictions as string[]) || []) : [];
+    const campaignCode = eligible ? (actionData?.campaignCode as string | undefined) : undefined;
 
     // 8. Calculate discount amount
     const discountAmount = this.calculateDiscountAmount(input.totalAmount, discountPercent);

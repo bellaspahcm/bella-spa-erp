@@ -9,6 +9,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-client';
 import type { UpdateRuleRequest } from '@/types/rule-management.types';
+import type { Database } from '@/types/database.types';
+import type { Json } from '@/types/database.types';
 
 interface RouteParams {
   params: Promise<{
@@ -48,7 +50,7 @@ export async function GET(
       .eq('id', user.id)
       .single();
 
-    if (userError || !userData) {
+    if (userError || !userData || !userData.tenant_id) {
       return NextResponse.json(
         {
           success: false,
@@ -138,7 +140,7 @@ export async function PATCH(
       .eq('id', user.id)
       .single();
 
-    if (userError || !userData) {
+    if (userError || !userData || !userData.tenant_id) {
       return NextResponse.json(
         {
           success: false,
@@ -166,7 +168,7 @@ export async function PATCH(
     }
 
     // Build update payload
-    const updatePayload: Record<string, unknown> = {
+    const updatePayload: Database['public']['Tables']['workflow_rules']['Update'] = {
       updated_at: new Date().toISOString()
     };
 
@@ -174,8 +176,8 @@ export async function PATCH(
     if (body.description !== undefined) updatePayload.description = body.description;
     if (body.ruleType !== undefined) updatePayload.rule_type = body.ruleType;
     if (body.priority !== undefined) updatePayload.priority = body.priority;
-    if (body.config !== undefined) updatePayload.config = body.config;
-    if (body.metadata !== undefined) updatePayload.metadata = body.metadata;
+    if (body.config !== undefined) updatePayload.config = body.config as unknown as Json;
+    if (body.metadata !== undefined) updatePayload.metadata = body.metadata as unknown as Json;
     if (body.isActive !== undefined) updatePayload.is_active = body.isActive;
 
     // Update rule
@@ -250,7 +252,7 @@ export async function DELETE(
       .eq('id', user.id)
       .single();
 
-    if (userError || !userData) {
+    if (userError || !userData || !userData.tenant_id) {
       return NextResponse.json(
         {
           success: false,

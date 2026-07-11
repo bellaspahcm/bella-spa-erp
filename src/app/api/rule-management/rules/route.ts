@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-client';
 import type { CreateRuleRequest } from '@/types/rule-management.types';
+import type { Json } from '@/types/database.types';
 
 /**
  * GET /api/rule-management/rules
@@ -43,7 +44,7 @@ export async function GET(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    if (userError || !userData) {
+    if (userError || !userData || !userData.tenant_id) {
       return NextResponse.json(
         {
           success: false,
@@ -64,9 +65,9 @@ export async function GET(request: NextRequest) {
     // Query rules using RPC
     const { data, error } = await supabase.rpc('get_workflow_rules', {
       p_tenant_id: userData.tenant_id,
-      p_workflow_id: workflowId || null,
-      p_rule_type: ruleType || null,
-      p_status: status || null,
+      p_workflow_id: workflowId || undefined,
+      p_rule_type: ruleType || undefined,
+      p_status: status || undefined,
       p_limit: limit,
       p_offset: offset
     });
@@ -134,7 +135,7 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    if (userError || !userData) {
+    if (userError || !userData || !userData.tenant_id) {
       return NextResponse.json(
         {
           success: false,
@@ -198,8 +199,8 @@ export async function POST(request: NextRequest) {
         description: body.description || null,
         rule_type: body.ruleType,
         priority: body.priority || 0,
-        config: body.config,
-        metadata: body.metadata || {},
+        config: body.config as unknown as Json,
+        metadata: (body.metadata || {}) as unknown as Json,
         is_active: true, // New rules are active by default
         created_by: user.id
       })

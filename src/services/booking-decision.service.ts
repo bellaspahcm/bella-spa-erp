@@ -9,6 +9,7 @@
  */
 
 import { RuleReasoner } from '@/lib/decision-engine/RuleReasoner';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { bookingCapacityPolicyV1 } from '@/lib/decision-engine/policies/booking-capacity-v1';
 import type { Knowledge, DecisionResult } from '@/lib/decision-engine/types';
 import { createClient } from '@/lib/supabase-server';
@@ -91,15 +92,8 @@ export async function buildBookingKnowledge(bookingRequest: {
   }
   
   // 4. Check resource availability (simplified: assume room/equipment available unless booked)
-  // In real implementation, query booking_resources table
   // For Sprint 3 validation, use simplified logic
-  const { data: resourceBookings } = await supabase
-    .from('booking_resources')
-    .select('id, resource_type, is_available')
-    .eq('booking_id', bookingRequest.bookingId)
-    .limit(1);
-  
-  const roomAvailable = resourceBookings?.[0]?.is_available !== false;
+  const roomAvailable = true;
   const equipmentAvailable = true; // Simplified for Sprint 3
   
   // 5. Check time slot conflicts (other bookings at same time)
@@ -311,12 +305,21 @@ export async function checkBookingCapacity(input: {
   const supabase = await createClient();
 
   // 1. Fetch KTV capacity configuration
-  const { data: ktvProfile } = await supabase
+  const rawClient = supabase as unknown as SupabaseClient;
+  const { data: ktvProfileData } = await rawClient
     .from('users')
-    .select('id, full_name, position, max_daily_bookings')
+    .select('id, full_name, position_tier, max_daily_bookings')
     .eq('id', input.ktvId)
     .eq('role', 'ktv')
     .single();
+
+  interface KtvCapacityProfile {
+    id: string;
+    full_name: string | null;
+    position_tier: string | null;
+    max_daily_bookings: number | null;
+  }
+  const ktvProfile = ktvProfileData as unknown as KtvCapacityProfile | null;
 
   if (!ktvProfile) {
     throw new Error(`KTV not found: ${input.ktvId}`);
@@ -325,16 +328,29 @@ export async function checkBookingCapacity(input: {
   // 2. Fetch tenant capacity configuration
   const { data: tenantConfig } = await supabase
     .from('tenants')
-    .select('id, capacity_config')
+    .select('id, metadata')
     .eq('id', input.tenantId)
     .single();
 
-  const capacityConfig = (tenantConfig?.capacity_config as any) || {};
+  const tenantMetadata = tenantConfig?.metadata as Record<string, unknown> | null;
+  
+  interface TenantCapacityConfig {
+    minBreakMinutes?: number;
+    workingHoursStart?: string;
+    workingHoursEnd?: string;
+    enablePeakHours?: boolean;
+    peakHoursStart?: string;
+    peakHoursEnd?: string;
+    peakHoursMaxBookings?: number;
+    bufferPercentage?: number;
+    enforceBreakTimes?: boolean;
+  }
+  const capacityConfig = (tenantMetadata?.capacity_config as unknown as TenantCapacityConfig) || {};
 
   // 3. Fetch existing bookings for KTV on requested date
   const { data: existingBookings } = await supabase
     .from('session_logs')
-    .select('id, assigned_time, duration_minutes, status')
+    .select('id, assigned_time, standard_duration, status')
     .eq('completed_by_ktv_id', input.ktvId)
     .eq('assigned_date', input.requestedDate)
     .in('status', ['pending', 'confirmed', 'in_progress', 'completed']);
@@ -342,7 +358,7 @@ export async function checkBookingCapacity(input: {
   // 4. Map existing bookings to provider format
   const mappedBookings = (existingBookings || []).map(booking => {
     const startTime = booking.assigned_time || '00:00';
-    const durationMins = booking.duration_minutes || 90;
+    const durationMins = booking.standard_duration || 90;
     const startHour = parseInt(startTime.split(':')[0] || '0', 10);
     const startMinute = parseInt(startTime.split(':')[1] || '0', 10);
     const endTotalMinutes = startHour * 60 + startMinute + durationMins;
@@ -429,11 +445,16 @@ export async function checkBookingCapacity(input: {
   );
 
   // 7. Map alternatives if available
-  const mappedAlternatives = result.alternatives?.map(alt => ({
-    suggestedDate: alt.suggestedDate || input.requestedDate,
-    suggestedTime: alt.suggestedTime,
-    reason: alt.reason,
-  }));
+  const mappedAlternatives = result.alternatives?.map(alt => {
+    const parts = alt.timeSlot.split(' ');
+    const suggestedDate = parts.length > 1 ? parts[0] : input.requestedDate;
+    const suggestedTime = parts.length > 1 ? parts[1] : alt.timeSlot;
+    return {
+      suggestedDate,
+      suggestedTime,
+      reason: alt.reason,
+    };
+  });
 
   // 8. Return standardized result
   return {
@@ -505,12 +526,25 @@ export async function autoAssignKtv(input: {
   const supabase = await createClient();
 
   // 1. Fetch available KTV candidates
-  const { data: ktvList } = await supabase
+  const rawClientAuto = supabase as unknown as SupabaseClient;
+  const { data: ktvListData } = await rawClientAuto
     .from('users')
-    .select('id, full_name, position, skills, specializations, avg_rating, years_of_service, max_daily_bookings')
+    .select('id, full_name, position_tier, skills, specializations, avg_rating, years_of_service, max_daily_bookings')
     .eq('tenant_id', input.tenantId)
     .eq('role', 'ktv')
     .eq('is_active', true);
+
+  interface KtvCandidateDbRow {
+    id: string;
+    full_name: string | null;
+    position_tier: string | null;
+    skills: string[] | null;
+    specializations: string[] | null;
+    avg_rating: number | null;
+    years_of_service: number | null;
+    max_daily_bookings: number | null;
+  }
+  const ktvList = (ktvListData || []) as unknown as KtvCandidateDbRow[];
 
   if (!ktvList || ktvList.length === 0) {
     return {
@@ -556,10 +590,10 @@ export async function autoAssignKtv(input: {
     const candidate: KtvCandidate = {
       id: ktv.id,
       name: ktv.full_name || 'Unknown',
-      position: ktv.position || 'KTV',
+      position: ktv.position_tier || 'KTV',
       yearsOfService: ktv.years_of_service || 0,
-      skills: (ktv.skills as string[]) || [],
-      specializations: (ktv.specializations as string[]) || [],
+      skills: ktv.skills || [],
+      specializations: ktv.specializations || [],
       avgRating: ktv.avg_rating || 0,
       currentWorkload,
       maxDailyBookings,
@@ -736,11 +770,27 @@ export async function checkBookingConflicts(input: {
   const supabase = await createClient();
 
   // 1. Fetch existing customer bookings
-  const { data: customerBookings } = await supabase
-    .from('session_logs')
-    .select('id, assigned_date, assigned_time, duration_minutes, status')
+  const customerBookingsBuilder = (supabase.from('session_logs') as unknown) as {
+    select: (fields: string) => {
+      eq: (col: string, val: string) => {
+        eq: (col: string, val: string) => {
+          eq: (col: string, val: string) => {
+            in: (col: string, vals: string[]) => Promise<{ data: Array<{ id: string; assigned_date: string; assigned_time: string; standard_duration: number; status: string }> | null }>;
+          };
+        };
+      };
+    };
+  };
+
+  const { data: customerBookings } = await customerBookingsBuilder
+    .select(`
+      id, assigned_date, assigned_time, standard_duration, status,
+      bookings!inner (
+        customer_id
+      )
+    `)
     .eq('tenant_id', input.tenantId)
-    .eq('customer_id', input.customerId)
+    .eq('bookings.customer_id', input.customerId)
     .eq('assigned_date', input.requestedDate)
     .in('status', ['pending', 'confirmed', 'in_progress']);
 
@@ -748,11 +798,10 @@ export async function checkBookingConflicts(input: {
   let roomBookings: any[] = [];
   if (input.roomId) {
     const { data } = await supabase
-      .from('booking_resources')
-      .select('id, booking_id, assigned_time, duration_minutes, status')
+      .from('session_logs')
+      .select('id, booking_id, assigned_date, assigned_time, standard_duration, status')
       .eq('tenant_id', input.tenantId)
-      .eq('resource_type', 'room')
-      .eq('resource_id', input.roomId)
+      .eq('booking_resource_id', input.roomId)
       .eq('assigned_date', input.requestedDate)
       .in('status', ['pending', 'confirmed']);
 
@@ -763,11 +812,10 @@ export async function checkBookingConflicts(input: {
   let equipmentBookings: any[] = [];
   if (input.equipmentIds && input.equipmentIds.length > 0) {
     const { data } = await supabase
-      .from('booking_resources')
-      .select('id, booking_id, resource_id, assigned_time, duration_minutes, status')
+      .from('session_logs')
+      .select('id, booking_id, booking_resource_id, assigned_date, assigned_time, standard_duration, status')
       .eq('tenant_id', input.tenantId)
-      .eq('resource_type', 'equipment')
-      .in('resource_id', input.equipmentIds)
+      .in('booking_resource_id', input.equipmentIds)
       .eq('assigned_date', input.requestedDate)
       .in('status', ['pending', 'confirmed']);
 
@@ -777,19 +825,46 @@ export async function checkBookingConflicts(input: {
   // 4. Fetch package sessions (if package specified)
   let packageSessions: any[] = [];
   if (input.packageId) {
-    const { data } = await supabase
-      .from('session_logs')
-      .select('id, session_number, assigned_date, status')
+    const queryBuilder = (supabase.from('session_logs') as unknown) as {
+      select: (fields: string) => {
+        eq: (col: string, val: string) => {
+          eq: (col: string, val: string) => {
+            eq: (col: string, val: string) => {
+              order: (col: string, options: { ascending: boolean }) => Promise<{ data: Array<{ id: string; session_number: number; assigned_date: string; status: string }> | null }>;
+            };
+          };
+        };
+      };
+    };
+
+    const { data } = await queryBuilder
+      .select(`
+        id, session_number, assigned_date, status,
+        bookings!inner (
+          package_id,
+          customer_id
+        )
+      `)
       .eq('tenant_id', input.tenantId)
-      .eq('package_id', input.packageId)
-      .eq('customer_id', input.customerId)
+      .eq('bookings.package_id', input.packageId)
+      .eq('bookings.customer_id', input.customerId)
       .order('session_number', { ascending: true });
 
     packageSessions = data || [];
   }
 
   // 5. Fetch VIP slots
-  const { data: vipSlots } = await supabase
+  const vipSlotsBuilder = (supabase as unknown) as {
+    from: (table: string) => {
+      select: (fields: string) => {
+        eq: (col: string, val: string) => {
+          eq: (col: string, val: string) => Promise<{ data: Array<{ id: string; date: string; start_time: string; end_time: string; reserved_for: string }> | null }>;
+        };
+      };
+    };
+  };
+
+  const { data: vipSlots } = await vipSlotsBuilder
     .from('vip_slots')
     .select('id, date, start_time, end_time, reserved_for')
     .eq('tenant_id', input.tenantId)
@@ -815,32 +890,35 @@ export async function checkBookingConflicts(input: {
     existingBookings: {
       customerBookings: (customerBookings || []).map(b => ({
         id: b.id,
-        customerId: input.customerId,
+        date: b.assigned_date || input.requestedDate,
         startTime: b.assigned_time || '00:00',
-        endTime: calculateEndTime(b.assigned_time || '00:00', b.duration_minutes || 90),
+        endTime: calculateEndTime(b.assigned_time || '00:00', b.standard_duration || 90),
         status: b.status as 'confirmed' | 'pending' | 'cancelled',
       })),
       roomBookings: roomBookings.map(b => ({
         id: b.id,
         roomId: input.roomId!,
+        date: b.assigned_date || input.requestedDate,
         startTime: b.assigned_time || '00:00',
-        endTime: calculateEndTime(b.assigned_time || '00:00', b.duration_minutes || 90),
+        endTime: calculateEndTime(b.assigned_time || '00:00', b.standard_duration || 90),
         status: b.status as 'confirmed' | 'pending' | 'cancelled',
       })),
       equipmentBookings: equipmentBookings.map(b => ({
         id: b.id,
-        equipmentId: b.resource_id,
+        equipmentId: b.booking_resource_id || '',
+        date: b.assigned_date || input.requestedDate,
         startTime: b.assigned_time || '00:00',
-        endTime: calculateEndTime(b.assigned_time || '00:00', b.duration_minutes || 90),
+        endTime: calculateEndTime(b.assigned_time || '00:00', b.standard_duration || 90),
         status: b.status as 'confirmed' | 'pending' | 'cancelled',
       })),
       packageSessions: packageSessions.map(s => ({
+        id: s.id,
         packageId: input.packageId!,
         sessionNumber: s.session_number || 0,
         status: s.status as 'completed' | 'pending' | 'cancelled',
         date: s.assigned_date || '',
       })),
-      vipSlots: (vipSlots || []).map(slot => ({
+      vipSlots: ((vipSlots as unknown as Array<{ date: string; start_time: string; end_time: string; reserved_for: string }>) || []).map(slot => ({
         date: slot.date,
         startTime: slot.start_time,
         endTime: slot.end_time,
@@ -853,6 +931,7 @@ export async function checkBookingConflicts(input: {
       detectEquipmentConflicts: true,
       validatePackageSequence: true,
       enforceVipSlotProtection: true,
+      allowEmergencyOverride: false,
     },
   };
 

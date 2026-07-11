@@ -10,6 +10,7 @@
 import { createClient } from '@/lib/supabase-server';
 import { revalidatePath } from 'next/cache';
 import type { KPIConfig, AttendanceConfig, RatingConfig } from '@/types/payroll-config';
+import type { Database } from '@/types/database.types';
 
 // =====================================================
 // TYPES
@@ -72,7 +73,7 @@ export async function loadProviderConfig<T = any>(
 
     return {
       success: true,
-      data: data as ProviderConfigResponse<T>
+      data: data as unknown as ProviderConfigResponse<T>
     };
   } catch (error: any) {
     console.error('Error loading provider config:', error);
@@ -133,7 +134,7 @@ export async function saveProviderConfig<T = any>(
       .update({
         enabled,
         strategy,
-        config,
+        config: config as unknown as Database['public']['Tables']['tenant_payroll_config']['Update']['config'],
         notes,
         updated_at: new Date().toISOString()
       })
@@ -286,8 +287,8 @@ export async function loadCommissionConfig(tenantId: string) {
 export async function saveCommissionConfig(
   tenantId: string,
   enabled: boolean,
-  strategy: 'fixed' | 'tier' | 'percentage' | 'service',
-  config: Record<string, any>
+  strategy: 'fixed' | 'tier' | 'percentage' | 'service' | 'product_sales' | 'total_revenue' | 'revenue' | 'category',
+  config: Record<string, unknown>
 ) {
   return saveProviderConfig({
     tenantId,

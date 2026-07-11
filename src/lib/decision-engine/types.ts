@@ -4,7 +4,7 @@
  */
 
 // Re-export extended Rule type for providers
-export type { Rule } from './rule';
+export type { Rule } from './types/rule';
 
 /**
  * Knowledge: Simple key-value dictionary.
@@ -18,7 +18,14 @@ export type Knowledge = Record<string, unknown>;
 export type DecisionOutcome = 
   | 'APPROVE'
   | 'REJECT'
-  | 'ESCALATE';
+  | 'ESCALATE'
+  | 'FULL'
+  | 'BOOKABLE'
+  | 'DATA_ERROR'
+  | 'EXCESSIVE_DEDUCTION'
+  | 'REQUIRES_CFO_APPROVAL'
+  | 'KPI_MISMATCH'
+  | 'LOW_ATTENDANCE_ALERT';
 
 /**
  * Decision result (pure decision, no telemetry).
@@ -35,7 +42,7 @@ export interface ComparisonCondition {
   type: 'comparison';
   field: string;
   operator: '>=' | '>' | '<=' | '<' | '==' | '===' | '!=' | '!==';
-  value: any;
+  value: unknown;
 }
 
 export interface OperatorCondition {

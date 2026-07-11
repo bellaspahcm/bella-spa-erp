@@ -25,10 +25,15 @@ export class ApprovalPolicy implements BookingPolicy<ApprovalResult> {
 
   async evaluate(context: BookingDecisionContext): Promise<ApprovalResult> {
     const { customer } = context;
+    const membershipTier = customer.membershipTier || 'new';
+    const paymentStatus = customer.paymentStatus || 'good';
+    const totalBookings = customer.totalBookings ?? 0;
+    const cancelledBookings = customer.cancelledBookings ?? 0;
+    const noShowCount = customer.noShowCount ?? 0;
     const matchedRules: string[] = [];
 
     // Rule 1: Auto-approve VIP customers
-    if (customer.membershipTier === 'vip' && customer.paymentStatus === 'good') {
+    if (membershipTier === 'vip' && paymentStatus === 'good') {
       matchedRules.push('vip-auto-approval');
       return {
         autoApproved: true,
@@ -39,7 +44,7 @@ export class ApprovalPolicy implements BookingPolicy<ApprovalResult> {
     }
 
     // Rule 2: Require review for new customers (first 3 bookings)
-    if (customer.membershipTier === 'new' || customer.totalBookings < 3) {
+    if (membershipTier === 'new' || totalBookings < 3) {
       matchedRules.push('new-customer-review');
       return {
         autoApproved: false,
@@ -51,22 +56,22 @@ export class ApprovalPolicy implements BookingPolicy<ApprovalResult> {
     }
 
     // Rule 3: Require review if customer has cancellations/no-shows
-    if (customer.cancelledBookings > 2 || customer.noShowCount > 0) {
+    if (cancelledBookings > 2 || noShowCount > 0) {
       matchedRules.push('violation-review');
       return {
         autoApproved: false,
         requiredApprovers: ['manager'],
         estimatedReviewTime: '4 hours',
-        reason: `Customer has ${customer.cancelledBookings} cancellations and ${customer.noShowCount} no-shows`,
+        reason: `Customer has ${cancelledBookings} cancellations and ${noShowCount} no-shows`,
         matchedRules,
       };
     }
 
     // Rule 4: Auto-approve regular customers with good history
     if (
-      customer.membershipTier === 'regular' &&
-      customer.paymentStatus === 'good' &&
-      customer.totalBookings >= 3
+      membershipTier === 'regular' &&
+      paymentStatus === 'good' &&
+      totalBookings >= 3
     ) {
       matchedRules.push('regular-customer-auto-approval');
       return {

@@ -34,7 +34,7 @@ import {
 } from '@/lib/decision-engine/types/payroll-types';
 import type { PayrollDecisionContext } from '@/lib/decision-engine/types/decision-context';
 import { PayrollConfigService } from '@/services/payroll-config.service';
-import type { RatingConfig, RatingThresholdConfig, RatingLinearConfig, RatingTierConfig } from '@/types/payroll-config';
+import type { RatingConfig, RatingThresholdConfig, RatingLinearConfig, RatingTierConfig, ProviderConfig } from '@/types/payroll-config';
 
 /**
  * Rating Provider
@@ -146,7 +146,7 @@ export class RatingProvider implements PayrollProvider<SalaryComponent> {
     }
 
     // Step 1: Load tenant configuration
-    const config = await this.configService.getProviderConfig<RatingConfig>(tenantId, 'rating');
+    const config = (await this.configService.getProviderConfig(tenantId, 'rating')) as unknown as ProviderConfig<RatingConfig>;
 
     // Step 2: Check if rating provider is enabled
     if (!config.enabled) {
@@ -175,7 +175,7 @@ export class RatingProvider implements PayrollProvider<SalaryComponent> {
     }
 
     // Step 4: Select strategy and calculate bonus
-    const result = this.calculateBonus(config.strategy, config.config, avgRating);
+    const result = this.calculateBonus(config.strategy || 'linear', config.config, avgRating);
 
     return createSalaryComponent('rating-bonus', {
       eligible: result.eligible,
@@ -190,19 +190,15 @@ export class RatingProvider implements PayrollProvider<SalaryComponent> {
     });
   }
 
-  /**
-   * Calculate bonus based on strategy
-   * @private
-   */
   private calculateBonus(
     strategy: string,
-    config: any,
+    config: RatingConfig,
     avgRating: number
   ): {
     eligible: boolean;
     amount: number;
     reason: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
   } {
     switch (strategy) {
       case 'threshold':
@@ -233,7 +229,7 @@ export class RatingProvider implements PayrollProvider<SalaryComponent> {
     eligible: boolean;
     amount: number;
     reason: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
   } {
     const { minRating, bonus } = config;
 
@@ -262,7 +258,7 @@ export class RatingProvider implements PayrollProvider<SalaryComponent> {
 
   /**
    * STRATEGY 2: Linear
-   * Progressive bonus (bonusPerPoint × points above baseline)
+   * Progressive bonus (bonusPerPoint × 10 per star above baseline)
    * @private
    */
   private calculateLinearBonus(
@@ -272,9 +268,10 @@ export class RatingProvider implements PayrollProvider<SalaryComponent> {
     eligible: boolean;
     amount: number;
     reason: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
   } {
-    const { baseline, bonusPerPoint, maxBonus } = config;
+    const { baseRating, bonusPerPoint } = config;
+    const baseline = baseRating ?? 0;
 
     if (avgRating <= baseline) {
       return {
@@ -288,24 +285,17 @@ export class RatingProvider implements PayrollProvider<SalaryComponent> {
       };
     }
 
-    const pointsAboveBaseline = avgRating - baseline;
-    let bonus = pointsAboveBaseline * bonusPerPoint;
-
-    // Apply max cap if configured
-    if (maxBonus && bonus > maxBonus) {
-      bonus = maxBonus;
-    }
+    const pointsAboveBaseline = (avgRating - baseline) * 10;
+    const bonus = pointsAboveBaseline * bonusPerPoint;
 
     return {
       eligible: true,
       amount: Math.round(bonus),
-      reason: `Rating linear bonus: (${avgRating.toFixed(1)}★ - ${baseline.toFixed(1)}★) × ${bonusPerPoint.toLocaleString('vi-VN')}đ = ${bonus.toLocaleString('vi-VN')}đ${maxBonus && bonus >= maxBonus ? ' (capped)' : ''}`,
+      reason: `Rating linear bonus: (${avgRating.toFixed(1)}★ - ${baseline.toFixed(1)}★, ${pointsAboveBaseline.toFixed(1)} x 0.1★) × ${bonusPerPoint.toLocaleString('vi-VN')}đ = ${bonus.toLocaleString('vi-VN')}đ`,
       metadata: {
         baseline,
         pointsAboveBaseline: parseFloat(pointsAboveBaseline.toFixed(2)),
         bonusPerPoint,
-        maxBonus,
-        capped: maxBonus && bonus >= maxBonus,
       },
     };
   }
@@ -322,13 +312,13 @@ export class RatingProvider implements PayrollProvider<SalaryComponent> {
     eligible: boolean;
     amount: number;
     reason: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
   } {
     const { tiers } = config;
 
     // Find matching tier
     const matchedTier = tiers.find(
-      (tier) => avgRating >= tier.min && avgRating <= tier.max
+      (tier) => avgRating >= tier.minRating && avgRating <= tier.maxRating
     );
 
     if (!matchedTier) {
@@ -347,10 +337,10 @@ export class RatingProvider implements PayrollProvider<SalaryComponent> {
       return {
         eligible: false,
         amount: 0,
-        reason: `Rating tier bonus: ${avgRating.toFixed(1)}★ → Tier ${matchedTier.min.toFixed(1)}-${matchedTier.max.toFixed(1)} (no bonus)`,
+        reason: `Rating tier bonus: ${avgRating.toFixed(1)}★ → Tier ${matchedTier.minRating.toFixed(1)}-${matchedTier.maxRating.toFixed(1)} (no bonus)`,
         metadata: {
           avgRating,
-          tier: `${matchedTier.min}-${matchedTier.max}`,
+          tier: `${matchedTier.minRating}-${matchedTier.maxRating}`,
           tierIndex: tiers.indexOf(matchedTier) + 1,
         },
       };
@@ -359,12 +349,13 @@ export class RatingProvider implements PayrollProvider<SalaryComponent> {
     return {
       eligible: true,
       amount: matchedTier.bonus,
-      reason: `Rating tier bonus: ${avgRating.toFixed(1)}★ → Tier ${matchedTier.min.toFixed(1)}-${matchedTier.max.toFixed(1)} = ${matchedTier.bonus.toLocaleString('vi-VN')}đ`,
+      reason: `Rating tier bonus: ${avgRating.toFixed(1)}★ → Tier ${matchedTier.minRating.toFixed(1)}-${matchedTier.maxRating.toFixed(1)} = ${matchedTier.bonus.toLocaleString('vi-VN')}đ`,
       metadata: {
         avgRating,
-        tier: `${matchedTier.min}-${matchedTier.max}`,
+        tier: `${matchedTier.minRating}-${matchedTier.maxRating}`,
         tierIndex: tiers.indexOf(matchedTier) + 1,
       },
     };
   }
 }
+

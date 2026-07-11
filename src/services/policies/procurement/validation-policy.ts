@@ -32,20 +32,22 @@ export class ValidationPolicy implements ProcurementPolicy<ValidationResult> {
   async evaluate(
     context: ProcurementDecisionContext
   ): Promise<ValidationResult> {
-    const { requisition, budget, vendor } = context;
+    const requisition = context.requisition;
+    const budget = context.budget || { available: 0, used: 0, total: 0 };
+    const vendor = context.vendor || { id: '', name: 'Unknown', approved: false, rating: 0 };
     const matchedRules: string[] = [];
     const validationErrors: string[] = [];
 
     // Rule 1: Budget availability check
     const budgetCheck = {
-      passed: budget.remaining >= requisition.totalAmount,
-      available: budget.remaining,
+      passed: budget.available >= requisition.totalAmount,
+      available: budget.available,
       required: requisition.totalAmount,
     };
 
     if (!budgetCheck.passed) {
       validationErrors.push(
-        `Insufficient budget: ${budget.remaining.toLocaleString()}đ available, ${requisition.totalAmount.toLocaleString()}đ required`
+        `Insufficient budget: ${budget.available.toLocaleString()}đ available, ${requisition.totalAmount.toLocaleString()}đ required`
       );
       matchedRules.push('budget-insufficient');
     } else {
@@ -86,7 +88,7 @@ export class ValidationPolicy implements ProcurementPolicy<ValidationResult> {
       }
       
       // Check urgent items have justification
-      if (item.urgency === 'critical' && !requisition.justification) {
+      if (requisition.urgency === 'critical' && !requisition.justification) {
         itemsIssues.push(`${item.name}: critical urgency requires justification`);
       }
     }

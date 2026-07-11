@@ -74,8 +74,8 @@ export function FinancialHealthChart({
             fontSize: '12px',
             boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.05)',
           }}
-          formatter={(value, name, entry: any) => {
-            if (typeof value !== 'number') return ['', name];
+          formatter={(value: unknown, name: unknown, entry: { payload?: { unit?: string } }) => {
+            if (typeof value !== 'number') return ['', String(name)];
             const unit = entry?.payload?.unit;
             if (unit === '%') {
               return [`${value.toFixed(1)}%`, 'Giá trị'];
@@ -90,10 +90,10 @@ export function FinancialHealthChart({
           <LabelList
             dataKey="value"
             position="right"
-            formatter={(value: any, entry: any) => {
-              if (typeof value !== 'number') return value;
-              const unit = entry?.payload?.unit;
-              if (unit === '%') {
+            formatter={(value: unknown, index?: number) => {
+              if (typeof value !== 'number' || index === undefined) return String(value);
+              const item = data[index];
+              if (item?.unit === '%') {
                 return `${value.toFixed(1)}%`;
               }
               return `${value.toFixed(1)}M ₫`;

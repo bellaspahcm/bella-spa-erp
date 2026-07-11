@@ -17,13 +17,7 @@ import {
   type PayrollProvider,
   createSalaryComponent,
 } from '@/lib/decision-engine/types/payroll-types';
-import type { PayrollDecisionContext } from '@/lib/decision-engine/types/decision-context';
-import {
-  baseSalaryRules,
-  BASE_SALARY_DECISION_TYPE,
-} from '@/lib/decision-engine/rules/base-salary-rules';
-import { RuleProvider } from '@/lib/decision-engine';
-import type { DecisionContext } from '@/lib/decision-engine/types';
+import type { PayrollDecisionContext, EmployeeData, AttendanceData } from '@/lib/decision-engine/types/decision-context';
 
 /**
  * Base Salary Provider
@@ -70,13 +64,7 @@ import type { DecisionContext } from '@/lib/decision-engine/types';
  */
 export class BaseSalaryProvider implements PayrollProvider<SalaryComponent> {
   readonly name = 'BaseSalaryProvider';
-  readonly decisionType = BASE_SALARY_DECISION_TYPE;
-
-  private ruleProvider: RuleProvider;
-
-  constructor() {
-    this.ruleProvider = new RuleProvider();
-  }
+  readonly decisionType = 'base-salary';
 
   /**
    * Evaluate base salary for the given context
@@ -192,10 +180,10 @@ export class BaseSalaryProvider implements PayrollProvider<SalaryComponent> {
    * @private
    */
   private async calculateBaseAmount(
-    employee: any,
-    attendance: any,
+    employee: EmployeeData,
+    attendance: AttendanceData | undefined,
     monthYear: string,
-    tenantConfig: any
+    tenantConfig: PayrollDecisionContext['tenantConfig']
   ): Promise<SalaryComponent> {
     const baseSalary = employee.baseSalary || 0;
 

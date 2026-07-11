@@ -72,12 +72,12 @@ export function RulesFilters({
     router.push(`/dashboard/rules?${params.toString()}`);
   };
 
-  const handleProviderChange = (value: string) => {
-    updateFilters({ provider: value });
+  const handleProviderChange = (value: string | null) => {
+    updateFilters({ provider: value || undefined });
   };
 
-  const handleStatusChange = (value: string) => {
-    updateFilters({ status: value });
+  const handleStatusChange = (value: string | null) => {
+    updateFilters({ status: value || undefined });
   };
 
   const handleSearchChange = (value: string) => {

@@ -28,10 +28,8 @@ import {
   createSalaryComponent,
 } from '@/lib/decision-engine/types/payroll-types';
 import type { PayrollDecisionContext } from '@/lib/decision-engine/types/decision-context';
-import {
-  compensationRules,
-  COMPENSATION_DECISION_TYPE,
-} from '@/lib/decision-engine/rules/compensation-rules';
+
+const COMPENSATION_DECISION_TYPE = 'session-commission';
 
 /**
  * Compensation Provider

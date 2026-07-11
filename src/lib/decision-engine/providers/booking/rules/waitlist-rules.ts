@@ -12,7 +12,17 @@
  * @module decision-engine/providers/booking/rules
  */
 
-import type { Rule } from '../../../core/types';
+/** Local Rule type for DSL-style waitlist management rules */
+interface Rule {
+  id: string;
+  name: string;
+  description?: string;
+  priority: number;
+  conditions: Array<{ field: string; operator: string; value: unknown }>;
+  actions: Array<Record<string, unknown>>;
+  metadata?: Record<string, unknown>;
+}
+
 
 /**
  * Rule 1: Calculate Priority Score

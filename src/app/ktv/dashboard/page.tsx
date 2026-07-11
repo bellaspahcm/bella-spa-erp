@@ -321,8 +321,8 @@ export default function KTVDashboard() {
       if (!u) return;
       
       const [active, upcoming] = await Promise.all([
-        getKTVActiveSessions(u),
-        getKTVUpcomingSessions(u),
+        getKTVActiveSessions(u as unknown as import('@/types/domain').CurrentUser),
+        getKTVUpcomingSessions(u as unknown as import('@/types/domain').CurrentUser),
       ]);
       setActiveSessions(active);
       setUpcomingSessions(upcoming);

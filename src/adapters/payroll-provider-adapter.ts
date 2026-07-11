@@ -82,22 +82,22 @@ export interface SalaryCalculationContext {
     kpi?: {
       enabled: boolean;
       strategy: 'threshold' | 'linear' | 'tier';
-      config: Record<string, any>;
+      config: Record<string, unknown>;
     };
     attendance?: {
       enabled: boolean;
       strategy: 'late_deduction' | 'absent_deduction' | 'combined';
-      config: Record<string, any>;
+      config: Record<string, unknown>;
     };
     rating?: {
       enabled: boolean;
       strategy: 'threshold' | 'linear' | 'tier';
-      config: Record<string, any>;
+      config: Record<string, unknown>;
     };
     commission?: {
       enabled: boolean;
       strategy: 'fixed' | 'tier' | 'percentage' | 'service';
-      config: Record<string, any>;
+      config: Record<string, unknown>;
     };
   };
 }
@@ -176,7 +176,7 @@ export class PayrollProviderAdapter {
       employee: {
         baseSalary: context.employee.base_salary || 0,
         position: context.employee.position || undefined,
-        yearsOfService: this.calculateYearsOfService(context.employee.hired_date),
+        yearsOfService: this.calculateYearsOfService(context.employee.hired_date || null),
       },
       
       // Map config (already in correct format)
@@ -237,7 +237,10 @@ export class PayrollProviderAdapter {
     // Sum sessions with package multipliers (if available)
     // If session has package_multiplier field, use it; otherwise default to 1.0
     const totalSessions = completedSessions.reduce((sum, session) => {
-      const multiplier = (session as any).package_multiplier || 1.0;
+      const sessionObj = session as Record<string, unknown>;
+      const multiplier = typeof sessionObj.package_multiplier === 'number'
+        ? sessionObj.package_multiplier
+        : 1.0;
       return sum + multiplier;
     }, 0);
 
@@ -253,7 +256,8 @@ export class PayrollProviderAdapter {
     // Aggregate service types (use package_name as service type)
     const serviceTypes: Record<string, number> = {};
     completedSessions.forEach(session => {
-      const serviceType = session.package_name || (session as any).service_type;
+      const sessionObj = session as Record<string, unknown>;
+      const serviceType = session.package_name || (typeof sessionObj.service_type === 'string' ? sessionObj.service_type : null);
       if (serviceType) {
         serviceTypes[serviceType] = (serviceTypes[serviceType] || 0) + 1;
       }

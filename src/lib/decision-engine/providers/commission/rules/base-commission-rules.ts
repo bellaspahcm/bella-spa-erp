@@ -81,7 +81,7 @@ export const serviceCommissionFixedRule: Rule = {
     
     for (const item of input.serviceItems) {
       // Check if item has override (takes precedence)
-      if (item.overrideType === 'fixed' && item.overrideValue !== null) {
+      if (item.overrideType === 'fixed' && item.overrideValue != null) {
         totalCommission += item.overrideValue;
       } else {
         totalCommission += fixedAmount;
@@ -160,7 +160,7 @@ export const serviceCommissionPercentageRule: Rule = {
       const subtotal = item.subtotal ?? 0;
       
       // Check if item has override
-      if (item.overrideType === 'percentage' && item.overrideValue !== null) {
+      if (item.overrideType === 'percentage' && item.overrideValue != null) {
         const overrideRate = item.overrideValue;
         totalCommission += Math.round((subtotal * overrideRate) / 100);
       } else {
@@ -235,7 +235,7 @@ export const productCommissionFixedRule: Rule = {
     
     for (const sale of input.productSales) {
       // Check if sale has override
-      if (sale.overrideType === 'fixed' && sale.overrideValue !== null) {
+      if (sale.overrideType === 'fixed' && sale.overrideValue != null) {
         totalCommission += sale.overrideValue;
       } else {
         totalCommission += fixedAmount;
@@ -314,7 +314,7 @@ export const productCommissionPercentageRule: Rule = {
       const salesAmount = sale.salesAmount ?? 0;
       
       // Check if sale has override
-      if (sale.overrideType === 'percentage' && sale.overrideValue !== null) {
+      if (sale.overrideType === 'percentage' && sale.overrideValue != null) {
         const overrideRate = sale.overrideValue;
         totalCommission += Math.round((salesAmount * overrideRate) / 100);
       } else {

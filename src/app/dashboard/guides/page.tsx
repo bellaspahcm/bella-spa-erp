@@ -80,7 +80,7 @@ export default function UserManualsHub() {
           footerBorder: 'border-slate-200/50 dark:border-[#3E3A35]/30',
           footerLink: 'text-emerald-800 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300',
         };
-      case 'baby_care':
+      case 'babycare':
         return {
           wrapperBg: 'bg-[#FFF5F7] dark:bg-[#11100F]',
           glowTop: 'bg-pink-300/30 dark:bg-[#5D1C34]/15',

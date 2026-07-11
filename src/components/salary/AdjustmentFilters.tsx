@@ -16,7 +16,7 @@ interface AdjustmentFiltersProps {
   filters: AdjustmentsFilters;
   onFilterChange: (key: keyof AdjustmentsFilters, value: string) => void;
   onClearFilters: () => void;
-  ktvList: Array<{ id: string; full_name: string }>;
+  ktvList: Array<{ id: string; full_name: string; email?: string | null }>;
 }
 
 const BONUS_CATEGORIES = [

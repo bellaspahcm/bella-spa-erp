@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-client';
 import type { CreateWorkflowRequest } from '@/types/rule-management.types';
+import type { Database, Json } from '@/types/database.types';
 
 /**
  * GET /api/rule-management/workflows
@@ -42,7 +43,7 @@ export async function GET(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    if (userError || !userData) {
+    if (userError || !userData || !userData.tenant_id) {
       return NextResponse.json(
         {
           success: false,
@@ -62,8 +63,8 @@ export async function GET(request: NextRequest) {
     // Query workflows using RPC
     const { data, error } = await supabase.rpc('get_workflow_definitions', {
       p_tenant_id: userData.tenant_id,
-      p_status: status || null,
-      p_category: category || null,
+      p_status: status || undefined,
+      p_category: category || undefined,
       p_limit: limit,
       p_offset: offset
     });
@@ -129,7 +130,7 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    if (userError || !userData) {
+    if (userError || !userData || !userData.tenant_id) {
       return NextResponse.json(
         {
           success: false,
@@ -162,8 +163,8 @@ export async function POST(request: NextRequest) {
         description: body.description || null,
         category: body.category,
         status: 'draft', // New workflows start as draft
-        config: body.config,
-        metadata: body.metadata || {},
+        config: body.config as unknown as Json,
+        metadata: (body.metadata || {}) as unknown as Json,
         created_by: user.id
       })
       .select()
@@ -180,7 +181,7 @@ export async function POST(request: NextRequest) {
         workflow_id: data.id,
         tenant_id: userData.tenant_id,
         version: 1,
-        config: body.config,
+        config: body.config as unknown as Json,
         change_summary: 'Initial version',
         created_by: user.id
       });

@@ -41,6 +41,7 @@ import type {
   CommissionTierConfig,
   CommissionPercentageConfig,
   CommissionServiceConfig,
+  ProviderConfig,
 } from '@/types/payroll-config';
 
 /**
@@ -223,7 +224,7 @@ export class CommissionProvider implements PayrollProvider<SalaryComponent> {
     }
 
     // Step 1: Load tenant configuration
-    const config = await this.configService.getProviderConfig<CommissionConfig>(tenantId, 'commission');
+    const config = (await this.configService.getProviderConfig(tenantId, 'commission')) as unknown as ProviderConfig<CommissionConfig>;
 
     // Step 2: Check if commission provider is enabled
     if (!config.enabled) {
@@ -252,7 +253,7 @@ export class CommissionProvider implements PayrollProvider<SalaryComponent> {
     }
 
     // Step 4: Select strategy and calculate commission
-    const result = this.calculateCommission(config.strategy, config.config, sessions);
+    const result = this.calculateCommission(config.strategy || 'linear', config.config, sessions);
 
     return createSalaryComponent('session-commission', {
       eligible: result.eligible,

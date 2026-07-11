@@ -69,10 +69,12 @@ export class CapacityManagementProvider {
           priority: rule.priority,
           conditions: this.convertConditionToReasoner(rule.condition),
           action: {
-            outcome: rule.action.type === 'reject' ? 'DENY' : 
-                     rule.action.type === 'modify' ? 'MODIFY' : 'APPROVE',
+            outcome: typeof rule.action === 'function'
+              ? 'APPROVE'
+              : rule.action.type === 'reject' ? 'REJECT' : 
+                rule.action.type === 'modify' ? 'ESCALATE' : 'APPROVE',
             reason: rule.name,
-            metadata: rule.action.data,
+            metadata: typeof rule.action === 'function' ? undefined : rule.action.data,
           },
         })),
     };

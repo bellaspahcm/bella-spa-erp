@@ -50,9 +50,15 @@ const USE_CONFIG_PROVIDERS = process.env.USE_CONFIG_PROVIDERS === 'true';
 import { getPayrollProviderAdapter } from '@/adapters/payroll-provider-adapter';
 const USE_PAYROLL_PROVIDER = process.env.FEATURE_PAYROLL_PROVIDER === 'true';
 
-// Phase 4: Commission Provider Adapter (Task 6 - Decision Engine)
-// Replaces hardcoded commission logic with rule-based engine
 import { getCommissionProviderAdapter } from '@/adapters/commission-provider-adapter';
+import type { SalaryRecordComponents } from '@/adapters/payroll-provider-adapter';
+import type { CommissionRecordComponents, CommissionCalculationContext } from '@/adapters/commission-provider-adapter';
+import type { SalaryCalculationContext } from '@/adapters/payroll-provider-adapter';
+import type { PayrollDecisionContext, SessionData } from '@/lib/decision-engine/types/decision-context';
+import type { CommissionConfig as ProviderCommissionConfig } from '@/lib/decision-engine/providers/commission';
+
+type CombinedCommissionConfig = CommissionConfig & Partial<ProviderCommissionConfig>;
+
 const USE_COMMISSION_PROVIDER = process.env.FEATURE_COMMISSION_PROVIDER === 'true';
 
 interface KtvUserDataAdmin {
@@ -227,8 +233,9 @@ export async function recalculateAndSaveSalaryRecordEngine(
       .single();
     
     if (commissionData) {
-      positionTier = ((commissionData as any).position_tier || 'junior') as 'junior' | 'senior' | 'lead';
-      hireDate = (commissionData as any).hire_date || null;
+      const cd = commissionData as unknown as { position_tier?: string; hire_date?: string | null };
+      positionTier = ((cd.position_tier || 'junior') as 'junior' | 'senior' | 'lead');
+      hireDate = cd.hire_date || null;
     }
   } catch (err) {
     // Columns don't exist yet, use defaults
@@ -255,7 +262,7 @@ export async function recalculateAndSaveSalaryRecordEngine(
 
   // Commission config for Beauty Spa (Task 28-32: Advanced Commission System)
   // Try to get commission_config if column exists
-  let commissionConfig: CommissionConfig = {};
+  let commissionConfig: CombinedCommissionConfig = {};
   try {
     const { data: commissionData } = await supabase
       .from('tenants')
@@ -264,7 +271,8 @@ export async function recalculateAndSaveSalaryRecordEngine(
       .maybeSingle();
     
     if (commissionData) {
-      commissionConfig = (commissionData as any).commission_config || {};
+      const cd = commissionData as unknown as { commission_config?: CommissionConfig };
+      commissionConfig = cd.commission_config || {};
     }
   } catch (err) {
     // Column doesn't exist yet, use defaults
@@ -319,30 +327,84 @@ export async function recalculateAndSaveSalaryRecordEngine(
   const liveSessionsCount = calculateWeightedSessionCount(sessionsTyped, packageMultiplierMap);
   const liveSessionBonus = calculateSessionCommissionBonus(sessionsTyped);
 
+  // Hoist leaderboard query here so avgRating is available for provider contexts below
+  const { data: leaderboardDataEarly, error: leaderboardEarlyError } = await supabase.rpc(
+    'get_ktv_leaderboard',
+    { p_tenant_id: tenantId, p_month: monthYear }
+  );
+  if (leaderboardEarlyError) throw leaderboardEarlyError;
+
+  const leaderboardEarly = (leaderboardDataEarly || []) as unknown as {
+    ktv_id: string;
+    average_rating: number | null;
+    late_days: number | null;
+    absent_days: number | null;
+  }[];
+  const ktvRowEarly = leaderboardEarly.find((row) => row.ktv_id === ktvId);
+  const avgRating: number | null = ktvRowEarly?.average_rating ?? null;
+  const lateDays = ktvRowEarly?.late_days ?? 0;
+  const absentDays = ktvRowEarly?.absent_days ?? 0;
+
+  const commonContext: PayrollDecisionContext = {
+    tenantId,
+    userId: ktvId,
+    timestamp: new Date().toISOString(),
+    monthYear,
+    employee: {
+      id: ktvId,
+      fullName: ktv?.full_name ?? 'KTV',
+      baseSalary: ktv?.base_salary ?? 6000000,
+      positionTier: positionTier,
+      hireDate: hireDate,
+      resignationDate: ktv?.resignation_date || null,
+    },
+  };
+
   // Phase 1: Provider Integration - Commission Provider (Comparison Mode)
   // Phase 2: Feature Flag - Use provider result when USE_CONFIG_PROVIDERS=true
   let providerCommissionAmount: number | null = null;
-  let commissionProviderResult: any = null;
+  let commissionProviderResult: { amount: number; metadata?: { strategy?: string } } | null = null;
   try {
     // Prepare session data for commission calculation
     const sessionsWithRevenue = sessionsTyped.map(session => ({
       id: session.id,
-      service_type: session.bookings?.package_name || 'unknown',
-      revenue: session.bookings?.ktv_commission || 0,
+      packageName: session.bookings?.package_name || null,
+      rating: session.rating,
       commission: session.bookings?.ktv_commission || 0,
     }));
 
-    const commissionContext = {
-      sessions: sessionsWithRevenue,
-      sessionsCount: liveSessionsCount,
-      totalRevenue: sessionsWithRevenue.reduce((sum, s) => sum + s.revenue, 0),
-      tenantId,
-      userId: ktvId,
-      period: monthYear,
-      metadata: {
+    // Construct rating breakdown
+    const fiveStars = sessionsTyped.filter(s => s.rating === 5).length;
+    const fourHalfStars = sessionsTyped.filter(s => s.rating === 4.5).length;
+    const fourStars = sessionsTyped.filter(s => s.rating === 4).length;
+    const belowFour = sessionsTyped.filter(s => s.rating && s.rating < 4).length;
+
+    const totalRevenue = sessionsWithRevenue.reduce((sum, s) => sum + s.commission, 0);
+
+    const commissionContext: PayrollDecisionContext = {
+      ...commonContext,
+      sessions: {
+        count: sessionsTyped.length,
+        weightedCount: liveSessionsCount,
         avgRating,
+        ratingBreakdown: {
+          fiveStars,
+          fourHalfStars,
+          fourStars,
+          belowFour,
+        },
+        logs: sessionsWithRevenue,
+        // Extra properties read by CommissionProvider at runtime
+        totalRevenue,
+        byServiceType: sessionsTyped.reduce((acc, s) => {
+          const name = s.bookings?.package_name || 'unknown';
+          acc[name] = (acc[name] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>),
+      } as unknown as SessionData,
+      metadata: {
         attendanceDays: attendanceListTyped.length,
-      }
+      },
     };
     
     commissionProviderResult = await commissionProvider.evaluate(commissionContext);
@@ -357,7 +419,7 @@ export async function recalculateAndSaveSalaryRecordEngine(
         old_logic_would_be: liveSessionBonus,
         strategy: commissionProviderResult.metadata?.strategy,
         sessions: liveSessionsCount,
-        total_revenue: commissionContext.totalRevenue,
+        total_revenue: totalRevenue,
       });
     } else {
       console.log('[PROVIDER_INTEGRATION] Commission Comparison:', {
@@ -369,29 +431,17 @@ export async function recalculateAndSaveSalaryRecordEngine(
         diff: commissionProviderResult.amount - liveSessionBonus,
         diff_percent: liveSessionBonus > 0 ? ((commissionProviderResult.amount - liveSessionBonus) / liveSessionBonus * 100).toFixed(2) + '%' : 'N/A',
         sessions: liveSessionsCount,
-        total_revenue: commissionContext.totalRevenue,
+        total_revenue: totalRevenue,
       });
     }
   } catch (error) {
     console.error('[PROVIDER_INTEGRATION] Commission Provider failed (non-blocking):', error);
   }
 
-  const { data: leaderboardData, error: leaderboardError } = await supabase.rpc(
-    'get_ktv_leaderboard',
-    { p_tenant_id: tenantId, p_month: monthYear }
-  );
-  if (leaderboardError) throw leaderboardError;
-
-  const leaderboard = (leaderboardData || []) as unknown as {
-    ktv_id: string;
-    average_rating: number | null;
-    late_days: number | null;
-    absent_days: number | null;
-  }[];
-  const ktvRow = leaderboard.find((row) => row.ktv_id === ktvId);
-  const avgRating: number | null = ktvRow?.average_rating ?? null;
-  const lateDays = ktvRow?.late_days ?? 0;
-  const absentDays = ktvRow?.absent_days ?? 0;
+  // leaderboard + avgRating already computed above (hoisted for provider contexts)
+  // Reassign to keep the rest of the function unchanged
+  const leaderboard = leaderboardEarly;
+  const ktvRow = ktvRowEarly;
   const liveAttendanceComponents = calculateLiveAttendanceSalaryComponents({
     attendanceLogs: attendanceListTyped,
     rawBaseSalary: ktv?.base_salary ?? 6000000,
@@ -408,17 +458,20 @@ export async function recalculateAndSaveSalaryRecordEngine(
   // Phase 1: Provider Integration - Attendance Provider (Comparison Mode)
   // Phase 2: Feature Flag - Use provider result when USE_CONFIG_PROVIDERS=true
   let providerAttendanceAmount: number | null = null;
-  let attendanceProviderResult: any = null;
+  let attendanceProviderResult: { amount: number; metadata?: { strategy?: string } } | null = null;
   try {
-    const attendanceContext = {
-      lateDays,
-      absentDays,
-      tenantId,
-      userId: ktvId,
-      period: monthYear,
+    const attendanceContext: PayrollDecisionContext = {
+      ...commonContext,
+      attendance: {
+        totalDays: attendanceListTyped.length,
+        presentDays: attendanceListTyped.filter(a => a.status === 'present').length,
+        lateDays,
+        absentDays,
+        halfDays: attendanceListTyped.filter(a => a.status === 'half_day').length,
+      },
       metadata: {
         totalWorkingDays: attendanceListTyped.length,
-      }
+      },
     };
     
     attendanceProviderResult = await attendanceProvider.evaluate(attendanceContext);
@@ -470,18 +523,19 @@ export async function recalculateAndSaveSalaryRecordEngine(
   // Phase 2: Feature Flag - Use provider result when USE_CONFIG_PROVIDERS=true
   // Call provider alongside existing logic to verify correctness
   let providerKpiAmount: number | null = null;
-  let kpiProviderResult: any = null;
+  let kpiProviderResult: { amount: number; metadata?: { strategy?: string } } | null = null;
   try {
-    const kpiContext = {
-      metric: 'sessions' as const,
-      value: liveSessionsCount,
-      tenantId,
-      userId: ktvId,
-      period: monthYear,
+    const kpiContext: PayrollDecisionContext = {
+      ...commonContext,
+      sessions: {
+        count: liveSessionsCount,
+        weightedCount: liveSessionsCount,
+        avgRating,
+      },
       metadata: {
         avgRating,
         attendanceDays: attendanceListTyped.length,
-      }
+      },
     };
     
     kpiProviderResult = await kpiProvider.evaluate(kpiContext);
@@ -516,7 +570,9 @@ export async function recalculateAndSaveSalaryRecordEngine(
 
   // Query commission data (Task 28-32: Advanced Commission System)
   // Service commission from booking_service_items
-  const { data: serviceItems, error: serviceItemsError } = await (supabase as any)
+  // Cast to base SupabaseClient (no schema generic) for tables not in generated types
+  const rawClient = supabase as unknown as SupabaseClient;
+  const { data: serviceItems, error: serviceItemsError } = await rawClient
     .from('booking_service_items')
     .select('calculated_commission')
     .eq('ktv_id', ktvId)
@@ -530,7 +586,7 @@ export async function recalculateAndSaveSalaryRecordEngine(
   const liveServiceCommission = serviceItemsTyped.reduce((sum, item) => sum + Number(item.calculated_commission || 0), 0);
 
   // Product sales commission from product_sales
-  const { data: productSales, error: productSalesError } = await (supabase as any)
+  const { data: productSales, error: productSalesError } = await rawClient
     .from('product_sales')
     .select('calculated_commission')
     .eq('ktv_id', ktvId)
@@ -544,7 +600,7 @@ export async function recalculateAndSaveSalaryRecordEngine(
   const liveProductCommission = productSalesTyped.reduce((sum, sale) => sum + Number(sale.calculated_commission || 0), 0);
 
   // Manual adjustments from salary_adjustments
-  const { data: manualAdjustments, error: adjustmentsError } = await (supabase as any)
+  const { data: manualAdjustments, error: adjustmentsError } = await rawClient
     .from('salary_adjustments')
     .select('adjustment_type, amount, status')
     .eq('ktv_id', ktvId)
@@ -582,7 +638,7 @@ export async function recalculateAndSaveSalaryRecordEngine(
   // ================================================================
   // Phase 3: Unified Payroll Provider Integration (Decision Engine)
   // ================================================================
-  let payrollProviderResult: any = null;
+  let payrollProviderResult: SalaryRecordComponents | null = null;
   if (USE_PAYROLL_PROVIDER) {
     try {
       const adapter = getPayrollProviderAdapter();
@@ -707,15 +763,15 @@ export async function recalculateAndSaveSalaryRecordEngine(
   // Phase 1: Provider Integration - Rating Provider (Comparison Mode)
   // Phase 2: Feature Flag - Use provider result when USE_CONFIG_PROVIDERS=true
   let providerRatingAmount: number | null = null;
-  let ratingProviderResult: any = null;
+  let ratingProviderResult: { amount: number; metadata?: { strategy?: string } } | null = null;
   try {
-    const ratingContext = {
-      avgRating: avgRating || 0,
-      sessionsCount,
-      tenantId,
-      userId: ktvId,
-      period: monthYear,
-      metadata: {}
+    const ratingContext: PayrollDecisionContext = {
+      ...commonContext,
+      sessions: {
+        count: sessionsCount,
+        avgRating: avgRating || 0,
+      },
+      metadata: {},
     };
     
     ratingProviderResult = await ratingProvider.evaluate(ratingContext);
@@ -800,13 +856,13 @@ export async function recalculateAndSaveSalaryRecordEngine(
 
   // Calculate commission components (Task 28-32)
   // Phase 4: Commission Provider Integration (Task 6 - Decision Engine)
-  let commissionAdapterResult: any = null;
+  let commissionAdapterResult: CommissionRecordComponents | null = null;
   if (USE_COMMISSION_PROVIDER) {
     try {
       const adapter = getCommissionProviderAdapter();
       
       // Query full service items and product sales for Decision Engine
-      const { data: fullServiceItems } = await (supabase as any)
+      const { data: fullServiceItems } = await rawClient
         .from('booking_service_items')
         .select('id, ktv_id, subtotal, calculated_commission, override_commission_type, override_commission_value, status, completed_date')
         .eq('ktv_id', ktvId)
@@ -815,7 +871,7 @@ export async function recalculateAndSaveSalaryRecordEngine(
         .gte('completed_date', startOfMonthStr)
         .lt('completed_date', endOfMonthStr);
 
-      const { data: fullProductSales } = await (supabase as any)
+      const { data: fullProductSales } = await rawClient
         .from('product_sales')
         .select('id, ktv_id, sales_amount, calculated_commission, override_commission_type, override_commission_value, status, sale_date')
         .eq('ktv_id', ktvId)
@@ -835,11 +891,12 @@ export async function recalculateAndSaveSalaryRecordEngine(
           id: s.id,
           rating: s.rating,
           status: 'completed',
-          package_multiplier: packageMultiplierMap[s.bookings?.package_name || ''] || 1.0,
+          package_multiplier: packageMultiplierMap.get(s.bookings?.package_name || '') || 1.0,
         })),
         employee: {
           id: ktvId,
           position_tier: positionTier,
+          text_position: positionTier,
           hire_date: hireDate,
           tenant_id: tenantId,
         },
@@ -865,7 +922,7 @@ export async function recalculateAndSaveSalaryRecordEngine(
           enableQualityGate: commissionConfig.enableQualityGate ?? false,
           minRatingForCommission: commissionConfig.minRatingForCommission,
         },
-      };
+      } as unknown as CommissionCalculationContext;
 
       // Calculate via unified commission provider
       commissionAdapterResult = await adapter.calculateCommission(commissionContext);
@@ -998,7 +1055,7 @@ export async function recalculateAndSaveSalaryRecordEngine(
     position_bonus: finalPositionBonus,
     seniority_bonus: finalSeniorityBonus,
     manual_adjustments: finalManualAdjustments,
-  } as any; // Cast to any because new columns not yet in generated types
+  } satisfies Database['public']['Tables']['salary_records']['Update'];
 
   let result;
   if (existing) {

@@ -28,12 +28,21 @@ export class ApprovalPolicy
   async evaluate(
     context: ProcurementDecisionContext
   ): Promise<ApprovalRoutingResult> {
-    const { requisition, approvalChain, rules } = context;
+    const requisition = context.requisition;
+    const approvalChain = context.approvalChain || {
+      manager: { threshold: 10000000, name: 'Manager' },
+      director: { threshold: 50000000, name: 'Director' },
+      cfo: { threshold: 200000000, name: 'CFO' },
+      ceo: { threshold: Infinity, name: 'CEO' },
+    };
+    const rules = context.rules || {};
+    const maxAmountWithoutApproval = rules.maxAmountWithoutApproval ?? 1000000;
+
     const matchedRules: string[] = [];
     const amount = requisition.totalAmount;
 
     // Rule 1: Auto-approve if below threshold
-    if (amount < rules.maxAmountWithoutApproval) {
+    if (amount < maxAmountWithoutApproval) {
       matchedRules.push('auto-approve-low-amount');
       return {
         requiredApprovers: [],
@@ -87,8 +96,8 @@ export class ApprovalPolicy
 
     // Rule 3: Check if multiple quotes required
     const requiresMultipleQuotes =
-      rules.requiresMultipleQuotes &&
-      amount >= rules.multipleQuotesThreshold;
+      !!rules.requiresMultipleQuotes &&
+      amount >= (rules.multipleQuotesThreshold ?? 20000000);
 
     if (requiresMultipleQuotes) {
       matchedRules.push('multiple-quotes-required');

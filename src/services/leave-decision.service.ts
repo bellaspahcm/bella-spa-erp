@@ -58,8 +58,8 @@ export async function buildLeaveKnowledge(leaveRequest: {
   const { data: conflictingSessions } = await supabase
     .from('session_logs')
     .select('id, booking_id, session_number, assigned_time')
-    .eq('ktv_id', leaveRequest.user_id)
-    .eq('session_date', leaveRequest.leave_date)
+    .eq('completed_by_ktv_id', leaveRequest.user_id)
+    .eq('assigned_date', leaveRequest.leave_date)
     .in('status', ['pending', 'confirmed']);
   
   // Filter by leave type (morning/afternoon/full_day)

@@ -47,6 +47,16 @@
     "packages",
     ".next",
     "out",
-    "build"
+    "build",
+    "archive-old-decision-engine",
+    "**/archive",
+    "scripts",
+    "tests",
+    "src/__tests__",
+    "**/__tests__",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx"
   ]
 }

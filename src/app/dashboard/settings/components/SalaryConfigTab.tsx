@@ -18,7 +18,7 @@ import {
 import type { TenantGeneralSettings } from '@/types/domain';
 import type {
   KPIThresholdConfig,
-  AttendanceCombinedConfig,
+  AttendanceConfig,
   RatingThresholdConfig,
 } from '@/types/payroll-config';
 
@@ -161,7 +161,7 @@ export default function SalaryConfigTab({
         const attendanceResult = await loadAttendanceConfig(tenantId!);
         if (attendanceResult.success && attendanceResult.data) {
           setAttendanceEnabled(attendanceResult.data.enabled);
-          const config = attendanceResult.data.config as AttendanceCombinedConfig;
+          const config = attendanceResult.data.config as AttendanceConfig;
           setLatePenalty(config.latePenalty || 50000);
           setAbsentPenalty(config.absentPenalty || 200000);
           setLateGracePeriod(config.lateGracePeriod || 15);

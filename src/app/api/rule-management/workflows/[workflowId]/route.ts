@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-client';
 import type { UpdateWorkflowRequest } from '@/types/rule-management.types';
+import type { Database, Json } from '@/types/database.types';
 
 interface RouteParams {
   params: Promise<{
@@ -48,7 +49,7 @@ export async function GET(
       .eq('id', user.id)
       .single();
 
-    if (userError || !userData) {
+    if (userError || !userData || !userData.tenant_id) {
       return NextResponse.json(
         {
           success: false,
@@ -138,7 +139,7 @@ export async function PATCH(
       .eq('id', user.id)
       .single();
 
-    if (userError || !userData) {
+    if (userError || !userData || !userData.tenant_id) {
       return NextResponse.json(
         {
           success: false,
@@ -173,7 +174,7 @@ export async function PATCH(
     }
 
     // Build update payload
-    const updatePayload: Record<string, unknown> = {
+    const updatePayload: Database['public']['Tables']['workflow_definitions']['Update'] = {
       updated_at: new Date().toISOString()
     };
 
@@ -181,8 +182,8 @@ export async function PATCH(
     if (body.description !== undefined) updatePayload.description = body.description;
     if (body.category !== undefined) updatePayload.category = body.category;
     if (body.status !== undefined) updatePayload.status = body.status;
-    if (body.config !== undefined) updatePayload.config = body.config;
-    if (body.metadata !== undefined) updatePayload.metadata = body.metadata;
+    if (body.config !== undefined) updatePayload.config = body.config as unknown as Json;
+    if (body.metadata !== undefined) updatePayload.metadata = body.metadata as unknown as Json;
 
     // Update workflow definition
     const { data, error } = await supabase
@@ -230,7 +231,7 @@ export async function PATCH(
           workflow_id: workflowId,
           tenant_id: userData.tenant_id,
           version: latestVersion + 1,
-          config: body.config,
+          config: body.config as unknown as Database['public']['Tables']['workflow_versions']['Insert']['config'],
           change_summary: body.changeSummary,
           created_by: user.id
         });
@@ -291,7 +292,7 @@ export async function DELETE(
       .eq('id', user.id)
       .single();
 
-    if (userError || !userData) {
+    if (userError || !userData || !userData.tenant_id) {
       return NextResponse.json(
         {
           success: false,

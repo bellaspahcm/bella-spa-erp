@@ -165,8 +165,8 @@ export interface AssignmentScoreBreakdown {
     specialization: number; // 0-10
   };
 
-  /** Penalties applied */
-  penalties?: {
+  /** Penalties applied (always present, values optional) */
+  penalties: {
     lowRating?: number;
     overloaded?: number;
     noHistory?: number;
@@ -323,18 +323,7 @@ export interface CapacityCheckOutput {
   };
 
   /** Conflicts detected (if any) */
-  conflicts?: Array<{
-    /** Conflict type */
-    type: 'time_overlap' | 'concurrent_limit' | 'break_time_violation' | 'daily_limit' | 'outside_working_hours';
-    /** Conflict reason */
-    reason: string;
-    /** Conflicting booking (if applicable) */
-    conflictingBooking?: {
-      id: string;
-      startTime: string;
-      endTime: string;
-    };
-  }>;
+  conflicts?: CapacityConflict[];
 
   /** Alternative suggestions (if capacity not available) */
   alternatives?: Array<{
@@ -355,6 +344,24 @@ export interface CapacityCheckOutput {
   /** Confidence score (0-1) */
   confidence: number;
 }
+
+/**
+ * Capacity Conflict Details
+ */
+export interface CapacityConflict {
+  /** Conflict type */
+  type: 'time_overlap' | 'concurrent_limit' | 'break_time_violation' | 'daily_limit' | 'outside_working_hours';
+  /** Conflict reason */
+  reason: string;
+  /** Conflicting booking (if applicable) */
+  conflictingBooking?: {
+    id: string;
+    startTime: string;
+    endTime: string;
+  };
+}
+
+
 
 /**
  * Capacity Snapshot
@@ -960,6 +967,9 @@ export interface WaitlistEntry {
       ktvId?: string;
     };
   };
+
+  /** Preferred KTV ID (if any) */
+  preferredKtvId?: string;
 
   /** Created at timestamp */
   createdAt: string;

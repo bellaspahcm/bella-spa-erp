@@ -349,8 +349,8 @@ export function ProductSalesListPage() {
 
   // Module check - Allow both 'spa' and 'beauty_spa' modules
   if (tenantContext?.enabledModules && 
-      !tenantContext.enabledModules.includes('spa') &&
-      !tenantContext.enabledModules.includes('beauty_spa')) {
+      !(tenantContext.enabledModules as readonly string[]).includes('spa') &&
+      !(tenantContext.enabledModules as readonly string[]).includes('beauty_spa')) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
