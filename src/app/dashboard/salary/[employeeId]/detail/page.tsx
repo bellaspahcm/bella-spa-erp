@@ -1,6 +1,6 @@
 import { EmployeeDetailScreen } from '@/components/payroll/EmployeeDetailScreen';
 
-export default async function EmployeeDetailPage({
+export default async function SalaryDetailPage({
   params,
   searchParams,
 }: {

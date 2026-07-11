@@ -87,6 +87,7 @@ type TenantBrandDisplay = Pick<
   | 'menuStyle'
   | 'radiusStyle'
   | 'isBeautySpa'
+  | 'fontHeading'
 >;
 type CachedTenantBrandDisplay = TenantBrandDisplay & {
   tenantId: string;
@@ -105,6 +106,7 @@ const DEFAULT_SIDEBAR_BRAND: TenantBrandDisplay = {
   menuStyle: 'comfortable',
   radiusStyle: 'soft',
   isBeautySpa: false,
+  fontHeading: 'serif',
 };
 const NEUTRAL_SIDEBAR_BRAND: TenantBrandDisplay = {
   ...DEFAULT_SIDEBAR_BRAND,
@@ -150,6 +152,7 @@ function toTenantBrandDisplay(parsed: CachedTenantBrandDisplay): TenantBrandDisp
     menuStyle: parsed.menuStyle,
     radiusStyle: parsed.radiusStyle,
     isBeautySpa: parsed.isBeautySpa,
+    fontHeading: parsed.fontHeading ?? 'serif',
   };
 }
 
@@ -225,6 +228,13 @@ function applyTenantBrandRuntime(brand: TenantBrandDisplay) {
   root.style.setProperty('--primary-hover', brand.primaryHoverColor);
   root.style.setProperty('--accent', brand.accentColor);
   root.style.setProperty('--ring', brand.primaryColor);
+  // Inject tenant heading font: 'serif' → Playfair Display, 'sans' → Geist
+  root.style.setProperty(
+    '--font-heading',
+    brand.fontHeading === 'serif'
+      ? 'var(--font-serif), Georgia, serif'
+      : 'var(--font-sans), system-ui, sans-serif',
+  );
   themeMeta?.setAttribute('content', brand.primaryColor);
 }
 

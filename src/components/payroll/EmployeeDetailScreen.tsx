@@ -115,13 +115,13 @@ function BreakdownCard({
 }: BreakdownCardProps) {
   const [expanded, setExpanded] = useState(false);
   
-  const bgColor = type === 'earning' ? 'bg-emerald-50/20' : 'bg-rose-50/20';
+  const bgColor = type === 'earning' ? 'bg-primary/5' : 'bg-rose-50/20';
   const borderColor = type === 'earning' 
-    ? 'border-emerald-100/50 hover:border-emerald-800/30 hover:bg-emerald-50/30' 
+    ? 'border-primary/20 hover:border-primary/40 hover:bg-primary/5' 
     : 'border-rose-100/50 hover:border-rose-800/30 hover:bg-rose-50/30';
-  const textColor = type === 'earning' ? 'text-emerald-800' : 'text-rose-850';
-  const iconBgColor = type === 'earning' ? 'bg-emerald-50' : 'bg-rose-50';
-  const iconColor = type === 'earning' ? 'text-emerald-800' : 'text-rose-800';
+  const textColor = type === 'earning' ? 'text-primary' : 'text-rose-600';
+  const iconBgColor = type === 'earning' ? 'bg-primary/10' : 'bg-rose-50';
+  const iconColor = type === 'earning' ? 'text-primary' : 'text-rose-600';
 
   return (
     <Card 
@@ -163,7 +163,7 @@ function BreakdownCard({
             <Button
               variant="outline"
               size="sm"
-              className="mt-2 text-xs font-bold rounded-lg border-slate-200 bg-white hover:bg-slate-50 hover:text-emerald-800 hover:border-emerald-800/30 transition-all active:scale-95"
+              className="mt-2 text-xs font-bold rounded-lg border-slate-200 bg-white hover:bg-primary/5 hover:text-primary hover:border-primary/30 transition-all active:scale-95"
               onClick={(e) => {
                 e.stopPropagation();
                 onActionClick?.();
@@ -258,20 +258,20 @@ export function EmployeeDetailScreen({ employeeId, month }: { employeeId: string
           {/* Breadcrumbs & Back Button */}
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-2 text-xs font-semibold tracking-wider text-slate-500 uppercase">
-              <Link href="/dashboard" className="hover:text-emerald-800 transition-colors">
+              <Link href="/dashboard" className="hover:text-primary transition-colors">
                 Tổng quan
               </Link>
               <ChevronRight size={12} className="opacity-40" />
-              <Link href="/dashboard/payroll" className="hover:text-emerald-800 transition-colors">
+              <Link href="/dashboard/salary" className="hover:text-primary transition-colors">
                 Bảng lương
               </Link>
               <ChevronRight size={12} className="opacity-40" />
-              <span className="text-emerald-800 font-bold">Chi tiết lương</span>
+              <span className="text-primary font-bold">Chi tiết lương</span>
             </div>
 
             <button
               onClick={() => router.back()}
-              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-bold text-slate-600 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:text-emerald-800 hover:border-emerald-800/30 group"
+              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-bold text-slate-600 shadow-sm transition-all duration-200 hover:bg-primary/5 hover:text-primary hover:border-primary/30 group"
             >
               <ArrowLeft size={14} className="transition-transform group-hover:-translate-x-1" />
               <span>Quay lại</span>
@@ -281,11 +281,11 @@ export function EmployeeDetailScreen({ employeeId, month }: { employeeId: string
           {/* Title & Actions */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-1">
             <div>
-              <h1 className="font-serif text-3xl font-extrabold text-slate-900 tracking-tight">
+              <h1 className="font-heading text-3xl font-extrabold text-slate-900 tracking-tight">
                 {data.employee.name}
               </h1>
               <p className="text-xs text-slate-500 font-medium mt-1">
-                <span className="font-bold text-emerald-850 uppercase tracking-wider">{data.employee.position}</span>
+                <span className="font-bold text-primary uppercase tracking-wider">{data.employee.position}</span>
                 {' • '}
                 Ngày vào: {formatDate(data.employee.hireDate)} ({data.employee.yearsOfService} năm)
               </p>
@@ -295,7 +295,7 @@ export function EmployeeDetailScreen({ employeeId, month }: { employeeId: string
               <Button
                 variant="outline"
                 size="sm"
-                className="rounded-xl text-xs font-bold border-slate-200 hover:text-emerald-800 hover:border-emerald-800/30 active:scale-95 transition-all"
+                className="rounded-xl text-xs font-bold border-slate-200 hover:text-primary hover:border-primary/30 active:scale-95 transition-all"
                 onClick={() => setShowComparison(true)}
               >
                 <BarChart3 size={14} className="mr-1.5" />
@@ -304,7 +304,7 @@ export function EmployeeDetailScreen({ employeeId, month }: { employeeId: string
               <Button 
                 variant="outline" 
                 size="sm"
-                className="rounded-xl text-xs font-bold border-slate-200 hover:text-emerald-800 hover:border-emerald-800/30 active:scale-95 transition-all"
+                className="rounded-xl text-xs font-bold border-slate-200 hover:text-primary hover:border-primary/30 active:scale-95 transition-all"
               >
                 <FileText size={14} className="mr-1.5" />
                 Xuất PDF
@@ -316,13 +316,13 @@ export function EmployeeDetailScreen({ employeeId, month }: { employeeId: string
 
       {/* Main Content */}
       <div className="max-w-4xl mx-auto px-6 py-8">
-        {/* Total Salary Card (Luxurious Emerald Design) */}
-        <Card className="p-6 bg-gradient-to-br from-emerald-800 to-teal-900 text-white rounded-[2rem] border-none shadow-xl shadow-emerald-950/10 mb-8 relative overflow-hidden group">
+        {/* Total Salary Card - uses tenant primary color via CSS variable */}
+        <Card className="p-6 text-white rounded-[2rem] border-none shadow-xl mb-8 relative overflow-hidden group" style={{ background: 'linear-gradient(135deg, var(--primary) 0%, color-mix(in srgb, var(--primary) 70%, #000) 100%)' }}>
           <div className="absolute right-0 top-0 translate-x-10 -translate-y-10 w-40 h-40 bg-white/5 rounded-full blur-2xl group-hover:scale-110 transition-transform duration-500" />
           <div className="flex items-center justify-between relative z-10">
             <div className="flex items-center gap-4">
               <div className="p-3.5 bg-white/10 rounded-2xl backdrop-blur-sm">
-                <Wallet size={24} className="text-emerald-100" />
+                <Wallet size={24} className="text-white/90" />
               </div>
               <div>
                 <p 
@@ -332,13 +332,13 @@ export function EmployeeDetailScreen({ employeeId, month }: { employeeId: string
                   Tổng lương nhận thực tế
                 </p>
                 <p 
-                  className="text-3.5xl font-extrabold font-serif tracking-tight mt-1 tabular-nums"
+                  className="text-3.5xl font-extrabold font-heading tracking-tight mt-1 tabular-nums"
                   style={{ color: '#ffffff' }}
                 >
                   {formatCurrency(data.salary.total)}
                 </p>
                 <div className="inline-flex items-center gap-1.5 mt-2 bg-white/10 text-white/90 rounded-lg px-2.5 py-1 text-xs backdrop-blur-sm">
-                  <span className={data.salary.changePercent >= 0 ? 'text-emerald-300' : 'text-rose-300'}>
+                  <span className={data.salary.changePercent >= 0 ? 'text-green-200' : 'text-rose-300'}>
                     {changeIcon}
                   </span>
                   <span className="font-medium">
@@ -353,7 +353,7 @@ export function EmployeeDetailScreen({ employeeId, month }: { employeeId: string
 
         {/* Section Title */}
         <div className="flex items-center gap-2 mb-6">
-          <ClipboardList size={18} className="text-emerald-850" />
+          <ClipboardList size={18} className="text-primary" />
           <h2 className="text-sm font-extrabold text-slate-850 uppercase tracking-widest">Chi tiết lương</h2>
         </div>
 
@@ -430,7 +430,7 @@ export function EmployeeDetailScreen({ employeeId, month }: { employeeId: string
               title="HOA HỒNG BÁN HÀNG"
               amount={data.breakdown.productSalesCommission.amount}
               type="earning"
-              icon={<TrendingUp size={20} className="text-emerald-800" />}
+              icon={<TrendingUp size={20} />}
               description="Hoa hồng từ bán sản phẩm"
               details={
                 <div className="space-y-2">
@@ -487,7 +487,7 @@ export function EmployeeDetailScreen({ employeeId, month }: { employeeId: string
                     <span className="text-amber-500 text-base">⭐⭐⭐⭐☆</span>
                     <span className="text-slate-850 font-bold text-sm">{data.breakdown.ratingBonus.averageRating} sao</span>
                     <span className="text-slate-350 font-medium">•</span>
-                    <span className="text-emerald-800 font-bold text-xs">+{formatCurrency(data.breakdown.ratingBonus.bonusPerSession)} / ca</span>
+                    <span className="text-primary font-bold text-xs">+{formatCurrency(data.breakdown.ratingBonus.bonusPerSession)} / ca</span>
                   </div>
                 </div>
               </div>
@@ -548,7 +548,7 @@ export function EmployeeDetailScreen({ employeeId, month }: { employeeId: string
         {/* Summary */}
         <Card className="p-6 mt-8 rounded-[2rem] border border-slate-200/50 bg-white shadow-sm space-y-4">
           <div className="flex items-center gap-2 border-b border-slate-50 pb-3">
-            <BarChart3 size={18} className="text-emerald-800" />
+            <BarChart3 size={18} className="text-primary" />
             <h3 className="text-sm font-extrabold text-slate-850 uppercase tracking-widest">Tổng kết bảng lương</h3>
           </div>
           <div className="space-y-3">
@@ -572,7 +572,7 @@ export function EmployeeDetailScreen({ employeeId, month }: { employeeId: string
             </div>
             <div className="pt-4 border-t border-slate-105 flex items-center justify-between">
               <span className="font-extrabold text-slate-900 uppercase tracking-wider text-xs">Tổng lương thực nhận:</span>
-              <span className="font-extrabold text-2xl md:text-3xl text-emerald-800 font-serif tracking-tight">
+              <span className="font-extrabold text-2xl md:text-3xl text-primary font-heading tracking-tight">
                 {formatCurrency(data.salary.total)}
               </span>
             </div>
@@ -585,7 +585,7 @@ export function EmployeeDetailScreen({ employeeId, month }: { employeeId: string
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <Card className="w-full max-w-md rounded-[2rem] border-none shadow-2xl overflow-hidden bg-white p-6 md:p-8 space-y-6">
             <div className="space-y-1">
-              <h2 className="text-xl font-bold font-serif text-slate-900 tracking-tight">So sánh lương kỹ thuật viên</h2>
+              <h2 className="text-xl font-bold font-heading text-slate-900 tracking-tight">So sánh lương kỹ thuật viên</h2>
               <p className="text-xs text-slate-500 font-medium">So sánh kết quả thu nhập của {data.employee.name} qua các tháng</p>
             </div>
             <div className="py-8 text-center bg-slate-50 border border-slate-100 rounded-2xl">
@@ -594,7 +594,7 @@ export function EmployeeDetailScreen({ employeeId, month }: { employeeId: string
             </div>
             <div className="flex justify-end pt-2">
               <Button 
-                className="rounded-xl text-xs font-bold bg-emerald-800 text-white hover:bg-emerald-700 px-6 py-2 transition-all active:scale-95" 
+                className="rounded-xl text-xs font-bold bg-primary text-white hover:bg-primary-hover px-6 py-2 transition-all active:scale-95" 
                 onClick={() => setShowComparison(false)}
               >
                 Đóng cửa sổ

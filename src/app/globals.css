@@ -18,6 +18,17 @@
   font-family: var(--font-serif), Georgia, serif !important;
 }
 
+/**
+ * font-heading: Tenant-aware heading font.
+ * Resolves to 'serif' (Playfair Display) for spa/luxury tenants,
+ * or 'sans' (Geist) for professional/industrial tenants.
+ * Injected at runtime by DashboardLayout via --font-heading CSS variable.
+ * Falls back to --font-serif for backwards-compat when variable is not yet set.
+ */
+.font-heading {
+  font-family: var(--font-heading, var(--font-serif, Georgia, serif));
+}
+
 :root {
   /* Option C: Deep Rose Luxury (Refined & Softened) */
   --primary: #E91E63;

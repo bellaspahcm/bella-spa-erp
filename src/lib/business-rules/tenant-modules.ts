@@ -18,6 +18,9 @@ export type TenantBrandRadiusStyle = (typeof TENANT_BRAND_RADIUS_STYLES)[number]
 export type TenantBrandButtonStyle = (typeof TENANT_BRAND_BUTTON_STYLES)[number];
 export type TenantBrandMenuStyle = (typeof TENANT_BRAND_MENU_STYLES)[number];
 
+export const TENANT_BRAND_FONT_HEADINGS = ['sans', 'serif'] as const;
+export type TenantBrandFontHeading = (typeof TENANT_BRAND_FONT_HEADINGS)[number];
+
 export type TenantBrandTheme = {
   brandName: string;
   logoUrl: string;
@@ -29,6 +32,8 @@ export type TenantBrandTheme = {
   radiusStyle: TenantBrandRadiusStyle;
   buttonStyle: TenantBrandButtonStyle;
   menuStyle: TenantBrandMenuStyle;
+  /** Heading font: 'serif' for luxury/spa feel, 'sans' for professional/clean */
+  fontHeading: TenantBrandFontHeading;
 };
 
 export type TenantBrandSurface = 'app' | 'portal' | 'invoice';
@@ -61,6 +66,7 @@ export const DEFAULT_TENANT_BRAND_THEME: TenantBrandTheme = {
   radiusStyle: 'soft',
   buttonStyle: 'pill',
   menuStyle: 'comfortable',
+  fontHeading: 'serif', // Baby care: warm, premium serif feel
 };
 
 export const DEFAULT_BEAUTY_TENANT_BRAND_THEME: TenantBrandTheme = {
@@ -74,6 +80,7 @@ export const DEFAULT_BEAUTY_TENANT_BRAND_THEME: TenantBrandTheme = {
   radiusStyle: 'soft',
   buttonStyle: 'pill',
   menuStyle: 'comfortable',
+  fontHeading: 'serif', // Beauty spa: luxurious serif feel
 };
 
 export const DEFAULT_CLEANING_TENANT_BRAND_THEME: TenantBrandTheme = {
@@ -87,6 +94,7 @@ export const DEFAULT_CLEANING_TENANT_BRAND_THEME: TenantBrandTheme = {
   radiusStyle: 'balanced',
   buttonStyle: 'rounded',
   menuStyle: 'compact',
+  fontHeading: 'sans', // Industrial: clean, professional sans-serif
 };
 
 const HEX_COLOR_PATTERN = /^#[0-9A-Fa-f]{6}$/;
@@ -101,6 +109,7 @@ const TEXT_LIMITS: Record<keyof TenantBrandTheme, number> = {
   radiusStyle: 40,
   buttonStyle: 40,
   menuStyle: 40,
+  fontHeading: 10,
 };
 
 function isPlainRecord(value: unknown): value is Record<string, unknown> {
@@ -218,6 +227,7 @@ export function normalizeTenantBrandThemeForModule(
     radiusStyle: cleanChoice(source.radiusStyle, TENANT_BRAND_RADIUS_STYLES, fallback.radiusStyle),
     buttonStyle: cleanChoice(source.buttonStyle, TENANT_BRAND_BUTTON_STYLES, fallback.buttonStyle),
     menuStyle: cleanChoice(source.menuStyle, TENANT_BRAND_MENU_STYLES, fallback.menuStyle),
+    fontHeading: cleanChoice(source.fontHeading, TENANT_BRAND_FONT_HEADINGS, fallback.fontHeading),
   };
 }
 

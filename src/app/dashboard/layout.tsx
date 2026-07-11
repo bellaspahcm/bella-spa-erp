@@ -40,6 +40,13 @@ async function applyDashboardTenantBrandRuntime(
   root.style.setProperty('--primary-hover', brand.primaryHoverColor);
   root.style.setProperty('--accent', brand.accentColor);
   root.style.setProperty('--ring', brand.primaryColor);
+  // Inject tenant heading font: 'serif' → Playfair Display, 'sans' → Geist
+  root.style.setProperty(
+    '--font-heading',
+    brand.fontHeading === 'serif'
+      ? 'var(--font-serif), Georgia, serif'
+      : 'var(--font-sans), system-ui, sans-serif',
+  );
   themeMeta?.setAttribute('content', brand.primaryColor);
 
   try {
