@@ -15,7 +15,7 @@ interface AddToWaitlistModalProps {
 
 interface Customer {
   id: string;
-  name_mother: string;
+  name: string; // Changed from name_mother - API returns "name"
   name_baby: string | null;
   phone: string;
   tier: 'vip' | 'loyal' | 'new';
@@ -279,7 +279,7 @@ export function AddToWaitlistModal({
                     className="w-full px-4 py-2 text-left hover:bg-gray-50"
                   >
                     <div className="text-sm font-medium text-gray-900">
-                      {customer.name_mother}
+                      {customer.name}
                       {customer.name_baby && ` - ${customer.name_baby}`}
                     </div>
                     <div className="text-xs text-gray-600">
@@ -292,7 +292,7 @@ export function AddToWaitlistModal({
             {selectedCustomer && (
               <div className="mt-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
                 <div className="text-sm font-medium text-gray-900">
-                  {selectedCustomer.name_mother}
+                  {selectedCustomer.name}
                   {selectedCustomer.name_baby && ` - ${selectedCustomer.name_baby}`}
                 </div>
                 <div className="text-xs text-gray-600">
