@@ -3544,3 +3544,92 @@ html[data-tenant-module="beauty_spa"] .border-rose-100\/50 {
   min-width: 64rem !important;
 }
 
+
+/* ============================================
+   Automation Studio Design Tokens
+   ============================================ */
+
+:root {
+  /* Automation-specific colors */
+  --color-automation-primary: #f43f5e; /* rose-500 */
+  --color-automation-primary-light: #ffe4e6; /* rose-50 */
+  --color-automation-primary-dark: #be123c; /* rose-700 */
+  
+  /* Semantic colors for automation states */
+  --color-automation-success: #10b981; /* green-500 */
+  --color-automation-error: #ef4444; /* red-500 */
+  --color-automation-warning: #f59e0b; /* amber-500 */
+  --color-automation-info: #3b82f6; /* blue-500 */
+  
+  /* Automation spacing */
+  --spacing-automation-xs: 4px;
+  --spacing-automation-sm: 8px;
+  --spacing-automation-md: 16px;
+  --spacing-automation-lg: 24px;
+  --spacing-automation-xl: 32px;
+  --spacing-automation-card: 20px;
+  
+  /* Automation shadows */
+  --shadow-automation-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-automation-md: 0 4px 8px rgba(0, 0, 0, 0.1);
+  --shadow-automation-lg: 0 8px 16px rgba(0, 0, 0, 0.15);
+  --shadow-automation-xl: 0 16px 32px rgba(0, 0, 0, 0.2);
+  --shadow-automation-rose: 0 4px 12px rgba(244, 63, 94, 0.2);
+  --shadow-automation-blue: 0 4px 12px rgba(59, 130, 246, 0.2);
+  
+  /* Automation border radius */
+  --radius-automation-sm: 8px;
+  --radius-automation-md: 12px;
+  --radius-automation-lg: 16px;
+  --radius-automation-xl: 24px;
+  
+  /* Automation transitions */
+  --transition-automation-fast: 100ms ease-out;
+  --transition-automation-default: 200ms ease-out;
+  --transition-automation-medium: 300ms ease-in-out;
+  --transition-automation-slow: 500ms ease-in-out;
+}
+
+/* Automation Studio utility classes */
+.automation-card-hover {
+  transition: transform var(--transition-automation-default), 
+              box-shadow var(--transition-automation-default);
+}
+
+.automation-card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-automation-lg);
+}
+
+.automation-btn-press {
+  transition: transform var(--transition-automation-fast), 
+              background var(--transition-automation-default);
+}
+
+.automation-btn-press:active {
+  transform: scale(0.98);
+}
+
+/* Command Palette backdrop */
+.command-palette-backdrop {
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+/* Empty state gradients */
+.automation-empty-state {
+  background: linear-gradient(135deg, var(--color-automation-primary-light) 0%, white 100%);
+}
+
+/* Version timeline */
+.automation-timeline-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--color-automation-primary);
+}
+
+.automation-timeline-line {
+  width: 2px;
+  background: #fda4af; /* rose-300 */
+}

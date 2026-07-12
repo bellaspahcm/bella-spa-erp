@@ -102,7 +102,9 @@ function isServicePackageModuleKey(value: unknown): value is TenantPrimaryBusine
 }
 
 function getEnabledModuleKeys(enabledModules: TenantEnabledModules) {
-  return TENANT_PRIMARY_BUSINESS_MODULE_KEYS.filter(moduleKey => enabledModules[moduleKey]);
+  return TENANT_PRIMARY_BUSINESS_MODULE_KEYS
+    .filter(moduleKey => enabledModules[moduleKey])
+    .map(moduleKey => moduleKey === 'babycare' ? 'baby_care' : moduleKey);
 }
 
 function normalizeTenantId(value: string | null | undefined) {
@@ -156,8 +158,9 @@ function resolvePackageModuleForTenant(
   scope: PackageTenantModuleScope,
 ): PackageModuleResult {
   const normalizedRequestedModule = requestedModuleKey?.trim().toLowerCase();
-  const moduleKey = isServicePackageModuleKey(normalizedRequestedModule)
-    ? normalizedRequestedModule
+  const targetModule = normalizedRequestedModule === 'baby_care' ? 'babycare' : normalizedRequestedModule;
+  const moduleKey = isServicePackageModuleKey(targetModule)
+    ? targetModule
     : scope.defaultModuleKey;
 
   if (!scope.enabledModules[moduleKey]) {
@@ -292,6 +295,9 @@ export async function createPackage(packageData: PackageActionInput): Promise<Pa
     tenant_id: auth.tenantId,
     module_key: scopedModule.moduleKey,
   });
+  if ((dbData.module_key as unknown) === 'babycare') {
+    dbData.module_key = 'baby_care';
+  }
 
   const { data, error } = await supabase
     .from('packages')
@@ -376,7 +382,9 @@ export async function updatePackage(
     tenant_id: undefined,
   });
   if (packageData.module_key !== undefined) {
-    dbData.module_key = nextModule.moduleKey;
+    dbData.module_key = nextModule.moduleKey === 'babycare'
+      ? 'baby_care'
+      : (nextModule.moduleKey as PackageUpdate['module_key']);
   }
 
   const { data, error } = await supabase

@@ -159,7 +159,7 @@ function createPackageRow(overrides: Partial<PackageRow> = {}): PackageRow {
     id: 'pkg-1',
     is_hq_template: null,
     ktv_commission: 150000,
-    module_key: 'babycare',
+    module_key: 'baby_care',
     name: 'VIP',
     offer: '',
     price: 1000000,
@@ -211,7 +211,7 @@ describe('package actions transaction safety', () => {
     const selectOperation = findOperation('select', operation => operation.table === 'packages');
     expect(selectOperation?.filters).toEqual(expect.arrayContaining([
       expect.objectContaining({ column: 'tenant_id', value: 'tenant-1' }),
-      expect.objectContaining({ column: 'module_key', value: ['babycare'], operator: 'in' }),
+      expect.objectContaining({ column: 'module_key', value: ['baby_care'], operator: 'in' }),
     ]));
   });
 
@@ -237,7 +237,7 @@ describe('package actions transaction safety', () => {
       price: 1000000,
       total_sessions: 10,
       ktv_commission: 150000,
-      module_key: 'babycare',
+      module_key: 'baby_care',
       status: 'active',
     })]);
     expect(mockRecordAuditLog).toHaveBeenCalledWith(expect.objectContaining({
@@ -272,7 +272,7 @@ describe('package actions transaction safety', () => {
 
     const result = await createPackage({
       name: 'Babycare should be blocked',
-      module_key: 'babycare',
+      module_key: 'baby_care',
     });
 
     expect(result.error).toContain('Admin HQ');
@@ -297,7 +297,7 @@ describe('package actions transaction safety', () => {
     queueResult(oldPackage);
 
     const result = await updatePackage('pkg-1', {
-      module_key: 'babycare',
+      module_key: 'baby_care',
       name: 'Blocked module switch',
     });
 
@@ -307,7 +307,7 @@ describe('package actions transaction safety', () => {
   });
 
   it('rejects deleting packages outside the HQ enabled module scope', async () => {
-    const oldPackage = createPackageRow({ module_key: 'babycare' });
+    const oldPackage = createPackageRow({ module_key: 'baby_care' });
     queueTenantModules({ babycare: false, beauty_spa: true });
     queueResult(oldPackage);
 
