@@ -127,13 +127,32 @@ function isRecord(value: Json | null): value is Record<string, Json | undefined>
   return Boolean(value && typeof value === 'object' && !Array.isArray(value));
 }
 
-function getNotificationHref(data: Json | null) {
-  if (isRecord(data) && typeof data.href === 'string' && data.href.startsWith('/dashboard')) {
-    let href = data.href;
-    if (href.startsWith('/dashboard/admin/rules')) {
-      href = href.replace('/dashboard/admin/rules', '/dashboard/rules');
+function getNotificationHref(data: Json | null, type?: string) {
+  if (isRecord(data)) {
+    // 1. If there's a specific accounting health href or destination, prioritize it
+    if (typeof data.accounting_health_href === 'string' && data.accounting_health_href.startsWith('/dashboard')) {
+      return data.accounting_health_href;
     }
-    return href;
+
+    // 2. If it points to the monitor page (self-referential), redirect to health page
+    if (typeof data.href === 'string' && data.href.startsWith('/dashboard') && data.href !== '/dashboard/system-monitor') {
+      let href = data.href;
+      if (href.startsWith('/dashboard/admin/rules')) {
+        href = href.replace('/dashboard/admin/rules', '/dashboard/rules');
+      }
+      return href;
+    }
+  }
+
+  // 3. Specific fallbacks based on notification type
+  if (type === 'business_rule_health_alert') {
+    return '/dashboard/accounting/health';
+  }
+  if (type === 'accounting_worker_health_alert') {
+    return '/dashboard/accounting/health';
+  }
+  if (type === 'accounting_worker_cron_alert') {
+    return '/dashboard/accounting/health';
   }
 
   return '/dashboard/accounting/health';
@@ -364,7 +383,7 @@ export async function getSystemMonitorSummary(month?: string | null): Promise<Sy
       status: getNotificationSeverity(row),
       value: getNotificationSourceLabel(row),
       message: row.message,
-      href: getNotificationHref(row.data),
+      href: getNotificationHref(row.data, row.type),
     }))
     : [{
       id: 'no-open-system-alerts',
@@ -396,7 +415,7 @@ export async function getSystemMonitorSummary(month?: string | null): Promise<Sy
       title: row.title,
       message: row.message,
       created_at: row.created_at,
-      href: getNotificationHref(row.data),
+      href: getNotificationHref(row.data, row.type),
       severity: getNotificationSeverity(row),
     })),
     quick_metrics: {
