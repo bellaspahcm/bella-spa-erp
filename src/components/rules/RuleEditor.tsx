@@ -5,7 +5,12 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 import RuleMetadataForm from './RuleMetadataForm';
+import { RuleConditionsBuilder } from './RuleConditionsBuilder';
+import { RuleActionsBuilder } from './RuleActionsBuilder';
+import { validateRuleForm } from '@/lib/decision-engine/rule-validation';
 import { Loader2, Save, X } from 'lucide-react';
 
 interface RuleEditorProps {
@@ -18,6 +23,7 @@ export default function RuleEditor({ mode, ruleId, initialData }: RuleEditorProp
   const router = useRouter();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState(initialData || {
     name: '',
     description: '',
@@ -25,30 +31,23 @@ export default function RuleEditor({ mode, ruleId, initialData }: RuleEditorProp
     category: '',
     priority: 100,
     status: 'draft',
-    conditions: [
-      {
-        field: 'customer.tier',
-        operator: 'equals',
-        value: 'VIP'
-      }
-    ],
-    actions: [
-      {
-        type: 'set_priority',
-        value: 1000
-      }
-    ],
+    conditions: [],
+    actions: [],
+    logicalOperator: 'and',
   });
 
   const handleSave = async () => {
     try {
       setIsSaving(true);
+      setValidationErrors({});
 
-      // Validation
-      if (!formData.name || !formData.provider) {
+      // Client-side validation
+      const validationResult = validateRuleForm(formData);
+      if (!validationResult.isValid) {
+        setValidationErrors(validationResult.errors);
         toast({
           title: 'Validation Error',
-          description: 'Name and Provider are required',
+          description: 'Please fix the errors in the form before saving',
           variant: 'destructive',
         });
         return;
@@ -95,6 +94,23 @@ export default function RuleEditor({ mode, ruleId, initialData }: RuleEditorProp
 
   return (
     <div className="space-y-6">
+      {/* Validation Error Summary */}
+      {Object.keys(validationErrors).length > 0 && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Please fix the following errors:
+            <ul className="list-disc list-inside mt-2">
+              {Object.entries(validationErrors).map(([key, error]) => (
+                <li key={key} className="text-sm">
+                  {error}
+                </li>
+              ))}
+            </ul>
+          </AlertDescription>
+        </Alert>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle>Rule Information</CardTitle>
@@ -110,7 +126,25 @@ export default function RuleEditor({ mode, ruleId, initialData }: RuleEditorProp
         </CardContent>
       </Card>
 
-      {/* Conditions and Actions will be added in Phase 3 */}
+      {/* Conditions Builder - Phase 3 */}
+      <RuleConditionsBuilder
+        provider={formData.provider}
+        conditions={formData.conditions || []}
+        onChange={(conditions) => setFormData({ ...formData, conditions })}
+        logicalOperator={formData.logicalOperator || 'and'}
+        onLogicalOperatorChange={(operator) => setFormData({ ...formData, logicalOperator: operator })}
+        errors={validationErrors}
+        disabled={isSaving}
+      />
+
+      {/* Actions Builder - Phase 3 */}
+      <RuleActionsBuilder
+        provider={formData.provider}
+        actions={formData.actions || []}
+        onChange={(actions) => setFormData({ ...formData, actions })}
+        errors={validationErrors}
+        disabled={isSaving}
+      />
       
       <div className="flex justify-end gap-4">
         <Button
