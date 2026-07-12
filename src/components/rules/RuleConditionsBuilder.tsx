@@ -45,10 +45,10 @@ export function RuleConditionsBuilder({
   }, [conditions, onChange]);
 
   return (
-    <Card>
+    <Card className="bg-white/40 dark:bg-[#1c1b19]/40 backdrop-blur-md border border-white/20 dark:border-white/5 shadow-sm rounded-xl">
       <CardHeader>
-        <CardTitle>Điều kiện</CardTitle>
-        <CardDescription>
+        <CardTitle className="text-sm font-bold text-slate-800 dark:text-slate-200">Điều kiện</CardTitle>
+        <CardDescription className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
           Xác định khi nào quy tắc này được áp dụng
         </CardDescription>
       </CardHeader>

@@ -111,10 +111,10 @@ export default function RuleEditor({ mode, ruleId, initialData }: RuleEditorProp
         </Alert>
       )}
 
-      <Card>
+      <Card className="bg-white/40 dark:bg-[#1c1b19]/40 backdrop-blur-md border border-white/20 dark:border-white/5 shadow-sm rounded-xl">
         <CardHeader>
-          <CardTitle>Thông tin Quy tắc Luật</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-sm font-bold text-slate-800 dark:text-slate-200">Thông tin Quy tắc Luật</CardTitle>
+          <CardDescription className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Định nghĩa các thuộc tính cơ bản của quy tắc luật
           </CardDescription>
         </CardHeader>
