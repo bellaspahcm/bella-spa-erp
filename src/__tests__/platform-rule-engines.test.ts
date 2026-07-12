@@ -135,6 +135,7 @@ describe('platform rule engines', () => {
     expect(normalizeEnabledModules(null)).toEqual({
       babycare: true,
       beauty_spa: false,
+      industrial_cleaning: false,
       student_training: false,
     });
     expect(normalizeEnabledModules({
@@ -145,6 +146,7 @@ describe('platform rule engines', () => {
     })).toEqual({
       babycare: false,
       beauty_spa: true,
+      industrial_cleaning: false,
       student_training: true,
     });
     expect(normalizeEnabledModules({
@@ -152,6 +154,7 @@ describe('platform rule engines', () => {
     })).toEqual({
       babycare: false,
       beauty_spa: true,
+      industrial_cleaning: false,
       student_training: false,
     });
     expect(normalizeEnabledModules({
@@ -159,6 +162,7 @@ describe('platform rule engines', () => {
     })).toEqual({
       babycare: true,
       beauty_spa: false,
+      industrial_cleaning: false,
       student_training: false,
     });
     expect(normalizeEnabledModulesForSave({
@@ -168,6 +172,7 @@ describe('platform rule engines', () => {
     })).toEqual({
       babycare: true,
       beauty_spa: false,
+      industrial_cleaning: false,
       student_training: true,
     });
     expect(normalizeEnabledModulesForSave({
@@ -176,6 +181,7 @@ describe('platform rule engines', () => {
     })).toEqual({
       babycare: false,
       beauty_spa: true,
+      industrial_cleaning: false,
       student_training: false,
     });
     expect(normalizeEnabledModulesForSave({
@@ -184,6 +190,7 @@ describe('platform rule engines', () => {
     })).toEqual({
       babycare: true,
       beauty_spa: false,
+      industrial_cleaning: false,
       student_training: false,
     });
     expect(getDefaultTenantModuleKey({
@@ -210,6 +217,7 @@ describe('platform rule engines', () => {
       radiusStyle: 'soft',
       buttonStyle: 'pill',
       menuStyle: 'comfortable',
+      fontHeading: 'serif',
     });
     expect(normalizeTenantBrandThemeForModule({}, 'beauty_spa')).toEqual({
       brandName: '',
@@ -222,6 +230,7 @@ describe('platform rule engines', () => {
       radiusStyle: 'soft',
       buttonStyle: 'pill',
       menuStyle: 'comfortable',
+      fontHeading: 'serif',
     });
     expect(resolveTenantBrandIdentity({
       enabledModules: { babycare: false, beauty_spa: true, student_training: true, industrial_cleaning: false },

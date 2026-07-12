@@ -19,6 +19,7 @@ import { format } from 'date-fns';
 import DecisionDetailDrawer from '@/components/decision-engine/DecisionDetailDrawer';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
+import { Button } from '@/components/ui/button';
 
 
 interface AuditLogEntry {
@@ -322,19 +323,20 @@ export default function DecisionAuditTrailPage() {
 
         {/* Filter Actions */}
         <div className="flex gap-3 mt-4">
-          <button
+          <Button
             onClick={handleApplyFilters}
             disabled={loading || !tenantId}
-            className={`px-5 py-2.5 rounded-xl transition-all font-bold text-xs active:scale-[0.98] disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed ${theme.activeBtn}`}
+            className="rounded-xl font-bold text-xs active:scale-95 transition-all shadow-sm h-9 px-5 bg-primary hover:bg-primary-hover text-primary-foreground border-transparent"
           >
             Áp dụng bộ lọc
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="outline"
             onClick={handleResetFilters}
-            className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl transition-all font-bold text-xs active:scale-[0.98]"
+            className="rounded-xl font-bold text-xs active:scale-95 transition-all h-9 px-5"
           >
             Đặt lại
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -359,12 +361,12 @@ export default function DecisionAuditTrailPage() {
         ) : error ? (
           <div className="p-12 text-center">
             <p className="text-red-600 mb-4 font-semibold text-xs">⚠️ {error}</p>
-            <button
+            <Button
               onClick={fetchAuditLog}
-              className={`px-5 py-2.5 rounded-xl transition-all font-bold text-xs active:scale-[0.98] ${theme.activeBtn}`}
+              className="rounded-xl font-bold text-xs active:scale-95 transition-all h-9 px-5 bg-primary hover:bg-primary-hover text-primary-foreground border-transparent"
             >
               Thử lại
-            </button>
+            </Button>
           </div>
         ) : data.length === 0 ? (
           <div className="p-12 text-center space-y-2">

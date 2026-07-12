@@ -12,7 +12,7 @@ const getThemeColors = (moduleKey: string | null) => {
     return {
       primary: 'emerald',
       gradient: 'from-emerald-500 to-teal-600',
-      activeTab: 'border-emerald-500 text-emerald-600 dark:text-emerald-400 font-bold',
+      activeTab: 'border-primary text-primary dark:text-primary font-bold',
       inactiveTab: 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-200',
       badgeBg: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300',
     };
@@ -20,7 +20,7 @@ const getThemeColors = (moduleKey: string | null) => {
     return {
       primary: 'indigo',
       gradient: 'from-indigo-500 to-blue-600',
-      activeTab: 'border-indigo-500 text-indigo-600 dark:text-indigo-400 font-bold',
+      activeTab: 'border-primary text-primary dark:text-primary font-bold',
       inactiveTab: 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-200',
       badgeBg: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-300',
     };
@@ -28,7 +28,7 @@ const getThemeColors = (moduleKey: string | null) => {
     return {
       primary: 'rose',
       gradient: 'from-rose-500 to-pink-600',
-      activeTab: 'border-rose-500 text-rose-600 dark:text-rose-400 font-bold',
+      activeTab: 'border-primary text-primary dark:text-primary font-bold',
       inactiveTab: 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-200',
       badgeBg: 'bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300',
     };
