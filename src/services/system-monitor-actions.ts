@@ -129,7 +129,11 @@ function isRecord(value: Json | null): value is Record<string, Json | undefined>
 
 function getNotificationHref(data: Json | null) {
   if (isRecord(data) && typeof data.href === 'string' && data.href.startsWith('/dashboard')) {
-    return data.href;
+    let href = data.href;
+    if (href.startsWith('/dashboard/admin/rules')) {
+      href = href.replace('/dashboard/admin/rules', '/dashboard/rules');
+    }
+    return href;
   }
 
   return '/dashboard/accounting/health';
