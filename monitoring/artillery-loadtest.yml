@@ -1,0 +1,127 @@
+# Decision Engine Load Test Configuration
+# 
+# Run with: artillery run monitoring/artillery-loadtest.yml
+# 
+# Scenarios:
+#   - Normal load: 10 users/sec for 1 minute
+#   - Peak load: 50 users/sec for 2 minutes
+#   - Stress test: Ramp up 10-100 users/sec over 5 minutes
+
+config:
+  target: "https://bella-spa.vercel.app"
+  phases:
+    # Warm-up phase
+    - duration: 30
+      arrivalRate: 5
+      name: "Warm-up (5 users/sec)"
+    
+    # Normal load
+    - duration: 60
+      arrivalRate: 10
+      name: "Normal load (10 users/sec)"
+    
+    # Peak load
+    - duration: 120
+      arrivalRate: 50
+      name: "Peak load (50 users/sec)"
+    
+    # Cooldown
+    - duration: 30
+      arrivalRate: 5
+      name: "Cooldown (5 users/sec)"
+  
+  plugins:
+    metrics-by-endpoint:
+      # Track metrics per API endpoint
+      stripQueryString: true
+      excludeHeaders: true
+
+scenarios:
+  # Scenario 1: Booking availability check (most common decision)
+  - name: "Booking Availability Decision"
+    weight: 40
+    flow:
+      - post:
+          url: "/api/decision-engine/booking/availability"
+          json:
+            tenantId: "{{ $randomString() }}"
+            ktvId: "ktv-{{ $randomNumber(1, 20) }}"
+            sessionDate: "2026-07-{{ $randomNumber(10, 20) }}"
+            timeSlot: "{{ $randomNumber(9, 18) }}:00"
+          expect:
+            - statusCode: 200
+            - contentType: json
+            - hasProperty: decision
+      
+      - think: 1
+  
+  # Scenario 2: Discount calculation
+  - name: "Discount Calculation Decision"
+    weight: 25
+    flow:
+      - post:
+          url: "/api/decision-engine/discount/calculate"
+          json:
+            tenantId: "{{ $randomString() }}"
+            customerId: "customer-{{ $randomNumber(1, 100) }}"
+            packageType: "combo_vip"
+            totalAmount: "{{ $randomNumber(3000000, 8000000) }}"
+          expect:
+            - statusCode: 200
+            - contentType: json
+            - hasProperty: discountAmount
+      
+      - think: 1
+  
+  # Scenario 3: Payroll bonus calculation
+  - name: "Payroll Bonus Decision"
+    weight: 20
+    flow:
+      - post:
+          url: "/api/decision-engine/payroll/bonus"
+          json:
+            tenantId: "{{ $randomString() }}"
+            ktvId: "ktv-{{ $randomNumber(1, 20) }}"
+            month: "2026-07"
+            totalSessions: "{{ $randomNumber(10, 30) }}"
+            avgRating: "{{ $randomNumber(40, 50) / 10 }}"
+          expect:
+            - statusCode: 200
+            - contentType: json
+            - hasProperty: totalBonus
+      
+      - think: 2
+  
+  # Scenario 4: Commission calculation
+  - name: "Commission Calculation Decision"
+    weight: 15
+    flow:
+      - post:
+          url: "/api/decision-engine/commission/calculate"
+          json:
+            tenantId: "{{ $randomString() }}"
+            ktvId: "ktv-{{ $randomNumber(1, 20) }}"
+            sessionId: "session-{{ $randomString() }}"
+            completedSessions: "{{ $randomNumber(5, 25) }}"
+          expect:
+            - statusCode: 200
+            - contentType: json
+            - hasProperty: commission
+      
+      - think: 1
+
+# Performance thresholds
+ensure:
+  # Average latency should be <50ms
+  p95: 50
+  
+  # P99 latency should be <100ms
+  p99: 100
+  
+  # Error rate should be <1%
+  maxErrorRate: 1
+
+# Output configuration
+output:
+  # Save results to file
+  path: "monitoring/loadtest-results-{{ $timestamp }}.json"

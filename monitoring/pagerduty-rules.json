@@ -1,0 +1,56 @@
+[
+  {
+    "id": "decision-engine-down",
+    "name": "Decision Engine Down",
+    "description": "No decisions executed for 5 minutes - system may be completely down",
+    "severity": "critical",
+    "condition": {
+      "metric": "decision_count",
+      "operator": "equals",
+      "threshold": 0,
+      "window": "5m"
+    },
+    "notification": {
+      "channels": ["pagerduty"],
+      "escalation_policy": "engineering-oncall",
+      "urgency": "high"
+    },
+    "runbook": "https://docs.bella-spa.com/runbook#decision-engine-down"
+  },
+  {
+    "id": "high-error-rate",
+    "name": "High Error Rate",
+    "description": "Error rate >5% for any provider in last 5 minutes",
+    "severity": "critical",
+    "condition": {
+      "metric": "decision_error_rate",
+      "operator": "greater_than",
+      "threshold": 0.05,
+      "window": "5m"
+    },
+    "notification": {
+      "channels": ["pagerduty", "slack"],
+      "escalation_policy": "engineering-oncall",
+      "urgency": "high"
+    },
+    "runbook": "https://docs.bella-spa.com/runbook#high-error-rate"
+  },
+  {
+    "id": "database-connection-failure",
+    "name": "Database Connection Failure",
+    "description": "Multiple database connection errors detected",
+    "severity": "critical",
+    "condition": {
+      "metric": "database_connection_errors",
+      "operator": "greater_than",
+      "threshold": 10,
+      "window": "1m"
+    },
+    "notification": {
+      "channels": ["pagerduty"],
+      "escalation_policy": "dba-oncall",
+      "urgency": "high"
+    },
+    "runbook": "https://docs.bella-spa.com/runbook#database-connection-failure"
+  }
+]

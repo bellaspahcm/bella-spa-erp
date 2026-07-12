@@ -1,0 +1,140 @@
+name: Decision Engine Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/lib/decision-engine/**'
+      - 'supabase/migrations/**'
+      - 'scripts/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/lib/decision-engine/**'
+      - 'supabase/migrations/**'
+
+jobs:
+  test:
+    name: Test Decision Engine
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run type check
+        run: npm run build
+      
+      - name: Run Decision Engine tests
+        run: npm test -- src/lib/decision-engine
+        env:
+          NODE_ENV: test
+      
+      - name: Run integration tests
+        run: npm run test:integration
+        if: github.event_name == 'pull_request'
+        env:
+          NODE_ENV: test
+      
+      - name: Performance benchmark
+        run: npm run test:performance
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      
+      - name: Security audit
+        run: npm audit --audit-level=high
+        continue-on-error: true
+      
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: test-results
+          path: |
+            coverage/
+            test-results/
+
+  deploy-staging:
+    name: Deploy to Staging
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Deploy to Vercel Staging
+        uses: amondnet/vercel-action@v20
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          scope: ${{ secrets.VERCEL_ORG_ID }}
+      
+      - name: Run smoke tests
+        run: npm run test:smoke -- --env=staging
+        env:
+          STAGING_URL: ${{ steps.deploy.outputs.preview-url }}
+      
+      - name: Comment PR with preview URL
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `✅ Staging deployment complete!\n\nPreview: ${process.env.STAGING_URL}`
+            })
+
+  deploy-production:
+    name: Deploy to Production
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Deploy to Vercel Production
+        uses: amondnet/vercel-action@v20
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod'
+          scope: ${{ secrets.VERCEL_ORG_ID }}
+      
+      - name: Wait for deployment
+        run: sleep 30
+      
+      - name: Run production smoke tests
+        run: npm run test:smoke -- --env=production
+        env:
+          PRODUCTION_URL: ${{ secrets.PRODUCTION_URL }}
+      
+      - name: Warmup cache
+        run: npm run cache:warmup -- --env=production
+        env:
+          REDIS_URL: ${{ secrets.REDIS_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      
+      - name: Notify Slack
+        uses: 8398a7/action-slack@v3
+        if: always()
+        with:
+          status: ${{ job.status }}
+          text: 'Decision Engine deployed to production'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}

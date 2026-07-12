@@ -1,0 +1,70 @@
+[
+  {
+    "id": "high-latency-warning",
+    "name": "High Latency Warning",
+    "description": "P95 latency >20ms for 10 minutes",
+    "severity": "warning",
+    "condition": {
+      "metric": "p95_latency",
+      "operator": "greater_than",
+      "threshold": 20,
+      "window": "10m"
+    },
+    "notification": {
+      "channels": ["slack"],
+      "slack_channel": "#alerts",
+      "mention": "@backend-team"
+    },
+    "runbook": "https://docs.bella-spa.com/runbook#high-latency"
+  },
+  {
+    "id": "low-cache-hit-rate",
+    "name": "Low Cache Hit Rate",
+    "description": "Cache hit rate <60% for 15 minutes",
+    "severity": "warning",
+    "condition": {
+      "metric": "cache_hit_rate",
+      "operator": "less_than",
+      "threshold": 0.6,
+      "window": "15m"
+    },
+    "notification": {
+      "channels": ["slack"],
+      "slack_channel": "#alerts",
+      "message": "Cache hit rate dropped below 60%. Check Redis health."
+    },
+    "runbook": "https://docs.bella-spa.com/runbook#low-cache-hit-rate"
+  },
+  {
+    "id": "dead-rule-detected",
+    "name": "Dead Rule Detected",
+    "description": "Rule not executed in 48 hours",
+    "severity": "info",
+    "condition": {
+      "metric": "rule_execution_count",
+      "operator": "equals",
+      "threshold": 0,
+      "window": "48h"
+    },
+    "notification": {
+      "channels": ["slack"],
+      "slack_channel": "#decision-engine",
+      "message": "Rule {{rule_id}} has not been executed in 48 hours. Review if still needed."
+    },
+    "runbook": "https://docs.bella-spa.com/runbook#dead-rules"
+  },
+  {
+    "id": "new-rule-deployed",
+    "name": "New Rule Deployed",
+    "description": "Notification when new rule is created",
+    "severity": "info",
+    "condition": {
+      "event": "rule_created"
+    },
+    "notification": {
+      "channels": ["slack"],
+      "slack_channel": "#decision-engine",
+      "message": "✅ New rule deployed: {{rule_id}} ({{provider}})"
+    }
+  }
+]
