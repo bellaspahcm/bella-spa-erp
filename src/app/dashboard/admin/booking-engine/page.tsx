@@ -8,8 +8,6 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   RefreshCw,
-  TrendingUp,
-  TrendingDown,
   Clock,
   CheckCircle2,
   AlertTriangle,
@@ -18,6 +16,8 @@ import {
   Zap,
   ShieldCheck,
 } from 'lucide-react';
+import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
+import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
 
 // ============================================================================
 // Types
@@ -100,6 +100,61 @@ interface MetricsResponse {
 type DateRange = '24h' | '7d' | '30d';
 
 // ============================================================================
+// Theme Utilities
+// ============================================================================
+
+const getThemeColors = (moduleKey: string | null) => {
+  const normKey = moduleKey === 'babycare' ? 'baby_care' : (moduleKey || 'baby_care');
+  if (normKey === 'beauty_spa') {
+    return {
+      primary: 'emerald',
+      bgLight: 'bg-emerald-50/50 dark:bg-emerald-950/20',
+      border: 'border-emerald-100/50 dark:border-emerald-900/30',
+      text: 'text-emerald-700 dark:text-emerald-400',
+      glow: 'shadow-emerald-100 dark:shadow-emerald-950/30',
+      accentColor: '#10b981',
+      badgeBg: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
+      progressBg: 'bg-emerald-200 dark:bg-emerald-800/40',
+      gradient: 'from-emerald-500 to-teal-600',
+      cardGradient: 'from-emerald-50 to-teal-50/30 dark:from-emerald-950/20 dark:to-teal-950/10',
+      autoRefreshBtnActive: 'bg-emerald-50/80 border-emerald-200/50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:border-emerald-900/30 dark:text-emerald-400',
+      iconContainer: 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border border-emerald-100/30',
+    };
+  } else if (normKey === 'industrial_cleaning') {
+    return {
+      primary: 'indigo',
+      bgLight: 'bg-indigo-50/50 dark:bg-indigo-950/20',
+      border: 'border-indigo-100/50 dark:border-indigo-900/30',
+      text: 'text-indigo-700 dark:text-indigo-400',
+      glow: 'shadow-indigo-100 dark:shadow-indigo-950/30',
+      accentColor: '#6366f1',
+      badgeBg: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300',
+      progressBg: 'bg-indigo-200 dark:bg-indigo-800/40',
+      gradient: 'from-indigo-500 to-blue-600',
+      cardGradient: 'from-indigo-50 to-blue-50/30 dark:from-indigo-950/20 dark:to-blue-950/10',
+      autoRefreshBtnActive: 'bg-indigo-50/80 border-indigo-200/50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-950/20 dark:border-indigo-900/30 dark:text-indigo-400',
+      iconContainer: 'bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 border border-indigo-100/30',
+    };
+  } else {
+    // Default baby_care / babycare / pending
+    return {
+      primary: 'rose',
+      bgLight: 'bg-rose-50/50 dark:bg-rose-950/20',
+      border: 'border-rose-100/50 dark:border-rose-900/30',
+      text: 'text-rose-700 dark:text-rose-400',
+      glow: 'shadow-rose-100 dark:shadow-rose-950/30',
+      accentColor: '#f43f5e',
+      badgeBg: 'bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300',
+      progressBg: 'bg-rose-200 dark:bg-rose-800/40',
+      gradient: 'from-rose-500 to-pink-600',
+      cardGradient: 'from-rose-50 to-pink-50/30 dark:from-rose-950/20 dark:to-pink-950/10',
+      autoRefreshBtnActive: 'bg-rose-50/80 border-rose-200/50 text-rose-700 hover:bg-rose-100 dark:bg-rose-950/20 dark:border-rose-900/30 dark:text-rose-400',
+      iconContainer: 'bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 border border-rose-100/30',
+    };
+  }
+};
+
+// ============================================================================
 // Main Component
 // ============================================================================
 
@@ -111,6 +166,10 @@ export default function BookingEngineDashboardPage() {
   const [isAutoRefresh, setIsAutoRefresh] = useState(true);
   const [lastRefreshAt, setLastRefreshAt] = useState<Date | null>(null);
 
+  const { tenantModuleKey } = useTenantModuleKey();
+  const vocab = useModuleVocabulary();
+  const theme = getThemeColors(tenantModuleKey);
+
   // ========================================
   // Fetch Metrics
   // ========================================
@@ -119,7 +178,6 @@ export default function BookingEngineDashboardPage() {
       setIsLoading(true);
       setError(null);
 
-      // Calculate date range
       const now = new Date();
       const startDate = new Date();
       switch (dateRange) {
@@ -157,9 +215,6 @@ export default function BookingEngineDashboardPage() {
     }
   }, [dateRange]);
 
-  // ========================================
-  // Auto-refresh every 30 seconds
-  // ========================================
   useEffect(() => {
     void fetchMetrics();
   }, [fetchMetrics]);
@@ -182,21 +237,19 @@ export default function BookingEngineDashboardPage() {
       <div className="container mx-auto p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Booking Engine Dashboard</h1>
-            <p className="text-muted-foreground mt-1">Real-time Decision Engine metrics</p>
+            <h1 className="text-2xl font-bold tracking-tight">Trung tâm Điều phối Đặt lịch</h1>
+            <p className="text-sm text-slate-500 mt-1">Lỗi khi tải dữ liệu vận hành từ Decision Engine</p>
           </div>
         </div>
 
-        <Alert variant="destructive">
+        <Alert variant="destructive" className="rounded-2xl border-red-200/50 bg-red-50/50 backdrop-blur">
           <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            {error}
-          </AlertDescription>
+          <AlertDescription>{error}</AlertDescription>
         </Alert>
 
-        <Button onClick={() => void fetchMetrics()} variant="outline">
+        <Button onClick={() => void fetchMetrics()} variant="outline" className="rounded-xl">
           <RefreshCw className="h-4 w-4 mr-2" />
-          Retry
+          Thử lại
         </Button>
       </div>
     );
@@ -210,20 +263,20 @@ export default function BookingEngineDashboardPage() {
       <div className="container mx-auto p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Booking Engine Dashboard</h1>
-            <p className="text-muted-foreground mt-1">Real-time Decision Engine metrics</p>
+            <Skeleton className="h-8 w-64 rounded-lg" />
+            <Skeleton className="h-4 w-48 mt-2 rounded-lg" />
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {[...Array(4)].map((_, i) => (
-            <Card key={i}>
+            <Card key={i} className="rounded-2xl border-slate-100">
               <CardHeader className="pb-2">
-                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-4 w-32 rounded" />
               </CardHeader>
-              <CardContent>
-                <Skeleton className="h-8 w-20 mb-2" />
-                <Skeleton className="h-3 w-24" />
+              <CardContent className="space-y-3">
+                <Skeleton className="h-8 w-20 rounded" />
+                <Skeleton className="h-3 w-28 rounded" />
               </CardContent>
             </Card>
           ))}
@@ -239,44 +292,66 @@ export default function BookingEngineDashboardPage() {
   if (!data) return null;
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto p-6 space-y-6 animate-in fade-in duration-500">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/40 dark:bg-[#1c1b19]/40 backdrop-blur-md border border-white/20 dark:border-white/5 p-6 rounded-2xl shadow-sm">
         <div>
-          <h1 className="text-3xl font-bold">Booking Engine Dashboard</h1>
-          <p className="text-muted-foreground mt-1">
-            Real-time Decision Engine metrics
-            {lastRefreshAt && (
-              <span className="ml-2 text-xs">
-                • Last updated {lastRefreshAt.toLocaleTimeString()}
-              </span>
-            )}
-          </p>
+          <div className="flex items-center gap-3">
+            <div className={`p-2.5 rounded-xl bg-gradient-to-tr ${theme.gradient} text-white shadow-md`}>
+              <Zap className="h-5 w-5 animate-pulse" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
+                Trung tâm Điều phối Đặt lịch
+              </h1>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Chỉ số vận hành của Decision Engine theo thời gian thực
+              </p>
+            </div>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Last Updated Badge */}
+          {lastRefreshAt && (
+            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold ${theme.badgeBg} border ${theme.border}`}>
+              <Clock className="h-3.5 w-3.5" />
+              <span>Cập nhật lúc: {lastRefreshAt.toLocaleTimeString()}</span>
+            </div>
+          )}
+
           {/* Date Range Selector */}
-          <div className="flex gap-1 border rounded-lg p-1">
+          <div className="flex items-center bg-slate-100/80 dark:bg-slate-900/50 backdrop-blur border border-slate-200/50 dark:border-slate-800 p-1 rounded-xl">
             {(['24h', '7d', '30d'] as DateRange[]).map((range) => (
               <Button
                 key={range}
-                variant={dateRange === range ? 'default' : 'ghost'}
+                variant="ghost"
                 size="sm"
+                className={`rounded-lg px-3.5 py-1.5 h-8 text-xs font-medium transition-all ${
+                  dateRange === range
+                    ? `bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm font-bold`
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
                 onClick={() => setDateRange(range)}
               >
-                {range === '24h' ? '24 Hours' : range === '7d' ? '7 Days' : '30 Days'}
+                {range === '24h' ? '24 Giờ' : range === '7d' ? '7 Ngày' : '30 Ngày'}
               </Button>
             ))}
           </div>
 
           {/* Auto-refresh Toggle */}
           <Button
-            variant={isAutoRefresh ? 'default' : 'outline'}
+            variant="ghost"
             size="sm"
             onClick={() => setIsAutoRefresh(!isAutoRefresh)}
+            className={`h-9 px-3.5 rounded-xl border text-xs font-semibold transition-all ${
+              isAutoRefresh
+                ? theme.autoRefreshBtnActive
+                : 'bg-white border-slate-200 dark:bg-slate-900 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+            }`}
           >
-            <Zap className="h-4 w-4 mr-2" />
-            Auto-refresh {isAutoRefresh ? 'ON' : 'OFF'}
+            <Zap className={`h-3.5 w-3.5 mr-2 ${isAutoRefresh ? 'animate-bounce text-yellow-500' : ''}`} />
+            Auto-refresh: {isAutoRefresh ? 'BẬT' : 'TẮT'}
           </Button>
 
           {/* Manual Refresh */}
@@ -285,148 +360,218 @@ export default function BookingEngineDashboardPage() {
             size="sm"
             onClick={() => void fetchMetrics()}
             disabled={isLoading}
+            className="h-9 px-3.5 rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all active:scale-95"
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
+            <RefreshCw className={`h-3.5 w-3.5 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+            Làm mới
           </Button>
         </div>
       </div>
 
-      {/* Error Alert (if refetch failed) */}
+      {/* Error Alert */}
       {error && (
-        <Alert variant="destructive">
+        <Alert variant="destructive" className="rounded-2xl border-red-200/50 bg-red-50/50 backdrop-blur">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
 
       {/* KPI Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {/* Assignment Success Rate */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-green-600" />
-              Assignment Success
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        {/* Card 1: Assignment Success */}
+        <div className="relative overflow-hidden bg-white/60 dark:bg-[#1c1b19]/60 backdrop-blur-md border border-white/20 dark:border-white/5 p-6 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 group">
+          <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl ${theme.gradient} opacity-[0.03] rounded-bl-full group-hover:scale-110 transition-transform duration-500`} />
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              Hiệu suất phân bổ
+            </span>
+            <div className={`p-2 rounded-xl ${theme.iconContainer}`}>
+              <CheckCircle2 className="h-5 w-5" />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">
               {data.assignment.success_rate_percent || 0}%
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {data.assignment.successful_assignments}/{data.assignment.total_assignments} successful
+            </h3>
+            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+              Điều phối thành công {data.assignment.successful_assignments}/{data.assignment.total_assignments} {vocab.booking.singular.toLowerCase()}
             </p>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full mt-4 overflow-hidden">
+            <div 
+              className={`h-full bg-gradient-to-r ${theme.gradient} transition-all duration-1000`} 
+              style={{ width: `${data.assignment.success_rate_percent || 0}%` }}
+            />
+          </div>
+        </div>
 
-        {/* Auto-Assignment Rate */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-blue-600" />
-              Auto-Assignment Rate
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">
+        {/* Card 2: Auto-Assignment Rate */}
+        <div className="relative overflow-hidden bg-white/60 dark:bg-[#1c1b19]/60 backdrop-blur-md border border-white/20 dark:border-white/5 p-6 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 group">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-blue-500 to-indigo-600 opacity-[0.03] rounded-bl-full group-hover:scale-110 transition-transform duration-500" />
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              Tỷ lệ Tự động hóa
+            </span>
+            <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 border border-blue-100/30">
+              <Users className="h-5 w-5" />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">
               {data.assignment.auto_assignment_rate_percent || 0}%
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {data.assignment.auto_assigned} auto / {data.assignment.manual_assigned} manual
+            </h3>
+            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+              Tự động: {data.assignment.auto_assigned} | Thủ công: {data.assignment.manual_assigned}
             </p>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full mt-4 overflow-hidden flex">
+            <div 
+              className="h-full bg-blue-500 transition-all duration-1000" 
+              style={{ width: `${data.assignment.auto_assignment_rate_percent || 0}%` }}
+            />
+            <div 
+              className="h-full bg-slate-300 dark:bg-slate-600 transition-all duration-1000" 
+              style={{ width: `${100 - (data.assignment.auto_assignment_rate_percent || 0)}%` }}
+            />
+          </div>
+        </div>
 
-        {/* Conflict Rate */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription className="flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-orange-600" />
-              Conflict Rate
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">
+        {/* Card 3: Conflict Rate */}
+        <div className="relative overflow-hidden bg-white/60 dark:bg-[#1c1b19]/60 backdrop-blur-md border border-white/20 dark:border-white/5 p-6 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 group">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-orange-500 to-red-600 opacity-[0.03] rounded-bl-full group-hover:scale-110 transition-transform duration-500" />
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              Trùng lặp lịch
+            </span>
+            <div className={`p-2 rounded-xl ${
+              data.conflict.conflict_rate_percent > 10 
+                ? 'bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border border-red-100/30' 
+                : 'bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 border border-amber-100/30'
+            }`}>
+              <AlertTriangle className="h-5 w-5" />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">
               {data.conflict.conflict_rate_percent || 0}%
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {data.conflict.blocking_conflicts} blocking / {data.conflict.warning_conflicts} warnings
+            </h3>
+            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+              Trùng cứng: {data.conflict.blocking_conflicts} | Trùng nhẹ: {data.conflict.warning_conflicts}
             </p>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full mt-4 overflow-hidden">
+            <div 
+              className={`h-full bg-gradient-to-r ${data.conflict.conflict_rate_percent > 10 ? 'from-amber-500 to-red-500' : 'from-yellow-400 to-amber-500'} transition-all duration-1000`} 
+              style={{ width: `${data.conflict.conflict_rate_percent || 0}%` }}
+            />
+          </div>
+        </div>
 
-        {/* Capacity Full Rate */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-purple-600" />
-              Capacity Full
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">
-              {data.capacity.capacity_full_rate_percent || 0}%
+        {/* Card 4: Capacity Full */}
+        <div className="relative overflow-hidden bg-white/60 dark:bg-[#1c1b19]/60 backdrop-blur-md border border-white/20 dark:border-white/5 p-6 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 group">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-purple-500 to-indigo-600 opacity-[0.03] rounded-bl-full group-hover:scale-110 transition-transform duration-500" />
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              Trạng thái Quá tải
+            </span>
+            <div className="p-2 rounded-xl bg-purple-50 dark:bg-purple-950/30 text-purple-600 dark:text-purple-400 border border-purple-100/30">
+              <Calendar className="h-5 w-5" />
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {data.capacity.capacity_full}/{data.capacity.total_checks} times full
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">
+              {data.capacity.capacity_full_rate_percent || 0}%
+            </h3>
+            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+              Quá tải {data.capacity.capacity_full}/{data.capacity.total_checks} lần kiểm tra hệ thống
             </p>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full mt-4 overflow-hidden">
+            <div 
+              className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 transition-all duration-1000" 
+              style={{ width: `${data.capacity.capacity_full_rate_percent || 0}%` }}
+            />
+          </div>
+        </div>
       </div>
 
       {/* Performance Breakdown */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5" />
-            Performance Breakdown
-          </CardTitle>
-          <CardDescription>
-            Execution time across all providers (last {dateRange})
-          </CardDescription>
+      <Card className="bg-white/60 dark:bg-[#1c1b19]/60 backdrop-blur-md border border-white/20 dark:border-white/5 rounded-2xl shadow-sm overflow-hidden">
+        <CardHeader className="border-b border-slate-100 dark:border-slate-800/50 pb-4">
+          <div className="flex items-center gap-2">
+            <Clock className="h-5 w-5 text-indigo-500" />
+            <div>
+              <CardTitle className="text-lg font-bold">Hiệu năng xử lý (Execution Time)</CardTitle>
+              <CardDescription className="text-xs mt-0.5">
+                Thời gian xử lý trung bình của Decision Engine trong khoảng thời gian {dateRange === '24h' ? '24 Giờ qua' : dateRange === '7d' ? '7 Ngày qua' : '30 Ngày qua'}
+              </CardDescription>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div>
-              <div className="text-sm text-muted-foreground">Average</div>
-              <div className="text-2xl font-bold">{data.performance.avg_execution_time_ms}ms</div>
+        <CardContent className="pt-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 p-4 rounded-xl bg-slate-50/50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800/40">
+            <div className="space-y-1.5">
+              <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Trung bình (Avg)</div>
+              <div className="text-2xl font-black text-slate-800 dark:text-slate-100 flex items-baseline gap-1">
+                {data.performance.avg_execution_time_ms}
+                <span className="text-xs font-bold text-slate-400 dark:text-slate-500">ms</span>
+              </div>
             </div>
-            <div>
-              <div className="text-sm text-muted-foreground">Median</div>
-              <div className="text-2xl font-bold">{data.performance.median_execution_time_ms}ms</div>
+            <div className="space-y-1.5">
+              <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Trung vị (Median)</div>
+              <div className="text-2xl font-black text-slate-800 dark:text-slate-100 flex items-baseline gap-1">
+                {data.performance.median_execution_time_ms}
+                <span className="text-xs font-bold text-slate-400 dark:text-slate-500">ms</span>
+              </div>
             </div>
-            <div>
-              <div className="text-sm text-muted-foreground">P95</div>
-              <div className="text-2xl font-bold">{data.performance.p95_execution_time_ms}ms</div>
+            <div className="space-y-1.5">
+              <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Mốc P95</div>
+              <div className="text-2xl font-black text-orange-600 dark:text-orange-400 flex items-baseline gap-1">
+                {data.performance.p95_execution_time_ms}
+                <span className="text-xs font-bold text-slate-400 dark:text-slate-500">ms</span>
+              </div>
             </div>
-            <div>
-              <div className="text-sm text-muted-foreground">P99</div>
-              <div className="text-2xl font-bold">{data.performance.p99_execution_time_ms}ms</div>
+            <div className="space-y-1.5">
+              <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Mốc P99</div>
+              <div className="text-2xl font-black text-red-600 dark:text-red-400 flex items-baseline gap-1">
+                {data.performance.p99_execution_time_ms}
+                <span className="text-xs font-bold text-slate-400 dark:text-slate-500">ms</span>
+              </div>
             </div>
           </div>
 
-          {/* By Provider */}
+          {/* By Provider list */}
           {data.performance.by_provider && (
-            <div className="mt-6 space-y-3">
-              <h4 className="font-semibold text-sm">By Provider</h4>
-              <div className="space-y-2">
+            <div className="mt-6 space-y-4">
+              <h4 className="font-bold text-sm text-slate-700 dark:text-slate-300">Phân tích chi tiết theo Engine Module</h4>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {Object.entries(data.performance.by_provider).map(([provider, stats]) => (
-                  <div key={provider} className="flex items-center justify-between border rounded-lg p-3">
-                    <div>
-                      <div className="font-medium capitalize">
-                        {provider.replace(/_/g, ' ')}
+                  <div 
+                    key={provider} 
+                    className="flex flex-col justify-between border border-slate-100 dark:border-slate-800 p-4 rounded-xl hover:border-slate-200 dark:hover:border-slate-700 transition-all bg-white/20 dark:bg-slate-900/10 hover:shadow-sm"
+                  >
+                    <div className="flex items-start justify-between gap-2 mb-3">
+                      <div>
+                        <div className="font-bold text-sm text-slate-800 dark:text-slate-200 capitalize">
+                          {provider.replace(/_/g, ' ')}
+                        </div>
+                        <div className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+                          {stats.count} lượt xử lý
+                        </div>
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        {stats.count} operations
-                      </div>
+                      <Badge variant="outline" className="bg-slate-50/50 dark:bg-slate-950/20 text-slate-600 dark:text-slate-400 text-[10px] font-bold border-slate-200/50 dark:border-slate-800">
+                        Active
+                      </Badge>
                     </div>
-                    <div className="text-right">
-                      <div className="text-sm font-semibold">
-                        {stats.avg_ms}ms avg
+
+                    <div className="flex justify-between items-end border-t border-slate-50 dark:border-slate-800/50 pt-3">
+                      <div>
+                        <div className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider">Trung bình</div>
+                        <div className="text-base font-extrabold text-slate-800 dark:text-slate-200">{stats.avg_ms} ms</div>
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        {stats.p95_ms}ms p95
+                      <div className="text-right">
+                        <div className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider">Mốc P95</div>
+                        <div className="text-sm font-extrabold text-orange-500 dark:text-orange-400">{stats.p95_ms} ms</div>
                       </div>
                     </div>
                   </div>
@@ -437,148 +582,185 @@ export default function BookingEngineDashboardPage() {
         </CardContent>
       </Card>
 
-      {/* Top Conflict Types */}
-      {data.conflict.top_conflict_types && data.conflict.top_conflict_types.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5" />
-              Top Conflict Types
-            </CardTitle>
-            <CardDescription>Most common booking conflicts detected</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {data.conflict.top_conflict_types.map((conflict, index) => (
-                <div key={index} className="flex items-center justify-between border-b pb-2 last:border-0">
-                  <div className="flex items-center gap-3">
-                    <Badge variant="outline">{index + 1}</Badge>
-                    <div>
-                      <div className="font-medium capitalize">
-                        {conflict.type.replace(/_/g, ' ')}
+      {/* Top Conflict Types & Overrides Grid */}
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Top Conflict Types */}
+        {data.conflict.top_conflict_types && data.conflict.top_conflict_types.length > 0 ? (
+          <Card className="bg-white/60 dark:bg-[#1c1b19]/60 backdrop-blur-md border border-white/20 dark:border-white/5 rounded-2xl shadow-sm flex flex-col justify-between overflow-hidden">
+            <div>
+              <CardHeader className="border-b border-slate-100 dark:border-slate-800/50 pb-4">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-orange-500" />
+                  <div>
+                    <CardTitle className="text-lg font-bold">Các xung đột lịch đặt</CardTitle>
+                    <CardDescription className="text-xs mt-0.5">Xung đột được phát hiện nhiều nhất khi quét lịch</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-6 space-y-4">
+                {data.conflict.top_conflict_types.map((conflict, index) => (
+                  <div key={index} className="space-y-1.5 pb-3 border-b border-slate-100 dark:border-slate-800/50 last:border-0 last:pb-0">
+                    <div className="flex items-center justify-between text-xs font-semibold">
+                      <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                        <span className="flex items-center justify-center w-5 h-5 text-[10px] font-bold rounded bg-slate-100 dark:bg-slate-800">
+                          {index + 1}
+                        </span>
+                        <span className="capitalize">{conflict.type.replace(/_/g, ' ')}</span>
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        {conflict.count} occurrences
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-slate-400 dark:text-slate-500">({conflict.count} lần)</span>
+                        <span className="text-slate-900 dark:text-white font-extrabold">{conflict.percentage}%</span>
                       </div>
                     </div>
+                    <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-gradient-to-r from-amber-500 to-orange-500 transition-all duration-1000" 
+                        style={{ width: `${conflict.percentage}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="text-lg font-semibold">{conflict.percentage}%</div>
+                ))}
+              </CardContent>
+            </div>
+          </Card>
+        ) : (
+          <Card className="bg-white/60 dark:bg-[#1c1b19]/60 backdrop-blur-md border border-white/20 dark:border-white/5 rounded-2xl shadow-sm flex items-center justify-center p-8 text-center">
+            <div className="space-y-2">
+              <div className="mx-auto w-12 h-12 rounded-full bg-emerald-50 dark:bg-emerald-950/20 flex items-center justify-center text-emerald-500">
+                <CheckCircle2 className="h-6 w-6" />
+              </div>
+              <h3 className="font-bold text-slate-800 dark:text-slate-200">Không có xung đột lịch</h3>
+              <p className="text-xs text-slate-400 dark:text-slate-500 max-w-[250px] mx-auto">Hệ thống ghi nhận trạng thái vận hành ổn định không phát hiện trùng lặp.</p>
+            </div>
+          </Card>
+        )}
+
+        {/* Manager Overrides */}
+        <Card className="bg-white/60 dark:bg-[#1c1b19]/60 backdrop-blur-md border border-white/20 dark:border-white/5 rounded-2xl shadow-sm flex flex-col justify-between overflow-hidden">
+          <div>
+            <CardHeader className="border-b border-slate-100 dark:border-slate-800/50 pb-4">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5 text-emerald-500" />
+                <div>
+                  <CardTitle className="text-lg font-bold">Lượt ghi đè quyền lực (Overrides)</CardTitle>
+                  <CardDescription className="text-xs mt-0.5">Số lần bỏ qua kiểm tra tự động do tác động thủ công</CardDescription>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+              </div>
+            </CardHeader>
+            <CardContent className="pt-6 space-y-6">
+              <div className={`flex items-center justify-between p-4 rounded-xl ${theme.bgLight} border ${theme.border}`}>
+                <div>
+                  <div className={`text-xs font-semibold ${theme.text}`}>Tỷ lệ ghi đè thủ công</div>
+                  <div className="text-2xl font-black text-slate-800 dark:text-white mt-0.5">
+                    {data.overrides.override_rate_percent || 0}%
+                  </div>
+                </div>
+                <div className={`p-2.5 rounded-xl bg-gradient-to-tr ${theme.gradient} text-white shadow-sm`}>
+                  <ShieldCheck className="h-5 w-5" />
+                </div>
+              </div>
 
-      {/* Manager Overrides */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <ShieldCheck className="h-5 w-5" />
-            Manager Overrides
-          </CardTitle>
-          <CardDescription>
-            Times providers were skipped via manual override
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="text-sm font-medium">Override Rate</div>
-              <div className="text-2xl font-bold">{data.overrides.override_rate_percent || 0}%</div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-4 pt-2 border-t">
-              <div>
-                <div className="text-sm text-muted-foreground">Capacity Skipped</div>
-                <div className="text-xl font-semibold">{data.overrides.capacity_checks_skipped}</div>
+              <div className="grid grid-cols-3 gap-4 pt-2">
+                <div className="space-y-1">
+                  <div className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider font-bold">Capacity Skip</div>
+                  <div className="text-lg font-extrabold text-slate-800 dark:text-slate-200">{data.overrides.capacity_checks_skipped}</div>
+                </div>
+                <div className="space-y-1">
+                  <div className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider font-bold">Conflict Skip</div>
+                  <div className="text-lg font-extrabold text-slate-800 dark:text-slate-200">{data.overrides.conflict_checks_skipped}</div>
+                </div>
+                <div className="space-y-1">
+                  <div className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider font-bold">Assign Skip</div>
+                  <div className="text-lg font-extrabold text-slate-800 dark:text-slate-200">{data.overrides.assignments_skipped}</div>
+                </div>
               </div>
-              <div>
-                <div className="text-sm text-muted-foreground">Conflict Skipped</div>
-                <div className="text-xl font-semibold">{data.overrides.conflict_checks_skipped}</div>
-              </div>
-              <div>
-                <div className="text-sm text-muted-foreground">Assignment Skipped</div>
-                <div className="text-xl font-semibold">{data.overrides.assignments_skipped}</div>
-              </div>
-            </div>
+            </CardContent>
           </div>
-        </CardContent>
-      </Card>
+        </Card>
+      </div>
 
       {/* Additional Details Row */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-3">
         {/* Assignment Details */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Assignment Details</CardTitle>
+        <Card className="bg-white/60 dark:bg-[#1c1b19]/60 backdrop-blur-md border border-white/20 dark:border-white/5 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+              <div className="w-1.5 h-4 rounded-full bg-blue-500" />
+              Chi tiết phân bổ {vocab.worker.short}
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Avg Confidence</span>
-              <span className="font-semibold">{data.assignment.avg_confidence || 'N/A'}</span>
+          <CardContent className="space-y-3.5 text-xs">
+            <div className="flex justify-between items-center pb-2 border-b border-slate-50 dark:border-slate-800/40">
+              <span className="text-slate-400 dark:text-slate-500">Độ tin cậy TB (Confidence)</span>
+              <span className="font-bold text-slate-800 dark:text-slate-200">{data.assignment.avg_confidence || 'N/A'}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Avg Time</span>
-              <span className="font-semibold">{data.assignment.avg_execution_time_ms}ms</span>
+            <div className="flex justify-between items-center pb-2 border-b border-slate-50 dark:border-slate-800/40">
+              <span className="text-slate-400 dark:text-slate-500">Thời gian TB (Average)</span>
+              <span className="font-bold text-slate-800 dark:text-slate-200">{data.assignment.avg_execution_time_ms} ms</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">P95 Time</span>
-              <span className="font-semibold">{data.assignment.p95_execution_time_ms}ms</span>
+            <div className="flex justify-between items-center pb-2 border-b border-slate-50 dark:border-slate-800/40">
+              <span className="text-slate-400 dark:text-slate-500">Thời gian mốc P95</span>
+              <span className="font-bold text-orange-500">{data.assignment.p95_execution_time_ms} ms</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">P99 Time</span>
-              <span className="font-semibold">{data.assignment.p99_execution_time_ms}ms</span>
+            <div className="flex justify-between items-center">
+              <span className="text-slate-400 dark:text-slate-500">Thời gian mốc P99</span>
+              <span className="font-bold text-red-500">{data.assignment.p99_execution_time_ms} ms</span>
             </div>
           </CardContent>
         </Card>
 
         {/* Conflict Details */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Conflict Details</CardTitle>
+        <Card className="bg-white/60 dark:bg-[#1c1b19]/60 backdrop-blur-md border border-white/20 dark:border-white/5 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+              <div className="w-1.5 h-4 rounded-full bg-amber-500" />
+              Chi tiết kiểm tra xung đột
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Total Checks</span>
-              <span className="font-semibold">{data.conflict.total_checks}</span>
+          <CardContent className="space-y-3.5 text-xs">
+            <div className="flex justify-between items-center pb-2 border-b border-slate-50 dark:border-slate-800/40">
+              <span className="text-slate-400 dark:text-slate-500">Tổng số lượt kiểm tra</span>
+              <span className="font-bold text-slate-800 dark:text-slate-200">{data.conflict.total_checks}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Conflicts Found</span>
-              <span className="font-semibold">{data.conflict.conflicts_detected}</span>
+            <div className="flex justify-between items-center pb-2 border-b border-slate-50 dark:border-slate-800/40">
+              <span className="text-slate-400 dark:text-slate-500">Xung đột được phát hiện</span>
+              <span className="font-bold text-amber-500">{data.conflict.conflicts_detected}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Blocking Rate</span>
-              <span className="font-semibold">{data.conflict.blocking_rate_percent}%</span>
+            <div className="flex justify-between items-center pb-2 border-b border-slate-50 dark:border-slate-800/40">
+              <span className="text-slate-400 dark:text-slate-500">Tỷ lệ chặn xung đột</span>
+              <span className="font-bold text-red-500">{data.conflict.blocking_rate_percent}%</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Avg Time</span>
-              <span className="font-semibold">{data.conflict.avg_execution_time_ms}ms</span>
+            <div className="flex justify-between items-center">
+              <span className="text-slate-400 dark:text-slate-500">Thời gian TB (Average)</span>
+              <span className="font-bold text-slate-800 dark:text-slate-200">{data.conflict.avg_execution_time_ms} ms</span>
             </div>
           </CardContent>
         </Card>
 
         {/* Capacity Details */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Capacity Details</CardTitle>
+        <Card className="bg-white/60 dark:bg-[#1c1b19]/60 backdrop-blur-md border border-white/20 dark:border-white/5 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+              <div className="w-1.5 h-4 rounded-full bg-purple-500" />
+              Chi tiết kiểm tra sức chứa
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Avg Utilization</span>
-              <span className="font-semibold">{data.capacity.avg_utilization_percent || 'N/A'}%</span>
+          <CardContent className="space-y-3.5 text-xs">
+            <div className="flex justify-between items-center pb-2 border-b border-slate-50 dark:border-slate-800/40">
+              <span className="text-slate-400 dark:text-slate-500">Hiệu suất sử dụng (Avg Util)</span>
+              <span className="font-bold text-slate-800 dark:text-slate-200">{data.capacity.avg_utilization_percent || 'N/A'}%</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Avg Buffer Used</span>
-              <span className="font-semibold">{data.capacity.avg_buffer_used_percent || 'N/A'}%</span>
+            <div className="flex justify-between items-center pb-2 border-b border-slate-50 dark:border-slate-800/40">
+              <span className="text-slate-400 dark:text-slate-500">Vùng đệm sử dụng (Avg Buffer)</span>
+              <span className="font-bold text-slate-800 dark:text-slate-200">{data.capacity.avg_buffer_used_percent || 'N/A'}%</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Available</span>
-              <span className="font-semibold">{data.capacity.capacity_available}</span>
+            <div className="flex justify-between items-center pb-2 border-b border-slate-50 dark:border-slate-800/40">
+              <span className="text-slate-400 dark:text-slate-500">Sức chứa khả dụng</span>
+              <span className="font-bold text-slate-800 dark:text-slate-200">{data.capacity.capacity_available}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Avg Time</span>
-              <span className="font-semibold">{data.capacity.avg_execution_time_ms}ms</span>
+            <div className="flex justify-between items-center">
+              <span className="text-slate-400 dark:text-slate-500">Thời gian TB (Average)</span>
+              <span className="font-bold text-slate-800 dark:text-slate-200">{data.capacity.avg_execution_time_ms} ms</span>
             </div>
           </CardContent>
         </Card>
