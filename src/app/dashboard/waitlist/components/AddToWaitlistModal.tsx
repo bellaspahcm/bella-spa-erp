@@ -19,7 +19,7 @@ interface Customer {
   name_baby: string | null;
   phone: string;
   tier: 'vip' | 'loyal' | 'new';
-  total_spending: number;
+  // total_spending removed - not needed for waitlist
 }
 
 interface Package {
@@ -296,8 +296,7 @@ export function AddToWaitlistModal({
                   {selectedCustomer.name_baby && ` - ${selectedCustomer.name_baby}`}
                 </div>
                 <div className="text-xs text-gray-600">
-                  {selectedCustomer.phone} • {selectedCustomer.tier.toUpperCase()} • 
-                  Chi tiêu: {selectedCustomer.total_spending.toLocaleString('vi-VN')} VNĐ
+                  {selectedCustomer.phone} • {selectedCustomer.tier.toUpperCase()}
                 </div>
                 <button
                   type="button"
