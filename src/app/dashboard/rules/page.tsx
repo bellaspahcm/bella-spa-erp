@@ -20,8 +20,8 @@ import { RulesTableSkeleton } from '@/components/rules/RulesTableSkeleton';
 import DecisionEngineHeader from '@/components/decision-engine/DecisionEngineHeader';
 
 export const metadata = {
-  title: 'Decision Rules | Bella ERP',
-  description: 'Manage decision rules for booking, payroll, commission, and more',
+  title: 'Quy tắc Luật nghiệp vụ | Bella ERP',
+  description: 'Quản lý các quy tắc luật tự động phân ca, tính lương, hoa hồng và các nghiệp vụ khác',
 };
 
 interface RulesPageProps {

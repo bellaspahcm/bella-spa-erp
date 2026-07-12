@@ -42,19 +42,19 @@ export default function DecisionEngineHeader() {
 
   const tabs = [
     {
-      name: 'Quản lý Luật (Rules)',
+      name: 'Quản lý quy tắc luật',
       href: '/dashboard/rules',
       icon: FileText,
       pattern: /^\/dashboard\/rules(\/|$)/,
     },
     {
-      name: 'Nhật ký Quyết định (Audit)',
+      name: 'Nhật ký quyết định',
       href: '/dashboard/decision-engine/audit',
       icon: History,
       pattern: /^\/dashboard\/decision-engine\/audit(\/|$)/,
     },
     {
-      name: 'Chỉ số Vận hành (Metrics)',
+      name: 'Chỉ số vận hành',
       href: '/dashboard/admin/booking-engine',
       icon: Activity,
       pattern: /^\/dashboard\/admin\/booking-engine(\/|$)/,
@@ -71,7 +71,7 @@ export default function DecisionEngineHeader() {
           </div>
           <div>
             <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
-              Trung tâm Decision Engine
+              Hệ thống Luật nghiệp vụ
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               Cấu hình luật nghiệp vụ tự động và giám sát kết quả vận hành thời gian thực

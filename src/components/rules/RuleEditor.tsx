@@ -46,8 +46,8 @@ export default function RuleEditor({ mode, ruleId, initialData }: RuleEditorProp
       if (!validationResult.isValid) {
         setValidationErrors(validationResult.errors);
         toast({
-          title: 'Validation Error',
-          description: 'Please fix the errors in the form before saving',
+          title: 'Lỗi xác thực',
+          description: 'Vui lòng sửa các lỗi trong biểu mẫu trước khi lưu',
           variant: 'destructive',
         });
         return;
@@ -64,20 +64,20 @@ export default function RuleEditor({ mode, ruleId, initialData }: RuleEditorProp
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to save rule');
+        throw new Error(error.error || 'Không thể lưu quy tắc luật');
       }
 
       const result = await response.json();
 
       toast({
-        title: 'Success',
-        description: mode === 'create' ? 'Rule created successfully' : 'Rule updated successfully',
+        title: 'Thành công',
+        description: mode === 'create' ? 'Tạo quy tắc luật thành công' : 'Cập nhật quy tắc luật thành công',
       });
 
       router.push(`/dashboard/rules/${result.data?.id || result.id || ''}`);
     } catch (error: any) {
       toast({
-        title: 'Error',
+        title: 'Lỗi',
         description: error.message,
         variant: 'destructive',
       });
@@ -87,7 +87,7 @@ export default function RuleEditor({ mode, ruleId, initialData }: RuleEditorProp
   };
 
   const handleCancel = () => {
-    if (confirm('Discard changes?')) {
+    if (confirm('Hủy bỏ các thay đổi?')) {
       router.push('/dashboard/rules');
     }
   };
@@ -99,7 +99,7 @@ export default function RuleEditor({ mode, ruleId, initialData }: RuleEditorProp
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            Please fix the following errors:
+            Vui lòng sửa các lỗi sau:
             <ul className="list-disc list-inside mt-2">
               {Object.entries(validationErrors).map(([key, error]) => (
                 <li key={key} className="text-sm">
@@ -113,9 +113,9 @@ export default function RuleEditor({ mode, ruleId, initialData }: RuleEditorProp
 
       <Card>
         <CardHeader>
-          <CardTitle>Rule Information</CardTitle>
+          <CardTitle>Thông tin Quy tắc Luật</CardTitle>
           <CardDescription>
-            Define the basic properties of your rule
+            Định nghĩa các thuộc tính cơ bản của quy tắc luật
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -153,7 +153,7 @@ export default function RuleEditor({ mode, ruleId, initialData }: RuleEditorProp
           disabled={isSaving}
         >
           <X className="mr-2 h-4 w-4" />
-          Cancel
+          Hủy bỏ
         </Button>
         <Button
           onClick={handleSave}
@@ -162,12 +162,12 @@ export default function RuleEditor({ mode, ruleId, initialData }: RuleEditorProp
           {isSaving ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Saving...
+              Đang lưu...
             </>
           ) : (
             <>
               <Save className="mr-2 h-4 w-4" />
-              Save Rule
+              Lưu Quy tắc
             </>
           )}
         </Button>

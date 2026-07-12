@@ -42,17 +42,17 @@ export function RuleActionsBuilder({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Actions</CardTitle>
+        <CardTitle>Hành động</CardTitle>
         <CardDescription>
-          Define what happens when conditions match
+          Xác định điều gì xảy ra khi các điều kiện được thỏa mãn
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Actions List */}
         {actions.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
-            <p>No actions defined</p>
-            <p className="text-sm mt-1">Click &quot;Add Action&quot; to get started</p>
+            <p>Chưa định nghĩa hành động nào</p>
+            <p className="text-sm mt-1">Bấm &quot;Thêm hành động&quot; để bắt đầu</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -92,7 +92,7 @@ export function RuleActionsBuilder({
           className="w-full"
         >
           <Plus className="mr-2 h-4 w-4" />
-          Add Action
+          Thêm hành động
         </Button>
       </CardContent>
     </Card>

@@ -129,7 +129,7 @@ export default function DecisionDetailDrawer({
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gray-50">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Decision Detail</h2>
+            <h2 className="text-2xl font-bold text-gray-900">Chi tiết Quyết định</h2>
             {data && (
               <p className="text-sm text-gray-600 mt-1 font-mono">{data.decisionId}</p>
             )}
@@ -171,13 +171,13 @@ export default function DecisionDetailDrawer({
               <SummaryCard data={data} />
 
               {/* Input Context */}
-              <Section title="Input Context" copyButton={() => copyJSON(data.inputContext)}>
+              <Section title="Dữ liệu đầu vào (Input)" copyButton={() => copyJSON(data.inputContext)}>
                 <JSONViewer data={data.inputContext} />
               </Section>
 
               {/* Policies Executed */}
               {data.policiesExecuted.length > 0 && (
-                <Section title="Policies Executed">
+                <Section title="Chính sách đã thực thi">
                   <ul className="space-y-2">
                     {data.policiesExecuted.map((policy, idx) => (
                       <li key={idx} className="flex items-center gap-2">
@@ -191,19 +191,19 @@ export default function DecisionDetailDrawer({
 
               {/* Matched Rules */}
               {data.matchedRules.length > 0 && (
-                <Section title="Matched Rules">
+                <Section title="Quy tắc luật phù hợp">
                   <div className="space-y-4">
                     {data.matchedRules.map((rule, idx) => (
                       <div key={idx} className="border border-gray-200 rounded-lg p-4">
                         <div className="flex items-center justify-between mb-2">
                           <h4 className="font-semibold">{rule.ruleName || rule.ruleId}</h4>
                           <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded">
-                            Priority: {rule.priority}
+                            Độ ưu tiên: {rule.priority}
                           </span>
                         </div>
                         {rule.conditions && rule.conditions.length > 0 && (
                           <div className="mt-2">
-                            <p className="text-sm text-gray-600 mb-1">Matched Conditions:</p>
+                            <p className="text-sm text-gray-600 mb-1">Điều kiện khớp:</p>
                             <ul className="space-y-1">
                               {rule.conditions.map((condition, cidx) => (
                                 <li key={cidx} className="flex items-start gap-2 text-sm">
@@ -221,13 +221,13 @@ export default function DecisionDetailDrawer({
               )}
 
               {/* Output */}
-              <Section title="Output" copyButton={() => copyJSON(data.output)}>
+              <Section title="Kết quả đầu ra (Output)" copyButton={() => copyJSON(data.output)}>
                 <JSONViewer data={data.output} />
               </Section>
 
               {/* Audit Log */}
               {data.auditLog.length > 0 && (
-                <Section title="Audit Log">
+                <Section title="Nhật ký kiểm toán">
                   <div className="space-y-3">
                     {data.auditLog.map((log, idx) => (
                       <div key={idx} className="flex items-start gap-3">
@@ -245,7 +245,7 @@ export default function DecisionDetailDrawer({
               )}
 
               {/* Metadata */}
-              <Section title="Metadata">
+              <Section title="Dữ liệu hệ thống (Metadata)">
                 <MetadataGrid data={data} />
               </Section>
 
@@ -254,7 +254,7 @@ export default function DecisionDetailDrawer({
                   onClick={() => setShowTimeMachine(true)}
                   className="flex-1 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl hover:bg-primary-hover active:scale-[0.98] transition-all font-semibold text-sm"
                 >
-                  🔄 Replay Decision (Time Machine)
+                  🔄 Chạy lại quyết định (Time Machine)
                 </button>
                 {data.traceId && (
                   <button
@@ -264,7 +264,7 @@ export default function DecisionDetailDrawer({
                     }}
                     className="flex-1 px-5 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 active:scale-[0.98] transition-all font-semibold text-sm"
                   >
-                    🔍 View Full Trace
+                    🔍 Xem toàn bộ Trace
                   </button>
                 )}
               </div>
@@ -305,9 +305,9 @@ function Section({
           <button
             onClick={copyButton}
             className="px-3 py-1 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded hover:bg-gray-50 transition-colors"
-            title="Copy JSON"
+            title="Sao chép JSON"
           >
-            📋 Copy
+            📋 Sao chép
           </button>
         )}
       </div>
@@ -324,33 +324,33 @@ function SummaryCard({ data }: { data: DecisionDetail }) {
     <div className="bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20 rounded-2xl p-5">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div>
-          <p className="text-xs text-gray-600 mb-1">Type</p>
+          <p className="text-xs text-gray-600 mb-1">Phân loại</p>
           <span className="px-2.5 py-1 text-sm font-bold bg-primary/10 text-primary border border-primary/20 rounded-lg">
             {data.decisionType}
           </span>
         </div>
         <div>
-          <p className="text-xs text-gray-600 mb-1">Status</p>
+          <p className="text-xs text-gray-600 mb-1">Trạng thái</p>
           <StatusBadge status={data.status} />
         </div>
         <div>
-          <p className="text-xs text-gray-600 mb-1">Provider</p>
+          <p className="text-xs text-gray-600 mb-1">Nhà cung cấp</p>
           <p className="font-medium text-gray-900">{data.provider}</p>
         </div>
         <div>
-          <p className="text-xs text-gray-600 mb-1">Execution Time</p>
+          <p className="text-xs text-gray-600 mb-1">Thời gian xử lý</p>
           <p className="font-medium text-gray-900">{data.executionTimeMs}ms</p>
         </div>
         {data.confidenceScore !== undefined && (
           <div>
-            <p className="text-xs text-gray-600 mb-1">Confidence</p>
+            <p className="text-xs text-gray-600 mb-1">Độ tin cậy</p>
             <p className="font-medium text-gray-900">
               {(data.confidenceScore * 100).toFixed(0)}%
             </p>
           </div>
         )}
         <div>
-          <p className="text-xs text-gray-600 mb-1">Created At</p>
+          <p className="text-xs text-gray-600 mb-1">Thời gian tạo</p>
           <p className="font-medium text-gray-900 text-sm">
             {format(new Date(data.createdAt), 'yyyy-MM-dd HH:mm:ss')}
           </p>
@@ -419,7 +419,7 @@ function StatusBadge({ status }: { status: 'success' | 'error' | 'warning' }) {
       className={`px-2 py-1 text-xs font-medium rounded inline-flex items-center gap-1 ${colors[status]}`}
     >
       <span>{icons[status]}</span>
-      <span className="capitalize">{status}</span>
+      <span className="capitalize">{status === 'success' ? 'Thành công' : status === 'warning' ? 'Cảnh báo' : 'Thất bại'}</span>
     </span>
   );
 }
@@ -445,7 +445,7 @@ function LogLevelBadge({ level }: { level: 'info' | 'warn' | 'error' }) {
       className={`px-2 py-1 text-xs font-medium rounded inline-flex items-center gap-1 ${colors[level]}`}
     >
       <span>{icons[level]}</span>
-      <span className="uppercase">{level}</span>
+      <span className="uppercase">{level === 'info' ? 'Thông tin' : level === 'warn' ? 'Cảnh báo' : 'Lỗi'}</span>
     </span>
   );
 }

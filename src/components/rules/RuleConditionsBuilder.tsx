@@ -47,38 +47,38 @@ export function RuleConditionsBuilder({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Conditions</CardTitle>
+        <CardTitle>Điều kiện</CardTitle>
         <CardDescription>
-          Define when this rule should apply
+          Xác định khi nào quy tắc này được áp dụng
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Logical Operator Selector */}
         {conditions.length > 1 && onLogicalOperatorChange && (
           <div className="flex items-center gap-2 text-sm">
-            <span className="text-muted-foreground">Match</span>
+            <span className="text-muted-foreground">Khớp</span>
             <Select 
               value={logicalOperator} 
               onValueChange={onLogicalOperatorChange as (value: string) => void}
               disabled={disabled}
             >
-              <SelectTrigger className="w-[120px]">
+              <SelectTrigger className="w-[140px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="and">ALL</SelectItem>
-                <SelectItem value="or">ANY</SelectItem>
+                <SelectItem value="and">TẤT CẢ (ALL)</SelectItem>
+                <SelectItem value="or">BẤT KỲ (ANY)</SelectItem>
               </SelectContent>
             </Select>
-            <span className="text-muted-foreground">of the following conditions:</span>
+            <span className="text-muted-foreground">điều kiện sau đây:</span>
           </div>
         )}
 
         {/* Conditions List */}
         {conditions.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
-            <p>No conditions defined</p>
-            <p className="text-sm mt-1">Click &quot;Add Condition&quot; to get started</p>
+            <p>Chưa định nghĩa điều kiện nào</p>
+            <p className="text-sm mt-1">Bấm &quot;Thêm điều kiện&quot; để bắt đầu</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -96,7 +96,7 @@ export function RuleConditionsBuilder({
                 {index < conditions.length - 1 && (
                   <div className="flex justify-center my-2">
                     <span className="text-xs font-medium text-muted-foreground bg-muted px-3 py-1 rounded">
-                      {logicalOperator.toUpperCase()}
+                      {logicalOperator === 'and' ? 'VÀ (AND)' : 'HOẶC (OR)'}
                     </span>
                   </div>
                 )}
@@ -113,7 +113,7 @@ export function RuleConditionsBuilder({
           className="w-full"
         >
           <Plus className="mr-2 h-4 w-4" />
-          Add Condition
+          Thêm điều kiện
         </Button>
       </CardContent>
     </Card>

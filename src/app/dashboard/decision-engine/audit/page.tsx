@@ -57,30 +57,30 @@ interface AuditResponse {
 }
 
 const decisionTypeOptions = [
-  { value: '', label: 'All Types' },
-  { value: 'payroll', label: 'Payroll' },
-  { value: 'booking', label: 'Booking' },
-  { value: 'procurement', label: 'Procurement' },
-  { value: 'eligibility', label: 'Eligibility' },
-  { value: 'discount', label: 'Discount' },
-  { value: 'approval', label: 'Approval' },
-  { value: 'pricing', label: 'Pricing' },
-  { value: 'recommendation', label: 'Recommendation' },
+  { value: '', label: 'Tất cả phân loại' },
+  { value: 'payroll', label: 'Tính lương' },
+  { value: 'booking', label: 'Đặt lịch' },
+  { value: 'procurement', label: 'Mua sắm / Vật tư' },
+  { value: 'eligibility', label: 'Điều kiện / Quyền lợi' },
+  { value: 'discount', label: 'Chiết khấu' },
+  { value: 'approval', label: 'Phê duyệt' },
+  { value: 'pricing', label: 'Định giá' },
+  { value: 'recommendation', label: 'Gợi ý thông minh' },
 ];
 
 const providerOptions = [
-  { value: '', label: 'All Providers' },
-  { value: 'RuleProvider', label: 'Rule Provider' },
-  { value: 'BIProvider', label: 'BI Provider' },
-  { value: 'AIProvider', label: 'AI Provider' },
-  { value: 'CompositeProvider', label: 'Composite Provider' },
+  { value: '', label: 'Tất cả nhà cung cấp' },
+  { value: 'RuleProvider', label: 'Bộ cung cấp Luật (Rule)' },
+  { value: 'BIProvider', label: 'Bộ cung cấp Báo cáo (BI)' },
+  { value: 'AIProvider', label: 'Bộ cung cấp Trí tuệ nhân tạo (AI)' },
+  { value: 'CompositeProvider', label: 'Bộ cung cấp Tổng hợp' },
 ];
 
 const statusOptions = [
-  { value: '', label: 'All Statuses' },
-  { value: 'success', label: 'Success' },
-  { value: 'error', label: 'Error' },
-  { value: 'warning', label: 'Warning' },
+  { value: '', label: 'Tất cả trạng thái' },
+  { value: 'success', label: 'Thành công' },
+  { value: 'error', label: 'Thất bại' },
+  { value: 'warning', label: 'Cảnh báo' },
 ];
 
 export default function DecisionAuditTrailPage() {
@@ -146,7 +146,7 @@ export default function DecisionAuditTrailPage() {
         const response = await fetch('/api/tenant/context');
         if (!response.ok) {
           const errData = await response.json().catch(() => ({}));
-          setError('Unable to determine your tenant: ' + (errData.error || `HTTP ${response.status}`));
+          setError('Không thể xác định thông tin Tenant của bạn: ' + (errData.error || `HTTP ${response.status}`));
           setLoading(false);
           return;
         }
@@ -156,11 +156,11 @@ export default function DecisionAuditTrailPage() {
         if (tenantIdValue) {
           setTenantId(tenantIdValue);
         } else {
-          setError('Unable to determine your tenant. Please contact support.');
+          setError('Không thể xác định thông tin Tenant của bạn. Vui lòng liên hệ hỗ trợ.');
           setLoading(false);
         }
       } catch (err) {
-        setError('Failed to fetch user context: ' + (err instanceof Error ? err.message : 'Unknown error'));
+        setError('Lỗi khi tải ngữ cảnh người dùng: ' + (err instanceof Error ? err.message : 'Lỗi không xác định'));
         setLoading(false);
       }
     };
@@ -244,7 +244,7 @@ export default function DecisionAuditTrailPage() {
           {/* Decision Type */}
           <div className="flex flex-col space-y-1.5">
             <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-              Loại quyết định (Decision Type)
+              Phân loại quyết định
             </label>
             <PremiumSelect
               options={decisionTypeOptions}
@@ -257,7 +257,7 @@ export default function DecisionAuditTrailPage() {
           {/* Provider */}
           <div className="flex flex-col space-y-1.5">
             <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-              Nhà cung cấp (Provider)
+              Nhà cung cấp quyết định
             </label>
             <PremiumSelect
               options={providerOptions}
@@ -270,7 +270,7 @@ export default function DecisionAuditTrailPage() {
           {/* Status */}
           <div className="flex flex-col space-y-1.5">
             <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-              Trạng thái (Status)
+              Trạng thái xử lý
             </label>
             <PremiumSelect
               options={statusOptions}
@@ -283,7 +283,7 @@ export default function DecisionAuditTrailPage() {
           {/* Date From */}
           <div>
             <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wide">
-              Từ ngày (Date From)
+              Từ ngày
             </label>
             <input
               type="date"
@@ -296,7 +296,7 @@ export default function DecisionAuditTrailPage() {
           {/* Date To */}
           <div>
             <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wide">
-              Đến ngày (Date To)
+              Đến ngày
             </label>
             <input
               type="date"

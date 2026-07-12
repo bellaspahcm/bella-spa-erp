@@ -12,11 +12,11 @@ interface RuleMetadataFormProps {
 }
 
 const PROVIDERS = [
-  { value: 'booking', label: 'Booking' },
-  { value: 'discount', label: 'Discount' },
-  { value: 'payroll', label: 'Payroll' },
-  { value: 'commission', label: 'Commission' },
-  { value: 'inventory', label: 'Inventory' },
+  { value: 'booking', label: 'Đặt lịch' },
+  { value: 'discount', label: 'Chiết khấu' },
+  { value: 'payroll', label: 'Tính lương' },
+  { value: 'commission', label: 'Hoa hồng' },
+  { value: 'inventory', label: 'Kho hàng' },
 ];
 
 const CATEGORIES_BY_PROVIDER: Record<string, string[]> = {
@@ -27,11 +27,38 @@ const CATEGORIES_BY_PROVIDER: Record<string, string[]> = {
   inventory: ['reorder', 'allocation', 'expiry'],
 };
 
+const CATEGORY_LABELS: Record<string, string> = {
+  // booking
+  assignment: 'Phân bổ ca',
+  capacity: 'Công suất',
+  conflict: 'Xung đột lịch',
+  waitlist: 'Danh sách chờ',
+  priority: 'Ưu tiên',
+  // discount
+  membership: 'Hạng thành viên',
+  campaign: 'Chiến dịch',
+  bundle: 'Gói combo',
+  referral: 'Giới thiệu',
+  // payroll
+  kpi_bonus: 'Thưởng KPI',
+  attendance_deduction: 'Khấu trừ chuyên cần',
+  session_bonus: 'Hoa hồng ca làm',
+  rating_bonus: 'Thưởng đánh giá',
+  // commission
+  service_commission: 'Hoa hồng dịch vụ',
+  product_commission: 'Hoa hồng sản phẩm',
+  performance_bonus: 'Thưởng hiệu suất',
+  // inventory
+  reorder: 'Đặt hàng lại',
+  allocation: 'Phân bổ kho',
+  expiry: 'Hạn sử dụng',
+};
+
 const STATUSES = [
-  { value: 'draft', label: 'Draft' },
-  { value: 'active', label: 'Active' },
-  { value: 'disabled', label: 'Disabled' },
-  { value: 'pending_approval', label: 'Pending Approval' },
+  { value: 'draft', label: 'Bản nháp' },
+  { value: 'active', label: 'Hoạt động' },
+  { value: 'disabled', label: 'Đã tắt' },
+  { value: 'pending_approval', label: 'Chờ phê duyệt' },
 ];
 
 export default function RuleMetadataForm({ data, onChange }: RuleMetadataFormProps) {
@@ -46,32 +73,32 @@ export default function RuleMetadataForm({ data, onChange }: RuleMetadataFormPro
       {/* Rule Name */}
       <div className="space-y-2">
         <Label htmlFor="name">
-          Rule Name <span className="text-red-500">*</span>
+          Tên quy tắc <span className="text-red-500">*</span>
         </Label>
         <Input
           id="name"
           value={data.name}
           onChange={(e) => handleChange('name', e.target.value)}
-          placeholder="e.g., VIP Customer Priority Assignment"
+          placeholder="Ví dụ: Quy tắc phân bổ KTV cho khách hàng VIP"
           required
         />
         <p className="text-sm text-muted-foreground">
-          A clear, descriptive name for this rule
+          Tên rõ ràng và mô tả đúng quy tắc này
         </p>
       </div>
 
       {/* Description */}
       <div className="space-y-2">
-        <Label htmlFor="description">Description</Label>
+        <Label htmlFor="description">Mô tả</Label>
         <Textarea
           id="description"
           value={data.description}
           onChange={(e) => handleChange('description', e.target.value)}
-          placeholder="Describe what this rule does and when it applies..."
+          placeholder="Mô tả chức năng của quy tắc này và thời điểm áp dụng..."
           rows={3}
         />
         <p className="text-sm text-muted-foreground">
-          Optional detailed explanation
+          Giải thích chi tiết (tùy chọn)
         </p>
       </div>
 
@@ -80,7 +107,7 @@ export default function RuleMetadataForm({ data, onChange }: RuleMetadataFormPro
         {/* Provider */}
         <div className="space-y-2">
           <Label htmlFor="provider">
-            Provider <span className="text-red-500">*</span>
+            Nghiệp vụ áp dụng <span className="text-red-500">*</span>
           </Label>
           <Select
             value={data.provider}
@@ -90,7 +117,7 @@ export default function RuleMetadataForm({ data, onChange }: RuleMetadataFormPro
             }}
           >
             <SelectTrigger id="provider">
-              <SelectValue placeholder="Select provider" />
+              <SelectValue placeholder="Chọn nghiệp vụ" />
             </SelectTrigger>
             <SelectContent>
               {PROVIDERS.map((provider) => (
@@ -105,7 +132,7 @@ export default function RuleMetadataForm({ data, onChange }: RuleMetadataFormPro
         {/* Category */}
         <div className="space-y-2">
           <Label htmlFor="category">
-            Category <span className="text-red-500">*</span>
+            Phân loại <span className="text-red-500">*</span>
           </Label>
           <Select
             value={data.category}
@@ -113,12 +140,12 @@ export default function RuleMetadataForm({ data, onChange }: RuleMetadataFormPro
             disabled={!data.provider}
           >
             <SelectTrigger id="category">
-              <SelectValue placeholder="Select category" />
+              <SelectValue placeholder="Chọn phân loại" />
             </SelectTrigger>
             <SelectContent>
               {categories.map((category) => (
                 <SelectItem key={category} value={category}>
-                  {category.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
+                  {CATEGORY_LABELS[category] || category.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -129,26 +156,26 @@ export default function RuleMetadataForm({ data, onChange }: RuleMetadataFormPro
       {/* Priority */}
       <div className="space-y-2">
         <Label htmlFor="priority">
-          Priority: {data.priority}
+          Độ ưu tiên: {data.priority}
         </Label>
         <RulePrioritySlider
           value={data.priority}
           onChange={(value) => handleChange('priority', value)}
         />
         <p className="text-sm text-muted-foreground">
-          Higher priority rules are evaluated first (0-1000)
+          Quy tắc có độ ưu tiên cao hơn sẽ được đánh giá trước (0-1000)
         </p>
       </div>
 
       {/* Status */}
       <div className="space-y-2">
-        <Label htmlFor="status">Status</Label>
+        <Label htmlFor="status">Trạng thái</Label>
         <Select
           value={data.status}
           onValueChange={(value) => handleChange('status', value)}
         >
           <SelectTrigger id="status">
-            <SelectValue placeholder="Select status" />
+            <SelectValue placeholder="Chọn trạng thái" />
           </SelectTrigger>
           <SelectContent>
             {STATUSES.map((status) => (
@@ -159,7 +186,7 @@ export default function RuleMetadataForm({ data, onChange }: RuleMetadataFormPro
           </SelectContent>
         </Select>
         <p className="text-sm text-muted-foreground">
-          Draft rules are not executed
+          Quy tắc ở trạng thái bản nháp sẽ không được thực thi
         </p>
       </div>
     </div>

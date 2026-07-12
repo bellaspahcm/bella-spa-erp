@@ -26,27 +26,27 @@ interface RuleProviderBadgeProps {
 
 const PROVIDER_CONFIG = {
   booking: {
-    label: 'Booking',
+    label: 'Đặt lịch',
     icon: Calendar,
     className: 'bg-blue-50 text-blue-700 border-blue-200',
   },
   discount: {
-    label: 'Discount',
+    label: 'Chiết khấu',
     icon: Tag,
     className: 'bg-purple-50 text-purple-700 border-purple-200',
   },
   payroll: {
-    label: 'Payroll',
+    label: 'Tính lương',
     icon: Wallet,
     className: 'bg-green-50 text-green-700 border-green-200',
   },
   commission: {
-    label: 'Commission',
+    label: 'Hoa hồng',
     icon: TrendingUp,
     className: 'bg-orange-50 text-orange-700 border-orange-200',
   },
   inventory: {
-    label: 'Inventory',
+    label: 'Kho hàng',
     icon: Package,
     className: 'bg-amber-50 text-amber-700 border-amber-200',
   },

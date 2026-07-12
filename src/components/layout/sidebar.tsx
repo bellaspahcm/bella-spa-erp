@@ -306,7 +306,7 @@ const menuItems: SidebarMenuItem[] = [
   { icon: Wallet,          label: 'Kế toán sổ cái',      href: '/dashboard/accounting' },
 
   { type: 'header', label: 'Báo cáo & Phân tích' },
-  { icon: BarChart3,       label: 'Executive Dashboard', href: '/dashboard/executive' },
+  { icon: BarChart3,       label: 'Bảng quản trị CEO', href: '/dashboard/executive' },
   { icon: TrendingUp,      label: 'Dự báo kinh doanh',  href: '/dashboard/forecast' },
   { icon: Brain,           label: 'Gợi ý thông minh',   href: '/dashboard/recommendations' },
   { icon: UserCheck,       label: 'Phân tích khách hàng', href: '/dashboard/customer-intelligence' },
@@ -317,7 +317,7 @@ const menuItems: SidebarMenuItem[] = [
 
   { type: 'header', label: 'Hệ thống' },
   { icon: Key,             label: 'API Partners',        href: '/dashboard/admin/partners' },
-  { icon: Brain,           label: 'Decision Engine',     href: '/dashboard/rules' },
+  { icon: Brain,           label: 'Quy tắc nghiệp vụ',     href: '/dashboard/rules' },
   { icon: MonitorDot,      label: 'Trung tâm giám sát', href: '/dashboard/system-monitor' },
   { icon: History,         label: 'Nhật ký hệ thống',    href: '/dashboard/audit' },
   { icon: HelpCircle,      label: 'Hướng dẫn sử dụng',   href: '/dashboard/guides' },

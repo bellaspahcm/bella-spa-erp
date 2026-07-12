@@ -30,23 +30,23 @@ interface RulesFiltersProps {
 }
 
 const PROVIDERS = [
-  { value: 'all', label: 'All Providers' },
-  { value: 'booking', label: 'Booking' },
-  { value: 'discount', label: 'Discount' },
-  { value: 'payroll', label: 'Payroll' },
-  { value: 'commission', label: 'Commission' },
-  { value: 'inventory', label: 'Inventory' },
+  { value: 'all', label: 'Tất cả nghiệp vụ' },
+  { value: 'booking', label: 'Đặt lịch' },
+  { value: 'discount', label: 'Chiết khấu' },
+  { value: 'payroll', label: 'Tính lương' },
+  { value: 'commission', label: 'Hoa hồng' },
+  { value: 'inventory', label: 'Kho hàng' },
 ];
 
 const STATUSES = [
-  { value: 'all', label: 'All Status' },
-  { value: 'draft', label: 'Draft', color: 'gray' },
-  { value: 'active', label: 'Active', color: 'green' },
-  { value: 'disabled', label: 'Disabled', color: 'yellow' },
-  { value: 'pending_approval', label: 'Pending Approval', color: 'blue' },
-  { value: 'approved', label: 'Approved', color: 'green' },
-  { value: 'rejected', label: 'Rejected', color: 'red' },
-  { value: 'archived', label: 'Archived', color: 'gray' },
+  { value: 'all', label: 'Tất cả trạng thái' },
+  { value: 'draft', label: 'Bản nháp', color: 'gray' },
+  { value: 'active', label: 'Hoạt động', color: 'green' },
+  { value: 'disabled', label: 'Đã tắt', color: 'yellow' },
+  { value: 'pending_approval', label: 'Chờ duyệt', color: 'blue' },
+  { value: 'approved', label: 'Đã duyệt', color: 'green' },
+  { value: 'rejected', label: 'Từ chối', color: 'red' },
+  { value: 'archived', label: 'Lưu trữ', color: 'gray' },
 ];
 
 export function RulesFilters({
@@ -112,7 +112,7 @@ export function RulesFilters({
           {/* Provider Filter */}
           <Select value={initialProvider} onValueChange={handleProviderChange}>
             <SelectTrigger className="w-full md:w-[200px] rounded-lg bg-white/80 dark:bg-[#1c1b19]/80 border-slate-200 dark:border-slate-800 text-xs font-semibold focus:ring-0 focus:ring-offset-0 focus:border-slate-300 dark:focus:border-slate-700">
-              <SelectValue placeholder="Select provider" />
+              <SelectValue placeholder="Chọn nghiệp vụ" />
             </SelectTrigger>
             <SelectContent className="rounded-xl">
               {PROVIDERS.map((provider) => (
@@ -126,7 +126,7 @@ export function RulesFilters({
           {/* Status Filter */}
           <Select value={initialStatus} onValueChange={handleStatusChange}>
             <SelectTrigger className="w-full md:w-[200px] rounded-lg bg-white/80 dark:bg-[#1c1b19]/80 border-slate-200 dark:border-slate-800 text-xs font-semibold focus:ring-0 focus:ring-offset-0 focus:border-slate-300 dark:focus:border-slate-700">
-              <SelectValue placeholder="Select status" />
+              <SelectValue placeholder="Chọn trạng thái" />
             </SelectTrigger>
             <SelectContent className="rounded-xl">
               {STATUSES.map((status) => (

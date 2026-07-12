@@ -75,7 +75,7 @@ export async function RulesTable({
     return (
       <div className="rounded-lg border border-destructive bg-destructive/10 p-4">
         <p className="text-sm text-destructive">
-          Failed to load rules. Please try again.
+          Không thể tải danh sách quy tắc luật. Vui lòng thử lại.
         </p>
       </div>
     );
@@ -84,11 +84,11 @@ export async function RulesTable({
   if (!rules || rules.length === 0) {
     return (
       <div className="rounded-lg border border-dashed p-12 text-center">
-        <h3 className="text-lg font-semibold">No rules found</h3>
+        <h3 className="text-lg font-semibold">Không tìm thấy quy tắc luật nào</h3>
         <p className="text-sm text-muted-foreground mt-2">
           {search || provider || status
-            ? 'Try adjusting your filters'
-            : 'Get started by creating your first rule'}
+            ? 'Hãy thử điều chỉnh bộ lọc của bạn'
+            : 'Bắt đầu bằng cách tạo quy tắc luật đầu tiên của bạn'}
         </p>
       </div>
     );
@@ -104,7 +104,7 @@ export async function RulesTable({
           <TableHeader className="bg-slate-50/50 dark:bg-slate-900/40">
             <TableRow className="border-b border-slate-200/60 dark:border-slate-800/50 hover:bg-transparent">
               <TableHead className="w-[300px] text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tên luật</TableHead>
-              <TableHead className="w-[150px] text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Provider</TableHead>
+              <TableHead className="w-[150px] text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Bộ phận nghiệp vụ</TableHead>
               <TableHead className="w-[120px] text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Phân loại</TableHead>
               <TableHead className="w-[120px] text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Trạng thái</TableHead>
               <TableHead className="w-[100px] text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Độ ưu tiên</TableHead>
