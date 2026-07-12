@@ -36,7 +36,8 @@ import {
   UserCheck,
   Building2,
   ShoppingCart,
-  FileText
+  FileText,
+  ClipboardList
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -276,6 +277,7 @@ const menuItems: SidebarMenuItem[] = [
 
   { type: 'header', label: 'Vận hành & Dịch vụ' },
   { icon: Calendar,        label: 'Lịch hẹn',           href: '/dashboard/bookings' },
+  { icon: ClipboardList,   label: 'Danh sách chờ',      href: '/dashboard/waitlist' },
   { icon: ReceiptText,     label: 'POS / In bill',      href: '/dashboard/bookings?surface=pos' },
   { icon: Users,           label: 'Khách hàng',         href: '/dashboard/customers' },
   { icon: Flower2,         label: 'Thẻ liệu trình',     href: '/dashboard/sessions' }, // Dynamic label adjusted below
