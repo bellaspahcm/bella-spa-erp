@@ -33,12 +33,12 @@ export async function GET(request: NextRequest) {
     // First, query customers
     let customerQuery = supabase
       .from('customers')
-      .select('id, name_mother, phone, email, status, loyalty_points')
+      .select('id, name_mother, phone, status, loyalty_points')
       .eq('tenant_id', tenantId)
       .limit(limit);
 
     if (search) {
-      customerQuery = customerQuery.or(`name_mother.ilike.%${search}%,phone.ilike.%${search}%,email.ilike.%${search}%`);
+      customerQuery = customerQuery.or(`name_mother.ilike.%${search}%,phone.ilike.%${search}%`);
     }
 
     const { data: customersData, error: customersError } = await customerQuery.order('name_mother');
@@ -65,7 +65,6 @@ export async function GET(request: NextRequest) {
           name: customer.name_mother, // UI expects "name"
           name_baby: null, // Optional field
           phone: customer.phone,
-          email: customer.email,
           tier: calculateCustomerTier(customer.status, count || 0),
           total_spending: customer.loyalty_points || 0, // Use loyalty_points as proxy
         };
