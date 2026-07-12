@@ -9,6 +9,7 @@ import {
   BellRing,
   CheckCircle2,
   Database,
+  ExternalLink,
   RefreshCw,
   ServerCog,
   ShieldCheck,
@@ -21,6 +22,7 @@ import { cn } from '@/lib/utils';
 import {
   getSystemMonitorSummary,
   type SystemMonitorCheck,
+  type SystemMonitorOpenAlert,
   type SystemMonitorSection,
   type SystemMonitorStatus,
   type SystemMonitorSummary,
@@ -231,10 +233,10 @@ export default function SystemMonitorPage() {
           </div>
           <Link
             href="/dashboard/accounting/health"
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 text-3xs font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 dark:border-[#3E3A35] dark:text-[#CDBCAB] dark:hover:bg-[#11100F]"
+            className="group inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 text-3xs font-black uppercase tracking-widest text-slate-600 transition-all duration-150 hover:bg-slate-100 hover:border-slate-300 active:scale-95 dark:border-[#3E3A35] dark:text-[#CDBCAB] dark:hover:bg-[#11100F] dark:hover:border-[#55504A]"
           >
             Mở Accounting Health
-            <ArrowRight className="h-3.5 w-3.5" />
+            <ArrowRight className="h-3.5 w-3.5 transition-transform duration-150 group-hover:translate-x-0.5" />
           </Link>
         </div>
 
@@ -256,6 +258,10 @@ export default function SystemMonitorPage() {
           </div>
         )}
       </section>
+
+      {!loading && summary && summary.open_alerts.length > 0 && (
+        <OpenAlertsPanel alerts={summary.open_alerts} />
+      )}
     </div>
   );
 }
@@ -345,6 +351,13 @@ function MonitorSection({ section }: { section: SystemMonitorSection }) {
 function MonitorCheckRow({ check }: { check: SystemMonitorCheck }) {
   const tone = STATUS_TONE[check.status];
   const Icon = tone.icon;
+  const [clicked, setClicked] = useState(false);
+
+  const handleClick = () => {
+    setClicked(true);
+    // Reset sau 3s phòng trường hợp navigation bị delay hoặc thất bại
+    setTimeout(() => setClicked(false), 3000);
+  };
 
   return (
     <div className="flex flex-col gap-3 py-4 sm:flex-row sm:items-start sm:justify-between">
@@ -365,13 +378,113 @@ function MonitorCheckRow({ check }: { check: SystemMonitorCheck }) {
       {check.href ? (
         <Link
           href={check.href}
-          className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg bg-slate-50 px-3 text-4xs font-black uppercase tracking-widest text-slate-600 hover:text-primary dark:bg-[#11100F] dark:text-[#CDBCAB]"
+          onClick={handleClick}
+          className={cn(
+            'group inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg px-3 text-4xs font-black uppercase tracking-widest transition-all duration-150 active:scale-95',
+            clicked
+              ? 'cursor-wait bg-slate-100 text-slate-400 dark:bg-[#2A2826] dark:text-[#CDBCAB]/50'
+              : 'bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-primary dark:bg-[#11100F] dark:text-[#CDBCAB] dark:hover:bg-[#2A2826]'
+          )}
         >
-          Mở
-          <ArrowRight className="h-3 w-3" />
+          {clicked ? (
+            <>
+              <RefreshCw className="h-3 w-3 animate-spin" />
+              <span>Đang mở...</span>
+            </>
+          ) : (
+            <>
+              Mở
+              <ArrowRight className="h-3 w-3 transition-transform duration-150 group-hover:translate-x-0.5" />
+            </>
+          )}
         </Link>
       ) : null}
     </div>
+  );
+}
+
+function AlertRow({ alert }: { alert: SystemMonitorOpenAlert }) {
+  const [clicked, setClicked] = useState(false);
+  const tone = STATUS_TONE[alert.severity];
+
+  const handleClick = () => {
+    setClicked(true);
+    setTimeout(() => setClicked(false), 3000);
+  };
+
+  return (
+    <div className="flex flex-col gap-3 py-4 sm:flex-row sm:items-start sm:justify-between">
+      <div className="flex min-w-0 items-start gap-3">
+        <AlertTriangle className={cn('mt-0.5 h-4 w-4 shrink-0', tone.text)} />
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-xs font-black text-slate-900 dark:text-[#EFE9E1]">{alert.title}</p>
+            <span className={cn('rounded-full border px-2 py-0.5 text-4xs font-black uppercase tracking-widest', tone.bg, tone.border, tone.text)}>
+              {tone.label}
+            </span>
+          </div>
+          <p className="mt-1 text-2xs font-medium leading-relaxed text-slate-500 dark:text-[#CDBCAB]/65">
+            {alert.message}
+          </p>
+          {alert.created_at && (
+            <p className="mt-0.5 text-4xs font-medium text-slate-400 dark:text-[#CDBCAB]/40">
+              {new Date(alert.created_at).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })}
+            </p>
+          )}
+        </div>
+      </div>
+      <Link
+        href={alert.href}
+        onClick={handleClick}
+        className={cn(
+          'group inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg px-3 text-4xs font-black uppercase tracking-widest transition-all duration-150 active:scale-95',
+          clicked
+            ? 'cursor-wait bg-rose-100/70 text-rose-400 dark:bg-rose-500/10 dark:text-rose-500/50'
+            : 'bg-white/70 text-rose-700 hover:bg-white hover:shadow-sm dark:bg-rose-500/10 dark:text-rose-400 dark:hover:bg-rose-500/20'
+        )}
+      >
+        {clicked ? (
+          <>
+            <RefreshCw className="h-3 w-3 animate-spin" />
+            <span>Đang mở...</span>
+          </>
+        ) : (
+          <>
+            Xem
+            <ExternalLink className="h-3 w-3 transition-transform duration-150 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+          </>
+        )}
+      </Link>
+    </div>
+  );
+}
+
+function OpenAlertsPanel({ alerts }: { alerts: SystemMonitorOpenAlert[] }) {
+
+  return (
+    <section className="rounded-3xl md:rounded-[2rem] bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 p-5 md:p-8 shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-5">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-rose-100 dark:bg-rose-500/20">
+            <BellRing className="h-5 w-5 text-rose-600 dark:text-rose-400" />
+          </div>
+          <div>
+            <h2 className="text-sm font-black uppercase tracking-wider text-slate-950 dark:text-[#EFE9E1]">
+              Cảnh báo đang mở ({alerts.length})
+            </h2>
+            <p className="mt-0.5 text-2xs font-medium text-slate-500 dark:text-[#CDBCAB]/60">
+              Các thông báo hệ thống chưa được đọc — bấm để xem chi tiết và xử lý.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="divide-y divide-rose-100 dark:divide-rose-500/20">
+        {alerts.map((alert) => (
+          <AlertRow key={alert.id} alert={alert} />
+        ))}
+      </div>
+    </section>
   );
 }
 

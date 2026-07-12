@@ -132,7 +132,7 @@ function getNotificationHref(data: Json | null) {
     return data.href;
   }
 
-  return '/dashboard/system-monitor';
+  return '/dashboard/accounting/health';
 }
 
 function getNotificationSeverity(row: AppNotificationRow): SystemMonitorStatus {
@@ -316,7 +316,7 @@ export async function getSystemMonitorSummary(month?: string | null): Promise<Sy
       message: businessRuleOpenAlerts > 0
         ? 'Dang co canh bao rule engine production chua doc.'
         : 'Khong co canh bao rule engine production dang mo.',
-      href: '/dashboard/system-monitor',
+      href: '/dashboard/accounting/health',
     },
     {
       id: 'tenant-data-isolation',
