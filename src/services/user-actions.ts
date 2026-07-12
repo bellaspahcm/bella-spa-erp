@@ -654,7 +654,7 @@ export async function updateUser(
 
   // Only update position_tier and hire_date if provided (use type assertion for new fields)
   if (formData.position_tier !== undefined) {
-    (updatePayload as any).position_tier = formData.position_tier;
+    (updatePayload as any).position_tier = formData.position_tier || 'junior';
   }
   if (formData.hire_date !== undefined) {
     (updatePayload as any).hire_date = formData.hire_date;
