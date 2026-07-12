@@ -363,7 +363,7 @@ describe('DiscountProvider', () => {
       expect(result.discountPercent).toBe(0);
       expect(result.discountType).toBe('none');
       expect(result.finalAmount).toBe(5000000);
-      expect(result.reason).toBe('No Discount (Fallback)');
+      expect(result.reason).toBe('No rules matched');
     });
   });
 

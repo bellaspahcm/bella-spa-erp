@@ -13,11 +13,13 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { format } from 'date-fns';
 import DecisionDetailDrawer from '@/components/decision-engine/DecisionDetailDrawer';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
+import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
+
 
 interface AuditLogEntry {
   id: string;
@@ -81,14 +83,40 @@ const statusOptions = [
 ];
 
 export default function DecisionAuditTrailPage() {
-  const router = useRouter();
   const searchParams = useSearchParams();
+  const { tenantModuleKey } = useTenantModuleKey();
+
+  const isBeautySpa = tenantModuleKey === 'beauty_spa';
+  const isIndustrialCleaning = tenantModuleKey === 'industrial_cleaning';
+  
+  const theme = isBeautySpa
+    ? {
+        gradient: 'from-emerald-500 to-teal-600',
+        activeBtn: 'bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600 text-white shadow-sm',
+        border: 'border-emerald-200/50 dark:border-emerald-800/50',
+        badgeBg: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400',
+        textColor: 'text-emerald-600 dark:text-emerald-400',
+      }
+    : isIndustrialCleaning
+    ? {
+        gradient: 'from-indigo-500 to-blue-600',
+        activeBtn: 'bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-600 text-white shadow-sm',
+        border: 'border-indigo-200/50 dark:border-indigo-800/50',
+        badgeBg: 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-400',
+        textColor: 'text-indigo-600 dark:text-indigo-400',
+      }
+    : {
+        gradient: 'from-rose-500 to-pink-600',
+        activeBtn: 'bg-rose-600 hover:bg-rose-700 dark:bg-rose-700 dark:hover:bg-rose-600 text-white shadow-sm',
+        border: 'border-rose-200/50 dark:border-rose-800/50',
+        badgeBg: 'bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400',
+        textColor: 'text-rose-600 dark:text-rose-400',
+      };
 
   // State
   const [data, setData] = useState<AuditLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentUser, setCurrentUser] = useState<{ tenant_id: string | null } | null>(null);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 25,
@@ -125,7 +153,6 @@ export default function DecisionAuditTrailPage() {
         // API returns TenantContext directly with camelCase `tenantId`
         const tenantIdValue = result.tenantId || result.tenant_id || result.data?.tenantId || result.data?.tenant_id;
         if (tenantIdValue) {
-          setCurrentUser({ tenant_id: tenantIdValue });
           setTenantId(tenantIdValue);
         } else {
           setError('Unable to determine your tenant. Please contact support.');
@@ -140,7 +167,7 @@ export default function DecisionAuditTrailPage() {
   }, []);
 
   // Fetch data
-  const fetchAuditLog = async () => {
+  const fetchAuditLog = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -170,7 +197,7 @@ export default function DecisionAuditTrailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [tenantId, decisionType, provider, status, dateFrom, dateTo, search, pagination.page, pagination.limit]);
 
   // Fetch on mount and when filters change
   useEffect(() => {
@@ -183,7 +210,7 @@ export default function DecisionAuditTrailPage() {
     }
     
     fetchAuditLog();
-  }, [tenantId, decisionType, provider, status, dateFrom, dateTo, search, pagination.page]);
+  }, [tenantId, fetchAuditLog]);
 
   // Handle row click
   const handleRowClick = (id: string) => {
@@ -208,97 +235,87 @@ export default function DecisionAuditTrailPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Decision Audit Trail
-        </h1>
-        <p className="text-gray-600">
-          Comprehensive audit log của Decision Engine executions. Mọi quyết định đều giải trình được.
-        </p>
-      </div>
-
+    <div className="container mx-auto px-6 py-6 space-y-6">
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <h2 className="text-lg font-semibold mb-4">Filters</h2>
+      <div className="bg-white/40 dark:bg-[#1c1b19]/40 backdrop-blur-md rounded-2xl border border-white/20 dark:border-white/5 p-6 shadow-sm">
+        <h2 className="text-sm font-bold mb-4 text-slate-800 dark:text-slate-200">Bộ lọc tìm kiếm</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* Decision Type */}
           <div className="flex flex-col space-y-1.5">
-            <label className="block text-sm font-semibold text-slate-700">
-              Decision Type
+            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+              Loại quyết định (Decision Type)
             </label>
             <PremiumSelect
               options={decisionTypeOptions}
               value={decisionType}
               onChange={setDecisionType}
-              placeholder="All Types"
+              placeholder="Tất cả phân loại"
             />
           </div>
 
           {/* Provider */}
           <div className="flex flex-col space-y-1.5">
-            <label className="block text-sm font-semibold text-slate-700">
-              Provider
+            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+              Nhà cung cấp (Provider)
             </label>
             <PremiumSelect
               options={providerOptions}
               value={provider}
               onChange={setProvider}
-              placeholder="All Providers"
+              placeholder="Tất cả nhà cung cấp"
             />
           </div>
 
           {/* Status */}
           <div className="flex flex-col space-y-1.5">
-            <label className="block text-sm font-semibold text-slate-700">
-              Status
+            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+              Trạng thái (Status)
             </label>
             <PremiumSelect
               options={statusOptions}
               value={status}
               onChange={setStatus}
-              placeholder="All Statuses"
+              placeholder="Tất cả trạng thái"
             />
           </div>
 
           {/* Date From */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Date From
+            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wide">
+              Từ ngày (Date From)
             </label>
             <input
               type="date"
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary focus:outline-none"
+              className="w-full px-3 py-2 text-xs font-semibold bg-white/80 dark:bg-[#1c1b19]/80 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-1 focus:ring-slate-300 dark:focus:ring-slate-700"
             />
           </div>
 
           {/* Date To */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Date To
+            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wide">
+              Đến ngày (Date To)
             </label>
             <input
               type="date"
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary focus:outline-none"
+              className="w-full px-3 py-2 text-xs font-semibold bg-white/80 dark:bg-[#1c1b19]/80 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-1 focus:ring-slate-300 dark:focus:ring-slate-700"
             />
           </div>
 
           {/* Search */}
           <div className="lg:col-span-3">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Search Decision ID
+            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wide">
+              Tìm kiếm mã quyết định (Decision ID)
             </label>
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by decision ID..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary focus:outline-none"
+              placeholder="Nhập mã quyết định..."
+              className="w-full px-3 py-2 text-xs font-medium bg-white/80 dark:bg-[#1c1b19]/80 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-1 focus:ring-slate-300 dark:focus:ring-slate-700"
             />
           </div>
         </div>
@@ -308,27 +325,27 @@ export default function DecisionAuditTrailPage() {
           <button
             onClick={handleApplyFilters}
             disabled={loading || !tenantId}
-            className="px-5 py-2.5 bg-primary text-white rounded-xl hover:bg-primary-hover disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed transition-all font-semibold shadow-sm text-sm active:scale-[0.98]"
+            className={`px-5 py-2.5 rounded-xl transition-all font-bold text-xs active:scale-[0.98] disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed ${theme.activeBtn}`}
           >
-            Apply Filters
+            Áp dụng bộ lọc
           </button>
           <button
             onClick={handleResetFilters}
-            className="px-5 py-2.5 bg-gray-150 text-gray-700 rounded-xl hover:bg-gray-200 transition-all font-semibold text-sm active:scale-[0.98]"
+            className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl transition-all font-bold text-xs active:scale-[0.98]"
           >
-            Reset
+            Đặt lại
           </button>
         </div>
       </div>
 
       {/* Results */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+      <div className="bg-white/40 dark:bg-[#1c1b19]/40 backdrop-blur-md rounded-2xl border border-white/20 dark:border-white/5 shadow-sm overflow-hidden">
         {/* Summary */}
         {!loading && data.length > 0 && (
-          <div className="px-6 py-4 border-b border-gray-100 bg-slate-50/50">
-            <p className="text-sm font-medium text-slate-600">
-              Showing {data.length} of {pagination.total} decisions (Page{' '}
-              {pagination.page} of {pagination.totalPages})
+          <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800/40 bg-slate-50/20">
+            <p className="text-xs font-bold text-slate-500 dark:text-slate-400">
+              Hiển thị {data.length} trên {pagination.total} quyết định (Trang{' '}
+              {pagination.page} / {pagination.totalPages})
             </p>
           </div>
         )}
@@ -336,87 +353,87 @@ export default function DecisionAuditTrailPage() {
         {/* Table */}
         {loading ? (
           <div className="p-12 text-center">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-primary border-t-transparent"></div>
-            <p className="mt-4 text-gray-600 font-medium">Loading audit log...</p>
+            <div className={`inline-block animate-spin rounded-full h-8 w-8 border-4 border-slate-300 dark:border-slate-700 border-t-slate-500`}></div>
+            <p className="mt-4 text-xs font-bold text-slate-600 dark:text-slate-400">Đang tải nhật ký quyết định...</p>
           </div>
         ) : error ? (
           <div className="p-12 text-center">
-            <p className="text-red-600 mb-4 font-semibold">⚠️ {error}</p>
+            <p className="text-red-600 mb-4 font-semibold text-xs">⚠️ {error}</p>
             <button
               onClick={fetchAuditLog}
-              className="px-5 py-2.5 bg-primary text-primary-foreground rounded-xl hover:bg-primary-hover transition-all font-semibold active:scale-[0.98]"
+              className={`px-5 py-2.5 rounded-xl transition-all font-bold text-xs active:scale-[0.98] ${theme.activeBtn}`}
             >
-              Retry
+              Thử lại
             </button>
           </div>
         ) : data.length === 0 ? (
-          <div className="p-12 text-center">
-            <p className="text-gray-600 mb-4">
-              📭 No decisions found matching your filters
+          <div className="p-12 text-center space-y-2">
+            <p className="text-slate-600 dark:text-slate-400 font-bold text-sm">
+              📭 Không tìm thấy quyết định nào
             </p>
-            <p className="text-sm text-gray-500">
-              Try adjusting your filters or date range
+            <p className="text-xs text-slate-400">
+              Vui lòng điều chỉnh lại bộ lọc tìm kiếm
             </p>
           </div>
         ) : (
           <>
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-100">
-                <thead className="bg-slate-50/70">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
-                      Decision ID
+              <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800/40">
+                <thead className="bg-slate-50/50 dark:bg-slate-900/40">
+                  <tr className="border-b border-slate-100 dark:border-slate-800/40">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Mã Quyết Định (ID)
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
-                      Type
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Phân loại
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
-                      Provider
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Nhà cung cấp
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
-                      Status
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Trạng thái
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
-                      Execution Time
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Thời gian xử lý
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
-                      Confidence
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Độ tin cậy
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
-                      Created At
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Thời gian tạo
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-100">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40">
                   {data.map((entry) => (
                     <tr
                       key={entry.id}
                       onClick={() => handleRowClick(entry.id)}
-                      className="hover:bg-slate-50/50 cursor-pointer transition-colors"
+                      className="hover:bg-slate-50/50 dark:hover:bg-slate-900/20 cursor-pointer transition-colors"
                     >
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-slate-900 font-semibold">
+                      <td className="px-6 py-4 whitespace-nowrap text-xs font-mono text-slate-900 dark:text-slate-100 font-bold">
                         {entry.decision_id}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-2.5 py-1 text-xs font-bold bg-primary/10 text-primary border border-primary/20 rounded-lg">
+                        <span className={`px-2 py-0.5 text-[10px] font-bold rounded-lg ${theme.badgeBg}`}>
                           {entry.decision_type}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                      <td className="px-6 py-4 whitespace-nowrap text-xs font-medium text-slate-600 dark:text-slate-400">
                         {entry.provider}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <StatusBadge status={entry.status} />
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                      <td className="px-6 py-4 whitespace-nowrap text-xs font-mono font-semibold text-slate-600 dark:text-slate-400">
                         {entry.execution_time_ms}ms
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                      <td className="px-6 py-4 whitespace-nowrap text-xs font-semibold text-slate-600 dark:text-slate-400">
                         {entry.confidence_score
                           ? `${(entry.confidence_score * 100).toFixed(0)}%`
                           : 'N/A'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                      <td className="px-6 py-4 whitespace-nowrap text-xs font-medium text-slate-500 dark:text-slate-400">
                         {format(new Date(entry.created_at), 'yyyy-MM-dd HH:mm:ss')}
                       </td>
                     </tr>
@@ -426,19 +443,19 @@ export default function DecisionAuditTrailPage() {
             </div>
 
             {/* Pagination */}
-            <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+            <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800/40 flex items-center justify-between">
               <button
                 onClick={() =>
                   setPagination((prev) => ({ ...prev, page: prev.page - 1 }))
                 }
                 disabled={pagination.page === 1}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
               >
-                Previous
+                Trang trước
               </button>
 
-              <span className="text-sm text-gray-700">
-                Page {pagination.page} of {pagination.totalPages}
+              <span className="text-xs font-bold text-slate-500">
+                Trang {pagination.page} / {pagination.totalPages}
               </span>
 
               <button
@@ -446,9 +463,9 @@ export default function DecisionAuditTrailPage() {
                   setPagination((prev) => ({ ...prev, page: prev.page + 1 }))
                 }
                 disabled={!pagination.hasMore}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
               >
-                Next
+                Trang sau
               </button>
             </div>
           </>
@@ -461,7 +478,6 @@ export default function DecisionAuditTrailPage() {
           decisionId={selectedDecision}
           onClose={() => setSelectedDecision(null)}
           onReplay={(id) => {
-            // TODO: Open Time Machine interface (Task #10)
             alert(`Replay decision ${id} - Time Machine interface coming in Task #10`);
           }}
         />
@@ -475,9 +491,9 @@ export default function DecisionAuditTrailPage() {
  */
 function StatusBadge({ status }: { status: 'success' | 'error' | 'warning' }) {
   const colors = {
-    success: 'bg-green-100 text-green-800',
-    error: 'bg-red-100 text-red-800',
-    warning: 'bg-yellow-100 text-yellow-800',
+    success: 'bg-green-150 text-green-700 dark:bg-green-950/30 dark:text-green-400 border-green-200/50 dark:border-green-900/30',
+    error: 'bg-red-150 text-red-700 dark:bg-red-950/30 dark:text-red-400 border-red-200/50 dark:border-red-900/30',
+    warning: 'bg-yellow-150 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-400 border-yellow-200/50 dark:border-yellow-900/30',
   };
 
   const icons = {
@@ -488,10 +504,10 @@ function StatusBadge({ status }: { status: 'success' | 'error' | 'warning' }) {
 
   return (
     <span
-      className={`px-2 py-1 text-xs font-medium rounded inline-flex items-center gap-1 ${colors[status]}`}
+      className={`px-2.5 py-0.5 text-[10px] font-bold border rounded-lg inline-flex items-center gap-1 ${colors[status]}`}
     >
       <span>{icons[status]}</span>
-      <span className="capitalize">{status}</span>
+      <span className="capitalize">{status === 'success' ? 'Thành công' : status === 'warning' ? 'Cảnh báo' : 'Thất bại'}</span>
     </span>
   );
 }

@@ -4,7 +4,7 @@
  * Shared layout for all Decision Engine pages with navigation tabs.
  */
 
-import DecisionEngineNav from './DecisionEngineNav';
+import DecisionEngineHeader from '@/components/decision-engine/DecisionEngineHeader';
 
 export default function DecisionEngineLayout({
   children,
@@ -12,12 +12,12 @@ export default function DecisionEngineLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#11100F] transition-colors duration-300">
       {/* Navigation Tabs */}
-      <DecisionEngineNav />
+      <DecisionEngineHeader />
 
       {/* Page Content */}
-      <main>{children}</main>
+      <main className="animate-in fade-in duration-500">{children}</main>
     </div>
   );
 }

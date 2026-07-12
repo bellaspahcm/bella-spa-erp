@@ -20,6 +20,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
+
 
 interface RulesFiltersProps {
   initialProvider?: string;
@@ -88,67 +90,82 @@ export function RulesFilters({
     router.push('/dashboard/rules');
   };
 
+  const { tenantModuleKey } = useTenantModuleKey();
+  const isBeautySpa = tenantModuleKey === 'beauty_spa';
+  const isIndustrialCleaning = tenantModuleKey === 'industrial_cleaning';
+
+  const buttonActive = isBeautySpa
+    ? 'hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-950/20 dark:hover:text-emerald-400 border-emerald-200 dark:border-emerald-800/60'
+    : isIndustrialCleaning
+    ? 'hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-950/20 dark:hover:text-indigo-400 border-indigo-200 dark:border-indigo-800/60'
+    : 'hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/20 dark:hover:text-rose-400 border-rose-200 dark:border-rose-800/60';
+
   const hasActiveFilters =
     initialProvider !== 'all' ||
     initialStatus !== 'all' ||
     initialSearch !== '';
 
   return (
-    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-      <div className="flex flex-1 flex-col gap-4 md:flex-row md:items-center">
-        {/* Provider Filter */}
-        <Select value={initialProvider} onValueChange={handleProviderChange}>
-          <SelectTrigger className="w-full md:w-[200px]">
-            <SelectValue placeholder="Select provider" />
-          </SelectTrigger>
-          <SelectContent>
-            {PROVIDERS.map((provider) => (
-              <SelectItem key={provider.value} value={provider.value}>
-                {provider.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+    <div className="bg-white/40 dark:bg-[#1c1b19]/40 backdrop-blur-md border border-white/20 dark:border-white/5 p-4 rounded-xl shadow-sm">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-1 flex-col gap-4 md:flex-row md:items-center">
+          {/* Provider Filter */}
+          <Select value={initialProvider} onValueChange={handleProviderChange}>
+            <SelectTrigger className="w-full md:w-[200px] rounded-lg bg-white/80 dark:bg-[#1c1b19]/80 border-slate-200 dark:border-slate-800 text-xs font-semibold focus:ring-0 focus:ring-offset-0 focus:border-slate-300 dark:focus:border-slate-700">
+              <SelectValue placeholder="Select provider" />
+            </SelectTrigger>
+            <SelectContent className="rounded-xl">
+              {PROVIDERS.map((provider) => (
+                <SelectItem key={provider.value} value={provider.value} className="text-xs font-medium">
+                  {provider.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-        {/* Status Filter */}
-        <Select value={initialStatus} onValueChange={handleStatusChange}>
-          <SelectTrigger className="w-full md:w-[200px]">
-            <SelectValue placeholder="Select status" />
-          </SelectTrigger>
-          <SelectContent>
-            {STATUSES.map((status) => (
-              <SelectItem key={status.value} value={status.value}>
-                {status.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          {/* Status Filter */}
+          <Select value={initialStatus} onValueChange={handleStatusChange}>
+            <SelectTrigger className="w-full md:w-[200px] rounded-lg bg-white/80 dark:bg-[#1c1b19]/80 border-slate-200 dark:border-slate-800 text-xs font-semibold focus:ring-0 focus:ring-offset-0 focus:border-slate-300 dark:focus:border-slate-700">
+              <SelectValue placeholder="Select status" />
+            </SelectTrigger>
+            <SelectContent className="rounded-xl">
+              {STATUSES.map((status) => (
+                <SelectItem key={status.value} value={status.value} className="text-xs font-medium">
+                  {status.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-        {/* Search Input */}
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search rules..."
-            className="pl-9"
-            defaultValue={initialSearch}
-            onChange={(e) => {
-              const value = e.target.value;
-              // Debounce search
-              const timeout = setTimeout(() => {
-                handleSearchChange(value);
-              }, 500);
-              return () => clearTimeout(timeout);
-            }}
-          />
+          {/* Search Input */}
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Input
+              placeholder="Tìm kiếm luật..."
+              className="pl-9 rounded-lg bg-white/80 dark:bg-[#1c1b19]/80 border-slate-200 dark:border-slate-800 text-xs font-medium focus-visible:ring-1 focus-visible:ring-slate-300 dark:focus-visible:ring-slate-700"
+              defaultValue={initialSearch}
+              onChange={(e) => {
+                const value = e.target.value;
+                const timeout = setTimeout(() => {
+                  handleSearchChange(value);
+                }, 500);
+                return () => clearTimeout(timeout);
+              }}
+            />
+          </div>
         </div>
-      </div>
 
-      {/* Clear Filters */}
-      {hasActiveFilters && (
-        <Button variant="outline" onClick={handleClearFilters}>
-          Clear Filters
-        </Button>
-      )}
+        {/* Clear Filters */}
+        {hasActiveFilters && (
+          <Button 
+            variant="outline" 
+            onClick={handleClearFilters}
+            className={`rounded-lg h-9 px-4 text-xs font-semibold transition-all ${buttonActive}`}
+          >
+            Xóa bộ lọc
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

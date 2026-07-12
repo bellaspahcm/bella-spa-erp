@@ -16,7 +16,6 @@ import {
   Sparkles,
   MessageSquare,
   Banknote,
-  ShieldAlert,
   History,
   Megaphone,
   Menu,
@@ -36,7 +35,6 @@ import {
   UserCheck,
   Building2,
   ShoppingCart,
-  FileText,
   ClipboardList
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -267,6 +265,20 @@ function isPathActive(pathname: string, searchParams: URLSearchParams, href: str
     return false;
   }
 
+  // Custom mapping for Decision Engine tabs to keep sidebar highlighted
+  if (normalizedHref === '/dashboard/rules') {
+    if (
+      normalizedPath === '/dashboard/rules' ||
+      normalizedPath.startsWith('/dashboard/rules/') ||
+      normalizedPath === '/dashboard/decision-engine/audit' ||
+      normalizedPath.startsWith('/dashboard/decision-engine/') ||
+      normalizedPath === '/dashboard/admin/booking-engine' ||
+      normalizedPath.startsWith('/dashboard/admin/booking-engine/')
+    ) {
+      return true;
+    }
+  }
+
   return normalizedPath === normalizedHref || normalizedPath.startsWith(`${normalizedHref}/`);
 }
 
@@ -305,9 +317,7 @@ const menuItems: SidebarMenuItem[] = [
 
   { type: 'header', label: 'Hệ thống' },
   { icon: Key,             label: 'API Partners',        href: '/dashboard/admin/partners' },
-  { icon: Brain,           label: 'Decision Engine',     href: '/dashboard/decision-engine/audit' },
-  { icon: FileText,        label: 'Rule Management',     href: '/dashboard/rules' },
-  { icon: Activity,        label: 'Booking Engine',      href: '/dashboard/admin/booking-engine' },
+  { icon: Brain,           label: 'Decision Engine',     href: '/dashboard/rules' },
   { icon: MonitorDot,      label: 'Trung tâm giám sát', href: '/dashboard/system-monitor' },
   { icon: History,         label: 'Nhật ký hệ thống',    href: '/dashboard/audit' },
   { icon: HelpCircle,      label: 'Hướng dẫn sử dụng',   href: '/dashboard/guides' },

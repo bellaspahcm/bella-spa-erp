@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
 import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
+import DecisionEngineHeader from '@/components/decision-engine/DecisionEngineHeader';
 
 // ============================================================================
 // Types
@@ -292,81 +293,77 @@ export default function BookingEngineDashboardPage() {
   if (!data) return null;
 
   return (
-    <div className="container mx-auto p-6 space-y-6 animate-in fade-in duration-500">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/40 dark:bg-[#1c1b19]/40 backdrop-blur-md border border-white/20 dark:border-white/5 p-6 rounded-2xl shadow-sm">
-        <div>
-          <div className="flex items-center gap-3">
-            <div className={`p-2.5 rounded-xl bg-gradient-to-tr ${theme.gradient} text-white shadow-md`}>
-              <Zap className="h-5 w-5 animate-pulse" />
+    <div className="flex flex-col min-h-screen">
+      <DecisionEngineHeader />
+      <div className="container mx-auto p-6 space-y-6 animate-in fade-in duration-500">
+        {/* Control bar */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/40 dark:bg-[#1c1b19]/40 backdrop-blur-md border border-white/20 dark:border-white/5 p-4 rounded-2xl shadow-sm">
+          <div>
+            <h2 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+              Bộ lọc & Chỉ số vận hành
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Phạm vi: {dateRange === '24h' ? '24 Giờ qua' : dateRange === '7d' ? '7 Ngày qua' : '30 Ngày qua'}
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Last Updated Badge */}
+            {lastRefreshAt && (
+              <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold ${theme.badgeBg} border ${theme.border}`}>
+                <Clock className="h-3.5 w-3.5" />
+                <span>Cập nhật lúc: {lastRefreshAt.toLocaleTimeString()}</span>
+              </div>
+            )}
+
+            {/* Date Range Selector */}
+            <div className="flex items-center bg-slate-100/80 dark:bg-slate-900/50 backdrop-blur border border-slate-200/50 dark:border-slate-800 p-1 rounded-xl">
+              {(['24h', '7d', '30d'] as DateRange[]).map((range) => (
+                <Button
+                  key={range}
+                  variant="ghost"
+                  size="sm"
+                  className={`rounded-lg px-3.5 py-1.5 h-8 text-xs font-medium transition-all ${
+                    dateRange === range
+                      ? `bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm font-bold`
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                  onClick={() => setDateRange(range)}
+                >
+                  {range === '24h' ? '24 Giờ' : range === '7d' ? '7 Ngày' : '30 Ngày'}
+                </Button>
+              ))}
             </div>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
-                Trung tâm Điều phối Đặt lịch
-              </h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Chỉ số vận hành của Decision Engine theo thời gian thực
-              </p>
-            </div>
+
+            {/* Auto-refresh Toggle */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsAutoRefresh(!isAutoRefresh)}
+              className={`h-9 px-3.5 rounded-xl border text-xs font-semibold transition-all ${
+                isAutoRefresh
+                  ? theme.autoRefreshBtnActive
+                  : 'bg-white border-slate-200 dark:bg-slate-900 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+              }`}
+            >
+              <Zap className={`h-3.5 w-3.5 mr-2 ${isAutoRefresh ? 'animate-bounce text-yellow-500' : ''}`} />
+              Auto-refresh: {isAutoRefresh ? 'BẬT' : 'TẮT'}
+            </Button>
+
+            {/* Manual Refresh */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void fetchMetrics()}
+              disabled={isLoading}
+              className="h-9 px-3.5 rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all active:scale-95"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+              Làm mới
+            </Button>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Last Updated Badge */}
-          {lastRefreshAt && (
-            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold ${theme.badgeBg} border ${theme.border}`}>
-              <Clock className="h-3.5 w-3.5" />
-              <span>Cập nhật lúc: {lastRefreshAt.toLocaleTimeString()}</span>
-            </div>
-          )}
-
-          {/* Date Range Selector */}
-          <div className="flex items-center bg-slate-100/80 dark:bg-slate-900/50 backdrop-blur border border-slate-200/50 dark:border-slate-800 p-1 rounded-xl">
-            {(['24h', '7d', '30d'] as DateRange[]).map((range) => (
-              <Button
-                key={range}
-                variant="ghost"
-                size="sm"
-                className={`rounded-lg px-3.5 py-1.5 h-8 text-xs font-medium transition-all ${
-                  dateRange === range
-                    ? `bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm font-bold`
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-                onClick={() => setDateRange(range)}
-              >
-                {range === '24h' ? '24 Giờ' : range === '7d' ? '7 Ngày' : '30 Ngày'}
-              </Button>
-            ))}
-          </div>
-
-          {/* Auto-refresh Toggle */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsAutoRefresh(!isAutoRefresh)}
-            className={`h-9 px-3.5 rounded-xl border text-xs font-semibold transition-all ${
-              isAutoRefresh
-                ? theme.autoRefreshBtnActive
-                : 'bg-white border-slate-200 dark:bg-slate-900 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
-            }`}
-          >
-            <Zap className={`h-3.5 w-3.5 mr-2 ${isAutoRefresh ? 'animate-bounce text-yellow-500' : ''}`} />
-            Auto-refresh: {isAutoRefresh ? 'BẬT' : 'TẮT'}
-          </Button>
-
-          {/* Manual Refresh */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => void fetchMetrics()}
-            disabled={isLoading}
-            className="h-9 px-3.5 rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all active:scale-95"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            Làm mới
-          </Button>
-        </div>
-      </div>
 
       {/* Error Alert */}
       {error && (
@@ -764,6 +761,7 @@ export default function BookingEngineDashboardPage() {
             </div>
           </CardContent>
         </Card>
+      </div>
       </div>
     </div>
   );
