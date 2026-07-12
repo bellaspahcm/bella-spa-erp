@@ -89,6 +89,20 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async redirects() {
+    return [
+      {
+        source: '/dashboard/admin/rules',
+        destination: '/dashboard/rules',
+        permanent: true,
+      },
+      {
+        source: '/dashboard/admin/rules/:path*',
+        destination: '/dashboard/rules/:path*',
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default withSentryConfig(nextConfig, {
