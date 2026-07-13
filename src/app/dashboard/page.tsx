@@ -60,6 +60,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback,useEffect,useRef,useState } from 'react';
 import { toast } from 'sonner';
+import { getCachedCurrentUser } from '@/lib/dashboard-client-context';
 
 // Heavy modals — lazy-loaded so they don't bloat the dashboard's initial JS bundle.
 // BookingModal (~715 LOC + form deps) only opens on user click.
@@ -88,14 +89,14 @@ export default function DashboardPage() {
   const [isSecondaryLoading, setIsSecondaryLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [isAllNotificationsOpen, setIsAllNotificationsOpen] = useState(false);
+  const [searchQueryNotifications, setSearchQueryNotifications] = useState('');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [quickNoteId, setQuickNoteId] = useState<string | null>(null);
   const [quickNoteValue, setQuickNoteValue] = useState('');
   const [userRole, setUserRole] = useState<'admin' | 'ktv' | null>(null);
   const [tenantId, setTenantId] = useState<string | null>(null);
-  const [isAllNotificationsOpen, setIsAllNotificationsOpen] = useState(false);
-  const [notifSearch, setNotifSearch] = useState('');
-  const [notifTab, setNotifTab] = useState('all');
+  const sessionsRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dashboardRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dashboardAlertsRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { tenantModuleKey } = useTenantModuleKey();
@@ -129,8 +130,7 @@ export default function DashboardPage() {
   useEffect(() => {
     async function checkRole() {
       try {
-        const { getCurrentUser } = await import('@/services/user-actions');
-        const profile = await getCurrentUser();
+        const profile = await getCachedCurrentUser();
         if (!profile) {
           setUserRole('ktv');
           setTenantId(null);

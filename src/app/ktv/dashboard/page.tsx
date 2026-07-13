@@ -34,7 +34,7 @@ import { KtvNotificationDetailModal } from './components/KtvNotificationDetailMo
 import { KtvOfflineSyncBanner } from './components/KtvOfflineSyncBanner';
 import { KtvProfileDrawer, type KtvOfflineAction, type KtvProfileUser } from './components/KtvProfileDrawer';
 import { KtvSessionSections, type KtvDashboardSession } from './components/KtvSessionSections';
-import { getTenantSettings } from '@/services/tenant-actions';
+import { getCachedCurrentUser, getCachedTenantSettings } from '@/lib/dashboard-client-context';
 import { getLocalDateString } from '@/lib/utils';
 
 type KtvUser = NonNullable<KtvProfileUser> & {
@@ -358,8 +358,8 @@ export default function KTVDashboard() {
       // Priority 1: Critical data for initial render (show UI ASAP)
       const criticalStart = performance.now();
       const [u, tenant] = await Promise.all([
-        getCurrentUser(),
-        getTenantSettings(),
+        getCachedCurrentUser(),
+        getCachedTenantSettings(),
       ]);
       perfMarks['critical_data'] = performance.now() - criticalStart;
       console.log(`[KTV Dashboard] ✅ Critical data loaded in ${perfMarks['critical_data'].toFixed(0)}ms`);

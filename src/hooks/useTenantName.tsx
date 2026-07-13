@@ -17,7 +17,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { getTenantSettings } from '@/services/tenant-actions';
+import { getCachedTenantSettings } from '@/lib/dashboard-client-context';
 
 interface UseTenantNameOptions {
   /** Width of skeleton loader in pixels (default: 200) */
@@ -32,7 +32,7 @@ export function useTenantName(options: UseTenantNameOptions = {}) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    getTenantSettings()
+    getCachedTenantSettings()
       .then((tenant) => {
         if (tenant?.name) {
           setTenantName(tenant.name);

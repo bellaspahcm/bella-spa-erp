@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { getDefaultTenantModuleKey, type TenantModuleKey } from '@/lib/business-rules/tenant-modules';
-import { getTenantSettings } from '@/services/tenant-actions';
+import { getCachedTenantSettings } from '@/lib/dashboard-client-context';
 
 export function useTenantModuleKey() {
   const [tenantModuleKey, setTenantModuleKey] = useState<TenantModuleKey | null>(null);
@@ -15,7 +15,7 @@ export function useTenantModuleKey() {
     setTenantModuleError(null);
 
     try {
-      const tenant = await getTenantSettings();
+      const tenant = await getCachedTenantSettings();
       setTenantModuleKey(getDefaultTenantModuleKey(tenant?.enabled_modules));
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Khong the tai cau hinh phan he';
