@@ -37,8 +37,8 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    // Parse query parameters
-    const horizon = parseInt(searchParams.get('horizon') || '12');
+    // Parse query parameters — accept 'months' as alias for 'horizon'
+    const horizon = parseInt(searchParams.get('months') || searchParams.get('horizon') || '12');
     const modelName = searchParams.get('model') as any;
     const confidenceLevel = parseFloat(searchParams.get('confidence') || '0.95');
     

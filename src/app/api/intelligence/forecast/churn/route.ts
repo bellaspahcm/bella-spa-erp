@@ -38,7 +38,16 @@ export async function GET(request: NextRequest) {
     }
     
     // Parse query parameters
-    const horizon = parseInt(searchParams.get('horizon') || '30');
+    // Accept 'months' param and map to nearest valid churn horizon (30/60/90 days)
+    const monthsParam = parseInt(searchParams.get('months') || '0');
+    let horizon: 30 | 60 | 90;
+    if (monthsParam > 0) {
+      // Map months to days: 1 month ≈ 30 days, 2 months ≈ 60 days, 3+ months ≈ 90 days
+      const days = monthsParam <= 1 ? 30 : monthsParam <= 2 ? 60 : 90;
+      horizon = days as 30 | 60 | 90;
+    } else {
+      horizon = parseInt(searchParams.get('horizon') || '30') as 30 | 60 | 90;
+    }
     
     if (![30, 60, 90].includes(horizon)) {
       return NextResponse.json(
@@ -56,6 +65,13 @@ export async function GET(request: NextRequest) {
     
     // Generate forecast
     const result = await forecastService.getChurnForecast(input);
+    
+    if (!result.success) {
+      return NextResponse.json(
+        { error: 'Churn forecast failed', message: result.error?.message },
+        { status: 500 }
+      );
+    }
     
     return NextResponse.json(result);
     

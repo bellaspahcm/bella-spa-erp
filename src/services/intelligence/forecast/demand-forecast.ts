@@ -65,7 +65,21 @@ export async function forecastDemand(
   );
   
   if (historicalData.length === 0) {
-    throw new Error('No historical demand data found');
+    return {
+      tenantId: input.tenantId,
+      modelName: 'simple_moving_average',
+      modelVersion: MODEL_VERSION,
+      horizon: input.forecastHorizon,
+      itemType: input.itemType,
+      forecasts: [],
+      summary: {
+        totalPredictedDemand: 0,
+        avgDailyDemand: 0,
+        peakDemandDate: new Date().toISOString().split('T')[0],
+        peakDemandValue: 0,
+        trend: 'stable' as const,
+      },
+    };
   }
   
   // Group by item
@@ -90,7 +104,21 @@ export async function forecastDemand(
   }
   
   if (allForecasts.length === 0) {
-    throw new Error('Insufficient data to generate demand forecasts');
+    return {
+      tenantId: input.tenantId,
+      modelName: 'simple_moving_average',
+      modelVersion: MODEL_VERSION,
+      horizon: input.forecastHorizon,
+      itemType: input.itemType,
+      forecasts: [],
+      summary: {
+        totalPredictedDemand: 0,
+        avgDailyDemand: 0,
+        peakDemandDate: new Date().toISOString().split('T')[0],
+        peakDemandValue: 0,
+        trend: 'stable' as const,
+      },
+    };
   }
   
   // Calculate summary statistics
@@ -135,34 +163,100 @@ async function fetchHistoricalDemand(
     .toISOString()
     .split('T')[0];
   
-  if (itemType === 'service') {
-    // Get service demand from sessions
-    // Note: RPC not in generated types yet, using type cast
-    const { data, error } = await (supabase as any).rpc('get_service_demand_history', {
-      p_tenant_id: tenantId,
-      p_start_date: startDate || defaultStartDate,
-      p_end_date: endDate,
-    });
-    
-    if (error) {
-      throw new Error(`Failed to fetch service demand: ${error.message}`);
+  try {
+    if (itemType === 'service') {
+      // Get service demand from sessions
+      // Note: RPC not in generated types yet, using type cast
+      const { data, error } = await (supabase as any).rpc('get_service_demand_history', {
+        p_tenant_id: tenantId,
+        p_start_date: startDate || defaultStartDate,
+        p_end_date: endDate,
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      return (data || []).map(transformServiceDemand);
+    } else {
+      // Get package demand from bookings
+      // Note: RPC not in generated types yet, using type cast
+      const { data, error } = await (supabase as any).rpc('get_package_demand_history', {
+        p_tenant_id: tenantId,
+        p_start_date: startDate || defaultStartDate,
+        p_end_date: endDate,
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      return (data || []).map(transformPackageDemand);
     }
-    
-    return (data || []).map(transformServiceDemand);
-  } else {
-    // Get package demand from bookings
-    // Note: RPC not in generated types yet, using type cast
-    const { data, error } = await (supabase as any).rpc('get_package_demand_history', {
-      p_tenant_id: tenantId,
-      p_start_date: startDate || defaultStartDate,
-      p_end_date: endDate,
-    });
-    
-    if (error) {
-      throw new Error(`Failed to fetch package demand: ${error.message}`);
+  } catch (rpcError) {
+    console.warn('[Demand Forecast] RPC not available, falling back to base table query:', rpcError);
+    // Fallback: Query base table
+    if (itemType === 'service') {
+      // Query session_logs
+      const { data, error } = await supabase
+        .from('session_logs')
+        .select('created_at, booking_id')
+        .eq('tenant_id', tenantId)
+        .gte('created_at', startDate || defaultStartDate);
+      
+      if (error) {
+        throw error; // Throw database execution error as per Rule #1
+      }
+      
+      // Group sessions by day
+      const dailyMap = new Map<string, number>();
+      (data || []).forEach(row => {
+        if (row.created_at) {
+          const dateStr = row.created_at.split('T')[0];
+          dailyMap.set(dateStr, (dailyMap.get(dateStr) || 0) + 1);
+        }
+      });
+      
+      return Array.from(dailyMap.entries()).map(([date, count]) => ({
+        date,
+        itemId: 'all_services',
+        itemName: 'All Services',
+        demandCount: count,
+      }));
+    } else {
+      // Query bookings
+      const { data, error } = await supabase
+        .from('bookings')
+        .select('created_at, package_name, package_id')
+        .eq('tenant_id', tenantId)
+        .gte('created_at', startDate || defaultStartDate);
+      
+      if (error) {
+        throw error; // Throw database execution error as per Rule #1
+      }
+      
+      // Group bookings by day and package
+      const dailyMap = new Map<string, { date: string; itemId: string; itemName: string; count: number }>();
+      (data || []).forEach(row => {
+        if (row.created_at) {
+          const dateStr = row.created_at.split('T')[0];
+          const packageId = row.package_id || 'custom_booking';
+          const packageName = row.package_name || 'Custom Booking';
+          const key = `${dateStr}_${packageId}`;
+          
+          const existing = dailyMap.get(key) || { date: dateStr, itemId: packageId, itemName: packageName, count: 0 };
+          existing.count++;
+          dailyMap.set(key, existing);
+        }
+      });
+      
+      return Array.from(dailyMap.values()).map(item => ({
+        date: item.date,
+        itemId: item.itemId,
+        itemName: item.itemName,
+        demandCount: item.count,
+      }));
     }
-    
-    return (data || []).map(transformPackageDemand);
   }
 }
 

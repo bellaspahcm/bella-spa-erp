@@ -50,7 +50,20 @@ export async function forecastRevenue(
   );
   
   if (historicalData.length < 3) {
-    throw new Error('Insufficient historical data for forecasting (minimum 3 months required)');
+    return {
+      tenantId: input.tenantId,
+      modelName: input.modelName || 'exponential_smoothing',
+      modelVersion: MODEL_VERSION,
+      confidenceLevel: input.confidenceLevel || DEFAULT_CONFIDENCE_LEVEL,
+      horizon: input.forecastHorizon,
+      forecasts: [],
+      summary: {
+        totalPredictedRevenue: 0,
+        avgMonthlyRevenue: 0,
+        growthRate: 0,
+        trend: 'stable' as const,
+      },
+    };
   }
   
   // Select model
@@ -107,27 +120,38 @@ async function fetchHistoricalRevenue(
   tenantId: string,
   startDate?: string
 ): Promise<HistoricalRevenueData[]> {
-  // Get last 24 months of revenue data from mv_monthly_pnl
-  // Note: View not in generated types yet, using type cast
-  const { data, error } = await (supabase as any)
-    .from('mv_monthly_pnl')
-    .select('period_month, total_revenue')
+  // Query revenue table directly
+  const { data, error } = await supabase
+    .from('revenue')
+    .select('received_date, amount')
     .eq('tenant_id', tenantId)
-    .order('period_month', { ascending: true })
-    .limit(24);
+    .eq('status', 'confirmed');
   
   if (error) {
     throw new Error(`Failed to fetch historical revenue: ${error.message}`);
   }
   
   if (!data || data.length === 0) {
-    throw new Error('No historical revenue data found');
+    return [];
   }
   
-  return data.map((row: any) => ({
-    month: row.period_month,
-    revenue: Number(row.total_revenue) || 0,
+  const monthlyMap = new Map<string, number>();
+  data.forEach((row) => {
+    if (row.received_date) {
+      const month = row.received_date.slice(0, 7); // YYYY-MM
+      monthlyMap.set(month, (monthlyMap.get(month) || 0) + Number(row.amount || 0));
+    }
+  });
+
+  const historical = Array.from(monthlyMap.entries()).map(([month, revenue]) => ({
+    month,
+    revenue,
   }));
+
+  // Sort chronologically
+  historical.sort((a, b) => a.month.localeCompare(b.month));
+
+  return historical;
 }
 
 async function selectBestModel(

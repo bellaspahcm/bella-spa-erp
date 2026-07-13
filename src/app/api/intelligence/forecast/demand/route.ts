@@ -37,8 +37,8 @@ export async function GET(request: NextRequest) {
     }
     
     // Parse query parameters
-    const horizon = parseInt(searchParams.get('horizon') || '2');
-    const itemType = searchParams.get('item_type') as 'service' | 'package';
+    const horizon = parseInt(searchParams.get('months') || searchParams.get('horizon') || '2');
+    const itemType = (searchParams.get('item_type') || 'service') as 'service' | 'package';
     
     if (horizon < 1 || horizon > 12) {
       return NextResponse.json(
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    if (!itemType || !['service', 'package'].includes(itemType)) {
+    if (!['service', 'package'].includes(itemType)) {
       return NextResponse.json(
         { error: 'Item type must be "service" or "package"' },
         { status: 400 }

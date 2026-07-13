@@ -74,7 +74,20 @@ export async function forecastChurn(
   const customerData = await fetchCustomerData(supabase, input.tenantId);
   
   if (customerData.length === 0) {
-    throw new Error('No customer data found for churn forecasting');
+    return {
+      tenantId: input.tenantId,
+      modelName: 'logistic_regression',
+      modelVersion: MODEL_VERSION,
+      horizon: input.forecastHorizon as 30 | 60 | 90,
+      customersAtRisk: [],
+      summary: {
+        totalCustomers: 0,
+        predictedChurn: 0,
+        churnRate: 0,
+        expectedRevenueLoss: 0,
+        avgChurnProbability: 0,
+      },
+    };
   }
   
   // Calculate churn probabilities for each customer
@@ -124,36 +137,101 @@ async function fetchCustomerData(
 ): Promise<CustomerData[]> {
   // Fetch customer data from mv_customer_segments (has RFM scores)
   // Note: View not in generated types yet, using type cast
-  const { data, error } = await (supabase as any)
-    .from('mv_customer_segments')
-    .select('*')
-    .eq('tenant_id', tenantId);
-  
-  if (error) {
-    throw new Error(`Failed to fetch customer data: ${error.message}`);
+  try {
+    const { data, error } = await (supabase as any)
+      .from('mv_customer_segments')
+      .select('*')
+      .eq('tenant_id', tenantId);
+    
+    if (error) {
+      throw error;
+    }
+    
+    if (!data || data.length === 0) {
+      return [];
+    }
+    
+    // Transform to CustomerData format
+    return data.map((row: any) => ({
+      customerId: row.customer_id,
+      customerName: row.customer_name || 'Unknown',
+      lastPurchaseDate: row.last_purchase_date,
+      daysSinceLastPurchase: row.days_since_last_purchase,
+      totalOrders: row.total_orders,
+      totalRevenue: Number(row.total_revenue) || 0,
+      avgOrderValue: Number(row.avg_order_value) || 0,
+      avgRating: row.avg_rating ? Number(row.avg_rating) : null,
+      lifetimeValue: Number(row.total_revenue) || 0,
+      segment: row.segment || 'Unknown',
+      recencyScore: row.recency_score,
+      frequencyScore: row.frequency_score,
+      monetaryScore: row.monetary_score,
+    }));
+  } catch (viewError) {
+    console.warn('[Churn Forecast] mv_customer_segments not available, falling back to base tables:', viewError);
+    
+    // Fallback: query customers and bookings tables
+    const { data: customers, error: custError } = await supabase
+      .from('customers')
+      .select('id, name_mother, created_at')
+      .eq('tenant_id', tenantId);
+    
+    if (custError) {
+      throw custError; // Propagate real DB errors per Rule #1
+    }
+    
+    if (!customers || customers.length === 0) {
+      return [];
+    }
+    
+    // Get bookings to compute RFM
+    const { data: bookings, error: bookingError } = await supabase
+      .from('bookings')
+      .select('customer_id, created_at, deposit_amount, full_price')
+      .eq('tenant_id', tenantId)
+      .in('status', ['active', 'completed']);
+    
+    if (bookingError) {
+      throw bookingError; // Propagate real DB errors per Rule #1
+    }
+    
+    const now = Date.now();
+    const bookingsByCustomer = new Map<string, any[]>();
+    (bookings || []).forEach(b => {
+      if (!bookingsByCustomer.has(b.customer_id)) bookingsByCustomer.set(b.customer_id, []);
+      bookingsByCustomer.get(b.customer_id)!.push(b);
+    });
+    
+    return customers.map(c => {
+      const custBookings = bookingsByCustomer.get(c.id) || [];
+      const dates = custBookings.map(b => new Date(b.created_at).getTime()).sort((a, z) => z - a);
+      const lastTs = dates[0] || new Date(c.created_at).getTime();
+      const daysSince = Math.floor((now - lastTs) / (1000 * 60 * 60 * 24));
+      const totalRevenue = custBookings.reduce((s, b) => s + Number(b.full_price || 0), 0);
+      const totalOrders = custBookings.length;
+      // Simple recency/frequency/monetary scores (0-1 scale)
+      const recencyScore = Math.max(0, 1 - daysSince / 365);
+      const frequencyScore = Math.min(1, totalOrders / 10);
+      const monetaryScore = Math.min(1, totalRevenue / 10_000_000);
+      return {
+        customerId: c.id,
+        customerName: (c as any).name_mother || 'Unknown',
+        lastPurchaseDate: new Date(lastTs).toISOString().split('T')[0],
+        daysSinceLastPurchase: daysSince,
+        totalOrders,
+        totalRevenue,
+        avgOrderValue: totalOrders > 0 ? totalRevenue / totalOrders : 0,
+        avgRating: null,
+        lifetimeValue: totalRevenue,
+        segment: 'fallback',
+        recencyScore,
+        frequencyScore,
+        monetaryScore,
+      };
+    });
   }
-  
-  if (!data || data.length === 0) {
-    return [];
-  }
-  
-  // Transform to CustomerData format
-  return data.map((row: any) => ({
-    customerId: row.customer_id,
-    customerName: row.customer_name || 'Unknown',
-    lastPurchaseDate: row.last_purchase_date,
-    daysSinceLastPurchase: row.days_since_last_purchase,
-    totalOrders: row.total_orders,
-    totalRevenue: Number(row.total_revenue) || 0,
-    avgOrderValue: Number(row.avg_order_value) || 0,
-    avgRating: row.avg_rating ? Number(row.avg_rating) : null,
-    lifetimeValue: Number(row.total_revenue) || 0, // LTV = total revenue for simplicity
-    segment: row.segment || 'Unknown',
-    recencyScore: row.recency_score,
-    frequencyScore: row.frequency_score,
-    monetaryScore: row.monetary_score,
-  }));
 }
+
 
 async function getChurnAccuracy(
   supabase: Awaited<ReturnType<typeof createClient>>,

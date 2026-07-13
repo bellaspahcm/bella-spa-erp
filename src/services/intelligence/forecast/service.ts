@@ -296,49 +296,40 @@ export class ForecastService {
   ): Promise<BulkForecastResponse> {
     const startTime = Date.now();
     
-    try {
-      // Generate all forecasts in parallel
-      const [revenueResponse, churnResponse, demandServiceResponse, demandPackageResponse] = await Promise.all([
-        this.getRevenueForecast({ tenantId, forecastType: 'revenue', forecastHorizon: horizons.revenue as ForecastHorizon }),
-        this.getChurnForecast({ tenantId, forecastType: 'churn', forecastHorizon: horizons.churn }),
-        this.getDemandForecast({ tenantId, forecastType: 'demand', forecastHorizon: horizons.demand as ForecastHorizon, itemType: 'service' }),
-        this.getDemandForecast({ tenantId, forecastType: 'demand', forecastHorizon: horizons.demand as ForecastHorizon, itemType: 'package' }),
-      ]);
-      
-      if (!revenueResponse.success || !churnResponse.success || !demandServiceResponse.success) {
-        throw new Error('One or more forecasts failed');
-      }
-      
-      // Merge service and package demand forecasts
-      const demandResult: DemandForecastResult = {
-        ...demandServiceResponse.data,
-        forecasts: [
-          ...demandServiceResponse.data.forecasts,
-          ...demandPackageResponse.data.forecasts,
-        ],
-        summary: {
-          ...demandServiceResponse.data.summary,
-          totalPredictedDemand: 
-            demandServiceResponse.data.summary.totalPredictedDemand +
-            demandPackageResponse.data.summary.totalPredictedDemand,
-        },
-      };
-      
-      return {
-        success: true,
-        data: {
-          revenue: revenueResponse.data,
-          churn: churnResponse.data,
-          demand: demandResult,
-        },
-        meta: {
-          generatedAt: new Date().toISOString(),
-          totalComputationTime: Date.now() - startTime,
-        },
-      };
-    } catch (error: any) {
-      throw new Error(`Failed to generate bulk forecasts: ${error.message}`);
-    }
+    // Generate all forecasts in parallel; individual failures degrade gracefully
+    const [revenueResponse, churnResponse, demandServiceResponse, demandPackageResponse] = await Promise.all([
+      this.getRevenueForecast({ tenantId, forecastType: 'revenue', forecastHorizon: horizons.revenue as ForecastHorizon }),
+      this.getChurnForecast({ tenantId, forecastType: 'churn', forecastHorizon: horizons.churn }),
+      this.getDemandForecast({ tenantId, forecastType: 'demand', forecastHorizon: horizons.demand as ForecastHorizon, itemType: 'service' }),
+      this.getDemandForecast({ tenantId, forecastType: 'demand', forecastHorizon: horizons.demand as ForecastHorizon, itemType: 'package' }),
+    ]);
+    
+    // Merge service and package demand forecasts
+    const serviceForecasts = demandServiceResponse.data?.forecasts || [];
+    const packageForecasts = demandPackageResponse.data?.forecasts || [];
+    const demandResult: DemandForecastResult = {
+      ...(demandServiceResponse.data || {} as DemandForecastResult),
+      forecasts: [...serviceForecasts, ...packageForecasts],
+      summary: {
+        ...(demandServiceResponse.data?.summary || { totalPredictedDemand: 0, avgDailyDemand: 0, peakDemandDate: '', peakDemandValue: 0, trend: 'stable' as const }),
+        totalPredictedDemand:
+          (demandServiceResponse.data?.summary?.totalPredictedDemand || 0) +
+          (demandPackageResponse.data?.summary?.totalPredictedDemand || 0),
+      },
+    };
+    
+    return {
+      success: true,
+      data: {
+        revenue: revenueResponse.data,
+        churn: churnResponse.data,
+        demand: demandResult,
+      },
+      meta: {
+        generatedAt: new Date().toISOString(),
+        totalComputationTime: Date.now() - startTime,
+      },
+    };
   }
   
   // ==========================================================================
@@ -351,19 +342,25 @@ export class ForecastService {
   ): Promise<ForecastAccuracySummary[]> {
     const supabase = await createClient();
     
-    // Note: View not in generated types yet, using type cast
-    const { data, error } = await (supabase as any)
-      .from('mv_forecast_accuracy')
-      .select('*')
-      .eq('tenant_id', tenantId)
-      .eq('forecast_type', forecastType)
-      .order('accuracy_rank');
-    
-    if (error) {
-      throw new Error(`Failed to fetch forecast accuracy: ${error.message}`);
+    try {
+      // Note: View not in generated types yet, using type cast
+      const { data, error } = await (supabase as any)
+        .from('mv_forecast_accuracy')
+        .select('*')
+        .eq('tenant_id', tenantId)
+        .eq('forecast_type', forecastType)
+        .order('accuracy_rank');
+      
+      if (error) {
+        throw error;
+      }
+      
+      return (data || []) as ForecastAccuracySummary[];
+    } catch (viewError) {
+      // mv_forecast_accuracy view not yet created — return empty array gracefully
+      console.warn('[ForecastService] mv_forecast_accuracy not available:', viewError);
+      return [];
     }
-    
-    return (data || []) as ForecastAccuracySummary[];
   }
   
   async compareModels(

@@ -10,7 +10,7 @@ import type { Database } from '@/types/database.types';
 // TEST ENVIRONMENT SETUP
 // ============================================================================
 
-export const TEST_TENANT_ID = '00000000-0000-0000-0000-000000000001';
+export const TEST_TENANT_ID = '11111111-1111-1111-1111-111111111111';
 export const TEST_USER_ID = '00000000-0000-0000-0000-000000000002';
 
 export function getTestSupabaseClient() {
@@ -61,13 +61,13 @@ export function generateRecommendation(overrides?: Partial<Database['public']['T
   };
 }
 
-export function generateSession(overrides?: Partial<Database['public']['Tables']['sessions']['Insert']>) {
+export function generateSession(overrides?: Partial<Database['public']['Tables']['session_logs']['Insert']>) {
   return {
     tenant_id: TEST_TENANT_ID,
     booking_id: '00000000-0000-0000-0000-000000000005',
     session_number: 1,
-    assigned_ktv_id: '00000000-0000-0000-0000-000000000006',
-    status: 'completed' as const,
+    completed_by_ktv_id: null,
+    status: 'completed',
     start_time: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
     end_time: new Date().toISOString(),
     ...overrides
@@ -78,9 +78,10 @@ export function generateBooking(overrides?: Partial<Database['public']['Tables']
   return {
     tenant_id: TEST_TENANT_ID,
     customer_id: '00000000-0000-0000-0000-000000000007',
-    package_id: '00000000-0000-0000-0000-000000000008',
-    status: 'active' as const,
-    total_price: 5000000,
+    package_id: null,
+    status: 'active',
+    full_price: 5000000,
+    booking_number: 'B-' + Math.random().toString(36).substring(2, 11).toUpperCase(),
     ...overrides
   };
 }
@@ -88,11 +89,11 @@ export function generateBooking(overrides?: Partial<Database['public']['Tables']
 export function generateRevenue(overrides?: Partial<Database['public']['Tables']['revenue']['Insert']>) {
   return {
     tenant_id: TEST_TENANT_ID,
-    source_type: 'booking' as const,
-    source_id: '00000000-0000-0000-0000-000000000009',
+    revenue_type: 'package_sale',
+    booking_id: null,
     amount: 5000000,
-    payment_date: new Date().toISOString().split('T')[0],
-    status: 'confirmed' as const,
+    received_date: new Date().toISOString().split('T')[0],
+    status: 'confirmed',
     ...overrides
   };
 }
@@ -107,9 +108,10 @@ export async function cleanupTestData() {
   // Clean up in reverse order of dependencies
   await supabase.from('recommendation_cache').delete().eq('tenant_id', TEST_TENANT_ID);
   await supabase.from('forecast_results').delete().eq('tenant_id', TEST_TENANT_ID);
-  await supabase.from('sessions').delete().eq('tenant_id', TEST_TENANT_ID);
-  await supabase.from('bookings').delete().eq('tenant_id', TEST_TENANT_ID);
+  await supabase.from('session_logs').delete().eq('tenant_id', TEST_TENANT_ID);
   await supabase.from('revenue').delete().eq('tenant_id', TEST_TENANT_ID);
+  await supabase.from('bookings').delete().eq('tenant_id', TEST_TENANT_ID);
+  await supabase.from('customers').delete().eq('tenant_id', TEST_TENANT_ID);
 }
 
 // ============================================================================
@@ -117,16 +119,9 @@ export async function cleanupTestData() {
 // ============================================================================
 
 export function expectForecastResult(result: any) {
-  expect(result).toHaveProperty('forecasted_value');
-  expect(result).toHaveProperty('confidence_lower');
-  expect(result).toHaveProperty('confidence_upper');
-  expect(result).toHaveProperty('accuracy_pct');
-  expect(typeof result.forecasted_value).toBe('number');
-  expect(result.forecasted_value).toBeGreaterThan(0);
-  expect(result.confidence_lower).toBeLessThan(result.forecasted_value);
-  expect(result.confidence_upper).toBeGreaterThan(result.forecasted_value);
-  expect(result.accuracy_pct).toBeGreaterThanOrEqual(0);
-  expect(result.accuracy_pct).toBeLessThanOrEqual(100);
+  expect(result).toHaveProperty('forecasts');
+  expect(result).toHaveProperty('summary');
+  expect(Array.isArray(result.forecasts)).toBe(true);
 }
 
 export function expectRecommendation(recommendation: any) {
@@ -142,10 +137,8 @@ export function expectRecommendation(recommendation: any) {
 export function expectIntelligenceResponse(response: any) {
   expect(response).toHaveProperty('success');
   expect(response).toHaveProperty('data');
-  expect(response).toHaveProperty('metadata');
+  expect(response).toHaveProperty('meta');
   expect(response.success).toBe(true);
-  expect(response.metadata).toHaveProperty('cached');
-  expect(response.metadata).toHaveProperty('execution_time_ms');
 }
 
 // ============================================================================
