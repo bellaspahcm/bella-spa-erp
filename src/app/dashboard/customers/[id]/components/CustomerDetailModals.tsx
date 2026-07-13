@@ -519,7 +519,7 @@ export function EditBookingModal({
                   type="number"
                   min="0"
                   max="100"
-                  value={data.discount_percent}
+                  value={data.discount_percent.toString()}
                   onChange={(e) => setData({ ...data, discount_percent: parsePercentInput(e.target.value) })}
                   className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-slate-700"
                 />
@@ -546,7 +546,7 @@ export function EditBookingModal({
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Tổng số buổi</label>
               <input
                 type="number"
-                value={data.total_sessions}
+                value={data.total_sessions.toString()}
                 onChange={(e) => setData({ ...data, total_sessions: parseIntegerInput(e.target.value, { min: 0, max: 100 }) })}
                 className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-slate-700"
               />
@@ -556,7 +556,7 @@ export function EditBookingModal({
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Buổi đã hoàn thành</label>
               <input
                 type="number"
-                value={data.completed_sessions}
+                value={data.completed_sessions.toString()}
                 onChange={(e) => setData({ ...data, completed_sessions: parseIntegerInput(e.target.value, { min: 0, max: 100 }) })}
                 className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-slate-700"
               />
