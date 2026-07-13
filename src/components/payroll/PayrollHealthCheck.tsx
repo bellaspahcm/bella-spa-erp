@@ -100,7 +100,8 @@ export function PayrollHealthCheck({ salaries, currentMonth }: PayrollHealthChec
       }
       
       // Info: Missing KPI bonus (when should have it)
-      if (ktv.sessions >= 12 && ktv.kpiBonus === 0) {
+      const targetSessions = ktv.kpiTargetSessions ?? 12;
+      if (ktv.sessions >= targetSessions && ktv.kpiBonus === 0) {
         detected.push({
           id: `${ktv.id}-kpi`,
           ktvId: ktv.id,
@@ -479,7 +480,8 @@ export function getPayrollAnomalies(salaries: KtvSalaryRecord[]) {
       });
     }
     
-    if (ktv.sessions >= 12 && ktv.kpiBonus === 0) {
+    const targetSessions = ktv.kpiTargetSessions ?? 12;
+    if (ktv.sessions >= targetSessions && ktv.kpiBonus === 0) {
       anomalies.push({
         id: `${ktv.id}-kpi`,
         ktvId: ktv.id,

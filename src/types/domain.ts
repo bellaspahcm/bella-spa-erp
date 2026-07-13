@@ -30,6 +30,7 @@ export interface KtvSalaryRecord {
   positionBonus?: number;
   seniorityBonus?: number;
   manualAdjustments?: number;
+  kpiTargetSessions?: number;
 }
 
 export interface KtvAttendanceLog {

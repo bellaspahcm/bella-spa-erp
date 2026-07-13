@@ -190,6 +190,21 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
       penalty_absent_per_day: stored.penalty_absent_per_day ?? 200000,
     };
 
+    const { data: kpiConfigData } = await supabase
+      .from('tenant_payroll_config')
+      .select('config, enabled')
+      .eq('provider_key', 'kpi')
+      .eq('tenant_id', tenantId)
+      .maybeSingle();
+
+    let dynamicKpiTargetSessions = salaryConfig.kpi_target_sessions;
+    if (kpiConfigData?.enabled && kpiConfigData.config) {
+      const config = kpiConfigData.config as { target?: number };
+      if (typeof config.target === 'number') {
+        dynamicKpiTargetSessions = config.target;
+      }
+    }
+
     // Fetch KTVs
     const ktvQuery = supabase
       .from('users')
@@ -409,6 +424,7 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
           resignationDate: ktv.resignation_date,
           ktvStatus: ktv.status || 'active',
           actualDays,
+          kpiTargetSessions: dynamicKpiTargetSessions,
           // Advanced commission components (Task 28-32)
           serviceCommission: salaryDisplay.serviceCommission,
           productSalesCommission: salaryDisplay.productSalesCommission,

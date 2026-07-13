@@ -35,6 +35,7 @@ export interface KtvSalaryRecord {
   /** Actual attendance-based work days for pro-rata base salary calculation */
   actualDays?: number;
   ktvStatus?: string;
+  kpiTargetSessions?: number;
 }
 
 // Salary configuration types
