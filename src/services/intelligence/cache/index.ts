@@ -134,35 +134,42 @@ export class MultiTierCache implements CacheService {
   }
 
   async set<T>(key: string, value: T, options?: CacheOptions): Promise<void> {
-    const promises: Promise<void>[] = [];
+    try {
+      const promises: Promise<void>[] = [];
 
-    // Write to Memory Cache (if enabled)
-    if (this.memory) {
-      const memoryTTL = options?.ttl
-        ? Math.floor(options.ttl * this.memoryTTLMultiplier)
-        : undefined;
+      // Write to Memory Cache (if enabled)
+      if (this.memory) {
+        const memoryTTL = options?.ttl
+          ? Math.floor(options.ttl * this.memoryTTLMultiplier)
+          : undefined;
 
-      promises.push(
-        this.memory.set(key, value, {
-          ...options,
-          ttl: memoryTTL,
-        })
+        promises.push(
+          this.memory.set(key, value, {
+            ...options,
+            ttl: memoryTTL,
+          })
+        );
+      }
+
+      // Write to Redis Cache (if enabled) - with error handling
+      if (this.redis) {
+        promises.push(
+          this.redis.set(key, value, options).catch(redisError => {
+            // Redis error: log but don't fail entire request
+            console.warn(`[MultiTierCache] Redis cache write error for key "${key}":`, redisError instanceof Error ? redisError.message : 'Unknown');
+            // Don't re-throw - allow request to continue with Memory cache only
+          })
+        );
+      }
+
+      // Wait for all writes to complete (Redis errors are caught above)
+      await Promise.all(promises);
+    } catch (error) {
+      throw new CacheError(
+        `Failed to set key "${key}" in multi-tier cache`,
+        error instanceof Error ? error : undefined
       );
     }
-
-    // Write to Redis Cache (if enabled) - with error handling
-    if (this.redis) {
-      promises.push(
-        this.redis.set(key, value, options).catch(redisError => {
-          // Redis error: log but don't fail entire request
-          console.warn(`[MultiTierCache] Redis cache write error for key "${key}":`, redisError instanceof Error ? redisError.message : 'Unknown');
-          // Don't re-throw - allow request to continue with Memory cache only
-        })
-      );
-    }
-
-    // Wait for all writes to complete (Redis errors are caught above)
-    await Promise.all(promises);
   }
 
   async delete(key: string): Promise<void> {

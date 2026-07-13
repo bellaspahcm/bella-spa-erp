@@ -618,8 +618,8 @@ export async function getExpenseBreakdown(
       .select('payment_method, amount')
       .eq('tenant_id', tenantId)
       .eq('status', 'confirmed')
-      .gte('revenue_date', formatDate(range.startDate))
-      .lte('revenue_date', formatDate(range.endDate));
+      .gte('received_date', formatDate(range.startDate))
+      .lte('received_date', formatDate(range.endDate));
     
     // Aggregate payment methods from revenue (as proxy for cash flow patterns)
     const methodMap = new Map<string, number>();
@@ -698,11 +698,11 @@ export async function getRevenueBreakdown(
     // Query current period revenue
     const { data, error } = await supabase
       .from('revenue')
-      .select('revenue_type, amount, payment_method, revenue_date')
+      .select('revenue_type, amount, payment_method, received_date')
       .eq('tenant_id', tenantId)
       .eq('status', 'confirmed')
-      .gte('revenue_date', formatDate(range.startDate))
-      .lte('revenue_date', formatDate(range.endDate));
+      .gte('received_date', formatDate(range.startDate))
+      .lte('received_date', formatDate(range.endDate));
     
     if (error) {
       throw new QueryError(
@@ -717,8 +717,8 @@ export async function getRevenueBreakdown(
       .select('revenue_type, amount')
       .eq('tenant_id', tenantId)
       .eq('status', 'confirmed')
-      .gte('revenue_date', formatDate(prevStartDate))
-      .lte('revenue_date', formatDate(prevEndDate));
+      .gte('received_date', formatDate(prevStartDate))
+      .lte('received_date', formatDate(prevEndDate));
     
     // Aggregate by type
     const typeMap = new Map<string, number>();
