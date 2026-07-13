@@ -88,6 +88,8 @@ export class RedisCache implements CacheService {
       maxRetriesPerRequest: this.maxRetries,
       enableReadyCheck: true,
       lazyConnect: false, // Connect immediately
+      connectTimeout: 1500, // Timeout connection attempt after 1.5s
+      enableOfflineQueue: false, // Return error immediately on connection loss instead of queuing commands
     });
 
     // Event handlers
