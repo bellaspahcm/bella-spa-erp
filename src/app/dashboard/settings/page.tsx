@@ -20,6 +20,8 @@ import {
   KeyRound,
   Calculator,
   Megaphone,
+  Brain,
+  MonitorDot,
 } from "lucide-react";
 import { toast } from "sonner";
 import { saveTenantSettings } from "@/services/tenant-actions";
@@ -60,6 +62,9 @@ const TABS = [
   { id: "notifications", label: "Thông báo", icon: Bell },
   { id: "appearance", label: "Giao diện & Module", icon: Palette },
   { id: "promotions", label: "Khuyến mãi", icon: Sparkles },
+  { id: "rules", label: "Quy tắc nghiệp vụ", icon: Brain },
+  { id: "partners", label: "API Partners", icon: KeyRound },
+  { id: "system-monitor", label: "Giám sát & Nhật ký", icon: MonitorDot },
 ] as const;
 
 type SettingsTabId = (typeof TABS)[number]["id"];
@@ -317,6 +322,38 @@ function SettingsContent() {
 
               {activeTab === "promotions" && (
                 <PromotionsTab />
+              )}
+
+              {activeTab === "rules" && (
+                <div className="w-full h-full min-h-[70vh]">
+                  <iframe src="/dashboard/rules?embedded=true" className="w-full h-[70vh] border-0 rounded-2xl bg-slate-50 dark:bg-zinc-950" />
+                </div>
+              )}
+
+              {activeTab === "partners" && (
+                <div className="w-full h-full min-h-[70vh]">
+                  <iframe src="/dashboard/admin/partners?embedded=true" className="w-full h-[70vh] border-0 rounded-2xl bg-slate-50 dark:bg-zinc-950" />
+                </div>
+              )}
+
+              {activeTab === "system-monitor" && (
+                <div className="w-full h-full flex flex-col gap-6 min-h-[70vh]">
+                  <h3 className="text-lg font-bold text-foreground mb-2">Giám sát hệ thống & Nhật ký</h3>
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 h-[65vh]">
+                    <div className="border border-slate-200 dark:border-zinc-800 rounded-2xl overflow-hidden bg-slate-50 dark:bg-zinc-950">
+                      <div className="bg-slate-100 dark:bg-zinc-900 px-4 py-2 text-xs font-bold text-muted-foreground border-b border-slate-200 dark:border-zinc-800">
+                        TRUNG TÂM GIÁM SÁT
+                      </div>
+                      <iframe src="/dashboard/system-monitor?embedded=true" className="w-full h-[calc(65vh-33px)] border-0" />
+                    </div>
+                    <div className="border border-slate-200 dark:border-zinc-800 rounded-2xl overflow-hidden bg-slate-50 dark:bg-zinc-950">
+                      <div className="bg-slate-100 dark:bg-zinc-900 px-4 py-2 text-xs font-bold text-muted-foreground border-b border-slate-200 dark:border-zinc-800">
+                        NHẬT KÝ HỆ THỐNG (AUDIT LOGS)
+                      </div>
+                      <iframe src="/dashboard/audit?embedded=true" className="w-full h-[calc(65vh-33px)] border-0" />
+                    </div>
+                  </div>
+                </div>
               )}
             </motion.div>
           </AnimatePresence>

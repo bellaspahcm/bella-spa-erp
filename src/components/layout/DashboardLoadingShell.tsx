@@ -77,6 +77,19 @@ export function DashboardAuthLoadingShell() {
 }
 
 export function DashboardAuthorizedShell({ children }: { children: React.ReactNode }) {
+  let isEmbedded = false;
+  if (typeof window !== 'undefined') {
+    isEmbedded = new URLSearchParams(window.location.search).get('embedded') === 'true';
+  }
+
+  if (isEmbedded) {
+    return (
+      <main className="flex-1 flex flex-col min-w-0 max-w-full overflow-x-auto bg-transparent">
+        {children}
+      </main>
+    );
+  }
+
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar />
