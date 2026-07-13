@@ -357,8 +357,13 @@ function SettingsContent() {
                 )}
 
                 {activeTab === "partners" && (
-                  <div className="w-full h-full min-h-[70vh]">
-                    <iframe src="/dashboard/admin/partners?embedded=true" className="w-full h-[70vh] border-0 rounded-2xl bg-slate-50 dark:bg-zinc-950" />
+                  <div className="w-full h-full">
+                    <iframe
+                      src="/dashboard/admin/partners?embedded=true"
+                      style={{ height: iframeHeight }}
+                      className="w-full border-0 bg-transparent"
+                      scrolling="no"
+                    />
                   </div>
                 )}
 
