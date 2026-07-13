@@ -75,10 +75,15 @@ export default function AICopilotClient() {
   const [approvingId, setApprovingId] = useState<string | null>(null);
   const [approvedActions, setApprovedActions] = useState<Record<string, boolean>>({});
   
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTo({
+        top: chatContainerRef.current.scrollHeight,
+        behavior: "smooth"
+      });
+    }
   }, [messages]);
 
   useEffect(() => {
@@ -177,7 +182,7 @@ export default function AICopilotClient() {
   };
 
   return (
-    <div className="flex-1 min-h-[calc(100vh-4rem)] lg:min-h-screen flex flex-col overflow-y-auto lg:overflow-hidden relative bg-background text-foreground">
+    <div className="flex-1 min-h-[calc(100vh-4rem)] lg:h-screen lg:max-h-screen flex flex-col overflow-y-auto lg:overflow-hidden relative bg-background text-foreground">
       {/* Dynamic Background Glows */}
       <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-accent/10 rounded-full blur-[120px] pointer-events-none" />
@@ -209,7 +214,10 @@ export default function AICopilotClient() {
         {/* Chat Area (Left 3/5) */}
         <div className="flex min-h-[32rem] flex-col bg-card/40 border border-border rounded-3xl lg:rounded-[2rem] overflow-hidden backdrop-blur-md shadow-lg lg:flex-1 lg:min-h-0">
           {/* Scrollable messages */}
-          <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 sm:space-y-6 custom-scrollbar">
+          <div 
+            ref={chatContainerRef}
+            className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 sm:space-y-6 custom-scrollbar"
+          >
             {messages.map((msg, index) => (
               <div 
                 key={index}
@@ -267,7 +275,7 @@ export default function AICopilotClient() {
                 </div>
               </div>
             )}
-            <div ref={messagesEndRef} />
+            {/* Scroll anchor handled via ref */}
           </div>
 
           {/* Form Input */}
