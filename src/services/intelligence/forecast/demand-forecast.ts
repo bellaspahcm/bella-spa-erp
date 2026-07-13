@@ -217,12 +217,19 @@ async function fetchHistoricalDemand(
         }
       });
       
-      return Array.from(dailyMap.entries()).map(([date, count]) => ({
-        date,
-        itemId: 'all_services',
-        itemName: 'All Services',
-        demandCount: count,
-      }));
+      return Array.from(dailyMap.entries()).map(([date, count]) => {
+        const d = new Date(date);
+        return {
+          date,
+          itemId: 'all_services',
+          itemName: 'All Services',
+          itemType: 'service' as const,
+          demand: count,
+          dayOfWeek: d.getDay(),
+          dayOfMonth: d.getDate(),
+          weekOfMonth: Math.ceil(d.getDate() / 7),
+        };
+      });
     } else {
       // Query bookings
       const { data, error } = await supabase
@@ -250,12 +257,19 @@ async function fetchHistoricalDemand(
         }
       });
       
-      return Array.from(dailyMap.values()).map(item => ({
-        date: item.date,
-        itemId: item.itemId,
-        itemName: item.itemName,
-        demandCount: item.count,
-      }));
+      return Array.from(dailyMap.values()).map(item => {
+        const d = new Date(item.date);
+        return {
+          date: item.date,
+          itemId: item.itemId,
+          itemName: item.itemName,
+          itemType: 'package' as const,
+          demand: item.count,
+          dayOfWeek: d.getDay(),
+          dayOfMonth: d.getDate(),
+          weekOfMonth: Math.ceil(d.getDate() / 7),
+        };
+      });
     }
   }
 }

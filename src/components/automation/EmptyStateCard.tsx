@@ -78,7 +78,7 @@ export function EmptyStateCard({
           <IconComponent size={48} className="text-rose-500" />
         ) : (
           <span className="text-5xl" role="img" aria-label={headline}>
-            {icon}
+            {typeof icon === 'string' ? icon : ''}
           </span>
         )}
       </motion.div>

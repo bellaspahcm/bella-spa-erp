@@ -32,6 +32,9 @@ const mockCreateRpcClient = () => ({
     if (!this?.rest) {
       throw new TypeError("Cannot read properties of undefined (reading 'rest')");
     }
+    if (fn === 'set_session_tenant') {
+      return Promise.resolve({ data: null, error: null });
+    }
     return mockRpc(fn, args);
   },
 });

@@ -90,7 +90,8 @@ export default function DashboardPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [isAllNotificationsOpen, setIsAllNotificationsOpen] = useState(false);
-  const [searchQueryNotifications, setSearchQueryNotifications] = useState('');
+  const [notifSearch, setNotifSearch] = useState('');
+  const [notifTab, setNotifTab] = useState('all');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [quickNoteId, setQuickNoteId] = useState<string | null>(null);
   const [quickNoteValue, setQuickNoteValue] = useState('');

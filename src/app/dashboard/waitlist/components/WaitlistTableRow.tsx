@@ -128,7 +128,7 @@ export function WaitlistTableRow({ entry, onRefresh }: WaitlistTableRowProps) {
 
       {/* Preferred Time */}
       <TableCell className="px-6 py-4 text-sm text-slate-700 dark:text-slate-300 font-mono">
-        {entry.preferred_time || '-'}
+        {entry.preferred_start_time || '-'}
       </TableCell>
 
       {/* Priority Score */}

@@ -61,7 +61,7 @@ const PACKAGE_MODULE_SETUP_ERROR = 'Không thể tải cấu hình module ngành
 
 type PackageTenantModuleScope = {
   enabledModules: TenantEnabledModules;
-  enabledModuleKeys: TenantPrimaryBusinessModuleKey[];
+  enabledModuleKeys: string[];
   defaultModuleKey: TenantPrimaryBusinessModuleKey;
 };
 

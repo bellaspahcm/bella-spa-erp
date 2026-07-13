@@ -366,6 +366,7 @@ describe('updateSalaryConfig audit rollback', () => {
 
   it('records old and new salary data when audit succeeds', async () => {
     const calls = setupDb([
+      { table: 'salary_records', op: 'select', data: null },
       { table: 'salary_records', op: 'select', data: salarySnapshot },
     ]);
 
@@ -393,11 +394,12 @@ describe('updateSalaryConfig audit rollback', () => {
       new_data: payload,
     });
     expect(mockRevalidatePath).toHaveBeenCalledWith('/dashboard/salary');
-    expect(calls).toHaveLength(1);
+    expect(calls).toHaveLength(2);
   });
 
   it('restores the previous salary row when audit fails after recalculation', async () => {
     const calls = setupDb([
+      { table: 'salary_records', op: 'select', data: null },
       { table: 'salary_records', op: 'select', data: salarySnapshot },
       { table: 'salary_records', op: 'update', data: salarySnapshot },
     ]);
@@ -407,7 +409,7 @@ describe('updateSalaryConfig audit rollback', () => {
 
     expect(result.success).toBe(false);
     expect(result.error).toContain('audit insert failed');
-    expect(calls[1]).toEqual({
+    expect(calls[2]).toEqual({
       table: 'salary_records',
       op: 'update',
       payload: salarySnapshot,
@@ -419,6 +421,7 @@ describe('updateSalaryConfig audit rollback', () => {
   it('deletes the generated current-month row when audit fails and no prior row existed', async () => {
     const calls = setupDb([
       { table: 'salary_records', op: 'select', data: null },
+      { table: 'salary_records', op: 'select', data: null },
       { table: 'salary_records', op: 'delete', data: null },
     ]);
     mockRecordAuditLog.mockRejectedValue(new Error('audit insert failed'));
@@ -427,7 +430,7 @@ describe('updateSalaryConfig audit rollback', () => {
 
     expect(result.success).toBe(false);
     expect(result.error).toContain('audit insert failed');
-    expect(calls[1]).toEqual({
+    expect(calls[2]).toEqual({
       table: 'salary_records',
       op: 'delete',
       payload: undefined,
@@ -442,6 +445,7 @@ describe('updateSalaryConfig audit rollback', () => {
 
   it('reports rollback failure when restoring the previous salary row fails', async () => {
     setupDb([
+      { table: 'salary_records', op: 'select', data: null },
       { table: 'salary_records', op: 'select', data: salarySnapshot },
       { table: 'salary_records', op: 'update', error: { message: 'restore failed' } },
     ]);
@@ -457,6 +461,7 @@ describe('updateSalaryConfig audit rollback', () => {
 
   it('does not audit or rollback when salary recalculation fails', async () => {
     const calls = setupDb([
+      { table: 'salary_records', op: 'select', data: null },
       { table: 'salary_records', op: 'select', data: salarySnapshot },
     ]);
     mockRecalculateAndSaveSalaryRecordEngine.mockRejectedValue(new Error('recalc failed'));
@@ -466,7 +471,7 @@ describe('updateSalaryConfig audit rollback', () => {
     expect(result.success).toBe(false);
     expect(result.error).toContain('recalc failed');
     expect(mockRecordAuditLog).not.toHaveBeenCalled();
-    expect(calls).toHaveLength(1);
+    expect(calls).toHaveLength(2);
     expect(mockRevalidatePath).not.toHaveBeenCalled();
   });
 });
@@ -638,6 +643,7 @@ describe('confirmKtvSessions salary rollback', () => {
 
   it('confirms sessions and recalculates salary when all side effects succeed', async () => {
     const calls = setupDb([
+      { table: 'salary_records', op: 'select', data: null },
       { table: 'session_logs', op: 'select', data: sessionSnapshots },
       { table: 'session_logs', op: 'update', data: null },
     ]);
@@ -645,7 +651,7 @@ describe('confirmKtvSessions salary rollback', () => {
     const result = await confirmKtvSessions('ktv-1', 12.5);
 
     expect(result).toEqual({ success: true });
-    expect(calls[0]).toEqual({
+    expect(calls[1]).toEqual({
       table: 'session_logs',
       op: 'select',
       payload: undefined,
@@ -654,7 +660,7 @@ describe('confirmKtvSessions salary rollback', () => {
         { field: 'status', value: 'completed' },
       ],
     });
-    expect(calls[1]).toEqual({
+    expect(calls[2]).toEqual({
       table: 'session_logs',
       op: 'update',
       payload: { is_confirmed: true },
@@ -678,6 +684,7 @@ describe('confirmKtvSessions salary rollback', () => {
 
   it('restores previous session confirmation states when salary recalculation fails', async () => {
     const calls = setupDb([
+      { table: 'salary_records', op: 'select', data: null },
       { table: 'session_logs', op: 'select', data: sessionSnapshots },
       { table: 'session_logs', op: 'update', data: null },
       { table: 'session_logs', op: 'update', data: null },
@@ -689,13 +696,13 @@ describe('confirmKtvSessions salary rollback', () => {
 
     expect(result.success).toBe(false);
     expect(result.error).toContain('recalc failed');
-    expect(calls[2]).toEqual({
+    expect(calls[3]).toEqual({
       table: 'session_logs',
       op: 'update',
       payload: { is_confirmed: false },
       filters: [{ field: 'id', value: 'session-1' }],
     });
-    expect(calls[3]).toEqual({
+    expect(calls[4]).toEqual({
       table: 'session_logs',
       op: 'update',
       payload: { is_confirmed: null },
@@ -706,6 +713,7 @@ describe('confirmKtvSessions salary rollback', () => {
 
   it('reports rollback failure when restoring session confirmation state fails', async () => {
     setupDb([
+      { table: 'salary_records', op: 'select', data: null },
       { table: 'session_logs', op: 'select', data: sessionSnapshots },
       { table: 'session_logs', op: 'update', data: null },
       { table: 'session_logs', op: 'update', error: { message: 'restore session failed' } },
@@ -723,6 +731,7 @@ describe('confirmKtvSessions salary rollback', () => {
 
   it('does not recalculate salary when session confirmation update fails', async () => {
     setupDb([
+      { table: 'salary_records', op: 'select', data: null },
       { table: 'session_logs', op: 'select', data: sessionSnapshots },
       { table: 'session_logs', op: 'update', error: { message: 'session update failed' } },
     ]);

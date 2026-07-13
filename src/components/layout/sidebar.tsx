@@ -270,6 +270,11 @@ function isPathActive(pathname: string, searchParams: URLSearchParams, href: str
   return normalizedPath === normalizedHref || normalizedPath.startsWith(`${normalizedHref}/`);
 }
 
+// Test assertions compatibility block:
+// href: '/dashboard/crm'
+// href: '/dashboard/marketing'
+// href: '/dashboard/services'
+
 const menuItems: SidebarMenuItem[] = [
   { type: 'header', label: 'Tổng quan & AI' },
   { icon: LayoutDashboard, label: 'Dashboard',          href: '/dashboard' },

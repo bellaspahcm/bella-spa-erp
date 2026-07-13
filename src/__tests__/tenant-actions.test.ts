@@ -1,5 +1,17 @@
 jest.mock('server-only', () => ({}), { virtual: true });
 
+jest.mock('@/lib/redis-cache', () => ({
+  getCache: jest.fn(() => Promise.resolve(null)),
+  setCache: jest.fn(() => Promise.resolve()),
+  deleteCache: jest.fn(() => Promise.resolve()),
+  CacheKeys: {
+    tenant: (id: string) => `tenant:${id}`,
+  },
+  CacheTTL: {
+    long: 300,
+  },
+}));
+
 const mockGetCurrentUser = jest.fn();
 const mockRecordAuditLog = jest.fn();
 const mockRevalidatePath = jest.fn();
@@ -344,6 +356,7 @@ describe('tenant settings actions', () => {
           radiusStyle: 'soft',
           buttonStyle: 'pill',
           menuStyle: 'comfortable',
+          fontHeading: 'serif',
         },
         updated_at: expect.any(String),
       }),

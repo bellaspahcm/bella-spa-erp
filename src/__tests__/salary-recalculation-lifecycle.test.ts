@@ -4,6 +4,21 @@ jest.mock('@/modules/hr-salary/actions/base-salary-actions', () => ({
   calcProRataBaseSalary: jest.fn(async () => 0),
 }));
 
+jest.mock('@/lib/supabase-server', () => ({
+  createClient: jest.fn(() => Promise.resolve({
+    from: jest.fn(() => ({
+      select: jest.fn(() => ({
+        eq: jest.fn(() => ({
+          single: jest.fn(() => Promise.resolve({ data: null, error: { code: 'PGRST116', message: 'Not found' } })),
+          eq: jest.fn(() => ({
+            single: jest.fn(() => Promise.resolve({ data: null, error: { code: 'PGRST116', message: 'Not found' } })),
+          })),
+        })),
+      })),
+    })),
+  })),
+}));
+
 type DbOperation = 'select' | 'update' | 'insert';
 
 type ScriptedResult = {
@@ -119,7 +134,16 @@ function baseScripts(existingRecord: unknown, includeWrite = true): ScriptedResu
         resignation_date: null,
       },
     },
+    {
+      table: 'users',
+      op: 'select',
+      data: {
+        position_tier: 'junior',
+        hire_date: null,
+      },
+    },
     { table: 'tenants', op: 'select', data: { salary_config: null } },
+    { table: 'tenants', op: 'select', data: { commission_config: null } },
     {
       table: 'attendance',
       op: 'select',
@@ -148,6 +172,9 @@ function baseScripts(existingRecord: unknown, includeWrite = true): ScriptedResu
     },
     { table: 'packages', op: 'select', data: [{ name: 'VIP Package', session_multiplier: 2 }] },
     { table: 'kpi_records', op: 'select', data: [{ bonus_amount: 999_000 }] },
+    { table: 'booking_service_items', op: 'select', data: [] },
+    { table: 'product_sales', op: 'select', data: [] },
+    { table: 'salary_adjustments', op: 'select', data: [] },
     { table: 'salary_records', op: 'select', data: existingRecord },
     ...(includeWrite ? [{ table: 'salary_records', op: 'update', data: null } satisfies ScriptedResult] : []),
   ];

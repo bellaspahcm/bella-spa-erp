@@ -184,7 +184,7 @@ export function WaitlistFilters({
               </label>
               <Select
                 value={packageId || 'all'}
-                onValueChange={(val) => updateFilters({ package_id: val === 'all' ? undefined : val })}
+                onValueChange={(val) => updateFilters({ package_id: val === 'all' ? undefined : (val || undefined) })}
                 disabled={isLoadingPackages}
               >
                 <SelectTrigger className="w-full h-8 rounded-lg bg-white/80 dark:bg-[#1c1b19]/80 border-slate-200 dark:border-slate-800 text-xs font-semibold focus:ring-0 focus:ring-offset-0 focus:border-slate-300 dark:focus:border-slate-700">
@@ -210,7 +210,7 @@ export function WaitlistFilters({
                 value={getActivePreset()}
                 onValueChange={(val) => {
                   if (val === 'custom') return;
-                  const date = val === 'all' ? undefined : getDateFromPreset(val) || undefined;
+                  const date = val === 'all' ? undefined : getDateFromPreset(val || '') || undefined;
                   updateFilters({ preferred_date: date });
                 }}
               >

@@ -67,6 +67,7 @@ export interface WaitlistEntry {
   customer_id: string;
   customer_name: string;
   customer_tier: CustomerTier;
+  customer_phone?: string;
   booking_id: string | null;
   booking_request_id: string | null;
   

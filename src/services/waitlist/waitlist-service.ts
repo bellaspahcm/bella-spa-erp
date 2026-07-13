@@ -123,7 +123,7 @@ export async function addToWaitlist(
       .eq('customer_id', input.customer_id)
       .single();
 
-    const customerTier: CustomerTier = membership?.tier || 'new';
+    const customerTier = (membership?.tier as CustomerTier) || 'new';
 
     // 5. Fetch package details (for name)
     const { data: packageData, error: packageError } = await supabase
@@ -178,17 +178,21 @@ export async function addToWaitlist(
         id: input.customer_id,
         name: customer.name_mother,
         tier: customerTier,
+        email: '',
+        phone: customer.phone,
         contactPreferences: {
-          preferredChannel: 'zalo', // Default: Zalo
+          preferredChannel: 'sms', // Map Zalo/preferred to SMS for rule evaluation
+          acceptsMarketing: true,
         },
       },
       booking: {
         serviceId: input.package_id,
         serviceName: packageData.name,
+        serviceType: 'package',
+        bookingValue: input.booking_value,
         preferredDate: input.preferred_date,
         preferredStartTime: input.preferred_start_time,
         durationMinutes: input.duration_minutes || 90,
-        bookingValue: input.booking_value,
         isFlexible: input.is_flexible || false,
       },
       existingWaitlist: (existingWaitlist || []).map((e) => ({
@@ -196,7 +200,7 @@ export async function addToWaitlist(
         tenantId: e.tenant_id,
         customerId: e.customer_id,
         customerName: e.customer_name,
-        customerTier: e.customer_tier,
+        customerTier: (e.customer_tier as CustomerTier) || 'new',
         bookingRequestId: e.booking_request_id || '',
         serviceId: e.package_id,
         serviceName: e.package_name,
@@ -206,12 +210,12 @@ export async function addToWaitlist(
         durationMinutes: e.duration_minutes,
         priorityScore: e.priority_score,
         position: e.position,
-        waitMinutes: e.wait_minutes,
-        status: e.status as 'active' | 'notified' | 'reserved',
+        waitMinutes: e.wait_minutes || 0,
+        status: (e.status as any) || 'active',
         createdAt: e.created_at,
         expiresAt: e.expires_at,
         updatedAt: e.updated_at,
-      })),
+      })) as any,
       config: {
         enablePriorityRanking: true,
         enableAutoNotification: true,
@@ -929,7 +933,7 @@ export async function getWaitlistStats(
     const conversionRate = totalNotified > 0 ? (convertedEntries / totalNotified) * 100 : 0;
 
     // Average wait time
-    const totalWaitMinutes = entries.reduce((sum, e) => sum + e.wait_minutes, 0);
+    const totalWaitMinutes = entries.reduce((sum, e) => sum + (e.wait_minutes ?? 0), 0);
     const avgWaitMinutes = totalEntries > 0 ? totalWaitMinutes / totalEntries : 0;
 
     // Average position

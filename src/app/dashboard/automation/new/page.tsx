@@ -66,10 +66,12 @@ function NewAutomationContent() {
         <div className="max-w-4xl mx-auto">
           <EmptyStateCard
             icon="⚠️"
-            title="Template không tồn tại"
+            headline="Template không tồn tại"
             description="Không tìm thấy template này. Vui lòng chọn template khác."
-            actionLabel="← Về trang chủ"
-            onAction={() => router.push('/dashboard/automation')}
+            primaryAction={{
+              label: "← Về trang chủ",
+              onClick: () => router.push('/dashboard/automation')
+            }}
           />
         </div>
       </div>
@@ -395,8 +397,8 @@ function NewAutomationContent() {
           <div className="lg:col-span-1">
             <div className="sticky top-24">
               <PreviewPanel
-                title="👀 Preview"
-                description="Bella sẽ làm gì khi automation chạy"
+                conditions={template.conditions.map(c => c.label)}
+                actions={template.actions.map(a => a.label)}
                 jsonData={{
                   template: template.name,
                   conditions: template.conditions.map(c => c.label),

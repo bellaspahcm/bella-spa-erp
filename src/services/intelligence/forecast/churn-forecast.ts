@@ -205,7 +205,7 @@ async function fetchCustomerData(
     return customers.map(c => {
       const custBookings = bookingsByCustomer.get(c.id) || [];
       const dates = custBookings.map(b => new Date(b.created_at).getTime()).sort((a, z) => z - a);
-      const lastTs = dates[0] || new Date(c.created_at).getTime();
+      const lastTs = dates[0] || (c.created_at ? new Date(c.created_at).getTime() : now);
       const daysSince = Math.floor((now - lastTs) / (1000 * 60 * 60 * 24));
       const totalRevenue = custBookings.reduce((s, b) => s + Number(b.full_price || 0), 0);
       const totalOrders = custBookings.length;

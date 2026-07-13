@@ -70,7 +70,7 @@ export default function RuleMetadataForm({ data, onChange }: RuleMetadataFormPro
 
   const selectedProvider = PROVIDERS.find((p) => p.value === data.provider);
   const selectedCategoryLabel = data.category
-    ? CATEGORY_LABELS[data.category] || data.category.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())
+    ? CATEGORY_LABELS[data.category] || data.category.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())
     : undefined;
   const selectedStatus = STATUSES.find((s) => s.value === data.status);
 

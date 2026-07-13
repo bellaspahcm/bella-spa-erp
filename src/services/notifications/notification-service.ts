@@ -67,22 +67,31 @@ async function fetchCustomerDetails(customerId: string): Promise<{
   const supabase = createClient();
 
   try {
-    const { data, error } = await supabase
+    const { data: customer, error: customerError } = await supabase
       .from('customers')
-      .select('name_mother, phone, email, tier')
+      .select('name_mother, phone, metadata')
       .eq('id', customerId)
       .single();
 
-    if (error || !data) {
-      console.error('Error fetching customer:', error);
+    if (customerError || !customer) {
+      console.error('Error fetching customer:', customerError);
       return null;
     }
 
+    const { data: membership } = await supabase
+      .from('membership_records')
+      .select('tier')
+      .eq('customer_id', customerId)
+      .single();
+
+    const metadataObj = customer.metadata as Record<string, any> | null;
+    const email = metadataObj?.email || null;
+
     return {
-      name: data.name_mother || 'Khách hàng',
-      phone: data.phone,
-      email: data.email,
-      tier: (data.tier as CustomerTier) || 'new',
+      name: customer.name_mother || 'Khách hàng',
+      phone: customer.phone,
+      email,
+      tier: (membership?.tier as CustomerTier) || 'new',
     };
   } catch (error) {
     console.error('Error fetching customer:', error);
@@ -218,7 +227,7 @@ export async function retryNotification(
     }
 
     // Check retry limit
-    if (log.retry_count >= log.max_retries) {
+    if ((log.retry_count ?? 0) >= (log.max_retries ?? 3)) {
       return {
         success: false,
         error: 'Max retries reached',
@@ -248,8 +257,8 @@ export async function retryNotification(
       entryId: log.waitlist_entry_id,
       customerId: log.customer_id,
       tenantId: log.tenant_id,
-      type: log.notification_type,
-      channel: log.channel,
+      type: log.notification_type as NotificationType,
+      channel: log.channel as NotificationChannel,
       recipient: {
         name: customer.name,
         phone: customer.phone || undefined,
@@ -324,7 +333,7 @@ export async function retryFailedNotifications(
     }
 
     // Filter by retry limit
-    const retryable = logs.filter((log) => log.retry_count < log.max_retries);
+    const retryable = logs.filter((log) => (log.retry_count ?? 0) < (log.max_retries ?? 3));
 
     let succeeded = 0;
     let failed = 0;

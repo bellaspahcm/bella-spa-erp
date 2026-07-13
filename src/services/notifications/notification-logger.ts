@@ -10,6 +10,7 @@
 import { createClient } from '@/lib/supabase-server';
 import type { WaitlistNotificationLog } from '@/types/waitlist';
 import type { NotificationLogEntry } from './types';
+import type { Json } from '@/types/database.types';
 
 /**
  * Log a notification attempt to database
@@ -42,7 +43,7 @@ export async function logNotificationAttempt(
         error_code: entry.error_code,
         retry_count: entry.retry_count || 0,
         max_retries: entry.max_retries || 3,
-        metadata: entry.metadata || null,
+        metadata: (entry.metadata as Json) || null,
       })
       .select('id')
       .single();
@@ -83,11 +84,13 @@ export async function updateNotificationStatus(
   const supabase = createClient();
 
   try {
+    const { metadata, ...restUpdates } = updates || {};
     const { error } = await supabase
       .from('waitlist_notification_logs')
       .update({
         status,
-        ...updates,
+        ...restUpdates,
+        ...(metadata ? { metadata: metadata as Json } : {}),
       })
       .eq('id', logId);
 
@@ -151,7 +154,6 @@ export async function getFailedNotificationsForRetry(
       .from('waitlist_notification_logs')
       .select('*')
       .eq('status', 'failed')
-      .lt('retry_count', supabase.rpc('max_retries')) // retry_count < max_retries
       .order('created_at', { ascending: true })
       .limit(limit);
 
@@ -166,7 +168,8 @@ export async function getFailedNotificationsForRetry(
       return [];
     }
 
-    return (data || []) as WaitlistNotificationLog[];
+    const logs = (data || []) as WaitlistNotificationLog[];
+    return logs.filter(log => (log.retry_count ?? 0) < (log.max_retries ?? 3));
   } catch (error) {
     console.error('Error fetching failed notifications:', error);
     return [];
