@@ -64,20 +64,20 @@ export function WaitlistPagination({
   const pageNumbers = getPageNumbers();
 
   return (
-    <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 rounded-b-2xl">
+    <div className="flex items-center justify-between border-t border-slate-200/60 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-900/30 px-4 py-3 sm:px-6 rounded-b-2xl">
       {/* Mobile summary */}
       <div className="flex flex-1 justify-between sm:hidden">
         <button
           onClick={() => updatePage(currentPage - 1)}
           disabled={currentPage === 1}
-          className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="relative inline-flex items-center rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-zinc-950 px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
         >
           Trước
         </button>
         <button
           onClick={() => updatePage(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="relative ml-3 inline-flex items-center rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-zinc-950 px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
         >
           Sau
         </button>
@@ -86,27 +86,27 @@ export function WaitlistPagination({
       {/* Desktop pagination */}
       <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
         <div>
-          <p className="text-sm text-gray-700">
+          <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
             Hiển thị{' '}
-            <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span>
+            <span className="font-bold text-slate-900 dark:text-slate-100">{(currentPage - 1) * itemsPerPage + 1}</span>
             {' '}-{' '}
-            <span className="font-medium">
+            <span className="font-bold text-slate-900 dark:text-slate-100">
               {Math.min(currentPage * itemsPerPage, totalItems)}
             </span>
             {' '}trong tổng số{' '}
-            <span className="font-medium">{totalItems}</span> mục
+            <span className="font-bold text-slate-900 dark:text-slate-100">{totalItems}</span> mục
           </p>
         </div>
         <div>
-          <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+          <nav className="isolate inline-flex -space-x-px rounded-lg shadow-xs" aria-label="Pagination">
             {/* Previous button */}
             <button
               onClick={() => updatePage(currentPage - 1)}
               disabled={currentPage === 1}
-              className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="relative inline-flex items-center rounded-l-lg px-2.5 py-1.5 text-slate-400 border border-slate-200/60 dark:border-slate-800 hover:bg-slate-100/50 dark:hover:bg-slate-900/40 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
               <span className="sr-only">Trang trước</span>
-              <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+              <ChevronLeft className="h-4 w-4" aria-hidden="true" />
             </button>
 
             {/* Page numbers */}
@@ -115,7 +115,7 @@ export function WaitlistPagination({
                 return (
                   <span
                     key={`ellipsis-${idx}`}
-                    className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300"
+                    className="relative inline-flex items-center px-3 py-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 border-y border-r border-slate-200/60 dark:border-slate-800"
                   >
                     ...
                   </span>
@@ -129,10 +129,10 @@ export function WaitlistPagination({
                 <button
                   key={pageNum}
                   onClick={() => updatePage(pageNum)}
-                  className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
+                  className={`relative inline-flex items-center px-3 py-1.5 text-xs font-bold border-y border-r border-slate-200/60 dark:border-slate-800 transition-all ${
                     isActive
-                      ? 'z-10 bg-primary text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary'
-                      : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
+                      ? 'z-10 bg-primary text-white border-primary dark:border-primary'
+                      : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100/50 dark:hover:bg-slate-900/40'
                   }`}
                 >
                   {pageNum}
@@ -144,10 +144,10 @@ export function WaitlistPagination({
             <button
               onClick={() => updatePage(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="relative inline-flex items-center rounded-r-lg px-2.5 py-1.5 text-slate-400 border-y border-r border-slate-200/60 dark:border-slate-800 hover:bg-slate-100/50 dark:hover:bg-slate-900/40 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
               <span className="sr-only">Trang sau</span>
-              <ChevronRight className="h-5 w-5" aria-hidden="true" />
+              <ChevronRight className="h-4 w-4" aria-hidden="true" />
             </button>
           </nav>
         </div>

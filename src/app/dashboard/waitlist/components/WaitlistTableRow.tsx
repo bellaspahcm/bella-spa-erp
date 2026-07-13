@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { MoreVertical, Eye, Bell, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { WaitlistStatusBadge } from './WaitlistStatusBadge';
+import { TableRow, TableCell } from '@/components/ui/table';
 import type { WaitlistEntry } from '@/types/waitlist';
 
 interface WaitlistTableRowProps {
@@ -66,7 +67,6 @@ export function WaitlistTableRow({ entry, onRefresh }: WaitlistTableRowProps) {
   };
 
   const handleConvert = async () => {
-    // TODO: Implement booking creation flow
     toast.info('Chức năng chuyển đổi sang lịch hẹn đang được phát triển');
     setIsActionsOpen(false);
   };
@@ -95,76 +95,76 @@ export function WaitlistTableRow({ entry, onRefresh }: WaitlistTableRowProps) {
   };
 
   return (
-    <tr className="hover:bg-gray-50 transition-colors">
+    <TableRow className="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-50/50 dark:hover:bg-slate-900/20 transition-colors">
       {/* Position */}
-      <td className="px-6 py-4 text-sm font-semibold text-gray-900">
+      <TableCell className="px-6 py-4 text-sm font-semibold text-slate-900 dark:text-slate-100">
         {entry.position || '-'}
-      </td>
+      </TableCell>
 
       {/* Customer */}
-      <td className="px-6 py-4">
-        <div className="text-sm font-medium text-gray-900">
+      <TableCell className="px-6 py-4">
+        <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">
           {entry.customer_name}
         </div>
-        <div className="text-sm text-gray-600">
+        <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
           {entry.customer_phone}
         </div>
-      </td>
+      </TableCell>
 
       {/* Service */}
-      <td className="px-6 py-4">
-        <div className="text-sm text-gray-900">
+      <TableCell className="px-6 py-4">
+        <div className="text-sm font-medium text-slate-900 dark:text-slate-100">
           {entry.package_name}
         </div>
-        <div className="text-sm text-gray-600">
+        <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
           {entry.duration_minutes} phút
         </div>
-      </td>
+      </TableCell>
 
       {/* Preferred Date */}
-      <td className="px-6 py-4 text-sm text-gray-900">
+      <TableCell className="px-6 py-4 text-sm text-slate-700 dark:text-slate-300">
         {new Date(entry.preferred_date).toLocaleDateString('vi-VN')}
-      </td>
+      </TableCell>
 
       {/* Preferred Time */}
-      <td className="px-6 py-4 text-sm text-gray-900">
+      <TableCell className="px-6 py-4 text-sm text-slate-700 dark:text-slate-300 font-mono">
         {entry.preferred_time || '-'}
-      </td>
+      </TableCell>
 
       {/* Priority Score */}
-      <td className="px-6 py-4">
-        <div className="flex items-center gap-2">
+      <TableCell className="px-6 py-4">
+        <div className="flex items-center gap-3">
           <div className="flex-1">
-            <div className="h-2 w-24 rounded-full bg-gray-200">
+            <div className="h-2 w-24 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200/30 dark:border-slate-700/30">
               <div
                 className={`h-full rounded-full ${getPriorityColor(entry.priority_score)}`}
                 style={{ width: `${entry.priority_score}%` }}
               />
             </div>
           </div>
-          <span className="text-sm font-medium text-gray-900">
+          <span className="text-xs font-bold text-slate-700 dark:text-slate-300 font-mono">
             {entry.priority_score}
           </span>
         </div>
-      </td>
+      </TableCell>
 
       {/* Status */}
-      <td className="px-6 py-4">
+      <TableCell className="px-6 py-4">
         <WaitlistStatusBadge status={entry.status} />
-      </td>
+      </TableCell>
 
       {/* Wait Time */}
-      <td className="px-6 py-4 text-sm text-gray-600">
+      <TableCell className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">
         {getWaitTime()}
-      </td>
+      </TableCell>
 
       {/* Actions */}
-      <td className="px-6 py-4 text-right">
+      <TableCell className="px-6 py-4 text-right">
         <div className="relative">
           <button
             onClick={() => setIsActionsOpen(!isActionsOpen)}
             disabled={isProcessing}
-            className="inline-flex items-center rounded-lg p-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900 disabled:opacity-50"
+            className="inline-flex items-center rounded-lg p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-slate-100 disabled:opacity-50 transition-colors"
           >
             <MoreVertical className="h-5 w-5" />
           </button>
@@ -179,15 +179,15 @@ export function WaitlistTableRow({ entry, onRefresh }: WaitlistTableRowProps) {
               />
 
               {/* Menu */}
-              <div className="absolute right-0 top-full z-20 mt-2 w-56 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
+              <div className="absolute right-0 top-full z-20 mt-2 w-56 rounded-xl border border-slate-200/60 dark:border-slate-800 bg-white/95 dark:bg-[#1c1b19]/95 backdrop-blur-md py-1 shadow-lg animate-in fade-in slide-in-from-top-1 duration-200">
                 <button
                   onClick={() => {
                     setIsActionsOpen(false);
                     router.push(`/dashboard/waitlist/${entry.id}`);
                   }}
-                  className="flex w-full items-center gap-3 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
+                  className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors"
                 >
-                  <Eye className="h-4 w-4" />
+                  <Eye className="h-4 w-4 text-slate-400" />
                   Xem chi tiết
                 </button>
 
@@ -195,9 +195,9 @@ export function WaitlistTableRow({ entry, onRefresh }: WaitlistTableRowProps) {
                   <button
                     onClick={handleNotify}
                     disabled={isProcessing}
-                    className="flex w-full items-center gap-3 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                    className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors disabled:opacity-50"
                   >
-                    <Bell className="h-4 w-4" />
+                    <Bell className="h-4 w-4 text-slate-400" />
                     Gửi thông báo
                   </button>
                 )}
@@ -206,9 +206,9 @@ export function WaitlistTableRow({ entry, onRefresh }: WaitlistTableRowProps) {
                   <button
                     onClick={handleConvert}
                     disabled={isProcessing}
-                    className="flex w-full items-center gap-3 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                    className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors disabled:opacity-50"
                   >
-                    <Check className="h-4 w-4" />
+                    <Check className="h-4 w-4 text-slate-400" />
                     Chuyển sang lịch hẹn
                   </button>
                 )}
@@ -217,9 +217,9 @@ export function WaitlistTableRow({ entry, onRefresh }: WaitlistTableRowProps) {
                   <button
                     onClick={handleCancel}
                     disabled={isProcessing}
-                    className="flex w-full items-center gap-3 px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
+                    className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors disabled:opacity-50"
                   >
-                    <X className="h-4 w-4" />
+                    <X className="h-4 w-4 text-red-400" />
                     Hủy
                   </button>
                 )}
@@ -227,7 +227,7 @@ export function WaitlistTableRow({ entry, onRefresh }: WaitlistTableRowProps) {
             </>
           )}
         </div>
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   );
 }

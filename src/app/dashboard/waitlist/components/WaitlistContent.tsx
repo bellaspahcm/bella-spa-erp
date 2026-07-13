@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTenantContext } from '@/core/hooks/useTenantContext';
+import { Button } from '@/components/ui/button';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
 import { WaitlistTable } from './WaitlistTable';
 import { WaitlistFilters } from './WaitlistFilters';
@@ -106,14 +107,17 @@ export function WaitlistContent() {
 
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Danh sách chờ</h1>
-        <button
+        <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100 uppercase tracking-tight font-heading">
+          Danh sách chờ
+        </h1>
+        <Button
           onClick={() => setShowAddModal(true)}
-          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-primary/90 transition-colors"
+          size="sm"
+          className="rounded-lg shadow-sm font-semibold h-9 px-4 active:scale-95 transition-all animate-in fade-in zoom-in duration-300"
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="mr-1.5 h-4 w-4" />
           Thêm vào
-        </button>
+        </Button>
       </div>
 
       {/* Filters */}

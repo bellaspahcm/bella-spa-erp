@@ -1,3 +1,10 @@
+import {
+  Table,
+  TableBody,
+  TableHeader,
+  TableRow,
+  TableHead,
+} from '@/components/ui/table';
 import { WaitlistTableRow } from './WaitlistTableRow';
 import { WaitlistPagination } from './WaitlistPagination';
 import type { WaitlistEntry } from '@/types/waitlist';
@@ -22,14 +29,14 @@ export function WaitlistTable({
   // Empty state
   if (entries.length === 0 && !isLoading) {
     return (
-      <div className="rounded-2xl border border-gray-200 bg-white p-10 text-center shadow-sm">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
+      <div className="rounded-2xl border border-slate-200/60 dark:border-slate-800/50 bg-white/40 dark:bg-[#1c1b19]/40 backdrop-blur-md p-10 text-center shadow-sm">
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100/50 dark:bg-slate-900/40 text-slate-400">
           <span className="text-3xl">📋</span>
         </div>
-        <h3 className="mb-2 text-lg font-semibold text-gray-900">
+        <h3 className="mb-2 text-lg font-bold text-slate-900 dark:text-slate-100">
           Chưa có khách trong danh sách chờ
         </h3>
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           Thêm khách hàng vào danh sách chờ để quản lý lịch hẹn hiệu quả hơn
         </p>
       </div>
@@ -37,42 +44,23 @@ export function WaitlistTable({
   }
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white shadow-sm">
-      {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead className="border-b border-gray-200 bg-gray-50">
-            <tr>
-              <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">
-                #
-              </th>
-              <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">
-                Khách hàng
-              </th>
-              <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">
-                Dịch vụ
-              </th>
-              <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">
-                Ngày mong muốn
-              </th>
-              <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">
-                Giờ
-              </th>
-              <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">
-                Ưu tiên
-              </th>
-              <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">
-                Trạng thái
-              </th>
-              <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">
-                Thời gian chờ
-              </th>
-              <th className="px-6 py-4 text-right text-sm font-medium text-gray-700">
-                Thao tác
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
+    <div className="space-y-4">
+      <div className="rounded-2xl border border-slate-200/60 dark:border-slate-800/50 bg-white/40 dark:bg-[#1c1b19]/40 backdrop-blur-md overflow-hidden shadow-sm">
+        <Table>
+          <TableHeader className="bg-slate-50/50 dark:bg-slate-900/40 border-b border-slate-200/60 dark:border-slate-800/50">
+            <TableRow className="hover:bg-transparent border-0">
+              <TableHead className="px-6 py-4 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">#</TableHead>
+              <TableHead className="px-6 py-4 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Khách hàng</TableHead>
+              <TableHead className="px-6 py-4 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Dịch vụ</TableHead>
+              <TableHead className="px-6 py-4 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Ngày mong muốn</TableHead>
+              <TableHead className="px-6 py-4 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Giờ</TableHead>
+              <TableHead className="px-6 py-4 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Ưu tiên</TableHead>
+              <TableHead className="px-6 py-4 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Trạng thái</TableHead>
+              <TableHead className="px-6 py-4 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Thời gian chờ</TableHead>
+              <TableHead className="px-6 py-4 text-right text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Thao tác</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {entries.map((entry) => (
               <WaitlistTableRow
                 key={entry.id}
@@ -80,8 +68,8 @@ export function WaitlistTable({
                 onRefresh={onRefresh}
               />
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
 
         {/* Loading overlay */}
         {isLoading && (
