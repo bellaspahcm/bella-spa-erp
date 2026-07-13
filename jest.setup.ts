@@ -15,3 +15,13 @@ console.log('[Jest Setup] SUPABASE_SERVICE_ROLE_KEY loaded:',
 
 global.TextEncoder = TextEncoder
 global.TextDecoder = TextDecoder as any
+
+if (typeof global.Request === 'undefined') {
+  global.Request = class {} as any;
+}
+if (typeof global.Response === 'undefined') {
+  global.Response = class {} as any;
+}
+if (typeof global.Headers === 'undefined') {
+  global.Headers = class {} as any;
+}

@@ -252,6 +252,7 @@ export default function FinancePage() {
 
   const handleMonthChange = (newMonth: string) => {
     setSelectedMonth(newMonth);
+    setCurrentPage(1);
   };
 
   usePageRefresh(() => fetchData(selectedMonth, { force: true }));
@@ -381,6 +382,32 @@ export default function FinancePage() {
           <p className="text-slate-500 font-medium mt-1">Theo dõi dòng tiền và hiệu quả kinh doanh</p>
         </div>
         <div className="bella-toolbar flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="w-full sm:w-32">
+              <PremiumSelect
+                value={String(parseInt(selectedMonth.split('-')[1]) - 1)}
+                options={['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'].map((m, i) => ({ value: String(i), label: m }))}
+                onChange={(val) => {
+                  const year = selectedMonth.split('-')[0];
+                  const month = String(parseInt(val) + 1).padStart(2, '0');
+                  handleMonthChange(`${year}-${month}-01`);
+                }}
+              />
+            </div>
+            <div className="w-full sm:w-28">
+              <PremiumSelect
+                value={selectedMonth.split('-')[0]}
+                options={Array.from({ length: 5 }, (_, i) => {
+                  const y = new Date().getFullYear() - 2 + i;
+                  return { value: String(y), label: String(y) };
+                })}
+                onChange={(val) => {
+                  const month = selectedMonth.split('-')[1];
+                  handleMonthChange(`${val}-${month}-01`);
+                }}
+              />
+            </div>
+          </div>
           <PremiumExportButton />
           <button 
             onClick={() => setIsModalOpen(true)}

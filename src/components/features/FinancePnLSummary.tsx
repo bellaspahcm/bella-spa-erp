@@ -25,7 +25,6 @@ import {
 } from '@/services/accounting-actions';
 import { toast } from 'sonner';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
 import type { PnLData, ServicePerformance } from './FinancePnLSummary.types';
 
@@ -63,7 +62,7 @@ function formatChecksForConfirmation(checks: AccountingHealthCheck[]) {
     .join('\n');
 }
 
-export function FinancePnLSummary({ pnl, performance, selectedMonth, onMonthChange, onRefresh }: FinancePnLSummaryProps) {
+export function FinancePnLSummary({ pnl, performance, selectedMonth, onMonthChange: _onMonthChange, onRefresh }: FinancePnLSummaryProps) {
   const vocab = useModuleVocabulary();
   const [isLocking, setIsLocking] = useState(false);
   const [isUnlocking, setIsUnlocking] = useState(false);
@@ -247,32 +246,7 @@ export function FinancePnLSummary({ pnl, performance, selectedMonth, onMonthChan
         <Activity className="w-8 h-8 text-slate-400" />
       </div>
       <p className="text-slate-700 font-bold">Chưa có dữ liệu tài chính cho tháng này</p>
-      <div className="mt-6 flex items-center gap-2">
-        <div className="w-32">
-          <PremiumSelect
-            value={String(parseInt(selectedMonth.split('-')[1]) - 1)}
-            options={['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'].map((m, i) => ({ value: String(i), label: m }))}
-            onChange={(val) => {
-              const year = selectedMonth.split('-')[0];
-              const month = String(parseInt(val) + 1).padStart(2, '0');
-              onMonthChange(`${year}-${month}-01`);
-            }}
-          />
-        </div>
-        <div className="w-28">
-          <PremiumSelect
-            value={selectedMonth.split('-')[0]}
-            options={Array.from({ length: 5 }, (_, i) => {
-              const y = new Date().getFullYear() - 2 + i;
-              return { value: String(y), label: String(y) };
-            })}
-            onChange={(val) => {
-              const month = selectedMonth.split('-')[1];
-              onMonthChange(`${val}-${month}-01`);
-            }}
-          />
-        </div>
-      </div>
+      <p className="text-slate-400 text-xs mt-2">Vui lòng thay đổi Tháng/Năm ở thanh công cụ phía trên để xem dữ liệu khác.</p>
     </div>
   );
 
@@ -308,32 +282,6 @@ export function FinancePnLSummary({ pnl, performance, selectedMonth, onMonthChan
                 {isCheckingPreflight ? 'Đang kiểm tra' : isLocking ? 'Đang chốt sổ' : 'Chốt sổ tháng'}
               </button>
            )}
-        </div>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <div className="w-full sm:w-32">
-            <PremiumSelect
-              value={String(parseInt(selectedMonth.split('-')[1]) - 1)}
-              options={['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'].map((m, i) => ({ value: String(i), label: m }))}
-              onChange={(val) => {
-                const year = selectedMonth.split('-')[0];
-                const month = String(parseInt(val) + 1).padStart(2, '0');
-                onMonthChange(`${year}-${month}-01`);
-              }}
-            />
-          </div>
-          <div className="w-full sm:w-28">
-            <PremiumSelect
-              value={selectedMonth.split('-')[0]}
-              options={Array.from({ length: 5 }, (_, i) => {
-                const y = new Date().getFullYear() - 2 + i;
-                return { value: String(y), label: String(y) };
-              })}
-              onChange={(val) => {
-                const month = selectedMonth.split('-')[1];
-                onMonthChange(`${val}-${month}-01`);
-              }}
-            />
-          </div>
         </div>
       </div>
 

@@ -7,36 +7,36 @@ import { ActionSchema } from '../../action-schema.types';
 export const COMMISSION_ACTIONS: ActionSchema[] = [
   {
     type: 'apply_session_commission',
-    label: 'Apply Session Commission',
-    description: 'Apply commission based on sessions',
+    label: 'Áp dụng hoa hồng theo ca',
+    description: 'Áp dụng định mức hoa hồng cho mỗi ca làm việc hoàn thành',
     params: [
       {
         key: 'rate',
-        label: 'Commission Rate (VND per session)',
+        label: 'Định mức hoa hồng (VND/ca)',
         type: 'number',
         required: true,
-        placeholder: 'e.g., 50000',
+        placeholder: 'ví dụ: 50000',
         validation: { min: 0 },
-        description: 'Commission per session',
+        description: 'Số tiền hoa hồng được nhận cho mỗi ca làm việc',
       },
     ],
-    group: 'Commission',
+    group: 'Hoa hồng',
   },
   {
     type: 'apply_sales_commission',
-    label: 'Apply Sales Commission',
-    description: 'Apply commission based on product sales',
+    label: 'Áp dụng hoa hồng doanh số',
+    description: 'Áp dụng hoa hồng dựa trên doanh số bán sản phẩm/mỹ phẩm',
     params: [
       {
         key: 'percentage',
-        label: 'Commission Percentage',
+        label: 'Tỷ lệ % hoa hồng',
         type: 'number',
         required: true,
-        placeholder: 'e.g., 10',
+        placeholder: 'ví dụ: 10',
         validation: { min: 0, max: 100 },
-        description: 'Percentage of sales (0-100)',
+        description: 'Tỷ lệ % hoa hồng được hưởng trên doanh số (0-100)',
       },
     ],
-    group: 'Commission',
+    group: 'Hoa hồng',
   },
 ];
