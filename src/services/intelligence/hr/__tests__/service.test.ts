@@ -10,7 +10,30 @@
  * - No real database or cache connections
  */
 
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach } from '@jest/globals';
+
+jest.mock('../queries', () => ({
+  getWorkforceAnalytics: jest.fn(),
+  getAttendanceReport: jest.fn(),
+  getPayrollSummary: jest.fn(),
+  getEmployeePerformance: jest.fn(),
+  getRecruitmentMetrics: jest.fn(),
+  getTrainingMetrics: jest.fn(),
+  getRetentionAnalysis: jest.fn(),
+  getProductivityTrends: jest.fn(),
+}));
+
+jest.mock('../queries-simple', () => ({
+  getWorkforceAnalytics: jest.fn(),
+  getAttendanceReport: jest.fn(),
+  getPayrollSummary: jest.fn(),
+  getEmployeePerformance: jest.fn(),
+  getRecruitmentMetrics: jest.fn(),
+  getTrainingMetrics: jest.fn(),
+  getRetentionAnalysis: jest.fn(),
+  getProductivityTrends: jest.fn(),
+}));
+
 import { HRIntelligenceService } from '../service';
 import type { 
   WorkforceAnalytics,
@@ -27,11 +50,16 @@ import type {
 const mockCacheGet = jest.fn();
 const mockCacheSet = jest.fn();
 const mockCacheDel = jest.fn();
+const mockCacheDeleteByTag = jest.fn();
+const mockCacheDeletePattern = jest.fn();
 
 const mockCache = {
   get: mockCacheGet,
   set: mockCacheSet,
   del: mockCacheDel,
+  delete: mockCacheDel,
+  deleteByTag: mockCacheDeleteByTag,
+  deletePattern: mockCacheDeletePattern,
   clear: jest.fn(),
   healthCheck: jest.fn().mockResolvedValue({ healthy: true }),
 };
@@ -40,20 +68,16 @@ jest.mock('../../cache', () => ({
   getCache: jest.fn(() => mockCache),
 }));
 
-// Mock query functions
-jest.mock('../queries', () => ({
-  getWorkforceAnalytics: jest.fn(),
-  getAttendanceReport: jest.fn(),
-  getPayrollSummary: jest.fn(),
-  getEmployeePerformance: jest.fn(),
-  getRecruitmentMetrics: jest.fn(),
-  getTrainingMetrics: jest.fn(),
-  getRetentionAnalysis: jest.fn(),
-  getProductivityTrends: jest.fn(),
-}));
-
-// Import mocked functions
-import * as queries from '../queries';
+import {
+  getWorkforceAnalytics,
+  getAttendanceReport,
+  getPayrollSummary,
+  getEmployeePerformance,
+  getRecruitmentMetrics,
+  getTrainingMetrics,
+  getRetentionAnalysis,
+  getProductivityTrends,
+} from '../queries-simple';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Test Data
@@ -174,23 +198,14 @@ describe('HRIntelligenceService', () => {
   describe('getWorkforceAnalytics', () => {
     it('should return cached data when cache hit', async () => {
       // Setup cache hit
-      const cachedResponse = {
-        data: mockWorkforceData,
-        metadata: {
-          generatedAt: new Date().toISOString(),
-          cacheHit: true,
-          queryTimeMs: 0,
-          dataSourcesUsed: ['redis'],
-        },
-      };
-      mockCacheGet.mockResolvedValue(JSON.stringify(cachedResponse));
+      mockCacheGet.mockResolvedValue(mockWorkforceData);
 
       const result = await service.getWorkforceAnalytics(TEST_TENANT_ID, TEST_MONTH);
 
       expect(result.metadata.cacheHit).toBe(true);
       expect(result.data).toEqual(mockWorkforceData);
       expect(mockCacheGet).toHaveBeenCalledTimes(1);
-      expect(queries.getWorkforceAnalytics).not.toHaveBeenCalled();
+      expect(getWorkforceAnalytics).not.toHaveBeenCalled();
     });
 
     it('should fetch from database on cache miss', async () => {
@@ -198,20 +213,20 @@ describe('HRIntelligenceService', () => {
       mockCacheGet.mockResolvedValue(null);
 
       // Setup query response
-      (queries.getWorkforceAnalytics as jest.Mock).mockResolvedValue(mockWorkforceData);
+      (getWorkforceAnalytics as jest.Mock).mockResolvedValue(mockWorkforceData);
 
       const result = await service.getWorkforceAnalytics(TEST_TENANT_ID, TEST_MONTH);
 
       expect(result.metadata.cacheHit).toBe(false);
       expect(result.data).toEqual(mockWorkforceData);
       expect(mockCacheGet).toHaveBeenCalledTimes(1);
-      expect(queries.getWorkforceAnalytics).toHaveBeenCalled();
+      expect(getWorkforceAnalytics).toHaveBeenCalled();
       expect(mockCacheSet).toHaveBeenCalledTimes(1);
     });
 
     it('should handle database errors gracefully', async () => {
       mockCacheGet.mockResolvedValue(null);
-      (queries.getWorkforceAnalytics as jest.Mock).mockRejectedValue(
+      (getWorkforceAnalytics as jest.Mock).mockRejectedValue(
         new Error('Database connection failed')
       );
 
@@ -223,7 +238,7 @@ describe('HRIntelligenceService', () => {
     it('should handle cache write failures silently', async () => {
       mockCacheGet.mockResolvedValue(null);
       mockCacheSet.mockRejectedValue(new Error('Redis write failed'));
-      (queries.getWorkforceAnalytics as jest.Mock).mockResolvedValue(mockWorkforceData);
+      (getWorkforceAnalytics as jest.Mock).mockResolvedValue(mockWorkforceData);
 
       // Should not throw despite cache write failure
       const result = await service.getWorkforceAnalytics(TEST_TENANT_ID, TEST_MONTH);
@@ -240,7 +255,7 @@ describe('HRIntelligenceService', () => {
   describe('getAttendanceReport', () => {
     it('should return attendance data', async () => {
       mockCacheGet.mockResolvedValue(null);
-      (queries.getAttendanceReport as jest.Mock).mockResolvedValue(mockAttendanceData);
+      (getAttendanceReport as jest.Mock).mockResolvedValue(mockAttendanceData);
 
       const result = await service.getAttendanceReport(TEST_TENANT_ID, TEST_MONTH);
 
@@ -250,7 +265,7 @@ describe('HRIntelligenceService', () => {
 
     it('should return empty array when no data found', async () => {
       mockCacheGet.mockResolvedValue(null);
-      (queries.getAttendanceReport as jest.Mock).mockResolvedValue([]);
+      (getAttendanceReport as jest.Mock).mockResolvedValue([]);
 
       const result = await service.getAttendanceReport(TEST_TENANT_ID, TEST_MONTH);
 
@@ -266,7 +281,7 @@ describe('HRIntelligenceService', () => {
   describe('getPayrollSummary', () => {
     it('should return payroll data with correct calculations', async () => {
       mockCacheGet.mockResolvedValue(null);
-      (queries.getPayrollSummary as jest.Mock).mockResolvedValue(mockPayrollData);
+      (getPayrollSummary as jest.Mock).mockResolvedValue(mockPayrollData);
 
       const result = await service.getPayrollSummary(TEST_TENANT_ID, TEST_MONTH);
 
@@ -282,7 +297,7 @@ describe('HRIntelligenceService', () => {
   describe('getEmployeePerformance', () => {
     it('should return performance metrics with all fields', async () => {
       mockCacheGet.mockResolvedValue(null);
-      (queries.getEmployeePerformance as jest.Mock).mockResolvedValue(mockPerformanceData);
+      (getEmployeePerformance as jest.Mock).mockResolvedValue(mockPerformanceData);
 
       const result = await service.getEmployeePerformance(TEST_TENANT_ID, TEST_MONTH);
 
@@ -298,24 +313,22 @@ describe('HRIntelligenceService', () => {
   // ───────────────────────────────────────────────────────────────────────────
 
   describe('healthCheck', () => {
-    it('should return healthy status when cache is accessible', async () => {
-      mockCache.healthCheck.mockResolvedValue({ healthy: true });
+    it('should return true when cache is healthy', async () => {
+      mockCacheGet.mockResolvedValue({ test: true });
+      mockCacheSet.mockResolvedValue(true);
+      mockCacheDel.mockResolvedValue(1);
 
       const result = await service.healthCheck();
 
-      expect(result.healthy).toBe(true);
+      expect(result).toBe(true);
     });
 
-    it('should return unhealthy when cache fails', async () => {
-      mockCache.healthCheck.mockResolvedValue({ 
-        healthy: false, 
-        error: 'Redis connection failed' 
-      });
+    it('should return false when cache fails', async () => {
+      mockCacheGet.mockRejectedValue(new Error('Redis connection failed'));
 
       const result = await service.healthCheck();
 
-      expect(result.healthy).toBe(false);
-      expect(result.error).toContain('Redis connection failed');
+      expect(result).toBe(false);
     });
   });
 
@@ -325,17 +338,17 @@ describe('HRIntelligenceService', () => {
 
   describe('clearCache', () => {
     it('should clear tenant-specific cache when tenantId provided', async () => {
-      mockCacheDel.mockResolvedValue(1);
+      mockCacheDeleteByTag.mockResolvedValue(true);
 
       await service.clearCache(TEST_TENANT_ID);
 
-      expect(mockCacheDel).toHaveBeenCalledWith(`hr:${TEST_TENANT_ID}:*`);
+      expect(mockCacheDeleteByTag).toHaveBeenCalledWith(`tenant:${TEST_TENANT_ID}`);
     });
 
-    it('should not throw on cache clear failure', async () => {
-      mockCacheDel.mockRejectedValue(new Error('Redis del failed'));
+    it('should throw on cache clear failure', async () => {
+      mockCacheDeletePattern.mockRejectedValue(new Error('Redis deletePattern failed'));
 
-      await expect(service.clearCache()).resolves.not.toThrow();
+      await expect(service.clearCache()).rejects.toThrow('Failed to clear HR intelligence cache');
     });
   });
 
@@ -345,20 +358,20 @@ describe('HRIntelligenceService', () => {
 
   describe('edge cases', () => {
     it('should handle malformed cached data', async () => {
-      // Cache contains invalid JSON
-      mockCacheGet.mockResolvedValue('invalid-json{{{');
-      (queries.getWorkforceAnalytics as jest.Mock).mockResolvedValue(mockWorkforceData);
+      // Cache contains invalid JSON (parsing throws syntax error)
+      mockCacheGet.mockRejectedValue(new SyntaxError('Unexpected token i in JSON at position 0'));
+      (getWorkforceAnalytics as jest.Mock).mockResolvedValue(mockWorkforceData);
 
       const result = await service.getWorkforceAnalytics(TEST_TENANT_ID, TEST_MONTH);
 
       // Should fall back to database
       expect(result.data).toEqual(mockWorkforceData);
-      expect(queries.getWorkforceAnalytics).toHaveBeenCalled();
+      expect(getWorkforceAnalytics).toHaveBeenCalled();
     });
 
     it('should include query timing in metadata', async () => {
       mockCacheGet.mockResolvedValue(null);
-      (queries.getWorkforceAnalytics as jest.Mock).mockResolvedValue(mockWorkforceData);
+      (getWorkforceAnalytics as jest.Mock).mockResolvedValue(mockWorkforceData);
 
       const result = await service.getWorkforceAnalytics(TEST_TENANT_ID, TEST_MONTH);
 

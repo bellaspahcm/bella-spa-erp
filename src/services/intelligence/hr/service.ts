@@ -210,8 +210,11 @@ export class HRIntelligenceService implements IntelligenceService {
         };
       }
 
-      // Query database (simplified - ignore dateRange and ktvId params for now)
-      const data = await queryAttendanceReport(tenantId);
+      // Query database
+      const targetMonth = parsedRange 
+        ? formatDate(parsedRange.startDate).slice(0, 7) // Extract 'YYYY-MM'
+        : undefined;
+      const data = await queryAttendanceReport(tenantId, targetMonth);
 
       // Write to cache (best effort - don't fail if cache write fails)
       try {

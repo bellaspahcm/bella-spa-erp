@@ -55,17 +55,45 @@ export async function getWorkforceAnalytics(tenantId: string) {
       return acc;
     }, {} as Record<string, number>);
 
+    // Query attendance to calculate actual workforce average attendance rate
+    const currentMonthStr = new Date().toISOString().slice(0, 7);
+    const [yearStr, monthStr] = currentMonthStr.split('-');
+    const year = parseInt(yearStr, 10);
+    const monthNum = parseInt(monthStr, 10);
+    const startDate = `${currentMonthStr}-01`;
+    const nextMonth = monthNum === 12 ? 1 : monthNum + 1;
+    const nextYear = monthNum === 12 ? year + 1 : year;
+    const endDate = `${nextYear}-${String(nextMonth).padStart(2, '0')}-01`;
+
+    const { data: attendanceData, error: attendanceError } = await supabase
+      .from('attendance')
+      .select('status')
+      .eq('tenant_id', tenantId)
+      .gte('date', startDate)
+      .lt('date', endDate);
+
+    if (attendanceError) {
+      console.error('[HR Intelligence] Attendance query in workforce error:', attendanceError);
+      throw new QueryError('Failed to query attendance for workforce analytics', attendanceError);
+    }
+
+    let avgAttendanceRate = 0;
+    if (attendanceData && attendanceData.length > 0) {
+      const presentOrLate = attendanceData.filter(a => a.status === 'present' || a.status === 'late').length;
+      avgAttendanceRate = (presentOrLate / attendanceData.length) * 100;
+    }
+
     // Return aggregated metrics
     return {
       totalEmployees: activeUsers.length,
       activeEmployees: activeUsers.length,
       onLeaveToday: 0,
-      avgAttendanceRate: 0,
+      avgAttendanceRate,
       avgWorkingDaysPerMonth: 0,
       departmentBreakdown: Object.entries(roleGroups).map(([dept, count]) => ({
         department: dept,
         employeeCount: count,
-        avgAttendanceRate: 0,
+        avgAttendanceRate,
       })),
       contractTypeBreakdown: [],
       turnoverRate: 0,
@@ -85,39 +113,56 @@ export async function getAttendanceReport(tenantId: string, month?: string) {
     const supabase = await createServiceRoleClient();
     const currentMonth = month || new Date().toISOString().slice(0, 7);
 
-    // Query attendance table
+    // Build safe date range for PostgreSQL
+    const [yearStr, monthStr] = currentMonth.split('-');
+    const year = parseInt(yearStr, 10);
+    const monthNum = parseInt(monthStr, 10);
+    const startDate = `${currentMonth}-01`;
+    const nextMonth = monthNum === 12 ? 1 : monthNum + 1;
+    const nextYear = monthNum === 12 ? year + 1 : year;
+    const endDate = `${nextYear}-${String(nextMonth).padStart(2, '0')}-01`;
+
+    // Query attendance table using correct schema columns
     const { data: attendance, error } = await supabase
       .from('attendance')
-      .select('employee_id, date, status, check_in_time')
+      .select('ktv_id, date, status, checkin_time')
       .eq('tenant_id', tenantId)
-      .gte('date', `${currentMonth}-01`)
-      .lt('date', `${currentMonth}-32`) as {
-        data: Array<{ employee_id: string; date: string; status: string; check_in_time: string | null }> | null;
-        error: unknown;
+      .gte('date', startDate)
+      .lt('date', endDate) as {
+        data: Array<{ ktv_id: string; date: string; status: string; checkin_time: string | null }> | null;
+        error: any;
       };
 
-    if (error || !attendance || attendance.length === 0) {
+    if (error) {
       console.error('[HR Intelligence] Attendance query error:', error);
+      throw new QueryError(`Failed to fetch attendance report: ${error.message}`, error);
+    }
+
+    if (!attendance || attendance.length === 0) {
       return [];
     }
 
     // Get user info
-    const userIds = [...new Set(attendance.map(a => a.employee_id))];
-    const { data: users } = await supabase
+    const userIds = [...new Set(attendance.map(a => a.ktv_id))];
+    const { data: users, error: usersError } = await supabase
       .from('users')
       .select('id, full_name, role, phone')
       .in('id', userIds);
+
+    if (usersError) {
+      throw new QueryError(`Failed to fetch user data for attendance: ${usersError.message}`, usersError);
+    }
 
     const userMap = new Map(users?.map(u => [u.id, u]) || []);
 
     // Group attendance by user
     const userAttendance = attendance.reduce((acc, record) => {
-      if (!acc[record.employee_id]) {
-        acc[record.employee_id] = [];
+      if (!acc[record.ktv_id]) {
+        acc[record.ktv_id] = [];
       }
-      acc[record.employee_id].push(record);
+      acc[record.ktv_id].push(record);
       return acc;
-    }, {} as Record<string, typeof attendance>);
+    }, {} as Record<string, Array<{ ktv_id: string; date: string; status: string; checkin_time: string | null }>>);
 
     // Calculate metrics per user
     return Object.entries(userAttendance).map(([userId, records]) => {
@@ -150,7 +195,7 @@ export async function getAttendanceReport(tenantId: string, month?: string) {
     });
   } catch (error) {
     console.error('[HR Intelligence] Attendance report error:', error);
-    return [];
+    throw error;
   }
 }
 
@@ -161,25 +206,34 @@ export async function getAttendanceReport(tenantId: string, month?: string) {
 export async function getPayrollSummary(tenantId: string, month: string) {
   try {
     const supabase = await createServiceRoleClient();
+    const formattedMonth = month.includes('-') && month.split('-').length === 2 ? `${month}-01` : month;
 
     // Query salary_records table
     const { data: salaryRecords, error } = await supabase
       .from('salary_records')
       .select('*')
       .eq('tenant_id', tenantId)
-      .eq('month_year', month);
+      .eq('month_year', formattedMonth);
 
-    if (error || !salaryRecords || salaryRecords.length === 0) {
+    if (error) {
       console.error('[HR Intelligence] Payroll query error:', error);
+      throw new QueryError(`Failed to fetch payroll summary: ${error.message}`, error);
+    }
+
+    if (!salaryRecords || salaryRecords.length === 0) {
       return [];
     }
 
     // Get user info
     const userIds = salaryRecords.map(s => s.ktv_id);
-    const { data: users } = await supabase
+    const { data: users, error: usersError } = await supabase
       .from('users')
       .select('id, full_name, role')
       .in('id', userIds);
+
+    if (usersError) {
+      throw new QueryError(`Failed to fetch user data for payroll: ${usersError.message}`, usersError);
+    }
 
     const userMap = new Map(users?.map(u => [u.id, u]) || []);
 
@@ -241,38 +295,49 @@ export async function getEmployeePerformance(tenantId: string, month?: string) {
   try {
     const supabase = await createServiceRoleClient();
     const currentMonth = month || new Date().toISOString().slice(0, 7);
+    const formattedMonth = currentMonth.includes('-') && currentMonth.split('-').length === 2 ? `${currentMonth}-01` : currentMonth;
 
-    // Query KPI records
+    // Query KPI records using correct schema columns
     const { data: kpiRecords, error: kpiError } = await supabase
       .from('kpi_records')
-      .select('employee_id, customer_satisfaction_score, kpi_amount')
+      .select('ktv_id, customer_satisfaction, bonus_amount')
       .eq('tenant_id', tenantId)
-      .eq('month_year', currentMonth) as {
-        data: Array<{ employee_id: string; customer_satisfaction_score: number | null; kpi_amount: number | null }> | null;
-        error: unknown;
+      .eq('month_year', formattedMonth) as {
+        data: Array<{ ktv_id: string; customer_satisfaction: number | null; bonus_amount: number | null }> | null;
+        error: any;
       };
 
-    if (kpiError || !kpiRecords || kpiRecords.length === 0) {
+    if (kpiError) {
       console.error('[HR Intelligence] KPI query error:', kpiError);
+      throw new QueryError(`Failed to fetch employee performance: ${kpiError.message}`, kpiError);
+    }
+
+    if (!kpiRecords || kpiRecords.length === 0) {
       return [];
     }
 
     // Get user info
-    const userIds = kpiRecords.map(k => k.employee_id);
-    const { data: users } = await supabase
+    const userIds = kpiRecords.map(k => k.ktv_id);
+    const { data: users, error: usersError } = await supabase
       .from('users')
       .select('id, full_name, role, phone')
       .in('id', userIds);
+
+    if (usersError) {
+      throw new QueryError(`Failed to fetch user data for performance: ${usersError.message}`, usersError);
+    }
 
     const userMap = new Map(users?.map(u => [u.id, u]) || []);
 
     // Map to output format
     return kpiRecords.map(record => {
-      const user = userMap.get(record.employee_id);
+      const user = userMap.get(record.ktv_id);
+      const score = record.customer_satisfaction ? parseFloat(record.customer_satisfaction.toString()) : 0;
+      const bonus = record.bonus_amount ? parseFloat(record.bonus_amount.toString()) : 0;
       return {
         tenantId,
         month: currentMonth,
-        ktvId: record.employee_id,
+        ktvId: record.ktv_id,
         ktvName: user?.full_name || 'Unknown',
         ktvRole: user?.role || 'unknown',
         ktvPhone: user?.phone || null,
@@ -284,9 +349,9 @@ export async function getEmployeePerformance(tenantId: string, month?: string) {
         fiveStarCount: 0,
         fourStarCount: 0,
         belowFourCount: 0,
-        kpiScore: record.customer_satisfaction_score || 0,
-        kpiAmount: record.kpi_amount || 0,
-        customerSatisfactionScore: record.customer_satisfaction_score || 0,
+        kpiScore: score,
+        kpiAmount: bonus,
+        customerSatisfactionScore: score,
         totalRevenueContributed: 0,
         revenueTransactionCount: 0,
         workingDays: 0,
@@ -294,7 +359,7 @@ export async function getEmployeePerformance(tenantId: string, month?: string) {
         absentDays: 0,
         revenuePerSession: 0,
         sessionsPerWorkingDay: 0,
-        overallPerformanceScore: record.customer_satisfaction_score || 0,
+        overallPerformanceScore: score,
         performanceRank: 0,
         performanceTier: 'top_50' as const,
         computedAt: new Date().toISOString(),
@@ -302,7 +367,7 @@ export async function getEmployeePerformance(tenantId: string, month?: string) {
     });
   } catch (error) {
     console.error('[HR Intelligence] Employee performance error:', error);
-    return [];
+    throw error;
   }
 }
 

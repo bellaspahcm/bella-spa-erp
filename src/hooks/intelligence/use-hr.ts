@@ -83,6 +83,27 @@ interface AttendanceInsights {
   attendanceTrend: 'improving' | 'stable' | 'declining'
 }
 
+interface AttendanceReport {
+  tenantId: string
+  month: string
+  ktvId: string
+  ktvName: string
+  ktvRole: string
+  totalDays: number
+  daysPresent: number
+  daysAbsent: number
+  daysLate: number
+  daysHalfDay: number
+  workingDays: number
+  onTimeRatePct: number
+  attendanceRatePct: number
+  avgLateMinutes: number | null
+  attendancePerformanceScore: number
+  performanceRank: number
+  attendanceStatus: 'excellent' | 'good' | 'fair' | 'poor'
+  computedAt: string
+}
+
 /**
  * Payroll Summary
  */
@@ -167,8 +188,12 @@ async function fetchAttendanceInsights(
   month: string,
   year: string
 ): Promise<IntelligenceResponse<AttendanceInsights>> {
+  const startDate = `${year}-${month}-01`;
+  const lastDay = new Date(parseInt(year, 10), parseInt(month, 10), 0).getDate();
+  const endDate = `${year}-${month}-${String(lastDay).padStart(2, '0')}`;
+
   const response = await fetch(
-    `/api/intelligence/hr/attendance-report?period=current_month`,
+    `/api/intelligence/hr/attendance-report?period=custom&startDate=${startDate}&endDate=${endDate}`,
     {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
@@ -181,7 +206,45 @@ async function fetchAttendanceInsights(
     throw new Error(errorData.error || `API Error: ${response.status}`)
   }
 
-  return response.json()
+  const json = await response.json();
+  const reports: AttendanceReport[] = json.data || [];
+
+  // Compute insights from raw reports array
+  const totalWorkingDays = reports.length > 0 ? Math.max(...reports.map(r => r.totalDays)) : 0;
+  const avgAttendanceRate = reports.length > 0 
+    ? reports.reduce((sum, r) => sum + r.attendanceRatePct, 0) / reports.length 
+    : 0;
+  const totalAbsences = reports.reduce((sum, r) => sum + r.daysAbsent, 0);
+  const totalLateArrivals = reports.reduce((sum, r) => sum + r.daysLate, 0);
+  const totalEarlyDepartures = reports.reduce((sum, r) => sum + (r.daysHalfDay || 0), 0);
+
+  const topPerformers = [...reports]
+    .sort((a, b) => b.attendanceRatePct - a.attendanceRatePct)
+    .map(r => ({
+      employeeId: r.ktvId,
+      employeeName: r.ktvName,
+      attendanceRate: r.attendanceRatePct,
+      workingDays: r.workingDays,
+    }));
+
+  const insights: AttendanceInsights = {
+    month,
+    year,
+    totalWorkingDays,
+    avgAttendanceRate,
+    totalAbsences,
+    totalLateArrivals,
+    totalEarlyDepartures,
+    topPerformers,
+    attendanceTrend: 'stable',
+  };
+
+  return {
+    success: json.success,
+    data: insights,
+    error: json.error || null,
+    metadata: json.metadata,
+  };
 }
 
 async function fetchPayrollSummary(
