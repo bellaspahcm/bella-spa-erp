@@ -73,6 +73,7 @@ export async function calculateKtvSalarySheet(
 
   const { data, error } = await dataClient.rpc('calculate_ktv_salary_sheet', {
     p_month_year: monthYear,
+    p_tenant_id: tenantId,
   });
 
   if (!error) {
@@ -85,7 +86,8 @@ export async function calculateKtvSalarySheet(
     error.message.includes('set_session_tenant') ||
     error.message.includes('branch') ||
     error.message.includes('chi nhanh') ||
-    error.message.includes('Quyen han khong hop le')
+    error.message.includes('Quyen han khong hop le') ||
+    error.message.includes('Quyền hạn không hợp lệ')
   ) {
     const connectionString = process.env.SUPABASE_DB_URL;
     if (connectionString) {
