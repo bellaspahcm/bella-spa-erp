@@ -337,10 +337,16 @@ let multiTierCacheInstance: MultiTierCache | null = null;
 export function getCache(config?: MultiTierCacheConfig): MultiTierCache {
   if (!multiTierCacheInstance) {
     const isTestEnv = process.env.NODE_ENV === 'test';
-    const hasRedisUrl = !!process.env.REDIS_URL;
+    const redisUrl = process.env.REDIS_URL;
+    const isLocalhostRedis = redisUrl?.includes('localhost') || redisUrl?.includes('127.0.0.1');
+    const isVercel = process.env.VERCEL === '1';
+    
+    // Automatically disable Redis on Vercel if it misconfigures to localhost
+    const hasValidRedis = !!redisUrl && !(isVercel && isLocalhostRedis);
+
     multiTierCacheInstance = new MultiTierCache({
       enableMemory: true,
-      enableRedis: !isTestEnv && hasRedisUrl, // Disable Redis in test environment or if REDIS_URL is not set
+      enableRedis: !isTestEnv && hasValidRedis,
       ...config,
     });
   }
