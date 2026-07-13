@@ -12,9 +12,10 @@
 import { cookies } from 'next/headers';
 import { createServerClient as createSupabaseServerClient } from '@supabase/ssr';
 import { Database } from '@/types/database.types';
+import { cache } from 'react';
 
-export function createServerClient() {
-  return createSupabaseServerClient<Database>(
+export const createServerClient = cache(() => {
+  const client = createSupabaseServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
@@ -42,7 +43,15 @@ export function createServerClient() {
       },
     }
   );
-}
+
+  // Memoize client.auth.getUser at the request level to avoid redundant network roundtrips.
+  const originalGetUser = client.auth.getUser.bind(client.auth);
+  client.auth.getUser = cache(async (jwt?: string) => {
+    return await originalGetUser(jwt);
+  });
+
+  return client;
+});
 
 // Backward compatibility alias
 export const createClient = createServerClient;
