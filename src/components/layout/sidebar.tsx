@@ -31,11 +31,9 @@ import {
   TrendingUp,
   Brain,
   BarChart3,
-  Activity,
-  UserCheck,
-  Building2,
   ShoppingCart,
-  ClipboardList
+  ClipboardList,
+  LineChart
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -286,6 +284,8 @@ const menuItems: SidebarMenuItem[] = [
   { type: 'header', label: 'Tổng quan' },
   { icon: LayoutDashboard, label: 'Dashboard',          href: '/dashboard' },
   { icon: Sparkles,        label: 'AI Copilot',         href: '/dashboard/ai-copilot' },
+  { icon: TrendingUp,      label: 'Dự báo kinh doanh',  href: '/dashboard/forecast' },
+  { icon: Brain,           label: 'Gợi ý thông minh',   href: '/dashboard/recommendations' },
 
   { type: 'header', label: 'Vận hành & Dịch vụ' },
   { icon: Calendar,        label: 'Lịch hẹn',           href: '/dashboard/bookings' },
@@ -307,13 +307,7 @@ const menuItems: SidebarMenuItem[] = [
 
   { type: 'header', label: 'Báo cáo & Phân tích' },
   { icon: BarChart3,       label: 'Bảng quản trị CEO', href: '/dashboard/executive' },
-  { icon: TrendingUp,      label: 'Dự báo kinh doanh',  href: '/dashboard/forecast' },
-  { icon: Brain,           label: 'Gợi ý thông minh',   href: '/dashboard/recommendations' },
-  { icon: UserCheck,       label: 'Phân tích khách hàng', href: '/dashboard/customer-intelligence' },
-  { icon: DollarSign,      label: 'Phân tích tài chính', href: '/dashboard/finance' },
-  { icon: Building2,       label: 'Phân tích nhân sự',   href: '/dashboard/hr' },
-  { icon: Activity,        label: 'Phân tích vận hành',  href: '/dashboard/operations' },
-  { icon: Megaphone,       label: 'Phân tích marketing', href: '/dashboard/marketing' },
+  { icon: LineChart,       label: 'Trung tâm Phân tích', href: '/dashboard/analytics' },
 
   { type: 'header', label: 'Hệ thống' },
   { icon: Key,             label: 'API Partners',        href: '/dashboard/admin/partners' },
@@ -539,7 +533,9 @@ export function Sidebar() {
             "max-w-[9rem] truncate font-handwriting text-2xl text-primary dark:text-[#A67D44] leading-none mt-1",
             (isBeautySpaShell || isIndustrialCleaningShell) && "beauty-erp-brand-script"
           )}>
-            {tenantBrand.displayName}
+            {tenantBrand.displayName.toLowerCase().endsWith('headquarter')
+              ? tenantBrand.displayName.slice(0, -11).trim()
+              : tenantBrand.displayName}
           </span>
         </div>
 
@@ -609,10 +605,19 @@ export function Sidebar() {
             </div>
             <div className="text-center">
               <h2 className={cn(
-                "max-w-64 truncate text-[2.24rem] font-handwriting leading-[0.8] mb-2 drop-shadow-sm text-primary dark:text-[#A67D44]",
+                "max-w-64 text-[2.24rem] font-handwriting mb-2 drop-shadow-sm text-primary dark:text-[#A67D44] text-center",
                 (isBeautySpaShell || isIndustrialCleaningShell) && "beauty-erp-brand-script"
               )}>
-                {tenantBrand.displayName}
+                {tenantBrand.displayName.toLowerCase().endsWith('headquarter') ? (
+                  <span className="flex flex-col items-center">
+                    <span className="leading-[0.8]">{tenantBrand.displayName.slice(0, -11).trim()}</span>
+                    <span className="text-[1.6rem] mt-2.5 leading-[0.8] font-handwriting">
+                      Headquarter
+                    </span>
+                  </span>
+                ) : (
+                  <span className="block truncate leading-[0.8]">{tenantBrand.displayName}</span>
+                )}
               </h2>
               <span className={cn(
                 "text-[7px] font-extrabold text-[#8A6D7C] dark:text-[#CDBCAB] uppercase tracking-[0.25em] block mt-1",
