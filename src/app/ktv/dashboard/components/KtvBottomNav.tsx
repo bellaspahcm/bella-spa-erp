@@ -35,6 +35,7 @@ export function KtvBottomNav() {
           <Link
             key={item.href}
             href={item.href}
+            prefetch={false}
             className={
               isActive
                 ? "text-rose-700 dark:text-[#A67D44] flex flex-col items-center gap-1 transition-colors"

@@ -715,6 +715,11 @@ export async function getKTVEarnings(month: string, currentUser?: CurrentUser) {
   const user = currentUser || await getCurrentUser();
   if (!user || user.role !== 'ktv') return { total: 0, sessions: 0 };
 
+  const cacheKey = `ktv:earnings:${user.id}:${month}`;
+  const { getCache, setCache, CacheTTL } = await import('@/lib/redis-cache');
+  const cached = await getCache<{ total: number; sessions: number }>(cacheKey);
+  if (cached) return cached;
+
   const startOfMonth = `${month}-01`;
   const nextMonth = getLocalDateString(new Date(new Date(startOfMonth).setMonth(new Date(startOfMonth).getMonth() + 1)));
 
@@ -737,10 +742,18 @@ export async function getKTVEarnings(month: string, currentUser?: CurrentUser) {
 
   const total = (data as unknown as SessionLogCommission[] || []).reduce((acc: number, s) => acc + (Number(s.bookings?.ktv_commission) || 0), 0);
   
-  return {
+  const result = {
     total,
     sessions: data.length
   };
+
+  const now = new Date();
+  const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const isCurrentMonth = month === currentMonthStr;
+  const ttl = isCurrentMonth ? CacheTTL.short : 86400; // Cache current month for 30s, past months for 24h
+  void setCache(cacheKey, result, ttl);
+
+  return result;
 }
 
 export async function getKTVLeaderboard(month: string, currentUser?: CurrentUser) {
@@ -749,16 +762,30 @@ export async function getKTVLeaderboard(month: string, currentUser?: CurrentUser
   const tenantId = user?.tenant_id;
   if (!tenantId) return [];
 
+  const monthStart = month.includes('-01') ? month : `${month}-01`;
+  const cacheKey = `leaderboard:${tenantId}:${monthStart}`;
+  const { getCache, setCache, CacheTTL } = await import('@/lib/redis-cache');
+  
+  const cached = await getCache<any[]>(cacheKey);
+  if (cached) return cached;
+
   const { data, error } = await supabase.rpc('get_ktv_leaderboard', {
     p_tenant_id: tenantId,
-    p_month: `${month}-01`
+    p_month: monthStart
   });
 
   if (error) {
     throw new Error(`get_ktv_leaderboard failed: ${error.message}`);
   }
 
-  return data || [];
+  const result = data || [];
+  const now = new Date();
+  const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+  const isCurrentMonth = monthStart === currentMonthStr;
+  const ttl = isCurrentMonth ? CacheTTL.medium : 86400; // Cache current month for 1m, past months for 24h
+  void setCache(cacheKey, result, ttl);
+
+  return result;
 }
 
 /**
