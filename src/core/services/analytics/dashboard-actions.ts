@@ -2,6 +2,7 @@
 import type { Database } from '@/types/database.types';
 import { resolvePackageName } from '@bella/shared';;
 import { getCurrentUser } from '@/services/user-actions';
+import { getCache, setCache, CacheTTL } from '@/lib/redis-cache';
 
 type KtvLeaderboardRow = Database['public']['Functions']['get_ktv_leaderboard']['Returns'][number];
 const DASHBOARD_UPCOMING_SESSIONS_LIMIT = 20;
@@ -243,8 +244,22 @@ export async function getDashboardStats(
 
     // Composite blended rating via RPC (60% customer + 40% discipline).
     // Run alongside other queries so we don't add round-trip latency.
-    const curMonthRpc = supabase.rpc('get_ktv_leaderboard', { p_tenant_id: tenantId, p_month: monthStart });
-    const prevMonthRpc = supabase.rpc('get_ktv_leaderboard', { p_tenant_id: tenantId, p_month: prevStart });
+    const getLeaderboardCached = async (month: string) => {
+      const cacheKey = `leaderboard:${tenantId}:${month}`;
+      const cached = await getCache<any>(cacheKey);
+      if (cached) return { data: cached };
+      
+      const res = await supabase.rpc('get_ktv_leaderboard', { p_tenant_id: tenantId, p_month: month });
+      if (res.data) {
+        const isCurrentMonth = month === monthStart;
+        const ttl = isCurrentMonth ? CacheTTL.medium : 86400;
+        void setCache(cacheKey, res.data, ttl);
+      }
+      return res;
+    };
+
+    const curMonthRpc = getLeaderboardCached(monthStart);
+    const prevMonthRpc = getLeaderboardCached(prevStart);
 
     const [custRes, prevCustRes, revRes, prevRevRes, todayBookingsRes, yesterdayBookingsRes, curRpcRes, prevRpcRes] = await Promise.all([
       custQ, prevCustQ, revQ, prevRevQ, todayBookingsQ, yesterdayBookingsQ, curMonthRpc, prevMonthRpc
@@ -514,10 +529,22 @@ export async function getTopTechnicians(): Promise<KtvPerformanceViewModel[]> {
     const now = new Date();
     const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
 
-    const { data, error } = await supabase.rpc('get_ktv_leaderboard', {
-      p_tenant_id: tenantId,
-      p_month: month
-    });
+    const cacheKey = `leaderboard:${tenantId}:${month}`;
+    let data = await getCache<any>(cacheKey);
+    let error = null;
+
+    if (!data) {
+      const res = await supabase.rpc('get_ktv_leaderboard', {
+        p_tenant_id: tenantId,
+        p_month: month
+      });
+      data = res.data;
+      error = res.error;
+      
+      if (data) {
+        void setCache(cacheKey, data, CacheTTL.medium);
+      }
+    }
 
     if (error) {
       throw new Error(`Failed to fetch top technicians: ${error.message}`);
@@ -584,9 +611,23 @@ export async function getMonthlyPerformance(): Promise<PerformanceDataPointViewM
     // The RPC returns the blended composite rating (60% customer + 40%
     // discipline) per KTV. We average across KTVs (excluding NULL =
     // KTVs with no activity) to get the month's headline rating.
-    const monthlyRpcCalls = months.map((mo) => (
-      supabase.rpc('get_ktv_leaderboard', { p_tenant_id: tenantId, p_month: mo.start })
-    ));
+    const currentMonthStr = now.toISOString().slice(0, 7) + '-01';
+    
+    const monthlyRpcCalls = months.map(async (mo) => {
+      const cacheKey = `leaderboard:${tenantId}:${mo.start}`;
+      const cached = await getCache<any>(cacheKey);
+      if (cached) {
+        return { data: cached };
+      }
+      
+      const res = await supabase.rpc('get_ktv_leaderboard', { p_tenant_id: tenantId, p_month: mo.start });
+      if (res.data) {
+        const isCurrentMonth = mo.start === currentMonthStr;
+        const ttl = isCurrentMonth ? CacheTTL.medium : 86400;
+        void setCache(cacheKey, res.data, ttl);
+      }
+      return res;
+    });
 
     const [revData, expData, customerData, ...monthlyRpcResults] = await Promise.all([
       supabase.from('revenue').select('amount, received_date')

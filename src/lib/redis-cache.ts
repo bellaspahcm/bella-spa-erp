@@ -24,6 +24,7 @@ import { Redis } from '@upstash/redis';
 
 // Create Redis client (lazy initialization)
 let redis: Redis | null = null;
+const localCache = new Map<string, { value: string; expiresAt: number }>();
 
 function getRedisClient(): Redis | null {
   // Only initialize if environment variables are present
@@ -31,10 +32,6 @@ function getRedisClient(): Redis | null {
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
 
   if (!url || !token) {
-    if (process.env.NODE_ENV === 'development') {
-      console.warn('[Redis Cache] Upstash Redis not configured. Caching disabled.');
-      console.warn('[Redis Cache] Install Upstash Redis integration: https://vercel.com/integrations/upstash');
-    }
     return null;
   }
 
@@ -62,7 +59,13 @@ export async function setCache<T>(
   ttlSeconds: number = 60
 ): Promise<boolean> {
   const client = getRedisClient();
-  if (!client) return false;
+  if (!client) {
+    localCache.set(key, {
+      value: JSON.stringify(value),
+      expiresAt: Date.now() + ttlSeconds * 1000,
+    });
+    return true;
+  }
 
   try {
     await client.set(key, JSON.stringify(value), { ex: ttlSeconds });
@@ -81,7 +84,15 @@ export async function setCache<T>(
  */
 export async function getCache<T>(key: string): Promise<T | null> {
   const client = getRedisClient();
-  if (!client) return null;
+  if (!client) {
+    const cached = localCache.get(key);
+    if (!cached) return null;
+    if (Date.now() > cached.expiresAt) {
+      localCache.delete(key);
+      return null;
+    }
+    return JSON.parse(cached.value) as T;
+  }
 
   try {
     const cached = await client.get<string>(key);
@@ -102,7 +113,10 @@ export async function getCache<T>(key: string): Promise<T | null> {
  */
 export async function deleteCache(key: string): Promise<boolean> {
   const client = getRedisClient();
-  if (!client) return false;
+  if (!client) {
+    localCache.delete(key);
+    return true;
+  }
 
   try {
     await client.del(key);
@@ -121,7 +135,17 @@ export async function deleteCache(key: string): Promise<boolean> {
  */
 export async function deleteCachePattern(pattern: string): Promise<number> {
   const client = getRedisClient();
-  if (!client) return 0;
+  if (!client) {
+    let count = 0;
+    const prefix = pattern.replace('*', '');
+    for (const key of localCache.keys()) {
+      if (key.startsWith(prefix)) {
+        localCache.delete(key);
+        count++;
+      }
+    }
+    return count;
+  }
 
   try {
     // Upstash Redis REST API doesn't support SCAN, so we use a workaround
