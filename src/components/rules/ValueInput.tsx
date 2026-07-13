@@ -29,36 +29,36 @@ export function ValueInput({ provider, fieldKey, operator, value, onChange, plac
 
   if (!fieldKey || !fieldSchema) {
     return (
-      <Input 
-        disabled 
-        placeholder="Select field first" 
-        className="w-full"
+      <Input
+        disabled
+        placeholder="Chọn trường trước"
+        className="h-11 !rounded-xl bg-slate-100/50 dark:bg-zinc-900/50 border-slate-200/80 dark:border-zinc-800 text-slate-400 dark:text-zinc-500 text-xs w-full cursor-not-allowed"
       />
     );
   }
 
   if (!operatorNeedsValue) {
     return (
-      <Input 
-        disabled 
-        placeholder="No value needed" 
-        className="w-full"
+      <Input
+        disabled
+        placeholder="Không cần nhập giá trị"
+        className="h-11 !rounded-xl bg-slate-100/50 dark:bg-zinc-900/50 border-slate-200/80 dark:border-zinc-800 text-slate-400 dark:text-zinc-500 text-xs w-full cursor-not-allowed"
       />
     );
   }
 
-  const effectivePlaceholder = placeholder || fieldSchema.placeholder || `Enter ${fieldSchema.label.toLowerCase()}`;
+  const effectivePlaceholder = placeholder || fieldSchema.placeholder || `Nhập ${fieldSchema.label.toLowerCase()}`;
 
   // Boolean type - use switch
   if (fieldSchema.type === 'boolean') {
     return (
-      <div className="flex items-center space-x-2 h-10">
+      <div className="flex items-center space-x-3 h-11 px-3 !rounded-xl bg-slate-50/50 dark:bg-zinc-900/30 border border-slate-200/50 dark:border-zinc-800/60 shadow-sm w-full">
         <Switch
           checked={value === true}
           onCheckedChange={onChange}
           disabled={disabled}
         />
-        <Label>{value === true ? 'True' : 'False'}</Label>
+        <Label className="text-sm font-bold text-slate-700 dark:text-zinc-300">{value === true ? 'ĐÚNG (True)' : 'SAI (False)'}</Label>
       </div>
     );
   }
@@ -75,21 +75,27 @@ export function ValueInput({ provider, fieldKey, operator, value, onChange, plac
             const values = e.target.value.split(',').map(v => v.trim()).filter(Boolean);
             onChange(values);
           }}
-          placeholder="e.g., VIP, Loyal"
+          placeholder="Ví dụ: VIP, Loyal"
           disabled={disabled}
-          className="w-full"
+          className="h-11 !rounded-xl bg-slate-50/50 dark:bg-zinc-900/40 border-slate-200/80 dark:border-zinc-800/80 hover:bg-slate-50 hover:border-slate-300 dark:hover:bg-zinc-900/60 dark:hover:border-zinc-700 focus-visible:bg-white dark:focus-visible:bg-zinc-950 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary shadow-sm transition-all duration-200 text-sm w-full"
         />
       );
     }
 
+    const selectedOption = fieldSchema.enumValues.find(
+      (option) => option.value.toString() === value?.toString()
+    );
+
     return (
       <Select value={value?.toString()} onValueChange={onChange} disabled={disabled}>
-        <SelectTrigger className="w-full">
-          <SelectValue placeholder={effectivePlaceholder} />
+        <SelectTrigger className="w-full h-11 !rounded-xl bg-slate-50/50 dark:bg-zinc-900/40 border-slate-200/80 dark:border-zinc-800/80 hover:bg-slate-50 hover:border-slate-300 dark:hover:bg-zinc-900/60 dark:hover:border-zinc-700 focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-sm transition-all duration-200 text-sm">
+          <SelectValue placeholder={effectivePlaceholder}>
+            {selectedOption ? selectedOption.label : undefined}
+          </SelectValue>
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="rounded-xl border-slate-200 dark:border-zinc-800 shadow-xl max-h-64">
           {fieldSchema.enumValues.map((option) => (
-            <SelectItem key={option.value} value={option.value.toString()}>
+            <SelectItem key={option.value} value={option.value.toString()} className="text-sm rounded-lg py-2.5">
               {option.label}
             </SelectItem>
           ))}
@@ -112,7 +118,7 @@ export function ValueInput({ provider, fieldKey, operator, value, onChange, plac
         disabled={disabled}
         min={fieldSchema.validation?.min}
         max={fieldSchema.validation?.max}
-        className="w-full"
+        className="h-11 !rounded-xl bg-slate-50/50 dark:bg-zinc-900/40 border-slate-200/80 dark:border-zinc-800/80 hover:bg-slate-50 hover:border-slate-300 dark:hover:bg-zinc-900/60 dark:hover:border-zinc-700 focus-visible:bg-white dark:focus-visible:bg-zinc-950 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary shadow-sm transition-all duration-200 text-sm w-full"
       />
     );
   }
@@ -125,7 +131,7 @@ export function ValueInput({ provider, fieldKey, operator, value, onChange, plac
         value={value || ''}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
-        className="w-full"
+        className="h-11 !rounded-xl bg-slate-50/50 dark:bg-zinc-900/40 border-slate-200/80 dark:border-zinc-800/80 hover:bg-slate-50 hover:border-slate-300 dark:hover:bg-zinc-900/60 dark:hover:border-zinc-700 focus-visible:bg-white dark:focus-visible:bg-zinc-950 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary shadow-sm transition-all duration-200 text-sm w-full"
       />
     );
   }
@@ -138,7 +144,7 @@ export function ValueInput({ provider, fieldKey, operator, value, onChange, plac
         value={value || ''}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
-        className="w-full"
+        className="h-11 !rounded-xl bg-slate-50/50 dark:bg-zinc-900/40 border-slate-200/80 dark:border-zinc-800/80 hover:bg-slate-50 hover:border-slate-300 dark:hover:bg-zinc-900/60 dark:hover:border-zinc-700 focus-visible:bg-white dark:focus-visible:bg-zinc-950 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary shadow-sm transition-all duration-200 text-sm w-full"
       />
     );
   }
@@ -151,7 +157,7 @@ export function ValueInput({ provider, fieldKey, operator, value, onChange, plac
       onChange={(e) => onChange(e.target.value)}
       placeholder={effectivePlaceholder}
       disabled={disabled}
-      className="w-full"
+      className="h-11 !rounded-xl bg-slate-50/50 dark:bg-zinc-900/40 border-slate-200/80 dark:border-zinc-800/80 hover:bg-slate-50 hover:border-slate-300 dark:hover:bg-zinc-900/60 dark:hover:border-zinc-700 focus-visible:bg-white dark:focus-visible:bg-zinc-950 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary shadow-sm transition-all duration-200 text-sm w-full"
     />
   );
 }

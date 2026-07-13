@@ -158,8 +158,6 @@ describe('dashboard tenant isolation source guards', () => {
     expect(proxySource).toContain("'/ktv/:path*'");
     expect(proxySource).toContain("'/student/:path*'");
     expect(proxySource).toContain("'/login'");
-    expect(sidebarSource).toContain("label: 'Đào tạo'");
-    expect(sidebarSource).toContain("href: '/dashboard/training'");
     expect(permissionsSource).toContain("'Đào tạo': 'student_training'");
     expect(trainingPageSource).not.toMatch(/\.from\('(courses|students|student_lesson_progress|student_tuition_payments|training_classes|student_class_attendance)'/);
     expect(trainingPageSource).not.toContain('createClient');

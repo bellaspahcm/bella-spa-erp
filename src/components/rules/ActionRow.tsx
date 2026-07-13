@@ -63,23 +63,31 @@ export function ActionRow({ provider, action, actionNumber, onChange, onDelete, 
   };
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
+    <Card className="bg-white/50 dark:bg-zinc-950/40 backdrop-blur-md border border-slate-200/50 dark:border-zinc-800/60 shadow-sm rounded-3xl overflow-hidden relative pl-4 hover:shadow-md hover:border-slate-200 dark:hover:border-zinc-850 transition-all duration-300">
+      {/* Left Accent Bar */}
+      <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-primary via-primary-hover to-accent" />
+
+      <CardHeader className="pb-3 pt-5 pr-5">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base font-medium">
-            Action {actionNumber}
+          <CardTitle className="text-xs font-black text-slate-700 dark:text-zinc-300 uppercase tracking-widest flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+            Hành động #{actionNumber}
           </CardTitle>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             {actionSchema?.description && (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <Info className="h-4 w-4 text-muted-foreground" />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8.5 w-8.5 rounded-full text-slate-400 hover:text-slate-600 dark:text-zinc-500 dark:hover:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-850/80 active:scale-95 transition-all"
+                    >
+                      <Info className="h-4.5 w-4.5" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="max-w-xs">{actionSchema.description}</p>
+                  <TooltipContent className="rounded-xl p-3 border-slate-200 dark:border-zinc-800 shadow-xl max-w-xs">
+                    <p className="text-xs">{actionSchema.description}</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -89,19 +97,20 @@ export function ActionRow({ provider, action, actionNumber, onChange, onDelete, 
               size="icon"
               onClick={onDelete}
               disabled={disabled}
-              className="h-8 w-8 text-destructive hover:text-destructive"
+              className="h-8.5 w-8.5 rounded-full text-slate-400 hover:text-destructive dark:text-zinc-500 hover:bg-red-500/10 active:scale-95 transition-all"
             >
-              <X className="h-4 w-4" />
+              <X className="h-4.5 w-4.5" />
             </Button>
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+
+      <CardContent className="space-y-5 pb-5 pr-5">
         {/* Action Type Selector */}
         <div className="space-y-2">
-          <label className="text-sm font-medium">
-            Action Type
-            <span className="text-red-500 ml-1">*</span>
+          <label className="text-xs font-bold text-slate-600 dark:text-zinc-400 tracking-wider uppercase">
+            Loại hành động
+            <span className="text-destructive font-black text-sm ml-1">*</span>
           </label>
           <ActionTypeSelector
             provider={provider}
@@ -110,13 +119,15 @@ export function ActionRow({ provider, action, actionNumber, onChange, onDelete, 
             disabled={disabled}
           />
           {errors.type && (
-            <p className="text-sm text-destructive">{errors.type}</p>
+            <p className="text-xs text-destructive bg-destructive/5 px-2.5 py-1.5 rounded-xl border border-destructive/10 mt-1 font-semibold flex items-center gap-1.5">
+              ⚠️ {errors.type}
+            </p>
           )}
         </div>
 
         {/* Action Parameters Form */}
         {action.type && (
-          <div className="pt-2 border-t">
+          <div className="pt-4 border-t border-slate-100 dark:border-zinc-800/60">
             <ActionParamsForm
               provider={provider}
               actionType={action.type}
@@ -130,7 +141,7 @@ export function ActionRow({ provider, action, actionNumber, onChange, onDelete, 
 
         {/* Action Description */}
         {actionSchema?.description && (
-          <p className="text-xs text-muted-foreground pt-2 border-t">
+          <p className="text-[11px] text-slate-400 dark:text-zinc-500 pt-3 border-t border-slate-100 dark:border-zinc-800/45">
             ℹ️ {actionSchema.description}
           </p>
         )}

@@ -314,7 +314,7 @@ export default function RuleTestSimulator({ rule, testHistory }: RuleTestSimulat
                         <div className="flex-1">
                           <div className="font-medium">{step.step}</div>
                           <div className="text-muted-foreground text-xs">
-                            → {typeof step.result === 'object' 
+                            → {typeof step.result === 'object'
                                 ? JSON.stringify(step.result)
                                 : String(step.result)}
                           </div>

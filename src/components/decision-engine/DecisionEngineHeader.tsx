@@ -42,7 +42,7 @@ export default function DecisionEngineHeader() {
 
   const tabs = [
     {
-      name: 'Quản lý quy tắc luật',
+      name: 'Quản lý quy tắc',
       href: '/dashboard/rules',
       icon: FileText,
       pattern: /^\/dashboard\/rules(\/|$)/,
@@ -71,10 +71,10 @@ export default function DecisionEngineHeader() {
           </div>
           <div>
             <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
-              Hệ thống Luật nghiệp vụ
+              Hệ thống quy tắc nghiệp vụ
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Cấu hình luật nghiệp vụ tự động và giám sát kết quả vận hành thời gian thực
+              Cấu hình quy tắc nghiệp vụ tự động và giám sát kết quả vận hành thời gian thực
             </p>
           </div>
         </div>

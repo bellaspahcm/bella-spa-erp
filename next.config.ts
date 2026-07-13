@@ -2,7 +2,7 @@ import { withSentryConfig } from '@sentry/nextjs';
 import type { NextConfig } from "next";
 
 const securityHeaders = [
-  { key: 'X-Frame-Options', value: 'DENY' },
+  { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
   { key: 'X-Content-Type-Options', value: 'nosniff' },
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
   { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
@@ -20,7 +20,7 @@ const securityHeaders = [
       "font-src 'self'",
       "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://sentry.io https://o4511424569868288.ingest.us.sentry.io https://vercel.live wss://vercel.live",
       "worker-src 'self' blob:",
-      "frame-ancestors 'none'",
+      "frame-ancestors 'self'",
       "manifest-src 'self'",
       "media-src 'self'",
     ].join('; '),

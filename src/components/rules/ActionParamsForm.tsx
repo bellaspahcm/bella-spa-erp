@@ -77,6 +77,10 @@ export function ActionParamsForm({ provider, actionType, params, onChange, error
 
     // Enum type - use select
     if (param.type === 'enum' && param.enumValues) {
+      const selectedOption = param.enumValues.find(
+        (option) => option.value.toString() === value?.toString()
+      );
+
       return (
         <div key={param.key} className="space-y-2">
           <Label htmlFor={inputId}>
@@ -88,8 +92,10 @@ export function ActionParamsForm({ provider, actionType, params, onChange, error
             onValueChange={(val) => handleParamChange(param.key, val)}
             disabled={disabled}
           >
-            <SelectTrigger id={inputId}>
-              <SelectValue placeholder={param.placeholder || `Select ${param.label.toLowerCase()}`} />
+            <SelectTrigger id={inputId} className="h-11 !rounded-xl bg-slate-50/50 dark:bg-zinc-900/40 border-slate-200/80 dark:border-zinc-800/80 hover:bg-slate-50 hover:border-slate-300 dark:hover:bg-zinc-900/60 dark:hover:border-zinc-700 focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-sm transition-all duration-200 text-sm">
+              <SelectValue placeholder={param.placeholder || `Select ${param.label.toLowerCase()}`}>
+                {selectedOption ? selectedOption.label : undefined}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {param.enumValues.map((option) => (
@@ -127,6 +133,7 @@ export function ActionParamsForm({ provider, actionType, params, onChange, error
             disabled={disabled}
             min={param.validation?.min}
             max={param.validation?.max}
+            className="h-11 !rounded-xl bg-slate-50/50 dark:bg-zinc-900/40 border-slate-200/80 dark:border-zinc-800/80 hover:bg-slate-50 hover:border-slate-300 dark:hover:bg-zinc-900/60 dark:hover:border-zinc-700 focus-visible:bg-white dark:focus-visible:bg-zinc-950 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary shadow-sm transition-all duration-200 text-sm"
           />
           {param.description && (
             <p className="text-xs text-muted-foreground">{param.description}</p>
@@ -138,7 +145,7 @@ export function ActionParamsForm({ provider, actionType, params, onChange, error
 
     // String type - check if it's long text (textarea) or short text (input)
     const isLongText = param.key.includes('reason') || param.key.includes('message') || param.key.includes('description');
-    
+
     if (isLongText) {
       return (
         <div key={param.key} className="space-y-2">
@@ -153,6 +160,7 @@ export function ActionParamsForm({ provider, actionType, params, onChange, error
             placeholder={param.placeholder}
             disabled={disabled}
             rows={3}
+            className="!rounded-xl bg-slate-50/50 dark:bg-zinc-900/40 border-slate-200/80 dark:border-zinc-800/80 hover:bg-slate-50 hover:border-slate-300 dark:hover:bg-zinc-900/60 dark:hover:border-zinc-700 focus-visible:bg-white dark:focus-visible:bg-zinc-950 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary shadow-sm transition-all duration-200 text-sm resize-none"
           />
           {param.description && (
             <p className="text-xs text-muted-foreground">{param.description}</p>
@@ -176,6 +184,7 @@ export function ActionParamsForm({ provider, actionType, params, onChange, error
           onChange={(e) => handleParamChange(param.key, e.target.value)}
           placeholder={param.placeholder}
           disabled={disabled}
+          className="h-11 !rounded-xl bg-slate-50/50 dark:bg-zinc-900/40 border-slate-200/80 dark:border-zinc-800/80 hover:bg-slate-50 hover:border-slate-300 dark:hover:bg-zinc-900/60 dark:hover:border-zinc-700 focus-visible:bg-white dark:focus-visible:bg-zinc-950 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary shadow-sm transition-all duration-200 text-sm"
         />
         {param.description && (
           <p className="text-xs text-muted-foreground">{param.description}</p>

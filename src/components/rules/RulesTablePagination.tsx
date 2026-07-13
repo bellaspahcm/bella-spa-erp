@@ -2,7 +2,7 @@
 
 /**
  * Rules Table Pagination Component
- * 
+ *
  * Pagination controls with:
  * - Page numbers
  * - Previous/Next buttons

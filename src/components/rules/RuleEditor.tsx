@@ -64,14 +64,14 @@ export default function RuleEditor({ mode, ruleId, initialData }: RuleEditorProp
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Không thể lưu quy tắc luật');
+        throw new Error(error.error || 'Không thể lưu quy tắc');
       }
 
       const result = await response.json();
 
       toast({
         title: 'Thành công',
-        description: mode === 'create' ? 'Tạo quy tắc luật thành công' : 'Cập nhật quy tắc luật thành công',
+        description: mode === 'create' ? 'Tạo quy tắc thành công' : 'Cập nhật quy tắc thành công',
       });
 
       router.push(`/dashboard/rules/${result.data?.id || result.id || ''}`);
@@ -96,29 +96,37 @@ export default function RuleEditor({ mode, ruleId, initialData }: RuleEditorProp
     <div className="space-y-6">
       {/* Validation Error Summary */}
       {Object.keys(validationErrors).length > 0 && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Vui lòng sửa các lỗi sau:
-            <ul className="list-disc list-inside mt-2">
+        <div className="flex gap-3 items-start rounded-3xl border border-red-500/20 bg-red-500/5 text-red-600 dark:text-red-400 p-5 shadow-sm animate-in fade-in duration-300">
+          <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
+          <div className="space-y-1.5 w-full">
+            <h5 className="font-bold text-sm tracking-wider uppercase">Lỗi xác thực dữ liệu</h5>
+            <p className="text-xs text-red-500/80 dark:text-red-400/80">Vui lòng điều chỉnh các thông tin cấu hình luật dưới đây:</p>
+            <ul className="list-disc list-inside mt-2 text-xs space-y-1">
               {Object.entries(validationErrors).map(([key, error]) => (
-                <li key={key} className="text-sm">
+                <li key={key} className="pl-1">
                   {error}
                 </li>
               ))}
             </ul>
-          </AlertDescription>
-        </Alert>
+          </div>
+        </div>
       )}
 
-      <Card className="bg-white/40 dark:bg-[#1c1b19]/40 backdrop-blur-md border border-white/20 dark:border-white/5 shadow-sm rounded-xl">
-        <CardHeader>
-          <CardTitle className="text-sm font-bold text-slate-800 dark:text-slate-200">Thông tin Quy tắc Luật</CardTitle>
-          <CardDescription className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Định nghĩa các thuộc tính cơ bản của quy tắc luật
+      {/* Metadata card info */}
+      <Card className="bg-white/50 dark:bg-zinc-950/40 backdrop-blur-md border border-slate-200/60 dark:border-zinc-800/40 shadow-md rounded-3xl overflow-hidden relative">
+        {/* Top Gradient Ribbon (Canva Style) */}
+        <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-violet-500 via-primary to-accent" />
+
+        <CardHeader className="pt-7 pb-5">
+          <CardTitle className="text-sm font-bold text-slate-800 dark:text-zinc-200 uppercase tracking-wider">
+            Thông tin Quy tắc
+          </CardTitle>
+          <CardDescription className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
+            Thiết lập tên, mô tả, mức độ ưu tiên và nghiệp vụ quyết định áp dụng
           </CardDescription>
         </CardHeader>
-        <CardContent>
+
+        <CardContent className="pb-7">
           <RuleMetadataForm
             data={formData}
             onChange={setFormData}
@@ -126,7 +134,7 @@ export default function RuleEditor({ mode, ruleId, initialData }: RuleEditorProp
         </CardContent>
       </Card>
 
-      {/* Conditions Builder - Phase 3 */}
+      {/* Conditions Builder */}
       <RuleConditionsBuilder
         provider={formData.provider}
         conditions={formData.conditions || []}
@@ -137,7 +145,7 @@ export default function RuleEditor({ mode, ruleId, initialData }: RuleEditorProp
         disabled={isSaving}
       />
 
-      {/* Actions Builder - Phase 3 */}
+      {/* Actions Builder */}
       <RuleActionsBuilder
         provider={formData.provider}
         actions={formData.actions || []}
@@ -145,24 +153,28 @@ export default function RuleEditor({ mode, ruleId, initialData }: RuleEditorProp
         errors={validationErrors}
         disabled={isSaving}
       />
-      
-      <div className="flex justify-end gap-4">
+
+      {/* Bottom Button Actions row */}
+      <div className="flex justify-end gap-3 pt-2">
         <Button
           variant="outline"
           onClick={handleCancel}
           disabled={isSaving}
+          className="h-11 px-6 rounded-2xl border border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-900 text-slate-600 dark:text-zinc-350 text-xs font-bold uppercase tracking-wider transition-all duration-200 active:scale-95"
         >
           <X className="mr-2 h-4 w-4" />
-          Hủy bỏ
+          Hủy bỏ thay đổi
         </Button>
+
         <Button
           onClick={handleSave}
           disabled={isSaving}
+          className="h-11 px-6 rounded-2xl bg-gradient-to-r from-primary via-primary-hover to-accent hover:from-primary/90 hover:to-accent/90 text-white font-extrabold text-xs uppercase tracking-widest shadow-md hover:shadow-lg active:scale-95 transition-all duration-200"
         >
           {isSaving ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Đang lưu...
+              Đang lưu quy tắc...
             </>
           ) : (
             <>

@@ -1,6 +1,6 @@
 /**
  * Rules Table Skeleton Component
- * 
+ *
  * Loading skeleton for rules table while data is fetching.
  */
 

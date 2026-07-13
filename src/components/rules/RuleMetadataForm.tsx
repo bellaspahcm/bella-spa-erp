@@ -68,12 +68,21 @@ export default function RuleMetadataForm({ data, onChange }: RuleMetadataFormPro
 
   const categories = CATEGORIES_BY_PROVIDER[data.provider] || [];
 
+  const selectedProvider = PROVIDERS.find((p) => p.value === data.provider);
+  const selectedCategoryLabel = data.category
+    ? CATEGORY_LABELS[data.category] || data.category.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())
+    : undefined;
+  const selectedStatus = STATUSES.find((s) => s.value === data.status);
+
   return (
     <div className="space-y-6">
       {/* Rule Name */}
-      <div className="space-y-2">
-        <Label htmlFor="name">
-          Tên quy tắc <span className="text-red-500">*</span>
+      <div className="space-y-2 group">
+        <Label
+          htmlFor="name"
+          className="text-xs font-bold text-slate-700 dark:text-zinc-300 tracking-wider uppercase flex items-center gap-1"
+        >
+          Tên quy tắc <span className="text-destructive font-black text-sm">*</span>
         </Label>
         <Input
           id="name"
@@ -81,33 +90,43 @@ export default function RuleMetadataForm({ data, onChange }: RuleMetadataFormPro
           onChange={(e) => handleChange('name', e.target.value)}
           placeholder="Ví dụ: Quy tắc phân bổ KTV cho khách hàng VIP"
           required
+          className="h-11 !rounded-xl bg-slate-50/50 dark:bg-zinc-900/40 border-slate-200/80 dark:border-zinc-800/80 hover:bg-slate-50 hover:border-slate-300 dark:hover:bg-zinc-900/60 dark:hover:border-zinc-700 focus-visible:bg-white dark:focus-visible:bg-zinc-950 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary shadow-sm transition-all duration-200 text-sm"
         />
-        <p className="text-sm text-muted-foreground">
-          Tên rõ ràng và mô tả đúng quy tắc này
+        <p className="text-[11px] text-slate-500 dark:text-zinc-400 italic">
+          Tên ngắn gọn, rõ ràng để dễ nhận diện trong hệ thống quyết định.
         </p>
       </div>
 
       {/* Description */}
       <div className="space-y-2">
-        <Label htmlFor="description">Mô tả</Label>
+        <Label
+          htmlFor="description"
+          className="text-xs font-bold text-slate-700 dark:text-zinc-300 tracking-wider uppercase"
+        >
+          Mô tả chi tiết
+        </Label>
         <Textarea
           id="description"
           value={data.description}
           onChange={(e) => handleChange('description', e.target.value)}
           placeholder="Mô tả chức năng của quy tắc này và thời điểm áp dụng..."
           rows={3}
+          className="!rounded-xl bg-slate-50/50 dark:bg-zinc-900/40 border-slate-200/80 dark:border-zinc-800/80 hover:bg-slate-50 hover:border-slate-300 dark:hover:bg-zinc-900/60 dark:hover:border-zinc-700 focus-visible:bg-white dark:focus-visible:bg-zinc-950 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary shadow-sm transition-all duration-200 text-sm resize-none"
         />
-        <p className="text-sm text-muted-foreground">
-          Giải thích chi tiết (tùy chọn)
+        <p className="text-[11px] text-slate-500 dark:text-zinc-400">
+          Giải thích chi tiết về tác động nghiệp vụ (tùy chọn).
         </p>
       </div>
 
       {/* Provider and Category - Side by side */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {/* Provider */}
         <div className="space-y-2">
-          <Label htmlFor="provider">
-            Nghiệp vụ áp dụng <span className="text-red-500">*</span>
+          <Label
+            htmlFor="provider"
+            className="text-xs font-bold text-slate-700 dark:text-zinc-300 tracking-wider uppercase"
+          >
+            Nghiệp vụ áp dụng <span className="text-destructive font-black text-sm">*</span>
           </Label>
           <Select
             value={data.provider}
@@ -116,12 +135,17 @@ export default function RuleMetadataForm({ data, onChange }: RuleMetadataFormPro
               handleChange('category', ''); // Reset category when provider changes
             }}
           >
-            <SelectTrigger id="provider">
-              <SelectValue placeholder="Chọn nghiệp vụ" />
+            <SelectTrigger
+              id="provider"
+              className="h-11 !rounded-xl bg-slate-50/50 dark:bg-zinc-900/40 border-slate-200/80 dark:border-zinc-800/80 hover:bg-slate-50 hover:border-slate-300 dark:hover:bg-zinc-900/60 dark:hover:border-zinc-700 focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-sm transition-all duration-200 text-sm"
+            >
+              <SelectValue placeholder="Chọn nghiệp vụ">
+                {selectedProvider ? selectedProvider.label : undefined}
+              </SelectValue>
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="rounded-xl border-slate-200 dark:border-zinc-800 shadow-xl">
               {PROVIDERS.map((provider) => (
-                <SelectItem key={provider.value} value={provider.value}>
+                <SelectItem key={provider.value} value={provider.value} className="text-sm rounded-lg py-2.5">
                   {provider.label}
                 </SelectItem>
               ))}
@@ -131,20 +155,28 @@ export default function RuleMetadataForm({ data, onChange }: RuleMetadataFormPro
 
         {/* Category */}
         <div className="space-y-2">
-          <Label htmlFor="category">
-            Phân loại <span className="text-red-500">*</span>
+          <Label
+            htmlFor="category"
+            className="text-xs font-bold text-slate-700 dark:text-zinc-300 tracking-wider uppercase"
+          >
+            Phân loại cụ thể <span className="text-destructive font-black text-sm">*</span>
           </Label>
           <Select
             value={data.category}
             onValueChange={(value) => handleChange('category', value)}
             disabled={!data.provider}
           >
-            <SelectTrigger id="category">
-              <SelectValue placeholder="Chọn phân loại" />
+            <SelectTrigger
+              id="category"
+              className="h-11 !rounded-xl bg-slate-50/50 dark:bg-zinc-900/40 border-slate-200/80 dark:border-zinc-800/80 hover:bg-slate-50 hover:border-slate-300 dark:hover:bg-zinc-900/60 dark:hover:border-zinc-700 focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-sm transition-all duration-200 text-sm"
+            >
+              <SelectValue placeholder="Chọn phân loại">
+                {selectedCategoryLabel}
+              </SelectValue>
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="rounded-xl border-slate-200 dark:border-zinc-800 shadow-xl">
               {categories.map((category) => (
-                <SelectItem key={category} value={category}>
+                <SelectItem key={category} value={category} className="text-sm rounded-lg py-2.5">
                   {CATEGORY_LABELS[category] || category.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
                 </SelectItem>
               ))}
@@ -154,39 +186,57 @@ export default function RuleMetadataForm({ data, onChange }: RuleMetadataFormPro
       </div>
 
       {/* Priority */}
-      <div className="space-y-2">
-        <Label htmlFor="priority">
-          Độ ưu tiên: {data.priority}
-        </Label>
+      <div className="space-y-3 p-4 bg-slate-50/50 dark:bg-zinc-900/30 border border-slate-100 dark:border-zinc-800/40 rounded-2xl shadow-inner">
+        <div className="flex justify-between items-center">
+          <Label
+            htmlFor="priority"
+            className="text-xs font-bold text-slate-700 dark:text-zinc-300 tracking-wider uppercase"
+          >
+            Mức độ ưu tiên
+          </Label>
+          <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-primary/10 text-primary border border-primary/20 animate-pulse">
+            {data.priority}
+          </span>
+        </div>
         <RulePrioritySlider
           value={data.priority}
           onChange={(value) => handleChange('priority', value)}
         />
-        <p className="text-sm text-muted-foreground">
-          Quy tắc có độ ưu tiên cao hơn sẽ được đánh giá trước (0-1000)
+        <p className="text-[11px] text-slate-500 dark:text-zinc-400">
+          * Quy tắc có điểm ưu tiên cao hơn sẽ luôn được thẩm định trước trong chuỗi xử lý.
         </p>
       </div>
 
       {/* Status */}
       <div className="space-y-2">
-        <Label htmlFor="status">Trạng thái</Label>
+        <Label
+          htmlFor="status"
+          className="text-xs font-bold text-slate-700 dark:text-zinc-300 tracking-wider uppercase"
+        >
+          Trạng thái cấu hình
+        </Label>
         <Select
           value={data.status}
           onValueChange={(value) => handleChange('status', value)}
         >
-          <SelectTrigger id="status">
-            <SelectValue placeholder="Chọn trạng thái" />
+          <SelectTrigger
+            id="status"
+            className="h-11 !rounded-xl bg-slate-50/50 dark:bg-zinc-900/40 border-slate-200/80 dark:border-zinc-800/80 hover:bg-slate-50 hover:border-slate-300 dark:hover:bg-zinc-900/60 dark:hover:border-zinc-700 focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-sm transition-all duration-200 text-sm"
+          >
+            <SelectValue placeholder="Chọn trạng thái">
+              {selectedStatus ? selectedStatus.label : undefined}
+            </SelectValue>
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="rounded-xl border-slate-200 dark:border-zinc-800 shadow-xl">
             {STATUSES.map((status) => (
-              <SelectItem key={status.value} value={status.value}>
+              <SelectItem key={status.value} value={status.value} className="text-sm rounded-lg py-2.5">
                 {status.label}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
-        <p className="text-sm text-muted-foreground">
-          Quy tắc ở trạng thái bản nháp sẽ không được thực thi
+        <p className="text-[11px] text-slate-500 dark:text-zinc-400">
+          Chỉ các quy tắc &ldquo;Hoạt động&rdquo; mới được nạp vào Decision Engine thời gian thực.
         </p>
       </div>
     </div>

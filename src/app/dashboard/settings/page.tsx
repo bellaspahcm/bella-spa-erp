@@ -155,6 +155,22 @@ function SettingsContent() {
     setActiveTab((currentTab) => (currentTab === nextTab ? currentTab : nextTab));
   }, [searchParams]);
 
+  const [iframeHeight, setIframeHeight] = useState('1200px');
+
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data && event.data.type === 'resize-iframe') {
+        setIframeHeight(`${event.data.height}px`);
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
+
+  useEffect(() => {
+    setIframeHeight('1200px');
+  }, [activeTab]);
+
   usePageRefresh(() => loadSettings({ force: true }));
 
   const handleTabChange = useCallback(
@@ -257,105 +273,116 @@ function SettingsContent() {
 
         {/* Content Area */}
         <div className="lg:col-span-3">
-          <AnimatePresence>
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="glass-pink rounded-[3rem] p-10 shadow-sm border border-white h-full"
-            >
-              {activeTab === "general" && (
-                <GeneralSettingsTab
-                  generalSettings={generalSettings}
-                  setGeneralSettings={setGeneralSettings}
-                  isLoadingSettings={isLoadingSettings}
+          <AnimatePresence mode="wait">
+            {activeTab === "rules" ? (
+              <motion.div
+                key="rules"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="w-full"
+              >
+                <iframe
+                  src="/dashboard/rules?embedded=true"
+                  style={{ height: iframeHeight }}
+                  className="w-full border border-slate-200/50 dark:border-[#3E3A35]/50 rounded-[2.5rem] bg-slate-50 dark:bg-[#11100F] shadow-xl overflow-hidden"
+                  scrolling="no"
                 />
-              )}
+              </motion.div>
+            ) : (
+              <motion.div
+                key={activeTab}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="glass-pink rounded-[3rem] p-10 shadow-sm border border-white h-full"
+              >
+                {activeTab === "general" && (
+                  <GeneralSettingsTab
+                    generalSettings={generalSettings}
+                    setGeneralSettings={setGeneralSettings}
+                    isLoadingSettings={isLoadingSettings}
+                  />
+                )}
 
-              {activeTab === "subscription" && (
-                <SubscriptionTab />
-              )}
+                {activeTab === "subscription" && (
+                  <SubscriptionTab />
+                )}
 
-              {activeTab === "hq-billing" && (
-                <HqBillingTab />
-              )}
+                {activeTab === "hq-billing" && (
+                  <HqBillingTab />
+                )}
 
-              {activeTab === "meta-ads" && (
-                <MetaAdsSettingsTab />
-              )}
+                {activeTab === "meta-ads" && (
+                  <MetaAdsSettingsTab />
+                )}
 
-              {activeTab === "salary" && (
-                <SalaryConfigTab
-                  generalSettings={generalSettings}
-                  setGeneralSettings={setGeneralSettings}
-                />
-              )}
+                {activeTab === "salary" && (
+                  <SalaryConfigTab
+                    generalSettings={generalSettings}
+                    setGeneralSettings={setGeneralSettings}
+                  />
+                )}
 
-              {activeTab === "commission" && (
-                <CommissionSettingsTab />
-              )}
+                {activeTab === "commission" && (
+                  <CommissionSettingsTab />
+                )}
 
-              {activeTab === "accounting" && (
-                <AccountingConfigTab />
-              )}
+                {activeTab === "accounting" && (
+                  <AccountingConfigTab />
+                )}
 
-              {activeTab === "staff" && (
-                <StaffManagementTab />
-              )}
+                {activeTab === "staff" && (
+                  <StaffManagementTab />
+                )}
 
-              {activeTab === "permissions" && (
-                <PermissionsTab />
-              )}
+                {activeTab === "permissions" && (
+                  <PermissionsTab />
+                )}
 
-              {activeTab === "security" && (
-                <SecurityTab />
-              )}
+                {activeTab === "security" && (
+                  <SecurityTab />
+                )}
 
-              {activeTab === "notifications" && (
-                <NotificationsTab />
-              )}
+                {activeTab === "notifications" && (
+                  <NotificationsTab />
+                )}
 
-              {activeTab === "appearance" && (
-                <AppearanceTab />
-              )}
+                {activeTab === "appearance" && (
+                  <AppearanceTab />
+                )}
 
-              {activeTab === "promotions" && (
-                <PromotionsTab />
-              )}
+                {activeTab === "promotions" && (
+                  <PromotionsTab />
+                )}
 
-              {activeTab === "rules" && (
-                <div className="w-full h-full min-h-[70vh]">
-                  <iframe src="/dashboard/rules?embedded=true" className="w-full h-[70vh] border-0 rounded-2xl bg-slate-50 dark:bg-zinc-950" />
-                </div>
-              )}
+                {activeTab === "partners" && (
+                  <div className="w-full h-full min-h-[70vh]">
+                    <iframe src="/dashboard/admin/partners?embedded=true" className="w-full h-[70vh] border-0 rounded-2xl bg-slate-50 dark:bg-zinc-950" />
+                  </div>
+                )}
 
-              {activeTab === "partners" && (
-                <div className="w-full h-full min-h-[70vh]">
-                  <iframe src="/dashboard/admin/partners?embedded=true" className="w-full h-[70vh] border-0 rounded-2xl bg-slate-50 dark:bg-zinc-950" />
-                </div>
-              )}
-
-              {activeTab === "system-monitor" && (
-                <div className="w-full h-full flex flex-col gap-6 min-h-[70vh]">
-                  <h3 className="text-lg font-bold text-foreground mb-2">Giám sát hệ thống & Nhật ký</h3>
-                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 h-[65vh]">
-                    <div className="border border-slate-200 dark:border-zinc-800 rounded-2xl overflow-hidden bg-slate-50 dark:bg-zinc-950">
-                      <div className="bg-slate-100 dark:bg-zinc-900 px-4 py-2 text-xs font-bold text-muted-foreground border-b border-slate-200 dark:border-zinc-800">
-                        TRUNG TÂM GIÁM SÁT
+                {activeTab === "system-monitor" && (
+                  <div className="w-full h-full flex flex-col gap-6 min-h-[70vh]">
+                    <h3 className="text-lg font-bold text-foreground mb-2">Giám sát hệ thống & Nhật ký</h3>
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 h-[65vh]">
+                      <div className="border border-slate-200 dark:border-zinc-800 rounded-2xl overflow-hidden bg-slate-50 dark:bg-zinc-950">
+                        <div className="bg-slate-100 dark:bg-zinc-900 px-4 py-2 text-xs font-bold text-muted-foreground border-b border-slate-200 dark:border-zinc-800">
+                          TRUNG TÂM GIÁM SÁT
+                        </div>
+                        <iframe src="/dashboard/system-monitor?embedded=true" className="w-full h-[calc(65vh-33px)] border-0" />
                       </div>
-                      <iframe src="/dashboard/system-monitor?embedded=true" className="w-full h-[calc(65vh-33px)] border-0" />
-                    </div>
-                    <div className="border border-slate-200 dark:border-zinc-800 rounded-2xl overflow-hidden bg-slate-50 dark:bg-zinc-950">
-                      <div className="bg-slate-100 dark:bg-zinc-900 px-4 py-2 text-xs font-bold text-muted-foreground border-b border-slate-200 dark:border-zinc-800">
-                        NHẬT KÝ HỆ THỐNG (AUDIT LOGS)
+                      <div className="border border-slate-200 dark:border-zinc-800 rounded-2xl overflow-hidden bg-slate-50 dark:bg-zinc-950">
+                        <div className="bg-slate-100 dark:bg-zinc-900 px-4 py-2 text-xs font-bold text-muted-foreground border-b border-slate-200 dark:border-zinc-800">
+                          NHẬT KÝ HỆ THỐNG (AUDIT LOGS)
+                        </div>
+                        <iframe src="/dashboard/audit?embedded=true" className="w-full h-[calc(65vh-33px)] border-0" />
                       </div>
-                      <iframe src="/dashboard/audit?embedded=true" className="w-full h-[calc(65vh-33px)] border-0" />
                     </div>
                   </div>
-                </div>
-              )}
-            </motion.div>
+                )}
+              </motion.div>
+            )}
           </AnimatePresence>
         </div>
       </div>

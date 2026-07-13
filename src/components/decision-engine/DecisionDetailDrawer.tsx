@@ -191,7 +191,7 @@ export default function DecisionDetailDrawer({
 
               {/* Matched Rules */}
               {data.matchedRules.length > 0 && (
-                <Section title="Quy tắc luật phù hợp">
+                <Section title="Quy tắc phù hợp">
                   <div className="space-y-4">
                     {data.matchedRules.map((rule, idx) => (
                       <div key={idx} className="border border-gray-200 rounded-lg p-4">

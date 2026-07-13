@@ -1,6 +1,6 @@
 /**
  * Rule Provider Badge Component
- * 
+ *
  * Provider-specific badges with icons:
  * - booking: 📅
  * - discount: 💰
@@ -10,7 +10,7 @@
  */
 
 import { Badge } from '@/components/ui/badge';
-import { 
+import {
   Calendar,
   Tag,
   Wallet,

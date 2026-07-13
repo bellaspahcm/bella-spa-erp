@@ -2,7 +2,7 @@
 
 /**
  * Rules Filters Component
- * 
+ *
  * Provides filtering controls for the rules list:
  * - Provider filter (booking, discount, payroll, commission, inventory)
  * - Status filter (draft, active, disabled, pending_approval, approved, rejected, archived)
@@ -59,7 +59,7 @@ export function RulesFilters({
 
   const updateFilters = (updates: Record<string, string | undefined>) => {
     const params = new URLSearchParams(searchParams.toString());
-    
+
     Object.entries(updates).forEach(([key, value]) => {
       if (value && value !== 'all') {
         params.set(key, value);
@@ -157,8 +157,8 @@ export function RulesFilters({
 
         {/* Clear Filters */}
         {hasActiveFilters && (
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={handleClearFilters}
             className={`rounded-lg h-9 px-4 text-xs font-semibold transition-all ${buttonActive}`}
           >

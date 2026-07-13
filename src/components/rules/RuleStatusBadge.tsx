@@ -1,6 +1,6 @@
 /**
  * Rule Status Badge Component
- * 
+ *
  * Color-coded status badges for rules:
  * - draft: gray
  * - active: green

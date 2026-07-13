@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { X, Info } from 'lucide-react';
+import { X, Info, AlertCircle } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { FieldSelector } from './FieldSelector';
 import { OperatorSelector } from './OperatorSelector';
@@ -31,10 +31,8 @@ export function ConditionRow({ provider, condition, onChange, onDelete, error, d
     return getFieldSchema(provider, condition.field);
   }, [provider, condition.field]);
 
-  // Extract specific errors if error is a composite key
+  // Extract specific errors
   const fieldError = error;
-  const operatorError = undefined;
-  const valueError = undefined;
 
   // Auto-select default operator when field changes
   useEffect(() => {
@@ -72,10 +70,14 @@ export function ConditionRow({ provider, condition, onChange, onDelete, error, d
   };
 
   return (
-    <div className="space-y-2">
-      <div className="grid grid-cols-12 gap-2 items-start">
+    <div className={`p-4 rounded-2xl transition-all duration-300 space-y-2 border ${
+      fieldError
+        ? 'bg-red-500/[0.02] border-red-500/20 shadow-[0_0_12px_rgba(239,68,68,0.02)]'
+        : 'bg-slate-50/70 dark:bg-zinc-900/35 border-slate-100/80 dark:border-zinc-800/40 hover:border-slate-200 dark:hover:border-zinc-850 shadow-sm hover:shadow'
+    }`}>
+      <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
         {/* Field Selector */}
-        <div className="col-span-4">
+        <div className="sm:col-span-4 w-full">
           <FieldSelector
             provider={provider}
             value={condition.field}
@@ -85,7 +87,7 @@ export function ConditionRow({ provider, condition, onChange, onDelete, error, d
         </div>
 
         {/* Operator Selector */}
-        <div className="col-span-3">
+        <div className="sm:col-span-3 w-full">
           <OperatorSelector
             provider={provider}
             fieldKey={condition.field}
@@ -96,7 +98,7 @@ export function ConditionRow({ provider, condition, onChange, onDelete, error, d
         </div>
 
         {/* Value Input */}
-        <div className="col-span-4">
+        <div className="sm:col-span-4 w-full">
           <ValueInput
             provider={provider}
             fieldKey={condition.field}
@@ -108,17 +110,21 @@ export function ConditionRow({ provider, condition, onChange, onDelete, error, d
         </div>
 
         {/* Delete Button & Info */}
-        <div className="col-span-1 flex items-center gap-1">
+        <div className="sm:col-span-1 flex justify-end items-center gap-1 w-full">
           {fieldSchema?.description && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-10 w-10">
-                    <Info className="h-4 w-4 text-muted-foreground" />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 rounded-full text-slate-400 hover:text-slate-600 dark:text-zinc-500 dark:hover:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800/70 transition-all active:scale-95"
+                  >
+                    <Info className="h-4.5 w-4.5" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>
-                  <p className="max-w-xs">{fieldSchema.description}</p>
+                <TooltipContent className="rounded-xl p-3 border-slate-200 dark:border-zinc-800 shadow-xl max-w-xs">
+                  <p className="text-xs">{fieldSchema.description}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -128,22 +134,25 @@ export function ConditionRow({ provider, condition, onChange, onDelete, error, d
             size="icon"
             onClick={onDelete}
             disabled={disabled}
-            className="h-10 w-10 text-destructive hover:text-destructive"
+            className="h-9 w-9 rounded-full text-slate-400 hover:text-destructive dark:text-zinc-500 hover:bg-red-500/10 active:scale-95 transition-all"
           >
-            <X className="h-4 w-4" />
+            <X className="h-4.5 w-4.5" />
           </Button>
         </div>
       </div>
 
-      {/* Error Message */}
+      {/* Helper Context & Errors */}
       {fieldError && (
-        <p className="text-sm text-destructive px-1">{fieldError}</p>
+        <div className="flex items-center gap-1.5 text-xs font-semibold text-red-600 dark:text-red-400 bg-red-500/5 dark:bg-red-500/[0.02] border border-red-500/10 px-3 py-2 rounded-xl animate-in slide-in-from-top-1 duration-200">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <span>{fieldError}</span>
+        </div>
       )}
 
-      {/* Field Description */}
-      {fieldSchema?.description && (
-        <p className="text-xs text-muted-foreground px-1">
-          {fieldSchema.description}
+      {/* Inline Description Helper */}
+      {fieldSchema?.description && !fieldError && (
+        <p className="text-[11px] text-slate-400 dark:text-zinc-500 pl-1">
+          💡 {fieldSchema.description}
         </p>
       )}
     </div>

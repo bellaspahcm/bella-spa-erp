@@ -2,7 +2,7 @@
 
 /**
  * Rule Actions Component
- * 
+ *
  * Dropdown menu with row actions:
  * - View: Navigate to rule detail
  * - Edit: Navigate to edit page
@@ -105,7 +105,7 @@ export function RuleActions({ rule }: RuleActionsProps) {
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>Actions</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          
+
           <DropdownMenuItem onClick={handleView}>
             <Eye className="mr-2 h-4 w-4" />
             View Details

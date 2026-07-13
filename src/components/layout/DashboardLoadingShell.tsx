@@ -76,10 +76,42 @@ export function DashboardAuthLoadingShell() {
   );
 }
 
+import { useState, useEffect } from 'react';
+
 export function DashboardAuthorizedShell({ children }: { children: React.ReactNode }) {
-  let isEmbedded = false;
-  if (typeof window !== 'undefined') {
-    isEmbedded = new URLSearchParams(window.location.search).get('embedded') === 'true';
+  const [isEmbedded, setIsEmbedded] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    const searchParams = new URLSearchParams(window.location.search);
+    const embedded = searchParams.get('embedded') === 'true';
+    setIsEmbedded(embedded);
+
+    if (embedded && typeof window !== 'undefined' && window.parent !== window) {
+      const sendHeight = () => {
+        const height = document.documentElement.scrollHeight;
+        window.parent.postMessage({ type: 'resize-iframe', height }, '*');
+      };
+
+      sendHeight();
+      const handle = requestAnimationFrame(sendHeight);
+      const observer = new ResizeObserver(sendHeight);
+      observer.observe(document.body);
+
+      return () => {
+        cancelAnimationFrame(handle);
+        observer.disconnect();
+      };
+    }
+  }, []);
+
+  if (!mounted) {
+    return (
+      <main className="flex-1 flex flex-col min-w-0 max-w-full overflow-x-auto bg-transparent">
+        {children}
+      </main>
+    );
   }
 
   if (isEmbedded) {
