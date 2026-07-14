@@ -1,4 +1,6 @@
 /**
+ * @jest-environment jsdom
+ * 
  * ServiceItemRow Component Tests
  * 
  * Tests for ServiceItemRow and CommissionOverrideInput components
@@ -51,8 +53,8 @@ describe('ServiceItemRow', () => {
   });
 
   it('should calculate subtotal automatically', () => {
-    const onChange = vi.fn();
-    const onRemove = vi.fn();
+    const onChange = jest.fn();
+    const onRemove = jest.fn();
 
     const item = { ...mockItem, quantity: 2, unitPrice: 300000 };
 
@@ -72,8 +74,8 @@ describe('ServiceItemRow', () => {
   });
 
   it('should display calculated commission preview', () => {
-    const onChange = vi.fn();
-    const onRemove = vi.fn();
+    const onChange = jest.fn();
+    const onRemove = jest.fn();
 
     render(
       <ServiceItemRow
@@ -90,8 +92,8 @@ describe('ServiceItemRow', () => {
   });
 
   it('should call onChange when quantity changes', () => {
-    const onChange = vi.fn();
-    const onRemove = vi.fn();
+    const onChange = jest.fn();
+    const onRemove = jest.fn();
 
     render(
       <ServiceItemRow
@@ -110,8 +112,8 @@ describe('ServiceItemRow', () => {
   });
 
   it('should call onRemove when remove button clicked', () => {
-    const onChange = vi.fn();
-    const onRemove = vi.fn();
+    const onChange = jest.fn();
+    const onRemove = jest.fn();
 
     render(
       <ServiceItemRow
@@ -130,8 +132,8 @@ describe('ServiceItemRow', () => {
   });
 
   it('should show override badge when override is active', () => {
-    const onChange = vi.fn();
-    const onRemove = vi.fn();
+    const onChange = jest.fn();
+    const onRemove = jest.fn();
 
     const itemWithOverride = {
       ...mockItem,
@@ -153,8 +155,8 @@ describe('ServiceItemRow', () => {
   });
 
   it('should disable all inputs when disabled prop is true', () => {
-    const onChange = vi.fn();
-    const onRemove = vi.fn();
+    const onChange = jest.fn();
+    const onRemove = jest.fn();
 
     render(
       <ServiceItemRow
@@ -175,8 +177,8 @@ describe('ServiceItemRow', () => {
   });
 
   it('should format unit price with thousand separator', () => {
-    const onChange = vi.fn();
-    const onRemove = vi.fn();
+    const onChange = jest.fn();
+    const onRemove = jest.fn();
 
     render(
       <ServiceItemRow
@@ -195,8 +197,8 @@ describe('ServiceItemRow', () => {
 
 describe('Commission Override Integration', () => {
   it('should calculate commission with fixed override', () => {
-    const onChange = vi.fn();
-    const onRemove = vi.fn();
+    const onChange = jest.fn();
+    const onRemove = jest.fn();
 
     const itemWithFixedOverride = {
       ...mockItem,
@@ -220,8 +222,8 @@ describe('Commission Override Integration', () => {
   });
 
   it('should calculate commission with percentage override', () => {
-    const onChange = vi.fn();
-    const onRemove = vi.fn();
+    const onChange = jest.fn();
+    const onRemove = jest.fn();
 
     const itemWithPercentageOverride = {
       ...mockItem,
@@ -244,3 +246,4 @@ describe('Commission Override Integration', () => {
     expect(screen.getByText(/100.000đ/)).toBeInTheDocument();
   });
 });
+

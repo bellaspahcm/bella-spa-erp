@@ -44,9 +44,10 @@ function ensureSupabaseClient(): SupabaseClient {
   return supabaseAdmin;
 }
 
-// Test data prefix to avoid conflicts
+// Test data constants
+// Use fixed UUIDs for deterministic testing (not random, for reproducibility)
 const TEST_PREFIX = 'e2e-salary-test';
-const TEST_TENANT_ID = `${TEST_PREFIX}-tenant`;
+const TEST_TENANT_ID = '00000000-0000-0000-0000-000000000001'; // Fixed UUID for test tenant
 
 // ============================================================================
 // TYPES
@@ -172,9 +173,8 @@ export async function createTestTenant(): Promise<string> {
   const tenantData = {
     id: TEST_TENANT_ID,
     name: 'E2E Test Tenant',
-    subdomain: 'e2e-test',
-    module: 'baby_care' as const,
-    is_active: true,
+    enabled_modules: { baby_care: true }, // JSONB: correct format
+    status: 'active',
     salary_config: {
       kpi_bonus_enabled: true,
       rating_bonus_enabled: true,
@@ -222,13 +222,13 @@ export async function createTestKTVs(profiles: TestKTVProfile[]): Promise<TestKT
  * Create test packages with session multipliers
  */
 export async function createTestPackages(packages: TestPackage[]): Promise<TestPackage[]> {
-  const { data, error } = await supabaseAdmin
+  const supabase = ensureSupabaseClient();
+  const { data, error } = await supabase
     .from('packages')
     .upsert(packages.map(p => ({
       ...p,
       created_at: new Date().toISOString(),
-      is_active: true,
-      duration_minutes: 90,
+      // Removed: is_active, duration_minutes (not in schema)
     })))
     .select();
 
@@ -245,11 +245,11 @@ export async function createTestPackages(packages: TestPackage[]): Promise<TestP
  */
 export async function createTestCustomer(tenantId: string): Promise<string> {
   const customerData = {
-    id: `${TEST_PREFIX}-customer`,
-    full_name: 'Test Customer',
-    phone: '0900000999',
-    email: 'test@example.com',
-    tenant_id: tenantId,
+    id: '00000000-0000-0000-0000-000000000201', // UUID for test customer
+    name_mother: 'Test Customer', // REQUIRED: changed from full_name
+    phone: '0900000999', // REQUIRED
+    tenant_id: tenantId, // REQUIRED
+    // Removed: email (doesn't exist in schema)
   };
 
   const { data, error } = await supabaseAdmin

@@ -1,4 +1,6 @@
 /**
+ * @jest-environment jsdom
+ * 
  * Unit Tests for RuleConditionsBuilder Component
  * 
  * Tests the conditions builder that allows users to:
@@ -10,7 +12,7 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import RuleConditionsBuilder from '../RuleConditionsBuilder';
+import { RuleConditionsBuilder } from '../RuleConditionsBuilder';
 
 describe('RuleConditionsBuilder', () => {
   const mockOnChange = jest.fn();

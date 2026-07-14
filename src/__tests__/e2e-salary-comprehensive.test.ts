@@ -67,12 +67,18 @@ import {
 import { createAdjustment } from '@/modules/salary/actions/create-adjustment';
 import { approveAdjustment } from '@/modules/salary/actions/approve-adjustment';
 
-type KTVProfile = {
-  id: string;
-  name: string;
-  baseSalary: number;
-  resignationDate: string | null;
-};
+// Use types from helper (DB-aligned snake_case)
+// Removed local camelCase types (KTVProfile, etc.) to prevent schema mismatch
+
+// Test KTV IDs (UUIDs)
+const KTV_ALPHA_ID = '00000000-0000-0000-0000-000000000011';
+const KTV_BETA_ID = '00000000-0000-0000-0000-000000000012';
+const KTV_GAMMA_ID = '00000000-0000-0000-0000-000000000013';
+
+// Test Package IDs (UUIDs)
+const PKG_BASIC_ID = '00000000-0000-0000-0000-000000000101';
+const PKG_HAPPY_ID = '00000000-0000-0000-0000-000000000102';
+const PKG_VIP_ID = '00000000-0000-0000-0000-000000000103';
 
 type SessionLog = {
   id: string;
@@ -113,11 +119,35 @@ describe('E2E Comprehensive Salary System Test', () => {
   const TENANT_ID = 'test-tenant-e2e-salary';
   const MONTH_YEAR = '2026-06-01';
   
-  // KTV Profiles
-  const ktvProfiles: KTVProfile[] = [
-    { id: 'ktv-alpha', name: 'KTV Alpha', baseSalary: 6_000_000, resignationDate: null },
-    { id: 'ktv-beta', name: 'KTV Beta', baseSalary: 5_000_000, resignationDate: '2026-06-15' },
-    { id: 'ktv-gamma', name: 'KTV Gamma', baseSalary: 7_000_000, resignationDate: null },
+  // KTV Profiles (use snake_case to match DB schema + valid UUIDs)
+  const ktvProfiles: TestKTVProfile[] = [
+    { 
+      id: KTV_ALPHA_ID,
+      full_name: 'KTV Alpha',
+      email: 'ktv-alpha@test.com',
+      role: 'ktv',
+      base_salary: 6_000_000,
+      resignation_date: null,
+      tenant_id: getTestTenantId(),
+    },
+    { 
+      id: KTV_BETA_ID,
+      full_name: 'KTV Beta',
+      email: 'ktv-beta@test.com',
+      role: 'ktv',
+      base_salary: 5_000_000,
+      resignation_date: '2026-06-15',
+      tenant_id: getTestTenantId(),
+    },
+    { 
+      id: KTV_GAMMA_ID,
+      full_name: 'KTV Gamma',
+      email: 'ktv-gamma@test.com',
+      role: 'ktv',
+      base_salary: 7_000_000,
+      resignation_date: null,
+      tenant_id: getTestTenantId(),
+    },
   ];
   
   // Session Logs với package multipliers
@@ -125,7 +155,7 @@ describe('E2E Comprehensive Salary System Test', () => {
     // KTV Alpha: 20 sessions (mixed packages, total: 30 weighted sessions)
     ...Array.from({ length: 10 }, (_, i) => ({
       id: `session-alpha-${i + 1}`,
-      ktvId: 'ktv-alpha',
+      ktvId: KTV_ALPHA_ID,
       packageName: 'Combo Mẹ & Bé Tiết Kiệm',
       multiplier: 1.0,
       commission: 100_000,
@@ -134,7 +164,7 @@ describe('E2E Comprehensive Salary System Test', () => {
     })),
     ...Array.from({ length: 6 }, (_, i) => ({
       id: `session-alpha-${i + 11}`,
-      ktvId: 'ktv-alpha',
+      ktvId: KTV_ALPHA_ID,
       packageName: 'Combo Mẹ & Bé Hạnh Phúc',
       multiplier: 1.5,
       commission: 150_000,
@@ -143,7 +173,7 @@ describe('E2E Comprehensive Salary System Test', () => {
     })),
     ...Array.from({ length: 4 }, (_, i) => ({
       id: `session-alpha-${i + 17}`,
-      ktvId: 'ktv-alpha',
+      ktvId: KTV_ALPHA_ID,
       packageName: 'Combo Mẹ & Bé VIP Toàn Diện',
       multiplier: 2.0,
       commission: 200_000,
@@ -154,7 +184,7 @@ describe('E2E Comprehensive Salary System Test', () => {
     // KTV Beta: 10 sessions (basic package only, total: 10 weighted sessions)
     ...Array.from({ length: 10 }, (_, i) => ({
       id: `session-beta-${i + 1}`,
-      ktvId: 'ktv-beta',
+      ktvId: KTV_BETA_ID,
       packageName: 'Combo Mẹ & Bé Tiết Kiệm',
       multiplier: 1.0,
       commission: 100_000,
@@ -165,7 +195,7 @@ describe('E2E Comprehensive Salary System Test', () => {
     // KTV Gamma: 15 sessions (VIP package only, total: 30 weighted sessions)
     ...Array.from({ length: 15 }, (_, i) => ({
       id: `session-gamma-${i + 1}`,
-      ktvId: 'ktv-gamma',
+      ktvId: KTV_GAMMA_ID,
       packageName: 'Combo Mẹ & Bé VIP Toàn Diện',
       multiplier: 2.0,
       commission: 200_000,
@@ -178,39 +208,39 @@ describe('E2E Comprehensive Salary System Test', () => {
   const attendanceRecords: AttendanceRecord[] = [
     // KTV Alpha: 22 days present (full month)
     ...Array.from({ length: 22 }, (_, i) => ({
-      ktvId: 'ktv-alpha',
+      ktvId: KTV_ALPHA_ID,
       date: `2026-06-${String(i + 1).padStart(2, '0')}`,
       status: 'present' as const,
     })),
     
     // KTV Beta: 12 days present (resigned mid-month)
     ...Array.from({ length: 12 }, (_, i) => ({
-      ktvId: 'ktv-beta',
+      ktvId: KTV_BETA_ID,
       date: `2026-06-${String(i + 1).padStart(2, '0')}`,
       status: 'present' as const,
     })),
     
     // KTV Gamma: 20 days present, 2 days late
     ...Array.from({ length: 20 }, (_, i) => ({
-      ktvId: 'ktv-gamma',
+      ktvId: KTV_GAMMA_ID,
       date: `2026-06-${String(i + 1).padStart(2, '0')}`,
       status: 'present' as const,
     })),
-    ...[{ ktvId: 'ktv-gamma', date: '2026-06-21', status: 'late' as const }],
-    ...[{ ktvId: 'ktv-gamma', date: '2026-06-22', status: 'late' as const }],
+    ...[{ ktvId: KTV_GAMMA_ID, date: '2026-06-21', status: 'late' as const }],
+    ...[{ ktvId: KTV_GAMMA_ID, date: '2026-06-22', status: 'late' as const }],
   ];
   
   // Manual Adjustments
   const salaryAdjustments: SalaryAdjustment[] = [
     {
-      ktvId: 'ktv-alpha',
+      ktvId: KTV_ALPHA_ID,
       type: 'bonus',
       amount: 500_000,
       category: 'Thưởng hoàn thành mục tiêu',
       reason: 'Hoàn thành 100% KPI tháng 6',
     },
     {
-      ktvId: 'ktv-beta',
+      ktvId: KTV_BETA_ID,
       type: 'deduction',
       amount: 200_000,
       category: 'Phạt kỷ luật',
@@ -231,31 +261,31 @@ describe('E2E Comprehensive Salary System Test', () => {
       // Create packages with multipliers
       const packages: TestPackage[] = [
         {
-          id: `${getTestPrefix()}-pkg-basic`,
+          id: PKG_BASIC_ID,
           name: 'Combo Mẹ & Bé Tiết Kiệm',
           description: 'Basic package',
           session_multiplier: 1.0,
           price: 1000000,
           tenant_id: tenantId,
-          module: 'baby_care',
+          module_key: 'baby_care', // REQUIRED field
         },
         {
-          id: `${getTestPrefix()}-pkg-happy`,
+          id: PKG_HAPPY_ID,
           name: 'Combo Mẹ & Bé Hạnh Phúc',
           description: 'Happy package',
           session_multiplier: 1.5,
           price: 1500000,
           tenant_id: tenantId,
-          module: 'baby_care',
+          module_key: 'baby_care', // REQUIRED field
         },
         {
-          id: `${getTestPrefix()}-pkg-vip`,
+          id: PKG_VIP_ID,
           name: 'Combo Mẹ & Bé VIP Toàn Diện',
           description: 'VIP package',
           session_multiplier: 2.0,
           price: 2000000,
           tenant_id: tenantId,
-          module: 'baby_care',
+          module_key: 'baby_care', // REQUIRED field
         },
       ];
       await createTestPackages(packages);
@@ -299,26 +329,26 @@ describe('E2E Comprehensive Salary System Test', () => {
     });
 
     it('should track attendance correctly including pro-rata for resignation', async () => {
-      const alphaAttendance = attendanceRecords.filter(a => a.ktvId === 'ktv-alpha' && a.status !== 'absent').length;
+      const alphaAttendance = attendanceRecords.filter(a => a.ktvId === KTV_ALPHA_ID && a.status !== 'absent').length;
       expect(alphaAttendance).toBe(22);
       
-      const betaAttendance = attendanceRecords.filter(a => a.ktvId === 'ktv-beta' && a.status !== 'absent').length;
+      const betaAttendance = attendanceRecords.filter(a => a.ktvId === KTV_BETA_ID && a.status !== 'absent').length;
       expect(betaAttendance).toBe(12);
       
-      const gammaAttendance = attendanceRecords.filter(a => a.ktvId === 'ktv-gamma' && a.status !== 'absent').length;
+      const gammaAttendance = attendanceRecords.filter(a => a.ktvId === KTV_GAMMA_ID && a.status !== 'absent').length;
       expect(gammaAttendance).toBe(22); // 20 present + 2 late
     });
 
     it('should calculate average ratings for each KTV', async () => {
-      const alphaRatings = sessionLogs.filter(s => s.ktvId === 'ktv-alpha').map(s => s.rating);
+      const alphaRatings = sessionLogs.filter(s => s.ktvId === KTV_ALPHA_ID).map(s => s.rating);
       const alphaAvgRating = alphaRatings.reduce((sum, r) => sum + r, 0) / alphaRatings.length;
       expect(alphaAvgRating).toBeCloseTo(4.8, 1);
       
-      const betaRatings = sessionLogs.filter(s => s.ktvId === 'ktv-beta').map(s => s.rating);
+      const betaRatings = sessionLogs.filter(s => s.ktvId === KTV_BETA_ID).map(s => s.rating);
       const betaAvgRating = betaRatings.reduce((sum, r) => sum + r, 0) / betaRatings.length;
       expect(betaAvgRating).toBe(5.0);
       
-      const gammaRatings = sessionLogs.filter(s => s.ktvId === 'ktv-gamma').map(s => s.rating);
+      const gammaRatings = sessionLogs.filter(s => s.ktvId === KTV_GAMMA_ID).map(s => s.rating);
       const gammaAvgRating = gammaRatings.reduce((sum, r) => sum + r, 0) / gammaRatings.length;
       expect(gammaAvgRating).toBeCloseTo(4.67, 1);
     });
@@ -351,7 +381,7 @@ describe('E2E Comprehensive Salary System Test', () => {
       const proRataBase = Math.round((5_000_000 / 26) * 12);
       
       const expected: ExpectedSalary = {
-        ktvId: 'ktv-beta',
+        ktvId: KTV_BETA_ID,
         totalSessions: 10.0,
         baseSalary: proRataBase,
         sessionBonus: 1_000_000, // 10 sessions × 100k
@@ -367,7 +397,7 @@ describe('E2E Comprehensive Salary System Test', () => {
 
     it('should calculate KTV Gamma salary correctly (VIP package, discipline deduction)', async () => {
       const expected: ExpectedSalary = {
-        ktvId: 'ktv-gamma',
+        ktvId: KTV_GAMMA_ID,
         totalSessions: 30.0, // 15 sessions × 2.0 multiplier
         baseSalary: 7_000_000, // full month
         sessionBonus: 3_000_000, // 15 sessions × 200k commission
@@ -384,7 +414,7 @@ describe('E2E Comprehensive Salary System Test', () => {
 
   describe('Phase 3: Manual Adjustments', () => {
     it('should apply manual bonus adjustment to KTV Alpha', async () => {
-      const adjustment = salaryAdjustments.find(a => a.ktvId === 'ktv-alpha');
+      const adjustment = salaryAdjustments.find(a => a.ktvId === KTV_ALPHA_ID);
       expect(adjustment).toBeDefined();
       expect(adjustment?.type).toBe('bonus');
       expect(adjustment?.amount).toBe(500_000);
@@ -395,7 +425,7 @@ describe('E2E Comprehensive Salary System Test', () => {
     });
 
     it('should apply manual deduction adjustment to KTV Beta', async () => {
-      const adjustment = salaryAdjustments.find(a => a.ktvId === 'ktv-beta');
+      const adjustment = salaryAdjustments.find(a => a.ktvId === KTV_BETA_ID);
       expect(adjustment).toBeDefined();
       expect(adjustment?.type).toBe('deduction');
       expect(adjustment?.amount).toBe(200_000);

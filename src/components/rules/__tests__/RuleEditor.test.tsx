@@ -1,4 +1,6 @@
 /**
+ * @jest-environment jsdom
+ * 
  * Unit Tests for RuleEditor Component
  * 
  * Tests the main rule editor container that integrates:
@@ -8,13 +10,26 @@
  * - Save/Cancel buttons
  */
 
-import { describe, it, expect, jest, beforeEach } from '@jest/globals';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
-import RuleEditor from '../RuleEditor';
-import type { Rule } from '@/types/database.types';
+// Mock Next.js router - MUST be before imports
+const mockPush = jest.fn();
+const mockBack = jest.fn();
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: mockPush,
+    back: mockBack,
+    refresh: jest.fn(),
+    prefetch: jest.fn(),
+  }),
+}));
 
-// Mock child components
+// Mock toast - MUST be before imports
+jest.mock('@/hooks/use-toast', () => ({
+  useToast: () => ({
+    toast: jest.fn(),
+  }),
+}));
+
+// Mock child components - MUST be before imports
 jest.mock('../RuleMetadataForm', () => ({
   __esModule: true,
   default: ({ value, onChange }: any) => (
@@ -64,7 +79,7 @@ jest.mock('../RuleActionsBuilder', () => ({
     <div data-testid="rule-actions-builder">
       <button
         data-testid="add-action-button"
-        onClick={() => onChange([...actions, { type: 'approve' }])}
+        onClick={() => onChange([...actions, { type: 'setField', field: 'new', value: '' }])}
       >
         Add Action
       </button>
@@ -72,6 +87,12 @@ jest.mock('../RuleActionsBuilder', () => ({
     </div>
   ),
 }));
+
+import { describe, it, expect, jest, beforeEach } from '@jest/globals';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import '@testing-library/jest-dom';
+import RuleEditor from '../RuleEditor';
+import type { Rule } from '@/types/database.types';
 
 describe('RuleEditor', () => {
   const mockOnSave = jest.fn();

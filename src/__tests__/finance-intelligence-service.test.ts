@@ -13,7 +13,7 @@ import { getFinanceIntelligenceService } from '@/services/intelligence/finance/s
 // Mock Redis cache
 const mockCache = new Map<string, { value: any; expiresAt: number }>();
 
-jest.mock('@/lib/redis', () => ({
+jest.mock('@/lib/redis-cache', () => ({
   getCacheClient: jest.fn(() => ({
     get: jest.fn((key: string) => {
       const cached = mockCache.get(key);
