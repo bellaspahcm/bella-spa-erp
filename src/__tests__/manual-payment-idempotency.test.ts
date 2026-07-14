@@ -4,10 +4,10 @@ import { join } from 'path';
 process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
 process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key';
 
-// Mock the shared package's getLocalDateString function
-jest.mock('../../packages/shared/src/index.ts', () => ({
+// Mock @bella/shared to use fixed date for idempotency key generation
+jest.mock('@bella/shared', () => ({
   getLocalDateString: jest.fn(() => '2026-06-07'),
-}), { virtual: true });
+}));
 
 import {
   buildManualPaymentIdempotencyKey,
@@ -44,8 +44,7 @@ describe('manual remaining payment idempotency', () => {
     );
   });
 
-  // TODO: Fix module mocking for @bella/shared - currently fails due to date mismatch
-  it.skip('passes the idempotency key through RPC metadata and accounting outbox payload', async () => {
+  it('passes the idempotency key through RPC metadata and accounting outbox payload', async () => {
     const rpc = jest.fn().mockResolvedValue({
       data: { booking_id: 'booking-1', revenue_id: 'revenue-1', idempotent: false },
       error: null,

@@ -13,6 +13,7 @@ const config: Config = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    '^@bella/shared$': '<rootDir>/packages/shared/src/index.ts',
   },
   testMatch: [
     '<rootDir>/src/**/*.test.[jt]s?(x)',
