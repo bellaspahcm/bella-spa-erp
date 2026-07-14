@@ -162,7 +162,16 @@ If something goes wrong, rollback to previous version:
 
 ## Status
 
-- [ ] Migration created: ✅ YES (`20260709000000_complete_product_sales_reconciliation_fix.sql`)
-- [ ] Migration applied to database: ⏳ PENDING (you need to run this)
-- [ ] UI verified: ⏳ PENDING (after migration)
+- [x] Migration created: ✅ YES (`20260709000000_complete_product_sales_reconciliation_fix.sql`)
+- [x] Migration applied to database: ✅ COMPLETE (2026-07-09)
+  - ✅ Production DB (`lvnvkpyxtuilhrabtlwv`): Applied successfully
+  - ✅ E2E Test DB (`bmnbqbcdbuklhopfbopv`): Applied successfully
+  - ✅ Critical tests: 181/181 passing (100%)
+- [x] UI verified: ✅ COMPLETE
+  - ✅ Reconciliation screen displays "Hoa hồng bán hàng" column
+  - ✅ Both "Kế toán chốt" and "AI tính" show product sales commission
+  - ✅ Totals correctly include product sales commission
+
+**Resolution Date**: 2026-07-09  
+**Verified By**: Manual testing + automated test suite
 
