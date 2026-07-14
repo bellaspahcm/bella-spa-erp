@@ -78,17 +78,11 @@ BEGIN
         SELECT
             r.ktv_id,
             COALESCE(r.base_salary, 0)::NUMERIC AS legacy_base,
-            COALESCE(r.service_percentage_bonus, 0)::NUMERIC AS legacy_session,
+            COALESCE(r.session_bonus, 0)::NUMERIC AS legacy_session,  -- ⭐ FIX: r.session_bonus thay vì r.service_percentage_bonus
             COALESCE(r.kpi_bonus, 0)::NUMERIC AS legacy_kpi,
-            COALESCE(r.product_sales_commission, 0)::NUMERIC AS legacy_product_sales,  -- ⭐ THÊM
+            COALESCE(r.product_sales_commission, 0)::NUMERIC AS legacy_product_sales,
             COALESCE(r.violations_deduction, 0)::NUMERIC AS legacy_ded,
-            (
-                COALESCE(r.base_salary, 0) +
-                COALESCE(r.service_percentage_bonus, 0) +
-                COALESCE(r.kpi_bonus, 0) +
-                COALESCE(r.product_sales_commission, 0) -  -- ⭐ THÊM VÀO TỔNG
-                COALESCE(r.violations_deduction, 0)
-            )::NUMERIC AS legacy_tot,
+            COALESCE(r.total_salary, 0)::NUMERIC AS legacy_tot, -- ⭐ FIX: Ưu tiên total_salary trực tiếp từ cột lưu trữ làm ground truth
             COALESCE(r.status, 'missing') AS legacy_stat
         FROM public.salary_records r
         WHERE r.tenant_id = p_tenant_id
