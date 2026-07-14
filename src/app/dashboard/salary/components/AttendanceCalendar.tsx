@@ -3,6 +3,7 @@
 import { cn } from '@/lib/utils';
 import { adminOverrideAttendance } from '@/services/attendance-actions';
 import { KtvAttendanceLog,KtvAttendanceSummary } from '@/types/domain';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -13,6 +14,13 @@ interface AttendanceCalendarProps {
   selectedKtv: KtvAttendanceSummary | null;
   onSaveSuccess: () => Promise<void>;
 }
+
+const attendanceStatusOptions = [
+  { value: 'present', label: 'Đúng giờ (Có mặt)' },
+  { value: 'late', label: 'Đi muộn' },
+  { value: 'absent', label: 'Vắng mặt (Nghỉ)' },
+  { value: 'half_day', label: 'Nửa ngày' },
+];
 
 export default function AttendanceCalendar({
   isOpen,
@@ -186,16 +194,11 @@ export default function AttendanceCalendar({
 
                 <div>
                   <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">Trạng thái chấm công</label>
-                  <select
+                  <PremiumSelect
+                    options={attendanceStatusOptions}
                     value={overrideStatus}
-                    onChange={e => setOverrideStatus(e.target.value as 'present' | 'late' | 'absent' | 'half_day')}
-                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-bold text-slate-900 outline-none"
-                  >
-                    <option value="present">Đúng giờ (Có mặt)</option>
-                    <option value="late">Đi muộn</option>
-                    <option value="absent">Vắng mặt (Nghỉ)</option>
-                    <option value="half_day">Nửa ngày</option>
-                  </select>
+                    onChange={value => setOverrideStatus(value as 'present' | 'late' | 'absent' | 'half_day')}
+                  />
                 </div>
 
                 <div>
