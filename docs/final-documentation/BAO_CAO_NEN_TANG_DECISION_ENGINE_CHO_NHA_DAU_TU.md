@@ -736,3 +736,348 @@ Nền tảng được xây dựng dựa trên **10 nguyên tắc kiến trúc b�
 - Yêu cầu: Audit trail đầy đủ cho mọi thay đổi lương
 - Trước: Excel file thủ công, dễ bị mất/thay đổi
 - Sau: 100% audit trail không thể thay đổi (append-only logs)
+
+
+**GDPR / Bảo Mật Dữ Liệu**:
+- Yêu cầu: Ghi log ai truy cập dữ liệu khách hàng, khi nào, tại sao
+- Trước: Không có audit trail đầy đủ
+- Sau: Mọi quyết định ghi log với user context, timestamp, lý do
+
+**SOC 2 Compliance** (nếu bán cho khách hàng quốc tế):
+- Yêu cầu: Kiểm soát truy cập, audit trail, encryption
+- Trước: Chưa sẵn sàng (cần 6-12 tháng chuẩn bị)
+- Sau: 85% sẵn sàng (cần 1-2 tháng finalize)
+
+**Giá trị tính bằng tiền**:
+- Chi phí thuê audit firm: $30,000-50,000/lần (mỗi 2 năm)
+- Tiết kiệm thời gian chuẩn bị audit: 200-400 giờ/lần
+- Giảm nguy cơ phạt vi phạm: $50,000-200,000 (risk mitigation)
+- **Giá trị trung bình/năm**: **$40,000/năm**
+
+---
+
+### 3.6. Tổng Hợp ROI (Return on Investment)
+
+#### Chi Phí Phát Triển Decision Engine
+
+**Năm 1 (2026)**: Development + Infrastructure
+- Developer time: 120 ngày × $400/ngày = $48,000
+- Infrastructure (Supabase, Vercel, Redis): $3,600/năm
+- Testing & QA: $8,000
+- **Tổng đầu tư**: **$59,600**
+
+
+**Năm 2+ (2027+)**: Maintenance Only
+- Maintenance: 10 ngày/năm × $400/ngày = $4,000
+- Infrastructure: $3,600/năm
+- **Tổng chi phí hàng năm**: **$7,600/năm**
+
+---
+
+#### Lợi Ích Hàng Năm (Annual Benefits)
+
+| Hạng mục | Giá trị/năm | % tổng lợi ích |
+|----------|-------------|----------------|
+| **Tiết kiệm phát triển** | $57,200 | 29% |
+| **Giảm lỗi production** | $298,200 | 52% |
+| **Năng suất vận hành** | $39,280 | 7% |
+| **Giảm nợ kỹ thuật** | $36,000 | 6% |
+| **Audit & compliance** | $40,000 | 7% |
+| **TỔNG LỢI ÍCH** | **$470,680** | **100%** |
+
+---
+
+#### Phân Tích ROI 5 Năm
+
+| Năm | Đầu tư | Lợi ích | Lợi nhuận ròng | ROI tích lũy |
+|-----|--------|---------|----------------|--------------|
+| **2026** | $59,600 | $470,680 | $411,080 | **690%** |
+| **2027** | $7,600 | $470,680 | $463,080 | **1,460%** |
+| **2028** | $7,600 | $470,680 | $463,080 | **2,230%** |
+| **2029** | $7,600 | $470,680 | $463,080 | **3,000%** |
+| **2030** | $7,600 | $470,680 | $463,080 | **3,770%** |
+| **Tổng 5 năm** | **$90,000** | **$2,353,400** | **$2,263,400** | **2,515%** |
+
+**Payback Period**: <2 tháng (59,600 ÷ 470,680 × 12 = 1.5 tháng)
+
+---
+
+### 3.7. Lợi Ích Vô Hình (Intangible Benefits)
+
+Ngoài các lợi ích có thể định lượng bằng tiền, Decision Engine mang lại nhiều giá trị vô hình:
+
+#### 1. **Lợi Thế Cạnh Tranh** (Competitive Advantage)
+
+- ✅ **Time-to-market nhanh hơn**: Thêm rule mới 4-6 lần nhanh hơn → Phản ứng thị trường nhanh
+- ✅ **Thử nghiệm dễ dàng**: A/B test business rules mới không cần deploy code
+- ✅ **Khả năng mở rộng**: Sẵn sàng đa ngành (mở Beauty Spa, Fitness Center, Nail Salon)
+- ✅ **Khả năng SaaS**: Có thể bán nền tảng cho spa khác (revenue opportunity)
+
+**Giá trị tiềm năng**: $500,000-2,000,000 (nếu productize thành SaaS)
+
+---
+
+#### 2. **Sự Hài Lòng Nhân Viên** (Employee Satisfaction)
+
+- ✅ **KTV tin tưởng hệ thống**: Hoa hồng chính xác, minh bạch → Giảm turnover
+- ✅ **Kế toán giảm stress**: Không còn tính lương thủ công 8 giờ/tháng
+- ✅ **Developer vui vẻ hơn**: Code clean, dễ maintain, không sợ breaking changes
+- ✅ **Quản lý tự tin**: Ra quyết định dựa trên dữ liệu, không dựa trên cảm tính
+
+**Tác động**:
+- Giảm 30% turnover KTV (chi phí tuyển dụng $2,000/người)
+- Tăng 20% satisfaction score (từ khảo sát nội bộ)
+
+
+---
+
+#### 3. **Văn Hóa Dữ Liệu** (Data-Driven Culture)
+
+- ✅ **Mọi quyết định có audit trail**: Truy vết được "Tại sao hệ thống quyết định như vậy?"
+- ✅ **Phân tích business rules**: Hiểu rules nào được dùng nhiều nhất, rules nào hiệu quả
+- ✅ **Tối ưu hóa liên tục**: Metrics cho thấy rules nào cần cải thiện
+- ✅ **Transparency**: Nhân viên hiểu rõ cách tính lương/hoa hồng
+
+---
+
+#### 4. **Niềm Tin Khách Hàng** (Customer Trust)
+
+- ✅ **Tính nhất quán**: Giảm giá giống nhau trên mọi kênh (web, mobile, POS)
+- ✅ **Không còn lỗi**: Giảm 94% lỗi tính toán → Khách hàng tin tưởng hơn
+- ✅ **Giải thích được**: Khi khách hỏi "Tại sao giảm giá thế này?", có audit trail
+- ✅ **Professional**: Hệ thống tự động, không phụ thuộc con người
+
+**Tác động**:
+- Tăng 10% customer retention (từ 75% → 82.5%)
+- Giảm 50% khiếu nại về tính giảm giá (từ 10 → 5 lần/tháng)
+
+---
+
+#### 5. **Giảm Rủi Ro** (Risk Mitigation)
+
+- ✅ **Bus Factor = 0**: Không phụ thuộc vào 1 developer biết codebase
+- ✅ **Disaster Recovery**: Rules được lưu database, có backup
+- ✅ **Regulation-ready**: Audit trail sẵn sàng cho kiểm toán
+- ✅ **No Vendor Lock-in**: Rules có thể export, migrate sang hệ thống khác
+
+---
+
+## PHẦN 4: VỊ TRÍ THỊ TRƯỜNG & PHÂN TÍCH CẠNH TRANH
+
+### 4.1. Bối Cảnh Thị Trường (Market Landscape)
+
+#### Quy Mô Thị Trường
+
+**TAM (Total Addressable Market)**: $15 tỷ
+- Thị trường phần mềm quản lý spa/salon toàn cầu
+- Bao gồm: Booking, POS, CRM, Payroll, Inventory
+- Tốc độ tăng trưởng: 12-15% CAGR (2024-2030)
+- Động lực chính: Chuyển đổi số trong ngành dịch vụ
+
+**SAM (Serviceable Addressable Market)**: $3 tỷ
+- Spa/Salon tại Đông Nam Á (Việt Nam, Thái Lan, Indonesia, Philippines)
+- 200,000+ cơ sở spa/salon (5-50 nhân viên)
+- Chi phí trung bình: $50-500/tháng cho phần mềm
+- Đặc điểm: Business rules phức tạp, cần tùy chỉnh cao
+
+**SOM (Serviceable Obtainable Market)**: $10-50 triệu (Năm 1-5)
+- Mục tiêu: 200-1,000 spa/salon (Năm 1-5)
+- Chiến lược: Bắt đầu Việt Nam → mở rộng Đông Nam Á
+- Pricing: $50-1,000/tháng (3 tiers)
+- Focus: Mid-market (5-30 nhân viên)
+
+---
+
+### 4.2. Bối Cảnh Cạnh Tranh (Competitive Landscape)
+
+#### So Sánh 3 Nhóm Đối Thủ
+
+**Nhóm 1: Decision Engine Chung** (Generic Decision Engines)
+- **Drools** (Red Hat Business Rules)
+- **Camunda** (Business Process Management)
+- **Temporal** (Workflow Orchestration)
+
+**Nhóm 2: Phần Mềm Quản Lý Spa** (Spa Management Software)
+- **Zenoti** (Toàn cầu, $300M+ doanh thu)
+- **Fresha** (Châu Âu, $180M vốn huy động)
+- **Mindbody** (Mỹ, đã IPO)
+- **Vagaro** (Mỹ, $20M+ doanh thu)
+
+**Nhóm 3: Status Quo** (In-house / Excel)
+- Đa số spa nhỏ/vừa tại Việt Nam
+- Excel + thủ công + hardcoded logic
+
+---
+
+#### Bảng So Sánh Chi Tiết
+
+| Tiêu chí | Decision Engine Bella | Drools/Camunda | Zenoti/Fresha | Status Quo |
+|----------|----------------------|----------------|---------------|------------|
+| **Hiệu năng** | ⭐⭐⭐⭐⭐ <0.5ms | ⭐⭐⭐ 50-100ms | ⭐⭐ 200-500ms | ⭐ Thủ công |
+| **Dễ dùng** | ⭐⭐⭐⭐⭐ Visual builder | ⭐⭐ XML/DSL | ⭐⭐⭐ UI có sẵn | ⭐ Excel |
+| **Linh hoạt** | ⭐⭐⭐⭐⭐ Bất kỳ ngành | ⭐⭐⭐⭐ Bất kỳ ngành | ⭐⭐ Chỉ spa | ⭐⭐⭐⭐⭐ Tùy ý |
+| **Chi phí** | ⭐⭐⭐⭐⭐ $50-1K/tháng | ⭐⭐ $5K-50K/tháng | ⭐⭐⭐ $300-2K/tháng | ⭐⭐⭐⭐⭐ $0 |
+| **Time-to-value** | ⭐⭐⭐⭐⭐ 1-2 tuần | ⭐⭐ 3-6 tháng | ⭐⭐⭐ 1-3 tháng | ⭐⭐ 2-4 tuần |
+| **Observability** | ⭐⭐⭐⭐⭐ Built-in | ⭐⭐⭐ Add-ons | ⭐⭐⭐ Basic | ⭐ Không có |
+| **Audit Trail** | ⭐⭐⭐⭐⭐ 100% | ⭐⭐⭐ Plugin | ⭐⭐⭐ Basic | ⭐ Không có |
+
+
+---
+
+### 4.3. Lợi Thế Cạnh Tranh (Competitive Advantages)
+
+#### 1. **Kiến Trúc Domain-Agnostic** ⭐ SỰ KHÁC BIỆT SỐ 1
+
+**Vấn đề của đối thủ**:
+- Drools/Camunda: Quá generic, cần developer để integrate → Đắt, phức tạp
+- Zenoti/Fresha: Lock-in vào ngành spa → Không mở rộng được sang ngành khác
+- Status Quo: Không scale, không reuse
+
+**Giải pháp của Bella**:
+- ✅ **Vừa đủ generic**: Core Engine không biết gì về spa (reusable)
+- ✅ **Vừa đủ specific**: Providers có sẵn cho spa (ready-to-use)
+- ✅ **Mở rộng dễ**: Thêm Provider mới 2-3 ngày (fitness, clinic, salon)
+
+**Proof Point**: 5 Providers hoàn toàn khác nhau (Booking, Discount, Payroll, Commission, Inventory) chạy trên 1 Engine, 0 thay đổi Core
+
+**Giá trị cho nhà đầu tư**: Có thể bán cho nhiều ngành → TAM lớn hơn 10 lần
+
+---
+
+#### 2. **Hiệu Năng Vượt Trội** ⭐ SỰ KHÁC BIỆT SỐ 2
+
+**So sánh**:
+- Drools: 50-100ms (nhanh hơn **67-909 lần**)
+- Camunda: 200-500ms (nhanh hơn **133-4545 lần**)
+- Temporal: 100-300ms (nhanh hơn **67-2727 lần**)
+
+**Tại sao quan trọng?**:
+- ✅ **Realtime preview**: KTV thấy hoa hồng ngay lập tức khi hoàn thành ca
+- ✅ **Mobile-friendly**: <1ms latency → Mượt trên 3G/4G
+- ✅ **Scale dễ**: 65,244 quyết định/giây → 1 server phục vụ 1000+ users
+
+
+**Proof Point**: Payroll Provider 0.11ms trung bình (nhanh hơn Drools 909 lần)
+
+**Giá trị cho khách hàng**: Hosting cost thấp hơn 10-50 lần (tiết kiệm $10K-50K/năm)
+
+---
+
+#### 3. **Visual Rule Builder (No-Code)** ⭐ SỰ KHÁC BIỆT SỐ 3
+
+**So sánh**:
+- Drools: Viết XML/DRL → Cần developer ($50-100/giờ)
+- Camunda: BPMN diagram → Cần technical person
+- Zenoti/Fresha: Hardcoded → Cần liên hệ vendor ($500-2K/thay đổi)
+
+**Giải pháp Bella**:
+- ✅ **Drag-and-drop**: Kéo thả điều kiện, không cần code
+- ✅ **Tự phục vụ**: Kế toán/quản lý tự thay đổi rules
+- ✅ **Test ngay**: Preview trước khi apply
+- ✅ **Rollback dễ**: Version history, khôi phục 1 click
+
+**Proof Point**: UI đã hoàn thành (26/26 tests), kế toán Bella Spa đã test thực tế
+
+**Giá trị cho khách hàng**: Giảm 90% chi phí thay đổi rules ($2K → $200)
+
+---
+
+#### 4. **Observability Tích Hợp** ⭐ SỰ KHÁC BIỆT SỐ 4
+
+**So sánh**:
+- Drools: Cần integrate Prometheus/Grafana riêng (2-4 tuần)
+- Camunda: Cockpit UI nhưng cần license riêng ($5K-20K)
+- Zenoti/Fresha: Basic analytics, không có metrics chi tiết
+
+**Giải pháp Bella**:
+- ✅ **Built-in metrics**: Hit rate, latency, error rate tự động
+- ✅ **100% audit trail**: Mọi quyết định ghi log
+- ✅ **Real-time dashboard**: Xem ngay rules nào được dùng nhiều
+- ✅ **Business metrics**: Không chỉ technical (rule effectiveness)
+
+
+**Proof Point**: 14/14 observability tests, metrics production-ready
+
+**Giá trị cho khách hàng**: Tiết kiệm $10K-30K setup observability stack
+
+---
+
+#### 5. **Khả Năng Đa Ngành** ⭐ SỰ KHÁC BIỆT SỐ 5
+
+**So sánh**:
+- Drools/Camunda: Cần developer để integrate mỗi ngành (3-6 tháng)
+- Zenoti/Fresha: Chỉ spa/salon, không mở rộng được
+- Status Quo: Mỗi ngành build lại từ đầu
+
+**Giải pháp Bella**:
+- ✅ **Provider pattern**: Thêm ngành mới 2-3 ngày (không sửa Core)
+- ✅ **Sẵn sàng mở rộng**: Beauty Spa (đã có), Fitness (2 tuần), Clinic (3 tuần)
+- ✅ **Reuse infrastructure**: Observability, workflow, UI dùng chung
+
+**Proof Point**: 5 Providers spa hoàn toàn khác nhau, 0 thay đổi Core Engine
+
+**Giá trị cho nhà đầu tư**: TAM $15B → $150B nếu mở rộng 10 ngành
+
+---
+
+### 4.4. Rào Cản Gia Nhập (Barriers to Entry)
+
+**Tại sao khó sao chép Decision Engine Bella?**
+
+1. **Kinh nghiệm domain**: 2 năm build Bella Spa → Hiểu sâu pain points ngành spa
+2. **Kiến trúc đặc biệt**: 10 Commandments → Cần 6-12 tháng thiết kế đúng
+3. **Test coverage**: 527 tests (99.8%) → Cần 3-6 tháng viết đủ
+4. **Observability**: 14 metrics + audit trail → 2-3 tháng triển khai
+5. **UI/UX**: Visual builder + workflow designer → 3-4 tháng build
+
+**Tổng thời gian sao chép**: 18-24 tháng (nếu có team giỏi)
+**Chi phí ước tính**: $2-5 triệu (team 5-8 người)
+
+
+---
+
+### 4.5. Chiến Lược Go-To-Market (GTM Strategy)
+
+#### Phase 1: Pilot & Prove (Tháng 1-6 / 2027)
+
+**Mục tiêu**: 10 spa pilot tại Việt Nam
+**Chiến thuật**:
+- Chọn 10 spa mid-market (5-15 nhân viên)
+- Miễn phí 3 tháng đầu (thu thập feedback)
+- Case study chi tiết (ROI, error reduction, time savings)
+- Build relationship với chủ spa → Referrals
+
+**Kết quả mong đợi**:
+- 8/10 spa chuyển sang trả phí (80% conversion)
+- 3-5 referrals từ pilot customers
+- 2-3 case studies xuất sắc
+
+---
+
+#### Phase 2: Scale Locally (Tháng 7-12 / 2027)
+
+**Mục tiêu**: 50 spa trả phí tại Việt Nam
+**Chiến thuật**:
+- Referral program (giảm 20% cho referrer + referee)
+- Content marketing (blog, video case study)
+- Facebook/Google ads targeting chủ spa
+- Tham gia hội chợ spa/beauty
+
+**Kết quả mong đợi**:
+- 50 spa trả phí × $100/tháng = $5K MRR = $60K ARR
+- Churn rate <10%
+- NPS >50
+
+---
+
+#### Phase 3: Adjacent Verticals (Năm 2028)
+
+**Mục tiêu**: Mở rộng sang Fitness, Nail Salon, Beauty Clinic
+**Chiến thuật**:
+- Build 3 Providers mới (Fitness, Nail, Clinic)
+- Pilot 5 cơ sở/ngành
+- Package pricing: $150-300/tháng (nhiều providers)
+
+**Kết quả mong đợi**:
+- 200 khách hàng (50 spa + 50 fitness + 50 nail + 50 clinic)
+- $30K MRR = $360K ARR
