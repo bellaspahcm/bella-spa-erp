@@ -16,7 +16,7 @@ RefreshCw,
 Users,
 XCircle,
 } from 'lucide-react';
-import { useCallback,useEffect,useState } from 'react';
+import { useCallback,useEffect,useState,Fragment } from 'react';
 import { toast } from 'sonner';
 import { getAccountingErrorMessage as getErrorMessage } from '@/lib/accounting-error-message';
 import { hasSalaryLegacyReconciliationRecord } from '@/lib/business-rules/salary';
@@ -240,7 +240,7 @@ export default function SalaryReconciliationPage() {
                   const isExpanded = expandedRows.has(row.ktv_id);
                   
                   return (
-                    <>
+                    <Fragment key={row.ktv_id}>
                       {/* Main row */}
                       <motion.tr
                         key={row.ktv_id}
@@ -363,7 +363,7 @@ export default function SalaryReconciliationPage() {
                           </td>
                         </tr>
                       )}
-                    </>
+                    </Fragment>
                   );
                 })}
               </tbody>
