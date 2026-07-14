@@ -282,6 +282,7 @@ const menuItems: SidebarMenuItem[] = [
 
   { type: 'header', label: 'Vận hành hàng ngày' },
   { icon: Calendar,        label: 'Lịch hẹn & POS',     href: '/dashboard/bookings' },
+  { icon: Flower2,         label: 'Thẻ liệu trình',     href: '/dashboard/sessions' },
   { icon: ClipboardList,   label: 'Danh sách chờ',      href: '/dashboard/waitlist' },
   { icon: Users,           label: 'Khách hàng & CRM',   href: '/dashboard/customers' },
   { icon: Package,         label: 'Kho & Bán hàng',     href: '/dashboard/inventory' },
@@ -413,8 +414,8 @@ export function Sidebar() {
     if (tenantBrand.isBeautySpa) {
       return { ...item, label: 'Liệu trình' };
     }
-    // Babycare (default): "Thẻ liệu trình"
-    return item;
+    // Babycare (default): "Đơn đặt lịch"
+    return { ...item, label: 'Đơn đặt lịch' };
   });
 
   const filteredMenuItems = [...moduleAwareMenuItems];
