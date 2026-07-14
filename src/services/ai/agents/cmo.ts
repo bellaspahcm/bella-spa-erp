@@ -74,8 +74,9 @@ export async function runCMOAgent(
 ): Promise<SubAgentResponse> {
   console.log("[AI COO Service] Định tuyến tới: CMO Agent");
 
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  // Mở rộng lên 180 ngày (6 tháng) vì khách hàng spa thường dùng liệu trình kéo dài nhiều tháng
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
   // Ngày hôm nay (giờ Việt Nam UTC+7)
   const todayUTC7 = new Date(new Date().getTime() + 7 * 60 * 60 * 1000);
@@ -86,7 +87,7 @@ export async function runCMOAgent(
     .from("bookings")
     .select("id, status, created_at, total_sessions, completed_sessions, package_name, customer_id")
     .eq("tenant_id", tenantId)
-    .gte("created_at", thirtyDaysAgo.toISOString());
+    .gte("created_at", sixMonthsAgo.toISOString());
 
   if (bookingsError) {
     console.error("[CMO Agent] Lỗi khi truy vấn bookings:", bookingsError);
@@ -277,7 +278,7 @@ export async function runCMOAgent(
     `Tổng số khách hàng: ${totalCustomers || 0} người, tháng này ghi nhận ${newCustCount} khách hàng mới. ` +
     `Điểm CSAT trung bình đạt ${avgRating}/5 sao dựa trên ${ratings.length} đánh giá đã duyệt. ` +
     `Ghi nhận ${badReviews.length} phản hồi tiêu cực (< 4 sao) cần xử lý. ` +
-    `Phễu đặt lịch ghi nhận ${bookingsSummary.total} giao dịch trong 30 ngày.`;
+    `Phễu đặt lịch ghi nhận ${bookingsSummary.total} giao dịch trong 6 tháng gần nhất.`;
 
   return {
     agent: "CMO (Trưởng phòng Chăm sóc khách hàng & Marketing)",
