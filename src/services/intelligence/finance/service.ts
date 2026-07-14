@@ -720,7 +720,12 @@ export class FinanceIntelligenceService implements IntelligenceService {
    * Health check for Finance Intelligence module.
    * Tests database connection and cache availability.
    */
-  async healthCheck(): Promise<boolean> {
+  async healthCheck(): Promise<{
+    status: 'healthy' | 'unhealthy';
+    timestamp: string;
+    service: string;
+    details?: string;
+  }> {
     try {
       // Test cache
       const testKey = `${CACHE_KEY_PREFIX.FINANCE}:health:test`;
@@ -730,15 +735,29 @@ export class FinanceIntelligenceService implements IntelligenceService {
 
       if (!cached) {
         console.error('[FinanceIntelligence] Cache health check failed');
-        return false;
+        return {
+          status: 'unhealthy',
+          timestamp: new Date().toISOString(),
+          service: 'FinanceIntelligence',
+          details: 'Cache health check failed',
+        };
       }
 
       // TODO: Test database connection (query a simple materialized view)
       // For now, assume DB is healthy if cache is healthy
-      return true;
+      return {
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        service: 'FinanceIntelligence',
+      };
     } catch (error) {
       console.error('[FinanceIntelligence] Health check failed:', error);
-      return false;
+      return {
+        status: 'unhealthy',
+        timestamp: new Date().toISOString(),
+        service: 'FinanceIntelligence',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      };
     }
   }
 
