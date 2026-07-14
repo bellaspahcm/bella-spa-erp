@@ -289,7 +289,7 @@ function LeaveRequestsDashboard() {
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-4">
           <Link
-            href="/dashboard/hr"
+            href="/dashboard/salary?tab=attendance"
             className="p-2.5 rounded-xl bg-white hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-colors border border-slate-200 shadow-sm shrink-0"
           >
             <ArrowLeft className="w-5 h-5" />

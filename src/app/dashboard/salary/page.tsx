@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { 
   DollarSign, 
   Send, 
@@ -112,6 +113,7 @@ function downloadExcelBlob(blob: Blob, filename: string) {
 
 export default function SalaryPage() {
   const vocab = useModuleVocabulary();
+  const searchParams = useSearchParams();
   const [ktvSalaries, setKtvSalaries] = useState<KtvSalaryRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -270,6 +272,13 @@ export default function SalaryPage() {
       void loadAttendanceData();
     }
   }, [hasLoadedAttendance, isAttendanceLoading, loadAttendanceData]);
+
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam && ['payroll', 'attendance', 'hr_profile'].includes(tabParam)) {
+      handleTabChange(tabParam as 'payroll' | 'attendance' | 'hr_profile');
+    }
+  }, [searchParams, handleTabChange]);
 
   const handleSoftRefresh = useCallback(async () => {
     await refreshData({

@@ -8,15 +8,13 @@
  * UPDATED: 2026-06-22 - Added real Quick Stats using Intelligence Layer hooks
  */
 
-import { useEffect, useState, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Building2, Users, TrendingUp, Calendar, Clock, Award, RefreshCw, CalendarDays } from 'lucide-react';
+import { Building2, Users, TrendingUp, Calendar, Clock, Award, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import { useWorkforceAnalytics, useAttendanceInsights } from '@/hooks/intelligence';
 
 export default function HRIntelligencePage() {
-  const router = useRouter();
 
   // Get current month/year for attendance insights
   const currentDate = useMemo(() => {
@@ -54,13 +52,6 @@ export default function HRIntelligencePage() {
       color: 'bg-blue-100 text-blue-600',
     },
     {
-      icon: CalendarDays,
-      title: 'Duyệt nghỉ phép KTV',
-      description: 'Phê duyệt đơn nghỉ và lịch sử nghỉ phép',
-      href: '/dashboard/hr/leave-requests',
-      color: 'bg-rose-100 text-rose-650',
-    },
-    {
       icon: Award,
       title: 'Đánh giá hiệu suất',
       description: 'KPI, đánh giá nhân viên theo tháng',
@@ -91,7 +82,7 @@ export default function HRIntelligencePage() {
       </div>
 
       {/* Modules Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
         {hrModules.map((module, index) => {
           const Icon = module.icon;
           return (

@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { CalendarDays } from 'lucide-react';
+import Link from 'next/link';
 import { KtvAttendanceSummary } from '@/types/domain';
 
 interface AttendanceSummaryTableProps {
@@ -26,6 +27,14 @@ export default function AttendanceSummaryTable({
               Giám sát chuyên chuyên cần, đi muộn, nghỉ phép và số ca hoàn thành
             </p>
           </div>
+          
+          <Link
+            href="/dashboard/hr/leave-requests"
+            className="flex items-center justify-center gap-2 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 px-5 py-3 text-xs font-black uppercase tracking-widest transition-all self-start md:self-auto shadow-xs"
+          >
+            <CalendarDays className="w-4 h-4 text-rose-600" />
+            <span>Duyệt nghỉ phép KTV</span>
+          </Link>
         </div>
         
         <div className="overflow-x-auto overscroll-x-contain custom-scrollbar shadow-[inset_-18px_0_18px_-18px_rgba(15,23,42,0.32)]">
