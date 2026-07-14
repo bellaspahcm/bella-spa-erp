@@ -25,3 +25,12 @@ if (typeof global.Response === 'undefined') {
 if (typeof global.Headers === 'undefined') {
   global.Headers = class {} as any;
 }
+
+// Setup test database schema
+// Note: If tests are running against real Supabase, ensure migrations are run:
+// - mv_monthly_pnl (supabase/migrations/20260622240000_create_mv_monthly_pnl.sql)
+// - mv_cash_flow (supabase/migrations/*_create_mv_cash_flow.sql)
+// - mv_budget_variance (supabase/migrations/*_create_mv_budget_variance.sql)
+// - policy_registry (supabase/migrations/20260701000001_create_policy_registry.sql)
+//
+// To run migrations: supabase db reset (local) or supabase db push (remote)
