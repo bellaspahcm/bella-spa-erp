@@ -11,6 +11,7 @@
 -- =============================================================================
 
 -- Update the reconciliation report RPC to include product_sales_commission
+DROP FUNCTION IF EXISTS public.get_salary_reconciliation_report(uuid, date);
 CREATE OR REPLACE FUNCTION public.get_salary_reconciliation_report(
     p_tenant_id UUID,
     p_month_year DATE
