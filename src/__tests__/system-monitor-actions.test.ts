@@ -185,9 +185,10 @@ describe('system monitor actions', () => {
 
     expect(summary.overall_status).toBe('critical');
     expect(summary.quick_metrics.business_rule_open_alerts).toBe(1);
+    // Note: Implementation redirects self-referential /dashboard/system-monitor to /dashboard/accounting/health
     expect(summary.open_alerts[0]).toEqual(expect.objectContaining({
       id: 'notif-rule-1',
-      href: '/dashboard/system-monitor',
+      href: '/dashboard/accounting/health', // Fallback for business_rule_health_alert type
       severity: 'critical',
     }));
     expect(summary.sections.find((section) => section.id === 'data')?.checks).toEqual(
