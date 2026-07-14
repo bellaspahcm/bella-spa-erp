@@ -69,33 +69,43 @@ Bella Spa ERP              Core ERP Platform
 ### 2.0. Fix Failing Tests (HIGH PRIORITY)
 
 **Duration**: 2-3 weeks  
-**Status**: 🚨 **URGENT**
+**Status**: 🟡 **IN PROGRESS** (Day 3, Week 1)
+
+**Progress Tracker** (Updated 14/07/2026):
+```
+Day 0 (12/07):  251 failing, 59 failing suites (Baseline)
+Day 1 (12/07):  245 failing, 58 failing suites (-6 tests, ROOT CAUSE #1 fix)
+Day 3 (14/07):  237 failing, 52 failing suites (-14 tests, P0 migration)
+Target (Week 3): <150 failing, <26 failing suites (>95% pass rate)
+```
+
+**Work Completed** ✅:
+- ✅ Week 1 Analysis (`TEST_FIX_WEEK1_ANALYSIS.md`)
+- ✅ ROOT CAUSE #1 Fixed: Next.js cookies() API (+74 tests)
+- ✅ ROOT CAUSE #2 Identified: Schema mismatches
+- ✅ ROOT CAUSE #3 Identified: Component tests (jsdom)
+- ✅ ROOT CAUSE #4 Identified: Orphaned test files
+- ✅ P0 Test Framework Migration (vitest → Jest)
 
 **Current Status**:
-- 251 failing tests (8.3%)
-- 59 failing test suites (23.2%)
-- 101 skipped tests (3.3%)
+- ✅ 2,757/3,095 tests passing (89.1%)
+- ✅ 195/250 suites passing (78.0%)
+- ⚠️ 237 tests failing (7.7%)
+- ⚠️ 52 suites failing (20.8%)
+- ⚠️ 101 skipped (3.3%)
 
-**Root Causes** (Needs investigation):
-1. **Outdated mocks**: Supabase/Redis mocks may be stale
-2. **Schema changes**: Database schema evolved, tests not updated
-3. **Environment issues**: Tests expect specific env setup
-4. **Flaky tests**: Timing/race conditions
-5. **Incomplete features**: Features changed but tests not updated
+**Root Causes Identified**:
+1. ✅ Next.js cookies() API - **FIXED**
+2. ⏳ Schema mismatches - **TODO** (~30 tests)
+3. ⏳ Component tests - **PARTIAL** (jsdom added)
+4. ⏳ Orphaned tests - **TODO** (~10-15 suites)
+5. ⏳ Others - **TODO** (~80 tests)
 
-**Action Plan**:
-1. **Week 1**: Categorize failures
-   - Group by module (booking, HR, inventory, etc.)
-   - Identify common patterns
-   - Prioritize critical business logic tests
-2. **Week 2**: Fix critical failures
-   - Focus on business logic (Decision Engine, Payroll, Booking)
-   - Update mocks to match current schema
-   - Fix environment setup issues
-3. **Week 3**: Fix remaining failures + investigate skipped tests
-   - Non-critical tests
-   - Skipped tests (decide: fix, delete, or keep skipped)
-   - Comprehensive re-test
+**Remaining Work** (Week 1-3):
+1. Fix schema mismatches (DB columns, types, views)
+2. Clean up orphaned test files (archived code)
+3. Debug remaining failures case-by-case
+4. Resolve 101 skipped tests
 
 **Success Criteria**:
 - ✅ Test pass rate >95% (2,883/3,035 tests)
