@@ -249,7 +249,7 @@ Bộ tài liệu này được tạo ra để:
 ### Architecture & Design
 
 - **`docs/DECISION_ENGINE_PRINCIPLES.md`** - 10 Commandments (immutable)
-- **`docs/DECISION_ENGINE_PLATFORM_ARCHITECTURE.md`** - v1.0.0 frozen architecture
+- **`final-documentation/DECISION_ENGINE_PLATFORM_ARCHITECTURE.md`** ⭐ **MOVED** - v1.0.0 frozen architecture (2,600+ lines)
 - **`docs/WORKFLOW_ENGINE_ARCHITECTURE.md`** - Workflow Engine design
 - **`docs/WORKFLOW_ENGINE_PHASE_1_COMPLETION_REPORT.md`** ⭐ **NEW** - Phase 1 completion (5,650 lines)
 - **`docs/RULE_MANAGEMENT_UI_PHASE_1_2_COMPLETE.md`** ⭐ **NEW** - Phase 1 & 2 completion (1,500 lines)
