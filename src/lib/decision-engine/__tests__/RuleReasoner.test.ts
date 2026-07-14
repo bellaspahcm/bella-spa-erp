@@ -15,7 +15,7 @@ import { RuleReasoner } from '../RuleReasoner';
 import { leaveApprovalPolicyV1 } from '../policies/leave-approval-v1';
 import type { Knowledge } from '../types';
 
-describe.skip('RuleReasoner', () => {
+describe('RuleReasoner', () => {
   // ALL TESTS SKIPPED: Language mismatch (English vs Vietnamese)
   let reasoner: RuleReasoner;
   
@@ -35,7 +35,7 @@ describe.skip('RuleReasoner', () => {
       const decision = reasoner.evaluate(leaveApprovalPolicyV1, knowledge);
       
       expect(decision.outcome).toBe('APPROVE');
-      expect(decision.explanation).toContain('24h advance notice');
+      expect(decision.explanation).toContain('báo trước ≥24 giờ');
     });
     
     test('should REJECT when <24h notice', () => {
@@ -49,7 +49,7 @@ describe.skip('RuleReasoner', () => {
       const decision = reasoner.evaluate(leaveApprovalPolicyV1, knowledge);
       
       expect(decision.outcome).toBe('REJECT');
-      expect(decision.explanation).toContain('Less than 24h');
+      expect(decision.explanation).toContain('cần báo trước tối thiểu 24 giờ');
     });
     
     test('should REJECT when no leave balance', () => {
@@ -63,7 +63,7 @@ describe.skip('RuleReasoner', () => {
       const decision = reasoner.evaluate(leaveApprovalPolicyV1, knowledge);
       
       expect(decision.outcome).toBe('REJECT');
-      expect(decision.explanation).toContain('Insufficient leave balance');
+      expect(decision.explanation).toContain('không còn số ngày phép');
     });
     
     test('should ESCALATE when has conflicts', () => {
@@ -77,7 +77,7 @@ describe.skip('RuleReasoner', () => {
       const decision = reasoner.evaluate(leaveApprovalPolicyV1, knowledge);
       
       expect(decision.outcome).toBe('ESCALATE');
-      expect(decision.explanation).toContain('Conflicts with existing bookings');
+      expect(decision.explanation).toContain('ca liệu trình trùng lịch');
     });
     
     test('should ESCALATE when has violations', () => {
@@ -91,7 +91,7 @@ describe.skip('RuleReasoner', () => {
       const decision = reasoner.evaluate(leaveApprovalPolicyV1, knowledge);
       
       expect(decision.outcome).toBe('ESCALATE');
-      expect(decision.explanation).toContain('attendance violations');
+      expect(decision.explanation).toContain('vi phạm chuyên cần');
     });
   });
   
@@ -108,7 +108,7 @@ describe.skip('RuleReasoner', () => {
       const decision = reasoner.evaluate(leaveApprovalPolicyV1, knowledge);
       
       expect(decision.outcome).toBe('REJECT');
-      expect(decision.explanation).toContain('Less than 24h'); // Not "Insufficient balance"
+      expect(decision.explanation).toContain('cần báo trước tối thiểu 24 giờ'); // Not "Insufficient balance"
     });
   });
   

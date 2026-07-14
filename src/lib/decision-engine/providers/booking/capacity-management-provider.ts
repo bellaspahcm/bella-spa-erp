@@ -552,6 +552,7 @@ export class CapacityManagementProvider {
     // Simple implementation: try slots every 30 minutes
     let currentTime = this.timeToMinutes(preferredStart);
     const workEnd = this.timeToMinutes(ktvCapacity.workingHours.end);
+    const minBreakMinutes = ktvCapacity.minBreakMinutes || 0;
 
     while (currentTime < workEnd) {
       currentTime += 30; // Try next 30-minute slot
@@ -559,15 +560,28 @@ export class CapacityManagementProvider {
       const startTime = this.minutesToTime(currentTime);
       const endTime = this.minutesToTime(currentTime + durationMinutes);
 
-      // Check if this slot is available
       const hasConflict = existingBookings.some(booking => {
         if (booking.status === 'cancelled') return false;
-        return this.timeRangesOverlap(
+
+        // Time overlap check
+        const overlap = this.timeRangesOverlap(
           startTime,
           endTime,
           booking.startTime,
           booking.endTime
         );
+        if (overlap) return true;
+
+        // Break time check
+        if (minBreakMinutes > 0) {
+          const gapBefore = this.calculateTimeDifference(booking.endTime, startTime);
+          if (gapBefore >= 0 && gapBefore < minBreakMinutes) return true;
+
+          const gapAfter = this.calculateTimeDifference(endTime, booking.startTime);
+          if (gapAfter >= 0 && gapAfter < minBreakMinutes) return true;
+        }
+
+        return false;
       });
 
       if (!hasConflict) {

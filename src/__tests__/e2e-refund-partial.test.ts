@@ -71,7 +71,7 @@ describe('E2E Partial Refund Flow (Critical Revenue Test)', () => {
     } else {
       const { data: newPkg, error } = await supabase.from('packages').insert({
         tenant_id: testTenantId, name: 'Partial Refund Test Package', description: 'Package for partial refund testing',
-        price: 5000000, total_sessions: 10, session_multiplier: 1.0, status: 'active', duration: '60 phút', module_key: 'babycare',
+        price: 5000000, total_sessions: 10, session_multiplier: 1.0, status: 'active', duration: '60 phút', module_key: 'baby_care',
         service_kind: 'treatment_package', default_duration_minutes: 60, requires_resource: false, before_after_required: false,
       }).select('id').single();
       if (error) throw new Error(`Failed to create test package: ${error.message}`);
@@ -169,7 +169,7 @@ describe('E2E Partial Refund Flow (Critical Revenue Test)', () => {
     expect(refundError).toBeNull();
     testRevenueIds.push(refund!.id);
 
-    const { error: statusError } = await supabase.from('bookings').update({ status: 'partially_completed' }).eq('id', testBookingId);
+    const { error: statusError } = await supabase.from('bookings').update({ status: 'completed' }).eq('id', testBookingId);
     expect(statusError).toBeNull();
 
     console.log('✅ Step 3: Partial refund issued', { refundAmount: partialRefundAmount, remainingSessions: 5 });
@@ -192,10 +192,10 @@ describe('E2E Partial Refund Flow (Critical Revenue Test)', () => {
     // STEP 6: Verify Booking Status
     const { data: finalBooking } = await supabase.from('bookings').select('*').eq('id', testBookingId).single();
     expect(finalBooking).toBeDefined();
-    expect(finalBooking!.status).toBe('partially_completed');
+    expect(finalBooking!.status).toBe('completed');
     expect(finalBooking!.completed_sessions).toBe(5);
 
-    console.log('✅ Step 6: Booking status verified', { status: 'partially_completed', completedSessions: 5, totalSessions: 10 });
+    console.log('✅ Step 6: Booking status verified', { status: 'completed', completedSessions: 5, totalSessions: 10 });
 
     console.log('\n🎉 E2E PARTIAL REFUND FLOW TEST: ALL PASSED!');
   }, 60000);

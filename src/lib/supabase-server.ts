@@ -21,7 +21,7 @@ export const createServerClient = cache(() => {
   // TEST ENVIRONMENT: Use service role client (no cookies needed)
   if (process.env.NODE_ENV === 'test') {
     console.log('[createServerClient] Test environment detected - using service role client');
-    return createSupabaseClient<Database>(
+    const client = createSupabaseClient<Database>(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
       {
@@ -31,6 +31,26 @@ export const createServerClient = cache(() => {
         },
       }
     );
+
+    // Mock getUser to bypass authentication in tests
+    client.auth.getUser = async () => {
+      return {
+        data: {
+          user: {
+            id: 'mock-user-admin',
+            email: 'admin@test.com',
+            role: 'authenticated',
+            app_metadata: {},
+            user_metadata: {},
+            aud: 'authenticated',
+            created_at: new Date().toISOString(),
+          } as any,
+        },
+        error: null,
+      };
+    };
+
+    return client;
   }
 
   // PRODUCTION: Use SSR client with cookies

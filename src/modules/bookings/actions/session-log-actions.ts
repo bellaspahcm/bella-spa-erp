@@ -169,10 +169,52 @@ export interface CreateBookingResult {
  * }
  * ```
  */
+// ============================================================================
+// IN-MEMORY MUTEX FOR CONCURRENCY CONTROL
+// ============================================================================
+
+class Mutex {
+  private promise: Promise<void> = Promise.resolve();
+
+  async acquire(): Promise<() => void> {
+    let release: () => void;
+    const nextPromise = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const currentPromise = this.promise;
+    this.promise = nextPromise;
+    await currentPromise;
+    return release!;
+  }
+}
+
+const locks = new Map<string, Mutex>();
+
+function getLock(key: string): Mutex {
+  if (!locks.has(key)) {
+    locks.set(key, new Mutex());
+  }
+  return locks.get(key)!;
+}
+
 export async function createBookingWithValidation(
   input: CreateBookingInput
 ): Promise<CreateBookingResult> {
   const startTime = performance.now();
+  const lock = getLock(input.tenantId || 'global');
+  const release = await lock.acquire();
+
+  try {
+    return await executeCreateBookingWithValidation(input, startTime);
+  } finally {
+    release();
+  }
+}
+
+async function executeCreateBookingWithValidation(
+  input: CreateBookingInput,
+  startTime: number
+): Promise<CreateBookingResult> {
 
   try {
     // Step 1: Validate input
@@ -450,6 +492,13 @@ export async function createBookingWithValidation(
       });
     }
 
+    if (!finalKtvId) {
+      return {
+        success: false,
+        error: 'Không tìm thấy KTV phù hợp: Bỏ qua tự động gán và không có KTV được chỉ định',
+      };
+    }
+
     // Step 6: Create session log
     const { data: sessionLog, error: createError } = await supabase
       .from('session_logs')
@@ -459,6 +508,7 @@ export async function createBookingWithValidation(
         assigned_date: input.assignedDate,
         assigned_time: input.assignedTime,
         completed_by_ktv_id: finalKtvId || null,
+        standard_duration: input.durationMinutes,
         status: 'pending',
         notes: input.notes || null,
         session_number: input.sessionNumber || 1,
@@ -594,6 +644,7 @@ export async function updateSessionLog(
         assigned_date: updates.assignedDate,
         assigned_time: updates.assignedTime,
         completed_by_ktv_id: updates.assignedKtvId,
+        standard_duration: updates.durationMinutes,
         status: updates.status,
         notes: updates.notes,
       })

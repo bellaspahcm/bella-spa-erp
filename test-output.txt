@@ -1,9 +1,9 @@
 
 > bella-spa-erp@0.1.0 test
-> jest conflict-detection-provider.test.ts --verbose
+> jest system-monitor-actions.test.ts
 
   console.log
-    Γùç injected env (8) from .env.local // tip: Γîü auth for agents [www.vestauth.com]
+    Γùç injected env (9) from .env.local // tip: Γîÿ suppress logs { quiet: true }
 
       at _log (node_modules/dotenv/lib/main.js:131:11)
 
@@ -12,95 +12,45 @@
 
       at Object.log (jest.setup.ts:10:9)
 
-FAIL src/lib/decision-engine/providers/booking/__tests__/conflict-detection-provider.test.ts
-  ConflictDetectionProvider
-    1. Customer Double-Booking Detection
-      ΓêÜ should detect exact time overlap (5 ms)
-      ΓêÜ should detect partial overlap (start during existing)
-      ΓêÜ should detect partial overlap (end during existing)
-      ΓêÜ should warn about close bookings (within 30 minutes) (1 ms)
-      ├ù should allow booking with no overlap (2 ms)
-    2. Room/Bed Conflict Detection
-      ΓêÜ should detect room double-booking
-      ΓêÜ should allow booking different room
-      ΓêÜ should warn about insufficient turnover time (4 ms)
-      ΓêÜ should allow booking with sufficient turnover time
-    3. Equipment Conflict Detection
-      ΓêÜ should detect equipment unavailability (1 ms)
-      ΓêÜ should allow booking different equipment
-      ΓêÜ should detect multiple equipment conflicts
-      ΓêÜ should allow booking with no equipment
-    4. Package Sequence Validation
-      ΓêÜ should detect package sequence violation (1 ms)
-      ΓêÜ should allow booking if all previous sessions completed
-      ├ù should warn about insufficient interval between sessions (1 ms)
-      ΓêÜ should allow booking with sufficient interval
-    5. VIP Slot Protection
-      ΓêÜ should block non-VIP from booking VIP slot
-      ΓêÜ should allow VIP to book VIP slot
-      ΓêÜ should warn new customers about prime time slots
-    6. Resolution Generation
-      ΓêÜ should suggest reschedule for customer double-booking (1 ms)
-      ΓêÜ should suggest change room for room conflict
-      ΓêÜ should suggest alternative equipment for equipment conflict (1 ms)
-      ΓêÜ should sort suggestions by priority
-    7. Severity Calculation
-      ΓêÜ should determine blocking severity for blocking conflicts (1 ms)
-      ΓêÜ should determine warning severity when only warnings
-    8. Edge Cases & Performance
-      ΓêÜ should handle cancelled bookings correctly
-      ΓêÜ should handle empty existing bookings
-      ΓêÜ should detect multiple conflicts simultaneously (1 ms)
-      ΓêÜ should complete detection in < 50ms
-    9. Additional Edge Cases
-      ΓêÜ should handle disabled conflict detection
-      ΓêÜ should handle booking without room or equipment
-      ΓêÜ should handle booking without package
-      ΓêÜ should handle evening prime time slots (1 ms)
-      ΓêÜ should allow loyal customers in prime time
-      ΓêÜ should handle large number of existing bookings efficiently (1 ms)
-    10. Integration & Real-World Scenarios
-      ΓêÜ should handle complex scenario: customer + room + equipment conflicts (1 ms)
-      ΓêÜ should handle package booking with sequence and interval issues
-      ΓêÜ should handle VIP customer booking prime time successfully (1 ms)
-      ΓêÜ should provide comprehensive conflict report (4 ms)
+FAIL src/__tests__/system-monitor-actions.test.ts
+  system monitor actions
+    ΓêÜ returns a healthy system monitor summary when engines and config are clean (5 ms)
+    ΓêÜ raises critical status when cron smoke notification is still open (1 ms)
+    ├ù raises critical status when a business rule production alert is still open (4 ms)
+    ΓêÜ surfaces tenant isolation issues as a dedicated data check (1 ms)
+    ΓêÜ propagates system alert query failures instead of returning a fake healthy state (7 ms)
 
-  ΓùÅ ConflictDetectionProvider ΓÇ║ 1. Customer Double-Booking Detection ΓÇ║ should allow booking with no overlap
+  ΓùÅ system monitor actions ΓÇ║ raises critical status when a business rule production alert is still open
 
-    expect(received).toBe(expected) // Object.is equality
+    expect(received).toEqual(expected) // deep equality
 
-    Expected: false
-    Received: true
+    - Expected  - 2
+    + Received  + 6
 
-      224 |       const result = await provider.detectConflicts(input);
-      225 |
-    > 226 |       expect(result.hasConflicts).toBe(false);
-          |                                   ^
-      227 |       expect(result.success).toBe(true);
-      228 |       expect(result.conflicts.length).toBe(0);
-      229 |     });
+    - ObjectContaining {
+    -   "href": "/dashboard/system-monitor",
+    + Object {
+    +   "created_at": "2026-06-08T00:00:00.000Z",
+    +   "href": "/dashboard/accounting/health",
+        "id": "notif-rule-1",
+    +   "message": "Business rule guard phat hien 1 loi nghiem trong.",
+        "severity": "critical",
+    +   "title": "Rule engine production can xu ly",
+    +   "type": "business_rule_health_alert",
+      }
 
-      at Object.toBe (src/lib/decision-engine/providers/booking/__tests__/conflict-detection-provider.test.ts:226:35)
+      186 |     expect(summary.overall_status).toBe('critical');
+      187 |     expect(summary.quick_metrics.business_rule_open_alerts).toBe(1);
+    > 188 |     expect(summary.open_alerts[0]).toEqual(expect.objectContaining({
+          |                                    ^
+      189 |       id: 'notif-rule-1',
+      190 |       href: '/dashboard/system-monitor',
+      191 |       severity: 'critical',
 
-  ΓùÅ ConflictDetectionProvider ΓÇ║ 4. Package Sequence Validation ΓÇ║ should warn about insufficient interval between sessions
-
-    expect(received).toBe(expected) // Object.is equality
-
-    Expected: true
-    Received: false
-
-      609 |       const result = await provider.detectConflicts(input);
-      610 |
-    > 611 |       expect(result.hasConflicts).toBe(true);
-          |                                   ^
-      612 |       expect(result.conflicts.some(c => c.severity === 'warning')).toBe(true);
-      613 |       expect(result.matchedRules).toContain('conflict-231-package-min-interval');
-      614 |     });
-
-      at Object.toBe (src/lib/decision-engine/providers/booking/__tests__/conflict-detection-provider.test.ts:611:35)
+      at Object.toEqual (src/__tests__/system-monitor-actions.test.ts:188:36)
 
 Test Suites: 1 failed, 1 total
-Tests:       2 failed, 38 passed, 40 total
+Tests:       1 failed, 4 passed, 5 total
 Snapshots:   0 total
-Time:        0.84 s, estimated 1 s
-Ran all test suites matching conflict-detection-provider.test.ts.
+Time:        0.699 s, estimated 1 s
+Ran all test suites matching system-monitor-actions.test.ts.

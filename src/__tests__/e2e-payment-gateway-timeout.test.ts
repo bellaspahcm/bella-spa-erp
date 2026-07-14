@@ -57,7 +57,7 @@ describe('E2E Payment Gateway Timeout (Idempotency Test)', () => {
     } else {
       const { data: newPkg, error } = await supabase.from('packages').insert({
         tenant_id: testTenantId, name: 'Gateway Timeout Package', price: 5000000, total_sessions: 10,
-        session_multiplier: 1.0, status: 'active', duration: '60 phút', module_key: 'babycare',
+        session_multiplier: 1.0, status: 'active', duration: '60 phút', module_key: 'baby_care',
         service_kind: 'treatment_package', default_duration_minutes: 60, requires_resource: false, before_after_required: false,
       }).select('id').single();
       if (error) throw new Error(`Failed to create test package: ${error.message}`);
@@ -102,7 +102,9 @@ describe('E2E Payment Gateway Timeout (Idempotency Test)', () => {
       tenant_id: testTenantId, booking_id: testBookingId, amount: 5000000, payment_method: 'bank_transfer',
       status: 'confirmed', received_date: today, revenue_type: 'deposit',
       notes: 'Manual payment recorded by admin (webhook timeout)',
-      idempotency_key: `${testBookingId}-5000000-bank_transfer-${today}`, // Manual idempotency key
+      accounting_metadata: {
+        manual_payment_idempotency_key: `${testBookingId}-5000000-bank_transfer-${today}`, // Manual idempotency key
+      },
     }).select('*').single();
     expect(manualError).toBeNull();
 
@@ -122,7 +124,9 @@ describe('E2E Payment Gateway Timeout (Idempotency Test)', () => {
       tenant_id: testTenantId, booking_id: testBookingId, amount: 5000000, payment_method: 'bank_transfer',
       status: 'confirmed', received_date: today, revenue_type: 'deposit',
       notes: 'Payment via webhook (late arrival)',
-      idempotency_key: `${testBookingId}-5000000-bank_transfer-${today}`, // Same idempotency key
+      accounting_metadata: {
+        manual_payment_idempotency_key: `${testBookingId}-5000000-bank_transfer-${today}`, // Same idempotency key
+      },
     }).select('*').single();
 
     // Webhook insert should fail due to duplicate idempotency_key (unique constraint)

@@ -25,14 +25,20 @@ describe('E2E Partner API Scope Restriction', () => {
     const { data: tenant } = await supabase.from('tenants').select('id').eq('name', 'Test Scope Tenant').single();
     testTenantId = tenant?.id || (await supabase.from('tenants').insert({ name: 'Test Scope Tenant', status: 'active' }).select('id').single()).data!.id;
 
-    const { data: apiKey } = await supabase.from('partner_api_keys').insert({
+    const { data: apiKey } = await supabase.from('api_partners').insert({
       tenant_id: testTenantId,
-      key_name: 'Read-Only Partner',
+      partner_name: 'Read-Only Partner',
+      partner_type: 'pos',
+      partner_description: 'Test Description',
       api_key: `readonly-key-${Date.now()}`,
-      scope: ['orders:read'], // No write permission
-      status: 'active',
+      allowed_scopes: ['orders:read'], // No write permission
+      is_active: true,
     }).select('api_key').single();
     readOnlyApiKey = apiKey!.api_key;
+  });
+
+  afterAll(async () => {
+    if (readOnlyApiKey) await supabase.from('api_partners').delete().eq('api_key', readOnlyApiKey);
   });
 
   it('should block write operations for read-only partner', async () => {
@@ -41,12 +47,12 @@ describe('E2E Partner API Scope Restriction', () => {
 
     // Simulate scope check
     const { data: apiKeyData } = await supabase
-      .from('partner_api_keys')
-      .select('scope')
+      .from('api_partners')
+      .select('allowed_scopes')
       .eq('api_key', readOnlyApiKey)
       .single();
 
-    const hasWritePermission = apiKeyData?.scope?.includes('bookings:write');
+    const hasWritePermission = apiKeyData?.allowed_scopes?.includes('bookings:write');
 
     if (!hasWritePermission) {
       console.log('✅ Partner lacks write permission, request blocked (403)');

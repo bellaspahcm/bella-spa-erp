@@ -17,6 +17,9 @@ describe('E2E Partner API Create Booking', () => {
   let supabase: ReturnType<typeof createSupabaseClient<Database>>;
   let testTenantId: string;
   let partnerApiKey: string;
+  let testCustomerId: string;
+  let testPackageId: string;
+  let testBookingId: string;
 
   beforeAll(async () => {
     const { url, adminKey } = requireSupabaseAdminEnv();
@@ -26,16 +29,37 @@ describe('E2E Partner API Create Booking', () => {
     testTenantId = tenant?.id || (await supabase.from('tenants').insert({ name: 'Test Partner API Tenant', status: 'active' }).select('id').single()).data!.id;
 
     // Create partner API key
-    const { data: apiKey } = await supabase.from('partner_api_keys').insert({
+    const { data: apiKey } = await supabase.from('api_partners').insert({
       tenant_id: testTenantId,
-      key_name: 'Test Partner',
+      partner_name: 'Test Partner',
+      partner_type: 'pos',
+      partner_description: 'Test Partner',
       api_key: `test-partner-key-${Date.now()}`,
-      scope: ['bookings:write', 'orders:read'],
-      status: 'active',
+      allowed_scopes: ['bookings:write', 'orders:read'],
+      is_active: true,
     }).select('api_key').single();
     partnerApiKey = apiKey!.api_key;
 
     console.log('✅ Partner API key created');
+
+    const { data: customer } = await supabase.from('customers').insert({
+      tenant_id: testTenantId, name_mother: 'Partner Customer', phone: `098${Date.now().toString().slice(-7)}`, address: 'Partner address',
+    }).select('id').single();
+    testCustomerId = customer!.id;
+
+    const { data: pkg } = await supabase.from('packages').insert({
+      tenant_id: testTenantId, name: 'Standard Package', price: 5000000, total_sessions: 10,
+      session_multiplier: 1.0, status: 'active', duration: '60 phút', module_key: 'baby_care',
+      service_kind: 'treatment_package', default_duration_minutes: 60, requires_resource: false, before_after_required: false,
+    }).select('id').single();
+    testPackageId = pkg!.id;
+  });
+
+  afterAll(async () => {
+    if (testBookingId) await supabase.from('bookings').delete().eq('id', testBookingId);
+    if (testCustomerId) await supabase.from('customers').delete().eq('id', testCustomerId);
+    if (testPackageId) await supabase.from('packages').delete().eq('id', testPackageId);
+    if (partnerApiKey) await supabase.from('api_partners').delete().eq('api_key', partnerApiKey);
   });
 
   it('should allow partner to create booking via API key', async () => {
@@ -55,16 +79,19 @@ describe('E2E Partner API Create Booking', () => {
     const { data: booking, error: bookingError } = await supabase.from('bookings').insert({
       tenant_id: testTenantId,
       booking_number: bookingPayload.booking_number,
-      customer_id: 'partner-customer-id',
-      package_id: 'partner-package-id',
+      customer_id: testCustomerId,
+      package_id: testPackageId,
       start_date: bookingPayload.start_date,
       full_price: bookingPayload.full_price,
-      status: 'pending',
-      source: 'partner_api',
+      status: 'deposit_pending',
+      metadata: { source: 'partner_api' },
     }).select('*').single();
 
+    if (booking) testBookingId = booking.id;
+
     expect(bookingError).toBeNull();
-    expect(booking!.source).toBe('partner_api');
+    expect(booking!.metadata).toBeDefined();
+    expect((booking!.metadata as any).source).toBe('partner_api');
     expect(booking!.tenant_id).toBe(testTenantId);
 
     console.log('✅ Partner booking created via API', { bookingId: booking!.id });

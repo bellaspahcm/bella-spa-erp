@@ -179,9 +179,9 @@ describe('Booking Flow Integration Tests', () => {
 
       expect(sessionLog.booking_id).toBe(parentBookingId);
       expect(sessionLog.assigned_date).toBe(today);
-      expect(sessionLog.assigned_time).toBe('16:00');
+      expect(sessionLog.assigned_time.substring(0, 5)).toBe('16:00');
       expect(sessionLog.completed_by_ktv_id).toBe(TEST_IDS.ktvs.bob);
-      expect(sessionLog.duration_minutes).toBe(60);
+      expect(sessionLog.standard_duration).toBe(60);
       expect(sessionLog.status).toBe('pending');
       expect(sessionLog.notes).toBe('Test booking with notes');
       expect(sessionLog.tenant_id).toBe(TEST_IDS.tenant);
@@ -587,11 +587,16 @@ describe('Booking Flow Integration Tests', () => {
       assertAutoAssignmentSuccess(vipAssignment);
 
       // Get assigned KTV's rating
-      const { data: assignedKtv } = await testSupabase
+      const { data: assignedKtvData } = await testSupabase
         .from('users')
-        .select('avg_rating, full_name')
+        .select('metadata, full_name')
         .eq('id', vipAssignment.assignedKtvId!)
         .single();
+
+      const assignedKtv = assignedKtvData ? {
+        full_name: assignedKtvData.full_name,
+        avg_rating: (assignedKtvData.metadata as any)?.avg_rating
+      } : null;
 
       console.log(`[Test] VIP assigned to: ${assignedKtv?.full_name} (rating: ${assignedKtv?.avg_rating})`);
 
@@ -621,13 +626,17 @@ describe('Booking Flow Integration Tests', () => {
         for (let i = 0; i < 8; i++) {
           const hour = 8 + i * 2;
           const bookingId = await createParentBooking(TEST_IDS.customers.loyal);
-          await createBookingInput({
+          const input = createBookingInput({
             bookingId,
             assignedDate: today,
             assignedTime: `${String(hour).padStart(2, '0')}:00`,
             assignedKtvId: ktvId,
             durationMinutes: 90,
+            skipCapacityCheck: true,
+            skipConflictCheck: true,
+            skipAutoAssignment: true,
           });
+          await createBookingWithValidation(input);
         }
       }
 
@@ -674,6 +683,9 @@ describe('Booking Flow Integration Tests', () => {
           assignedTime: `${String(hour).padStart(2, '0')}:00`,
           assignedKtvId: TEST_IDS.ktvs.alice,
           durationMinutes: 90,
+          skipCapacityCheck: true,
+          skipConflictCheck: true,
+          skipAutoAssignment: true,
         });
         await createBookingWithValidation(input);
       }
@@ -735,11 +747,16 @@ describe('Booking Flow Integration Tests', () => {
       if (assignment.assignedKtvId) {
         assertAutoAssignmentSuccess(assignment);
         
-        const { data: assignedKtv } = await testSupabase
+        const { data: assignedKtvData } = await testSupabase
           .from('users')
-          .select('avg_rating, full_name')
+          .select('metadata, full_name')
           .eq('id', assignment.assignedKtvId)
           .single();
+
+        const assignedKtv = assignedKtvData ? {
+          full_name: assignedKtvData.full_name,
+          avg_rating: (assignedKtvData.metadata as any)?.avg_rating
+        } : null;
 
         expect(assignedKtv?.avg_rating).toBeGreaterThanOrEqual(4.0);
         expect(assignment.assignedKtvId).not.toBe(TEST_IDS.ktvs.david);
@@ -1082,30 +1099,35 @@ describe('Booking Flow Integration Tests', () => {
       console.log('\n--- Scenario 8: Concurrent Bookings ---');
 
       const today = new Date().toISOString().split('T')[0];
-      const targetTime = '05:00';
+      const targetTime = '09:00';
 
-      // Step 1: Create 5 concurrent booking requests for Alice at same time
-      const bookingPromises = Array.from({ length: 5 }, async (_, i) => {
-        const parentBookingId = await createParentBooking(TEST_IDS.customers.vip);
+      // Step 1: Create 5 parent bookings and input configurations sequentially
+      const inputs = [];
+      for (let i = 0; i < 5; i++) {
+        const customersList = [
+          TEST_IDS.customers.vip,
+          TEST_IDS.customers.loyal,
+          TEST_IDS.customers.new,
+          TEST_IDS.customers.emma_customer,
+          TEST_IDS.customers.concurrency_customer,
+        ];
+        const customerId = customersList[i];
+        const parentBookingId = await createParentBooking(customerId);
         const input = createBookingInput({
           bookingId: parentBookingId,
           assignedDate: today,
           assignedTime: targetTime, // Same time
           assignedKtvId: TEST_IDS.ktvs.alice, // Same KTV
-          customerId: TEST_IDS.customers.vip,
+          customerId,
           durationMinutes: 90,
         });
-
-        return {
-          index: i,
-          promise: createBookingWithValidation(input),
-        };
-      });
+        inputs.push(input);
+      }
 
       // Step 2: Execute all concurrently
       const { result: results, executionTime } = await measureExecutionTime(
         async () => {
-          const resultPromises = bookingPromises.map(bp => bp.promise);
+          const resultPromises = inputs.map(input => createBookingWithValidation(input));
           return Promise.all(resultPromises);
         },
         'Concurrent Bookings'
@@ -1204,6 +1226,9 @@ describe('Booking Flow Integration Tests', () => {
           assignedTime: `${String(hour).padStart(2, '0')}:00`,
           assignedKtvId: TEST_IDS.ktvs.alice,
           durationMinutes: 90,
+          skipCapacityCheck: true,
+          skipConflictCheck: true,
+          skipAutoAssignment: true,
         });
         await createBookingWithValidation(input);
       }
@@ -1213,13 +1238,20 @@ describe('Booking Flow Integration Tests', () => {
       console.log('[Test] Alice at 7/8 capacity');
 
       // Step 2: 3 concurrent requests for last slot
-      const bookingPromises = Array.from({ length: 3 }, async () => {
-        const parentBookingId = await createParentBooking(TEST_IDS.customers.vip);
+      const bookingPromises = Array.from({ length: 3 }, async (_, i) => {
+        const customersList = [
+          TEST_IDS.customers.vip,
+          TEST_IDS.customers.loyal,
+          TEST_IDS.customers.new,
+        ];
+        const customerId = customersList[i];
+        const parentBookingId = await createParentBooking(customerId);
         const input = createBookingInput({
           bookingId: parentBookingId,
           assignedDate: today,
           assignedTime: '03:00', // Different time to avoid time overlap
           assignedKtvId: TEST_IDS.ktvs.alice,
+          customerId,
           durationMinutes: 90,
         });
         return createBookingWithValidation(input);
@@ -1250,8 +1282,9 @@ describe('Booking Flow Integration Tests', () => {
 
       const today = new Date().toISOString().split('T')[0];
 
-      // Step 1: Create 10 concurrent bookings (different times, different KTVs)
-      const bookingPromises = Array.from({ length: 10 }, async (_, i) => {
+      // Step 1: Create 10 parent bookings and input configurations sequentially
+      const inputs = [];
+      for (let i = 0; i < 10; i++) {
         const hour = 8 + i;
         const ktvIds = [
           TEST_IDS.ktvs.alice,
@@ -1261,21 +1294,29 @@ describe('Booking Flow Integration Tests', () => {
         ];
         const ktvId = ktvIds[i % 4];
 
-        const parentBookingId = await createParentBooking(TEST_IDS.customers.vip);
+        const customersList = [
+          TEST_IDS.customers.vip,
+          TEST_IDS.customers.loyal,
+          TEST_IDS.customers.new,
+          TEST_IDS.customers.concurrency_customer,
+        ];
+        const customerId = customersList[i % 4];
+
+        const parentBookingId = await createParentBooking(customerId);
         const input = createBookingInput({
           bookingId: parentBookingId,
           assignedDate: today,
           assignedTime: `${String(hour).padStart(2, '0')}:00`,
           assignedKtvId: ktvId,
+          customerId,
           durationMinutes: 90,
         });
-
-        return createBookingWithValidation(input);
-      });
+        inputs.push(input);
+      }
 
       // Step 2: Measure concurrent execution
       const { result: results, executionTime } = await measureExecutionTime(
-        () => Promise.all(bookingPromises),
+        () => Promise.all(inputs.map(input => createBookingWithValidation(input))),
         'Concurrent Load Test'
       );
 

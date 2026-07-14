@@ -308,7 +308,7 @@ export async function checkBookingCapacity(input: {
   const rawClient = supabase as unknown as SupabaseClient;
   const { data: ktvProfileData } = await rawClient
     .from('users')
-    .select('id, full_name, position_tier, max_daily_bookings')
+    .select('id, full_name, position_tier, metadata')
     .eq('id', input.ktvId)
     .eq('role', 'ktv')
     .single();
@@ -319,7 +319,12 @@ export async function checkBookingCapacity(input: {
     position_tier: string | null;
     max_daily_bookings: number | null;
   }
-  const ktvProfile = ktvProfileData as unknown as KtvCapacityProfile | null;
+  const ktvProfile = ktvProfileData ? {
+    id: ktvProfileData.id,
+    full_name: ktvProfileData.full_name,
+    position_tier: ktvProfileData.position_tier,
+    max_daily_bookings: (ktvProfileData.metadata as Record<string, any>)?.max_daily_bookings || 8
+  } as KtvCapacityProfile : null;
 
   if (!ktvProfile) {
     throw new Error(`KTV not found: ${input.ktvId}`);
@@ -529,22 +534,24 @@ export async function autoAssignKtv(input: {
   const rawClientAuto = supabase as unknown as SupabaseClient;
   const { data: ktvListData } = await rawClientAuto
     .from('users')
-    .select('id, full_name, position_tier, skills, specializations, avg_rating, years_of_service, max_daily_bookings')
+    .select('id, full_name, position_tier, metadata')
     .eq('tenant_id', input.tenantId)
     .eq('role', 'ktv')
-    .eq('is_active', true);
+    .eq('status', 'active');
 
-  interface KtvCandidateDbRow {
-    id: string;
-    full_name: string | null;
-    position_tier: string | null;
-    skills: string[] | null;
-    specializations: string[] | null;
-    avg_rating: number | null;
-    years_of_service: number | null;
-    max_daily_bookings: number | null;
-  }
-  const ktvList = (ktvListData || []) as unknown as KtvCandidateDbRow[];
+  const ktvList = (ktvListData || []).map(row => {
+    const ktvMeta = (row.metadata as Record<string, any>) || {};
+    return {
+      id: row.id,
+      full_name: row.full_name,
+      position_tier: row.position_tier,
+      skills: ktvMeta.skills || [],
+      specializations: ktvMeta.specializations || [],
+      avg_rating: ktvMeta.avg_rating || 5.0,
+      years_of_service: ktvMeta.years_of_service || 0,
+      max_daily_bookings: ktvMeta.max_daily_bookings || 8,
+    };
+  });
 
   if (!ktvList || ktvList.length === 0) {
     return {

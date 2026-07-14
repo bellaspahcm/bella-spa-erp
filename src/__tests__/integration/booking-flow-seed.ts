@@ -56,6 +56,8 @@ export const TEST_IDS = {
     vip: '00000000-0000-0000-0000-000000000201',
     loyal: '00000000-0000-0000-0000-000000000202',
     new: '00000000-0000-0000-0000-000000000203',
+    emma_customer: '00000000-0000-0000-0000-000000000299',
+    concurrency_customer: '00000000-0000-0000-0000-000000000205',
   },
   
   services: {
@@ -86,26 +88,107 @@ export async function seedTestDatabase(): Promise<void> {
 
   try {
     // 1. Create test tenant
-    await testSupabase.from('tenants').upsert({
+    const { error: tenantError } = await testSupabase.from('tenants').upsert({
       id: TEST_IDS.tenant,
       name: 'Bella Test Spa',
       status: 'active',
       address: '123 Test Street',
       contact_name: 'Test Manager',
       contact_phone: '0123456789',
-      capacity_config: {
-        minBreakMinutes: 15,
-        workingHoursStart: '08:00',
-        workingHoursEnd: '20:00',
-        bufferPercentage: 10,
-        enablePeakHours: true,
-        peakHoursStart: '12:00',
-        peakHoursEnd: '18:00',
-        peakHoursMaxBookings: 6,
-        enforceBreakTimes: true,
+      metadata: {
+        capacity_config: {
+          minBreakMinutes: 15,
+          workingHoursStart: '00:00',
+          workingHoursEnd: '23:59',
+          bufferPercentage: 10,
+          enablePeakHours: true,
+          peakHoursStart: '12:00',
+          peakHoursEnd: '18:00',
+          peakHoursMaxBookings: 6,
+          enforceBreakTimes: true,
+        }
       },
     });
+    if (tenantError) throw tenantError;
     console.log('[Seed] ✅ Tenant created');
+
+    // 1.1 Create packages/services
+    const packagesToSeed = [
+      {
+        id: TEST_IDS.services.massage,
+        name: 'Body Massage',
+        description: 'Standard massage service',
+        full_price: 500000,
+        total_sessions: 1,
+        status: 'active',
+        tenant_id: TEST_IDS.tenant,
+        module_key: 'baby_care',
+        service_kind: 'single_service',
+        default_duration_minutes: 90,
+        requires_resource: false,
+        before_after_required: false,
+      },
+      {
+        id: TEST_IDS.services.facial,
+        name: 'Facial Care',
+        description: 'Facial care service',
+        full_price: 300000,
+        total_sessions: 1,
+        status: 'active',
+        tenant_id: TEST_IDS.tenant,
+        module_key: 'baby_care',
+        service_kind: 'single_service',
+        default_duration_minutes: 90,
+        requires_resource: false,
+        before_after_required: false,
+      },
+      {
+        id: TEST_IDS.services.combo,
+        name: 'Baby Care Combo',
+        description: 'Combo package for baby care',
+        full_price: 1500000,
+        total_sessions: 5,
+        status: 'active',
+        tenant_id: TEST_IDS.tenant,
+        module_key: 'baby_care',
+        service_kind: 'treatment_package',
+        default_duration_minutes: 90,
+        requires_resource: false,
+        before_after_required: false,
+      },
+      {
+        id: TEST_IDS.packages.standard,
+        name: 'Standard Package',
+        description: 'Standard baby care package',
+        full_price: 3000000,
+        total_sessions: 10,
+        status: 'active',
+        tenant_id: TEST_IDS.tenant,
+        module_key: 'baby_care',
+        service_kind: 'treatment_package',
+        default_duration_minutes: 90,
+        requires_resource: false,
+        before_after_required: false,
+      },
+      {
+        id: TEST_IDS.packages.vip,
+        name: 'VIP Package',
+        description: 'VIP baby care package',
+        full_price: 5000000,
+        total_sessions: 15,
+        status: 'active',
+        tenant_id: TEST_IDS.tenant,
+        module_key: 'baby_care',
+        service_kind: 'treatment_package',
+        default_duration_minutes: 90,
+        requires_resource: false,
+        before_after_required: false,
+      },
+    ];
+
+    const { error: packagesError } = await testSupabase.from('packages').upsert(packagesToSeed);
+    if (packagesError) throw packagesError;
+    console.log('[Seed] ✅ Packages created');
 
     // 2. Create KTVs with diverse profiles
     const ktvs = [
@@ -115,14 +198,16 @@ export async function seedTestDatabase(): Promise<void> {
         full_name: 'Alice Nguyen',
         phone: '0901234567',
         role: 'ktv',
-        position: 'Senior KTV',
+        position_tier: 'senior',
         tenant_id: TEST_IDS.tenant,
-        is_active: true,
-        skills: ['Massage', 'Deep Tissue Massage', 'Swedish Massage'],
-        specializations: ['Massage', 'Deep Tissue Massage'],
-        avg_rating: 4.8,
-        years_of_service: 5,
-        max_daily_bookings: 8,
+        status: 'active',
+        metadata: {
+          skills: ['Massage', 'Deep Tissue Massage', 'Swedish Massage'],
+          specializations: ['Massage', 'Deep Tissue Massage'],
+          avg_rating: 4.8,
+          years_of_service: 5,
+          max_daily_bookings: 8,
+        }
       },
       {
         id: TEST_IDS.ktvs.bob,
@@ -130,14 +215,16 @@ export async function seedTestDatabase(): Promise<void> {
         full_name: 'Bob Tran',
         phone: '0901234568',
         role: 'ktv',
-        position: 'KTV',
+        position_tier: 'junior',
         tenant_id: TEST_IDS.tenant,
-        is_active: true,
-        skills: ['Massage', 'Facial', 'Manicure'],
-        specializations: ['Facial'],
-        avg_rating: 4.5,
-        years_of_service: 2,
-        max_daily_bookings: 8,
+        status: 'active',
+        metadata: {
+          skills: ['Massage', 'Facial', 'Manicure'],
+          specializations: ['Facial'],
+          avg_rating: 4.5,
+          years_of_service: 2,
+          max_daily_bookings: 8,
+        }
       },
       {
         id: TEST_IDS.ktvs.carol,
@@ -145,14 +232,16 @@ export async function seedTestDatabase(): Promise<void> {
         full_name: 'Carol Le',
         phone: '0901234569',
         role: 'ktv',
-        position: 'Junior KTV',
+        position_tier: 'junior',
         tenant_id: TEST_IDS.tenant,
-        is_active: true,
-        skills: ['Massage', 'Manicure'],
-        specializations: [],
-        avg_rating: 4.2,
-        years_of_service: 1,
-        max_daily_bookings: 8,
+        status: 'active',
+        metadata: {
+          skills: ['Massage', 'Manicure'],
+          specializations: [],
+          avg_rating: 4.2,
+          years_of_service: 1,
+          max_daily_bookings: 8,
+        }
       },
       {
         id: TEST_IDS.ktvs.david,
@@ -160,14 +249,16 @@ export async function seedTestDatabase(): Promise<void> {
         full_name: 'David Pham',
         phone: '0901234570',
         role: 'ktv',
-        position: 'Senior KTV',
+        position_tier: 'senior',
         tenant_id: TEST_IDS.tenant,
-        is_active: true,
-        skills: ['Massage', 'Deep Tissue Massage'],
-        specializations: ['Massage'],
-        avg_rating: 3.2, // Low rating
-        years_of_service: 4,
-        max_daily_bookings: 8,
+        status: 'active',
+        metadata: {
+          skills: ['Massage', 'Deep Tissue Massage'],
+          specializations: ['Massage'],
+          avg_rating: 3.2,
+          years_of_service: 4,
+          max_daily_bookings: 8,
+        }
       },
       {
         id: TEST_IDS.ktvs.emma,
@@ -175,18 +266,21 @@ export async function seedTestDatabase(): Promise<void> {
         full_name: 'Emma Vo',
         phone: '0901234571',
         role: 'ktv',
-        position: 'KTV',
+        position_tier: 'junior',
         tenant_id: TEST_IDS.tenant,
-        is_active: true,
-        skills: ['Massage', 'Swedish Massage'],
-        specializations: ['Massage'],
-        avg_rating: 4.7,
-        years_of_service: 3,
-        max_daily_bookings: 8,
+        status: 'active',
+        metadata: {
+          skills: ['Massage', 'Swedish Massage'],
+          specializations: ['Massage'],
+          avg_rating: 4.7,
+          years_of_service: 3,
+          max_daily_bookings: 8,
+        }
       },
     ];
 
-    await testSupabase.from('users').upsert(ktvs);
+    const { error: ktvsError } = await testSupabase.from('users').upsert(ktvs);
+    if (ktvsError) throw ktvsError;
     console.log('[Seed] ✅ KTVs created (5 users)');
 
     // 3. Create customers
@@ -200,7 +294,9 @@ export async function seedTestDatabase(): Promise<void> {
         address: '456 VIP Street',
         tenant_id: TEST_IDS.tenant,
         status: 'active',
-        tier: 'vip', // Custom field for testing
+        metadata: {
+          tier: 'vip',
+        },
       },
       {
         id: TEST_IDS.customers.loyal,
@@ -211,7 +307,9 @@ export async function seedTestDatabase(): Promise<void> {
         address: '789 Loyal Avenue',
         tenant_id: TEST_IDS.tenant,
         status: 'active',
-        tier: 'loyal',
+        metadata: {
+          tier: 'loyal',
+        },
       },
       {
         id: TEST_IDS.customers.new,
@@ -222,12 +320,41 @@ export async function seedTestDatabase(): Promise<void> {
         address: '321 New Road',
         tenant_id: TEST_IDS.tenant,
         status: 'active',
-        tier: 'new',
+        metadata: {
+          tier: 'new',
+        },
+      },
+      {
+        id: TEST_IDS.customers.emma_customer,
+        phone: '0987654329',
+        name_mother: 'Emma Customer Vo',
+        name_baby: 'Baby Emma',
+        dob_baby: '2025-06-15',
+        address: '77 Emma Street',
+        tenant_id: TEST_IDS.tenant,
+        status: 'active',
+        metadata: {
+          tier: 'loyal',
+        },
+      },
+      {
+        id: TEST_IDS.customers.concurrency_customer,
+        phone: '0987654325',
+        name_mother: 'Concurrency Customer',
+        name_baby: 'Baby Concurrency',
+        dob_baby: '2025-06-15',
+        address: '55 Concurrency Street',
+        tenant_id: TEST_IDS.tenant,
+        status: 'active',
+        metadata: {
+          tier: 'loyal',
+        },
       },
     ];
 
-    await testSupabase.from('customers').upsert(customers);
-    console.log('[Seed] ✅ Customers created (3 customers)');
+    const { error: customersError } = await testSupabase.from('customers').upsert(customers);
+    if (customersError) throw customersError;
+    console.log('[Seed] ✅ Customers created (4 customers)');
 
     // 4. Seed existing bookings for Emma (to make her fully booked)
     const today = new Date().toISOString().split('T')[0];
@@ -241,9 +368,10 @@ export async function seedTestDatabase(): Promise<void> {
         assigned_date: today,
         assigned_time: `${String(hour).padStart(2, '0')}:00`,
         completed_by_ktv_id: TEST_IDS.ktvs.emma,
-        duration_minutes: 90,
+        standard_duration: 90,
         status: 'pending',
         tenant_id: TEST_IDS.tenant,
+        session_number: i + 1,
       });
     }
 
@@ -251,15 +379,19 @@ export async function seedTestDatabase(): Promise<void> {
     const emmaParentBookings = emmaBookings.map((session, i) => ({
       id: session.booking_id,
       booking_number: `TEST-EMMA-${String(i + 1).padStart(3, '0')}`,
-      customer_id: TEST_IDS.customers.loyal,
+      customer_id: TEST_IDS.customers.emma_customer,
+      package_id: TEST_IDS.packages.standard,
       status: 'booked',
       tenant_id: TEST_IDS.tenant,
       total_sessions: 1,
       completed_sessions: 0,
     }));
 
-    await testSupabase.from('bookings').upsert(emmaParentBookings);
-    await testSupabase.from('session_logs').upsert(emmaBookings);
+    const { error: parentBookingsError } = await testSupabase.from('bookings').upsert(emmaParentBookings);
+    if (parentBookingsError) throw parentBookingsError;
+
+    const { error: sessionsError } = await testSupabase.from('session_logs').upsert(emmaBookings);
+    if (sessionsError) throw sessionsError;
     console.log(`[Seed] ✅ Emma's bookings created (8 sessions on ${today})`);
 
     console.log('[Seed] ✅ Test database seeding completed successfully!');
@@ -288,38 +420,51 @@ export async function cleanupTestDatabase(): Promise<void> {
     // Delete in reverse order of creation (respect FK constraints)
     
     // 1. Delete session logs
-    await testSupabase
+    const { error: logsError } = await testSupabase
       .from('session_logs')
       .delete()
       .eq('tenant_id', TEST_IDS.tenant);
+    if (logsError) throw logsError;
     console.log('[Cleanup] ✅ Session logs deleted');
 
     // 2. Delete bookings
-    await testSupabase
+    const { error: bookingsError } = await testSupabase
       .from('bookings')
       .delete()
       .eq('tenant_id', TEST_IDS.tenant);
+    if (bookingsError) throw bookingsError;
     console.log('[Cleanup] ✅ Bookings deleted');
 
+    // 2.1 Delete packages
+    const { error: packagesError } = await testSupabase
+      .from('packages')
+      .delete()
+      .eq('tenant_id', TEST_IDS.tenant);
+    if (packagesError) throw packagesError;
+    console.log('[Cleanup] ✅ Packages deleted');
+
     // 3. Delete customers
-    await testSupabase
+    const { error: customersError } = await testSupabase
       .from('customers')
       .delete()
       .eq('tenant_id', TEST_IDS.tenant);
+    if (customersError) throw customersError;
     console.log('[Cleanup] ✅ Customers deleted');
 
     // 4. Delete users (KTVs)
-    await testSupabase
+    const { error: usersError } = await testSupabase
       .from('users')
       .delete()
       .eq('tenant_id', TEST_IDS.tenant);
+    if (usersError) throw usersError;
     console.log('[Cleanup] ✅ Users deleted');
 
     // 5. Delete tenant
-    await testSupabase
+    const { error: tenantError } = await testSupabase
       .from('tenants')
       .delete()
       .eq('id', TEST_IDS.tenant);
+    if (tenantError) throw tenantError;
     console.log('[Cleanup] ✅ Tenant deleted');
 
     console.log('[Cleanup] ✅ Test database cleanup completed successfully!');
@@ -357,6 +502,7 @@ export async function createTestBooking(params: {
     id: bookingId,
     booking_number: `TEST-${Date.now()}`,
     customer_id: params.customerId,
+    package_id: params.serviceType === 'Facial' ? TEST_IDS.services.facial : TEST_IDS.services.massage,
     status: 'booked',
     tenant_id: TEST_IDS.tenant,
     total_sessions: 1,
@@ -374,9 +520,10 @@ export async function createTestBooking(params: {
     assigned_date: params.date,
     assigned_time: params.time,
     completed_by_ktv_id: params.ktvId || null,
-    duration_minutes: params.durationMinutes || 90,
+    standard_duration: params.durationMinutes || 90,
     status: 'pending',
     tenant_id: TEST_IDS.tenant,
+    session_number: 1,
   });
 
   if (sessionError) {

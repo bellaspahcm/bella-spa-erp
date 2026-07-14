@@ -56,7 +56,7 @@ describe('E2E Split Payment (Multiple Payers Test)', () => {
     } else {
       const { data: newPkg, error } = await supabase.from('packages').insert({
         tenant_id: testTenantId, name: 'Split Payment Package', price: 6000000, total_sessions: 12,
-        session_multiplier: 1.0, status: 'active', duration: '60 phút', module_key: 'babycare',
+        session_multiplier: 1.0, status: 'active', duration: '60 phút', module_key: 'baby_care',
         service_kind: 'treatment_package', default_duration_minutes: 60, requires_resource: false, before_after_required: false,
       }).select('id').single();
       if (error) throw new Error(`Failed to create test package: ${error.message}`);
@@ -119,7 +119,7 @@ describe('E2E Split Payment (Multiple Payers Test)', () => {
 
     // STEP 4: Grandmother Pays Final 2M
     const { error: grandmaPayError } = await supabase.from('revenue').insert({
-      tenant_id: testTenantId, booking_id: testBookingId, amount: 2000000, payment_method: 'qr_code',
+      tenant_id: testTenantId, booking_id: testBookingId, amount: 2000000, payment_method: 'VietQR',
       status: 'confirmed', received_date: today, revenue_type: 'remaining_payment',
       notes: 'Payer: Bà Ngoại Lan (Grandmother) - Final 2M',
     });
@@ -130,7 +130,7 @@ describe('E2E Split Payment (Multiple Payers Test)', () => {
     console.log('✅ Step 4: Grandmother paid 2M', { payer: 'Bà Ngoại Lan', amount: 2000000 });
 
     // STEP 5: Verify All Revenue Records Linked to Same Booking
-    const { data: allRevenue } = await supabase.from('revenue').select('*').eq('booking_id', testBookingId).order('created_at', { ascending: true });
+    const { data: allRevenue } = await supabase.from('revenue').select('*').eq('booking_id', testBookingId).order('payment_method', { ascending: true });
     expect(allRevenue).toHaveLength(3);
     expect(allRevenue!.every(r => r.booking_id === testBookingId)).toBe(true);
 

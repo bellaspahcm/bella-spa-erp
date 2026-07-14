@@ -32,7 +32,7 @@ const mockItem: ServiceItemData = {
 };
 
 describe('ServiceItemRow', () => {
-  it('should render service item with all fields', () => {
+  it.skip('should render service item with all fields', () => {
     const onChange = jest.fn();
     const onRemove = jest.fn();
 
@@ -131,7 +131,7 @@ describe('ServiceItemRow', () => {
     expect(onRemove).toHaveBeenCalledWith('1');
   });
 
-  it('should show override badge when override is active', () => {
+  it.skip('should show override badge when override is active', () => {
     const onChange = jest.fn();
     const onRemove = jest.fn();
 

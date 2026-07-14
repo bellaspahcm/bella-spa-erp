@@ -16,6 +16,7 @@ jest.setTimeout(60_000);
 describe('E2E Partner API Rate Limit', () => {
   let supabase: ReturnType<typeof createSupabaseClient<Database>>;
   let testTenantId: string;
+  let testPartnerId: string;
   let partnerApiKey: string;
 
   beforeAll(async () => {
@@ -25,14 +26,24 @@ describe('E2E Partner API Rate Limit', () => {
     const { data: tenant } = await supabase.from('tenants').select('id').eq('name', 'Test Rate Limit Tenant').single();
     testTenantId = tenant?.id || (await supabase.from('tenants').insert({ name: 'Test Rate Limit Tenant', status: 'active' }).select('id').single()).data!.id;
 
-    const { data: apiKey } = await supabase.from('partner_api_keys').insert({
+    const { data: apiKey } = await supabase.from('api_partners').insert({
       tenant_id: testTenantId,
-      key_name: 'Rate Limited Partner',
+      partner_name: 'Rate Limited Partner',
+      partner_type: 'pos',
+      partner_description: 'Test Description',
       api_key: `rate-limit-key-${Date.now()}`,
-      rate_limit: 10, // 10 requests per minute
-      status: 'active',
-    }).select('api_key').single();
+      rate_limit_per_minute: 10,
+      is_active: true,
+    }).select('id, api_key').single();
+    testPartnerId = apiKey!.id;
     partnerApiKey = apiKey!.api_key;
+  });
+
+  afterAll(async () => {
+    if (testPartnerId) {
+      await supabase.from('api_request_logs').delete().eq('partner_id', testPartnerId);
+      await supabase.from('api_partners').delete().eq('id', testPartnerId);
+    }
   });
 
   it('should enforce rate limiting for partner API', async () => {
@@ -41,13 +52,12 @@ describe('E2E Partner API Rate Limit', () => {
     // Simulate 10 API calls (within limit)
     for (let i = 0; i < maxRequests; i++) {
       // Record API call in rate limit tracker
-      await supabase.from('partner_api_logs').insert({
+      await supabase.from('api_request_logs').insert({
         tenant_id: testTenantId,
-        api_key: partnerApiKey,
+        partner_id: testPartnerId,
         endpoint: '/api/bookings',
         method: 'POST',
         status_code: 200,
-        timestamp: new Date().toISOString(),
       });
     }
 
@@ -55,10 +65,10 @@ describe('E2E Partner API Rate Limit', () => {
 
     // 11th request should be blocked
     const { data: recentCalls } = await supabase
-      .from('partner_api_logs')
+      .from('api_request_logs')
       .select('*')
-      .eq('api_key', partnerApiKey)
-      .gte('timestamp', new Date(Date.now() - 60000).toISOString()); // Last 1 minute
+      .eq('partner_id', testPartnerId)
+      .gte('created_at', new Date(Date.now() - 60000).toISOString()); // Last 1 minute
 
     const callCount = recentCalls?.length || 0;
 

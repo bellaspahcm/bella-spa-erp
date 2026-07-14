@@ -96,5 +96,14 @@ try {
 } catch (error) {
   console.error('Connection error:', error.message);
 } finally {
+  console.log('\nCleaning up test tables...');
+  try {
+    await client.query(`DROP TABLE IF EXISTS test_migration_debug;`);
+    await client.query(`DROP TABLE IF EXISTS test_migration_check;`);
+    await client.query(`DROP TABLE IF EXISTS test_migration_coalesce;`);
+    console.log('✓ Cleanup OK');
+  } catch (err) {
+    console.log('✗ Cleanup failed:', err.message);
+  }
   await client.end();
 }

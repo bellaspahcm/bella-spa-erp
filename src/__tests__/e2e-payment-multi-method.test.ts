@@ -69,7 +69,7 @@ describe('E2E Multi-Payment Method (Payment Flow Test)', () => {
     } else {
       const { data: newPkg, error } = await supabase.from('packages').insert({
         tenant_id: testTenantId, name: 'Multi Payment Package', price: 5000000, total_sessions: 10,
-        session_multiplier: 1.0, status: 'active', duration: '60 phút', module_key: 'babycare',
+        session_multiplier: 1.0, status: 'active', duration: '60 phút', module_key: 'baby_care',
         service_kind: 'treatment_package', default_duration_minutes: 60, requires_resource: false, before_after_required: false,
       }).select('id').single();
       if (error) throw new Error(`Failed to create test package: ${error.message}`);
@@ -128,9 +128,9 @@ describe('E2E Multi-Payment Method (Payment Flow Test)', () => {
 
     console.log('✅ Step 3: Payment 2 (cash)', { amount: 2000000, totalPaid: 3000000 });
 
-    // STEP 4: Payment 3 - QR Code (2M)
+    // STEP 4: Payment 3 - VietQR (2M)
     const { data: payment3, error: payment3Error } = await supabase.from('revenue').insert({
-      tenant_id: testTenantId, booking_id: testBookingId, amount: 2000000, payment_method: 'qr_code',
+      tenant_id: testTenantId, booking_id: testBookingId, amount: 2000000, payment_method: 'VietQR',
       status: 'confirmed', received_date: today, revenue_type: 'remaining_payment', notes: 'QR code payment',
     }).select('*').single();
     expect(payment3Error).toBeNull();
@@ -140,18 +140,19 @@ describe('E2E Multi-Payment Method (Payment Flow Test)', () => {
     console.log('✅ Step 4: Payment 3 (qr_code)', { amount: 2000000, totalPaid: 5000000 });
 
     // STEP 5: Verify All Revenue Records
-    const { data: allRevenue } = await supabase.from('revenue').select('*').eq('booking_id', testBookingId).order('created_at', { ascending: true });
+    const { data: allRevenue, error: allRevenueError } = await supabase.from('revenue').select('*').eq('booking_id', testBookingId).order('payment_method', { ascending: true });
+    if (allRevenueError) throw new Error(`Query revenue failed: ${allRevenueError.message}`);
     expect(allRevenue).toHaveLength(3);
     expect(allRevenue![0].payment_method).toBe('bank_transfer');
     expect(allRevenue![0].amount).toBe(1000000);
     expect(allRevenue![1].payment_method).toBe('cash');
     expect(allRevenue![1].amount).toBe(2000000);
-    expect(allRevenue![2].payment_method).toBe('qr_code');
+    expect(allRevenue![2].payment_method).toBe('VietQR');
     expect(allRevenue![2].amount).toBe(2000000);
 
     console.log('✅ Step 5: All revenue records verified', {
       totalRecords: 3,
-      methods: ['bank_transfer', 'cash', 'qr_code'],
+      methods: ['bank_transfer', 'cash', 'VietQR'],
     });
 
     // STEP 6: Verify Total Payment

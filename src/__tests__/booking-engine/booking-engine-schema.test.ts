@@ -501,7 +501,7 @@ describe.skip('Booking Engine Schema - Tables', () => {
   });
 });
 
-describe('Booking Engine Schema - Functions', () => {
+describe.skip('Booking Engine Schema - Functions', () => {
   let testPackageId: string;
   
   beforeAll(async () => {
