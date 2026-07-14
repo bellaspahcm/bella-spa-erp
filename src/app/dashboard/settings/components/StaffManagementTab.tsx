@@ -347,8 +347,8 @@ export default function StaffManagementTab() {
                               full_name: user.full_name,
                               email: user.email,
                               role: user.role || "ktv",
-                              position_tier: (user as any).position_tier || null,
-                              hire_date: (user as any).hire_date || null,
+                              position_tier: user.position_tier || null,
+                              hire_date: user.hire_date || null,
                             });
                             setIsEditModalOpen(true);
                           }}

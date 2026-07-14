@@ -273,7 +273,10 @@ export async function getUsers(): Promise<StaffRecord[]> {
       role: user.role,
       status: user.status,
       sessions_count: user.session_logs?.[0]?.count || 0,
-      avg_rating: avgRating.toFixed(1)
+      avg_rating: avgRating.toFixed(1),
+      // Truyền qua để form Cập nhật nhân sự hiển thị đúng dữ liệu
+      hire_date: (user as unknown as Record<string, unknown>).hire_date as string | null ?? null,
+      position_tier: (user as unknown as Record<string, unknown>).position_tier as 'junior' | 'senior' | 'lead' | null ?? null,
     };
   });
 

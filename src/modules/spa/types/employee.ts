@@ -85,6 +85,10 @@ export interface StaffRecord {
   status: string;
   sessions_count?: number;
   avg_rating?: string | number;
+  /** Ngày vào làm — cần cho form Chỉnh sửaa thông tin và tính thâm niên */
+  hire_date?: string | null;
+  /** Cấp bậc vị trí — ảnh hưởng hệ số hoa hồng */
+  position_tier?: 'junior' | 'senior' | 'lead' | null;
 }
 
 // Database row types for related tables
