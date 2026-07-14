@@ -37,6 +37,7 @@ export interface SessionBooking {
   next_session_date: string | null;
   assigned_ktv_id: string | null;
   assigned_ktv_name: string | null;
+  tenant_id: string;
   created_at: string;
   last_updated_date: string | null;
   customers: {

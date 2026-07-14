@@ -37,6 +37,7 @@ import Link from 'next/link';
 import { useCallback,useEffect,useMemo,useState } from 'react';
 import { toast } from 'sonner';
 import { SessionBooking,SessionLog } from '../types';
+import { KtvSuggestionPanel } from './KtvSuggestionPanel';
 
 function getErrorMessage(error: unknown, fallback = 'Khong ro nguyen nhan') {
   if (error instanceof Error) return error.message || fallback;
@@ -951,6 +952,25 @@ export function SessionLogsDetailsModal({
                   )}
                 </div>
               </div>
+
+              {/* AI suggestion panel here! Only for admin */}
+              {userRole === 'admin' && (
+                <div className="bg-white p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] shadow-sm border border-slate-100">
+                  <KtvSuggestionPanel
+                    bookingId={activeBooking.id}
+                    tenantId={activeBooking.tenant_id}
+                    requestedDate={selectedDate || new Date().toLocaleDateString('sv-SE')}
+                    requestedStartTime={selectedTime || '09:00'}
+                    durationMinutes={selectedSessionLog?.standard_duration || 60}
+                    onKtvAssigned={async (ktvId, ktvName) => {
+                      if (onSuccess) {
+                        onSuccess();
+                      }
+                      await fetchSessionLogs(activeBooking.id);
+                    }}
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>
