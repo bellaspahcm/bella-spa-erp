@@ -28,6 +28,13 @@ jest.mock('../lib/supabase-server', () => ({
   })),
 }));
 
+jest.mock('@supabase/supabase-js', () => ({
+  createClient: jest.fn(() => ({
+    from: mockFrom,
+    rpc: mockRpc,
+  })),
+}));
+
 jest.mock('../services/user-actions', () => ({
   getCurrentUser: (...args: any[]) => mockGetCurrentUser(...args),
 }));
@@ -280,7 +287,8 @@ describe('customer actions fail-fast behavior', () => {
       .mockReturnValueOnce(reviewQuery)
       .mockReturnValueOnce(rollbackQuery);
 
-    await expect(submitCustomerRating('session-1', 5, 'Good')).rejects.toThrow(
+    // Use valid UUID format instead of 'session-1'
+    await expect(submitCustomerRating('550e8400-e29b-41d4-a716-446655440000', 5, 'Good')).rejects.toThrow(
       'Failed to fetch existing session review: review lookup failed'
     );
 
@@ -289,15 +297,15 @@ describe('customer actions fail-fast behavior', () => {
       rating_comment: null,
     });
     expect(updateQuery.filters).toEqual(expect.arrayContaining([
-      { column: 'id', value: 'session-1' },
+      { column: 'id', value: '550e8400-e29b-41d4-a716-446655440000' },
       { column: 'tenant_id', value: 'tenant-1' },
     ]));
     expect(reviewQuery.filters).toEqual(expect.arrayContaining([
-      { column: 'session_log_id', value: 'session-1' },
+      { column: 'session_log_id', value: '550e8400-e29b-41d4-a716-446655440000' },
       { column: 'tenant_id', value: 'tenant-1' },
     ]));
     expect(rollbackQuery.filters).toEqual(expect.arrayContaining([
-      { column: 'id', value: 'session-1' },
+      { column: 'id', value: '550e8400-e29b-41d4-a716-446655440000' },
       { column: 'tenant_id', value: 'tenant-1' },
     ]));
   });
