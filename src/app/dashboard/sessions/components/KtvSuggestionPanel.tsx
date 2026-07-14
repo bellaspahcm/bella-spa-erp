@@ -177,7 +177,7 @@ export function KtvSuggestionPanel({
                 {/* Micro Score Breakdown Charts */}
                 <div className="space-y-2 border-t border-slate-50 pt-3">
                   <div className="flex items-center justify-between text-[9px] font-bold text-slate-400 uppercase">
-                    <span>Mức tay nghề (Skill)</span>
+                    <span>Độ phù hợp kỹ năng</span>
                     <span className="font-mono text-slate-600">{suggestion.breakdown.skillMatch}/25</span>
                   </div>
                   <div className="w-full bg-slate-50 h-1.5 rounded-full overflow-hidden">
@@ -188,7 +188,7 @@ export function KtvSuggestionPanel({
                   </div>
 
                   <div className="flex items-center justify-between text-[9px] font-bold text-slate-400 uppercase">
-                    <span>Định mức tải (Load)</span>
+                    <span>Độ trống ca (Cân bằng tải)</span>
                     <span className="font-mono text-slate-600">{suggestion.breakdown.workloadBalance}/20</span>
                   </div>
                   <div className="w-full bg-slate-50 h-1.5 rounded-full overflow-hidden">
@@ -199,7 +199,7 @@ export function KtvSuggestionPanel({
                   </div>
 
                   <div className="flex items-center justify-between text-[9px] font-bold text-slate-400 uppercase">
-                    <span>Độ ưu tiên khách hàng</span>
+                    <span>Khách quen & Yêu thích</span>
                     <span className="font-mono text-slate-600">{suggestion.breakdown.customerPreference}/10</span>
                   </div>
                   <div className="w-full bg-slate-50 h-1.5 rounded-full overflow-hidden">
