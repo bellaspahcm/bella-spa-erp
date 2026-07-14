@@ -95,20 +95,24 @@ Execution Time:    26.2 seconds
 
 **Vấn đề ban đầu**: Bella ERP khởi tạo với Vitest nhưng sau đó migrate sang Jest để tương thích tốt hơn với Next.js và React ecosystem. Một số test files vẫn import từ Vitest gây **47 P0 blocking errors**.
 
-### 2.2. Current Status (Updated: 14/07/2026 17:00)
+### 2.2. Current Status (Updated: 14/07/2026 18:30)
 
 **Overall Test Results**:
 ```
-Test Suites: 196 passed, 48 failed, 6 skipped (79.8% pass rate)
-Tests:       2,713 passed, 194 failed, 188 skipped (87.7% pass rate)
+Test Suites: 197 passed, 47 failed, 6 skipped (80.3% pass rate)
+Tests:       2,725 passed, 192 failed, 188 skipped (87.8% pass rate)
 Duration:    ~26 seconds
 ```
 
 **Progress Tracking**:
 - **Baseline (Day 1)**: 251 failing tests
 - **Day 2**: 201 failing tests (-50, -19.9% improvement)
-- **Day 3**: 194 failing tests (-7, -2.8% improvement)
-- **Total Progress**: **-57 tests fixed (-22.7% improvement)**
+- **Day 3 Morning**: 194 failing tests (-7, -2.8% improvement)
+- **Day 3 Evening**: 192 failing tests (-2, -1.0% improvement)
+- **Total Progress**: **-59 tests fixed (-23.5% improvement)**
+
+**Latest Fixes**:
+- ✅ `customer-actions.test.ts` (12/12 passing) - Fixed UUID format + Supabase mock
 
 ### 2.3. P0 Issues Resolved (Framework Migration)
 
@@ -1189,4 +1193,73 @@ Full analysis documented in: `docs/TEST_FIX_DAY3_MIGRATION_ISSUE.md`
 2. ⏳ Skip affected tests with notes (ready to implement)
 3. ⏳ Track as tech debt for Q3 2027 (database migration strategy)
 4. ⏳ Update CI/CD to apply migrations before test runs (future improvement)
+
+---
+
+### 2.5. Quick Win: customer-actions.test.ts (Day 3 Evening)
+
+**Status**: ✅ **FIXED** - 12/12 tests passing  
+**Impact**: +2 tests fixed, +1 test suite fixed
+
+#### Issues Fixed
+
+**Issue #1**: `propagates customer portal booking query failures`
+- **Root Cause**: `getCustomerBookingByToken()` conditionally creates service-role Supabase client via `@supabase/supabase-js` when `token` parameter is provided
+- **Symptom**: Test mocked `lib/supabase-server` but not `@supabase/supabase-js`, causing mock to be bypassed
+- **Solution**: Mock both modules:
+  ```typescript
+  jest.mock('../lib/supabase-server', () => ({
+    createClient: jest.fn(() => Promise.resolve({
+      from: mockFrom,
+      rpc: mockRpc,
+    })),
+  }));
+  
+  jest.mock('@supabase/supabase-js', () => ({
+    createClient: jest.fn(() => ({
+      from: mockFrom,
+      rpc: mockRpc,
+    })),
+  }));
+  ```
+
+**Issue #2**: `rolls back session rating when review lookup fails`
+- **Root Cause**: Test used `'session-1'` as session ID, but Supabase expects valid UUID format
+- **Symptom**: Query failed at step 1 (fetch session) with "invalid input syntax for type uuid" instead of step 3 (fetch review)
+- **Solution**: Use valid UUID format:
+  ```typescript
+  // Before
+  await submitCustomerRating('session-1', 5, 'Good')
+  
+  // After
+  await submitCustomerRating('550e8400-e29b-41d4-a716-446655440000', 5, 'Good')
+  ```
+
+#### Lessons Learned
+
+1. **Mock all client creation paths**: Functions may create Supabase clients via multiple modules (service-role vs authenticated)
+2. **Use realistic test data**: UUIDs, dates, phone numbers should match production format
+3. **Trace error flow**: When assertion fails at wrong step, check if test data is causing early failure
+
+#### Test Results
+
+```
+PASS src/__tests__/customer-actions.test.ts
+  customer actions fail-fast behavior
+    ✓ scopes customer list queries to the current tenant
+    ✓ filters nested bookings and revenue to the current tenant in customer lists
+    ✓ supports offset pagination for incremental customer list loading
+    ✓ scopes customer detail queries to the current tenant
+    ✓ creates customers under the current tenant instead of trusting client tenant input
+    ✓ scopes customer updates and strips client tenant changes
+    ✓ scopes customer deletes to the current tenant
+    ✓ propagates customer list query failures
+    ✓ propagates customer detail query failures while preserving not-found as null
+    ✓ propagates customer portal booking query failures ← FIXED
+    ✓ propagates loyalty RPC failures
+    ✓ rolls back session rating when review lookup fails ← FIXED
+
+Test Suites: 1 passed, 1 total
+Tests:       12 passed, 12 total
+```
 
