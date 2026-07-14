@@ -507,6 +507,39 @@ export async function getPendingLeaveRequests() {
   return data || [];
 }
 
+/** Admin Action: Lấy tất cả đơn nghỉ phép đã xử lý (được duyệt hoặc từ chối) theo tháng */
+export async function getProcessedLeaveRequests(monthStr?: string) {
+  const supabase = await createClient();
+  const currentUser = await getCurrentUser();
+  if (!currentUser || currentUser.role === 'ktv') return [];
+
+  let query = supabase
+    .from('staff_leaves')
+    .select(`
+      *,
+      users!staff_leaves_user_id_fkey (
+        id,
+        full_name,
+        email,
+        role
+      )
+    `)
+    .in('status', ['approved', 'rejected']);
+
+  if (monthStr) {
+    const startOfMonth = `${monthStr}-01`;
+    const endOfMonth = getLocalDateString(new Date(new Date(startOfMonth).getFullYear(), new Date(startOfMonth).getMonth() + 1, 1));
+    query = query.gte('leave_date', startOfMonth).lt('leave_date', endOfMonth);
+  }
+
+  const { data, error } = await query.order('leave_date', { ascending: false });
+
+  if (error) {
+    throw new Error(`Failed to fetch processed leave requests: ${error.message}`);
+  }
+  return data || [];
+}
+
 /** Admin Action: Lấy tất cả các ca bị trùng/xung đột của KTV trong ngày nghỉ */
 export async function getKTVConflictSessions(
   ktvId: string,

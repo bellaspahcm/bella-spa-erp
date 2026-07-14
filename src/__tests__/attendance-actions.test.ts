@@ -5,6 +5,7 @@ import {
   getKTVTodayAttendance,
   getMonthlyAttendanceSummary,
   getPendingLeaveRequests,
+  getProcessedLeaveRequests,
 } from '../services/attendance-actions';
 
 jest.mock('next/cache', () => ({
@@ -34,6 +35,7 @@ class MockQueryBuilder {
 
   select() { return this; }
   eq() { return this; }
+  in() { return this; }
   gte() { return this; }
   lt() { return this; }
   order() { return this; }
@@ -87,6 +89,10 @@ class ScriptedQueryBuilder {
   }
 
   eq() { return this; }
+  in() { return this; }
+  gte() { return this; }
+  lt() { return this; }
+  order() { return this; }
   maybeSingle() { return this.resolve(); }
   single() { return this.resolve(); }
 
@@ -151,6 +157,35 @@ describe('attendance read actions fail-fast behavior', () => {
     await expect(getPendingLeaveRequests()).rejects.toThrow(
       'Failed to fetch pending leave requests: pending leaves failed'
     );
+  });
+
+  it('propagates processed leave query failures', async () => {
+    mockGetCurrentUser.mockResolvedValue({
+      id: 'admin-1',
+      role: 'admin',
+      tenant_id: 'tenant-1',
+    });
+    mockFrom.mockReturnValue(new MockQueryBuilder(null, { message: 'processed leaves failed' }));
+
+    await expect(getProcessedLeaveRequests('2026-07')).rejects.toThrow(
+      'Failed to fetch processed leave requests: processed leaves failed'
+    );
+  });
+
+  it('returns processed leave requests successfully', async () => {
+    mockGetCurrentUser.mockResolvedValue({
+      id: 'admin-1',
+      role: 'admin',
+      tenant_id: 'tenant-1',
+    });
+    const mockLeaves = [
+      { id: 'leave-1', status: 'approved', leave_date: '2026-07-14' },
+      { id: 'leave-2', status: 'rejected', leave_date: '2026-07-15' }
+    ];
+    mockFrom.mockReturnValue(new MockQueryBuilder(mockLeaves, null));
+
+    const result = await getProcessedLeaveRequests('2026-07');
+    expect(result).toEqual(mockLeaves);
   });
 
   it('propagates conflict session query failures', async () => {
