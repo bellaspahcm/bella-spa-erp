@@ -821,8 +821,8 @@ export function SessionLogsDetailsModal({
             </div>
 
             {/* Right: Calendar Grid */}
-            <div className="order-1 lg:order-2 lg:col-span-2">
-              <div className="bg-white p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] shadow-sm border border-slate-100 h-full">
+            <div className="order-1 lg:order-2 lg:col-span-2 space-y-6">
+              <div className="bg-white p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] shadow-sm border border-slate-100">
                 <div className="flex items-center justify-between mb-5 md:mb-8">
                   <h3 className="text-lg md:text-xl font-black text-slate-900 flex items-center gap-3">
                     <Calendar className="w-5 h-5 md:w-6 md:h-6 text-primary" /> Lịch trình
