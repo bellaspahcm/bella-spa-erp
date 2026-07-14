@@ -23,7 +23,7 @@
  */
 
 import { RuleReasoner } from '../../RuleReasoner';
-import type { Policy, Knowledge } from '../../types';
+import type { Policy } from '../../types';
 import { assignmentRules } from './rules/assignment-rules';
 import type {
   AutoAssignmentInput,
@@ -145,6 +145,13 @@ export class AutoAssignmentProvider {
       confidence: this.calculateConfidence(bestCandidate.score.total),
       reason: `Assigned to ${bestCandidate.candidate.name} (score: ${bestCandidate.score.total}/100): ${this.buildScoreReason(bestCandidate.score)}`,
       matchedRules: bestCandidate.matchedRules,
+      score: bestCandidate.score,
+      evaluationMetadata: {
+        algorithmVersion: '1.0.0',
+        totalCandidates: candidates.length,
+        eligibleCandidates: eligibleCandidates.length,
+        executionTimeMs: executionTime,
+      },
       alternatives,
       executionTime,
       provider: 'AutoAssignmentProvider',
@@ -242,9 +249,6 @@ export class AutoAssignmentProvider {
     };
 
     const matchedRules: string[] = [];
-
-    // Enrich knowledge for rule evaluation
-    const knowledge = this.enrichKnowledge(input, candidate);
 
     // Component 1: Skill Match (25 points)
     const requiredSkills = input.constraints?.requiredSkills || [];
@@ -577,7 +581,19 @@ export class AutoAssignmentProvider {
    * Convert Platform Rule condition to RuleReasoner condition
    * @private
    */
-  private convertConditionToReasoner(condition: any): any {
+  private convertConditionToReasoner(condition: {
+    type: string;
+    operator?: string;
+    field?: string;
+    value?: unknown;
+    conditions?: Array<{
+      type: string;
+      operator?: string;
+      field?: string;
+      value?: unknown;
+      conditions?: unknown[];
+    }>;
+  }): unknown {
     if (condition.type === 'simple') {
       // Handle 'exists' operator
       if (condition.operator === 'exists') {
@@ -592,7 +608,7 @@ export class AutoAssignmentProvider {
       return {
         type: 'comparison',
         field: condition.field,
-        operator: this.mapOperator(condition.operator),
+        operator: this.mapOperator(condition.operator || 'equals'),
         value: condition.value,
       };
     }
@@ -601,7 +617,7 @@ export class AutoAssignmentProvider {
       return {
         type: 'operator',
         operator: 'and',
-        conditions: condition.conditions.map((c: any) =>
+        conditions: (condition.conditions || []).map((c) =>
           this.convertConditionToReasoner(c)
         ),
       };
@@ -611,7 +627,7 @@ export class AutoAssignmentProvider {
       return {
         type: 'operator',
         operator: 'or',
-        conditions: condition.conditions.map((c: any) =>
+        conditions: (condition.conditions || []).map((c) =>
           this.convertConditionToReasoner(c)
         ),
       };

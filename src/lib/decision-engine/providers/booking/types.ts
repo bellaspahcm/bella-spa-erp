@@ -84,6 +84,24 @@ export interface AutoAssignmentOutput {
   /** Matched rules */
   matchedRules: string[];
 
+  /** Selected candidate's score breakdown (Explain Mode) */
+  score?: AssignmentScoreBreakdown;
+
+  /**
+   * Evaluation metadata for observability, performance comparison, and debugging.
+   * Does not influence the algorithm — purely informational.
+   */
+  evaluationMetadata?: {
+    /** Semver version of the scoring algorithm. Bump when weights change. */
+    algorithmVersion: string;
+    /** Total number of KTV candidates passed in before any filtering. */
+    totalCandidates: number;
+    /** Number of KTVs that passed the eligibility filter and were scored. */
+    eligibleCandidates: number;
+    /** Wall-clock time in ms for the evaluate() call. */
+    executionTimeMs: number;
+  };
+
   /** Alternative KTV suggestions (if assignment failed or for reference) */
   alternatives?: Array<{
     ktvId: string;
