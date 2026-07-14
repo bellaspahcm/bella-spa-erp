@@ -70,6 +70,7 @@ describe('E2E Refund with Commission Clawback (Edge Case Test)', () => {
       const { data: newPkg, error } = await supabase.from('packages').insert({
         tenant_id: testTenantId, name: 'Clawback Test Package', price: 5000000, total_sessions: 10,
         session_multiplier: 1.0, status: 'active', duration: '60 phút', module_key: 'babycare',
+        service_kind: 'treatment_package', default_duration_minutes: 60, requires_resource: false, before_after_required: false,
       }).select('id').single();
       if (error) throw new Error(`Failed to create test package: ${error.message}`);
       testPackageId = newPkg!.id;
