@@ -3,6 +3,8 @@ export interface SubAgentResponse {
   period: string;
   summary: string;
   data: unknown;
+  /** Payload rút gọn gửi vào prompt Gemini — tránh vượt giới hạn token */
+  aiSummaryData?: unknown;
   anomalies?: unknown[];
   draftProposals?: unknown[];
   reportType?: string;

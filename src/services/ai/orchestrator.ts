@@ -300,7 +300,7 @@ Thông tin ngữ cảnh:
 - Bộ trợ lý chuyên môn đang phân tích: ${assistantName}
 - Kỳ báo cáo: ${vietnameseDate}
 - Dữ liệu thô từ Hệ thống EIP chi nhánh:
-${JSON.stringify(subAgentResponse.data, null, 2)}
+${JSON.stringify(subAgentResponse.aiSummaryData ?? subAgentResponse.data, null, 2)}
 
 Yêu cầu định dạng phản hồi:
 Bạn phải trả về DUY NHẤT một chuỗi JSON hợp lệ (không chứa mã markdown \`\`\`json hay bất kỳ chữ nào ngoài JSON) có cấu trúc chính xác như sau:

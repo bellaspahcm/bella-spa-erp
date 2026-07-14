@@ -315,6 +315,43 @@ export async function runCMOAgent(
       recent_reviews: typedReviews,
       bad_reviews: badReviews
     },
+    // Payload rút gọn gửi vào Gemini — giới hạn token để tránh lỗi JSON parse
+    aiSummaryData: {
+      report_date: todayStr,
+      customers_total: totalCustomers || 0,
+      customers_new_this_month_count: newCustCount,
+      top_loyal_customers: topLoyalCustomers || [],
+      bookings_summary: bookingsSummary,
+      // Chỉ lấy 20 booking gần nhất, tránh payload quá lớn
+      bookings_recent_20: (bookings || [])
+        .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
+        .slice(0, 20)
+        .map(b => ({
+          status: b.status,
+          package_name: b.package_name,
+          completed_sessions: b.completed_sessions || 0,
+          total_sessions: b.total_sessions || 0,
+          progress: `${b.completed_sessions || 0}/${b.total_sessions || 0} buổi`,
+          created_at: b.created_at
+        })),
+      today_sessions: {
+        date: todayStr,
+        total: typedTodaySessions.length,
+        completed: todayCompletedCount,
+        pending: todayScheduledCount,
+        sessions: todaySessionsSummary
+      },
+      recent_sessions_7days: recentSessionsSummary,
+      csat: avgRating,
+      total_reviews: typedReviews.length,
+      // Chỉ gửi các đánh giá tiêu cực (đã được lọc) — không gửi toàn bộ review blob
+      bad_reviews: badReviews.map(r => ({
+        rating: r.rating,
+        note: r.note,
+        reviewer: pickName(r.reviewer),
+        ktv: pickKtv(r.ktv),
+      }))
+    },
     anomalies: badReviews.map((r) => ({
       type: "negative_feedback",
       customer_name: pickName(r.reviewer) || "Khách hàng ẩn danh",
