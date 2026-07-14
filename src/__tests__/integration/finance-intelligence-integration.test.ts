@@ -32,7 +32,7 @@ describe('Finance Intelligence Integration Tests', () => {
         .from('tenants')
         .insert({
           name: 'Test Tenant for Finance Intelligence',
-          tier: 'premium',
+          subscription_tier: 'premium',
           status: 'active',
         })
         .select('id')
