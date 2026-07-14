@@ -18,6 +18,7 @@
  */
 
 import { createClient } from '@/lib/supabase-server';
+import { SupabaseClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
 import {
   checkBookingCapacity,
@@ -609,10 +610,42 @@ function validateInput(input: CreateBookingInput): string | null {
   return null;
 }
 
+async function verifySalaryRecordNotLocked(
+  supabase: SupabaseClient,
+  ktvId: string | null,
+  monthYear: string,
+  tenantId: string
+): Promise<{ success: boolean; error?: string }> {
+  if (!ktvId) return { success: true };
+  const { data: salaryRecord, error } = await supabase
+    .from('salary_records')
+    .select('status, is_locked')
+    .eq('ktv_id', ktvId)
+    .eq('month_year', monthYear)
+    .eq('tenant_id', tenantId)
+    .maybeSingle();
+
+  if (error) {
+    return { success: false, error: 'Không thể kiểm tra trạng thái bảng lương: ' + error.message };
+  }
+
+  if (salaryRecord) {
+    if (salaryRecord.is_locked) {
+      return { success: false, error: 'Không thể điều chỉnh: Bảng lương đã bị khóa (month-end close). Liên hệ kế toán để mở khóa.' };
+    }
+    if (salaryRecord.status === 'finalized') {
+      return { success: false, error: 'Không thể điều chỉnh: Bảng lương đã hoàn tất (finalized) và đã xuất chi. Điều chỉnh sẽ không có hiệu lực.' };
+    }
+  }
+
+  return { success: true };
+}
+
 /**
  * Update existing session log (for rescheduling)
  * 
  * @param sessionId - Session log ID to update
+ * @param tenantId - Tenant ID
  * @param updates - Fields to update
  * @returns Update result
  */
@@ -637,6 +670,42 @@ export async function updateSessionLog(
       return { success: false, error: 'Unauthorized' };
     }
 
+    // Fetch existing log
+    const { data: existingLog, error: fetchError } = await supabase
+      .from('session_logs')
+      .select('*')
+      .eq('id', sessionId)
+      .eq('tenant_id', tenantId)
+      .single();
+
+    if (fetchError || !existingLog) {
+      return { success: false, error: 'Không tìm thấy buổi dịch vụ' };
+    }
+
+    // Check old salary lock (if completed)
+    if (existingLog.status === 'completed' && existingLog.completed_by_ktv_id && existingLog.completed_date) {
+      const monthYear = `${existingLog.completed_date.substring(0, 7)}-01`;
+      const lockCheck = await verifySalaryRecordNotLocked(supabase, existingLog.completed_by_ktv_id, monthYear, tenantId);
+      if (!lockCheck.success) {
+        return { success: false, error: lockCheck.error };
+      }
+    }
+
+    // Check new salary lock (if transitioning to completed or changing KTV/date of a completed session)
+    const isTransitioningToCompleted = updates.status === 'completed' && existingLog.status !== 'completed';
+    const targetKtvId = updates.assignedKtvId !== undefined ? updates.assignedKtvId : existingLog.completed_by_ktv_id;
+    const targetCompletedDate = existingLog.completed_date || updates.assignedDate || existingLog.assigned_date;
+    const isCompletedKtvChanging = existingLog.status === 'completed' && updates.assignedKtvId !== undefined && updates.assignedKtvId !== existingLog.completed_by_ktv_id;
+    const isCompletedDateChanging = existingLog.status === 'completed' && updates.assignedDate !== undefined && updates.assignedDate !== existingLog.completed_date;
+
+    if ((isTransitioningToCompleted || isCompletedKtvChanging || isCompletedDateChanging) && targetKtvId && targetCompletedDate) {
+      const monthYear = `${targetCompletedDate.substring(0, 7)}-01`;
+      const lockCheck = await verifySalaryRecordNotLocked(supabase, targetKtvId, monthYear, tenantId);
+      if (!lockCheck.success) {
+        return { success: false, error: lockCheck.error };
+      }
+    }
+
     // Update session log
     const { error: updateError } = await supabase
       .from('session_logs')
@@ -647,6 +716,7 @@ export async function updateSessionLog(
         standard_duration: updates.durationMinutes,
         status: updates.status,
         notes: updates.notes,
+        ...(updates.status === 'completed' && !existingLog.completed_date ? { completed_date: updates.assignedDate || existingLog.assigned_date } : {})
       })
       .eq('id', sessionId)
       .eq('tenant_id', tenantId);
@@ -654,6 +724,79 @@ export async function updateSessionLog(
     if (updateError) {
       console.error('[UpdateSessionLog] Update failed', updateError);
       return { success: false, error: updateError.message };
+    }
+
+    // Trigger recalculations
+    let oldRecalcFailed = false;
+    let oldRecalcErrorMsg = '';
+
+    if (existingLog.status === 'completed' && existingLog.completed_by_ktv_id && existingLog.completed_date) {
+      const monthYear = `${existingLog.completed_date.substring(0, 7)}-01`;
+      try {
+        const { recalculateAndSaveSalaryRecord } = await import('@/modules/hr-salary/actions/admin-salary-actions');
+        await recalculateAndSaveSalaryRecord(supabase, existingLog.completed_by_ktv_id, monthYear, tenantId);
+      } catch (err) {
+        oldRecalcFailed = true;
+        oldRecalcErrorMsg = err instanceof Error ? err.message : 'Lỗi tính toán lương cũ';
+      }
+    }
+
+    const currentCompletedDate = updates.assignedDate || existingLog.completed_date || existingLog.assigned_date;
+    const currentKtvId = updates.assignedKtvId !== undefined ? updates.assignedKtvId : existingLog.completed_by_ktv_id;
+
+    // Check if new KTV/month is different from old completed KTV/month
+    const isDifferentKtvOrMonth = currentKtvId !== existingLog.completed_by_ktv_id ||
+      (currentCompletedDate && existingLog.completed_date && currentCompletedDate.substring(0, 7) !== existingLog.completed_date.substring(0, 7));
+
+    if (!oldRecalcFailed && (updates.status === 'completed' || existingLog.status === 'completed') && currentKtvId && currentCompletedDate && isDifferentKtvOrMonth) {
+      const monthYear = `${currentCompletedDate.substring(0, 7)}-01`;
+      try {
+        const { recalculateAndSaveSalaryRecord } = await import('@/modules/hr-salary/actions/admin-salary-actions');
+        await recalculateAndSaveSalaryRecord(supabase, currentKtvId, monthYear, tenantId);
+      } catch (err) {
+        console.error('[UpdateSessionLog] New recalculation failed, rolling back...', err);
+        // Rollback update in database
+        await supabase
+          .from('session_logs')
+          .update({
+            assigned_date: existingLog.assigned_date,
+            assigned_time: existingLog.assigned_time,
+            completed_by_ktv_id: existingLog.completed_by_ktv_id,
+            standard_duration: existingLog.standard_duration,
+            status: existingLog.status,
+            notes: existingLog.notes,
+            completed_date: existingLog.completed_date,
+          })
+          .eq('id', sessionId)
+          .eq('tenant_id', tenantId);
+
+        // Re-recalculate old KTV/month if we recalculated it
+        if (existingLog.status === 'completed' && existingLog.completed_by_ktv_id && existingLog.completed_date) {
+          const oldMonthYear = `${existingLog.completed_date.substring(0, 7)}-01`;
+          const { recalculateAndSaveSalaryRecord } = await import('@/modules/hr-salary/actions/admin-salary-actions');
+          await recalculateAndSaveSalaryRecord(supabase, existingLog.completed_by_ktv_id, oldMonthYear, tenantId);
+        }
+        return { success: false, error: err instanceof Error ? err.message : 'Lỗi tính toán lương mới' };
+      }
+    }
+
+    if (oldRecalcFailed) {
+      console.error('[UpdateSessionLog] Old recalculation failed, rolling back...', oldRecalcErrorMsg);
+      // Rollback update in database
+      await supabase
+        .from('session_logs')
+        .update({
+          assigned_date: existingLog.assigned_date,
+          assigned_time: existingLog.assigned_time,
+          completed_by_ktv_id: existingLog.completed_by_ktv_id,
+          standard_duration: existingLog.standard_duration,
+          status: existingLog.status,
+          notes: existingLog.notes,
+          completed_date: existingLog.completed_date,
+        })
+        .eq('id', sessionId)
+        .eq('tenant_id', tenantId);
+      return { success: false, error: oldRecalcErrorMsg };
     }
 
     // Revalidate paths
@@ -689,6 +832,27 @@ export async function deleteSessionLog(
       return { success: false, error: 'Unauthorized' };
     }
 
+    // Get existing session log for lock check and potential rollback
+    const { data: existingLog, error: fetchError } = await supabase
+      .from('session_logs')
+      .select('*')
+      .eq('id', sessionId)
+      .eq('tenant_id', tenantId)
+      .single();
+
+    if (fetchError || !existingLog) {
+      return { success: false, error: 'Không tìm thấy buổi dịch vụ' };
+    }
+
+    // Check salary lock
+    if (existingLog.status === 'completed' && existingLog.completed_by_ktv_id && existingLog.completed_date) {
+      const monthYear = `${existingLog.completed_date.substring(0, 7)}-01`;
+      const lockCheck = await verifySalaryRecordNotLocked(supabase, existingLog.completed_by_ktv_id, monthYear, tenantId);
+      if (!lockCheck.success) {
+        return { success: false, error: lockCheck.error };
+      }
+    }
+
     // Delete session log
     const { error: deleteError } = await supabase
       .from('session_logs')
@@ -699,6 +863,20 @@ export async function deleteSessionLog(
     if (deleteError) {
       console.error('[DeleteSessionLog] Delete failed', deleteError);
       return { success: false, error: deleteError.message };
+    }
+
+    // Trigger recalculation
+    if (existingLog.status === 'completed' && existingLog.completed_by_ktv_id && existingLog.completed_date) {
+      const monthYear = `${existingLog.completed_date.substring(0, 7)}-01`;
+      try {
+        const { recalculateAndSaveSalaryRecord } = await import('@/modules/hr-salary/actions/admin-salary-actions');
+        await recalculateAndSaveSalaryRecord(supabase, existingLog.completed_by_ktv_id, monthYear, tenantId);
+      } catch (err) {
+        console.error('[DeleteSessionLog] Recalculation failed, rolling back delete...', err);
+        // Insert back to database
+        await supabase.from('session_logs').insert(existingLog);
+        return { success: false, error: err instanceof Error ? err.message : 'Lỗi tính toán lương' };
+      }
     }
 
     // Revalidate paths

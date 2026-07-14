@@ -14,6 +14,12 @@ import {
   getSessionPackageMultiplier,
 } from './salary-attendance-calculation';
 import { buildSalaryDisplayComponents } from '@/lib/business-rules/salary';
+import {
+  calculatePositionBonus,
+  calculateSeniorityBonus,
+  aggregateManualAdjustments,
+  type CommissionConfig,
+} from '@/lib/business-rules/commission';
 import { KtvSalaryRecord, KtvSessionMatrix, KtvSessionMatrixRecord, TenantSalaryConfig } from '@/types/domain';
 
 // Interfaces for Database Records
@@ -25,6 +31,7 @@ interface KtvUserData {
   hire_date: string | null;
   resignation_date: string | null;
   status: string | null;
+  position_tier?: 'junior' | 'senior' | 'lead' | null;
 }
 
 interface SalaryRecordDb {
@@ -40,6 +47,11 @@ interface SalaryRecordDb {
   service_percentage_bonus: number | null;
   total_salary: number | null;
   status: string | null;
+  service_commission?: number | null;
+  product_sales_commission?: number | null;
+  position_bonus?: number | null;
+  seniority_bonus?: number | null;
+  manual_adjustments?: number | null;
 }
 
 interface SessionReviewDb {
@@ -173,7 +185,7 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
 
     const { data: tenantData, error: tenantError } = await supabase
       .from('tenants')
-      .select('salary_config')
+      .select('salary_config, commission_config')
       .eq('id', tenantId)
       .single();
     if (tenantError) {
@@ -188,6 +200,15 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
       kpi_bonus_amount:      stored.kpi_bonus_amount      ?? 1000000,
       penalty_late_per_day:  stored.penalty_late_per_day  ?? 50000,
       penalty_absent_per_day: stored.penalty_absent_per_day ?? 200000,
+    };
+
+    const commissionConfig = (tenantData?.commission_config as unknown as Partial<CommissionConfig>) || {};
+    const positionMultipliers = commissionConfig.position_multipliers || { junior: 1.0, senior: 1.2, lead: 1.5 };
+    const seniorityBonusRates = commissionConfig.seniority_bonus_rates || {
+      '0_to_1_year': 0.00,
+      '1_to_3_years': 0.05,
+      '3_to_5_years': 0.10,
+      '5_plus_years': 0.15,
     };
 
     const { data: kpiConfigData } = await supabase
@@ -205,10 +226,9 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
       }
     }
 
-    // Fetch KTVs
     const ktvQuery = supabase
       .from('users')
-      .select('id, full_name, role, base_salary, hire_date, resignation_date, status')
+      .select('id, full_name, role, base_salary, hire_date, resignation_date, status, position_tier')
       .eq('role', 'ktv')
       .eq('tenant_id', tenantId);
 
@@ -347,6 +367,42 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
       productSalesCommissionByKtv.set(sale.ktv_id, current + Number(sale.calculated_commission || 0));
     });
 
+    // Fetch booking service items commission for all KTVs this month
+    const { data: serviceItemsData, error: serviceItemsError } = await (supabase as any)
+      .from('booking_service_items')
+      .select('ktv_id, calculated_commission')
+      .eq('status', 'completed')
+      .gte('completed_date', startOfMonthStr)
+      .lt('completed_date', endOfMonthStr)
+      .eq('tenant_id', tenantId);
+
+    if (serviceItemsError) {
+      console.error('[getSalaryData] booking_service_items query failed:', serviceItemsError);
+    }
+    const serviceItemsCommissionByKtv = new Map<string, number>();
+    ((serviceItemsData || []) as { ktv_id: string; calculated_commission: number | null }[]).forEach((item) => {
+      const current = serviceItemsCommissionByKtv.get(item.ktv_id) ?? 0;
+      serviceItemsCommissionByKtv.set(item.ktv_id, current + Number(item.calculated_commission || 0));
+    });
+
+    // Fetch manual adjustments for all KTVs this month
+    const { data: adjustmentsData, error: adjustmentsError } = await (supabase as any)
+      .from('salary_adjustments')
+      .select('ktv_id, adjustment_type, amount, status')
+      .eq('status', 'approved')
+      .eq('month_year', currentMonthYear)
+      .eq('tenant_id', tenantId);
+
+    if (adjustmentsError) {
+      console.error('[getSalaryData] salary_adjustments query failed:', adjustmentsError);
+    }
+    const manualAdjustmentsByKtv = new Map<string, Array<{ adjustment_type: 'bonus' | 'deduction'; amount: number; status: string }>>();
+    ((adjustmentsData || []) as Array<{ ktv_id: string; adjustment_type: 'bonus' | 'deduction'; amount: number; status: string } >).forEach((adj) => {
+      const list = manualAdjustmentsByKtv.get(adj.ktv_id) ?? [];
+      list.push(adj);
+      manualAdjustmentsByKtv.set(adj.ktv_id, list);
+    });
+
     const ktvSalaries = await Promise.all(realKtvs.map(async (ktv) => {
         const record = salaryRecords.find((r) => r.ktv_id === ktv.id);
         
@@ -389,6 +445,22 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
           }
         }
 
+        const liveServiceCommission = serviceItemsCommissionByKtv.get(ktv.id) ?? 0;
+        const liveManualAdjustments = aggregateManualAdjustments({
+          adjustments: manualAdjustmentsByKtv.get(ktv.id) ?? [],
+        });
+        const positionTier = (ktv.position_tier || 'junior') as 'junior' | 'senior' | 'lead';
+        const livePositionBonus = calculatePositionBonus({
+          baseCommission: liveServiceCommission,
+          positionTier,
+          multipliers: positionMultipliers,
+        });
+        const liveSeniorityBonus = calculateSeniorityBonus({
+          baseSalary: liveBaseSalary,
+          hireDate: ktv.hire_date,
+          bonusRates: seniorityBonusRates,
+        });
+
         const salaryDisplay = buildSalaryDisplayComponents({
           record,
           liveSessionsCount,
@@ -399,11 +471,11 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
           liveDeductions: autoAttendancePenalty,
           liveAdvances: 0,
           // Advanced commission components (Task 28-32)
-          liveServiceCommission: 0,
+          liveServiceCommission,
           liveProductSalesCommission: productSalesCommissionByKtv.get(ktv.id) ?? 0,
-          livePositionBonus: 0,
-          liveSeniorityBonus: 0,
-          liveManualAdjustments: 0,
+          livePositionBonus,
+          liveSeniorityBonus,
+          liveManualAdjustments,
         });
 
         return {
@@ -651,12 +723,13 @@ export async function getKtvSessionMatrix(): Promise<KtvSessionMatrix> {
     const rows = realKtvs.map((ktv) => {
       const row: KtvSessionMatrixRecord = { id: ktv.id, name: ktv.full_name || '', isConfirmed: false };
       
-      // Determine if this KTV's sessions are confirmed
       const salaryRecord = salaryRecords.find((r) => r.ktv_id === ktv.id);
-      
-      // Confirmed ONLY if status is explicitly pending_approval or approved
+      // Confirmed if status is pending_approval, approved, confirmed, or finalized
       row.isConfirmed = !!(salaryRecord && 
-                        (salaryRecord.status === 'pending_approval' || salaryRecord.status === 'approved'));
+                        (salaryRecord.status === 'pending_approval' || 
+                         salaryRecord.status === 'approved' || 
+                         salaryRecord.status === 'confirmed' || 
+                         salaryRecord.status === 'finalized'));
       
       packageNames.forEach((pkg: string) => {
         if (hasAnyRealData && matrix[ktv.id]) {

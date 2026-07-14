@@ -10,7 +10,7 @@ getUsers,
 updateUser,
 updateUserStatus,
 } from "@/services/user-actions";
-import { StaffRecord } from "@/types/domain";
+import type { StaffRecord } from "@/modules/spa/types/employee";
 import { useModuleVocabulary } from "@/hooks/useModuleVocabulary";
 import { AnimatePresence,motion } from "framer-motion";
 import {

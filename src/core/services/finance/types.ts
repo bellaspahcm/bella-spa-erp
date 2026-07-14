@@ -44,6 +44,8 @@ export interface ExpenseDBRow {
 export interface KtvDBRow {
   id: string;
   base_salary?: number;
+  hire_date?: string | null;
+  position_tier?: 'junior' | 'senior' | 'lead' | null;
 }
 
 export interface SalaryRecordDBRow {
@@ -56,6 +58,11 @@ export interface SalaryRecordDBRow {
   total_salary?: number | string | null;
   session_bonus?: number | string | null;
   rating_bonus?: number | string | null;
+  service_commission?: number | string | null;
+  product_sales_commission?: number | string | null;
+  position_bonus?: number | string | null;
+  seniority_bonus?: number | string | null;
+  manual_adjustments?: number | string | null;
 }
 
 export interface SessionReviewDBRow {

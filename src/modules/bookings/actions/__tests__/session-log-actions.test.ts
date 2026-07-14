@@ -14,61 +14,90 @@
  * @module bookings/actions/__tests__
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
+
+const mockCreateClient = jest.fn();
+const mockCheckBookingCapacity = jest.fn();
+const mockAutoAssignKtv = jest.fn();
+const mockCheckBookingConflicts = jest.fn();
+const mockRevalidatePath = jest.fn();
+
+// Mock Supabase
+jest.mock('@/lib/supabase-server', () => ({
+  createClient: () => mockCreateClient(),
+}));
+
+// Mock booking decision service
+jest.mock('@/services/booking-decision.service', () => ({
+  checkBookingCapacity: (...args: unknown[]) => mockCheckBookingCapacity(...args),
+  autoAssignKtv: (...args: unknown[]) => mockAutoAssignKtv(...args),
+  checkBookingConflicts: (...args: unknown[]) => mockCheckBookingConflicts(...args),
+}));
+
+// Mock Next.js cache
+jest.mock('next/cache', () => ({
+  revalidatePath: (...args: unknown[]) => mockRevalidatePath(...args),
+}));
+
 import {
   createBookingWithValidation,
   updateSessionLog,
   deleteSessionLog,
 } from '../session-log-actions';
 
-// Mock Supabase
-vi.mock('@/lib/supabase-server', () => ({
-  createClient: vi.fn(),
-}));
-
-// Mock booking decision service
-vi.mock('@/services/booking-decision.service', () => ({
-  checkBookingCapacity: vi.fn(),
-  autoAssignKtv: vi.fn(),
-}));
-
-// Mock Next.js cache
-vi.mock('next/cache', () => ({
-  revalidatePath: vi.fn(),
-}));
-
-import { createClient } from '@/lib/supabase-server';
-import {
-  checkBookingCapacity,
-  autoAssignKtv,
-} from '@/services/booking-decision.service';
-import { revalidatePath } from 'next/cache';
-
 describe('Session Log Actions', () => {
-  let mockSupabase: any;
+  let mockSupabase: any; // eslint-disable-line @typescript-eslint/no-explicit-any
+  let mockQueryBuilder: any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
   beforeEach(() => {
     // Reset all mocks before each test
-    vi.clearAllMocks();
+    jest.clearAllMocks();
+
+    // Mock Query Builder
+    mockQueryBuilder = {
+      select: jest.fn().mockReturnThis(),
+      insert: jest.fn().mockReturnThis(),
+      update: jest.fn().mockReturnThis(),
+      delete: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      single: jest.fn(),
+      maybeSingle: jest.fn(),
+      then: jest.fn((onfulfilled: any) => onfulfilled({ data: null, error: null })), // eslint-disable-line @typescript-eslint/no-explicit-any
+    };
 
     // Mock Supabase client
     mockSupabase = {
       auth: {
-        getUser: vi.fn(),
+        getUser: jest.fn(),
       },
-      from: vi.fn().mockReturnThis(),
-      select: vi.fn().mockReturnThis(),
-      insert: vi.fn().mockReturnThis(),
-      update: vi.fn().mockReturnThis(),
-      delete: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      single: vi.fn(),
+      from: jest.fn().mockReturnValue(mockQueryBuilder),
     };
-    (createClient as any).mockResolvedValue(mockSupabase);
+    mockCreateClient.mockResolvedValue(mockSupabase);
+
+    // Default mock response for checkBookingConflicts
+    mockCheckBookingConflicts.mockResolvedValue({
+      conflicts: [],
+      alternatives: [],
+    });
+
+    // Default mock response for single()
+    mockQueryBuilder.single.mockResolvedValue({
+      data: {
+        id: 'session-001',
+        booking_id: 'booking-123',
+        tenant_id: 'tenant-001',
+        status: 'pending',
+        assigned_date: '2026-07-15',
+        assigned_time: '14:00',
+        completed_by_ktv_id: 'ktv-456',
+        completed_date: null,
+      },
+      error: null,
+    });
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   // ============================================================================
@@ -161,7 +190,7 @@ describe('Session Log Actions', () => {
         error: null,
       });
 
-      mockSupabase.single.mockResolvedValueOnce({
+      mockQueryBuilder.single.mockResolvedValueOnce({
         data: null,
         error: new Error('Booking not found'),
       });
@@ -178,7 +207,7 @@ describe('Session Log Actions', () => {
         error: null,
       });
 
-      mockSupabase.single.mockResolvedValueOnce({
+      mockQueryBuilder.single.mockResolvedValueOnce({
         data: {
           id: 'booking-123',
           tenant_id: 'different-tenant',
@@ -202,7 +231,7 @@ describe('Session Log Actions', () => {
         error: null,
       });
 
-      mockSupabase.single
+      mockQueryBuilder.single
         .mockResolvedValueOnce({
           data: {
             id: 'booking-123',
@@ -217,7 +246,7 @@ describe('Session Log Actions', () => {
           error: null,
         });
 
-      (checkBookingCapacity as any).mockResolvedValueOnce({
+      mockCheckBookingCapacity.mockResolvedValueOnce({
         available: true,
         capacityDetails: {
           currentBookings: 3,
@@ -232,7 +261,7 @@ describe('Session Log Actions', () => {
 
       const result = await createBookingWithValidation(mockInput);
 
-      expect(checkBookingCapacity).toHaveBeenCalledWith({
+      expect(mockCheckBookingCapacity).toHaveBeenCalledWith({
         tenantId: 'tenant-001',
         ktvId: 'ktv-456',
         requestedDate: '2026-07-15',
@@ -251,7 +280,7 @@ describe('Session Log Actions', () => {
         error: null,
       });
 
-      mockSupabase.single.mockResolvedValueOnce({
+      mockQueryBuilder.single.mockResolvedValueOnce({
         data: {
           id: 'booking-123',
           tenant_id: 'tenant-001',
@@ -261,7 +290,7 @@ describe('Session Log Actions', () => {
         error: null,
       });
 
-      (checkBookingCapacity as any).mockResolvedValueOnce({
+      mockCheckBookingCapacity.mockResolvedValueOnce({
         available: false,
         capacityDetails: {
           currentBookings: 8,
@@ -305,7 +334,7 @@ describe('Session Log Actions', () => {
         error: null,
       });
 
-      mockSupabase.single
+      mockQueryBuilder.single
         .mockResolvedValueOnce({
           data: {
             id: 'booking-123',
@@ -322,7 +351,7 @@ describe('Session Log Actions', () => {
 
       await createBookingWithValidation(inputWithSkip);
 
-      expect(checkBookingCapacity).not.toHaveBeenCalled();
+      expect(mockCheckBookingCapacity).not.toHaveBeenCalled();
     });
 
     // ========== Auto-Assignment Tests ==========
@@ -335,7 +364,7 @@ describe('Session Log Actions', () => {
         error: null,
       });
 
-      mockSupabase.single
+      mockQueryBuilder.single
         .mockResolvedValueOnce({
           data: {
             id: 'booking-123',
@@ -350,7 +379,7 @@ describe('Session Log Actions', () => {
           error: null,
         });
 
-      (autoAssignKtv as any).mockResolvedValueOnce({
+      mockAutoAssignKtv.mockResolvedValueOnce({
         assignedKtvId: 'ktv-auto-assigned',
         assignedKtvName: 'Alice Nguyen',
         confidence: 0.85,
@@ -360,7 +389,7 @@ describe('Session Log Actions', () => {
 
       const result = await createBookingWithValidation(inputNoKtv);
 
-      expect(autoAssignKtv).toHaveBeenCalledWith({
+      expect(mockAutoAssignKtv).toHaveBeenCalledWith({
         tenantId: 'tenant-001',
         customerId: 'customer-789',
         serviceId: 'service-massage',
@@ -384,7 +413,7 @@ describe('Session Log Actions', () => {
         error: null,
       });
 
-      mockSupabase.single.mockResolvedValueOnce({
+      mockQueryBuilder.single.mockResolvedValueOnce({
         data: {
           id: 'booking-123',
           tenant_id: 'tenant-001',
@@ -394,7 +423,7 @@ describe('Session Log Actions', () => {
         error: null,
       });
 
-      (autoAssignKtv as any).mockResolvedValueOnce({
+      mockAutoAssignKtv.mockResolvedValueOnce({
         assignedKtvId: null,
         confidence: 0,
         reason: 'Không có KTV nào khả dụng',
@@ -415,7 +444,7 @@ describe('Session Log Actions', () => {
         error: null,
       });
 
-      mockSupabase.single
+      mockQueryBuilder.single
         .mockResolvedValueOnce({
           data: {
             id: 'booking-123',
@@ -430,7 +459,7 @@ describe('Session Log Actions', () => {
           error: null,
         });
 
-      (checkBookingCapacity as any).mockResolvedValueOnce({
+      mockCheckBookingCapacity.mockResolvedValueOnce({
         available: true,
         capacityDetails: {
           currentBookings: 3,
@@ -448,8 +477,8 @@ describe('Session Log Actions', () => {
       expect(result.success).toBe(true);
       expect(result.sessionId).toBe('session-001');
       expect(mockSupabase.from).toHaveBeenCalledWith('session_logs');
-      expect(revalidatePath).toHaveBeenCalledWith('/dashboard/bookings');
-      expect(revalidatePath).toHaveBeenCalledWith('/dashboard/bookings/booking-123');
+      expect(mockRevalidatePath).toHaveBeenCalledWith('/dashboard/bookings');
+      expect(mockRevalidatePath).toHaveBeenCalledWith('/dashboard/bookings/booking-123');
     });
 
     it('should handle database insert errors gracefully', async () => {
@@ -458,7 +487,7 @@ describe('Session Log Actions', () => {
         error: null,
       });
 
-      mockSupabase.single
+      mockQueryBuilder.single
         .mockResolvedValueOnce({
           data: {
             id: 'booking-123',
@@ -473,7 +502,7 @@ describe('Session Log Actions', () => {
           error: new Error('Database constraint violation'),
         });
 
-      (checkBookingCapacity as any).mockResolvedValueOnce({
+      mockCheckBookingCapacity.mockResolvedValueOnce({
         available: true,
         capacityDetails: {
           currentBookings: 3,
@@ -504,10 +533,6 @@ describe('Session Log Actions', () => {
         error: null,
       });
 
-      mockSupabase.eq.mockResolvedValueOnce({
-        error: null,
-      });
-
       const result = await updateSessionLog(
         'session-001',
         'tenant-001',
@@ -520,7 +545,7 @@ describe('Session Log Actions', () => {
 
       expect(result.success).toBe(true);
       expect(mockSupabase.from).toHaveBeenCalledWith('session_logs');
-      expect(revalidatePath).toHaveBeenCalledWith('/dashboard/bookings');
+      expect(mockRevalidatePath).toHaveBeenCalledWith('/dashboard/bookings');
     });
 
     it('should reject when user not authenticated', async () => {
@@ -551,16 +576,12 @@ describe('Session Log Actions', () => {
         error: null,
       });
 
-      mockSupabase.eq.mockResolvedValueOnce({
-        error: null,
-      });
-
       const result = await deleteSessionLog('session-001', 'tenant-001');
 
       expect(result.success).toBe(true);
       expect(mockSupabase.from).toHaveBeenCalledWith('session_logs');
-      expect(mockSupabase.delete).toHaveBeenCalled();
-      expect(revalidatePath).toHaveBeenCalledWith('/dashboard/bookings');
+      expect(mockQueryBuilder.delete).toHaveBeenCalled();
+      expect(mockRevalidatePath).toHaveBeenCalledWith('/dashboard/bookings');
     });
 
     it('should reject when user not authenticated', async () => {
@@ -581,9 +602,10 @@ describe('Session Log Actions', () => {
         error: null,
       });
 
-      mockSupabase.eq.mockResolvedValueOnce({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      mockQueryBuilder.then.mockImplementationOnce((onfulfilled: any) => onfulfilled({
         error: new Error('Foreign key constraint'),
-      });
+      }));
 
       const result = await deleteSessionLog('session-001', 'tenant-001');
 

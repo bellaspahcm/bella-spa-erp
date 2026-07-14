@@ -7,6 +7,11 @@ import {
   calculateSalaryTotal,
 } from '@/lib/business-rules/salary';
 import { calculateAttendanceWorkDays } from '@/lib/business-rules/attendance';
+import {
+  calculatePositionBonus,
+  calculateSeniorityBonus,
+  aggregateManualAdjustments,
+} from '@/lib/business-rules/commission';
 import { BUSINESS_RULES } from '@bella/shared';
 
 /**
@@ -189,12 +194,82 @@ export async function getMonthlyPnL(month?: string) {
       // 1. Fetch KTVs
       const { data: ktvs, error: ktvsError } = await supabase
         .from('users')
-        .select('id, base_salary')
+        .select('id, base_salary, hire_date, position_tier')
         .eq('role', 'ktv')
         .eq('tenant_id', tenantId);
       if (ktvsError) throw new Error(`[getMonthlyPnL] ktv query failed: ${ktvsError.message}`);
 
       const typedKtvs = (ktvs as unknown as KtvDBRow[]) || [];
+
+      // Fetch commission config from tenants
+      const { data: tenantData } = await supabase
+        .from('tenants')
+        .select('commission_config')
+        .eq('id', tenantId)
+        .maybeSingle();
+
+      const commissionConfig = (tenantData?.commission_config as unknown as any) || {};
+      const positionMultipliers = commissionConfig.position_multipliers || { junior: 1.0, senior: 1.2, lead: 1.5 };
+      const seniorityBonusRates = commissionConfig.seniority_bonus_rates || {
+        '0_to_1_year': 0.00,
+        '1_to_3_years': 0.05,
+        '3_to_5_years': 0.10,
+        '5_plus_years': 0.15,
+      };
+
+      // Fetch advanced commission data
+      const rawClient = supabase as any;
+      const [serviceItemsRes, productSalesRes, adjustmentsRes, kpiRecordsRes] = await Promise.all([
+        rawClient
+          .from('booking_service_items')
+          .select('ktv_id, calculated_commission')
+          .eq('status', 'completed')
+          .gte('completed_date', startDate)
+          .lt('completed_date', endDate)
+          .eq('tenant_id', tenantId),
+        rawClient
+          .from('product_sales')
+          .select('ktv_id, calculated_commission')
+          .eq('status', 'completed')
+          .gte('sale_date', startDate)
+          .lt('sale_date', endDate)
+          .eq('tenant_id', tenantId),
+        rawClient
+          .from('salary_adjustments')
+          .select('ktv_id, adjustment_type, amount, status')
+          .eq('status', 'approved')
+          .eq('month_year', startDate)
+          .eq('tenant_id', tenantId),
+        rawClient
+          .from('kpi_records')
+          .select('ktv_id, bonus_amount')
+          .eq('month_year', startDate)
+          .eq('tenant_id', tenantId),
+      ]);
+
+      const serviceItemsCommissionByKtv = new Map<string, number>();
+      ((serviceItemsRes.data || []) as { ktv_id: string; calculated_commission: number | null }[]).forEach((item) => {
+        const current = serviceItemsCommissionByKtv.get(item.ktv_id) ?? 0;
+        serviceItemsCommissionByKtv.set(item.ktv_id, current + Number(item.calculated_commission || 0));
+      });
+
+      const productSalesCommissionByKtv = new Map<string, number>();
+      ((productSalesRes.data || []) as { ktv_id: string; calculated_commission: number | null }[]).forEach((sale) => {
+        const current = productSalesCommissionByKtv.get(sale.ktv_id) ?? 0;
+        productSalesCommissionByKtv.set(sale.ktv_id, current + Number(sale.calculated_commission || 0));
+      });
+
+      const manualAdjustmentsByKtv = new Map<string, Array<{ adjustment_type: 'bonus' | 'deduction'; amount: number; status: string }>>();
+      ((adjustmentsRes.data || []) as Array<{ ktv_id: string; adjustment_type: 'bonus' | 'deduction'; amount: number; status: string } >).forEach((adj) => {
+        const list = manualAdjustmentsByKtv.get(adj.ktv_id) ?? [];
+        list.push(adj);
+        manualAdjustmentsByKtv.set(adj.ktv_id, list);
+      });
+
+      const kpiBonusByKtv = new Map<string, number>();
+      ((kpiRecordsRes.data || []) as { ktv_id: string; bonus_amount: number | null }[]).forEach((record) => {
+        kpiBonusByKtv.set(record.ktv_id, (kpiBonusByKtv.get(record.ktv_id) ?? 0) + Number(record.bonus_amount || 0));
+      });
 
       // 2. Fetch salary records
       const { data: salaryRecords, error: salaryRecordsError } = await supabase
@@ -234,6 +309,11 @@ export async function getMonthlyPnL(month?: string) {
               kpiBonus: record.kpi_bonus,
               deductions: record.violations_deduction,
               advances: record.service_percentage_bonus,
+              serviceCommission: record.service_commission,
+              productSalesCommission: record.product_sales_commission,
+              positionBonus: record.position_bonus,
+              seniorityBonus: record.seniority_bonus,
+              manualAdjustments: record.manual_adjustments,
             });
           return;
         }
@@ -244,17 +324,30 @@ export async function getMonthlyPnL(month?: string) {
         );
         const actualDays = calculateAttendanceWorkDays(ktvAttendance);
 
+        const ktvSessions = sessions.filter((s) => s.completed_by_ktv_id === ktv.id);
+        const sessionCommissions = ktvSessions.reduce(
+          (sum: number, s) => sum + (Number(s.bookings?.ktv_commission) || DEFAULT_KTV_SESSION_COMMISSION),
+          0,
+        );
+
         // If no attendance at all → no salary accrued (KTV hasn't worked this month)
         if (actualDays === 0) {
           // Still add session commissions if any (edge case: completed session without checkin)
-          const ktvSessions = sessions.filter((s) => s.completed_by_ktv_id === ktv.id);
-          const sessionCommissions = ktvSessions.reduce(
-            (sum: number, s) => sum + (Number(s.bookings?.ktv_commission) || DEFAULT_KTV_SESSION_COMMISSION),
-            0,
-          );
           accruedSalaries += calculateSalaryTotal({
             baseSalary: 0,
             sessionBonus: sessionCommissions,
+            serviceCommission: serviceItemsCommissionByKtv.get(ktv.id) ?? 0,
+            productSalesCommission: productSalesCommissionByKtv.get(ktv.id) ?? 0,
+            kpiBonus: kpiBonusByKtv.get(ktv.id) ?? 0,
+            positionBonus: calculatePositionBonus({
+              baseCommission: serviceItemsCommissionByKtv.get(ktv.id) ?? 0,
+              positionTier: (ktv.position_tier || 'junior') as any,
+              multipliers: positionMultipliers,
+            }),
+            seniorityBonus: 0,
+            manualAdjustments: aggregateManualAdjustments({
+              adjustments: manualAdjustmentsByKtv.get(ktv.id) ?? [],
+            }),
           });
           return;
         }
@@ -263,16 +356,33 @@ export async function getMonthlyPnL(month?: string) {
         const baseSalary = Number(ktv.base_salary || 6000000);
         const proRataBase = Math.round((baseSalary / BUSINESS_RULES.PAYROLL.WORKING_DAYS_PER_MONTH) * actualDays);
 
-        // Session commissions for this KTV
-        const ktvSessions = sessions.filter((s) => s.completed_by_ktv_id === ktv.id);
-        const sessionCommissions = ktvSessions.reduce(
-          (sum: number, s) => sum + (Number(s.bookings?.ktv_commission) || DEFAULT_KTV_SESSION_COMMISSION),
-          0,
-        );
+        const serviceCommission = serviceItemsCommissionByKtv.get(ktv.id) ?? 0;
+        const productSalesCommission = productSalesCommissionByKtv.get(ktv.id) ?? 0;
+        const kpiBonus = kpiBonusByKtv.get(ktv.id) ?? 0;
+        const manualAdjustments = aggregateManualAdjustments({
+          adjustments: manualAdjustmentsByKtv.get(ktv.id) ?? [],
+        });
+        const positionTier = (ktv.position_tier || 'junior') as any;
+        const positionBonus = calculatePositionBonus({
+          baseCommission: serviceCommission,
+          positionTier,
+          multipliers: positionMultipliers,
+        });
+        const seniorityBonus = calculateSeniorityBonus({
+          baseSalary: proRataBase,
+          hireDate: ktv.hire_date,
+          bonusRates: seniorityBonusRates,
+        });
 
         accruedSalaries += calculateSalaryTotal({
           baseSalary: proRataBase,
           sessionBonus: sessionCommissions,
+          serviceCommission,
+          productSalesCommission,
+          kpiBonus,
+          positionBonus,
+          seniorityBonus,
+          manualAdjustments,
         });
       });
 

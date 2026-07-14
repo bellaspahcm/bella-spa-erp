@@ -60,6 +60,12 @@ export type SalaryRecordFinancialLike = {
   violations_deduction?: number | string | null;
   service_percentage_bonus?: number | string | null;
   total_salary?: number | string | null;
+  // Advanced commission system fields (Beauty Spa)
+  service_commission?: number | string | null;
+  product_sales_commission?: number | string | null;
+  position_bonus?: number | string | null;
+  seniority_bonus?: number | string | null;
+  manual_adjustments?: number | string | null;
 } | null | undefined;
 
 export type SalaryRecalculationLifecycleOverrides = {
@@ -1195,27 +1201,27 @@ export function buildSalaryDisplayComponents(input: SalaryDisplayComponentsInput
   // Advanced commission components (Task 28-32)
   const serviceCommission = selectSavedOrLive(
     useSavedFinancials,
-    (record as any)?.service_commission,
+    record?.service_commission,
     input.liveServiceCommission
   );
   const productSalesCommission = selectSavedOrLive(
     useSavedFinancials,
-    (record as any)?.product_sales_commission,
+    record?.product_sales_commission,
     input.liveProductSalesCommission
   );
   const positionBonus = selectSavedOrLive(
     useSavedFinancials,
-    (record as any)?.position_bonus,
+    record?.position_bonus,
     input.livePositionBonus
   );
   const seniorityBonus = selectSavedOrLive(
     useSavedFinancials,
-    (record as any)?.seniority_bonus,
+    record?.seniority_bonus,
     input.liveSeniorityBonus
   );
   const manualAdjustments = selectSavedOrLive(
     useSavedFinancials,
-    (record as any)?.manual_adjustments,
+    record?.manual_adjustments,
     input.liveManualAdjustments
   );
   
