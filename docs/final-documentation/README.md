@@ -270,7 +270,7 @@ Bộ tài liệu này được tạo ra để:
 
 ### Investor & Business Reports
 
-- **`final-documentation/INVESTOR_GRADE_PLATFORM_REPORT.md`** ⭐ **NEW** - Comprehensive investor report (2,183 lines)
+- **`final-documentation/INVESTOR_GRADE_PLATFORM_REPORT.md`** ⭐ **NEW** - Comprehensive investor report (2,183 lines, English)
   - Executive Summary (1-page overview, key metrics, competitive advantages)
   - Technical Architecture Deep-Dive (10 Commandments, 5 providers, 99.7% test coverage, 67-909x faster)
   - Business Value Analysis (technical debt reduction, velocity improvement, $112K/year savings, 282% ROI)
@@ -278,6 +278,12 @@ Bộ tài liệu này được tạo ra để:
   - 5-Phase Go-to-Market Strategy (2027-2031)
   - Investment Thesis ($500K-1M Seed, $234M exit, 39x expected return)
   - Executive Presentation Slides Outline (20 slides, 15-20 min pitch)
+
+- **`final-documentation/BAO_CAO_NEN_TANG_DECISION_ENGINE_CHO_NHA_DAU_TU.md`** ⭐ **NEW** - Vietnamese version (1,600+ lines)
+  - Vietnamese translation of full investor report
+  - All sections included: Executive Summary, Technical Deep-Dive, Business Value, Market Analysis
+  - Complete with 20-slide presentation outline in Vietnamese
+  - Ready for Vietnamese investors and stakeholders
 
 ---
 
