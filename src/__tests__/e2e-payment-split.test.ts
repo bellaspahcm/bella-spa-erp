@@ -56,7 +56,7 @@ describe('E2E Split Payment (Multiple Payers Test)', () => {
     } else {
       const { data: newPkg, error } = await supabase.from('packages').insert({
         tenant_id: testTenantId, name: 'Split Payment Package', price: 6000000, total_sessions: 12,
-        session_multiplier: 1.0, status: 'active', duration: '60 phút',
+        session_multiplier: 1.0, status: 'active', duration: '60 phút', module_key: 'babycare',
       }).select('id').single();
       if (error) throw new Error(`Failed to create test package: ${error.message}`);
       testPackageId = newPkg!.id;
