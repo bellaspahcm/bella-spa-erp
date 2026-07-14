@@ -7,6 +7,7 @@ import type { TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 import { cn, formatNumberWithSeparator } from '@/lib/utils';
 import { ChevronRight, FileText, Image as ImageIcon, Loader2, MessageCircle, Share2, Sparkles, User } from 'lucide-react';
 import type { CustomerDetailBooking, KtvOption } from '../types';
+import { KtvSuggestionPanel } from '../../../sessions/components/KtvSuggestionPanel';
 
 export function ActiveBookingPanel({
   activeBooking,
@@ -214,46 +215,64 @@ export function ActiveBookingPanel({
               </div>
 
               {activeBooking && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-8 border-t border-white/10">
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3 text-white/60">
-                      <User className="w-4 h-4" />
-                      <span className="text-[10px] font-black uppercase tracking-widest">{vocab.worker.short} Phụ trách chính</span>
+                <div className="space-y-6 pt-8 border-t border-white/10">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3 text-white/60">
+                        <User className="w-4 h-4" />
+                        <span className="text-[10px] font-black uppercase tracking-widest">{vocab.worker.short} Phụ trách chính</span>
+                      </div>
+                      <div className="relative customer-detail-ktv-select">
+                        <PremiumSelect
+                          value={activeBooking.assigned_ktv_id || ''}
+                          options={[
+                            { value: '', label: 'Chưa phân công' },
+                            ...ktvs.map(k => ({ value: k.id, label: k.full_name }))
+                          ]}
+                          onChange={onUpdateKtv}
+                          disabled={isUpdatingKtv}
+                          placeholder="Chưa phân công"
+                          className="w-full"
+                          dropdownClassName="bg-white shadow-[0_20px_50px_rgba(0,0,0,0.3)] [&_button]:!text-slate-900"
+                        />
+                      </div>
                     </div>
-                    <div className="relative customer-detail-ktv-select">
-                      <PremiumSelect
-                        value={activeBooking.assigned_ktv_id || ''}
-                        options={[
-                          { value: '', label: 'Chưa phân công' },
-                          ...ktvs.map(k => ({ value: k.id, label: k.full_name }))
-                        ]}
-                        onChange={onUpdateKtv}
-                        disabled={isUpdatingKtv}
-                        placeholder="Chưa phân công"
-                        className="w-full"
-                        dropdownClassName="bg-white shadow-[0_20px_50px_rgba(0,0,0,0.3)] [&_button]:!text-slate-900"
-                      />
+
+                    <div className="bg-white/5 rounded-3xl p-5 border border-white/10 flex flex-col justify-center">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-white/40 text-[10px] font-black uppercase tracking-widest">Tiến độ {vocab.workUnit.singular.toLowerCase()}</span>
+                        <span className="text-white font-black text-sm">{activeBooking.completed_sessions || 0}/{activeBooking.total_sessions || 0}</span>
+                        <button
+                          onClick={onOpenBookingSessions}
+                          className="p-2 hover:bg-slate-50 rounded-xl transition-colors group/btn"
+                        >
+                          <ChevronRight className="w-4 h-4 text-slate-300 group-hover/btn:text-primary transition-colors" />
+                        </button>
+                      </div>
+                      <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-white rounded-full transition-all duration-1000"
+                          style={{ width: `${((activeBooking.completed_sessions || 0) / Math.max(1, activeBooking.total_sessions || 15)) * 100}%` }}
+                        />
+                      </div>
                     </div>
                   </div>
 
-                  <div className="bg-white/5 rounded-3xl p-5 border border-white/10 flex flex-col justify-center">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-white/40 text-[10px] font-black uppercase tracking-widest">Tiến độ {vocab.workUnit.singular.toLowerCase()}</span>
-                      <span className="text-white font-black text-sm">{activeBooking.completed_sessions || 0}/{activeBooking.total_sessions || 0}</span>
-                      <button
-                        onClick={onOpenBookingSessions}
-                        className="p-2 hover:bg-slate-50 rounded-xl transition-colors group/btn"
-                      >
-                        <ChevronRight className="w-4 h-4 text-slate-300 group-hover/btn:text-primary transition-colors" />
-                      </button>
-                    </div>
-                    <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-white rounded-full transition-all duration-1000"
-                        style={{ width: `${((activeBooking.completed_sessions || 0) / Math.max(1, activeBooking.total_sessions || 15)) * 100}%` }}
+                  {/* AI suggestion panel here! Only for admin */}
+                  {userRole === 'admin' && (
+                    <div className="bg-white p-6 md:p-8 rounded-[2.5rem] shadow-sm border border-slate-100 mt-4 text-slate-800">
+                      <KtvSuggestionPanel
+                        bookingId={activeBooking.id}
+                        tenantId={activeBooking.tenant_id}
+                        requestedDate={activeBooking.start_date || new Date().toLocaleDateString('sv-SE')}
+                        requestedStartTime={activeBooking.preferred_time || '09:00'}
+                        durationMinutes={60}
+                        onKtvAssigned={async (ktvId, ktvName) => {
+                          onUpdateKtv(ktvId);
+                        }}
                       />
                     </div>
-                  </div>
+                  )}
                 </div>
               )}
             </div>
