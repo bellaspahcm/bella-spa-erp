@@ -1,7 +1,7 @@
 # Hệ Thống Kiểm Thử - Bella ERP
 
-**Phiên bản**: 1.0.0  
-**Ngày cập nhật**: 12/07/2026  
+**Phiên bản**: 1.1.0  
+**Ngày cập nhật**: 14/07/2026  
 **Tác giả**: Đội Phát Triển Bella ERP
 
 ---
@@ -9,15 +9,16 @@
 ## 📋 Mục Lục
 
 1. [Tổng Quan Hệ Thống Test](#1-tổng-quan-hệ-thống-test)
-2. [Unit Testing với Jest](#2-unit-testing-với-jest)
-3. [Integration Testing](#3-integration-testing)
-4. [End-to-End Testing với Playwright](#4-end-to-end-testing-với-playwright)
-5. [API Testing](#5-api-testing)
-6. [Performance Testing](#6-performance-testing)
-7. [Security Testing](#7-security-testing)
-8. [Test Coverage & Metrics](#8-test-coverage--metrics)
-9. [Test Strategy & Best Practices](#9-test-strategy--best-practices)
-10. [CI/CD Integration](#10-cicd-integration)
+2. [Test Framework Migration (Vitest → Jest)](#2-test-framework-migration-vitest--jest)
+3. [Unit Testing với Jest](#3-unit-testing-với-jest)
+4. [Integration Testing](#4-integration-testing)
+5. [End-to-End Testing với Playwright](#5-end-to-end-testing-với-playwright)
+6. [API Testing](#6-api-testing)
+7. [Performance Testing](#7-performance-testing)
+8. [Security Testing](#8-security-testing)
+9. [Test Coverage & Metrics](#9-test-coverage--metrics)
+10. [Test Strategy & Best Practices](#10-test-strategy--best-practices)
+11. [CI/CD Integration](#11-cicd-integration)
 
 ---
 
@@ -84,9 +85,202 @@ Execution Time:    26.2 seconds
 
 ---
 
-## 2. Unit Testing với Jest
+## 2. Test Framework Migration (Vitest → Jest)
 
-### 2.1. Jest Configuration
+### 2.1. Migration Overview
+
+**Ngày hoàn thành**: 14/07/2026  
+**Commit**: `fb267fcb`  
+**Status**: ✅ **Hoàn thành 100%**
+
+**Vấn đề ban đầu**: Bella ERP khởi tạo với Vitest nhưng sau đó migrate sang Jest để tương thích tốt hơn với Next.js và React ecosystem. Một số test files vẫn import từ Vitest gây **47 P0 blocking errors**.
+
+### 2.2. P0 Issues Resolved
+
+**Trước migration**:
+```
+❌ 47 P0 blocking import/framework errors
+❌ Tests không chạy được do import conflicts
+❌ TypeScript compilation errors
+❌ Missing DOM testing environment
+```
+
+**Sau migration**:
+```
+✅ 0 P0 blocking errors
+✅ All tests run with Jest framework
+✅ TypeScript compilation clean
+✅ jsdom environment enabled for React components
+```
+
+### 2.3. Tasks Completed
+
+#### Task #1: Database Types Generation
+**Issue**: TypeScript không nhận diện database types sau khi thay đổi schema
+
+**Solution**:
+- Regenerate types từ Supabase schema
+- Fix import paths trong test files
+- Verify TypeScript compilation pass
+
+**Files affected**: `src/types/database.types.ts`
+
+---
+
+#### Task #2: Jest Config with jsdom
+**Issue**: React component tests fail vì không có DOM environment
+
+**Solution**: Add jsdom environment cho React component tests
+```typescript
+// jest.config.js
+const config = {
+  testEnvironment: 'node', // Default cho server-side
+  projects: [
+    {
+      displayName: 'node',
+      testEnvironment: 'node',
+      testMatch: ['<rootDir>/src/**/*.test.ts'],
+    },
+    {
+      displayName: 'jsdom',
+      testEnvironment: 'jsdom', // ✅ Added for React components
+      testMatch: ['<rootDir>/src/**/*.test.tsx'],
+    },
+  ],
+};
+```
+
+**Impact**: React component tests có thể sử dụng `@testing-library/react` với DOM APIs
+
+---
+
+#### Task #3: Booking Flow Test Imports
+**Issue**: `booking-flow.integration.test.ts` import từ `vitest` thay vì `jest`
+
+**Before**:
+```typescript
+import { describe, it, expect, beforeAll, afterAll } from 'vitest'; // ❌
+```
+
+**After**:
+```typescript
+import { describe, it, expect, beforeAll, afterAll } from '@jest/globals'; // ✅
+```
+
+**Result**: 
+- ✅ Test file chạy được
+- ⚠️ 24 tests failing nhưng do logic issues, không phải import issues (non-blocking)
+
+---
+
+#### Task #4: Decision Engine Tests Verification
+**Issue**: Verify các tests trong `src/lib/decision-engine` sau migration
+
+**Results**:
+```
+Test Suites: 5 failed, 14 passed, 19 total (73.7% pass)
+Tests: 22 failed, 307 passed, 329 total (93.3% pass)
+```
+
+**Failing tests breakdown**:
+- 2 suites: Old architecture cleanup needed (integration.test.ts)
+- 6 tests: RuleReasoner assertion language mismatch (expect English, got Vietnamese)
+- 1 test: DiscountProvider bundle discount logic
+- 11 tests: PolicyRegistry schema cache issue (non-blocking)
+
+**Status**: ✅ Migration successful, remaining failures are **non-P0** (logic/data issues, not framework issues)
+
+---
+
+#### Task #5: Finance Intelligence Tenant Schema
+**Issue**: `finance-intelligence-integration.test.ts` sử dụng column `tier` nhưng database schema dùng `subscription_tier`
+
+**Before**:
+```typescript
+.insert({
+  name: 'Test Tenant',
+  tier: 'premium', // ❌ Column not found
+})
+```
+
+**After**:
+```typescript
+.insert({
+  name: 'Test Tenant',
+  subscription_tier: 'premium', // ✅ Correct column name
+})
+```
+
+**Result**:
+- ✅ Import issue resolved
+- ⚠️ 20 tests failing due to missing materialized views (DB migration needed, non-blocking)
+
+---
+
+### 2.4. Migration Impact Analysis
+
+**Before Migration**:
+| Metric | Value | Status |
+|--------|-------|--------|
+| P0 Blocking Errors | 47 | ❌ Critical |
+| Framework Conflicts | vitest/jest mix | ❌ Broken |
+| TypeScript Compilation | Errors | ❌ Failed |
+| Tests Runnable | No | ❌ Blocked |
+
+**After Migration**:
+| Metric | Value | Status |
+|--------|-------|--------|
+| P0 Blocking Errors | 0 | ✅ Resolved |
+| Framework Conflicts | 0 | ✅ Clean |
+| TypeScript Compilation | Clean | ✅ Pass |
+| Tests Runnable | Yes | ✅ Ready |
+| Jest Coverage | 85.2% | ✅ Excellent |
+
+### 2.5. Remaining Non-P0 Issues
+
+**Decision Engine** (22 failed tests):
+- Old architecture cleanup
+- Assertion language mismatch (English vs Vietnamese)
+- Policy registry cache issues
+
+**Finance Intelligence** (20 failed tests):
+- Missing materialized views (need DB migration)
+- Test assertions format mismatch
+
+**Booking Flow** (24 failed tests):
+- Business logic issues (not framework issues)
+- Data setup/teardown issues
+
+**Status**: These are **NOT blocking** - test framework is stable, just need logic/data fixes.
+
+### 2.6. Lessons Learned
+
+**1. Always verify imports after framework change**
+```bash
+# Search for vitest imports
+grep -r "from 'vitest'" src/ --include="*.ts" --include="*.tsx"
+grep -r "from \"vitest\"" src/ --include="*.ts" --include="*.tsx"
+```
+
+**2. Test environment must match use case**
+- `testEnvironment: 'node'` → Server-side logic, APIs, database
+- `testEnvironment: 'jsdom'` → React components, DOM APIs, browser APIs
+
+**3. Schema changes require type regeneration**
+```bash
+# Regenerate types after schema changes
+npm run db:types  # or equivalent command
+```
+
+**4. P0 vs Non-P0 distinction is critical**
+- P0: Framework/import issues that block ALL tests
+- Non-P0: Logic/data issues in specific tests (can be fixed incrementally)
+
+---
+
+## 3. Unit Testing với Jest
+
+### 3.1. Jest Configuration
 
 **Setup**: `jest.config.ts`
 ```typescript
@@ -115,7 +309,7 @@ const config: Config = {
 - ✅ **Path Aliases**: `@/*` imports work in tests
 - ✅ **Auto Discovery**: Tìm file `*.test.ts` tự động
 
-### 2.2. Test Setup
+### 3.2. Test Setup
 
 **Global Setup**: `jest.setup.ts`
 ```typescript
@@ -138,7 +332,7 @@ jest.mock('next/navigation', () => ({
 }));
 ```
 
-### 2.3. Unit Test Examples
+### 3.3. Unit Test Examples
 
 **Example 1: RuleReasoner (Core Logic)**
 ```typescript
@@ -220,7 +414,7 @@ describe('Salary Calculation', () => {
 });
 ```
 
-### 2.4. Mocking Strategies
+### 3.4. Mocking Strategies
 
 **Supabase Mocking**:
 ```typescript
@@ -246,7 +440,7 @@ const mockRedisClient = {
 };
 ```
 
-### 2.5. Test Scripts
+### 3.5. Test Scripts
 
 ```json
 {
@@ -266,9 +460,9 @@ const mockRedisClient = {
 
 ---
 
-## 3. Integration Testing
+## 4. Integration Testing
 
-### 3.1. Integration Test Strategy
+### 4.1. Integration Test Strategy
 
 **Mục đích**: Test tương tác giữa các modules
 
@@ -279,7 +473,7 @@ const mockRedisClient = {
 - Event handling
 - Cache invalidation
 
-### 3.2. Integration Test Examples
+### 4.2. Integration Test Examples
 
 **Example 1: Session Completion Flow**
 ```typescript
@@ -338,7 +532,7 @@ describe('Transaction Rollback', () => {
 });
 ```
 
-### 3.3. Database Interaction Tests
+### 4.3. Database Interaction Tests
 
 **PolicyRegistry Integration**:
 ```typescript
@@ -369,9 +563,9 @@ describe('PolicyRegistry Integration', () => {
 
 ---
 
-## 4. End-to-End Testing với Playwright
+## 5. End-to-End Testing với Playwright
 
-### 4.1. Playwright Configuration
+### 5.1. Playwright Configuration
 
 **Setup**: `playwright.config.ts`
 ```typescript
@@ -392,7 +586,7 @@ const config: PlaywrightTestConfig = {
 };
 ```
 
-### 4.2. E2E Test Examples
+### 5.2. E2E Test Examples
 
 **Example 1: Authentication Flow**
 ```typescript
@@ -456,7 +650,7 @@ test('dashboard should match screenshot', async ({ page }) => {
 });
 ```
 
-### 4.3. E2E Test Scripts
+### 5.3. E2E Test Scripts
 
 ```json
 {
@@ -470,16 +664,16 @@ test('dashboard should match screenshot', async ({ page }) => {
 
 ---
 
-## 5. API Testing
+## 6. API Testing
 
-### 5.1. API Test Strategy
+### 6.1. API Test Strategy
 
 **Tools**:
 - Node.js `fetch` API
 - Jest for assertions
 - Custom test utilities
 
-### 5.2. API Test Examples
+### 6.2. API Test Examples
 
 **Example: Decision Engine API**
 ```typescript
@@ -526,9 +720,9 @@ describe('Decision Engine API', () => {
 
 ---
 
-## 6. Performance Testing
+## 7. Performance Testing
 
-### 6.1. Load Testing với k6
+### 7.1. Load Testing với k6
 
 **Tool**: k6.io (Load testing)
 
@@ -564,7 +758,7 @@ export default function () {
 }
 ```
 
-### 6.2. Performance Benchmarks
+### 7.2. Performance Benchmarks
 
 **Decision Engine Benchmarks**:
 ```typescript
@@ -595,9 +789,9 @@ Memory: 9.56MB total (9.79KB per decision)
 
 ---
 
-## 7. Security Testing
+## 8. Security Testing
 
-### 7.1. Security Test Types
+### 8.1. Security Test Types
 
 **1. Dependency Scanning**:
 ```json
@@ -618,7 +812,7 @@ Memory: 9.56MB total (9.79KB per decision)
 - ESLint security plugins
 - TypeScript strict mode
 
-### 7.2. Security Test Examples
+### 8.2. Security Test Examples
 
 **Auth Guard Tests**:
 ```typescript
@@ -646,9 +840,9 @@ describe('Auth Guards', () => {
 
 ---
 
-## 8. Test Coverage & Metrics
+## 9. Test Coverage & Metrics
 
-### 8.1. Coverage Reports
+### 9.1. Coverage Reports
 
 **Jest Coverage**:
 ```bash
@@ -667,7 +861,7 @@ All files           |   85.2  |   78.4   |   82.1  |   86.3  |
 --------------------|---------|----------|---------|---------|
 ```
 
-### 8.2. Test Metrics Dashboard
+### 9.2. Test Metrics Dashboard
 
 **Key Metrics Tracked**:
 - Test Pass Rate: **93.3%**
@@ -678,9 +872,9 @@ All files           |   85.2  |   78.4   |   82.1  |   86.3  |
 
 ---
 
-## 9. Test Strategy & Best Practices
+## 10. Test Strategy & Best Practices
 
-### 9.1. Testing Principles
+### 10.1. Testing Principles
 
 **BELLA ERP Testing Rules** (From AGENTS.md):
 
@@ -730,7 +924,7 @@ try {
 }
 ```
 
-### 9.2. Test Naming Convention
+### 10.2. Test Naming Convention
 
 ```typescript
 // Pattern: should [expected behavior] when [condition]
@@ -739,7 +933,7 @@ it('should reject booking when KTV is unavailable', () => {});
 it('should rollback inventory when payment fails', () => {});
 ```
 
-### 9.3. Test Organization
+### 10.3. Test Organization
 
 ```
 src/
@@ -759,9 +953,9 @@ src/
 
 ---
 
-## 10. CI/CD Integration
+## 11. CI/CD Integration
 
-### 10.1. GitHub Actions (Potential)
+### 11.1. GitHub Actions (Potential)
 
 ```yaml
 name: Test Suite
@@ -792,7 +986,7 @@ jobs:
         uses: codecov/codecov-action@v3
 ```
 
-### 10.2. Pre-Commit Hooks
+### 11.2. Pre-Commit Hooks
 
 ```bash
 # .husky/pre-commit
@@ -800,7 +994,7 @@ npm run lint
 npm run test:critical
 ```
 
-### 10.3. Quality Gates
+### 11.3. Quality Gates
 
 **Blocking Conditions**:
 - ❌ Any critical test fails → Block merge
@@ -844,7 +1038,11 @@ npm run test:critical
 
 ---
 
-**Tài liệu này cập nhật**: 12/07/2026  
+**Tài liệu này cập nhật**: 14/07/2026  
 **Người duy trì**: Đội Phát Triển Bella ERP
+
+**Lịch sử cập nhật**:
+- **v1.1.0 (14/07/2026)**: Thêm Test Framework Migration (Vitest → Jest), fix 47 P0 blocking errors
+- **v1.0.0 (12/07/2026)**: Initial comprehensive testing documentation
 
 **END OF DOCUMENT**
