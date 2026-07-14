@@ -363,6 +363,9 @@ Bạn phải trả về DUY NHẤT một chuỗi JSON hợp lệ (không chứa 
         const resData = await response.json();
         const textResponse = resData.candidates?.[0]?.content?.parts?.[0]?.text;
         if (textResponse) {
+          // Log raw response để debug khi có lỗi JSON parse
+          console.log("[AI COO Service] Raw Gemini response (first 500 chars):", textResponse.substring(0, 500));
+          console.log("[AI COO Service] Raw Gemini response length:", textResponse.length);
           const parsed = cleanAndParseJson(textResponse);
           if (parsed.executiveSummary) executiveSummary = parsed.executiveSummary as string;
           if (parsed.anomaliesFound) anomaliesFound = parsed.anomaliesFound as unknown[];
