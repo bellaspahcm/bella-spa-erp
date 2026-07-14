@@ -15,6 +15,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import Link from 'next/link';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import {
   Calendar,
@@ -27,6 +28,7 @@ import {
   AlertCircle,
   Users,
   BarChart3,
+  CalendarDays,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase-client';
@@ -351,6 +353,15 @@ function AttendancePayrollDashboard() {
             onChange={(e) => setMonth(e.target.value)}
             className="px-4 py-2 border border-slate-300 rounded-lg bg-white hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-primary"
           />
+
+          {/* Leave Requests Link */}
+          <Link
+            href="/dashboard/hr/leave-requests"
+            className="flex items-center gap-2 px-4 py-2 bg-rose-50 text-rose-700 border border-rose-200 rounded-lg hover:bg-rose-100 font-medium transition-all shadow-xs"
+          >
+            <CalendarDays className="h-4 w-4" />
+            Duyệt nghỉ phép
+          </Link>
 
           {/* Refresh Button */}
           <button
