@@ -22,7 +22,7 @@
  * @module integration/booking-flow
  */
 
-import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from '@jest/globals';
 import {
   seedTestDatabase,
   cleanupTestDatabase,

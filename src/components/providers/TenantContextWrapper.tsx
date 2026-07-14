@@ -20,6 +20,7 @@ const PUBLIC_ROUTES = [
   '/', // Landing page
   '/book', // Public booking page
   '/beauty-spa', // Public marketing page
+  '/bellaspa', // Public Bella Spa page
 ];
 
 /**
