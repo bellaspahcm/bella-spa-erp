@@ -67,18 +67,30 @@ customer         → Customer portal only
 - ✅ Status workflow (Draft → Confirmed → Completed → Cancelled)
 - ✅ Payment tracking (VNPay, MoMo, Cash)
 
-**2. Session Scheduling**
-- ✅ Xếp lịch ca tự động
-- ✅ KTV availability check
-- ✅ Capacity management
-- ✅ Conflict detection
-- ✅ Waitlist management
+**2. Session Scheduling & Waitlist Management**
+- ✅ **Xếp lịch ca tự động & Kiểm tra KTV**: Tự động hóa lịch trực của KTV, xác thực trạng thái khả dụng.
+- ✅ **Quản lý công suất (Capacity Management)**: Quản lý giới hạn tải làm việc của từng KTV trong ngày và kiểm tra các khung giờ vàng (Peak hours).
+- ✅ **Phát hiện xung đột trùng giờ**: Chặn trùng giờ KTV, trùng phòng/giường, trùng lịch khách hàng.
+- ✅ **Hàng chờ thông minh (Smart Waitlist)**: Khi hết công suất hoặc trùng giờ, điều phối viên có thể đẩy khách hàng vào hàng chờ thông qua API [POST /api/waitlist](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/src/app/api/waitlist/route.ts#L116) gọi đến nghiệp vụ [addToWaitlist](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/src/services/waitlist/waitlist-service.ts#L62).
+  - *Sắp xếp thứ tự ưu tiên (Priority Ranking)*: Chạy qua **WaitlistManagementProvider** của Decision Engine để chấm điểm dựa trên: hạng khách hàng (VIP/Loyal/New), giá trị lịch đặt (Booking Value), độ linh hoạt về giờ (Flexibility Bonus +10 điểm), và thời gian đã chờ (Wait Time Score).
+  - *Tự động giải phóng khi có slot trống (Auto-Allocation)*: Khi có ca hủy hoặc ca dời, hàm [processSlotAvailable](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/src/services/waitlist/waitlist-service.ts#L605) chấm điểm độ khớp (Match Score) và tự động gửi tin nhắn (Zalo/SMS) mời đặt chỗ đến Top 3 khách hàng xếp cao nhất.
+  - *Tự động hết hạn (Auto Expiry)*: Tác vụ định kỳ gọi hàm [expireOldEntries](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/src/services/waitlist/waitlist-service.ts#L747) dọn dẹp các lịch chờ quá 24h và thông báo lại cho khách hàng.
 
-**3. KTV Assignment**
-- ✅ Auto-assignment (availability + skill match)
-- ✅ Manual assignment
-- ✅ Substitute KTV support
-- ✅ Load balancing
+**3. KTV Assignment & AI Suggestions**
+- ✅ **Manual Assignment**: Quản trị viên chỉ định KTV thủ công, hệ thống hỗ trợ chọn KTV dự phòng.
+- ✅ **AI Auto-Assignment & Suggestions**: Động cơ tự động tìm kiếm và đề xuất top 3 KTV phù hợp nhất thông qua hàm [getKtvSuggestions](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/src/modules/bookings/actions/ktv-suggestion-actions.ts#L85), sau đó cập nhật lựa chọn của Admin vào hệ thống bằng [applyKtvSuggestion](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/src/modules/bookings/actions/ktv-suggestion-actions.ts#L210) tại file [ktv-suggestion-actions.ts](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/src/modules/bookings/actions/ktv-suggestion-actions.ts).
+- ✅ **Hệ thống chấm điểm (Scoring System)**: Đánh giá KTV trên thang điểm 100 từ [AutoAssignmentProvider](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/src/lib/decision-engine/providers/booking/auto-assignment-provider.ts#L51) dựa trên:
+  - *Độ tương thích kỹ năng (Skill Match)*: Tối đa 25 điểm.
+  - *Khả năng đáp ứng thời gian (Availability)*: Tối đa 20 điểm.
+  - *Cân bằng tải công việc (Workload Balance)*: Tối đa 20 điểm (KTV ít ca hơn sẽ có điểm cao hơn).
+  - *Hiệu suất dịch vụ (Performance)*: Tối đa 15 điểm (dựa trên điểm đánh giá trung bình).
+  - *Sự ưu tiên của khách (Customer Preference)*: Tối đa 10 điểm (dựa trên KTV yêu thích hoặc lịch sử số ca phục vụ khách hàng này).
+  - *Độ chuyên môn hóa (Specialization)*: Tối đa 10 điểm (độ tương thích giữa chuyên môn KTV và dịch vụ được chọn).
+- ✅ **Bộ quy tắc cộng/trừ điểm (Rule-based Adjustments)**:
+  - *Thưởng kinh nghiệm phục vụ VIP (VIP Seniority)*: Cộng thêm 15 điểm cho KTV có trên 3 năm kinh nghiệm khi phục vụ khách hàng VIP (`booking-assignment-vip-seniority`).
+  - *Phạt đánh giá kém (Low Rating Penalty)*: Trừ 10 điểm nếu điểm đánh giá trung bình < 3.5 sao (`booking-assignment-low-rating-penalty`).
+  - *Phạt làm việc quá tải (Overloaded Penalty)*: Trừ 5 điểm nếu công suất hoạt động trong ngày > 80%.
+  - *Phạt chưa có lịch sử làm việc (No History Penalty)*: Trừ 2 điểm nếu KTV chưa từng phục vụ khách hàng này nhằm khuyến khích khách hàng gặp lại KTV quen thuộc.
 
 **4. Session Execution**
 - ✅ Check-in/Check-out
@@ -113,8 +125,12 @@ customer         → Customer portal only
 2. Deposit requirement (risk + history based)
 3. KTV assignment (availability + skill + workload)
 4. Capacity check (max sessions per day)
-5. Conflict detection (time overlap)
-6. Waitlist priority (tier + booking time)
+5. Conflict detection (time overlap / double-booking):
+   - **KTV Double Booking**: Kiểm tra thời lượng buổi và chặn đứng (`REJECT`) đặt trùng lịch của KTV (hàm `no-ktv-double-booking` trong `overbooking-detection.ts`).
+   - **Room Double Booking**: Ngăn trùng lịch phòng/giường thông qua quy tắc `no-room-double-booking` và bộ lọc `validateBookingResourceSchedule` trong `booking-resource-schedule-guard.ts` (chặn khi tạo mới và khi dời lịch).
+   - **Customer Double Booking**: Chặn đứng (`blocking`) trường hợp khách hàng có hai lịch hẹn trùng khung giờ thông qua trình kiểm tra `checkCustomerTimeOverlap` trong `conflict-detection-provider.ts`.
+   - **Close Bookings**: Cảnh báo (`warning`) nếu các lịch hẹn của một khách hàng quá sát nhau (dưới 30 phút) thông qua `checkCloseBookings`.
+6. Waitlist priority (tier + booking value + flexibility + wait time)
 
 ### 2.3. Session Completion Flow
 
@@ -396,12 +412,18 @@ const operatingExpenses = await supabase
 - ✅ Customer history
 - ✅ Notes & tags
 
-**2. Membership System**
-- ✅ **Tiers**: New → Active → Loyal → VIP
-- ✅ Auto-upgrade/downgrade
-- ✅ Tier benefits (discounts, priority booking)
-- ✅ Membership cards
-- ✅ Points system
+**2. Membership & Loyalty System**
+- ✅ **Chấm điểm Loyalty tự động**: Tự động quy đổi và cộng điểm thưởng khi hoàn tất thanh toán hóa đơn (`confirmed` revenue) thông qua hàm [addLoyaltyPoints](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/src/services/customer-actions.ts#L342) trong file [customer-actions.ts](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/src/services/customer-actions.ts).
+  - *Tỷ lệ quy đổi*: Mỗi **100,000 VNĐ** thanh toán thành công được cộng **1 điểm Loyalty** (làm tròn xuống).
+- ✅ **Hạng thành viên tự động (Tiers)**: Tự động phân cấp hạng khách hàng dựa trên điểm số Loyalty tích lũy:
+  - 👑 **VIP**: Từ **1,000 điểm trở lên** (hoặc gắn nhãn VIP thủ công).
+  - ⭐ **Loyal (Thân thiết)**: Từ **300 điểm đến dưới 1,000 điểm**.
+  - 🌱 **New (Khách hàng mới)**: Dưới **300 điểm**.
+- ✅ **Quyền lợi tích hợp hạng thành viên**:
+  - *Chiết khấu tự động*: Giảm giá hóa đơn dịch vụ lẻ theo hạng thành viên (VIP giảm 15%, Loyal giảm 10%, New giảm 5%).
+  - *Điểm cộng ưu tiên hàng chờ*: Ưu tiên đẩy hạng chờ xếp lịch (+40 điểm cho VIP, +25 điểm cho Loyal).
+  - *Chăm sóc đặc biệt*: Ưu tiên gán KTV thâm niên cao (>3 năm) phục vụ khách VIP.
+- ✅ **Membership cards & Points system**: Quản lý thẻ thành viên và lịch sử điểm tích lũy của khách hàng.
 
 **3. Package Management**
 - ✅ **Package Types**: Single service, Combo, Subscription
@@ -628,6 +650,10 @@ Check Stock → Evaluate Reorder → Create PO → Notify Supplier → Update In
 - ✅ Pre-computed metrics
 - ✅ Real-time data
 - ✅ Contextual analysis
+
+**4. Role-Based Access Control (RBAC)**
+- ✅ **Phân quyền truy cập UI & API**: Chỉ có các vai trò thuộc `AI_COPILOT_ROLES` (`super_admin`, `admin`, `accountant`) mới có quyền truy cập trang `/dashboard/ai-copilot` và gọi API `coo-orchestrator`. Các vai trò KTV, lễ tân hoặc nhân viên thông thường sẽ bị chặn và chuyển hướng ngay lập tức.
+- ✅ **Xác thực kênh tương tác (Telegram Bot)**: Các câu lệnh gửi qua Telegram Group bằng cú pháp `/coo` được đối chiếu chat ID với cấu hình trong hệ thống (`ai_agent_configs`). Phiên xử lý chạy dưới danh nghĩa một người dùng có quyền quản trị/kế toán thuộc chi nhánh đó, đảm bảo tính phân lập dữ liệu (Tenant Isolation) theo đúng chuẩn RLS.
 
 ### 10.2. AI Model
 
