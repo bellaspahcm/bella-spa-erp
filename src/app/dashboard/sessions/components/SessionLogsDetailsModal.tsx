@@ -453,30 +453,34 @@ export function SessionLogsDetailsModal({
                     </div>
                   ) : (
                     <>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
                         <div>
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Ngày dự kiến</label>
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5 ml-1">
+                            <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                            Ngày dự kiến
+                          </label>
                           <div className="relative flex items-center rounded-xl bg-slate-50 focus-within:ring-2 focus-within:ring-primary/20">
-                            <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 hidden md:block pointer-events-none" />
                             <input 
                               type="date"
                               value={selectedDate}
                               onChange={(e) => setSelectedDate(e.target.value)}
                               disabled={!selectedSessionLog || (userRole !== 'admin' && !['scheduled', 'in_progress'].includes(selectedSessionLog.status))}
-                              className="w-full py-3 pl-3 md:pl-11 pr-3 bg-transparent border-none outline-none font-bold text-slate-700 text-xs disabled:opacity-50"
+                              className="w-full py-3 px-4 bg-transparent border-none outline-none font-bold text-slate-700 text-xs disabled:opacity-50"
                             />
                           </div>
                         </div>
                         <div>
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Giờ hẹn</label>
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5 ml-1">
+                            <Clock className="w-3.5 h-3.5 text-slate-400" />
+                            Giờ hẹn
+                          </label>
                           <div className="relative flex items-center rounded-xl bg-slate-50 focus-within:ring-2 focus-within:ring-primary/20">
-                            <Clock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 hidden md:block pointer-events-none" />
                             <input 
                               type="time"
                               value={selectedTime}
                               onChange={(e) => setSelectedTime(e.target.value)}
                               disabled={!selectedSessionLog || (userRole !== 'admin' && !['scheduled', 'in_progress'].includes(selectedSessionLog.status))}
-                              className="w-full py-3 pl-3 md:pl-11 pr-3 bg-transparent border-none outline-none font-bold text-slate-700 text-xs disabled:opacity-50"
+                              className="w-full py-3 px-4 bg-transparent border-none outline-none font-bold text-slate-700 text-xs disabled:opacity-50"
                             />
                           </div>
                         </div>
