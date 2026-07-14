@@ -892,6 +892,10 @@ function checkSalary(dataset, context) {
       ['session_bonus', record.session_bonus],
       ['rating_bonus', record.rating_bonus],
       ['kpi_bonus', record.kpi_bonus],
+      ['service_commission', record.service_commission],
+      ['product_sales_commission', record.product_sales_commission],
+      ['position_bonus', record.position_bonus],
+      ['seniority_bonus', record.seniority_bonus],
       ['violations_deduction', record.violations_deduction],
       ['service_percentage_bonus', record.service_percentage_bonus],
       ['total_salary', record.total_salary],
@@ -914,7 +918,12 @@ function checkSalary(dataset, context) {
       asFiniteNumber(record.base_salary) +
         asFiniteNumber(record.session_bonus) +
         asFiniteNumber(record.rating_bonus) +
-        asFiniteNumber(record.kpi_bonus) -
+        asFiniteNumber(record.kpi_bonus) +
+        asFiniteNumber(record.service_commission) +
+        asFiniteNumber(record.product_sales_commission) +
+        asFiniteNumber(record.position_bonus) +
+        asFiniteNumber(record.seniority_bonus) +
+        asFiniteNumber(record.manual_adjustments) -
         asFiniteNumber(record.violations_deduction) -
         asFiniteNumber(record.service_percentage_bonus)
     );
