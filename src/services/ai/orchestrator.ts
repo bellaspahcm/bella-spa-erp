@@ -7,6 +7,29 @@ import { runFranchiseAgent } from './agents/franchise';
 import { runCHROAgent } from './agents/chro';
 import { runCFOAgent } from './agents/cfo';
 
+/**
+ * Tìm vị trí đóng của `{` đầu tiên bằng thuật toán brace-matching,
+ * tránh lỗi khi Gemini trả về nhiều JSON object liên tiếp hoặc text sau JSON.
+ */
+function findBalancedJsonEnd(text: string, start: number): number {
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+  for (let i = start; i < text.length; i++) {
+    const ch = text[i];
+    if (escape) { escape = false; continue; }
+    if (ch === '\\' && inString) { escape = true; continue; }
+    if (ch === '"') { inString = !inString; continue; }
+    if (inString) continue;
+    if (ch === '{') depth++;
+    else if (ch === '}') {
+      depth--;
+      if (depth === 0) return i;
+    }
+  }
+  return -1;
+}
+
 function cleanAndParseJson(text: string): Record<string, unknown> {
   let cleaned = text.trim();
   // Remove markdown code blocks if present
@@ -15,11 +38,13 @@ function cleanAndParseJson(text: string): Record<string, unknown> {
   }
   cleaned = cleaned.trim();
 
-  // Find the first '{' and last '}' to isolate the JSON object
+  // Dùng brace-matching thay vì lastIndexOf để tránh merge nhiều JSON object
   const firstBrace = cleaned.indexOf("{");
-  const lastBrace = cleaned.lastIndexOf("}");
-  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-    cleaned = cleaned.substring(firstBrace, lastBrace + 1);
+  if (firstBrace !== -1) {
+    const lastBrace = findBalancedJsonEnd(cleaned, firstBrace);
+    if (lastBrace !== -1) {
+      cleaned = cleaned.substring(firstBrace, lastBrace + 1);
+    }
   }
 
   try {
