@@ -23,7 +23,8 @@ import {
   RefreshCw,
   BarChart3,
   ClipboardList,
-  LineChart
+  LineChart,
+  Sliders
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -298,6 +299,7 @@ const menuItems: SidebarMenuItem[] = [
 
   { type: 'header', label: 'Hệ thống' },
   { icon: HelpCircle,      label: 'Hướng dẫn sử dụng',   href: '/dashboard/guides' },
+  { icon: Sliders,         label: 'Cấu hình Dịch vụ',    href: '/dashboard/services' },
   { icon: Settings,        label: 'Cài đặt',             href: '/dashboard/settings' },
 ];
 
