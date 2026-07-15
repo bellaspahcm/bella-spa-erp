@@ -290,6 +290,7 @@ const menuItems: SidebarMenuItem[] = [
   { type: 'header', label: 'Tài chính & Nhân sự' },
   { icon: Banknote,        label: 'Bảng lương & Công',  href: '/dashboard/salary' },
   { icon: Wallet,          label: 'Sổ cái kế toán',     href: '/dashboard/accounting' },
+  { icon: DollarSign,      label: 'Đối soát Công nợ',   href: '/dashboard/finance/reconciliation' },
 
   { type: 'header', label: 'Báo cáo & Phân tích' },
   { icon: BarChart3,       label: 'Bảng quản trị CEO',  href: '/dashboard/executive' },
