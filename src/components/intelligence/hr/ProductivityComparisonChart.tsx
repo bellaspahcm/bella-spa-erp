@@ -26,12 +26,15 @@ import {
   ZAxis,
 } from 'recharts';
 import type { EmployeePerformance } from '@/services/intelligence/hr/queries';
+import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
 
 interface ProductivityComparisonChartProps {
   data: EmployeePerformance[];
 }
 
 export function ProductivityComparisonChart({ data }: ProductivityComparisonChartProps) {
+  const vocab = useModuleVocabulary();
+
   // Sort by performance score and take top 15 to avoid clutter
   const topPerformers = [...data]
     .sort((a, b) => b.overallPerformanceScore - a.overallPerformanceScore)
@@ -51,6 +54,9 @@ export function ProductivityComparisonChart({ data }: ProductivityComparisonChar
     );
   }
 
+  const workUnitLabel = `${vocab.workUnit.singular} hoàn thành`;
+  const workUnitShortLabel = `Số ${vocab.workUnit.singular.toLowerCase()}`;
+
   return (
     <ResponsiveContainer width="100%" height={400}>
       <ScatterChart
@@ -65,9 +71,9 @@ export function ProductivityComparisonChart({ data }: ProductivityComparisonChar
         <XAxis
           type="number"
           dataKey="sessions"
-          name="Ca hoàn thành"
+          name={workUnitLabel}
           tick={{ fill: '#4b5563', fontSize: 12 }}
-          label={{ value: 'Số ca hoàn thành', position: 'insideBottom', offset: -10, style: { fill: '#4b5563' } }}
+          label={{ value: `Số ${vocab.workUnit.singular.toLowerCase()} hoàn thành`, position: 'insideBottom', offset: -10, style: { fill: '#4b5563' } }}
         />
         <YAxis
           type="number"
@@ -86,15 +92,15 @@ export function ProductivityComparisonChart({ data }: ProductivityComparisonChar
             padding: '12px',
           }}
           formatter={(value, name) => {
-            if (name === 'Ca hoàn thành') return [value, 'Số ca'];
+            if (name === workUnitLabel) return [value, workUnitShortLabel];
             if (name === 'Doanh thu') return [`${Number(value).toFixed(1)}M VNĐ`, 'Doanh thu'];
             if (name === 'Điểm hiệu suất') return [Number(value).toFixed(1), 'Điểm'];
             return [value, name];
           }}
-          labelFormatter={(label) => `KTV: ${topPerformers[label]?.name || label}`}
+          labelFormatter={(label) => `${vocab.worker.short}: ${topPerformers[label]?.name || label}`}
         />
         <Scatter
-          name="KTV"
+          name={vocab.worker.short}
           data={topPerformers}
           fill="#8b5cf6"
           fillOpacity={0.6}

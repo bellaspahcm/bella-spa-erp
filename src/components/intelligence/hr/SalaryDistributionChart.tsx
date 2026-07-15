@@ -9,7 +9,7 @@
  * Features:
  * - Bar chart showing total amounts for each salary component
  * - Base salary, KPI bonus, session bonus, deductions breakdown
- * - Vietnamese localization
+ * - Dynamic vocabulary based on tenant module configuration
  * - Responsive design with Recharts
  */
 
@@ -25,12 +25,15 @@ import {
   Cell,
 } from 'recharts';
 import type { PayrollSummary } from '@/services/intelligence/hr/queries';
+import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
 
 interface SalaryDistributionChartProps {
   data: PayrollSummary[];
 }
 
 export function SalaryDistributionChart({ data }: SalaryDistributionChartProps) {
+  const vocab = useModuleVocabulary();
+
   // Aggregate all salary components
   const totals = data.reduce(
     (acc, ktv) => ({
@@ -54,7 +57,7 @@ export function SalaryDistributionChart({ data }: SalaryDistributionChartProps) 
       color: '#10b981',
     },
     {
-      name: 'Hoa hồng ca',
+      name: `Hoa hồng ${vocab.workUnit.singular.toLowerCase()}`,
       value: totals.sessionBonus,
       color: '#f59e0b',
     },
@@ -63,7 +66,7 @@ export function SalaryDistributionChart({ data }: SalaryDistributionChartProps) 
       value: totals.deductions,
       color: '#ef4444',
     },
-  ];
+  ].filter(item => Math.abs(item.value) > 0);
 
   if (data.length === 0) {
     return (

@@ -24,9 +24,12 @@ import {
   AlertCircle,
   Users,
   Activity,
+  ArrowLeft,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase-client';
+import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
+import { cn } from '@/lib/utils';
 import type { IntelligenceResponse } from '@/services/intelligence/shared/types';
 import type { EmployeePerformance } from '@/services/intelligence/hr/queries';
 import {
@@ -48,6 +51,7 @@ type ViewMode = 'overview' | 'kpi' | 'rating' | 'productivity';
 
 export default function EmployeePerformanceDashboard() {
   const router = useRouter();
+  const vocab = useModuleVocabulary();
   const [tenantId, setTenantId] = useState<string | null>(null);
   const [month, setMonth] = useState<string>(() => {
     const now = new Date();
@@ -204,10 +208,47 @@ export default function EmployeePerformanceDashboard() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="flex flex-col items-center gap-4">
-          <RefreshCw className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-slate-600">Đang tải dữ liệu...</p>
+      <div className="p-6 space-y-6 max-w-7xl mx-auto">
+        {/* Header Skeleton */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-2">
+            <div className="h-9 w-64 bg-slate-200 dark:bg-zinc-800 rounded-lg animate-pulse" />
+            <div className="h-5 w-96 bg-slate-200 dark:bg-zinc-800 rounded-lg animate-pulse" />
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="h-11 w-80 bg-slate-100 dark:bg-zinc-900 rounded-2xl animate-pulse" />
+            <div className="h-11 w-32 bg-slate-100 dark:bg-zinc-900 rounded-2xl animate-pulse" />
+            <div className="h-11 w-28 bg-slate-100 dark:bg-zinc-900 rounded-2xl animate-pulse" />
+          </div>
+        </div>
+
+        {/* Stats Cards Skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="bg-white dark:bg-zinc-900 rounded-[2rem] p-6 border border-slate-200 dark:border-zinc-800 h-32 animate-pulse flex items-center justify-between shadow-sm">
+              <div className="space-y-2 flex-1">
+                <div className="h-4 w-28 bg-slate-200 dark:bg-zinc-800 rounded" />
+                <div className="h-8 w-16 bg-slate-200 dark:bg-zinc-800 rounded" />
+                <div className="h-4 w-20 bg-slate-200 dark:bg-zinc-800 rounded" />
+              </div>
+              <div className="w-12 h-12 bg-slate-200 dark:bg-zinc-800 rounded-lg" />
+            </div>
+          ))}
+        </div>
+
+        {/* Charts Skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {[1, 2].map((i) => (
+            <div key={i} className="bg-white dark:bg-zinc-900 rounded-[2rem] p-6 border border-slate-200 dark:border-zinc-800 h-[400px] animate-pulse">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-slate-200 dark:bg-zinc-800 rounded-lg" />
+                  <div className="h-6 w-48 bg-slate-200 dark:bg-zinc-800 rounded" />
+                </div>
+              </div>
+              <div className="h-64 w-full bg-slate-100 dark:bg-zinc-800/40 rounded-xl" />
+            </div>
+          ))}
         </div>
       </div>
     );
@@ -222,72 +263,70 @@ export default function EmployeePerformanceDashboard() {
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900">Hiệu Suất KTV</h1>
-          <p className="text-slate-600 mt-1">Đánh giá tổng hợp hiệu suất làm việc của kỹ thuật viên</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => router.back()}
+            className="w-12 h-12 bg-white/60 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-slate-200/60 text-slate-600 hover:text-primary hover:border-primary/30 active:scale-95 transition-all shadow-sm shrink-0"
+            title="Quay lại trang trước"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div>
+            <h1 className="text-3xl font-black text-slate-900 tracking-tighter sm:text-4xl font-heading uppercase">
+              Hiệu Suất {vocab.worker.short}
+            </h1>
+            <p className="text-slate-500 font-medium mt-1">
+              Đánh giá tổng hợp hiệu suất làm việc của {vocab.worker.plural.toLowerCase()}
+            </p>
+          </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
           {/* View Mode Selector */}
-          <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-lg">
-            <button
-              onClick={() => setViewMode('overview')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                viewMode === 'overview'
-                  ? 'bg-white text-slate-900 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Tổng quan
-            </button>
-            <button
-              onClick={() => setViewMode('kpi')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                viewMode === 'kpi'
-                  ? 'bg-white text-slate-900 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              KPI
-            </button>
-            <button
-              onClick={() => setViewMode('rating')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                viewMode === 'rating'
-                  ? 'bg-white text-slate-900 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Đánh giá
-            </button>
-            <button
-              onClick={() => setViewMode('productivity')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                viewMode === 'productivity'
-                  ? 'bg-white text-slate-900 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Năng suất
-            </button>
+          <div className="flex bg-white/60 p-1.5 rounded-2xl border border-slate-100 gap-1.5 backdrop-blur-md shadow-sm">
+            {(['overview', 'kpi', 'rating', 'productivity'] as const).map((mode) => {
+              const labelMap = {
+                overview: 'Tổng quan',
+                kpi: 'KPI',
+                rating: 'Đánh giá',
+                productivity: 'Năng suất',
+              };
+              const isActive = viewMode === mode;
+              return (
+                <button
+                  key={mode}
+                  onClick={() => setViewMode(mode)}
+                  className={cn(
+                    "px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap",
+                    isActive
+                      ? "bg-slate-900 text-white shadow-md"
+                      : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
+                  )}
+                >
+                  {labelMap[mode]}
+                </button>
+              );
+            })}
           </div>
 
           {/* Month Selector */}
-          <input
-            type="month"
-            value={month}
-            onChange={(e) => setMonth(e.target.value)}
-            className="px-4 py-2 border border-slate-300 rounded-lg bg-white hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-primary"
-          />
+          <div className="relative group">
+            <input
+              type="month"
+              value={month}
+              onChange={(e) => setMonth(e.target.value)}
+              className="px-4 py-3 bg-white/85 border border-border rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all shadow-sm font-bold text-slate-800"
+            />
+          </div>
 
           {/* Refresh Button */}
           <button
             onClick={() => fetchPerformanceMetrics(true)}
             disabled={isRefreshing}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-wider transition-all shadow-lg shadow-pink-100 dark:shadow-none active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
             Làm mới
           </button>
         </div>
@@ -299,19 +338,19 @@ export default function EmployeePerformanceDashboard() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-xl shadow-sm border border-slate-200 p-6"
+          className="luxury-card-white flex flex-col justify-center rounded-[2rem] p-6 shadow-sm border border-slate-200"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-slate-600">Điểm Hiệu Suất TB</p>
-              <p className="text-3xl font-bold text-purple-600 mt-1">
+              <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Điểm Hiệu Suất TB</p>
+              <p className="text-3xl font-black text-purple-600 mt-2">
                 {formatNumber(metrics.avgPerformanceScore, 1)}
               </p>
-              <p className="text-sm text-slate-500 mt-2">
+              <p className="text-xs font-bold text-slate-500 mt-2">
                 trên thang 100
               </p>
             </div>
-            <div className="p-3 bg-purple-100 rounded-lg">
+            <div className="p-3 bg-purple-50 dark:bg-purple-950/30 rounded-2xl">
               <Award className="h-8 w-8 text-purple-600" />
             </div>
           </div>
@@ -322,19 +361,19 @@ export default function EmployeePerformanceDashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-white rounded-xl shadow-sm border border-slate-200 p-6"
+          className="luxury-card-white flex flex-col justify-center rounded-[2rem] p-6 shadow-sm border border-slate-200"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-slate-600">Điểm KPI TB</p>
-              <p className="text-3xl font-bold text-blue-600 mt-1">
+              <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Điểm KPI TB</p>
+              <p className="text-3xl font-black text-blue-600 mt-2">
                 {formatNumber(metrics.avgKpiScore, 1)}
               </p>
-              <p className="text-sm text-slate-500 mt-2">
+              <p className="text-xs font-bold text-slate-500 mt-2">
                 chỉ tiêu tháng
               </p>
             </div>
-            <div className="p-3 bg-blue-100 rounded-lg">
+            <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-2xl">
               <Target className="h-8 w-8 text-blue-600" />
             </div>
           </div>
@@ -345,19 +384,19 @@ export default function EmployeePerformanceDashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-white rounded-xl shadow-sm border border-slate-200 p-6"
+          className="luxury-card-white flex flex-col justify-center rounded-[2rem] p-6 shadow-sm border border-slate-200"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-slate-600">Đánh Giá TB</p>
-              <p className="text-3xl font-bold text-yellow-600 mt-1">
+              <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Đánh Giá TB</p>
+              <p className="text-3xl font-black text-yellow-600 mt-2">
                 {formatNumber(metrics.avgRating, 1)} ⭐
               </p>
-              <p className="text-sm text-slate-500 mt-2">
+              <p className="text-xs font-bold text-slate-500 mt-2">
                 từ khách hàng
               </p>
             </div>
-            <div className="p-3 bg-yellow-100 rounded-lg">
+            <div className="p-3 bg-yellow-50 dark:bg-yellow-950/30 rounded-2xl">
               <Star className="h-8 w-8 text-yellow-600" />
             </div>
           </div>
@@ -368,19 +407,21 @@ export default function EmployeePerformanceDashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="bg-white rounded-xl shadow-sm border border-slate-200 p-6"
+          className="luxury-card-white flex flex-col justify-center rounded-[2rem] p-6 shadow-sm border border-slate-200"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-slate-600">Tổng Ca Hoàn Thành</p>
-              <p className="text-2xl font-bold text-green-600 mt-1">
+              <p className="text-xs font-black text-slate-400 uppercase tracking-widest">
+                Tổng {vocab.workUnit.singular.toLowerCase()} hoàn thành
+              </p>
+              <p className="text-3xl font-black text-green-600 mt-2">
                 {formatNumber(metrics.totalSessionsCompleted)}
               </p>
-              <p className="text-sm text-slate-500 mt-2">
+              <p className="text-xs font-bold text-slate-500 mt-2 truncate">
                 Doanh thu: {formatCurrency(metrics.totalRevenueContribution)}
               </p>
             </div>
-            <div className="p-3 bg-green-100 rounded-lg">
+            <div className="p-3 bg-green-50 dark:bg-green-950/30 rounded-2xl shrink-0">
               <Activity className="h-8 w-8 text-green-600" />
             </div>
           </div>
@@ -393,41 +434,49 @@ export default function EmployeePerformanceDashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="bg-gradient-to-r from-purple-500 to-indigo-600 rounded-xl shadow-lg p-6 text-white"
+          className="luxury-card-pink relative overflow-hidden rounded-[2rem] p-6 shadow-lg text-white"
         >
-          <div className="flex items-center gap-3 mb-4">
-            <Award className="h-6 w-6" />
-            <h3 className="text-lg font-semibold">Top 3 Xuất Sắc Tháng Này</h3>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {metrics.topPerformers.map((ktv, index) => (
-              <div key={ktv.ktvId} className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className={`flex items-center justify-center w-8 h-8 rounded-full ${
-                    index === 0 ? 'bg-yellow-400 text-yellow-900' :
-                    index === 1 ? 'bg-slate-300 text-slate-900' :
-                    'bg-amber-600 text-white'
-                  } font-bold`}>
-                    {index + 1}
+          <div className="relative z-10">
+            <div className="flex items-center gap-3 mb-4">
+              <Award className="h-6 w-6" />
+              <h3 className="text-lg font-black uppercase tracking-wider">
+                Top 3 {vocab.worker.short} Xuất Sắc Tháng Này
+              </h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {metrics.topPerformers.map((ktv, index) => (
+                <div key={ktv.ktvId} className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className={cn(
+                      "flex items-center justify-center w-8 h-8 rounded-full font-bold shadow-inner border border-white/20",
+                      index === 0 ? 'bg-yellow-400 text-yellow-950' :
+                      index === 1 ? 'bg-slate-200 text-slate-900' :
+                      'bg-amber-600 text-white'
+                    )}>
+                      {index + 1}
+                    </div>
+                    <div>
+                      <p className="font-bold">{ktv.ktvName}</p>
+                      <p className="text-xs opacity-90 font-semibold">
+                        Điểm: {formatNumber(ktv.overallPerformanceScore, 1)}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-semibold">{ktv.ktvName}</p>
-                    <p className="text-sm opacity-90">Điểm: {formatNumber(ktv.overallPerformanceScore, 1)}</p>
+                  <div className="grid grid-cols-2 gap-2 text-xs font-semibold">
+                    <div>
+                      <p className="opacity-75">KPI</p>
+                      <p className="font-bold">{formatNumber(ktv.kpiScore, 1)}</p>
+                    </div>
+                    <div>
+                      <p className="opacity-75">Đánh giá</p>
+                      <p className="font-bold">{formatNumber(ktv.avgStarRating, 1)} ⭐</p>
+                    </div>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div>
-                    <p className="opacity-75">KPI</p>
-                    <p className="font-medium">{formatNumber(ktv.kpiScore, 1)}</p>
-                  </div>
-                  <div>
-                    <p className="opacity-75">Đánh giá</p>
-                    <p className="font-medium">{formatNumber(ktv.avgStarRating, 1)} ⭐</p>
-                  </div>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
+          <div className="absolute top-[-20%] right-[-10%] w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
         </motion.div>
       )}
 
@@ -439,17 +488,19 @@ export default function EmployeePerformanceDashboard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
-            className="bg-white rounded-xl shadow-sm border border-slate-200 p-6"
+            className="luxury-card-white bg-white/85 backdrop-blur-md rounded-[2rem] p-6 border border-slate-200 shadow-sm"
           >
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <div className="p-3 bg-purple-100 rounded-lg">
+                <div className="p-3 bg-purple-50 dark:bg-purple-950/30 rounded-2xl">
                   <TrendingUp className="h-6 w-6 text-purple-600" />
                 </div>
-                <h3 className="text-lg font-semibold text-slate-900">Phân Bổ Điểm Hiệu Suất</h3>
+                <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">
+                  Phân Bổ Điểm Hiệu Suất
+                </h3>
               </div>
               {performanceData.metadata.cacheHit && (
-                <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">Cache</span>
+                <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg">Cache</span>
               )}
             </div>
 
@@ -459,7 +510,7 @@ export default function EmployeePerformanceDashboard() {
               <div className="flex items-center justify-center h-80">
                 <div className="text-center">
                   <AlertCircle className="h-12 w-12 text-slate-300 mx-auto mb-2" />
-                  <p className="text-slate-500">Chưa có dữ liệu</p>
+                  <p className="text-slate-500 font-medium">Chưa có dữ liệu</p>
                 </div>
               </div>
             )}
@@ -472,14 +523,16 @@ export default function EmployeePerformanceDashboard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
-            className="bg-white rounded-xl shadow-sm border border-slate-200 p-6"
+            className="luxury-card-white bg-white/85 backdrop-blur-md rounded-[2rem] p-6 border border-slate-200 shadow-sm"
           >
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <div className="p-3 bg-blue-100 rounded-lg">
+                <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-2xl">
                   <Target className="h-6 w-6 text-blue-600" />
                 </div>
-                <h3 className="text-lg font-semibold text-slate-900">Top 10 Đạt KPI Cao Nhất</h3>
+                <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">
+                  Top 10 Đạt KPI Cao Nhất
+                </h3>
               </div>
             </div>
 
@@ -489,7 +542,7 @@ export default function EmployeePerformanceDashboard() {
               <div className="flex items-center justify-center h-80">
                 <div className="text-center">
                   <AlertCircle className="h-12 w-12 text-slate-300 mx-auto mb-2" />
-                  <p className="text-slate-500">Chưa có dữ liệu</p>
+                  <p className="text-slate-500 font-medium">Chưa có dữ liệu</p>
                 </div>
               </div>
             )}
@@ -502,14 +555,16 @@ export default function EmployeePerformanceDashboard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.7 }}
-            className="bg-white rounded-xl shadow-sm border border-slate-200 p-6"
+            className="luxury-card-white bg-white/85 backdrop-blur-md rounded-[2rem] p-6 border border-slate-200 shadow-sm"
           >
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <div className="p-3 bg-yellow-100 rounded-lg">
+                <div className="p-3 bg-yellow-50 dark:bg-yellow-950/30 rounded-2xl">
                   <Star className="h-6 w-6 text-yellow-600" />
                 </div>
-                <h3 className="text-lg font-semibold text-slate-900">Phân Bổ Đánh Giá Sao</h3>
+                <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">
+                  Phân Bổ Đánh Giá Sao
+                </h3>
               </div>
             </div>
 
@@ -519,7 +574,7 @@ export default function EmployeePerformanceDashboard() {
               <div className="flex items-center justify-center h-80">
                 <div className="text-center">
                   <AlertCircle className="h-12 w-12 text-slate-300 mx-auto mb-2" />
-                  <p className="text-slate-500">Chưa có dữ liệu</p>
+                  <p className="text-slate-500 font-medium">Chưa có dữ liệu</p>
                 </div>
               </div>
             )}
@@ -532,14 +587,16 @@ export default function EmployeePerformanceDashboard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.8 }}
-            className="bg-white rounded-xl shadow-sm border border-slate-200 p-6"
+            className="luxury-card-white bg-white/85 backdrop-blur-md rounded-[2rem] p-6 border border-slate-200 shadow-sm"
           >
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <div className="p-3 bg-green-100 rounded-lg">
+                <div className="p-3 bg-green-50 dark:bg-green-950/30 rounded-2xl">
                   <Activity className="h-6 w-6 text-green-600" />
                 </div>
-                <h3 className="text-lg font-semibold text-slate-900">So Sánh Năng Suất</h3>
+                <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">
+                  So Sánh Năng Suất
+                </h3>
               </div>
             </div>
 
@@ -549,7 +606,7 @@ export default function EmployeePerformanceDashboard() {
               <div className="flex items-center justify-center h-80">
                 <div className="text-center">
                   <AlertCircle className="h-12 w-12 text-slate-300 mx-auto mb-2" />
-                  <p className="text-slate-500">Chưa có dữ liệu</p>
+                  <p className="text-slate-500 font-medium">Chưa có dữ liệu</p>
                 </div>
               </div>
             )}
@@ -560,7 +617,7 @@ export default function EmployeePerformanceDashboard() {
       {/* Cache Info Footer */}
       {performanceData && (
         <div className="text-center text-sm text-slate-500">
-          <p>
+          <p className="font-medium">
             Dữ liệu được tạo lúc {new Date(performanceData.metadata.generatedAt).toLocaleTimeString('vi-VN')}
             {' '}({performanceData.metadata.cacheHit ? 'Cache' : 'Mới'})
           </p>

@@ -3,13 +3,13 @@
 /**
  * TopEarnersChart Component
  * 
- * Displays top-earning KTVs with stacked salary components
+ * Displays top-earning workers with stacked salary components
  * Used in Attendance & Payroll Dashboard
  * 
  * Features:
- * - Stacked bar chart showing base salary, KPI bonus, session bonus
+ * - Stacked bar chart showing base salary, KPI bonus, and session/commission bonus
  * - Top 10 earners by total salary
- * - Vietnamese localization
+ * - Dynamic vocabulary based on tenant module configuration
  * - Responsive design with Recharts
  */
 
@@ -25,12 +25,16 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import type { PayrollSummary } from '@/services/intelligence/hr/queries';
+import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
 
 interface TopEarnersChartProps {
   data: PayrollSummary[];
 }
 
 export function TopEarnersChart({ data }: TopEarnersChartProps) {
+  const vocab = useModuleVocabulary();
+  const workUnitCommissionKey = `Hoa hồng ${vocab.workUnit.singular.toLowerCase()}`;
+
   // Sort by total salary descending and take top 10
   const topEarners = [...data]
     .sort((a, b) => b.totalSalary - a.totalSalary)
@@ -39,7 +43,7 @@ export function TopEarnersChart({ data }: TopEarnersChartProps) {
       name: ktv.ktvName,
       'Lương cơ bản': ktv.baseSalary,
       'Thưởng KPI': ktv.kpiBonus,
-      'Hoa hồng ca': ktv.sessionBonus,
+      [workUnitCommissionKey]: ktv.sessionBonus,
     }));
 
   if (topEarners.length === 0) {
@@ -102,7 +106,7 @@ export function TopEarnersChart({ data }: TopEarnersChartProps) {
         />
         <Bar dataKey="Lương cơ bản" stackId="a" fill="#3b82f6" />
         <Bar dataKey="Thưởng KPI" stackId="a" fill="#10b981" />
-        <Bar dataKey="Hoa hồng ca" stackId="a" fill="#f59e0b" />
+        <Bar dataKey={workUnitCommissionKey} stackId="a" fill="#f59e0b" />
       </BarChart>
     </ResponsiveContainer>
   );

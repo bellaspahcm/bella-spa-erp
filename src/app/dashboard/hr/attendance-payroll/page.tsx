@@ -29,9 +29,12 @@ import {
   Users,
   BarChart3,
   CalendarDays,
+  ArrowLeft,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase-client';
+import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
+import { cn } from '@/lib/utils';
 import type { IntelligenceResponse } from '@/services/intelligence/shared/types';
 import type { 
   AttendanceReport, 
@@ -55,6 +58,7 @@ type ViewMode = 'attendance' | 'payroll' | 'combined';
 
 function AttendancePayrollDashboard() {
   const router = useRouter();
+  const vocab = useModuleVocabulary();
   const [tenantId, setTenantId] = useState<string | null>(null);
   const [month, setMonth] = useState<string>(() => {
     const now = new Date();
@@ -252,33 +256,8 @@ function AttendancePayrollDashboard() {
       }));
   };
 
-  const getTopEarnersData = () => {
-    if (!payrollData || !payrollData.data) return [];
-
-    return payrollData.data
-      .sort((a, b) => b.totalSalary - a.totalSalary)
-      .slice(0, 10)
-      .map(ktv => ({
-        name: ktv.ktvName,
-        baseSalary: ktv.baseSalary,
-        bonus: ktv.sessionBonus + ktv.kpiBonus + ktv.ratingBonus,
-        totalSalary: ktv.totalSalary,
-      }));
-  };
-
-  const getSalaryDistributionData = () => {
-    if (!payrollData || !payrollData.data) return [];
-
-    const aggregates = getAggregatePayroll();
-    
-    return [
-      { component: 'Lương cơ bản', amount: payrollData.data.reduce((sum, ktv) => sum + ktv.baseSalary, 0), color: '#3b82f6' },
-      { component: 'Thưởng ca', amount: payrollData.data.reduce((sum, ktv) => sum + ktv.sessionBonus, 0), color: '#10b981' },
-      { component: 'Thưởng KPI', amount: payrollData.data.reduce((sum, ktv) => sum + ktv.kpiBonus, 0), color: '#f59e0b' },
-      { component: 'Thưởng sao', amount: payrollData.data.reduce((sum, ktv) => sum + ktv.ratingBonus, 0), color: '#8b5cf6' },
-      { component: 'Trừ vi phạm', amount: -payrollData.data.reduce((sum, ktv) => sum + ktv.violationsDeduction, 0), color: '#ef4444' },
-    ].filter(item => Math.abs(item.amount) > 0);
-  };
+  const attendanceMetrics = getAggregateAttendance();
+  const payrollMetrics = getAggregatePayroll();
 
   // ───────────────────────────────────────────────────────────────────────────
   // Render loading state
@@ -286,78 +265,122 @@ function AttendancePayrollDashboard() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="flex flex-col items-center gap-4">
-          <RefreshCw className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-slate-600">Đang tải dữ liệu...</p>
+      <div className="p-6 space-y-6 max-w-7xl mx-auto">
+        {/* Header Skeleton */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-slate-100 dark:bg-zinc-900 rounded-2xl animate-pulse" />
+            <div className="space-y-2">
+              <div className="h-9 w-64 bg-slate-200 dark:bg-zinc-800 rounded-lg animate-pulse" />
+              <div className="h-5 w-96 bg-slate-200 dark:bg-zinc-800 rounded-lg animate-pulse" />
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="h-11 w-80 bg-slate-100 dark:bg-zinc-900 rounded-2xl animate-pulse" />
+            <div className="h-11 w-32 bg-slate-100 dark:bg-zinc-900 rounded-2xl animate-pulse" />
+            <div className="h-11 w-28 bg-slate-100 dark:bg-zinc-900 rounded-2xl animate-pulse" />
+          </div>
+        </div>
+
+        {/* Stats Cards Skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="bg-white dark:bg-zinc-900 rounded-[2rem] p-6 border border-slate-200 dark:border-zinc-800 h-32 animate-pulse flex items-center justify-between shadow-sm">
+              <div className="space-y-2 flex-1">
+                <div className="h-4 w-28 bg-slate-200 dark:bg-zinc-800 rounded" />
+                <div className="h-8 w-16 bg-slate-200 dark:bg-zinc-800 rounded" />
+                <div className="h-4 w-20 bg-slate-200 dark:bg-zinc-800 rounded" />
+              </div>
+              <div className="w-12 h-12 bg-slate-200 dark:bg-zinc-800 rounded-lg" />
+            </div>
+          ))}
+        </div>
+
+        {/* Charts Skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {[1, 2].map((i) => (
+            <div key={i} className="bg-white dark:bg-zinc-900 rounded-[2rem] p-6 border border-slate-200 dark:border-zinc-800 h-[400px] animate-pulse">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-slate-200 dark:bg-zinc-800 rounded-lg" />
+                  <div className="h-6 w-48 bg-slate-200 dark:bg-zinc-800 rounded" />
+                </div>
+              </div>
+              <div className="h-64 w-full bg-slate-100 dark:bg-zinc-800/40 rounded-xl" />
+            </div>
+          ))}
         </div>
       </div>
     );
   }
-
-  const attendanceMetrics = getAggregateAttendance();
-  const payrollMetrics = getAggregatePayroll();
 
   // ───────────────────────────────────────────────────────────────────────────
   // Render
   // ───────────────────────────────────────────────────────────────────────────
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8 py-8 space-y-6 max-w-[1400px] mx-auto">
+    <div className="p-6 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900">Chấm Công & Lương</h1>
-          <p className="text-slate-600 mt-1">Theo dõi chấm công, tính lương và hiệu suất KTV</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => router.back()}
+            className="w-12 h-12 bg-white/60 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-slate-200/60 text-slate-600 hover:text-primary hover:border-primary/30 active:scale-95 transition-all shadow-sm shrink-0"
+            title="Quay lại trang trước"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div>
+            <h1 className="text-3xl font-black text-slate-900 tracking-tighter sm:text-4xl font-heading uppercase">
+              Chấm Công & Lương
+            </h1>
+            <p className="text-slate-500 font-medium mt-1">
+              Theo dõi chấm công, tính lương và hiệu suất {vocab.worker.short}
+            </p>
+          </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
           {/* View Mode Selector */}
-          <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-lg">
-            <button
-              onClick={() => setViewMode('attendance')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                viewMode === 'attendance'
-                  ? 'bg-white text-slate-900 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Chấm công
-            </button>
-            <button
-              onClick={() => setViewMode('payroll')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                viewMode === 'payroll'
-                  ? 'bg-white text-slate-900 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Lương
-            </button>
-            <button
-              onClick={() => setViewMode('combined')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                viewMode === 'combined'
-                  ? 'bg-white text-slate-900 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Tổng hợp
-            </button>
+          <div className="flex bg-white/60 p-1.5 rounded-2xl border border-slate-100 gap-1.5 backdrop-blur-md shadow-sm">
+            {(['attendance', 'payroll', 'combined'] as const).map((mode) => {
+              const labelMap = {
+                attendance: 'Chấm công',
+                payroll: 'Lương',
+                combined: 'Tổng hợp',
+              };
+              const isActive = viewMode === mode;
+              return (
+                <button
+                  key={mode}
+                  onClick={() => setViewMode(mode)}
+                  className={cn(
+                    "px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap",
+                    isActive
+                      ? "bg-slate-900 text-white shadow-md"
+                      : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
+                  )}
+                >
+                  {labelMap[mode]}
+                </button>
+              );
+            })}
           </div>
 
           {/* Month Selector */}
-          <input
-            type="month"
-            value={month}
-            onChange={(e) => setMonth(e.target.value)}
-            className="px-4 py-2 border border-slate-300 rounded-lg bg-white hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-primary"
-          />
+          <div className="relative group">
+            <input
+              type="month"
+              value={month}
+              onChange={(e) => setMonth(e.target.value)}
+              className="px-4 py-3 bg-white/85 border border-border rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all shadow-sm font-bold text-slate-800"
+            />
+          </div>
 
           {/* Leave Requests Link */}
           <Link
             href="/dashboard/hr/leave-requests"
-            className="flex items-center gap-2 px-4 py-2 bg-rose-50 text-rose-700 border border-rose-200 rounded-lg hover:bg-rose-100 font-medium transition-all shadow-xs"
+            className="flex items-center gap-2 px-6 py-3 bg-rose-50 text-rose-700 border border-rose-200 rounded-2xl hover:bg-rose-100 font-bold transition-all shadow-sm active:scale-95 text-xs uppercase tracking-wider"
           >
             <CalendarDays className="h-4 w-4" />
             Duyệt nghỉ phép
@@ -367,9 +390,9 @@ function AttendancePayrollDashboard() {
           <button
             onClick={() => fetchAllMetrics(true)}
             disabled={isRefreshing}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-wider transition-all shadow-lg shadow-pink-100 dark:shadow-none active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
             Làm mới
           </button>
         </div>
@@ -382,19 +405,19 @@ function AttendancePayrollDashboard() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-xl shadow-sm border border-slate-200 p-6"
+            className="luxury-card-white flex flex-col justify-center rounded-[2rem] p-6 shadow-sm border border-slate-200"
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-600">Tỷ Lệ Đi Làm TB</p>
-                <p className="text-3xl font-bold text-green-600 mt-1">
+                <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Tỷ Lệ Đi Làm TB</p>
+                <p className="text-3xl font-black text-green-600 mt-2">
                   {formatPercent(attendanceMetrics.avgAttendanceRate)}
                 </p>
-                <p className="text-sm text-slate-500 mt-2">
-                  {payrollMetrics.ktvCount} KTV
+                <p className="text-xs font-bold text-slate-500 mt-2">
+                  {payrollMetrics.ktvCount} {vocab.worker.short}
                 </p>
               </div>
-              <div className="p-3 bg-green-100 rounded-lg">
+              <div className="p-3 bg-green-50 dark:bg-green-950/30 rounded-2xl">
                 <Calendar className="h-8 w-8 text-green-600" />
               </div>
             </div>
@@ -405,19 +428,19 @@ function AttendancePayrollDashboard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="bg-white rounded-xl shadow-sm border border-slate-200 p-6"
+            className="luxury-card-white flex flex-col justify-center rounded-[2rem] p-6 shadow-sm border border-slate-200"
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-600">Tỷ Lệ Đúng Giờ TB</p>
-                <p className="text-3xl font-bold text-blue-600 mt-1">
+                <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Tỷ Lệ Đúng Giờ TB</p>
+                <p className="text-3xl font-black text-blue-600 mt-2">
                   {formatPercent(attendanceMetrics.avgOnTimeRate)}
                 </p>
-                <p className="text-sm text-slate-500 mt-2">
+                <p className="text-xs font-bold text-slate-500 mt-2">
                   {attendanceMetrics.totalLate} lượt muộn
                 </p>
               </div>
-              <div className="p-3 bg-blue-100 rounded-lg">
+              <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-2xl">
                 <Clock className="h-8 w-8 text-blue-600" />
               </div>
             </div>
@@ -428,19 +451,19 @@ function AttendancePayrollDashboard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="bg-white rounded-xl shadow-sm border border-slate-200 p-6"
+            className="luxury-card-white flex flex-col justify-center rounded-[2rem] p-6 shadow-sm border border-slate-200"
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-600">Tổng Ngày Nghỉ</p>
-                <p className="text-3xl font-bold text-orange-600 mt-1">
+                <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Tổng Ngày Nghỉ</p>
+                <p className="text-3xl font-black text-orange-600 mt-2">
                   {formatNumber(attendanceMetrics.totalAbsences)}
                 </p>
-                <p className="text-sm text-slate-500 mt-2">
+                <p className="text-xs font-bold text-slate-500 mt-2">
                   ngày trong tháng
                 </p>
               </div>
-              <div className="p-3 bg-orange-100 rounded-lg">
+              <div className="p-3 bg-orange-50 dark:bg-orange-950/30 rounded-2xl">
                 <AlertTriangle className="h-8 w-8 text-orange-600" />
               </div>
             </div>
@@ -451,19 +474,19 @@ function AttendancePayrollDashboard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="bg-white rounded-xl shadow-sm border border-slate-200 p-6"
+            className="luxury-card-white flex flex-col justify-center rounded-[2rem] p-6 shadow-sm border border-slate-200"
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-600">Lương TB/KTV</p>
-                <p className="text-2xl font-bold text-purple-600 mt-1">
+                <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Lương TB/{vocab.worker.short}</p>
+                <p className="text-2xl font-black text-purple-600 mt-2 truncate">
                   {formatCurrency(payrollMetrics.avgSalary)}
                 </p>
-                <p className="text-sm text-slate-500 mt-2">
+                <p className="text-xs font-bold text-slate-500 mt-2 truncate">
                   Tổng: {formatCurrency(payrollMetrics.totalSalary)}
                 </p>
               </div>
-              <div className="p-3 bg-purple-100 rounded-lg">
+              <div className="p-3 bg-purple-50 dark:bg-purple-950/30 rounded-2xl shrink-0">
                 <DollarSign className="h-8 w-8 text-purple-600" />
               </div>
             </div>
@@ -479,17 +502,19 @@ function AttendancePayrollDashboard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="bg-white rounded-xl shadow-sm border border-slate-200 p-6"
+            className="luxury-card-white bg-white/85 backdrop-blur-md rounded-[2rem] p-6 border border-slate-200 shadow-sm"
           >
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <div className="p-3 bg-green-100 rounded-lg">
+                <div className="p-3 bg-green-50 dark:bg-green-950/30 rounded-2xl">
                   <BarChart3 className="h-6 w-6 text-green-600" />
                 </div>
-                <h3 className="text-lg font-semibold text-slate-900">Top 10 Chấm Công Tốt Nhất</h3>
+                <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">
+                  Top 10 Chấm Công Tốt Nhất
+                </h3>
               </div>
               {attendanceData?.metadata.cacheHit && (
-                <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">Cache</span>
+                <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg">Cache</span>
               )}
             </div>
 
@@ -499,7 +524,7 @@ function AttendancePayrollDashboard() {
               <div className="flex items-center justify-center h-80">
                 <div className="text-center">
                   <AlertCircle className="h-12 w-12 text-slate-300 mx-auto mb-2" />
-                  <p className="text-slate-500">Chưa có dữ liệu</p>
+                  <p className="text-slate-500 font-medium">Chưa có dữ liệu</p>
                 </div>
               </div>
             )}
@@ -512,17 +537,19 @@ function AttendancePayrollDashboard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
-            className="bg-white rounded-xl shadow-sm border border-slate-200 p-6"
+            className="luxury-card-white bg-white/85 backdrop-blur-md rounded-[2rem] p-6 border border-slate-200 shadow-sm"
           >
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <div className="p-3 bg-purple-100 rounded-lg">
+                <div className="p-3 bg-purple-50 dark:bg-purple-950/30 rounded-2xl">
                   <Award className="h-6 w-6 text-purple-600" />
                 </div>
-                <h3 className="text-lg font-semibold text-slate-900">Top 10 Thu Nhập Cao Nhất</h3>
+                <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">
+                  Top 10 Thu Nhập Cao Nhất
+                </h3>
               </div>
               {payrollData?.metadata.cacheHit && (
-                <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">Cache</span>
+                <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg">Cache</span>
               )}
             </div>
 
@@ -532,7 +559,7 @@ function AttendancePayrollDashboard() {
               <div className="flex items-center justify-center h-80">
                 <div className="text-center">
                   <AlertCircle className="h-12 w-12 text-slate-300 mx-auto mb-2" />
-                  <p className="text-slate-500">Chưa có dữ liệu</p>
+                  <p className="text-slate-500 font-medium">Chưa có dữ liệu</p>
                 </div>
               </div>
             )}
@@ -545,14 +572,16 @@ function AttendancePayrollDashboard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
-            className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 lg:col-span-2"
+            className="luxury-card-white bg-white/85 backdrop-blur-md rounded-[2rem] p-6 border border-slate-200 shadow-sm lg:col-span-2"
           >
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <div className="p-3 bg-blue-100 rounded-lg">
+                <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-2xl">
                   <DollarSign className="h-6 w-6 text-blue-600" />
                 </div>
-                <h3 className="text-lg font-semibold text-slate-900">Phân Bổ Quỹ Lương</h3>
+                <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">
+                  Phân Bổ Quỹ Lương
+                </h3>
               </div>
             </div>
 
@@ -562,33 +591,33 @@ function AttendancePayrollDashboard() {
                 
                 {/* Summary Table */}
                 <div className="mt-6 grid grid-cols-2 md:grid-cols-5 gap-4">
-                  <div className="p-4 bg-blue-50 rounded-lg">
-                    <p className="text-sm text-blue-600 font-medium">Lương cơ bản</p>
-                    <p className="text-lg font-bold text-blue-900 mt-1">
+                  <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100">
+                    <p className="text-xs font-bold text-blue-600">Lương cơ bản</p>
+                    <p className="text-lg font-black text-blue-900 mt-1">
                       {formatCurrency(payrollData.data.reduce((sum, ktv) => sum + ktv.baseSalary, 0))}
                     </p>
                   </div>
-                  <div className="p-4 bg-green-50 rounded-lg">
-                    <p className="text-sm text-green-600 font-medium">Thưởng ca</p>
-                    <p className="text-lg font-bold text-green-900 mt-1">
+                  <div className="p-4 bg-green-50/50 rounded-2xl border border-green-100">
+                    <p className="text-xs font-bold text-green-600">Hoa hồng {vocab.workUnit.singular.toLowerCase()}</p>
+                    <p className="text-lg font-black text-green-900 mt-1">
                       {formatCurrency(payrollData.data.reduce((sum, ktv) => sum + ktv.sessionBonus, 0))}
                     </p>
                   </div>
-                  <div className="p-4 bg-amber-50 rounded-lg">
-                    <p className="text-sm text-amber-600 font-medium">Thưởng KPI</p>
-                    <p className="text-lg font-bold text-amber-900 mt-1">
+                  <div className="p-4 bg-amber-50/50 rounded-2xl border border-amber-100">
+                    <p className="text-xs font-bold text-amber-600">Thưởng KPI</p>
+                    <p className="text-lg font-black text-amber-900 mt-1">
                       {formatCurrency(payrollData.data.reduce((sum, ktv) => sum + ktv.kpiBonus, 0))}
                     </p>
                   </div>
-                  <div className="p-4 bg-purple-50 rounded-lg">
-                    <p className="text-sm text-purple-600 font-medium">Thưởng sao</p>
-                    <p className="text-lg font-bold text-purple-900 mt-1">
+                  <div className="p-4 bg-purple-50/50 rounded-2xl border border-purple-100">
+                    <p className="text-xs font-bold text-purple-600">Thưởng sao</p>
+                    <p className="text-lg font-black text-purple-900 mt-1">
                       {formatCurrency(payrollData.data.reduce((sum, ktv) => sum + ktv.ratingBonus, 0))}
                     </p>
                   </div>
-                  <div className="p-4 bg-red-50 rounded-lg">
-                    <p className="text-sm text-red-600 font-medium">Trừ vi phạm</p>
-                    <p className="text-lg font-bold text-red-900 mt-1">
+                  <div className="p-4 bg-red-50/50 rounded-2xl border border-red-100">
+                    <p className="text-xs font-bold text-red-600">Trừ vi phạm</p>
+                    <p className="text-lg font-black text-red-900 mt-1">
                       {formatCurrency(payrollData.data.reduce((sum, ktv) => sum + ktv.violationsDeduction, 0))}
                     </p>
                   </div>
@@ -598,7 +627,7 @@ function AttendancePayrollDashboard() {
               <div className="flex items-center justify-center h-64">
                 <div className="text-center">
                   <AlertCircle className="h-12 w-12 text-slate-300 mx-auto mb-2" />
-                  <p className="text-slate-500">Chưa có dữ liệu</p>
+                  <p className="text-slate-500 font-medium">Chưa có dữ liệu</p>
                 </div>
               </div>
             )}
@@ -609,7 +638,7 @@ function AttendancePayrollDashboard() {
       {/* Cache Info Footer */}
       {attendanceData && payrollData && (
         <div className="text-center text-sm text-slate-500">
-          <p>
+          <p className="font-medium">
             Dữ liệu được tạo lúc {new Date(attendanceData.metadata.generatedAt).toLocaleTimeString('vi-VN')}
             {' '}(Chấm công: {attendanceData.metadata.cacheHit ? 'Cache' : 'Mới'}, 
             {' '}Lương: {payrollData.metadata.cacheHit ? 'Cache' : 'Mới'})

@@ -25,12 +25,15 @@ import {
   Cell,
 } from 'recharts';
 import type { EmployeePerformance } from '@/services/intelligence/hr/queries';
+import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
 
 interface RatingDistributionChartProps {
   data: EmployeePerformance[];
 }
 
 export function RatingDistributionChart({ data }: RatingDistributionChartProps) {
+  const vocab = useModuleVocabulary();
+
   // Group KTVs by rating brackets
   const brackets = [
     { name: '4.5-5.0 ⭐', min: 4.5, max: 5.0, color: '#fbbf24', count: 0 },
@@ -83,7 +86,7 @@ export function RatingDistributionChart({ data }: RatingDistributionChartProps) 
         />
         <YAxis
           tick={{ fill: '#4b5563', fontSize: 12 }}
-          label={{ value: 'Số KTV', angle: -90, position: 'insideLeft', style: { fill: '#4b5563' } }}
+          label={{ value: `Số ${vocab.worker.short}`, angle: -90, position: 'insideLeft', style: { fill: '#4b5563' } }}
         />
         <Tooltip
           contentStyle={{

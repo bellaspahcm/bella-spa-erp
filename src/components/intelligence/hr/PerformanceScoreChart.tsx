@@ -25,12 +25,15 @@ import {
   Cell,
 } from 'recharts';
 import type { EmployeePerformance } from '@/services/intelligence/hr/queries';
+import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
 
 interface PerformanceScoreChartProps {
   data: EmployeePerformance[];
 }
 
 export function PerformanceScoreChart({ data }: PerformanceScoreChartProps) {
+  const vocab = useModuleVocabulary();
+
   // Group KTVs by performance tier
   const tiers = [
     { name: 'Xuất sắc (90-100)', min: 90, max: 100, color: '#10b981', count: 0 },
@@ -82,7 +85,7 @@ export function PerformanceScoreChart({ data }: PerformanceScoreChartProps) {
         />
         <YAxis
           tick={{ fill: '#4b5563', fontSize: 12 }}
-          label={{ value: 'Số KTV', angle: -90, position: 'insideLeft', style: { fill: '#4b5563' } }}
+          label={{ value: `Số ${vocab.worker.short}`, angle: -90, position: 'insideLeft', style: { fill: '#4b5563' } }}
         />
         <Tooltip
           contentStyle={{
