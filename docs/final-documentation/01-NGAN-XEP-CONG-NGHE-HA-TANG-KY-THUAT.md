@@ -688,6 +688,7 @@ Sessions page  — hiển thị danh sách ca:        ~2.8s → ~0.45s (-84% tim
 Bookings page  — hiển thị calendar grid:     ~1.2s → ~0.8s (-33%)
 Customer page  — hiển thị profile chính:     ~2.5s → ~0.8s (-68%)
 KTV assignment dropdown                       cold → warm (từ cache toàn cục)
+KTV PWA (Trang KTV) — thời gian load profile: ~1.5s → ~0.1s (-93% nhờ Client Cache & Edge Caching)
 ```
 
 ---
