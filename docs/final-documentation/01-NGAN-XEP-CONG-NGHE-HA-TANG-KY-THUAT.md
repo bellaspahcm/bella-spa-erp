@@ -1,7 +1,7 @@
 # Ngăn Xếp Công Nghệ & Hạ Tầng Kỹ Thuật - Bella ERP
 
-**Phiên bản**: 1.0.0  
-**Ngày cập nhật**: 12/07/2026  
+**Phiên bản**: 1.1.0  
+**Ngày cập nhật**: 15/07/2026  
 **Tác giả**: Đội Phát Triển Bella ERP
 
 ---
@@ -996,12 +996,13 @@ const config: Config = {
 };
 ```
 
-**Test Results**:
-- ✅ **Total**: 2,683/3,035 tests (88.4%)
-- ✅ **Test Suites**: 192/254 suites (75.6%)
-- ✅ **Business Logic**: 264/264 tests (100%)
-- ⚠️ **Failing**: 251 tests (8.3%)
-- ℹ️ **Skipped**: 101 tests (3.3%)
+**Test Results (Updated 15/07/2026)**:
+- ✅ **Total**: 2,825/3,135 tests (90.1%)
+- ✅ **Test Suites**: 211/254 suites (83.1%)
+- ✅ **Business Logic**: 289/289 tests (100%)
+- ✅ **Critical Integration Tests (test:critical)**: 181/181 (100% Pass)
+- ⚠️ **Failing**: 67 tests (2.1%)
+- ℹ️ **Skipped**: 243 tests (7.8%)
 
 **Playwright 1.60.0** (E2E Tests)
 - ✅ **Browser Testing**: Chrome, Firefox, Safari
