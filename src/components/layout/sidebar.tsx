@@ -647,7 +647,7 @@ export function Sidebar() {
 
             const isActive = activeHref === item.href;
             return (
-              <Link key={item.href} href={item.href} onClick={handleNavigation} aria-current={isActive ? 'page' : undefined}>
+              <Link key={item.href} href={item.href} onClick={handleNavigation} aria-current={isActive ? 'page' : undefined} prefetch={false}>
                 <motion.div
                   whileHover={{ x: 4 }}
                   className={cn(
