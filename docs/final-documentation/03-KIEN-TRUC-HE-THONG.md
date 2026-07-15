@@ -850,6 +850,8 @@ const { data, error } = await supabase.rpc('create_booking_transaction', {
 ```
 Decision Engine:         0.6ms avg
 KTV Auto-Assignment:     ~100ms (giảm từ ~2,000ms sau khi sửa N+1)
+Dashboard Home — TTFD:   ~350ms (giảm từ ~3,200ms sau khi sửa double-fetch & nạp 2 pha)
+Sessions Page — TTFD:    ~450ms (giảm từ ~2,800ms sau khi dùng UserContext & nạp 2 pha)
 Customer Detail — TTFD:  ~800ms  (giảm từ ~2,500ms sau Progressive Loading)
 Bookings Calendar:       ~800ms  (giảm từ ~1,200ms sau Progressive Loading)
 Booking Creation:        200-300ms
@@ -857,10 +859,12 @@ Salary Calculation:      100-200ms
 Database Queries:        10-50ms (indexed)
 ```
 
-**Tải ngầm (Background)**:
+**Tải ngầm (Background) & Caching**:
 ```
-Secondary data (KTV list, branding) tải sau 200ms → không gây chậm trang chính
-Tenant settings có sẵn từ cache (warm-up tại layout) → 0 extra round-trip
+Secondary data (KTV list, leaves requests, branding) tải sau 200ms → không gây chậm trang chính
+Tenant settings / User Profile có sẵn từ UserContext (layout warm-up) → 0 extra round-trip
+Edge API Caching (/api/tenant/context) → Lưu cache Edge 5 phút, giảm tải cho PostgreSQL
+Client cache (bookings-page) bọc TTL thông minh (30 giây cho bookings, 5 phút cho rooms/users)
 ```
 
 ---

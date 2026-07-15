@@ -591,6 +591,10 @@ KTV Auto-Assignment (before): ~2,000ms  ← N+1 query bug
 KTV Auto-Assignment (after):   ~100ms   ← Batch query (20x faster)
 Customer Detail Page (before): ~2,500ms ← tất cả data gộp 1 request
 Customer Detail Page (after):  ~800ms   ← Phase 1 critical data only
+Dashboard Home Page (before): ~3,200ms ← double-fetch + nạp đồng thời
+Dashboard Home Page (after):   ~350ms   ← Sửa double-fetch, 2-phase load, layout warm cache (9x nhanh hơn)
+Sessions Page (before):       ~2,800ms ← nạp đồng thời leaves + user profile
+Sessions Page (after):         ~450ms   ← Dùng UserContext cache, lazy components, 2-phase load (6x nhanh hơn)
 ```
 
 ### 5.4. Optimization Strategies
@@ -672,15 +676,18 @@ if (!criticalReady) return <Spinner />;
 **Trang đã áp dụng**:
 | Trang | Phase 1 (Critical) | Phase 2 (Secondary) |
 |---|---|---|
-| `/dashboard/*` | — | tenant settings warm-up |
+| `/dashboard` (Trang chủ) | Stats (KPI/Doanh thu) + Lịch hôm nay | Leaderboard KTV + Cảnh báo vận hành |
+| `/dashboard/sessions` | Ca làm việc (Sessions list) | Pending leave requests (cho Admin) |
 | `/dashboard/bookings` | Calendar sessions | Bookings list, KTV dropdown, phòng |
 | `/dashboard/customers/[id]` | Customer profile + bookings | KTV list, tenant branding |
 
 **Hiệu năng đo được**:
 ```
-Bookings page — thời gian đến lúc calendar hiển thị: ~1.2s → ~0.8s (-33%)
-Customer page — thời gian đến lúc profile hiển thị:   ~2.5s → ~0.8s (-68%)
-KTV assignment dropdown                                 cold → warm (từ cache)
+Dashboard page — hiển thị KPI & lịch hôm nay: ~3.2s → ~0.35s (-89% time-to-first-data)
+Sessions page  — hiển thị danh sách ca:        ~2.8s → ~0.45s (-84% time-to-first-data)
+Bookings page  — hiển thị calendar grid:     ~1.2s → ~0.8s (-33%)
+Customer page  — hiển thị profile chính:     ~2.5s → ~0.8s (-68%)
+KTV assignment dropdown                       cold → warm (từ cache toàn cục)
 ```
 
 ---
