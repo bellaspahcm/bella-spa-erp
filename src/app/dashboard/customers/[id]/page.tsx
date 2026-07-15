@@ -121,6 +121,7 @@ export default function CustomerDetailPage() {
             activeDepositAmount={activeDepositAmount}
             activeNetPrice={activeNetPrice}
             userRole={userRole}
+            loyaltyPoints={customer.loyalty_points}
           />
 
           <BookingSelectorPanel

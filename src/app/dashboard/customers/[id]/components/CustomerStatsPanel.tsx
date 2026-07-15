@@ -1,7 +1,7 @@
 'use client';
 
 import { cn, formatNumberWithSeparator } from '@/lib/utils';
-import { Clock, DollarSign, TrendingUp } from 'lucide-react';
+import { Clock, DollarSign, TrendingUp, Award } from 'lucide-react';
 import type { CustomerDetailBooking } from '../types';
 
 export function CustomerStatsPanel({
@@ -9,11 +9,13 @@ export function CustomerStatsPanel({
   activeDepositAmount,
   activeNetPrice,
   userRole,
+  loyaltyPoints,
 }: {
   activeBooking: CustomerDetailBooking | null;
   activeDepositAmount: number;
   activeNetPrice: number;
   userRole: 'admin' | 'ktv';
+  loyaltyPoints?: number | null;
 }) {
   const activeFullPrice = activeBooking?.full_price || 0;
   const activeDiscountPercent = activeBooking?.discount_percent || 0;
@@ -74,10 +76,17 @@ export function CustomerStatsPanel({
       color: 'text-blue-500',
       bg: 'bg-blue-50',
     },
+    {
+      label: 'Điểm tích lũy',
+      value: loyaltyPoints !== undefined && loyaltyPoints !== null ? `${loyaltyPoints} điểm` : '0 điểm',
+      icon: Award,
+      color: 'text-amber-500',
+      bg: 'bg-amber-50',
+    },
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
       {stats.map((stat, index) => (
         <div
           key={`${stat.label}-${index}`}

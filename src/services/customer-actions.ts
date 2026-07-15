@@ -385,6 +385,7 @@ export async function getCustomers(options: GetCustomersOptions = {}) {
       status,
       created_at,
       tenant_id,
+      loyalty_points,
       bookings (
         deposit_amount,
         package_name,

@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { Baby, Heart, MapPin, Phone, PlusCircle, Sparkles, TrendingUp } from 'lucide-react';
+import { Baby, Heart, MapPin, Phone, PlusCircle, Sparkles, TrendingUp, Award } from 'lucide-react';
 import { getTenantModulePresentationOrNeutral } from '@/lib/business-rules/tenant-module-presentation';
 import type { TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 import type { CustomerDetailRecord } from '../types';
@@ -59,6 +59,15 @@ export function CustomerProfilePanel({
                   <div className="min-w-0 text-left">
                     <p className="text-[10px] font-black text-slate-400 uppercase">Điện thoại</p>
                     <p className="break-all font-bold text-slate-700">{customer.phone}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl">
+                  <div className="w-10 h-10 shrink-0 bg-white rounded-xl flex items-center justify-center text-amber-500 shadow-sm">
+                    <Award className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0 text-left">
+                    <p className="text-[10px] font-black text-slate-400 uppercase">Điểm tích lũy (Loyalty)</p>
+                    <p className="break-all font-black text-amber-600">{customer.loyalty_points ?? 0} điểm</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4 p-4 bg-slate-50 rounded-2xl">

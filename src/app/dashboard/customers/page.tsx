@@ -34,7 +34,8 @@ Search,
 Sparkles,
 Trash2,
 UserPlus,
-X
+X,
+Award
 } from 'lucide-react';
 
 import { createCustomer,deleteCustomer,getCustomers,updateCustomer } from '@/services/customer-actions';
@@ -625,6 +626,10 @@ export default function CustomersPage() {
                     <span className="break-words">Gói: {customer.package_name}</span>
                   </div>
                 )}
+                <div className="flex min-w-0 items-center gap-2 text-amber-600/90 font-bold">
+                  <Award className="w-4 h-4 shrink-0 text-amber-500" />
+                  <span className="break-words">{customer.loyalty_points ?? 0} điểm</span>
+                </div>
                 <div className="flex min-w-0 items-start gap-2">
                   <MapPin className="mt-0.5 w-4 h-4 shrink-0 text-slate-400" />
                   <span className="break-words">{customer.address}</span>
