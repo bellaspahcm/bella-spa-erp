@@ -11,6 +11,7 @@ import type { Database } from '@/types/database.types';
 import { getMonthStart } from '@/lib/utils';
 import type { SupabaseClient as SupabaseJsClient } from '@supabase/supabase-js';
 import { recalculateAndSaveSalaryRecordEngine } from '@/modules/hr-salary/actions/salary-recalculation-engine';
+import { cache } from 'react';
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 type AdminSupabaseClient = {
@@ -72,7 +73,7 @@ function assertNonMissingQueryError(error: SupabaseQueryError, context: string) 
   throw new Error(`${context}: ${error.message || 'Unknown database error'}`);
 }
 
-export async function getCurrentUser(): Promise<CurrentUser | null> {
+export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   const perfStart = Date.now();
   const supabase = await createClient();
   
@@ -233,7 +234,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     full_name: "",
     avatar_url: null
   };
-}
+});
 
 
 export async function getUsers(): Promise<StaffRecord[]> {

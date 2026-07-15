@@ -47,6 +47,7 @@ function getRedisClient(): Redis | null {
 
 /**
  * Cache a value with expiration time
+ * Luôn ghi vào cả L1 (In-Memory) và L2 (Redis) để tối ưu hóa tốc độ đọc.
  * 
  * @param key - Cache key (e.g., "user:123", "tenant:456")
  * @param value - Value to cache (will be JSON stringified)
@@ -58,17 +59,22 @@ export async function setCache<T>(
   value: T,
   ttlSeconds: number = 60
 ): Promise<boolean> {
+  const serialized = JSON.stringify(value);
+
+  // 1. Luôn ghi vào L1 local cache
+  localCache.set(key, {
+    value: serialized,
+    expiresAt: Date.now() + ttlSeconds * 1000,
+  });
+
   const client = getRedisClient();
   if (!client) {
-    localCache.set(key, {
-      value: JSON.stringify(value),
-      expiresAt: Date.now() + ttlSeconds * 1000,
-    });
     return true;
   }
 
+  // 2. Ghi vào L2 Redis cache
   try {
-    await client.set(key, JSON.stringify(value), { ex: ttlSeconds });
+    await client.set(key, serialized, { ex: ttlSeconds });
     return true;
   } catch (error) {
     console.error('[Redis Cache] Set failed:', error);
@@ -78,27 +84,39 @@ export async function setCache<T>(
 
 /**
  * Get a cached value
+ * Kiểm tra L1 (In-Memory) trước, nếu miss mới gọi tới L2 (Redis) và lưu ngược lại L1.
  * 
  * @param key - Cache key
  * @returns Cached value or null if not found / expired / Redis unavailable
  */
 export async function getCache<T>(key: string): Promise<T | null> {
-  const client = getRedisClient();
-  if (!client) {
-    const cached = localCache.get(key);
-    if (!cached) return null;
-    if (Date.now() > cached.expiresAt) {
+  // 1. Kiểm tra L1 Cache trước (tốc độ đọc RAM cực nhanh ~0.01ms)
+  const cachedL1 = localCache.get(key);
+  if (cachedL1) {
+    if (Date.now() <= cachedL1.expiresAt) {
+      return JSON.parse(cachedL1.value) as T;
+    } else {
       localCache.delete(key);
-      return null;
     }
-    return JSON.parse(cached.value) as T;
   }
 
-  try {
-    const cached = await client.get<string>(key);
-    if (!cached) return null;
+  const client = getRedisClient();
+  if (!client) {
+    return null;
+  }
 
-    return JSON.parse(cached) as T;
+  // 2. L1 Miss -> Kiểm tra L2 Cache (Upstash Redis)
+  try {
+    const cachedL2 = await client.get<string>(key);
+    if (!cachedL2) return null;
+
+    // Lưu ngược lại vào L1 cache tạm 15 giây để tránh spam request mạng liên tục
+    localCache.set(key, {
+      value: cachedL2,
+      expiresAt: Date.now() + 15 * 1000,
+    });
+
+    return JSON.parse(cachedL2) as T;
   } catch (error) {
     console.error('[Redis Cache] Get failed:', error);
     return null;
@@ -107,17 +125,21 @@ export async function getCache<T>(key: string): Promise<T | null> {
 
 /**
  * Delete a cached value
+ * Xóa đồng thời ở cả L1 và L2.
  * 
  * @param key - Cache key to delete
  * @returns true if deleted, false if Redis unavailable
  */
 export async function deleteCache(key: string): Promise<boolean> {
+  // 1. Xóa ở L1 cache
+  localCache.delete(key);
+
   const client = getRedisClient();
   if (!client) {
-    localCache.delete(key);
     return true;
   }
 
+  // 2. Xóa ở L2 Redis cache
   try {
     await client.del(key);
     return true;
