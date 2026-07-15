@@ -578,17 +578,29 @@ export async function autoAssignKtv(input: {
     }
   });
 
-  // 3. For each KTV, fetch today's workload and check availability
-  const candidatesPromises = ktvList.map(async (ktv) => {
-    // Count bookings today
-    const { data: todayBookings } = await supabase
-      .from('session_logs')
-      .select('id')
-      .eq('completed_by_ktv_id', ktv.id)
-      .eq('assigned_date', input.requestedDate)
-      .in('status', ['pending', 'confirmed', 'in_progress']);
+  // 3. Fetch today's workloads for all KTVs in a single query (Optimized to prevent N+1 queries)
+  const ktvIds = ktvList.map(k => k.id);
+  const { data: allTodayBookings, error: workloadError } = await supabase
+    .from('session_logs')
+    .select('completed_by_ktv_id')
+    .in('completed_by_ktv_id', ktvIds)
+    .eq('assigned_date', input.requestedDate)
+    .in('status', ['pending', 'confirmed', 'in_progress']);
 
-    const currentWorkload = todayBookings?.length || 0;
+  if (workloadError) {
+    console.error('[autoAssignKtv] Error fetching today\'s workloads:', workloadError);
+  }
+
+  const workloadMap: Record<string, number> = {};
+  (allTodayBookings || []).forEach(log => {
+    if (log.completed_by_ktv_id) {
+      workloadMap[log.completed_by_ktv_id] = (workloadMap[log.completed_by_ktv_id] || 0) + 1;
+    }
+  });
+
+  // Map candidates synchronously without database calls
+  const candidates = ktvList.map((ktv) => {
+    const currentWorkload = workloadMap[ktv.id] || 0;
     const maxDailyBookings = ktv.max_daily_bookings || 8;
 
     // Check availability at requested time (simple check: not overloaded)
@@ -614,8 +626,6 @@ export async function autoAssignKtv(input: {
 
     return candidate;
   });
-
-  const candidates = await Promise.all(candidatesPromises);
 
   // 4. Build assignment input
   const assignmentInput: AutoAssignmentInput = {
