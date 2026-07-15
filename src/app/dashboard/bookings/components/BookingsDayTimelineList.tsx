@@ -72,7 +72,7 @@ export function BookingsDayTimelineList({
                 <div className="mb-3 flex flex-wrap items-center gap-3 sm:gap-4">
                   <div className="flex items-center gap-1.5 text-slate-900 font-black">
                     <Clock className="w-4 h-4 text-rose-500" />
-                    {session.assigned_time || '09:00 - 11:00'}
+                    {session.assigned_time || session.bookings?.preferred_time || '09:00 - 11:00'}
                   </div>
                   <span
                     className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${

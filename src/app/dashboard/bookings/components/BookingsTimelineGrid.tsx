@@ -45,6 +45,7 @@ export type TimelineSession = {
     deposit_amount?: number | string | null;
     discount_percent?: number | string | null;
     status?: string | null;
+    preferred_time?: string | null;
     revenue?: {
       amount?: number | string | null;
       status?: string | null;
@@ -210,7 +211,7 @@ export function BookingsTimelineGrid({
                     return (
                       isKtvMatch &&
                       isSameDay(new Date(session.assigned_date), selectedDate) &&
-                      getSessionHourBlock(session.assigned_time) === hour
+                      getSessionHourBlock(session.assigned_time || session.bookings?.preferred_time) === hour
                     );
                   });
 
@@ -256,7 +257,7 @@ export function BookingsTimelineGrid({
                                   </span>
                                   <span className="text-[10px] font-black text-slate-400 flex items-center gap-0.5 shrink-0">
                                     <Clock className="w-2.5 h-2.5 text-rose-400" />
-                                    {session.assigned_time || '09:00'}
+                                    {session.assigned_time || session.bookings?.preferred_time || '09:00'}
                                   </span>
                                 </div>
                                 <h4 className="font-extrabold text-slate-800 text-xs truncate">

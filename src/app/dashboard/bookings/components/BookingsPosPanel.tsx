@@ -111,7 +111,9 @@ export function BookingsPosPanel({
       })
       .sort((a, b) => {
         if (a.remainingDebt !== b.remainingDebt) return b.remainingDebt - a.remainingDebt;
-        return String(a.session.assigned_time || '').localeCompare(String(b.session.assigned_time || ''));
+        return String(a.session.assigned_time || a.session.bookings?.preferred_time || '').localeCompare(
+          String(b.session.assigned_time || b.session.bookings?.preferred_time || '')
+        );
       });
   }, [isSameDay, normalizedQuery, selectedDate, sessions, tenantModuleKey]);
 
@@ -172,7 +174,7 @@ export function BookingsPosPanel({
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-slate-500">
-                      {item.session.assigned_time || '09:00'}
+                      {item.session.assigned_time || item.session.bookings?.preferred_time || '09:00'}
                     </span>
                     <span className="rounded-full bg-rose-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-rose-600">
                       {item.bookingNumber}
