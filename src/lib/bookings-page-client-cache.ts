@@ -8,14 +8,18 @@ type BookingsResult = Awaited<ReturnType<typeof getBookings>>;
 type UsersResult = Awaited<ReturnType<typeof getUsers>>;
 type BookingResourcesResult = Awaited<ReturnType<typeof getBookingResources>>;
 
-function createClientCache<T>(loader: () => Promise<T>) {
+function createClientCache<T>(loader: () => Promise<T>, ttlMs = 60000) {
   let loaded = false;
   let cache: T | null = null;
   let promise: Promise<T> | null = null;
   let requestVersion = 0;
+  let cachedAt = 0;
 
   return function getCached(options: { force?: boolean } = {}) {
-    if (!options.force && loaded) {
+    const now = Date.now();
+    const isFresh = loaded && (now - cachedAt) < ttlMs;
+
+    if (!options.force && isFresh) {
       return Promise.resolve(cache as T);
     }
 
@@ -30,6 +34,7 @@ function createClientCache<T>(loader: () => Promise<T>) {
         if (currentVersion === requestVersion) {
           cache = result;
           loaded = true;
+          cachedAt = Date.now();
         }
         return result;
       })
@@ -43,6 +48,7 @@ function createClientCache<T>(loader: () => Promise<T>) {
   };
 }
 
-export const getCachedBookingsForPage = createClientCache<BookingsResult>(() => getBookings());
-export const getCachedBookingPageUsers = createClientCache<UsersResult>(() => getUsers());
-export const getCachedBookingPageResources = createClientCache<BookingResourcesResult>(() => getBookingResources());
+export const getCachedBookingsForPage = createClientCache<BookingsResult>(() => getBookings(), 30000); // 30 seconds TTL for bookings
+export const getCachedBookingPageUsers = createClientCache<UsersResult>(() => getUsers(), 300000); // 5 minutes TTL for users
+export const getCachedBookingPageResources = createClientCache<BookingResourcesResult>(() => getBookingResources(), 300000); // 5 minutes TTL for rooms
+

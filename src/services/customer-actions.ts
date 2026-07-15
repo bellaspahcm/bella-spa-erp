@@ -371,7 +371,39 @@ export async function getCustomers(options: GetCustomersOptions = {}) {
 
   let query = supabase
     .from('customers')
-    .select('*, bookings(deposit_amount, package_name, full_price, discount_percent, created_at, is_in_care, status, total_sessions, completed_sessions, tenant_id, revenue(amount, status, revenue_type, tenant_id))')
+    .select(`
+      id,
+      name_mother,
+      phone,
+      name_baby,
+      dob_expected,
+      dob_baby,
+      address,
+      notes,
+      zalo_oa_id,
+      gender_baby,
+      status,
+      created_at,
+      tenant_id,
+      bookings (
+        deposit_amount,
+        package_name,
+        full_price,
+        discount_percent,
+        created_at,
+        is_in_care,
+        status,
+        total_sessions,
+        completed_sessions,
+        tenant_id,
+        revenue (
+          amount,
+          status,
+          revenue_type,
+          tenant_id
+        )
+      )
+    `)
     .eq('tenant_id', tenantId)
     .order('name_mother', { ascending: true });
 

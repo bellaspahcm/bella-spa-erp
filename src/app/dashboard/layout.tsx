@@ -62,6 +62,8 @@ async function applyDashboardTenantBrandRuntime(
   }
 }
 
+import { UserProvider } from '@/lib/user-context';
+
 export default function DashboardLayout({
   children,
 }: {
@@ -152,9 +154,11 @@ export default function DashboardLayout({
   }
 
   return (
-    <DashboardAuthorizedShell>
-      {children}
-    </DashboardAuthorizedShell>
+    <UserProvider>
+      <DashboardAuthorizedShell>
+        {children}
+      </DashboardAuthorizedShell>
+    </UserProvider>
   );
 }
 

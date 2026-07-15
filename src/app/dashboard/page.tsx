@@ -60,7 +60,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback,useEffect,useRef,useState } from 'react';
 import { toast } from 'sonner';
-import { getCachedCurrentUser } from '@/lib/dashboard-client-context';
+import { useUser } from '@/lib/user-context';
 
 // Heavy modals — lazy-loaded so they don't bloat the dashboard's initial JS bundle.
 // BookingModal (~715 LOC + form deps) only opens on user click.
@@ -128,32 +128,18 @@ export default function DashboardPage() {
     ? 'Lịch làm việc hôm nay'
     : 'Lịch trình liệu trình trực tuyến';
 
+  const { user: profile } = useUser();
+
   useEffect(() => {
-    async function checkRole() {
-      try {
-        const profile = await getCachedCurrentUser();
-        if (!profile) {
-          setUserRole('ktv');
-          setTenantId(null);
-          router.replace('/ktv/dashboard');
-          return;
-        }
-        setTenantId(profile.tenant_id || null);
-        const role = profile.role?.toLowerCase();
-        if (role === 'ktv') {
-          router.replace('/ktv/dashboard');
-          return;
-        }
-        setUserRole(role === 'admin' ? 'admin' : 'ktv');
-      } catch (error) {
-        console.error('Error checking user role:', error);
-        setUserRole('ktv');
-        setTenantId(null);
-        router.replace('/ktv/dashboard');
-      }
+    if (!profile) return;
+    setTenantId(profile.tenant_id || null);
+    const role = profile.role?.toLowerCase();
+    if (role === 'ktv') {
+      router.replace('/ktv/dashboard');
+      return;
     }
-    checkRole();
-  }, [router]);
+    setUserRole(role === 'admin' ? 'admin' : 'ktv');
+  }, [profile, router]);
 
   const getMonthRange = (month: number, year: number) => {
     // Manually construct YYYY-MM-DD to avoid timezone shifts from .toISOString()
@@ -247,16 +233,27 @@ export default function DashboardPage() {
     }
   }, [tenantId, userRole]);
 
+  // fetchData = manual refresh (e.g. realtime trigger) — runs both phases in parallel
   const fetchData = useCallback(async () => {
     setIsSecondaryLoading(true);
     await Promise.all([fetchPrimaryData(), fetchSecondaryData()]);
   }, [fetchPrimaryData, fetchSecondaryData]);
 
+
   usePageRefresh(fetchData);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData, userRole]);
+    // ── Progressive initial load ─────────────────────────────────────
+    // Phase 1: today's schedule (sessions + stats) — clears the main spinner
+    // Phase 2: KTV leaderboard + alerts — deferred 200ms so it never races
+    // NOTE: guard is inside fetchPrimaryData/fetchSecondaryData (userRole check)
+    //       so we do NOT include userRole here — that was causing a double-fetch.
+    void fetchPrimaryData();
+    const t = setTimeout(() => { void fetchSecondaryData(); }, 200);
+    return () => clearTimeout(t);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tenantId]); // re-run only if tenant changes, not on every userRole update
+
 
   const scheduleDashboardRefresh = useCallback(() => {
     if (dashboardRefreshTimerRef.current) {

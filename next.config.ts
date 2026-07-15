@@ -80,6 +80,12 @@ const nextConfig: NextConfig = {
         headers: apiNoStoreHeaders,
       },
       {
+        source: '/api/tenant/context',
+        headers: [
+          { key: 'Cache-Control', value: 'private, max-age=300, stale-while-revalidate=60' },
+        ],
+      },
+      {
         source: '/user-manuals/:path*',
         headers: userManualsHeaders,
       },

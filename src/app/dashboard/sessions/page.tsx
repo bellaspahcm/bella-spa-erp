@@ -11,7 +11,8 @@ getSessionsWithDetails,
 saveSessionNote
 } from '@/core/services/order';
 import { getPendingLeaveRequests } from '@/services/attendance-actions';
-import { getCurrentUser } from '@/services/user-actions';
+import { useUser } from '@/lib/user-context';
+import { useProgressiveLoad } from '@/hooks/useProgressiveLoad';
 import { AnimatePresence,motion } from 'framer-motion';
 import {
 Calendar,
@@ -31,10 +32,19 @@ import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
 import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
 import { useModuleVocabulary } from '@/lib/business-rules/module-vocabulary';
-import { LeaveApprovalModal } from './components/LeaveApprovalModal';
 import { SessionCard } from './components/SessionCard';
-import { SessionLogsDetailsModal } from './components/SessionLogsDetailsModal';
 import { LeaveRequest,SessionBooking } from './types';
+import dynamic from 'next/dynamic';
+
+const LeaveApprovalModal = dynamic(
+  () => import('./components/LeaveApprovalModal').then(m => m.LeaveApprovalModal),
+  { ssr: false }
+);
+
+const SessionLogsDetailsModal = dynamic(
+  () => import('./components/SessionLogsDetailsModal').then(m => m.SessionLogsDetailsModal),
+  { ssr: false }
+);
 
 function getErrorMessage(error: unknown, fallback = 'Loi khong xac dinh') {
   if (error instanceof Error) return error.message || fallback;
@@ -72,6 +82,7 @@ function SessionsListSkeleton() {
 }
 
 function SessionsContent() {
+  const { user } = useUser();
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialSearch = searchParams.get('search') || '';
@@ -139,7 +150,7 @@ function SessionsContent() {
     } catch (error: unknown) {
       console.error('Failed to load sessions:', error);
       setSessions([]);
-      toast.error('Khong the tai danh sach buoi dich vu: ' + getErrorMessage(error));
+      toast.error('Không thể tải danh sách buổi dịch vụ: ' + getErrorMessage(error));
       return [];
     } finally {
       setHasLoadedSessions(true);
@@ -157,20 +168,27 @@ function SessionsContent() {
     }, 400);
   }, [loadSessions]);
 
-  useEffect(() => {
-    loadSessions();
-    const fetchUser = async () => {
-      const user = await getCurrentUser();
+  // ── Progressive Data Loading ───────────────────────────────────────────────
+  const { criticalReady } = useProgressiveLoad({
+    critical: async () => {
+      if (!user) return;
+      // 1. Get user details from pre-warmed context
+      const role = user.role?.toLowerCase() === 'admin' ? 'admin' : 'KTV';
+      setUserRole(role);
+      
+      // 2. Fetch primary session data
+      await loadSessions();
+    },
+    secondary: async () => {
       if (user?.role?.toLowerCase() === 'admin') {
-        setUserRole('admin');
-        loadPendingLeaves();
-      } else {
-        setUserRole('KTV');
+        await loadPendingLeaves();
       }
-    };
-    fetchUser();
+    },
+    deps: [loadSessions, loadPendingLeaves, user],
+  });
 
-    // REALTIME SUBSCRIPTION
+  // REALTIME SUBSCRIPTION EFFECT
+  useEffect(() => {
     const supabase = createClient();
     const channel = supabase
       .channel('sessions-realtime')
@@ -188,7 +206,8 @@ function SessionsContent() {
       }
       supabase.removeChannel(channel);
     };
-  }, [loadPendingLeaves, loadSessions, scheduleSessionsReload]);
+  }, [scheduleSessionsReload]);
+
 
   const handleSoftRefresh = useCallback(async () => {
     await Promise.all([
@@ -538,8 +557,7 @@ function SessionsContent() {
           />
         </div>
       </div>
-
-      {isSyncing && !hasLoadedSessions ? (
+      {!criticalReady ? (
         <SessionsListSkeleton />
       ) : displaySessions.length === 0 ? (
         <div className="rounded-[2rem] border border-dashed border-slate-200 bg-white p-10 text-center sm:rounded-[3rem] sm:p-20">

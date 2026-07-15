@@ -581,19 +581,7 @@ export class AutoAssignmentProvider {
    * Convert Platform Rule condition to RuleReasoner condition
    * @private
    */
-  private convertConditionToReasoner(condition: {
-    type: string;
-    operator?: string;
-    field?: string;
-    value?: unknown;
-    conditions?: Array<{
-      type: string;
-      operator?: string;
-      field?: string;
-      value?: unknown;
-      conditions?: unknown[];
-    }>;
-  }): unknown {
+  private convertConditionToReasoner(condition: any): any {
     if (condition.type === 'simple') {
       // Handle 'exists' operator
       if (condition.operator === 'exists') {
@@ -617,7 +605,7 @@ export class AutoAssignmentProvider {
       return {
         type: 'operator',
         operator: 'and',
-        conditions: (condition.conditions || []).map((c) =>
+        conditions: (condition.conditions || []).map((c: any) =>
           this.convertConditionToReasoner(c)
         ),
       };
@@ -627,7 +615,7 @@ export class AutoAssignmentProvider {
       return {
         type: 'operator',
         operator: 'or',
-        conditions: (condition.conditions || []).map((c) =>
+        conditions: (condition.conditions || []).map((c: any) =>
           this.convertConditionToReasoner(c)
         ),
       };

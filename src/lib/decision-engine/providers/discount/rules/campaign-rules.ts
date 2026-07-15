@@ -151,7 +151,7 @@ export const bundleDiscountRule: Rule = {
       {
         type: 'simple',
         field: 'serviceCount',
-        operator: 'greater_than_or_equal',
+        operator: 'greaterThanOrEqual',
         value: 3,
       },
     ],
