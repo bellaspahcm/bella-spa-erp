@@ -278,6 +278,7 @@ const eslintConfig = defineConfig([
     "*.js",
     "*.mjs",
     "docs/**/*.js",
+    "tests/**",
   ]),
   // Phase 1.1.5: no-explicit-any is an ERROR everywhere in production code.
   // A new `as any` in any clean file fails the build. `npm run lint:strict`
