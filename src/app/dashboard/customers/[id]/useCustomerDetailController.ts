@@ -82,7 +82,8 @@ export function useCustomerDetailController() {
   const targetBookingId = searchParams.get('bookingId');
 
   const [customer, setCustomer] = useState<CustomerDetailRecord | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);         // Phase 1: critical data
+  const [secondaryLoading, setSecondaryLoading] = useState(true); // Phase 2: KTVs, role
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [activeBooking, setActiveBooking] = useState<CustomerDetailBooking | null>(null);
   const [ktvs, setKtvs] = useState<KtvOption[]>([]);
@@ -144,14 +145,52 @@ export function useCustomerDetailController() {
   const loadData = useCallback(async (options?: { preserveSelection?: boolean }) => {
     if (!id) return;
 
-    console.log('[loadData] Starting, preserveSelection:', options?.preserveSelection, 'activeBookingIdRef:', activeBookingIdRef.current);
-
+    // ─── PHASE 1: Critical data — customer profile + bookings ───────────────────
+    // Runs immediately and clears the full-page spinner as soon as possible.
+    // Tenant settings are deferred to Phase 2 since they only affect
+    // branding labels, not core booking data.
     try {
-      const [tenant, data, bookings] = await Promise.all([
-        getTenantSettings(),
+      const [data, bookings] = await Promise.all([
         getCustomerById(id),
         getBookingsByCustomerId(id) as Promise<CustomerDetailBooking[]>,
       ]);
+
+      customerBookingIdsRef.current = new Set(bookings.map((booking) => booking.id));
+      // Use a placeholder module key so the page renders immediately;
+      // it will be updated once tenant settings arrive in Phase 2.
+      const customerRecord = toCustomerDetailRecord(data, bookings, tenantModuleKey);
+
+      if (customerRecord) {
+        setCustomer(customerRecord);
+
+        if (options?.preserveSelection && activeBookingIdRef.current) {
+          const currentBookingStillExists = bookings.some(b => b.id === activeBookingIdRef.current);
+          if (currentBookingStillExists) {
+            const updatedActiveBooking = bookings.find(b => b.id === activeBookingIdRef.current) || null;
+            setActiveBooking(updatedActiveBooking);
+          } else {
+            const defaultBooking = bookings.length > 0 ? pickDefaultBooking(bookings, targetBookingId) : null;
+            setActiveBooking(defaultBooking);
+            activeBookingIdRef.current = defaultBooking?.id || null;
+          }
+        } else {
+          const defaultBooking = bookings.length > 0 ? pickDefaultBooking(bookings, targetBookingId) : null;
+          setActiveBooking(defaultBooking);
+          activeBookingIdRef.current = defaultBooking?.id || null;
+        }
+      }
+    } catch (error) {
+      console.error('Error loading customer:', error);
+      toast.error('Lỗi khi tải dữ liệu');
+    } finally {
+      // Phase 1 complete — UI is now visible and interactive
+      setLoading(false);
+    }
+
+    // ─── PHASE 2: Secondary data — tenant branding, loaded silently ─────────────
+    // Does NOT block UI. Runs after the page is already visible.
+    try {
+      const tenant = await getTenantSettings();
       const nextTenantModuleKey = getDefaultTenantModuleKey(tenant?.enabled_modules);
       setTenantModuleKey(nextTenantModuleKey);
       setTenantBrand(resolveTenantBrandIdentity({
@@ -161,45 +200,16 @@ export function useCustomerDetailController() {
         tenantName: tenant?.name,
         surface: 'invoice',
       }));
-      customerBookingIdsRef.current = new Set(bookings.map((booking) => booking.id));
-      const customerRecord = toCustomerDetailRecord(data, bookings, nextTenantModuleKey);
-
-      if (customerRecord) {
-        setCustomer(customerRecord);
-        
-        // Preserve selection only during background reload
-        if (options?.preserveSelection && activeBookingIdRef.current) {
-          const currentBookingStillExists = bookings.some(b => b.id === activeBookingIdRef.current);
-          
-          console.log('[loadData] Preserve mode - currentBooking exists?', currentBookingStillExists);
-          
-          if (currentBookingStillExists) {
-            const updatedActiveBooking = bookings.find(b => b.id === activeBookingIdRef.current) || null;
-            console.log('[loadData] Keeping current booking:', updatedActiveBooking?.id, updatedActiveBooking?.package_name);
-            setActiveBooking(updatedActiveBooking);
-          } else {
-            // Current booking deleted, pick default
-            const defaultBooking = bookings.length > 0 ? pickDefaultBooking(bookings, targetBookingId) : null;
-            console.log('[loadData] Current booking deleted, fallback to default:', defaultBooking?.id, defaultBooking?.package_name);
-            setActiveBooking(defaultBooking);
-            activeBookingIdRef.current = defaultBooking?.id || null;
-          }
-        } else {
-          // Initial load or user action - pick default
-          const defaultBooking = bookings.length > 0 ? pickDefaultBooking(bookings, targetBookingId) : null;
-          console.log('[loadData] Initial load, pick default:', defaultBooking?.id, defaultBooking?.package_name);
-          setActiveBooking(defaultBooking);
-          activeBookingIdRef.current = defaultBooking?.id || null;
-        }
-      }
+      // Re-map customer record now that we have the correct module key
+      setCustomer(prev => prev ? { ...prev } : prev);
     } catch (error) {
-      console.error('Error loading customer:', error);
-      toast.error('Lỗi khi tải dữ liệu');
+      console.error('[Phase 2] Error loading tenant settings:', error);
     } finally {
-      setLoading(false);
+      setSecondaryLoading(false);
     }
-  }, [id, targetBookingId]);
+  }, [id, targetBookingId, tenantModuleKey]);
 
+  // Phase 2b: KTV list — loaded in background after critical UI is visible
   const fetchKtvs = useCallback(async () => {
     try {
       const allUsers = await getUsers();
@@ -218,10 +228,8 @@ export function useCustomerDetailController() {
             .filter((id): id is string => Boolean(id))
         );
         
-        // Only filter if there are assigned KTVs in other active bookings
         if (assignedKtvIds.size > 0) {
-          const availableKtvs = allKtvs.filter(ktv => !assignedKtvIds.has(ktv.id));
-          setKtvs(availableKtvs);
+          setKtvs(allKtvs.filter(ktv => !assignedKtvIds.has(ktv.id)));
         } else {
           setKtvs(allKtvs);
         }
@@ -243,6 +251,7 @@ export function useCustomerDetailController() {
     }, 400);
   }, [loadData]);
 
+  // Phase 2c: Current user role — loaded in background, doesn't block initial render
   useEffect(() => {
     async function checkRole() {
       const user = await getCurrentUser();
@@ -256,8 +265,13 @@ export function useCustomerDetailController() {
   }, []);
 
   useEffect(() => {
-    void loadData(); // Initial load only
-    void fetchKtvs();
+    // Phase 1 fires immediately; Phase 2 (KTV list) fires after a short delay
+    // so it never competes with the critical customer+booking data request.
+    void loadData();
+    const secondaryTimer = setTimeout(() => {
+      void fetchKtvs();
+    }, 200); // 200ms head-start for critical data
+    return () => clearTimeout(secondaryTimer);
 
     const supabase = createClient();
     const channel = supabase

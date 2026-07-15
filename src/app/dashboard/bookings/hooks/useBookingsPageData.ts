@@ -131,17 +131,25 @@ export function useBookingsPageData(currentMonth: Date) {
     }, 400);
   }, [fetchAllBookings]);
 
+  // ─── Progressive load ──────────────────────────────────────────────────────
+  // Phase 1 (Critical): calendar sessions — the main visual grid.
+  //   Runs immediately so the calendar is interactive within ~1-2 s.
+  // Phase 2 (Secondary): bookings list + KTV dropdown + room resources.
+  //   Loads silently 200 ms after Phase 1 so it never competes with sessions.
   useEffect(() => {
-    void Promise.all([fetchSessions(), fetchKtvs(), refreshTenantModuleKey()]);
-  }, [fetchKtvs, fetchSessions, refreshTenantModuleKey]);
+    // Phase 1 — calendar sessions (visible above the fold)
+    void fetchSessions();
+    void refreshTenantModuleKey();
 
-  useEffect(() => {
-    void fetchAllBookings();
-  }, [fetchAllBookings]);
+    // Phase 2 — secondary data, deferred to give Phase 1 a head-start
+    const secondaryTimer = setTimeout(() => {
+      void fetchAllBookings();
+      void fetchKtvs();
+      void fetchBookingResources();
+    }, 200);
 
-  useEffect(() => {
-    void fetchBookingResources();
-  }, [fetchBookingResources]);
+    return () => clearTimeout(secondaryTimer);
+  }, [fetchSessions, fetchAllBookings, fetchKtvs, fetchBookingResources, refreshTenantModuleKey]);
 
   useEffect(() => {
     const supabase = createClient();

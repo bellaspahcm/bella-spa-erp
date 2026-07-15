@@ -74,6 +74,14 @@ export default function DashboardLayout({
   useEffect(() => {
     async function checkAuth() {
       try {
+        // ── Warm-up: kick off tenant settings fetch in PARALLEL with auth check ──
+        // By the time any child page mounts and calls getCachedTenantSettings(),
+        // the value is already cached — eliminating a cold round-trip for every page.
+        const tenantWarmupPromise = getCachedTenantSettings().catch((e) => {
+          console.warn('[DashboardLayout] Tenant settings warm-up failed (non-fatal):', e);
+          return null;
+        });
+
         const user = await getCachedCurrentUser();
         if (!user) {
           router.replace('/login');
@@ -89,8 +97,9 @@ export default function DashboardLayout({
           return;
         }
         try {
-          const tenant = await getCachedTenantSettings();
-          await applyDashboardTenantBrandRuntime(tenant);
+          // Reuse the already-in-flight tenant settings promise (no extra fetch)
+          const tenant = await tenantWarmupPromise;
+          await applyDashboardTenantBrandRuntime(tenant ?? undefined);
         } catch (brandError) {
           console.error('[DashboardLayout] Brand runtime apply failed:', brandError);
         }
