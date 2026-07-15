@@ -40,6 +40,9 @@ class MockQueryBuilder {
     this.filters.push({ method: 'limit', args });
     return this;
   }
+  maybeSingle() {
+    return this;
+  }
   
   then(onfulfilled: any) {
     MockQueryBuilder.calls.push({
