@@ -253,7 +253,7 @@ async function loadBusinessDataset({
       ...common,
       table: 'salary_records',
       select:
-        'id,ktv_id,month_year,tenant_id,status,paid_date,paid_method,notes,total_sessions,base_salary,session_bonus,rating_bonus,kpi_bonus,violations_deduction,service_percentage_bonus,total_salary,business_event_type,accounting_review_status',
+        'id,ktv_id,month_year,tenant_id,status,paid_date,paid_method,notes,total_sessions,base_salary,session_bonus,rating_bonus,kpi_bonus,violations_deduction,service_percentage_bonus,total_salary,business_event_type,accounting_review_status,service_commission,product_sales_commission,position_bonus,seniority_bonus,manual_adjustments',
     }),
     fetchTableRows({
       ...common,
@@ -1252,23 +1252,46 @@ function runBusinessInvariantChecksOnDataset(dataset, options = {}) {
   ];
 }
 
+function filterDatasetByTenant(dataset, tenantId) {
+  const filtered = {};
+  for (const [key, rows] of Object.entries(dataset)) {
+    if (key === 'journalLines') continue;
+    if (Array.isArray(rows)) {
+      filtered[key] = rows.filter((row) => !row.tenant_id || row.tenant_id === tenantId);
+    } else {
+      filtered[key] = rows;
+    }
+  }
+
+  const entryIds = new Set((filtered.journalEntries || []).map((e) => e.id));
+  filtered.journalLines = (dataset.journalLines || []).filter((line) => entryIds.has(line.entry_id));
+
+  return filtered;
+}
+
 async function runBusinessInvariantChecks({
   supabaseUrl,
   serviceRoleKey,
   fetchImpl = globalThis.fetch,
   now = new Date(),
   maxRows = DEFAULT_MAX_ROWS,
+  tenantId,
 }) {
   if (typeof fetchImpl !== 'function') {
     throw new Error('Fetch API is not available in this Node runtime.');
   }
 
-  const dataset = await loadBusinessDataset({
+  let dataset = await loadBusinessDataset({
     supabaseUrl,
     serviceRoleKey,
     fetchImpl,
     maxRows,
   });
+
+  if (tenantId) {
+    dataset = filterDatasetByTenant(dataset, tenantId);
+  }
+
   const results = runBusinessInvariantChecksOnDataset(dataset, { now });
 
   return {
@@ -1333,6 +1356,7 @@ async function main() {
   const optional = process.env.DB_BUSINESS_INVARIANTS_OPTIONAL === '1';
   const failOnWarning = process.env.DB_BUSINESS_INVARIANTS_FAIL_ON_WARNING === '1';
   const maxRows = Math.max(1000, asFiniteNumber(process.env.DB_BUSINESS_INVARIANT_MAX_ROWS, DEFAULT_MAX_ROWS));
+  const tenantId = process.env.BUSINESS_RULE_ALERT_TENANT_ID || process.env.ACCOUNTING_ALERT_TENANT_ID || process.env.ALERT_TENANT_ID || process.env.TENANT_ID || '';
   const credentials = getSupabaseCredentials();
 
   if (!credentials.isConfigured) {
@@ -1351,6 +1375,7 @@ async function main() {
     invariantRun = await runBusinessInvariantChecks({
       ...credentials,
       maxRows,
+      tenantId,
     });
   } catch (error) {
     console.error('Could not run business invariant checks.');

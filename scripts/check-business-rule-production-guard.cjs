@@ -257,12 +257,15 @@ async function runBusinessRuleProductionGuard({
     throw new Error(`Business rule production guard missing config: ${config.missing.join(', ')}.`);
   }
 
+  const tenantId = await resolveAlertTenantId({ config, fetchImpl }).catch(() => null);
+
   const invariantRun = await runInvariantChecksImpl({
     supabaseUrl: config.supabaseUrl,
     serviceRoleKey: config.serviceRoleKey,
     fetchImpl,
     now,
     maxRows: config.maxRows,
+    tenantId,
   });
   const summary = summarizeBusinessInvariantResults(invariantRun.results, {
     failOnWarning: config.failOnWarning,

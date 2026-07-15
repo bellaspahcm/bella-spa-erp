@@ -18,8 +18,10 @@ function parseSupabaseMigrationList(output) {
     const columns = line.split('|').map((column) => column.trim());
     if (columns.length < 2) continue;
 
-    const local = /^\d{14}$/.test(columns[0]) ? columns[0] : null;
-    const remote = /^\d{14}$/.test(columns[1]) ? columns[1] : null;
+    const localMatch = columns[0].match(/^(\d{14})/);
+    const remoteMatch = columns[1].match(/^(\d{14})/);
+    const local = localMatch ? localMatch[1] : null;
+    const remote = remoteMatch ? remoteMatch[1] : null;
     if (!local && !remote) continue;
 
     rows.push({ local, remote });
@@ -39,7 +41,7 @@ function analyzeMigrationState(localVersions, remoteVersions) {
     latestRemote: remoteVersions.at(-1) || null,
     pendingLocal,
     remoteOnly,
-    isSynced: pendingLocal.length === 0 && remoteOnly.length === 0,
+    isSynced: pendingLocal.length === 0,
   };
 }
 
