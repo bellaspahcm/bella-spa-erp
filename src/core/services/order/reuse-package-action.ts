@@ -54,6 +54,7 @@ export async function reusePackage(bookingId: string) {
     total_sessions: original.total_sessions,
     completed_sessions: 0,
     start_date: getLocalDateString(),
+    preferred_time: original.preferred_time || null,
     tenant_id: tenantId,
   };
 
@@ -113,6 +114,7 @@ async function finalizeReuse(
       session_number: i + 1,
       status: 'scheduled',
       assigned_date: assignedDate,
+      assigned_time: newBooking.preferred_time || null,
       tenant_id: newBooking.tenant_id,
     };
   });

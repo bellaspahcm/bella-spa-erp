@@ -145,6 +145,20 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
           : 'Failed to record updateBooking audit log'
       };
     }
+
+    // Sync scheduled sessions' assigned_time with the new preferred_time
+    if (updatePayload.preferred_time !== undefined) {
+      const { error: logsTimeError } = await supabase
+        .from('session_logs')
+        .update({ assigned_time: updatePayload.preferred_time })
+        .eq('booking_id', id)
+        .eq('tenant_id', tenantId)
+        .eq('status', 'scheduled');
+
+      if (logsTimeError) {
+        console.error('[updateBooking] Failed to update scheduled session times:', logsTimeError);
+      }
+    }
   }
 
   if (updatePayload.total_sessions !== undefined) {
