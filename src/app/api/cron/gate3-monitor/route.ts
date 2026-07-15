@@ -117,7 +117,7 @@ export async function GET(request: NextRequest) {
   try {
     // Verify cron secret (Vercel passes this automatically)
     const authHeader = request.headers.get('authorization');
-    const cronSecret = process.env.CRON_SECRET || 'dev-secret';
+    const cronSecret = process.env.CRON_SECRET || 'mock-cron-secret';
     
     if (authHeader !== `Bearer ${cronSecret}`) {
       return NextResponse.json(

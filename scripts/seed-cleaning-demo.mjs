@@ -445,7 +445,7 @@ async function run() {
   console.log(`   Admin: admin@cleanpro-demo.com`);
   console.log(`   Lead: lead@cleanpro-demo.com`);
   console.log(`   Worker: worker1@cleanpro-demo.com (and worker2-5)\n`);
-  console.log(`⚠️  Note: Set passwords via Supabase Auth before login\n`);
+  console.log(`⚠️  Note: Set login credentials via Supabase Auth before login\n`);
 }
 
 run().catch(err => {

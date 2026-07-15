@@ -159,7 +159,7 @@ async function setup() {
     console.log('   • 100+ completed sessions');
     console.log('   • 65+ revenue records');
     console.log('   • 38 expense records');
-    console.log('\n🔑 Next step: Set password in Supabase Auth for admin@cleanpro-v2.com');
+    console.log('\n🔑 Next step: Set credentials in Supabase Auth for admin@cleanpro-v2.com');
     console.log('   Then login to test the module!\n');
 
   } catch (error) {

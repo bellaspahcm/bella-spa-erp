@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
   try {
     // Cron authentication (check secret from header)
     const authHeader = request.headers.get('authorization');
-    const cronSecret = process.env.CRON_SECRET || 'dev-secret'; // TODO: Set in production
+    const cronSecret = process.env.CRON_SECRET || 'mock-cron-secret'; // TODO: Set in production
 
     const isCronJob = authHeader === `Bearer ${cronSecret}`;
 

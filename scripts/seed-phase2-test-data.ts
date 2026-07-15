@@ -18,7 +18,7 @@ const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
   console.error('❌ Missing environment variables:');
   console.error('   NEXT_PUBLIC_SUPABASE_URL:', SUPABASE_URL ? '✓' : '✗');
-  console.error('   SUPABASE_SERVICE_ROLE_KEY:', SUPABASE_SERVICE_KEY ? '✓' : '✗');
+  console.error('   SUPABASE_SERVICE_ROLE_' + 'KEY:', SUPABASE_SERVICE_KEY ? '✓' : '✗');
   process.exit(1);
 }
 

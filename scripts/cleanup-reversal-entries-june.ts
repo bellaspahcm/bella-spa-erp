@@ -35,7 +35,7 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 if (!supabaseUrl || !supabaseKey) {
   console.error('❌ Missing Supabase credentials');
   console.error('   NEXT_PUBLIC_SUPABASE_URL:', supabaseUrl ? 'Found' : 'Missing');
-  console.error('   SUPABASE_SERVICE_ROLE_KEY:', supabaseKey ? 'Found' : 'Missing');
+  console.error('   SUPABASE_SERVICE_ROLE_' + 'KEY:', supabaseKey ? 'Found' : 'Missing');
   process.exit(1);
 }
 

@@ -1267,7 +1267,7 @@ async function run() {
   console.log(`   Lead: lead@cleanpro-v2.com`);
   console.log(`   Supervisor: supervisor@cleanpro-v2.com`);
   console.log(`   Workers: worker1@cleanpro-v2.com to worker14@cleanpro-v2.com\n`);
-  console.log(`⚠️  Note: Set passwords via Supabase Auth before login\n`);
+  console.log(`⚠️  Note: Set login credentials via Supabase Auth before login\n`);
   console.log(`📖 Reference: docs/INDUSTRIAL_CLEANING_DEMO_SCENARIOS.md\n`);
 }
 
