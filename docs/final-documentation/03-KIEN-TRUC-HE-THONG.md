@@ -826,10 +826,11 @@ const { data, error } = await supabase.rpc('create_booking_transaction', {
   const countByKtv = groupBy(data, 'ktv_id');
   ```
 
-**Caching** (Client-Side Warm-up):
-- Redis for hot data (user sessions)
-- In-memory for critical path
-- TTL-based expiration
+**Caching** (L1/L2 Hybrid & Client Warm-up):
+- **L1 Cache (In-Memory)**: Lưu trữ trong RAM NodeJS (`~0.01ms`) để triệt tiêu độ trễ mạng khi đọc cache lặp lại.
+- **L2 Cache (Upstash Redis)**: Cache phân tán lưu user sessions, settings, leaderboard.
+- **Request Memoization**: Bọc React `cache()` cho `getCurrentUser()` giúp gom các query xác thực của các hàm song song trong cùng 1 request (giảm từ 3-4 query xuống còn 1 query duy nhất).
+- **TTL-based expiration** (30s cho bookings, 5m cho settings/users).
 - ✅ **Dashboard Layout warm-up**: `getCachedCurrentUser()` và `getCachedTenantSettings()` được khởi động **song song** ngay khi vào `/dashboard` — tích lũy cache trước khi trang con cần dữ liệu
 
 **Frontend — Progressive Loading** (`src/hooks/useProgressiveLoad.ts`):
