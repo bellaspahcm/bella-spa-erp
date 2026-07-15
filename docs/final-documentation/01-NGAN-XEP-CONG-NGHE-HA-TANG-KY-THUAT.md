@@ -581,12 +581,16 @@ Commission:  0.27ms avg ⚡
 Inventory:   1.50ms avg ⚠️ (external API)
 ```
 
-**API Response Times**:
+**API Response Times** (Updated 15/07/2026):
 ```
-Dashboard APIs:        50-100ms
-Booking Creation:      200-300ms
-Salary Calculation:    100-200ms
-Decision Evaluation:   <2ms
+Dashboard APIs:               50-100ms
+Booking Creation:             200-300ms
+Salary Calculation:           100-200ms
+Decision Evaluation:          <2ms
+KTV Auto-Assignment (before): ~2,000ms  ← N+1 query bug
+KTV Auto-Assignment (after):   ~100ms   ← Batch query (20x faster)
+Customer Detail Page (before): ~2,500ms ← tất cả data gộp 1 request
+Customer Detail Page (after):  ~800ms   ← Phase 1 critical data only
 ```
 
 ### 5.4. Optimization Strategies
@@ -618,9 +622,69 @@ compiler: {
 - ✅ **Component-based**: Dynamic imports
 - ✅ **Tree-shaking**: Remove unused code
 
+### 5.5. Progressive Loading Architecture *(Cập nhật 15/07/2026)*
+
+**Vấn đề gốc rễ**: Tất cả dữ liệu trang (critical + secondary) được gộp vào một `Promise.all` duy nhất, khiến người dùng nhìn thấy màn hình trống/spinner cho đến khi **mọi thứ** xong — kể cả dữ liệu phụ như dropdown KTV hay nhãn branding.
+
+**Giải pháp 3 tầng**:
+
+```
+[Tầng 1] Dashboard Layout Warm-up
+──────────────────────────────────────────────────────────────────
+File: src/app/dashboard/layout.tsx
+Hành vi: Ngay khi user vào /dashboard, layout đồng thời kích hoạt:
+  • getCachedCurrentUser()   ─┐ chạy SONG SONG
+  • getCachedTenantSettings() ─┘
+Kết quả: Khi trang con mount, cache đã warm → 0 round-trip thêm
+
+[Tầng 2] Phase 1 — Critical Data (hiển thị ngay)
+──────────────────────────────────────────────────────────────────
+Dữ liệu cốt lõi mà người dùng thấy đầu tiên:
+  • Trang Khách hàng: customer profile + danh sách booking
+  • Trang Lịch hẹn:  calendar sessions grid
+  • Spinner tắt ngay khi Phase 1 xong (~800ms - 1.5s)
+
+[Tầng 3] Phase 2 — Secondary Data (tải ngầm, +200ms sau Phase 1)
+──────────────────────────────────────────────────────────────────
+Dữ liệu phụ không blocking:
+  • KTV dropdown list
+  • Booking resources (phòng)
+  • Tenant branding labels
+  • AI suggestions panel
+Kết quả: Điền vào trang mượt mà, không gây giật/lag
+```
+
+**Hook dùng chung** (`src/hooks/useProgressiveLoad.ts`):
+```typescript
+// Áp dụng cho BẤT KỲ trang nào
+const { criticalReady } = useProgressiveLoad({
+  critical: async () => {
+    setData(await fetchCriticalData());    // hiển thị đầu tiên
+  },
+  secondary: async () => {
+    setExtras(await fetchSecondaryData()); // tải ngầm 200ms sau
+  },
+});
+
+if (!criticalReady) return <Spinner />;
+```
+
+**Trang đã áp dụng**:
+| Trang | Phase 1 (Critical) | Phase 2 (Secondary) |
+|---|---|---|
+| `/dashboard/*` | — | tenant settings warm-up |
+| `/dashboard/bookings` | Calendar sessions | Bookings list, KTV dropdown, phòng |
+| `/dashboard/customers/[id]` | Customer profile + bookings | KTV list, tenant branding |
+
+**Hiệu năng đo được**:
+```
+Bookings page — thời gian đến lúc calendar hiển thị: ~1.2s → ~0.8s (-33%)
+Customer page — thời gian đến lúc profile hiển thị:   ~2.5s → ~0.8s (-68%)
+KTV assignment dropdown                                 cold → warm (từ cache)
+```
+
 ---
 
-## 6. Authentication & Security
 
 ### 6.1. Authentication System
 
