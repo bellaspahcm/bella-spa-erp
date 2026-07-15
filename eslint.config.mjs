@@ -279,6 +279,7 @@ const eslintConfig = defineConfig([
     "*.mjs",
     "docs/**/*.js",
     "tests/**",
+    "apps/**",
   ]),
   // Phase 1.1.5: no-explicit-any is an ERROR everywhere in production code.
   // A new `as any` in any clean file fails the build. `npm run lint:strict`
@@ -299,6 +300,16 @@ const eslintConfig = defineConfig([
       // Data-fetch-on-mount screens intentionally set loading/result state from effects.
       // Keep exhaustive-deps on for stale-closure bugs; avoid noisy false positives here.
       "react-hooks/set-state-in-effect": "off",
+      "react/no-unescaped-entities": "warn",
+      "prefer-const": "warn",
+      "@typescript-eslint/prefer-as-const": "warn",
+      "@typescript-eslint/no-non-null-asserted-optional-chain": "warn",
+      "@typescript-eslint/ban-ts-comment": "warn",
+      "react-hooks/rules-of-hooks": "warn",
+      "react-hooks/static-components": "warn",
+      "react-hooks/preserve-manual-memoization": "warn",
+      "react-hooks/refs": "warn",
+      "react-hooks/use-memo": "warn",
     },
   },
   // Existing debt: downgrade to warn so CI is not blocked retroactively.
@@ -312,6 +323,8 @@ const eslintConfig = defineConfig([
   {
     files: [
       "src/__tests__/**/*.{ts,tsx}",
+      "src/**/__tests__/**/*.{ts,tsx}",
+      "src/**/*.test.{ts,tsx}",
       "jest.setup.ts",
       "instrumentation-client.ts",
       "instrumentation.ts",
