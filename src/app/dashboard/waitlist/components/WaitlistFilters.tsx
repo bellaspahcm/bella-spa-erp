@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
 
 interface WaitlistFiltersProps {
   tenantId: string;
@@ -53,6 +54,7 @@ export function WaitlistFilters({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const vocab = useModuleVocabulary();
 
   const [packages, setPackages] = useState<Package[]>([]);
   const [isLoadingPackages, setIsLoadingPackages] = useState(false);
@@ -180,7 +182,7 @@ export function WaitlistFilters({
             {/* Package filter */}
             <div>
               <label className="mb-1.5 block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                Dịch vụ
+                {vocab.package.singular}
               </label>
               <Select
                 value={packageId || 'all'}
@@ -188,10 +190,10 @@ export function WaitlistFilters({
                 disabled={isLoadingPackages}
               >
                 <SelectTrigger className="w-full h-8 rounded-lg bg-white/80 dark:bg-[#1c1b19]/80 border-slate-200 dark:border-slate-800 text-xs font-semibold focus:ring-0 focus:ring-offset-0 focus:border-slate-300 dark:focus:border-slate-700">
-                  <SelectValue placeholder="Tất cả dịch vụ" />
+                  <SelectValue placeholder={`Tất cả ${vocab.package.singular.toLowerCase()}`} />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl bg-white/95 dark:bg-[#1c1b19]/95 backdrop-blur-md border-slate-200/60 dark:border-slate-800/60">
-                  <SelectItem value="all" className="text-xs font-medium">Tất cả dịch vụ</SelectItem>
+                  <SelectItem value="all" className="text-xs font-medium">Tất cả {vocab.package.singular.toLowerCase()}</SelectItem>
                   {packages.map((pkg) => (
                     <SelectItem key={pkg.id} value={pkg.id} className="text-xs font-medium">
                       {pkg.name}

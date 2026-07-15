@@ -6,6 +6,7 @@ import { MoreVertical, Eye, Bell, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { WaitlistStatusBadge } from './WaitlistStatusBadge';
 import { TableRow, TableCell } from '@/components/ui/table';
+import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
 import type { WaitlistEntry } from '@/types/waitlist';
 
 interface WaitlistTableRowProps {
@@ -15,6 +16,7 @@ interface WaitlistTableRowProps {
 
 export function WaitlistTableRow({ entry, onRefresh }: WaitlistTableRowProps) {
   const router = useRouter();
+  const vocab = useModuleVocabulary();
   const [isActionsOpen, setIsActionsOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -67,7 +69,7 @@ export function WaitlistTableRow({ entry, onRefresh }: WaitlistTableRowProps) {
   };
 
   const handleConvert = async () => {
-    toast.info('Chức năng chuyển đổi sang lịch hẹn đang được phát triển');
+    toast.info(`Chức năng chuyển đổi sang ${vocab.booking.singular.toLowerCase()} đang được phát triển`);
     setIsActionsOpen(false);
   };
 
@@ -209,7 +211,7 @@ export function WaitlistTableRow({ entry, onRefresh }: WaitlistTableRowProps) {
                     className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors disabled:opacity-50"
                   >
                     <Check className="h-4 w-4 text-slate-400" />
-                    Chuyển sang lịch hẹn
+                    Chuyển sang {vocab.booking.singular.toLowerCase()}
                   </button>
                 )}
 

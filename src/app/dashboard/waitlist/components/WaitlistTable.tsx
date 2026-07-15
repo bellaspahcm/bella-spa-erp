@@ -7,6 +7,7 @@ import {
 } from '@/components/ui/table';
 import { WaitlistTableRow } from './WaitlistTableRow';
 import { WaitlistPagination } from './WaitlistPagination';
+import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
 import type { WaitlistEntry } from '@/types/waitlist';
 
 interface WaitlistTableProps {
@@ -26,6 +27,8 @@ export function WaitlistTable({
   isLoading,
   onRefresh,
 }: WaitlistTableProps) {
+  const vocab = useModuleVocabulary();
+
   // Empty state
   if (entries.length === 0 && !isLoading) {
     return (
@@ -34,10 +37,10 @@ export function WaitlistTable({
           <span className="text-3xl">📋</span>
         </div>
         <h3 className="mb-2 text-lg font-bold text-slate-900 dark:text-slate-100">
-          Chưa có khách trong danh sách chờ
+          Chưa có {vocab.customer.singular.toLowerCase()} trong danh sách chờ
         </h3>
         <p className="text-sm text-slate-500 dark:text-slate-400">
-          Thêm khách hàng vào danh sách chờ để quản lý lịch hẹn hiệu quả hơn
+          Thêm {vocab.customer.singular.toLowerCase()} vào danh sách chờ để quản lý lịch hẹn hiệu quả hơn
         </p>
       </div>
     );
@@ -50,8 +53,8 @@ export function WaitlistTable({
           <TableHeader className="bg-slate-50/50 dark:bg-slate-900/40 border-b border-slate-200/60 dark:border-slate-800/50">
             <TableRow className="hover:bg-transparent border-0">
               <TableHead className="px-6 py-4 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">#</TableHead>
-              <TableHead className="px-6 py-4 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Khách hàng</TableHead>
-              <TableHead className="px-6 py-4 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Dịch vụ</TableHead>
+              <TableHead className="px-6 py-4 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{vocab.customer.singular}</TableHead>
+              <TableHead className="px-6 py-4 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{vocab.package.singular}</TableHead>
               <TableHead className="px-6 py-4 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Ngày mong muốn</TableHead>
               <TableHead className="px-6 py-4 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Giờ</TableHead>
               <TableHead className="px-6 py-4 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Ưu tiên</TableHead>
