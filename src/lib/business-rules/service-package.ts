@@ -234,6 +234,20 @@ export function buildServicePackageUpdatePayload(input: Partial<ServicePackageIn
   if (input.session_multiplier !== undefined) {
     payload.session_multiplier = normalizePackageSessionMultiplier(input.session_multiplier);
   }
+  if (input.module_key !== undefined) payload.module_key = normalizePackageModuleKey(input.module_key);
+  if (input.service_kind !== undefined) payload.service_kind = normalizeServicePackageKind(input.service_kind);
+  if (input.service_category !== undefined) payload.service_category = normalizeNullableText(input.service_category);
+  if (input.default_duration_minutes !== undefined) {
+    payload.default_duration_minutes = normalizeDefaultDurationMinutes(input.default_duration_minutes);
+  }
+  if (input.requires_resource !== undefined) payload.requires_resource = input.requires_resource === true;
+  if (input.default_resource_type !== undefined) {
+    payload.default_resource_type = normalizeOptionalBookingResourceType(input.default_resource_type);
+  }
+  if (input.before_after_required !== undefined) {
+    payload.before_after_required = input.before_after_required === true;
+  }
+  if (input.care_note_template !== undefined) payload.care_note_template = normalizeNullableText(input.care_note_template);
 
   return payload;
 }

@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
     const { data, error } = await supabase
       .from('packages')
-      .select('id, name, full_price, description, default_duration_minutes')
+      .select('id, name, price, duration, full_price, description, default_duration_minutes')
       .eq('tenant_id', tenantId)
       .limit(limit)
       .order('name');
@@ -32,13 +32,33 @@ export async function GET(request: NextRequest) {
     }
 
     // Transform data to match UI expectations
-    const packages = (data || []).map((pkg: any) => ({
-      id: pkg.id,
-      name: pkg.name,
-      price: pkg.full_price, // UI expects "price"
-      description: pkg.description,
-      duration_minutes: pkg.default_duration_minutes, // UI expects "duration_minutes"
-    }));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const packages = (data || []).map((pkg: any) => {
+      // Extract duration minutes from text if default_duration_minutes is missing/invalid
+      let durationMinutes = pkg.default_duration_minutes;
+      if (!durationMinutes && pkg.duration) {
+        const match = pkg.duration.match(/\d+/);
+        if (match) {
+          durationMinutes = parseInt(match[0], 10);
+        }
+      }
+      if (!durationMinutes) {
+        durationMinutes = 90; // Fallback
+      }
+
+      // Use price (bigint) primarily, fallback to full_price (numeric)
+      const packagePrice = pkg.price !== null && pkg.price !== undefined
+        ? Number(pkg.price)
+        : Number(pkg.full_price || 0);
+
+      return {
+        id: pkg.id,
+        name: pkg.name,
+        price: packagePrice,
+        description: pkg.description,
+        duration_minutes: durationMinutes,
+      };
+    });
 
     return NextResponse.json({ packages });
   } catch (error) {
