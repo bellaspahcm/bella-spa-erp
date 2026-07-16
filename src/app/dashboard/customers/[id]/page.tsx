@@ -31,6 +31,7 @@ export default function CustomerDetailPage() {
     editData,
     handleBack,
     handleBookingSuccess,
+    handleDeleteBooking,
     handleExportContract,
     handleExportQuotation,
     handleOpenBookingSessions,
