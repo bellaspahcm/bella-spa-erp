@@ -19,7 +19,7 @@ describe('beauty spa module isolation guards', () => {
 
     expect(servicesPageSource).toContain('const canManageServices = hasLoadedTenantModules && enabledModuleOptions.length > 0');
     expect(servicesPageSource).toContain('const showModuleFilter = hasLoadedTenantModules && enabledModuleOptions.length > 1');
-    expect(servicesPageSource).toContain('{hasLoadedTenantModules && enabledModules.babycare && (');
+    expect(servicesPageSource).toContain('{hasLoadedTenantModules && (enabledModules.babycare || enabledModules.industrial_cleaning || enabledModules.beauty_spa) && (');
     expect(servicesPageSource).toContain('disabled={!canManageServices}');
   });
 
