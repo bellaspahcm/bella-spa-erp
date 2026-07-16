@@ -35,6 +35,8 @@ import type {
   CoreBookingOrder,
   TenantContext,
 } from '@/core/types';
+import { CapacityManagementProvider } from '@/lib/decision-engine/providers/booking/capacity-management-provider';
+import { createClient } from '@/lib/supabase-server';
 
 /**
  * Spa-specific package type extending CoreServiceCatalogItem.
@@ -207,11 +209,12 @@ export class SpaModuleAdapter implements ModuleAdapter {
    * 1. Validates required metadata fields exist
    * 2. Checks session limits (completed < total)
    * 3. Validates KTV assignment
+   * 4. Checks capacity and break time buffer (via CapacityManagementProvider)
    * 
-   * **Future enhancements**:
-   * - Check KTV availability at scheduled time
-   * - Validate room/resource availability
-   * - Check customer package eligibility
+   * **Break Time Buffer Validation**:
+   * - Queries existing bookings for the assigned KTV
+   * - Checks for time overlaps and insufficient break times
+   * - Enforces minimum break time between sessions (tenant-configurable)
    * 
    * @example
    * ```typescript
@@ -223,7 +226,7 @@ export class SpaModuleAdapter implements ModuleAdapter {
    */
   async validateBookingRules(
     order: CoreBookingOrder,
-    _context: TenantContext
+    context: TenantContext
   ): Promise<boolean> {
     console.log(`[SpaAdapter] Validating booking rules for order ${order.id}`);
 
@@ -256,15 +259,120 @@ export class SpaModuleAdapter implements ModuleAdapter {
       return false;
     }
 
-    // Future: Check KTV availability at scheduled time
-    // const ktvAvailable = await checkKtvAvailability(ktvId, order.scheduledStartTime, context.tenantId);
-    // if (!ktvAvailable) {
-    //   console.error('[SpaAdapter] KTV not available at scheduled time');
-    //   return false;
-    // }
+    // ─── CAPACITY & BREAK TIME VALIDATION ───────────────────────────────────────
+    // Check KTV availability, time overlaps, and break time buffer.
+    // This prevents double-booking and ensures quality rest time between sessions.
+    
+    try {
+      const supabase = createClient();
+      
+      // Fetch tenant capacity configuration
+      const { data: tenantData } = await supabase
+        .from('tenants')
+        .select('capacity_config')
+        .eq('id', context.tenantId)
+        .single();
+      
+      const capacityConfig = tenantData?.capacity_config as Record<string, any> | null;
+      
+      // Get booking date from scheduledStartTime (YYYY-MM-DD format)
+      const scheduledDate = order.scheduledStartTime; // Already in YYYY-MM-DD
+      
+      // Fetch existing bookings for this KTV on the same date
+      const { data: existingBookings } = await supabase
+        .from('bookings')
+        .select('id, start_date, preferred_time, total_sessions, status, packages(duration_minutes)')
+        .eq('assigned_ktv_id', ktvId)
+        .eq('tenant_id', context.tenantId)
+        .gte('start_date', scheduledDate)
+        .lte('start_date', scheduledDate)
+        .in('status', ['booked', 'deposit_pending', 'active', 'in_progress']);
+      
+      // Transform bookings for capacity provider
+      const existingBookingsFormatted = (existingBookings || []).map((booking: any) => ({
+        id: booking.id,
+        startTime: booking.preferred_time || '08:00',
+        endTime: this.calculateEndTime(
+          booking.preferred_time || '08:00',
+          booking.packages?.duration_minutes || 60
+        ),
+        status: booking.status,
+      }));
+      
+      // Initialize capacity provider
+      const capacityProvider = new CapacityManagementProvider({ debug: true });
+      
+      // Calculate booking end time
+      // Get start time from metadata.preferred_time (session time), not scheduledStartTime (package start date)
+      const startTime = (order.metadata.preferred_time as string) || '08:00';
+      const durationMinutes = 60; // Default duration, could be from service metadata
+      const endTime = this.calculateEndTime(startTime, durationMinutes);
+      
+      // Note: scheduledDate already defined above from order.scheduledStartTime
+      
+      // Check capacity
+      const capacityResult = await capacityProvider.checkCapacity({
+        booking: {
+          requestedStartTime: startTime,
+          requestedEndTime: endTime,
+          requestedDate: scheduledDate,
+          serviceType: 'spa_session',
+          ktvId: ktvId,
+        },
+        existingBookings: existingBookingsFormatted,
+        tenantCapacity: capacityConfig ? {
+          dailyCapacityLimit: capacityConfig.dailyCapacityLimit || 10,
+          concurrentSessionLimit: capacityConfig.concurrentSessionLimit || 5,
+          enforceBreakTimes: capacityConfig.enforceBreakTimes || false,
+          workingHours: capacityConfig.workingHours || { start: '08:00', end: '22:00' },
+        } : undefined,
+        ktvCapacity: {
+          maxDailySessions: 10,
+          minBreakMinutes: capacityConfig?.minBreakMinutes || 15,
+          workingHours: { start: '08:00', end: '22:00' },
+        },
+        tenantId: context.tenantId,
+      });
+      
+      if (!capacityResult.isAvailable) {
+        console.error(
+          `[SpaAdapter] Capacity check failed: ${capacityResult.reason}`,
+          capacityResult.conflicts
+        );
+        
+        // Log detailed conflict information
+        if (capacityResult.conflicts && capacityResult.conflicts.length > 0) {
+          capacityResult.conflicts.forEach(conflict => {
+            console.error(`[SpaAdapter] Conflict: ${conflict.type} - ${conflict.reason}`);
+          });
+        }
+        
+        return false;
+      }
+      
+      console.log(`[SpaAdapter] Capacity check passed for order ${order.id}`);
+      
+    } catch (error) {
+      console.error('[SpaAdapter] Error during capacity validation:', error);
+      // If capacity check fails due to error, log but allow booking (fail open)
+      // This prevents blocking bookings if the capacity system has issues
+      console.warn('[SpaAdapter] Proceeding with booking despite capacity check error');
+    }
 
     console.log(`[SpaAdapter] Booking validation passed for order ${order.id}`);
     return true;
+  }
+
+  /**
+   * Calculate end time given start time and duration
+   * @private
+   */
+  private calculateEndTime(startTime: string, durationMinutes: number): string {
+    const [hours, minutes] = startTime.split(':').map(Number);
+    const totalMinutes = hours * 60 + minutes + durationMinutes;
+    const endHours = Math.floor(totalMinutes / 60) % 24;
+    const endMinutes = totalMinutes % 60;
+    return `${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`;
   }
 
   /**

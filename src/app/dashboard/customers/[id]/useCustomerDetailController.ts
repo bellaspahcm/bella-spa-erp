@@ -163,17 +163,24 @@ export function useCustomerDetailController() {
       if (customerRecord) {
         setCustomer(customerRecord);
 
-        if (options?.preserveSelection && activeBookingIdRef.current) {
+        // ALWAYS try to preserve user's selection first
+        // Only fall back to pickDefaultBooking if:
+        // 1. No prior selection (activeBookingIdRef.current is null)
+        // 2. Prior selection no longer exists
+        if (activeBookingIdRef.current) {
           const currentBookingStillExists = bookings.some(b => b.id === activeBookingIdRef.current);
           if (currentBookingStillExists) {
             const updatedActiveBooking = bookings.find(b => b.id === activeBookingIdRef.current) || null;
             setActiveBooking(updatedActiveBooking);
+            // Keep ref unchanged - user is still viewing this booking
           } else {
+            // User's selected booking was deleted - fall back to default
             const defaultBooking = bookings.length > 0 ? pickDefaultBooking(bookings, targetBookingId) : null;
             setActiveBooking(defaultBooking);
             activeBookingIdRef.current = defaultBooking?.id || null;
           }
         } else {
+          // First load - no prior selection, use default
           const defaultBooking = bookings.length > 0 ? pickDefaultBooking(bookings, targetBookingId) : null;
           setActiveBooking(defaultBooking);
           activeBookingIdRef.current = defaultBooking?.id || null;
@@ -350,14 +357,35 @@ export function useCustomerDetailController() {
     try {
       const result = await updateBooking(activeBooking.id, { assigned_ktv_id: ktvId });
       if (result.error) throw new Error(result.error);
+      
+      // Optimistic update: Update local state immediately without waiting for full data reload
+      // This ensures the dropdown shows the new KTV right away (better UX)
+      const selectedKtv = ktvs.find(k => k.id === ktvId);
+      setActiveBooking((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          assigned_ktv_id: ktvId,
+          assigned_ktv_name: selectedKtv?.full_name || null,
+          users: selectedKtv ? { 
+            id: selectedKtv.id, 
+            full_name: selectedKtv.full_name,
+            role: selectedKtv.role,
+          } : null,
+        };
+      });
+      
       toast.success('Đã cập nhật KTV phụ trách');
-      await loadData();
+      // Background refresh to sync any other changes (optional)
+      void loadData();
     } catch (error: unknown) {
       toast.error('Lỗi: ' + getErrorMessage(error));
+      // On error, reload data to revert optimistic update
+      await loadData();
     } finally {
       setIsUpdatingKTV(false);
     }
-  }, [activeBooking, loadData]);
+  }, [activeBooking, ktvs, loadData]);
 
   const handleUpdateCustomer = useCallback(async () => {
     setIsUpdatingCustomer(true);

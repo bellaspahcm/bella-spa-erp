@@ -142,11 +142,11 @@ export async function getKtvSuggestions(
     });
 
     // 5. Build suggestions list from winner + alternatives
-    const suggestions: KtvSuggestion[] = [];
+    const allCandidates: KtvSuggestion[] = [];
 
     // Top recommendation (winner)
     if (engineResult.assignedKtvId) {
-      suggestions.push({
+      allCandidates.push({
         ktvId: engineResult.assignedKtvId,
         ktvName: engineResult.assignedKtvName || 'KTV',
         score: 100, // Winner — exact score extracted from reason string below
@@ -158,7 +158,7 @@ export async function getKtvSuggestions(
 
     // Runner-ups from alternatives
     (engineResult.alternatives || []).slice(0, 2).forEach(alt => {
-      suggestions.push({
+      allCandidates.push({
         ktvId: alt.ktvId,
         ktvName: alt.ktvName,
         score: alt.score,
@@ -168,11 +168,21 @@ export async function getKtvSuggestions(
       });
     });
 
+    // 6. Filter out unavailable KTVs (those with conflicts at requested time)
+    const suggestions = await filterAvailableKtvs(
+      allCandidates,
+      input.tenantId,
+      input.requestedDate,
+      input.requestedStartTime,
+      durationMinutes,
+      input.bookingId
+    );
+
     if (suggestions.length === 0) {
       return {
         success: false,
         suggestions: [],
-        error: engineResult.reason || 'Không tìm thấy KTV phù hợp',
+        error: 'Không có KTV khả dụng lúc ' + input.requestedStartTime + ' (các KTV được đề xuất đều đã có lịch)',
       };
     }
 
@@ -273,4 +283,191 @@ function parseBreakdownFromReason(reason: string): KtvSuggestion['breakdown'] {
     customerPreference: Math.round(10 * ratio),
     specialization: Math.round(10 * ratio),
   };
+}
+
+/**
+ * Filter KTV suggestions to only those available at requested time.
+ * 
+ * Uses the CapacityManagementProvider (same logic as booking validation)
+ * to check for conflicts (break time violation, overlap, daily limit).
+ * 
+ * @param candidates - All KTV suggestions from Decision Engine
+ * @param tenantId - Tenant ID for fetching capacity config
+ * @param date - Requested date (YYYY-MM-DD)
+ * @param time - Requested time (HH:mm)
+ * @param duration - Session duration in minutes
+ * @param excludeBookingId - Booking ID to exclude (for edit mode)
+ * @returns Filtered list of only available KTVs
+ */
+async function filterAvailableKtvs(
+  candidates: KtvSuggestion[],
+  tenantId: string,
+  date: string,
+  time: string,
+  duration: number,
+  excludeBookingId?: string
+): Promise<KtvSuggestion[]> {
+  try {
+    const supabase = await createClient();
+
+    // 1. Fetch capacity config
+    const { data: tenant } = await supabase
+      .from('tenants')
+      .select('capacity_config')
+      .eq('id', tenantId)
+      .single();
+
+    const capacityConfig = (tenant?.capacity_config as { break_buffer_minutes?: number; max_sessions_per_day?: number } | null) || {};
+    const breakBufferMinutes = capacityConfig.break_buffer_minutes || 15;
+    const maxSessionsPerDay = capacityConfig.max_sessions_per_day || 8;
+
+    // 2. Fetch ALL active bookings for the current booking's customer to check multi-booking constraints
+    let customerOtherActiveBookings: string[] = [];
+    if (excludeBookingId) {
+      const { data: currentBooking } = await supabase
+        .from('bookings')
+        .select('customer_id')
+        .eq('id', excludeBookingId)
+        .single();
+
+      if (currentBooking?.customer_id) {
+        const { data: customerBookings } = await supabase
+          .from('bookings')
+          .select('id, assigned_ktv_id')
+          .eq('customer_id', currentBooking.customer_id)
+          .in('status', ['in_progress', 'booked'])
+          .neq('id', excludeBookingId); // Exclude current booking
+
+        customerOtherActiveBookings = (customerBookings || [])
+          .map(b => b.assigned_ktv_id)
+          .filter((id): id is string => Boolean(id));
+      }
+    }
+
+    console.log(`[filterAvailableKtvs] Customer other active bookings KTV IDs:`, customerOtherActiveBookings);
+
+    // 3. Check each KTV for availability
+    const availableKtvs: KtvSuggestion[] = [];
+
+    for (const candidate of candidates) {
+      // Business rule: A KTV cannot be assigned to multiple active bookings of the same customer
+      if (customerOtherActiveBookings.includes(candidate.ktvId)) {
+        console.log(`[filterAvailableKtvs] KTV ${candidate.ktvName} skipped: Already assigned to another active booking of this customer`);
+        continue; // Skip this KTV
+      }
+
+      // Fetch existing bookings for this KTV on same date
+      const { data: existingBookings } = await supabase
+        .from('bookings')
+        .select('id, start_date, end_date, preferred_time, packages(default_duration_minutes)')
+        .eq('tenant_id', tenantId)
+        .eq('assigned_ktv_id', candidate.ktvId)
+        .eq('start_date', date)
+        .in('status', ['booked', 'in_progress', 'deposit_pending']);
+
+      console.log(`[filterAvailableKtvs] KTV ${candidate.ktvName}:`, {
+        totalBookings: existingBookings?.length || 0,
+        date,
+        time,
+        excludeBookingId,
+      });
+
+      // Exclude current booking if editing
+      const filteredBookings = (existingBookings || [])
+        .filter(b => b.id !== excludeBookingId)
+        .map(b => ({
+          startTime: b.preferred_time || '09:00',
+          durationMinutes: ((b.packages as { default_duration_minutes?: number } | null)?.default_duration_minutes) || 60,
+        }));
+
+      console.log(`[filterAvailableKtvs] After filtering:`, {
+        ktvName: candidate.ktvName,
+        filteredCount: filteredBookings.length,
+        filteredBookings,
+      });
+
+      // Check if new session would conflict
+      const hasConflict = checkKtvConflict(
+        filteredBookings,
+        time,
+        duration,
+        breakBufferMinutes,
+        maxSessionsPerDay
+      );
+
+      console.log(`[filterAvailableKtvs] Conflict check result:`, {
+        ktvName: candidate.ktvName,
+        hasConflict,
+      });
+
+      if (!hasConflict) {
+        availableKtvs.push(candidate);
+      }
+    }
+
+    console.log(`[filterAvailableKtvs] Final result:`, {
+      totalCandidates: candidates.length,
+      availableCount: availableKtvs.length,
+      availableNames: availableKtvs.map(k => k.ktvName),
+    });
+
+    return availableKtvs;
+  } catch (err) {
+    console.error('[filterAvailableKtvs] Error:', err);
+    // On error, return all candidates (don't block UI)
+    return candidates;
+  }
+}
+
+/**
+ * Check if a KTV has a conflict at the requested time.
+ * 
+ * Conflict types:
+ * 1. Time overlap with existing booking
+ * 2. Break time buffer violation (< 15 min between sessions)
+ * 3. Daily limit reached (>= 8 sessions)
+ * 
+ * @returns true if conflict exists, false if KTV is available
+ */
+function checkKtvConflict(
+  existingBookings: { startTime: string; durationMinutes: number }[],
+  newTime: string,
+  newDuration: number,
+  breakBufferMinutes: number,
+  maxSessionsPerDay: number
+): boolean {
+  // Check daily limit
+  if (existingBookings.length >= maxSessionsPerDay) {
+    return true; // Conflict: Daily limit reached
+  }
+
+  // Parse new session time
+  const [newHour, newMinute] = newTime.split(':').map(Number);
+  const newStartMinutes = newHour * 60 + newMinute;
+  const newEndMinutes = newStartMinutes + newDuration;
+
+  // Check each existing booking for overlap or break time violation
+  for (const booking of existingBookings) {
+    const [hour, minute] = booking.startTime.split(':').map(Number);
+    const existingStartMinutes = hour * 60 + minute;
+    const existingEndMinutes = existingStartMinutes + booking.durationMinutes;
+
+    // Check for time overlap
+    if (newStartMinutes < existingEndMinutes && newEndMinutes > existingStartMinutes) {
+      return true; // Conflict: Time overlap
+    }
+
+    // Check for break time buffer violation
+    // Case 1: New session starts right after existing session (need break buffer)
+    if (newStartMinutes >= existingEndMinutes && newStartMinutes < existingEndMinutes + breakBufferMinutes) {
+      return true; // Conflict: Break buffer violation (new session too soon after existing)
+    }
+
+    // Case 2: Existing session starts right after new session (need break buffer)
+    if (existingStartMinutes >= newEndMinutes && existingStartMinutes < newEndMinutes + breakBufferMinutes) {
+      return true; // Conflict: Break buffer violation (existing session too soon after new)
+    }
+  }
+
+  return false; // No conflict
 }
