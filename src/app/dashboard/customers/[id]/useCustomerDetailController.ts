@@ -656,13 +656,18 @@ export function useCustomerDetailController() {
 
   const handleDeleteBooking = useCallback(async (bookingId: string) => {
     try {
-      const supabase = createClient();
-      const { error } = await supabase
-        .from('bookings')
-        .delete()
-        .eq('id', bookingId);
+      // Call server action to delete booking (bypasses RLS)
+      const response = await fetch('/api/bookings/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId }),
+      });
 
-      if (error) throw error;
+      const result = await response.json();
+      
+      if (!response.ok || result.error) {
+        throw new Error(result.error || 'Failed to delete booking');
+      }
 
       toast.success('Đã xóa gói dịch vụ vĩnh viễn');
       
