@@ -16,72 +16,7 @@
  */
 
 -- =====================================================
--- STEP 1: Add resource columns to bookings table
--- =====================================================
-
--- Add bed assignment (giường)
-ALTER TABLE bookings 
-ADD COLUMN IF NOT EXISTS assigned_bed_id UUID REFERENCES beds(id);
-
--- Add room assignment (phòng)
-ALTER TABLE bookings 
-ADD COLUMN IF NOT EXISTS assigned_room_id UUID REFERENCES rooms(id);
-
--- Add equipment requirements (thiết bị - array of UUIDs)
-ALTER TABLE bookings 
-ADD COLUMN IF NOT EXISTS required_equipment_ids UUID[] DEFAULT ARRAY[]::UUID[];
-
--- Add comments
-COMMENT ON COLUMN bookings.assigned_bed_id IS 'Beauty Spa: Giường được phân cho booking này';
-COMMENT ON COLUMN bookings.assigned_room_id IS 'Beauty Spa: Phòng được phân cho booking này';
-COMMENT ON COLUMN bookings.required_equipment_ids IS 'Beauty Spa: Danh sách thiết bị cần thiết (array of equipment IDs)';
-
--- =====================================================
--- STEP 2: Create index for faster conflict checks
--- =====================================================
-
-CREATE INDEX IF NOT EXISTS idx_bookings_assigned_bed 
-ON bookings(assigned_bed_id, start_date, preferred_time) 
-WHERE assigned_bed_id IS NOT NULL;
-
-CREATE INDEX IF NOT EXISTS idx_bookings_assigned_room 
-ON bookings(assigned_room_id, start_date, preferred_time) 
-WHERE assigned_room_id IS NOT NULL;
-
-CREATE INDEX IF NOT EXISTS idx_bookings_equipment 
-ON bookings USING GIN(required_equipment_ids) 
-WHERE required_equipment_ids IS NOT NULL AND array_length(required_equipment_ids, 1) > 0;
-
--- =====================================================
--- STEP 3: Create beds table (if not exists)
--- =====================================================
-
-CREATE TABLE IF NOT EXISTS beds (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-  bed_number VARCHAR(50) NOT NULL,
-  bed_name VARCHAR(255),
-  room_id UUID REFERENCES rooms(id),
-  status VARCHAR(50) DEFAULT 'active' CHECK (status IN ('active', 'maintenance', 'inactive')),
-  notes TEXT,
-  created_at TIMESTAMPTZ DEFAULT now(),
-  updated_at TIMESTAMPTZ DEFAULT now()
-);
-
--- Index for tenant isolation
-CREATE INDEX IF NOT EXISTS idx_beds_tenant ON beds(tenant_id);
-CREATE INDEX IF NOT EXISTS idx_beds_room ON beds(room_id);
-
--- Unique constraint: bed_number per tenant
-CREATE UNIQUE INDEX IF NOT EXISTS idx_beds_number_tenant 
-ON beds(tenant_id, bed_number);
-
-COMMENT ON TABLE beds IS 'Beauty Spa: Danh sách giường phục vụ';
-COMMENT ON COLUMN beds.bed_number IS 'Mã số giường (e.g., "G01", "G02")';
-COMMENT ON COLUMN beds.status IS 'active = sẵn sàng, maintenance = bảo trì, inactive = không dùng';
-
--- =====================================================
--- STEP 4: Create rooms table (if not exists)
+-- STEP 1: Create rooms table FIRST (beds reference rooms)
 -- =====================================================
 
 CREATE TABLE IF NOT EXISTS rooms (
@@ -110,7 +45,62 @@ COMMENT ON COLUMN rooms.capacity IS 'Số lượng người tối đa trong phò
 COMMENT ON COLUMN rooms.room_type IS 'Loại phòng: single, double, vip, group';
 
 -- =====================================================
--- STEP 5: Create equipment table (if not exists)
+-- STEP 2: Create beds table (NOW rooms exists)
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS beds (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  bed_number VARCHAR(50) NOT NULL,
+  bed_name VARCHAR(255),
+  room_id UUID REFERENCES rooms(id),
+  status VARCHAR(50) DEFAULT 'active' CHECK (status IN ('active', 'maintenance', 'inactive')),
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Index for tenant isolation
+CREATE INDEX IF NOT EXISTS idx_beds_tenant ON beds(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_beds_room ON beds(room_id);
+
+-- Unique constraint: bed_number per tenant
+CREATE UNIQUE INDEX IF NOT EXISTS idx_beds_number_tenant 
+ON beds(tenant_id, bed_number);
+
+COMMENT ON TABLE beds IS 'Beauty Spa: Danh sách giường phục vụ';
+COMMENT ON COLUMN beds.bed_number IS 'Mã số giường (e.g., "G01", "G02")';
+COMMENT ON COLUMN beds.status IS 'active = sẵn sàng, maintenance = bảo trì, inactive = không dùng';
+
+-- =====================================================
+-- STEP 3: Create equipment table
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS rooms (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  room_number VARCHAR(50) NOT NULL,
+  room_name VARCHAR(255),
+  capacity INT DEFAULT 1 CHECK (capacity > 0),
+  room_type VARCHAR(50), -- 'single', 'double', 'vip', 'group'
+  status VARCHAR(50) DEFAULT 'active' CHECK (status IN ('active', 'maintenance', 'inactive')),
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Index for tenant isolation
+CREATE INDEX IF NOT EXISTS idx_rooms_tenant ON rooms(tenant_id);
+
+-- Unique constraint: room_number per tenant
+CREATE UNIQUE INDEX IF NOT EXISTS idx_rooms_number_tenant 
+ON rooms(tenant_id, room_number);
+
+COMMENT ON TABLE rooms IS 'Beauty Spa: Danh sách phòng phục vụ';
+COMMENT ON COLUMN rooms.room_number IS 'Mã số phòng (e.g., "P01", "VIP01")';
+COMMENT ON COLUMN rooms.capacity IS 'Số lượng người tối đa trong phòng';
+COMMENT ON COLUMN rooms.room_type IS 'Loại phòng: single, double, vip, group';
+
 -- =====================================================
 
 CREATE TABLE IF NOT EXISTS equipment (
@@ -139,7 +129,37 @@ COMMENT ON COLUMN equipment.quantity IS 'Số lượng thiết bị available';
 COMMENT ON COLUMN equipment.equipment_type IS 'Loại thiết bị: machine, tool, consumable';
 
 -- =====================================================
--- STEP 6: Verification
+-- STEP 4: Add resource columns to bookings table
+-- =====================================================
+
+-- Add bed reference
+ALTER TABLE bookings 
+ADD COLUMN IF NOT EXISTS assigned_bed_id UUID REFERENCES beds(id) ON DELETE SET NULL;
+
+-- Add room reference
+ALTER TABLE bookings 
+ADD COLUMN IF NOT EXISTS assigned_room_id UUID REFERENCES rooms(id) ON DELETE SET NULL;
+
+-- Add equipment array (JSONB for flexibility)
+ALTER TABLE bookings 
+ADD COLUMN IF NOT EXISTS required_equipment_ids JSONB DEFAULT '[]'::jsonb;
+
+-- Indexes for conflict detection queries
+CREATE INDEX IF NOT EXISTS idx_bookings_bed 
+ON bookings(assigned_bed_id, start_date, status);
+
+CREATE INDEX IF NOT EXISTS idx_bookings_room 
+ON bookings(assigned_room_id, start_date, status);
+
+CREATE INDEX IF NOT EXISTS idx_bookings_equipment 
+ON bookings USING gin(required_equipment_ids);
+
+COMMENT ON COLUMN bookings.assigned_bed_id IS 'Beauty Spa: Giường được phân công';
+COMMENT ON COLUMN bookings.assigned_room_id IS 'Beauty Spa: Phòng được phân công';
+COMMENT ON COLUMN bookings.required_equipment_ids IS 'Beauty Spa: Mảng UUID thiết bị cần thiết';
+
+-- =====================================================
+-- STEP 5: Verification
 -- =====================================================
 
 DO $$
@@ -167,7 +187,7 @@ BEGIN
 END $$;
 
 -- =====================================================
--- STEP 7: Sample data (optional, for testing)
+-- STEP 6: Sample data (optional, for testing)
 -- =====================================================
 
 -- Insert sample beds (commented out - run manually if needed)
