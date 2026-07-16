@@ -1,7 +1,7 @@
 import type { Database } from '@/types/database.types';
 import type { TransferOrderItem } from '@/services/inventory-transfer-actions';
 
-export type ActiveInventoryTab = 'stock' | 'requests' | 'reconciliation';
+export type ActiveInventoryTab = 'stock' | 'requests' | 'reconciliation' | 'sales';
 export type StockFilter = 'all' | 'low' | 'ok';
 
 export type InventoryItem = Database['public']['Tables']['inventory_items']['Row'];

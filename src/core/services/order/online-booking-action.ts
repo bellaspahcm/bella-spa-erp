@@ -116,6 +116,46 @@ export async function submitOnlineBooking(formData: OnlineBookingFormData): Prom
     }
   }
 
+  // 2.5. CRITICAL FIX (15/07/2026): Check for conflicting active bookings
+  // Prevent customer from creating multiple active bookings
+  const { data: activeBookings, error: conflictCheckError } = await supabase
+    .from('bookings')
+    .select('id, package_name, status, start_date, booking_number')
+    .eq('customer_id', customerId)
+    .eq('tenant_id', tenantId)
+    .in('status', ['deposit_pending', 'in_progress', 'scheduled', 'confirmed']);
+
+  if (conflictCheckError) {
+    console.error('[submitOnlineBooking] Conflict check error:', conflictCheckError);
+    // Log error but allow booking to proceed (graceful degradation)
+    // In production, consider blocking if conflict check fails
+  }
+
+  if (activeBookings && activeBookings.length > 0) {
+    // Customer has active bookings - block new booking creation
+    const packageNames = activeBookings
+      .map(b => b.package_name || 'Gói không tên')
+      .filter((name, index, self) => self.indexOf(name) === index)  // Unique names only
+      .join(', ');
+
+    console.warn(
+      `[submitOnlineBooking] Blocked: Customer ${customerId} has ${activeBookings.length} active booking(s):`,
+      activeBookings.map(b => b.booking_number).join(', ')
+    );
+
+    // If we created a new customer (lead) for this booking attempt, we should NOT delete it
+    // The customer record is still valuable even if booking is blocked
+    // Next time they book, we'll find existing customer
+
+    return {
+      error: 
+        `❌ Bạn đang có ${activeBookings.length} gói đang thực hiện:\n\n` +
+        `📦 ${packageNames}\n\n` +
+        `Vui lòng hoàn thành hoặc hủy các gói này trước khi đặt gói mới.\n\n` +
+        `💡 Nếu cần hỗ trợ, vui lòng liên hệ hotline để được tư vấn.`
+    };
+  }
+
   // 3. Create the booking
   const bookingNumber = `BK-ONLINE-${Date.now()}`;
   const bookingPayload: BookingInsert = {

@@ -444,6 +444,9 @@ export function EditBookingModal({
   isSubmitting,
   data,
   setData,
+  bookingId,
+  currentKtvId,
+  currentKtvName,
 }: {
   isOpen: boolean;
   onClose: () => void;
@@ -451,7 +454,74 @@ export function EditBookingModal({
   isSubmitting: boolean;
   data: EditBookingData;
   setData: ModalStateSetter<EditBookingData>;
+  bookingId?: string;
+  currentKtvId?: string;
+  currentKtvName?: string;
 }) {
+  const [ktvAvailability, setKtvAvailability] = useState<{
+    available: boolean;
+    reason?: string;
+    nextAvailableTime?: string;
+  } | null>(null);
+  const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
+
+  // Check KTV availability when time changes
+  useEffect(() => {
+    if (!isOpen || !currentKtvId || !data.start_date || !data.preferred_time) {
+      setKtvAvailability(null);
+      return;
+    }
+
+    const checkAvailability = async () => {
+      setIsCheckingAvailability(true);
+      try {
+        const searchParams = new URLSearchParams({
+          date: data.start_date,
+          time: data.preferred_time,
+          duration: '60', // Default 60 minutes
+        });
+
+        if (bookingId) {
+          searchParams.append('excludeBookingId', bookingId);
+        }
+
+        const response = await fetch(`/api/bookings/check-ktv-availability?${searchParams.toString()}`);
+        
+        if (!response.ok) {
+          console.error('[EditBookingModal] Failed to check availability');
+          setKtvAvailability(null);
+          return;
+        }
+
+        const result = await response.json();
+        
+        // Find current KTV in results
+        const currentKtvResult = [...result.available, ...result.unavailable].find(
+          (ktv: any) => ktv.id === currentKtvId
+        );
+
+        if (currentKtvResult && !currentKtvResult.available) {
+          setKtvAvailability({
+            available: false,
+            reason: currentKtvResult.reason,
+            nextAvailableTime: currentKtvResult.conflictDetails?.nextAvailableTime,
+          });
+        } else {
+          setKtvAvailability({ available: true });
+        }
+      } catch (error) {
+        console.error('[EditBookingModal] Error checking availability:', error);
+        setKtvAvailability(null);
+      } finally {
+        setIsCheckingAvailability(false);
+      }
+    };
+
+    // Debounce the check
+    const timeoutId = setTimeout(checkAvailability, 500);
+    return () => clearTimeout(timeoutId);
+  }, [isOpen, data.start_date, data.preferred_time, currentKtvId, bookingId]);
+
   if (!isOpen) return null;
 
   return (
@@ -485,6 +555,34 @@ export function EditBookingModal({
         </div>
 
         <div className="p-8 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
+          {/* KTV Availability Warning Banner */}
+          {ktvAvailability && !ktvAvailability.available && currentKtvName && (
+            <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-xl animate-in fade-in slide-in-from-top-2">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1 space-y-2">
+                  <p className="font-black text-amber-900 text-sm uppercase tracking-wide">
+                    ⚠️ KTV {currentKtvName} không khả dụng
+                  </p>
+                  <p className="text-amber-800 text-xs font-bold">
+                    {ktvAvailability.reason || 'Đang có lịch trùng hoặc không đủ thời gian nghỉ'}
+                  </p>
+                  {ktvAvailability.nextAvailableTime && (
+                    <p className="text-amber-700 text-xs font-bold">
+                      💡 Thời gian khả dụng tiếp theo: <span className="font-black">{ktvAvailability.nextAvailableTime}</span>
+                    </p>
+                  )}
+                  <p className="text-amber-600 text-xs font-bold italic">
+                    → Vui lòng chọn KTV khác hoặc đổi thời gian sang {ktvAvailability.nextAvailableTime || 'thời điểm khác'}
+                  </p>
+                </div>
+                {isCheckingAvailability && (
+                  <Loader2 className="w-4 h-4 text-amber-500 animate-spin flex-shrink-0" />
+                )}
+              </div>
+            </div>
+          )}
+
           <div className="space-y-2">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Tên gói dịch vụ</label>
             <input

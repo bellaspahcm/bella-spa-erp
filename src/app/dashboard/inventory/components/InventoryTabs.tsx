@@ -1,4 +1,4 @@
-import { ClipboardCheck, Package, Truck } from 'lucide-react';
+import { ClipboardCheck, Package, ShoppingCart, Truck } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
@@ -38,6 +38,15 @@ export function InventoryTabs({ activeTab, onChange }: InventoryTabsProps) {
         )}
       >
         <ClipboardCheck className="w-4 h-4" /> Kiểm kê cuối tháng
+      </button>
+      <button
+        onClick={() => onChange('sales')}
+        className={cn(
+          'flex shrink-0 items-center gap-2 border-b-2 pb-4 text-xs font-black uppercase tracking-widest transition-all',
+          activeTab === 'sales' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-600',
+        )}
+      >
+        <ShoppingCart className="w-4 h-4" /> Bán hàng sản phẩm
       </button>
     </div>
   );

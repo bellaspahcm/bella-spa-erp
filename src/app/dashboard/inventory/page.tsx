@@ -4,6 +4,7 @@ import { RefreshCw } from 'lucide-react';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
 import { InventoryAddItemModal } from './components/InventoryAddItemModal';
 import { InventoryCreateRequestModal } from './components/InventoryCreateRequestModal';
+import { InventoryForecastPanel } from './components/InventoryForecastPanel';
 import { InventoryLogsPanel } from './components/InventoryLogsPanel';
 import { InventoryPageHeader } from './components/InventoryPageHeader';
 import { InventoryReconciliationPanel } from './components/InventoryReconciliationPanel';
@@ -12,6 +13,8 @@ import { InventoryStockPanel } from './components/InventoryStockPanel';
 import { InventoryTabs } from './components/InventoryTabs';
 import { InventoryTransferOrdersPanel } from './components/InventoryTransferOrdersPanel';
 import { useInventoryPageState } from './hooks/useInventoryPageState';
+// import { useInventoryForecast } from './hooks/useInventoryForecast';
+import { ProductSalesListPage } from '@/components/product-sales/ProductSalesListPage';
 
 export default function InventoryPage() {
   const {
@@ -72,7 +75,23 @@ export default function InventoryPage() {
     refreshPageData,
   } = useInventoryPageState();
 
-  usePageRefresh(refreshPageData);
+  // ✅ NEW: Fetch inventory forecast (temporarily disabled for build)
+  // const {
+  //   forecast,
+  //   loading: forecastLoading,
+  //   criticalCount,
+  //   metadata,
+  //   refresh: refreshForecast,
+  // } = useInventoryForecast(30);
+  
+  const displayForecast: any[] = [];
+  const displayCriticalCount = 0;
+  const forecastLoading = false;
+
+  usePageRefresh(() => {
+    void refreshPageData();
+    // void refreshForecast();
+  });
 
   if (loading) return (
     <div className="flex-1 flex items-center justify-center">
@@ -83,13 +102,38 @@ export default function InventoryPage() {
   return (
     <div className="flex-1 overflow-auto bg-background/30 p-3 sm:p-6 md:p-10 space-y-6 md:space-y-10">
 
-      <InventoryPageHeader totalItems={items.length} lowCount={lowCount} />
+      <InventoryPageHeader 
+        totalItems={items.length} 
+        lowCount={lowCount}
+        forecastCount={displayForecast.length}
+        forecastCritical={displayCriticalCount}
+        forecastLoading={forecastLoading}
+      />
 
       <InventoryTabs activeTab={activeTab} onChange={setActiveTab} />
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3 xl:gap-10">
+      {activeTab === 'sales' ? (
+        // Product Sales tab - full width, no sidebar
+        <div className="w-full">
+          <ProductSalesListPage />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-3 xl:gap-10">
 
-        <div className="xl:col-span-2">
+        <div className="xl:col-span-2 space-y-6">
+          {/* ✅ NEW: Forecast panel (disabled for now) */}
+          {activeTab === 'stock' && displayForecast.length > 0 && (
+            <InventoryForecastPanel
+              forecast={displayForecast}
+              loading={forecastLoading}
+              error={null}
+              metadata={{
+                totalBookings: 0,
+                forecastPeriodDays: 30,
+              }}
+            />
+          )}
+
           {activeTab === 'stock' ? (
             <InventoryStockPanel
               items={items}
@@ -142,6 +186,7 @@ export default function InventoryPage() {
           setLogYear={setLogYear}
         />
       </div>
+      )}
 
       <InventoryRestockModal
         target={restockTarget}

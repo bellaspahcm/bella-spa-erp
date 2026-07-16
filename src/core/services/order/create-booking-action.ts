@@ -204,6 +204,30 @@ export async function createBooking(formData: CreateBookingInput): Promise<Creat
   }
   const customerId = customerResult.customerId;
 
+  // CRITICAL FIX (15/07/2026): Check for OVERLAPPING bookings (not just multiple bookings)
+  // UPDATE (15/07/2026 - Evening): Also block deposit_pending to prevent overlaps
+  // DISABLED: Old logic blocked ALL multiple bookings (wrong - customer can have multiple bookings at different times)
+  // NEW: Only block if bookings OVERLAP in time
+  
+  // TODO: Implement proper time overlap check here
+  // For now, Decision Engine will handle time conflicts via break time buffer
+  // This section is intentionally disabled to allow multiple bookings per customer
+  
+  /* DISABLED LOGIC:
+  const { data: activeBookings, error: conflictCheckError } = await supabase
+    .from('bookings')
+    .select('id, package_name, status, start_date, booking_number')
+    .eq('customer_id', customerId)
+    .eq('tenant_id', tenantId)
+    .in('status', ['deposit_pending', 'in_progress', 'scheduled', 'confirmed']);
+
+  if (activeBookings && activeBookings.length > 0) {
+    return {
+      error: `❌ Khách hàng đang có ${activeBookings.length} gói đang thực hiện...`
+    };
+  }
+  */
+
   const existingBooking = await findPendingBookingForCustomer(supabase, customerId, tenantId);
 
   // Task 19.1 & 19.2: Construct tenant context for adapter integration

@@ -65,6 +65,87 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
     }
   }
 
+  // CRITICAL FIX (15/07/2026 - Evening): Add Decision Engine validation for UPDATE
+  // When editing booking time, date, or KTV, must check break time buffer
+  if (oldBooking && (
+    updatePayload.preferred_time !== undefined || 
+    updatePayload.start_date !== undefined ||
+    updatePayload.preferred_date !== undefined ||
+    updatePayload.assigned_ktv_id !== undefined
+  )) {
+    console.log('[updateBooking] Decision Engine validation triggered for time/KTV change');
+    
+    // Build updated booking data for validation
+    // Map update payload fields to BookingInsert format for Decision Engine
+    const updatedBookingData = {
+      // Core booking fields
+      id: oldBooking.id,
+      tenant_id: oldBooking.tenant_id,
+      customer_id: oldBooking.customer_id,
+      package_id: updatePayload.package_id !== undefined ? updatePayload.package_id : oldBooking.package_id,
+      package_name: updatePayload.package_name !== undefined ? updatePayload.package_name : oldBooking.package_name,
+      
+      // Time fields - map preferred_time to start_date for Decision Engine
+      start_date: updatePayload.preferred_time !== undefined ? updatePayload.preferred_time : oldBooking.start_date,
+      preferred_date: updatePayload.preferred_date !== undefined ? updatePayload.preferred_date : oldBooking.preferred_date,
+      preferred_time: updatePayload.preferred_time !== undefined ? updatePayload.preferred_time : oldBooking.preferred_time,
+      
+      // KTV assignment
+      assigned_ktv_id: updatePayload.assigned_ktv_id !== undefined ? updatePayload.assigned_ktv_id : oldBooking.assigned_ktv_id,
+      ktv_id: updatePayload.assigned_ktv_id !== undefined ? updatePayload.assigned_ktv_id : oldBooking.assigned_ktv_id,
+      
+      // Status and payment
+      status: updatePayload.status !== undefined ? updatePayload.status : oldBooking.status,
+      full_price: updatePayload.full_price !== undefined ? updatePayload.full_price : oldBooking.full_price,
+      deposit_amount: updatePayload.deposit_amount !== undefined ? updatePayload.deposit_amount : oldBooking.deposit_amount,
+      
+      // Other fields
+      total_sessions: updatePayload.total_sessions !== undefined ? updatePayload.total_sessions : oldBooking.total_sessions,
+      notes: updatePayload.notes !== undefined ? updatePayload.notes : oldBooking.notes,
+    };
+
+    console.log('[updateBooking] Updated booking data for validation:', {
+      id: updatedBookingData.id,
+      start_date: updatedBookingData.start_date,
+      assigned_ktv_id: updatedBookingData.assigned_ktv_id,
+      status: updatedBookingData.status,
+    });
+
+    // Import Decision Engine adapter validation (same as create-booking-action.ts)
+    try {
+      const { invokeAdapterValidation, constructTenantContextForBooking } = await import('./create-booking-helpers');
+
+      // Get tenant context
+      const tenantContext = await constructTenantContextForBooking(supabase, tenantId);
+      if ('error' in tenantContext) {
+        console.error('[updateBooking] Failed to get tenant context:', tenantContext.error);
+        return { error: tenantContext.error };
+      }
+
+      console.log('[updateBooking] Tenant context loaded, invoking Decision Engine validation...');
+
+      // Validate with Decision Engine (includes break time buffer check)
+      const validationResult = await invokeAdapterValidation(
+        updatedBookingData as any, // Type assertion since we're mapping fields
+        tenantContext.context
+      );
+
+      if ('error' in validationResult) {
+        console.error('[updateBooking] Decision Engine validation failed:', validationResult.error);
+        return { error: validationResult.error };
+      }
+      
+      console.log('[updateBooking] Decision Engine validation passed');
+    } catch (validationErr) {
+      console.error('[updateBooking] Decision Engine validation exception:', validationErr);
+      return {
+        error: validationErr instanceof Error
+          ? validationErr.message
+          : 'Failed to validate booking update with Decision Engine'
+      };
+    }
+  }
+
   const { data, error } = await supabase
     .from('bookings')
     .update(updatePayload)

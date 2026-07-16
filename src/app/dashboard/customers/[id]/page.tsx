@@ -204,6 +204,9 @@ export default function CustomerDetailPage() {
         isSubmitting={isSavingBooking}
         data={editBookingData}
         setData={setEditBookingData}
+        bookingId={activeBooking?.id}
+        currentKtvId={activeBooking?.assigned_ktv_id || undefined}
+        currentKtvName={activeBooking?.users?.full_name || activeBooking?.assigned_ktv_name || 'KTV'}
       />
 
       {activeBooking && receiptData && (

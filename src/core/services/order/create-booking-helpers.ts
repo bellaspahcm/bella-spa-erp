@@ -776,6 +776,7 @@ export async function invokeAdapterValidation(
       sessions_completed: 0,
       package_category: '', // Will be filled from package metadata
       original_db_status: bookingPayload.status, // Preserve original status for adapter
+      preferred_time: bookingPayload.preferred_time, // Add preferred_time for capacity validation
     },
   };
 
