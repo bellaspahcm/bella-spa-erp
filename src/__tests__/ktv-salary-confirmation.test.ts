@@ -145,6 +145,7 @@ describe('getKtvSalaryForConfirmation', () => {
     });
     expect(salarySheetClient.rpc).toHaveBeenCalledWith('calculate_ktv_salary_sheet', {
       p_month_year: '2026-06-01',
+      p_tenant_id: 'tenant-1',
     });
     expect(result?.sessions).toHaveLength(1);
   });
