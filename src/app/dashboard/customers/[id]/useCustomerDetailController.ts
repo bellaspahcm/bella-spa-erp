@@ -654,6 +654,31 @@ export function useCustomerDetailController() {
     setIsEditBookingModalOpen(true);
   }, [activeBooking]);
 
+  const handleDeleteBooking = useCallback(async (bookingId: string) => {
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from('bookings')
+        .delete()
+        .eq('id', bookingId);
+
+      if (error) throw error;
+
+      toast.success('Đã xóa gói dịch vụ vĩnh viễn');
+      
+      // If deleted booking was the active one, clear selection
+      if (activeBooking?.id === bookingId) {
+        setActiveBooking(null);
+        activeBookingIdRef.current = null;
+      }
+      
+      await loadData();
+    } catch (error) {
+      console.error('Delete booking error:', error);
+      toast.error('Lỗi khi xóa gói: ' + getErrorMessage(error));
+    }
+  }, [activeBooking?.id, loadData]);
+
   const isDepositOnly = Boolean(activeBooking && activeBooking.status === 'deposit_pending' && !activeBooking.package_id);
   const sortedSessions = useMemo(
     () => (activeBooking?.session_logs ? [...activeBooking.session_logs].sort((a, b) => (a.session_number || 0) - (b.session_number || 0)) : []),
@@ -682,6 +707,7 @@ export function useCustomerDetailController() {
     editData,
     handleBack,
     handleBookingSuccess,
+    handleDeleteBooking,
     handleExportContract,
     handleExportQuotation,
     handleOpenBookingSessions,

@@ -128,7 +128,9 @@ export default function CustomerDetailPage() {
             bookings={customer.allBookings || []}
             activeBooking={activeBooking}
             onSelectBooking={setActiveBooking}
+            onDeleteBooking={handleDeleteBooking}
             tenantModuleKey={tenantModuleKey}
+            userRole={userRole}
           />
 
           <ActiveBookingPanel

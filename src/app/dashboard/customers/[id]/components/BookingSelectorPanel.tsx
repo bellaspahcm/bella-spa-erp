@@ -4,20 +4,46 @@ import { cn } from '@/lib/utils';
 import type { CustomerDetailBooking } from '../types';
 import { useModuleVocabulary } from '@/lib/business-rules/module-vocabulary';
 import type { TenantModuleKey } from '@/lib/business-rules/tenant-modules';
+import { Trash2 } from 'lucide-react';
+
+// Vietnamese status labels
+const STATUS_LABELS: Record<string, { label: string; color: string }> = {
+  'active': { label: 'Đang thực hiện', color: 'text-emerald-600' },
+  'in_progress': { label: 'Đang thực hiện', color: 'text-emerald-600' },
+  'booked': { label: 'Đã đặt', color: 'text-blue-600' },
+  'deposit_pending': { label: 'Chờ đặt cọc', color: 'text-amber-600' },
+  'completed': { label: 'Hoàn thành', color: 'text-slate-500' },
+  'cancelled': { label: 'Đã hủy', color: 'text-red-600' },
+  'refunded': { label: 'Đã hoàn tiền', color: 'text-red-600' },
+};
+
+function getStatusDisplay(status: string) {
+  return STATUS_LABELS[status] || { label: status, color: 'text-slate-400' };
+}
 
 export function BookingSelectorPanel({
   bookings,
   activeBooking,
   onSelectBooking,
+  onDeleteBooking,
   tenantModuleKey,
+  userRole,
 }: {
   bookings: CustomerDetailBooking[];
   activeBooking: CustomerDetailBooking | null;
   onSelectBooking: (booking: CustomerDetailBooking) => void;
+  onDeleteBooking?: (bookingId: string) => void;
   tenantModuleKey: TenantModuleKey | null;
+  userRole: 'admin' | 'ktv';
 }) {
   const vocab = useModuleVocabulary(tenantModuleKey);
   const activeBookingName = activeBooking?.package_name || activeBooking?.packages?.name || (activeBooking?.status === 'deposit_pending' ? 'Phiếu Đặt Cọc' : 'Dịch vụ lẻ');
+  
+  // Filter out cancelled bookings from the list (but still show if selected)
+  const visibleBookings = bookings.filter(b => 
+    b.status !== 'cancelled' || b.id === activeBooking?.id
+  );
+  const cancelledCount = bookings.filter(b => b.status === 'cancelled').length;
 
   return (
           <div className="relative mb-8 overflow-hidden rounded-[2.5rem] border-2 border-primary/20 bg-white p-6 shadow-[0_18px_45px_rgba(190,24,93,0.13)] ring-4 ring-primary/5">
@@ -34,28 +60,65 @@ export function BookingSelectorPanel({
                   </div>
                 )}
               </div>
-              <span className="w-fit rounded-full bg-primary/10 px-3 py-1 text-[9px] font-black uppercase text-primary">
-                Có {bookings.length} {vocab.package.singular.toLowerCase()}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="w-fit rounded-full bg-primary/10 px-3 py-1 text-[9px] font-black uppercase text-primary">
+                  Có {visibleBookings.length} {vocab.package.singular.toLowerCase()}
+                </span>
+                {cancelledCount > 0 && (
+                  <span className="w-fit rounded-full bg-red-100 px-3 py-1 text-[9px] font-black uppercase text-red-600">
+                    {cancelledCount} đã hủy
+                  </span>
+                )}
+              </div>
             </div>
             <div className="flex flex-wrap gap-2">
-              {bookings.length > 0 ? (
-                bookings.map((b) => (
-                  <button
-                    key={b.id}
-                    onClick={() => onSelectBooking(b)}
-                    aria-current={activeBooking?.id === b.id ? 'true' : undefined}
-                    className={cn(
-                      "rounded-2xl border px-4 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all",
-                      activeBooking?.id === b.id
-                        ? "bg-primary text-white border-primary shadow-xl shadow-pink-200 ring-4 ring-primary/15 dark:shadow-none"
-                        : "bg-slate-50 text-slate-400 border-slate-100 hover:border-primary/30 hover:bg-white hover:text-primary"
-                    )}
-                  >
-                    {b.package_name || (b.status === 'deposit_pending' ? 'Phiếu Đặt Cọc' : 'Gói lẻ')}
-                    <span className="ml-2 opacity-60">({b.status})</span>
-                  </button>
-                ))
+              {visibleBookings.length > 0 ? (
+                visibleBookings.map((b) => {
+                  const statusDisplay = getStatusDisplay(b.status || '');
+                  const isCancelled = b.status === 'cancelled';
+                  
+                  return (
+                    <div key={b.id} className="relative group">
+                      <button
+                        onClick={() => onSelectBooking(b)}
+                        aria-current={activeBooking?.id === b.id ? 'true' : undefined}
+                        className={cn(
+                          "rounded-2xl border px-4 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2",
+                          activeBooking?.id === b.id
+                            ? "bg-primary text-white border-primary shadow-xl shadow-pink-200 ring-4 ring-primary/15 dark:shadow-none"
+                            : isCancelled
+                            ? "bg-red-50 text-red-400 border-red-200 hover:border-red-300 hover:bg-red-100 hover:text-red-600 opacity-60"
+                            : "bg-slate-50 text-slate-400 border-slate-100 hover:border-primary/30 hover:bg-white hover:text-primary"
+                        )}
+                      >
+                        <span>
+                          {b.package_name || (b.status === 'deposit_pending' ? 'Phiếu Đặt Cọc' : 'Gói lẻ')}
+                        </span>
+                        <span className={cn(
+                          "ml-1 font-normal text-[9px]",
+                          activeBooking?.id === b.id ? "text-white/70" : statusDisplay.color
+                        )}>
+                          ({statusDisplay.label})
+                        </span>
+                      </button>
+                      
+                      {/* Delete button - only for admin and cancelled/deposit_pending bookings */}
+                      {userRole === 'admin' && onDeleteBooking && (isCancelled || b.status === 'deposit_pending') && (
+                        <button
+                          onClick={() => {
+                            if (confirm(`Xác nhận XÓA VĨNH VIỄN gói "${b.package_name || 'Gói lẻ'}"?\n\nThao tác này KHÔNG THỂ HOÀN TÁC!`)) {
+                              onDeleteBooking(b.id);
+                            }
+                          }}
+                          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 hover:scale-110 active:scale-95 shadow-lg"
+                          title="Xóa gói (VĨNH VIỄN)"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
+                  );
+                })
               ) : (
                 <div className="w-full py-4 text-center border-2 border-dashed border-slate-100 rounded-2xl">
                   <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
