@@ -29,6 +29,7 @@
 
 import { moduleRegistry } from '@/core/adapters/registry';
 import { SpaModuleAdapter } from './adapters/SpaModuleAdapter';
+import { BeautySpaModuleAdapter } from '@/modules/beauty-spa/adapters/BeautySpaModuleAdapter';
 import type { ModuleAdapter } from '@/core/types';
 
 /**
@@ -44,19 +45,10 @@ export function registerSpaModule(): void {
     moduleRegistry.register(spaAdapter);
     console.log('[SpaModule] ✅ Registered adapter for module: spa (Baby Care Spa)');
 
-    // Register for Beauty Spa (same logic, different tenant)
-    // Create a new instance to allow independent state if needed
-    const beautySpaAdapter = new SpaModuleAdapter();
-    
-    // Override moduleId and moduleName for beauty_spa
-    // This is a workaround to reuse the same adapter class
-    // @ts-expect-error - Overriding readonly properties for module aliasing
-    beautySpaAdapter.moduleId = 'beauty_spa';
-    // @ts-expect-error - Overriding readonly properties for module aliasing
-    beautySpaAdapter.moduleName = 'Beauty Spa Module';
-    
+    // Register for Beauty Spa (enhanced with resource conflict detection)
+    const beautySpaAdapter = new BeautySpaModuleAdapter();
     moduleRegistry.register(beautySpaAdapter as ModuleAdapter);
-    console.log('[SpaModule] ✅ Registered adapter for module: beauty_spa (Beauty Spa)');
+    console.log('[SpaModule] ✅ Registered adapter for module: beauty_spa (Beauty Spa with resources)');
 
     // Verify registration
     if (moduleRegistry.has('spa') && moduleRegistry.has('beauty_spa')) {

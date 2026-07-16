@@ -3,7 +3,7 @@
 > next build
 
 Γû▓ Next.js 16.2.6 (Turbopack)
-- Environments: .env.local, .env.production
+- Environments: .env.production.local, .env.local, .env.production
 - Experiments (use with caution):
   ┬╖ clientTraceMetadata
   ┬╖ optimizePackageImports
