@@ -13,7 +13,7 @@ import { InventoryStockPanel } from './components/InventoryStockPanel';
 import { InventoryTabs } from './components/InventoryTabs';
 import { InventoryTransferOrdersPanel } from './components/InventoryTransferOrdersPanel';
 import { useInventoryPageState } from './hooks/useInventoryPageState';
-// import { useInventoryForecast } from './hooks/useInventoryForecast';
+import { useInventoryForecast } from './hooks/useInventoryForecast';
 import { ProductSalesListPage } from '@/components/product-sales/ProductSalesListPage';
 
 export default function InventoryPage() {
@@ -75,22 +75,21 @@ export default function InventoryPage() {
     refreshPageData,
   } = useInventoryPageState();
 
-  // ✅ NEW: Fetch inventory forecast (temporarily disabled for build)
-  // const {
-  //   forecast,
-  //   loading: forecastLoading,
-  //   criticalCount,
-  //   metadata,
-  //   refresh: refreshForecast,
-  // } = useInventoryForecast(30);
+  // ✅ Inventory forecast enabled
+  const {
+    forecast,
+    loading: forecastLoading,
+    criticalCount,
+    metadata,
+    refresh: refreshForecast,
+  } = useInventoryForecast(30);
   
-  const displayForecast: any[] = [];
-  const displayCriticalCount = 0;
-  const forecastLoading = false;
+  const displayForecast = forecast;
+  const displayCriticalCount = criticalCount;
 
   usePageRefresh(() => {
     void refreshPageData();
-    // void refreshForecast();
+    void refreshForecast();
   });
 
   if (loading) return (
@@ -121,13 +120,13 @@ export default function InventoryPage() {
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-3 xl:gap-10">
 
         <div className="xl:col-span-2 space-y-6">
-          {/* ✅ NEW: Forecast panel (disabled for now) */}
+          {/* ✅ Inventory forecast panel */}
           {activeTab === 'stock' && displayForecast.length > 0 && (
             <InventoryForecastPanel
               forecast={displayForecast}
               loading={forecastLoading}
               error={null}
-              metadata={{
+              metadata={metadata || {
                 totalBookings: 0,
                 forecastPeriodDays: 30,
               }}
