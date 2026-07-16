@@ -39,10 +39,9 @@ export function BookingSelectorPanel({
   const vocab = useModuleVocabulary(tenantModuleKey);
   const activeBookingName = activeBooking?.package_name || activeBooking?.packages?.name || (activeBooking?.status === 'deposit_pending' ? 'Phiếu Đặt Cọc' : 'Dịch vụ lẻ');
   
-  // Filter out cancelled bookings from the list (but still show if selected)
-  const visibleBookings = bookings.filter(b => 
-    b.status !== 'cancelled' || b.id === activeBooking?.id
-  );
+  // Show ALL bookings (including cancelled) so admin can delete them
+  // Just style them differently
+  const visibleBookings = bookings;
   const cancelledCount = bookings.filter(b => b.status === 'cancelled').length;
 
   return (
