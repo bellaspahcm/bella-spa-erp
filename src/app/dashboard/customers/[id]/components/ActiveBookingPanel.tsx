@@ -218,7 +218,7 @@ export function ActiveBookingPanel({
                 <div className="space-y-6 pt-8 border-t border-white/10">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-3">
-                      <div className="flex items-center gap-3 text-white/60">
+                      <div className="flex items-center gap-3 text-white/90">
                         <User className="w-4 h-4" />
                         <span className="text-[10px] font-black uppercase tracking-widest">{vocab.worker.short} Phụ trách chính</span>
                       </div>
@@ -240,7 +240,7 @@ export function ActiveBookingPanel({
 
                     <div className="bg-white/5 rounded-3xl p-5 border border-white/10 flex flex-col justify-center">
                       <div className="flex justify-between items-center mb-2">
-                        <span className="text-white/40 text-[10px] font-black uppercase tracking-widest">Tiến độ {vocab.workUnit.singular.toLowerCase()}</span>
+                        <span className="text-white/75 text-[10px] font-black uppercase tracking-widest">Tiến độ {vocab.workUnit.singular.toLowerCase()}</span>
                         <span className="text-white font-black text-sm">{activeBooking.completed_sessions || 0}/{activeBooking.total_sessions || 0}</span>
                         <button
                           onClick={onOpenBookingSessions}

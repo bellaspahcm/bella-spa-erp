@@ -160,7 +160,7 @@ export function KtvSuggestionPanel({
                     <h4 className="text-xs font-black text-slate-900 group-hover:text-primary transition-colors">
                       {suggestion.ktvName}
                     </h4>
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
+                    <p className="text-[9px] font-bold text-slate-600 uppercase tracking-wider mt-0.5">
                       Kỹ thuật viên
                     </p>
                   </div>
@@ -176,7 +176,7 @@ export function KtvSuggestionPanel({
 
                 {/* Micro Score Breakdown Charts */}
                 <div className="space-y-2 border-t border-slate-50 pt-3">
-                  <div className="flex items-center justify-between text-[9px] font-bold text-slate-400 uppercase">
+                  <div className="flex items-center justify-between text-[9px] font-bold text-slate-600 uppercase">
                     <span>Độ phù hợp kỹ năng</span>
                     <span className="font-mono text-slate-600">{suggestion.breakdown.skillMatch}/25</span>
                   </div>
@@ -187,7 +187,7 @@ export function KtvSuggestionPanel({
                     />
                   </div>
 
-                  <div className="flex items-center justify-between text-[9px] font-bold text-slate-400 uppercase">
+                  <div className="flex items-center justify-between text-[9px] font-bold text-slate-600 uppercase">
                     <span>Độ trống ca (Cân bằng tải)</span>
                     <span className="font-mono text-slate-600">{suggestion.breakdown.workloadBalance}/20</span>
                   </div>
@@ -198,7 +198,7 @@ export function KtvSuggestionPanel({
                     />
                   </div>
 
-                  <div className="flex items-center justify-between text-[9px] font-bold text-slate-400 uppercase">
+                  <div className="flex items-center justify-between text-[9px] font-bold text-slate-600 uppercase">
                     <span>Khách quen & Yêu thích</span>
                     <span className="font-mono text-slate-600">{suggestion.breakdown.customerPreference}/10</span>
                   </div>
