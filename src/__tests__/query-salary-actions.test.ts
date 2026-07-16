@@ -79,6 +79,10 @@ class ScriptedQueryBuilder {
     return this.resolve();
   }
 
+  maybeSingle() {
+    return this.resolve();
+  }
+
   then(onfulfilled: (value: { data: unknown; error: { message: string } | null }) => unknown) {
     return this.resolve().then(onfulfilled);
   }
@@ -129,6 +133,7 @@ describe('getSalaryData query errors', () => {
   it('returns computed salary rows when all salary queries succeed', async () => {
     const calls = setupDb([
       { table: 'tenants', op: 'select', data: { salary_config: null } },
+      { table: 'tenant_payroll_config', op: 'select', data: null },
       {
         table: 'users',
         op: 'select',
@@ -164,6 +169,8 @@ describe('getSalaryData query errors', () => {
       { table: 'packages', op: 'select', data: [{ name: 'Combo VIP', session_multiplier: 1.5 }] },
       { table: 'kpi_records', op: 'select', data: [{ ktv_id: 'ktv-1', bonus_amount: 123000 }] },
       { table: 'product_sales', op: 'select', data: [] },
+      { table: 'booking_service_items', op: 'select', data: [] },
+      { table: 'salary_adjustments', op: 'select', data: [] },
     ]);
 
     const result = await getSalaryData();
@@ -183,17 +190,18 @@ describe('getSalaryData query errors', () => {
       p_tenant_id: 'tenant-1',
       p_month: '2026-06-01',
     });
-    expect(calls[1].filters).toEqual([
+    expect(calls[2].filters).toEqual([
       { field: 'role', value: 'ktv' },
       { field: 'tenant_id', value: 'tenant-1' },
     ]);
-    expect(calls[3].filters).toContainEqual({ field: 'tenant_id', value: 'tenant-1' });
     expect(calls[4].filters).toContainEqual({ field: 'tenant_id', value: 'tenant-1' });
+    expect(calls[5].filters).toContainEqual({ field: 'tenant_id', value: 'tenant-1' });
   });
 
   it('does not default draft salary rows to full-month attendance when no attendance logs exist', async () => {
     setupDb([
       { table: 'tenants', op: 'select', data: { salary_config: null } },
+      { table: 'tenant_payroll_config', op: 'select', data: null },
       {
         table: 'users',
         op: 'select',
@@ -213,6 +221,8 @@ describe('getSalaryData query errors', () => {
       { table: 'packages', op: 'select', data: [] },
       { table: 'kpi_records', op: 'select', data: [] },
       { table: 'product_sales', op: 'select', data: [] },
+      { table: 'booking_service_items', op: 'select', data: [] },
+      { table: 'salary_adjustments', op: 'select', data: [] },
     ]);
 
     const result = await getSalaryData();
@@ -229,6 +239,7 @@ describe('getSalaryData query errors', () => {
   it('preserves saved non-draft salary amounts while showing live attendance days', async () => {
     setupDb([
       { table: 'tenants', op: 'select', data: { salary_config: null } },
+      { table: 'tenant_payroll_config', op: 'select', data: null },
       {
         table: 'users',
         op: 'select',
@@ -263,6 +274,8 @@ describe('getSalaryData query errors', () => {
       { table: 'packages', op: 'select', data: [] },
       { table: 'kpi_records', op: 'select', data: [] },
       { table: 'product_sales', op: 'select', data: [] },
+      { table: 'booking_service_items', op: 'select', data: [] },
+      { table: 'salary_adjustments', op: 'select', data: [] },
     ]);
 
     const result = await getSalaryData();
@@ -281,6 +294,7 @@ describe('getSalaryData query errors', () => {
   it('throws instead of returning an empty salary list when a required query fails', async () => {
     setupDb([
       { table: 'tenants', op: 'select', data: { salary_config: null } },
+      { table: 'tenant_payroll_config', op: 'select', data: null },
       { table: 'users', op: 'select', error: { message: 'users query failed' } },
     ]);
 
