@@ -479,45 +479,52 @@ export function BookingDayDetailModal({
                 </div>
               </div>
 
-              <div className="mt-6 flex flex-col gap-3 sm:mt-8 sm:flex-row">
-                <button
-                  onClick={onPrintInvoice}
-                  disabled={isPrintingInvoice}
-                  className="flex-1 bg-slate-900 text-white py-4 rounded-2xl font-bold hover:bg-slate-800 transition-all active:scale-95 flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:bg-emerald-600 disabled:active:scale-100"
-                >
-                  {isPrintingInvoice ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
-                  <span>{isPrintingInvoice ? 'Đang chuẩn bị...' : 'In hóa đơn'}</span>
-                </button>
-                <button
-                  onClick={onVoidInvoice}
-                  className="flex-1 bg-red-50 hover:bg-red-100 text-red-600 border border-red-100/70 py-4 rounded-2xl font-bold transition-all active:scale-95 flex items-center justify-center gap-2"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                  <span>Hủy bill</span>
-                </button>
-                <button
-                  onClick={() => {
-                    onClose();
-                    onOpenQrModal(modalData.bookingId);
-                  }}
-                  className="flex-1 bg-rose-50 hover:bg-rose-100 text-rose-500 hover:text-rose-600 border border-rose-100/50 py-4 rounded-2xl font-bold transition-all active:scale-95 flex items-center justify-center gap-2"
-                >
-                  <QrCode className="w-4 h-4" />
-                  <span>Thanh toán VietQR</span>
-                </button>
-                <button
-                  onClick={onSave}
-                  disabled={isUpdating}
-                  className="flex-1 bg-primary text-white py-4 rounded-2xl font-bold hover:bg-rose-600 transition-all active:scale-95 shadow-lg shadow-rose-200 dark:shadow-none disabled:opacity-50"
-                >
-                  {isUpdating ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Lưu thay đổi'}
-                </button>
-                <button
-                  onClick={onClose}
-                  className="flex-1 bg-slate-100 text-slate-600 py-4 rounded-2xl font-bold hover:bg-slate-200 transition-all active:scale-95"
-                >
-                  Đóng
-                </button>
+              <div className="mt-6 space-y-3 sm:mt-8">
+                {/* Row 1: Invoice & Payment Actions */}
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <button
+                    onClick={onPrintInvoice}
+                    disabled={isPrintingInvoice}
+                    className="bg-slate-900 text-white py-3.5 rounded-2xl font-bold hover:bg-slate-800 transition-all active:scale-95 flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:bg-emerald-600 disabled:active:scale-100 text-sm"
+                  >
+                    {isPrintingInvoice ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
+                    <span>{isPrintingInvoice ? 'Đang chuẩn bị...' : 'In hóa đơn'}</span>
+                  </button>
+                  <button
+                    onClick={onVoidInvoice}
+                    className="bg-red-50 hover:bg-red-100 text-red-600 border border-red-100/70 py-3.5 rounded-2xl font-bold transition-all active:scale-95 flex items-center justify-center gap-2 text-sm"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    <span>Hủy bill</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      onClose();
+                      onOpenQrModal(modalData.bookingId);
+                    }}
+                    className="bg-rose-50 hover:bg-rose-100 text-rose-500 hover:text-rose-600 border border-rose-100/50 py-3.5 rounded-2xl font-bold transition-all active:scale-95 flex items-center justify-center gap-2 text-sm"
+                  >
+                    <QrCode className="w-4 h-4" />
+                    <span>Thanh toán VietQR</span>
+                  </button>
+                </div>
+
+                {/* Row 2: Save & Close */}
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <button
+                    onClick={onSave}
+                    disabled={isUpdating}
+                    className="bg-primary text-white py-4 rounded-2xl font-black hover:bg-rose-600 transition-all active:scale-95 shadow-lg shadow-rose-200 dark:shadow-none disabled:opacity-50 text-sm uppercase tracking-wider flex items-center justify-center"
+                  >
+                    {isUpdating ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Lưu thay đổi'}
+                  </button>
+                  <button
+                    onClick={onClose}
+                    className="bg-slate-100 text-slate-600 py-4 rounded-2xl font-black hover:bg-slate-200 transition-all active:scale-95 text-sm uppercase tracking-wider"
+                  >
+                    Đóng
+                  </button>
+                </div>
               </div>
             </div>
           </motion.div>
