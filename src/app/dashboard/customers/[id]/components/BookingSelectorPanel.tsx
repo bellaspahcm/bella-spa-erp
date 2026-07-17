@@ -74,28 +74,52 @@ export function BookingSelectorPanel({
               {visibleBookings.length > 0 ? (
                 visibleBookings.map((b) => {
                   const statusDisplay = getStatusDisplay(b.status || '');
-                  const isCancelled = b.status === 'cancelled';
-                  
+                  const status = b.status || '';
+                  const isActive = activeBooking?.id === b.id;
+                  const isInProgress = status === 'in_progress' || status === 'active';
+                  const isUpcoming = status === 'booked' || status === 'deposit_pending';
+                  const isInactive = status === 'completed' || status === 'cancelled' || status === 'refunded';
+                  const isCancelled = status === 'cancelled';
+
+                  let btnClasses = "rounded-2xl border px-4 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2";
+
+                  if (isActive) {
+                    btnClasses = cn(btnClasses, "bg-primary text-white border-primary shadow-xl shadow-pink-200 ring-4 ring-primary/15 dark:shadow-none");
+                  } else if (isInProgress) {
+                    btnClasses = cn(btnClasses, "bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300");
+                  } else if (isUpcoming) {
+                    if (status === 'deposit_pending') {
+                      btnClasses = cn(btnClasses, "bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100 hover:border-amber-300");
+                    } else {
+                      btnClasses = cn(btnClasses, "bg-blue-50 text-blue-800 border-blue-200 hover:bg-blue-100 hover:border-blue-300");
+                    }
+                  } else {
+                    // completed, cancelled, refunded
+                    btnClasses = cn(
+                      btnClasses,
+                      isCancelled
+                        ? "bg-red-50/50 text-red-400 border-red-100 opacity-40 hover:opacity-80"
+                        : "bg-slate-50 text-slate-400 border-slate-100 opacity-40 hover:opacity-80"
+                    );
+                  }
+
                   return (
                     <div key={b.id} className="relative group">
                       <button
                         onClick={() => onSelectBooking(b)}
-                        aria-current={activeBooking?.id === b.id ? 'true' : undefined}
-                        className={cn(
-                          "rounded-2xl border px-4 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2",
-                          activeBooking?.id === b.id
-                            ? "bg-primary text-white border-primary shadow-xl shadow-pink-200 ring-4 ring-primary/15 dark:shadow-none"
-                            : isCancelled
-                            ? "bg-red-50 text-red-400 border-red-200 hover:border-red-300 hover:bg-red-100 hover:text-red-600 opacity-60"
-                            : "bg-slate-50 text-slate-400 border-slate-100 hover:border-primary/30 hover:bg-white hover:text-primary"
-                        )}
+                        aria-current={isActive ? 'true' : undefined}
+                        className={btnClasses}
                       >
                         <span>
                           {b.package_name || (b.status === 'deposit_pending' ? 'Phiếu Đặt Cọc' : 'Gói lẻ')}
                         </span>
                         <span className={cn(
-                          "ml-1 font-normal text-[9px]",
-                          activeBooking?.id === b.id ? "text-white/70" : statusDisplay.color
+                          "ml-1 text-[9px] tracking-normal normal-case",
+                          isActive
+                            ? "text-white/80 font-black"
+                            : isInProgress
+                            ? "text-emerald-600 font-black"
+                            : statusDisplay.color
                         )}>
                           ({statusDisplay.label})
                         </span>

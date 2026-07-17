@@ -142,8 +142,8 @@ export const PaymentReceiptTemplate = forwardRef<HTMLDivElement, PaymentReceiptT
                   <th className="py-2 px-1 font-medium border-r border-pink-300 border-b border-pink-200">Đơn giá (VND/Buổi)</th>
                   <th className="py-2 px-1 font-medium border-r border-pink-300 border-b border-pink-200">Thành tiền</th>
                   <th className="py-2 px-1 font-medium border-r border-pink-300 border-b border-pink-200">CTKM</th>
-                  <th className="py-2 px-1 font-medium border-r border-pink-300 border-b border-pink-200">Trả trước (VND)</th>
-                  <th className="py-2 px-1 font-medium border-b border-pink-200">Thanh toán (VND)</th>
+                  <th className="py-2 px-1 font-medium border-r border-pink-300 border-b border-pink-200">Đã thanh toán (VND)</th>
+                  <th className="py-2 px-1 font-medium border-b border-pink-200">Còn lại (VND)</th>
                 </tr>
               </thead>
               <tbody>

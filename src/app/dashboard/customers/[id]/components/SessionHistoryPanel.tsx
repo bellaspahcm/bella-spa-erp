@@ -4,6 +4,7 @@ import { ChevronRight, ClipboardList, Clock, Heart, History, TrendingUp } from '
 import type { CustomerDetailBooking, CustomerDetailSession } from '../types';
 import { useModuleVocabulary } from '@/lib/business-rules/module-vocabulary';
 import type { TenantModuleKey } from '@/lib/business-rules/tenant-modules';
+import { formatViDate } from '@/lib/utils';
 
 export function SessionHistoryPanel({
   activeBooking,
@@ -34,7 +35,7 @@ export function SessionHistoryPanel({
               <h3 className="text-xl font-black text-slate-900 flex items-center gap-3 flex-wrap">
                 <History className="text-primary w-6 h-6 flex-shrink-0" />
                 <span>
-                  {vocab.serviceHistory.label}: <span className="text-primary">{activeBooking?.package_name || activeBooking?.packages?.name || (activeBooking?.status === 'deposit_pending' ? 'Phiếu Đặt Cọc' : 'Dịch vụ lẻ')}</span> ({activeBooking?.completed_sessions || 0}/{activeBooking?.total_sessions || 15})
+                  {vocab.serviceHistory.label}: <span className="text-primary">{activeBooking?.package_name || activeBooking?.packages?.name || (activeBooking?.status === 'deposit_pending' ? 'Phiếu Đặt Cọc' : 'Gói lẻ')}</span> ({activeBooking?.completed_sessions || 0}/{activeBooking?.total_sessions || 15})
                 </span>
               </h3>
               <button
@@ -56,7 +57,7 @@ export function SessionHistoryPanel({
                       <p className="text-xs font-black text-primary uppercase tracking-[0.2em] mb-1">{vocab.workUnit.singular} tiếp theo</p>
                       <h4 className="text-xl font-black text-slate-900">{vocab.workUnit.singular} số {nextSession.session_number}</h4>
                       <p className="text-xs text-slate-500 font-bold mt-1">
-                        Ngày {nextSession.assigned_date || 'Chưa đặt'} • {nextSession.assigned_time || activeBooking?.preferred_time || '--:--'}
+                        Ngày {nextSession.assigned_date ? formatViDate(nextSession.assigned_date) : 'Chưa đặt'} • {nextSession.assigned_time || activeBooking?.preferred_time || '--:--'}
                       </p>
                     </div>
                   </div>
@@ -104,7 +105,7 @@ export function SessionHistoryPanel({
                           <span>•</span>
                           <span>Hotline: <strong className="text-rose-500 font-black">0865 701 493</strong></span>
                           <span>•</span>
-                          <span>{session.completed_date || session.assigned_date || 'Chưa cập nhật'}</span>
+                          <span>{session.completed_date ? formatViDate(session.completed_date) : session.assigned_date ? formatViDate(session.assigned_date) : 'Chưa cập nhật'}</span>
                         </p>
                         {session.notes && (
                           <p className="text-[11px] font-medium text-slate-500 mt-2 pl-3 border-l-2 border-slate-200">{session.notes}</p>

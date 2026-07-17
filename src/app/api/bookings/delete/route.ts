@@ -1,5 +1,6 @@
-import { createDevelopmentBypassClient } from '@/lib/supabase-dev-bypass-server';
+import { getSupabaseAdminKey, getSupabaseAdminUrl } from '@/lib/supabase-admin-env';
 import { getCurrentUser } from '@/services/user-actions';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
@@ -22,8 +23,20 @@ export async function POST(request: Request) {
       );
     }
 
-    // Get booking to check it's cancelled or deposit_pending
-    const supabase = await createDevelopmentBypassClient();
+    // Create admin client using service role key to bypass RLS for administrative deletion
+    const adminUrl = getSupabaseAdminUrl();
+    const adminKey = getSupabaseAdminKey();
+
+    if (!adminUrl || !adminKey) {
+      return NextResponse.json(
+        { error: 'Hệ thống chưa được cấu hình Secret Key để thực hiện thao tác này' },
+        { status: 500 }
+      );
+    }
+
+    const supabase = createSupabaseClient(adminUrl, adminKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
     
     const { data: booking, error: fetchError } = await supabase
       .from('bookings')

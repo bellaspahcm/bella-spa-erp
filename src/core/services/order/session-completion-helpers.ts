@@ -297,14 +297,15 @@ export async function recordSingleSessionRevenueIfNeeded(params: {
   const { supabase, bookingId, tenantId, today, currentBooking, sessionId, isInventoryConsumed } = params;
 
   const packageName = currentBooking?.package_name ?? '';
-  if (!shouldCreateSingleSessionRevenue(packageName)) {
+  const totalSessions = Math.max(1, Number(currentBooking?.total_sessions || 1));
+  if (totalSessions > 1 || !shouldCreateSingleSessionRevenue(packageName)) {
     return { isRevenueCreated: false, createdRevenueId: null };
   }
 
   // Calculate actual revenue amount after discount instead of hardcoding
   const fullPrice = asFiniteNumber(currentBooking?.full_price);
   const discountPercent = clampDiscountPercent(currentBooking?.discount_percent);
-  const actualAmount = Math.max(0, fullPrice * (1 - discountPercent / 100));
+  const actualAmount = Math.max(0, (fullPrice * (1 - discountPercent / 100)) / totalSessions);
 
   const revenueType = 'package_payment';
   const businessEventType = inferBusinessEventType({

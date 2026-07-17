@@ -1,7 +1,7 @@
 'use client';
 
 import { calculateConfirmedPaidAmount } from '@/lib/business-rules/payment';
-import { cn, formatNumberWithSeparator } from '@/lib/utils';
+import { cn, formatNumberWithSeparator, formatViDate } from '@/lib/utils';
 import { CreditCard as CreditCardIcon, DollarSign as DollarIcon } from 'lucide-react';
 import type { CustomerDetailBooking } from '../types';
 
@@ -58,7 +58,7 @@ export function PaymentHistoryPanel({
                             </span>
                           </div>
                           <p className="text-xs font-bold text-slate-400 mt-1">
-                            Ngày thu: <strong className="text-slate-600">{rev.received_date}</strong>
+                            Ngày thu: <strong className="text-slate-600">{formatViDate(rev.received_date)}</strong>
                             {rev.recorded_by?.full_name && (
                               <> • Người ghi nhận: <strong className="text-slate-600">{rev.recorded_by.full_name}</strong></>
                             )}

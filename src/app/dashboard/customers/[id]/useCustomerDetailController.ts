@@ -15,7 +15,7 @@ import {
 } from '@/lib/business-rules/tenant-modules';
 import { createClient } from '@/lib/supabase-client';
 import { parseMoneyInput } from '@bella/shared';
-import { parseIntegerInput } from '@/lib/utils';;
+import { parseIntegerInput, formatViDate } from '@/lib/utils';
 import { generateShareToken, getBookingsByCustomerId, recordRemainingPayment, reusePackage, updateBooking } from '@/core/services/order';
 import { getCustomerById, updateCustomer } from '@/services/customer-actions';
 import { getTenantSettings } from '@/services/tenant-actions';
@@ -537,7 +537,7 @@ export function useCustomerDetailController() {
       customerName: customer.name_mother || 'Chưa cập nhật',
       phone: customer.phone || 'Chưa cập nhật',
       address: customer.address || 'Chưa cập nhật',
-      serviceNote: `${activeBooking.package_name || activeBooking.packages?.name || 'Gói dịch vụ'} (Bắt đầu gói từ ${activeBooking.start_date || 'Chưa cập nhật'})`,
+      serviceNote: `${activeBooking.package_name || activeBooking.packages?.name || 'Gói dịch vụ'} (Bắt đầu gói từ ${activeBooking.start_date ? formatViDate(activeBooking.start_date) : 'Chưa cập nhật'})`,
       brand: {
         displayName: tenantBrand.invoiceDisplayName || tenantBrand.displayName,
         logoUrl: tenantBrand.logoUrl,

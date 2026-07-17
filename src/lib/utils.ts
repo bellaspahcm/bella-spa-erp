@@ -96,6 +96,30 @@ export function getLocalDateString(date?: Date | string): string {
 }
 
 /**
+ * Format date to Vietnamese format dd-mm-yyyy
+ */
+export function formatViDate(date: Date | string | null | undefined): string {
+  if (!date) return '';
+  
+  if (typeof date === 'string') {
+    const cleanStr = date.split('T')[0].trim();
+    const match = cleanStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (match) {
+      return `${match[3]}-${match[2]}-${match[1]}`;
+    }
+  }
+
+  const d = typeof date === 'string' ? new Date(date) : date;
+  if (Number.isNaN(d.getTime())) return '';
+  
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  return `${day}-${month}-${year}`;
+}
+
+
+/**
  * Format money input with Vietnamese thousand separators
  * Used for displaying formatted input values
  * 
