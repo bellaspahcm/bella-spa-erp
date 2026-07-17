@@ -276,20 +276,34 @@ function SettingsContent() {
         {/* Content Area */}
         <div className="lg:col-span-3">
           <AnimatePresence mode="wait">
-            {activeTab === "rules" ? (
+            {activeTab === "rules" || activeTab === "system-monitor" || activeTab === "audit-logs" ? (
               <motion.div
-                key="rules"
+                key={activeTab}
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 className="w-full"
               >
-                <iframe
-                  src="/dashboard/rules?embedded=true"
-                  style={{ height: iframeHeight }}
-                  className="w-full border border-slate-200/50 dark:border-[#3E3A35]/50 rounded-[2.5rem] bg-slate-50 dark:bg-[#11100F] shadow-xl overflow-hidden"
-                  scrolling="no"
-                />
+                {activeTab === "rules" && (
+                  <iframe
+                    src="/dashboard/rules?embedded=true"
+                    style={{ height: iframeHeight }}
+                    className="w-full border border-slate-200/50 dark:border-[#3E3A35]/50 rounded-[2.5rem] bg-slate-50 dark:bg-[#11100F] shadow-xl overflow-hidden"
+                    scrolling="no"
+                  />
+                )}
+                {activeTab === "system-monitor" && (
+                  <iframe
+                    src="/dashboard/system-monitor?embedded=true"
+                    className="w-full h-[85vh] border-0 bg-transparent overflow-hidden"
+                  />
+                )}
+                {activeTab === "audit-logs" && (
+                  <iframe
+                    src="/dashboard/audit?embedded=true"
+                    className="w-full h-[85vh] border-0 bg-transparent overflow-hidden"
+                  />
+                )}
               </motion.div>
             ) : (
               <motion.div
@@ -366,24 +380,6 @@ function SettingsContent() {
                       className="w-full border-0 bg-transparent"
                       scrolling="no"
                     />
-                  </div>
-                )}
-
-                {activeTab === "system-monitor" && (
-                  <div className="w-full h-full flex flex-col gap-6 min-h-[70vh]">
-                    <h3 className="text-lg font-bold text-foreground mb-2">Trung tâm Giám sát</h3>
-                    <div className="border border-slate-200 dark:border-zinc-800 rounded-2xl overflow-hidden bg-slate-50 dark:bg-zinc-950 h-[70vh]">
-                      <iframe src="/dashboard/system-monitor?embedded=true" className="w-full h-full border-0" />
-                    </div>
-                  </div>
-                )}
-
-                {activeTab === "audit-logs" && (
-                  <div className="w-full h-full flex flex-col gap-6 min-h-[70vh]">
-                    <h3 className="text-lg font-bold text-foreground mb-2">Nhật ký hệ thống (Audit Logs)</h3>
-                    <div className="border border-slate-200 dark:border-zinc-800 rounded-2xl overflow-hidden bg-slate-50 dark:bg-zinc-950 h-[70vh]">
-                      <iframe src="/dashboard/audit?embedded=true" className="w-full h-full border-0" />
-                    </div>
                   </div>
                 )}
               </motion.div>

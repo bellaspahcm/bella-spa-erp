@@ -92,6 +92,13 @@ export default function SystemMonitorPage() {
   const [summary, setSummary] = useState<SystemMonitorSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [isEmbedded, setIsEmbedded] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsEmbedded(window.location.search.includes('embedded=true'));
+    }
+  }, []);
 
   const loadData = useCallback(async (monthValue = month) => {
     setRefreshing(true);
@@ -127,7 +134,7 @@ export default function SystemMonitorPage() {
   }, [summary]);
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8 space-y-6">
+    <div className={cn("min-h-screen space-y-6", isEmbedded ? "p-0 bg-transparent" : "bg-background p-4 md:p-8")}>
       <section className={cn('rounded-3xl md:rounded-[2rem] border p-5 md:p-8 shadow-sm', overallTone.bg, overallTone.border)}>
         <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
           <div className="flex items-start gap-4">

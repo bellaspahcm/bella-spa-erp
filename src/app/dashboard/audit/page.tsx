@@ -315,6 +315,13 @@ const EXCLUDED_KEYS = [
 ];
 
 export default function AuditPage() {
+  const [isEmbedded, setIsEmbedded] = useState(false);
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsEmbedded(window.location.search.includes('embedded=true'));
+    }
+  }, []);
+
   const supabase = useMemo(() => createClient(), []);
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -739,7 +746,7 @@ export default function AuditPage() {
   };
 
   return (
-    <div className="p-6 max-w-[1600px] mx-auto space-y-8 min-h-screen pb-20">
+    <div className={isEmbedded ? "space-y-8 min-h-screen pb-20 p-0 bg-transparent" : "p-6 max-w-[1600px] mx-auto space-y-8 min-h-screen pb-20 bg-background"}>
       {/* Header section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <motion.div 
