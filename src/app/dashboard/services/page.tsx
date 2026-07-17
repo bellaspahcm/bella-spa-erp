@@ -388,7 +388,7 @@ export default function ServicesPage() {
       )}
 
       {/* Services Grid */}
-      {isLoading ? (
+      {(isLoading || !hasLoadedTenantModules) ? (
         <div className="flex min-h-[400px] items-center justify-center">
           <div className="flex flex-col items-center gap-4">
             <RefreshCw className="h-12 w-12 animate-spin text-primary" />
@@ -404,7 +404,7 @@ export default function ServicesPage() {
             <div>
               <h3 className="text-lg font-black text-slate-900">Chưa có dịch vụ nào</h3>
               <p className="mt-1 text-sm font-medium text-slate-500">
-                Bấm "Thêm dịch vụ mới" để tạo gói dịch vụ đầu tiên
+                Bấm &quot;Thêm dịch vụ mới&quot; để tạo gói dịch vụ đầu tiên
               </p>
             </div>
           </div>
