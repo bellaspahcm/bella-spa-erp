@@ -168,21 +168,26 @@ export function BookingSelectorPanel({
                             {isSelected && <span className="text-indigo-600 text-[10px] font-black">✓</span>}
                           </span>
                         )}
-                        <span>
-                          {b.package_name || (b.status === 'deposit_pending' ? 'Phiếu Đặt Cọc' : 'Gói lẻ')}
-                        </span>
-                        {!isCombineMode && (
+                        <span className="text-left flex flex-col gap-0.5">
+                          <span className="font-black block">
+                            {b.package_name || (b.status === 'deposit_pending' ? 'Phiếu Đặt Cọc' : 'Gói lẻ')}
+                          </span>
                           <span className={cn(
-                            "ml-1 text-[9px] tracking-normal normal-case",
-                            isActive
-                              ? "text-white/80 font-black"
+                            "text-[8.5px] tracking-normal normal-case font-bold block",
+                            isCombineMode
+                              ? isSelected
+                                ? "text-indigo-200"
+                                : "text-slate-400 group-hover:text-indigo-400"
+                              : isActive
+                              ? "text-white/80"
                               : isInProgress
-                              ? "text-emerald-600 font-black"
+                              ? "text-emerald-600"
                               : statusDisplay.color
                           )}>
-                            ({statusDisplay.label})
+                            {statusDisplay.label} • {b.completed_sessions || 0}/{b.total_sessions || 15} ca
+                            {b.created_at && ` • Đăng ký: ${new Date(b.created_at).toLocaleDateString('vi-VN')}`}
                           </span>
-                        )}
+                        </span>
                       </button>
                       
                       {/* Delete button - only for admin and cancelled/deposit_pending bookings */}
