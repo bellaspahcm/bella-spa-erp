@@ -33,6 +33,7 @@ export default function CustomerDetailPage() {
     handleBookingSuccess,
     handleDeleteBooking,
     handleExportContract,
+    handleExportCombinedQuotation,
     handleExportQuotation,
     handleOpenBookingSessions,
     handleOpenEditBooking,
@@ -43,14 +44,19 @@ export default function CustomerDetailPage() {
     handleRecordPayment,
     handleReuseActivePackage,
     handleSaveBooking,
+    handleShareCombinedPortal,
     handleSharePortal,
+    handleToggleBookingSelection,
+    handleToggleCombineMode,
     handleUpdateCustomer,
     handleUpdateKTV,
     isBookingModalOpen,
+    isCombineMode,
     isCompleted,
     isDepositOnly,
     isEditBookingModalOpen,
     isEditModalOpen,
+    isExportingCombinedQuotation,
     isExportingQuotation,
     isPaymentModalOpen,
     isRecordingPayment,
@@ -63,8 +69,11 @@ export default function CustomerDetailPage() {
     nextSession,
     paymentData,
     paymentFile,
+    combinedQuotationRef,
+    combinedReceiptData,
     quotationRef,
     receiptData,
+    selectedBookingIds,
     setActiveBooking,
     setEditBookingData,
     setEditData,
@@ -132,6 +141,10 @@ export default function CustomerDetailPage() {
             onDeleteBooking={handleDeleteBooking}
             tenantModuleKey={tenantModuleKey}
             userRole={userRole}
+            selectedBookingIds={selectedBookingIds}
+            onToggleBookingSelection={handleToggleBookingSelection}
+            isCombineMode={isCombineMode}
+            onToggleCombineMode={handleToggleCombineMode}
           />
 
           <ActiveBookingPanel
@@ -143,7 +156,10 @@ export default function CustomerDetailPage() {
             activeDepositAmount={activeDepositAmount}
             activeNetPrice={activeNetPrice}
             isExportingQuotation={isExportingQuotation}
+            isExportingCombinedQuotation={isExportingCombinedQuotation}
             isUpdatingKtv={isUpdatingKTV}
+            isCombineMode={isCombineMode}
+            selectedBookingIds={selectedBookingIds}
             onOpenBooking={() => setIsBookingModalOpen(true)}
             onPayRemaining={handlePayRemaining}
             onOpenZalo={handleOpenZalo}
@@ -153,6 +169,8 @@ export default function CustomerDetailPage() {
             onEditBooking={handleOpenEditBooking}
             onUpdateKtv={handleUpdateKTV}
             onOpenBookingSessions={handleOpenBookingSessions}
+            onExportCombinedQuotation={handleExportCombinedQuotation}
+            onShareCombinedPortal={handleShareCombinedPortal}
           />
 
           <SessionHistoryPanel
@@ -215,6 +233,13 @@ export default function CustomerDetailPage() {
       {activeBooking && receiptData && (
         <div style={{ position: 'absolute', left: '-9999px', top: '-9999px', pointerEvents: 'none' }}>
           <PaymentReceiptTemplate ref={quotationRef} data={receiptData} />
+        </div>
+      )}
+
+      {/* Hidden combined receipt template for multi-booking export */}
+      {combinedReceiptData && (
+        <div style={{ position: 'absolute', left: '-9999px', top: '-9999px', pointerEvents: 'none' }}>
+          <PaymentReceiptTemplate ref={combinedQuotationRef} data={combinedReceiptData} />
         </div>
       )}
     </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState, use, type CSSProperties } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import { 
@@ -32,7 +33,11 @@ type CustomerPortalSession = NonNullable<CustomerPortalBooking['session_logs']>[
 
 export default function CustomerPortal({ params }: { params: Promise<{ token: string }> }) {
   const { token } = use(params);
+  const searchParams = useSearchParams();
+  const bundleToken = searchParams.get('bundle');
+
   const [booking, setBooking] = useState<CustomerPortalBooking | null>(null);
+  const [bundleBooking, setBundleBooking] = useState<CustomerPortalBooking | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedSession, setSelectedSession] = useState<CustomerPortalSession | null>(null);
   const [rating, setRating] = useState(5);
@@ -50,12 +55,22 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
     try {
       const data = await getCustomerBookingByToken(token);
       setBooking(data);
+      // Also fetch bundle booking if bundleToken present
+      if (bundleToken) {
+        try {
+          const bundleData = await getCustomerBookingByToken(bundleToken);
+          setBundleBooking(bundleData);
+        } catch {
+          // Bundle token invalid - still show primary booking
+          setBundleBooking(null);
+        }
+      }
     } catch {
       toast.error('Không tìm thấy thông tin liệu trình');
     } finally {
       setIsLoading(false);
     }
-  }, [token]);
+  }, [token, bundleToken]);
 
   useEffect(() => {
     fetchData();
@@ -100,6 +115,12 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
   const totalSessions = booking.total_sessions || sessionLogs.length || 1;
   const completedSessions = sessionLogs.filter((s) => s.status === 'completed').length;
   const progress = (completedSessions / totalSessions) * 100;
+
+  // Bundle booking data
+  const bundleSessionLogs = bundleBooking?.session_logs ?? [];
+  const bundleTotalSessions = bundleBooking?.total_sessions || bundleSessionLogs.length || 1;
+  const bundleCompletedSessions = bundleSessionLogs.filter((s) => s.status === 'completed').length;
+  const bundleProgress = bundleBooking ? (bundleCompletedSessions / bundleTotalSessions) * 100 : 0;
 
   // Tìm buổi chăm sóc đã hoàn thành gần nhất chưa được đánh giá
   const pendingReviewSession = sessionLogs.find((s) => s.status === 'completed' && !s.rating);
@@ -163,6 +184,15 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
                Liệu trình <br/>
                <span className="text-primary">{booking.package_name || 'Gói dịch vụ'}</span>
             </h2>
+            {/* Bundle badge: show second package name */}
+            {bundleBooking && (
+              <div className="mt-2 flex items-center gap-2">
+                <span className="text-[9px] font-black text-indigo-500 uppercase tracking-widest bg-indigo-50 border border-indigo-100 px-3 py-1.5 rounded-full">
+                  + {bundleBooking.package_name || 'Gói thứ 2'}
+                </span>
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Liệu trình gộp</span>
+              </div>
+            )}
             <div className="mt-2 flex flex-col gap-2">
               <div>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50 border border-slate-100/50 inline-block px-3 py-1.5 rounded-full">
@@ -178,11 +208,13 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
             </div>
           </div>
 
-          {/* Progress Card */}
+          {/* Progress Card — primary booking */}
           <div className="bg-slate-900 rounded-[32px] p-6 text-white shadow-2xl shadow-slate-200">
              <div className="flex justify-between items-end mb-4">
                 <div>
-                   <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">Tiến độ hoàn thành</p>
+                   <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">
+                     {bundleBooking ? booking.package_name || 'Gói 1' : 'Tiến độ hoàn thành'}
+                   </p>
                    <p className="text-3xl font-black">{completedSessions}<span className="text-lg opacity-40">/{totalSessions}</span></p>
                 </div>
                 <div className="text-right">
@@ -204,6 +236,32 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
              <p className="text-[10px] font-bold text-white/30 mt-3 uppercase tracking-wider text-center">
                 Còn lại {Math.max(totalSessions - completedSessions, 0)} buổi chăm sóc chuyên sâu
              </p>
+
+             {/* Bundle second package progress */}
+             {bundleBooking && (
+               <>
+                 <div className="border-t border-white/10 mt-4 pt-4">
+                   <div className="flex justify-between items-end mb-3">
+                     <div>
+                       <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">
+                         {bundleBooking.package_name || 'Gói 2'}
+                       </p>
+                       <p className="text-2xl font-black">{bundleCompletedSessions}<span className="text-lg opacity-40">/{bundleTotalSessions}</span></p>
+                     </div>
+                   </div>
+                   <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                     <motion.div 
+                       initial={{ width: 0 }}
+                       animate={{ width: `${bundleProgress}%` }}
+                       className="h-full bg-indigo-400"
+                     />
+                   </div>
+                   <p className="text-[10px] font-bold text-white/30 mt-2 uppercase tracking-wider text-center">
+                     Còn lại {Math.max(bundleTotalSessions - bundleCompletedSessions, 0)} buổi
+                   </p>
+                 </div>
+               </>
+             )}
           </div>
         </div>
       <div className="px-6 mt-10 space-y-8">

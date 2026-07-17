@@ -18,7 +18,10 @@ export function ActiveBookingPanel({
   activeDepositAmount,
   activeNetPrice,
   isExportingQuotation,
+  isExportingCombinedQuotation,
   isUpdatingKtv,
+  isCombineMode,
+  selectedBookingIds,
   onOpenBooking,
   onPayRemaining,
   onOpenZalo,
@@ -28,6 +31,8 @@ export function ActiveBookingPanel({
   onEditBooking,
   onUpdateKtv,
   onOpenBookingSessions,
+  onExportCombinedQuotation,
+  onShareCombinedPortal,
 }: {
   activeBooking: CustomerDetailBooking | null;
   ktvs: KtvOption[];
@@ -37,7 +42,10 @@ export function ActiveBookingPanel({
   activeDepositAmount: number;
   activeNetPrice: number;
   isExportingQuotation: boolean;
+  isExportingCombinedQuotation?: boolean;
   isUpdatingKtv: boolean;
+  isCombineMode?: boolean;
+  selectedBookingIds?: Set<string>;
   onOpenBooking: () => void;
   onPayRemaining: (amount: number) => void;
   onOpenZalo: () => void;
@@ -47,6 +55,8 @@ export function ActiveBookingPanel({
   onEditBooking: () => void;
   onUpdateKtv: (ktvId: string) => void;
   onOpenBookingSessions: () => void;
+  onExportCombinedQuotation?: () => void | Promise<void>;
+  onShareCombinedPortal?: () => void | Promise<void>;
 }) {
   const vocab = getModuleVocabulary(tenantModuleKey);
   
@@ -146,6 +156,36 @@ export function ActiveBookingPanel({
                   </div>
                 </div>
 
+                {/* ── Combine mode action panel ── */}
+                {isCombineMode && (selectedBookingIds?.size ?? 0) >= 2 && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="col-span-2 bg-indigo-500/20 border border-indigo-300/30 rounded-2xl px-4 py-3 text-center">
+                      <p className="text-[9px] font-black text-indigo-200 uppercase tracking-widest">
+                        Đã chọn {selectedBookingIds?.size} gói để gộp
+                      </p>
+                    </div>
+                    <button
+                      onClick={onExportCombinedQuotation}
+                      disabled={isExportingCombinedQuotation}
+                      className="flex items-center justify-center gap-2 bg-indigo-500 hover:bg-indigo-400 text-white px-4 py-2.5 rounded-xl font-bold transition-all uppercase tracking-wider text-[9.5px] shadow-lg shadow-indigo-500/20 active:scale-95 disabled:opacity-50"
+                    >
+                      {isExportingCombinedQuotation
+                        ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        : <ImageIcon className="w-3.5 h-3.5" />}
+                      Xuất báo giá gộp
+                    </button>
+                    <button
+                      onClick={onShareCombinedPortal}
+                      className="flex items-center justify-center gap-2 bg-teal-500 hover:bg-teal-400 text-white px-4 py-2.5 rounded-xl font-bold transition-all uppercase tracking-wider text-[9.5px] shadow-lg shadow-teal-500/20 active:scale-95"
+                    >
+                      <Share2 className="w-3.5 h-3.5" />
+                      Link portal gộp
+                    </button>
+                  </div>
+                )}
+
+                {/* ── Single booking action buttons ── */}
+                {!isCombineMode && (
                 <div className="grid grid-cols-2 gap-2 min-w-[200px]">
                   {isDepositOnly ? (
                     <button
@@ -212,6 +252,7 @@ export function ActiveBookingPanel({
                     </>
                   )}
                 </div>
+                )}
               </div>
 
               {activeBooking && (

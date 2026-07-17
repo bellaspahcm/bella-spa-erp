@@ -102,6 +102,7 @@ export function useCustomerDetailController() {
   const [tenantModuleKey, setTenantModuleKey] = useState<TenantModuleKey | null>(null);
   const [tenantBrand, setTenantBrand] = useState<ResolvedTenantBrandIdentity | null>(null);
   const [isExportingQuotation, setIsExportingQuotation] = useState(false);
+  const [isExportingCombinedQuotation, setIsExportingCombinedQuotation] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isUpdatingCustomer, setIsUpdatingCustomer] = useState(false);
   const [editData, setEditData] = useState<EditCustomerData>({
@@ -131,7 +132,11 @@ export function useCustomerDetailController() {
     status: 'in_progress',
   });
   const [isReusing, setIsReusing] = useState(false);
+  // ── Combine mode: multi-select bookings for combined quotation/portal ────────
+  const [isCombineMode, setIsCombineMode] = useState(false);
+  const [selectedBookingIds, setSelectedBookingIds] = useState<Set<string>>(new Set());
   const quotationRef = useRef<HTMLDivElement>(null);
+  const combinedQuotationRef = useRef<HTMLDivElement>(null);
   const customerBookingIdsRef = useRef<Set<string>>(new Set());
   const reloadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const activeBookingIdRef = useRef<string | null>(null); // Track user-selected booking
@@ -613,6 +618,156 @@ export function useCustomerDetailController() {
     setIsBookingModalOpen(false);
   }, [loadData]);
 
+  // ── Combine mode handlers ────────────────────────────────────────────────────
+  const handleToggleCombineMode = useCallback(() => {
+    setIsCombineMode(prev => {
+      if (prev) {
+        // Exiting combine mode: clear selection
+        setSelectedBookingIds(new Set());
+      }
+      return !prev;
+    });
+  }, []);
+
+  const handleToggleBookingSelection = useCallback((bookingId: string) => {
+    setSelectedBookingIds(prev => {
+      const next = new Set(prev);
+      if (next.has(bookingId)) {
+        next.delete(bookingId);
+      } else {
+        next.add(bookingId);
+      }
+      return next;
+    });
+  }, []);
+
+  const combinedReceiptData = useMemo<ReceiptData | null>(() => {
+    if (!customer || !tenantBrand) return null;
+    if (selectedBookingIds.size < 2) return null;
+
+    const selectedBookings = (customer.allBookings || []).filter(b => selectedBookingIds.has(b.id));
+    if (selectedBookings.length < 2) return null;
+
+    const items = selectedBookings.map((booking, idx) => {
+      const paymentState = calculateBookingPaymentState({
+        fullPrice: booking.full_price,
+        discountPercent: booking.discount_percent,
+        depositAmount: booking.deposit_amount,
+        bookingStatus: booking.status,
+        revenues: booking.revenue,
+      });
+      const disc = booking.discount_percent || 0;
+      const gift = (booking.metadata as Record<string, unknown>)?.gift_sessions as number || 0;
+      const discountNote = (() => {
+        if (disc > 0 && gift > 0) return `Giảm ${disc}% + Tặng ${gift} buổi`;
+        if (disc > 0) return `Giảm ${disc}%`;
+        if (gift > 0) return `Tặng ${gift} buổi`;
+        return 'Không có';
+      })();
+
+      return {
+        id: idx + 1,
+        name: booking.package_name || booking.packages?.name || 'Gói dịch vụ',
+        sessions: booking.total_sessions || 1,
+        unitPrice: Math.round((booking.full_price || 0) / Math.max(1, booking.total_sessions || 1)),
+        total: booking.full_price || 0,
+        discountNote,
+        prepaid: paymentState.totalPaid,
+        finalPayment: paymentState.remainingDebt,
+      };
+    });
+
+    const totalAmount = selectedBookings.reduce((sum, b) => {
+      const ps = calculateBookingPaymentState({
+        fullPrice: b.full_price,
+        discountPercent: b.discount_percent,
+        depositAmount: b.deposit_amount,
+        bookingStatus: b.status,
+        revenues: b.revenue,
+      });
+      return sum + Math.round(ps.priceAfterDiscount);
+    }, 0);
+
+    return {
+      customerName: customer.name_mother || 'Chưa cập nhật',
+      phone: customer.phone || 'Chưa cập nhật',
+      address: customer.address || 'Chưa cập nhật',
+      serviceNote: `Báo giá gộp ${selectedBookings.length} gói dịch vụ`,
+      brand: {
+        displayName: tenantBrand.invoiceDisplayName || tenantBrand.displayName,
+        logoUrl: tenantBrand.logoUrl,
+        primaryColor: tenantBrand.primaryColor,
+        accentColor: tenantBrand.accentColor,
+        monogram: tenantBrand.monogram,
+      },
+      items,
+      totalAmount,
+      bankInfo: {
+        ownerName: 'Cao Thị Thúy Vân',
+        accountNumber: '8832041471',
+        bankName: 'Ngân hàng BIDV',
+      },
+    };
+  }, [customer, tenantBrand, selectedBookingIds]);
+
+  const handleExportCombinedQuotation = useCallback(async () => {
+    if (!combinedQuotationRef.current || !customer) return;
+
+    setIsExportingCombinedQuotation(true);
+    toast.loading('Đang khởi tạo ảnh báo giá gộp...', { id: 'combined-quotation-export' });
+
+    try {
+      const dataUrl = await toPng(combinedQuotationRef.current, {
+        quality: 1,
+        pixelRatio: 2,
+      });
+
+      const link = document.createElement('a');
+      link.download = `Bao_Gia_Gop_${(customer.name_mother || 'Khach').replace(/\s+/g, '_')}.png`;
+      link.href = dataUrl;
+      link.click();
+
+      toast.success('Đã xuất ảnh báo giá gộp thành công!', { id: 'combined-quotation-export' });
+    } catch (error) {
+      console.error('Failed to export combined quotation image', error);
+      toast.error('Lỗi khi xuất ảnh. Vui lòng thử lại!', { id: 'combined-quotation-export' });
+    } finally {
+      setIsExportingCombinedQuotation(false);
+    }
+  }, [customer]);
+
+  const handleShareCombinedPortal = useCallback(async () => {
+    if (selectedBookingIds.size < 2 || !customer?.allBookings) return;
+
+    const selectedBookings = customer.allBookings.filter(b => selectedBookingIds.has(b.id));
+    toast.loading('Đang tạo link gộp...', { id: 'combined-portal' });
+
+    try {
+      const tokens: string[] = [];
+      for (const booking of selectedBookings) {
+        let token = booking.share_token;
+        if (!token) {
+          const result = await generateShareToken(booking.id);
+          if (result.error || !result.data) {
+            throw new Error(`Lỗi tạo token cho gói "${booking.package_name}": ${result.error || 'Unknown'}`);
+          }
+          token = result.data.share_token;
+        }
+        tokens.push(token);
+      }
+
+      if (tokens.length < 2) throw new Error('Không đủ token để tạo link gộp');
+
+      // Build URL: /portal/[token1]?bundle=[token2]&bundle=[token3]...
+      const bundleParams = tokens.slice(1).map(t => `bundle=${encodeURIComponent(t)}`).join('&');
+      const url = `${window.location.origin}/portal/${tokens[0]}?${bundleParams}`;
+      void navigator.clipboard.writeText(url);
+      toast.success(`Đã sao chép link gộp ${tokens.length} gói dịch vụ!`, { id: 'combined-portal' });
+    } catch (error) {
+      toast.error('Lỗi: ' + getErrorMessage(error), { id: 'combined-portal' });
+    }
+  }, [customer?.allBookings, selectedBookingIds]);
+
   const handlePayRemaining = useCallback((amount: number) => {
     if (isRecordingPayment) return;
     setPaymentData((prev) => ({
@@ -733,6 +888,7 @@ export function useCustomerDetailController() {
     handleBookingSuccess,
     handleDeleteBooking,
     handleExportContract,
+    handleExportCombinedQuotation,
     handleExportQuotation,
     handleOpenBookingSessions,
     handleOpenEditBooking,
@@ -743,14 +899,19 @@ export function useCustomerDetailController() {
     handleRecordPayment,
     handleReuseActivePackage,
     handleSaveBooking,
+    handleShareCombinedPortal,
     handleSharePortal,
+    handleToggleBookingSelection,
+    handleToggleCombineMode,
     handleUpdateCustomer,
     handleUpdateKTV,
     isBookingModalOpen,
+    isCombineMode,
     isCompleted,
     isDepositOnly,
     isEditBookingModalOpen,
     isEditModalOpen,
+    isExportingCombinedQuotation,
     isExportingQuotation,
     isPaymentModalOpen,
     isRecordingPayment,
@@ -763,8 +924,11 @@ export function useCustomerDetailController() {
     nextSession,
     paymentData,
     paymentFile,
+    combinedQuotationRef,
+    combinedReceiptData,
     quotationRef,
     receiptData,
+    selectedBookingIds,
     setActiveBooking: setActiveBookingWithTracking, // Export wrapper instead of direct setter
     setEditBookingData,
     setEditData,
