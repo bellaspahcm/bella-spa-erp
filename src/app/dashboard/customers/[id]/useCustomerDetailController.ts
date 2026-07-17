@@ -227,32 +227,11 @@ export function useCustomerDetailController() {
     try {
       const allUsers = await getUsers();
       const allKtvs = allUsers.filter((user) => user.role?.toLowerCase() === 'ktv');
-      
-      // Filter out KTVs already assigned to other active bookings
-      if (customer?.allBookings) {
-        const otherActiveBookings = customer.allBookings.filter((booking) => 
-          booking.id !== activeBooking?.id && 
-          (booking.status === 'in_progress' || booking.status === 'booked')
-        );
-        
-        const assignedKtvIds = new Set(
-          otherActiveBookings
-            .map(b => b.assigned_ktv_id)
-            .filter((id): id is string => Boolean(id))
-        );
-        
-        if (assignedKtvIds.size > 0) {
-          setKtvs(allKtvs.filter(ktv => !assignedKtvIds.has(ktv.id)));
-        } else {
-          setKtvs(allKtvs);
-        }
-      } else {
-        setKtvs(allKtvs);
-      }
-    } catch (error) {
-      console.error('Error fetching KTVs:', error);
+      setKtvs(allKtvs);
+    } catch (err) {
+      console.error('Error fetching KTVs:', err);
     }
-  }, [customer?.allBookings, activeBooking?.id]);
+  }, []);
 
   const scheduleDataReload = useCallback(() => {
     if (reloadTimerRef.current) {
