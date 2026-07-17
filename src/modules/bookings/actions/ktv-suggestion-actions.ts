@@ -321,40 +321,10 @@ async function filterAvailableKtvs(
     const breakBufferMinutes = capacityConfig.break_buffer_minutes || 15;
     const maxSessionsPerDay = capacityConfig.max_sessions_per_day || 8;
 
-    // 2. Fetch ALL active bookings for the current booking's customer to check multi-booking constraints
-    let customerOtherActiveBookings: string[] = [];
-    if (excludeBookingId) {
-      const { data: currentBooking } = await supabase
-        .from('bookings')
-        .select('customer_id')
-        .eq('id', excludeBookingId)
-        .single();
-
-      if (currentBooking?.customer_id) {
-        const { data: customerBookings } = await supabase
-          .from('bookings')
-          .select('id, assigned_ktv_id')
-          .eq('customer_id', currentBooking.customer_id)
-          .in('status', ['in_progress', 'booked'])
-          .neq('id', excludeBookingId); // Exclude current booking
-
-        customerOtherActiveBookings = (customerBookings || [])
-          .map(b => b.assigned_ktv_id)
-          .filter((id): id is string => Boolean(id));
-      }
-    }
-
-    console.log(`[filterAvailableKtvs] Customer other active bookings KTV IDs:`, customerOtherActiveBookings);
-
-    // 3. Check each KTV for availability
+    // 2. Check each KTV for availability
     const availableKtvs: KtvSuggestion[] = [];
 
     for (const candidate of candidates) {
-      // Business rule: A KTV cannot be assigned to multiple active bookings of the same customer
-      if (customerOtherActiveBookings.includes(candidate.ktvId)) {
-        console.log(`[filterAvailableKtvs] KTV ${candidate.ktvName} skipped: Already assigned to another active booking of this customer`);
-        continue; // Skip this KTV
-      }
 
       // Fetch existing bookings for this KTV on same date
       const { data: existingBookings } = await supabase
