@@ -45,6 +45,10 @@ type TenantBankInfo = Pick<
 type DraftBooking = Awaited<ReturnType<typeof getDraftBooking>>;
 type BookingSubmitPayload = Parameters<typeof createBooking>[0];
 
+// Memory cache for packages and KTVs to enable instantaneous loading on subsequent opens
+let cachedPackages: PackageRow[] | null = null;
+let cachedKtvs: Pick<UserRow, 'id' | 'full_name'>[] | null = null;
+
 function getErrorMessage(error: unknown, fallback = 'Không rõ nguyên nhân. Kiểm tra console để biết thêm.') {
   return error instanceof Error ? error.message : fallback;
 }
@@ -64,6 +68,7 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
   const [filteredCustomers, setFilteredCustomers] = useState<CustomerRow[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerRow | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isPackagesLoading, setIsPackagesLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { tenantModuleKey, refreshTenantModuleKey } = useTenantModuleKey();
   const customerLabels = getTenantModulePresentationOrNeutral(tenantModuleKey);
@@ -104,24 +109,35 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
   });
 
   async function fetchPackages() {
+    if (cachedPackages && cachedPackages.length > 0) {
+      setPackages(cachedPackages);
+      return;
+    }
+    setIsPackagesLoading(true);
     try {
       const data = await getScopedPackages();
-      setPackages(data || []);
+      cachedPackages = data || [];
+      setPackages(cachedPackages);
     } catch (error) {
       console.error('Error fetching packages:', error);
       toast.error('Không thể tải gói dịch vụ theo phân hệ');
+    } finally {
+      setIsPackagesLoading(false);
     }
   }
 
   async function fetchKtvs() {
+    if (cachedKtvs && cachedKtvs.length > 0) {
+      setKtvs(cachedKtvs);
+      return;
+    }
     try {
       const data = await getUsers();
-      setKtvs(
-        data
-          .filter((user) => user.role === 'ktv' && user.status === 'active')
-          .map((user) => ({ id: user.id, full_name: user.full_name }))
-          .sort((a, b) => a.full_name.localeCompare(b.full_name))
-      );
+      cachedKtvs = data
+        .filter((user) => user.role === 'ktv' && user.status === 'active')
+        .map((user) => ({ id: user.id, full_name: user.full_name }))
+        .sort((a, b) => a.full_name.localeCompare(b.full_name));
+      setKtvs(cachedKtvs);
     } catch (error) {
       console.error('Error fetching KTVs:', error);
     }
@@ -573,31 +589,38 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
                   <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
                     <Package className="w-4 h-4" /> Chọn gói dịch vụ
                   </label>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {packages.map((pkg) => (
-                      <button
-                        key={pkg.id}
-                        onClick={() => handleSelectService(pkg)}
-                        className={cn(
-                          "p-4 rounded-2xl border text-left transition-all relative group",
-                          formData.package_id === pkg.id 
-                            ? "border-primary bg-primary/5 shadow-lg shadow-primary/5" 
-                            : "border-slate-100 hover:border-primary/50"
-                        )}
-                      >
-                        {(formData.package_id === pkg.id || formData.package_name === pkg.name) && (
-                          <CheckCircle2 className="absolute top-3 right-3 w-5 h-5 text-primary" />
-                        )}
-                        <h5 className="font-black text-slate-900 group-hover:text-primary transition-colors">{pkg.name}</h5>
-                        <p className="text-xs text-slate-500 font-bold mt-1">{pkg.total_sessions} buổi - {formatNumberWithSeparator(pkg.price || pkg.full_price || 0)}đ</p>
-                      </button>
-                    ))}
-                    {packages.length === 0 && !isLoading && (
-                      <p className="col-span-2 text-center py-4 text-slate-400 italic font-bold">
-                        Chưa có dữ liệu gói dịch vụ trong hệ thống.
-                      </p>
-                    )}
-                  </div>
+                  {isPackagesLoading ? (
+                    <div className="py-12 text-center bg-slate-50/50 rounded-3xl border border-dashed border-slate-200 flex flex-col items-center justify-center gap-3">
+                      <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                      <p className="text-slate-400 font-bold text-xs">Đang tải danh sách gói...</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {packages.map((pkg) => (
+                        <button
+                          key={pkg.id}
+                          onClick={() => handleSelectService(pkg)}
+                          className={cn(
+                            "p-4 rounded-2xl border text-left transition-all relative group",
+                            formData.package_id === pkg.id
+                              ? "border-primary bg-primary/5 shadow-lg shadow-primary/5"
+                              : "border-slate-100 hover:border-primary/50"
+                          )}
+                        >
+                          {(formData.package_id === pkg.id || formData.package_name === pkg.name) && (
+                            <CheckCircle2 className="absolute top-3 right-3 w-5 h-5 text-primary" />
+                          )}
+                          <h5 className="font-black text-slate-900 group-hover:text-primary transition-colors">{pkg.name}</h5>
+                          <p className="text-xs text-slate-500 font-bold mt-1">{pkg.total_sessions} buổi - {formatNumberWithSeparator(pkg.price || pkg.full_price || 0)}đ</p>
+                        </button>
+                      ))}
+                      {packages.length === 0 && (
+                        <p className="col-span-2 text-center py-4 text-slate-400 italic font-bold">
+                          Chưa có dữ liệu gói dịch vụ trong hệ thống.
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* KTV & Date Form */}
