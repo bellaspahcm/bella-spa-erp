@@ -24,7 +24,8 @@ import {
   BarChart3,
   ClipboardList,
   LineChart,
-  Sliders
+  Sliders,
+  ShoppingCart
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -287,6 +288,7 @@ const menuItems: SidebarMenuItem[] = [
   { icon: ClipboardList,   label: 'Danh sách chờ',      href: '/dashboard/waitlist' },
   { icon: Users,           label: 'Khách hàng & CRM',   href: '/dashboard/customers' },
   { icon: Package,         label: 'Kho & Bán hàng',     href: '/dashboard/inventory' },
+  { icon: ShoppingCart,    label: 'Bán hàng sản phẩm',  href: '/dashboard/product-sales' },
 
   { type: 'header', label: 'Tài chính & Nhân sự' },
   { icon: Banknote,        label: 'Bảng lương & Công',  href: '/dashboard/salary' },
