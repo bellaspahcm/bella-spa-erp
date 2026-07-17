@@ -99,7 +99,15 @@ export function SessionHistoryPanel({
                         <ClipboardList className="w-5 h-5" />
                       </div>
                       <div>
-                        <p className="font-black text-slate-800">{session.type || vocab.service.singular} - {vocab.workUnit.singular} {session.session_number}/{activeBooking?.total_sessions || 15}</p>
+                        <p className="font-black text-slate-800">
+                          {session.type || vocab.service.singular} - {vocab.workUnit.singular} {session.session_number}/{activeBooking?.total_sessions || 15}
+                          {activeBooking?.package_name && (
+                            <span className="ml-2 text-[9px] font-black text-indigo-500 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full align-middle">
+                              {activeBooking.package_name}
+                            </span>
+                          )}
+                        </p>
+
                         <p className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 flex-wrap mt-1">
                           <span>{vocab.worker.short}: <strong className="text-slate-700">{session.completed_by_ktv?.full_name || activeBooking?.assigned_ktv?.full_name || 'Chưa phân công'}</strong>{session.completed_by_ktv?.phone || activeBooking?.assigned_ktv?.phone ? ` (${session.completed_by_ktv?.phone || activeBooking?.assigned_ktv?.phone})` : ''}</span>
                           <span>•</span>

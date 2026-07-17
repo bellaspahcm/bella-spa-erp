@@ -753,6 +753,9 @@ export function useCustomerDetailController() {
           }
           token = result.data.share_token;
         }
+        if (!token) {
+          throw new Error(`Không thể khởi tạo token chia sẻ cho gói "${booking.package_name}"`);
+        }
         tokens.push(token);
       }
 

@@ -558,8 +558,15 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
                       {session.status === 'completed' ? <CheckCircle2 className="w-5 h-5" /> : <Clock className="w-5 h-5" />}
                     </div>
                     <div>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Buổi {session.session_number}</p>
-                      <h4 className="text-sm font-black text-slate-900 leading-tight">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Buổi {session.session_number}</p>
+                        {booking.package_name && (
+                          <span className="text-[9px] font-black text-rose-500 bg-rose-50 border border-rose-100/50 px-2 py-0.5 rounded-full normal-case">
+                            {booking.package_name}
+                          </span>
+                        )}
+                      </div>
+                      <h4 className="text-sm font-black text-slate-900 leading-tight mt-0.5">
                         {session.status === 'completed' ? 'Đã chăm sóc' : 'Chưa diễn ra'}
                       </h4>
                     </div>
@@ -636,6 +643,119 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
               </div>
             ))}
           </div>
+
+          {/* Bundle sessions logs list */}
+          {bundleBooking && bundleSessionLogs.length > 0 && (
+            <div className="mt-8 space-y-4">
+              <div className="flex items-center gap-3 px-2">
+                <div className="h-px bg-slate-200 flex-grow" />
+                <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest bg-indigo-50 border border-indigo-100/50 px-3 py-1 rounded-full">
+                  Nhật ký: {bundleBooking.package_name || 'Gói thứ 2'}
+                </span>
+                <div className="h-px bg-slate-200 flex-grow" />
+              </div>
+              <div className="space-y-4">
+                {bundleSessionLogs.map((session) => (
+                  <div 
+                    key={session.id} 
+                    className={`bg-white rounded-[32px] border ${session.status === 'completed' ? 'border-indigo-100' : 'border-slate-100'} shadow-sm relative overflow-hidden`}
+                  >
+                    {/* Header: Icon + Session Number + Action */}
+                    <div className={`px-6 pt-5 pb-4 flex items-center justify-between ${session.status === 'completed' ? 'bg-gradient-to-r from-indigo-50/60 to-white' : 'bg-gradient-to-r from-slate-50/60 to-white'}`}>
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                          session.status === 'completed' ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-200' : 'bg-slate-200 text-slate-400'
+                        }`}>
+                          {session.status === 'completed' ? <CheckCircle2 className="w-5 h-5" /> : <Clock className="w-5 h-5" />}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Buổi {session.session_number}</p>
+                            {bundleBooking.package_name && (
+                              <span className="text-[9px] font-black text-indigo-500 bg-indigo-50 border border-indigo-100/50 px-2 py-0.5 rounded-full normal-case">
+                                {bundleBooking.package_name}
+                              </span>
+                            )}
+                          </div>
+                          <h4 className="text-sm font-black text-slate-900 leading-tight mt-0.5">
+                            {session.status === 'completed' ? 'Đã chăm sóc' : 'Chưa diễn ra'}
+                          </h4>
+                        </div>
+                      </div>
+                      {session.status === 'completed' && !session.rating && (
+                        <button 
+                          onClick={() => setSelectedSession(session)}
+                          className="bg-amber-400 hover:bg-amber-500 text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-md shadow-amber-100/50 animate-bounce active:scale-95 transition-all"
+                        >
+                          ⭐ Đánh giá
+                        </button>
+                      )}
+                      {session.rating && (
+                        <div className="flex items-center gap-0.5 text-amber-400">
+                          {Array.from({ length: session.rating }).map((_, i) => (
+                            <Star key={i} className="w-3 h-3 fill-current" />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Body */}
+                    <div className="px-6 pb-5 space-y-3">
+                      {session.status === 'completed' ? (
+                        <>
+                          {/* KTV Info */}
+                          <div className="flex items-center gap-2 text-[11px] text-slate-500 font-bold">
+                            <span>KTV thực hiện:</span>
+                            <span className="text-indigo-600 font-black">
+                              {session.completed_by_ktv?.full_name || portalBrand.displayName}
+                              {session.completed_by_ktv?.id !== bundleBooking.assigned_ktv?.id && ' (Làm thay)'}
+                            </span>
+                          </div>
+                          
+                          {/* Check-in / Check-out — full width */}
+                          <div className="grid grid-cols-2 bg-slate-50 border border-slate-100/60 rounded-2xl overflow-hidden">
+                            <div className="p-4 text-center">
+                              <p className="text-[10px] font-black text-emerald-500 uppercase tracking-wider mb-1">📍 Check-in</p>
+                              <p className="text-lg font-black text-slate-800">
+                                {session.start_time ? new Date(session.start_time).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                              </p>
+                            </div>
+                            <div className="p-4 text-center border-l border-slate-200">
+                              <p className="text-[10px] font-black text-rose-400 uppercase tracking-wider mb-1">🏁 Check-out</p>
+                              <p className="text-lg font-black text-slate-800">
+                                {session.end_time ? new Date(session.end_time).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Date */}
+                          <p className="text-[10px] text-slate-400 font-medium text-center">
+                            Chăm sóc ngày <span className="font-bold text-slate-600">{session.completed_date ? new Date(session.completed_date).toLocaleDateString('vi-VN') : 'Đang cập nhật'}</span>
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex items-center gap-2 text-[11px] text-slate-500 font-bold">
+                            <span>KTV phụ trách:</span>
+                            <span className="text-slate-800 font-black">{bundleBooking.assigned_ktv?.full_name || 'Đang sắp xếp KTV'}</span>
+                          </div>
+                          {session.completed_by_ktv && session.completed_by_ktv.id !== bundleBooking.assigned_ktv?.id && (
+                            <div className="flex items-center gap-2 text-[11px] text-amber-700 font-bold bg-amber-50/70 rounded-2xl px-4 py-1.5 border border-amber-200/50 animate-pulse">
+                              <span>🔄 KTV làm thay:</span>
+                              <span className="text-primary font-black">{session.completed_by_ktv.full_name}</span>
+                            </div>
+                          )}
+                          <p className="text-[10px] text-slate-400 font-medium">
+                            Thời gian dự kiến: <span className="font-bold text-slate-600">{session.assigned_date || 'Đang cập nhật'}</span>
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </section>
 
         {/* Spa Info */}
