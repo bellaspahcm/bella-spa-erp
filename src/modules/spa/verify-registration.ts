@@ -24,7 +24,7 @@
  */
 
 import { moduleRegistry } from '@/core/adapters/registry';
-import { registerSpaModule } from './register';
+import { registerSpaModule, SpaModuleAdapter } from './register';
 
 function verify() {
   console.log('\n=== Spa Module Registration Verification ===\n');
@@ -92,7 +92,8 @@ function verify() {
     // Step 7: Test duplicate registration prevention
     console.log('Step 7: Testing duplicate registration prevention...');
     try {
-      registerSpaModule();
+      const duplicateAdapter = new SpaModuleAdapter();
+      moduleRegistry.register(duplicateAdapter);
       throw new Error('Should have thrown DuplicateModuleError');
     } catch (error: unknown) {
       if (error instanceof Error && error.name === 'DuplicateModuleError') {

@@ -1149,6 +1149,151 @@ export type Database = {
           },
         ]
       }
+      beds: {
+        Row: {
+          id: string
+          tenant_id: string
+          bed_number: string
+          bed_name: string | null
+          room_id: string | null
+          status: string | null
+          notes: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          tenant_id: string
+          bed_number: string
+          bed_name?: string | null
+          room_id?: string | null
+          status?: string | null
+          notes?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          tenant_id?: string
+          bed_number?: string
+          bed_name?: string | null
+          room_id?: string | null
+          status?: string | null
+          notes?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "beds_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "beds_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      rooms: {
+        Row: {
+          id: string
+          tenant_id: string
+          room_number: string
+          room_name: string | null
+          capacity: number | null
+          room_type: string | null
+          status: string | null
+          notes: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          tenant_id: string
+          room_number: string
+          room_name?: string | null
+          capacity?: number | null
+          room_type?: string | null
+          status?: string | null
+          notes?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          tenant_id?: string
+          room_number?: string
+          room_name?: string | null
+          capacity?: number | null
+          room_type?: string | null
+          status?: string | null
+          notes?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rooms_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      equipment: {
+        Row: {
+          id: string
+          tenant_id: string
+          equipment_code: string
+          equipment_name: string
+          equipment_type: string | null
+          quantity: number | null
+          status: string | null
+          notes: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          tenant_id: string
+          equipment_code: string
+          equipment_name: string
+          equipment_type?: string | null
+          quantity?: number | null
+          status?: string | null
+          notes?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          tenant_id?: string
+          equipment_code?: string
+          equipment_name?: string
+          equipment_type?: string | null
+          quantity?: number | null
+          status?: string | null
+          notes?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       bookings: {
         Row: {
           assigned_ktv_id: string | null
@@ -1177,6 +1322,9 @@ export type Database = {
           tenant_id: string
           total_sessions: number | null
           updated_at: string | null
+          assigned_bed_id: string | null
+          assigned_room_id: string | null
+          required_equipment_ids: Json
         }
         Insert: {
           assigned_ktv_id?: string | null
@@ -1205,6 +1353,9 @@ export type Database = {
           tenant_id: string
           total_sessions?: number | null
           updated_at?: string | null
+          assigned_bed_id?: string | null
+          assigned_room_id?: string | null
+          required_equipment_ids?: Json
         }
         Update: {
           assigned_ktv_id?: string | null
@@ -1233,6 +1384,9 @@ export type Database = {
           tenant_id?: string
           total_sessions?: number | null
           updated_at?: string | null
+          assigned_bed_id?: string | null
+          assigned_room_id?: string | null
+          required_equipment_ids?: Json
         }
         Relationships: [
           {
@@ -5449,6 +5603,7 @@ export type Database = {
           zalo_template_birthday_id: string | null
           zalo_template_reminder_id: string | null
           zalo_token_expires_at: string | null
+          capacity_config: Json | null
         }
         Insert: {
           accounting_mode?: string | null
@@ -5492,6 +5647,7 @@ export type Database = {
           zalo_template_birthday_id?: string | null
           zalo_template_reminder_id?: string | null
           zalo_token_expires_at?: string | null
+          capacity_config?: Json | null
         }
         Update: {
           accounting_mode?: string | null
@@ -5535,6 +5691,7 @@ export type Database = {
           zalo_template_birthday_id?: string | null
           zalo_template_reminder_id?: string | null
           zalo_token_expires_at?: string | null
+          capacity_config?: Json | null
         }
         Relationships: [
           {

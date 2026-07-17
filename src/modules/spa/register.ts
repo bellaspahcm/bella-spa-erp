@@ -41,14 +41,18 @@ import type { ModuleAdapter } from '@/core/types';
 export function registerSpaModule(): void {
   try {
     // Register for Baby Care Spa (original module)
-    const spaAdapter = new SpaModuleAdapter();
-    moduleRegistry.register(spaAdapter);
-    console.log('[SpaModule] ✅ Registered adapter for module: spa (Baby Care Spa)');
+    if (!moduleRegistry.has('spa')) {
+      const spaAdapter = new SpaModuleAdapter();
+      moduleRegistry.register(spaAdapter);
+      console.log('[SpaModule] ✅ Registered adapter for module: spa (Baby Care Spa)');
+    }
 
     // Register for Beauty Spa (enhanced with resource conflict detection)
-    const beautySpaAdapter = new BeautySpaModuleAdapter();
-    moduleRegistry.register(beautySpaAdapter as ModuleAdapter);
-    console.log('[SpaModule] ✅ Registered adapter for module: beauty_spa (Beauty Spa with resources)');
+    if (!moduleRegistry.has('beauty_spa')) {
+      const beautySpaAdapter = new BeautySpaModuleAdapter();
+      moduleRegistry.register(beautySpaAdapter as ModuleAdapter);
+      console.log('[SpaModule] ✅ Registered adapter for module: beauty_spa (Beauty Spa with resources)');
+    }
 
     // Verify registration
     if (moduleRegistry.has('spa') && moduleRegistry.has('beauty_spa')) {

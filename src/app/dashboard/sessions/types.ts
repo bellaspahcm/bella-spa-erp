@@ -33,6 +33,7 @@ export interface SessionBooking {
   package_name: string;
   total_sessions: number;
   completed_sessions: number;
+  status: string | null;
   start_date: string | null;
   next_session_date: string | null;
   assigned_ktv_id: string | null;

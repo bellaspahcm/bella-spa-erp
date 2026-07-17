@@ -70,7 +70,6 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
   if (oldBooking && (
     updatePayload.preferred_time !== undefined || 
     updatePayload.start_date !== undefined ||
-    updatePayload.preferred_date !== undefined ||
     updatePayload.assigned_ktv_id !== undefined
   )) {
     console.log('[updateBooking] Decision Engine validation triggered for time/KTV change');
@@ -86,8 +85,7 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
       package_name: updatePayload.package_name !== undefined ? updatePayload.package_name : oldBooking.package_name,
       
       // Time fields - map preferred_time to start_date for Decision Engine
-      start_date: updatePayload.preferred_time !== undefined ? updatePayload.preferred_time : oldBooking.start_date,
-      preferred_date: updatePayload.preferred_date !== undefined ? updatePayload.preferred_date : oldBooking.preferred_date,
+      start_date: updatePayload.start_date !== undefined ? updatePayload.start_date : oldBooking.start_date,
       preferred_time: updatePayload.preferred_time !== undefined ? updatePayload.preferred_time : oldBooking.preferred_time,
       
       // KTV assignment
@@ -101,7 +99,7 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
       
       // Other fields
       total_sessions: updatePayload.total_sessions !== undefined ? updatePayload.total_sessions : oldBooking.total_sessions,
-      notes: updatePayload.notes !== undefined ? updatePayload.notes : oldBooking.notes,
+      metadata: updatePayload.metadata !== undefined ? updatePayload.metadata : oldBooking.metadata,
     };
 
     console.log('[updateBooking] Updated booking data for validation:', {

@@ -200,15 +200,15 @@ export class BeautySpaModuleAdapter extends SpaModuleAdapter implements ModuleAd
     // Check time overlap
     for (const booking of existingBookings) {
       const existingStart = booking.preferred_time || '08:00';
-      const existingDuration = (booking.packages as any)?.duration_minutes || 60;
+      const existingDuration = (booking.packages as unknown as Record<string, unknown>)?.duration_minutes as number || 60;
       const existingEnd = this.calculateEndTime(existingStart, existingDuration);
 
       if (this.timeRangesOverlap(startTime, endTime, existingStart, existingEnd)) {
-        const bedInfo = booking.beds as any;
+        const bedInfo = booking.beds as unknown as Record<string, unknown>;
         return {
           type: 'bed',
           resourceId: bedId,
-          resourceName: bedInfo?.bed_name || bedInfo?.bed_number || bedId,
+          resourceName: (bedInfo?.bed_name as string) || (bedInfo?.bed_number as string) || bedId,
           conflictingBookingId: booking.id,
           timeRange: `${existingStart} - ${existingEnd}`,
         };
@@ -266,7 +266,7 @@ export class BeautySpaModuleAdapter extends SpaModuleAdapter implements ModuleAd
     let overlappingCount = 0;
     for (const booking of existingBookings) {
       const existingStart = booking.preferred_time || '08:00';
-      const existingDuration = (booking.packages as any)?.duration_minutes || 60;
+      const existingDuration = (booking.packages as unknown as Record<string, unknown>)?.duration_minutes as number || 60;
       const existingEnd = this.calculateEndTime(existingStart, existingDuration);
 
       if (this.timeRangesOverlap(startTime, endTime, existingStart, existingEnd)) {
@@ -275,13 +275,14 @@ export class BeautySpaModuleAdapter extends SpaModuleAdapter implements ModuleAd
     }
 
     // Check if room capacity exceeded
-    if (overlappingCount >= room.capacity) {
+    const roomCapacity = room.capacity ?? 1;
+    if (overlappingCount >= roomCapacity) {
       return {
         type: 'room',
         resourceId: roomId,
         resourceName: room.room_name || room.room_number,
         conflictingBookingId: existingBookings[0].id,
-        timeRange: `${startTime} - ${endTime} (${overlappingCount}/${room.capacity} used)`,
+        timeRange: `${startTime} - ${endTime} (${overlappingCount}/${roomCapacity} used)`,
       };
     }
 
@@ -339,7 +340,7 @@ export class BeautySpaModuleAdapter extends SpaModuleAdapter implements ModuleAd
       let overlappingCount = 0;
       for (const booking of existingBookings) {
         const existingStart = booking.preferred_time || '08:00';
-        const existingDuration = (booking.packages as any)?.duration_minutes || 60;
+        const existingDuration = (booking.packages as unknown as Record<string, unknown>)?.duration_minutes as number || 60;
         const existingEnd = this.calculateEndTime(existingStart, existingDuration);
 
         if (this.timeRangesOverlap(startTime, endTime, existingStart, existingEnd)) {
@@ -348,13 +349,14 @@ export class BeautySpaModuleAdapter extends SpaModuleAdapter implements ModuleAd
       }
 
       // Check if equipment quantity exceeded
-      if (overlappingCount >= equipment.quantity) {
+      const equipmentQty = equipment.quantity ?? 1;
+      if (overlappingCount >= equipmentQty) {
         conflicts.push({
           type: 'equipment',
           resourceId: equipmentId,
           resourceName: equipment.equipment_name || equipment.equipment_code,
           conflictingBookingId: existingBookings[0].id,
-          timeRange: `${startTime} - ${endTime} (${overlappingCount}/${equipment.quantity} used)`,
+          timeRange: `${startTime} - ${endTime} (${overlappingCount}/${equipmentQty} used)`,
         });
       }
     }

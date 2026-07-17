@@ -31,6 +31,7 @@
 
 import type {
   ModuleAdapter,
+  ModuleId,
   CoreServiceCatalogItem,
   CoreBookingOrder,
   TenantContext,
@@ -101,10 +102,10 @@ export interface SpaBooking extends CoreBookingOrder {
  */
 export class SpaModuleAdapter implements ModuleAdapter {
   /** Module identifier for spa module */
-  readonly moduleId = 'spa' as const;
+  readonly moduleId: ModuleId = 'spa';
   
   /** Human-readable module name */
-  readonly moduleName = 'Bella Spa & Babycare';
+  readonly moduleName: string = 'Bella Spa & Babycare';
 
   /**
    * Transform CoreServiceCatalogItem to spa package type.
@@ -273,7 +274,7 @@ export class SpaModuleAdapter implements ModuleAdapter {
         .eq('id', context.tenantId)
         .single();
       
-      const capacityConfig = tenantData?.capacity_config as Record<string, any> | null;
+      const capacityConfig = tenantData?.capacity_config as Record<string, unknown> | null;
       
       // Get booking date from scheduledStartTime (YYYY-MM-DD format)
       const scheduledDate = order.scheduledStartTime; // Already in YYYY-MM-DD
@@ -288,16 +289,33 @@ export class SpaModuleAdapter implements ModuleAdapter {
         .lte('start_date', scheduledDate)
         .in('status', ['booked', 'deposit_pending', 'active', 'in_progress']);
       
-      // Transform bookings for capacity provider
-      const existingBookingsFormatted = (existingBookings || []).map((booking: any) => ({
-        id: booking.id,
-        startTime: booking.preferred_time || '08:00',
-        endTime: this.calculateEndTime(
-          booking.preferred_time || '08:00',
-          booking.packages?.duration_minutes || 60
-        ),
-        status: booking.status,
-      }));
+      const existingBookingsFormatted = (existingBookings || []).map((booking: {
+        id: string;
+        preferred_time: string | null;
+        status: string | null;
+        packages: unknown;
+      }) => {
+        const durationMinutes = (booking.packages as Record<string, unknown> | null)?.duration_minutes as number || 60;
+        const statusMap: Record<string, 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled'> = {
+          booked: 'confirmed',
+          deposit_pending: 'pending',
+          active: 'confirmed',
+          in_progress: 'in_progress',
+          completed: 'completed',
+          cancelled: 'cancelled',
+        };
+        const status = statusMap[booking.status || ''] || 'pending';
+        return {
+          id: booking.id,
+          startTime: booking.preferred_time || '08:00',
+          endTime: this.calculateEndTime(
+            booking.preferred_time || '08:00',
+            durationMinutes
+          ),
+          durationMinutes,
+          status,
+        };
+      });
       
       // Initialize capacity provider
       const capacityProvider = new CapacityManagementProvider({ debug: true });
@@ -316,25 +334,28 @@ export class SpaModuleAdapter implements ModuleAdapter {
           requestedStartTime: startTime,
           requestedEndTime: endTime,
           requestedDate: scheduledDate,
+          durationMinutes: durationMinutes,
           serviceType: 'spa_session',
-          ktvId: ktvId,
+          customerTier: (order.metadata.customer_tier as 'vip' | 'loyal' | 'new') || 'new',
         },
+        ktvId: ktvId,
         existingBookings: existingBookingsFormatted,
         tenantCapacity: capacityConfig ? {
-          dailyCapacityLimit: capacityConfig.dailyCapacityLimit || 10,
-          concurrentSessionLimit: capacityConfig.concurrentSessionLimit || 5,
-          enforceBreakTimes: capacityConfig.enforceBreakTimes || false,
-          workingHours: capacityConfig.workingHours || { start: '08:00', end: '22:00' },
+          bufferPercentage: (capacityConfig.bufferPercentage as number) || 10,
+          enablePeakHourManagement: (capacityConfig.enablePeakHourManagement as boolean) || false,
+          enforceBreakTimes: (capacityConfig.enforceBreakTimes as boolean) || false,
         } : undefined,
         ktvCapacity: {
-          maxDailySessions: 10,
-          minBreakMinutes: capacityConfig?.minBreakMinutes || 15,
-          workingHours: { start: '08:00', end: '22:00' },
+          maxDailyBookings: (capacityConfig?.dailyCapacityLimit as number) || 10,
+          maxConcurrentSessions: (capacityConfig?.concurrentSessionLimit as number) || 5,
+          minBreakMinutes: (capacityConfig?.minBreakMinutes as number) || 15,
+          workingHours: (capacityConfig?.workingHours as { start: string; end: string }) || { start: '08:00', end: '22:00' },
+          peakHours: capacityConfig?.peakHours as { start: string; end: string; maxBookings: number } | undefined,
         },
         tenantId: context.tenantId,
       });
       
-      if (!capacityResult.isAvailable) {
+      if (!capacityResult.available) {
         console.error(
           `[SpaAdapter] Capacity check failed: ${capacityResult.reason}`,
           capacityResult.conflicts
@@ -365,9 +386,9 @@ export class SpaModuleAdapter implements ModuleAdapter {
 
   /**
    * Calculate end time given start time and duration
-   * @private
+   * @protected - accessible to subclasses
    */
-  private calculateEndTime(startTime: string, durationMinutes: number): string {
+  protected calculateEndTime(startTime: string, durationMinutes: number): string {
     const [hours, minutes] = startTime.split(':').map(Number);
     const totalMinutes = hours * 60 + minutes + durationMinutes;
     const endHours = Math.floor(totalMinutes / 60) % 24;

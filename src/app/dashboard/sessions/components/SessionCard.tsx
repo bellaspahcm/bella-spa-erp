@@ -128,9 +128,11 @@ export function SessionCard({
           </div>
           <span className={cn(
             "px-4 py-1.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border",
-            isFullyCompleted ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-primary/5 text-primary border-primary/10'
+            booking.status === 'cancelled'
+              ? 'bg-rose-50 text-rose-600 border-rose-100'
+              : isFullyCompleted ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-primary/5 text-primary border-primary/10'
           )}>
-            {isFullyCompleted ? 'Hoàn thành' : 'Đang thực hiện'}
+            {booking.status === 'cancelled' ? 'Đã hủy' : isFullyCompleted ? 'Hoàn thành' : 'Đang thực hiện'}
           </span>
           {/* Badge cảnh báo chưa phân KTV */}
           {!hasKtv && !isFullyCompleted && (

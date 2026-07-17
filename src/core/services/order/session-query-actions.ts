@@ -124,6 +124,8 @@ export async function getSessionsWithDetails(options: GetSessionsWithDetailsOpti
       session_logs(id, booking_id, session_number, assigned_date, assigned_time, booking_resource_id, completed_date, start_time, end_time, status, notes, rating, rating_comment, completed_by_ktv_id, ktv:users!session_logs_completed_by_ktv_id_fkey(id, full_name), booking_resource:booking_resources!session_logs_booking_resource_id_fkey(id, name, resource_type, status), duration_warning_type, ktv_checkout_note, standard_duration, actual_duration, time_deviation)
     `)
     .eq('tenant_id', tenantId)
+    .neq('status', 'cancelled')
+    .neq('status', 'inquiry')
     .order('created_at', { ascending: false });
 
   if (currentUser?.role?.toLowerCase() === 'ktv') {

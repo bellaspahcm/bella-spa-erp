@@ -1,5 +1,14 @@
-import { useState, useEffect, useCallback } from 'react';
-import { debounce } from 'lodash';
+import { useState, useCallback, useMemo } from 'react';
+// Inline debounce implementation to avoid lodash dependency issues
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function debounce<T extends (...args: any[]) => void>(fn: T, delay: number) {
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  const debounced = (...args: Parameters<T>) => {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), delay);
+  };
+  return debounced;
+}
 
 export interface KTVAvailabilityInfo {
   id: string;
@@ -86,8 +95,8 @@ export function useKtvAvailability() {
   );
 
   // Debounced version for real-time input
-  const checkAvailabilityDebounced = useCallback(
-    debounce(checkAvailability, 500),
+  const checkAvailabilityDebounced = useMemo(
+    () => debounce(checkAvailability, 500),
     [checkAvailability]
   );
 

@@ -3,9 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
 import { CapacityManagementProvider } from '@/lib/decision-engine/providers/booking/capacity-management-provider';
-import type { Database } from '@/types/database.types';
 
-type UserRow = Database['public']['Tables']['users']['Row'];
 
 interface KTVAvailability {
   id: string;
@@ -93,9 +91,9 @@ export async function GET(request: NextRequest) {
       .eq('id', tenantId)
       .single();
 
-    const capacityConfig = tenantData?.capacity_config as Record<string, any> | null;
-    const minBreakMinutes = capacityConfig?.minBreakMinutes || 15;
-    const enforceBreakTimes = capacityConfig?.enforceBreakTimes !== false; // Default true
+    const capacityConfig = tenantData?.capacity_config as Record<string, unknown> | null;
+    const minBreakMinutes = (capacityConfig?.minBreakMinutes as number) || 15;
+    const enforceBreakTimes = (capacityConfig?.enforceBreakTimes as boolean) !== false; // Default true
 
     // Fetch all active KTVs
     const { data: allKtvs, error: ktvsError } = await supabase
@@ -149,42 +147,52 @@ export async function GET(request: NextRequest) {
 
           const { data: existingBookings } = await query;
 
-          // Transform bookings for capacity provider
-          const existingBookingsFormatted = (existingBookings || []).map((booking: any) => ({
-            id: booking.id,
-            startTime: booking.preferred_time || '08:00',
-            endTime: calculateEndTime(
-              booking.preferred_time || '08:00',
-              booking.packages?.duration_minutes || 60
-            ),
-            status: booking.status,
-          }));
+          const existingBookingsFormatted = (existingBookings || []).map((booking: {
+            id: string;
+            preferred_time: string | null;
+            packages?: unknown;
+            status: string | null;
+          }) => {
+            const durationMinutes = (booking.packages as Record<string, unknown> | null)?.duration_minutes as number || 60;
+            return {
+              id: booking.id,
+              startTime: booking.preferred_time || '08:00',
+              endTime: calculateEndTime(
+                booking.preferred_time || '08:00',
+                durationMinutes
+              ),
+              durationMinutes,
+              status: (booking.status || 'pending') as 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled',
+            };
+          });
 
           // Check capacity
           const capacityResult = await capacityProvider.checkCapacity({
+            ktvId: ktv.id,
+            tenantId: tenantId,
             booking: {
               requestedStartTime: time,
               requestedEndTime: endTime,
               requestedDate: date,
+              durationMinutes: duration,
               serviceType: 'spa_session',
-              ktvId: ktv.id,
+              customerTier: 'new',
             },
             existingBookings: existingBookingsFormatted,
             tenantCapacity: capacityConfig ? {
-              dailyCapacityLimit: capacityConfig.dailyCapacityLimit || 10,
-              concurrentSessionLimit: capacityConfig.concurrentSessionLimit || 5,
+              bufferPercentage: (capacityConfig.bufferPercentage as number) || 0,
+              enablePeakHourManagement: (capacityConfig.enablePeakHourManagement as boolean) || false,
               enforceBreakTimes: enforceBreakTimes,
-              workingHours: capacityConfig.workingHours || { start: '08:00', end: '22:00' },
             } : undefined,
             ktvCapacity: {
-              maxDailySessions: 10,
+              maxDailyBookings: 10,
+              maxConcurrentSessions: 5,
               minBreakMinutes: minBreakMinutes,
               workingHours: { start: '08:00', end: '22:00' },
             },
-            tenantId: tenantId,
           });
 
-          if (capacityResult.isAvailable) {
+          if (capacityResult.available) {
             return {
               id: ktv.id,
               name: ktv.full_name,
@@ -200,7 +208,7 @@ export async function GET(request: NextRequest) {
             if (conflict) {
               if (conflict.type === 'break_time_violation') {
                 conflictType = 'break_time_violation';
-                const existingTime = conflict.conflictingBooking?.preferredTime || '';
+                const existingTime = conflict.conflictingBooking?.startTime || '';
                 reason = `Đang có ca lúc ${existingTime} (cần ${minBreakMinutes} phút nghỉ)`;
                 conflictDetails = {
                   existingBookingTime: existingTime,
@@ -209,12 +217,12 @@ export async function GET(request: NextRequest) {
                 };
               } else if (conflict.type === 'time_overlap') {
                 conflictType = 'overlap';
-                const existingTime = conflict.conflictingBooking?.preferredTime || '';
+                const existingTime = conflict.conflictingBooking?.startTime || '';
                 reason = `Đang có ca trùng giờ lúc ${existingTime}`;
                 conflictDetails = {
                   existingBookingTime: existingTime,
                 };
-              } else if (conflict.type === 'daily_capacity_exceeded') {
+              } else if (conflict.type === 'daily_limit' || conflict.type === 'outside_working_hours') {
                 conflictType = 'daily_limit';
                 reason = 'Đã đạt giới hạn ca trong ngày';
               }
