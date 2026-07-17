@@ -90,15 +90,14 @@ export async function getAuditTables(): Promise<string[]> {
 
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from('audit_logs')
-    .select('table_name');
+    .rpc('get_distinct_audit_tables');
 
   if (error) {
-    throw new Error(`[getAuditTables] audit_logs query failed: ${error.message}`);
+    throw new Error(`[getAuditTables] audit_logs RPC query failed: ${error.message}`);
   }
 
-  const tablesSet = new Set<string>((data || []).map(d => d.table_name).filter(Boolean));
-  return Array.from(tablesSet).sort();
+  const tables = (data || []) as { table_name: string }[];
+  return tables.map(d => d.table_name).filter(Boolean).sort();
 }
 
 export async function getAuditUsers(): Promise<{ id: string; name: string }[]> {

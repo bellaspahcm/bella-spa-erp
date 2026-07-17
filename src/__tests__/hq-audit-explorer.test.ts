@@ -171,10 +171,9 @@ describe('HQ Audit Explorer System', () => {
       const mockRawTables = [
         { table_name: 'packages' },
         { table_name: 'tenants' },
-        { table_name: 'packages' },
         { table_name: 'users' }
       ];
-      auditLogQueryMock = new MockQueryBuilder(mockRawTables);
+      mockRpc.mockResolvedValue({ data: mockRawTables, error: null });
 
       const result = await getAuditTables();
       expect(result).toEqual(['packages', 'tenants', 'users']);
