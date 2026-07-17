@@ -248,6 +248,26 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
     }
   }, [selectedCustomer, step]);
 
+  // Automatically calculate package price based on total_sessions for single session packages (gói lẻ)
+  useEffect(() => {
+    if (!formData.package_id) return;
+    
+    const selectedPkg = packages.find(p => p.id === formData.package_id);
+    if (!selectedPkg) return;
+
+    const baseSessions = Number(selectedPkg.total_sessions || 1);
+    const basePrice = Number(selectedPkg.price || selectedPkg.full_price || 0);
+
+    if (baseSessions === 1) {
+      const calculatedPrice = basePrice * formData.total_sessions;
+      if (formData.full_price !== calculatedPrice) {
+        setFormData(prev => ({
+          ...prev,
+          full_price: calculatedPrice
+        }));
+      }
+    }
+  }, [formData.package_id, formData.total_sessions, packages]);
 
   useEffect(() => {
     if (searchQuery.trim() === '') {
