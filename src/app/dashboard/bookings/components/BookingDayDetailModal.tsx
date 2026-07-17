@@ -25,6 +25,7 @@ import { ServiceItemsTable } from '@/components/bookings/ServiceItemsTable';
 import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
 import { useServiceItems } from '../hooks/useServiceItems';
 import type { BookingInvoicePrintLog } from '@/core/services/order/invoice-print-actions';
+import { useScrollLock } from '@/hooks/useScrollLock';
 
 export type KtvOption = {
   id: string;
@@ -116,6 +117,8 @@ export function BookingDayDetailModal({
   const vocab = useModuleVocabulary();
   const router = useRouter();
   const { serviceItems, isLoadingServiceItems, fetchServiceItems } = useServiceItems();
+
+  useScrollLock(isOpen);
   
   // Fetch service items when modal opens with booking data
   useEffect(() => {

@@ -34,6 +34,7 @@ X
 } from 'lucide-react';
 import { useEffect,useState } from 'react';
 import { toast } from 'sonner';
+import { useScrollLock } from '@/hooks/useScrollLock';
 
 type CustomerRow = Database['public']['Tables']['customers']['Row'];
 type PackageRow = Database['public']['Tables']['packages']['Row'];
@@ -72,6 +73,8 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { tenantModuleKey, refreshTenantModuleKey } = useTenantModuleKey();
   const customerLabels = getTenantModulePresentationOrNeutral(tenantModuleKey);
+
+  useScrollLock(isOpen);
 
   // VietQR deposit states
   const [showQrModal, setShowQrModal] = useState(false);

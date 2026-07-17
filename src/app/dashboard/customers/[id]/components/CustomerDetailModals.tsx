@@ -12,6 +12,7 @@ import { AlertCircle, Camera, CheckCircle2, CreditCard as CreditCardIcon, Dollar
 import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
+import { useScrollLock } from '@/hooks/useScrollLock';
 import type { EditBookingData, EditCustomerData, ModalStateSetter, PaymentData } from '../types';
 
 export function EditCustomerModal({
@@ -33,6 +34,8 @@ export function EditCustomerModal({
 }) {
   const [isGeocoding, setIsGeocoding] = useState(false);
   const customerLabels = getTenantModulePresentationOrNeutral(tenantModuleKey);
+
+  useScrollLock(isOpen);
 
   if (!isOpen) return null;
 
@@ -245,6 +248,8 @@ export function BookingPaymentModal({
   customerName: string;
 }) {
   const previewUrl = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
+
+  useScrollLock(isOpen);
 
   useEffect(() => {
     return () => {
@@ -465,6 +470,8 @@ export function EditBookingModal({
   } | null>(null);
   const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
 
+  useScrollLock(isOpen);
+
   // Check KTV availability when time changes
   useEffect(() => {
     if (!isOpen || !currentKtvId || !data.start_date || !data.preferred_time) {
@@ -496,8 +503,17 @@ export function EditBookingModal({
         const result = await response.json();
         
         // Find current KTV in results
-        const currentKtvResult = [...result.available, ...result.unavailable].find(
-          (ktv: any) => ktv.id === currentKtvId
+        interface KtvAvailabilityItem {
+          id: string;
+          available: boolean;
+          reason?: string;
+          conflictDetails?: { nextAvailableTime?: string };
+        }
+        const currentKtvResult = [
+          ...(result.available || []),
+          ...(result.unavailable || [])
+        ].find(
+          (ktv: KtvAvailabilityItem) => ktv.id === currentKtvId
         );
 
         if (currentKtvResult && !currentKtvResult.available) {
