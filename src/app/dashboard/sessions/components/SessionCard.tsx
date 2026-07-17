@@ -104,7 +104,12 @@ export function SessionCard({
         <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16 opacity-0 group-hover:opacity-100 transition-opacity" />
       </div>
 
-      <div className="relative z-10 flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-2xl border border-pink-100 bg-gradient-to-br from-pink-50 to-white shadow-inner transition-transform group-hover:scale-110 sm:h-16 sm:w-16">
+      <div className={cn(
+        "relative z-10 flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-2xl shadow-inner transition-transform group-hover:scale-110 sm:h-16 sm:w-16",
+        tenantModuleKey === 'beauty_spa'
+          ? "border border-emerald-100 bg-gradient-to-br from-emerald-50 to-white"
+          : "border border-pink-100 bg-gradient-to-br from-pink-50 to-white"
+      )}>
         <Flower2 className="text-primary w-8 h-8" />
       </div>
       
@@ -119,7 +124,10 @@ export function SessionCard({
             </p>
           )}
           <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <span className="max-w-full break-words rounded-lg border border-primary/10 bg-rose-50 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.05em] text-primary">
+            <span className={cn(
+              "max-w-full break-words rounded-lg border border-primary/10 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.05em] text-primary",
+              tenantModuleKey === 'beauty_spa' ? "bg-emerald-50" : "bg-rose-50"
+            )}>
               {resolvePackageName(booking)}
             </span>
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-1 rounded-lg">
@@ -227,7 +235,10 @@ export function SessionCard({
                 "flex w-full items-center justify-center gap-3 rounded-2xl px-4 py-4 text-[10px] font-black uppercase tracking-widest shadow-lg transition-all active:scale-95 sm:px-8",
                 (alreadyDoneToday || (!isScheduledForToday && userRole !== 'admin')) 
                   ? "bg-slate-100 text-slate-400 shadow-none cursor-not-allowed" 
-                  : "bg-primary text-white shadow-pink-100 dark:shadow-none hover:bg-primary-hover"
+                  : cn(
+                      "bg-primary text-white dark:shadow-none hover:bg-primary-hover",
+                      tenantModuleKey === 'beauty_spa' ? "shadow-emerald-100" : "shadow-pink-100"
+                    )
               )}
             >
               {isUpdating ? (

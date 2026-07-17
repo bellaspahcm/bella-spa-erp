@@ -402,7 +402,12 @@ export function SessionLogsDetailsModal({
             </div>
             <Link
               href={`/dashboard/customers/${activeBooking.customers?.id}?bookingId=${activeBooking.id}`}
-              className="px-3 md:px-4 py-2 bg-primary text-white rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 transition-all shadow-lg shadow-pink-100 dark:shadow-none active:scale-95 flex items-center gap-2 whitespace-nowrap"
+              className={cn(
+                "px-3 md:px-4 py-2 bg-primary text-white rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all dark:shadow-none active:scale-95 flex items-center gap-2 whitespace-nowrap",
+                tenantModuleKey === 'beauty_spa' 
+                  ? "hover:bg-emerald-600 shadow-lg shadow-emerald-100" 
+                  : "hover:bg-rose-600 shadow-lg shadow-pink-100"
+              )}
             >
               <UserCircle className="w-3.5 h-3.5" /> Hồ sơ
             </Link>
@@ -441,7 +446,10 @@ export function SessionLogsDetailsModal({
                             return (
                               <>
                                 <p className="text-[10px] font-bold text-slate-500 italic mb-4">&quot;{lastLog.notes || 'Không có ghi chú'}&quot;</p>
-                                <div className="bg-white px-4 py-2 rounded-xl text-[8px] font-black uppercase tracking-widest text-primary shadow-sm border border-pink-50">
+                                <div className={cn(
+                                  "bg-white px-4 py-2 rounded-xl text-[8px] font-black uppercase tracking-widest text-primary shadow-sm border",
+                                  tenantModuleKey === 'beauty_spa' ? "border-emerald-100" : "border-pink-50"
+                                )}>
                                   Đã làm buổi {lastLog.session_number} vào {lastLog.completed_date || lastLog.assigned_date || 'N/A'}
                                 </div>
                               </>
@@ -725,7 +733,10 @@ export function SessionLogsDetailsModal({
                     <button 
                       onClick={() => handleSaveFullUpdate()}
                       disabled={isSavingNote || !selectedSessionLog || (userRole !== 'admin' && !['scheduled', 'in_progress'].includes(selectedSessionLog.status))}
-                      className="w-full mt-2 bg-primary text-white py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] shadow-lg shadow-pink-100 dark:shadow-none flex items-center justify-center gap-2 hover:bg-primary-hover active:scale-95 transition-all disabled:opacity-50"
+                      className={cn(
+                        "w-full mt-2 bg-primary text-white py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] dark:shadow-none flex items-center justify-center gap-2 hover:bg-primary-hover active:scale-95 transition-all disabled:opacity-50",
+                        tenantModuleKey === 'beauty_spa' ? "shadow-lg shadow-emerald-100" : "shadow-lg shadow-pink-100"
+                      )}
                     >
                       {isSavingNote ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} 
                       Cập nhật thông tin
@@ -936,7 +947,10 @@ export function SessionLogsDetailsModal({
                                   e.stopPropagation();
                                   setSelectedSessionLog(log);
                                 }}
-                                className="bg-white text-primary px-2 py-1 rounded-lg text-[8px] font-black uppercase mt-1 hover:bg-pink-50 transition-colors"
+                                className={cn(
+                                  "bg-white text-primary px-2 py-1 rounded-lg text-[8px] font-black uppercase mt-1 transition-colors",
+                                  tenantModuleKey === 'beauty_spa' ? "hover:bg-emerald-50" : "hover:bg-pink-50"
+                                )}
                               >
                                 Cập nhật
                               </button>
