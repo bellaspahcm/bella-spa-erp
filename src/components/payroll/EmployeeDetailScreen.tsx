@@ -387,6 +387,7 @@ export function EmployeeDetailScreen({ employeeId, month }: { employeeId: string
               </div>
             }
             actionLabel="Xem bảng chấm công chi tiết"
+            onActionClick={() => router.push(`/dashboard/salary?tab=attendance&employee=${encodeURIComponent(data.employee.name)}&month=${month || ''}`)} 
           />
 
           {/* Service Commission */}
@@ -422,6 +423,7 @@ export function EmployeeDetailScreen({ employeeId, month }: { employeeId: string
               </div>
             }
             actionLabel="Xem danh sách ca dịch vụ"
+            onActionClick={() => router.push(`/dashboard/sessions?search=${encodeURIComponent(data.employee.name)}`)}
           />
 
           {/* Product Sales Commission */}
@@ -446,6 +448,7 @@ export function EmployeeDetailScreen({ employeeId, month }: { employeeId: string
                 </div>
               }
               actionLabel="Xem lịch sử bán sản phẩm"
+              onActionClick={() => router.push(`/dashboard/product-sales?ktv=${employeeId}&month=${month || ''}`)}
             />
           )}
 
@@ -470,6 +473,7 @@ export function EmployeeDetailScreen({ employeeId, month }: { employeeId: string
               </div>
             }
             actionLabel="Xem cấu hình chức danh & bậc thợ"
+            onActionClick={() => router.push('/dashboard/services')}
           />
 
           {/* Rating Bonus */}
@@ -493,6 +497,7 @@ export function EmployeeDetailScreen({ employeeId, month }: { employeeId: string
               </div>
             }
             actionLabel="Xem lịch sử đánh giá từ khách hàng"
+            onActionClick={() => router.push(`/dashboard/sessions?search=${encodeURIComponent(data.employee.name)}`)}
           />
 
           {/* Attendance Penalty */}
@@ -517,6 +522,7 @@ export function EmployeeDetailScreen({ employeeId, month }: { employeeId: string
               </div>
             }
             actionLabel="Xem lịch sử đi muộn chi tiết"
+            onActionClick={() => router.push(`/dashboard/salary?tab=attendance&employee=${encodeURIComponent(data.employee.name)}&month=${month || ''}`)}
           />
 
           {/* Advances */}
@@ -542,6 +548,7 @@ export function EmployeeDetailScreen({ employeeId, month }: { employeeId: string
               </div>
             }
             actionLabel="Xem lịch sử tạm ứng chi tiết"
+            onActionClick={() => router.push(`/dashboard/salary?tab=advances&employee=${encodeURIComponent(data.employee.name)}&month=${month || ''}`)}
           />
         </div>
 
