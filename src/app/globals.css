@@ -1851,9 +1851,9 @@ html[data-tenant-module="beauty_spa"] .active-booking-panel {
   color: #f8f6f2;
 }
 
-html[data-tenant-module="beauty_spa"] .active-booking-panel p,
-html[data-tenant-module="beauty_spa"] .active-booking-panel span:not([class*="text-slate-900"]):not([class*="text-rose-600"]),
-html[data-tenant-module="beauty_spa"] .active-booking-panel label {
+html[data-tenant-module="beauty_spa"] .active-booking-panel p:not(.bg-white *):not(.customer-detail-ktv-select *),
+html[data-tenant-module="beauty_spa"] .active-booking-panel span:not([class*="text-slate-900"]):not([class*="text-rose-600"]):not(.bg-white *):not(.customer-detail-ktv-select *),
+html[data-tenant-module="beauty_spa"] .active-booking-panel label:not(.bg-white *):not(.customer-detail-ktv-select *) {
   color: rgba(248, 246, 242, 0.92) !important;
 }
 
