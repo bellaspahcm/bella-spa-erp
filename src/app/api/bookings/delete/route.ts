@@ -52,6 +52,70 @@ export async function POST(request: Request) {
     };
 
     // Delete referenced records first to avoid foreign key violations
+    // 0a. Fetch all session log IDs for this booking to clean up their references
+    const { data: logs, error: getLogsError } = await supabase
+      .from('session_logs')
+      .select('id')
+      .eq('booking_id', bookingId)
+      .eq('tenant_id', user.tenant_id);
+
+    if (getLogsError) {
+      console.error('Fetch session logs error:', getLogsError);
+      return NextResponse.json({ error: getLogsError.message }, { status: 500 });
+    }
+
+    const logIds = logs?.map(l => l.id) || [];
+
+    if (logIds.length > 0) {
+      // 0b. Delete session_reviews first to avoid FK constraint violation
+      const { error: reviewsError } = await supabase
+        .from('session_reviews')
+        .delete()
+        .in('session_log_id', logIds)
+        .eq('tenant_id', user.tenant_id);
+
+      if (reviewsError && !isMissingTableError(reviewsError)) {
+        console.error('Delete session_reviews error:', reviewsError);
+        return NextResponse.json({ error: reviewsError.message }, { status: 500 });
+      }
+
+      // 0c. Set session_log_id to null in invoice_print_logs
+      const { error: printLogsError } = await supabase
+        .from('invoice_print_logs')
+        .update({ session_log_id: null })
+        .in('session_log_id', logIds)
+        .eq('tenant_id', user.tenant_id);
+
+      if (printLogsError && !isMissingTableError(printLogsError)) {
+        console.error('Update invoice_print_logs error:', printLogsError);
+        return NextResponse.json({ error: printLogsError.message }, { status: 500 });
+      }
+
+      // 0d. Set session_log_id to null in inventory_logs
+      const { error: inventoryLogsError } = await supabase
+        .from('inventory_logs')
+        .update({ session_log_id: null })
+        .in('session_log_id', logIds)
+        .eq('tenant_id', user.tenant_id);
+
+      if (inventoryLogsError && !isMissingTableError(inventoryLogsError)) {
+        console.error('Update inventory_logs error:', inventoryLogsError);
+        return NextResponse.json({ error: inventoryLogsError.message }, { status: 500 });
+      }
+    }
+
+    // 0e. Set booking_id to null in invoice_print_logs
+    const { error: printLogsBookingError } = await supabase
+      .from('invoice_print_logs')
+      .update({ booking_id: null })
+      .eq('booking_id', bookingId)
+      .eq('tenant_id', user.tenant_id);
+
+    if (printLogsBookingError && !isMissingTableError(printLogsBookingError)) {
+      console.error('Update invoice_print_logs booking_id error:', printLogsBookingError);
+      return NextResponse.json({ error: printLogsBookingError.message }, { status: 500 });
+    }
+
     // 1. Delete session_logs
     const { error: logsError } = await supabase
       .from('session_logs')
