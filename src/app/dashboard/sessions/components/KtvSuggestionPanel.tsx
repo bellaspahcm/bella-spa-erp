@@ -175,34 +175,34 @@ export function KtvSuggestionPanel({
                 </div>
 
                 {/* Micro Score Breakdown Charts */}
-                <div className="space-y-2 border-t border-slate-50 pt-3">
-                  <div className="flex items-center justify-between text-[9px] font-bold text-slate-600 uppercase">
+                <div className="space-y-2 border-t border-slate-100 pt-3">
+                  <div className="flex items-center justify-between text-[9px] font-bold text-slate-700 uppercase">
                     <span>Độ phù hợp kỹ năng</span>
-                    <span className="font-mono text-slate-600">{suggestion.breakdown.skillMatch}/25</span>
+                    <span className="font-mono text-slate-800">{suggestion.breakdown.skillMatch}/25</span>
                   </div>
-                  <div className="w-full bg-slate-50 h-1.5 rounded-full overflow-hidden">
+                  <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
                     <div
                       className="bg-primary h-full rounded-full transition-all duration-500"
                       style={{ width: `${(suggestion.breakdown.skillMatch / 25) * 100}%` }}
                     />
                   </div>
 
-                  <div className="flex items-center justify-between text-[9px] font-bold text-slate-600 uppercase">
+                  <div className="flex items-center justify-between text-[9px] font-bold text-slate-700 uppercase">
                     <span>Độ trống ca (Cân bằng tải)</span>
-                    <span className="font-mono text-slate-600">{suggestion.breakdown.workloadBalance}/20</span>
+                    <span className="font-mono text-slate-800">{suggestion.breakdown.workloadBalance}/20</span>
                   </div>
-                  <div className="w-full bg-slate-50 h-1.5 rounded-full overflow-hidden">
+                  <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
                     <div
                       className="bg-emerald-500 h-full rounded-full transition-all duration-500"
                       style={{ width: `${(suggestion.breakdown.workloadBalance / 20) * 100}%` }}
                     />
                   </div>
 
-                  <div className="flex items-center justify-between text-[9px] font-bold text-slate-600 uppercase">
+                  <div className="flex items-center justify-between text-[9px] font-bold text-slate-700 uppercase">
                     <span>Khách quen & Yêu thích</span>
-                    <span className="font-mono text-slate-600">{suggestion.breakdown.customerPreference}/10</span>
+                    <span className="font-mono text-slate-800">{suggestion.breakdown.customerPreference}/10</span>
                   </div>
-                  <div className="w-full bg-slate-50 h-1.5 rounded-full overflow-hidden">
+                  <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
                     <div
                       className="bg-sky-500 h-full rounded-full transition-all duration-500"
                       style={{ width: `${(suggestion.breakdown.customerPreference / 10) * 100}%` }}
