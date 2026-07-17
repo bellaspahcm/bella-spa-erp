@@ -644,7 +644,7 @@ export function HqSubscriptionQuotaConsole({
               options={
                 hasPlans
                   ? overview.plans.map((plan) => ({ value: plan.plan_code, label: plan.display_name }))
-                  : [{ value: '', label: 'Chưa có gói' }]
+                  : [{ value: '__empty__', label: 'Chưa có gói' }]
               }
               buttonClassName={selectButtonClassName}
             />
@@ -727,7 +727,7 @@ export function HqSubscriptionQuotaConsole({
                 options={
                   hasPlans
                     ? overview.plans.map((plan) => ({ value: plan.plan_code, label: plan.display_name }))
-                    : [{ value: '', label: 'Chưa có gói' }]
+                    : [{ value: '__empty__', label: 'Chưa có gói' }]
                 }
                 buttonClassName={selectButtonClassName}
               />
@@ -829,7 +829,7 @@ export function HqSubscriptionQuotaConsole({
               options={
                 hasActiveTenants
                   ? activeTenants.map((tenant) => ({ value: tenant.id, label: tenant.name }))
-                  : [{ value: '', label: 'Chưa có chi nhánh' }]
+                  : [{ value: '__empty__', label: 'Chưa có chi nhánh' }]
               }
               buttonClassName={selectButtonClassName}
             />
@@ -845,7 +845,7 @@ export function HqSubscriptionQuotaConsole({
                 options={
                   hasPlans
                     ? overview.plans.map((plan) => ({ value: plan.plan_code, label: plan.display_name }))
-                    : [{ value: '', label: 'Chưa có gói' }]
+                    : [{ value: '__empty__', label: 'Chưa có gói' }]
                 }
                 buttonClassName={selectButtonClassName}
               />
