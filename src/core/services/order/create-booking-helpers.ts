@@ -376,6 +376,7 @@ export async function buildBookingPayload(params: {
     assigned_ktv_id: validatedData.assigned_ktv_id || null,
     preferred_time: validatedData.preferred_time || null,
     tenant_id: tenantId,
+    metadata: (validatedData.metadata as any) || null,
   };
 
   return payload;

@@ -124,6 +124,7 @@ export function useCustomerDetailController() {
     deposit_amount: 0,
     discount_percent: 0,
     total_sessions: 0,
+    gift_sessions: 0,
     completed_sessions: 0,
     preferred_time: '08:00',
     start_date: '',
@@ -415,16 +416,24 @@ export function useCustomerDetailController() {
 
     setIsSavingBooking(true);
     try {
+      const baseSessions = parseIntegerInput(editBookingData.total_sessions, { min: 0, max: 100 });
+      const giftSessions = parseIntegerInput(editBookingData.gift_sessions, { min: 0, max: 100 });
+      const totalSessions = baseSessions + giftSessions;
+
       const result = await updateBooking(activeBooking.id, {
         package_name: editBookingData.package_name || null,
         full_price: parseMoneyInput(editBookingData.full_price),
         deposit_amount: parseMoneyInput(editBookingData.deposit_amount),
         discount_percent: normalizeDiscountPercent(editBookingData.discount_percent),
-        total_sessions: parseIntegerInput(editBookingData.total_sessions, { min: 0, max: 100 }),
+        total_sessions: totalSessions,
         completed_sessions: parseIntegerInput(editBookingData.completed_sessions, { min: 0, max: 100 }),
         preferred_time: editBookingData.preferred_time || '08:00',
         start_date: editBookingData.start_date || null,
         status: editBookingData.status,
+        metadata: {
+          ...((activeBooking.metadata as any) || {}),
+          gift_sessions: giftSessions,
+        },
       });
 
       if (result.error) throw new Error(result.error);
@@ -552,7 +561,14 @@ export function useCustomerDetailController() {
           sessions: activeBooking.total_sessions || 15,
           unitPrice: Math.round((activeBooking.full_price || 0) / Math.max(1, activeBooking.total_sessions || 15)),
           total: activeBooking.full_price || 0,
-          discountNote: activeBooking.discount_percent ? `Giảm ${activeBooking.discount_percent}%` : 'Không có',
+          discountNote: (() => {
+            const disc = activeBooking.discount_percent || 0;
+            const gift = (activeBooking.metadata as any)?.gift_sessions || 0;
+            if (disc > 0 && gift > 0) return `Giảm ${disc}% + Tặng ${gift} buổi`;
+            if (disc > 0) return `Giảm ${disc}%`;
+            if (gift > 0) return `Tặng ${gift} buổi`;
+            return 'Không có';
+          })(),
           prepaid: paymentState.totalPaid,
           finalPayment: paymentState.remainingDebt,
         },
@@ -640,12 +656,15 @@ export function useCustomerDetailController() {
   const handleOpenEditBooking = useCallback(() => {
     if (!activeBooking) return;
 
+    const giftSessions = (activeBooking.metadata as any)?.gift_sessions || 0;
+
     setEditBookingData({
       package_name: activeBooking.package_name || activeBooking.packages?.name || '',
       full_price: activeBooking.full_price || 0,
       deposit_amount: activeBooking.deposit_amount || 0,
       discount_percent: activeBooking.discount_percent || 0,
-      total_sessions: activeBooking.total_sessions || 0,
+      total_sessions: (activeBooking.total_sessions || 0) - giftSessions,
+      gift_sessions: giftSessions,
       completed_sessions: activeBooking.completed_sessions || 0,
       preferred_time: activeBooking.preferred_time || '08:00',
       start_date: activeBooking.start_date || '',

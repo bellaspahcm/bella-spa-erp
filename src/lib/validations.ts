@@ -38,6 +38,7 @@ export const bookingSchema = z.object({
   discount_percent: z.coerce.number().min(0).max(100).optional(),
   preferred_time: z.string().optional(),
   serviceItems: z.array(serviceItemSchema).optional(),
+  metadata: z.any().optional(),
 });
 
 export const productSaleSchema = z.object({

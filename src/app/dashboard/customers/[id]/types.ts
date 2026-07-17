@@ -63,6 +63,7 @@ export type EditBookingData = {
   deposit_amount: number;
   discount_percent: number;
   total_sessions: number;
+  gift_sessions: number;
   completed_sessions: number;
   preferred_time: string;
   start_date: string;

@@ -8,7 +8,7 @@ import {
 import type { TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 import { geocodeAddress } from '@/services/customer-actions';
 import { motion } from 'framer-motion';
-import { AlertCircle, Camera, CheckCircle2, CreditCard as CreditCardIcon, DollarSign as DollarIcon, FileText, Image as ImageIcon, Loader2, PlusCircle, Sparkles, User } from 'lucide-react';
+import { AlertCircle, Camera, CheckCircle2, CreditCard as CreditCardIcon, DollarSign as DollarIcon, FileText, Gift, Image as ImageIcon, Loader2, PlusCircle, Sparkles, User } from 'lucide-react';
 import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
@@ -657,6 +657,18 @@ export function EditBookingModal({
             </div>
 
             <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Tặng thêm buổi</label>
+              <input
+                type="number"
+                min="0"
+                value={data.gift_sessions.toString()}
+                onChange={(e) => setData({ ...data, gift_sessions: parseIntegerInput(e.target.value, { min: 0, max: 100 }) })}
+                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-slate-700"
+                placeholder="0"
+              />
+            </div>
+
+            <div className="space-y-2">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Tổng số buổi</label>
               <input
                 type="number"
@@ -708,6 +720,14 @@ export function EditBookingModal({
                 <option value="cancelled">Đã hủy</option>
                 <option value="deposit_pending">Chờ đặt cọc / Phiếu cọc</option>
               </select>
+            </div>
+
+            {/* Real-time Total Sessions Display */}
+            <div className="space-y-2 col-span-2 bg-pink-50/50 p-4 border border-pink-100/50 rounded-2xl flex justify-between items-center text-xs">
+              <span className="font-bold text-slate-500 uppercase tracking-wider">Tổng số buổi thực tế (gồm tặng thêm):</span>
+              <span className="text-sm font-black text-primary">
+                {(data.total_sessions || 0) + (data.gift_sessions || 0)} buổi
+              </span>
             </div>
           </div>
         </div>

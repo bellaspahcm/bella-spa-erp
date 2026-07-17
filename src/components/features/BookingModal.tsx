@@ -18,19 +18,20 @@ import { getUsers } from '@/services/user-actions';
 import type { Database } from '@/types/database.types';
 import { AnimatePresence,motion } from 'framer-motion';
 import {
-ArrowLeft,
-Calendar,
-CheckCircle2,
-ChevronRight,
-CreditCard,
-Loader2,
-Package,
-Phone,
-Plus,
-Search,
-Tag,
-User,
-X
+  ArrowLeft,
+  Calendar,
+  CheckCircle2,
+  ChevronRight,
+  CreditCard,
+  Gift,
+  Loader2,
+  Package,
+  Phone,
+  Plus,
+  Search,
+  Tag,
+  User,
+  X
 } from 'lucide-react';
 import { useEffect,useState } from 'react';
 import { toast } from 'sonner';
@@ -99,6 +100,7 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
   const [packages, setPackages] = useState<PackageRow[]>([]);
   const [draftBooking, setDraftBooking] = useState<DraftBooking>(null);
   const [discountPercent, setDiscountPercent] = useState<string>('');
+  const [giftSessions, setGiftSessions] = useState<string>('');
 
   const [formData, setFormData] = useState({
     package_id: '',
@@ -293,6 +295,7 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
       full_price: pkgPrice,
       total_sessions: parseIntegerInput(pkg.total_sessions, { min: 1, max: 100, fallback: 10 })
     });
+    setGiftSessions('');
   };
 
   const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -327,10 +330,18 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
 
     setIsSubmitting(true);
     try {
+      const baseSessions = parseIntegerInput(formData.total_sessions, { min: 1, max: 100, fallback: 15 });
+      const extraSessions = parseIntegerInput(giftSessions, { min: 0, max: 100, fallback: 0 });
+      const totalSessions = baseSessions + extraSessions;
+
       const payload: BookingSubmitPayload = {
         ...formData,
+        total_sessions: totalSessions,
         discount_percent: normalizeDiscountPercent(discountPercent),
         customer_id: mode === 'new' ? 'new' : selectedCustomer?.id || '',
+        metadata: {
+          gift_sessions: extraSessions,
+        },
       };
 
       if (mode === 'new') {
@@ -706,41 +717,67 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
                     </div>
                   </div>
 
-                <div className="space-y-2">
-                  <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                    <CreditCard className="w-4 h-4" /> Tiền đặt cọc bổ sung (VNĐ) {existingConfirmedPaidAmount > 0 && <span className="text-primary normal-case">(Đã cọc trước: {formatNumberWithSeparator(existingConfirmedPaidAmount)}đ)</span>}
-                  </label>
-                  <div className="relative">
-                    <input 
-                      type="text" 
-                      placeholder="0"
-                      value={formatMoneyInput(formData.deposit_amount)}
-                      onChange={(e) => {
-                        setFormData({...formData, deposit_amount: parseMoneyInput(e.target.value)});
-                      }}
-                      className="w-full pl-5 pr-12 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold"
-                    />
-                    <span className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 font-bold">đ</span>
-                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                      <Gift className="w-4 h-4" /> Tặng thêm buổi
+                    </label>
+                    <div className="relative">
+                      <input 
+                        type="number" 
+                        min="0"
+                        placeholder="0"
+                        value={giftSessions}
+                        onChange={(e) => setGiftSessions(e.target.value)}
+                        className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-sm"
+                      />
+                    </div>
                   </div>
                 </div>
 
-                <div className="space-y-2 mb-6">
-                  <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                    <Tag className="w-4 h-4" /> Ưu đãi giảm giá (%)
-                  </label>
-                  <div className="relative">
-                    <input 
-                      type="number" 
-                      placeholder="0"
-                      min="0"
-                      max="100"
-                      value={discountPercent}
-                      onChange={handleDiscountChange}
-                      className="w-full pl-5 pr-12 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold"
-                    />
-                    <span className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 font-bold">%</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                      <CreditCard className="w-4 h-4" /> Tiền đặt cọc bổ sung (VNĐ) {existingConfirmedPaidAmount > 0 && <span className="text-primary normal-case">(Đã cọc trước: {formatNumberWithSeparator(existingConfirmedPaidAmount)}đ)</span>}
+                    </label>
+                    <div className="relative">
+                      <input 
+                        type="text" 
+                        placeholder="0"
+                        value={formatMoneyInput(formData.deposit_amount)}
+                        onChange={(e) => {
+                          setFormData({...formData, deposit_amount: parseMoneyInput(e.target.value)});
+                        }}
+                        className="w-full pl-5 pr-12 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold"
+                      />
+                      <span className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 font-bold">đ</span>
+                    </div>
                   </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                      <Tag className="w-4 h-4" /> Ưu đãi giảm giá (%)
+                    </label>
+                    <div className="relative">
+                      <input 
+                        type="number" 
+                        placeholder="0"
+                        min="0"
+                        max="100"
+                        value={discountPercent}
+                        onChange={handleDiscountChange}
+                        className="w-full pl-5 pr-12 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold"
+                      />
+                      <span className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 font-bold">%</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Real-time Total Sessions Display */}
+                <div className="bg-pink-50/50 p-4 border border-pink-100/50 rounded-2xl flex justify-between items-center text-xs">
+                  <span className="font-bold text-slate-500 uppercase tracking-wider">Tổng số buổi thực tế (gồm tặng thêm):</span>
+                  <span className="text-sm font-black text-primary">
+                    {(formData.total_sessions || 0) + parseIntegerInput(giftSessions, { min: 0, max: 100, fallback: 0 })} buổi
+                  </span>
                 </div>
 
                 {/* Pricing Summary */}
