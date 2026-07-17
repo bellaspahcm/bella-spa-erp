@@ -1024,6 +1024,7 @@ export default function HqDashboardClient({
       {/* Configuration Modal */}
       <AnimatePresence>
         <HqRoyaltyConfigModal
+          key={editingTenant ? `royalty-config-${editingTenant.id}` : 'royalty-config-closed'}
           tenant={editingTenant}
           royaltyType={royaltyType}
           royaltyRate={royaltyRate}
@@ -1045,6 +1046,7 @@ export default function HqDashboardClient({
         />
 
         <HqClearingRateModal
+          key={editingClearingRateTenant ? `clearing-rate-${editingClearingRateTenant.id}` : 'clearing-rate-closed'}
           tenant={editingClearingRateTenant}
           rate={newClearingRate}
           submitting={submittingClearingRate}
@@ -1054,6 +1056,7 @@ export default function HqDashboardClient({
         />
 
         <HqTransferShipModal
+          key={showShipModal && selectedTransfer ? `ship-modal-${selectedTransfer.id}` : 'ship-modal-closed'}
           transfer={showShipModal ? selectedTransfer : null}
           shippingCarrier={shippingCarrier}
           trackingNumber={trackingNumber}
@@ -1069,6 +1072,7 @@ export default function HqDashboardClient({
         />
 
         <HqTransferCancelModal
+          key={showCancelModal && selectedTransfer ? `cancel-modal-${selectedTransfer.id}` : 'cancel-modal-closed'}
           transfer={showCancelModal ? selectedTransfer : null}
           refusingReason={refusingReason}
           submitting={submittingTransferAction}
@@ -1082,6 +1086,7 @@ export default function HqDashboardClient({
         />
 
         <HqAuditDetailModal
+          key={showAuditDetailModal && selectedAuditLog ? `audit-detail-${selectedAuditLog.id}` : 'audit-detail-closed'}
           log={showAuditDetailModal ? selectedAuditLog : null}
           showRawJson={showRawJson}
           onClose={() => {
@@ -1092,6 +1097,7 @@ export default function HqDashboardClient({
         />
 
         <HqServiceTemplateModal
+          key={showTemplateModal ? `template-modal-${editingTemplate?.id ?? 'new'}` : 'template-modal-closed'}
           open={showTemplateModal}
           editingTemplate={editingTemplate}
           templateName={templateName}
@@ -1125,6 +1131,7 @@ export default function HqDashboardClient({
         />
 
         <HqServiceDistributionModal
+          key={showDistributionModal && selectedTemplateForDist ? `dist-modal-${selectedTemplateForDist.id}` : 'dist-modal-closed'}
           open={showDistributionModal}
           template={selectedTemplateForDist}
           tenants={matrixTenants}
