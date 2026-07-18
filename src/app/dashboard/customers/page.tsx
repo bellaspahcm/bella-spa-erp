@@ -544,7 +544,7 @@ export default function CustomersPage() {
       <div className="grid grid-cols-1 gap-4">
         {isLoading && customers.length === 0 ? (
           <div className="bg-white rounded-3xl p-10 text-center border border-slate-100 shadow-sm sm:p-20">
-            <div className="w-12 h-12 border-4 border-rose-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <div className="w-12 h-12 border-4 rounded-full animate-spin mx-auto mb-4" style={{ borderColor: 'var(--primary)', borderTopColor: 'transparent' }}></div>
             <p className="text-slate-500 font-bold uppercase text-[10px] tracking-widest">Đang tải dữ liệu...</p>
           </div>
         ) : filteredCustomers.length === 0 ? (

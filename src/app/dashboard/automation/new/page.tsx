@@ -418,8 +418,8 @@ export default function NewAutomationPage() {
     <Suspense fallback={
       <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-orange-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-rose-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Đang tải...</p>
+          <div className="w-12 h-12 border-4 rounded-full animate-spin mx-auto mb-4" style={{ borderColor: 'var(--primary)', borderTopColor: 'transparent' }} />
+          <p className="text-gray-600 font-bold uppercase text-[10px] tracking-widest">Đang tải...</p>
         </div>
       </div>
     }>

@@ -91,7 +91,7 @@ export default function CustomerDetailPage() {
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center bg-background/30">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-500" />
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderBottomColor: 'var(--primary)' }} />
       </div>
     );
   }
@@ -100,7 +100,7 @@ export default function CustomerDetailPage() {
     return (
       <div className="flex-1 flex flex-col items-center justify-center bg-background/30">
         <h2 className="text-xl font-bold text-slate-800 mb-4">Không tìm thấy khách hàng</h2>
-        <button onClick={handleBack} className="text-rose-500 font-bold hover:underline">
+        <button onClick={handleBack} className="text-primary font-bold hover:underline">
           Quay lại danh sách
         </button>
       </div>
