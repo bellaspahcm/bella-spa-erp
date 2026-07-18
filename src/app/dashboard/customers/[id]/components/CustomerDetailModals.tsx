@@ -13,6 +13,7 @@ import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { useScrollLock } from '@/hooks/useScrollLock';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import type { EditBookingData, EditCustomerData, ModalStateSetter, PaymentData } from '../types';
 
 export function EditCustomerModal({
@@ -710,16 +711,18 @@ export function EditBookingModal({
 
             <div className="space-y-2">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Trạng thái gói</label>
-              <select
+              <PremiumSelect
                 value={data.status}
-                onChange={(e) => setData({ ...data, status: e.target.value })}
-                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-slate-700 appearance-none"
-              >
-                <option value="in_progress">Đang thực hiện</option>
-                <option value="completed">Đã hoàn thành</option>
-                <option value="cancelled">Đã hủy</option>
-                <option value="deposit_pending">Chờ đặt cọc / Phiếu cọc</option>
-              </select>
+                onChange={(value) => setData({ ...data, status: value })}
+                options={[
+                  { value: 'in_progress', label: 'Đang thực hiện' },
+                  { value: 'completed', label: 'Đã hoàn thành' },
+                  { value: 'cancelled', label: 'Đã hủy' },
+                  { value: 'deposit_pending', label: 'Chờ đặt cọc / Phiếu cọc' },
+                ]}
+                placeholder="Chọn trạng thái..."
+                buttonClassName="w-full px-6 py-4 bg-slate-50 hover:bg-slate-100/50 border border-slate-100 rounded-2xl outline-none font-bold text-slate-700 flex items-center justify-between transition-all duration-200 active:scale-[0.98]"
+              />
             </div>
 
             {/* Real-time Total Sessions Display */}
