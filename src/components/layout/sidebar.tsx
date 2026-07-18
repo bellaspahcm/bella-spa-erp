@@ -283,10 +283,10 @@ const menuItems: SidebarMenuItem[] = [
   { icon: Sparkles,        label: 'AI Copilot',         href: '/dashboard/ai-copilot' },
 
   { type: 'header', label: 'Vận hành hàng ngày' },
-  { icon: Users,           label: 'Khách hàng & CRM',   href: '/dashboard/customers' },
   { icon: Calendar,        label: 'Lịch hẹn & POS',     href: '/dashboard/bookings' },
   { icon: Flower2,         label: 'Thẻ liệu trình',     href: '/dashboard/sessions' },
   { icon: ClipboardList,   label: 'Danh sách chờ',      href: '/dashboard/waitlist' },
+  { icon: Users,           label: 'Khách hàng & CRM',   href: '/dashboard/customers' },
   { icon: Package,         label: 'Kho & Bán hàng',     href: '/dashboard/inventory' },
   { icon: ShoppingCart,    label: 'Bán hàng sản phẩm',  href: '/dashboard/product-sales' },
 
@@ -564,7 +564,7 @@ export function Sidebar() {
         - Mobile: Slide-out fixed drawer based on `isOpen` state
       */}
       <aside className={cn(
-        "w-80 bg-[#FAFAFA] border-r border-slate-200/50 dark:bg-[#1C1B19] dark:border-[#3E3A35] flex flex-col h-screen md:h-screen fixed inset-y-0 left-0 z-50 transform lg:translate-x-0 lg:sticky lg:top-0 transition-transform duration-300 ease-in-out overflow-hidden shadow-[10px_0_40px_rgba(0,0,0,0.02)] dark:shadow-[10px_0_40px_rgba(0,0,0,0.5)] beauty-erp-sidebar",
+        "w-80 bg-[#FAFAFA] border-r border-slate-200/50 dark:bg-[#1C1B19] dark:border-[#3E3A35] flex flex-col h-screen md:h-[111.2vh] fixed inset-y-0 left-0 z-50 transform lg:translate-x-0 lg:sticky lg:top-0 transition-transform duration-300 ease-in-out overflow-hidden shadow-[10px_0_40px_rgba(0,0,0,0.02)] dark:shadow-[10px_0_40px_rgba(0,0,0,0.5)] beauty-erp-sidebar",
         isBeautySpaShell && "beauty-erp-sidebar",
         isIndustrialCleaningShell && "beauty-erp-sidebar", // Apply same class for theme CSS
         isOpen ? "translate-x-0" : "-translate-x-full"
