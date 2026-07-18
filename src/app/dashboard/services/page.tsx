@@ -734,7 +734,7 @@ export default function ServicesPage() {
 
                       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div className="space-y-2">
-                          <label className="ml-1 text-xs font-black uppercase tracking-widest text-slate-400">
+                          <label className="ml-1 text-xs font-black uppercase tracking-widest text-slate-600">
                             Module
                           </label>
                           {enabledModuleOptions.length > 1 ? (
@@ -752,7 +752,7 @@ export default function ServicesPage() {
                         </div>
 
                         <div className="space-y-2">
-                          <label className="ml-1 text-xs font-black uppercase tracking-widest text-slate-400">
+                          <label className="ml-1 text-xs font-black uppercase tracking-widest text-slate-600">
                             Loại dịch vụ
                           </label>
                           <PremiumSelect
@@ -764,7 +764,7 @@ export default function ServicesPage() {
                         </div>
 
                         <div className="space-y-2">
-                          <label className="ml-1 text-xs font-black uppercase tracking-widest text-slate-400">
+                          <label className="ml-1 text-xs font-black uppercase tracking-widest text-slate-600">
                             Nhóm dịch vụ
                           </label>
                           <input
@@ -776,7 +776,7 @@ export default function ServicesPage() {
                         </div>
 
                         <div className="space-y-2">
-                          <label className="ml-1 text-xs font-black uppercase tracking-widest text-slate-400">
+                          <label className="ml-1 text-xs font-black uppercase tracking-widest text-slate-600">
                             Thời lượng chuẩn (phút)
                           </label>
                           <input
@@ -795,7 +795,7 @@ export default function ServicesPage() {
                           <div className="flex items-center justify-between gap-4">
                             <div>
                               <p className="text-sm font-black text-slate-800">Cần giường/phòng/máy</p>
-                              <p className="mt-1 text-xs font-bold text-slate-400">Dùng khi lên lịch Beauty Spa sau này.</p>
+                              <p className="mt-1 text-xs font-bold text-slate-500">Dùng khi lên lịch Beauty Spa sau này.</p>
                             </div>
                             <button
                               type="button"
@@ -830,7 +830,7 @@ export default function ServicesPage() {
                           <div className="flex items-center justify-between gap-4">
                             <div>
                               <p className="text-sm font-black text-slate-800">Cần ảnh trước/sau</p>
-                              <p className="mt-1 text-xs font-bold text-slate-400">Đánh dấu dịch vụ cần theo dõi kết quả.</p>
+                              <p className="mt-1 text-xs font-bold text-slate-500">Đánh dấu dịch vụ cần theo dõi kết quả.</p>
                             </div>
                             <button
                               type="button"
@@ -853,7 +853,7 @@ export default function ServicesPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <label className="ml-1 text-xs font-black uppercase tracking-widest text-slate-400">
+                        <label className="ml-1 text-xs font-black uppercase tracking-widest text-slate-600">
                           Mẫu ghi chú chăm sóc
                         </label>
                         <textarea
@@ -869,7 +869,7 @@ export default function ServicesPage() {
                   <div className="flex flex-col gap-3 rounded-2xl bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0">
                       <span className="text-sm font-black text-slate-700 block">Kích hoạt {vocab.package.singular.toLowerCase()}</span>
-                      <span className="text-xs text-slate-400 font-bold">
+                      <span className="text-xs text-slate-500 font-bold">
                         {vocab.worker.short === 'NVS' 
                           ? 'Kích hoạt để hiển thị gói dịch vụ này trong danh sách'
                           : 'Kích hoạt để gói hiển thị trực tiếp trên trang chủ Landing Page'
