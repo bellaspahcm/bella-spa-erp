@@ -478,6 +478,14 @@ export async function createCustomer(customerData: CustomerCreateInput) {
     tenant_id: currentUser.tenant_id
   };
 
+  // Normalize date fields: convert empty string "" to null
+  if (payload.dob_expected === '') {
+    payload.dob_expected = null;
+  }
+  if (payload.dob_baby === '') {
+    payload.dob_baby = null;
+  }
+
   const { checkSubscriptionLimit } = await import('@/lib/subscription');
   const customerLimit = await checkSubscriptionLimit(currentUser.tenant_id, 'customer');
   if (customerLimit.isBlocked) {
@@ -543,6 +551,14 @@ export async function updateCustomer(id: string, customerData: CustomerUpdate) {
   const { tenant_id: _ignoredTenantId, ...scopedCustomerData } = customerData;
   void _ignoredTenantId;
   const payload: CustomerUpdate = { ...scopedCustomerData };
+  
+  // Normalize date fields: convert empty string "" to null
+  if (payload.dob_expected === '') {
+    payload.dob_expected = null;
+  }
+  if (payload.dob_baby === '') {
+    payload.dob_baby = null;
+  }
   
   // Fetch existing customer before update for audit trail
   let oldCustomer = null;

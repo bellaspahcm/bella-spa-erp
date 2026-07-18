@@ -309,4 +309,39 @@ describe('customer actions fail-fast behavior', () => {
       { column: 'tenant_id', value: 'tenant-1' },
     ]));
   });
+
+  it('normalizes empty string date fields to null when creating a customer', async () => {
+    const createQuery = new MockQueryBuilder([{ id: 'cust-1', tenant_id: 'tenant-1' }]);
+    mockFrom.mockReturnValue(createQuery);
+
+    await createCustomer({
+      name: 'Customer A',
+      phone: '0900000000',
+      dob_expected: '',
+      dob_baby: '',
+    });
+
+    expect(createQuery.insertSpy).toHaveBeenCalledWith([expect.objectContaining({
+      dob_expected: null,
+      dob_baby: null,
+    })]);
+  });
+
+  it('normalizes empty string date fields to null when updating a customer', async () => {
+    const oldCustomerQuery = new MockQueryBuilder({ id: 'cust-1', tenant_id: 'tenant-1', dob_expected: '2026-07-18' });
+    const updateQuery = new MockQueryBuilder([{ id: 'cust-1', tenant_id: 'tenant-1' }]);
+    mockFrom
+      .mockReturnValueOnce(oldCustomerQuery)
+      .mockReturnValueOnce(updateQuery);
+
+    await updateCustomer('cust-1', {
+      dob_expected: '',
+      dob_baby: '',
+    });
+
+    expect(updateQuery.updateSpy).toHaveBeenCalledWith(expect.objectContaining({
+      dob_expected: null,
+      dob_baby: null,
+    }));
+  });
 });

@@ -12,7 +12,7 @@ type CustomerRow = Database['public']['Tables']['customers']['Row'];
 type SessionLogRow = Database['public']['Tables']['session_logs']['Row'];
 type RevenueRow = Database['public']['Tables']['revenue']['Row'];
 
-type PackageRef = Pick<PackageRow, 'name'>;
+type PackageRef = Pick<PackageRow, 'name' | 'price' | 'total_sessions'>;
 type CustomerRef = Pick<CustomerRow, 'name_mother' | 'phone'> | null;
 type BookingListItem = BookingRow & {
   customers?: CustomerRef;
@@ -78,7 +78,7 @@ export async function getBookingsByCustomerId(customerId: string) {
     .select(`
       *, 
       assigned_ktv:users!bookings_assigned_ktv_id_fkey(full_name, phone), 
-      packages!bookings_package_id_fkey(name),
+      packages!bookings_package_id_fkey(name, price, total_sessions),
       session_logs(
         *,
         completed_by_ktv:users!session_logs_completed_by_ktv_id_fkey(full_name, phone)
@@ -99,12 +99,29 @@ export async function getBookingsByCustomerId(customerId: string) {
   if (!data || data.length === 0) return [];
 
   const bookings = (data || []) as BookingCustomerDetailItem[];
-  return bookings.map((b) => ({
-    ...b,
-    package_name: resolvePackageName(b),
-    start_date: b.start_date,
-    expected_birth_date: b.expected_birth_date
-  }));
+  return bookings.map((b) => {
+    // For retail (single-session) packages, recompute full_price as:
+    //   paid_sessions × unit_price
+    // because old bookings may have stored only the unit price (150k)
+    // instead of the total (10 × 150k = 1,500,000).
+    const pkg = b.packages as (PackageRef | null);
+    const giftSessions = Number((b.metadata as Record<string, unknown>)?.gift_sessions || 0);
+    const paidSessions = (b.total_sessions || 0) - giftSessions;
+    const isRetailPackage = pkg && Number(pkg.total_sessions || 1) === 1;
+    const unitPrice = pkg?.price || 0;
+    const computedFullPrice = isRetailPackage && paidSessions > 1
+      ? unitPrice * paidSessions
+      : (b.full_price || 0);
+
+    return {
+      ...b,
+      package_name: resolvePackageName(b),
+      start_date: b.start_date,
+      expected_birth_date: b.expected_birth_date,
+      // Override full_price with computed value for retail packages
+      full_price: computedFullPrice,
+    };
+  });
 }
 
 export async function getDraftBooking(customerId: string) {

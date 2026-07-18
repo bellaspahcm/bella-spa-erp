@@ -279,37 +279,58 @@ export class SpaModuleAdapter implements ModuleAdapter {
       // Get booking date from scheduledStartTime (YYYY-MM-DD format)
       const scheduledDate = order.scheduledStartTime; // Already in YYYY-MM-DD
       
-      // Fetch existing bookings for this KTV on the same date
-      const { data: existingBookings } = await supabase
-        .from('bookings')
-        .select('id, start_date, preferred_time, total_sessions, status, packages(duration_minutes)')
-        .eq('assigned_ktv_id', ktvId)
+      // Fetch existing session logs for this KTV on the same date
+      const { data: existingSessions, error: sessionFetchError } = await supabase
+        .from('session_logs')
+        .select(`
+          id,
+          status,
+          assigned_time,
+          completed_by_ktv_id,
+          bookings!inner (
+            id,
+            assigned_ktv_id,
+            status,
+            packages (
+              duration_minutes:default_duration_minutes
+            )
+          )
+        `)
+        .eq('assigned_date', scheduledDate)
         .eq('tenant_id', context.tenantId)
-        .gte('start_date', scheduledDate)
-        .lte('start_date', scheduledDate)
-        .in('status', ['booked', 'deposit_pending', 'active', 'in_progress']);
-      
-      const existingBookingsFormatted = (existingBookings || []).map((booking: {
-        id: string;
-        preferred_time: string | null;
-        status: string | null;
-        packages: unknown;
-      }) => {
-        const durationMinutes = (booking.packages as Record<string, unknown> | null)?.duration_minutes as number || 60;
+        .in('status', ['scheduled', 'in_progress', 'completed']);
+
+      if (sessionFetchError) {
+        console.error('[SpaAdapter] Failed to fetch session logs for capacity check:', sessionFetchError);
+        throw new Error(sessionFetchError.message);
+      }
+
+      const filteredSessions = (existingSessions || []).filter(session => {
+        const booking = Array.isArray(session.bookings) ? session.bookings[0] : session.bookings;
+        if (!booking) return false;
+        if (booking.status === 'cancelled') return false;
+
+        // Exclude the current booking's session logs to prevent self-conflict
+        if (order.id && booking.id === order.id) return false;
+
+        const activeKtvId = session.completed_by_ktv_id || booking.assigned_ktv_id;
+        return activeKtvId === ktvId;
+      });
+
+      const existingBookingsFormatted = filteredSessions.map(session => {
+        const booking = Array.isArray(session.bookings) ? session.bookings[0] : session.bookings;
+        const durationMinutes = (booking?.packages as unknown as Record<string, unknown>)?.duration_minutes as number || 60;
         const statusMap: Record<string, 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled'> = {
-          booked: 'confirmed',
-          deposit_pending: 'pending',
-          active: 'confirmed',
+          scheduled: 'confirmed',
           in_progress: 'in_progress',
           completed: 'completed',
-          cancelled: 'cancelled',
         };
-        const status = statusMap[booking.status || ''] || 'pending';
+        const status = statusMap[session.status || ''] || 'pending';
         return {
-          id: booking.id,
-          startTime: booking.preferred_time || '08:00',
+          id: booking?.id || session.id,
+          startTime: session.assigned_time || '08:00',
           endTime: this.calculateEndTime(
-            booking.preferred_time || '08:00',
+            session.assigned_time || '08:00',
             durationMinutes
           ),
           durationMinutes,
@@ -434,6 +455,16 @@ export class SpaModuleAdapter implements ModuleAdapter {
     console.log(
       `[SpaAdapter] Calculating pricing for ${item.name}, base price: ${price}`
     );
+
+    // Respect single-session retail package pricing: multiply by booking total sessions
+    const baseSessions = Number(item.metadata.total_sessions || 1);
+    const bookingSessions = Number(item.metadata.booking_total_sessions || baseSessions);
+    if (baseSessions === 1) {
+      price = price * bookingSessions;
+      console.log(
+        `[SpaAdapter] Single session package. Multiplied base price by booking sessions (${bookingSessions}): ${price}`
+      );
+    }
 
     // Apply package category discount
     const category = item.metadata.category as string;

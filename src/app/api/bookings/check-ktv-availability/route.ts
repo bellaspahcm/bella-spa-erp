@@ -130,39 +130,62 @@ export async function GET(request: NextRequest) {
     const availabilityChecks = await Promise.all(
       allKtvs.map(async (ktv) => {
         try {
-          // Fetch existing bookings for this KTV on same date
-          let query = supabase
-            .from('bookings')
-            .select('id, start_date, preferred_time, total_sessions, status, packages(duration_minutes)')
-            .eq('assigned_ktv_id', ktv.id)
+          // Fetch existing session logs for this date
+          const { data: existingSessions, error: sessionFetchError } = await supabase
+            .from('session_logs')
+            .select(`
+              id,
+              status,
+              assigned_time,
+              completed_by_ktv_id,
+              bookings!inner (
+                id,
+                assigned_ktv_id,
+                status,
+                packages (
+                  duration_minutes:default_duration_minutes
+                )
+              )
+            `)
+            .eq('assigned_date', date)
             .eq('tenant_id', tenantId)
-            .gte('start_date', date)
-            .lte('start_date', date)
-            .in('status', ['booked', 'deposit_pending', 'active', 'in_progress']);
+            .in('status', ['scheduled', 'in_progress', 'completed']);
 
-          // Exclude current booking if editing
-          if (excludeBookingId) {
-            query = query.neq('id', excludeBookingId);
+          if (sessionFetchError) {
+            console.error('[CheckAvailability] Failed to fetch session logs:', sessionFetchError);
+            throw new Error(sessionFetchError.message);
           }
 
-          const { data: existingBookings } = await query;
+          const filteredSessions = (existingSessions || []).filter(session => {
+            const booking = Array.isArray(session.bookings) ? session.bookings[0] : session.bookings;
+            if (!booking) return false;
+            if (booking.status === 'cancelled') return false;
 
-          const existingBookingsFormatted = (existingBookings || []).map((booking: {
-            id: string;
-            preferred_time: string | null;
-            packages?: unknown;
-            status: string | null;
-          }) => {
-            const durationMinutes = (booking.packages as Record<string, unknown> | null)?.duration_minutes as number || 60;
+            // Exclude current booking if editing
+            if (excludeBookingId && booking.id === excludeBookingId) return false;
+
+            const activeKtvId = session.completed_by_ktv_id || booking.assigned_ktv_id;
+            return activeKtvId === ktv.id;
+          });
+
+          const existingBookingsFormatted = filteredSessions.map(session => {
+            const booking = Array.isArray(session.bookings) ? session.bookings[0] : session.bookings;
+            const durationMinutes = (booking?.packages as unknown as Record<string, unknown>)?.duration_minutes as number || 60;
+            const statusMap: Record<string, 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled'> = {
+              scheduled: 'confirmed',
+              in_progress: 'in_progress',
+              completed: 'completed',
+            };
+            const status = statusMap[session.status || ''] || 'pending';
             return {
-              id: booking.id,
-              startTime: booking.preferred_time || '08:00',
+              id: booking?.id || session.id,
+              startTime: session.assigned_time || '08:00',
               endTime: calculateEndTime(
-                booking.preferred_time || '08:00',
+                session.assigned_time || '08:00',
                 durationMinutes
               ),
               durationMinutes,
-              status: (booking.status || 'pending') as 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled',
+              status,
             };
           });
 

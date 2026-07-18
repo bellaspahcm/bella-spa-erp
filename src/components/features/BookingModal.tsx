@@ -287,14 +287,29 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
 
   const handleSelectService = (pkg: PackageRow) => {
     const pkgPrice = Number(pkg.price || pkg.full_price || 0);
+    const pkgSessions = Number(pkg.total_sessions || 1);
 
-    setFormData({
-      ...formData,
-      package_id: pkg.id,
-      package_name: pkg.name,
-      full_price: pkgPrice,
-      total_sessions: parseIntegerInput(pkg.total_sessions, { min: 1, max: 100, fallback: 10 })
-    });
+    if (pkgSessions === 1) {
+      // Single-session (retail) package: keep current total_sessions from form,
+      // and immediately calculate total price = unit_price × sessions
+      const currentSessions = formData.total_sessions || 1;
+      setFormData({
+        ...formData,
+        package_id: pkg.id,
+        package_name: pkg.name,
+        full_price: pkgPrice * currentSessions,
+        total_sessions: currentSessions, // Keep existing sessions count
+      });
+    } else {
+      // Multi-session (combo) package: price is fixed, set sessions from package
+      setFormData({
+        ...formData,
+        package_id: pkg.id,
+        package_name: pkg.name,
+        full_price: pkgPrice,
+        total_sessions: parseIntegerInput(pkg.total_sessions, { min: 1, max: 100, fallback: 10 })
+      });
+    }
     setGiftSessions('');
   };
 
@@ -645,7 +660,12 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
                             <CheckCircle2 className="absolute top-3 right-3 w-5 h-5 text-primary" />
                           )}
                           <h5 className="font-black text-slate-900 group-hover:text-primary transition-colors">{pkg.name}</h5>
-                          <p className="text-xs text-slate-500 font-bold mt-1">{pkg.total_sessions} buổi - {formatNumberWithSeparator(pkg.price || pkg.full_price || 0)}đ</p>
+                          <p className="text-xs text-slate-500 font-bold mt-1">
+                            {Number(pkg.total_sessions || 1) === 1
+                              ? `Gói lẻ - ${formatNumberWithSeparator(pkg.price || pkg.full_price || 0)}đ/buổi`
+                              : `${pkg.total_sessions} buổi - ${formatNumberWithSeparator(pkg.price || pkg.full_price || 0)}đ`
+                            }
+                          </p>
                         </button>
                       ))}
                       {packages.length === 0 && (
@@ -703,7 +723,13 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                      <Package className="w-4 h-4" /> Số buổi liệu trình
+                      <Package className="w-4 h-4" />
+                      {(() => {
+                        const selPkg = packages.find(p => p.id === formData.package_id);
+                        return selPkg && Number(selPkg.total_sessions || 1) === 1
+                          ? `Số buổi mua lẻ (${formatNumberWithSeparator(Number(selPkg.price || selPkg.full_price || 0))}đ/buổi)`
+                          : 'Số buổi liệu trình';
+                      })()}
                     </label>
                     <div className="relative">
                       <input 

@@ -187,7 +187,7 @@ export class BeautySpaModuleAdapter extends SpaModuleAdapter implements ModuleAd
     // Query existing bookings for this bed on the same date
     const { data: existingBookings } = await supabase
       .from('bookings')
-      .select('id, preferred_time, packages(duration_minutes), beds(bed_number, bed_name)')
+      .select('id, preferred_time, packages(duration_minutes:default_duration_minutes), beds(bed_number, bed_name)')
       .eq('assigned_bed_id', bedId)
       .eq('tenant_id', tenantId)
       .eq('start_date', date)
@@ -252,7 +252,7 @@ export class BeautySpaModuleAdapter extends SpaModuleAdapter implements ModuleAd
     // Query existing bookings for this room on the same date
     const { data: existingBookings } = await supabase
       .from('bookings')
-      .select('id, preferred_time, packages(duration_minutes)')
+      .select('id, preferred_time, packages(duration_minutes:default_duration_minutes)')
       .eq('assigned_room_id', roomId)
       .eq('tenant_id', tenantId)
       .eq('start_date', date)
@@ -326,7 +326,7 @@ export class BeautySpaModuleAdapter extends SpaModuleAdapter implements ModuleAd
       // Query existing bookings using this equipment on the same date
       const { data: existingBookings } = await supabase
         .from('bookings')
-        .select('id, preferred_time, packages(duration_minutes)')
+        .select('id, preferred_time, packages(duration_minutes:default_duration_minutes)')
         .contains('required_equipment_ids', [equipmentId])
         .eq('tenant_id', tenantId)
         .eq('start_date', date)

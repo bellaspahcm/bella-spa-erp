@@ -86,6 +86,7 @@ export interface TenantSalaryConfig {
  * Mặc định tất cả = true (bật). Spa nhỏ có thể tắt phòng/giường/thiết bị.
  */
 export interface ConflictDetectionConfig {
+  [key: string]: any;
   /** Bật kiểm tra trùng lịch KTV (luôn bật, không thể tắt - core feature) */
   detectKtvConflicts: boolean;
   /** Bật kiểm tra trùng phòng */

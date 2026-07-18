@@ -6,7 +6,7 @@
 
 import { describe, it, expect } from '@jest/globals';
 import { SpaModuleAdapter, spaModuleAdapter } from './SpaModuleAdapter';
-import type { CoreServiceCatalogItem, CoreBookingOrder } from '@/core/types';
+import type { CoreServiceCatalogItem, CoreBookingOrder, TenantContext } from '@/core/types';
 
 describe('SpaModuleAdapter', () => {
   describe('Module Identity', () => {
@@ -172,6 +172,55 @@ describe('SpaModuleAdapter', () => {
       expect(spaBooking.sessionsTotal).toBe(15);
       expect(spaBooking.assignedKtvId).toBeNull();
       expect(spaBooking.packageCategory).toBe('premium');
+    });
+  });
+
+  describe('calculatePricing', () => {
+    const mockContext: TenantContext = {
+      tenantId: 'tenant-1',
+      tenantName: 'Test Tenant',
+      enabledModules: ['spa'],
+      subscriptionPlan: 'free',
+      featureFlags: {},
+      settings: {},
+    };
+
+    it('should multiply base price by booking sessions for retail/single-session packages (total_sessions = 1)', async () => {
+      const singleSessionItem: CoreServiceCatalogItem = {
+        id: 'pkg-retail-1',
+        tenantId: 'tenant-1',
+        moduleId: 'spa',
+        name: 'Single Session',
+        basePrice: 150000,
+        currency: 'VND',
+        status: 'active',
+        metadata: {
+          total_sessions: 1, // Retail package has 1 session
+          booking_total_sessions: 10, // Booking requested 10 sessions
+        },
+      };
+
+      const price = await spaModuleAdapter.calculatePricing(singleSessionItem, mockContext);
+      expect(price).toBe(1500000); // 150000 * 10
+    });
+
+    it('should NOT multiply base price if the package is a multi-session combo package (total_sessions > 1)', async () => {
+      const multiSessionItem: CoreServiceCatalogItem = {
+        id: 'pkg-combo-1',
+        tenantId: 'tenant-1',
+        moduleId: 'spa',
+        name: 'Combo 30 Sessions',
+        basePrice: 6000000,
+        currency: 'VND',
+        status: 'active',
+        metadata: {
+          total_sessions: 30, // Combo package has 30 sessions
+          booking_total_sessions: 30,
+        },
+      };
+
+      const price = await spaModuleAdapter.calculatePricing(multiSessionItem, mockContext);
+      expect(price).toBe(6000000); // Should remain 6000000 (not multiplied)
     });
   });
 

@@ -270,6 +270,10 @@ export async function buildBookingPayload(params: {
           metadata: {
             total_sessions: packageData.total_sessions,
             session_multiplier: packageData.session_multiplier,
+            // IMPORTANT: Use only PAID sessions for price calculation.
+            // total_sessions includes gift sessions (free), so subtract them.
+            // e.g. 10 paid + 1 gift = 11 total → price = 10 × unitPrice (NOT 11)
+            booking_total_sessions: validatedData.total_sessions - Number(validatedData.metadata?.gift_sessions || 0),
           },
         };
         
@@ -283,28 +287,12 @@ export async function buildBookingPayload(params: {
     }
   }
   
-  // Phase 0.5: Use Decision Engine for discount calculation (Task 4)
-  // Calculate server-side discount to prevent client manipulation
-  let serverCalculatedDiscount = validatedData.discount_percent || 0;
-  
-  try {
-    const { calculateServerDiscount } = await import('./discount-integration');
-    
-    serverCalculatedDiscount = await calculateServerDiscount({
-      tenantId,
-      customerId,
-      totalAmount: finalPrice,
-      serviceCount: validatedData.total_sessions || 1,
-      // TODO: Add referral/campaign support when available
-    });
-    
-    console.log(
-      `[buildBookingPayload] Discount: client=${validatedData.discount_percent}%, server=${serverCalculatedDiscount}% (enforced)`
-    );
-  } catch (error) {
-    console.error('[buildBookingPayload] Discount calculation failed, using client value:', error);
-    // Fallback to client-submitted discount if server calculation fails
-  }
+  // Use admin's explicitly-entered discount value.
+  // The server-side auto-discount engine was removed because it silently overrode
+  // the admin's intent (e.g., applying 5% Active Customer discount when admin set 0%).
+  // Admin always has full control over the discount for each booking.
+  const serverCalculatedDiscount = validatedData.discount_percent || 0;
+  console.log('[buildBookingPayload] Discount: admin=%s% (trusted, no auto-override)', serverCalculatedDiscount);
   
   // Phase 0.5: Use Decision Engine for booking approval logic
   // TODO: Restore booking-decision-service after provider integration is complete
@@ -657,11 +645,21 @@ export async function constructTenantContextForBooking(
   }
 
   // Extract enabled modules
-  const enabledModules = Array.isArray(tenant.enabled_modules)
-    ? tenant.enabled_modules
-    : tenant.enabled_modules
-    ? [tenant.enabled_modules as string]
-    : ['spa'];
+  let enabledModules: string[] = ['spa'];
+  if (tenant.enabled_modules) {
+    if (Array.isArray(tenant.enabled_modules)) {
+      enabledModules = tenant.enabled_modules.filter((item): item is string => typeof item === 'string');
+    } else if (typeof tenant.enabled_modules === 'object') {
+      enabledModules = Object.entries(tenant.enabled_modules)
+        .filter(([_key, value]) => value === true)
+        .map(([key]) => key === 'babycare' ? 'spa' : key);
+    } else if (typeof tenant.enabled_modules === 'string') {
+      enabledModules = [tenant.enabled_modules === 'babycare' ? 'spa' : tenant.enabled_modules];
+    }
+  }
+  if (enabledModules.length === 0) {
+    enabledModules = ['spa'];
+  }
 
   // Extract subscription plan
   const subscriptionPlan = (tenant.subscription_tier as TenantContext['subscriptionPlan']) || 'basic';
@@ -761,7 +759,7 @@ export async function invokeAdapterValidation(
   };
 
   const coreOrder: CoreBookingOrder = {
-    id: '', // Not yet created
+    id: (bookingPayload as any).id || '', // Support editing existing bookings
     tenantId: context.tenantId,
     moduleId: (context.enabledModules[0] || 'spa') as ModuleId,
     customerId: bookingPayload.customer_id || '',

@@ -90,13 +90,13 @@ export async function getAuditTables(): Promise<string[]> {
 
   const supabase = await createClient();
   const { data, error } = await supabase
-    .rpc('get_distinct_audit_tables');
+    .rpc('get_distinct_audit_tables' as any);
 
   if (error) {
     throw new Error(`[getAuditTables] audit_logs RPC query failed: ${error.message}`);
   }
 
-  const tables = (data || []) as { table_name: string }[];
+  const tables = (data as any || []) as { table_name: string }[];
   return tables.map(d => d.table_name).filter(Boolean).sort();
 }
 

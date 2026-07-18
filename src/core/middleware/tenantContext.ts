@@ -263,11 +263,21 @@ export async function extractTenantContext(
  */
 function transformTenantRowToContext(tenant: TenantRow): TenantContext {
   // Extract enabled modules from database (stored as text[] or JSON)
-  const enabledModules = Array.isArray(tenant.enabled_modules)
-    ? tenant.enabled_modules
-    : tenant.enabled_modules
-    ? [tenant.enabled_modules as string]
-    : ['spa']; // Default to spa module for backward compatibility
+  let enabledModules: string[] = ['spa'];
+  if (tenant.enabled_modules) {
+    if (Array.isArray(tenant.enabled_modules)) {
+      enabledModules = tenant.enabled_modules.filter((item): item is string => typeof item === 'string');
+    } else if (typeof tenant.enabled_modules === 'object') {
+      enabledModules = Object.entries(tenant.enabled_modules)
+        .filter(([_key, value]) => value === true)
+        .map(([key]) => key === 'babycare' ? 'spa' : key);
+    } else if (typeof tenant.enabled_modules === 'string') {
+      enabledModules = [tenant.enabled_modules === 'babycare' ? 'spa' : tenant.enabled_modules];
+    }
+  }
+  if (enabledModules.length === 0) {
+    enabledModules = ['spa'];
+  }
 
   // Extract subscription plan (with fallback to 'basic')
   const subscriptionPlan = (tenant.subscription_tier as TenantContext['subscriptionPlan']) || 'basic';

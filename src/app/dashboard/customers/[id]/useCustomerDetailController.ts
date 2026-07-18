@@ -101,6 +101,11 @@ export function useCustomerDetailController() {
   const [userRole, setUserRole] = useState<'admin' | 'ktv'>('ktv');
   const [tenantModuleKey, setTenantModuleKey] = useState<TenantModuleKey | null>(null);
   const [tenantBrand, setTenantBrand] = useState<ResolvedTenantBrandIdentity | null>(null);
+  const [bankInfo, setBankInfo] = useState<{ ownerName: string; accountNumber: string; bankName: string }>({
+    ownerName: '',
+    accountNumber: '',
+    bankName: '',
+  });
   const [isExportingQuotation, setIsExportingQuotation] = useState(false);
   const [isExportingCombinedQuotation, setIsExportingCombinedQuotation] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -213,6 +218,11 @@ export function useCustomerDetailController() {
         tenantName: tenant?.name,
         surface: 'invoice',
       }));
+      setBankInfo({
+        ownerName: tenant?.qr_account_name || '',
+        accountNumber: tenant?.qr_account_number || '',
+        bankName: tenant?.qr_bank_code || '',
+      });
       // Re-map customer record now that we have the correct module key
       setCustomer(prev => prev ? { ...prev } : prev);
     } catch (error) {
@@ -543,7 +553,11 @@ export function useCustomerDetailController() {
           id: 1,
           name: activeBooking.package_name || activeBooking.packages?.name || 'Gói dịch vụ',
           sessions: activeBooking.total_sessions || 15,
-          unitPrice: Math.round((activeBooking.full_price || 0) / Math.max(1, activeBooking.total_sessions || 15)),
+          unitPrice: (() => {
+            const gift = Number((activeBooking.metadata as any)?.gift_sessions || 0);
+            const paidSessions = Math.max(1, (activeBooking.total_sessions || 15) - gift);
+            return Math.round((activeBooking.full_price || 0) / paidSessions);
+          })(),
           total: activeBooking.full_price || 0,
           discountNote: (() => {
             const disc = activeBooking.discount_percent || 0;
@@ -559,12 +573,12 @@ export function useCustomerDetailController() {
       ],
       totalAmount: Math.round(paymentState.priceAfterDiscount),
       bankInfo: {
-        ownerName: 'Cao Thị Thúy Vân',
-        accountNumber: '8832041471',
-        bankName: 'Ngân hàng BIDV',
+        ownerName: bankInfo.ownerName || 'Chưa cấu hình',
+        accountNumber: bankInfo.accountNumber || 'Chưa cấu hình',
+        bankName: bankInfo.bankName || 'Chưa cấu hình',
       },
     };
-  }, [activeBooking, customer, tenantBrand]);
+  }, [activeBooking, customer, tenantBrand, bankInfo]);
 
   const handleExportQuotation = useCallback(async () => {
     if (!quotationRef.current || !customer) return;
@@ -648,7 +662,11 @@ export function useCustomerDetailController() {
         id: idx + 1,
         name: booking.package_name || booking.packages?.name || 'Gói dịch vụ',
         sessions: booking.total_sessions || 1,
-        unitPrice: Math.round((booking.full_price || 0) / Math.max(1, booking.total_sessions || 1)),
+        unitPrice: (() => {
+          const giftSess = Number((booking.metadata as any)?.gift_sessions || 0);
+          const paidSess = Math.max(1, (booking.total_sessions || 1) - giftSess);
+          return Math.round((booking.full_price || 0) / paidSess);
+        })(),
         total: booking.full_price || 0,
         discountNote,
         prepaid: paymentState.totalPaid,
@@ -682,12 +700,12 @@ export function useCustomerDetailController() {
       items,
       totalAmount,
       bankInfo: {
-        ownerName: 'Cao Thị Thúy Vân',
-        accountNumber: '8832041471',
-        bankName: 'Ngân hàng BIDV',
+        ownerName: bankInfo.ownerName || 'Chưa cấu hình',
+        accountNumber: bankInfo.accountNumber || 'Chưa cấu hình',
+        bankName: bankInfo.bankName || 'Chưa cấu hình',
       },
     };
-  }, [customer, tenantBrand, selectedBookingIds]);
+  }, [customer, tenantBrand, selectedBookingIds, bankInfo]);
 
   const handleExportCombinedQuotation = useCallback(async () => {
     if (!combinedQuotationRef.current || !customer) return;
