@@ -43,7 +43,7 @@ BEGIN
     SELECT COALESCE(jsonb_agg(
         jsonb_build_object(
             'booking_id', bep.id,
-            'customer_name', COALESCE(c.name_mother, c.full_name, 'Khách hàng'),
+            'customer_name', COALESCE(c.name_mother, c.name_baby, 'Khach hang'),
             'package_name', bep.package_name,
             'full_price', bep.effective_full_price,
             'total_paid', COALESCE((SELECT SUM(amount) FROM public.revenue WHERE booking_id = bep.id AND status = 'confirmed'), 0),
@@ -101,7 +101,7 @@ BEGIN
     SELECT COALESCE(jsonb_agg(
         jsonb_build_object(
             'booking_id', bep.id,
-            'customer_name', COALESCE(c.name_mother, c.full_name, 'Khách hàng'),
+            'customer_name', COALESCE(c.name_mother, c.name_baby, 'Khach hang'),
             'package_name', bep.package_name,
             'full_price', bep.effective_full_price,
             'total_paid', COALESCE((SELECT SUM(amount) FROM public.revenue WHERE booking_id = bep.id AND status = 'confirmed'), 0),
