@@ -3,7 +3,8 @@
 import React from "react";
 import { Store, Phone, Mail, MapPin, Camera, Database } from "lucide-react";
 import { PremiumSelect } from "@/components/ui/PremiumSelect";
-import { TenantGeneralSettings } from "@/types/domain";
+import { TenantGeneralSettings, DEFAULT_CONFLICT_DETECTION_CONFIG } from "@/types/domain";
+import OverbookingConfigSection from "./OverbookingConfigSection";
 
 const POPULAR_BANKS = [
   { code: "MB", name: "MB Bank (Ngân hàng Quân Đội)" },
@@ -176,6 +177,20 @@ export default function GeneralSettingsTab({
           </div>
         </div>
       </div>
+
+      {/* Advanced Conflict Detection Toggles */}
+      <OverbookingConfigSection
+        config={generalSettings.salary_config.conflict_detection ?? DEFAULT_CONFLICT_DETECTION_CONFIG}
+        onChange={(updatedCd) =>
+          setGeneralSettings({
+            ...generalSettings,
+            salary_config: {
+              ...generalSettings.salary_config,
+              conflict_detection: updatedCd,
+            },
+          })
+        }
+      />
     </div>
   );
 }

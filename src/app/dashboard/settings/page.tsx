@@ -136,6 +136,15 @@ function SettingsContent() {
             penalty_late_per_day: sc.penalty_late_per_day !== undefined ? Number(sc.penalty_late_per_day) : undefined,
             penalty_absent_per_day: sc.penalty_absent_per_day !== undefined ? Number(sc.penalty_absent_per_day) : undefined,
             auto_consume_inventory: sc.auto_consume_inventory !== undefined ? !!sc.auto_consume_inventory : undefined,
+            conflict_detection: (() => {
+              const cd = sc.conflict_detection as Record<string, unknown> | undefined;
+              return {
+                detectKtvConflicts: cd?.detectKtvConflicts !== false, // always default true
+                detectRoomConflicts: cd?.detectRoomConflicts !== false,
+                detectEquipmentConflicts: cd?.detectEquipmentConflicts !== false,
+                detectCustomerDoubleBooking: cd?.detectCustomerDoubleBooking !== false,
+              };
+            })(),
           }
         });
       }

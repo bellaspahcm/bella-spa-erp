@@ -77,7 +77,31 @@ export interface TenantSalaryConfig {
   penalty_late_per_day?: number;     // mặc định 50.000đ
   penalty_absent_per_day?: number;   // mặc định 200.000đ
   auto_consume_inventory?: boolean;
+  // Conflict detection configuration (stored as nested JSON under salary_config)
+  conflict_detection?: ConflictDetectionConfig;
 }
+
+/**
+ * Cấu hình bật/tắt kiểm tra trùng lịch nâng cao theo từng loại tài nguyên.
+ * Mặc định tất cả = true (bật). Spa nhỏ có thể tắt phòng/giường/thiết bị.
+ */
+export interface ConflictDetectionConfig {
+  /** Bật kiểm tra trùng lịch KTV (luôn bật, không thể tắt - core feature) */
+  detectKtvConflicts: boolean;
+  /** Bật kiểm tra trùng phòng */
+  detectRoomConflicts: boolean;
+  /** Bật kiểm tra trùng thiết bị */
+  detectEquipmentConflicts: boolean;
+  /** Bật kiểm tra trùng lịch khách hàng (1 khách 2 buổi cùng lúc) */
+  detectCustomerDoubleBooking: boolean;
+}
+
+export const DEFAULT_CONFLICT_DETECTION_CONFIG: ConflictDetectionConfig = {
+  detectKtvConflicts: true,
+  detectRoomConflicts: true,
+  detectEquipmentConflicts: true,
+  detectCustomerDoubleBooking: true,
+};
 
 export interface TenantGeneralSettings {
   name: string;

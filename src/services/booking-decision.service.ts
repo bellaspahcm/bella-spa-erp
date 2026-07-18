@@ -26,6 +26,8 @@ import type {
   ConflictDetectionOutput,
 } from '@/lib/decision-engine/providers/booking/types';
 import { DecisionEngineContext } from '@/lib/decision-engine/DecisionEngineContext';
+import { getTenantSettings } from '@/services/tenant-actions';
+import { DEFAULT_CONFLICT_DETECTION_CONFIG } from '@/types/domain';
 
 /**
  * Build knowledge from booking request for decision engine.
@@ -786,6 +788,26 @@ export async function checkBookingConflicts(input: {
 }> {
   const supabase = await createClient();
 
+  // 0. Load tenant conflict detection config (non-blocking, fallback to defaults if unavailable)
+  let tenantCdConfig = DEFAULT_CONFLICT_DETECTION_CONFIG;
+  try {
+    const tenantSettings = await getTenantSettings();
+    if (tenantSettings) {
+      const sc = (tenantSettings.salary_config ?? {}) as Record<string, unknown>;
+      const cd = sc.conflict_detection as Record<string, unknown> | undefined;
+      if (cd) {
+        tenantCdConfig = {
+          detectKtvConflicts: cd.detectKtvConflicts !== false,
+          detectRoomConflicts: cd.detectRoomConflicts !== false,
+          detectEquipmentConflicts: cd.detectEquipmentConflicts !== false,
+          detectCustomerDoubleBooking: cd.detectCustomerDoubleBooking !== false,
+        };
+      }
+    }
+  } catch {
+    // Non-critical: proceed with default config (all checks enabled)
+  }
+
   // 1. Fetch existing customer bookings
   const customerBookingsBuilder = (supabase.from('session_logs') as unknown) as {
     select: (fields: string) => {
@@ -943,9 +965,9 @@ export async function checkBookingConflicts(input: {
       })),
     },
     config: {
-      detectCustomerDoubleBooking: true,
-      detectRoomConflicts: true,
-      detectEquipmentConflicts: true,
+      detectCustomerDoubleBooking: tenantCdConfig.detectCustomerDoubleBooking,
+      detectRoomConflicts: tenantCdConfig.detectRoomConflicts,
+      detectEquipmentConflicts: tenantCdConfig.detectEquipmentConflicts,
       validatePackageSequence: true,
       enforceVipSlotProtection: true,
       allowEmergencyOverride: false,
