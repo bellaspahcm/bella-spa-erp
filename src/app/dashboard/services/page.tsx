@@ -613,20 +613,20 @@ export default function ServicesPage() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-[2rem] bg-white shadow-2xl sm:rounded-[3rem]"
+              className="relative flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-[2rem] bg-white dark:bg-[#1C1410] shadow-2xl sm:rounded-[3rem]"
             >
               <form onSubmit={handleSubmit} className="flex flex-col h-full overflow-hidden">
                 {/* Header */}
-                <div className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-100 bg-white p-5 pb-4 sm:p-10 sm:pb-6">
+                <div className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-100 dark:border-white/10 bg-white dark:bg-[#1C1410] p-5 pb-4 sm:p-10 sm:pb-6">
                   <div className="flex min-w-0 items-center gap-3 sm:gap-5">
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[1.25rem] bg-primary text-white shadow-2xl shadow-rose-200 dark:shadow-none sm:h-14 sm:w-14 sm:rounded-[1.5rem]">
                       <Zap className="w-7 h-7" />
                     </div>
                     <div className="min-w-0">
-                      <h2 className="break-words text-xl font-black tracking-tight text-slate-900 sm:text-3xl">
+                      <h2 className="break-words text-xl font-black tracking-tight text-slate-900 dark:text-white sm:text-3xl">
                         {modalMode === 'add' ? 'Thêm dịch vụ' : 'Chỉnh sửa dịch vụ'}
                       </h2>
-                      <p className="text-slate-500 font-bold">
+                      <p className="text-slate-500 dark:text-slate-300 font-bold">
                         {modalMode === 'add' ? `Tạo ${vocab.package.singular.toLowerCase()} mới cho khách hàng` : `Cập nhật thông tin ${vocab.package.singular.toLowerCase()}`}
                       </p>
                     </div>
@@ -634,7 +634,7 @@ export default function ServicesPage() {
                   <button 
                     type="button"
                     onClick={() => setIsModalOpen(false)}
-                    className="p-3 bg-slate-50 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-all"
+                    className="p-3 bg-slate-50 dark:bg-white/10 hover:bg-slate-100 dark:hover:bg-white/20 rounded-full text-slate-400 dark:text-slate-300 hover:text-slate-600 dark:hover:text-white transition-all"
                   >
                     <X className="w-6 h-6" />
                   </button>
@@ -644,35 +644,35 @@ export default function ServicesPage() {
                 <div className="flex-1 space-y-5 overflow-y-auto p-5 scrollbar-thin sm:space-y-6 sm:p-10 sm:py-6">
                   <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6">
                     <div className="space-y-2">
-                      <label className="text-sm font-black text-slate-700 ml-1">Tên dịch vụ / Gói</label>
+                      <label className="text-sm font-black text-slate-700 dark:text-slate-200 ml-1">Tên dịch vụ / Gói</label>
                       <input 
                         type="text" 
                         required
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700" 
+                        className="w-full px-6 py-4 bg-slate-50 dark:bg-white/10 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500" 
                         placeholder="VD: Mẹ Bầu Toàn Diện" 
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-black text-slate-700 ml-1">Giá trọn gói (VNĐ)</label>
+                      <label className="text-sm font-black text-slate-700 dark:text-slate-200 ml-1">Giá trọn gói (VNĐ)</label>
                       <input 
                         type="text" 
                         required
                         value={price}
                         onChange={(e) => setPrice(formatMoneyInput(e.target.value))}
-                        className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700" 
+                        className="w-full px-6 py-4 bg-slate-50 dark:bg-white/10 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500" 
                         placeholder="VD: 15,500,000" 
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-black text-slate-700 ml-1">Thời lượng (phút)</label>
+                      <label className="text-sm font-black text-slate-700 dark:text-slate-200 ml-1">Thời lượng (phút)</label>
                       <input 
                         type="text" 
                         required
                         value={duration}
                         onChange={(e) => setDuration(e.target.value)}
-                        className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700" 
+                        className="w-full px-6 py-4 bg-slate-50 dark:bg-white/10 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500" 
                         placeholder="VD: 90" 
                       />
                     </div>
@@ -686,7 +686,7 @@ export default function ServicesPage() {
                           const value = e.target.value;
                           setSessions(value === '' ? '' : String(parseIntegerInput(value, { min: 1, max: 100, fallback: 1 })));
                         }}
-                        className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700" 
+                        className="w-full px-6 py-4 bg-slate-50 dark:bg-white/10 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500" 
                         placeholder="VD: 15" 
                       />
                     </div>
@@ -697,19 +697,19 @@ export default function ServicesPage() {
                         required
                         value={formatMoneyInput(ktvCommission)}
                         onChange={(e) => setKtvCommission(formatMoneyInput(e.target.value))}
-                        className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700" 
+                        className="w-full px-6 py-4 bg-slate-50 dark:bg-white/10 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500" 
                         placeholder="VD: 150,000" 
                       />
                     </div>
                   </div>
                   
                   <div className="space-y-2">
-                    <label className="text-sm font-black text-slate-700 ml-1">Chi tiết dịch vụ (Phân cách bằng dấu phẩy)</label>
+                    <label className="text-sm font-black text-slate-700 dark:text-slate-200 ml-1">Chi tiết dịch vụ (Phân cách bằng dấu phẩy)</label>
                     <input 
                       type="text" 
                       value={details}
                       onChange={(e) => setDetails(e.target.value)}
-                      className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700" 
+                      className="w-full px-6 py-4 bg-slate-50 dark:bg-white/10 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500" 
                       placeholder={
                         vocab.worker.short === 'NVS' 
                           ? 'VD: Vệ sinh sàn nhà, Lau kính, Dọn toilet' 
@@ -866,10 +866,10 @@ export default function ServicesPage() {
                     </div>
                   )}
 
-                  <div className="flex flex-col gap-3 rounded-2xl bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex flex-col gap-3 rounded-2xl bg-slate-50 dark:bg-white/10 p-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0">
-                      <span className="text-sm font-black text-slate-700 block">Kích hoạt {vocab.package.singular.toLowerCase()}</span>
-                      <span className="text-xs text-slate-500 font-bold">
+                      <span className="text-sm font-black text-slate-700 dark:text-white block">Kích hoạt {vocab.package.singular.toLowerCase()}</span>
+                      <span className="text-xs text-slate-500 dark:text-slate-400 font-bold">
                         {vocab.worker.short === 'NVS' 
                           ? 'Kích hoạt để hiển thị gói dịch vụ này trong danh sách'
                           : 'Kích hoạt để gói hiển thị trực tiếp trên trang chủ Landing Page'
@@ -894,11 +894,11 @@ export default function ServicesPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-black text-slate-700 ml-1">Chương trình ưu đãi (nếu có)</label>
+                    <label className="text-sm font-black text-slate-700 dark:text-slate-200 ml-1">Chương trình ưu đãi (nếu có)</label>
                     <textarea
                       value={offer}
                       onChange={(e) => setOffer(e.target.value)}
-                      className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700 resize-none h-24"
+                      className="w-full px-6 py-4 bg-slate-50 dark:bg-white/10 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none h-24"
                       placeholder="Nhập các khuyến mãi đi kèm..."
                     ></textarea>
                   </div>
@@ -911,9 +911,9 @@ export default function ServicesPage() {
                           <Database className="w-5 h-5" />
                         </div>
                         <div className="min-w-0">
-                          <h4 className="text-sm font-black text-slate-900">Định mức tiêu hao vật tư mỗi {vocab.workUnit.singular.toLowerCase()}</h4>
-                          <p className="text-[11px] text-slate-500 font-semibold leading-relaxed mt-0.5">
-                            Hệ thống sẽ tự trừ kho theo định mức này khi {vocab.worker.short} hoàn thành {vocab.workUnit.singular.toLowerCase()} <span className="text-rose-500">(nếu bật ở Cài đặt → Quản lý Tiêu hao Kho vận)</span>.
+                          <h4 className="text-sm font-black text-slate-900 dark:text-white">Định mức tiêu hao vật tư mỗi {vocab.workUnit.singular.toLowerCase()}</h4>
+                          <p className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold leading-relaxed mt-0.5">
+                            Hệ thống sẽ tự trừ kho theo định mức này khi {vocab.worker.short} hoàn thành {vocab.workUnit.singular.toLowerCase()} <span className="text-rose-400 dark:text-rose-300">(nếu bật ở Cài đặt → Quản lý Tiêu hao Kho vận)</span>.
                           </p>
                         </div>
                       </div>
@@ -1017,7 +1017,7 @@ export default function ServicesPage() {
                 </div>
 
                 {/* Footer */}
-                <div className="flex shrink-0 flex-col gap-3 border-t border-slate-100 bg-slate-50/50 p-5 sm:flex-row sm:gap-4 sm:p-10 sm:pt-6">
+                <div className="flex shrink-0 flex-col gap-3 border-t border-slate-100 dark:border-white/10 bg-slate-50/50 dark:bg-white/5 p-5 sm:flex-row sm:gap-4 sm:p-10 sm:pt-6">
                   <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-black rounded-[2rem] transition-all uppercase tracking-widest text-xs">
                     Hủy bỏ
                   </button>
