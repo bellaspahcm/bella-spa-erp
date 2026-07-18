@@ -209,10 +209,10 @@ export default function AICopilotClient() {
       </header>
 
       {/* Main Board */}
-      <div className="flex-1 flex flex-col lg:flex-row overflow-visible lg:overflow-hidden relative z-10 p-4 sm:p-6 gap-4 sm:gap-6 min-h-0">
+      <div className="flex-1 flex flex-col lg:flex-row overflow-visible lg:overflow-hidden relative z-10 p-4 pb-0 sm:p-6 sm:pb-0 lg:pb-0 gap-4 sm:gap-6 min-h-0">
         
         {/* Chat Area (Left 3/5) */}
-        <div className="flex min-h-[32rem] flex-col bg-card/40 border border-border rounded-3xl lg:rounded-[2rem] overflow-hidden backdrop-blur-md shadow-lg lg:flex-1 lg:min-h-0">
+        <div className="flex min-h-[32rem] flex-col bg-card/40 border border-border rounded-t-3xl rounded-b-none lg:rounded-t-[2rem] lg:rounded-b-none overflow-hidden backdrop-blur-md shadow-lg lg:flex-1 lg:min-h-0">
           {/* Scrollable messages */}
           <div 
             ref={chatContainerRef}
@@ -302,7 +302,7 @@ export default function AICopilotClient() {
         </div>
 
         {/* Action Board (Right 2/5) */}
-        <div className="w-full lg:w-96 flex min-h-[24rem] lg:min-h-0 flex-col bg-card/40 border border-border rounded-3xl lg:rounded-[2rem] overflow-hidden backdrop-blur-md shadow-lg p-4 sm:p-6 space-y-5 sm:space-y-6">
+        <div className="w-full lg:w-96 flex min-h-[24rem] lg:min-h-0 flex-col bg-card/40 border border-border rounded-t-3xl rounded-b-none lg:rounded-t-[2rem] lg:rounded-b-none overflow-hidden backdrop-blur-md shadow-lg p-4 sm:p-6 space-y-5 sm:space-y-6">
           <div className="shrink-0">
             <h3 className="text-sm font-black bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent uppercase tracking-widest flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-primary" /> Bảng Duyệt Hành Động (Mức A)
