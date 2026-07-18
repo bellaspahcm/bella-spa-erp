@@ -71,9 +71,9 @@ export function RatingDistributionChart({ data }: RatingDistributionChartProps) 
         data={chartData}
         margin={{
           top: 20,
-          right: 30,
-          left: 20,
-          bottom: 40,
+          right: 20,
+          left: -15,
+          bottom: 30,
         }}
       >
         <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -82,11 +82,10 @@ export function RatingDistributionChart({ data }: RatingDistributionChartProps) 
           tick={{ fill: '#4b5563', fontSize: 12 }}
           angle={-15}
           textAnchor="end"
-          height={60}
+          height={40}
         />
         <YAxis
           tick={{ fill: '#4b5563', fontSize: 12 }}
-          label={{ value: `Số ${vocab.worker.short}`, angle: -90, position: 'insideLeft', style: { fill: '#4b5563' } }}
         />
         <Tooltip
           contentStyle={{

@@ -23,7 +23,7 @@ WITH monthly_payroll AS (
     COALESCE(sr.rating_bonus, 0) AS rating_bonus,
     COALESCE(sr.service_percentage_bonus, 0) AS service_percentage_bonus,
     COALESCE(sr.violations_deduction, 0) AS violations_deduction,
-    COALESCE(sr.other_adjustments, 0) AS other_adjustments,
+    COALESCE(sr.manual_adjustments, 0) AS other_adjustments,
     COALESCE(sr.total_salary, 0) AS total_salary,
     
     -- Session metrics
@@ -32,7 +32,7 @@ WITH monthly_payroll AS (
     -- Status
     sr.status AS payroll_status,
     sr.published_at,
-    sr.confirmed_at
+    sr.ktv_confirmed_at AS confirmed_at
     
   FROM salary_records sr
   INNER JOIN users u ON u.id = sr.ktv_id
@@ -210,4 +210,4 @@ COMMENT ON MATERIALIZED VIEW mv_payroll_summary IS
   'Aggregated payroll summary by KTV with salary breakdown (base, bonuses, deductions), session counts, salary rankings, and payroll aggregates. Refreshed hourly. Used by HR Dashboard.';
 
 -- Refresh the view immediately
-REFRESH MATERIALIZED VIEW CONCURRENTLY mv_payroll_summary;
+REFRESH MATERIALIZED VIEW mv_payroll_summary;

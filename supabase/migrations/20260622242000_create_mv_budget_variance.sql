@@ -97,8 +97,7 @@ CREATE INDEX idx_mv_budget_variance_over_budget
   WHERE budget_status = 'over_budget';
 
 CREATE INDEX idx_mv_budget_variance_recent 
-  ON mv_budget_variance (month DESC)
-  WHERE month >= (CURRENT_DATE - INTERVAL '6 months');
+  ON mv_budget_variance (month DESC);
 
 -- Grant access to authenticated and anon users (read-only)
 GRANT SELECT ON mv_budget_variance TO authenticated;

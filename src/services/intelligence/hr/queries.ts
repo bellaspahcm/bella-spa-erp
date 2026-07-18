@@ -408,11 +408,16 @@ export async function getPayrollSummary(
 ): Promise<PayrollSummary[]> {
   const supabase = await createServiceRoleClient();
   
+  // Convert month (YYYY-MM) to first day of month (YYYY-MM-01) for date type comparison in Postgres
+  const formattedMonth = month.includes('-') && month.split('-').length === 2
+    ? `${month}-01`
+    : month;
+
   let query = supabase
     .from('mv_payroll_summary' as any) // Materialized view not in generated types yet
     .select('*')
     .eq('tenant_id', tenantId)
-    .eq('month', month);
+    .eq('month', formattedMonth);
   
   // Apply KTV filter if provided
   if (ktvId) {

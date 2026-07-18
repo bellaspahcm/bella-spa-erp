@@ -50,6 +50,7 @@ interface WorkforceAnalytics {
   activeEmployees: number
   onLeaveToday: number
   avgAttendanceRate: number
+  avgKPI: number
   avgWorkingDaysPerMonth: number
   departmentBreakdown: Array<{
     department: string

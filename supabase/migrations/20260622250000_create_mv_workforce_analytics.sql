@@ -14,7 +14,7 @@ WITH monthly_headcount AS (
     DATE_TRUNC('month', created_at)::DATE AS month,
     role,
     COUNT(DISTINCT id) AS new_hires,
-    COUNT(DISTINCT id) FILTER (WHERE is_active = true) AS active_count
+    COUNT(DISTINCT id) FILTER (WHERE status = 'active') AS active_count
   FROM users
   WHERE role IN ('ktv', 'manager', 'admin')
   GROUP BY tenant_id, DATE_TRUNC('month', created_at)::DATE, role
@@ -27,7 +27,7 @@ monthly_terminations AS (
     COUNT(DISTINCT id) AS termination_count
   FROM users
   WHERE role IN ('ktv', 'manager', 'admin')
-    AND is_active = false
+    AND status != 'active'
     AND updated_at IS NOT NULL
   GROUP BY tenant_id, DATE_TRUNC('month', updated_at)::DATE, role
 ),
@@ -35,7 +35,7 @@ current_headcount AS (
   SELECT
     tenant_id,
     role,
-    COUNT(DISTINCT id) FILTER (WHERE is_active = true) AS current_active_count,
+    COUNT(DISTINCT id) FILTER (WHERE status = 'active') AS current_active_count,
     COUNT(DISTINCT id) AS total_ever_hired,
     AVG(EXTRACT(YEAR FROM AGE(NOW(), created_at)) * 12 + EXTRACT(MONTH FROM AGE(NOW(), created_at)))::NUMERIC AS avg_tenure_months
   FROM users
@@ -46,10 +46,10 @@ role_distribution AS (
   SELECT
     tenant_id,
     role,
-    COUNT(DISTINCT id) FILTER (WHERE is_active = true) AS active_count,
+    COUNT(DISTINCT id) FILTER (WHERE status = 'active') AS active_count,
     ROUND(
-      COUNT(DISTINCT id) FILTER (WHERE is_active = true)::NUMERIC / 
-      NULLIF(SUM(COUNT(DISTINCT id) FILTER (WHERE is_active = true)) OVER (PARTITION BY tenant_id), 0) * 100,
+      COUNT(DISTINCT id) FILTER (WHERE status = 'active')::NUMERIC / 
+      NULLIF(SUM(COUNT(DISTINCT id) FILTER (WHERE status = 'active')) OVER (PARTITION BY tenant_id), 0) * 100,
       2
     ) AS role_percentage
   FROM users
@@ -121,4 +121,4 @@ COMMENT ON MATERIALIZED VIEW mv_workforce_analytics IS
   'Aggregated workforce analytics with headcount trends, turnover rates, average tenure, and role distribution. Refreshed hourly. Used by HR Dashboard.';
 
 -- Refresh the view immediately
-REFRESH MATERIALIZED VIEW CONCURRENTLY mv_workforce_analytics;
+REFRESH MATERIALIZED VIEW mv_workforce_analytics;

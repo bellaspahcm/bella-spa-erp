@@ -35,15 +35,15 @@ export function RFMMatrixChart({ data, height = 400 }: RFMMatrixChartProps) {
   };
 
   return (
-    <ResponsiveContainer width="100%" height={height}>
-      <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+    <ResponsiveContainer width="100%" height={350}>
+      <ScatterChart margin={{ top: 20, right: 20, left: -15, bottom: 30 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
         <XAxis
           type="number"
           dataKey="recency"
           name="Recency"
           domain={[0, 5]}
-          label={{ value: 'Điểm Recency', position: 'insideBottom', offset: -10 }}
+          height={40}
           tick={{ fill: '#64748b', fontSize: 12 }}
         />
         <YAxis
@@ -51,7 +51,6 @@ export function RFMMatrixChart({ data, height = 400 }: RFMMatrixChartProps) {
           dataKey="frequency"
           name="Frequency"
           domain={[0, 5]}
-          label={{ value: 'Điểm Frequency', angle: -90, position: 'insideLeft' }}
           tick={{ fill: '#64748b', fontSize: 12 }}
         />
         <ZAxis type="number" dataKey="monetary" range={[50, 400]} name="Monetary" />

@@ -23,7 +23,7 @@ interface TenureDistributionChartProps {
 export function TenureDistributionChart({ data, height = 300 }: TenureDistributionChartProps) {
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <BarChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+      <BarChart data={data} margin={{ top: 5, right: 20, left: -15, bottom: 15 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
         <XAxis 
           dataKey="range" 

@@ -19,7 +19,7 @@ WITH monthly_sessions AS (
     COUNT(DISTINCT b.id) AS total_bookings_served,
     
     -- Average star rating from customers
-    ROUND(AVG(sl.rating), 2) FILTER (WHERE sl.rating IS NOT NULL) AS avg_star_rating,
+    ROUND(AVG(sl.rating) FILTER (WHERE sl.rating IS NOT NULL), 2) AS avg_star_rating,
     COUNT(*) FILTER (WHERE sl.rating IS NOT NULL) AS ratings_count,
     
     -- Rating distribution
@@ -37,17 +37,17 @@ WITH monthly_sessions AS (
 monthly_kpi AS (
   SELECT
     tenant_id,
-    month AS month,
+    month_year AS month,
     ktv_id,
     
     -- KPI metrics
-    COALESCE(kpi_score, 0) AS kpi_score,
-    COALESCE(kpi_amount, 0) AS kpi_amount,
-    COALESCE(total_sessions, 0) AS kpi_sessions,
+    COALESCE(kpi_achievement_rate, 0) AS kpi_score,
+    COALESCE(bonus_amount, 0) AS kpi_amount,
+    COALESCE(sessions_completed, 0) AS kpi_sessions,
     COALESCE(customer_satisfaction, 0) AS customer_satisfaction_score
     
   FROM kpi_records
-  WHERE month IS NOT NULL
+  WHERE month_year IS NOT NULL
     AND ktv_id IS NOT NULL
 ),
 monthly_revenue_contribution AS (
@@ -89,7 +89,7 @@ ktv_performance_combined AS (
     u.full_name AS ktv_name,
     u.role AS ktv_role,
     u.phone AS ktv_phone,
-    u.is_active AS is_active,
+    COALESCE(u.status = 'active', false) AS is_active,
     
     -- Session metrics
     COALESCE(ms.total_sessions_completed, 0) AS total_sessions_completed,
@@ -243,4 +243,4 @@ COMMENT ON MATERIALIZED VIEW mv_employee_performance IS
   'Aggregated employee performance metrics including KPI scores, star ratings, session counts, revenue contribution, attendance, productivity metrics, and overall performance rankings. Refreshed hourly. Used by HR Dashboard.';
 
 -- Refresh the view immediately
-REFRESH MATERIALIZED VIEW CONCURRENTLY mv_employee_performance;
+REFRESH MATERIALIZED VIEW mv_employee_performance;

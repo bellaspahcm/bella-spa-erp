@@ -70,9 +70,9 @@ export function PerformanceScoreChart({ data }: PerformanceScoreChartProps) {
         data={chartData}
         margin={{
           top: 20,
-          right: 30,
-          left: 20,
-          bottom: 60,
+          right: 20,
+          left: -15,
+          bottom: 30,
         }}
       >
         <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -80,12 +80,11 @@ export function PerformanceScoreChart({ data }: PerformanceScoreChartProps) {
           dataKey="name"
           angle={-15}
           textAnchor="end"
-          height={80}
+          height={40}
           tick={{ fill: '#4b5563', fontSize: 12 }}
         />
         <YAxis
           tick={{ fill: '#4b5563', fontSize: 12 }}
-          label={{ value: `Số ${vocab.worker.short}`, angle: -90, position: 'insideLeft', style: { fill: '#4b5563' } }}
         />
         <Tooltip
           contentStyle={{

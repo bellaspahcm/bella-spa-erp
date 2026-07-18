@@ -26,12 +26,12 @@
  * - kpi_records.updated → Invalidates hr:*
  * - users.updated → Invalidates hr:*
  */
-
 import type { IntelligenceService, DateRange, TimePeriod, IntelligenceResponse, CacheService } from '../shared/types';
 import { IntelligenceError, QueryError } from '../shared/types';
 import { getCache } from '../cache';
 import { buildCacheKey, parseDateRange, formatDate } from '../shared/helpers';
-import { DEFAULT_CACHE_TTL, CACHE_KEY_PREFIX } from '../shared/constants';
+import { CACHE_KEY_PREFIX } from '../shared/constants';
+
 import type {
   AttendanceReport,
   PayrollSummary,
@@ -40,14 +40,16 @@ import type {
   ProductivityTrends,
 } from './queries';
 import {
-  getWorkforceAnalytics as queryWorkforceAnalytics,
   getAttendanceReport as queryAttendanceReport,
   getPayrollSummary as queryPayrollSummary,
   getEmployeePerformance as queryEmployeePerformance,
-  getRecruitmentMetrics as queryRecruitmentMetrics,
-  getTrainingMetrics as queryTrainingMetrics,
   getRetentionAnalysis as queryRetentionAnalysis,
   getProductivityTrends as queryProductivityTrends,
+} from './queries';
+import {
+  getWorkforceAnalytics as queryWorkforceAnalytics,
+  getRecruitmentMetrics as queryRecruitmentMetrics,
+  getTrainingMetrics as queryTrainingMetrics,
   RecruitmentMetrics,
   TrainingMetrics,
   WorkforceAnalytics,
@@ -209,12 +211,8 @@ export class HRIntelligenceService implements IntelligenceService {
           },
         };
       }
-
       // Query database
-      const targetMonth = parsedRange 
-        ? formatDate(parsedRange.startDate).slice(0, 7) // Extract 'YYYY-MM'
-        : undefined;
-      const data = await queryAttendanceReport(tenantId, targetMonth);
+      const data = await queryAttendanceReport(tenantId, dateRange, ktvId);
 
       // Write to cache (best effort - don't fail if cache write fails)
       try {
@@ -295,9 +293,8 @@ export class HRIntelligenceService implements IntelligenceService {
           },
         };
       }
-
-      // Query database (simplified - ignore ktvId param for now)
-      const data = await queryPayrollSummary(tenantId, month);
+      // Query database
+      const data = await queryPayrollSummary(tenantId, month, ktvId);
 
       // Write to cache (best effort - don't fail if cache write fails)
       try {
@@ -385,9 +382,8 @@ export class HRIntelligenceService implements IntelligenceService {
           },
         };
       }
-
-      // Query database (simplified - ignore dateRange, ktvId, limit params for now)
-      const data = await queryEmployeePerformance(tenantId);
+      // Query database
+      const data = await queryEmployeePerformance(tenantId, dateRange, ktvId, limit);
 
       // Write to cache (best effort - don't fail if cache write fails)
       try {
@@ -631,9 +627,8 @@ export class HRIntelligenceService implements IntelligenceService {
           },
         };
       }
-
-      // Query database (simplified - ignore dateRange param for now)
-      const data = await queryRetentionAnalysis(tenantId);
+      // Query database
+      const data = await queryRetentionAnalysis(tenantId, dateRange);
 
       // Write to cache (best effort - don't fail if cache write fails)
       try {
@@ -713,9 +708,8 @@ export class HRIntelligenceService implements IntelligenceService {
           },
         };
       }
-
-      // Query database (simplified - ignore dateRange param for now)
-      const data = await queryProductivityTrends(tenantId);
+      // Query database
+      const data = await queryProductivityTrends(tenantId, dateRange);
 
       // Write to cache (best effort - don't fail if cache write fails)
       try {

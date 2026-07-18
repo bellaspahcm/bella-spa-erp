@@ -41,7 +41,7 @@ WITH monthly_attendance AS (
     ) AS attendance_rate_pct,
     
     -- Average check-in time for late arrivals
-    AVG(EXTRACT(EPOCH FROM (a.check_in_time - '08:30:00'::TIME)) / 60) FILTER (WHERE a.status = 'late') AS avg_late_minutes
+    AVG(EXTRACT(EPOCH FROM (a.checkin_time::TIME - '08:30:00'::TIME)) / 60) FILTER (WHERE a.status = 'late') AS avg_late_minutes
     
   FROM attendance a
   INNER JOIN users u ON u.id = a.ktv_id
@@ -148,4 +148,4 @@ COMMENT ON MATERIALIZED VIEW mv_attendance_summary IS
   'Aggregated attendance summary by KTV with attendance rates, on-time rates, absences, late arrivals, and performance scores. Refreshed hourly. Used by HR Dashboard.';
 
 -- Refresh the view immediately
-REFRESH MATERIALIZED VIEW CONCURRENTLY mv_attendance_summary;
+REFRESH MATERIALIZED VIEW mv_attendance_summary;

@@ -22,13 +22,19 @@ export interface FinanceIntelligenceResponse<T = any> {
 
 export interface MonthlyPnLData {
   month: string;
-  total_revenue: number;
-  cogs: number;
-  gross_profit: number;
-  operating_expenses: number;
-  operating_profit: number;
-  net_profit: number;
-  profit_margin_pct: number;
+  totalRevenue: number;
+  salaryExpense: number;
+  operatingExpense: number;
+  totalExpense: number;
+  grossProfit: number;
+  operatingProfit: number;
+  netProfit: number;
+  netMarginPct: number;
+  // Legacy snake_case aliases (for compatibility with pnl/page.tsx)
+  total_revenue?: number;
+  operating_expenses?: number;
+  net_profit?: number;
+  profit_margin_pct?: number;
 }
 
 export interface CashFlowData {
@@ -75,8 +81,15 @@ export interface FinancialRatiosData {
 // API FUNCTIONS
 // ============================================================================
 
-async function fetchMonthlyPnL(tenantId: string, month: string): Promise<FinanceIntelligenceResponse<MonthlyPnLData[]>> {
-  const params = new URLSearchParams({ tenant_id: tenantId, month });
+async function fetchMonthlyPnL(month: string, year: string): Promise<FinanceIntelligenceResponse<MonthlyPnLData[]>> {
+  // Build startDate/endDate from month+year (API requires startDate/endDate or period, not 'month')
+  const monthNum = month.padStart(2, '0');
+  const startDate = `${year}-${monthNum}-01`;
+  // Calculate last day of month
+  const lastDay = new Date(Number(year), Number(month), 0).getDate();
+  const endDate = `${year}-${monthNum}-${String(lastDay).padStart(2, '0')}`;
+  
+  const params = new URLSearchParams({ startDate, endDate });
   const response = await fetch(`/api/intelligence/finance/monthly-pnl?${params}`);
   
   if (!response.ok) {
@@ -155,13 +168,14 @@ async function fetchFinancialRatios(tenantId: string, month: string): Promise<Fi
  * });
  */
 export function useMonthlyPnL(
-  tenantId: string,
   month: string,
+  year: string,
   queryOptions?: Omit<UseQueryOptions<FinanceIntelligenceResponse<MonthlyPnLData[]>>, 'queryKey' | 'queryFn'>
 ) {
   return useQuery({
-    queryKey: ['finance', 'monthly-pnl', tenantId, month],
-    queryFn: () => fetchMonthlyPnL(tenantId, month),
+    queryKey: ['finance', 'monthly-pnl', year, month],
+    queryFn: () => fetchMonthlyPnL(month, year),
+    enabled: !!(month && year),
     staleTime: 1 * 60 * 60 * 1000, // 1 hour
     refetchOnWindowFocus: false,
     ...queryOptions
@@ -294,7 +308,11 @@ export function useFinancialRatios(
  * const { pnl, cashFlow, budgetVariance, expenses, revenue, ratios } = financeData;
  */
 export function useAllFinanceData(tenantId: string, month: string) {
-  const pnl = useMonthlyPnL(tenantId, month);
+  // Parse month (format 'YYYY-MM' or 'MM') and year for useMonthlyPnL
+  const [parsedYear, parsedMonth] = month.includes('-') 
+    ? month.split('-') 
+    : [new Date().getFullYear().toString(), month];
+  const pnl = useMonthlyPnL(parsedMonth, parsedYear);
   const cashFlow = useCashFlowAnalysis(tenantId, month);
   const budgetVariance = useBudgetVariance(tenantId, month);
   const expenses = useExpenseBreakdown(tenantId, month);

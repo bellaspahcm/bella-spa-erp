@@ -58,13 +58,13 @@ export function ProductivityComparisonChart({ data }: ProductivityComparisonChar
   const workUnitShortLabel = `Số ${vocab.workUnit.singular.toLowerCase()}`;
 
   return (
-    <ResponsiveContainer width="100%" height={400}>
+    <ResponsiveContainer width="100%" height={350}>
       <ScatterChart
         margin={{
           top: 20,
-          right: 30,
-          left: 20,
-          bottom: 20,
+          right: 20,
+          left: -15,
+          bottom: 30,
         }}
       >
         <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -73,14 +73,13 @@ export function ProductivityComparisonChart({ data }: ProductivityComparisonChar
           dataKey="sessions"
           name={workUnitLabel}
           tick={{ fill: '#4b5563', fontSize: 12 }}
-          label={{ value: `Số ${vocab.workUnit.singular.toLowerCase()} hoàn thành`, position: 'insideBottom', offset: -10, style: { fill: '#4b5563' } }}
+          height={40}
         />
         <YAxis
           type="number"
           dataKey="revenue"
           name="Doanh thu"
           tick={{ fill: '#4b5563', fontSize: 12 }}
-          label={{ value: 'Doanh thu (triệu VNĐ)', angle: -90, position: 'insideLeft', style: { fill: '#4b5563' } }}
         />
         <ZAxis type="number" dataKey="score" range={[100, 1000]} name="Điểm hiệu suất" />
         <Tooltip

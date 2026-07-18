@@ -70,7 +70,7 @@ export function PnLStatementChart({ data, height = 300 }: PnLStatementChartProps
     <ResponsiveContainer width="100%" height={height}>
       <BarChart
         data={chartData}
-        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+        margin={{ top: 20, right: 20, left: -15, bottom: 15 }}
       >
         <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
         <XAxis

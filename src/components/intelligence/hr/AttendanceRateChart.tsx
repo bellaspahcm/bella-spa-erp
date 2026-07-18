@@ -23,15 +23,15 @@ interface AttendanceRateChartProps {
 export function AttendanceRateChart({ data, height = 300 }: AttendanceRateChartProps) {
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <BarChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+      <BarChart data={data} margin={{ top: 5, right: 20, left: -15, bottom: 30 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
         <XAxis 
           dataKey="name" 
           tick={{ fill: '#64748b', fontSize: 12 }}
           tickLine={{ stroke: '#e2e8f0' }}
-          angle={-45}
+          angle={-30}
           textAnchor="end"
-          height={100}
+          height={40}
         />
         <YAxis 
           tick={{ fill: '#64748b', fontSize: 12 }}

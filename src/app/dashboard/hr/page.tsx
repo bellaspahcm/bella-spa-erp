@@ -34,9 +34,8 @@ export default function HRIntelligencePage() {
     const totalEmployees = workforceQuery.data?.data?.totalEmployees ?? 0;
     const attendanceRate = attendanceQuery.data?.data?.avgAttendanceRate ?? 0;
     
-    // For KPI average, we'll need to add this to the API later
-    // For now, showing attendance rate as a proxy
-    const avgKPI = attendanceRate; // Placeholder until we add KPI endpoint
+    // Retrieve actual average KPI score from Workforce Analytics query
+    const avgKPI = workforceQuery.data?.data?.avgKPI ?? 0;
 
     return { totalEmployees, attendanceRate, avgKPI };
   }, [workforceQuery.data, attendanceQuery.data]);

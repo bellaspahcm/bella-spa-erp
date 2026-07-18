@@ -74,7 +74,7 @@ export function CustomerActivityChart({ data, height = 350 }: CustomerActivityCh
 
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <ComposedChart data={chartData} margin={{ top: 15, right: 10, left: 10, bottom: 5 }}>
+      <ComposedChart data={chartData} margin={{ top: 15, right: 20, left: -15, bottom: 15 }}>
         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
         <XAxis
           dataKey="level"
@@ -87,7 +87,6 @@ export function CustomerActivityChart({ data, height = 350 }: CustomerActivityCh
           tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: '700' }}
           axisLine={false}
           tickLine={false}
-          label={{ value: 'Số KH', angle: -90, position: 'insideLeft', offset: -5, style: { fill: '#94a3b8', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em' } }}
         />
         <YAxis
           yAxisId="right"
@@ -95,7 +94,6 @@ export function CustomerActivityChart({ data, height = 350 }: CustomerActivityCh
           tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: '700' }}
           axisLine={false}
           tickLine={false}
-          label={{ value: 'Điểm rủi ro TB', angle: 90, position: 'insideRight', offset: -5, style: { fill: '#94a3b8', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em' } }}
         />
         <Tooltip content={<CustomTooltip />} />
         <Legend 

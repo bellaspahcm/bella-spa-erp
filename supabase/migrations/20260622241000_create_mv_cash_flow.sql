@@ -24,13 +24,13 @@ monthly_cash_outflows AS (
   SELECT
     tenant_id,
     DATE_TRUNC('month', expense_date)::DATE AS month,
-    payment_method,
+    COALESCE(accounting_metadata->>'payment_method', 'bank_transfer') AS payment_method,
     category,
     SUM(amount) FILTER (WHERE status = 'paid') AS total_outflow,
     COUNT(*) FILTER (WHERE status = 'paid') AS transaction_count
   FROM expenses
   WHERE expense_date IS NOT NULL
-  GROUP BY tenant_id, DATE_TRUNC('month', expense_date)::DATE, payment_method, category
+  GROUP BY tenant_id, DATE_TRUNC('month', expense_date)::DATE, COALESCE(accounting_metadata->>'payment_method', 'bank_transfer'), category
 ),
 monthly_summary AS (
   SELECT
@@ -145,8 +145,7 @@ CREATE INDEX idx_mv_cash_flow_burn_rate
   ON mv_cash_flow (tenant_id, burn_rate DESC);
 
 CREATE INDEX idx_mv_cash_flow_recent 
-  ON mv_cash_flow (month DESC)
-  WHERE month >= (CURRENT_DATE - INTERVAL '12 months');
+  ON mv_cash_flow (month DESC);
 
 -- Grant access to authenticated and anon users (read-only)
 GRANT SELECT ON mv_cash_flow TO authenticated;

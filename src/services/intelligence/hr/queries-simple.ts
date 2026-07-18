@@ -83,12 +83,26 @@ export async function getWorkforceAnalytics(tenantId: string) {
       avgAttendanceRate = (presentOrLate / attendanceData.length) * 100;
     }
 
+    // Query KPI records to calculate average KPI score (achievement rate)
+    const { data: kpiData, error: kpiError } = await supabase
+      .from('kpi_records')
+      .select('kpi_achievement_rate')
+      .eq('tenant_id', tenantId)
+      .eq('month_year', startDate);
+
+    let avgKPI = 0;
+    if (!kpiError && kpiData && kpiData.length > 0) {
+      const totalKpi = kpiData.reduce((sum, k) => sum + (Number(k.kpi_achievement_rate) || 0), 0);
+      avgKPI = totalKpi / kpiData.length;
+    }
+
     // Return aggregated metrics
     return {
       totalEmployees: activeUsers.length,
       activeEmployees: activeUsers.length,
       onLeaveToday: 0,
       avgAttendanceRate,
+      avgKPI,
       avgWorkingDaysPerMonth: 0,
       departmentBreakdown: Object.entries(roleGroups).map(([dept, count]) => ({
         department: dept,
@@ -457,6 +471,7 @@ export interface WorkforceAnalytics {
   activeEmployees: number;
   onLeaveToday: number;
   avgAttendanceRate: number;
+  avgKPI: number;
   avgWorkingDaysPerMonth: number;
   departmentBreakdown: Array<{
     department: string;

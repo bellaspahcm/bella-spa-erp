@@ -51,7 +51,7 @@ export function VarianceTrendChart({ data, categories, height = 300 }: VarianceT
     <ResponsiveContainer width="100%" height={height}>
       <LineChart
         data={data}
-        margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+        margin={{ top: 10, right: 20, left: -15, bottom: 15 }}
       >
         <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
         <XAxis

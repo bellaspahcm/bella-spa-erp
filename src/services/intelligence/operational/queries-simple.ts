@@ -182,11 +182,60 @@ export async function getSessionAnalytics(tenantId: string) {
 }
 
 /**
- * Get Inventory Status - Simplified
+ * Get Inventory Status - queries mv_inventory_status materialized view
  */
-export async function getInventoryStatus(tenantId: string, stockStatus?: string) {
-  // Return placeholder empty array since inventory table does not exist
-  return [];
+export async function getInventoryStatus(tenantId: string, stockStatus?: string): Promise<InventoryStatus[]> {
+  const supabase = await createServiceRoleClient();
+
+  let query = supabase
+    .from('mv_inventory_status' as any)
+    .select('*')
+    .eq('tenant_id', tenantId);
+
+  if (stockStatus) {
+    query = query.eq('stock_status', stockStatus);
+  }
+
+  // Sort: out_of_stock first, then low_stock, medium_stock, high_stock
+  query = query.order('stock_status', { ascending: true });
+
+  const { data, error } = await query;
+
+  if (error) {
+    throw error;
+  }
+
+  return ((data || []) as any[]).map((row) => ({
+    tenantId: row.tenant_id,
+    productId: row.product_id,
+    productName: row.product_name,
+    category: row.category,
+    sku: row.sku,
+    unitOfMeasure: row.unit_of_measure,
+    currentStock: Number(row.current_stock),
+    reorderLevel: Number(row.reorder_point),
+    reorderPoint: Number(row.reorder_point),
+    reorderQuantity: Number(row.reorder_quantity),
+    maxStockLevel: Number(row.max_stock_level),
+    stockStatus: row.stock_status,
+    stockValue: Number(row.stock_value),
+    usageLast30Days: Number(row.usage_last_30_days),
+    avgDailyUsage: Number(row.avg_daily_usage),
+    daysUntilStockout: row.days_until_stockout !== null ? Number(row.days_until_stockout) : null,
+    supplierId: row.supplier_id,
+    supplierName: row.supplier_name,
+    supplierContact: row.supplier_contact,
+    supplierPhone: row.supplier_phone,
+    supplierEmail: row.supplier_email,
+    supplierLeadTimeDays: Number(row.supplier_lead_time_days),
+    reorderRecommendation: row.reorder_recommendation,
+    suggestedReorderDate: row.suggested_reorder_date,
+    lastRestockDate: row.last_restock_date,
+    lastRestockQuantity: row.last_restock_quantity !== null ? Number(row.last_restock_quantity) : null,
+    lastUsageDate: row.last_usage_date,
+    inventoryUpdatedAt: row.inventory_updated_at,
+    computedAt: row.computed_at,
+  }));
 }
 
 /**
@@ -341,13 +390,34 @@ export interface InventoryStatus {
   tenantId: string;
   productId: string;
   productName: string;
+  category: string;
+  sku: string | null;
+  unitOfMeasure: string | null;
   currentStock: number;
   reorderLevel: number;
-  stockStatus: string;
-  daysUntilStockout: number;
-  recommendedOrderQuantity: number;
+  reorderPoint: number;
+  reorderQuantity: number;
+  maxStockLevel: number;
+  stockStatus: 'out_of_stock' | 'low_stock' | 'medium_stock' | 'high_stock';
+  stockValue: number;
+  usageLast30Days: number;
+  avgDailyUsage: number;
+  daysUntilStockout: number | null;
+  supplierId: string | null;
+  supplierName: string | null;
+  supplierContact: string | null;
+  supplierPhone: string | null;
+  supplierEmail: string | null;
+  supplierLeadTimeDays: number;
+  reorderRecommendation: 'urgent' | 'recommended' | 'suggested' | 'not_needed';
+  suggestedReorderDate: string | null;
+  lastRestockDate: string | null;
+  lastRestockQuantity: number | null;
+  lastUsageDate: string | null;
+  inventoryUpdatedAt: string;
   computedAt: string;
 }
+
 
 export interface KTVPerformanceSimple {
   tenantId: string;

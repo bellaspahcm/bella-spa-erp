@@ -234,7 +234,8 @@ export class OperationalIntelligenceService implements IntelligenceService {
       );
 
       const cached = await this.cache.get<InventoryStatus[]>(cacheKey);
-      if (cached) {
+      // Skip empty cache — could be stale from when the placeholder returned []
+      if (cached && cached.length > 0) {
         return {
           data: cached,
           metadata: {
@@ -248,11 +249,14 @@ export class OperationalIntelligenceService implements IntelligenceService {
 
       const data = await queryInventoryStatus(tenantId, stockStatus);
 
-      // Lower TTL for inventory (5 minutes - more critical data)
-      await this.cache.set(cacheKey, data, {
-        ttl: 300, // 5 minutes
-        tags: ['operational', `tenant:${tenantId}`, 'inventory'],
-      });
+      // Only cache non-empty results
+      if (data.length > 0) {
+        // Lower TTL for inventory (5 minutes - more critical data)
+        await this.cache.set(cacheKey, data, {
+          ttl: 300, // 5 minutes
+          tags: ['operational', `tenant:${tenantId}`, 'inventory'],
+        });
+      }
 
       return {
         data,

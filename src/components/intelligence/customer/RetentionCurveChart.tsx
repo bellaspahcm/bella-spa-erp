@@ -43,7 +43,7 @@ export function RetentionCurveChart({ data, height = 350 }: RetentionCurveChartP
 
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <AreaChart data={chartData} margin={{ top: 15, right: 10, left: 10, bottom: 5 }}>
+      <AreaChart data={chartData} margin={{ top: 15, right: 20, left: -15, bottom: 15 }}>
         <defs>
           <linearGradient id="retentionGradient" x1="0" y1="0" x2="0" y2="1">
             <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.25} />

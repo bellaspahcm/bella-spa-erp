@@ -55,7 +55,7 @@ export function LtvDistributionChart({ data, height = 350 }: LtvDistributionChar
 
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <BarChart data={chartData} margin={{ top: 15, right: 10, left: 10, bottom: 5 }}>
+      <BarChart data={chartData} margin={{ top: 15, right: 20, left: -15, bottom: 15 }}>
         <defs>
           <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.9} />

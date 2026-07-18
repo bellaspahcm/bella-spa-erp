@@ -140,8 +140,15 @@ export default function InventoryDashboardPage() {
       if (statusFilter !== 'all') {
         params.append('stockStatus', statusFilter);
       }
+      params.append('t', Date.now().toString()); // Cache buster
 
-      const response = await fetch(`/api/intelligence/operational/inventory-status?${params}`);
+      const response = await fetch(`/api/intelligence/operational/inventory-status?${params}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
       const data = await response.json();
 
       if (data.error) {

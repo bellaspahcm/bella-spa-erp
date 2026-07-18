@@ -33,13 +33,13 @@ export function RevenueBySegmentChart({ data, height = 350 }: RevenueBySegmentCh
 
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <BarChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 80 }}>
+      <BarChart data={chartData} margin={{ top: 5, right: 20, left: -15, bottom: 30 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
         <XAxis
           dataKey="segment"
-          angle={-45}
+          angle={-30}
           textAnchor="end"
-          height={100}
+          height={40}
           tick={{ fill: '#64748b', fontSize: 11 }}
         />
         <YAxis

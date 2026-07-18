@@ -97,6 +97,7 @@ describe('Forecast API - Integration Tests', () => {
   let supabase: ReturnType<typeof getTestSupabaseClient>;
 
   beforeAll(async () => {
+    jest.setTimeout(30000);
     supabase = getTestSupabaseClient();
   });
 

@@ -18,8 +18,7 @@ CREATE INDEX IF NOT EXISTS idx_forecast_results_date_range
 
 -- Partial index for recent forecasts (last 90 days)
 CREATE INDEX IF NOT EXISTS idx_forecast_results_recent 
-  ON public.forecast_results(tenant_id, forecast_type, created_at DESC)
-  WHERE created_at >= CURRENT_DATE - INTERVAL '90 days';
+  ON public.forecast_results(tenant_id, forecast_type, created_at DESC);
 
 -- ============================================================================
 -- RECOMMENDATION_CACHE OPTIMIZATIONS

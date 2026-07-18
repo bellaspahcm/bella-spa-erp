@@ -306,29 +306,29 @@ export default function PnLDashboardPage() {
                 <div>
                   <p className="text-sm text-slate-600">Tổng doanh thu</p>
                   <p className="text-xl font-bold text-green-600">
-                    {formatCurrency(currentPnL.total_revenue)}
+                    {formatCurrency(currentPnL.totalRevenue)}
                   </p>
                 </div>
 
                 <div>
                   <p className="text-sm text-slate-600">Tổng chi phí</p>
                   <p className="text-xl font-bold text-red-600">
-                    {/* TODO: MonthlyPnLData has operating_expenses, not totalExpense */}
-                    {formatCurrency(currentPnL.operating_expenses)}
+                    {/* totalExpense = salaries + operating expenses */}
+                    {formatCurrency(currentPnL.totalExpense)}
                   </p>
                 </div>
 
                 <div>
                   <p className="text-sm text-slate-600">Lợi nhuận ròng</p>
-                  <p className={`text-xl font-bold ${currentPnL.net_profit >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-                    {formatCurrency(currentPnL.net_profit)}
+                  <p className={`text-xl font-bold ${currentPnL.netProfit >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                    {formatCurrency(currentPnL.netProfit)}
                   </p>
                 </div>
 
                 <div>
                   <p className="text-sm text-slate-600">Biên lợi nhuận</p>
-                  <p className={`text-xl font-bold ${currentPnL.profit_margin_pct >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-                    {formatNumber(currentPnL.profit_margin_pct, 1)}%
+                  <p className={`text-xl font-bold ${currentPnL.netMarginPct >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                    {formatNumber(currentPnL.netMarginPct, 1)}%
                   </p>
                 </div>
               </div>
@@ -338,10 +338,10 @@ export default function PnLDashboardPage() {
                 <p className="text-sm font-medium text-slate-700 mb-3">Biểu đồ P&L</p>
                 <PnLStatementChart
                   data={{
-                    totalRevenue: currentPnL.total_revenue,
-                    totalExpenses: currentPnL.operating_expenses,
-                    netProfit: currentPnL.net_profit,
-                    profitMargin: currentPnL.profit_margin_pct,
+                    totalRevenue: currentPnL.totalRevenue,
+                    totalExpenses: currentPnL.totalExpense,
+                    netProfit: currentPnL.netProfit,
+                    profitMargin: currentPnL.netMarginPct,
                   }}
                   height={250}
                 />

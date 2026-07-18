@@ -14,6 +14,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getOperationalIntelligenceService } from '@/services/intelligence/operational';
 import { getTenantIdFromSessionOrParam } from '../../shared/get-tenant-id';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     // Parse query params
@@ -39,7 +41,10 @@ export async function GET(request: NextRequest) {
     const service = getOperationalIntelligenceService();
     const result = await service.getInventoryStatus(tenantId, stockStatus || undefined);
 
-    return NextResponse.json(result, { status: 200 });
+    const response = NextResponse.json(result, { status: 200 });
+    response.headers.set('Cache-Control', 'no-store, max-age=0, must-revalidate');
+    response.headers.set('Pragma', 'no-cache');
+    return response;
   } catch (error) {
     console.error('[API] Inventory Status error:', error);
 

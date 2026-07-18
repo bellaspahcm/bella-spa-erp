@@ -53,25 +53,24 @@ export function KpiTrendChart({ data }: KpiTrendChartProps) {
     <ResponsiveContainer width="100%" height={350}>
       <BarChart
         data={topKpis}
-        layout="vertical"
         margin={{
           top: 20,
-          right: 30,
-          left: 100,
-          bottom: 20,
+          right: 20,
+          left: -15,
+          bottom: 30,
         }}
       >
         <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
         <XAxis
-          type="number"
-          domain={[0, 100]}
-          tick={{ fill: '#4b5563', fontSize: 12 }}
+          dataKey="name"
+          angle={-30}
+          textAnchor="end"
+          height={40}
+          tick={{ fill: '#4b5563', fontSize: 11 }}
         />
         <YAxis
-          type="category"
-          dataKey="name"
+          domain={[0, 100]}
           tick={{ fill: '#4b5563', fontSize: 12 }}
-          width={90}
         />
         <Tooltip
           contentStyle={{
@@ -80,9 +79,9 @@ export function KpiTrendChart({ data }: KpiTrendChartProps) {
             borderRadius: '8px',
             padding: '12px',
           }}
-          formatter={(value) => [`${value} điểm`, 'KPI Score']}
+          formatter={(value) => [`${value} điểm`, 'Điểm KPI']}
         />
-        <Bar dataKey="kpiScore" radius={[0, 8, 8, 0]}>
+        <Bar dataKey="kpiScore" radius={[6, 6, 0, 0]}>
           {topKpis.map((entry, index) => (
             <Cell key={`cell-${index}`} fill={entry.color} />
           ))}

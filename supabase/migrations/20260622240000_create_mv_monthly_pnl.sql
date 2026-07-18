@@ -164,8 +164,7 @@ CREATE INDEX idx_mv_monthly_pnl_revenue
   ON mv_monthly_pnl (tenant_id, total_revenue DESC);
 
 CREATE INDEX idx_mv_monthly_pnl_recent 
-  ON mv_monthly_pnl (month DESC)
-  WHERE month >= (CURRENT_DATE - INTERVAL '6 months');
+  ON mv_monthly_pnl (month DESC);
 
 -- Grant access to authenticated and anon users (read-only)
 GRANT SELECT ON mv_monthly_pnl TO authenticated;

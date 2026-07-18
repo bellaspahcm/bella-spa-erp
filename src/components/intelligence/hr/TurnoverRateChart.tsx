@@ -22,7 +22,7 @@ interface TurnoverRateChartProps {
 export function TurnoverRateChart({ data, height = 300 }: TurnoverRateChartProps) {
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <AreaChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+      <AreaChart data={data} margin={{ top: 5, right: 20, left: -15, bottom: 15 }}>
         <defs>
           <linearGradient id="turnoverGradient" x1="0" y1="0" x2="0" y2="1">
             <stop offset="5%" stopColor="#f97316" stopOpacity={0.3} />

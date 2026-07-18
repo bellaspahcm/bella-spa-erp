@@ -38,6 +38,7 @@ export async function GET(request: NextRequest) {
     const period = searchParams.get('period') as TimePeriod | null;
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
+    const month = searchParams.get('month');
     const ktvId = searchParams.get('ktvId') || undefined;
     const limitParam = searchParams.get('limit');
     const limit = limitParam ? parseInt(limitParam, 10) : undefined;
@@ -62,6 +63,9 @@ export async function GET(request: NextRequest) {
     let dateRange: TimePeriod | { startDate: string; endDate: string } | undefined;
     if (startDate && endDate) {
       dateRange = { startDate, endDate };
+    } else if (month && /^\d{4}-\d{2}$/.test(month)) {
+      const monthStart = `${month}-01`;
+      dateRange = { startDate: monthStart, endDate: monthStart };
     } else if (period) {
       dateRange = period;
     }

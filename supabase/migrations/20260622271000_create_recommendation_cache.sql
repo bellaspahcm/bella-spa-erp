@@ -60,18 +60,15 @@ CREATE TABLE IF NOT EXISTS public.recommendation_cache (
 
 -- Primary query pattern: fetch by cache_key
 CREATE UNIQUE INDEX idx_recommendation_cache_key 
-  ON public.recommendation_cache(tenant_id, cache_key)
-  WHERE expires_at > NOW(); -- Partial index: only active cache entries
+  ON public.recommendation_cache(tenant_id, cache_key);
 
 -- Query by customer and type
 CREATE INDEX idx_recommendation_cache_customer_type 
-  ON public.recommendation_cache(tenant_id, customer_id, recommendation_type)
-  WHERE expires_at > NOW();
+  ON public.recommendation_cache(tenant_id, customer_id, recommendation_type);
 
 -- For cache cleanup jobs
 CREATE INDEX idx_recommendation_cache_expired 
-  ON public.recommendation_cache(expires_at)
-  WHERE expires_at <= NOW();
+  ON public.recommendation_cache(expires_at);
 
 -- For analytics on cache usage
 CREATE INDEX idx_recommendation_cache_hit_count 
@@ -83,31 +80,13 @@ CREATE INDEX idx_recommendation_cache_hit_count
 
 ALTER TABLE public.recommendation_cache ENABLE ROW LEVEL SECURITY;
 
--- Policy: Users can only see recommendations for their tenant
-CREATE POLICY recommendation_cache_tenant_isolation 
-  ON public.recommendation_cache
+CREATE POLICY recommendation_cache_select_policy ON public.recommendation_cache
   FOR SELECT
-  USING (
-    tenant_id IN (
-      SELECT tenant_id 
-      FROM public.user_tenant_roles 
-      WHERE user_id = auth.uid()
-    )
-  );
+  USING (is_hq_super_admin() OR tenant_id = get_auth_tenant_id());
 
--- Policy: Only service account can insert/update cache
-CREATE POLICY recommendation_cache_service_write 
-  ON public.recommendation_cache
+CREATE POLICY recommendation_cache_all_policy ON public.recommendation_cache
   FOR ALL
-  USING (
-    tenant_id IN (
-      SELECT utr.tenant_id 
-      FROM public.user_tenant_roles utr
-      JOIN public.roles r ON utr.role_id = r.id
-      WHERE utr.user_id = auth.uid()
-        AND r.name IN ('admin', 'owner', 'service_account')
-    )
-  );
+  USING (is_hq_super_admin() OR (tenant_id = get_auth_tenant_id() AND current_user_role() = 'admin'));
 
 -- ============================================================================
 -- FUNCTION: Get Cached Recommendations

@@ -338,29 +338,29 @@ export async function getMonthlyPnL(
       );
     }
     
-    // Map database columns to camelCase
+    // Map database columns to camelCase (matching actual mv_monthly_pnl view schema)
     return (data || []).map((row: any) => ({
       tenantId: row.tenant_id,
       month: row.month,
-      serviceRevenue: row.service_revenue || 0,
+      serviceRevenue: row.booking_revenue || 0,       // view: booking_revenue
       productRevenue: row.product_revenue || 0,
       packageRevenue: row.package_revenue || 0,
       otherRevenue: row.other_revenue || 0,
       totalRevenue: row.total_revenue || 0,
-      salaryExpense: row.salary_expense || 0,
-      operatingExpense: row.operating_expense || 0,
-      inventoryExpense: row.inventory_expense || 0,
+      salaryExpense: row.total_ktv_salaries || 0,      // view: total_ktv_salaries
+      operatingExpense: row.total_operating_expenses || 0, // view: total_operating_expenses
+      inventoryExpense: row.supplies_expense || 0,
       marketingExpense: row.marketing_expense || 0,
-      utilityExpense: row.utility_expense || 0,
+      utilityExpense: row.utilities_expense || 0,
       maintenanceExpense: row.maintenance_expense || 0,
-      otherExpense: row.other_expense || 0,
-      totalExpense: row.total_expense || 0,
-      grossProfit: row.gross_profit || 0,
-      operatingProfit: row.operating_profit || 0,
+      otherExpense: row.other_operating_expense || 0,
+      totalExpense: row.total_expenses || 0,           // view: total_expenses
+      grossProfit: row.gross_revenue || 0,             // view: gross_revenue (same as total_revenue before expenses)
+      operatingProfit: (row.total_revenue || 0) - (row.total_operating_expenses || 0),
       netProfit: row.net_profit || 0,
-      grossMarginPct: row.gross_margin_pct || 0,
-      operatingMarginPct: row.operating_margin_pct || 0,
-      netMarginPct: row.net_margin_pct || 0,
+      grossMarginPct: row.total_revenue > 0 ? (row.gross_revenue / row.total_revenue * 100) : 0,
+      operatingMarginPct: row.total_revenue > 0 ? ((row.total_revenue - row.total_operating_expenses) / row.total_revenue * 100) : 0,
+      netMarginPct: row.profit_margin_pct || 0,
       computedAt: row.computed_at,
     }));
   } catch (error: unknown) {

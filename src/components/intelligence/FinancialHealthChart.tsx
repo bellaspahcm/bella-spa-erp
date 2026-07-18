@@ -54,7 +54,7 @@ export function FinancialHealthChart({
       <BarChart
         layout="vertical"
         data={data}
-        margin={{ top: 15, right: 45, left: 10, bottom: 5 }}
+        margin={{ top: 15, right: 45, left: -15, bottom: 15 }}
       >
         <XAxis type="number" hide />
         <YAxis

@@ -55,22 +55,22 @@ export function TopEarnersChart({ data }: TopEarnersChartProps) {
   }
 
   return (
-    <ResponsiveContainer width="100%" height={400}>
+    <ResponsiveContainer width="100%" height={350}>
       <BarChart
         data={topEarners}
         margin={{
           top: 20,
-          right: 30,
-          left: 20,
-          bottom: 80,
+          right: 20,
+          left: -15,
+          bottom: 30,
         }}
       >
         <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
         <XAxis
           dataKey="name"
-          angle={-45}
+          angle={-30}
           textAnchor="end"
-          height={100}
+          height={40}
           tick={{ fill: '#4b5563', fontSize: 12 }}
         />
         <YAxis

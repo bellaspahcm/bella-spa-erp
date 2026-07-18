@@ -71,6 +71,10 @@ CREATE INDEX idx_forecast_results_accuracy
 CREATE INDEX idx_forecast_results_horizon 
   ON public.forecast_results(tenant_id, forecast_type, forecast_horizon);
 
+-- Unique index to support upsert on conflict
+CREATE UNIQUE INDEX idx_forecast_results_upsert_key 
+  ON public.forecast_results(tenant_id, forecast_type, model_name, model_version, forecast_date, forecast_horizon);
+
 -- ============================================================================
 -- ROW LEVEL SECURITY (RLS)
 -- ============================================================================
@@ -78,44 +82,13 @@ CREATE INDEX idx_forecast_results_horizon
 ALTER TABLE public.forecast_results ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Users can only see forecasts for their tenant
-CREATE POLICY forecast_results_tenant_isolation 
-  ON public.forecast_results
+CREATE POLICY forecast_results_select_policy ON public.forecast_results
   FOR SELECT
-  USING (
-    tenant_id IN (
-      SELECT tenant_id 
-      FROM public.user_tenant_roles 
-      WHERE user_id = auth.uid()
-    )
-  );
+  USING (is_hq_super_admin() OR tenant_id = get_auth_tenant_id());
 
--- Policy: Only admins can insert forecast results
-CREATE POLICY forecast_results_admin_insert 
-  ON public.forecast_results
-  FOR INSERT
-  WITH CHECK (
-    tenant_id IN (
-      SELECT utr.tenant_id 
-      FROM public.user_tenant_roles utr
-      JOIN public.roles r ON utr.role_id = r.id
-      WHERE utr.user_id = auth.uid()
-        AND r.name IN ('admin', 'owner')
-    )
-  );
-
--- Policy: Only admins can update forecast results (to add actual values)
-CREATE POLICY forecast_results_admin_update 
-  ON public.forecast_results
-  FOR UPDATE
-  USING (
-    tenant_id IN (
-      SELECT utr.tenant_id 
-      FROM public.user_tenant_roles utr
-      JOIN public.roles r ON utr.role_id = r.id
-      WHERE utr.user_id = auth.uid()
-        AND r.name IN ('admin', 'owner')
-    )
-  );
+CREATE POLICY forecast_results_all_policy ON public.forecast_results
+  FOR ALL
+  USING (is_hq_super_admin() OR (tenant_id = get_auth_tenant_id() AND current_user_role() = 'admin'));
 
 -- ============================================================================
 -- TRIGGER: Update updated_at timestamp

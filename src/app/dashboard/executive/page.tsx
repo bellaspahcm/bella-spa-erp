@@ -66,10 +66,16 @@ const REVENUE_SOURCE_LABELS: Record<string, string> = {
   remaining_payment: 'Thanh toán còn lại',
   deposit: 'Tiền đặt cọc',
   package_payment: 'Thanh toán trọn gói',
+  package_sale: 'Thanh toán trọn gói',
+  session_completed: 'Thanh toán theo buổi',
+  service_revenue: 'Doanh thu dịch vụ',
+  partial_payment: 'Thanh toán một phần',
+  late_fee: 'Phí trễ hạn',
+  refund: 'Hoàn tiền',
 };
 
 const getRevenueSourceLabel = (key: string) => {
-  return REVENUE_SOURCE_LABELS[key] || key;
+  return REVENUE_SOURCE_LABELS[key.trim().toLowerCase()] || key;
 };
 
 const periodOptions = [

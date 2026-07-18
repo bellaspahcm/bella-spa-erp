@@ -115,19 +115,19 @@ export default function FinancePage() {
   // Transform Intelligence Layer MonthlyPnL to component's expected PnLData format
   const pnlData = useMemo<PnLData | null>(() => {
     if (!monthlyPnLQuery.data?.data?.[0]) return null;
-    const intelligencePnL = monthlyPnLQuery.data.data[0];
+    const pnl = monthlyPnLQuery.data.data[0];
     
-    // Transform from Intelligence Layer API format (snake_case) to component format
-    // MonthlyPnLData uses: total_revenue, operating_expenses, net_profit (snake_case)
+    // Service returns camelCase (totalRevenue, netProfit, operatingExpense)
+    // Component expects snake_case PnLData fields
     return {
       month_year: `${year}-${month}`,
-      total_revenue: intelligencePnL.total_revenue,
-      total_operating_expenses: intelligencePnL.operating_expenses,
-      total_ktv_salaries: 0,  // Not available in MonthlyPnLData yet - only has aggregated operating_expenses
-      net_profit: intelligencePnL.net_profit,
-      total_bookings: 0,  // Not available in Intelligence Layer MonthlyPnLData yet
-      total_sessions_completed: 0,  // Not available in Intelligence Layer MonthlyPnLData yet
-      is_locked: false,  // Not available in Intelligence Layer MonthlyPnLData yet
+      total_revenue: pnl.totalRevenue ?? 0,
+      total_operating_expenses: (pnl.operatingExpense ?? 0) + (pnl.salaryExpense ?? 0),
+      total_ktv_salaries: pnl.salaryExpense ?? 0,
+      net_profit: pnl.netProfit ?? 0,
+      total_bookings: 0,  // Not in mv_monthly_pnl
+      total_sessions_completed: 0,  // Not in mv_monthly_pnl
+      is_locked: false,  // Not tracked in materialized view
     };
   }, [monthlyPnLQuery.data, month, year]);
 
