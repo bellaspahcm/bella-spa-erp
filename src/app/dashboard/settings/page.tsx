@@ -50,31 +50,39 @@ import MetaAdsSettingsTab from "./components/MetaAdsSettingsTab";
 import CommissionSettingsTab from "./components/CommissionSettingsTab";
 
 const TABS = [
+  { type: "header", label: "Doanh nghiệp & Giao diện" },
   { id: "general", label: "Thông tin chung", icon: Store },
+  { id: "appearance", label: "Giao diện & Module", icon: Palette },
   { id: "subscription", label: "Gói dịch vụ (SaaS)", icon: CreditCard },
   { id: "hq-billing", label: "Hóa đơn HQ (Royalty)", icon: Receipt },
-  { id: "meta-ads", label: "Meta Ads", icon: Megaphone },
+
+  { type: "header", label: "Vận hành & Tài chính" },
   { id: "salary", label: "Lương & Thưởng", icon: Coins },
   { id: "commission", label: "Hoa hồng (Beauty Spa)", icon: Sparkles },
   { id: "accounting", label: "Chế độ Kế toán", icon: Calculator },
+  { id: "promotions", label: "Khuyến mãi", icon: Sparkles },
+  { id: "meta-ads", label: "Meta Ads", icon: Megaphone },
+
+  { type: "header", label: "Bảo mật & Phân quyền" },
   { id: "staff", label: "Nhân sự & Quyền", icon: Shield },
   { id: "permissions", label: "Phân quyền", icon: Lock },
   { id: "security", label: "Bảo mật & Mật khẩu", icon: KeyRound },
   { id: "notifications", label: "Thông báo", icon: Bell },
-  { id: "appearance", label: "Giao diện & Module", icon: Palette },
-  { id: "promotions", label: "Khuyến mãi", icon: Sparkles },
+
+  { type: "header", label: "Giám sát & Tích hợp" },
   { id: "rules", label: "Quy tắc nghiệp vụ", icon: Brain },
   { id: "partners", label: "API Partners", icon: KeyRound },
   { id: "system-monitor", label: "Trung tâm Giám sát", icon: MonitorDot },
   { id: "audit-logs", label: "Nhật ký hệ thống", icon: History },
 ] as const;
 
-type SettingsTabId = (typeof TABS)[number]["id"];
+type TabItem = (typeof TABS)[number];
+type SettingsTabId = Extract<TabItem, { id: string }>["id"];
 
 const DEFAULT_SETTINGS_TAB: SettingsTabId = "general";
 
 function isSettingsTabId(value: string | null): value is SettingsTabId {
-  return TABS.some((tab) => tab.id === value);
+  return TABS.some((tab) => "id" in tab && tab.id === value);
 }
 
 function SettingsContent() {
@@ -254,32 +262,50 @@ function SettingsContent() {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         {/* Navigation Sidebar */}
-        <div className="lg:col-span-1 space-y-2">
-          {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => handleTabChange(tab.id)}
-              className={cn(
-                "w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all duration-300 font-bold group",
-                activeTab === tab.id
-                  ? "bg-white dark:bg-[#5D1C34]/30 text-primary dark:text-[#EFE9E1] shadow-lg shadow-pink-100 dark:shadow-none border border-pink-50 dark:border-[#A67D44]/30"
-                  : "text-muted-foreground hover:bg-white/50 hover:text-primary",
-              )}
-            >
-              <tab.icon
+        <div className="lg:col-span-1 space-y-1.5 bg-white/40 dark:bg-[#1C1B19]/40 p-4 rounded-[2.5rem] border border-slate-200/40 dark:border-[#3E3A35]/40 h-fit max-h-[85vh] overflow-y-auto custom-scrollbar">
+          {TABS.map((tab, idx) => {
+            if ("type" in tab && tab.type === "header") {
+              return (
+                <div
+                  key={`header-${idx}`}
+                  className="px-5 pt-4 pb-2 text-[10px] font-extrabold text-primary/70 dark:text-[#A67D44]/75 uppercase tracking-[0.2em] relative z-10 select-none pointer-events-none mt-4 first:mt-0"
+                >
+                  {tab.label}
+                </div>
+              );
+            }
+
+            // Normal tab button
+            const normalTab = tab as Extract<TabItem, { id: string }>;
+            const isTabActive = activeTab === normalTab.id;
+            const Icon = normalTab.icon;
+
+            return (
+              <button
+                key={normalTab.id}
+                onClick={() => handleTabChange(normalTab.id)}
                 className={cn(
-                  "w-5 h-5 transition-transform group-hover:scale-110",
-                  activeTab === tab.id
-                    ? "text-primary"
-                    : "text-slate-400 group-hover:text-primary",
+                  "w-full flex items-center gap-4 px-5 py-3.5 rounded-2xl transition-all duration-300 font-bold group text-left border",
+                  isTabActive
+                    ? "bg-white dark:bg-[#5D1C34]/30 text-primary dark:text-[#EFE9E1] shadow-lg shadow-pink-100/50 dark:shadow-none border-pink-50 dark:border-[#A67D44]/30"
+                    : "text-muted-foreground hover:bg-white/60 hover:text-primary border-transparent",
                 )}
-              />
-              <span className="text-sm">{tab.label}</span>
-              {activeTab === tab.id && (
-                <ChevronRight className="ml-auto w-4 h-4 text-primary animate-pulse" />
-              )}
-            </button>
-          ))}
+              >
+                <Icon
+                  className={cn(
+                    "w-5 h-5 transition-transform group-hover:scale-105",
+                    isTabActive
+                      ? "text-primary dark:text-[#A67D44]"
+                      : "text-slate-400 group-hover:text-primary dark:group-hover:text-[#A67D44]",
+                  )}
+                />
+                <span className="text-sm">{normalTab.label}</span>
+                {isTabActive && (
+                  <ChevronRight className="ml-auto w-4 h-4 text-primary dark:text-[#A67D44] animate-pulse" />
+                )}
+              </button>
+            );
+          })}
         </div>
 
         {/* Content Area */}
