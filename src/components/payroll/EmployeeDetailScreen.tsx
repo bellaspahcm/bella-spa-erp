@@ -38,6 +38,7 @@ interface EmployeeDetailData {
     total: number;
     totalLastMonth: number;
     changePercent: number;
+    history?: Array<{ month: string; total: number }>;
   };
   breakdown: {
     baseSalary: {
@@ -253,10 +254,10 @@ export function EmployeeDetailScreen({ employeeId, month }: { employeeId: string
   return (
     <div className="min-h-screen bg-slate-50/50">
       {/* Sticky Premium Header */}
-      <div className="bg-white/80 backdrop-blur-md border-b border-slate-200/50 sticky top-0 z-10">
+      <div className="bg-white/80 backdrop-blur-md border-b border-slate-200/50 sticky top-0 z-10 print:hidden">
         <div className="max-w-4xl mx-auto px-6 py-4 space-y-3">
           {/* Breadcrumbs & Back Button */}
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center justify-between gap-4 print:hidden">
             <div className="flex items-center gap-2 text-xs font-semibold tracking-wider text-slate-500 uppercase">
               <Link href="/dashboard" className="hover:text-primary transition-colors">
                 Tổng quan
@@ -271,7 +272,7 @@ export function EmployeeDetailScreen({ employeeId, month }: { employeeId: string
 
             <button
               onClick={() => router.back()}
-              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-bold text-slate-600 shadow-sm transition-all duration-200 hover:bg-primary/5 hover:text-primary hover:border-primary/30 group"
+              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-bold text-slate-600 shadow-sm transition-all duration-200 hover:bg-primary/5 hover:text-primary hover:border-primary/30 group print:hidden"
             >
               <ArrowLeft size={14} className="transition-transform group-hover:-translate-x-1" />
               <span>Quay lại</span>
@@ -291,7 +292,7 @@ export function EmployeeDetailScreen({ employeeId, month }: { employeeId: string
               </p>
             </div>
             
-            <div className="flex gap-2">
+            <div className="flex gap-2 print:hidden">
               <Button
                 variant="outline"
                 size="sm"
@@ -305,6 +306,7 @@ export function EmployeeDetailScreen({ employeeId, month }: { employeeId: string
                 variant="outline" 
                 size="sm"
                 className="rounded-xl text-xs font-bold border-slate-200 hover:text-primary hover:border-primary/30 active:scale-95 transition-all"
+                onClick={() => window.print()}
               >
                 <FileText size={14} className="mr-1.5" />
                 Xuất PDF
@@ -589,16 +591,55 @@ export function EmployeeDetailScreen({ employeeId, month }: { employeeId: string
 
       {/* Comparison Modal */}
       {showComparison && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 print:hidden">
           <Card className="w-full max-w-md rounded-[2rem] border-none shadow-2xl overflow-hidden bg-white p-6 md:p-8 space-y-6">
             <div className="space-y-1">
               <h2 className="text-xl font-bold font-heading text-slate-900 tracking-tight">So sánh lương kỹ thuật viên</h2>
               <p className="text-xs text-slate-500 font-medium">So sánh kết quả thu nhập của {data.employee.name} qua các tháng</p>
             </div>
-            <div className="py-8 text-center bg-slate-50 border border-slate-100 rounded-2xl">
-              <BarChart3 className="mx-auto h-10 w-10 text-slate-300 animate-pulse" />
-              <p className="mt-3 text-sm text-slate-500 font-medium">Biểu đồ so sánh đang được cập nhật...</p>
+            
+            <div className="bg-slate-50 border border-slate-100/80 rounded-2xl p-6 relative">
+              <div className="h-48 flex items-end justify-between gap-3 pt-6 px-1">
+                {data.salary.history && data.salary.history.length > 0 ? (
+                  data.salary.history.map((item, idx) => {
+                    const maxVal = Math.max(...(data.salary.history || []).map(h => h.total), 1);
+                    const percentage = (item.total / maxVal) * 100;
+                    // Check if this month is the current month
+                    const isCurrent = item.month === `${data.month.split('-')[1]}/${data.month.split('-')[0]}`;
+
+                    return (
+                      <div key={idx} className="flex-1 flex flex-col items-center gap-1 group h-full justify-end relative">
+                        {/* Hover Tooltip showing exact value */}
+                        <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-slate-800 text-white text-[9px] font-bold py-1 px-1.5 rounded shadow-md z-20 pointer-events-none -translate-y-12 text-center">
+                          {formatCurrency(item.total)}
+                        </div>
+                        
+                        {/* Vertical Bar */}
+                        <div 
+                          className="w-full rounded-t-lg transition-all duration-500 relative cursor-pointer"
+                          style={{ 
+                            height: `${Math.max(6, percentage)}%`,
+                            background: isCurrent 
+                              ? 'linear-gradient(to top, var(--primary) 0%, var(--accent) 100%)' 
+                              : 'linear-gradient(to top, #CBD5E1 0%, #94A3B8 100%)',
+                            opacity: isCurrent ? 1 : 0.8
+                          }}
+                          title={`${item.month}: ${formatCurrency(item.total)}`}
+                        />
+                        
+                        {/* Month Label */}
+                        <span className={`text-[10px] font-extrabold mt-1 tracking-tight ${isCurrent ? 'text-primary font-black' : 'text-slate-400'}`}>
+                          {item.month}
+                        </span>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className="text-xs text-slate-400 text-center w-full">Không có dữ liệu lịch sử</p>
+                )}
+              </div>
             </div>
+
             <div className="flex justify-end pt-2">
               <Button 
                 className="rounded-xl text-xs font-bold bg-primary text-white hover:bg-primary-hover px-6 py-2 transition-all active:scale-95" 
@@ -610,6 +651,30 @@ export function EmployeeDetailScreen({ employeeId, month }: { employeeId: string
           </Card>
         </div>
       )}
+
+      {/* CSS overrides for print mode */}
+      <style>{`
+        @media print {
+          /* Hide sidebar, headers, and actions */
+          aside, 
+          .beauty-erp-sidebar,
+          .beauty-erp-mobile-header,
+          .print\\:hidden,
+          button,
+          a,
+          nav {
+            display: none !important;
+          }
+          /* Expand layout container to page limits */
+          body, html, main, .max-w-4xl {
+            width: 100% !important;
+            max-width: 100% !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            background: white !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

@@ -274,19 +274,35 @@ export async function GET(
 
     const totalSalary = baseSalary + serviceCommission + positionBonus + ratingBonus + productSalesCommission + attendancePenalty - totalAdvances;
 
-    // 14. Fetch previous month for comparison
-    const prevMonth = new Date(year, month - 2, 1);
-    const prevMonthYear = `${prevMonth.getFullYear()}-${String(prevMonth.getMonth() + 1).padStart(2, '0')}-01`;
-    
-    const { data: prevSalaryRecord } = await supabase
-      .from('salary_records')
-      .select('total_salary')
-      .eq('ktv_id', employeeId)
-      .eq('month_year', prevMonthYear)
-      .eq('tenant_id', tenantId)
-      .maybeSingle();
+    // 14. Fetch last 6 months of salary history for comparison
+    const historyMonths: string[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(year, month - 1 - i, 1);
+      const mStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+      historyMonths.push(mStr);
+    }
 
-    const totalLastMonth = prevSalaryRecord?.total_salary || totalSalary;
+    const { data: salaryHistory } = await supabase
+      .from('salary_records')
+      .select('month_year, total_salary')
+      .eq('ktv_id', employeeId)
+      .eq('tenant_id', tenantId)
+      .in('month_year', historyMonths)
+      .order('month_year', { ascending: true });
+
+    const historyMap = new Map((salaryHistory || []).map(h => [h.month_year, Number(h.total_salary)]));
+    const history = historyMonths.map(m => {
+      const dateParts = m.split('-');
+      const label = `${dateParts[1]}/${dateParts[0]}`;
+      let totalVal = historyMap.get(m) || 0;
+      if (m === monthYearDate && !totalVal) {
+        totalVal = totalSalary;
+      }
+      return { month: label, total: totalVal };
+    });
+
+    const prevMonthYear = historyMonths[4] || `${year}-${String(month - 1).padStart(2, '0')}-01`;
+    const totalLastMonth = historyMap.get(prevMonthYear) || totalSalary;
     const changePercent = totalLastMonth > 0 
       ? Number((((totalSalary - totalLastMonth) / totalLastMonth) * 100).toFixed(1))
       : 0;
@@ -307,6 +323,7 @@ export async function GET(
         total: salaryRecord?.total_salary || totalSalary,
         totalLastMonth,
         changePercent,
+        history,
       },
       breakdown: {
         baseSalary: {
