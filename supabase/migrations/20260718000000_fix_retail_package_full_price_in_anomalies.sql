@@ -63,7 +63,7 @@ BEGIN
         jsonb_build_object(
             'revenue_id', r.id,
             'amount', r.amount,
-            'received_date', COALESCE(r.received_date, r.revenue_date),
+            'received_date', r.received_date,
             'notes', r.notes,
             'revenue_type', r.revenue_type
         )
