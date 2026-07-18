@@ -175,7 +175,27 @@ export async function GET(
     const lateDays = attendanceLogs.filter(a => a.status === 'late').length;
     const lateDates = attendanceLogs
       .filter(a => a.status === 'late')
-      .map(a => ({ date: a.date, minutes: 15 })); // TODO: Store actual late minutes
+      .map(a => {
+        let minutes = 15; // Fallback
+        if (a.checkin_time) {
+          try {
+            const checkinLocalTime = new Date(a.checkin_time).toLocaleTimeString('en-US', {
+              hour12: false,
+              timeZone: 'Asia/Ho_Chi_Minh'
+            });
+            const parts = checkinLocalTime.split(':').map(Number);
+            const checkinMin = (parts[0] || 0) * 60 + (parts[1] || 0);
+            const cutoffMin = 8 * 60 + 30; // 08:30
+            const diff = checkinMin - cutoffMin;
+            if (diff > 0) {
+              minutes = diff;
+            }
+          } catch (e) {
+            console.error('Error parsing checkin_time:', a.checkin_time, e);
+          }
+        }
+        return { date: a.date, minutes };
+      });
 
     // 9. Fetch salary advances for the month
     const { data: advances } = await (supabase as unknown as SupabaseClient)
