@@ -381,7 +381,10 @@ export async function collectDebtPayment(input: {
     if (!user || !user.tenant_id || !canWriteReconciliation(user.role)) {
       return { success: false, error: 'Không có quyền thu tiền' };
     }
-    await assertLegacyFinanceWriteAllowed('Thu đối soát công nợ');
+    // NOTE: Thu nợ (debt collection) luôn được phép ở mọi chế độ kế toán.
+    // Bản ghi revenue được tạo ra có đầy đủ business_event_type + accounting_metadata
+    // tương thích với Professional Core. KHÔNG chặn nghiệp vụ này.
+
 
     if (!input.bookingId) return { success: false, error: 'Thiếu booking cần thu tiền' };
     if (!Number.isFinite(input.amount) || input.amount <= 0) {
