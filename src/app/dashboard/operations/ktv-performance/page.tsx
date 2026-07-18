@@ -289,7 +289,7 @@ export default function KtvPerformanceDashboardPage() {
           <span className="text-xs font-bold text-emerald-800 uppercase tracking-widest block">
             Báo cáo vận hành
           </span>
-          <h1 className="font-serif text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
+          <h1 className="font-heading text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
             Bảng Xếp Hạng KTV
           </h1>
           <p className="text-sm text-slate-600 font-medium max-w-xl">
@@ -370,7 +370,7 @@ export default function KtvPerformanceDashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-bold text-amber-700 uppercase tracking-wider">KTV Xuất Sắc Nhất</p>
-                <p className="font-serif mt-3 text-2xl font-extrabold text-amber-900">
+                <p className="font-heading mt-3 text-2xl font-extrabold text-amber-900">
                   {leaderboard.data[0].ktvName}
                 </p>
                 <p className="text-sm font-semibold text-amber-800 mt-1">
@@ -390,7 +390,7 @@ export default function KtvPerformanceDashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Trung Bình</p>
-                <p className="font-serif mt-3 text-2xl font-extrabold text-slate-900">
+                <p className="font-heading mt-3 text-2xl font-extrabold text-slate-900">
                   {metric === 'revenue' && formatCurrency(
                     leaderboard.data.reduce((sum, ktv) => sum + ktv.metricValue, 0) / leaderboard.data.length
                   )}
@@ -413,7 +413,7 @@ export default function KtvPerformanceDashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tổng Cộng</p>
-                <p className="font-serif mt-3 text-2xl font-extrabold text-slate-900">
+                <p className="font-heading mt-3 text-2xl font-extrabold text-slate-900">
                   {metric === 'revenue' && formatCurrency(
                     leaderboard.data.reduce((sum, ktv) => sum + ktv.metricValue, 0)
                   )}

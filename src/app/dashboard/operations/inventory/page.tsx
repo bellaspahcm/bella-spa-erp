@@ -260,7 +260,7 @@ export default function InventoryDashboardPage() {
           <span className="text-xs font-bold text-emerald-800 uppercase tracking-widest block">
             Báo cáo vận hành
           </span>
-          <h1 className="font-serif text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
+          <h1 className="font-heading text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
             Quản Lý Kho Hàng
           </h1>
           <p className="text-sm text-slate-600 font-medium max-w-xl">
@@ -320,7 +320,7 @@ export default function InventoryDashboardPage() {
               <p className={`text-xs font-bold uppercase tracking-wider ${statusFilter === 'out_of_stock' ? 'text-white/80' : 'text-slate-500'}`}>
                 Hết hàng
               </p>
-              <p className="mt-2 text-3xl font-extrabold font-serif">{statusCounts.out_of_stock}</p>
+              <p className="mt-2 text-3xl font-extrabold font-heading">{statusCounts.out_of_stock}</p>
             </div>
             <div className={`flex h-12 w-12 items-center justify-center rounded-2xl transition-transform group-hover:scale-110 ${
               statusFilter === 'out_of_stock' ? 'bg-white/15 text-white' : 'bg-red-50 text-red-500'
@@ -344,7 +344,7 @@ export default function InventoryDashboardPage() {
               <p className={`text-xs font-bold uppercase tracking-wider ${statusFilter === 'low_stock' ? 'text-white/80' : 'text-slate-500'}`}>
                 Sắp hết
               </p>
-              <p className="mt-2 text-3xl font-extrabold font-serif">{statusCounts.low_stock}</p>
+              <p className="mt-2 text-3xl font-extrabold font-heading">{statusCounts.low_stock}</p>
             </div>
             <div className={`flex h-12 w-12 items-center justify-center rounded-2xl transition-transform group-hover:scale-110 ${
               statusFilter === 'low_stock' ? 'bg-white/15 text-white' : 'bg-orange-50 text-orange-500'
@@ -368,7 +368,7 @@ export default function InventoryDashboardPage() {
               <p className={`text-xs font-bold uppercase tracking-wider ${statusFilter === 'medium_stock' ? 'text-white/80' : 'text-slate-500'}`}>
                 Vừa phải
               </p>
-              <p className="mt-2 text-3xl font-extrabold font-serif">{statusCounts.medium_stock}</p>
+              <p className="mt-2 text-3xl font-extrabold font-heading">{statusCounts.medium_stock}</p>
             </div>
             <div className={`flex h-12 w-12 items-center justify-center rounded-2xl transition-transform group-hover:scale-110 ${
               statusFilter === 'medium_stock' ? 'bg-white/15 text-white' : 'bg-amber-50 text-amber-600'
@@ -392,7 +392,7 @@ export default function InventoryDashboardPage() {
               <p className={`text-xs font-bold uppercase tracking-wider ${statusFilter === 'high_stock' ? 'text-white/80' : 'text-slate-500'}`}>
                 Đầy đủ
               </p>
-              <p className="mt-2 text-3xl font-extrabold font-serif">{statusCounts.high_stock}</p>
+              <p className="mt-2 text-3xl font-extrabold font-heading">{statusCounts.high_stock}</p>
             </div>
             <div className={`flex h-12 w-12 items-center justify-center rounded-2xl transition-transform group-hover:scale-110 ${
               statusFilter === 'high_stock' ? 'bg-white/15 text-white' : 'bg-emerald-50 text-emerald-600'
@@ -411,7 +411,7 @@ export default function InventoryDashboardPage() {
               <AlertTriangle className="h-5 w-5 animate-pulse" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-red-950 font-serif">Cảnh báo nhập hàng khẩn cấp</h2>
+              <h2 className="text-lg font-bold text-red-950 font-heading">Cảnh báo nhập hàng khẩn cấp</h2>
               <p className="text-xs text-red-700 font-medium">Hiện có {urgentReorders.length} sản phẩm sắp chạm đáy tồn kho</p>
             </div>
           </div>

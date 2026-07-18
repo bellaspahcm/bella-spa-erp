@@ -334,7 +334,7 @@ export default function SessionAnalyticsDashboardPage() {
           <span className="text-xs font-bold text-emerald-800 uppercase tracking-widest block">
             Báo cáo vận hành
           </span>
-          <h1 className="font-serif text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
+          <h1 className="font-heading text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
             Phân Tích Phiên Dịch Vụ
           </h1>
           <p className="text-sm text-slate-600 font-medium max-w-xl">
@@ -394,7 +394,7 @@ export default function SessionAnalyticsDashboardPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tổng phiên</p>
-              <p className="font-serif mt-3 text-4xl font-extrabold text-slate-900">
+              <p className="font-heading mt-3 text-4xl font-extrabold text-slate-900">
                 {formatNumber(totals?.totalSessions || 0)}
               </p>
             </div>
@@ -410,7 +410,7 @@ export default function SessionAnalyticsDashboardPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tỷ lệ hoàn thành</p>
-              <p className="font-serif mt-3 text-4xl font-extrabold text-emerald-800">
+              <p className="font-heading mt-3 text-4xl font-extrabold text-emerald-800">
                 {formatNumber(avgCompletionRate, 1)}%
               </p>
             </div>
@@ -427,7 +427,7 @@ export default function SessionAnalyticsDashboardPage() {
             <div>
               <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Đánh giá TB</p>
               <div className="mt-3 flex items-baseline gap-1">
-                <p className="font-serif text-4xl font-extrabold text-amber-500">
+                <p className="font-heading text-4xl font-extrabold text-amber-500">
                   {avgRating > 0 ? formatNumber(avgRating, 1) : '—'}
                 </p>
                 {avgRating > 0 && <span className="text-xs font-bold text-slate-400">/ 5.0</span>}
@@ -463,7 +463,7 @@ export default function SessionAnalyticsDashboardPage() {
           <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-800">
             <Clock className="h-5 w-5" />
           </div>
-          <h2 className="font-serif text-xl font-bold text-slate-900">Phân bố theo giờ</h2>
+          <h2 className="font-heading text-xl font-bold text-slate-900">Phân bố theo giờ</h2>
         </div>
         <div className="grid gap-6 md:grid-cols-3">
           {/* Morning */}
@@ -474,7 +474,7 @@ export default function SessionAnalyticsDashboardPage() {
                 {totals && totals.totalSessions > 0 ? Math.round((totals.morningSessions / totals.totalSessions) * 100) : 0}%
               </span>
             </div>
-            <p className="font-serif text-3xl font-extrabold text-slate-900">
+            <p className="font-heading text-3xl font-extrabold text-slate-900">
               {formatNumber(totals?.morningSessions || 0)} <span className="text-xs font-normal text-slate-400">phiên</span>
             </p>
             <div className="mt-4 h-2 w-full rounded-full bg-slate-100">
@@ -495,7 +495,7 @@ export default function SessionAnalyticsDashboardPage() {
                 {totals && totals.totalSessions > 0 ? Math.round((totals.afternoonSessions / totals.totalSessions) * 100) : 0}%
               </span>
             </div>
-            <p className="font-serif text-3xl font-extrabold text-slate-900">
+            <p className="font-heading text-3xl font-extrabold text-slate-900">
               {formatNumber(totals?.afternoonSessions || 0)} <span className="text-xs font-normal text-slate-400">phiên</span>
             </p>
             <div className="mt-4 h-2 w-full rounded-full bg-slate-100">
@@ -516,7 +516,7 @@ export default function SessionAnalyticsDashboardPage() {
                 {totals && totals.totalSessions > 0 ? Math.round((totals.eveningSessions / totals.totalSessions) * 100) : 0}%
               </span>
             </div>
-            <p className="font-serif text-3xl font-extrabold text-slate-900">
+            <p className="font-heading text-3xl font-extrabold text-slate-900">
               {formatNumber(totals?.eveningSessions || 0)} <span className="text-xs font-normal text-slate-400">phiên</span>
             </p>
             <div className="mt-4 h-2 w-full rounded-full bg-slate-100">
@@ -537,13 +537,13 @@ export default function SessionAnalyticsDashboardPage() {
           <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-800">
             <Award className="h-5 w-5" />
           </div>
-          <h2 className="font-serif text-xl font-bold text-slate-900">Phân bố theo gói dịch vụ</h2>
+          <h2 className="font-heading text-xl font-bold text-slate-900">Phân bố theo gói dịch vụ</h2>
         </div>
         <div className="grid gap-6 md:grid-cols-3">
           {/* Basic */}
           <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-5 transition-all duration-200 hover:border-emerald-800/10">
             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Gói Tiết Kiệm</p>
-            <p className="font-serif mt-3 text-3xl font-extrabold text-slate-900">
+            <p className="font-heading mt-3 text-3xl font-extrabold text-slate-900">
               {formatNumber(totals?.basicPackageSessions || 0)} <span className="text-xs font-normal text-slate-400">phiên</span>
             </p>
             <div className="mt-4 flex items-center justify-between">
@@ -559,7 +559,7 @@ export default function SessionAnalyticsDashboardPage() {
           {/* Premium */}
           <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-5 transition-all duration-200 hover:border-emerald-800/10">
             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Gói Hạnh Phúc</p>
-            <p className="font-serif mt-3 text-3xl font-extrabold text-slate-900">
+            <p className="font-heading mt-3 text-3xl font-extrabold text-slate-900">
               {formatNumber(totals?.premiumPackageSessions || 0)} <span className="text-xs font-normal text-slate-400">phiên</span>
             </p>
             <div className="mt-4 flex items-center justify-between">
@@ -575,7 +575,7 @@ export default function SessionAnalyticsDashboardPage() {
           {/* VIP */}
           <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-5 transition-all duration-200 hover:border-emerald-800/10">
             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Gói VIP Toàn Diện</p>
-            <p className="font-serif mt-3 text-3xl font-extrabold text-slate-900">
+            <p className="font-heading mt-3 text-3xl font-extrabold text-slate-900">
               {formatNumber(totals?.vipPackageSessions || 0)} <span className="text-xs font-normal text-slate-400">phiên</span>
             </p>
             <div className="mt-4 flex items-center justify-between">
@@ -593,7 +593,7 @@ export default function SessionAnalyticsDashboardPage() {
       {/* Daily Breakdown Table */}
       <div className="overflow-hidden rounded-[2rem] bg-white border border-slate-200/50 shadow-sm shadow-slate-100/50">
         <div className="border-b border-slate-100 px-8 py-5 flex items-center justify-between bg-slate-50/50">
-          <h2 className="font-serif text-lg font-bold text-slate-900">Chi tiết theo ngày</h2>
+          <h2 className="font-heading text-lg font-bold text-slate-900">Chi tiết theo ngày</h2>
           <span className="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
             {formatNumber(analytics?.data.length || 0)} ngày ghi nhận
           </span>
