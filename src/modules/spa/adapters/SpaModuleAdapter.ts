@@ -234,12 +234,12 @@ export class SpaModuleAdapter implements ModuleAdapter {
     // Validate required metadata fields
     if (!order.metadata?.assigned_ktv_id) {
       console.error('[SpaAdapter] Missing required field: assigned_ktv_id');
-      return false;
+      throw new Error('Vui lòng chọn kỹ thuật viên phụ trách chính.');
     }
 
     if (!order.metadata?.sessions_total) {
       console.error('[SpaAdapter] Missing required field: sessions_total');
-      return false;
+      throw new Error('Đơn hàng thiếu thông tin tổng số buổi/ca chăm sóc.');
     }
 
     // Validate session limits
@@ -250,14 +250,14 @@ export class SpaModuleAdapter implements ModuleAdapter {
       console.error(
         `[SpaAdapter] All sessions completed (${sessionsCompleted}/${sessionsTotal})`
       );
-      return false;
+      throw new Error('Gói dịch vụ đã hoàn thành đủ số buổi/ca chăm sóc, không thể đặt thêm lịch.');
     }
 
     // Validate KTV assignment
     const ktvId = order.metadata.assigned_ktv_id as string;
     if (!ktvId || ktvId.trim().length === 0) {
       console.error('[SpaAdapter] Invalid KTV assignment');
-      return false;
+      throw new Error('Thông tin kỹ thuật viên không hợp lệ hoặc chưa được gán.');
     }
 
     // ─── CAPACITY & BREAK TIME VALIDATION ───────────────────────────────────────
@@ -376,6 +376,9 @@ export class SpaModuleAdapter implements ModuleAdapter {
         tenantId: context.tenantId,
       });
       
+      let isAvailable = true;
+      let rejectionReason = '';
+
       if (!capacityResult.available) {
         console.error(
           `[SpaAdapter] Capacity check failed: ${capacityResult.reason}`,
@@ -388,17 +391,44 @@ export class SpaModuleAdapter implements ModuleAdapter {
             console.error(`[SpaAdapter] Conflict: ${conflict.type} - ${conflict.reason}`);
           });
         }
-        
-        return false;
+
+        isAvailable = false;
+        let friendlyReason = 'Kỹ thuật viên bận hoặc không khả dụng trong khung giờ này.';
+        if (capacityResult.conflicts && capacityResult.conflicts.length > 0) {
+          const reasons = capacityResult.conflicts.map(conflict => {
+            switch (conflict.type) {
+              case 'time_overlap':
+                return 'Kỹ thuật viên đã có lịch chăm sóc khác trùng vào khung giờ này.';
+              case 'daily_limit':
+                return 'Kỹ thuật viên đã đạt giới hạn tối đa số ca làm việc trong ngày.';
+              case 'concurrent_limit':
+                return 'Kỹ thuật viên đang thực hiện ca chăm sóc khác vào thời điểm này (vượt quá số ca phục vụ đồng thời).';
+              case 'break_time_violation':
+                return 'Thời gian giãn cách nghỉ ngơi giữa các ca chăm sóc của kỹ thuật viên không đủ.';
+              case 'outside_working_hours':
+                return 'Giờ đặt lịch nằm ngoài khung giờ làm việc đăng ký của kỹ thuật viên.';
+              default:
+                return conflict.reason || 'Kỹ thuật viên không đáp ứng điều kiện khả dụng.';
+            }
+          });
+          friendlyReason = reasons.join(' ');
+        }
+        rejectionReason = friendlyReason;
+      }
+
+      if (!isAvailable) {
+        throw new Error(rejectionReason);
       }
       
       console.log(`[SpaAdapter] Capacity check passed for order ${order.id}`);
       
     } catch (error) {
-      console.error('[SpaAdapter] Error during capacity validation:', error);
-      // If capacity check fails due to error, log but allow booking (fail open)
-      // This prevents blocking bookings if the capacity system has issues
-      console.warn('[SpaAdapter] Proceeding with booking despite capacity check error');
+      if (error instanceof Error && !error.message.includes('Kỹ thuật viên')) {
+        console.error('[SpaAdapter] Error during capacity validation:', error);
+        console.warn('[SpaAdapter] Proceeding with booking despite capacity check error');
+      } else {
+        throw error;
+      }
     }
 
     console.log(`[SpaAdapter] Booking validation passed for order ${order.id}`);

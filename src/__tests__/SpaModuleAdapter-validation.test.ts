@@ -153,8 +153,9 @@ describe('SpaModuleAdapter validation', () => {
       settings: {},
     };
 
-    const isValid = await spaModuleAdapter.validateBookingRules(order, context);
-    expect(isValid).toBe(false);
+    await expect(
+      spaModuleAdapter.validateBookingRules(order, context)
+    ).rejects.toThrow('Kỹ thuật viên đã có lịch chăm sóc khác trùng vào khung giờ này.');
   });
 
   it('should parse enabled_modules correctly in constructTenantContextForBooking', async () => {

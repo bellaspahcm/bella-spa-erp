@@ -73,13 +73,11 @@ export class BeautySpaModuleAdapter extends SpaModuleAdapter implements ModuleAd
         console.error(
           `[BeautySpaAdapter] Resource conflicts detected (${resourceConflicts.length}):`
         );
-        resourceConflicts.forEach(conflict => {
-          console.error(
-            `  - ${conflict.type}: ${conflict.resourceName} (ID: ${conflict.resourceId}) ` +
-            `conflicts with booking ${conflict.conflictingBookingId} at ${conflict.timeRange}`
-          );
+        const conflictReasons = resourceConflicts.map(conflict => {
+          const resourceType = conflict.type === 'bed' ? 'Giường/Phòng' : 'Thiết bị';
+          return `${resourceType} "${conflict.resourceName}" đã có lịch sử dụng từ ${conflict.timeRange} (Đơn trùng: ${conflict.conflictingBookingId.split('-')[0]?.toUpperCase() || conflict.conflictingBookingId}).`;
         });
-        return false;
+        throw new Error(conflictReasons.join(' '));
       }
 
       console.log(`[BeautySpaAdapter] All resource checks passed for order ${order.id}`);
