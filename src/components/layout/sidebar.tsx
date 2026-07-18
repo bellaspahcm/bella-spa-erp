@@ -283,10 +283,10 @@ const menuItems: SidebarMenuItem[] = [
   { icon: Sparkles,        label: 'AI Copilot',         href: '/dashboard/ai-copilot' },
 
   { type: 'header', label: 'Vận hành hàng ngày' },
+  { icon: Users,           label: 'Khách hàng & CRM',   href: '/dashboard/customers' },
   { icon: Calendar,        label: 'Lịch hẹn & POS',     href: '/dashboard/bookings' },
   { icon: Flower2,         label: 'Thẻ liệu trình',     href: '/dashboard/sessions' },
   { icon: ClipboardList,   label: 'Danh sách chờ',      href: '/dashboard/waitlist' },
-  { icon: Users,           label: 'Khách hàng & CRM',   href: '/dashboard/customers' },
   { icon: Package,         label: 'Kho & Bán hàng',     href: '/dashboard/inventory' },
   { icon: ShoppingCart,    label: 'Bán hàng sản phẩm',  href: '/dashboard/product-sales' },
 
