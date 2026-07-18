@@ -425,7 +425,7 @@ export default function ServicesPage() {
                 <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,_var(--tw-gradient-from)_0%,_transparent_70%)]" />
               </div>
               <div className="w-16 h-16 bg-white rounded-3xl flex items-center justify-center shadow-lg shadow-rose-200 dark:shadow-none mb-4 z-10">
-                <Sparkles className="text-rose-500 w-8 h-8" />
+                <Sparkles className="!text-primary w-8 h-8" />
               </div>
               <div className="bg-primary text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full z-10">
                 {service.total_sessions} Buổi
