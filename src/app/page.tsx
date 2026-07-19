@@ -111,7 +111,7 @@ export default function LandingPage() {
 
       <div
         ref={containerRef}
-        className="dark tech-font-wrapper min-h-screen text-slate-200 relative overflow-x-hidden font-sans selection:bg-blue-600 selection:text-white"
+        className="tech-font-wrapper min-h-screen text-slate-200 relative overflow-x-hidden font-sans selection:bg-blue-600 selection:text-white"
         style={{background: 'linear-gradient(180deg, #0a0f1e 0%, #0f172a 30%, #111827 60%, #0a0f1e 100%)'}}
       >
 
@@ -218,6 +218,7 @@ export default function LandingPage() {
           </AnimatePresence>
         </header>
 
+        <div className="dark">
         {/* ── HERO SECTION (Dark Tech with Banner.png Backdrop) ── */}
         <section className="relative pt-44 pb-8 flex flex-col justify-between min-h-screen overflow-hidden">
 
@@ -922,6 +923,7 @@ export default function LandingPage() {
           </div>
         </footer>
 
+        </div>
       </div>
     </>
   );
