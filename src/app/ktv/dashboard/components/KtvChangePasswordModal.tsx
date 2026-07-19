@@ -54,7 +54,7 @@ export function KtvChangePasswordModal({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.92, y: 16 }}
               transition={{ type: 'spring', damping: 25, stiffness: 350 }}
-              className="bg-white rounded-[32px] p-6 w-full max-w-sm shadow-2xl border border-slate-100 pointer-events-auto relative"
+              className="bg-white rounded-[32px] p-6 w-full max-w-sm shadow-2xl border border-slate-100 pointer-events-auto relative overflow-hidden"
             >
               <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-pink-500 via-rose-500 to-amber-500 rounded-t-[32px]" />
 

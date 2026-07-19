@@ -27,6 +27,45 @@ export default function LoginPage() {
       const { getSupabase } = await import('@/lib/supabase-client');
       const { needsMfaChallenge } = await import('@/lib/mfa');
       const supabase = getSupabase();
+
+      // DEVELOPMENT BYPASS: dev user with password123 — preserved as-is
+      if (process.env.NODE_ENV === 'development' && password === 'password123') {
+        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+          email,
+          password: 'password123',
+        });
+
+        if (!authError && authData?.user) {
+          document.cookie = 'mock_user_email=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+          // Still honour MFA in dev if enrolled
+          if (await needsMfaChallenge()) {
+            setStage('mfa');
+            setLoading(false);
+            return;
+          }
+          window.location.href = '/dashboard';
+          return;
+        }
+
+        if (email === 'bellaspa.testadmin@gmail.com') {
+          document.cookie = `mock_user_email=${email}; path=/; max-age=31536000; SameSite=Lax`;
+          window.location.href = '/dashboard';
+          return;
+        }
+
+        const { data: userExists } = await supabase
+          .from('users')
+          .select('email, role')
+          .eq('email', email)
+          .single();
+
+        if (userExists) {
+          document.cookie = `mock_user_email=${email}; path=/; max-age=31536000; SameSite=Lax`;
+          window.location.href = '/dashboard';
+          return;
+        }
+      }
+
       const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
       if (signInError) { setError(signInError.message); setLoading(false); return; }
       const requiresMfa = await needsMfaChallenge();

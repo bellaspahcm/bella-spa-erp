@@ -118,13 +118,28 @@ export default function StaffManagementTab() {
         toast.error("Lỗi: " + result.error);
       } else {
         // Show the default password to the admin so they can pass it on.
-        // Toast stays open longer (12s) so it's not missed.
+        // Toast stays open longer so it's not missed.
         const pwd = (result as { defaultPassword?: string }).defaultPassword;
+        const emailSent = (result as { emailSent?: boolean }).emailSent;
+        const emailError = (result as { emailError?: string }).emailError;
+
         if (pwd) {
-          toast.success(
-            `Đã thêm ${newStaff.full_name}. Mật khẩu mặc định: ${pwd} (báo nhân viên đổi sau lần đăng nhập đầu).`,
-            { duration: 12000 }
-          );
+          if (emailSent) {
+            toast.success(
+              `Đã thêm ${newStaff.full_name} và gửi mật khẩu tạm qua email thành công! Mật khẩu: ${pwd}`,
+              { duration: 12000 }
+            );
+          } else {
+            // Email was not sent (e.g. SMTP not configured)
+            let reason = "Hệ thống chưa cấu hình gửi mail";
+            if (emailError && emailError !== "SMTP_CONFIG_MISSING") {
+              reason = `Lỗi gửi mail: ${emailError}`;
+            }
+            toast.success(
+              `Đã thêm ${newStaff.full_name} (${reason}). Mật khẩu tạm thời: ${pwd} (vui lòng copy để báo cho nhân viên).`,
+              { duration: 16000 }
+            );
+          }
         } else {
           toast.success("Đã thêm nhân viên " + newStaff.full_name);
         }

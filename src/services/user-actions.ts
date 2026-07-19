@@ -12,6 +12,7 @@ import { getMonthStart } from '@/lib/utils';
 import type { SupabaseClient as SupabaseJsClient } from '@supabase/supabase-js';
 import { recalculateAndSaveSalaryRecordEngine } from '@/modules/hr-salary/actions/salary-recalculation-engine';
 import { cache } from 'react';
+import { sendTemporaryPasswordEmail } from '@/lib/mail';
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 type AdminSupabaseClient = {
@@ -565,7 +566,29 @@ export async function createUser(formData: CreateUserInput) {
   }
 
   await safeRevalidatePath('/dashboard/settings');
-  return { data, defaultPassword: temporaryPassword };
+
+  let emailSent = false;
+  let emailError: string | undefined;
+
+  try {
+    const mailResult = await sendTemporaryPasswordEmail(
+      formData.email,
+      formData.full_name,
+      temporaryPassword
+    );
+    emailSent = mailResult.success;
+    emailError = mailResult.error;
+  } catch (err: any) {
+    console.error('[createUser] Error calling sendTemporaryPasswordEmail:', err);
+    emailError = err?.message || 'UNKNOWN_MAIL_ERROR';
+  }
+
+  return {
+    data,
+    defaultPassword: temporaryPassword,
+    emailSent,
+    emailError,
+  };
 }
 
 export async function updateUserStatus(id: string, status: 'active' | 'inactive') {

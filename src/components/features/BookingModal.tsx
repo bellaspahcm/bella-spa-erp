@@ -349,8 +349,20 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
       const extraSessions = parseIntegerInput(giftSessions, { min: 0, max: 100, fallback: 0 });
       const totalSessions = baseSessions + extraSessions;
 
+      // Guard: Recalculate full_price for single-session (lẻ) packages at submit time.
+      // This prevents stale draft data from carrying the wrong unit price as total price.
+      let finalFullPrice = formData.full_price;
+      if (formData.package_id) {
+        const selectedPkg = packages.find(p => p.id === formData.package_id);
+        if (selectedPkg && Number(selectedPkg.total_sessions || 1) === 1) {
+          const unitPrice = Number(selectedPkg.price || selectedPkg.full_price || 0);
+          finalFullPrice = unitPrice * baseSessions;
+        }
+      }
+
       const payload: BookingSubmitPayload = {
         ...formData,
+        full_price: finalFullPrice,
         total_sessions: totalSessions,
         discount_percent: normalizeDiscountPercent(discountPercent),
         customer_id: mode === 'new' ? 'new' : selectedCustomer?.id || '',

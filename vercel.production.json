@@ -5,7 +5,7 @@
   "devCommand": "npm run dev",
   "installCommand": "npm ci",
   "outputDirectory": ".next",
-  "regions": ["sin1", "hnd1"],
+  "regions": ["sin1"],
   "headers": [
     {
       "source": "/api/(.*)",

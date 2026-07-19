@@ -4,11 +4,7 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-@media (min-width: 768px) {
-  html {
-    zoom: 0.9;
-  }
-}
+
 
 .font-handwriting {
   font-family: var(--font-handwriting), cursive;
