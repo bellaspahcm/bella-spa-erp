@@ -40,7 +40,7 @@ export function setup() {
     throw new Error("Cần SUPABASE_URL + SUPABASE_ANON_KEY để chạy dashboard load.");
   }
   const session = loginViaApi(ENV.ADMIN_EMAIL, ENV.ADMIN_PASSWORD);
-  if (!session?.access_token) {
+  if (!session || !session.access_token) {
     throw new Error("Setup login failed — kiểm tra ADMIN_EMAIL/PASSWORD.");
   }
   return { accessToken: session.access_token };

@@ -40,7 +40,7 @@ export function loginViaApi(email, password) {
     "login has access_token": (r) => {
       try {
         return !!JSON.parse(r.body).access_token;
-      } catch {
+      } catch (err) {
         return false;
       }
     },
@@ -49,7 +49,7 @@ export function loginViaApi(email, password) {
   if (!ok) return null;
   try {
     return JSON.parse(res.body);
-  } catch {
+  } catch (err) {
     return null;
   }
 }

@@ -48,7 +48,7 @@ export default function () {
   // 2) Optional: hit Supabase auth nếu có credentials
   if (ENV.SUPABASE_URL && ENV.SUPABASE_ANON_KEY) {
     const session = loginViaApi(ENV.ADMIN_EMAIL, ENV.ADMIN_PASSWORD);
-    if (session?.access_token) {
+    if (session && session.access_token) {
       // 3) Supabase REST: count customers (cheap query)
       const headers = authHeaders(session.access_token);
       res = http.get(
