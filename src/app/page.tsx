@@ -112,7 +112,7 @@ export default function LandingPage() {
       <div
         ref={containerRef}
         className="tech-font-wrapper min-h-screen text-slate-200 relative overflow-x-hidden font-sans selection:bg-blue-600 selection:text-white"
-        style={{background: 'linear-gradient(180deg, #0a0f1e 0%, #0f172a 30%, #111827 60%, #0a0f1e 100%)'}}
+        style={{background: '#0a0f1e'}}
       >
 
         {/* Dynamic mouse glow */}
