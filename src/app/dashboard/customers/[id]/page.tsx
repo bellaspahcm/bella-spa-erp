@@ -85,6 +85,7 @@ export default function CustomerDetailPage() {
     setPaymentFile,
     sortedSessions,
     tenantModuleKey,
+    tenantPhone,
     userRole,
   } = useCustomerDetailController();
 
@@ -183,6 +184,7 @@ export default function CustomerDetailPage() {
             onOpenBookingSessions={handleOpenBookingSessions}
             onReusePackage={handleReuseActivePackage}
             tenantModuleKey={tenantModuleKey}
+            tenantPhone={tenantPhone}
           />
 
           <PaymentHistoryPanel activeBooking={activeBooking} userRole={userRole} />

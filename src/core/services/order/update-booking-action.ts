@@ -124,6 +124,7 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
 
       // Validate with Decision Engine (includes break time buffer check)
       const validationResult = await invokeAdapterValidation(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         updatedBookingData as any, // Type assertion since we're mapping fields
         tenantContext.context
       );
@@ -134,6 +135,42 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
       }
       
       console.log('[updateBooking] Decision Engine validation passed');
+
+      // CRITICAL FIX (19/07/2026): Enforce conflict check on all scheduled session logs
+      const { data: scheduledSessions, error: scheduledSessionsError } = await supabase
+        .from('session_logs')
+        .select('id, assigned_date, assigned_time, booking_resource_id')
+        .eq('booking_id', id)
+        .eq('tenant_id', tenantId)
+        .eq('status', 'scheduled');
+
+      if (scheduledSessionsError) {
+        console.error('[updateBooking] Failed to fetch scheduled sessions:', scheduledSessionsError.message);
+        return { error: 'Không thể tải danh sách ca để kiểm tra xung đột: ' + scheduledSessionsError.message };
+      }
+
+      const checkKtvId = updatePayload.assigned_ktv_id !== undefined ? updatePayload.assigned_ktv_id : oldBooking.assigned_ktv_id;
+      const checkPreferredTime = updatePayload.preferred_time !== undefined ? updatePayload.preferred_time : oldBooking.preferred_time;
+
+      if (scheduledSessions && scheduledSessions.length > 0) {
+        const { checkBookingConflicts } = await import('@/services/decision-actions/booking-decisions');
+        
+        for (const session of scheduledSessions) {
+          const conflictCheck = await checkBookingConflicts({
+            bookingId: id,
+            ktvId: checkKtvId,
+            bookingResourceId: session.booking_resource_id,
+            assignedDate: session.assigned_date,
+            assignedTime: (updatePayload.preferred_time !== undefined ? checkPreferredTime : (session.assigned_time || checkPreferredTime)) || '09:00',
+            durationMinutes: 90, // Will be resolved dynamically by the engine
+          });
+
+          if (conflictCheck.decision === 'REJECT') {
+            console.error('[updateBooking] Session conflict detected:', conflictCheck.message);
+            return { error: `Trùng lịch vào ngày ${session.assigned_date}: ${conflictCheck.message}` };
+          }
+        }
+      }
     } catch (validationErr) {
       console.error('[updateBooking] Decision Engine validation exception:', validationErr);
       return {
@@ -143,13 +180,15 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
       };
     }
   }
-
   const { data, error } = await supabase
     .from('bookings')
     .update(updatePayload)
     .eq('id', id)
     .eq('tenant_id', tenantId)
     .select();
+
+  let finalData = data;
+  let finalPayload = updatePayload;
 
   if (error) {
     if (error.message?.includes('package_name') || error.message?.includes('package_id') || error.message?.includes('uuid')) {
@@ -167,49 +206,24 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
         console.error('Error updating booking (retry):', retryError);
         return { error: retryError.message };
       }
-      
-      if (retryData?.[0]) {
-        try {
-          const { recordAuditLog } = await import('@/services/audit-actions');
-          await recordAuditLog({
-            action: 'UPDATE',
-            table_name: 'bookings',
-            record_id: id,
-            old_data: oldBooking,
-            new_data: retryPayload
-          });
-        } catch (auditErr) {
-          if (oldBooking) {
-            await supabase
-              .from('bookings')
-              .update(oldBooking)
-              .eq('id', id)
-              .eq('tenant_id', tenantId);
-          }
-          return {
-            error: auditErr instanceof Error
-              ? auditErr.message
-              : 'Failed to record updateBooking retry audit log'
-          };
-        }
-      }
-      return { data: retryData };
+      finalData = retryData;
+      finalPayload = retryPayload;
+    } else {
+      console.error('Error updating booking:', error);
+      return { error: error.message };
     }
-
-    console.error('Error updating booking:', error);
-    return { error: error.message };
   }
 
-  if (data?.[0]) {
+  if (finalData?.[0]) {
     try {
       const { recordAuditLog } = await import('@/services/audit-actions');
       await recordAuditLog({
-            action: 'UPDATE',
-            table_name: 'bookings',
-            record_id: id,
-            old_data: oldBooking,
-            new_data: updatePayload
-          });
+        action: 'UPDATE',
+        table_name: 'bookings',
+        record_id: id,
+        old_data: oldBooking,
+        new_data: finalPayload
+      });
     } catch (auditErr) {
       if (oldBooking) {
         await supabase
@@ -226,10 +240,10 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
     }
 
     // Sync scheduled sessions' assigned_time with the new preferred_time
-    if (updatePayload.preferred_time !== undefined) {
+    if (finalPayload.preferred_time !== undefined) {
       const { error: logsTimeError } = await supabase
         .from('session_logs')
-        .update({ assigned_time: updatePayload.preferred_time })
+        .update({ assigned_time: finalPayload.preferred_time })
         .eq('booking_id', id)
         .eq('tenant_id', tenantId)
         .eq('status', 'scheduled');
@@ -238,11 +252,45 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
         console.error('[updateBooking] Failed to update scheduled session times:', logsTimeError);
       }
     }
+
+    // Sync scheduled sessions' assigned_date with the new start_date
+    if (finalPayload.start_date !== undefined && finalPayload.start_date !== null) {
+      const { data: allSessions, error: fetchSessionsError } = await supabase
+        .from('session_logs')
+        .select('id, session_number, status, assigned_date')
+        .eq('booking_id', id)
+        .eq('tenant_id', tenantId)
+        .order('session_number', { ascending: true });
+
+      if (!fetchSessionsError && allSessions) {
+        const scheduledSessions = allSessions.filter(s => s.status === 'scheduled');
+        
+        if (scheduledSessions.length > 0) {
+          const startDateStr = finalPayload.start_date;
+          const [year, month, day] = startDateStr.split('-').map(Number);
+          
+          const updates = scheduledSessions.map((session, index) => {
+            const date = new Date(year, month - 1, day);
+            date.setDate(date.getDate() + index);
+            
+            const assignedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+            
+            return supabase
+              .from('session_logs')
+              .update({ assigned_date: assignedDate })
+              .eq('id', session.id);
+          });
+          
+          await Promise.all(updates);
+          console.log(`[updateBooking] Rescheduled ${scheduledSessions.length} sessions starting from ${startDateStr}`);
+        }
+      }
+    }
   }
 
-  if (updatePayload.total_sessions !== undefined) {
+  if (finalPayload.total_sessions !== undefined) {
     try {
-      const newTotal = Number(updatePayload.total_sessions);
+      const newTotal = Number(finalPayload.total_sessions);
       const { data: existingLogs, error: existingLogsError } = await supabase
         .from('session_logs')
         .select('session_number, assigned_date, status')
@@ -270,7 +318,7 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
         }
       } else if (newTotal > maxSessionNumber) {
         const newLogs: SessionLogInsert[] = [];
-        let baseDateStr: string | null = updatePayload.start_date || data?.[0]?.start_date || null;
+        let baseDateStr: string | null = finalPayload.start_date || finalData?.[0]?.start_date || null;
         if (!baseDateStr) {
           const { data: b } = await supabase
             .from('bookings')
@@ -281,9 +329,22 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
           baseDateStr = b?.start_date || null;
         }
 
+        let defaultDuration = 60;
+        const packageId = finalPayload.package_id || oldBooking?.package_id;
+        if (packageId) {
+          const { data: pkgData } = await supabase
+            .from('packages')
+            .select('default_duration_minutes')
+            .eq('id', packageId)
+            .single();
+          if (pkgData?.default_duration_minutes) {
+            defaultDuration = pkgData.default_duration_minutes;
+          }
+        }
+
         const lastLogWithDate = [...logs].reverse().find((l) => l.assigned_date);
         let lastAssignedDate = lastLogWithDate?.assigned_date || baseDateStr;
-        const tenantIdForNewLogs = data?.[0]?.tenant_id || oldBooking?.tenant_id || tenantId;
+        const tenantIdForNewLogs = finalData?.[0]?.tenant_id || oldBooking?.tenant_id || tenantId;
 
         if (!tenantIdForNewLogs) {
           throw new BookingError('Missing tenant_id for new session logs inside updateBooking', 'BOOKING_MISSING_TENANT_ID', { bookingId: id });
@@ -308,8 +369,9 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
             session_number: i,
             status: 'scheduled',
             assigned_date: assignedDate,
-            assigned_time: updatePayload.preferred_time || data?.[0]?.preferred_time || null,
-            tenant_id: tenantIdForNewLogs
+            assigned_time: finalPayload.preferred_time || finalData?.[0]?.preferred_time || null,
+            tenant_id: tenantIdForNewLogs,
+            standard_duration: defaultDuration
           });
         }
 
@@ -356,7 +418,7 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
   }
   await Promise.all(revalPaths.map(path => safeRevalidatePath(path)));
 
-  return { data };
+  return { data: finalData };
 }
 
 export async function syncBookingProgress(bookingId: string, tenantId?: string) {

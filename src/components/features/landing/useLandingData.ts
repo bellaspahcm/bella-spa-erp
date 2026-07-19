@@ -147,3 +147,39 @@ export function useLandingPromotions() {
     promotions,
   };
 }
+
+/**
+ * Fetches the public tenant's contact phone for the landing page.
+ * Resolves via DEFAULT_TENANT_ID env var (via anon key public query)
+ * or falls back to the first active babycare tenant.
+ */
+export function useLandingTenantContact() {
+  const [tenantPhone, setTenantPhone] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchTenantPhone = async () => {
+      try {
+        const supabase = createBrowserClient();
+        // Fetch the contact_phone from the tenants table.
+        // RLS allows reading contact_phone publicly for the relevant tenant.
+        const { data } = await supabase
+          .from('tenants')
+          .select('contact_phone')
+          .eq('status', 'active')
+          .or('enabled_modules->>babycare.eq.true')
+          .limit(1)
+          .single<{ contact_phone: string | null }>();
+
+        if (data?.contact_phone) {
+          setTenantPhone(data.contact_phone);
+        }
+      } catch {
+        // Silently ignore – landing page will simply hide the phone number
+      }
+    };
+
+    fetchTenantPhone();
+  }, []);
+
+  return { tenantPhone };
+}

@@ -285,6 +285,42 @@ export function useBookingsPageActions({
       const newDateString = modalData.dateString;
       const isDateChanged = Boolean(newDateString && newDateString !== modalData.originalDateString);
 
+      // Check for booking conflicts using Decision Engine
+      const conflictCheck = await checkBookingConflicts({
+        bookingId: modalData.bookingId,
+        ktvId: modalData.ktvId || null,
+        bookingResourceId: modalData.bookingResourceId || null,
+        assignedDate: modalData.dateString || getLocalDateString(modalData.date),
+        assignedTime: modalData.time || '09:00',
+        durationMinutes: 90, // Resolved dynamically inside the action
+      });
+
+      // Handle conflict check result
+      if (conflictCheck.decision === 'REJECT') {
+        toast.error(conflictCheck.message || 'Không thể cập nhật lịch hẹn do xung đột');
+        if (conflictCheck.context?.conflicts && Array.isArray(conflictCheck.context.conflicts)) {
+          const conflicts = conflictCheck.context.conflicts as Array<{
+            type: string;
+            time: string;
+            customer?: string;
+            room?: string;
+          }>;
+          conflicts.forEach((conflict) => {
+            if (conflict.type === 'ktv_double_booking') {
+              toast.error(`⚠️ KTV đã có lịch lúc ${conflict.time} với khách ${conflict.customer}`);
+            } else if (conflict.type === 'room_double_booking') {
+              toast.error(`⚠️ Phòng ${conflict.room} đã có lịch lúc ${conflict.time}`);
+            }
+          });
+        }
+        setIsUpdating(false);
+        return; // Block update
+      }
+
+      if (conflictCheck.decision === 'APPROVE_WITH_WARNING') {
+        toast.warning(conflictCheck.message || 'Cảnh báo: Vượt quá số ca khuyến nghị');
+      }
+
       if (newDateString && isDateChanged && modalData.status === 'scheduled') {
         const rescheduleResult = await rescheduleSession(modalData.id, newDateString);
         if (rescheduleResult.error) {

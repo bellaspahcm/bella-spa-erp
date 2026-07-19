@@ -106,6 +106,7 @@ export function useCustomerDetailController() {
     accountNumber: '',
     bankName: '',
   });
+  const [tenantPhone, setTenantPhone] = useState<string>('');
   const [isExportingQuotation, setIsExportingQuotation] = useState(false);
   const [isExportingCombinedQuotation, setIsExportingCombinedQuotation] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -223,6 +224,9 @@ export function useCustomerDetailController() {
         accountNumber: tenant?.qr_account_number || '',
         bankName: tenant?.qr_bank_code || '',
       });
+      if (tenant?.contact_phone) {
+        setTenantPhone(tenant.contact_phone);
+      }
       // Re-map customer record now that we have the correct module key
       setCustomer(prev => prev ? { ...prev } : prev);
     } catch (error) {
@@ -940,6 +944,7 @@ export function useCustomerDetailController() {
     setPaymentFile,
     sortedSessions,
     tenantModuleKey,
+    tenantPhone,
     userRole,
   };
 }

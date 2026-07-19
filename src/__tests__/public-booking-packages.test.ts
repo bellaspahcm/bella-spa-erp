@@ -18,6 +18,7 @@ function createTenantBuilder() {
         name: 'Bella Spa Headquarter',
         status: 'active',
         enabled_modules: { babycare: true, beauty_spa: false },
+        contact_phone: '0865 701 493',
       },
       error: null,
     }),
@@ -109,6 +110,7 @@ describe('public booking packages', () => {
     const result = await getPublicBabycareBookingPackages();
 
     expect(result.error).toBeNull();
+    expect(result.tenantPhone).toBe('0865 701 493');
     expect(result.packages.map((pkg) => pkg.id)).toEqual(['pkg-babycare', 'pkg-legacy-null']);
     expect(tenantBuilder.eq).toHaveBeenCalledWith('id', 'bella-tenant');
     expect(packagesBuilder.eq).toHaveBeenCalledWith('tenant_id', 'bella-tenant');

@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 };
 
 export default async function BookPage() {
-  const { packages, error: packageLoadError } = await getPublicBabycareBookingPackages();
+  const { packages, tenantPhone, error: packageLoadError } = await getPublicBabycareBookingPackages();
 
-  return <BookingPageClient packages={packages} packageLoadError={packageLoadError} />;
+  return <BookingPageClient packages={packages} tenantPhone={tenantPhone} packageLoadError={packageLoadError} />;
 }

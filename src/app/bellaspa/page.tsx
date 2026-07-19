@@ -30,7 +30,7 @@ import { HeroSection } from '@/components/features/landing/HeroSection';
 import { ServiceWizard } from '@/components/features/landing/ServiceWizard';
 import { FeedbackCarousel } from '@/components/features/landing/FeedbackCarousel';
 import { LandingPackagesSection } from '@/components/features/landing/LandingPackagesSection';
-import { useLandingPackages, useLandingPromotions } from '@/components/features/landing/useLandingData';
+import { useLandingPackages, useLandingPromotions, useLandingTenantContact } from '@/components/features/landing/useLandingData';
 import type { LandingCategoryKey } from '@/components/features/landing/landing-data';
 import { submitOnlineBooking } from '@/core/services/order';
 
@@ -72,6 +72,7 @@ export default function LandingPage() {
     dataStatus: promotionDataStatus,
     promotions,
   } = useLandingPromotions();
+  const { tenantPhone } = useLandingTenantContact();
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -599,7 +600,11 @@ export default function LandingPage() {
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 font-black uppercase tracking-wider block">Hotline đặt lịch 24/7</span>
-                    <a href="tel:0865701493" className="text-slate-800 font-black text-sm hover:text-primary transition-colors">0865 701 493</a>
+                    {tenantPhone ? (
+                      <a href={`tel:${tenantPhone.replace(/\s/g, '')}`} className="text-slate-800 font-black text-sm hover:text-primary transition-colors">{tenantPhone}</a>
+                    ) : (
+                      <span className="text-slate-800 font-black text-sm">Liên hệ tư vấn</span>
+                    )}
                   </div>
                 </div>
 
@@ -828,7 +833,7 @@ export default function LandingPage() {
                 </li>
                 <li className="flex gap-3">
                   <Phone className="w-4 h-4 text-rose-500 shrink-0" />
-                  <span>Hotline: 0865 701 493</span>
+                  <span>Hotline: {tenantPhone || 'Liên hệ tư vấn'}</span>
                 </li>
                 <li className="flex gap-3">
                   <Mail className="w-4 h-4 text-rose-500 shrink-0" />

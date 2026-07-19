@@ -128,7 +128,7 @@ export function BookingsTimelineGrid({
     { id: null, full_name: 'Chưa phân công', role: 'ktv', isUnassigned: true },
     ...filteredKtvs,
   ];
-  const hours = Array.from({ length: 12 }, (_, i) => 9 + i);
+  const hours = Array.from({ length: 13 }, (_, i) => 8 + i);
 
   return (
     <div className="relative border border-slate-200/60 rounded-[40px] bg-white shadow-xl shadow-slate-100/50 overflow-hidden flex flex-col">

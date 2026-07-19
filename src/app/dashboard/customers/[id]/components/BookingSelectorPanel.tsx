@@ -185,7 +185,11 @@ export function BookingSelectorPanel({
                               : statusDisplay.color
                           )}>
                             {statusDisplay.label} • {b.completed_sessions || 0}/{b.total_sessions || 15} ca
-                            {b.created_at && ` • Đăng ký: ${new Date(b.created_at).toLocaleDateString('vi-VN')}`}
+                            {b.start_date
+                              ? ` • Bắt đầu: ${new Date(b.start_date).toLocaleDateString('vi-VN')}`
+                              : b.created_at
+                              ? ` • Đăng ký: ${new Date(b.created_at).toLocaleDateString('vi-VN')}`
+                              : ''}
                           </span>
                         </span>
                       </button>

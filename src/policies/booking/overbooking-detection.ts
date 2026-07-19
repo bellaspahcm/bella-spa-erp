@@ -129,20 +129,19 @@ async function checkKTVConflicts(
   const endTime = calculateEndTime(time, duration);
   const requestedSlot: TimeSlot = { startTime: time, endTime };
 
-  // Query all active session logs for this KTV on this date
+  // Query active session logs on this date to check conflicts (including joined bookings to resolve assigned_ktv_id)
   let query = supabase
     .from('session_logs')
-    .select('id, assigned_time, standard_duration, booking_id, bookings(customer_id, customers(name_mother))')
-    .eq('completed_by_ktv_id', ktvId)
+    .select('id, assigned_time, standard_duration, booking_id, completed_by_ktv_id, bookings(customer_id, assigned_ktv_id, customers(name_mother))')
     .eq('assigned_date', date)
     .eq('tenant_id', tenantId)
-    .in('status', ['pending', 'confirmed', 'in_progress']);
+    .in('status', ['pending', 'confirmed', 'in_progress', 'scheduled']);
 
   if (excludeBookingId) {
     query = query.neq('booking_id', excludeBookingId);
   }
 
-  const { data: existingBookings, error } = await query;
+  const { data: existingSessions, error } = await query;
 
   if (error) {
     console.error('[overbooking-detection] Error querying KTV bookings:', error);
@@ -151,7 +150,13 @@ async function checkKTVConflicts(
 
   const conflicts: Conflict[] = [];
 
-  for (const booking of existingBookings || []) {
+  // Filter sessions in memory for matching KTV (completed_by_ktv_id OR bookings.assigned_ktv_id)
+  const matchingSessions = (existingSessions || []).filter((session) => {
+    const sessionKtvId = session.completed_by_ktv_id || session.bookings?.assigned_ktv_id;
+    return sessionKtvId === ktvId;
+  });
+
+  for (const booking of matchingSessions) {
     const assignedTime = booking.assigned_time || '00:00';
     const durationMins = booking.standard_duration || 90;
     const bookingEndTime = calculateEndTime(assignedTime, durationMins);
@@ -198,7 +203,7 @@ async function checkRoomConflicts(
     .eq('booking_resource_id', roomId)
     .eq('assigned_date', date)
     .eq('tenant_id', tenantId)
-    .in('status', ['pending', 'confirmed', 'in_progress']);
+    .in('status', ['pending', 'confirmed', 'in_progress', 'scheduled']);
 
   if (excludeBookingId) {
     query = query.neq('booking_id', excludeBookingId);
@@ -247,20 +252,25 @@ async function countKTVSessionsOnDate(
 ): Promise<number> {
   const supabase = await createClient();
 
-  const { count, error } = await supabase
+  const { data: existingSessions, error } = await supabase
     .from('session_logs')
-    .select('id', { count: 'exact', head: true })
-    .eq('completed_by_ktv_id', ktvId)
+    .select('id, completed_by_ktv_id, bookings(assigned_ktv_id)')
     .eq('assigned_date', date)
     .eq('tenant_id', tenantId)
-    .in('status', ['pending', 'confirmed', 'in_progress']);
+    .in('status', ['pending', 'confirmed', 'in_progress', 'scheduled']);
 
   if (error) {
     console.error('[overbooking-detection] Error counting KTV sessions:', error);
     return 0; // Return 0 on error to allow booking (fail-open)
   }
 
-  return count || 0;
+  // Count KTV sessions in memory including completed and scheduled ones
+  const ktvSessions = (existingSessions || []).filter((session) => {
+    const sessionKtvId = session.completed_by_ktv_id || session.bookings?.assigned_ktv_id;
+    return sessionKtvId === ktvId;
+  });
+
+  return ktvSessions.length;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

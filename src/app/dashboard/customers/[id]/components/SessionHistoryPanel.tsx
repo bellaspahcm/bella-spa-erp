@@ -16,6 +16,7 @@ export function SessionHistoryPanel({
   onOpenBookingSessions,
   onReusePackage,
   tenantModuleKey,
+  tenantPhone,
 }: {
   activeBooking: CustomerDetailBooking | null;
   sortedSessions: CustomerDetailSession[];
@@ -26,6 +27,7 @@ export function SessionHistoryPanel({
   onOpenBookingSessions: () => void;
   onReusePackage: () => void;
   tenantModuleKey: TenantModuleKey | null;
+  tenantPhone?: string;
 }) {
   const vocab = useModuleVocabulary(tenantModuleKey);
   
@@ -110,8 +112,7 @@ export function SessionHistoryPanel({
 
                         <p className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 flex-wrap mt-1">
                           <span>{vocab.worker.short}: <strong className="text-slate-700">{session.completed_by_ktv?.full_name || activeBooking?.assigned_ktv?.full_name || 'Chưa phân công'}</strong>{session.completed_by_ktv?.phone || activeBooking?.assigned_ktv?.phone ? ` (${session.completed_by_ktv?.phone || activeBooking?.assigned_ktv?.phone})` : ''}</span>
-                          <span>•</span>
-                          <span>Hotline: <strong className="text-rose-500 font-black">0865 701 493</strong></span>
+                          {tenantPhone && <><span>•</span><span>Hotline: <strong className="text-rose-500 font-black">{tenantPhone}</strong></span></>}
                           <span>•</span>
                           <span>{session.completed_date ? formatViDate(session.completed_date) : session.assigned_date ? formatViDate(session.assigned_date) : 'Chưa cập nhật'}</span>
                         </p>

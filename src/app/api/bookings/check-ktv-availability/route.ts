@@ -13,6 +13,7 @@ interface KTVAvailability {
   conflictType?: 'overlap' | 'break_time_violation' | 'daily_limit';
   conflictDetails?: {
     existingBookingTime?: string;
+    existingBookingEndTime?: string;
     requiredBreakMinutes?: number;
     nextAvailableTime?: string;
   };
@@ -232,18 +233,26 @@ export async function GET(request: NextRequest) {
               if (conflict.type === 'break_time_violation') {
                 conflictType = 'break_time_violation';
                 const existingTime = conflict.conflictingBooking?.startTime || '';
-                reason = `Đang có ca lúc ${existingTime} (cần ${minBreakMinutes} phút nghỉ)`;
+                const existingEnd = conflict.conflictingBooking?.endTime || calculateEndTime(existingTime, duration);
+                reason = `Ca kết thúc lúc ${existingEnd}, cần thêm ${minBreakMinutes} phút nghỉ`;
+                const nextAvail = calculateNextAvailable(existingEnd, 0, minBreakMinutes);
                 conflictDetails = {
                   existingBookingTime: existingTime,
+                  existingBookingEndTime: existingEnd,
                   requiredBreakMinutes: minBreakMinutes,
-                  nextAvailableTime: calculateNextAvailable(existingTime, duration, minBreakMinutes),
+                  nextAvailableTime: nextAvail,
                 };
               } else if (conflict.type === 'time_overlap') {
                 conflictType = 'overlap';
                 const existingTime = conflict.conflictingBooking?.startTime || '';
-                reason = `Đang có ca trùng giờ lúc ${existingTime}`;
+                const existingEnd = conflict.conflictingBooking?.endTime || calculateEndTime(existingTime, duration);
+                const nextAvail = calculateNextAvailable(existingEnd, 0, minBreakMinutes);
+                reason = `Trùng ca đang có lúc ${existingTime}–${existingEnd}`;
                 conflictDetails = {
                   existingBookingTime: existingTime,
+                  existingBookingEndTime: existingEnd,
+                  requiredBreakMinutes: minBreakMinutes,
+                  nextAvailableTime: nextAvail,
                 };
               } else if (conflict.type === 'daily_limit' || conflict.type === 'outside_working_hours') {
                 conflictType = 'daily_limit';
@@ -304,12 +313,16 @@ function calculateEndTime(startTime: string, durationMinutes: number): string {
 
 /**
  * Calculate next available time considering break time buffer
+ * Pass existingDurationMinutes = 0 when existingEnd is already calculated
  */
 function calculateNextAvailable(
-  existingTime: string,
-  existingDuration: number,
+  existingEndOrStart: string,
+  existingDurationOrZero: number,
   minBreakMinutes: number
 ): string {
-  const existingEnd = calculateEndTime(existingTime, existingDuration);
+  if (existingDurationOrZero === 0) {
+    return calculateEndTime(existingEndOrStart, minBreakMinutes);
+  }
+  const existingEnd = calculateEndTime(existingEndOrStart, existingDurationOrZero);
   return calculateEndTime(existingEnd, minBreakMinutes);
 }

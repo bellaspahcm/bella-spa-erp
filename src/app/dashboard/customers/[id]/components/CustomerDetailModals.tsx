@@ -467,6 +467,9 @@ export function EditBookingModal({
   const [ktvAvailability, setKtvAvailability] = useState<{
     available: boolean;
     reason?: string;
+    conflictType?: 'overlap' | 'break_time_violation' | 'daily_limit';
+    existingBookingEndTime?: string;
+    requiredBreakMinutes?: number;
     nextAvailableTime?: string;
   } | null>(null);
   const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
@@ -508,7 +511,12 @@ export function EditBookingModal({
           id: string;
           available: boolean;
           reason?: string;
-          conflictDetails?: { nextAvailableTime?: string };
+          conflictType?: 'overlap' | 'break_time_violation' | 'daily_limit';
+          conflictDetails?: {
+            existingBookingEndTime?: string;
+            requiredBreakMinutes?: number;
+            nextAvailableTime?: string;
+          };
         }
         const currentKtvResult = [
           ...(result.available || []),
@@ -521,6 +529,9 @@ export function EditBookingModal({
           setKtvAvailability({
             available: false,
             reason: currentKtvResult.reason,
+            conflictType: currentKtvResult.conflictType,
+            existingBookingEndTime: currentKtvResult.conflictDetails?.existingBookingEndTime,
+            requiredBreakMinutes: currentKtvResult.conflictDetails?.requiredBreakMinutes,
             nextAvailableTime: currentKtvResult.conflictDetails?.nextAvailableTime,
           });
         } else {
@@ -579,18 +590,36 @@ export function EditBookingModal({
                 <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
                 <div className="flex-1 space-y-2">
                   <p className="font-black text-amber-900 text-sm uppercase tracking-wide">
-                    ⚠️ KTV {currentKtvName} không khả dụng
+                    ⚠️ {currentKtvName} không khả dụng
                   </p>
                   <p className="text-amber-800 text-xs font-bold">
                     {ktvAvailability.reason || 'Đang có lịch trùng hoặc không đủ thời gian nghỉ'}
                   </p>
+                  {/* Timeline breakdown */}
+                  {(ktvAvailability.existingBookingEndTime || ktvAvailability.requiredBreakMinutes) && (
+                    <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold">
+                      {ktvAvailability.existingBookingEndTime && (
+                        <span className="bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">
+                          🔚 Ca kết thúc: {ktvAvailability.existingBookingEndTime}
+                        </span>
+                      )}
+                      {ktvAvailability.requiredBreakMinutes && (
+                        <span className="bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">
+                          ⏱ Nghỉ: +{ktvAvailability.requiredBreakMinutes} phút
+                        </span>
+                      )}
+                    </div>
+                  )}
                   {ktvAvailability.nextAvailableTime && (
-                    <p className="text-amber-700 text-xs font-bold">
-                      💡 Thời gian khả dụng tiếp theo: <span className="font-black">{ktvAvailability.nextAvailableTime}</span>
-                    </p>
+                    <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+                      <span className="text-emerald-600 text-base leading-none">✅</span>
+                      <p className="text-emerald-800 text-xs font-black">
+                        Chọn từ <span className="text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md font-black text-sm">{ktvAvailability.nextAvailableTime}</span> trở đi
+                      </p>
+                    </div>
                   )}
                   <p className="text-amber-600 text-xs font-bold italic">
-                    → Vui lòng chọn KTV khác hoặc đổi thời gian sang {ktvAvailability.nextAvailableTime || 'thời điểm khác'}
+                    → Vui lòng chọn KTV khác hoặc đặt lịch từ {ktvAvailability.nextAvailableTime ? <strong>{ktvAvailability.nextAvailableTime}</strong> : 'thời điểm khác'}
                   </p>
                 </div>
                 {isCheckingAvailability && (

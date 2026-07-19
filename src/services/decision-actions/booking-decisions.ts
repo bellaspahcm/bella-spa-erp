@@ -99,13 +99,37 @@ export async function checkBookingConflicts(input: {
       };
     }
 
+    // Resolve dynamic duration from package if available
+    let duration = input.durationMinutes;
+    try {
+      const { data: bookingData } = await supabase
+        .from('bookings')
+        .select('package_id')
+        .eq('id', input.bookingId)
+        .single();
+
+      if (bookingData?.package_id) {
+        const { data: packageData } = await supabase
+          .from('packages')
+          .select('default_duration_minutes')
+          .eq('id', bookingData.package_id)
+          .single();
+
+        if (packageData?.default_duration_minutes) {
+          duration = packageData.default_duration_minutes;
+        }
+      }
+    } catch (err) {
+      console.warn('[checkBookingConflicts] Failed to fetch package duration, falling back to input:', err);
+    }
+
     // Build policy context
     const context: OverbookingContext = {
       ktvId: input.ktvId,
       roomId: input.bookingResourceId || undefined,
       preferredTime: input.assignedTime,
       preferredDate: input.assignedDate,
-      duration: input.durationMinutes,
+      duration,
       tenantId,
       bookingId: input.bookingId,
     };

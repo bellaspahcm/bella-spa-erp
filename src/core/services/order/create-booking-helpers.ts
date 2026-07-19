@@ -590,6 +590,19 @@ export async function createInitialSessionLogs(params: {
     startDateStr = getLocalDateString();
   }
 
+  // Fetch package default duration if package_id exists
+  let defaultDuration = 60;
+  if (booking.package_id) {
+    const { data: pkgData } = await supabase
+      .from('packages')
+      .select('default_duration_minutes')
+      .eq('id', booking.package_id)
+      .single();
+    if (pkgData?.default_duration_minutes) {
+      defaultDuration = pkgData.default_duration_minutes;
+    }
+  }
+
   const sessionLogs: SessionLogInsert[] = Array.from({ length: totalSessions }, (_, index) => {
     const [year, month, day] = startDateStr.split('-').map(Number);
     const date = new Date(year, month - 1, day);
@@ -604,6 +617,7 @@ export async function createInitialSessionLogs(params: {
       assigned_date: assignedDate,
       assigned_time: validatedData.preferred_time || null,
       tenant_id: tenantId,
+      standard_duration: defaultDuration,
     };
   });
 

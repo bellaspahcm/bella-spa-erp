@@ -21,6 +21,7 @@ interface Package {
 
 interface BookingPageClientProps {
   packages: Package[];
+  tenantPhone?: string | null;
   packageLoadError?: string | null;
 }
 
@@ -194,7 +195,10 @@ function PackageCard({
 /* =========================================================
    Success Screen
    ========================================================= */
-function SuccessScreen({ bookingNumber }: { bookingNumber: string }) {
+function SuccessScreen({ bookingNumber, tenantPhone }: { bookingNumber: string; tenantPhone?: string | null }) {
+  const telHref = tenantPhone
+    ? `tel:${tenantPhone.replace(/\s/g, '')}`
+    : null;
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-12" style={{ background: 'linear-gradient(135deg, #FDF2F5 0%, #FFF0F6 100%)' }}>
       <div
@@ -220,7 +224,7 @@ function SuccessScreen({ bookingNumber }: { bookingNumber: string }) {
           Đặt lịch thành công! 🎉
         </h1>
         <p className="text-sm mb-4" style={{ color: '#64748B' }}>
-          Cảm ơn bạn đã tin tưởng Bella Spa. Đội ngũ của chúng tôi sẽ liên hệ xác nhận lịch hẹn trong thời gian sớm nhất.
+          Cảm ơn bạn đã tin tưởng. Đội ngũ của chúng tôi sẽ liên hệ xác nhận lịch hẹn trong thời gian sớm nhất.
         </p>
 
         <div
@@ -235,13 +239,17 @@ function SuccessScreen({ bookingNumber }: { bookingNumber: string }) {
           Vui lòng lưu lại mã này để tiện liên hệ với chúng tôi.
         </p>
 
-        <a
-          href="tel:+84123456789"
-          className="block w-full py-3.5 rounded-2xl text-white font-bold text-sm transition-all duration-200 hover:opacity-90"
-          style={{ background: 'linear-gradient(135deg, #9D174D 0%, #BE185D 100%)' }}
-        >
-          📞 Liên hệ hotline để xác nhận
-        </a>
+        {telHref ? (
+          <a
+            href={telHref}
+            className="block w-full py-3.5 rounded-2xl text-white font-bold text-sm transition-all duration-200 hover:opacity-90"
+            style={{ background: 'linear-gradient(135deg, #9D174D 0%, #BE185D 100%)' }}
+          >
+            📞 Gọi hotline {tenantPhone} để xác nhận
+          </a>
+        ) : (
+          <p className="text-sm" style={{ color: '#64748B' }}>Đội ngũ sẽ chủ động liên hệ xác nhận với bạn.</p>
+        )}
 
         <Link href="/" className="block mt-3 text-sm font-medium" style={{ color: '#9D174D' }}>
           Quay về trang chủ →
@@ -254,7 +262,7 @@ function SuccessScreen({ bookingNumber }: { bookingNumber: string }) {
 /* =========================================================
    Main Component
    ========================================================= */
-export default function BookingPageClient({ packages, packageLoadError = null }: BookingPageClientProps) {
+export default function BookingPageClient({ packages, tenantPhone = null, packageLoadError = null }: BookingPageClientProps) {
   const [isPending, startTransition] = useTransition();
   const [successBookingNumber, setSuccessBookingNumber] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -306,7 +314,7 @@ export default function BookingPageClient({ packages, packageLoadError = null }:
   }
 
   if (successBookingNumber) {
-    return <SuccessScreen bookingNumber={successBookingNumber} />;
+    return <SuccessScreen bookingNumber={successBookingNumber} tenantPhone={tenantPhone} />;
   }
 
   const today = new Date().toISOString().split('T')[0];
@@ -722,13 +730,15 @@ export default function BookingPageClient({ packages, packageLoadError = null }:
             Hoặc liên hệ trực tiếp với chúng tôi
           </p>
           <div className="flex items-center justify-center gap-4 flex-wrap">
-            <a
-              href="tel:+84123456789"
-              className="flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-full transition-all duration-200 hover:opacity-80"
-              style={{ background: 'rgba(157,23,77,0.08)', color: '#9D174D' }}
-            >
-              📞 Hotline
-            </a>
+            {tenantPhone && (
+              <a
+                href={`tel:${tenantPhone.replace(/\s/g, '')}`}
+                className="flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-full transition-all duration-200 hover:opacity-80"
+                style={{ background: 'rgba(157,23,77,0.08)', color: '#9D174D' }}
+              >
+                📞 {tenantPhone}
+              </a>
+            )}
             <a
               href="https://zalo.me/"
               target="_blank"

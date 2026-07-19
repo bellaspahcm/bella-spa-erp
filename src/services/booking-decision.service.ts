@@ -78,7 +78,7 @@ export async function buildBookingKnowledge(bookingRequest: {
       .select('id, assigned_date, assigned_time, status')
       .eq('completed_by_ktv_id', ktvId)
       .eq('assigned_date', bookingRequest.requestedDate)
-      .in('status', ['pending', 'confirmed', 'in_progress']);
+      .in('status', ['pending', 'confirmed', 'in_progress', 'scheduled']);
     
     if (concurrentSessions && concurrentSessions.length > 0) {
       // Check time overlap (simple check: same date + time within 2 hours)
@@ -587,7 +587,7 @@ export async function autoAssignKtv(input: {
     .select('completed_by_ktv_id')
     .in('completed_by_ktv_id', ktvIds)
     .eq('assigned_date', input.requestedDate)
-    .in('status', ['pending', 'confirmed', 'in_progress']);
+    .in('status', ['pending', 'confirmed', 'in_progress', 'scheduled']);
 
   if (workloadError) {
     console.error('[autoAssignKtv] Error fetching today\'s workloads:', workloadError);
@@ -831,7 +831,7 @@ export async function checkBookingConflicts(input: {
     .eq('tenant_id', input.tenantId)
     .eq('bookings.customer_id', input.customerId)
     .eq('assigned_date', input.requestedDate)
-    .in('status', ['pending', 'confirmed', 'in_progress']);
+    .in('status', ['pending', 'confirmed', 'in_progress', 'scheduled']);
 
   // 2. Fetch existing room bookings (if room specified)
   let roomBookings: any[] = [];
@@ -842,7 +842,7 @@ export async function checkBookingConflicts(input: {
       .eq('tenant_id', input.tenantId)
       .eq('booking_resource_id', input.roomId)
       .eq('assigned_date', input.requestedDate)
-      .in('status', ['pending', 'confirmed']);
+      .in('status', ['pending', 'confirmed', 'scheduled']);
 
     roomBookings = data || [];
   }
@@ -856,7 +856,7 @@ export async function checkBookingConflicts(input: {
       .eq('tenant_id', input.tenantId)
       .in('booking_resource_id', input.equipmentIds)
       .eq('assigned_date', input.requestedDate)
-      .in('status', ['pending', 'confirmed']);
+      .in('status', ['pending', 'confirmed', 'scheduled']);
 
     equipmentBookings = data || [];
   }
