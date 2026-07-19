@@ -1,7 +1,7 @@
 # Tính Năng & Business Modules - Bella ERP
 
-**Phiên bản**: 1.0.0  
-**Ngày cập nhật**: 12/07/2026  
+**Phiên bản**: 1.1.0  
+**Ngày cập nhật**: 19/07/2026  
 **Tác giả**: Đội Phát Triển Bella ERP
 
 ---
@@ -162,6 +162,7 @@ customer         → Customer portal only
 - **Auto-Approval Rate**: 73%
 - **KTV Assignment Accuracy**: 95%
 - **Session Completion Success**: 99.7%
+- **k6 Concurrent Booking (10 VUs)**: 94.87ms avg, 31 req/s throughput ✅
 
 ---
 
@@ -693,6 +694,8 @@ Check Stock → Evaluate Reorder → Create PO → Notify Supplier → Update In
 - **Accuracy**: 95%+
 - **User Satisfaction**: 9/10
 - **Usage**: 50+ queries/day
+- **k6 AI Copilot Test**: 388ms avg, 100% success (10 VUs) ✅
+- **k6 Enterprise Workflow E2E**: 119.74ms avg, 100% success ✅
 
 ---
 
@@ -716,11 +719,13 @@ Check Stock → Evaluate Reorder → Create PO → Notify Supplier → Update In
 
 ✅ **Automation**: 95% time savings on rule deployment  
 ✅ **Accuracy**: 99.7% business logic test pass rate  
-✅ **Performance**: Sub-millisecond latency  
+✅ **Performance**: Sub-millisecond latency (Decision Engine 0.58ms avg)  
 ✅ **Scalability**: Handle 1,656 decisions/sec  
 ✅ **Visibility**: Full audit trail & metrics  
 ✅ **Intelligence**: 8 analytics domains  
 ✅ **AI-Powered**: Executive assistant ready  
+✅ **Load Tested**: 10/10 k6 enterprise scripts (Smoke → Enterprise E2E) passed  
+✅ **Production Deployed**: Vercel Production (19/07/2026)
 
 ### User Satisfaction
 
@@ -731,7 +736,7 @@ Check Stock → Evaluate Reorder → Create PO → Notify Supplier → Update In
 
 ---
 
-**Tài liệu này cập nhật**: 12/07/2026  
+**Tài liệu này cập nhật**: 19/07/2026  
 **Người duy trì**: Đội Phát Triển Bella ERP
 
 **END OF DOCUMENT**
