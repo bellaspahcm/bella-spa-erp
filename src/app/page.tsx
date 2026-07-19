@@ -98,10 +98,10 @@ export default function LandingPage() {
           width: 8px;
         }
         ::-webkit-scrollbar-track {
-          background: #f1f5f9;
+          background: #0f172a;
         }
         ::-webkit-scrollbar-thumb {
-          background: #cbd5e1;
+          background: #334155;
           border-radius: 4px;
         }
         ::-webkit-scrollbar-thumb:hover {
@@ -111,30 +111,30 @@ export default function LandingPage() {
 
       <div
         ref={containerRef}
-        className="tech-font-wrapper min-h-screen bg-[#f8fafc] text-slate-800 relative overflow-x-hidden font-sans selection:bg-blue-600 selection:text-white"
+        className="tech-font-wrapper min-h-screen text-slate-200 relative overflow-x-hidden font-sans selection:bg-blue-600 selection:text-white"
+        style={{background: 'linear-gradient(180deg, #0a0f1e 0%, #0f172a 30%, #111827 60%, #0a0f1e 100%)'}}
       >
 
-        {/* Dynamic Light Blue Interactive Mouse Glow Spotlights */}
+        {/* Dynamic mouse glow */}
         <div
-          className="pointer-events-none absolute inset-0 transition duration-300 -z-10 opacity-60"
+          className="pointer-events-none fixed inset-0 transition duration-300 -z-10"
           style={{
-            background: `radial-gradient(600px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(59, 130, 246, 0.07), transparent 80%)`
+            background: `radial-gradient(600px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(59,130,246,0.06), transparent 80%)`
           }}
         />
 
-        {/* Soft elegant bright blue background glows */}
-        <div className="absolute top-[-10%] left-[-10%] w-[65vw] h-[65vw] rounded-full bg-blue-600/5 blur-[160px] pointer-events-none -z-10" />
-        <div className="absolute top-[25%] right-[-10%] w-[55vw] h-[55vw] rounded-full bg-cyan-400/5 blur-[140px] pointer-events-none -z-10" />
-        <div className="absolute bottom-[20%] left-[-5%] w-[60vw] h-[60vw] rounded-full bg-indigo-500/5 blur-[150px] pointer-events-none -z-10" />
+        {/* Ambient glow blobs */}
+        <div className="fixed top-[-20%] left-[-10%] w-[60vw] h-[60vw] rounded-full opacity-20 blur-[120px] pointer-events-none -z-10" style={{background: 'radial-gradient(circle, #3b82f6 0%, transparent 70%)'}} />
+        <div className="fixed top-[50%] right-[-10%] w-[50vw] h-[50vw] rounded-full opacity-10 blur-[100px] pointer-events-none -z-10" style={{background: 'radial-gradient(circle, #6366f1 0%, transparent 70%)'}} />
 
-        {/* Global Bright Grid Pattern Overlay */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#0070f305_1px,transparent_1px),linear-gradient(to_bottom,#0070f305_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_15%,white_70%,transparent_100%)] pointer-events-none -z-10" />
+        {/* Global dark grid overlay */}
+        <div className="fixed inset-0 pointer-events-none -z-10" style={{backgroundImage: 'linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)', backgroundSize: '4rem 4rem'}} />
 
-        {/* ── HEADER & NAVIGATION (Futuristic Glassmorphic Capsule) ── */}
+        {/* ── HEADER & NAVIGATION (White Capsule — always readable) ── */}
         <header className="fixed top-5 left-1/2 -translate-x-1/2 w-[92%] max-w-7xl z-50 transition-all duration-500">
-          <div className={`w-full rounded-full transition-all duration-500 border px-6 py-2 flex items-center justify-between shadow-[0_10px_35px_rgba(59,130,246,0.06)] ${scrolled || mobileMenuOpen
-              ? 'bg-white/90 backdrop-blur-2xl border-slate-200/80 shadow-[0_12px_40px_rgba(0,0,0,0.03)]'
-              : 'bg-white/40 backdrop-blur-xl border-slate-200/40'
+          <div className={`w-full rounded-full transition-all duration-500 border px-6 py-2 flex items-center justify-between ${scrolled || mobileMenuOpen
+              ? 'bg-white/95 backdrop-blur-2xl border-slate-200 shadow-[0_12px_40px_rgba(0,0,0,0.12)]'
+              : 'bg-white/80 backdrop-blur-xl border-slate-200/60 shadow-[0_4px_20px_rgba(0,0,0,0.08)]'
             }`}>
             {/* Logo */}
             <Link href="/" className="flex items-center group">
@@ -147,26 +147,26 @@ export default function LandingPage() {
               />
             </Link>
 
-            {/* Desktop Navigation Link items */}
+            {/* Desktop Navigation */}
             <nav className="hidden lg:flex items-center gap-8">
-              <a href="#core-features" className="text-[10px] font-bold text-slate-500 hover:text-blue-600 transition-colors uppercase tracking-wider">Mô hình lõi</a>
-              <a href="#workspace-preview" className="text-[10px] font-bold text-slate-500 hover:text-blue-600 transition-colors uppercase tracking-wider">Hệ thống</a>
-              <a href="#solutions-grid" className="text-[10px] font-bold text-slate-500 hover:text-blue-600 transition-colors uppercase tracking-wider">Trụ cột</a>
-              <a href="#security-rls" className="text-[10px] font-bold text-slate-500 hover:text-blue-600 transition-colors uppercase tracking-wider">Bảo mật</a>
+              <a href="#core-features" className="text-[10px] font-bold text-slate-600 hover:text-blue-600 transition-colors uppercase tracking-wider">Mô hình lõi</a>
+              <a href="#workspace-preview" className="text-[10px] font-bold text-slate-600 hover:text-blue-600 transition-colors uppercase tracking-wider">Hệ thống</a>
+              <a href="#solutions-grid" className="text-[10px] font-bold text-slate-600 hover:text-blue-600 transition-colors uppercase tracking-wider">Trụ cột</a>
+              <a href="#security-rls" className="text-[10px] font-bold text-slate-600 hover:text-blue-600 transition-colors uppercase tracking-wider">Bảo mật</a>
             </nav>
 
             {/* Header Action buttons */}
             <div className="hidden lg:flex items-center gap-3">
               <Link
                 href="/bellaspa"
-                className="px-4.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-950 rounded-full font-bold text-[9px] uppercase tracking-wider transition-all border border-slate-200/80 active:scale-95 flex items-center gap-1.5 shadow-sm"
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 rounded-full font-bold text-[9px] uppercase tracking-wider transition-all border border-slate-200 active:scale-95 flex items-center gap-1.5"
               >
-                <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500/10" />
+                <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500/20" />
                 Phân hệ Bella Spa
               </Link>
               <Link
                 href="/login"
-                className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white rounded-full font-black text-[9px] uppercase tracking-wider transition-all active:scale-95 shadow-[0_4px_16px_rgba(37,99,235,0.15)] flex items-center gap-1.5"
+                className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white rounded-full font-black text-[9px] uppercase tracking-wider transition-all active:scale-95 shadow-[0_4px_16px_rgba(37,99,235,0.3)] flex items-center gap-1.5"
               >
                 Đăng Nhập
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -174,7 +174,7 @@ export default function LandingPage() {
             </div>
 
             {/* Mobile menu toggle */}
-            <button className="lg:hidden text-slate-500 hover:text-slate-900 p-1 transition-colors" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+            <button className="lg:hidden text-slate-600 hover:text-slate-900 p-1 transition-colors" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
@@ -187,13 +187,13 @@ export default function LandingPage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.25 }}
-                className="w-full bg-white/95 backdrop-blur-2xl border border-slate-200 rounded-[2rem] p-6 shadow-2xl mt-3 flex flex-col gap-5 lg:hidden text-left"
+                className="w-full bg-white/98 backdrop-blur-2xl border border-slate-200 rounded-[2rem] p-6 shadow-2xl mt-3 flex flex-col gap-5 lg:hidden text-left"
               >
                 <div className="flex flex-col gap-4 border-b border-slate-100 pb-4">
-                  <a href="#core-features" onClick={() => setMobileMenuOpen(false)} className="text-xs font-bold text-slate-600 hover:text-slate-900 py-1 transition-colors uppercase tracking-wider">Mô hình lõi</a>
-                  <a href="#workspace-preview" onClick={() => setMobileMenuOpen(false)} className="text-xs font-bold text-slate-600 hover:text-slate-900 py-1 transition-colors uppercase tracking-wider">Hệ thống</a>
-                  <a href="#solutions-grid" onClick={() => setMobileMenuOpen(false)} className="text-xs font-bold text-slate-600 hover:text-slate-900 py-1 transition-colors uppercase tracking-wider">Trụ cột</a>
-                  <a href="#security-rls" onClick={() => setMobileMenuOpen(false)} className="text-xs font-bold text-slate-600 hover:text-slate-900 py-1 transition-colors uppercase tracking-wider">Bảo mật</a>
+                  <a href="#core-features" onClick={() => setMobileMenuOpen(false)} className="text-xs font-bold text-slate-700 hover:text-blue-600 py-1 transition-colors uppercase tracking-wider">Mô hình lõi</a>
+                  <a href="#workspace-preview" onClick={() => setMobileMenuOpen(false)} className="text-xs font-bold text-slate-700 hover:text-blue-600 py-1 transition-colors uppercase tracking-wider">Hệ thống</a>
+                  <a href="#solutions-grid" onClick={() => setMobileMenuOpen(false)} className="text-xs font-bold text-slate-700 hover:text-blue-600 py-1 transition-colors uppercase tracking-wider">Trụ cột</a>
+                  <a href="#security-rls" onClick={() => setMobileMenuOpen(false)} className="text-xs font-bold text-slate-700 hover:text-blue-600 py-1 transition-colors uppercase tracking-wider">Bảo mật</a>
                 </div>
                 <div className="flex flex-col gap-3">
                   <Link
@@ -201,13 +201,13 @@ export default function LandingPage() {
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex items-center justify-center gap-1.5 w-full py-3 bg-slate-100 border border-slate-200 text-slate-700 rounded-full font-bold text-xs uppercase tracking-wider"
                   >
-                    <Heart className="w-4 h-4 text-rose-500 fill-rose-500/10" />
+                    <Heart className="w-4 h-4 text-rose-500 fill-rose-500/20" />
                     Phân hệ Bella Spa
                   </Link>
                   <Link
                     href="/login"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-center gap-1.5 w-full py-3 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-full font-black text-xs uppercase tracking-wider shadow-md"
+                    className="flex items-center justify-center gap-1.5 w-full py-3 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-full font-black text-xs uppercase tracking-wider shadow-lg shadow-blue-600/30"
                   >
                     <LogIn className="w-4 h-4" />
                     Đăng Nhập
@@ -218,10 +218,10 @@ export default function LandingPage() {
           </AnimatePresence>
         </header>
 
-        {/* ── HERO SECTION (Light-mode Tech Space with Banner.png Backdrop) ── */}
+        {/* ── HERO SECTION (Dark Tech with Banner.png Backdrop) ── */}
         <section className="relative pt-44 pb-8 flex flex-col justify-between min-h-screen overflow-hidden">
 
-          {/* Background cityscape banner with rocket embedded - hidden on mobile/tablet, cover full screen on desktop */}
+          {/* Background cityscape banner - darken overlay for dark mode */}
           <div className="absolute inset-0 z-0 w-full h-full overflow-hidden pointer-events-none hidden lg:block">
             <Image
               src="/Banner.png"
@@ -229,29 +229,27 @@ export default function LandingPage() {
               fill
               priority
               sizes="100vw"
-              className="object-cover object-right"
+              className="object-cover object-right opacity-20"
             />
-            {/* Soft gradient to blend left edge of image seamlessly with the site background */}
-            <div className="absolute inset-0 bg-gradient-to-r from-[#f8fafc] via-[#f8fafc]/20 to-transparent" />
-            <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-b from-transparent to-[#f8fafc]" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#0a0f1e] via-[#0a0f1e]/60 to-transparent" />
+            <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent to-[#0a0f1e]" />
           </div>
 
-          {/* Main Grid Row (centered vertically in remaining space) */}
+          {/* Main Grid Row */}
           <div className="flex-1 flex items-center w-full relative z-10">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
 
-                {/* Left Column Content - Canh lề trái, mở rộng cân đối cột tránh dồn nút */}
                 <div className="lg:col-span-7 flex flex-col items-start text-left space-y-8 max-w-2xl">
 
-                  {/* Tech Pill Badge with pulse effect */}
+                  {/* Tech Pill Badge */}
                   <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.6 }}
-                    className="inline-flex items-center gap-2.5 px-4.5 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-[10px] font-black uppercase tracking-widest shadow-sm"
+                    className="inline-flex items-center gap-2.5 px-4.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[10px] font-black uppercase tracking-widest"
                   >
-                    <span className="w-2 h-2 rounded-full bg-blue-600 animate-ping" />
+                    <span className="w-2 h-2 rounded-full bg-blue-400 animate-ping" />
                     SYSTEM PROTOCOL: OPERATIONAL INTEGRITY
                   </motion.div>
 
@@ -261,7 +259,8 @@ export default function LandingPage() {
                       initial={{ opacity: 0, y: 30 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                      className="text-5xl sm:text-7xl lg:text-[86px] font-black tracking-tight leading-[1.03] text-slate-900"
+                      className="text-5xl sm:text-7xl lg:text-[86px] font-black tracking-tight leading-[1.03]"
+                      style={{color: '#ffffff'}}
                     >
                       Bella EIP
                     </motion.h1>
@@ -269,27 +268,26 @@ export default function LandingPage() {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-                      className="text-lg sm:text-2xl font-bold tracking-wide uppercase bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 bg-clip-text text-transparent"
+                      className="text-lg sm:text-2xl font-bold tracking-wide uppercase bg-gradient-to-r from-blue-400 via-blue-300 to-cyan-400 bg-clip-text text-transparent"
                     >
                       Hệ Điều Hành Thông Minh Cho Chuỗi Dịch Vụ
                     </motion.p>
                   </div>
 
-                  {/* 3-paragraph descriptive subtext */}
                   <motion.div
                     initial={{ opacity: 0, y: 15 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8, delay: 0.2 }}
-                    className="text-slate-600 text-sm font-semibold leading-relaxed text-left max-w-xl"
+                    className="text-slate-200 placeholder:text-slate-500 text-sm font-semibold leading-relaxed text-left max-w-xl"
                   >
                     <p>
-                      Bella EIP tối ưu hóa tối đa hiệu suất vận hành của các chuỗi dịch vụ đa phân hệ quy mô lớn.
-                      Hệ thống tự động hóa hoàn toàn quy trình đặt lịch phân bổ, tính toán hoa hồng kỹ thuật viên tự động,
-                      đảm bảo dữ liệu lương thưởng bất biến và trích xuất báo cáo P&L chuẩn xác theo dòng tiền thực thu.
+                      Bella EIP hỗ trợ vận hành các chuỗi dịch vụ đa phân hệ quy mô lớn.
+                      Hệ thống tự động hóa quy trình đặt lịch, phân bổ và tính toán hoa hồng kỹ thuật viên,
+                      đảm bảo dữ liệu lương bất biến và trích xuất báo cáo P&L theo dòng tiền thực thu.
                     </p>
                   </motion.div>
 
-                  {/* Premium CTA Row */}
+                  {/* CTA Row */}
                   <motion.div
                     initial={{ opacity: 0, y: 15 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -298,26 +296,27 @@ export default function LandingPage() {
                   >
                     <Link
                       href="/login"
-                      className="px-9 py-4.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-black text-xs uppercase tracking-widest transition-all active:scale-95 shadow-[0_10px_25px_rgba(37,99,235,0.25)] flex items-center gap-2 group"
+                      className="px-9 py-4 bg-blue-500 hover:bg-blue-400 text-white rounded-full font-black text-xs uppercase tracking-widest transition-all active:scale-95 shadow-[0_10px_30px_rgba(59,130,246,0.4)] flex items-center gap-2 group"
                     >
                       Khởi chạy hệ thống
-                      <ArrowRight className="w-4.5 h-4.5 group-hover:translate-x-1 transition-transform" />
+                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     </Link>
                     <Link
                       href="/bellaspa"
-                      className="px-7 py-4.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 hover:text-slate-900 rounded-full font-black text-xs uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2 shadow-sm"
+                      className="px-7 py-4 bg-white/12 hover:bg-white/20 border border-white/25 text-white rounded-full font-black text-xs uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2"
                     >
                       Phân hệ Bella Spa
-                      <ArrowUpRight className="w-4.5 h-4.5" />
+                      <ArrowUpRight className="w-4 h-4" />
                     </Link>
                   </motion.div>
 
-                  {/* Mobile-only inline responsive banner card */}
+                  {/* Mobile-only banner */}
                   <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.8, delay: 0.32 }}
-                    className="relative w-full h-52 sm:h-72 md:h-96 rounded-3xl overflow-hidden border border-slate-200/80 shadow-md lg:hidden my-6 bg-white"
+                    className="relative w-full h-52 sm:h-72 md:h-96 rounded-3xl overflow-hidden border border-white/10 shadow-2xl lg:hidden my-6"
+                    style={{background: 'rgba(15,23,42,0.8)'}}
                   >
                     <Image
                       src="/Banner.png"
@@ -325,22 +324,18 @@ export default function LandingPage() {
                       fill
                       priority
                       sizes="(max-width: 1024px) 100vw, 50vw"
-                      className="object-cover object-right"
+                      className="object-cover object-right opacity-30"
                     />
-                    {/* Subtle ambient overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/10 via-transparent to-transparent pointer-events-none" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#0a0f1e]/80 via-transparent to-transparent" />
                   </motion.div>
 
                 </div>
-
-                {/* Right Column Spacer - Chừa chỗ trống cho hình tên lửa hiển thị từ ảnh nền Banner.png */}
                 <div className="lg:col-span-5 hidden lg:block" />
-
               </div>
             </div>
           </div>
 
-          {/* Bottom Stats Bar - Pushed to the very bottom, sitting natively on the highway boundary */}
+          {/* Bottom Stats Bar */}
           <div className="w-full relative z-10 mt-auto pb-4 pt-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
               <motion.div
@@ -349,86 +344,75 @@ export default function LandingPage() {
                 transition={{ duration: 0.8, delay: 0.35 }}
                 className="grid grid-cols-1 sm:grid-cols-3 gap-6 w-full text-left max-w-3xl"
               >
-                <div className="bg-white/80 backdrop-blur-md border border-slate-200/80 rounded-2xl p-5 shadow-[0_8px_30px_rgba(59,130,246,0.03)] flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
-                    <Database className="w-5 h-5" />
+                {[{icon: <Database className="w-5 h-5" />, value: '99.9%', label: 'Độ chính xác số liệu', color: 'blue'}, {icon: <Activity className="w-5 h-5" />, value: '100K+', label: 'Ca làm hoàn tất', color: 'violet'}, {icon: <Percent className="w-5 h-5" />, value: '0%', label: 'Lỗi tính hoa hồng', color: 'emerald'}].map(({icon, value, label, color}) => (
+                  <div key={label} className="rounded-2xl p-5 flex items-center gap-4 border border-white/10" style={{background: 'rgba(255,255,255,0.06)', backdropFilter: 'blur(12px)'}}>
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${color === 'blue' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : color === 'violet' ? 'bg-violet-500/20 text-violet-400 border border-violet-500/30' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'}`}>
+                      {icon}
+                    </div>
+                    <div>
+                      <span className="text-[17px] font-black text-white block leading-none">{value}</span>
+                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1.5 block">{label}</span>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-[17px] font-black text-slate-900 block leading-none">99.9%</span>
-                    <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1.5 block">Độ chính xác số liệu</span>
-                  </div>
-                </div>
-
-                <div className="bg-white/80 backdrop-blur-md border border-slate-200/80 rounded-2xl p-5 shadow-[0_8px_30px_rgba(59,130,246,0.03)] flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
-                    <Activity className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <span className="text-[17px] font-black text-slate-900 block leading-none">100K+</span>
-                    <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1.5 block">Ca làm hoàn tất</span>
-                  </div>
-                </div>
-
-                <div className="bg-white/80 backdrop-blur-md border border-slate-200/80 rounded-2xl p-5 shadow-[0_8px_30px_rgba(59,130,246,0.03)] flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
-                    <Percent className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <span className="text-[17px] font-black text-slate-900 block leading-none">0%</span>
-                    <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1.5 block">Lỗi tính hoa hồng</span>
-                  </div>
-                </div>
+                ))}
               </motion.div>
             </div>
           </div>
         </section>
 
-        {/* ── INTERACTIVE WORKSPACE PREVIEW (Stripe-style Light Console Panel) ── */}
-        <section id="workspace-preview" className="py-24 bg-white relative border-t border-slate-100 overflow-hidden">
-          {/* Subtle light speed background line */}
-          <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-blue-500/10 to-transparent" />
+        {/* ── INTERACTIVE WORKSPACE PREVIEW (Dark Console Panel) ── */}
+        <section id="workspace-preview" className="py-24 relative border-t border-white/5 overflow-hidden">
+          <div className="pointer-events-none absolute inset-0 overflow-hidden">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] rounded-full opacity-10" style={{background: 'radial-gradient(ellipse, #3b82f6 0%, transparent 70%)'}} />
+          </div>
 
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center max-w-3xl mx-auto space-y-4 mb-20">
-              <span className="text-xs font-black tracking-widest text-blue-600 uppercase">Trực Quan Hóa Quản Trị</span>
-              <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">Hệ Thống Phân Tích & Điều Phối Thực Tế</h2>
-              <p className="text-slate-600 text-sm font-semibold leading-relaxed">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+            <div className="text-center max-w-3xl mx-auto space-y-5 mb-16">
+              <span className="inline-flex items-center gap-2 text-xs font-black tracking-widest uppercase px-4 py-1.5 rounded-full border border-blue-500/40 bg-blue-500/10 text-blue-300">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+                Trực Quan Hóa Quản Trị
+              </span>
+              <h2 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
+                <span className="text-white">Hệ Thống Phân Tích</span><br/>
+                <span className="text-transparent bg-clip-text" style={{backgroundImage: 'linear-gradient(90deg, #60a5fa, #34d399)'}}>& Điều Phối Thực Tế</span>
+              </h2>
+              <p className="text-slate-300 text-sm font-semibold leading-relaxed">
                 Tích hợp toàn bộ báo cáo doanh thu thực thu, trích quỹ lương dự phòng KTV và nhật ký RLS trong một màn hình thống nhất.
               </p>
             </div>
 
-            {/* Desktop Mock Workspace App in Light Theme */}
-            <div className="relative w-full max-w-5xl mx-auto rounded-[2.5rem] border border-slate-200 bg-white shadow-[0_20px_50px_rgba(59,130,246,0.06)] overflow-hidden">
+            {/* Dark Workspace App Mock */}
+            <div className="relative w-full max-w-5xl mx-auto rounded-[2rem] border border-white/10 overflow-hidden" style={{background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)', boxShadow: '0 0 0 1px rgba(99,102,241,0.1), 0 40px 80px rgba(0,0,0,0.5)'}}>
               {/* Toolbar */}
-              <div className="w-full bg-slate-50 px-6 py-4.5 border-b border-slate-200/80 flex items-center justify-between">
+              <div className="w-full px-6 py-4 border-b border-white/8 flex items-center justify-between" style={{background: 'rgba(255,255,255,0.03)'}}>
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-slate-200" />
-                  <div className="w-3 h-3 rounded-full bg-slate-200" />
-                  <div className="w-3 h-3 rounded-full bg-slate-200" />
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-4 font-mono">Bella EIP Workspace v2.0</span>
+                  <div className="w-3 h-3 rounded-full bg-red-500/60" />
+                  <div className="w-3 h-3 rounded-full bg-amber-500/60" />
+                  <div className="w-3 h-3 rounded-full bg-emerald-500/60" />
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-4 font-mono">Bella EIP Workspace v2.0</span>
                 </div>
-                <div className="flex items-center gap-2 bg-blue-50 px-3.5 py-1 rounded-full border border-blue-100">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />
-                  <span className="text-[8px] font-bold text-blue-700 uppercase tracking-wider font-mono">SECURE (RLS ACTIVE)</span>
+                <div className="flex items-center gap-2 bg-emerald-500/10 px-3.5 py-1 rounded-full border border-emerald-500/30">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-[8px] font-bold text-emerald-400 uppercase tracking-wider font-mono">SECURE · RLS ACTIVE</span>
                 </div>
               </div>
 
               {/* Grid content */}
               <div className="grid grid-cols-1 md:grid-cols-12 min-h-[480px]">
                 {/* Sidebar */}
-                <div className="md:col-span-3 border-r border-slate-200 p-5 space-y-5 text-left bg-slate-50/50">
+                <div className="md:col-span-3 border-r border-white/8 p-5 space-y-5 text-left" style={{background: 'rgba(255,255,255,0.02)'}}>
                   <div className="space-y-2">
                     <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider block font-mono">Module Directory</span>
                     <div className="space-y-1">
-                      <div className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-blue-50 border border-blue-100 text-blue-600 font-bold text-xs">
+                      <div className="flex items-center justify-between px-3 py-2.5 rounded-lg border border-blue-500/30 text-blue-400 font-bold text-xs" style={{background: 'rgba(59,130,246,0.1)'}}>
                         <span>AI Scheduler</span>
                         <Activity className="w-4 h-4" />
                       </div>
-                      <div className="flex items-center justify-between px-3 py-2.5 rounded-lg text-slate-500 hover:bg-slate-100 font-semibold text-xs transition-colors">
+                      <div className="flex items-center justify-between px-3 py-2.5 rounded-lg text-slate-400 hover:bg-white/5 font-semibold text-xs transition-colors">
                         <span>Decision Matrix</span>
                         <Brain className="w-4 h-4" />
                       </div>
-                      <div className="flex items-center justify-between px-3 py-2.5 rounded-lg text-slate-500 hover:bg-slate-100 font-semibold text-xs transition-colors">
+                      <div className="flex items-center justify-between px-3 py-2.5 rounded-lg text-slate-400 hover:bg-white/5 font-semibold text-xs transition-colors">
                         <span>Financial P&L</span>
                         <BarChart3 className="w-4 h-4" />
                       </div>
@@ -438,62 +422,73 @@ export default function LandingPage() {
 
                 {/* Main panel */}
                 <div className="md:col-span-9 p-8 space-y-6 text-left">
-                  <div className="flex items-center justify-between pb-4 border-b border-slate-200">
+                  <div className="flex items-center justify-between pb-4 border-b border-white/8">
                     <div>
-                      <h4 className="text-base font-black text-slate-900">Bảng Quản Trị Vận Hành Hệ Thống</h4>
-                      <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-0.5 block font-mono">Core State • Live Monitor</span>
+                      <h4 className="text-base font-black text-white">Bảng Quản Trị Vận Hành Hệ Thống</h4>
+                      <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider font-mono">Core State • Live Monitor</span>
                     </div>
-                    <span className="text-[10px] bg-slate-100 text-slate-600 font-black px-3 py-1 rounded-full border border-slate-200">Operational Integrity</span>
+                    <span className="text-[10px] text-blue-400 font-black px-3 py-1 rounded-full border border-blue-500/30" style={{background: 'rgba(59,130,246,0.1)'}}>Operational Integrity</span>
                   </div>
 
                   {/* Micro dashboard cards */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/80 shadow-inner flex flex-col justify-between min-h-[90px]">
+                    <div className="p-4 rounded-xl border border-white/8 flex flex-col justify-between min-h-[90px]" style={{background: 'rgba(255,255,255,0.04)'}}>
                       <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider font-mono">Tổng doanh thu thực thu</span>
-                      <span className="text-lg font-black text-slate-900 mt-2">428.5 Tr</span>
+                      <span className="text-lg font-black text-white mt-2">428.5 Tr</span>
                     </div>
-                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/80 shadow-inner flex flex-col justify-between min-h-[90px]">
+                    <div className="p-4 rounded-xl border border-white/8 flex flex-col justify-between min-h-[90px]" style={{background: 'rgba(255,255,255,0.04)'}}>
                       <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider font-mono">Quỹ lương KTV dự phòng</span>
-                      <span className="text-lg font-black text-slate-900 mt-2">142.8 Tr</span>
+                      <span className="text-lg font-black text-white mt-2">142.8 Tr</span>
                     </div>
-                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/80 shadow-inner flex flex-col justify-between min-h-[90px]">
+                    <div className="p-4 rounded-xl border border-emerald-500/20 flex flex-col justify-between min-h-[90px]" style={{background: 'rgba(52,211,153,0.06)'}}>
                       <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider font-mono">Độ Lệch Hệ Thống</span>
-                      <span className="text-lg font-black text-blue-600 mt-2">0% Lệch</span>
+                      <span className="text-lg font-black text-emerald-400 mt-2">0% Lệch</span>
                     </div>
                   </div>
 
-                  {/* Terminal code logs in dark contrasted style for professional readability */}
-                  <div className="p-5 bg-slate-950 rounded-2xl border border-slate-900 font-mono text-[9px] space-y-2 text-slate-300 shadow-inner">
+                  {/* Terminal */}
+                  <div className="p-5 rounded-2xl border border-white/8 font-mono text-[9px] space-y-2 text-slate-300" style={{background: 'rgba(0,0,0,0.4)'}}>
                     <p className="text-slate-500">[INFO] Initializing recalculateAndSaveSalaryRecord Engine...</p>
-                    <p className="text-blue-400">[QUERY] Fetching completed service items: status = 'completed' (Approved/Paid only)</p>
+                    <p className="text-blue-400">[QUERY] Fetching completed service items: status = &apos;completed&apos; (Approved/Paid only)</p>
                     <p className="text-emerald-400">[SUCCESS] RLS context verified. 0 silent failures detected. Financial integrity locked.</p>
                   </div>
                 </div>
               </div>
-
             </div>
           </div>
         </section>
 
         {/* ── CORE FEATURES Tab Showcase (Interactive Layout) ── */}
-        <section id="core-features" className="py-32 bg-[#f8fafc] relative border-t border-slate-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section id="core-features" className="py-32 relative border-t border-slate-800/60 overflow-hidden" style={{background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 40%, #0c1a3a 70%, #0f172a 100%)'}}>
+          {/* Ambient glow blobs */}
+          <div className="pointer-events-none absolute inset-0 overflow-hidden">
+            <div className="absolute -top-40 left-1/4 w-[600px] h-[600px] rounded-full opacity-20" style={{background: 'radial-gradient(circle, #3b82f6 0%, transparent 70%)'}} />
+            <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] rounded-full opacity-15" style={{background: 'radial-gradient(circle, #6366f1 0%, transparent 70%)'}} />
+          </div>
 
-            <div className="text-center max-w-3xl mx-auto space-y-4 mb-16">
-              <span className="text-xs font-black tracking-widest text-blue-600 uppercase">Mô Hình Vận Hành Lõi</span>
-              <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">Quy Trình Tự Động Hóa Thực Tế</h2>
-              <p className="text-slate-600 text-sm font-semibold leading-relaxed">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+
+            <div className="text-center max-w-3xl mx-auto space-y-5 mb-16">
+              <span className="inline-flex items-center gap-2 text-xs font-black tracking-widest uppercase px-4 py-1.5 rounded-full border border-blue-500/40 bg-blue-500/10 text-blue-300">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+                Mô Hình Vận Hành Lõi
+              </span>
+              <h2 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
+                <span className="text-white">Quy Trình Tự Động Hóa</span><br/>
+                <span className="text-transparent bg-clip-text" style={{backgroundImage: 'linear-gradient(90deg, #60a5fa, #a78bfa)'}}>Thực Tế</span>
+              </h2>
+              <p className="text-slate-300 text-sm font-semibold leading-relaxed max-w-xl mx-auto">
                 Tự động hóa hoàn toàn quy trình xếp lịch, phân bổ ca phục vụ kỹ thuật viên và kế toán đối soát kỳ lương.
               </p>
             </div>
 
             {/* Interactive Control Tabs */}
-            <div className="flex flex-wrap items-center justify-center gap-3 mb-12">
+            <div className="flex flex-wrap items-center justify-center gap-3 mb-10">
               <button
                 onClick={() => setActiveTab('scheduler')}
-                className={`flex items-center gap-2 px-6 py-3 rounded-full text-xs font-bold uppercase tracking-wider transition-all border ${activeTab === 'scheduler'
-                    ? 'bg-blue-600 border-blue-500 text-white shadow-md shadow-blue-600/20'
-                    : 'bg-white border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                className={`flex items-center gap-2 px-6 py-3 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-300 border ${activeTab === 'scheduler'
+                    ? 'bg-blue-500 border-blue-400 text-white shadow-lg shadow-blue-500/40 scale-105'
+                    : 'bg-white/5 border-white/10 text-slate-400 hover:text-white hover:bg-white/10 hover:border-white/20'
                   }`}
               >
                 <Cpu className="w-4 h-4" />
@@ -501,9 +496,9 @@ export default function LandingPage() {
               </button>
               <button
                 onClick={() => setActiveTab('decision')}
-                className={`flex items-center gap-2 px-6 py-3 rounded-full text-xs font-bold uppercase tracking-wider transition-all border ${activeTab === 'decision'
-                    ? 'bg-blue-600 border-blue-500 text-white shadow-md shadow-blue-600/20'
-                    : 'bg-white border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                className={`flex items-center gap-2 px-6 py-3 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-300 border ${activeTab === 'decision'
+                    ? 'bg-blue-500 border-blue-400 text-white shadow-lg shadow-blue-500/40 scale-105'
+                    : 'bg-white/5 border-white/10 text-slate-400 hover:text-white hover:bg-white/10 hover:border-white/20'
                   }`}
               >
                 <Brain className="w-4 h-4" />
@@ -511,9 +506,9 @@ export default function LandingPage() {
               </button>
               <button
                 onClick={() => setActiveTab('finance')}
-                className={`flex items-center gap-2 px-6 py-3 rounded-full text-xs font-bold uppercase tracking-wider transition-all border ${activeTab === 'finance'
-                    ? 'bg-blue-600 border-blue-500 text-white shadow-md shadow-blue-600/20'
-                    : 'bg-white border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                className={`flex items-center gap-2 px-6 py-3 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-300 border ${activeTab === 'finance'
+                    ? 'bg-blue-500 border-blue-400 text-white shadow-lg shadow-blue-500/40 scale-105'
+                    : 'bg-white/5 border-white/10 text-slate-400 hover:text-white hover:bg-white/10 hover:border-white/20'
                   }`}
               >
                 <BarChart3 className="w-4 h-4" />
@@ -522,7 +517,7 @@ export default function LandingPage() {
             </div>
 
             {/* Active tab contents */}
-            <div className="bg-white/70 backdrop-blur-2xl border border-slate-200/80 rounded-[3rem] p-8 sm:p-12 shadow-[0_20px_50px_rgba(59,130,246,0.04)] min-h-[380px] flex items-center">
+            <div className="relative rounded-[2.5rem] p-8 sm:p-12 min-h-[420px] flex items-center border border-white/10" style={{background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(24px)', boxShadow: '0 0 0 1px rgba(99,102,241,0.15), 0 40px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08)'}}>
               <AnimatePresence mode="wait">
                 {activeTab === 'scheduler' && (
                   <motion.div
@@ -534,39 +529,39 @@ export default function LandingPage() {
                     className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center w-full"
                   >
                     <div className="lg:col-span-7 space-y-6 text-left">
-                      <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">AI COO: Điều phối và Sắp xếp thông minh</h3>
-                      <p className="text-slate-600 text-sm font-semibold leading-relaxed">
-                        Động cơ tự động phân bổ ca làm việc, thời gian phục vụ, và lộ trình di chuyển của kỹ thuật viên tối ưu theo thời gian thực. Giảm thiểu tối qua tình trạng xung đột hoặc trùng lịch hẹn.
+                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-500/20 text-blue-300 border border-blue-500/30 mb-1">
+                        <Cpu className="w-3 h-3" /> AI COO Engine
+                      </div>
+                      <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight">Điều phối & Sắp xếp<br/>thông minh</h3>
+                      <p className="text-slate-300 text-sm font-semibold leading-relaxed">
+                        Động cơ tự động phân bổ ca làm việc, thời gian phục vụ, và lộ trình di chuyển của kỹ thuật viên tối ưu theo thời gian thực. Giảm thiểu tối đa tình trạng xung đột hoặc trùng lịch hẹn.
                       </p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-700 font-bold">
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4.5 h-4.5 text-blue-600 shrink-0" />
-                          Phân bổ ca tự động theo tọa độ thực tế
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4.5 h-4.5 text-blue-600 shrink-0" />
-                          Tự động cảnh báo quá tải kỹ thuật viên
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4.5 h-4.5 text-blue-600 shrink-0" />
-                          Theo dõi trạng thái di chuyển KTV
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4.5 h-4.5 text-blue-600 shrink-0" />
-                          Đồng bộ lịch hẹn đa kênh thời gian thực
-                        </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {["Phân bổ ca tự động theo tọa độ thực tế", "Tự động cảnh báo quá tải kỹ thuật viên", "Theo dõi trạng thái di chuyển KTV", "Đồng bộ lịch hẹn đa kênh thời gian thực"].map((item) => (
+                          <div key={item} className="flex items-center gap-2.5 bg-white/5 rounded-xl px-3 py-2.5 border border-white/10">
+                            <CheckCircle2 className="w-4 h-4 text-blue-400 shrink-0" />
+                            <span className="text-xs text-slate-300 font-semibold">{item}</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                    <div className="lg:col-span-5 bg-slate-50/80 rounded-2xl p-6 border border-slate-200 space-y-3 text-left">
-                      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block font-mono">Trạng thái kỹ thuật viên</span>
+                    <div className="lg:col-span-5 rounded-2xl p-5 border border-white/10 space-y-3 text-left" style={{background: 'rgba(255,255,255,0.05)'}}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider font-mono">Trạng thái kỹ thuật viên</span>
+                        <span className="flex items-center gap-1 text-[9px] text-emerald-400 font-bold"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />LIVE</span>
+                      </div>
                       <div className="space-y-2">
-                        <div className="flex justify-between items-center bg-white p-3.5 rounded-xl border border-slate-150">
-                          <span className="text-xs font-bold text-slate-800">KTV Nguyễn Thùy Trang</span>
-                          <span className="text-[9px] bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded font-black border border-emerald-100">Đang phục vụ</span>
+                        <div className="flex justify-between items-center p-3.5 rounded-xl border border-white/10" style={{background: 'rgba(255,255,255,0.06)'}}>
+                          <span className="text-xs font-bold text-white">KTV Nguyễn Thùy Trang</span>
+                          <span className="text-[9px] bg-emerald-500/20 text-emerald-300 px-2.5 py-1 rounded-lg font-black border border-emerald-500/30">Đang phục vụ</span>
                         </div>
-                        <div className="flex justify-between items-center bg-white p-3.5 rounded-xl border border-slate-150">
-                          <span className="text-xs font-bold text-slate-800">KTV Phạm Minh Ánh</span>
-                          <span className="text-[9px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded font-black border border-blue-100">Đang di chuyển</span>
+                        <div className="flex justify-between items-center p-3.5 rounded-xl border border-white/10" style={{background: 'rgba(255,255,255,0.06)'}}>
+                          <span className="text-xs font-bold text-white">KTV Phạm Minh Ánh</span>
+                          <span className="text-[9px] bg-blue-500/20 text-blue-300 px-2.5 py-1 rounded-lg font-black border border-blue-500/30">Đang di chuyển</span>
+                        </div>
+                        <div className="flex justify-between items-center p-3.5 rounded-xl border border-white/10" style={{background: 'rgba(255,255,255,0.06)'}}>
+                          <span className="text-xs font-bold text-white">KTV Lê Thị Hoa</span>
+                          <span className="text-[9px] bg-amber-500/20 text-amber-300 px-2.5 py-1 rounded-lg font-black border border-amber-500/30">Chờ xác nhận</span>
                         </div>
                       </div>
                     </div>
@@ -583,47 +578,43 @@ export default function LandingPage() {
                     className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center w-full"
                   >
                     <div className="lg:col-span-7 space-y-6 text-left">
-                      <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Động cơ tính Lương & Hoa hồng chuẩn xác</h3>
-                      <p className="text-slate-600 text-sm font-semibold leading-relaxed">
-                        Quy tắc tính toán hoa hồng chặt chẽ thừa kế cấu trúc đa cấp bậc. Đảm bảo dữ liệu lương của nhân viên/KTV chính xác 100%, tự động đồng bộ theo thời gian thực từ dữ liệu chấm công chuyên cần và KPI records.
+                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-violet-500/20 text-violet-300 border border-violet-500/30 mb-1">
+                        <Brain className="w-3 h-3" /> Salary Engine v3
+                      </div>
+                      <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight">Động cơ tính Lương<br/>& Hoa hồng minh bạch</h3>
+                      <p className="text-slate-300 text-sm font-semibold leading-relaxed">
+                        Quy tắc tính toán hoa hồng chặt chẽ thừa kế cấu trúc đa cấp bậc. Đảm bảo dữ liệu lương của nhân viên/KTV minh bạch và đồng bộ theo thời gian thực từ dữ liệu chấm công chuyên cần và KPI records.
                       </p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-700 font-bold">
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4.5 h-4.5 text-blue-600 shrink-0" />
-                          Hệ số nhân ca làm dựa trên gói VIP/Hạnh Phúc
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4.5 h-4.5 text-blue-600 shrink-0" />
-                          Tính pro-rata lương cơ bản theo ngày công thực tế
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4.5 h-4.5 text-blue-600 shrink-0" />
-                          Tự động đồng bộ KPI & phạt chuyên cần từ log
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4.5 h-4.5 text-blue-600 shrink-0" />
-                          Khóa kỳ lương bất biến (Month-end close) bảo mật
-                        </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {["Hệ số nhân ca làm dựa trên gói VIP/Hạnh Phúc", "Tính pro-rata lương cơ bản theo ngày công thực tế", "Tự động đồng bộ KPI & phạt chuyên cần từ log", "Khóa kỳ lương bất biến (Month-end close) bảo mật"].map((item) => (
+                          <div key={item} className="flex items-center gap-2.5 bg-white/5 rounded-xl px-3 py-2.5 border border-white/10">
+                            <CheckCircle2 className="w-4 h-4 text-violet-400 shrink-0" />
+                            <span className="text-xs text-slate-300 font-semibold">{item}</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                    <div className="lg:col-span-5 bg-slate-50/80 rounded-2xl p-6 border border-slate-200 space-y-3.5 text-left font-mono text-xs text-slate-700">
-                      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block font-sans">Phiếu tính lương chi tiết</span>
+                    <div className="lg:col-span-5 rounded-2xl p-5 border border-white/10 space-y-3.5 text-left font-mono text-xs" style={{background: 'rgba(255,255,255,0.05)'}}>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider font-sans">Phiếu tính lương chi tiết</span>
+                        <span className="text-[9px] text-violet-400 font-black border border-violet-500/30 px-2 py-0.5 rounded-full bg-violet-500/10">AUTO-CALC</span>
+                      </div>
                       <div className="space-y-2">
-                        <div className="flex justify-between border-b border-slate-200 pb-1.5">
-                          <span>Lương cơ bản (22 ngày):</span>
-                          <span>5.800.000đ</span>
+                        <div className="flex justify-between border-b border-white/10 pb-2">
+                          <span className="text-slate-400">Lương cơ bản (22 ngày):</span>
+                          <span className="text-white font-bold">5.800.000đ</span>
                         </div>
-                        <div className="flex justify-between border-b border-slate-200 pb-1.5">
-                          <span>Hoa hồng ca làm (VIP x2):</span>
-                          <span className="text-blue-600">3.450.000đ</span>
+                        <div className="flex justify-between border-b border-white/10 pb-2">
+                          <span className="text-slate-400">Hoa hồng ca làm (VIP x2):</span>
+                          <span className="text-blue-400 font-bold">3.450.000đ</span>
                         </div>
-                        <div className="flex justify-between border-b border-slate-200 pb-1.5">
-                          <span>KPI đồng bộ tự động:</span>
-                          <span className="text-emerald-600">+500.000đ</span>
+                        <div className="flex justify-between border-b border-white/10 pb-2">
+                          <span className="text-slate-400">KPI đồng bộ tự động:</span>
+                          <span className="text-emerald-400 font-bold">+500.000đ</span>
                         </div>
-                        <div className="flex justify-between pt-2 text-sm font-black text-slate-900">
-                          <span>TỔNG THỰC LĨNH:</span>
-                          <span className="text-blue-600 font-black">9.600.000đ</span>
+                        <div className="flex justify-between pt-2 text-sm font-black rounded-xl px-3 py-2.5" style={{background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)'}}>
+                          <span className="text-white">TỔNG THỰC LĨNH:</span>
+                          <span className="text-violet-300">9.600.000đ</span>
                         </div>
                       </div>
                     </div>
@@ -640,48 +631,50 @@ export default function LandingPage() {
                     className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center w-full"
                   >
                     <div className="lg:col-span-7 space-y-6 text-left">
-                      <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Tài chính chuỗi & Báo cáo kết quả P&L thực tế</h3>
-                      <p className="text-slate-600 text-sm font-semibold leading-relaxed">
+                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 mb-1">
+                        <BarChart3 className="w-3 h-3" /> P&L Intelligence
+                      </div>
+                      <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight">Tài chính chuỗi<br/>& Báo cáo P&L thực tế</h3>
+                      <p className="text-slate-300 text-sm font-semibold leading-relaxed">
                         Phân tích sâu kết quả kinh doanh dòng tiền thực. Chỉ ghi nhận chi phí lương kỹ thuật viên thực tế và doanh thu dịch vụ đã được xác nhận (Status: Completed) để ngăn chặn rủi ro thổi phồng kết quả.
                       </p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-700 font-bold">
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4.5 h-4.5 text-blue-600 shrink-0" />
-                          Chỉ ghi nhận chi phí đã được kế toán duyệt
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4.5 h-4.5 text-blue-600 shrink-0" />
-                          Trích lập dynamic lương KTV dự phòng chính xác
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4.5 h-4.5 text-blue-600 shrink-0" />
-                          Theo dõi doanh thu thực thu theo thời gian thực
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4.5 h-4.5 text-blue-600 shrink-0" />
-                          Báo cáo P&L đa cấp độ cơ sở/chuỗi
-                        </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {["Chỉ ghi nhận chi phí đã được kế toán duyệt", "Trích lập dynamic lương KTV dự phòng chính xác", "Theo dõi doanh thu thực thu theo thời gian thực", "Báo cáo P&L đa cấp độ cơ sở/chuỗi"].map((item) => (
+                          <div key={item} className="flex items-center gap-2.5 bg-white/5 rounded-xl px-3 py-2.5 border border-white/10">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                            <span className="text-xs text-slate-300 font-semibold">{item}</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                    <div className="lg:col-span-5 bg-slate-50/80 rounded-2xl p-6 border border-slate-200 space-y-3.5 text-left">
-                      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block font-mono">Báo cáo cơ cấu P&L chi nhánh</span>
-                      <div className="space-y-3 text-xs text-slate-500">
+                    <div className="lg:col-span-5 rounded-2xl p-5 border border-white/10 space-y-4 text-left" style={{background: 'rgba(255,255,255,0.05)'}}>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider font-mono">Báo cáo P&L chi nhánh</span>
+                        <span className="text-[9px] text-emerald-400 font-black border border-emerald-500/30 px-2 py-0.5 rounded-full bg-emerald-500/10">REAL-TIME</span>
+                      </div>
+                      <div className="space-y-4 text-xs">
                         <div>
-                          <div className="flex justify-between mb-1">
-                            <span>Doanh thu thuần (Thực thu)</span>
-                            <span className="text-slate-900 font-black">428.5 Tr</span>
+                          <div className="flex justify-between mb-2">
+                            <span className="text-slate-400">Doanh thu thuần (Thực thu)</span>
+                            <span className="text-white font-black">428.5 Tr</span>
                           </div>
-                          <div className="h-1 bg-slate-200 rounded-full overflow-hidden">
-                            <div className="h-full bg-blue-500 w-full" />
+                          <div className="h-2 rounded-full overflow-hidden" style={{background: 'rgba(255,255,255,0.1)'}}>
+                            <div className="h-full rounded-full" style={{width: '100%', background: 'linear-gradient(90deg, #3b82f6, #60a5fa)'}} />
                           </div>
                         </div>
                         <div>
-                          <div className="flex justify-between mb-1">
-                            <span>Quỹ lương KTV dự phòng</span>
-                            <span className="text-slate-900 font-black">142.8 Tr</span>
+                          <div className="flex justify-between mb-2">
+                            <span className="text-slate-400">Quỹ lương KTV dự phòng</span>
+                            <span className="text-white font-black">142.8 Tr</span>
                           </div>
-                          <div className="h-1 bg-slate-200 rounded-full overflow-hidden">
-                            <div className="h-full bg-rose-500 w-[33%]" />
+                          <div className="h-2 rounded-full overflow-hidden" style={{background: 'rgba(255,255,255,0.1)'}}>
+                            <div className="h-full rounded-full" style={{width: '33%', background: 'linear-gradient(90deg, #f43f5e, #fb7185)'}} />
+                          </div>
+                        </div>
+                        <div className="pt-1 border-t border-white/10">
+                          <div className="flex justify-between">
+                            <span className="text-slate-400">Lợi nhuận gộp ước tính</span>
+                            <span className="text-emerald-400 font-black">285.7 Tr</span>
                           </div>
                         </div>
                       </div>
@@ -694,140 +687,126 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ── SOLUTIONS GRID (Luxury Bright Columns) ── */}
-        <section id="solutions-grid" className="py-32 bg-white relative border-t border-slate-100">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* ── SOLUTIONS GRID (Dark Glassmorphic Cards) ── */}
+        <section id="solutions-grid" className="py-32 relative border-t border-white/5 overflow-hidden">
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute -bottom-20 left-1/3 w-[500px] h-[500px] rounded-full opacity-10" style={{background: 'radial-gradient(circle, #6366f1 0%, transparent 70%)'}} />
+          </div>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
 
-            <div className="text-center max-w-3xl mx-auto space-y-4 mb-20">
-              <span className="text-xs font-black tracking-widest text-blue-600 uppercase">Trụ Cột Hệ Thống</span>
-              <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">4 Giải Pháp Quản Trị Hoàn Hảo</h2>
-              <p className="text-slate-600 text-sm font-semibold leading-relaxed">
+            <div className="text-center max-w-3xl mx-auto space-y-5 mb-16">
+              <span className="inline-flex items-center gap-2 text-xs font-black tracking-widest uppercase px-4 py-1.5 rounded-full border border-violet-500/40 bg-violet-500/10 text-violet-400">
+                <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />
+                Trụ Cột Hệ Thống
+              </span>
+              <h2 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
+                <span className="text-white">4 Giải Pháp</span><br/>
+                <span className="text-transparent bg-clip-text" style={{backgroundImage: 'linear-gradient(90deg, #a78bfa, #60a5fa)'}}>Quản Trị Hiệu Quả</span>
+              </h2>
+              <p className="text-slate-300 text-sm font-semibold leading-relaxed">
                 Từng mô-đun được xây dựng tuân thủ nghiêm ngặt các quy tắc an toàn dữ liệu và tối ưu hiệu suất dòng tiền.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-
-              {/* Feature Card 1 */}
-              <div className="bg-[#f8fafc]/60 backdrop-blur-xl border border-slate-200 p-6 rounded-3xl flex flex-col justify-between min-h-[240px] text-left hover:border-blue-300 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-                <div className="w-11 h-11 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600">
-                  <Cpu className="w-5 h-5" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+              {[
+                {icon: <Cpu className="w-5 h-5" />, label: 'AI COO Engine', title: 'Động Cơ Điều Phối AI COO', desc: 'Tự động phân bổ ca làm việc của KTV tối ưu địa lý và công suất phục vụ thực tế của các cơ sở.', color: 'blue'},
+                {icon: <Workflow className="w-5 h-5" />, label: 'Auto Workflow', title: 'Quy Trình Tự Động Hóa', desc: 'Xây dựng và kiểm soát chuỗi công việc tự động từ lúc tiếp nhận đến khi xuất hóa đơn và trích hoa hồng.', color: 'violet'},
+                {icon: <Brain className="w-5 h-5" />, label: 'Salary Engine', title: 'Động Cơ Quyết Định Lương', desc: 'Tự động áp dụng hoa hồng theo phân hạng ca dịch vụ, đảm bảo chuẩn xác không nuốt lỗi dữ liệu.', color: 'indigo'},
+                {icon: <BarChart3 className="w-5 h-5" />, label: 'P&L Intelligence', title: 'Báo Cáo P&L Thông Minh', desc: 'Phân tích sâu cơ cấu chi phí, dòng tiền thực thu và doanh thu thực tế của chuỗi cửa hàng dịch vụ.', color: 'emerald'},
+              ].map(({icon, label, title, desc, color}) => (
+                <div key={title} className="group relative p-6 rounded-3xl border border-white/8 flex flex-col justify-between min-h-[240px] text-left hover:border-white/20 hover:-translate-y-1.5 transition-all duration-300" style={{background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(12px)'}}>
+                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-4 ${color === 'blue' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : color === 'violet' ? 'bg-violet-500/20 text-violet-400 border border-violet-500/30' : color === 'indigo' ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'}`}>
+                    {icon}
+                  </div>
+                  <div className="absolute top-4 right-4">
+                    <span className={`text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border ${color === 'blue' ? 'border-blue-500/30 text-blue-400 bg-blue-500/10' : color === 'violet' ? 'border-violet-500/30 text-violet-400 bg-violet-500/10' : color === 'indigo' ? 'border-indigo-500/30 text-indigo-400 bg-indigo-500/10' : 'border-emerald-500/30 text-emerald-400 bg-emerald-500/10'}`}>{label}</span>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black text-white mb-2">{title}</h4>
+                    <p className="text-slate-400 text-[10px] font-semibold leading-relaxed group-hover:text-slate-200 transition-colors">{desc}</p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="text-sm font-black text-slate-900 mb-2">Động Cơ Điều Phối AI COO</h4>
-                  <p className="text-slate-500 text-[10px] font-semibold leading-relaxed">Tự động phân bổ ca làm việc của KTV tối ưu địa lý và công suất phục vụ thực tế của các cơ sở.</p>
-                </div>
-              </div>
-
-              {/* Feature Card 2 */}
-              <div className="bg-[#f8fafc]/60 backdrop-blur-xl border border-slate-200 p-6 rounded-3xl flex flex-col justify-between min-h-[240px] text-left hover:border-blue-300 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-                <div className="w-11 h-11 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600">
-                  <Workflow className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-black text-slate-900 mb-2">Quy Trình Tự Động Hóa</h4>
-                  <p className="text-slate-500 text-[10px] font-semibold leading-relaxed">Xây dựng và kiểm soát chuỗi công việc tự động từ lúc tiếp nhận đến khi xuất hóa đơn và trích hoa hồng.</p>
-                </div>
-              </div>
-
-              {/* Feature Card 3 */}
-              <div className="bg-[#f8fafc]/60 backdrop-blur-xl border border-slate-200 p-6 rounded-3xl flex flex-col justify-between min-h-[240px] text-left hover:border-blue-300 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-                <div className="w-11 h-11 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600">
-                  <Brain className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-black text-slate-900 mb-2">Động Cơ Quyết Định Lương</h4>
-                  <p className="text-slate-500 text-[10px] font-semibold leading-relaxed">Tự động áp dụng hoa hồng theo phân hạng ca dịch vụ, đảm bảo chuẩn xác không nuốt lỗi dữ liệu.</p>
-                </div>
-              </div>
-
-              {/* Feature Card 4 */}
-              <div className="bg-[#f8fafc]/60 backdrop-blur-xl border border-slate-200 p-6 rounded-3xl flex flex-col justify-between min-h-[240px] text-left hover:border-blue-300 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-                <div className="w-11 h-11 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600">
-                  <BarChart3 className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-black text-slate-900 mb-2">Báo Cáo P&L Thông Minh</h4>
-                  <p className="text-slate-500 text-[10px] font-semibold leading-relaxed">Phân tích sâu cơ cấu chi phí, dòng tiền thực thu và doanh thu thực tế của chuỗi cửa hàng dịch vụ.</p>
-                </div>
-              </div>
-
+              ))}
             </div>
           </div>
         </section>
 
-        {/* ── SECURITY GOVERNANCE (RLS & Safety) ── */}
-        <section id="security-rls" className="py-32 bg-[#f8fafc] relative overflow-hidden border-t border-slate-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div className="bg-white border border-slate-200/80 rounded-[3rem] p-8 sm:p-14 shadow-[0_20px_50px_rgba(59,130,246,0.03)] flex flex-col lg:flex-row items-center gap-12">
+        {/* ── SECURITY GOVERNANCE (Dark RLS & Safety) ── */}
+        <section id="security-rls" className="py-32 relative overflow-hidden border-t border-white/5">
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute -top-20 right-1/4 w-[600px] h-[400px] rounded-full opacity-10" style={{background: 'radial-gradient(ellipse, #10b981 0%, transparent 70%)'}} />
+          </div>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+            <div className="rounded-[2.5rem] p-8 sm:p-14 flex flex-col lg:flex-row items-center gap-12 border border-white/10" style={{background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)', boxShadow: '0 0 0 1px rgba(16,185,129,0.08), 0 40px 80px rgba(0,0,0,0.4)'}}>
               <div className="lg:w-1/2 space-y-6 text-left">
-                <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-[10px] font-bold uppercase tracking-wider">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold uppercase tracking-wider">
                   <Shield className="w-3.5 h-3.5" />
                   Bảo Mật Cơ Sở Dữ Liệu Enterprise
                 </div>
-                <h3 className="text-3xl font-black text-slate-900 tracking-tight leading-tight">Tuyệt Đối An Toàn Thông Tin Doanh Nghiệp</h3>
-                <p className="text-slate-600 text-sm font-semibold leading-relaxed">
+                <h3 className="text-3xl sm:text-4xl font-black tracking-tight leading-tight">
+                  <span className="text-white">Đảm Bảo An Toàn</span><br/>
+                  <span className="text-transparent bg-clip-text" style={{backgroundImage: 'linear-gradient(90deg, #34d399, #60a5fa)'}}>Thông Tin Doanh Nghiệp</span>
+                </h3>
+                <p className="text-slate-300 text-sm font-semibold leading-relaxed">
                   Từng dữ liệu tài chính nhạy cảm được cách ly độc lập giữa các chi nhánh hoặc chuỗi bằng Row Level Security (RLS) ở mức cơ sở dữ liệu. Ngăn chặn triệt để mọi hành vi sửa đổi dữ liệu kỳ lương lịch sử một khi đã được chốt (finalized).
                 </p>
-                <div className="space-y-4 text-xs font-bold text-slate-700">
-                  <div className="flex gap-3 items-center">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
-                    <span>Không có lỗi nuốt ngoại lệ cơ sở dữ liệu (Zero silent DB failures).</span>
-                  </div>
-                  <div className="flex gap-3 items-center">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
-                    <span>Bất biến dữ liệu tài chính lương đã khóa kỳ (Month-end close).</span>
-                  </div>
-                  <div className="flex gap-3 items-center">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
-                    <span>Nhật ký log kiểm toán bất biến (Audit Trail) ghi lại mọi thay đổi nhạy cảm.</span>
-                  </div>
+                <div className="space-y-3">
+                  {['Không có lỗi nuốt ngoại lệ cơ sở dữ liệu (Zero silent DB failures).', 'Bất biến dữ liệu tài chính lương đã khóa kỳ (Month-end close).', 'Nhật ký log kiểm toán bất biến (Audit Trail) ghi lại mọi thay đổi nhạy cảm.'].map(item => (
+                    <div key={item} className="flex gap-3 items-center bg-white/5 rounded-xl px-4 py-2.5 border border-white/8">
+                      <CheckCircle2 className="w-4.5 h-4.5 text-emerald-400 shrink-0" />
+                      <span className="text-xs font-semibold text-slate-300">{item}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
 
               <div className="lg:w-1/2 w-full grid grid-cols-2 gap-4">
-                <div className="p-6 bg-slate-50/50 rounded-3xl border border-slate-200 shadow-sm flex flex-col justify-between aspect-square text-left hover:border-blue-200 transition-colors">
-                  <div className="w-10 h-10 bg-blue-50 border border-blue-100 rounded-xl flex items-center justify-center text-blue-600 mb-4 shadow-sm">
-                    <ShieldCheck className="w-5 h-5" />
+                {[{icon: <ShieldCheck className="w-5 h-5" />, title: 'Supabase RLS', desc: 'Cách ly dữ liệu an toàn giữa các tenant ở cấp độ cơ sở dữ liệu.', color: 'emerald'}, {icon: <Database className="w-5 h-5" />, title: 'Bất Biến Dữ Liệu', desc: 'Khóa chặt dữ liệu kỳ lương lịch sử ngăn thay đổi ngoài ý muốn.', color: 'blue'}].map(({icon, title, desc, color}) => (
+                  <div key={title} className="p-6 rounded-3xl border border-white/10 flex flex-col justify-between aspect-square text-left hover:border-white/20 transition-all hover:-translate-y-1" style={{background: 'rgba(255,255,255,0.04)'}}>
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 ${color === 'emerald' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'}`}>
+                      {icon}
+                    </div>
+                    <div>
+                      <h6 className="text-sm font-black text-white">{title}</h6>
+                      <p className="text-[10px] text-slate-400 font-semibold mt-1 leading-normal">{desc}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h6 className="text-sm font-black text-slate-900">Supabase RLS</h6>
-                    <p className="text-[10px] text-slate-500 font-semibold mt-1 leading-normal">Cách ly dữ liệu tuyệt đối giữa các tenant ở cấp độ cơ sở dữ liệu.</p>
-                  </div>
-                </div>
-                <div className="p-6 bg-slate-50/50 rounded-3xl border border-slate-200 shadow-sm flex flex-col justify-between aspect-square text-left hover:border-blue-200 transition-colors">
-                  <div className="w-10 h-10 bg-blue-50 border border-blue-100 rounded-xl flex items-center justify-center text-blue-600 mb-4 shadow-sm">
-                    <Database className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h6 className="text-sm font-black text-slate-900">Bất Biến Dữ Liệu</h6>
-                    <p className="text-[10px] text-slate-500 font-semibold mt-1 leading-normal">Khóa chặt dữ liệu kỳ lương lịch sử ngăn thay đổi ngoài ý muốn.</p>
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
           </div>
         </section>
 
         {/* ── CONSULTATION REGISTRATION FORM ── */}
-        <section className="py-24 bg-white relative overflow-hidden border-t border-slate-100">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center space-y-8">
-            <div className="space-y-4">
-              <span className="text-xs font-black tracking-widest text-blue-600 uppercase block">Đăng ký trải nghiệm</span>
-              <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">Khởi Đầu Quản Trị Vận Hành Hiện Đại</h2>
-              <p className="text-slate-600 text-sm font-semibold leading-relaxed max-w-2xl mx-auto">
+        <section className="py-24 relative overflow-hidden border-t border-white/5">
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full opacity-15" style={{background: 'radial-gradient(circle, #3b82f6 0%, transparent 70%)'}} />
+          </div>
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative text-center space-y-8">
+            <div className="space-y-5">
+              <span className="inline-flex items-center gap-2 text-xs font-black tracking-widest uppercase px-4 py-1.5 rounded-full border border-blue-500/40 bg-blue-500/10 text-blue-400">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+                Đăng ký trải nghiệm
+              </span>
+              <h2 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
+                <span className="text-white">Khởi Đầu Quản Trị</span><br/>
+                <span className="text-transparent bg-clip-text" style={{backgroundImage: 'linear-gradient(90deg, #60a5fa, #a78bfa)'}}>Vận Hành Hiện Đại</span>
+              </h2>
+              <p className="text-slate-300 text-sm font-semibold leading-relaxed max-w-2xl mx-auto">
                 Nhập thông tin bên dưới để được đội ngũ chuyên viên liên hệ tư vấn giải pháp quản lý tối ưu phù hợp nhất với mô hình của bạn.
               </p>
             </div>
 
-            <div className="bg-[#f8fafc] border border-slate-200/80 p-6 sm:p-10 rounded-[2.5rem] shadow-[0_20px_50px_rgba(59,130,246,0.03)] text-left max-w-xl mx-auto">
+            <div className="p-6 sm:p-10 rounded-[2.5rem] text-left max-w-xl mx-auto border border-white/10" style={{background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(20px)', boxShadow: '0 0 0 1px rgba(99,102,241,0.1), 0 40px 80px rgba(0,0,0,0.4)'}}>
               <form onSubmit={handleContactSubmit} className="space-y-5">
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Họ và tên của bạn</label>
                   <input
                     type="text"
                     required
-                    className="block w-full px-4 py-3.5 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none font-semibold text-slate-900 text-xs"
+                    className="block w-full px-4 py-3.5 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all outline-none font-semibold text-white text-xs border border-white/10 placeholder:text-slate-600"
+                    style={{background: 'rgba(255,255,255,0.06)'}}
                     placeholder="VD: Nguyễn Văn A"
                   />
                 </div>
@@ -838,7 +817,8 @@ export default function LandingPage() {
                     <input
                       type="tel"
                       required
-                      className="block w-full px-4 py-3.5 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none font-semibold text-slate-900 text-xs"
+                      className="block w-full px-4 py-3.5 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all outline-none font-semibold text-white text-xs border border-white/10 placeholder:text-slate-600"
+                      style={{background: 'rgba(255,255,255,0.06)'}}
                       placeholder="09xxxxxxxx"
                     />
                   </div>
@@ -847,20 +827,22 @@ export default function LandingPage() {
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Phân hệ doanh nghiệp</label>
                     <select
                       required
-                      className="block w-full px-4 py-3.5 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none font-semibold text-slate-900 text-xs"
+                      className="block w-full px-4 py-3.5 rounded-xl focus:ring-2 focus:ring-blue-500/50 transition-all outline-none font-semibold text-white text-xs border border-white/10"
+                      style={{background: 'rgba(255,255,255,0.06)'}}
                     >
-                      <option value="spa">Spa & Beauty Clinic</option>
-                      <option value="fitness">Fitness & Gym Center</option>
-                      <option value="homecare">Chăm sóc sức khỏe gia đình (Mẹ & Bé)</option>
-                      <option value="academy">Học viện & Đào tạo nghề</option>
-                      <option value="other">Dịch vụ chuỗi/Khác</option>
+                      <option value="spa" style={{background: '#1e293b'}}>Spa & Beauty Clinic</option>
+                      <option value="fitness" style={{background: '#1e293b'}}>Fitness & Gym Center</option>
+                      <option value="homecare" style={{background: '#1e293b'}}>Chăm sóc sức khỏe gia đình (Mẹ & Bé)</option>
+                      <option value="academy" style={{background: '#1e293b'}}>Học viện & Đào tạo nghề</option>
+                      <option value="other" style={{background: '#1e293b'}}>Dịch vụ chuỗi/Khác</option>
                     </select>
                   </div>
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-black py-4 rounded-xl shadow-md hover:shadow-lg active:scale-95 transition-all text-xs uppercase tracking-widest flex items-center justify-center gap-2 mt-2"
+                  className="w-full bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-black py-4 rounded-xl active:scale-95 transition-all text-xs uppercase tracking-widest flex items-center justify-center gap-2 mt-2"
+                  style={{boxShadow: '0 8px 30px rgba(59,130,246,0.35)'}}
                 >
                   Gửi thông tin liên hệ
                   <ArrowRight className="w-4 h-4" />
@@ -871,9 +853,11 @@ export default function LandingPage() {
         </section>
 
         {/* ── FOOTER ── */}
-        <footer className="bg-slate-900 text-slate-300 pt-20 pb-10 border-t border-slate-800">
+        <footer className="relative pt-20 pb-10 border-t border-white/8" style={{background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(20px)'}}>
+          {/* Footer glow */}
+          <div className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-[400px] h-[1px]" style={{background: 'linear-gradient(90deg, transparent, rgba(99,102,241,0.5), transparent)'}} />
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 pb-16 border-b border-slate-800">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 pb-16 border-b border-white/8">
 
               {/* Brand block */}
               <div className="space-y-6 text-left">
@@ -883,17 +867,21 @@ export default function LandingPage() {
                     alt="Bella EIP Logo"
                     width={130}
                     height={36}
-                    className="h-8.5 w-auto object-contain brightness-0 invert"
+                    className="h-8.5 w-auto object-contain brightness-0 invert opacity-80"
                   />
                 </div>
                 <p className="text-xs font-semibold leading-relaxed text-slate-400">
                   Giải pháp quản trị vận hành chuỗi dịch vụ thế hệ mới, tích hợp động cơ tính toán và bảo mật tài chính tối ưu.
                 </p>
+                <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-full w-fit">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  System Operational
+                </div>
               </div>
 
               {/* Column 2 */}
               <div className="space-y-4 text-left">
-                <h5 className="text-xs font-black text-white uppercase tracking-widest">Phân hệ EIP</h5>
+                <h5 className="text-xs font-black text-white/80 uppercase tracking-widest">Phân hệ EIP</h5>
                 <ul className="space-y-2.5 text-xs font-semibold text-slate-400">
                   <li><Link href="/bellaspa" className="hover:text-white transition-colors">Bella Spa Mẹ & Bé</Link></li>
                   <li><a href="#" className="hover:text-white transition-colors">Bella Clinic & Y khoa</a></li>
@@ -904,7 +892,7 @@ export default function LandingPage() {
 
               {/* Column 3 */}
               <div className="space-y-4 text-left">
-                <h5 className="text-xs font-black text-white uppercase tracking-widest">Hệ thống</h5>
+                <h5 className="text-xs font-black text-white/80 uppercase tracking-widest">Hệ thống</h5>
                 <ul className="space-y-2.5 text-xs font-semibold text-slate-400">
                   <li><a href="#" className="hover:text-white transition-colors">Tài liệu API</a></li>
                   <li><a href="#" className="hover:text-white transition-colors">Bảo mật RLS</a></li>
@@ -915,7 +903,7 @@ export default function LandingPage() {
 
               {/* Column 4 */}
               <div className="space-y-4 text-left">
-                <h5 className="text-xs font-black text-white uppercase tracking-widest">Bản quyền</h5>
+                <h5 className="text-xs font-black text-white/80 uppercase tracking-widest">Bản quyền</h5>
                 <p className="text-xs font-semibold leading-relaxed text-slate-400">
                   © 2026 Bella EIP. Bảo lưu mọi quyền. Động cơ lõi được vận hành bảo mật trên nền tảng Supabase RLS.
                 </p>
