@@ -1,7 +1,7 @@
 # Hệ Thống Kiểm Thử - Bella ERP
 
-**Phiên bản**: 1.5.0 - Final Verification Complete  
-**Ngày cập nhật**: 15/07/2026  
+**Phiên bản**: 1.6.0 - Enterprise Load & Integration Verified  
+**Ngày cập nhật**: 19/07/2026  
 **Tác giả**: Đội Phát Triển Bella ERP
 
 ---
@@ -52,7 +52,7 @@ Bella ERP áp dụng **Testing Pyramid** với các cấp độ:
 
 ### 🎯 Health Score: 98/100 🟢
 
-**Tổng Quan Số Liệu** (Updated: 15/07/2026 - Day 3 Complete + Final Verification):
+**Tổng Quan Số Liệu** (Updated: 19/07/2026 - Enterprise Load & Integration Verified):
 
 ### 🎯 Health Score: 98/100 🟢
 
@@ -991,37 +991,89 @@ describe('Decision Engine API', () => {
 
 ### 7.1. Load Testing với k6
 
-**Tool**: k6.io (Load testing)
+**Công cụ**: k6.io (Kiểm thử hiệu năng và chịu tải)
 
-**Test Scripts**:
-```javascript
-// load-tests/scripts/01-smoke.js
-import http from 'k6/http';
-import { check, sleep } from 'k6';
+Hệ thống cung cấp bộ k6 benchmark toàn diện gồm 10 k6 scripts kiểm thử các kịch bản từ tải nhẹ đến cực hạn:
 
-export const options = {
-  vus: 10,
-  duration: '30s',
-};
+| Script | Loại | Mục tiêu kiểm thử | Cấu hình tải mặc định |
+| :--- | :--- | :--- | :--- |
+| **01-smoke.js** | Smoke | Kiểm tra tính sẵn sàng cơ bản của API Health | 1 VU trong 10 giây |
+| **02-dashboard-load.js** | Load | Tải trang tổng hợp chỉ số quản trị (Executive Dashboard) | Up to 5 VUs |
+| **03-booking-stress.js** | Stress | Tải cao tần tạo đặt lịch đặt phòng | Up to 5 VUs |
+| **04-login-spike.js** | Spike | Kiểm tra hệ thống giới hạn tần suất (Rate Limiter) khi đăng nhập | 5 VUs (Fast Burst) |
+| **05-checkout-soak.js** | Soak | Kiểm thử thời gian chạy dài của luồng thanh toán hóa đơn | Up to 5 VUs |
+| **06-concurrent-booking-spike.js**| Spike | Kiểm thử xung đột đặt phòng đồng thời (Race Condition) | 5 VUs |
+| **07-payroll-calc.js** | Load | Tính toán quỹ lương nhân viên, hoa hồng KTV & đồng bộ KPI | 5 VUs |
+| **08-inventory-checkout.js** | Load | Trừ kho nguyên vật liệu và cập nhật tồn kho trị liệu | 5 VUs |
+| **09-ai-assistant.js** | Stress | Đố thoại AI COO Copilot API (Gemini Orchestrator) | 5 VUs |
+| **10-enterprise-workflow.js**| Stress | Luồng tích hợp liên hoàn CRM -> HR -> AI -> P&L | 5 VUs |
 
-export default function () {
-  const res = http.get('http://localhost:3000/api/health');
-  
-  check(res, {
-    'status is 200': (r) => r.status === 200,
-    'response time < 200ms': (r) => r.timings.duration < 200,
-  });
-  
-  sleep(1);
+#### Kịch bản Chạy & Chỉ số Hiệu năng Thực tế
+
+Chỉ số thu thập được khi chạy giả lập chịu tải thực tế trên môi trường:
+
+```
+PARSED BENCHMARK METRICS
+================================================================================
+01-smoke.js:
+  Durations: avg=260.73ms min=51.64ms med=193.49ms max=903.25ms p(90)=630.5ms p(95)=852.42ms
+02-dashboard-load.js:
+  Durations: avg=122.43ms min=65.03ms med=98.62ms max=1.22s p(90)=153.6ms p(95)=228.04ms
+03-booking-stress.js:
+  Durations: avg=162.62ms min=76.59ms med=110.47ms max=859.67ms p(90)=300.76ms p(95)=540ms
+04-login-spike.js:
+  Durations: avg=428.68ms min=58.58ms med=98.9ms max=4.53s p(90)=1.01s p(95)=2.85s
+  Rate Limiter Hoạt động: Đăng nhập dồn dập trả về HTTP 429 Too Many Requests để bảo vệ API.
+05-checkout-soak.js:
+  Durations: avg=171.16ms min=83.12ms med=126.69ms max=818.66ms p(90)=315.12ms p(95)=332.98ms
+06-concurrent-booking-spike.js:
+  Durations: avg=94.87ms min=63.61ms med=90.51ms max=606.57ms p(90)=110.49ms p(95)=120.18ms
+  Race condition: Xử lý thành công đặt lịch đồng thời mà không bị khóa bảng (table locks).
+07-payroll-calc.js:
+  Durations: avg=129.52ms min=78.46ms med=107.01ms max=347.36ms p(90)=191.12ms p(95)=289.44ms
+08-inventory-checkout.js:
+  Durations: avg=111.72ms min=64.56ms med=96.2ms max=1.19s p(90)=135.56ms p(95)=173.43ms
+09-ai-assistant.js:
+  Durations: avg=388.05ms min=224.19ms med=312.12ms max=686.6ms p(90)=632.5ms p(95)=642.4ms
+10-enterprise-workflow.js:
+  Durations: avg=119.74ms min=70.12ms med=105.2ms max=440.07ms p(90)=163.72ms p(95)=223.45ms
+```
+
+#### Xử Lý Ranh Giới Kỹ Thuật (Token Propagation Bug)
+
+Trong quá trình chạy stress test với token Bearer JWT qua k6 (không qua cơ chế Cookie trình duyệt truyền thống), các endpoint API gọi tới cơ sở dữ liệu bị chặn lại bởi chính sách bảo mật Row-Level Security (RLS) của Supabase do Next.js Server Client khởi tạo qua `@supabase/ssr` không tự động truyền header `Authorization` xuống tầng PostgREST, dẫn đến lỗi:
+
+```
+[extractTenantContext] Failed to fetch user profile: {
+  code: 'PGRST116',
+  message: 'Cannot coerce the result to a single JSON object'
 }
 ```
 
-**Scripts**:
+**Giải pháp khắc phục:**
+Chúng tôi đã chỉnh sửa file [supabase-server.ts](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/src/lib/supabase-server.ts) để ghi nhận Header Authorization Bearer ở cấp độ Request và dùng hàm `.set('Authorization', ...)` tác động trực tiếp vào thực thể `rest.headers` của Supabase client:
+
+```typescript
+// src/lib/supabase-server.ts
+client.auth.getUser = cache(async (jwt?: string) => {
+  if (jwt) {
+    if (client.rest) {
+      client.rest.headers.set('Authorization', `Bearer ${jwt}`);
+    }
+    return await originalGetUser(jwt);
+  }
+  // ...
+```
+
+Nhờ sửa đổi này, PostgREST có được JWT hợp lệ của người dùng để bypass qua lớp RLS bảo mật phân tách Tenant, giúp tỷ lệ thành công của các kiểm thử tích hợp (09-ai, 10-enterprise) đạt mốc **100% checks passed**.
+
+**Scripts trong package.json**:
 ```json
 {
   "load:smoke": "k6 run load-tests/scripts/01-smoke.js",
   "load:stress": "k6 run load-tests/scripts/03-booking-stress.js",
-  "load:spike": "k6 run load-tests/scripts/04-login-spike.js"
+  "load:spike": "k6 run load-tests/scripts/04-login-spike.js",
+  "load:all": "powershell load-tests/run-all.ps1"
 }
 ```
 
@@ -1342,6 +1394,7 @@ npm run test:critical
 **Người duy trì**: Đội Phát Triển Bella ERP
 
 **Lịch sử cập nhật**:
+- **v1.6.0 (19/07/2026)**: Bổ sung 4 k6 scripts chịu tải mới (HR/Payroll, Inventory, AI Assistant, E2E Enterprise Workflow), hoàn thành khắc phục lỗi RLS Token Propagation trong Serverless Middleware giúp kiểm thử tích hợp đạt 100% thành công.
 - **v1.4.0 (15/07/2026)**: Đạt 100% tỷ lệ vượt qua cổng kiểm soát bảo mật (Secrets Scan: 0 leaks) và cổng phân tích tĩnh (ESLint: 0 errors), đồng thời bảo vệ 181 critical tests (100% passing).
 - **v1.3.0 (14/07/2026 23:30)**: Booking Engine breakthrough - 25/25 integration tests passing, 94.0% overall pass rate
 - **v1.2.0 (14/07/2026 22:30)**: Day 3 complete - 93.2% pass rate achieved, strategic skip documentation
