@@ -3633,3 +3633,34 @@ html[data-tenant-module="beauty_spa"] .border-rose-100\/50 {
   width: 2px;
   background: #fda4af; /* rose-300 */
 }
+
+/* ============================================
+   Bella Spa ERP Viewport & Zoom Lock Override
+   ============================================ */
+html, body {
+  touch-action: pan-x pan-y !important;
+  -webkit-text-size-adjust: 100% !important;
+  -moz-text-size-adjust: 100% !important;
+  text-size-adjust: 100% !important;
+  overflow-x: hidden !important;
+  max-width: 100vw !important;
+}
+
+/* ============================================
+   Beauty Spa Text Contrast & Visibility Overrides
+   ============================================ */
+html[data-tenant-module="beauty_spa"] .luxury-card-pink,
+html[data-tenant-module="beauty_spa"] .luxury-card-pink *,
+.reconciliation-kpi-card,
+.reconciliation-kpi-card * {
+  color: #ffffff !important;
+}
+
+html[data-tenant-module="beauty_spa"] .bella-data-table td,
+html[data-tenant-module="beauty_spa"] .bella-data-table td .text-slate-900,
+html[data-tenant-module="beauty_spa"] .bella-data-table td .text-slate-600,
+html[data-tenant-module="beauty_spa"] .bella-data-table td .text-slate-500,
+html[data-tenant-module="beauty_spa"] .bella-data-table td .text-slate-400 {
+  color: #ffffff !important;
+}
+

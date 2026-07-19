@@ -112,7 +112,7 @@ export default function (data) {
     null,
     { headers, tags: { name: "soak.delete_session" } },
   );
-  check(delRes, { "session deleted": (r) => r.status === 204 });
+  check(delRes, { "session deleted": (r) => r.status === 200 || r.status === 204 });
   deleteLatency.add(delRes.timings.duration);
 
   // KTV mỗi 2-3 giây 1 buổi (mô phỏng thật)

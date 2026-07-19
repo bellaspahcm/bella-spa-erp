@@ -37,11 +37,10 @@ export const options = {
     { duration: "30s", target: 50 },
     { duration: "30s", target: 0 },
   ],
-  thresholds: {
-    ...RELAXED_THRESHOLDS,
+  thresholds: Object.assign({}, RELAXED_THRESHOLDS, {
     // Custom: tỷ lệ insert booking thành công phải > 95%
     "checks{check:booking_inserted}": ["rate>0.95"],
-  },
+  }),
   tags: { test_type: "stress", target: "booking" },
 };
 

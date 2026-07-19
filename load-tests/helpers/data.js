@@ -59,7 +59,7 @@ export function randomVnPhone() {
   // VN mobile prefixes: 03/05/07/08/09
   const prefixes = ["032", "033", "034", "035", "070", "079", "081", "082", "086", "088", "098", "097"];
   const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
-  const tail = String(Math.floor(Math.random() * 10_000_000)).padStart(7, "0");
+  const tail = String(Math.floor(Math.random() * 10000000)).padStart(7, "0");
   return prefix + tail;
 }
 

@@ -86,7 +86,27 @@ export const createServerClient = cache(() => {
   // Memoize client.auth.getUser at the request level to avoid redundant network roundtrips.
   const originalGetUser = client.auth.getUser.bind(client.auth);
   client.auth.getUser = cache(async (jwt?: string) => {
-    return await originalGetUser(jwt);
+    if (jwt) {
+      if (client.rest) {
+        client.rest.headers.set('Authorization', `Bearer ${jwt}`);
+      }
+      return await originalGetUser(jwt);
+    }
+    try {
+      const { headers: nextHeaders } = await import('next/headers');
+      const reqHeaders = await nextHeaders();
+      const authHeader = reqHeaders.get('authorization');
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.substring(7);
+        if (client.rest) {
+          client.rest.headers.set('Authorization', `Bearer ${token}`);
+        }
+        return await originalGetUser(token);
+      }
+    } catch (e) {
+      // headers() may throw outside request context
+    }
+    return await originalGetUser();
   });
 
   return client;

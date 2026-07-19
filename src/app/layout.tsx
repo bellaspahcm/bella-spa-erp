@@ -79,8 +79,31 @@ export default async function RootLayout({
           strategy="beforeInteractive"
           src="/theme-bootstrap.js"
         />
+        <Script id="prevent-zoom" strategy="afterInteractive">
+          {`
+            document.addEventListener('gesturestart', function(e) {
+              e.preventDefault();
+            }, { passive: false });
+            document.addEventListener('gesturechange', function(e) {
+              e.preventDefault();
+            }, { passive: false });
+            document.addEventListener('gestureend', function(e) {
+              e.preventDefault();
+            }, { passive: false });
+            
+            // Also prevent double tap to zoom
+            let lastTouchEnd = 0;
+            document.addEventListener('touchend', function(e) {
+              const now = new Date().getTime();
+              if (now - lastTouchEnd <= 300) {
+                e.preventDefault();
+              }
+              lastTouchEnd = now;
+            }, { passive: false });
+          `}
+        </Script>
       </head>
-      <body className="min-h-full flex flex-col" suppressHydrationWarning>
+      <body className="min-h-full flex flex-col select-none touch-manipulation" suppressHydrationWarning>
         {/* Only wrap authenticated pages with TenantContextProvider */}
         {/* Auth pages (login, signup, etc.) should not be wrapped */}
         <QueryClientProvider>
