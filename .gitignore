@@ -60,6 +60,7 @@ yarn-error.log*
 
 # Local scratch / experiment scripts (KHÔNG commit — có thể chứa secrets)
 /scratch/
+/.tmp/
 /scripts/check_exec_sql.mjs
 /.claude/settings.local.json
 /supabase/.temp/
