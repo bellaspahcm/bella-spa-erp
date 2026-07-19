@@ -223,14 +223,14 @@ describe('updateBooking Conflict Verification', () => {
   });
 
   it('should reschedule scheduled sessions sequentially when start_date is updated', async () => {
-    // Setup multiple scheduled sessions
+    // Setup multiple sessions with some completed and some scheduled
     mockStore.sessionLogs = [
       {
         id: 'session-1',
         booking_id: 'booking-1',
         assigned_date: '2026-06-12',
         session_number: 1,
-        status: 'scheduled',
+        status: 'completed', // Already completed!
         tenant_id: 'tenant-1',
       } as SessionLogRow,
       {
@@ -238,6 +238,14 @@ describe('updateBooking Conflict Verification', () => {
         booking_id: 'booking-1',
         assigned_date: '2026-06-13',
         session_number: 2,
+        status: 'scheduled',
+        tenant_id: 'tenant-1',
+      } as SessionLogRow,
+      {
+        id: 'session-3',
+        booking_id: 'booking-1',
+        assigned_date: '2026-06-14',
+        session_number: 3,
         status: 'scheduled',
         tenant_id: 'tenant-1',
       } as SessionLogRow,
@@ -284,7 +292,9 @@ describe('updateBooking Conflict Verification', () => {
     expect(result.error).toBeUndefined();
     
     // Check that dates were rescheduled sequentially
-    expect(updatedDates['session-1']).toBe('2026-07-19');
+    expect(updatedDates['session-1']).toBeUndefined(); // Completed session should not be modified
     expect(updatedDates['session-2']).toBe('2026-07-20');
+    expect(updatedDates['session-3']).toBe('2026-07-21');
+
   });
 });

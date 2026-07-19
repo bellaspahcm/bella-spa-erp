@@ -36,6 +36,7 @@ type BookingCreateScheduleModalProps = {
   onSelectedBookingChange: (bookingId: string) => void;
   onCreateTimeRangeChange: (timeRange: TimeRange) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  tenantModuleKey?: string | null;
 };
 
 export function BookingCreateScheduleModal({
@@ -50,11 +51,16 @@ export function BookingCreateScheduleModal({
   onSelectedBookingChange,
   onCreateTimeRangeChange,
   onSubmit,
+  tenantModuleKey,
 }: BookingCreateScheduleModalProps) {
   const [selectedResourceId, setSelectedResourceId] = useState('');
   const activeBookingResources = bookingResources.filter((resource) => (
     resource.status === 'available' || resource.status === 'in_use'
   ));
+
+  const showResourceSelection = tenantModuleKey
+    ? tenantModuleKey === 'beauty_spa'
+    : activeBookingResources.length > 0;
 
   useEffect(() => {
     if (!isOpen) {
@@ -141,7 +147,7 @@ export function BookingCreateScheduleModal({
                       className="mt-1 w-full rounded-2xl border-none bg-slate-50 px-4 py-4 font-bold text-slate-900 outline-none transition-all focus:ring-2 focus:ring-primary/20 sm:px-6"
                     />
                   </div>
-                  {activeBookingResources.length > 0 && (
+                  {showResourceSelection && (
                     <div className="sm:col-span-2">
                       <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">
                         Tài nguyên chăm sóc

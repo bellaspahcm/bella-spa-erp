@@ -94,6 +94,7 @@ type BookingDayDetailModalProps = {
   onPrintInvoice: () => void;
   onVoidInvoice: () => void;
   onSave: () => void;
+  tenantModuleKey?: string | null;
 };
 
 export function BookingDayDetailModal({
@@ -113,6 +114,7 @@ export function BookingDayDetailModal({
   onPrintInvoice,
   onVoidInvoice,
   onSave,
+  tenantModuleKey,
 }: BookingDayDetailModalProps) {
   const vocab = useModuleVocabulary();
   const router = useRouter();
@@ -153,6 +155,9 @@ export function BookingDayDetailModal({
     })
     : resourceOptions;
   const visibleResourceOptions = matchingResourceOptions.length > 0 ? matchingResourceOptions : resourceOptions;
+  const showResourceSelection = tenantModuleKey
+    ? tenantModuleKey === 'beauty_spa'
+    : visibleResourceOptions.length > 0;
   const formatLogTime = (value?: string | null) => {
     if (!value) return '—';
     return new Intl.DateTimeFormat('vi-VN', {
@@ -252,7 +257,7 @@ export function BookingDayDetailModal({
                         />
                       </div>
                     </div>
-                    {visibleResourceOptions.length > 0 && (
+                     {showResourceSelection && (
                       <div>
                         <p className="text-xs text-slate-400 font-bold mb-2 ml-1">
                           Tài nguyên chăm sóc

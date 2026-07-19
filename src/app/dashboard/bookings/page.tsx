@@ -336,6 +336,7 @@ function BookingsContent() {
         onPrintInvoice={handlePrintThermalInvoice}
         onVoidInvoice={handleVoidLatestInvoice}
         onSave={handleUpdatePlan}
+        tenantModuleKey={resolvedTenantModuleKey}
       />
       <BookingThermalInvoicePrint
         invoice={printInvoiceData}
@@ -359,6 +360,7 @@ function BookingsContent() {
         onSelectedBookingChange={setSelectedBookingIdForCreate}
         onCreateTimeRangeChange={setCreateTimeRange}
         onSubmit={handleCreateScheduleSubmit}
+        tenantModuleKey={resolvedTenantModuleKey}
       />
       {/* VietQR Payment Modal */}
       {qrModalData && (

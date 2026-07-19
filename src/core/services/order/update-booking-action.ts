@@ -269,9 +269,10 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
           const startDateStr = finalPayload.start_date;
           const [year, month, day] = startDateStr.split('-').map(Number);
           
-          const updates = scheduledSessions.map((session, index) => {
+          const updates = scheduledSessions.map((session) => {
             const date = new Date(year, month - 1, day);
-            date.setDate(date.getDate() + index);
+            const sessionNum = session.session_number || 1;
+            date.setDate(date.getDate() + (sessionNum - 1));
             
             const assignedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
             
