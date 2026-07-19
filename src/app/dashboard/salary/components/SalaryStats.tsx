@@ -44,15 +44,15 @@ export default function SalaryStats({
         animate={{ opacity: 1, y: 0 }}
         className="luxury-card-pink relative overflow-hidden rounded-[2rem] p-5 sm:p-6 md:rounded-[40px] md:p-8"
       >
-        <div className="relative z-10">
+        <div className="relative z-10 text-white">
           <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-md border border-white/20">
             <DollarSign className="w-6 h-6 text-white" />
           </div>
-          <p className="text-sm font-black text-white/90 uppercase tracking-widest mb-2">
+          <p className="text-sm font-black !text-white/90 uppercase tracking-widest mb-2">
             {currentUser?.role?.toLowerCase() === 'ktv' ? 'Thu nhập của bạn' : 'Tổng quỹ lương tháng'}
           </p>
-          <h3 className="mb-4 text-3xl font-black sm:text-4xl">{totalPayout.toLocaleString()}đ</h3>
-          <div className="flex items-center gap-2 text-white/90 font-black text-sm">
+          <h3 className="mb-4 text-3xl font-black sm:text-4xl !text-white">{totalPayout.toLocaleString()}đ</h3>
+          <div className="flex items-center gap-2 !text-white/90 font-black text-sm">
             <TrendingUp className="w-4 h-4" />
             So với tháng {prevMonthYear}
           </div>
