@@ -253,37 +253,87 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
       }
     }
 
-    // Sync scheduled sessions' assigned_date with the new start_date
-    if (finalPayload.start_date !== undefined && finalPayload.start_date !== null) {
+    // Sync session statuses and assigned_dates when start_date or completed_sessions is modified
+    if (
+      finalPayload.start_date !== undefined ||
+      finalPayload.completed_sessions !== undefined
+    ) {
       const { data: allSessions, error: fetchSessionsError } = await supabase
         .from('session_logs')
-        .select('id, session_number, status, assigned_date')
+        .select('id, session_number, status, assigned_date, completed_date')
         .eq('booking_id', id)
         .eq('tenant_id', tenantId)
         .order('session_number', { ascending: true });
 
-      if (!fetchSessionsError && allSessions) {
-        const scheduledSessions = allSessions.filter(s => s.status === 'scheduled');
-        
-        if (scheduledSessions.length > 0) {
-          const startDateStr = finalPayload.start_date;
+      if (fetchSessionsError) {
+        throw new BookingError(`Lỗi tải danh sách buổi liệu trình: ${fetchSessionsError.message}`, 'BOOKING_SESSION_LOGS_FETCH_ERROR', { bookingId: id });
+      }
+
+      if (allSessions) {
+        const startDateStr = finalPayload.start_date !== undefined 
+          ? finalPayload.start_date 
+          : (oldBooking?.start_date || null);
+          
+        const completedCount = finalPayload.completed_sessions !== undefined
+          ? Number(finalPayload.completed_sessions)
+          : (oldBooking?.completed_sessions || 0);
+
+        if (startDateStr) {
           const [year, month, day] = startDateStr.split('-').map(Number);
           
-          const updates = scheduledSessions.map((session) => {
+          const updates = allSessions.map((session) => {
             const date = new Date(year, month - 1, day);
             const sessionNum = session.session_number || 1;
             date.setDate(date.getDate() + (sessionNum - 1));
             
             const assignedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
             
+            // Determine new status and completed_date
+            const isCompleted = sessionNum <= completedCount;
+            const newStatus = isCompleted ? 'completed' : 'scheduled';
+            const newCompletedDate = isCompleted ? assignedDate : null;
+
             return supabase
               .from('session_logs')
-              .update({ assigned_date: assignedDate })
+              .update({ 
+                assigned_date: assignedDate,
+                status: newStatus,
+                completed_date: newCompletedDate
+              })
               .eq('id', session.id);
           });
           
-          await Promise.all(updates);
-          console.log(`[updateBooking] Rescheduled ${scheduledSessions.length} sessions starting from ${startDateStr}`);
+          const results = await Promise.all(updates);
+          for (const res of results) {
+            if (res.error) {
+              throw new BookingError(`Lỗi cập nhật buổi liệu trình: ${res.error.message}`, 'BOOKING_SESSION_LOGS_UPDATE_ERROR', { bookingId: id });
+            }
+          }
+          console.log(`[updateBooking] Synchronized statuses and dates for ${allSessions.length} sessions starting from ${startDateStr} (completed: ${completedCount})`);
+        } else {
+          // If no start_date, only update statuses
+          const updates = allSessions.map((session) => {
+            const sessionNum = session.session_number || 1;
+            const isCompleted = sessionNum <= completedCount;
+            const newStatus = isCompleted ? 'completed' : 'scheduled';
+            const newCompletedDate = isCompleted ? (session.completed_date || session.assigned_date) : null;
+
+            return supabase
+              .from('session_logs')
+              .update({ 
+                status: newStatus,
+                completed_date: newCompletedDate
+              })
+              .eq('id', session.id);
+          });
+          
+          const results = await Promise.all(updates);
+          for (const res of results) {
+            if (res.error) {
+              throw new BookingError(`Lỗi cập nhật trạng thái buổi liệu trình: ${res.error.message}`, 'BOOKING_SESSION_LOGS_UPDATE_ERROR', { bookingId: id });
+            }
+          }
+          console.log(`[updateBooking] Synchronized statuses for ${allSessions.length} sessions (completed: ${completedCount})`);
         }
       }
     }
