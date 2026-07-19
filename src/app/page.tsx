@@ -139,7 +139,7 @@ export default function LandingPage() {
             {/* Logo */}
             <Link href="/" className="flex items-center group">
               <Image
-                src="/FullLogo_Transparent_NoBuffer.png"
+                src="/FullLogo_Transparent_NoBuffer.png?v=2"
                 alt="Bella EIP Logo"
                 width={150}
                 height={42}
@@ -880,7 +880,7 @@ export default function LandingPage() {
               <div className="space-y-6 text-left">
                 <div className="flex items-center gap-3">
                   <Image
-                    src="/FullLogo_Transparent_NoBuffer.png"
+                    src="/FullLogo_Transparent_NoBuffer.png?v=2"
                     alt="Bella EIP Logo"
                     width={130}
                     height={36}
