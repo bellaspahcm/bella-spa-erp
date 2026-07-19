@@ -45,14 +45,14 @@ export default async function RulesPage({ searchParams }: RulesPageProps) {
       {/* Shared Tabs Header */}
       <DecisionEngineHeader />
 
-      <div className="flex flex-col gap-6 p-6 container mx-auto animate-in fade-in duration-500">
+      <div className="flex flex-col gap-6 p-6 md:p-8 w-full max-w-full flex-1 pb-10 animate-in fade-in duration-500">
         {/* Action Row */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/40 dark:bg-[#1c1b19]/40 backdrop-blur-md border border-white/20 dark:border-white/5 p-4 rounded-xl shadow-sm">
           <div>
-            <h2 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+            <h2 className="text-base font-bold text-slate-800 dark:text-slate-200">
               Quy tắc & Luật nghiệp vụ
             </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
               Cấu hình các luật tự động phân ca, hoa hồng, tính lương và chiết khấu
             </p>
           </div>

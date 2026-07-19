@@ -111,12 +111,12 @@ export function RulesFilters({
         <div className="flex flex-1 flex-col gap-4 md:flex-row md:items-center">
           {/* Provider Filter */}
           <Select value={initialProvider} onValueChange={handleProviderChange}>
-            <SelectTrigger className="w-full md:w-[200px] rounded-lg bg-white/80 dark:bg-[#1c1b19]/80 border-slate-200 dark:border-slate-800 text-xs font-semibold focus:ring-0 focus:ring-offset-0 focus:border-slate-300 dark:focus:border-slate-700">
+            <SelectTrigger className="w-full md:w-[200px] rounded-lg bg-white/80 dark:bg-[#1c1b19]/80 border-slate-200 dark:border-slate-800 text-sm font-semibold focus:ring-0 focus:ring-offset-0 focus:border-slate-300 dark:focus:border-slate-700">
               <SelectValue placeholder="Chọn nghiệp vụ" />
             </SelectTrigger>
             <SelectContent className="rounded-xl">
               {PROVIDERS.map((provider) => (
-                <SelectItem key={provider.value} value={provider.value} className="text-xs font-medium">
+                <SelectItem key={provider.value} value={provider.value} className="text-sm font-medium">
                   {provider.label}
                 </SelectItem>
               ))}
@@ -125,12 +125,12 @@ export function RulesFilters({
 
           {/* Status Filter */}
           <Select value={initialStatus} onValueChange={handleStatusChange}>
-            <SelectTrigger className="w-full md:w-[200px] rounded-lg bg-white/80 dark:bg-[#1c1b19]/80 border-slate-200 dark:border-slate-800 text-xs font-semibold focus:ring-0 focus:ring-offset-0 focus:border-slate-300 dark:focus:border-slate-700">
+            <SelectTrigger className="w-full md:w-[200px] rounded-lg bg-white/80 dark:bg-[#1c1b19]/80 border-slate-200 dark:border-slate-800 text-sm font-semibold focus:ring-0 focus:ring-offset-0 focus:border-slate-300 dark:focus:border-slate-700">
               <SelectValue placeholder="Chọn trạng thái" />
             </SelectTrigger>
             <SelectContent className="rounded-xl">
               {STATUSES.map((status) => (
-                <SelectItem key={status.value} value={status.value} className="text-xs font-medium">
+                <SelectItem key={status.value} value={status.value} className="text-sm font-medium">
                   {status.label}
                 </SelectItem>
               ))}
@@ -142,7 +142,7 @@ export function RulesFilters({
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <Input
               placeholder="Tìm kiếm luật..."
-              className="pl-9 rounded-lg bg-white/80 dark:bg-[#1c1b19]/80 border-slate-200 dark:border-slate-800 text-xs font-medium focus-visible:ring-1 focus-visible:ring-slate-300 dark:focus-visible:ring-slate-700"
+              className="pl-9 rounded-lg bg-white/80 dark:bg-[#1c1b19]/80 border-slate-200 dark:border-slate-800 text-sm font-medium focus-visible:ring-1 focus-visible:ring-slate-300 dark:focus-visible:ring-slate-700"
               defaultValue={initialSearch}
               onChange={(e) => {
                 const value = e.target.value;
@@ -160,7 +160,7 @@ export function RulesFilters({
           <Button
             variant="outline"
             onClick={handleClearFilters}
-            className={`rounded-lg h-9 px-4 text-xs font-semibold transition-all ${buttonActive}`}
+            className={`rounded-lg h-9 px-4 text-sm font-semibold transition-all ${buttonActive}`}
           >
             Xóa bộ lọc
           </Button>

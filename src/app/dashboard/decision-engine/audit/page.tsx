@@ -236,14 +236,14 @@ export default function DecisionAuditTrailPage() {
   };
 
   return (
-    <div className="container mx-auto px-6 py-6 space-y-6">
+    <div className="w-full max-w-full px-6 md:px-8 py-6 pb-10 space-y-6 flex-1 flex flex-col">
       {/* Filters */}
       <div className="bg-white/40 dark:bg-[#1c1b19]/40 backdrop-blur-md rounded-2xl border border-white/20 dark:border-white/5 p-6 shadow-sm">
-        <h2 className="text-sm font-bold mb-4 text-slate-800 dark:text-slate-200">Bộ lọc tìm kiếm</h2>
+        <h2 className="text-base font-bold mb-4 text-slate-800 dark:text-slate-200">Bộ lọc tìm kiếm</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* Decision Type */}
           <div className="flex flex-col space-y-1.5">
-            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+            <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
               Phân loại quyết định
             </label>
             <PremiumSelect
@@ -256,7 +256,7 @@ export default function DecisionAuditTrailPage() {
 
           {/* Provider */}
           <div className="flex flex-col space-y-1.5">
-            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+            <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
               Nhà cung cấp quyết định
             </label>
             <PremiumSelect
@@ -269,7 +269,7 @@ export default function DecisionAuditTrailPage() {
 
           {/* Status */}
           <div className="flex flex-col space-y-1.5">
-            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+            <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
               Trạng thái xử lý
             </label>
             <PremiumSelect
@@ -282,33 +282,33 @@ export default function DecisionAuditTrailPage() {
 
           {/* Date From */}
           <div>
-            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wide">
+            <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wide">
               Từ ngày
             </label>
             <input
               type="date"
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
-              className="w-full px-3 py-2 text-xs font-semibold bg-white/80 dark:bg-[#1c1b19]/80 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-1 focus:ring-slate-300 dark:focus:ring-slate-700"
+              className="w-full px-3 py-2 text-sm font-semibold bg-white/80 dark:bg-[#1c1b19]/80 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-1 focus:ring-slate-300 dark:focus:ring-slate-700"
             />
           </div>
 
           {/* Date To */}
           <div>
-            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wide">
+            <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wide">
               Đến ngày
             </label>
             <input
               type="date"
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
-              className="w-full px-3 py-2 text-xs font-semibold bg-white/80 dark:bg-[#1c1b19]/80 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-1 focus:ring-slate-300 dark:focus:ring-slate-700"
+              className="w-full px-3 py-2 text-sm font-semibold bg-white/80 dark:bg-[#1c1b19]/80 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-1 focus:ring-slate-300 dark:focus:ring-slate-700"
             />
           </div>
 
           {/* Search */}
           <div className="lg:col-span-3">
-            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wide">
+            <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wide">
               Tìm kiếm mã quyết định (Decision ID)
             </label>
             <input
@@ -316,7 +316,7 @@ export default function DecisionAuditTrailPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Nhập mã quyết định..."
-              className="w-full px-3 py-2 text-xs font-medium bg-white/80 dark:bg-[#1c1b19]/80 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-1 focus:ring-slate-300 dark:focus:ring-slate-700"
+              className="w-full px-3 py-2 text-sm font-medium bg-white/80 dark:bg-[#1c1b19]/80 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-1 focus:ring-slate-300 dark:focus:ring-slate-700"
             />
           </div>
         </div>
@@ -326,14 +326,14 @@ export default function DecisionAuditTrailPage() {
           <Button
             onClick={handleApplyFilters}
             disabled={loading || !tenantId}
-            className="rounded-xl font-bold text-xs active:scale-95 transition-all shadow-sm h-9 px-5 bg-primary hover:bg-primary-hover text-primary-foreground border-transparent"
+            className="rounded-xl font-bold text-sm active:scale-95 transition-all shadow-sm h-9 px-5 bg-primary hover:bg-primary-hover text-primary-foreground border-transparent"
           >
             Áp dụng bộ lọc
           </Button>
           <Button
             variant="outline"
             onClick={handleResetFilters}
-            className="rounded-xl font-bold text-xs active:scale-95 transition-all h-9 px-5"
+            className="rounded-xl font-bold text-sm active:scale-95 transition-all h-9 px-5"
           >
             Đặt lại
           </Button>
@@ -345,7 +345,7 @@ export default function DecisionAuditTrailPage() {
         {/* Summary */}
         {!loading && data.length > 0 && (
           <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800/40 bg-slate-50/20">
-            <p className="text-xs font-bold text-slate-500 dark:text-slate-400">
+            <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
               Hiển thị {data.length} trên {pagination.total} quyết định (Trang{' '}
               {pagination.page} / {pagination.totalPages})
             </p>
@@ -356,14 +356,14 @@ export default function DecisionAuditTrailPage() {
         {loading ? (
           <div className="p-12 text-center">
             <div className={`inline-block animate-spin rounded-full h-8 w-8 border-4 border-slate-300 dark:border-slate-700 border-t-slate-500`}></div>
-            <p className="mt-4 text-xs font-bold text-slate-600 dark:text-slate-400">Đang tải nhật ký quyết định...</p>
+            <p className="mt-4 text-sm font-bold text-slate-600 dark:text-slate-400">Đang tải nhật ký quyết định...</p>
           </div>
         ) : error ? (
           <div className="p-12 text-center">
-            <p className="text-red-600 mb-4 font-semibold text-xs">⚠️ {error}</p>
+            <p className="text-red-600 mb-4 font-semibold text-sm">⚠️ {error}</p>
             <Button
               onClick={fetchAuditLog}
-              className="rounded-xl font-bold text-xs active:scale-95 transition-all h-9 px-5 bg-primary hover:bg-primary-hover text-primary-foreground border-transparent"
+              className="rounded-xl font-bold text-sm active:scale-95 transition-all h-9 px-5 bg-primary hover:bg-primary-hover text-primary-foreground border-transparent"
             >
               Thử lại
             </Button>
@@ -373,7 +373,7 @@ export default function DecisionAuditTrailPage() {
             <p className="text-slate-600 dark:text-slate-400 font-bold text-sm">
               📭 Không tìm thấy quyết định nào
             </p>
-            <p className="text-xs text-slate-400">
+            <p className="text-sm text-slate-400">
               Vui lòng điều chỉnh lại bộ lọc tìm kiếm
             </p>
           </div>
@@ -383,25 +383,25 @@ export default function DecisionAuditTrailPage() {
               <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800/40">
                 <thead className="bg-slate-50/50 dark:bg-slate-900/40">
                   <tr className="border-b border-slate-100 dark:border-slate-800/40">
-                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                       Mã Quyết Định (ID)
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                       Phân loại
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                       Nhà cung cấp
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                       Trạng thái
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                       Thời gian xử lý
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                       Độ tin cậy
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                       Thời gian tạo
                     </th>
                   </tr>
@@ -413,29 +413,29 @@ export default function DecisionAuditTrailPage() {
                       onClick={() => handleRowClick(entry.id)}
                       className="hover:bg-slate-50/50 dark:hover:bg-slate-900/20 cursor-pointer transition-colors"
                     >
-                      <td className="px-6 py-4 whitespace-nowrap text-xs font-mono text-slate-900 dark:text-slate-100 font-bold">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-slate-900 dark:text-slate-100 font-bold">
                         {entry.decision_id}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-0.5 text-[10px] font-bold rounded-lg ${theme.badgeBg}`}>
+                        <span className={`px-2 py-0.5 text-xs font-bold rounded-lg ${theme.badgeBg}`}>
                           {entry.decision_type}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-xs font-medium text-slate-600 dark:text-slate-400">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-600 dark:text-slate-400">
                         {entry.provider}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <StatusBadge status={entry.status} />
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-xs font-mono font-semibold text-slate-600 dark:text-slate-400">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-mono font-semibold text-slate-600 dark:text-slate-400">
                         {entry.execution_time_ms}ms
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-xs font-semibold text-slate-600 dark:text-slate-400">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-600 dark:text-slate-400">
                         {entry.confidence_score
                           ? `${(entry.confidence_score * 100).toFixed(0)}%`
                           : 'N/A'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-xs font-medium text-slate-500 dark:text-slate-400">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-500 dark:text-slate-400">
                         {format(new Date(entry.created_at), 'yyyy-MM-dd HH:mm:ss')}
                       </td>
                     </tr>
@@ -451,12 +451,12 @@ export default function DecisionAuditTrailPage() {
                   setPagination((prev) => ({ ...prev, page: prev.page - 1 }))
                 }
                 disabled={pagination.page === 1}
-                className="px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
+                className="px-3.5 py-1.5 text-sm font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
               >
                 Trang trước
               </button>
 
-              <span className="text-xs font-bold text-slate-500">
+              <span className="text-sm font-bold text-slate-500">
                 Trang {pagination.page} / {pagination.totalPages}
               </span>
 
@@ -465,7 +465,7 @@ export default function DecisionAuditTrailPage() {
                   setPagination((prev) => ({ ...prev, page: prev.page + 1 }))
                 }
                 disabled={!pagination.hasMore}
-                className="px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
+                className="px-3.5 py-1.5 text-sm font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
               >
                 Trang sau
               </button>
@@ -506,7 +506,7 @@ function StatusBadge({ status }: { status: 'success' | 'error' | 'warning' }) {
 
   return (
     <span
-      className={`px-2.5 py-0.5 text-[10px] font-bold border rounded-lg inline-flex items-center gap-1 ${colors[status]}`}
+      className={`px-2.5 py-0.5 text-xs font-bold border rounded-lg inline-flex items-center gap-1 ${colors[status]}`}
     >
       <span>{icons[status]}</span>
       <span className="capitalize">{status === 'success' ? 'Thành công' : status === 'warning' ? 'Cảnh báo' : 'Thất bại'}</span>

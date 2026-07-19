@@ -103,14 +103,14 @@ export async function RulesTable({
         <Table>
           <TableHeader className="bg-slate-50/50 dark:bg-slate-900/40">
             <TableRow className="border-b border-slate-200/60 dark:border-slate-800/50 hover:bg-transparent">
-              <TableHead className="w-[300px] text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tên quy tắc</TableHead>
-              <TableHead className="w-[150px] text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Bộ phận nghiệp vụ</TableHead>
-              <TableHead className="w-[120px] text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Phân loại</TableHead>
-              <TableHead className="w-[120px] text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Trạng thái</TableHead>
-              <TableHead className="w-[100px] text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Độ ưu tiên</TableHead>
-              <TableHead className="w-[100px] text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Phiên bản</TableHead>
-              <TableHead className="w-[150px] text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Cập nhật</TableHead>
-              <TableHead className="w-[100px] text-right text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Thao tác</TableHead>
+              <TableHead className="w-[300px] text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tên quy tắc</TableHead>
+              <TableHead className="w-[150px] text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Bộ phận nghiệp vụ</TableHead>
+              <TableHead className="w-[120px] text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Phân loại</TableHead>
+              <TableHead className="w-[120px] text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Trạng thái</TableHead>
+              <TableHead className="w-[100px] text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Độ ưu tiên</TableHead>
+              <TableHead className="w-[100px] text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Phiên bản</TableHead>
+              <TableHead className="w-[150px] text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Cập nhật</TableHead>
+              <TableHead className="w-[100px] text-right text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Thao tác</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -125,7 +125,7 @@ export async function RulesTable({
                     {rule.name}
                   </Link>
                   {rule.description && (
-                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                    <p className="text-sm text-muted-foreground mt-0.5 line-clamp-1">
                       {rule.description}
                     </p>
                   )}
@@ -133,34 +133,34 @@ export async function RulesTable({
 
                 {/* Provider */}
                 <TableCell>
-                  <RuleProviderBadge provider={rule.provider} />
+                  <RuleProviderBadge provider={rule.provider} className="text-sm" />
                 </TableCell>
 
                 {/* Category */}
                 <TableCell>
-                  <Badge variant="outline" className="text-[10px] font-bold px-2 py-0.5 rounded-lg border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50">
+                  <Badge variant="outline" className="text-xs font-bold px-2 py-0.5 rounded-lg border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50">
                     {rule.category}
                   </Badge>
                 </TableCell>
 
                 {/* Status */}
                 <TableCell>
-                  <RuleStatusBadge status={rule.status} />
+                  <RuleStatusBadge status={rule.status} className="text-xs" />
                 </TableCell>
 
                 {/* Priority */}
                 <TableCell>
-                  <span className="text-xs font-mono font-bold text-slate-600 dark:text-slate-400">{rule.priority}</span>
+                  <span className="text-sm font-mono font-bold text-slate-600 dark:text-slate-400">{rule.priority}</span>
                 </TableCell>
 
                 {/* Version */}
                 <TableCell>
-                  <span className="text-xs font-mono font-semibold bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-slate-600 dark:text-slate-400">v{rule.version}</span>
+                  <span className="text-sm font-mono font-semibold bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-slate-600 dark:text-slate-400">v{rule.version}</span>
                 </TableCell>
 
                 {/* Updated */}
                 <TableCell>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-sm text-muted-foreground">
                     {formatDistanceToNow(new Date(rule.updated_at), {
                       addSuffix: true,
                     })}
