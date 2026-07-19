@@ -35,6 +35,8 @@ export const metadata: Metadata = {
   },
 };
 
+import Script from "next/script";
+
 import { Toaster } from "sonner";
 import OfflineIndicator from "@/components/common/offline-indicator";
 import PwaRegister from "@/components/common/PwaRegister";
@@ -121,7 +123,11 @@ export default async function RootLayout({
     <html lang="vi" className={cn("h-full", "antialiased", theme === "dark" ? "dark" : "", corinthia.variable, playfair.variable, inter.variable, "font-sans", geist.variable)} suppressHydrationWarning>
       <head>
         <meta name="theme-color" content="#f8fafc" />
-        <script dangerouslySetInnerHTML={{ __html: tenantThemeBootstrapScript }} />
+        <Script
+          id="tenant-theme-bootstrap"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{ __html: tenantThemeBootstrapScript }}
+        />
       </head>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         {/* Only wrap authenticated pages with TenantContextProvider */}
