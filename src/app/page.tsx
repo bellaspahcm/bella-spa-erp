@@ -137,14 +137,15 @@ export default function LandingPage() {
               : 'bg-white/40 backdrop-blur-xl border-slate-200/40'
             }`}>
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2.5 group">
-              <div className="w-8.5 h-8.5 rounded-xl bg-gradient-to-tr from-blue-600 via-blue-500 to-cyan-400 flex items-center justify-center text-white font-black text-sm shadow-[0_4px_16px_rgba(37,99,235,0.25)] group-hover:scale-105 transition-transform duration-300">
-                B
-              </div>
-              <div className="flex flex-col text-left">
-                <span className="text-[11px] font-black text-slate-900 tracking-tight leading-none">BELLA EIP</span>
-                <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-0.5 leading-none">Enterprise Platform</span>
-              </div>
+            <Link href="/" className="flex items-center group">
+              <Image
+                src="/FullLogo_Transparent_NoBuffer.png"
+                alt="Bella EIP Logo"
+                width={150}
+                height={42}
+                priority
+                className="h-9 w-auto object-contain group-hover:scale-105 transition-transform duration-300"
+              />
             </Link>
 
             {/* Desktop Navigation Link items */}
@@ -162,7 +163,7 @@ export default function LandingPage() {
                 className="px-4.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-950 rounded-full font-bold text-[9px] uppercase tracking-wider transition-all border border-slate-200/80 active:scale-95 flex items-center gap-1.5 shadow-sm"
               >
                 <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500/10" />
-                Bella Spa Phân Hệ
+                Phân hệ Bella Spa
               </Link>
               <Link
                 href="/login"
@@ -202,7 +203,7 @@ export default function LandingPage() {
                     className="flex items-center justify-center gap-1.5 w-full py-3 bg-slate-100 border border-slate-200 text-slate-700 rounded-full font-bold text-xs uppercase tracking-wider"
                   >
                     <Heart className="w-4 h-4 text-rose-500 fill-rose-500/10" />
-                    Bella Spa Phân Hệ
+                    Phân hệ Bella Spa
                   </Link>
                   <Link
                     href="/login"
@@ -878,15 +879,13 @@ export default function LandingPage() {
               {/* Brand block */}
               <div className="space-y-6 text-left">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 bg-slate-850 rounded-xl flex items-center justify-center border border-slate-800 shadow-md">
-                    <div className="w-6.5 h-6.5 rounded-lg bg-blue-600 flex items-center justify-center text-white font-black text-xs">
-                      B
-                    </div>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-xs font-black text-white leading-none">BELLA EIP</span>
-                    <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mt-0.5 leading-none">Enterprise Platform</span>
-                  </div>
+                  <Image
+                    src="/FullLogo_Transparent_NoBuffer.png"
+                    alt="Bella EIP Logo"
+                    width={130}
+                    height={36}
+                    className="h-8.5 w-auto object-contain brightness-0 invert"
+                  />
                 </div>
                 <p className="text-xs font-semibold leading-relaxed text-slate-400">
                   Giải pháp quản trị vận hành chuỗi dịch vụ thế hệ mới, tích hợp động cơ tính toán và bảo mật tài chính tối ưu.
