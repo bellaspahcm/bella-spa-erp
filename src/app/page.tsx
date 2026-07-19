@@ -111,7 +111,7 @@ export default function LandingPage() {
 
       <div
         ref={containerRef}
-        className="tech-font-wrapper min-h-screen text-slate-200 relative overflow-x-hidden font-sans selection:bg-blue-600 selection:text-white"
+        className="dark tech-font-wrapper min-h-screen text-slate-200 relative overflow-x-hidden font-sans selection:bg-blue-600 selection:text-white"
         style={{background: 'linear-gradient(180deg, #0a0f1e 0%, #0f172a 30%, #111827 60%, #0a0f1e 100%)'}}
       >
 
@@ -805,7 +805,7 @@ export default function LandingPage() {
                   <input
                     type="text"
                     required
-                    className="block w-full px-4 py-3.5 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all outline-none font-semibold text-white text-xs border border-white/10 placeholder:text-slate-600"
+                    className="block w-full px-4 py-3.5 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all outline-none font-semibold text-white text-xs border border-white/10 placeholder:text-slate-400/60"
                     style={{background: 'rgba(255,255,255,0.06)'}}
                     placeholder="VD: Nguyễn Văn A"
                   />
@@ -817,7 +817,7 @@ export default function LandingPage() {
                     <input
                       type="tel"
                       required
-                      className="block w-full px-4 py-3.5 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all outline-none font-semibold text-white text-xs border border-white/10 placeholder:text-slate-600"
+                      className="block w-full px-4 py-3.5 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all outline-none font-semibold text-white text-xs border border-white/10 placeholder:text-slate-400/60"
                       style={{background: 'rgba(255,255,255,0.06)'}}
                       placeholder="09xxxxxxxx"
                     />
