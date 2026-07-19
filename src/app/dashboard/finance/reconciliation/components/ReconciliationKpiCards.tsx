@@ -25,10 +25,10 @@ export function ReconciliationKpiCards({
             <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
               <Wallet className="w-6 h-6 text-white" />
             </div>
-            <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-black backdrop-blur-md">{debtCount} khách</span>
+            <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-black backdrop-blur-md !text-white">{debtCount} khách</span>
           </div>
-          <p className="text-white/80 font-black text-xs uppercase tracking-widest mb-1">Cần thu hồi nợ</p>
-          <h3 className="text-2xl sm:text-3xl font-black break-words text-white">{formatCurrency(totalDebt)}</h3>
+          <p className="!text-white/80 font-black text-xs uppercase tracking-widest mb-1">Cần thu hồi nợ</p>
+          <h3 className="text-2xl sm:text-3xl font-black break-words !text-white">{formatCurrency(totalDebt)}</h3>
         </div>
         <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
       </div>
@@ -39,10 +39,10 @@ export function ReconciliationKpiCards({
             <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
               <LinkIcon className="w-6 h-6 text-white" />
             </div>
-            <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-black backdrop-blur-md">{orphanedCount} khoản</span>
+            <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-black backdrop-blur-md !text-white">{orphanedCount} khoản</span>
           </div>
-          <p className="text-white/80 font-black text-xs uppercase tracking-widest mb-1">Tiền thu bị treo</p>
-          <h3 className="text-2xl sm:text-3xl font-black break-words text-white">{formatCurrency(totalOrphaned)}</h3>
+          <p className="!text-white/80 font-black text-xs uppercase tracking-widest mb-1">Tiền thu bị treo</p>
+          <h3 className="text-2xl sm:text-3xl font-black break-words !text-white">{formatCurrency(totalOrphaned)}</h3>
         </div>
         <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
       </div>
@@ -53,11 +53,11 @@ export function ReconciliationKpiCards({
             <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
               <AlertTriangle className="w-6 h-6 text-white" />
             </div>
-            <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-black backdrop-blur-md">Xử lý ngay</span>
+            <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-black backdrop-blur-md !text-white">Xử lý ngay</span>
           </div>
-          <p className="text-white/80 font-black text-xs uppercase tracking-widest mb-1">Booking lệch giá trị</p>
-          <h3 className="text-2xl sm:text-3xl font-black break-words text-white">
-            {totalMismatches} <span className="text-lg opacity-80">vụ việc</span>
+          <p className="!text-white/80 font-black text-xs uppercase tracking-widest mb-1">Booking lệch giá trị</p>
+          <h3 className="text-2xl sm:text-3xl font-black break-words !text-white">
+            {totalMismatches} <span className="text-lg opacity-80 !text-white/90">vụ việc</span>
           </h3>
         </div>
         <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
