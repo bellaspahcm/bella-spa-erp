@@ -138,12 +138,11 @@ export default function LandingPage() {
             }`}>
             {/* Logo */}
             <Link href="/" className="flex items-center group">
-              <Image
+              <img
                 src="/FullLogo_Transparent_NoBuffer.png?v=2"
                 alt="Bella EIP Logo"
                 width={150}
                 height={42}
-                priority
                 className="h-9 w-auto object-contain group-hover:scale-105 transition-transform duration-300"
               />
             </Link>
@@ -879,7 +878,7 @@ export default function LandingPage() {
               {/* Brand block */}
               <div className="space-y-6 text-left">
                 <div className="flex items-center gap-3">
-                  <Image
+                  <img
                     src="/FullLogo_Transparent_NoBuffer.png?v=2"
                     alt="Bella EIP Logo"
                     width={130}
