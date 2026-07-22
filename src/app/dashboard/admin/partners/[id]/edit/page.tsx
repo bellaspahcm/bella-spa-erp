@@ -19,13 +19,13 @@ export const metadata: Metadata = {
 };
 
 interface EditPartnerPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default async function EditPartnerPage({ params }: EditPartnerPageProps) {
-  const { id } = params;
+  const { id } = await params;
 
   // Get current user and tenant
   const supabase = await createClient();

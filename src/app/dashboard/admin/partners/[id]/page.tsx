@@ -39,20 +39,21 @@ export const metadata: Metadata = {
 };
 
 interface PartnerDetailPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
-  searchParams: {
+  }>;
+  searchParams: Promise<{
     tab?: string;
-  };
+  }>;
 }
 
 export default async function PartnerDetailPage({
   params,
   searchParams,
 }: PartnerDetailPageProps) {
-  const { id } = params;
-  const activeTab = searchParams.tab || 'overview';
+  const { id } = await params;
+  const { tab } = await searchParams;
+  const activeTab = tab || 'overview';
 
   // Lấy user hiện tại
   const supabase = await createClient();
@@ -87,7 +88,7 @@ export default async function PartnerDetailPage({
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-4">
-          <Link href="/admin/partners">
+          <Link href="/dashboard/admin/partners">
             <Button variant="ghost" size="icon">
               <ArrowLeft className="h-4 w-4" />
             </Button>
@@ -104,7 +105,7 @@ export default async function PartnerDetailPage({
 
         {/* Actions */}
         <div className="flex items-center gap-2">
-          <Link href={`/admin/partners/${id}/edit`}>
+          <Link href={`/dashboard/admin/partners/${id}/edit`}>
             <Button variant="outline">
               <Edit className="mr-2 h-4 w-4" />
               Chỉnh Sửa
