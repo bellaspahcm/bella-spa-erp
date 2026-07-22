@@ -434,8 +434,8 @@ END $$;
 -- 8. GRANTS & PERMISSIONS
 -- =====================================================
 
--- Grant SELECT to authenticated users (through RLS)
-GRANT SELECT ON public.api_partners TO authenticated;
+-- Grant access to authenticated users (through RLS)
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.api_partners TO authenticated;
 GRANT SELECT ON public.api_request_logs TO authenticated;
 
 -- Grant ALL to service_role (for backend operations)
