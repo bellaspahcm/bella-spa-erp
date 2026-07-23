@@ -189,7 +189,7 @@ export function BookingsTimelineGrid({
         <div className="flex relative">
           <div className="w-20 md:w-24 border-r border-slate-100 flex-shrink-0 bg-white flex flex-col select-none">
             {hours.map((hour) => (
-              <div key={hour} className="h-[116px] border-b border-slate-100/60 flex items-center justify-center">
+              <div key={hour} className="h-[148px] border-b border-slate-100/60 flex items-center justify-center">
                 <span className="text-xs font-black text-slate-400 tracking-wider bg-slate-50 px-2.5 py-1 rounded-xl">
                   {String(hour).padStart(2, '0')}:00
                 </span>
@@ -218,7 +218,7 @@ export function BookingsTimelineGrid({
                   return (
                     <div
                       key={hour}
-                      className="h-[116px] border-b border-slate-100/60 p-2.5 relative flex flex-col justify-start gap-2 group/cell transition-colors hover:bg-slate-50/40"
+                      className="h-[148px] border-b border-slate-100/60 p-2.5 relative flex flex-col justify-start gap-2 group/cell transition-colors hover:bg-slate-50/40"
                     >
                       {cellSessions.length > 0 ? (
                         <div className="flex flex-col gap-2 overflow-y-auto max-h-full custom-scrollbar pr-0.5 z-10">
