@@ -586,6 +586,9 @@ export default function InventoryDashboardPage() {
           </div>
         )}
       </div>
+      
+      {/* Spacer to prevent scroll clipping next to browser viewport / taskbar */}
+      <div className="h-16 md:h-24" />
     </div>
   );
 }
