@@ -125,6 +125,7 @@ describe('E2E Payroll Month-End Closing (Critical HR Test)', () => {
           session_multiplier: 1.0,
           status: 'active',
           duration: '60 phút',
+          module_key: 'beauty_spa',
         })
         .select('id')
         .single();

@@ -125,6 +125,7 @@ describe('E2E Full Refund Flow (Critical Business Case)', () => {
           session_multiplier: 1.0,
           status: 'active',
           duration: '60 phút',
+          module_key: 'beauty_spa',
         })
         .select('id')
         .single();

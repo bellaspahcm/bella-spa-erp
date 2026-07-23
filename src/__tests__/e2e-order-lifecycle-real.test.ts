@@ -132,6 +132,7 @@ describe('E2E Order Lifecycle (Real Database)', () => {
           total_sessions: 10,
           session_multiplier: 1.0,
           status: 'active',
+          module_key: 'beauty_spa',
         })
         .select('id')
         .single();
