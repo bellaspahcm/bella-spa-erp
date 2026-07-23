@@ -232,10 +232,10 @@ export async function GET(request: NextRequest) {
             if (conflict) {
               if (conflict.type === 'break_time_violation') {
                 conflictType = 'break_time_violation';
-                const existingTime = conflict.conflictingBooking?.startTime || '';
-                const existingEnd = conflict.conflictingBooking?.endTime || calculateEndTime(existingTime, duration);
+                const existingTime = formatTime(conflict.conflictingBooking?.startTime || '');
+                const existingEnd = formatTime(conflict.conflictingBooking?.endTime || calculateEndTime(existingTime, duration));
                 reason = `Ca kết thúc lúc ${existingEnd}, cần thêm ${minBreakMinutes} phút nghỉ`;
-                const nextAvail = calculateNextAvailable(existingEnd, 0, minBreakMinutes);
+                const nextAvail = formatTime(calculateNextAvailable(existingEnd, 0, minBreakMinutes));
                 conflictDetails = {
                   existingBookingTime: existingTime,
                   existingBookingEndTime: existingEnd,
@@ -244,9 +244,9 @@ export async function GET(request: NextRequest) {
                 };
               } else if (conflict.type === 'time_overlap') {
                 conflictType = 'overlap';
-                const existingTime = conflict.conflictingBooking?.startTime || '';
-                const existingEnd = conflict.conflictingBooking?.endTime || calculateEndTime(existingTime, duration);
-                const nextAvail = calculateNextAvailable(existingEnd, 0, minBreakMinutes);
+                const existingTime = formatTime(conflict.conflictingBooking?.startTime || '');
+                const existingEnd = formatTime(conflict.conflictingBooking?.endTime || calculateEndTime(existingTime, duration));
+                const nextAvail = formatTime(calculateNextAvailable(existingEnd, 0, minBreakMinutes));
                 reason = `Trùng ca đang có lúc ${existingTime}–${existingEnd}`;
                 conflictDetails = {
                   existingBookingTime: existingTime,
@@ -325,4 +325,12 @@ function calculateNextAvailable(
   }
   const existingEnd = calculateEndTime(existingEndOrStart, existingDurationOrZero);
   return calculateEndTime(existingEnd, minBreakMinutes);
+}
+
+/**
+ * Format time to HH:mm, stripping seconds if present
+ */
+function formatTime(t: string): string {
+  if (!t) return '';
+  return t.split(':').slice(0, 2).join(':');
 }

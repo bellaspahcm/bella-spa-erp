@@ -398,8 +398,9 @@ export class SpaModuleAdapter implements ModuleAdapter {
           const reasons = capacityResult.conflicts.map(conflict => {
             switch (conflict.type) {
               case 'time_overlap':
+                const formatTime = (t: string) => t ? t.split(':').slice(0, 2).join(':') : '';
                 const overlapTime = conflict.conflictingBooking 
-                  ? `(từ ${conflict.conflictingBooking.startTime} đến ${conflict.conflictingBooking.endTime})`
+                  ? `(từ ${formatTime(conflict.conflictingBooking.startTime)} đến ${formatTime(conflict.conflictingBooking.endTime)})`
                   : '';
                 return `Kỹ thuật viên đã có lịch chăm sóc khác trùng vào khung giờ này.${overlapTime ? ' ' + overlapTime + '.' : ''}`;
               case 'daily_limit':
@@ -407,8 +408,9 @@ export class SpaModuleAdapter implements ModuleAdapter {
               case 'concurrent_limit':
                 return 'Kỹ thuật viên đang thực hiện ca chăm sóc khác vào thời điểm này (vượt quá số ca phục vụ đồng thời).';
               case 'break_time_violation':
+                const formatTimeBreak = (t: string) => t ? t.split(':').slice(0, 2).join(':') : '';
                 const breakTime = conflict.conflictingBooking 
-                  ? `(liền kề ca từ ${conflict.conflictingBooking.startTime} đến ${conflict.conflictingBooking.endTime}, cần nghỉ giữa ca tối thiểu ${capacityConfig?.minBreakMinutes || 15} phút)`
+                  ? `(liền kề ca từ ${formatTimeBreak(conflict.conflictingBooking.startTime)} đến ${formatTimeBreak(conflict.conflictingBooking.endTime)}, cần nghỉ giữa ca tối thiểu ${capacityConfig?.minBreakMinutes || 15} phút)`
                   : '';
                 return `Thời gian giãn cách nghỉ ngơi giữa các ca chăm sóc của kỹ thuật viên không đủ.${breakTime ? ' ' + breakTime + '.' : ''}`;
               case 'outside_working_hours':
