@@ -290,7 +290,7 @@ export function resolveTenantBrandIdentity(input: {
     displayName,
     portalDisplayName,
     invoiceDisplayName,
-    logoUrl: explicitLogoUrl || theme.logoUrl || (moduleKey === 'babycare' ? '/FullLogo_Transparent_NoBuffer.png' : ''),
+    logoUrl: explicitLogoUrl || theme.logoUrl || (moduleKey === 'babycare' ? '/logo.png' : ''),
     subtitle: 
       moduleKey === 'beauty_spa' ? 'Beauty Spa ERP' :
       moduleKey === 'industrial_cleaning' ? 'Industrial Cleaning ERP' :

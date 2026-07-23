@@ -248,7 +248,7 @@ describe('platform rule engines', () => {
       surface: 'app',
     })).toMatchObject({
       displayName: 'Bella Spa',
-      logoUrl: '/FullLogo_Transparent_NoBuffer.png',
+      logoUrl: '/logo.png',
       primaryColor: '#A91555',
       isBeautySpa: false,
     });
