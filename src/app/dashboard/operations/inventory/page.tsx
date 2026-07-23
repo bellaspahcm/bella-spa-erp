@@ -230,7 +230,7 @@ export default function InventoryDashboardPage() {
   // ───────────────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-slate-50/50 p-6 md:p-8 space-y-8">
+    <div className="min-h-screen bg-slate-50/50 p-6 md:p-8 pb-16 md:pb-24 space-y-8">
       {/* Breadcrumbs & Navigation */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-emerald-950/5 pb-4">
         <div className="flex items-center gap-2 text-xs font-semibold tracking-wider text-slate-500 uppercase">
