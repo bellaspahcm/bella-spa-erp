@@ -311,7 +311,7 @@ function SettingsContent() {
         {/* Content Area */}
         <div className="lg:col-span-3">
           <AnimatePresence mode="wait">
-            {activeTab === "rules" || activeTab === "system-monitor" || activeTab === "audit-logs" ? (
+            {activeTab === "rules" || activeTab === "system-monitor" || activeTab === "audit-logs" || activeTab === "partners" ? (
               <motion.div
                 key={activeTab}
                 initial={{ opacity: 0, x: 20 }}
@@ -337,6 +337,14 @@ function SettingsContent() {
                   <iframe
                     src="/dashboard/audit?embedded=true"
                     className="w-full h-[85vh] border-0 bg-transparent overflow-hidden"
+                  />
+                )}
+                {activeTab === "partners" && (
+                  <iframe
+                    src="/dashboard/admin/partners?embedded=true"
+                    style={{ height: iframeHeight }}
+                    className="w-full border-0 bg-transparent overflow-hidden"
+                    scrolling="no"
                   />
                 )}
               </motion.div>
@@ -407,16 +415,7 @@ function SettingsContent() {
                   <PromotionsTab />
                 )}
 
-                {activeTab === "partners" && (
-                  <div className="w-full h-full">
-                    <iframe
-                      src="/dashboard/admin/partners?embedded=true"
-                      style={{ height: iframeHeight }}
-                      className="w-full border-0 bg-transparent"
-                      scrolling="no"
-                    />
-                  </div>
-                )}
+
               </motion.div>
             )}
           </AnimatePresence>

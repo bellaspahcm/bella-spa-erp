@@ -107,8 +107,10 @@ export function PartnersList() {
     setPagination((prev) => ({ ...prev, offset: 0 }));
   };
 
+  const isEmbedded = searchParams.get('embedded') === 'true';
+
   const handleCreatePartner = () => {
-    router.push('/dashboard/admin/partners/new');
+    router.push(`/dashboard/admin/partners/new${isEmbedded ? '?embedded=true' : ''}`);
   };
 
   const handleExport = async () => {

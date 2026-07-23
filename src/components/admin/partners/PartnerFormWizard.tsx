@@ -13,7 +13,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -72,6 +72,8 @@ export function PartnerFormWizard({
   tenantId,
 }: PartnerFormWizardProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isEmbedded = searchParams.get('embedded') === 'true';
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
 
@@ -181,7 +183,7 @@ export function PartnerFormWizard({
         const { data: newPartner } = await response.json();
 
         toast.success(`Partner "${formData.partner_name}" created successfully`);
-        router.push(`/dashboard/admin/partners/${newPartner.id}`);
+        router.push(`/dashboard/admin/partners/${newPartner.id}${isEmbedded ? '?embedded=true' : ''}`);
       } else {
         // Update existing partner
         const input: UpdateAPIPartnerInput = {
@@ -209,7 +211,7 @@ export function PartnerFormWizard({
         }
 
         toast.success(`Partner "${formData.partner_name}" updated successfully`);
-        router.push(`/dashboard/admin/partners/${existingPartner!.id}`);
+        router.push(`/dashboard/admin/partners/${existingPartner!.id}${isEmbedded ? '?embedded=true' : ''}`);
       }
     } catch (error: unknown) {
       console.error('Error submitting form:', error);
@@ -231,7 +233,7 @@ export function PartnerFormWizard({
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 p-6">
+    <div className={`max-w-4xl mx-auto space-y-8 ${isEmbedded ? 'px-4 md:px-6' : 'p-6'}`}>
       {/* Progress Indicator */}
       <nav aria-label="Progress" className="bg-white dark:bg-gray-800 p-4 rounded-lg">
         <ol className="flex items-center justify-between">

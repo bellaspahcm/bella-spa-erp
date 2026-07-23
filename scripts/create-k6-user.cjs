@@ -57,14 +57,14 @@ async function run() {
   let authUserId;
 
   if (authUser) {
-    console.log(`Auth user found with ID: ${authUser.id}. Updating password to password123...`);
+    console.log(`Auth user found with ID: ${authUser.id}. Updating credentials...`);
     authUserId = authUser.id;
     const { error: updateError } = await supabase.auth.admin.updateUserById(authUserId, {
       password: password,
       email_confirm: true
     });
     if (updateError) {
-      console.error('Error updating user password:', updateError);
+      console.error('Error updating user credentials:', updateError);
       process.exit(1);
     }
     console.log('Password updated successfully.');

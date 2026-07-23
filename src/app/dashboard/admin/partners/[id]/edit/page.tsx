@@ -22,10 +22,15 @@ interface EditPartnerPageProps {
   params: Promise<{
     id: string;
   }>;
+  searchParams?: Promise<{
+    embedded?: string;
+  }>;
 }
 
-export default async function EditPartnerPage({ params }: EditPartnerPageProps) {
+export default async function EditPartnerPage({ params, searchParams }: EditPartnerPageProps) {
   const { id } = await params;
+  const sParams = await searchParams;
+  const isEmbedded = sParams?.embedded === 'true';
 
   // Get current user and tenant
   const supabase = await createClient();
@@ -56,14 +61,16 @@ export default async function EditPartnerPage({ params }: EditPartnerPageProps) 
   }
 
   return (
-    <div className="p-6 md:p-8 lg:p-10 space-y-6">
+    <div className={`space-y-6 ${isEmbedded ? 'px-4 md:px-6 py-2' : 'p-6 md:p-8 lg:p-10'}`}>
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Link href={`/dashboard/admin/partners/${id}`}>
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-        </Link>
+        {!isEmbedded && (
+          <Link href={`/dashboard/admin/partners/${id}`}>
+            <Button variant="ghost" size="icon">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          </Link>
+        )}
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Edit Partner</h1>
           <p className="text-muted-foreground">

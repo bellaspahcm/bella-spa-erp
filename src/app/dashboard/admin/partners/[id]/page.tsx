@@ -15,12 +15,10 @@
 
 import { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
-import { ArrowLeft, Edit, Trash2 } from 'lucide-react';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { createClient } from '@/lib/supabase-server';
 import { getPartnerById } from '@/services/api-gateway/partner.service';
+import { PartnerDetailHeader } from '@/components/admin/partners/PartnerDetailHeader';
 
 // Tab Components
 import { PartnerOverviewTab } from '@/components/admin/partners/detail-tabs/PartnerOverviewTab';
@@ -44,6 +42,7 @@ interface PartnerDetailPageProps {
   }>;
   searchParams: Promise<{
     tab?: string;
+    embedded?: string;
   }>;
 }
 
@@ -52,7 +51,7 @@ export default async function PartnerDetailPage({
   searchParams,
 }: PartnerDetailPageProps) {
   const { id } = await params;
-  const { tab } = await searchParams;
+  const { tab, embedded } = await searchParams;
   const activeTab = tab || 'overview';
 
   // Lấy user hiện tại
@@ -83,54 +82,30 @@ export default async function PartnerDetailPage({
     notFound();
   }
 
+  const isEmbedded = embedded === 'true';
+
   return (
-    <div className="p-6 md:p-8 lg:p-10 space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-4">
-          <Link href="/dashboard/admin/partners">
-            <Button variant="ghost" size="icon">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              {partnerData.partner_name}
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              {partnerData.partner_type.toUpperCase()} • {partnerData.is_sandbox ? 'Sandbox' : 'Production'}
-            </p>
+    <div className={`space-y-8 w-full ${isEmbedded ? 'px-4 md:px-6 py-2' : 'p-6 md:p-8 lg:p-10 max-w-7xl mx-auto'}`}>
+      {/* Redesigned Premium Header Component */}
+      <PartnerDetailHeader partner={partnerData} />
+
+      {/* Tabs list with horizontal scroll capability for smaller viewports */}
+      <Tabs defaultValue={activeTab} className="space-y-6">
+        <div className="w-full border-b border-slate-100 dark:border-slate-800/80 pb-px">
+          <div className="w-full overflow-x-auto scrollbar-none">
+            <TabsList variant="line" className="flex w-max min-w-full justify-start gap-4 md:gap-6 bg-transparent h-10 px-1 border-b border-transparent">
+              <TabsTrigger value="overview" className="data-active:text-foreground text-muted-foreground bg-transparent font-medium py-2">Tổng Quan</TabsTrigger>
+              <TabsTrigger value="scopes" className="data-active:text-foreground text-muted-foreground bg-transparent font-medium py-2">Phân Quyền</TabsTrigger>
+              <TabsTrigger value="security" className="data-active:text-foreground text-muted-foreground bg-transparent font-medium py-2">Security</TabsTrigger>
+              <TabsTrigger value="activity" className="data-active:text-foreground text-muted-foreground bg-transparent font-medium py-2">Activity</TabsTrigger>
+              <TabsTrigger value="logs" className="data-active:text-foreground text-muted-foreground bg-transparent font-medium py-2">Nhật Ký</TabsTrigger>
+              <TabsTrigger value="webhooks" className="data-active:text-foreground text-muted-foreground bg-transparent font-medium py-2">Webhooks</TabsTrigger>
+              <TabsTrigger value="webhook-logs" className="data-active:text-foreground text-muted-foreground bg-transparent font-medium py-2">Webhook Logs</TabsTrigger>
+              <TabsTrigger value="usage" className="data-active:text-foreground text-muted-foreground bg-transparent font-medium py-2">Thống Kê</TabsTrigger>
+              <TabsTrigger value="sla" className="data-active:text-foreground text-muted-foreground bg-transparent font-medium py-2">SLA</TabsTrigger>
+            </TabsList>
           </div>
         </div>
-
-        {/* Actions */}
-        <div className="flex items-center gap-2">
-          <Link href={`/dashboard/admin/partners/${id}/edit`}>
-            <Button variant="outline">
-              <Edit className="mr-2 h-4 w-4" />
-              Chỉnh Sửa
-            </Button>
-          </Link>
-          <Button variant="outline" className="text-red-600 hover:text-red-700">
-            <Trash2 className="mr-2 h-4 w-4" />
-            Xóa
-          </Button>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <Tabs defaultValue={activeTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-9 lg:w-auto lg:inline-grid">
-          <TabsTrigger value="overview">Tổng Quan</TabsTrigger>
-          <TabsTrigger value="scopes">Phân Quyền</TabsTrigger>
-          <TabsTrigger value="security">Security</TabsTrigger>
-          <TabsTrigger value="activity">Activity</TabsTrigger>
-          <TabsTrigger value="logs">Nhật Ký</TabsTrigger>
-          <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
-          <TabsTrigger value="webhook-logs">Webhook Logs</TabsTrigger>
-          <TabsTrigger value="usage">Thống Kê</TabsTrigger>
-          <TabsTrigger value="sla">SLA</TabsTrigger>
-        </TabsList>
 
         {/* Tab Content */}
         <TabsContent value="overview" className="space-y-4">

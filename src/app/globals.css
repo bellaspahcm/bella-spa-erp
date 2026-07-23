@@ -3660,3 +3660,18 @@ html[data-tenant-module="beauty_spa"] .bella-data-table td .text-slate-400 {
   color: #ffffff !important;
 }
 
+/* ============================================
+   Scrollbar Hide Utility
+   ============================================ */
+.scrollbar-none::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.scrollbar-none {
+  -ms-overflow-style: none !important;  /* IE and Edge */
+  scrollbar-width: none !important;  /* Firefox */
+}
+
+

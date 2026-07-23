@@ -12,7 +12,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   MoreHorizontal,
   Eye,
@@ -40,7 +40,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import {
   AlertDialog,
@@ -75,20 +76,23 @@ export function PartnersTable({ partners, loading, onRefresh }: PartnersTablePro
     partner: APIPartner | null;
   }>({ open: false, partner: null });
 
+  const searchParams = useSearchParams();
+  const isEmbedded = searchParams.get('embedded') === 'true';
+
   // Handlers
   const handleView = (partner: APIPartner) => {
-    router.push(`/dashboard/admin/partners/${partner.id}`);
+    router.push(`/dashboard/admin/partners/${partner.id}${isEmbedded ? '?embedded=true' : ''}`);
   };
 
   const handleEdit = (partner: APIPartner) => {
-    router.push(`/dashboard/admin/partners/${partner.id}/edit`);
+    router.push(`/dashboard/admin/partners/${partner.id}/edit${isEmbedded ? '?embedded=true' : ''}`);
   };
 
   const handleCopyApiKey = async (apiKey: string) => {
     try {
       await navigator.clipboard.writeText(apiKey);
       toast.success('API key copied to clipboard');
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to copy API key to clipboard');
     }
   };
@@ -107,7 +111,7 @@ export function PartnersTable({ partners, loading, onRefresh }: PartnersTablePro
 
       onRefresh();
       setRegenerateDialog({ open: false, partner: null });
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to regenerate API key');
     }
   };
@@ -126,7 +130,7 @@ export function PartnersTable({ partners, loading, onRefresh }: PartnersTablePro
 
       onRefresh();
       setDeleteDialog({ open: false, partner: null });
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to delete partner');
     }
   };
@@ -202,7 +206,7 @@ export function PartnersTable({ partners, loading, onRefresh }: PartnersTablePro
         <p className="mt-2 text-sm text-muted-foreground">
           Create your first API partner to get started
         </p>
-        <Button className="mt-4" onClick={() => router.push('/dashboard/admin/partners/new')}>
+        <Button className="mt-4" onClick={() => router.push(`/dashboard/admin/partners/new${isEmbedded ? '?embedded=true' : ''}`)}>
           Create Partner
         </Button>
       </div>
@@ -301,10 +305,10 @@ export function PartnersTable({ partners, loading, onRefresh }: PartnersTablePro
                 {/* Actions */}
                 <TableCell>
                   <DropdownMenu>
-                    <DropdownMenuTrigger>
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
+                    <DropdownMenuTrigger
+                      className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }))}
+                    >
+                      <MoreHorizontal className="h-4 w-4" />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>

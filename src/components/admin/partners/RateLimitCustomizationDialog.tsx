@@ -14,7 +14,6 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Settings,
-  Zap,
   AlertTriangle,
   TrendingUp,
   TrendingDown,
@@ -241,11 +240,22 @@ export function RateLimitCustomizationDialog({
           ? customLimits
           : selectedConfig.limits;
 
+      const dbTierMap: Record<RateLimitTier, string> = {
+        free: 'free',
+        basic: 'basic',
+        standard: 'pro',
+        premium: 'pro',
+        enterprise: 'unlimited',
+        custom: 'unlimited',
+      };
+
+      const dbTier = dbTierMap[selectedTier] || 'basic';
+
       const response = await fetch(`/api/admin/partners/${partner.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          rate_limit_tier: selectedTier,
+          rate_limit_tier: dbTier,
           rate_limit_per_minute: newLimits.per_minute,
           rate_limit_per_day: newLimits.per_day,
           rate_limit_burst: newLimits.burst,
@@ -259,7 +269,7 @@ export function RateLimitCustomizationDialog({
       toast.success('Đã cập nhật rate limit thành công');
       onOpenChange(false);
       router.refresh();
-    } catch (error) {
+    } catch (_error) {
       toast.error('Không thể cập nhật rate limit');
     } finally {
       setLoading(false);
