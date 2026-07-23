@@ -3659,7 +3659,7 @@ html, body {
    Beauty Spa Text Contrast & Visibility Overrides
    ============================================ */
 html[data-tenant-module="beauty_spa"] .luxury-card-pink,
-html[data-tenant-module="beauty_spa"] .luxury-card-pink *:not(.bg-white *):not([class*="bg-white"] *):not(.bg-slate-50 *):not([class*="bg-slate-50"] *):not([class*="bg-gradient-to-b"] *):not(.bg-amber-50 *),
+html[data-tenant-module="beauty_spa"] .luxury-card-pink *:not(.bg-white):not(.bg-white *):not([class*="bg-white"]):not([class*="bg-white"] *):not(.bg-slate-50):not(.bg-slate-50 *):not([class*="bg-slate-50"]):not([class*="bg-slate-50"] *):not([class*="bg-gradient-to-b"]):not([class*="bg-gradient-to-b"] *):not(.bg-amber-50):not(.bg-amber-50 *),
 .reconciliation-kpi-card,
 .reconciliation-kpi-card * {
   color: #ffffff !important;
