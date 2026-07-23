@@ -3665,11 +3665,11 @@ html[data-tenant-module="beauty_spa"] .luxury-card-pink *:not(.bg-white):not(.bg
   color: #ffffff !important;
 }
 
-html[data-tenant-module="beauty_spa"] .bella-data-table td,
-html[data-tenant-module="beauty_spa"] .bella-data-table td .text-slate-900,
-html[data-tenant-module="beauty_spa"] .bella-data-table td .text-slate-600,
-html[data-tenant-module="beauty_spa"] .bella-data-table td .text-slate-500,
-html[data-tenant-module="beauty_spa"] .bella-data-table td .text-slate-400 {
+html.dark[data-tenant-module="beauty_spa"] .bella-data-table td,
+html.dark[data-tenant-module="beauty_spa"] .bella-data-table td .text-slate-900,
+html.dark[data-tenant-module="beauty_spa"] .bella-data-table td .text-slate-600,
+html.dark[data-tenant-module="beauty_spa"] .bella-data-table td .text-slate-500,
+html.dark[data-tenant-module="beauty_spa"] .bella-data-table td .text-slate-400 {
   color: #ffffff !important;
 }
 
