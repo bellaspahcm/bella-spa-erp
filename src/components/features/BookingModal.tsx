@@ -18,6 +18,7 @@ import { getUsers } from '@/services/user-actions';
 import type { Database } from '@/types/database.types';
 import { AnimatePresence,motion } from 'framer-motion';
 import {
+  AlertCircle,
   ArrowLeft,
   Calendar,
   CheckCircle2,
@@ -101,6 +102,16 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
   const [draftBooking, setDraftBooking] = useState<DraftBooking>(null);
   const [discountPercent, setDiscountPercent] = useState<string>('');
   const [giftSessions, setGiftSessions] = useState<string>('');
+
+  const [ktvAvailability, setKtvAvailability] = useState<{
+    available: boolean;
+    reason?: string;
+    conflictType?: 'overlap' | 'break_time_violation' | 'daily_limit';
+    existingBookingEndTime?: string;
+    requiredBreakMinutes?: number;
+    nextAvailableTime?: string;
+  } | null>(null);
+  const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
 
   const [formData, setFormData] = useState({
     package_id: '',
@@ -271,6 +282,76 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
     }
   }, [formData.package_id, formData.total_sessions, packages]);
 
+  // Check KTV availability when KTV/date/time changes
+  useEffect(() => {
+    if (!isOpen || !formData.assigned_ktv_id || !formData.start_date || !formData.preferred_time) {
+      setKtvAvailability(null);
+      return;
+    }
+
+    const checkAvailability = async () => {
+      setIsCheckingAvailability(true);
+      try {
+        const searchParams = new URLSearchParams({
+          date: formData.start_date,
+          time: formData.preferred_time,
+          duration: '60', // Default 60 minutes
+        });
+
+        const response = await fetch(`/api/bookings/check-ktv-availability?${searchParams.toString()}`);
+        
+        if (!response.ok) {
+          console.error('[BookingModal] Failed to check availability');
+          setKtvAvailability(null);
+          return;
+        }
+
+        const result = await response.json();
+        
+        interface KtvAvailabilityItem {
+          id: string;
+          available: boolean;
+          reason?: string;
+          conflictType?: 'overlap' | 'break_time_violation' | 'daily_limit';
+          conflictDetails?: {
+            existingBookingEndTime?: string;
+            requiredBreakMinutes?: number;
+            nextAvailableTime?: string;
+          };
+        }
+        
+        const currentKtvResult = [
+          ...(result.available || []),
+          ...(result.unavailable || [])
+        ].find(
+          (ktv: KtvAvailabilityItem) => ktv.id === formData.assigned_ktv_id
+        );
+
+        if (currentKtvResult && !currentKtvResult.available) {
+          setKtvAvailability({
+            available: false,
+            reason: currentKtvResult.reason,
+            conflictType: currentKtvResult.conflictType,
+            existingBookingEndTime: currentKtvResult.conflictDetails?.existingBookingEndTime,
+            requiredBreakMinutes: currentKtvResult.conflictDetails?.requiredBreakMinutes,
+            nextAvailableTime: currentKtvResult.conflictDetails?.nextAvailableTime,
+          });
+        } else {
+          setKtvAvailability({ available: true });
+        }
+      } catch (error) {
+        console.error('[BookingModal] Error checking availability:', error);
+        setKtvAvailability(null);
+      } finally {
+        setIsCheckingAvailability(false);
+      }
+    };
+
+    // Debounce the check
+    const timeoutId = setTimeout(checkAvailability, 500);
+    return () => clearTimeout(timeoutId);
+  }, [isOpen, formData.start_date, formData.preferred_time, formData.assigned_ktv_id]);
+
   useEffect(() => {
     if (searchQuery.trim() === '') {
       setFilteredCustomers(customers);
@@ -384,7 +465,22 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
       console.log('[BookingModal] createBooking result:', result);
 
       if (result?.error) {
-        toast.error('Lỗi tạo lịch hẹn: ' + result.error);
+        const isKtvConflict = result.error.includes('Kỹ thuật viên') || 
+                             result.error.includes('giãn cách') || 
+                             result.error.includes('không khả dụng');
+        if (isKtvConflict) {
+          const overlapMatch = result.error.match(/\(từ (\d{2}:\d{2}) đến (\d{2}:\d{2})\)/);
+          const nextMatch = result.error.match(/sau: (\d{2}:\d{2})/);
+          
+          setKtvAvailability({
+            available: false,
+            reason: result.error.split('.')[0] + '.',
+            existingBookingEndTime: overlapMatch?.[2],
+            nextAvailableTime: nextMatch?.[1]
+          });
+        } else {
+          toast.error('Lỗi tạo lịch hẹn: ' + result.error);
+        }
       } else {
         const booking = result?.data;
         if (booking && booking.status === 'deposit_pending' && Number(booking.deposit_amount || 0) > 0) {
@@ -644,6 +740,62 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
                     <span className="ml-auto bg-primary/10 text-primary text-[10px] px-2 py-1 rounded-full font-black uppercase">Mới</span>
                   )}
                 </div>
+
+                {/* KTV Availability Warning Banner */}
+                {ktvAvailability && !ktvAvailability.available && formData.assigned_ktv_id && (
+                  <div className="relative overflow-hidden bg-gradient-to-br from-amber-50/90 to-orange-50/60 border border-amber-200/50 rounded-3xl p-5 shadow-lg shadow-amber-500/[0.03] animate-in fade-in slide-in-from-top-3 duration-300">
+                    <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-amber-500 to-orange-500" />
+                    <div className="flex items-start gap-4">
+                      <div className="w-10 h-10 bg-amber-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/20 flex-shrink-0 mt-0.5">
+                        <AlertCircle className="w-5 h-5" />
+                      </div>
+                      <div className="flex-1 space-y-3">
+                        <div>
+                          <p className="font-extrabold text-amber-900 text-xs uppercase tracking-wider">
+                            ⚠️ {ktvs.find(k => k.id === formData.assigned_ktv_id)?.full_name || 'Kỹ thuật viên'} không khả dụng
+                          </p>
+                          <p className="text-amber-800 text-[11px] font-bold mt-0.5">
+                            {ktvAvailability.reason || 'Đang có lịch trùng hoặc không đủ thời gian nghỉ'}
+                          </p>
+                        </div>
+
+                        {/* Timeline breakdown */}
+                        {(ktvAvailability.existingBookingEndTime || ktvAvailability.requiredBreakMinutes) && (
+                          <div className="flex flex-wrap items-center gap-2">
+                            {ktvAvailability.existingBookingEndTime && (
+                              <span className="flex items-center gap-1 bg-amber-100/60 border border-amber-200/40 text-amber-900 px-2.5 py-1 rounded-xl font-bold text-[10px]">
+                                🔚 Ca kết thúc: {ktvAvailability.existingBookingEndTime}
+                              </span>
+                            )}
+                            {ktvAvailability.requiredBreakMinutes && (
+                              <span className="flex items-center gap-1 bg-amber-100/60 border border-amber-200/40 text-amber-900 px-2.5 py-1 rounded-xl font-bold text-[10px]">
+                                ⏱ Nghỉ giữa ca: +{ktvAvailability.requiredBreakMinutes} phút
+                              </span>
+                            )}
+                          </div>
+                        )}
+
+                        {ktvAvailability.nextAvailableTime && (
+                          <div className="flex items-center gap-2.5 bg-emerald-500/[0.04] border border-emerald-500/15 rounded-2xl p-3.5 shadow-sm">
+                            <div className="w-6 h-6 bg-emerald-500 text-white rounded-xl flex items-center justify-center shadow-md shadow-emerald-500/15 flex-shrink-0 font-bold text-xs">
+                              ✓
+                            </div>
+                            <p className="text-emerald-900 text-xs font-black">
+                              Gợi ý chọn lịch từ <span className="bg-emerald-500 text-white px-2 py-0.5 rounded-lg font-black text-xs shadow-sm shadow-emerald-500/15">{ktvAvailability.nextAvailableTime}</span> trở đi
+                            </p>
+                          </div>
+                        )}
+
+                        <p className="text-amber-700/80 text-[10px] font-bold italic">
+                          → Vui lòng chọn KTV khác hoặc đặt lịch từ {ktvAvailability.nextAvailableTime ? <strong>{ktvAvailability.nextAvailableTime}</strong> : 'thời điểm khác'}
+                        </p>
+                      </div>
+                      {isCheckingAvailability && (
+                        <Loader2 className="w-4 h-4 text-amber-500 animate-spin flex-shrink-0 mt-1" />
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* Service Selection */}
                 <div className="space-y-4">

@@ -585,45 +585,55 @@ export function EditBookingModal({
         <div className="p-8 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
           {/* KTV Availability Warning Banner */}
           {ktvAvailability && !ktvAvailability.available && currentKtvName && (
-            <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-xl animate-in fade-in slide-in-from-top-2">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                <div className="flex-1 space-y-2">
-                  <p className="font-black text-amber-900 text-sm uppercase tracking-wide">
-                    ⚠️ {currentKtvName} không khả dụng
-                  </p>
-                  <p className="text-amber-800 text-xs font-bold">
-                    {ktvAvailability.reason || 'Đang có lịch trùng hoặc không đủ thời gian nghỉ'}
-                  </p>
+            <div className="relative overflow-hidden bg-gradient-to-br from-amber-50/90 to-orange-50/60 border border-amber-200/50 rounded-3xl p-5 shadow-lg shadow-amber-500/[0.03] animate-in fade-in slide-in-from-top-3 duration-300">
+              <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-amber-500 to-orange-500" />
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 bg-amber-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/20 flex-shrink-0 mt-0.5">
+                  <AlertCircle className="w-5 h-5" />
+                </div>
+                <div className="flex-1 space-y-3">
+                  <div>
+                    <p className="font-extrabold text-amber-900 text-xs uppercase tracking-wider">
+                      ⚠️ {currentKtvName} không khả dụng
+                    </p>
+                    <p className="text-amber-800 text-[11px] font-bold mt-0.5">
+                      {ktvAvailability.reason || 'Đang có lịch trùng hoặc không đủ thời gian nghỉ'}
+                    </p>
+                  </div>
+
                   {/* Timeline breakdown */}
                   {(ktvAvailability.existingBookingEndTime || ktvAvailability.requiredBreakMinutes) && (
-                    <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold">
+                    <div className="flex flex-wrap items-center gap-2">
                       {ktvAvailability.existingBookingEndTime && (
-                        <span className="bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">
+                        <span className="flex items-center gap-1 bg-amber-100/60 border border-amber-200/40 text-amber-900 px-2.5 py-1 rounded-xl font-bold text-[10px]">
                           🔚 Ca kết thúc: {ktvAvailability.existingBookingEndTime}
                         </span>
                       )}
                       {ktvAvailability.requiredBreakMinutes && (
-                        <span className="bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">
-                          ⏱ Nghỉ: +{ktvAvailability.requiredBreakMinutes} phút
+                        <span className="flex items-center gap-1 bg-amber-100/60 border border-amber-200/40 text-amber-900 px-2.5 py-1 rounded-xl font-bold text-[10px]">
+                          ⏱ Nghỉ giữa ca: +{ktvAvailability.requiredBreakMinutes} phút
                         </span>
                       )}
                     </div>
                   )}
+
                   {ktvAvailability.nextAvailableTime && (
-                    <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
-                      <span className="text-emerald-600 text-base leading-none">✅</span>
-                      <p className="text-emerald-800 text-xs font-black">
-                        Chọn từ <span className="text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md font-black text-sm">{ktvAvailability.nextAvailableTime}</span> trở đi
+                    <div className="flex items-center gap-2.5 bg-emerald-500/[0.04] border border-emerald-500/15 rounded-2xl p-3.5 shadow-sm">
+                      <div className="w-6 h-6 bg-emerald-500 text-white rounded-xl flex items-center justify-center shadow-md shadow-emerald-500/15 flex-shrink-0 font-bold text-xs">
+                        ✓
+                      </div>
+                      <p className="text-emerald-900 text-xs font-black">
+                        Gợi ý chọn lịch từ <span className="bg-emerald-500 text-white px-2 py-0.5 rounded-lg font-black text-xs shadow-sm shadow-emerald-500/15">{ktvAvailability.nextAvailableTime}</span> trở đi
                       </p>
                     </div>
                   )}
-                  <p className="text-amber-600 text-xs font-bold italic">
-                    → Vui lòng chọn KTV khác hoặc đặt lịch từ {ktvAvailability.nextAvailableTime ? <strong>{ktvAvailability.nextAvailableTime}</strong> : 'thời điểm khác'}
+
+                  <p className="text-amber-700/80 text-[10px] font-bold italic">
+                    → Vui lòng chọn KTV khác hoặc dời lịch hẹn sang {ktvAvailability.nextAvailableTime ? <strong>{ktvAvailability.nextAvailableTime}</strong> : 'thời điểm khác'}
                   </p>
                 </div>
                 {isCheckingAvailability && (
-                  <Loader2 className="w-4 h-4 text-amber-500 animate-spin flex-shrink-0" />
+                  <Loader2 className="w-4 h-4 text-amber-500 animate-spin flex-shrink-0 mt-1" />
                 )}
               </div>
             </div>
