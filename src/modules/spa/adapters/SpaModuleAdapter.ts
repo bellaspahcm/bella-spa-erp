@@ -398,13 +398,19 @@ export class SpaModuleAdapter implements ModuleAdapter {
           const reasons = capacityResult.conflicts.map(conflict => {
             switch (conflict.type) {
               case 'time_overlap':
-                return 'Kỹ thuật viên đã có lịch chăm sóc khác trùng vào khung giờ này.';
+                const overlapTime = conflict.conflictingBooking 
+                  ? `(từ ${conflict.conflictingBooking.startTime} đến ${conflict.conflictingBooking.endTime})`
+                  : '';
+                return `Kỹ thuật viên đã có lịch chăm sóc khác trùng vào khung giờ này.${overlapTime ? ' ' + overlapTime + '.' : ''}`;
               case 'daily_limit':
                 return 'Kỹ thuật viên đã đạt giới hạn tối đa số ca làm việc trong ngày.';
               case 'concurrent_limit':
                 return 'Kỹ thuật viên đang thực hiện ca chăm sóc khác vào thời điểm này (vượt quá số ca phục vụ đồng thời).';
               case 'break_time_violation':
-                return 'Thời gian giãn cách nghỉ ngơi giữa các ca chăm sóc của kỹ thuật viên không đủ.';
+                const breakTime = conflict.conflictingBooking 
+                  ? `(liền kề ca từ ${conflict.conflictingBooking.startTime} đến ${conflict.conflictingBooking.endTime}, cần nghỉ giữa ca tối thiểu ${capacityConfig?.minBreakMinutes || 15} phút)`
+                  : '';
+                return `Thời gian giãn cách nghỉ ngơi giữa các ca chăm sóc của kỹ thuật viên không đủ.${breakTime ? ' ' + breakTime + '.' : ''}`;
               case 'outside_working_hours':
                 return 'Giờ đặt lịch nằm ngoài khung giờ làm việc đăng ký của kỹ thuật viên.';
               default:
@@ -413,6 +419,13 @@ export class SpaModuleAdapter implements ModuleAdapter {
           });
           friendlyReason = reasons.join(' ');
         }
+
+        // Thêm gợi ý giờ trống nếu có
+        if (capacityResult.alternatives && capacityResult.alternatives.length > 0) {
+          const altSlots = capacityResult.alternatives.map(alt => alt.timeSlot).join(', ');
+          friendlyReason += ` Gợi ý nên chọn lịch từ các khung giờ trống sau: ${altSlots}.`;
+        }
+
         rejectionReason = friendlyReason;
       }
 
