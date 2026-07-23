@@ -131,15 +131,15 @@ export function BookingsTimelineGrid({
   const hours = Array.from({ length: 13 }, (_, i) => 8 + i);
 
   return (
-    <div className="relative border border-slate-200/60 rounded-[40px] bg-white shadow-xl shadow-slate-100/50 overflow-hidden flex flex-col">
+    <div className="relative border border-slate-300/80 rounded-[40px] bg-white shadow-xl shadow-slate-100/50 overflow-hidden flex flex-col">
       {isSyncing && (
         <div className="absolute inset-0 bg-white/40 backdrop-blur-[1px] z-40 flex items-center justify-center pointer-events-none">
           <Loader2 className="w-10 h-10 text-rose-500 animate-spin" />
         </div>
       )}
 
-      <div className="flex bg-slate-50/50 border-b border-slate-100 sticky top-0 z-20">
-        <div className="w-20 md:w-24 border-r border-slate-100 flex-shrink-0 bg-slate-50 flex items-center justify-center text-[10px] font-black uppercase text-slate-400 tracking-wider select-none">
+      <div className="flex bg-slate-50/50 border-b border-slate-200 sticky top-0 z-20">
+        <div className="w-20 md:w-24 border-r border-slate-200 flex-shrink-0 bg-slate-50 flex items-center justify-center text-[10px] font-black uppercase text-slate-400 tracking-wider select-none">
           Giờ
         </div>
 
@@ -154,7 +154,7 @@ export function BookingsTimelineGrid({
           {columns.map((col) => (
             <div
               key={col.id || 'unassigned'}
-              className="min-w-[200px] md:min-w-[240px] flex-1 py-4 px-6 text-center border-r border-slate-100 flex-shrink-0 flex flex-col items-center justify-center gap-1.5"
+              className="min-w-[200px] md:min-w-[240px] flex-1 py-4 px-6 text-center border-r border-slate-200 flex-shrink-0 flex flex-col items-center justify-center gap-1.5"
             >
               <div
                 className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm select-none ${
@@ -187,9 +187,9 @@ export function BookingsTimelineGrid({
         }}
       >
         <div className="flex relative">
-          <div className="w-20 md:w-24 border-r border-slate-100 flex-shrink-0 bg-white flex flex-col select-none">
+          <div className="w-20 md:w-24 border-r border-slate-200 flex-shrink-0 bg-white flex flex-col select-none">
             {hours.map((hour) => (
-              <div key={hour} className="h-[148px] border-b border-slate-100/60 flex items-center justify-center">
+              <div key={hour} className="h-[148px] border-b border-slate-200/80 flex items-center justify-center">
                 <span className="text-xs font-black text-slate-400 tracking-wider bg-slate-50 px-2.5 py-1 rounded-xl">
                   {String(hour).padStart(2, '0')}:00
                 </span>
@@ -201,7 +201,7 @@ export function BookingsTimelineGrid({
             {columns.map((col) => (
               <div
                 key={col.id || 'unassigned'}
-                className="min-w-[200px] md:min-w-[240px] flex-1 flex-shrink-0 border-r border-slate-100 relative bg-slate-50/20"
+                className="min-w-[200px] md:min-w-[240px] flex-1 flex-shrink-0 border-r border-slate-200 relative bg-slate-50/20"
               >
                 {hours.map((hour) => {
                   const cellSessions = sessions.filter((session) => {
@@ -218,7 +218,7 @@ export function BookingsTimelineGrid({
                   return (
                     <div
                       key={hour}
-                      className="h-[148px] border-b border-slate-100/60 p-2.5 relative flex flex-col justify-start gap-2 group/cell transition-colors hover:bg-slate-50/40"
+                      className="h-[148px] border-b border-slate-200/80 p-2.5 relative flex flex-col justify-start gap-2 group/cell transition-colors hover:bg-slate-50/40"
                     >
                       {cellSessions.length > 0 ? (
                         <div className="flex flex-col gap-2 overflow-y-auto max-h-full custom-scrollbar pr-0.5 z-10">
