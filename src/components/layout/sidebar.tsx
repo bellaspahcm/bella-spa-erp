@@ -586,7 +586,7 @@ export function Sidebar() {
                 displayName={tenantBrand.displayName}
                 logoUrl={tenantBrand.logoUrl}
                 monogram={tenantBrand.monogram}
-                className="w-17 h-17 relative z-10 transform group-hover:rotate-[5deg] transition-transform duration-500 text-lg"
+                className="w-24 h-24 relative z-10 transform group-hover:rotate-[5deg] transition-transform duration-500 text-2xl"
                 markClassName={cn("rounded-[1.75rem]", (isBeautySpaShell || isIndustrialCleaningShell) && "beauty-erp-logo-mark beauty-erp-logo-mark-large")}
               />
             </div>
@@ -597,13 +597,13 @@ export function Sidebar() {
               )}>
                 {tenantBrand.displayName.toLowerCase().endsWith('headquarter') ? (
                   <span className="flex flex-col items-center">
-                    <span className="leading-[0.8]">{tenantBrand.displayName.slice(0, -11).trim()}</span>
-                    <span className="text-[1.6rem] mt-2.5 leading-[0.8] font-handwriting">
+                    <span className="leading-[0.8] text-[#A91555] dark:text-[#F8A5C2]">{tenantBrand.displayName.slice(0, -11).trim()}</span>
+                    <span className="text-[0.95rem] mt-2 leading-[0.8] font-sans font-black tracking-widest uppercase text-slate-500 dark:text-zinc-400">
                       Headquarter
                     </span>
                   </span>
                 ) : (
-                  <span className="block truncate leading-[0.8]">{tenantBrand.displayName}</span>
+                  <span className="block truncate leading-[0.8] text-[#A91555] dark:text-[#F8A5C2]">{tenantBrand.displayName}</span>
                 )}
               </h2>
               <span className={cn(
