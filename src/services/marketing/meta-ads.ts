@@ -357,6 +357,15 @@ function buildMetaInsightsUrl(
   return url.toString();
 }
 
+function isSafeMetaUrl(urlStr: string): boolean {
+  try {
+    const parsed = new URL(urlStr);
+    return parsed.protocol === 'https:' && parsed.hostname === 'graph.facebook.com';
+  } catch {
+    return false;
+  }
+}
+
 async function fetchMetaInsights(
   input: SyncMetaAdsInsightsInput & { normalizedAdAccountId: string; accessToken: string },
 ) {
@@ -364,6 +373,9 @@ async function fetchMetaInsights(
   let nextUrl: string | null = buildMetaInsightsUrl(input);
 
   for (let page = 0; nextUrl && page < MAX_PAGES_PER_SYNC; page += 1) {
+    if (!isSafeMetaUrl(nextUrl)) {
+      throw new Error('Meta Ads API loi: Paging URL khong an toan.');
+    }
     const response = await fetch(nextUrl, { method: 'GET', cache: 'no-store' });
     const body = await response.json() as MetaGraphInsightsResponse;
 

@@ -21,6 +21,39 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
+function isSafeWebhookUrl(urlStr: string): boolean {
+  try {
+    const parsedUrl = new URL(urlStr);
+    if (parsedUrl.protocol !== 'https:') return false;
+
+    const hostname = parsedUrl.hostname.toLowerCase();
+
+    // Block localhost, local subnets, and local domain suffixes
+    if (
+      hostname === 'localhost' ||
+      hostname === '127.0.0.1' ||
+      hostname === '[::1]' ||
+      hostname.endsWith('.local') ||
+      hostname.endsWith('.internal') ||
+      hostname.endsWith('.lan') ||
+      hostname.endsWith('.test')
+    ) {
+      return false;
+    }
+
+    // Block IPv4 private address spaces
+    // 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 169.254.0.0/16, 0.0.0.0/8
+    const ipv4Pattern = /^(10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+|192\.168\.\d+\.\d+|169\.254\.\d+\.\d+|0\.\d+\.\d+\.\d+)$/;
+    if (ipv4Pattern.test(hostname)) {
+      return false;
+    }
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function POST(
   request: NextRequest,
   context: RouteParams
@@ -115,12 +148,12 @@ export async function POST(
       );
     }
 
-    if (!body.webhook_url.startsWith('https://')) {
+    if (!isSafeWebhookUrl(body.webhook_url)) {
       return NextResponse.json(
         {
           success: false,
           error: {
-            message: 'Webhook URL must use HTTPS',
+            message: 'Webhook URL must use HTTPS and point to a safe public host',
             code: 'VAL_001' as APIErrorCode,
           },
         },

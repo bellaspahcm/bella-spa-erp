@@ -394,7 +394,10 @@ function isPackageSaleRevenueType(revenueType) {
 async function optionalDeleteByTenant(client, table, tenantId) {
   const { error } = await client.from(table).delete().eq('tenant_id', tenantId);
   if (error) {
-    const tableMissing = error.code === '42P01' || /does not exist/i.test(error.message || '');
+    const tableMissing =
+      error.code === '42P01' ||
+      /does not exist/i.test(error.message || '') ||
+      /Could not find the table/i.test(error.message || '');
     const columnMissing = error.code === '42703' || /column .* does not exist/i.test(error.message || '');
     if (tableMissing || columnMissing) return { table, skipped: true, reason: error.message };
     throw new Error(`[${table}.delete] ${error.message}`);
@@ -781,6 +784,7 @@ async function createBeautyDemoTenant(client = createSupabaseAdmin()) {
         assigned_time: '10:00',
         completed_by_ktv_id: ktvUsers[0].id,
         status: 'scheduled',
+        accounting_review_status: 'UNREVIEWED',
         notes: DEMO_MARKER,
         standard_duration: 75,
         tenant_id: tenantId,
@@ -793,6 +797,7 @@ async function createBeautyDemoTenant(client = createSupabaseAdmin()) {
         assigned_time: '14:30',
         completed_by_ktv_id: ktvUsers[1].id,
         status: 'scheduled',
+        accounting_review_status: 'UNREVIEWED',
         notes: DEMO_MARKER,
         standard_duration: 60,
         tenant_id: tenantId,

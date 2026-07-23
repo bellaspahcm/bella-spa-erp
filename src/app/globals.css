@@ -1534,16 +1534,29 @@ html[data-tenant-module="beauty_spa"] .beauty-erp-sidebar::before {
   border-color: rgba(200, 169, 122, 0.24) !important;
 }
 
-html[data-tenant-module="beauty_spa"] .beauty-erp-brand-script {
+html[data-tenant-module="beauty_spa"] .beauty-erp-sidebar .beauty-erp-brand-script {
   color: var(--beauty-em) !important;
   font-family: var(--font-serif), "Playfair Display", Georgia, serif !important;
   font-weight: 500 !important;
-  line-height: 1.05 !important;
-  max-width: none !important;
+  line-height: 1.25 !important;
+  font-size: 1.625rem !important; /* Cap font size for beauty spa to prevent overflow */
+  max-width: 240px !important; /* Restrict width to avoid overflow inside sidebar */
+  margin-left: auto !important;
+  margin-right: auto !important;
   overflow: visible !important;
   text-overflow: clip !important;
   text-shadow: none !important;
   white-space: normal !important;
+  text-align: center !important;
+}
+
+html[data-tenant-module="beauty_spa"] .beauty-erp-sidebar .beauty-erp-brand-script span {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  word-break: break-word !important;
+  display: block !important;
+  max-width: 100% !important;
 }
 
 html[data-tenant-module="beauty_spa"] .beauty-erp-brand-subtitle,
