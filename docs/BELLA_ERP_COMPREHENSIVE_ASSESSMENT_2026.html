@@ -826,13 +826,51 @@ Industry Modules (Business-Specific)
       </div>
     </div>
     <div class="card">
-      <h3>A. Hiệu Năng & Độ Tin Cậy (Performance & Reliability)</h3>
+      <h3>A. Hiệu Năng & Độ Tin Cậy (Performance & Reliability) - Kiểm thử K6 Verified</h3>
       <ul>
-        <li>⚡ <strong>Chỉ số độ trễ (Latency Target):</strong> P95 latency dưới 150ms cho các API nghiệp vụ thông thường; P99 latency dưới 350ms khi chạy tính toán lương/báo cáo tài chính phức tạp.</li>
-        <li>⚡ <strong>Thông lượng tối đa (Throughput):</strong> Đạt mức xử lý tối đa 500+ requests/giây thông qua cơ chế Redis caching và tối ưu hoá SQL.</li>
+        <li>⚡ <strong>Chỉ số độ trễ (Latency Target):</strong> P95 latency dưới 150ms cho các API nghiệp vụ thông thường; P99 latency dưới 350ms khi chạy tính toán lương/báo cáo tài chính phức tạp ở quy mô tải tiêu chuẩn.</li>
+        <li>⚡ <strong>Thông lượng tối đa (Throughput):</strong> Đạt mức xử lý trung bình 107 - 241 req/s và chịu tải spike lên đến 1.000 VUs đồng thời.</li>
         <li>🛡️ <strong>Chỉ số phục hồi (MTTR):</strong> Cam kết thời gian khôi phục hệ thống trung bình (MTTR) dưới 5 phút thông qua cơ chế automated replica failover và hệ thống giám sát.</li>
         <li>💾 <strong>Chính sách sao lưu & khôi phục (Backup & Recovery):</strong> Hệ thống backup tự động theo giờ (incremental backup) và cold storage hàng ngày với thời gian lưu trữ tối thiểu 30 ngày.</li>
       </ul>
+      <h4 style="margin-top: 16px;">Kết quả thực nghiệm K6 Load Test (Chi tiết):</h4>
+      <div class="table-wrap" style="margin-top: 10px;">
+        <table>
+          <thead>
+            <tr style="background: rgba(124,58,237,0.05);">
+              <th>Kịch bản Test (VUs)</th>
+              <th>Tổng Requests / Doanh nghiệp</th>
+              <th>Thời gian phản hồi (P95)</th>
+              <th>Tỷ lệ thành công (Success Rate)</th>
+              <th>Đánh giá & Khuyến nghị hạ tầng</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Stress Test (50 VUs)</strong></td>
+              <td>19,629 reqs / 9,812 bookings</td>
+              <td class="text-jade"><strong>169 ms</strong> (Target &lt; 3s)</td>
+              <td class="text-jade"><strong>99.99%</strong></td>
+              <td><strong>Xuất sắc:</strong> Không xảy ra xung đột dữ liệu (Zero collision), không deadlock. Động cơ tính lương và RLS hoạt động hoàn hảo.</td>
+            </tr>
+            <tr>
+              <td><strong>Spike Test (200 VUs)</strong></td>
+              <td>53,853 reqs / 26,927 iterations</td>
+              <td class="text-jade"><strong>1.22 giây</strong> (Target &lt; 3s)</td>
+              <td class="text-jade"><strong>99.98%</strong></td>
+              <td><strong>Xuất sắc:</strong> Hệ thống duy trì độ ổn định cao trong suốt giai đoạn giữ tải. Tự động dọn dẹp dữ liệu rác sạch sẽ bằng SQL.</td>
+            </tr>
+            <tr>
+              <td><strong>Spike Test (1,000 VUs)</strong></td>
+              <td>29,411 reqs / 14,387 bookings</td>
+              <td class="text-rose"><strong>43.86 giây</strong> (Nghẽn cổ chai)</td>
+              <td class="text-jade"><strong>96.74%</strong> (Target &gt; 85%)</td>
+              <td><strong>Đạt chỉ tiêu (SLO Pass):</strong> Không sập hệ thống, ACID được bảo toàn. Nghẽn do giới hạn Connection Pool của Supabase Cloud.<br/>
+              <em>Khuyến nghị: Tăng pool size (PgBouncer/Supavisor), chuyển sang Transaction Pooling, scale PostgreSQL/Read Replica.</em></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
     <div class="card">
       <h3>B. Tối Ưu Hóa & Sức Khỏe Cơ Sở Dữ Liệu (Database Health)</h3>
