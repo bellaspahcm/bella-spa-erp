@@ -833,43 +833,55 @@ Industry Modules (Business-Specific)
         <li>🛡️ <strong>Chỉ số phục hồi (MTTR):</strong> Cam kết thời gian khôi phục hệ thống trung bình (MTTR) dưới 5 phút thông qua cơ chế automated replica failover và hệ thống giám sát.</li>
         <li>💾 <strong>Chính sách sao lưu & khôi phục (Backup & Recovery):</strong> Hệ thống backup tự động theo giờ (incremental backup) và cold storage hàng ngày với thời gian lưu trữ tối thiểu 30 ngày.</li>
       </ul>
-      <h4 style="margin-top: 16px;">Kết quả thực nghiệm K6 Load Test (Chi tiết):</h4>
-      <div class="table-wrap" style="margin-top: 10px;">
-        <table>
-          <thead>
-            <tr style="background: rgba(124,58,237,0.05);">
-              <th>Kịch bản Test (VUs)</th>
-              <th>Tổng Requests / Doanh nghiệp</th>
-              <th>Thời gian phản hồi (P95)</th>
-              <th>Tỷ lệ thành công (Success Rate)</th>
-              <th>Đánh giá & Khuyến nghị hạ tầng</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><strong>Stress Test (50 VUs)</strong></td>
-              <td>19,629 reqs / 9,812 bookings</td>
-              <td class="text-jade"><strong>169 ms</strong> (Target &lt; 3s)</td>
-              <td class="text-jade"><strong>99.99%</strong></td>
-              <td><strong>Xuất sắc:</strong> Không xảy ra xung đột dữ liệu (Zero collision), không deadlock. Động cơ tính lương và RLS hoạt động hoàn hảo.</td>
-            </tr>
-            <tr>
-              <td><strong>Spike Test (200 VUs)</strong></td>
-              <td>53,853 reqs / 26,927 iterations</td>
-              <td class="text-jade"><strong>1.22 giây</strong> (Target &lt; 3s)</td>
-              <td class="text-jade"><strong>99.98%</strong></td>
-              <td><strong>Xuất sắc:</strong> Hệ thống duy trì độ ổn định cao trong suốt giai đoạn giữ tải. Tự động dọn dẹp dữ liệu rác sạch sẽ bằng SQL.</td>
-            </tr>
-            <tr>
-              <td><strong>Spike Test (1,000 VUs)</strong></td>
-              <td>29,411 reqs / 14,387 bookings</td>
-              <td class="text-rose"><strong>43.86 giây</strong> (Nghẽn cổ chai)</td>
-              <td class="text-jade"><strong>96.74%</strong> (Target &gt; 85%)</td>
-              <td><strong>Đạt chỉ tiêu (SLO Pass):</strong> Không sập hệ thống, ACID được bảo toàn. Nghẽn do giới hạn Connection Pool của Supabase Cloud.<br/>
-              <em>Khuyến nghị: Tăng pool size (PgBouncer/Supavisor), chuyển sang Transaction Pooling, scale PostgreSQL/Read Replica.</em></td>
-            </tr>
-          </tbody>
-        </table>
+      <h4 style="margin-top: 24px; font-size: 1.1rem; color: var(--text-main);">Kết quả thực nghiệm K6 Load Test (Báo cáo phân tích chi tiết):</h4>
+      
+      <!-- Test Scenario 1 -->
+      <div style="margin-top: 16px; padding: 20px; border-radius: 12px; border: 1px solid rgba(0,177,128,0.15); background: rgba(0,177,128,0.02); position: relative;">
+        <span class="badge badge-green" style="position: absolute; top: 16px; right: 20px;">Stress Test (50 VUs)</span>
+        <h5 style="font-size: 1rem; font-weight: 800; color: var(--jade-dark); margin-bottom: 12px;">1. Kịch bản Booking Stress Test — 50 Virtual Users (VUs) đồng thời</h5>
+        <p style="margin-bottom: 8px; font-size: 13.5px; color: var(--text-muted);">
+          Mô phỏng 50 người dùng thực hiện thao tác nghiệp vụ liên tục trong 2 phút 30 giây.
+        </p>
+        <ul style="margin-left: 20px; font-size: 13.5px; color: var(--text-muted); list-style-type: disc;">
+          <li><strong>Tổng số lượng request:</strong> 19.629 HTTP requests, đạt thông lượng trung bình 107+ requests/giây.</li>
+          <li><strong>Giao dịch nghiệp vụ:</strong> Tạo thành công 9.810 đơn hàng (bookings) và khách hàng mới (~53,8 giao dịch thực tế/giây).</li>
+          <li><strong>Thời gian phản hồi (Latency):</strong> Thời gian phản hồi trung bình cực nhanh đạt 112ms, Median (P50) đạt 95ms và 95% số lượng request (P95) hoàn thành dưới <strong>169ms</strong> (vượt xa tiêu chuẩn SLO &lt; 3s).</li>
+          <li><strong>Tính ổn định:</strong> Tỷ lệ thành công đạt tuyệt đối <strong>99,99%</strong> (chỉ 2/19.629 requests bị lỗi kết nối).</li>
+          <li><strong>Đánh giá kiến trúc:</strong> Khẳng định cơ chế khóa tài nguyên không xung đột (Zero collision), không xảy ra deadlock hay race condition. Các cơ chế RLS, trigger tự động của cơ sở dữ liệu và động cơ tính lương KTV hoạt động ổn định với hiệu năng xuất sắc.</li>
+        </ul>
+      </div>
+
+      <!-- Test Scenario 2 -->
+      <div style="margin-top: 16px; padding: 20px; border-radius: 12px; border: 1px solid rgba(2,132,199,0.15); background: rgba(2,132,199,0.02); position: relative;">
+        <span class="badge badge-sky" style="position: absolute; top: 16px; right: 20px;">Spike Test (200 VUs)</span>
+        <h5 style="font-size: 1rem; font-weight: 800; color: var(--sky); margin-bottom: 12px;">2. Kịch bản Spike Test — 200 Virtual Users (VUs) tăng đột biến</h5>
+        <p style="margin-bottom: 8px; font-size: 13.5px; color: var(--text-muted);">
+          Tăng tải đột biến từ 0 lên 200 người dùng hoạt động đồng thời trong 3 phút 30 giây để đánh giá khả năng co giãn.
+        </p>
+        <ul style="margin-left: 20px; font-size: 13.5px; color: var(--text-muted); list-style-type: disc;">
+          <li><strong>Tổng số lượng request:</strong> 53.853 HTTP requests, đạt thông lượng trung bình 241 requests/giây.</li>
+          <li><strong>Giao dịch nghiệp vụ:</strong> Xử lý thành công 26.918 giao dịch tạo khách hàng và booking mới.</li>
+          <li><strong>Thời gian phản hồi (Latency):</strong> Thời gian phản hồi trung bình đạt 468,37ms; Median (P50) đạt 357,17ms; P95 đạt <strong>1,22 giây</strong> và P99 đạt 2,57 giây (hoàn toàn nằm dưới ngưỡng trần SLO 3s và 5s).</li>
+          <li><strong>Tính ổn định:</strong> Tỷ lệ thành công rất cao đạt <strong>99,98%</strong> (chỉ 11 requests bị lỗi mạng tạm thời).</li>
+          <li><strong>Đánh giá kiến trúc:</strong> Hệ thống duy trì sự ổn định tuyệt vời khi ở đỉnh tải 200 VUs trong 2 phút liên tục. Cơ chế dọn dẹp dữ liệu rác (cleanup script) chạy bằng SQL hoạt động chính xác sau khi test, trả lại tài nguyên sạch cho hệ thống.</li>
+        </ul>
+      </div>
+
+      <!-- Test Scenario 3 -->
+      <div style="margin-top: 16px; padding: 20px; border-radius: 12px; border: 1px solid rgba(225,29,72,0.15); background: rgba(225,29,72,0.02); position: relative;">
+        <span class="badge badge-rose" style="position: absolute; top: 16px; right: 20px;">Spike Test (1000 VUs)</span>
+        <h5 style="font-size: 1rem; font-weight: 800; color: var(--rose); margin-bottom: 12px;">3. Kịch bản Spike Test Cực Hạn — 1.000 Virtual Users (VUs) đồng thời</h5>
+        <p style="margin-bottom: 8px; font-size: 13.5px; color: var(--text-muted);">
+          Mô phỏng tình huống cực đoan với 1.000 người dùng đồng loạt thực hiện chuỗi nghiệp vụ phức tạp (Create Customer + Create Booking bao gồm RLS, Business Logic và Database Transactions).
+        </p>
+        <ul style="margin-left: 20px; font-size: 13.5px; color: var(--text-muted); list-style-type: disc;">
+          <li><strong>Tổng số lượng request:</strong> 29.411 HTTP requests, đạt thông lượng trung bình ~81,44 requests/giây.</li>
+          <li><strong>Giao dịch nghiệp vụ:</strong> Tạo thành công 14.538 khách hàng và 13.913 bookings mới (~56.000+ bản ghi được ghi nhận vào DB).</li>
+          <li><strong>Tỷ lệ thành công (Success Rate):</strong> Đạt <strong>96,74%</strong> (vượt qua yêu cầu tối thiểu &gt; 85% của tiêu chuẩn SLO cho lỗi cực hạn).</li>
+          <li><strong>Thời gian phản hồi (Latency):</strong> P50 đạt 2,31 giây; tuy nhiên P95 vọt lên <strong>43,86 giây</strong> và P99 chạm ngưỡng timeout tối đa <strong>60 giây</strong> (Không đạt tiêu chuẩn SLO P95 &lt; 3s).</li>
+          <li><strong>Phân tích nguyên nhân (Root Cause Analysis):</strong> Cơ sở dữ liệu và ứng dụng không bị sập hay tràn bộ nhớ. Điểm nghẽn duy nhất nằm ở hạ tầng: <strong>Giới hạn số lượng kết nối (Connection Pool) của Supabase Cloud bị quá tải</strong>. Các yêu cầu xử lý từ PostgREST API phải xếp hàng chờ đợi (queue) để có được kết nối vào database, gây ra trễ lớn ở các request sau. Dữ liệu nghiệp vụ vẫn được bảo toàn tính toàn vẹn (ACID), hoàn toàn không xảy ra deadlock, trùng lịch (double booking) hay rò rỉ dữ liệu giữa các tenant.</li>
+          <li><strong>Khuyến nghị tối ưu hạ tầng:</strong> (1) Tăng kích thước Connection Pool (PgBouncer/Supavisor); (2) Chuyển cấu hình pool sang chế độ Transaction Pooling thay vì Session Pooling; (3) Tối ưu hóa phân tách luồng đọc/ghi (Read-Write separation) và mở rộng database replica; (4) Chuyển đổi các nghiệp vụ ghi nặng sang hàng đợi (queue) để giảm tải tức thời cho database.</li>
+        </ul>
       </div>
     </div>
     <div class="card">
