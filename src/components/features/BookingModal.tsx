@@ -776,7 +776,7 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
                         )}
 
                         {ktvAvailability.nextAvailableTime && (
-                          <div className="flex items-center gap-2.5 bg-emerald-500/[0.04] border border-emerald-500/15 rounded-2xl p-3.5 shadow-sm">
+                          <div className="w-fit flex items-center gap-2.5 bg-emerald-500/[0.04] border border-emerald-500/15 rounded-2xl px-5 py-2.5 shadow-sm">
                             <div className="w-6 h-6 bg-emerald-500 text-white rounded-xl flex items-center justify-center shadow-md shadow-emerald-500/15 flex-shrink-0 font-bold text-xs">
                               ✓
                             </div>
