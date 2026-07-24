@@ -68,7 +68,7 @@ export async function getBookingPaymentSnapshot(
 ) {
   const { data: booking, error } = await supabase
     .from('bookings')
-    .select('id, deposit_amount, full_price, status, tenant_id, discount_percent, revenue(amount, status, revenue_type)')
+    .select('id, deposit_amount, full_price, total_sessions, metadata, status, tenant_id, discount_percent, packages!bookings_package_id_fkey(name, price, total_sessions), revenue(amount, status, revenue_type)')
     .eq('id', bookingId)
     .eq('tenant_id', tenantId)
     .single();
@@ -77,7 +77,29 @@ export async function getBookingPaymentSnapshot(
     return { error: 'Không tìm thấy booking: ' + (error?.message || '') };
   }
 
-  return { booking: booking as PaymentBookingSnapshot };
+  const pkg = booking.packages as ({ name?: string; price?: number; total_sessions?: number } | null);
+  const giftSessions = Number((booking.metadata as Record<string, unknown>)?.gift_sessions || 0);
+  const paidSessions = (booking.total_sessions || 0) - giftSessions;
+  const isRetailPackage = pkg && Number(pkg.total_sessions || 1) === 1;
+  const unitPrice = pkg?.price || 0;
+  const computedFullPrice = isRetailPackage && paidSessions > 1
+    ? unitPrice * paidSessions
+    : (booking.full_price || 0);
+
+  if (computedFullPrice > 0 && booking.full_price !== computedFullPrice) {
+    await supabase
+      .from('bookings')
+      .update({ full_price: computedFullPrice })
+      .eq('id', bookingId)
+      .eq('tenant_id', tenantId);
+  }
+
+  return {
+    booking: {
+      ...booking,
+      full_price: computedFullPrice,
+    } as PaymentBookingSnapshot,
+  };
 }
 
 export function validateRemainingPaymentAmount(
@@ -219,6 +241,7 @@ export async function fetchBookingDetailsWithPayment(
         qr_account_number,
         qr_account_name
       ),
+      packages!bookings_package_id_fkey(name, price, total_sessions),
       revenue (
         *
       )
@@ -231,5 +254,16 @@ export async function fetchBookingDetailsWithPayment(
     return { error: error.message };
   }
 
-  return { data };
+  if (!data) return { data: null };
+
+  const pkg = data.packages as ({ name?: string; price?: number; total_sessions?: number } | null);
+  const giftSessions = Number((data.metadata as Record<string, unknown>)?.gift_sessions || 0);
+  const paidSessions = (data.total_sessions || 0) - giftSessions;
+  const isRetailPackage = pkg && Number(pkg.total_sessions || 1) === 1;
+  const unitPrice = pkg?.price || 0;
+  const computedFullPrice = isRetailPackage && paidSessions > 1
+    ? unitPrice * paidSessions
+    : (data.full_price || 0);
+
+  return { data: { ...data, full_price: computedFullPrice } };
 }

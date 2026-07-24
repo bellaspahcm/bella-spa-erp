@@ -105,7 +105,7 @@ export function formatViDate(date: Date | string | null | undefined): string {
     const cleanStr = date.split('T')[0].trim();
     const match = cleanStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
     if (match) {
-      return `${match[3]}-${match[2]}-${match[1]}`;
+      return `${match[3]}/${match[2]}/${match[1]}`;
     }
   }
 
@@ -115,7 +115,7 @@ export function formatViDate(date: Date | string | null | undefined): string {
   const day = String(d.getDate()).padStart(2, '0');
   const month = String(d.getMonth() + 1).padStart(2, '0');
   const year = d.getFullYear();
-  return `${day}-${month}-${year}`;
+  return `${day}/${month}/${year}`;
 }
 
 

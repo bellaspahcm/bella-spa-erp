@@ -3665,6 +3665,23 @@ html[data-tenant-module="beauty_spa"] .luxury-card-pink *:not(.bg-white):not(.bg
   color: #ffffff !important;
 }
 
+/* Specific override for beauty_spa payment amount contrast in luxury-card-pink */
+html[data-tenant-module="beauty_spa"] .luxury-card-pink .text-primary {
+  color: #34d399 !important;
+}
+
+/* Specific override for beauty_spa cancelled status indicators to remain red */
+html[data-tenant-module="beauty_spa"] .session-status-dot-cancelled {
+  background-color: #f43f5e !important;
+  box-shadow: 0 0 8px rgba(244, 63, 94, 0.5) !important;
+}
+
+html[data-tenant-module="beauty_spa"] .session-status-badge-cancelled {
+  background-color: #fff1f2 !important;
+  border-color: #fecdd3 !important;
+  color: #e11d48 !important;
+}
+
 html.dark[data-tenant-module="beauty_spa"] .bella-data-table td,
 html.dark[data-tenant-module="beauty_spa"] .bella-data-table td .text-slate-900,
 html.dark[data-tenant-module="beauty_spa"] .bella-data-table td .text-slate-600,

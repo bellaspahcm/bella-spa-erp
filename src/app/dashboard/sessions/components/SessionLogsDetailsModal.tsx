@@ -5,7 +5,7 @@ import { getTenantModulePresentationOrNeutral } from '@/lib/business-rules/tenan
 import { getModuleVocabulary } from '@/lib/business-rules/module-vocabulary';
 import type { TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 import { createClient } from '@/lib/supabase-client';
-import { cn } from '@/lib/utils';
+import { cn, formatViDate } from '@/lib/utils';
 import { reusePackage,syncBookingProgress } from '@/core/services/order';
 import {
 addExtraSession,
@@ -844,7 +844,7 @@ export function SessionLogsDetailsModal({
                       <span className="text-[10px] font-black uppercase text-slate-400">Xong</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-rose-500 rounded-full shadow-[0_0_8px_rgba(244,63,94,0.5)]" />
+                      <div className="w-3 h-3 session-status-dot-cancelled bg-rose-500 rounded-full shadow-[0_0_8px_rgba(244,63,94,0.5)]" />
                       <span className="text-[10px] font-black uppercase text-slate-400">Hủy</span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -908,7 +908,7 @@ export function SessionLogsDetailsModal({
                             className={cn(
                               "aspect-square rounded-2xl flex flex-col items-center justify-center border transition-all cursor-pointer group relative overflow-hidden",
                               status === 'completed' ? 'bg-emerald-500 border-emerald-600 text-white shadow-[0_0_15px_rgba(16,185,129,0.3)]' :
-                              status === 'cancelled' ? 'bg-rose-50 border-rose-100 text-rose-600 hover:bg-rose-100 shadow-sm' :
+                              status === 'cancelled' ? 'bg-rose-50 border-rose-100 text-rose-600 hover:bg-rose-100 shadow-sm session-status-badge-cancelled' :
                               isNextToRun ? 'bg-amber-50 border-amber-300 text-amber-600 ring-4 ring-amber-50 shadow-lg' :
                               'bg-slate-50/50 border-slate-100 text-slate-300 hover:bg-slate-100',
                               selectedSessionLog?.id === log.id && "ring-2 ring-primary border-primary/50 shadow-inner",
@@ -940,16 +940,16 @@ export function SessionLogsDetailsModal({
                             )}
                             
                             <div className="absolute inset-0 bg-primary/90 text-white p-2 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-center z-20">
-                              <p className="text-[7px] font-black uppercase mb-1">Buổi {log.session_number}</p>
-                              <p className="text-[6px] font-bold opacity-80 mb-1">{log.assigned_date || 'Chưa hẹn'}</p>
+                              <p className="text-[9px] font-black uppercase mb-0.5 text-white !text-white leading-tight">Buổi {log.session_number}</p>
+                              <p className="text-[8px] font-bold opacity-90 mb-1 text-white !text-white leading-tight">{log.assigned_date ? formatViDate(log.assigned_date) : 'Chưa hẹn'}</p>
                               <button 
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setSelectedSessionLog(log);
                                 }}
                                 className={cn(
-                                  "bg-white text-primary px-2 py-1 rounded-lg text-[8px] font-black uppercase mt-1 transition-colors",
-                                  tenantModuleKey === 'beauty_spa' ? "hover:bg-emerald-50" : "hover:bg-pink-50"
+                                  "bg-white px-2 py-1 rounded-lg text-[8px] font-black uppercase mt-0.5 transition-colors shadow-sm",
+                                  tenantModuleKey === 'beauty_spa' ? "text-emerald-900 !text-emerald-900 hover:bg-emerald-50" : "text-primary hover:bg-pink-50"
                                 )}
                               >
                                 Cập nhật

@@ -988,7 +988,10 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
                   </div>
                   <div className="flex justify-between items-center pt-4 border-t border-white/10">
                     <span className="font-bold">Cần thanh toán thêm</span>
-                    <span className="text-2xl font-bold text-primary">
+                    <span className={cn(
+                      "text-2xl font-bold text-primary",
+                      tenantModuleKey === 'beauty_spa' && "text-[#34d399] !text-[#34d399]"
+                    )}>
                       {formatNumberWithSeparator(previewPaymentState.remainingDebt)}đ
                     </span>
                   </div>

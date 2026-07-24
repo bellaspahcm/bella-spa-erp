@@ -119,7 +119,9 @@ export async function getCustomerBookingByToken(token?: string) {
         loyalty_points
       ),
       packages!bookings_package_id_fkey (
-        name
+        name,
+        price,
+        total_sessions
       ),
       assigned_ktv:users!bookings_assigned_ktv_id_fkey (
         id,
@@ -174,6 +176,18 @@ export async function getCustomerBookingByToken(token?: string) {
   }
 
   const booking = data as CustomerPortalBooking;
+
+  // Compute effective full_price for retail packages
+  const pkg = booking.packages as ({ name?: string; price?: number; total_sessions?: number } | null);
+  const giftSessions = Number((booking.metadata as Record<string, unknown>)?.gift_sessions || 0);
+  const paidSessions = (booking.total_sessions || 0) - giftSessions;
+  const isRetailPackage = pkg && Number(pkg.total_sessions || 1) === 1;
+  const unitPrice = pkg?.price || 0;
+  const computedFullPrice = isRetailPackage && paidSessions > 1
+    ? unitPrice * paidSessions
+    : (booking.full_price || 0);
+
+  booking.full_price = computedFullPrice;
 
   // Sort sessions by number
   if (booking.session_logs) {

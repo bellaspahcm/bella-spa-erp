@@ -556,7 +556,10 @@ export function useCustomerDetailController() {
         {
           id: 1,
           name: activeBooking.package_name || activeBooking.packages?.name || 'Gói dịch vụ',
-          sessions: activeBooking.total_sessions || 15,
+          sessions: (() => {
+            const gift = Number((activeBooking.metadata as any)?.gift_sessions || 0);
+            return Math.max(0, (activeBooking.total_sessions || 15) - gift);
+          })(),
           unitPrice: (() => {
             const gift = Number((activeBooking.metadata as any)?.gift_sessions || 0);
             const paidSessions = Math.max(1, (activeBooking.total_sessions || 15) - gift);
@@ -665,7 +668,10 @@ export function useCustomerDetailController() {
       return {
         id: idx + 1,
         name: booking.package_name || booking.packages?.name || 'Gói dịch vụ',
-        sessions: booking.total_sessions || 1,
+        sessions: (() => {
+          const giftSess = Number((booking.metadata as any)?.gift_sessions || 0);
+          return Math.max(0, (booking.total_sessions || 1) - giftSess);
+        })(),
         unitPrice: (() => {
           const giftSess = Number((booking.metadata as any)?.gift_sessions || 0);
           const paidSess = Math.max(1, (booking.total_sessions || 1) - giftSess);

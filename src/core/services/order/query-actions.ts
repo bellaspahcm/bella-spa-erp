@@ -130,7 +130,7 @@ export async function getDraftBooking(customerId: string) {
   
   const { data, error } = await supabase
     .from('bookings')
-    .select('*, customers(name_mother, phone, address), revenue(amount, status, revenue_type)')
+    .select('*, customers(name_mother, phone, address), revenue(amount, status, revenue_type), packages!bookings_package_id_fkey(name, price, total_sessions)')
     .eq('customer_id', customerId)
     .eq('tenant_id', tenantId)
     .order('created_at', { ascending: false })
@@ -144,7 +144,16 @@ export async function getDraftBooking(customerId: string) {
   
   const b = data[0];
   if (b.status === 'deposit_pending' || b.status === 'lead') {
-    return b;
+    const pkg = b.packages as ({ name?: string; price?: number; total_sessions?: number } | null);
+    const giftSessions = Number((b.metadata as Record<string, unknown>)?.gift_sessions || 0);
+    const paidSessions = (b.total_sessions || 0) - giftSessions;
+    const isRetailPackage = pkg && Number(pkg.total_sessions || 1) === 1;
+    const unitPrice = pkg?.price || 0;
+    const computedFullPrice = isRetailPackage && paidSessions > 1
+      ? unitPrice * paidSessions
+      : (b.full_price || 0);
+
+    return { ...b, full_price: computedFullPrice };
   }
   
   return null;
