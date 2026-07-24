@@ -23,7 +23,7 @@ import {
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { entryId: string } }
+  { params }: { params: Promise<{ entryId: string }> }
 ) {
   try {
     // Authentication check
@@ -37,7 +37,7 @@ export async function GET(
       );
     }
 
-    const entryId = params.entryId;
+    const { entryId } = await params;
 
     if (!entryId) {
       return NextResponse.json(
@@ -82,7 +82,7 @@ export async function GET(
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { entryId: string } }
+  { params }: { params: Promise<{ entryId: string }> }
 ) {
   try {
     // Authentication check
@@ -96,7 +96,7 @@ export async function PATCH(
       );
     }
 
-    const entryId = params.entryId;
+    const { entryId } = await params;
 
     if (!entryId) {
       return NextResponse.json(
@@ -166,7 +166,7 @@ export async function PATCH(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { entryId: string } }
+  { params }: { params: Promise<{ entryId: string }> }
 ) {
   try {
     // Authentication check
@@ -180,7 +180,7 @@ export async function DELETE(
       );
     }
 
-    const entryId = params.entryId;
+    const { entryId } = await params;
 
     if (!entryId) {
       return NextResponse.json(

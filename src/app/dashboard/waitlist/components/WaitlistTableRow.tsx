@@ -7,6 +7,12 @@ import { toast } from 'sonner';
 import { WaitlistStatusBadge } from './WaitlistStatusBadge';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu';
 import type { WaitlistEntry } from '@/types/waitlist';
 
 interface WaitlistTableRowProps {
@@ -17,7 +23,6 @@ interface WaitlistTableRowProps {
 export function WaitlistTableRow({ entry, onRefresh }: WaitlistTableRowProps) {
   const router = useRouter();
   const vocab = useModuleVocabulary();
-  const [isActionsOpen, setIsActionsOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Calculate wait time in human-readable format
@@ -64,13 +69,11 @@ export function WaitlistTableRow({ entry, onRefresh }: WaitlistTableRowProps) {
       toast.error(err instanceof Error ? err.message : 'Lỗi khi gửi thông báo');
     } finally {
       setIsProcessing(false);
-      setIsActionsOpen(false);
     }
   };
 
   const handleConvert = async () => {
     toast.info(`Chức năng chuyển đổi sang ${vocab.booking.singular.toLowerCase()} đang được phát triển`);
-    setIsActionsOpen(false);
   };
 
   const handleCancel = async () => {
@@ -92,7 +95,6 @@ export function WaitlistTableRow({ entry, onRefresh }: WaitlistTableRowProps) {
       toast.error(err instanceof Error ? err.message : 'Lỗi khi hủy');
     } finally {
       setIsProcessing(false);
-      setIsActionsOpen(false);
     }
   };
 
@@ -162,73 +164,58 @@ export function WaitlistTableRow({ entry, onRefresh }: WaitlistTableRowProps) {
 
       {/* Actions */}
       <TableCell className="px-6 py-4 text-right">
-        <div className="relative">
-          <button
-            onClick={() => setIsActionsOpen(!isActionsOpen)}
-            disabled={isProcessing}
-            className="inline-flex items-center rounded-lg p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-slate-100 disabled:opacity-50 transition-colors"
-          >
-            <MoreVertical className="h-5 w-5" />
-          </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              disabled={isProcessing}
+              className="inline-flex items-center rounded-lg p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-slate-100 disabled:opacity-50 transition-colors"
+            >
+              <MoreVertical className="h-5 w-5" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-[#1c1b19] border border-slate-200/60 dark:border-slate-800 shadow-lg">
+            <DropdownMenuItem
+              onClick={() => router.push(`/dashboard/waitlist/${entry.id}`)}
+              className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors"
+            >
+              <Eye className="h-4 w-4 text-slate-400" />
+              Xem chi tiết
+            </DropdownMenuItem>
 
-          {/* Actions dropdown */}
-          {isActionsOpen && (
-            <>
-              {/* Backdrop */}
-              <div
-                className="fixed inset-0 z-10"
-                onClick={() => setIsActionsOpen(false)}
-              />
+            {entry.status === 'active' && (
+              <DropdownMenuItem
+                onClick={handleNotify}
+                disabled={isProcessing}
+                className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors disabled:opacity-50"
+              >
+                <Bell className="h-4 w-4 text-slate-400" />
+                Gửi thông báo
+              </DropdownMenuItem>
+            )}
 
-              {/* Menu */}
-              <div className="absolute right-0 top-full z-20 mt-2 w-56 rounded-xl border border-slate-200/60 dark:border-slate-800 bg-white/95 dark:bg-[#1c1b19]/95 backdrop-blur-md py-1 shadow-lg animate-in fade-in slide-in-from-top-1 duration-200">
-                <button
-                  onClick={() => {
-                    setIsActionsOpen(false);
-                    router.push(`/dashboard/waitlist/${entry.id}`);
-                  }}
-                  className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors"
-                >
-                  <Eye className="h-4 w-4 text-slate-400" />
-                  Xem chi tiết
-                </button>
+            {(entry.status === 'active' || entry.status === 'notified') && (
+              <DropdownMenuItem
+                onClick={handleConvert}
+                disabled={isProcessing}
+                className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors disabled:opacity-50"
+              >
+                <Check className="h-4 w-4 text-slate-400" />
+                Chuyển sang {vocab.booking.singular.toLowerCase()}
+              </DropdownMenuItem>
+            )}
 
-                {entry.status === 'active' && (
-                  <button
-                    onClick={handleNotify}
-                    disabled={isProcessing}
-                    className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors disabled:opacity-50"
-                  >
-                    <Bell className="h-4 w-4 text-slate-400" />
-                    Gửi thông báo
-                  </button>
-                )}
-
-                {(entry.status === 'active' || entry.status === 'notified') && (
-                  <button
-                    onClick={handleConvert}
-                    disabled={isProcessing}
-                    className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors disabled:opacity-50"
-                  >
-                    <Check className="h-4 w-4 text-slate-400" />
-                    Chuyển sang {vocab.booking.singular.toLowerCase()}
-                  </button>
-                )}
-
-                {entry.status !== 'cancelled' && entry.status !== 'converted' && (
-                  <button
-                    onClick={handleCancel}
-                    disabled={isProcessing}
-                    className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors disabled:opacity-50"
-                  >
-                    <X className="h-4 w-4 text-red-400" />
-                    Hủy
-                  </button>
-                )}
-              </div>
-            </>
-          )}
-        </div>
+            {entry.status !== 'cancelled' && entry.status !== 'converted' && (
+              <DropdownMenuItem
+                onClick={handleCancel}
+                disabled={isProcessing}
+                className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors disabled:opacity-50"
+              >
+                <X className="h-4 w-4 text-red-400" />
+                Hủy
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </TableCell>
     </TableRow>
   );

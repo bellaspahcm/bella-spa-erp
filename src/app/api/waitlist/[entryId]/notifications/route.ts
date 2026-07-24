@@ -24,10 +24,10 @@ import { getNotificationLogs } from '@/services/notifications/notification-logge
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { entryId: string } }
+  { params }: { params: Promise<{ entryId: string }> }
 ) {
   try {
-    const { entryId } = params;
+    const { entryId } = await params;
 
     if (!entryId) {
       return NextResponse.json(
