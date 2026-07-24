@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
+import { getCurrentUser } from '@/services/user-actions';
 
 export async function GET(request: NextRequest) {
   try {
@@ -8,10 +9,29 @@ export async function GET(request: NextRequest) {
     const role = searchParams.get('role'); // e.g., 'ktv'
     const limit = parseInt(searchParams.get('limit') || '100');
 
+    // 1. Authentication Check
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    // 2. Validate tenantId
     if (!tenantId) {
       return NextResponse.json(
         { error: 'tenant_id is required' },
         { status: 400 }
+      );
+    }
+
+    // Tenant boundary check: standard users cannot query other tenants
+    const isSuperAdmin = currentUser.role === 'super_admin' || currentUser.role === 'hq_super_admin';
+    if (tenantId !== currentUser.tenant_id && !isSuperAdmin) {
+      return NextResponse.json(
+        { error: 'Forbidden: Tenant mismatch' },
+        { status: 403 }
       );
     }
 

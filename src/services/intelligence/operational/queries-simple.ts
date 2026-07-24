@@ -181,6 +181,37 @@ export async function getSessionAnalytics(tenantId: string) {
   }];
 }
 
+interface MvInventoryStatusRow {
+  tenant_id: string;
+  product_id: string;
+  product_name: string;
+  category: string;
+  sku: string | null;
+  unit_of_measure: string | null;
+  current_stock: number | string;
+  reorder_point: number | string;
+  reorder_quantity: number | string;
+  max_stock_level: number | string;
+  stock_status: 'out_of_stock' | 'low_stock' | 'medium_stock' | 'high_stock';
+  stock_value: number | string;
+  usage_last_30_days: number | string;
+  avg_daily_usage: number | string;
+  days_until_stockout: number | string | null;
+  supplier_id: string | null;
+  supplier_name: string | null;
+  supplier_contact: string | null;
+  supplier_phone: string | null;
+  supplier_email: string | null;
+  supplier_lead_time_days: number | string;
+  reorder_recommendation: 'urgent' | 'recommended' | 'suggested' | 'not_needed';
+  suggested_reorder_date: string | null;
+  last_restock_date: string | null;
+  last_restock_quantity: number | string | null;
+  last_usage_date: string | null;
+  inventory_updated_at: string;
+  computed_at: string;
+}
+
 /**
  * Get Inventory Status - queries mv_inventory_status materialized view
  */
@@ -188,7 +219,7 @@ export async function getInventoryStatus(tenantId: string, stockStatus?: string)
   const supabase = await createServiceRoleClient();
 
   let query = supabase
-    .from('mv_inventory_status' as any)
+    .from('mv_inventory_status' as never)
     .select('*')
     .eq('tenant_id', tenantId);
 
@@ -205,7 +236,7 @@ export async function getInventoryStatus(tenantId: string, stockStatus?: string)
     throw error;
   }
 
-  return ((data || []) as any[]).map((row) => ({
+  return ((data || []) as unknown as MvInventoryStatusRow[]).map((row) => ({
     tenantId: row.tenant_id,
     productId: row.product_id,
     productName: row.product_name,

@@ -127,7 +127,7 @@ export async function GET(request: Request): Promise<Response> {
       const remainingSessions = (booking.total_sessions || 0) - (booking.completed_sessions || 0);
       if (remainingSessions <= 0) continue;
 
-      const pkg = booking.packages as { id?: string; name?: string; product_usage?: any } | null;
+      const pkg = booking.packages as { id?: string; name?: string; product_usage?: Record<string, number> | null } | null;
       if (!pkg?.product_usage) continue;
 
       // product_usage format: { "product-id": quantity_per_session }

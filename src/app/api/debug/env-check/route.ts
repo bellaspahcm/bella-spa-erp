@@ -8,6 +8,9 @@
 import { NextResponse } from 'next/server';
 
 export async function GET() {
+  if (process.env.NODE_ENV === 'production') {
+    return new Response('Forbidden', { status: 403 });
+  }
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   
   return NextResponse.json({

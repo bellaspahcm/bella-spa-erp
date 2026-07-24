@@ -20,7 +20,13 @@ Tai lieu nay mo ta cac API HTTP dang ton tai trong `src/app/api`. Muc tieu la gi
 | `GET /api/cron/accounting-worker` | Lay hang doi accounting outbox va tao but toan tu dong | `CRON_SECRET` qua `Authorization: Bearer ...` | Xu ly batch toi da 50 event, co ket qua chi tiet tung event |
 | `GET /api/cron/ai-autopilot` | Chay AI autopilot dinh ky, quet canh bao va gui Telegram | `CRON_SECRET` qua `Authorization: Bearer ...` | Quet cac tenant dang active va bao cao partial failure neu co tenant loi |
 | `GET /api/cron/zalo-reminders` | Gui nhac lich hen Zalo dinh ky | `CRON_SECRET` qua `Authorization: Bearer ...` hoac query `?secret=...` | Dung cho job scheduler noi bo |
+| `GET /api/cron/gate3-monitor` | Giám sát trạng thái hoạt động của hệ thống | `CRON_SECRET` qua `Authorization: Bearer ...` | Job nội bộ kiểm tra tình trạng Gate 3 |
+| `GET /api/cron/monitor-replica` | Giám sát tình trạng đồng bộ bản sao cơ sở dữ liệu | `CRON_SECRET` qua `Authorization: Bearer ...` | Kiểm tra độ trễ replica |
+| `GET /api/cron/sync-external-ads` | Đồng bộ dữ liệu quảng cáo từ các nền tảng ngoài | `CRON_SECRET` qua `Authorization: Bearer ...` | Lấy báo cáo chi phí quảng cáo tự động |
+| `POST /api/cron/sync-external-ads` | Kích hoạt đồng bộ dữ liệu quảng cáo thủ công | `CRON_SECRET` qua `Authorization: Bearer ...` | Hỗ trợ đẩy payload đồng bộ trực tiếp |
 | `GET /api/test-upcoming` | Kiem tra nhanh lich sap toi cua KTV trong moi truong dev/test | Local-only neu khong co secret; remote can `TEST_UPCOMING_SECRET` hoac `CRON_SECRET` | Production tra 404 |
+| `GET /api/v1/orders` | Danh sách đơn hàng (hỗ trợ phân trang, lọc và sandbox mode) | API key authentication (pk_test_... hoặc pk_live_...) | Tự động phân tách schema dữ liệu thật và sandbox dựa trên API key |
+| `POST /api/v1/orders` | Tạo mới đơn hàng (hỗ trợ sandbox mode) | API key authentication (pk_test_... hoặc pk_live_...) | Ghi đè tự động schema sandbox.orders nếu dùng key test |
 
 ## Chi Tiet Endpoint
 
@@ -212,3 +218,112 @@ Tra loi ngoai production:
 - Thanh cong: `{ "success": true, "count": number, "sessions": [...] }`.
 - `403` neu khong phai local va token sai/thieu.
 - `500` neu service lay lich loi.
+
+### `GET /api/v1/orders`
+
+Dùng để lấy danh sách đơn hàng của đối tác liên kết với tenant.
+
+Xác thực:
+
+- Sử dụng API Key của đối tác thông qua header `Authorization: Bearer <API_KEY>`.
+- Khóa bắt đầu bằng `pk_test_` sẽ tự động kích hoạt chế độ Sandbox (chỉ truy vấn dữ liệu từ schema `sandbox.orders`).
+- Khóa bắt đầu bằng `pk_live_` sẽ truy vấn dữ liệu thực tế (`public.orders`).
+- Yêu cầu scope: `order:read`.
+
+Tham số truy vấn (Query parameters):
+
+| Trường | Bắt buộc | Mặc định | Mô tả |
+| --- | --- | --- | --- |
+| `page` | Không | 1 | Số trang kết quả |
+| `per_page` | Không | 20 | Số kết quả trên một trang |
+| `status` | Không | - | Lọc theo trạng thái đơn hàng (e.g. pending, completed) |
+| `customer_id` | Không | - | Lọc theo mã khách hàng |
+| `from_date` | Không | - | Lọc đơn tạo từ ngày (YYYY-MM-DD) |
+| `to_date` | Không | - | Lọc đơn tạo đến ngày (YYYY-MM-DD) |
+| `search` | Không | - | Tìm kiếm từ khóa trong phần ghi chú (`notes`) |
+
+Trả lời:
+
+- Thành công (200): Phân trang chuẩn với metadata về trang và danh sách đơn hàng. Response headers chứa `X-Environment` và `X-Sandbox-Mode`.
+- `401` nếu thiếu hoặc sai API Key.
+- `403` nếu API Key thiếu scope `order:read`.
+- `500` nếu lỗi hệ thống.
+
+### `POST /api/v1/orders`
+
+Dùng để tạo mới đơn hàng.
+
+Xác thực:
+
+- Sử dụng API Key đối tác qua header `Authorization: Bearer <API_KEY>`.
+- Hỗ trợ chế độ Sandbox nếu dùng key test (`pk_test_...`).
+- Yêu cầu scope: `order:write`.
+
+Dữ liệu đầu vào (Body JSON):
+
+| Trường | Bắt buộc | Loại | Mô tả |
+| --- | --- | --- | --- |
+| `customer_id` | Có | string | Mã khách hàng (UUID) |
+| `items` | Có | array | Danh sách các mặt hàng / gói dịch vụ trong đơn |
+| `notes` | Không | string | Ghi chú đơn hàng |
+| `scheduled_date` | Không | string | Ngày hẹn làm dịch vụ (YYYY-MM-DD) |
+
+Trả lời:
+
+- Thành công (201): Trả về thông tin đơn hàng vừa tạo, kèm header `Location` trỏ đến endpoint chi tiết của đơn hàng.
+- `400` nếu thiếu trường bắt buộc hoặc dữ liệu sai định dạng.
+- `401` nếu thiếu hoặc sai API Key.
+- `403` nếu thiếu scope `order:write`.
+- `500` nếu lỗi hệ thống.
+
+### `GET /api/cron/gate3-monitor`
+
+Job định kỳ để giám sát hiệu suất và trạng thái của Gate 3.
+
+Xác thực:
+
+- `CRON_SECRET` qua `Authorization: Bearer <CRON_SECRET>`.
+
+Trả lời:
+
+- Thành công (200): Trả về thông tin trạng thái kiểm tra.
+- `401` nếu sai token.
+
+### `GET /api/cron/monitor-replica`
+
+Job định kỳ kiểm tra tình trạng đồng bộ dữ liệu của replica database.
+
+Xác thực:
+
+- `CRON_SECRET` qua `Authorization: Bearer <CRON_SECRET>`.
+
+Trả lời:
+
+- Thành công (200): Trả về độ trễ đồng bộ (lag).
+- `401` nếu sai token.
+
+### `GET /api/cron/sync-external-ads`
+
+Job định kỳ tự động đồng bộ chiến dịch quảng cáo.
+
+Xác thực:
+
+- `CRON_SECRET` qua `Authorization: Bearer <CRON_SECRET>`.
+
+Trả lời:
+
+- Thành công (200): Trả về số lượng chiến dịch được đồng bộ.
+- `401` nếu sai token.
+
+### `POST /api/cron/sync-external-ads`
+
+Endpoint để kích hoạt đồng bộ quảng cáo thủ công hoặc nhận webhook từ nền tảng quảng cáo.
+
+Xác thực:
+
+- `CRON_SECRET` qua `Authorization: Bearer <CRON_SECRET>`.
+
+Trả lời:
+
+- Thành công (200): Kết quả đồng bộ chi tiết.
+- `401` nếu sai token.

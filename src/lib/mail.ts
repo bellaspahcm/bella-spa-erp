@@ -96,11 +96,12 @@ export async function sendTemporaryPasswordEmail(
     const info = await transporter.sendMail(mailOptions);
     console.log(`[MailService] Email sent successfully to ${email}. MessageId: ${info.messageId}`);
     return { success: true };
-  } catch (error: any) {
-    console.error(`[MailService] Failed to send email to ${email}:`, error);
+  } catch (error) {
+    const err = error as Error;
+    console.error(`[MailService] Failed to send email to ${email}:`, err);
     return {
       success: false,
-      error: error?.message || 'SMTP_SEND_FAILED',
+      error: err?.message || 'SMTP_SEND_FAILED',
     };
   }
 }

@@ -8,6 +8,9 @@ import { getCache, setCache, deleteCache, CacheKeys } from '@/lib/redis-cache';
 import { NextResponse } from 'next/server';
 
 export async function GET() {
+  if (process.env.NODE_ENV === 'production') {
+    return new Response('Forbidden', { status: 403 });
+  }
   const testKey = 'debug:test';
   const testValue = {
     timestamp: new Date().toISOString(),

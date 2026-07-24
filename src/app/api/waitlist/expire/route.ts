@@ -12,6 +12,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
 import { expireOldEntries } from '@/services/waitlist/waitlist-service';
+import { getCurrentUser } from '@/services/user-actions';
 
 /**
  * POST /api/waitlist/expire
@@ -41,12 +42,11 @@ export async function POST(request: NextRequest) {
 
     const isCronJob = authHeader === `Bearer ${cronSecret}`;
 
+    const currentUser = await getCurrentUser();
+
     if (!isCronJob) {
       // Regular user authentication
-      const supabase = createClient();
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-      if (authError || !user) {
+      if (!currentUser) {
         return NextResponse.json(
           { error: 'Unauthorized' },
           { status: 401 }
@@ -54,7 +54,14 @@ export async function POST(request: NextRequest) {
       }
 
       // Check if user is admin (only admins can manually trigger expiry)
-      // TODO: Check user role
+      const isSuperAdmin = currentUser.role === 'super_admin' || currentUser.role === 'hq_super_admin';
+      const isAdmin = currentUser.role === 'admin' || isSuperAdmin;
+      if (!isAdmin) {
+        return NextResponse.json(
+          { error: 'Forbidden: Requires admin role' },
+          { status: 403 }
+        );
+      }
     }
 
     // Parse request body
@@ -66,6 +73,17 @@ export async function POST(request: NextRequest) {
         { error: 'tenant_id is required' },
         { status: 400 }
       );
+    }
+
+    // Tenant boundary check for non-cron requests
+    if (!isCronJob) {
+      const isSuperAdmin = currentUser?.role === 'super_admin' || currentUser?.role === 'hq_super_admin';
+      if (tenant_id !== currentUser?.tenant_id && !isSuperAdmin) {
+        return NextResponse.json(
+          { error: 'Forbidden: Tenant mismatch' },
+          { status: 403 }
+        );
+      }
     }
 
     // Expire old entries

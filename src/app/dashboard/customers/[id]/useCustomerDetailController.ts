@@ -429,7 +429,7 @@ export function useCustomerDetailController() {
         start_date: editBookingData.start_date || null,
         status: editBookingData.status,
         metadata: {
-          ...((activeBooking.metadata as any) || {}),
+          ...((activeBooking.metadata as Record<string, unknown>) || {}),
           gift_sessions: giftSessions,
         },
       });
@@ -557,18 +557,18 @@ export function useCustomerDetailController() {
           id: 1,
           name: activeBooking.package_name || activeBooking.packages?.name || 'Gói dịch vụ',
           sessions: (() => {
-            const gift = Number((activeBooking.metadata as any)?.gift_sessions || 0);
+            const gift = Number((activeBooking.metadata as Record<string, unknown>)?.gift_sessions || 0);
             return Math.max(0, (activeBooking.total_sessions || 15) - gift);
           })(),
           unitPrice: (() => {
-            const gift = Number((activeBooking.metadata as any)?.gift_sessions || 0);
+            const gift = Number((activeBooking.metadata as Record<string, unknown>)?.gift_sessions || 0);
             const paidSessions = Math.max(1, (activeBooking.total_sessions || 15) - gift);
             return Math.round((activeBooking.full_price || 0) / paidSessions);
           })(),
           total: activeBooking.full_price || 0,
           discountNote: (() => {
             const disc = activeBooking.discount_percent || 0;
-            const gift = (activeBooking.metadata as any)?.gift_sessions || 0;
+            const gift = Number((activeBooking.metadata as Record<string, unknown>)?.gift_sessions) || 0;
             if (disc > 0 && gift > 0) return `Giảm ${disc}% + Tặng ${gift} buổi`;
             if (disc > 0) return `Giảm ${disc}%`;
             if (gift > 0) return `Tặng ${gift} buổi`;
@@ -657,7 +657,7 @@ export function useCustomerDetailController() {
         revenues: booking.revenue,
       });
       const disc = booking.discount_percent || 0;
-      const gift = (booking.metadata as Record<string, unknown>)?.gift_sessions as number || 0;
+      const gift = Number((booking.metadata as Record<string, unknown>)?.gift_sessions) || 0;
       const discountNote = (() => {
         if (disc > 0 && gift > 0) return `Giảm ${disc}% + Tặng ${gift} buổi`;
         if (disc > 0) return `Giảm ${disc}%`;
@@ -669,11 +669,11 @@ export function useCustomerDetailController() {
         id: idx + 1,
         name: booking.package_name || booking.packages?.name || 'Gói dịch vụ',
         sessions: (() => {
-          const giftSess = Number((booking.metadata as any)?.gift_sessions || 0);
+          const giftSess = Number((booking.metadata as Record<string, unknown>)?.gift_sessions || 0);
           return Math.max(0, (booking.total_sessions || 1) - giftSess);
         })(),
         unitPrice: (() => {
-          const giftSess = Number((booking.metadata as any)?.gift_sessions || 0);
+          const giftSess = Number((booking.metadata as Record<string, unknown>)?.gift_sessions || 0);
           const paidSess = Math.max(1, (booking.total_sessions || 1) - giftSess);
           return Math.round((booking.full_price || 0) / paidSess);
         })(),
@@ -821,7 +821,7 @@ export function useCustomerDetailController() {
   const handleOpenEditBooking = useCallback(() => {
     if (!activeBooking) return;
 
-    const giftSessions = (activeBooking.metadata as any)?.gift_sessions || 0;
+    const giftSessions = Number((activeBooking.metadata as Record<string, unknown>)?.gift_sessions) || 0;
 
     setEditBookingData({
       package_name: activeBooking.package_name || activeBooking.packages?.name || '',

@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
 import { getWaitlistStats } from '@/services/waitlist/waitlist-service';
+import { getCurrentUser } from '@/services/user-actions';
 
 /**
  * GET /api/waitlist/stats
@@ -42,10 +43,8 @@ import { getWaitlistStats } from '@/services/waitlist/waitlist-service';
 export async function GET(request: NextRequest) {
   try {
     // Authentication check
-    const supabase = createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-    if (authError || !user) {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -61,6 +60,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         { error: 'tenant_id is required' },
         { status: 400 }
+      );
+    }
+
+    // Tenant boundary check: standard users cannot query other tenants
+    const isSuperAdmin = currentUser.role === 'super_admin' || currentUser.role === 'hq_super_admin';
+    if (tenant_id !== currentUser.tenant_id && !isSuperAdmin) {
+      return NextResponse.json(
+        { error: 'Forbidden: Tenant mismatch' },
+        { status: 403 }
       );
     }
 

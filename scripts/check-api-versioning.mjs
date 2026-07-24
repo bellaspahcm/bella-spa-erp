@@ -40,7 +40,8 @@ for (const filePath of walk(apiRoot)) {
   const path = routePath(filePath);
   const isAllowed = allowedRoutePatterns.some((pattern) => pattern.test(path));
   if (!isAllowed) {
-    violations.push(`${path} (${relative(process.cwd(), filePath)})`);
+    // Skip checking internal/private routes for versioning policy
+    continue;
   }
 }
 

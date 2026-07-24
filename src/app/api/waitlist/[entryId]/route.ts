@@ -15,6 +15,7 @@ import {
   updateWaitlistEntry, 
   removeFromWaitlist 
 } from '@/services/waitlist/waitlist-service';
+import { getCurrentUser } from '@/services/user-actions';
 
 /**
  * GET /api/waitlist/[entryId]
@@ -27,10 +28,9 @@ export async function GET(
 ) {
   try {
     // Authentication check
-    const supabase = createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const currentUser = await getCurrentUser();
 
-    if (authError || !user) {
+    if (!currentUser) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -53,6 +53,15 @@ export async function GET(
       return NextResponse.json(
         { error: 'Waitlist entry not found' },
         { status: 404 }
+      );
+    }
+
+    // Verify tenant boundary
+    const isSuperAdmin = currentUser.role === 'super_admin' || currentUser.role === 'hq_super_admin';
+    if (entry.tenant_id !== currentUser.tenant_id && !isSuperAdmin) {
+      return NextResponse.json(
+        { error: 'Forbidden: Tenant mismatch' },
+        { status: 403 }
       );
     }
 
@@ -86,10 +95,9 @@ export async function PATCH(
 ) {
   try {
     // Authentication check
-    const supabase = createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const currentUser = await getCurrentUser();
 
-    if (authError || !user) {
+    if (!currentUser) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -102,6 +110,24 @@ export async function PATCH(
       return NextResponse.json(
         { error: 'entryId is required' },
         { status: 400 }
+      );
+    }
+
+    // Fetch entry to verify tenant ownership before updating
+    const entry = await getWaitlistEntry(entryId);
+    if (!entry) {
+      return NextResponse.json(
+        { error: 'Waitlist entry not found' },
+        { status: 404 }
+      );
+    }
+
+    // Verify tenant boundary
+    const isSuperAdmin = currentUser.role === 'super_admin' || currentUser.role === 'hq_super_admin';
+    if (entry.tenant_id !== currentUser.tenant_id && !isSuperAdmin) {
+      return NextResponse.json(
+        { error: 'Forbidden: Tenant mismatch' },
+        { status: 403 }
       );
     }
 
@@ -130,7 +156,7 @@ export async function PATCH(
 
     // If status = cancelled, add removed_by_user_id
     if (body.status === 'cancelled') {
-      updates.removed_by_user_id = user.id;
+      updates.removed_by_user_id = currentUser.id;
     }
 
     // Update entry
@@ -170,10 +196,9 @@ export async function DELETE(
 ) {
   try {
     // Authentication check
-    const supabase = createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const currentUser = await getCurrentUser();
 
-    if (authError || !user) {
+    if (!currentUser) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -189,12 +214,30 @@ export async function DELETE(
       );
     }
 
+    // Fetch entry to verify tenant ownership before deleting
+    const entry = await getWaitlistEntry(entryId);
+    if (!entry) {
+      return NextResponse.json(
+        { error: 'Waitlist entry not found' },
+        { status: 404 }
+      );
+    }
+
+    // Verify tenant boundary
+    const isSuperAdmin = currentUser.role === 'super_admin' || currentUser.role === 'hq_super_admin';
+    if (entry.tenant_id !== currentUser.tenant_id && !isSuperAdmin) {
+      return NextResponse.json(
+        { error: 'Forbidden: Tenant mismatch' },
+        { status: 403 }
+      );
+    }
+
     // Get reason from query params
     const searchParams = request.nextUrl.searchParams;
     const reason = searchParams.get('reason') || 'Removed by admin';
 
     // Remove from waitlist (soft delete)
-    const result = await removeFromWaitlist(entryId, reason, user.id);
+    const result = await removeFromWaitlist(entryId, reason, currentUser.id);
 
     if (!result.success) {
       return NextResponse.json(

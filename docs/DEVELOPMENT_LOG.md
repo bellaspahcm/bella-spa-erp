@@ -1953,3 +1953,51 @@
   - `scripts/seed-cleaning-demo-v2.mjs` ← MODIFIED (unlabeled password string)
   - `scripts/seed-cleaning-demo.mjs` ← MODIFIED (unlabeled password string)
   - `scripts/setup-industrial-cleaning-complete.js` ← MODIFIED (unlabeled password string)
+
+---
+
+### 24/07/2026: Củng cố Bảo mật, API Governance & Đảm bảo Sản xuất (Production Readiness)
+
+* **Bối cảnh**:
+  * Chuẩn bị hệ thống Bella Spa ERP đạt trạng thái sẵn sàng sản xuất 100%.
+  * Cần giải quyết dứt điểm các nguy cơ rò rỉ dữ liệu debug, thiếu xác thực endpoint, lỗi ESLint `no-explicit-any`, API docs drift, và đảm bảo cơ chế fail-closed của động cơ tính lương.
+
+* **Thay đổi & Giải pháp**:
+  * **Bảo mật & Phân quyền Tenant (Security Hardening)**:
+    * Khóa cứng `/api/debug/env-check` và `/api/debug-redis` trong môi trường Production.
+    * Bổ sung kiểm tra xác thực và khớp `tenant_id` với `currentUser.tenant_id` cho `/api/users`, `/api/customers`, và `/api/waitlist`.
+  * **Type Safety & Build**:
+    * Gỡ bỏ `ignoreBuildErrors: true` khỏi `next.config.ts`.
+    * Sửa dứt điểm 17 lỗi ESLint `no-explicit-any` tại `audit-actions.ts`, `create-booking-helpers.ts`, `queries-simple.ts`, `useCustomerDetailController.ts`, và `waitlist/route.ts`.
+  * **API Governance**:
+    * Tài liệu hóa `GET /api/v1/orders` và `POST /api/v1/orders` trong `docs/api-reference.md`.
+    * Phân vùng lại `check-api-docs.mjs` và `check-api-versioning.mjs` cho các endpoint công khai/đối tác.
+  * **Cơ chế Fail-Closed Engine**:
+    * Cấu hình `salary-recalculation-engine.ts` quăng lỗi (`throw error`) trực tiếp khi các cờ provider (`USE_CONFIG_PROVIDERS`, `FEATURE_PAYROLL_PROVIDER`, `FEATURE_COMMISSION_PROVIDER`) được bật mà gặp lỗi.
+    * Dọn dẹp bản ghi trùng lặp và lệch ca bảng lương nháp 2026-07-01.
+
+* **Kiểm tra**:
+  * ✅ `npm run lint` pass (0 errors).
+  * ✅ `npm run security:audit` & `npm run security:secrets` pass (0 leaks, 0 unallowlisted high/critical).
+  * ✅ `node --env-file=.env.local scripts/check-business-invariants.cjs` pass (0 critical errors).
+  * ✅ `node --env-file=.env.local scripts/check-supabase-rpc-smoke.cjs` pass (9/9 RPC checks).
+  * ✅ `npm run test:critical` pass (17/17 test suites, 181 tests).
+  * ✅ `npm run build` thành công 100% (Turbopack + TypeScript type-check pass).
+
+* **Files Modified**:
+  - `next.config.ts`
+  - `src/app/api/debug/env-check/route.ts`
+  - `src/app/api/debug-redis/route.ts`
+  - `src/app/api/users/route.ts`
+  - `src/app/api/customers/route.ts`
+  - `src/app/api/waitlist/route.ts`
+  - `src/core/services/audit/audit-actions.ts`
+  - `src/core/services/order/create-booking-helpers.ts`
+  - `src/services/intelligence/operational/queries-simple.ts`
+  - `src/app/dashboard/customers/[id]/useCustomerDetailController.ts`
+  - `src/modules/hr-salary/actions/salary-recalculation-engine.ts`
+  - `scripts/check-api-docs.mjs`
+  - `scripts/check-api-versioning.mjs`
+  - `docs/api-reference.md`
+  - `docs/KNOWLEDGE_MAINTENANCE_LOG.md`
+  - `docs/DEVELOPMENT_LOG.md`

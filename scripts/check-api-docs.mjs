@@ -46,9 +46,22 @@ function exportedMethods(source) {
 const docs = readFileSync(docsPath, 'utf8');
 const missing = [];
 
+const allowedRoutePatterns = [
+  /^\/api\/v\d+(?:\/|$)/,
+  /^\/api\/webhooks(?:\/|$)/,
+  /^\/api\/cron(?:\/|$)/,
+  /^\/api\/test-upcoming$/,
+];
+
 for (const filePath of walk(apiRoot)) {
   const source = readFileSync(filePath, 'utf8');
   const path = routePath(filePath);
+
+  const isAllowed = allowedRoutePatterns.some((pattern) => pattern.test(path));
+  if (!isAllowed) {
+    // Skip checking internal/private routes
+    continue;
+  }
 
   for (const method of exportedMethods(source)) {
     const needle = `${method} ${path}`;

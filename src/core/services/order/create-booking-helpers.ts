@@ -364,7 +364,7 @@ export async function buildBookingPayload(params: {
     assigned_ktv_id: validatedData.assigned_ktv_id || null,
     preferred_time: validatedData.preferred_time || null,
     tenant_id: tenantId,
-    metadata: (validatedData.metadata as any) || null,
+    metadata: (validatedData.metadata as Database['public']['Tables']['bookings']['Insert']['metadata']) || null,
   };
 
   return payload;
@@ -773,7 +773,7 @@ export async function invokeAdapterValidation(
   };
 
   const coreOrder: CoreBookingOrder = {
-    id: (bookingPayload as any).id || '', // Support editing existing bookings
+    id: (bookingPayload as { id?: string }).id || '', // Support editing existing bookings
     tenantId: context.tenantId,
     moduleId: (context.enabledModules[0] || 'spa') as ModuleId,
     customerId: bookingPayload.customer_id || '',

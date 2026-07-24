@@ -435,7 +435,10 @@ export async function recalculateAndSaveSalaryRecordEngine(
       });
     }
   } catch (error) {
-    console.error('[PROVIDER_INTEGRATION] Commission Provider failed (non-blocking):', error);
+    console.error('[PROVIDER_INTEGRATION] Commission Provider failed:', error);
+    if (USE_CONFIG_PROVIDERS) {
+      throw error;
+    }
   }
 
   // leaderboard + avgRating already computed above (hoisted for provider contexts)
@@ -505,7 +508,10 @@ export async function recalculateAndSaveSalaryRecordEngine(
       });
     }
   } catch (error) {
-    console.error('[PROVIDER_INTEGRATION] Attendance Provider failed (non-blocking):', error);
+    console.error('[PROVIDER_INTEGRATION] Attendance Provider failed:', error);
+    if (USE_CONFIG_PROVIDERS) {
+      throw error;
+    }
   }
 
   const { data: kpiRecords, error: kpiError } = await supabase
@@ -564,8 +570,10 @@ export async function recalculateAndSaveSalaryRecordEngine(
       });
     }
   } catch (error) {
-    console.error('[PROVIDER_INTEGRATION] KPI Provider failed (non-blocking):', error);
-    // Non-blocking: old logic continues
+    console.error('[PROVIDER_INTEGRATION] KPI Provider failed:', error);
+    if (USE_CONFIG_PROVIDERS) {
+      throw error;
+    }
   }
 
   // Query commission data (Task 28-32: Advanced Commission System)
@@ -720,8 +728,8 @@ export async function recalculateAndSaveSalaryRecordEngine(
         execution_time: payrollProviderResult.calculation_metadata.executionTime,
       });
     } catch (error) {
-      console.error('[PAYROLL_PROVIDER] Unified provider failed (non-blocking):', error);
-      // Non-blocking: fallback to old logic
+      console.error('[PAYROLL_PROVIDER] Unified provider failed:', error);
+      throw error;
     }
   }
 
@@ -941,8 +949,8 @@ export async function recalculateAndSaveSalaryRecordEngine(
         execution_time: commissionAdapterResult.calculation_metadata.executionTime,
       });
     } catch (error) {
-      console.error('[COMMISSION_PROVIDER] Unified provider failed (non-blocking):', error);
-      // Non-blocking: fallback to old logic
+      console.error('[COMMISSION_PROVIDER] Unified provider failed:', error);
+      throw error;
     }
   }
 

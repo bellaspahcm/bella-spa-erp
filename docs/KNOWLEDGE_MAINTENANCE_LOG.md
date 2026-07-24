@@ -652,3 +652,27 @@ Chúng tôi đã đưa 3 nguyên tắc vàng chống lỗi ngầm vào các file
 - **Tính năng điều hướng & chuyển giao dữ liệu**: Xác minh 100% hoạt động của chuông thông báo (khi click sẽ chuyển hướng chính xác đến `/dashboard/sessions?bookingId=[booking_id]`, tự động mở bung popup liệu trình để admin đối soát tức thì) và cơ chế tự động đánh dấu đã đọc.
 - **Git & Vercel**: Stage, commit và push thành công toàn bộ mã nguồn lên nhánh `main` của GitHub repo, kích hoạt CI/CD triển khai an toàn lên Vercel.
 
+## 2026-07-24: Production Readiness, Security Hardening, API Governance & Fail-Closed Engine Safeguards
+
+### 1. Bảo mật & Chống rò rỉ dữ liệu Tenant (Security Hardening)
+- **Chặn route Debug công khai trong Production**: Khóa cứng `/api/debug/env-check` và `/api/debug-redis`, bắt buộc phải có quyền Admin và trả lỗi `404` / `403` trực tiếp nếu gọi từ bên ngoài trong môi trường Production.
+- **Rào chắn Tenant Boundary**: Cập nhật `/api/users`, `/api/customers`, và `/api/waitlist` để bắt buộc kiểm tra phiên đăng nhập và xác thực khớp `tenant_id` với `currentUser.tenant_id`.
+
+### 2. Chuẩn hóa Type Safety & Next.js Compiler
+- **Khôi phục kiểm tra TypeScript nghiêm ngặt**: Gỡ bỏ `ignoreBuildErrors: true` khỏi `next.config.ts`.
+- **Khắc phục 17 lỗi ESLint `no-explicit-any`**: Xử lý toàn bộ vi phạm ép kiểu lỏng lẻo tại `audit-actions.ts`, `create-booking-helpers.ts`, `queries-simple.ts`, `useCustomerDetailController.ts` và `waitlist/route.ts`.
+
+### 3. API Governance & Tài liệu hóa Endpoint
+- **Tài liệu hóa API Đơn hàng**: Bổ sung chi tiết `GET /api/v1/orders` và `POST /api/v1/orders` vào [api-reference.md](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/docs/api-reference.md).
+- **Phân vùng Checker tự động**: Cập nhật `scripts/check-api-docs.mjs` và `scripts/check-api-versioning.mjs` để tập trung kiểm soát các nhóm endpoint công khai/đối tác (`/api/v1/*`, `/api/webhooks/*`, `/api/cron/*`, `/api/test-upcoming`).
+
+### 4. Cơ chế Tính Lương Fail-Closed & Dọn dẹp Invariant CSDL
+- **Quy tắc Fail-Closed Engine**: Cấu hình `salary-recalculation-engine.ts` tự động quăng lỗi (`throw error`) ngay lập tức nếu các cờ tính năng provider (`USE_CONFIG_PROVIDERS`, `FEATURE_PAYROLL_PROVIDER`, `FEATURE_COMMISSION_PROVIDER`) được bật mà xảy ra lỗi tính toán, ngăn chặn việc nuốt lỗi CSDL hoặc quay về logic cũ khi provider active.
+- **Dọn dẹp Bảng lương 2026-07-01**: Khắc phục lỗi lệch số ca và trùng bản ghi bảng lương nháp trên database.
+
+### 5. Nghiệm thu Toàn bộ Validation Gates (Full Verification)
+- **Lint**: `npm run lint` → 0 lỗi (`0 errors, 1003 warnings`).
+- **Bảo mật & Secret Leaks**: `npm run security:audit` & `npm run security:secrets` → Đạt 100%.
+- **Bất biến CSDL & RPC Smoke**: 9/9 RPC checks passed, 0 lỗi bất biến tài chính.
+- **Test Suites Core**: 17/17 test suites (181 tests) xanh 100%.
+- **Next.js Production Build**: `npm run build` thành công hoàn toàn không có lỗi TypeScript hay Turbopack bundling.

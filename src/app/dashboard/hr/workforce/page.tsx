@@ -46,6 +46,14 @@ import {
 
 type PeriodType = 'month' | 'quarter' | 'year';
 
+type WorkforceDataPayload = WorkforceAnalytics[] | {
+  departmentBreakdown?: Array<{ department?: string | null; employeeCount?: number | null }>;
+  totalEmployees?: number;
+  activeEmployees?: number;
+  turnoverRate?: number;
+  avgWorkingDaysPerMonth?: number;
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Main Component
 // ─────────────────────────────────────────────────────────────────────────────
@@ -59,7 +67,7 @@ export default function WorkforceAnalyticsDashboard() {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // API Response state (can be array or single object depending on simplified query service)
-  const [workforceData, setWorkforceData] = useState<IntelligenceResponse<any> | null>(null);
+  const [workforceData, setWorkforceData] = useState<IntelligenceResponse<WorkforceDataPayload> | null>(null);
 
   // ───────────────────────────────────────────────────────────────────────────
   // Initialize tenant and check authorization
@@ -168,11 +176,17 @@ export default function WorkforceAnalyticsDashboard() {
     }
     
     // Single object format returned by simplified queries-simple
-    const s = workforceData.data;
+    const s = workforceData.data as {
+      departmentBreakdown?: Array<{ department?: string | null; employeeCount?: number | null }>;
+      totalEmployees?: number;
+      activeEmployees?: number;
+      turnoverRate?: number;
+      avgWorkingDaysPerMonth?: number;
+    };
     const deptList = s.departmentBreakdown || [];
     
     if (deptList.length > 0) {
-      return deptList.map((d: any) => ({
+      return deptList.map((d: { department?: string | null; employeeCount?: number | null }) => ({
         tenantId: tenantId || '',
         month: new Date().toISOString().slice(0, 7),
         role: d.department || 'Staff',
@@ -182,7 +196,7 @@ export default function WorkforceAnalyticsDashboard() {
         totalEverHired: s.totalEmployees || 0,
         turnoverRatePct: s.turnoverRate || 0,
         avgTenureMonths: s.avgWorkingDaysPerMonth || 0,
-        roleDistributionPct: s.totalEmployees > 0 ? (d.employeeCount / s.totalEmployees) * 100 : 0,
+        roleDistributionPct: s.totalEmployees && s.totalEmployees > 0 ? (Number(d.employeeCount || 0) / s.totalEmployees) * 100 : 0,
         computedAt: new Date().toISOString(),
       }));
     }
@@ -209,7 +223,12 @@ export default function WorkforceAnalyticsDashboard() {
     
     // If it was a single object, aggregate dataArray to represent current metrics
     if (!Array.isArray(workforceData?.data)) {
-      const s = workforceData?.data;
+      const s = workforceData?.data as {
+        totalEmployees?: number;
+        activeEmployees?: number;
+        turnoverRate?: number;
+        avgWorkingDaysPerMonth?: number;
+      };
       return {
         month: new Date().toISOString().slice(0, 7),
         currentHeadcount: s.totalEmployees || s.activeEmployees || 0,
