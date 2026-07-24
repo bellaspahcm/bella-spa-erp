@@ -165,13 +165,11 @@ export function WaitlistTableRow({ entry, onRefresh }: WaitlistTableRowProps) {
       {/* Actions */}
       <TableCell className="px-6 py-4 text-right">
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              disabled={isProcessing}
-              className="inline-flex items-center rounded-lg p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-slate-100 disabled:opacity-50 transition-colors"
-            >
-              <MoreVertical className="h-5 w-5" />
-            </button>
+          <DropdownMenuTrigger
+            disabled={isProcessing}
+            className="inline-flex items-center rounded-lg p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-slate-100 disabled:opacity-50 transition-colors"
+          >
+            <MoreVertical className="h-5 w-5" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-[#1c1b19] border border-slate-200/60 dark:border-slate-800 shadow-lg">
             <DropdownMenuItem
