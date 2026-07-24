@@ -103,7 +103,7 @@ export async function addToWaitlist(
     // 3. Fetch customer details (for name, tier)
     const { data: customer, error: customerError } = await supabase
       .from('customers')
-      .select('id, name_mother, phone')
+      .select('id, name_mother, phone, status')
       .eq('id', input.customer_id)
       .single();
 
@@ -116,14 +116,33 @@ export async function addToWaitlist(
       };
     }
 
-    // 4. Fetch customer tier from membership_records (vip/loyal/new)
-    const { data: membership, error: membershipError } = await supabase
+    // 4. Calculate customer waitlist tier based on status, bookings count and membership
+    const { count: completedBookingsCount } = await supabase
+      .from('bookings')
+      .select('*', { count: 'exact', head: true })
+      .eq('customer_id', input.customer_id)
+      .eq('status', 'completed');
+
+    const { data: membership } = await supabase
       .from('membership_records')
       .select('tier')
       .eq('customer_id', input.customer_id)
-      .single();
+      .maybeSingle();
 
-    const customerTier = (membership?.tier as CustomerTier) || 'new';
+    let customerTier: 'vip' | 'loyal' | 'new' = 'new';
+    const mTier = membership?.tier?.toLowerCase();
+    
+    if (mTier === 'vip' || mTier === 'gold' || mTier === 'platinum' || mTier === 'diamond') {
+      customerTier = 'vip';
+    } else if (mTier === 'silver' || mTier === 'loyal') {
+      customerTier = 'loyal';
+    } else {
+      if (customer.status === 'vip') {
+        customerTier = 'vip';
+      } else if ((completedBookingsCount || 0) >= 5) {
+        customerTier = 'loyal';
+      }
+    }
 
     // 5. Fetch package details (for name)
     const { data: packageData, error: packageError } = await supabase
