@@ -88,7 +88,7 @@ export function BookingsTimelineDateRibbon({
         </div>
       </div>
 
-      <div className="flex max-w-full items-center gap-2 overflow-x-auto no-scrollbar py-1">
+      <div className="flex max-w-full items-center gap-2 overflow-x-auto no-scrollbar py-2">
         {weekDays.map((date, idx) => {
           const selected = isSameDay(date, selectedDate);
           const dateIsToday = isSameDay(date, today);
