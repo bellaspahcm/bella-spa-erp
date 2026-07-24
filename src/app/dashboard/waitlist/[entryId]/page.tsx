@@ -1,16 +1,17 @@
 'use client';
 
-import { Suspense } from 'react';
+import React, { Suspense } from 'react';
 import { Loader2 } from 'lucide-react';
 import { WaitlistDetailContent } from './components/WaitlistDetailContent';
 
 interface WaitlistDetailPageProps {
-  params: {
+  params: Promise<{
     entryId: string;
-  };
+  }>;
 }
 
 export default function WaitlistDetailPage({ params }: WaitlistDetailPageProps) {
+  const unwrappedParams = React.use(params);
   return (
     <Suspense
       fallback={
@@ -19,7 +20,7 @@ export default function WaitlistDetailPage({ params }: WaitlistDetailPageProps) 
         </div>
       }
     >
-      <WaitlistDetailContent entryId={params.entryId} />
+      <WaitlistDetailContent entryId={unwrappedParams.entryId} />
     </Suspense>
   );
 }
