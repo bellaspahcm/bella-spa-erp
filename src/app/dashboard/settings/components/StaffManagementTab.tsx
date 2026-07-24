@@ -14,17 +14,19 @@ import type { StaffRecord } from "@/modules/spa/types/employee";
 import { useModuleVocabulary } from "@/hooks/useModuleVocabulary";
 import { AnimatePresence,motion } from "framer-motion";
 import {
-Mail,
-Pencil,
-Shield,
-ShieldAlert,
-Sparkles,
-Star,
-Trash2,
-User,
-UserPlus,
-X,
-Zap,
+  Check,
+  Copy,
+  Mail,
+  Pencil,
+  Shield,
+  ShieldAlert,
+  Sparkles,
+  Star,
+  Trash2,
+  User,
+  UserPlus,
+  X,
+  Zap,
 } from "lucide-react";
 import React,{ useEffect,useState } from "react";
 import { toast } from "sonner";
@@ -40,6 +42,15 @@ export default function StaffManagementTab() {
     email: "",
     role: "ktv",
   });
+
+  const [createdStaffResult, setCreatedStaffResult] = useState<{
+    full_name: string;
+    email: string;
+    password?: string;
+    emailSent?: boolean;
+    reason?: string;
+  } | null>(null);
+  const [copiedPwd, setCopiedPwd] = useState(false);
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -117,29 +128,64 @@ export default function StaffManagementTab() {
       if (result.error) {
         toast.error("Lỗi: " + result.error);
       } else {
-        // Show the default password to the admin so they can pass it on.
-        // Toast stays open longer so it's not missed.
         const pwd = (result as { defaultPassword?: string }).defaultPassword;
         const emailSent = (result as { emailSent?: boolean }).emailSent;
         const emailError = (result as { emailError?: string }).emailError;
 
         if (pwd) {
-          if (emailSent) {
-            toast.success(
-              `Đã thêm ${newStaff.full_name} và gửi mật khẩu tạm qua email thành công! Mật khẩu: ${pwd}`,
-              { duration: 12000 }
-            );
-          } else {
-            // Email was not sent (e.g. SMTP not configured)
-            let reason = "Hệ thống chưa cấu hình gửi mail";
+          let reason = "";
+          if (!emailSent) {
+            reason = "Hệ thống chưa cấu hình gửi mail tự động";
             if (emailError && emailError !== "SMTP_CONFIG_MISSING") {
-              reason = `Lỗi gửi mail: ${emailError}`;
+              if (emailError.includes("534-5.7.9") || emailError.includes("Invalid login")) {
+                reason = "Tài khoản Gmail SMTP yêu cầu Mật khẩu ứng dụng (App Password)";
+              } else {
+                reason = `Lỗi gửi mail: ${emailError.substring(0, 60)}`;
+              }
             }
-            toast.success(
-              `Đã thêm ${newStaff.full_name} (${reason}). Mật khẩu tạm thời: ${pwd} (vui lòng copy để báo cho nhân viên).`,
-              { duration: 16000 }
-            );
           }
+
+          setCreatedStaffResult({
+            full_name: newStaff.full_name,
+            email: newStaff.email,
+            password: pwd,
+            emailSent,
+            reason,
+          });
+          setCopiedPwd(false);
+
+          toast.success(
+            () => (
+              <div className="flex flex-col gap-2 p-1">
+                <div className="font-bold text-slate-900 text-sm flex items-center justify-between">
+                  <span>Đã thêm nhân sự {newStaff.full_name}!</span>
+                </div>
+                {reason && (
+                  <p className="text-xs text-amber-700 font-medium">
+                    ⚠️ {reason}
+                  </p>
+                )}
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-xs font-bold text-slate-500">Mật khẩu:</span>
+                  <code className="px-2.5 py-1 bg-slate-100 text-rose-600 font-mono font-bold text-xs rounded border border-slate-200 select-all">
+                    {pwd}
+                  </code>
+                  <button
+                    type="button"
+                    onClick={(evt) => {
+                      evt.stopPropagation();
+                      navigator.clipboard.writeText(pwd);
+                      toast.success("Đã sao chép mật khẩu!", { id: "copy-toast" });
+                    }}
+                    className="px-2.5 py-1 bg-emerald-600 text-white text-xs font-bold rounded flex items-center gap-1 hover:bg-emerald-700 transition-all active:scale-95 cursor-pointer shadow-sm"
+                  >
+                    <Copy className="w-3.5 h-3.5" /> Copy
+                  </button>
+                </div>
+              </div>
+            ),
+            { duration: 20000 }
+          );
         } else {
           toast.success("Đã thêm nhân viên " + newStaff.full_name);
         }
@@ -147,8 +193,9 @@ export default function StaffManagementTab() {
         setNewStaff({ full_name: "", email: "", role: "ktv" });
         fetchUsers();
       }
-    } catch {
-      toast.error("Đã xảy ra lỗi khi thêm nhân sự");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error("Đã xảy ra lỗi khi thêm nhân sự: " + msg);
     } finally {
       setIsAdding(false);
     }
@@ -182,8 +229,9 @@ export default function StaffManagementTab() {
         setIsEditModalOpen(false);
         fetchUsers();
       }
-    } catch {
-      toast.error("Đã xảy ra lỗi khi cập nhật");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error("Đã xảy ra lỗi khi cập nhật: " + msg);
     } finally {
       setIsUpdating(false);
     }
@@ -200,8 +248,9 @@ export default function StaffManagementTab() {
         setIsDeleteModalOpen(false);
         fetchUsers();
       }
-    } catch {
-      toast.error("Đã xảy ra lỗi khi xóa");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error("Đã xảy ra lỗi khi xóa: " + msg);
     } finally {
       setIsDeleting(false);
     }
@@ -729,6 +778,98 @@ export default function StaffManagementTab() {
                   <span>Xóa ngay</span>
                 </button>
               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Success Modal showing Password with 1-click Copy */}
+      <AnimatePresence>
+        {createdStaffResult && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 md:p-10">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setCreatedStaffResult(null)}
+              className="absolute inset-0 bg-[#1A0A0E]/70 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="bg-white w-full max-w-lg rounded-[3rem] shadow-2xl relative z-10 overflow-hidden flex flex-col border border-white p-8 text-center"
+            >
+              <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Sparkles className="w-8 h-8" />
+              </div>
+
+              <h2 className="text-2xl font-black text-slate-900 mb-1 uppercase tracking-tight">
+                Thêm nhân sự thành công!
+              </h2>
+              <p className="text-sm text-slate-500 font-medium mb-6">
+                Đã khởi tạo tài khoản cho <strong className="text-slate-800">{createdStaffResult.full_name}</strong> ({createdStaffResult.email})
+              </p>
+
+              {createdStaffResult.reason && (
+                <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl text-left text-xs text-amber-800 font-medium leading-relaxed flex items-start gap-2">
+                  <span className="text-base">⚠️</span>
+                  <div>
+                    <strong>Lưu ý về gửi mail:</strong> {createdStaffResult.reason}. Vui lòng sao chép mật khẩu bên dưới và bàn giao trực tiếp cho nhân viên.
+                  </div>
+                </div>
+              )}
+
+              {createdStaffResult.password && (
+                <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 mb-6 space-y-3">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
+                    Mật khẩu tạm thời của nhân viên
+                  </label>
+                  <div className="flex items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-slate-200 shadow-inner">
+                    <code className="text-base md:text-lg font-mono font-bold text-rose-600 tracking-wider break-all select-all px-2">
+                      {createdStaffResult.password}
+                    </code>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (createdStaffResult.password) {
+                          navigator.clipboard.writeText(createdStaffResult.password);
+                          setCopiedPwd(true);
+                          toast.success("Đã sao chép mật khẩu vào bộ nhớ tạm!");
+                          setTimeout(() => setCopiedPwd(false), 3000);
+                        }
+                      }}
+                      className={cn(
+                        "px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all active:scale-95 shrink-0 shadow-md cursor-pointer",
+                        copiedPwd
+                          ? "bg-emerald-600 text-white"
+                          : "bg-primary text-white hover:bg-primary-hover"
+                      )}
+                    >
+                      {copiedPwd ? (
+                        <>
+                          <Check className="w-4 h-4" /> Đã sao chép
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-4 h-4" /> Sao chép mật khẩu
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-slate-400 italic">
+                    Nhân viên sẽ được yêu cầu đổi mật khẩu khi đăng nhập lần đầu.
+                  </p>
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setCreatedStaffResult(null)}
+                className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-slate-800 transition-all active:scale-95 cursor-pointer"
+              >
+                Hoàn tất & Đóng
+              </button>
             </motion.div>
           </div>
         )}

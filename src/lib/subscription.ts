@@ -143,7 +143,7 @@ export async function checkSubscriptionLimit(
       .from('users')
       .select('*', { count: 'exact', head: true })
       .eq('tenant_id', tenantId)
-      .eq('role', 'ktv');
+      .in('role', ['ktv', 'ktv_lead']);
 
     if (error) {
       throw new Error(`[checkSubscriptionLimit] users count failed: ${error.message}`);

@@ -445,150 +445,156 @@ async function rollbackBaseSalaryChange(
 }
 
 export async function createUser(formData: CreateUserInput) {
-  const currentUser = await getCurrentUser();
-  if (!currentUser?.tenant_id) {
-    return { error: 'Khong xac dinh duoc chi nhanh cua nguoi dung hien tai.' };
-  }
-
-  const targetRole = formData.role || 'ktv';
-
-  if (targetRole === 'ktv') {
-    const ktvLimit = await checkSubscriptionLimit(currentUser.tenant_id, 'ktv');
-    if (ktvLimit.isBlocked) {
-      return { error: 'Vượt quá giới hạn nhân sự kỹ thuật viên của gói dịch vụ hiện tại. Vui lòng nâng cấp gói cước.' };
-    }
-  }
-
-  // STEP 1 — Create the Supabase Auth account first so the employee can log in.
-  // Without this, the public.users row was a dead record (no auth → no login).
-  // Pattern mirrors registerNewTenant() in onboarding-actions.ts.
-  const serviceRoleKey = getSupabaseAdminKey();
-  const supabaseUrl = getSupabaseAdminUrl();
-  console.warn('[createUser] env check', {
-    hasAdminKey: !!serviceRoleKey,
-    hasUrl: !!supabaseUrl,
-  });
-
-  if (!serviceRoleKey) {
-    return { error: 'Hệ thống chưa cấu hình SUPABASE_SECRET_KEY/SUPABASE_SERVICE_ROLE_KEY ở Vercel — không thể tạo tài khoản đăng nhập. Vào Vercel → Settings → Environment Variables để thêm.' };
-  }
-  if (!supabaseUrl) {
-    return { error: 'Hệ thống chưa cấu hình NEXT_PUBLIC_SUPABASE_URL — không thể kết nối Supabase.' };
-  }
-
-  const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
-  const supabaseAdmin = createSupabaseClient(
-    supabaseUrl,
-    serviceRoleKey,
-    { auth: { persistSession: false, autoRefreshToken: false } }
-  );
-
-  const temporaryPassword = generateTemporaryPassword();
-
-  const { data: adminData, error: adminError } = await supabaseAdmin.auth.admin.createUser({
-    email: formData.email,
-    password: temporaryPassword,
-    email_confirm: true, // bypass confirmation email (rate limit + UX)
-    user_metadata: { full_name: formData.full_name },
-  });
-
-  console.warn('[createUser] auth.admin.createUser result', {
-    hasUser: !!adminData?.user?.id,
-    authUserId: adminData?.user?.id ?? null,
-    errorMessage: adminError?.message ?? null,
-    errorStatus: (adminError as { status?: number } | null)?.status ?? null,
-  });
-
-  if (adminError) {
-    console.error('[createUser] Auth user creation failed:', adminError);
-    if (adminError.message?.toLowerCase().includes('already') || adminError.message?.includes('registered')) {
-      return { error: 'Email này đã được sử dụng trong hệ thống. Vui lòng sử dụng email khác.' };
-    }
-    return { error: `Không thể tạo tài khoản đăng nhập: ${adminError.message}` };
-  }
-
-  const authUserId = adminData?.user?.id;
-  if (!authUserId) {
-    return { error: 'Tạo tài khoản đăng nhập không thành công (auth user id rỗng).' };
-  }
-
-  // STEP 2 — Insert the profile row with id matching the auth user, so
-  // getCurrentUser()'s primary id lookup (users.id = auth.uid) hits directly.
-  // Uses supabaseAdmin (service role) to bypass any RLS policy that might
-  // restrict cross-user inserts on public.users (id != auth.uid()).
-  const userPayload: UserInsert = {
-    id: authUserId,
-    email: formData.email,
-    full_name: formData.full_name,
-    role: targetRole,
-    status: 'active',
-    tenant_id: currentUser.tenant_id,
-  };
-
-  const { data, error } = await supabaseAdmin
-    .from('users')
-    .insert([userPayload])
-    .select()
-    .single();
-
-  if (error) {
-    // Rollback the auth user so we don't leave an orphan account hanging.
-    const authRollbackError = await rollbackCreatedAuthUser(supabaseAdmin, authUserId);
-    console.error('[createUser] Profile insert failed:', error);
-    const rollbackNote = formatRollbackNotes([
-      ['auth rollback', authRollbackError],
-    ]);
-    if (!rollbackNote && (error.code === '23505' || error.message?.includes('users_email_key'))) {
-      return { error: 'Email này đã được sử dụng trong hệ thống. Vui lòng sử dụng email khác.' };
-    }
-    return { error: `${error.message}${rollbackNote}` };
-  }
-
   try {
-    await recordAuditLog({
-      action: 'INSERT',
-      table_name: 'users',
-      record_id: data.id,
-      new_data: {
-        full_name: formData.full_name,
-        email: formData.email,
-        role: targetRole,
-      },
+    const currentUser = await getCurrentUser();
+    if (!currentUser?.tenant_id) {
+      return { error: 'Không xác định được chi nhánh của người dùng hiện tại.' };
+    }
+
+    const targetRole = (formData.role || 'ktv').trim().toLowerCase();
+
+    if (targetRole === 'ktv' || targetRole === 'ktv_lead') {
+      const ktvLimit = await checkSubscriptionLimit(currentUser.tenant_id, 'ktv');
+      if (ktvLimit.isBlocked) {
+        return { error: 'Vượt quá giới hạn nhân sự kỹ thuật viên của gói dịch vụ hiện tại. Vui lòng nâng cấp gói cước.' };
+      }
+    }
+
+    // STEP 1 — Create the Supabase Auth account first so the employee can log in.
+    // Without this, the public.users row was a dead record (no auth → no login).
+    // Pattern mirrors registerNewTenant() in onboarding-actions.ts.
+    const serviceRoleKey = getSupabaseAdminKey();
+    const supabaseUrl = getSupabaseAdminUrl();
+    console.warn('[createUser] env check', {
+      hasAdminKey: !!serviceRoleKey,
+      hasUrl: !!supabaseUrl,
     });
-  } catch (auditError: unknown) {
-    const profileRollbackError = await rollbackCreatedUserProfile(supabaseAdmin, authUserId);
-    const authRollbackError = await rollbackCreatedAuthUser(supabaseAdmin, authUserId);
-    const rollbackNote = formatRollbackNotes([
-      ['profile rollback', profileRollbackError],
-      ['auth rollback', authRollbackError],
-    ]);
-    return { error: `Failed to record user create audit log: ${getErrorMessage(auditError)}${rollbackNote}` };
-  }
 
-  await safeRevalidatePath('/dashboard/settings');
+    if (!serviceRoleKey) {
+      return { error: 'Hệ thống chưa cấu hình SUPABASE_SECRET_KEY/SUPABASE_SERVICE_ROLE_KEY ở Vercel — không thể tạo tài khoản đăng nhập. Vào Vercel → Settings → Environment Variables để thêm.' };
+    }
+    if (!supabaseUrl) {
+      return { error: 'Hệ thống chưa cấu hình NEXT_PUBLIC_SUPABASE_URL — không thể kết nối Supabase.' };
+    }
 
-  let emailSent = false;
-  let emailError: string | undefined;
-
-  try {
-    const mailResult = await sendTemporaryPasswordEmail(
-      formData.email,
-      formData.full_name,
-      temporaryPassword
+    const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
+    const supabaseAdmin = createSupabaseClient(
+      supabaseUrl,
+      serviceRoleKey,
+      { auth: { persistSession: false, autoRefreshToken: false } }
     );
-    emailSent = mailResult.success;
-    emailError = mailResult.error;
-  } catch (err: any) {
-    console.error('[createUser] Error calling sendTemporaryPasswordEmail:', err);
-    emailError = err?.message || 'UNKNOWN_MAIL_ERROR';
-  }
 
-  return {
-    data,
-    defaultPassword: temporaryPassword,
-    emailSent,
-    emailError,
-  };
+    const temporaryPassword = generateTemporaryPassword();
+
+    const { data: adminData, error: adminError } = await supabaseAdmin.auth.admin.createUser({
+      email: formData.email,
+      password: temporaryPassword,
+      email_confirm: true, // bypass confirmation email (rate limit + UX)
+      user_metadata: { full_name: formData.full_name },
+    });
+
+    console.warn('[createUser] auth.admin.createUser result', {
+      hasUser: !!adminData?.user?.id,
+      authUserId: adminData?.user?.id ?? null,
+      errorMessage: adminError?.message ?? null,
+      errorStatus: (adminError as { status?: number } | null)?.status ?? null,
+    });
+
+    if (adminError) {
+      console.error('[createUser] Auth user creation failed:', adminError);
+      if (adminError.message?.toLowerCase().includes('already') || adminError.message?.includes('registered')) {
+        return { error: 'Email này đã được sử dụng trong hệ thống. Vui lòng sử dụng email khác.' };
+      }
+      return { error: `Không thể tạo tài khoản đăng nhập: ${adminError.message}` };
+    }
+
+    const authUserId = adminData?.user?.id;
+    if (!authUserId) {
+      return { error: 'Tạo tài khoản đăng nhập không thành công (auth user id rỗng).' };
+    }
+
+    // STEP 2 — Insert the profile row with id matching the auth user, so
+    // getCurrentUser()'s primary id lookup (users.id = auth.uid) hits directly.
+    // Uses supabaseAdmin (service role) to bypass any RLS policy that might
+    // restrict cross-user inserts on public.users (id != auth.uid()).
+    const userPayload: UserInsert = {
+      id: authUserId,
+      email: formData.email,
+      full_name: formData.full_name,
+      role: targetRole,
+      status: 'active',
+      tenant_id: currentUser.tenant_id,
+    };
+
+    const { data, error } = await supabaseAdmin
+      .from('users')
+      .insert([userPayload])
+      .select()
+      .single();
+
+    if (error) {
+      // Rollback the auth user so we don't leave an orphan account hanging.
+      const authRollbackError = await rollbackCreatedAuthUser(supabaseAdmin, authUserId);
+      console.error('[createUser] Profile insert failed:', error);
+      const rollbackNote = formatRollbackNotes([
+        ['auth rollback', authRollbackError],
+      ]);
+      if (!rollbackNote && (error.code === '23505' || error.message?.includes('users_email_key'))) {
+        return { error: 'Email này đã được sử dụng trong hệ thống. Vui lòng sử dụng email khác.' };
+      }
+      return { error: `${error.message}${rollbackNote}` };
+    }
+
+    try {
+      await recordAuditLog({
+        action: 'INSERT',
+        table_name: 'users',
+        record_id: data.id,
+        new_data: {
+          full_name: formData.full_name,
+          email: formData.email,
+          role: targetRole,
+        },
+      });
+    } catch (auditError: unknown) {
+      const profileRollbackError = await rollbackCreatedUserProfile(supabaseAdmin, authUserId);
+      const authRollbackError = await rollbackCreatedAuthUser(supabaseAdmin, authUserId);
+      const rollbackNote = formatRollbackNotes([
+        ['profile rollback', profileRollbackError],
+        ['auth rollback', authRollbackError],
+      ]);
+      return { error: `Failed to record user create audit log: ${getErrorMessage(auditError)}${rollbackNote}` };
+    }
+
+    await safeRevalidatePath('/dashboard/settings');
+
+    let emailSent = false;
+    let emailError: string | undefined;
+
+    try {
+      const mailResult = await sendTemporaryPasswordEmail(
+        formData.email,
+        formData.full_name,
+        temporaryPassword
+      );
+      emailSent = mailResult.success;
+      emailError = mailResult.error;
+    } catch (err: any) {
+      console.error('[createUser] Error calling sendTemporaryPasswordEmail:', err);
+      emailError = err?.message || 'UNKNOWN_MAIL_ERROR';
+    }
+
+    return {
+      data,
+      defaultPassword: temporaryPassword,
+      emailSent,
+      emailError,
+    };
+  } catch (err: unknown) {
+    const message = getErrorMessage(err);
+    console.error('[createUser] Exception thrown:', err);
+    return { error: `Lỗi khởi tạo nhân sự: ${message}` };
+  }
 }
 
 export async function updateUserStatus(id: string, status: 'active' | 'inactive') {
