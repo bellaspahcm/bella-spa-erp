@@ -172,20 +172,18 @@ CREATE INDEX idx_waitlist_converted_at ON waitlist_entries(converted_at)
 -- ROW LEVEL SECURITY (RLS)
 -- ============================================================================
 
--- DISABLED for development/testing
--- TODO: Enable RLS in production with proper policies
+ALTER TABLE waitlist_entries ENABLE ROW LEVEL SECURITY;
 
--- ALTER TABLE waitlist_entries ENABLE ROW LEVEL SECURITY;
--- ALTER TABLE waitlist_notification_logs ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Tenant view waitlist_entries" ON waitlist_entries
+    FOR ALL
+    TO authenticated
+    USING (is_hq_super_admin() OR (tenant_id = get_auth_tenant_id()))
+    WITH CHECK (is_hq_super_admin() OR (tenant_id = get_auth_tenant_id()));
 
--- Policy: Users can access waitlist in their tenant
--- CREATE POLICY "Users can access waitlist in their tenant"
---     ON waitlist_entries FOR ALL
---     USING (
---         tenant_id IN (
---             SELECT tenant_id FROM users WHERE id = auth.uid()
---         )
---     );
+CREATE POLICY "Tenant isolation for waitlist_entries" ON waitlist_entries
+    FOR ALL
+    TO public
+    USING (tenant_id = current_tenant_id());
 
 -- ============================================================================
 -- TABLE: waitlist_notification_logs
@@ -260,17 +258,18 @@ CREATE INDEX idx_notification_logs_sent_at ON waitlist_notification_logs(sent_at
 -- RLS (waitlist_notification_logs) 
 -- ============================================================================
 
--- DISABLED for development/testing
--- TODO: Enable RLS in production with proper policies
+ALTER TABLE waitlist_notification_logs ENABLE ROW LEVEL SECURITY;
 
--- Policy: Users can access notification logs in their tenant
--- CREATE POLICY "Users can access notification logs in their tenant"
---     ON waitlist_notification_logs FOR ALL
---     USING (
---         tenant_id IN (
---             SELECT tenant_id FROM users WHERE id = auth.uid()
---         )
---     );
+CREATE POLICY "Tenant view waitlist_notification_logs" ON waitlist_notification_logs
+    FOR ALL
+    TO authenticated
+    USING (is_hq_super_admin() OR (tenant_id = get_auth_tenant_id()))
+    WITH CHECK (is_hq_super_admin() OR (tenant_id = get_auth_tenant_id()));
+
+CREATE POLICY "Tenant isolation for waitlist_notification_logs" ON waitlist_notification_logs
+    FOR ALL
+    TO public
+    USING (tenant_id = current_tenant_id());
 
 -- ============================================================================
 -- COMMENTS (Documentation)
