@@ -343,8 +343,20 @@ export function AddToWaitlistModal({
                 <input
                   type="date"
                   value={formData.preferred_date || ''}
-                  onChange={(e) => setFormData({ ...formData, preferred_date: e.target.value })}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val) {
+                      const parts = val.split('-');
+                      if (parts[0] && parts[0].length > 4) {
+                        parts[0] = parts[0].substring(0, 4);
+                        setFormData({ ...formData, preferred_date: parts.join('-') });
+                        return;
+                      }
+                    }
+                    setFormData({ ...formData, preferred_date: val });
+                  }}
                   min={new Date().toISOString().split('T')[0]}
+                  max="9999-12-31"
                   className="w-full rounded-lg border border-gray-300 px-4 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   required
                 />
