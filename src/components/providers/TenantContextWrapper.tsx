@@ -21,6 +21,7 @@ const PUBLIC_ROUTES = [
   '/book', // Public booking page
   '/beauty-spa', // Public marketing page
   '/bellaspa', // Public Bella Spa page
+  '/portal', // Public customer portal links
 ];
 
 /**
