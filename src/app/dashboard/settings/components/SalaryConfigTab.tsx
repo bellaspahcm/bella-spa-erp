@@ -20,6 +20,8 @@ import type {
   KPIThresholdConfig,
   AttendanceConfig,
   RatingThresholdConfig,
+  KPIConfig,
+  RatingConfig,
 } from '@/types/payroll-config';
 
 interface SalaryConfigTabProps {
@@ -140,16 +142,16 @@ export default function SalaryConfigTab({
         const kpiResult = await loadKPIConfig(tenantId!);
         if (kpiResult.success && kpiResult.data) {
           setKpiEnabled(kpiResult.data.enabled);
-          setKpiStrategy(kpiResult.data.strategy as any || 'threshold');
-          const config = kpiResult.data.config as any;
+          setKpiStrategy(kpiResult.data.strategy as 'threshold' | 'linear' | 'tier' || 'threshold');
+          const config = kpiResult.data.config as unknown as Record<string, unknown>;
           
           if (kpiResult.data.strategy === 'threshold') {
-            setKpiTarget(config.target || 30);
-            setKpiBonus(config.bonus || 1000000);
+            setKpiTarget(Number(config.target) || 30);
+            setKpiBonus(Number(config.bonus) || 1000000);
           } else if (kpiResult.data.strategy === 'linear') {
-            setKpiRatePerSession(config.ratePerSession || 50000);
+            setKpiRatePerSession(Number(config.ratePerSession) || 50000);
           } else if (kpiResult.data.strategy === 'tier') {
-            setKpiTiers(config.tiers || kpiTiers);
+            setKpiTiers((config.tiers as Array<{ min: number; max: number; bonus: number }>) || kpiTiers);
           }
         } else {
           // Fallback to legacy generalSettings
@@ -187,27 +189,27 @@ export default function SalaryConfigTab({
         const commissionResult = await loadCommissionConfig(tenantId!);
         if (commissionResult.success && commissionResult.data) {
           setCommissionEnabled(commissionResult.data.enabled);
-          setCommissionStrategy(commissionResult.data.strategy as any || 'fixed');
-          const config = commissionResult.data.config as any;
+          setCommissionStrategy(commissionResult.data.strategy as typeof commissionStrategy || 'fixed');
+          const config = commissionResult.data.config as Record<string, unknown>;
           
           if (commissionResult.data.strategy === 'fixed') {
-            setCommissionRate(config.rate || 120000);
-            setCommissionMinSessions(config.minSessions || 0);
+            setCommissionRate(Number(config.rate) || 120000);
+            setCommissionMinSessions(Number(config.minSessions) || 0);
           } else if (commissionResult.data.strategy === 'tier') {
-            setCommissionTiers(config.tiers || commissionTiers);
+            setCommissionTiers((config.tiers as Array<{ min: number; max: number; rate: number }>) || commissionTiers);
           } else if (commissionResult.data.strategy === 'percentage') {
-            setCommissionPercentage(config.percentage || 15);
-            setCommissionMinRevenue(config.minRevenue || 0);
+            setCommissionPercentage(Number(config.percentage) || 15);
+            setCommissionMinRevenue(Number(config.minRevenue) || 0);
           } else if (commissionResult.data.strategy === 'service') {
-            setCommissionServiceRates(config.rates || commissionServiceRates);
+            setCommissionServiceRates((config.rates as Record<string, number>) || commissionServiceRates);
           } else if (commissionResult.data.strategy === 'product_sales') {
-            setProductSalesPercentage(config.percentage || 15);
-            setProductSalesMinSales(config.minSales || 0);
+            setProductSalesPercentage(Number(config.percentage) || 15);
+            setProductSalesMinSales(Number(config.minSales) || 0);
           } else if (commissionResult.data.strategy === 'total_revenue') {
-            setTotalRevenuePercentage(config.percentage || 10);
-            setTotalRevenueMinRevenue(config.minRevenue || 0);
-            setServiceWeight(config.serviceWeight || 1.0);
-            setProductWeight(config.productWeight || 1.0);
+            setTotalRevenuePercentage(Number(config.percentage) || 10);
+            setTotalRevenueMinRevenue(Number(config.minRevenue) || 0);
+            setServiceWeight(Number(config.serviceWeight) || 1.0);
+            setProductWeight(Number(config.productWeight) || 1.0);
           }
         } else {
           // Default to fixed strategy if no config
@@ -236,7 +238,7 @@ export default function SalaryConfigTab({
     setIsSaving(true);
     try {
       // Save KPI
-      let kpiConfig: any;
+      let kpiConfig: Record<string, unknown> = {};
       if (kpiStrategy === 'threshold') {
         kpiConfig = { target: kpiTarget, bonus: kpiBonus, metric: 'sessions' };
       } else if (kpiStrategy === 'linear') {
@@ -249,7 +251,7 @@ export default function SalaryConfigTab({
         tenantId,
         kpiEnabled,
         kpiStrategy,
-        kpiConfig
+        kpiConfig as unknown as KPIConfig
       );
       if (!kpiResult.success) {
         throw new Error(`KPI: ${kpiResult.error}`);
@@ -271,7 +273,7 @@ export default function SalaryConfigTab({
       }
 
       // Save Rating
-      let ratingConfig: any;
+      let ratingConfig: Record<string, unknown> = {};
       if (ratingStrategy === 'threshold') {
         ratingConfig = { minRating, bonus: ratingBonus };
       } else if (ratingStrategy === 'linear') {
@@ -284,14 +286,14 @@ export default function SalaryConfigTab({
         tenantId,
         ratingEnabled,
         ratingStrategy,
-        ratingConfig
+        ratingConfig as unknown as RatingConfig
       );
       if (!ratingResult.success) {
         throw new Error(`Rating: ${ratingResult.error}`);
       }
 
       // Save Commission
-      let commissionConfig: any;
+      let commissionConfig: Record<string, unknown> = {};
       if (commissionStrategy === 'fixed') {
         commissionConfig = { rate: commissionRate, minSessions: commissionMinSessions };
       } else if (commissionStrategy === 'tier') {
@@ -337,9 +339,9 @@ export default function SalaryConfigTab({
       });
 
       toast.success('Đã lưu cấu hình lương thành công!');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[SalaryConfigTab] Save error:', error);
-      toast.error(error.message || 'Không thể lưu cấu hình');
+      toast.error(error instanceof Error ? error.message : 'Không thể lưu cấu hình');
     } finally {
       setIsSaving(false);
     }
@@ -410,7 +412,7 @@ export default function SalaryConfigTab({
           <PremiumSelect
             label="Chiến lược tính thưởng"
             value={kpiStrategy}
-            onChange={(value) => setKpiStrategy(value as any)}
+            onChange={(value) => setKpiStrategy(value as 'threshold' | 'linear' | 'tier')}
             disabled={!kpiEnabled}
             options={[
               { 
@@ -666,7 +668,7 @@ export default function SalaryConfigTab({
           <PremiumSelect
             label="Chiến lược tính thưởng"
             value={ratingStrategy}
-            onChange={(value) => setRatingStrategy(value as any)}
+            onChange={(value) => setRatingStrategy(value as 'threshold' | 'linear' | 'tier')}
             disabled={!ratingEnabled}
             options={[
               { 
@@ -852,7 +854,7 @@ export default function SalaryConfigTab({
           <PremiumSelect
             label="Chiến lược tính hoa hồng"
             value={commissionStrategy}
-            onChange={(value) => setCommissionStrategy(value as any)}
+            onChange={(value) => setCommissionStrategy(value as typeof commissionStrategy)}
             disabled={!commissionEnabled}
             options={[
               { 

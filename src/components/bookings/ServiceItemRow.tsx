@@ -42,7 +42,7 @@ interface ServiceItemRowProps {
   item: ServiceItemData;
   packages: Package[];
   commissionDefaults: CommissionConfig;
-  onChange: (id: string, field: string, value: any) => void;
+  onChange: (id: string, field: string, value: string | number | null) => void;
   onRemove: (id: string) => void;
   disabled?: boolean;
   showRemoveButton?: boolean;

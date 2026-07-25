@@ -94,6 +94,7 @@ function mapTenantSettingsRollbackPayload(snapshot: TenantRow): TenantUpdate {
     qr_account_number: snapshot.qr_account_number,
     qr_account_name: snapshot.qr_account_name,
     salary_config: snapshot.salary_config,
+    commission_config: snapshot.commission_config,
     role_permissions: snapshot.role_permissions,
     updated_at: snapshot.updated_at,
   };
@@ -165,6 +166,7 @@ export async function saveTenantSettings(settings: {
   qr_account_number?: string;
   qr_account_name?: string;
   salary_config?: Json;
+  commission_config?: Json;
   role_permissions?: Json;
 }) {
   const auth = await getAuthorizedTenantUser({
@@ -212,6 +214,7 @@ export async function saveTenantSettings(settings: {
     if (settings.qr_account_number !== undefined) updatePayload.qr_account_number = settings.qr_account_number;
     if (settings.qr_account_name !== undefined) updatePayload.qr_account_name = settings.qr_account_name;
     if (settings.salary_config !== undefined) updatePayload.salary_config = settings.salary_config;
+    if (settings.commission_config !== undefined) updatePayload.commission_config = settings.commission_config;
     if (settings.role_permissions !== undefined) updatePayload.role_permissions = settings.role_permissions;
 
     let { data, error } = await supabase

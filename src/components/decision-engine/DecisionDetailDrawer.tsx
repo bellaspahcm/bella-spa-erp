@@ -30,7 +30,7 @@ interface DecisionDetail {
   provider: string;
   executionTimeMs: number;
   status: 'success' | 'error' | 'warning';
-  inputContext: Record<string, any>;
+  inputContext: Record<string, unknown>;
   policiesExecuted: string[];
   matchedRules: Array<{
     ruleId: string;
@@ -38,7 +38,7 @@ interface DecisionDetail {
     priority: number;
     conditions?: string[];
   }>;
-  output: Record<string, any>;
+  output: Record<string, unknown>;
   auditLog: Array<{
     timestamp: string;
     level: 'info' | 'warn' | 'error';
@@ -52,10 +52,10 @@ interface DecisionDetail {
   traceId?: string;
   spanId?: string;
   parentSpanId?: string;
-  versionSnapshot?: Record<string, any>;
-  resourceMetrics?: Record<string, any>;
-  businessOutcome?: Record<string, any>;
-  aiMetadata?: Record<string, any>;
+  versionSnapshot?: Record<string, unknown>;
+  resourceMetrics?: Record<string, unknown>;
+  businessOutcome?: Record<string, unknown>;
+  aiMetadata?: Record<string, unknown>;
   createdAt: string;
 }
 
@@ -113,7 +113,7 @@ export default function DecisionDetailDrawer({
   }, [onClose]);
 
   // Copy JSON to clipboard
-  const copyJSON = async (obj: any) => {
+  const copyJSON = async (obj: Record<string, unknown>) => {
     const success = await copyToClipboard(JSON.stringify(obj, null, 2));
     if (success) {
       toast.success('Đã sao chép dữ liệu JSON');
@@ -283,7 +283,7 @@ export default function DecisionDetailDrawer({
       {showTimeMachine && data && data.versionSnapshot?.version && (
         <DecisionTimeMachine
           decisionId={data.id}
-          originalVersion={data.versionSnapshot.version}
+          originalVersion={String(data.versionSnapshot.version)}
           onClose={() => setShowTimeMachine(false)}
         />
       )}
@@ -396,7 +396,7 @@ function MetadataGrid({ data }: { data: DecisionDetail }) {
 /**
  * JSON Viewer Component
  */
-function JSONViewer({ data }: { data: any }) {
+function JSONViewer({ data }: { data: Record<string, unknown> | null | undefined }) {
   return (
     <pre className="bg-gray-50 p-4 rounded-md overflow-x-auto text-sm">
       <code className="text-gray-800">{JSON.stringify(data, null, 2)}</code>

@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils';
 import type { CommissionConfig } from '@/lib/business-rules/commission';
 import { DEFAULT_COMMISSION_CONFIG } from '@/lib/business-rules/commission';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
+import type { Json } from '@/types/database.types';
 
 interface CommissionSettingsTabProps {
   className?: string;
@@ -58,7 +59,7 @@ export default function CommissionSettingsTab({ className }: CommissionSettingsT
     setIsLoading(true);
     try {
       const settings = await getTenantSettings();
-      const config = (settings as any)?.commission_config as CommissionConfig | null;
+      const config = (settings as Record<string, unknown>)?.commission_config as CommissionConfig | null;
 
       if (config) {
         // Service commission
@@ -121,7 +122,7 @@ export default function CommissionSettingsTab({ className }: CommissionSettingsT
         },
       };
 
-      await saveTenantSettings({ commission_config: commissionConfig } as any);
+      await saveTenantSettings({ commission_config: commissionConfig as unknown as Json });
       toast.success('Đã lưu cấu hình hoa hồng');
     } catch (error) {
       console.error('Error saving commission config:', error);
