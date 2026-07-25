@@ -32,13 +32,29 @@ interface VersionsPageProps {
   params: Promise<{ ruleId: string }>;
 }
 
+interface RuleState {
+  id: string;
+  name: string;
+  version: number;
+  status: string;
+}
+
+interface RuleVersionItem {
+  id: string;
+  version: number;
+  changeType?: string;
+  changeSummary?: string;
+  changedBy?: { name?: string };
+  changedAt: string;
+}
+
 export default function RuleVersionsPage({ params }: VersionsPageProps) {
   const { ruleId } = React.use(params);
-  const [rule, setRule] = useState<any>(null);
-  const [versions, setVersions] = useState<any[]>([]);
+  const [rule, setRule] = useState<RuleState | null>(null);
+  const [versions, setVersions] = useState<RuleVersionItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showRollbackDialog, setShowRollbackDialog] = useState(false);
-  const [selectedVersion, setSelectedVersion] = useState<any>(null);
+  const [selectedVersion, setSelectedVersion] = useState<RuleVersionItem | null>(null);
   const [isRollingBack, setIsRollingBack] = useState(false);
 
   const fetchRuleAndVersions = useCallback(async () => {
@@ -55,8 +71,8 @@ export default function RuleVersionsPage({ params }: VersionsPageProps) {
       if (!versionsResponse.ok) throw new Error('Failed to load version history');
       const versionsResult = await versionsResponse.json();
       setVersions(versionsResult.data?.versions || []);
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to load data');
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : 'Failed to load data');
     } finally {
       setIsLoading(false);
     }
@@ -66,7 +82,7 @@ export default function RuleVersionsPage({ params }: VersionsPageProps) {
     fetchRuleAndVersions();
   }, [fetchRuleAndVersions]);
 
-  const handleRollbackConfirm = (versionItem: any) => {
+  const handleRollbackConfirm = (versionItem: RuleVersionItem) => {
     if (rule?.status === 'active') {
       toast.error('Cannot rollback active rule. Please edit status to "draft" or "inactive" first.');
       return;
@@ -98,8 +114,8 @@ export default function RuleVersionsPage({ params }: VersionsPageProps) {
       setShowRollbackDialog(false);
       // Reload lists
       fetchRuleAndVersions();
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to rollback rule');
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : 'Failed to rollback rule');
     } finally {
       setIsRollingBack(false);
       setSelectedVersion(null);

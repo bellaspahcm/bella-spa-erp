@@ -73,10 +73,10 @@ export default async function RuleTestPage({ params }: PageProps) {
             ...h,
             test_name: h.test_name || 'Unnamed Test',
             execution_time_ms: h.execution_time_ms || 0,
-            trace: (h.trace as any) || [],
-            matched_conditions: (h.matched_conditions as any) || [],
-            executed_actions: (h.executed_actions as any) || [],
-          }))}
+            trace: (h.trace as never) || [],
+            matched_conditions: (h.matched_conditions as never) || [],
+            executed_actions: (h.executed_actions as never) || [],
+          })) as never}
         />
       </Suspense>
     </div>

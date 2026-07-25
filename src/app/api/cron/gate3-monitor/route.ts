@@ -44,22 +44,35 @@ async function fetchHealthMetrics() {
   return await response.json();
 }
 
+interface HealthData {
+  status?: string;
+  auditQueue?: {
+    pending?: number;
+    failed?: number;
+    deadLetters?: number;
+    circuitBreaker?: string;
+    successCount?: number;
+    failureCount?: number;
+  };
+  [key: string]: unknown;
+}
+
 /**
  * Store metrics snapshot in database
  */
-async function storeMetrics(health: any) {
+async function storeMetrics(health: HealthData) {
   const supabase = await createServiceRoleClient();
   
   const snapshot = {
     timestamp: new Date().toISOString(),
-    status: health.status,
+    status: health.status || 'unknown',
     queue_depth: health.auditQueue?.pending || 0,
     queue_failed: health.auditQueue?.failed || 0,
     dlq_size: health.auditQueue?.deadLetters || 0,
     circuit_breaker_state: health.auditQueue?.circuitBreaker || 'unknown',
     success_count: health.auditQueue?.successCount || 0,
     failure_count: health.auditQueue?.failureCount || 0,
-    raw_health_data: health,
+    raw_health_data: health as unknown as Database['public']['Tables']['gate3_monitoring_snapshots']['Insert']['raw_health_data'],
   };
   
   const { error } = await supabase
@@ -77,7 +90,7 @@ async function storeMetrics(health: any) {
 /**
  * Check thresholds and generate alerts
  */
-function checkThresholds(snapshot: any) {
+function checkThresholds(snapshot: ReturnType<typeof storeMetrics> extends Promise<infer S> ? S : never) {
   const alerts = [];
   
   if (snapshot.queue_depth > THRESHOLDS.queueDepth) {

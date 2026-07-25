@@ -66,14 +66,14 @@ export async function GET(request: NextRequest) {
       tenant_id,
       package_id: searchParams.get('package_id') || undefined,
       customer_id: searchParams.get('customer_id') || undefined,
-      status: searchParams.get('status')?.split(',') as any || undefined,
+      status: (searchParams.get('status')?.split(',') as WaitlistFilters['status']) || undefined,
       preferred_date: searchParams.get('preferred_date') || undefined,
       date_from: searchParams.get('date_from') || undefined,
       date_to: searchParams.get('date_to') || undefined,
       page: parseInt(searchParams.get('page') || '1'),
       limit: parseInt(searchParams.get('limit') || '20'),
-      sort_by: (searchParams.get('sort_by') as any) || 'priority',
-      sort_order: (searchParams.get('sort_order') as any) || 'desc',
+      sort_by: (searchParams.get('sort_by') as WaitlistFilters['sort_by']) || 'priority',
+      sort_order: (searchParams.get('sort_order') as WaitlistFilters['sort_order']) || 'desc',
     };
 
     // Fetch waitlist entries

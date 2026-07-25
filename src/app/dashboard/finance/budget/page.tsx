@@ -202,16 +202,16 @@ export default function BudgetTrackingDashboardPage() {
   const getOverBudgetCategories = () => {
     if (!budgetVariance.data || !budgetVariance.data.data) return [];
     // TODO: Fix type mismatch - API returns array but code expects nested object
-    return budgetVariance.data.data
-      .filter((cat: any) => cat.variance_pct > 10)
+    return (budgetVariance.data.data as unknown as Record<string, unknown>[])
+      .filter((cat) => Number(cat.variance_pct || 0) > 10)
       .slice(0, 3);
   };
 
   const getUnderBudgetCategories = () => {
     if (!budgetVariance.data || !budgetVariance.data.data) return [];
     // TODO: Fix type mismatch - API returns array but code expects nested object  
-    return budgetVariance.data.data
-      .filter((cat: any) => cat.variance_pct < -10)
+    return (budgetVariance.data.data as unknown as Record<string, unknown>[])
+      .filter((cat) => Number(cat.variance_pct || 0) < -10)
       .slice(0, 3);
   };
 
@@ -337,7 +337,7 @@ export default function BudgetTrackingDashboardPage() {
               <div className="border-t border-slate-100 pt-4">
                 <p className="text-sm font-medium text-slate-700 mb-3">So sánh ngân sách theo danh mục</p>
                 {/* TODO: Fix type mismatch between BudgetVarianceData[] and BudgetVarianceItem[] */}
-                <BudgetVarianceChart data={getBudgetVarianceData() as any} height={350} />
+                <BudgetVarianceChart data={getBudgetVarianceData() as never} height={350} />
               </div>
 
               {/* Top Over/Under Budget Categories */}
@@ -352,8 +352,8 @@ export default function BudgetTrackingDashboardPage() {
                     <div className="space-y-1">
                       {getOverBudgetCategories().map((item, idx) => (
                         <div key={idx} className="flex items-center justify-between text-sm">
-                          <span className="text-slate-600">{item.category}</span>
-                          <span className="font-medium text-red-600">+{formatNumber(item.variance_pct, 1)}%</span>
+                          <span className="text-slate-600">{String(item.category || '')}</span>
+                          <span className="font-medium text-red-600">+{formatNumber(Number(item.variance_pct || 0), 1)}%</span>
                         </div>
                       ))}
                     </div>
@@ -372,8 +372,8 @@ export default function BudgetTrackingDashboardPage() {
                     <div className="space-y-1">
                       {getUnderBudgetCategories().map((item, idx) => (
                         <div key={idx} className="flex items-center justify-between text-sm">
-                          <span className="text-slate-600">{item.category}</span>
-                          <span className="font-medium text-green-600">{formatNumber(item.variance_pct, 1)}%</span>
+                          <span className="text-slate-600">{String(item.category || '')}</span>
+                          <span className="font-medium text-green-600">{formatNumber(Number(item.variance_pct || 0), 1)}%</span>
                         </div>
                       ))}
                     </div>

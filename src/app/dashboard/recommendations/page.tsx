@@ -148,7 +148,7 @@ function RecommendationsPage() {
             <label className="ml-1 text-xs font-bold uppercase tracking-widest text-slate-400 mb-1.5 block">
               Thuật Toán
             </label>
-            <Select value={algorithm} onValueChange={(v) => v && setAlgorithm(v as any)}>
+            <Select value={algorithm} onValueChange={(v) => v && setAlgorithm(v as 'hybrid' | 'collaborative_filtering' | 'content_based' | 'rfm_based')}>
               <SelectTrigger className="rounded-2xl border-slate-100 bg-slate-50 px-5 py-4 text-sm font-black">
                 <SelectValue />
               </SelectTrigger>

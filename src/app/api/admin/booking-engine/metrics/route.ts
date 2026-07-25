@@ -4,7 +4,12 @@ import { NextRequest, NextResponse } from 'next/server';
 /**
  * Helper: Get tenant ID from user (with fallback to users table)
  */
-async function getTenantIdForUser(supabase: any, user: any): Promise<string | null> {
+type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
+
+async function getTenantIdForUser(
+  supabase: SupabaseServerClient,
+  user: { id: string; user_metadata?: { tenant_id?: string } }
+): Promise<string | null> {
   // Try metadata first
   const tenantId = user.user_metadata?.tenant_id;
   

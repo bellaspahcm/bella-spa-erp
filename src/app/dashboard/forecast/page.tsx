@@ -183,7 +183,7 @@ function ForecastDashboard() {
   const revenueForecast = useRevenueForecast({
     tenantId,
     months: revenueHorizon,
-    model: revenueModel as any,
+    model: revenueModel as 'simple_moving_average' | 'exponential_smoothing' | 'linear_regression',
     enabled: !!tenantId
   }, {
     retry: false,
@@ -455,20 +455,20 @@ function ForecastDashboard() {
                   </Alert>
                 ) : revenueForecast.data?.data ? (
                   (() => {
-                    const forecastData = Array.isArray(revenueForecast.data.data) 
-                      ? revenueForecast.data.data 
-                      : [revenueForecast.data.data];
+                    const forecastData = (Array.isArray(revenueForecast.data.data)
+                      ? revenueForecast.data.data
+                      : [revenueForecast.data.data]) as unknown as Record<string, unknown>[];
                     
                     return (
                       <ChartWrapper>
                         <Line
                           key={`revenue-chart-${chartKey}`}
                           data={{
-                          labels: forecastData.map((f: any) => f.period_end_date),
+                          labels: forecastData.map((f) => String(f.period_end_date || '')),
                           datasets: [
                             {
                               label: 'Dự Báo',
-                              data: forecastData.map((f: any) => f.forecasted_value),
+                              data: forecastData.map((f) => Number(f.forecasted_value || 0)),
                               borderColor: themeColor,
                               backgroundColor: themeRgba(0.1),
                               fill: false,
@@ -476,7 +476,7 @@ function ForecastDashboard() {
                             },
                             {
                               label: 'Upper Bound (95%)',
-                              data: forecastData.map((f: any) => f.confidence_upper),
+                              data: forecastData.map((f) => Number(f.confidence_upper || 0)),
                               borderColor: themeColor,
                               backgroundColor: themeRgba(0.05),
                               borderDash: [5, 5],
@@ -485,7 +485,7 @@ function ForecastDashboard() {
                             },
                             {
                               label: 'Lower Bound (95%)',
-                              data: forecastData.map((f: any) => f.confidence_lower),
+                              data: forecastData.map((f) => Number(f.confidence_lower || 0)),
                               borderColor: themeColor,
                               backgroundColor: themeRgba(0.05),
                               borderDash: [5, 5],
@@ -755,20 +755,20 @@ function ForecastDashboard() {
                   </Alert>
                 ) : demandForecast.data?.data ? (
                   (() => {
-                    const forecastData = Array.isArray(demandForecast.data.data) 
-                      ? demandForecast.data.data 
-                      : [demandForecast.data.data];
+                    const forecastData = (Array.isArray(demandForecast.data.data)
+                      ? demandForecast.data.data
+                      : [demandForecast.data.data]) as unknown as Record<string, unknown>[];
                     
                     return (
                       <ChartWrapper>
                         <Bar
                           key={`demand-chart-${chartKey}`}
                           data={{
-                          labels: forecastData.map((f: any) => f.period_end_date),
+                          labels: forecastData.map((f) => String(f.period_end_date || '')),
                           datasets: [
                             {
                               label: 'Dự Báo Nhu Cầu',
-                              data: forecastData.map((f: any) => f.forecasted_value),
+                              data: forecastData.map((f) => Number(f.forecasted_value || 0)),
                               backgroundColor: themeRgba(0.4),
                               borderColor: themeColor,
                               borderWidth: 2,

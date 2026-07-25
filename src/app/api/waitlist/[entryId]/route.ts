@@ -145,7 +145,7 @@ export async function PATCH(
     }
 
     // Build updates
-    const updates: any = {};
+    const updates: Record<string, unknown> = {};
 
     if (body.status !== undefined) updates.status = body.status;
     if (body.notes !== undefined) updates.notes = body.notes;
