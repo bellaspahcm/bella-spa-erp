@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     
     // Parse query parameters — accept 'months' as alias for 'horizon'
     const horizon = parseInt(searchParams.get('months') || searchParams.get('horizon') || '12');
-    const modelName = searchParams.get('model') as any;
+    const modelName = (searchParams.get('model') as any) || undefined;
     const confidenceLevel = parseFloat(searchParams.get('confidence') || '0.95');
     
     if (horizon < 1 || horizon > 12) {
@@ -63,12 +63,12 @@ export async function GET(request: NextRequest) {
     
     return NextResponse.json(result);
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Revenue forecast error:', error);
     return NextResponse.json(
       { 
         error: 'Internal server error',
-        message: error.message 
+        message: error instanceof Error ? error.message : String(error)
       },
       { status: 500 }
     );

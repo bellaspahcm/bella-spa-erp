@@ -32,8 +32,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Transform data to match UI expectations
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const packages = (data || []).map((pkg: any) => {
+    const packages = (data || []).map((pkg) => {
       // Extract duration minutes from text if default_duration_minutes is missing/invalid
       let durationMinutes = pkg.default_duration_minutes;
       if (!durationMinutes && pkg.duration) {

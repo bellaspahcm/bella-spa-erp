@@ -67,12 +67,12 @@ export async function GET(request: NextRequest) {
     
     return NextResponse.json(result);
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Demand forecast error:', error);
     return NextResponse.json(
       { 
         error: 'Internal server error',
-        message: error.message 
+        message: error instanceof Error ? error.message : String(error)
       },
       { status: 500 }
     );

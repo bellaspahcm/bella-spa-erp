@@ -54,12 +54,12 @@ export async function GET(request: NextRequest) {
       data: result,
     });
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Forecast accuracy error:', error);
     return NextResponse.json(
       { 
         error: 'Internal server error',
-        message: error.message 
+        message: error instanceof Error ? error.message : String(error)
       },
       { status: 500 }
     );

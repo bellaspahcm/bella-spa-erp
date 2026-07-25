@@ -56,9 +56,9 @@ export async function POST(request: NextRequest) {
     const input: UpsellRecommendationInput = {
       tenantId,
       customerId: customer_id,
-      currentItems: current_items.map((item: any) => ({
-        itemId: item.item_id || item.itemId,
-        itemType: item.item_type || item.itemType,
+      currentItems: (current_items as Record<string, unknown>[]).map((item) => ({
+        itemId: String(item.item_id || item.itemId || ''),
+        itemType: (item.item_type || item.itemType || 'service') as 'service' | 'package',
       })),
       limit: limit || 3,
       algorithm,
@@ -69,12 +69,12 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json(result);
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Upsell recommendation error:', error);
     return NextResponse.json(
       { 
         error: 'Internal server error',
-        message: error.message 
+        message: error instanceof Error ? error.message : String(error)
       },
       { status: 500 }
     );

@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
     
     // Parse optional parameters
     const limit = parseInt(searchParams.get('limit') || '3');
-    const algorithm = searchParams.get('algorithm') as any;
+    const algorithm = (searchParams.get('algorithm') as any) || undefined;
     
     // Parse filters
     const minPrice = searchParams.get('min_price') ? parseFloat(searchParams.get('min_price')!) : undefined;
@@ -67,12 +67,12 @@ export async function GET(request: NextRequest) {
     
     return NextResponse.json(result);
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Package recommendation error:', error);
     return NextResponse.json(
       { 
         error: 'Internal server error',
-        message: error.message 
+        message: error instanceof Error ? error.message : String(error)
       },
       { status: 500 }
     );

@@ -61,7 +61,7 @@ interface ExternalAdsDataInsert {
   cpa?: number | null;
   roas?: number | null;
   roi?: number | null;
-  raw_data?: Record<string, any>;
+  raw_data?: Record<string, unknown>;
   sync_status: 'pending' | 'success' | 'failed';
   synced_at: string;
 }
@@ -246,8 +246,8 @@ export class MarketingIntelligenceService {
         
         // Upsert (insert or update if exists)
         const { error } = await supabase
-          .from('external_ads_data')
-          .upsert(record, {
+          .from('external_ads_data' as never)
+          .upsert(record as never, {
             onConflict: 'tenant_id,platform,date,external_campaign_id,external_ad_id',
           });
         
@@ -393,8 +393,8 @@ export class MarketingIntelligenceService {
         
         // Upsert (insert or update if exists)
         const { error } = await supabase
-          .from('external_ads_data')
-          .upsert(record, {
+          .from('external_ads_data' as never)
+          .upsert(record as never, {
             onConflict: 'tenant_id,platform,date,external_campaign_id,external_ad_id',
           });
         
@@ -461,8 +461,8 @@ export class MarketingIntelligenceService {
     }
 
     // Extract ads_credentials from tenant metadata
-    const metadata = tenant.metadata as any;
-    return metadata.ads_credentials as TenantAdsCredentials || null;
+    const metadata = tenant.metadata as Record<string, unknown>;
+    return (metadata?.ads_credentials as TenantAdsCredentials) || null;
   }
 
   /**
@@ -491,8 +491,8 @@ export class MarketingIntelligenceService {
       try {
         // Use upsert (will update if exists, insert if new)
         const { error, count } = await supabase
-          .from('external_ads_data' as any)
-          .upsert(batch, {
+          .from('external_ads_data' as never)
+          .upsert(batch as never[], {
             onConflict: 'platform,external_campaign_id,external_ad_id,date,tenant_id',
             // @ts-ignore - count option exists
             count: 'exact',
@@ -525,7 +525,7 @@ export class MarketingIntelligenceService {
       
       // Test database connection by querying external_ads_data
       const { error } = await supabase
-        .from('external_ads_data' as any)
+        .from('external_ads_data' as never)
         .select('id')
         .limit(1);
 

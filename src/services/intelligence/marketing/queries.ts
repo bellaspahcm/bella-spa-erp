@@ -202,7 +202,7 @@ async function _getCampaignAnalyticsUncached(
   try {
     // Step 1: Get campaign overview from materialized view
     const { data: campaignData, error: campaignError } = await supabase
-      .from('mv_campaign_performance' as any)
+      .from('mv_campaign_performance' as never)
       .select('*')
       .eq('campaign_id', campaignId)
       .maybeSingle();
@@ -232,7 +232,7 @@ async function _getCampaignAnalyticsUncached(
 
     // Step 2: Get daily breakdown from external_ads_data
     let dailyQuery = supabase
-      .from('external_ads_data' as any)
+      .from('external_ads_data' as never)
       .select('date, impressions, clicks, spend, conversions, revenue, ctr, cpc, roas')
       .eq('internal_campaign_id', campaignId)
       .eq('sync_status', 'success')
@@ -282,7 +282,7 @@ async function _getCampaignAnalyticsUncached(
 
     // Step 3: Get platform breakdown from external_ads_data
     const { data: platformData, error: platformError } = await supabase
-      .from('external_ads_data' as any)
+      .from('external_ads_data' as never)
       .select('platform, impressions, clicks, spend, conversions, revenue')
       .eq('internal_campaign_id', campaignId)
       .eq('sync_status', 'success');
@@ -402,7 +402,7 @@ async function _getChannelPerformanceUncached(
   try {
     // Query channel performance materialized view
     let query = supabase
-      .from('mv_channel_performance' as any)
+      .from('mv_channel_performance' as never)
       .select('*')
       .eq('tenant_id', tenantId)
       .gte('month', `${dateRange.start.slice(0, 7)}-01`) // YYYY-MM-01 (first day of month)
@@ -475,7 +475,7 @@ export async function getROIReport(params: ROIReportParams): Promise<ROIReport> 
     if (groupBy === 'campaign') {
       // Query campaigns from mv_campaign_performance
       const { data, error } = await supabase
-        .from('mv_campaign_performance' as any)
+        .from('mv_campaign_performance' as never)
         .select('*')
         .eq('tenant_id', tenantId)
         .order('roi_pct', { ascending: false, nullsFirst: false });
@@ -503,7 +503,7 @@ export async function getROIReport(params: ROIReportParams): Promise<ROIReport> 
     } else if (groupBy === 'platform') {
       // Query platforms from mv_channel_performance
       let query = supabase
-        .from('mv_channel_performance' as any)
+        .from('mv_channel_performance' as never)
         .select('*')
         .eq('tenant_id', tenantId)
         .gte('month', dateRange.start.slice(0, 7))
@@ -556,7 +556,7 @@ export async function getROIReport(params: ROIReportParams): Promise<ROIReport> 
     } else {
       // groupBy === 'month'
       let query = supabase
-        .from('mv_channel_performance' as any)
+        .from('mv_channel_performance' as never)
         .select('*')
         .eq('tenant_id', tenantId)
         .gte('month', dateRange.start.slice(0, 7))
@@ -663,7 +663,7 @@ export async function getAdSpendSummary(
   try {
     // Step 1: Get daily spend from external_ads_data
     let dailyQuery = supabase
-      .from('external_ads_data' as any)
+      .from('external_ads_data' as never)
       .select('date, spend, platform')
       .eq('tenant_id', tenantId)
       .eq('sync_status', 'success')
@@ -699,7 +699,7 @@ export async function getAdSpendSummary(
 
     // Step 2: Get total budget from active campaigns
     const { data: campaignData, error: campaignError } = await supabase
-      .from('marketing_campaigns' as any)
+      .from('marketing_campaigns' as never)
       .select('budget')
       .eq('tenant_id', tenantId)
       .in('status', ['active', 'completed'])
@@ -796,7 +796,7 @@ export async function getTopPerformingAds(
   try {
     // Build query
     let query = supabase
-      .from('external_ads_data' as any)
+      .from('external_ads_data' as never)
       .select('*')
       .eq('tenant_id', tenantId)
       .eq('sync_status', 'success')
@@ -855,7 +855,7 @@ export async function getTopPerformingAds(
     const campaignNames = new Map<string, string>();
     if (campaignIds.length > 0) {
       const { data: campaigns } = await supabase
-        .from('marketing_campaigns' as any)
+        .from('marketing_campaigns' as never)
         .select('id, name')
         .in('id', campaignIds);
 

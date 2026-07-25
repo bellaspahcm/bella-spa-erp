@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Transform data to match UI expectations
-    const users = (data || []).map((user: any) => ({
+    const users = (data || []).map((user) => ({
       id: user.id,
       name: user.full_name, // UI expects "name"
       role: user.role,

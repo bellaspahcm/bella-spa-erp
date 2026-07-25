@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
 
     // For each customer, get completed bookings count
     const customers = await Promise.all(
-      (customersData || []).map(async (customer: any) => {
+      (customersData || []).map(async (customer) => {
         const { count } = await supabase
           .from('bookings')
           .select('*', { count: 'exact', head: true })

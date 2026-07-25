@@ -61,13 +61,13 @@ export type ConnectorErrorCode =
 export class ConnectorError extends Error {
   code: ConnectorErrorCode;
   retryable: boolean;
-  originalError?: any;
+  originalError?: unknown;
 
   constructor(
     code: ConnectorErrorCode,
     message: string,
     retryable: boolean = false,
-    originalError?: any
+    originalError?: unknown
   ) {
     super(message);
     this.name = 'ConnectorError';
@@ -98,13 +98,13 @@ export abstract class BaseConnector {
    * Fetch ad insights from platform API
    * Must be implemented by each connector
    */
-  protected abstract fetchInsights(params: SyncParams): Promise<any[]>;
+  protected abstract fetchInsights(params: SyncParams): Promise<unknown[]>;
 
   /**
    * Map platform-specific response to internal format
    * Must be implemented by each connector
    */
-  protected abstract mapToInternalFormat(data: any): Partial<ExternalAdsDataRow>;
+  protected abstract mapToInternalFormat(data: unknown): Partial<ExternalAdsDataRow>;
 
   /**
    * Test API connection
@@ -200,7 +200,7 @@ export abstract class BaseConnector {
     maxRetries: number = 3,
     initialDelay: number = 1000
   ): Promise<T> {
-    let lastError: any;
+    let lastError: unknown;
     
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {

@@ -201,7 +201,7 @@ function transformTenantRowToContext(tenant: TenantRow): TenantContext {
 
   // Extract settings from database
   // Settings include currency, timezone, locale, and other tenant-specific config
-  const settings: Record<string, any> = {
+  const settings: Record<string, unknown> = {
     currency: 'VND', // Default currency
     timezone: 'Asia/Ho_Chi_Minh', // Default timezone
     locale: 'vi-VN', // Default locale
@@ -210,9 +210,10 @@ function transformTenantRowToContext(tenant: TenantRow): TenantContext {
 
   // Merge in any additional settings from database
   if (tenant.brand_theme && typeof tenant.brand_theme === 'object') {
+    const theme = tenant.brand_theme as Record<string, unknown>;
     Object.assign(settings, {
-      logoUrl: (tenant.brand_theme as any).logoUrl || tenant.logo_url,
-      primaryColor: (tenant.brand_theme as any).primaryColor,
+      logoUrl: theme.logoUrl || tenant.logo_url,
+      primaryColor: theme.primaryColor,
     });
   } else if (tenant.logo_url) {
     // If no brand_theme but logo_url exists, set it
@@ -246,7 +247,7 @@ function transformTenantRowToContext(tenant: TenantRow): TenantContext {
   const context: TenantContext = {
     tenantId: tenant.id,
     tenantName: tenant.name || 'Unnamed Tenant',
-    enabledModules: enabledModules as any, // Cast to readonly array
+    enabledModules: enabledModules as TenantContext['enabledModules'],
     subscriptionPlan,
     featureFlags,
     settings,

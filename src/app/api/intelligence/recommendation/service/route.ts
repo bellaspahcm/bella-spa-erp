@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
     
     // Parse optional parameters
     const limit = parseInt(searchParams.get('limit') || '5');
-    const algorithm = searchParams.get('algorithm') as any;
+    const algorithm = (searchParams.get('algorithm') as any) || undefined;
     const excludeServices = searchParams.get('exclude')?.split(',') || [];
     
     // Parse filters
@@ -69,12 +69,12 @@ export async function GET(request: NextRequest) {
     
     return NextResponse.json(result);
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Service recommendation error:', error);
     return NextResponse.json(
       { 
         error: 'Internal server error',
-        message: error.message 
+        message: error instanceof Error ? error.message : String(error)
       },
       { status: 500 }
     );
