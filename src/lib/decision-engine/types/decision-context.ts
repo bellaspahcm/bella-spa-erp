@@ -233,7 +233,7 @@ export interface PayrollDecisionContext extends DecisionContext {
     bonus4Star?: number;
     minBaseSalary?: number;
     maxBaseSalary?: number;
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
 

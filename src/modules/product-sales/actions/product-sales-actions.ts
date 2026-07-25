@@ -12,28 +12,11 @@
 import { createClient } from '@/lib/supabase-server';
 import { calculateProductSalesCommission } from '@/lib/business-rules/commission';
 import type { CommissionType } from '@/lib/business-rules/commission';
+import type { Database } from '@/types/database.types';
 
-// Note: product_sales table will be created by migration 20260622164000_create_product_sales.sql
-// Inline type definition until database types are regenerated
-interface ProductSalesInsert {
-  tenant_id: string;
-  ktv_id: string;
-  customer_id?: string | null;
-  booking_id?: string | null;
-  product_name: string;
-  product_category?: string | null;
-  product_sku?: string | null;
-  quantity: number;
-  unit_price: number;
-  total_sales_amount: number;
-  override_commission_type?: string | null;
-  override_commission_value?: number | null;
-  calculated_commission: number;
-  status?: string;
-  payment_method?: string | null;
-  sale_date: string;
-  notes?: string | null;
-}
+type ProductSalesInsert = Database['public']['Tables']['product_sales']['Insert'];
+type ProductSalesUpdate = Database['public']['Tables']['product_sales']['Update'];
+
 
 interface CreateProductSaleInput {
   tenantId: string;
@@ -93,14 +76,14 @@ export async function createProductSale(
     const supabase = await createClient();
 
     // 1. Get tenant commission config for defaults
-    const { data: tenant, error: tenantError } = await supabase
+    const { data: tenant } = await supabase
       .from('tenants')
       .select('id, metadata')
       .eq('id', input.tenantId)
       .single();
 
-    // commission_config may be in metadata or a separate column (depending on migration state)
-    const commissionConfig = ((tenant as any)?.commission_config || (tenant as any)?.metadata?.commission_config) as {
+    // commission_config is in metadata or a separate column
+    const commissionConfig = (tenant?.metadata as Record<string, unknown>)?.commission_config as {
       product_sales_commission_default?: {
         type: CommissionType;
         value: number;
@@ -140,8 +123,7 @@ export async function createProductSale(
     };
 
     // 4. Insert product sale
-    // Note: Using type assertion because database types not regenerated yet
-    const { data: productSale, error: insertError } = await (supabase as any)
+    const { data: productSale, error: insertError } = await supabase
       .from('product_sales')
       .insert(insertData)
       .select('id, calculated_commission')
@@ -209,7 +191,7 @@ export async function updateProductSale(
     const supabase = await createClient();
 
     // Get existing record
-    const { data: existing, error: fetchError } = await (supabase as any)
+    const { data: existing, error: fetchError } = await supabase
       .from('product_sales')
       .select('*')
       .eq('id', id)
@@ -237,7 +219,7 @@ export async function updateProductSale(
       .eq('id', existing.tenant_id)
       .single();
 
-    const commissionConfig = ((tenant as any)?.commission_config || (tenant as any)?.metadata?.commission_config) as {
+    const commissionConfig = (tenant?.metadata as Record<string, unknown>)?.commission_config as {
       product_sales_commission_default?: {
         type: CommissionType;
         value: number;
@@ -257,23 +239,24 @@ export async function updateProductSale(
     });
 
     // Update record
-    const { error: updateError } = await (supabase as any)
+    const updateData: ProductSalesUpdate = {
+      product_name: updated.product_name,
+      product_category: updated.product_category ?? null,
+      product_sku: updated.product_sku ?? null,
+      quantity: updated.quantity,
+      unit_price: updated.unit_price,
+      total_sales_amount: updated.total_sales_amount,
+      override_commission_type: updated.override_commission_type ?? null,
+      override_commission_value: updated.override_commission_value ?? null,
+      calculated_commission: calculatedCommission,
+      payment_method: updated.payment_method ?? null,
+      sale_date: updated.sale_date,
+      notes: updated.notes ?? null,
+      updated_at: new Date().toISOString(),
+    };
+    const { error: updateError } = await supabase
       .from('product_sales')
-      .update({
-        product_name: updated.product_name,
-        product_category: updated.product_category,
-        product_sku: updated.product_sku,
-        quantity: updated.quantity,
-        unit_price: updated.unit_price,
-        total_sales_amount: updated.total_sales_amount,
-        override_commission_type: updated.override_commission_type,
-        override_commission_value: updated.override_commission_value,
-        calculated_commission: calculatedCommission,
-        payment_method: updated.payment_method,
-        sale_date: updated.sale_date,
-        notes: updated.notes,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq('id', id);
 
     if (updateError) {
@@ -322,7 +305,7 @@ export async function deleteProductSale(id: string): Promise<ActionResult> {
     const supabase = await createClient();
 
     // Get existing record to extract ktv_id, sale_date, tenant_id for salary recalculation
-    const { data: existing, error: fetchError } = await (supabase as any)
+    const { data: existing, error: fetchError } = await supabase
       .from('product_sales')
       .select('ktv_id, sale_date, tenant_id')
       .eq('id', id)
@@ -336,12 +319,13 @@ export async function deleteProductSale(id: string): Promise<ActionResult> {
     }
 
     // Soft delete by setting status to 'cancelled'
-    const { error } = await (supabase as any)
+    const cancelData: ProductSalesUpdate = {
+      status: 'cancelled',
+      updated_at: new Date().toISOString(),
+    };
+    const { error } = await supabase
       .from('product_sales')
-      .update({
-        status: 'cancelled',
-        updated_at: new Date().toISOString(),
-      })
+      .update(cancelData)
       .eq('id', id);
 
     if (error) {
@@ -392,7 +376,7 @@ export async function getProductSales(filters?: {
   try {
     const supabase = await createClient();
 
-    let query = (supabase as any)
+    let query = supabase
       .from('product_sales')
       .select('*, users!inner(full_name, role), customers(name_mother, name_baby)', { count: 'exact' });
 
@@ -454,7 +438,7 @@ export async function getProductSaleById(id: string): Promise<ActionResult<unkno
   try {
     const supabase = await createClient();
 
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from('product_sales')
       .select('*, users!inner(full_name, role), customers(name_mother, name_baby)')
       .eq('id', id)

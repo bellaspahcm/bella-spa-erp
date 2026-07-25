@@ -42,7 +42,7 @@ export function AdjustmentsBreakdown({
         const supabase = createClient();
         const monthYear = `${month}-01`; // Convert YYYY-MM to YYYY-MM-01
 
-        const { data, error: fetchError } = await (supabase as any)
+        const { data, error: fetchError } = await supabase
           .from('salary_adjustments')
           .select(`
             id,
@@ -65,14 +65,14 @@ export function AdjustmentsBreakdown({
           return;
         }
 
-        const adjustmentsData: Adjustment[] = (data || []).map((adj: any) => ({
+        const adjustmentsData: Adjustment[] = (data || []).map((adj) => ({
           id: adj.id,
-          adjustment_type: adj.adjustment_type,
+          adjustment_type: adj.adjustment_type as 'bonus' | 'deduction',
           amount: Number(adj.amount),
           category: adj.category,
           reason: adj.reason,
-          status: adj.status,
-          created_by_name: adj.created_by?.full_name || 'N/A',
+          status: adj.status as Adjustment['status'],
+          created_by_name: (adj.created_by as unknown as { full_name?: string })?.full_name || 'N/A',
           created_at: adj.created_at,
         }));
 

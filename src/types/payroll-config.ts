@@ -56,7 +56,7 @@ export interface TenantPayrollConfig {
   provider_key: ProviderKey;
   enabled: boolean;
   strategy: string | null;
-  config: Record<string, any>;
+  config: Record<string, unknown>;
   version: number;
   created_at: string;
   updated_at: string;
@@ -73,8 +73,8 @@ export interface TenantPayrollConfigHistory {
   config_id: string | null;
   tenant_id: string;
   provider_key: ProviderKey;
-  old_value: Record<string, any> | null;
-  new_value: Record<string, any>;
+  old_value: Record<string, unknown> | null;
+  new_value: Record<string, unknown>;
   changed_by: string | null;
   changed_at: string;
   change_type: ConfigChangeType;
@@ -226,7 +226,7 @@ export type RatingConfig =
  * Generic provider config structure
  * Used in API responses and UI
  */
-export interface ProviderConfig<T = Record<string, any>> {
+export interface ProviderConfig<T = Record<string, unknown>> {
   enabled: boolean;
   strategy: string | null;
   config: T;
@@ -254,7 +254,7 @@ export interface TenantPayrollConfigMap {
 export interface UpdateProviderConfigRequest {
   enabled?: boolean;
   strategy?: string;
-  config?: Record<string, any>;
+  config?: Record<string, unknown>;
   notes?: string;
 }
 
@@ -321,27 +321,34 @@ export const DEFAULT_CONFIGS: Partial<TenantPayrollConfigMap> = {
 /**
  * Type guard for Commission Fixed Config
  */
-export function isCommissionFixedConfig(config: any): config is CommissionFixedConfig {
+export function isCommissionFixedConfig(config: unknown): config is CommissionFixedConfig {
   return typeof config === 'object' && 
-         typeof config.rate === 'number';
+         config !== null &&
+         'rate' in config &&
+         typeof (config as Record<string, unknown>).rate === 'number';
 }
 
 /**
  * Type guard for Commission Tier Config
  */
-export function isCommissionTierConfig(config: any): config is CommissionTierConfig {
+export function isCommissionTierConfig(config: unknown): config is CommissionTierConfig {
   return typeof config === 'object' && 
-         Array.isArray(config.tiers) &&
-         config.tiers.length > 0;
+         config !== null &&
+         'tiers' in config &&
+         Array.isArray((config as Record<string, unknown>).tiers) &&
+         (config as { tiers: unknown[] }).tiers.length > 0;
 }
 
 /**
  * Type guard for KPI Threshold Config
  */
-export function isKPIThresholdConfig(config: any): config is KPIThresholdConfig {
+export function isKPIThresholdConfig(config: unknown): config is KPIThresholdConfig {
   return typeof config === 'object' && 
-         typeof config.target === 'number' &&
-         typeof config.bonus === 'number';
+         config !== null &&
+         'target' in config &&
+         'bonus' in config &&
+         typeof (config as Record<string, unknown>).target === 'number' &&
+         typeof (config as Record<string, unknown>).bonus === 'number';
 }
 
 // =====================================================

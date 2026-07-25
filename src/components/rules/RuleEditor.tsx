@@ -12,11 +12,26 @@ import { RuleConditionsBuilder } from './RuleConditionsBuilder';
 import { RuleActionsBuilder } from './RuleActionsBuilder';
 import { validateRuleForm } from '@/lib/decision-engine/rule-validation';
 import { Loader2, Save, X } from 'lucide-react';
+import type { ConditionExpression } from './ConditionRow';
+import type { ActionExpression } from './ActionRow';
+
+export interface RuleFormData {
+  name: string;
+  description: string;
+  provider: string;
+  category?: string;
+  priority: number;
+  status: string;
+  conditions: ConditionExpression[];
+  actions: ActionExpression[];
+  logicalOperator: 'and' | 'or';
+  [key: string]: unknown;
+}
 
 interface RuleEditorProps {
   mode: 'create' | 'edit';
   ruleId?: string;
-  initialData?: any;
+  initialData?: Partial<RuleFormData>;
 }
 
 export default function RuleEditor({ mode, ruleId, initialData }: RuleEditorProps) {
@@ -24,17 +39,18 @@ export default function RuleEditor({ mode, ruleId, initialData }: RuleEditorProp
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
-  const [formData, setFormData] = useState(initialData || {
-    name: '',
-    description: '',
-    provider: 'booking',
-    category: '',
-    priority: 100,
-    status: 'draft',
-    conditions: [],
-    actions: [],
-    logicalOperator: 'and',
-  });
+  const [formData, setFormData] = useState<RuleFormData>(() => ({
+    name: (initialData?.name as string) || '',
+    description: (initialData?.description as string) || '',
+    provider: (initialData?.provider as string) || 'booking',
+    category: (initialData?.category as string) || '',
+    priority: (initialData?.priority as number) ?? 100,
+    status: (initialData?.status as string) || 'draft',
+    conditions: (initialData?.conditions as ConditionExpression[]) || [],
+    actions: (initialData?.actions as ActionExpression[]) || [],
+    logicalOperator: (initialData?.logicalOperator as 'and' | 'or') || 'and',
+    ...initialData,
+  }));
 
   const handleSave = async () => {
     try {
@@ -75,10 +91,10 @@ export default function RuleEditor({ mode, ruleId, initialData }: RuleEditorProp
       });
 
       router.push(`/dashboard/rules/${result.data?.id || result.id || ''}`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: 'Lỗi',
-        description: error.message,
+        description: error instanceof Error ? error.message : 'Không thể lưu quy tắc',
         variant: 'destructive',
       });
     } finally {
@@ -129,7 +145,7 @@ export default function RuleEditor({ mode, ruleId, initialData }: RuleEditorProp
         <CardContent className="pb-7">
           <RuleMetadataForm
             data={formData}
-            onChange={setFormData}
+            onChange={(newData) => setFormData({ ...formData, ...newData } as RuleFormData)}
           />
         </CardContent>
       </Card>

@@ -321,11 +321,12 @@ export async function checkBookingCapacity(input: {
     position_tier: string | null;
     max_daily_bookings: number | null;
   }
+  interface KtvCapacityMetadata { max_daily_bookings?: number; }
   const ktvProfile = ktvProfileData ? {
     id: ktvProfileData.id,
     full_name: ktvProfileData.full_name,
     position_tier: ktvProfileData.position_tier,
-    max_daily_bookings: (ktvProfileData.metadata as Record<string, any>)?.max_daily_bookings || 8
+    max_daily_bookings: (ktvProfileData.metadata as KtvCapacityMetadata | null)?.max_daily_bookings || 8
   } as KtvCapacityProfile : null;
 
   if (!ktvProfile) {
@@ -541,8 +542,15 @@ export async function autoAssignKtv(input: {
     .eq('role', 'ktv')
     .eq('status', 'active');
 
+  interface KtvMetadata {
+    skills?: string[];
+    specializations?: string[];
+    avg_rating?: number;
+    years_of_service?: number;
+    max_daily_bookings?: number;
+  }
   const ktvList = (ktvListData || []).map(row => {
-    const ktvMeta = (row.metadata as Record<string, any>) || {};
+    const ktvMeta = (row.metadata as KtvMetadata | null) || {};
     return {
       id: row.id,
       full_name: row.full_name,
@@ -834,7 +842,8 @@ export async function checkBookingConflicts(input: {
     .in('status', ['pending', 'confirmed', 'in_progress', 'scheduled']);
 
   // 2. Fetch existing room bookings (if room specified)
-  let roomBookings: any[] = [];
+  type SessionSlot = { id: string; booking_id: string | null; assigned_date: string | null; assigned_time: string | null; standard_duration: number | null; status: string | null; booking_resource_id?: string | null };
+  let roomBookings: SessionSlot[] = [];
   if (input.roomId) {
     const { data } = await supabase
       .from('session_logs')
@@ -844,11 +853,11 @@ export async function checkBookingConflicts(input: {
       .eq('assigned_date', input.requestedDate)
       .in('status', ['pending', 'confirmed', 'scheduled']);
 
-    roomBookings = data || [];
+    roomBookings = (data as unknown as SessionSlot[]) || [];
   }
 
   // 3. Fetch existing equipment bookings (if equipment specified)
-  let equipmentBookings: any[] = [];
+  let equipmentBookings: SessionSlot[] = [];
   if (input.equipmentIds && input.equipmentIds.length > 0) {
     const { data } = await supabase
       .from('session_logs')
@@ -858,11 +867,12 @@ export async function checkBookingConflicts(input: {
       .eq('assigned_date', input.requestedDate)
       .in('status', ['pending', 'confirmed', 'scheduled']);
 
-    equipmentBookings = data || [];
+    equipmentBookings = (data as unknown as SessionSlot[]) || [];
   }
 
   // 4. Fetch package sessions (if package specified)
-  let packageSessions: any[] = [];
+  type PackageSessionSlot = { id: string; session_number: number; assigned_date: string | null; status: string | null };
+  let packageSessions: PackageSessionSlot[] = [];
   if (input.packageId) {
     const queryBuilder = (supabase.from('session_logs') as unknown) as {
       select: (fields: string) => {

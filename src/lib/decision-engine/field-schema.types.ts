@@ -42,7 +42,7 @@ export interface FieldValidation {
   min?: number;
   max?: number;
   pattern?: string;
-  customValidator?: (value: any) => boolean | string;
+  customValidator?: (value: unknown) => boolean | string;
 }
 
 export interface FieldSchema {

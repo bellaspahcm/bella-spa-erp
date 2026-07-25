@@ -31,7 +31,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { getTemplateById, type AutomationTemplate } from '@/lib/automation/templates';
-import { PreviewPanel, EmptyStateCard } from '@/components/automation';
+import { PreviewPanel, EmptyStateCard, SimulationTool } from '@/components/automation';
 
 function NewAutomationContent() {
   const router = useRouter();
@@ -266,32 +266,16 @@ function NewAutomationContent() {
                     </p>
                   </div>
 
-                  {/* TODO: Add SimulationTool component here */}
-                  <div className="p-8 bg-gradient-to-br from-purple-50 to-blue-50 border border-purple-200 rounded-2xl text-center">
-                    <div className="text-6xl mb-4">🧪</div>
-                    <p className="text-gray-600 mb-4">
-                      Simulation tool đang được phát triển...
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      Sẽ có trong Sprint 3
-                    </p>
-                  </div>
+                  <SimulationTool template={template} onComplete={() => setCurrentStep('review')} />
 
-                  {/* Navigation Buttons */}
-                  <div className="mt-6 flex justify-between">
+                  {/* Navigation back option */}
+                  <div className="mt-6 flex justify-start">
                     <button
                       onClick={() => setCurrentStep('customize')}
-                      className="flex items-center gap-2 px-6 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-all"
+                      className="flex items-center gap-2 px-6 py-2.5 bg-gray-100 text-gray-700 dark:bg-zinc-800 dark:text-zinc-300 rounded-xl font-medium hover:bg-gray-200 dark:hover:bg-zinc-700 transition-all text-xs"
                     >
                       <ArrowLeft className="w-4 h-4" />
-                      Quay lại
-                    </button>
-                    <button
-                      onClick={() => setCurrentStep('review')}
-                      className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl font-medium shadow-lg hover:shadow-xl transition-all"
-                    >
-                      Tiếp theo: Xem lại
-                      <ChevronRight className="w-4 h-4" />
+                      Quay lại tùy chỉnh
                     </button>
                   </div>
                 </div>

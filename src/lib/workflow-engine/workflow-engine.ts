@@ -14,6 +14,7 @@ import type {
   WorkflowDefinition,
   WorkflowContext,
   WorkflowExecutionResult,
+  StepExecutionResult,
   createWorkflowContext
 } from './types';
 
@@ -141,8 +142,8 @@ export class WorkflowEngine implements IWorkflowEngine {
       
       // Return failed result instead of throwing (tests expect result object)
       // WorkflowExecutionError contains step results
-      const steps = error instanceof Error && 'stepResult' in error
-        ? (error as any).stepResult ? [(error as any).stepResult] : []
+      const steps: StepExecutionResult[] = error instanceof Error && 'stepResult' in error
+        ? ((error as { stepResult?: unknown }).stepResult ? [(error as { stepResult?: unknown }).stepResult as StepExecutionResult] : [])
         : [];
       
       return {

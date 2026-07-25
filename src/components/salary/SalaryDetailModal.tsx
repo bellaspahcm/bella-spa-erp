@@ -48,7 +48,7 @@ export function SalaryDetailModal({
       setIsLoadingServices(true);
       try {
         const supabase = createClient();
-        const { data, error } = await (supabase as any)
+        const { data, error } = await supabase
           .from('booking_service_items')
           .select('service_name, quantity, calculated_commission')
           .eq('ktv_id', salary.id)
@@ -78,7 +78,7 @@ export function SalaryDetailModal({
       setIsLoadingProducts(true);
       try {
         const supabase = createClient();
-        const { data, error } = await (supabase as any)
+        const { data, error } = await supabase
           .from('product_sales')
           .select('product_name, quantity, calculated_commission')
           .eq('ktv_id', salary.id)

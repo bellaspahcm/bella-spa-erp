@@ -15,6 +15,7 @@ import { cookies } from 'next/headers';
 import { createServerClient as createSupabaseServerClient } from '@supabase/ssr';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { Database } from '@/types/database.types';
+import type { User } from '@supabase/supabase-js';
 import { cache } from 'react';
 
 export const createServerClient = cache(() => {
@@ -44,7 +45,7 @@ export const createServerClient = cache(() => {
             user_metadata: {},
             aud: 'authenticated',
             created_at: new Date().toISOString(),
-          } as any,
+          } as unknown as User,
         },
         error: null,
       };
@@ -86,7 +87,7 @@ export const createServerClient = cache(() => {
   // Memoize client.auth.getUser at the request level to avoid redundant network roundtrips.
   const originalGetUser = client.auth.getUser.bind(client.auth);
   client.auth.getUser = cache(async (jwt?: string) => {
-    const restClient = (client as any).rest;
+    const restClient = (client as unknown as { rest?: { headers: { set: (k: string, v: string) => void } } }).rest;
     if (jwt) {
       if (restClient) {
         restClient.headers.set('Authorization', `Bearer ${jwt}`);

@@ -18,7 +18,7 @@ import type { Database } from '@/types/database.types';
 
 export type ProviderKey = 'commission' | 'kpi' | 'attendance' | 'rating' | 'bonus' | 'deduction' | 'insurance' | 'tax' | 'advance' | 'position' | 'seniority' | 'shift' | 'overtime';
 
-export interface ProviderConfigResponse<T = any> {
+export interface ProviderConfigResponse<T = unknown> {
   id: string;
   tenant_id: string;
   provider_key: ProviderKey;
@@ -30,7 +30,7 @@ export interface ProviderConfigResponse<T = any> {
   notes?: string;
 }
 
-export interface SaveProviderConfigParams<T = any> {
+export interface SaveProviderConfigParams<T = unknown> {
   tenantId: string;
   providerKey: ProviderKey;
   enabled: boolean;
@@ -46,7 +46,7 @@ export interface SaveProviderConfigParams<T = any> {
 /**
  * Load a specific provider configuration for a tenant
  */
-export async function loadProviderConfig<T = any>(
+export async function loadProviderConfig<T = unknown>(
   tenantId: string,
   providerKey: ProviderKey
 ): Promise<{ success: true; data: ProviderConfigResponse<T> } | { success: false; error: string }> {
@@ -75,11 +75,11 @@ export async function loadProviderConfig<T = any>(
       success: true,
       data: data as unknown as ProviderConfigResponse<T>
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error loading provider config:', error);
     return {
       success: false,
-      error: error.message || 'Failed to load config'
+      error: error instanceof Error ? error.message : 'Failed to load config'
     };
   }
 }
@@ -105,11 +105,11 @@ export async function loadAllProviderConfigs(
       success: true,
       data: (data || []) as ProviderConfigResponse[]
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error loading all provider configs:', error);
     return {
       success: false,
-      error: error.message || 'Failed to load configs'
+      error: error instanceof Error ? error.message : 'Failed to load configs'
     };
   }
 }
@@ -121,7 +121,7 @@ export async function loadAllProviderConfigs(
 /**
  * Save a provider configuration
  */
-export async function saveProviderConfig<T = any>(
+export async function saveProviderConfig<T = unknown>(
   params: SaveProviderConfigParams<T>
 ): Promise<{ success: true } | { success: false; error: string }> {
   try {
@@ -147,11 +147,11 @@ export async function saveProviderConfig<T = any>(
     revalidatePath('/dashboard/settings');
 
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error saving provider config:', error);
     return {
       success: false,
-      error: error.message || 'Failed to save config'
+      error: error instanceof Error ? error.message : 'Failed to save config'
     };
   }
 }
@@ -182,11 +182,11 @@ export async function toggleProviderEnabled(
     revalidatePath('/dashboard/settings');
 
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error toggling provider:', error);
     return {
       success: false,
-      error: error.message || 'Failed to toggle provider'
+      error: error instanceof Error ? error.message : 'Failed to toggle provider'
     };
   }
 }
@@ -278,7 +278,7 @@ export async function saveRatingConfig(
  * Load Commission configuration
  */
 export async function loadCommissionConfig(tenantId: string) {
-  return loadProviderConfig<Record<string, any>>(tenantId, 'commission');
+  return loadProviderConfig<Record<string, unknown>>(tenantId, 'commission');
 }
 
 /**

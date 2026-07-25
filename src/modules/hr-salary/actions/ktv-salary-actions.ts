@@ -13,6 +13,9 @@ import { createClient } from '@/lib/supabase-server';
 import { getCurrentUser } from '@/services/user-actions';
 import { recordAuditLog } from '@/services/audit-actions';
 import { revalidatePath } from 'next/cache';
+import type { Database } from '@/types/database.types';
+
+type SalaryRecordUpdate = Database['public']['Tables']['salary_records']['Update'];
 
 /**
  * Confirm salary for the current KTV user
@@ -252,17 +255,17 @@ export async function resolveSalaryDispute(
     }
 
     // Prepare update payload
-    const updatePayload: any = {
+    const updatePayload: SalaryRecordUpdate = {
       status: 'confirmed',
       dispute_resolved_at: new Date().toISOString(),
-      dispute_resolution: resolution.trim(),
-      dispute_resolved_by: user.id,
+      // Store resolution in notes since dispute_resolution/dispute_resolved_by columns don't exist in schema
+      notes: (salaryRecord.notes || '') + ` | Giải quyết bởi: ${user.id} - ${resolution.trim()}`,
     };
 
     // If admin adjusts salary, update total_salary
     if (newTotalSalary !== undefined && newTotalSalary !== salaryRecord.total_salary) {
       updatePayload.total_salary = newTotalSalary;
-      updatePayload.notes = (salaryRecord.notes || '') + ` | Admin điều chỉnh sau tranh chấp: ${newTotalSalary.toLocaleString('vi-VN')}đ`;
+      updatePayload.notes = (salaryRecord.notes || '') + ` | Admin điều chỉnh sau tranh chấp: ${newTotalSalary.toLocaleString('vi-VN')}đ - ${resolution.trim()}`;
     }
 
     // Update salary record
@@ -287,8 +290,7 @@ export async function resolveSalaryDispute(
       new_data: { 
         status: 'confirmed',
         dispute_resolved_at: new Date().toISOString(),
-        dispute_resolution: resolution.trim(),
-        total_salary: newTotalSalary || salaryRecord.total_salary,
+        total_salary: newTotalSalary ?? salaryRecord.total_salary,
       },
     });
 

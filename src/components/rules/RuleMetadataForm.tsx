@@ -7,8 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import RulePrioritySlider from './RulePrioritySlider';
 
 interface RuleMetadataFormProps {
-  data: any;
-  onChange: (data: any) => void;
+  data: Record<string, unknown>;
+  onChange: (data: Record<string, unknown>) => void;
 }
 
 const PROVIDERS = [
@@ -62,17 +62,24 @@ const STATUSES = [
 ];
 
 export default function RuleMetadataForm({ data, onChange }: RuleMetadataFormProps) {
-  const handleChange = (field: string, value: any) => {
+  const handleChange = (field: string, value: unknown) => {
     onChange({ ...data, [field]: value });
   };
 
-  const categories = CATEGORIES_BY_PROVIDER[data.provider] || [];
+  const providerStr = (data.provider as string) || '';
+  const categoryStr = (data.category as string) || '';
+  const statusStr = (data.status as string) || '';
+  const nameStr = (data.name as string) || '';
+  const descStr = (data.description as string) || '';
+  const priorityNum = (data.priority as number) ?? 100;
 
-  const selectedProvider = PROVIDERS.find((p) => p.value === data.provider);
-  const selectedCategoryLabel = data.category
-    ? CATEGORY_LABELS[data.category] || data.category.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())
+  const categories = CATEGORIES_BY_PROVIDER[providerStr] || [];
+
+  const selectedProvider = PROVIDERS.find((p) => p.value === providerStr);
+  const selectedCategoryLabel = categoryStr
+    ? CATEGORY_LABELS[categoryStr] || categoryStr.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())
     : undefined;
-  const selectedStatus = STATUSES.find((s) => s.value === data.status);
+  const selectedStatus = STATUSES.find((s) => s.value === statusStr);
 
   return (
     <div className="space-y-6">
@@ -86,7 +93,7 @@ export default function RuleMetadataForm({ data, onChange }: RuleMetadataFormPro
         </Label>
         <Input
           id="name"
-          value={data.name}
+          value={nameStr}
           onChange={(e) => handleChange('name', e.target.value)}
           placeholder="Ví dụ: Quy tắc phân bổ KTV cho khách hàng VIP"
           required
@@ -107,7 +114,7 @@ export default function RuleMetadataForm({ data, onChange }: RuleMetadataFormPro
         </Label>
         <Textarea
           id="description"
-          value={data.description}
+          value={descStr}
           onChange={(e) => handleChange('description', e.target.value)}
           placeholder="Mô tả chức năng của quy tắc này và thời điểm áp dụng..."
           rows={3}
@@ -129,7 +136,7 @@ export default function RuleMetadataForm({ data, onChange }: RuleMetadataFormPro
             Nghiệp vụ áp dụng <span className="text-destructive font-black text-sm">*</span>
           </Label>
           <Select
-            value={data.provider}
+            value={providerStr}
             onValueChange={(value) => {
               handleChange('provider', value);
               handleChange('category', ''); // Reset category when provider changes
@@ -162,9 +169,9 @@ export default function RuleMetadataForm({ data, onChange }: RuleMetadataFormPro
             Phân loại cụ thể <span className="text-destructive font-black text-sm">*</span>
           </Label>
           <Select
-            value={data.category}
+            value={categoryStr}
             onValueChange={(value) => handleChange('category', value)}
-            disabled={!data.provider}
+            disabled={!providerStr}
           >
             <SelectTrigger
               id="category"
@@ -195,11 +202,11 @@ export default function RuleMetadataForm({ data, onChange }: RuleMetadataFormPro
             Mức độ ưu tiên
           </Label>
           <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-primary/10 text-primary border border-primary/20 animate-pulse">
-            {data.priority}
+            {priorityNum}
           </span>
         </div>
         <RulePrioritySlider
-          value={data.priority}
+          value={priorityNum}
           onChange={(value) => handleChange('priority', value)}
         />
         <p className="text-[11px] text-slate-500 dark:text-zinc-400">
@@ -216,7 +223,7 @@ export default function RuleMetadataForm({ data, onChange }: RuleMetadataFormPro
           Trạng thái cấu hình
         </Label>
         <Select
-          value={data.status}
+          value={statusStr}
           onValueChange={(value) => handleChange('status', value)}
         >
           <SelectTrigger

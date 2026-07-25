@@ -2,6 +2,9 @@
 
 import { createClient } from '@/lib/supabase-server';
 import { revalidatePath } from 'next/cache';
+import type { Database } from '@/types/database.types';
+
+type SalaryAdjustmentUpdate = Database['public']['Tables']['salary_adjustments']['Update'];
 
 interface RejectAdjustmentParams {
   adjustmentId: string;
@@ -51,7 +54,7 @@ export async function rejectAdjustment(
     }
 
     // Get adjustment details
-    const { data: adjustment, error: fetchError } = await (supabase as any)
+    const { data: adjustment, error: fetchError } = await supabase
       .from('salary_adjustments')
       .select('id, status, notes')
       .eq('id', params.adjustmentId)
@@ -71,14 +74,15 @@ export async function rejectAdjustment(
       ? `${adjustment.notes}\n\n[Từ chối] ${params.rejectionReason}`
       : `[Từ chối] ${params.rejectionReason}`;
 
-    const { error: updateError } = await (supabase as any)
+    const rejectPayload: SalaryAdjustmentUpdate = {
+      status: 'rejected',
+      notes: updatedNotes,
+      approved_by_id: user.id, // Track who rejected it
+      approved_at: new Date().toISOString(),
+    };
+    const { error: updateError } = await supabase
       .from('salary_adjustments')
-      .update({
-        status: 'rejected',
-        notes: updatedNotes,
-        approved_by_id: user.id, // Track who rejected it
-        approved_at: new Date().toISOString(),
-      })
+      .update(rejectPayload)
       .eq('id', params.adjustmentId);
 
     if (updateError) {

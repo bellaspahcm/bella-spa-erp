@@ -13,7 +13,7 @@ import { ComparisonOperator } from '@/lib/decision-engine/field-schema.types';
 export interface ConditionExpression {
   field?: string;
   operator?: ComparisonOperator;
-  value?: any;
+  value?: unknown;
 }
 
 interface ConditionRowProps {
@@ -62,7 +62,7 @@ export function ConditionRow({ provider, condition, onChange, onDelete, error, d
     });
   };
 
-  const handleValueChange = (value: any) => {
+  const handleValueChange = (value: unknown) => {
     onChange({
       ...condition,
       value,

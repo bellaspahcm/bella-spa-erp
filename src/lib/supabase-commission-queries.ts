@@ -169,7 +169,20 @@ export async function queryBookingServiceItemsWithKTV(
 }> {
   try {
     // Query with LEFT JOIN to users table for KTV name
-    const result = await (supabase as any)
+    const result = await (supabase as unknown as {
+      from: (table: string) => {
+        select: (cols: string) => {
+          eq: (col: string, val: string) => {
+            eq: (col: string, val: string) => {
+              order: (col: string, opts?: { ascending?: boolean }) => Promise<{
+                data: Array<BookingServiceItem & { ktv?: { full_name: string | null } }> | null;
+                error: Error | null;
+              }>;
+            };
+          };
+        };
+      };
+    })
       .from('booking_service_items')
       .select(`
         *,
@@ -186,7 +199,7 @@ export async function queryBookingServiceItemsWithKTV(
     }
 
     // Transform data to flatten KTV name
-    const transformedData = result.data?.map((item: any) => ({
+    const transformedData = result.data?.map((item: BookingServiceItem & { ktv?: { full_name: string | null } }) => ({
       ...item,
       ktv_name: item.ktv?.full_name || null,
       ktv: undefined, // Remove nested object

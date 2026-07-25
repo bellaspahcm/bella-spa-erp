@@ -27,7 +27,14 @@ import {
   type PayrollProvider,
   createSalaryComponent,
 } from '@/lib/decision-engine/types/payroll-types';
-import type { PayrollDecisionContext } from '@/lib/decision-engine/types/decision-context';
+import type { PayrollDecisionContext, SessionData, SalesData, EmployeeData } from '@/lib/decision-engine/types/decision-context';
+
+export interface AppliedPolicies {
+  rewardPolicies: string[];
+  multiplierPolicies: string[];
+  incentivePolicies: string[];
+  constraintPolicies: string[];
+}
 
 const COMPENSATION_DECISION_TYPE = 'session-commission';
 
@@ -118,7 +125,7 @@ export class CompensationProvider implements PayrollProvider<SalaryComponent> {
     const { employee, sessions, sales, tenantConfig, overrides } = context;
 
     // Track which policies applied
-    const appliedPolicies = {
+    const appliedPolicies: AppliedPolicies = {
       rewardPolicies: [] as string[],
       multiplierPolicies: [] as string[],
       incentivePolicies: [] as string[],
@@ -310,9 +317,9 @@ export class CompensationProvider implements PayrollProvider<SalaryComponent> {
    * - Manufacturing: units × bonusRate
    */
   private applyActivityReward(
-    activityData: any,
-    config: any,
-    appliedPolicies: any
+    activityData: SessionData | undefined,
+    config: PayrollDecisionContext['tenantConfig'],
+    appliedPolicies: AppliedPolicies
   ): number {
     if (!activityData || activityData.count === 0) return 0;
     if (!config?.sessionCommissionRate) return 0;
@@ -341,9 +348,9 @@ export class CompensationProvider implements PayrollProvider<SalaryComponent> {
    * - Manufacturing: qualityScore × bonusRate
    */
   private applyValueReward(
-    valueData: any,
-    config: any,
-    appliedPolicies: any
+    valueData: SalesData | undefined,
+    config: PayrollDecisionContext['tenantConfig'],
+    appliedPolicies: AppliedPolicies
   ): number {
     if (!valueData || valueData.serviceCount === 0) return 0;
     if (!config?.serviceCommissionRate) return 0;
@@ -382,9 +389,9 @@ export class CompensationProvider implements PayrollProvider<SalaryComponent> {
    * - Manufacturing: N/A
    */
   private applySalesReward(
-    salesData: any,
-    config: any,
-    appliedPolicies: any
+    salesData: SalesData | undefined,
+    config: PayrollDecisionContext['tenantConfig'],
+    appliedPolicies: AppliedPolicies
   ): number {
     if (!salesData || !salesData.productSales || salesData.productSales === 0) return 0;
     if (!config?.productCommissionRate) return 0;
@@ -417,7 +424,7 @@ export class CompensationProvider implements PayrollProvider<SalaryComponent> {
   private applyPerformanceMultiplier(
     baseAmount: number,
     performanceScore: number | null | undefined,
-    appliedPolicies: any
+    appliedPolicies: AppliedPolicies
   ): { multiplier: number; bonus: number } {
     if (!performanceScore || baseAmount === 0) {
       return { multiplier: 1.0, bonus: 0 };
@@ -452,7 +459,7 @@ export class CompensationProvider implements PayrollProvider<SalaryComponent> {
   private applyPositionMultiplier(
     applicableAmount: number,
     positionTier: string | undefined,
-    appliedPolicies: any
+    appliedPolicies: AppliedPolicies
   ): { multiplier: number; bonus: number } {
     if (!positionTier || positionTier === 'junior' || applicableAmount === 0) {
       return { multiplier: 1.0, bonus: 0 };
@@ -492,10 +499,10 @@ export class CompensationProvider implements PayrollProvider<SalaryComponent> {
    * - Manufacturing: 1000+ units → 2M bonus
    */
   private applyVolumeIncentive(
-    salesData: any,
-    activityData: any,
-    config: any,
-    appliedPolicies: any
+    salesData: (SalesData & { totalRevenue?: number }) | undefined,
+    activityData: SessionData | undefined,
+    config: PayrollDecisionContext['tenantConfig'],
+    appliedPolicies: AppliedPolicies
   ): number {
     const totalRevenue = salesData?.totalRevenue || salesData?.serviceSales || 0;
     const activityCount = activityData?.count || 0;
@@ -538,9 +545,9 @@ export class CompensationProvider implements PayrollProvider<SalaryComponent> {
    * - Manufacturing: Supervisor → 0.8% of team total
    */
   private applyTeamIncentive(
-    employee: any,
+    employee: EmployeeData,
     teamTotalCompensation: number | undefined,
-    appliedPolicies: any
+    appliedPolicies: AppliedPolicies
   ): number {
     if (!teamTotalCompensation || teamTotalCompensation === 0) return 0;
     if (!employee.positionTier) return 0;
@@ -579,10 +586,10 @@ export class CompensationProvider implements PayrollProvider<SalaryComponent> {
    * - Manufacturing: Must meet >= 80% production quota
    */
   private checkMinThreshold(
-    activityData: any,
-    config: any,
-    appliedPolicies: any
-  ): { eligible: boolean; reason: string; metadata?: any } {
+    activityData: SessionData | undefined,
+    config: PayrollDecisionContext['tenantConfig'],
+    appliedPolicies: AppliedPolicies
+  ): { eligible: boolean; reason: string; metadata?: Record<string, unknown> } {
     if (!config?.minSessionsForCommission) {
       return { eligible: true, reason: '' };
     }
@@ -622,8 +629,8 @@ export class CompensationProvider implements PayrollProvider<SalaryComponent> {
    */
   private applyMaxCap(
     totalAmount: number,
-    config: any,
-    appliedPolicies: any
+    config: PayrollDecisionContext['tenantConfig'],
+    appliedPolicies: AppliedPolicies
   ): { cappedAmount: number } {
     if (!config?.maxCompensationPerMonth || totalAmount <= config.maxCompensationPerMonth) {
       return { cappedAmount: totalAmount };

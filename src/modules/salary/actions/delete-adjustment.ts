@@ -29,7 +29,7 @@ export async function deleteAdjustment(
     }
 
     // Get adjustment details
-    const { data: adjustment, error: fetchError } = await (supabase as any)
+    const { data: adjustment, error: fetchError } = await supabase
       .from('salary_adjustments')
       .select('id, status, created_by_id')
       .eq('id', params.adjustmentId)
@@ -67,7 +67,7 @@ export async function deleteAdjustment(
     }
 
     // Delete adjustment
-    const { error: deleteError } = await (supabase as any)
+    const { error: deleteError } = await supabase
       .from('salary_adjustments')
       .delete()
       .eq('id', params.adjustmentId);

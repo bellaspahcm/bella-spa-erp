@@ -33,7 +33,7 @@ import {
   type PayrollProvider,
   createSalaryComponent,
 } from '@/lib/decision-engine/types/payroll-types';
-import type { PayrollDecisionContext } from '@/lib/decision-engine/types/decision-context';
+import type { PayrollDecisionContext, SessionData } from '@/lib/decision-engine/types/decision-context';
 import { PayrollConfigService } from '@/services/payroll-config.service';
 import type {
   CommissionConfig,
@@ -43,6 +43,11 @@ import type {
   CommissionServiceConfig,
   ProviderConfig,
 } from '@/types/payroll-config';
+
+interface CommissionSessionData extends SessionData {
+  totalRevenue?: number;
+  byServiceType?: Record<string, number>;
+}
 
 /**
  * Commission Provider
@@ -253,7 +258,11 @@ export class CommissionProvider implements PayrollProvider<SalaryComponent> {
     }
 
     // Step 4: Select strategy and calculate commission
-    const result = this.calculateCommission(config.strategy || 'linear', config.config, sessions);
+    const result = this.calculateCommission(
+      config.strategy || 'linear',
+      config.config as CommissionConfig,
+      sessions as CommissionSessionData
+    );
 
     return createSalaryComponent('session-commission', {
       eligible: result.eligible,
@@ -273,13 +282,13 @@ export class CommissionProvider implements PayrollProvider<SalaryComponent> {
    */
   private calculateCommission(
     strategy: string,
-    config: any,
-    sessions: any
+    config: CommissionConfig,
+    sessions: CommissionSessionData
   ): {
     eligible: boolean;
     amount: number;
     reason: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
   } {
     switch (strategy) {
       case 'fixed':
@@ -307,12 +316,12 @@ export class CommissionProvider implements PayrollProvider<SalaryComponent> {
    */
   private calculateFixedCommission(
     config: CommissionFixedConfig,
-    sessions: any
+    sessions: CommissionSessionData
   ): {
     eligible: boolean;
     amount: number;
     reason: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
   } {
     const { rate, minSessions = 0 } = config;
     const sessionCount = sessions?.count ?? 0;
@@ -346,12 +355,12 @@ export class CommissionProvider implements PayrollProvider<SalaryComponent> {
    */
   private calculateTierCommission(
     config: CommissionTierConfig,
-    sessions: any
+    sessions: CommissionSessionData
   ): {
     eligible: boolean;
     amount: number;
     reason: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
   } {
     const { tiers } = config;
     const sessionCount = sessions?.count ?? 0;
@@ -404,12 +413,12 @@ export class CommissionProvider implements PayrollProvider<SalaryComponent> {
    */
   private calculatePercentageCommission(
     config: CommissionPercentageConfig,
-    sessions: any
+    sessions: CommissionSessionData
   ): {
     eligible: boolean;
     amount: number;
     reason: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
   } {
     const { percentage, minRevenue = 0 } = config;
     const sessionCount = sessions?.count ?? 0;
@@ -447,12 +456,12 @@ export class CommissionProvider implements PayrollProvider<SalaryComponent> {
    */
   private calculateServiceBasedCommission(
     config: CommissionServiceConfig,
-    sessions: any
+    sessions: CommissionSessionData
   ): {
     eligible: boolean;
     amount: number;
     reason: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
   } {
     const { rates } = config;
     const sessionCount = sessions?.count ?? 0;

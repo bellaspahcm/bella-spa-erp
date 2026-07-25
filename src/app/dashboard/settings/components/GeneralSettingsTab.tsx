@@ -180,13 +180,13 @@ export default function GeneralSettingsTab({
 
       {/* Advanced Conflict Detection Toggles */}
       <OverbookingConfigSection
-        config={generalSettings.salary_config.conflict_detection ?? DEFAULT_CONFLICT_DETECTION_CONFIG}
+        config={(generalSettings.salary_config.conflict_detection as unknown as import('@/types/domain').ConflictDetectionConfig) ?? DEFAULT_CONFLICT_DETECTION_CONFIG}
         onChange={(updatedCd) =>
           setGeneralSettings({
             ...generalSettings,
             salary_config: {
               ...generalSettings.salary_config,
-              conflict_detection: updatedCd,
+              conflict_detection: updatedCd as unknown as import('@/types/database.types').Json,
             },
           })
         }

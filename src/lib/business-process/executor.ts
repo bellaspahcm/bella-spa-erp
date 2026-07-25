@@ -28,7 +28,7 @@ export abstract class BaseBusinessProcess<TContext, TResult>
   implements BusinessProcess<TContext, TResult>
 {
   abstract config: ProcessConfig;
-  abstract policies: PayrollProvider<any>[];
+  abstract policies: PayrollProvider<unknown>[];
 
   /**
    * Execute the business process
@@ -168,13 +168,13 @@ export abstract class BaseBusinessProcess<TContext, TResult>
    * Execute a single policy
    */
   private async executePolicy(
-    policy: PayrollProvider<any>,
+    policy: PayrollProvider<unknown>,
     context: TContext
   ): Promise<PolicyExecutionResult> {
     const startTime = performance.now();
 
     try {
-      const result = await policy.evaluate(context as any);
+      const result = await policy.evaluate(context as unknown as DecisionContext);
       const endTime = performance.now();
 
       return {
@@ -183,7 +183,7 @@ export abstract class BaseBusinessProcess<TContext, TResult>
         status: 'success',
         data: result,
         executionTime: endTime - startTime,
-        metadata: result.metadata,
+        metadata: (result as { metadata?: Record<string, unknown> })?.metadata,
       };
     } catch (error) {
       const endTime = performance.now();

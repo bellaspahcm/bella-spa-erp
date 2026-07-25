@@ -13,6 +13,7 @@ import {
   normalizeAttendanceStatus,
 } from '@/lib/business-rules/attendance';
 import type { Database } from '@/types/database.types';
+import type { CurrentUser } from '@/types/domain';
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 type AttendanceInsert = Database['public']['Tables']['attendance']['Insert'];
@@ -104,7 +105,7 @@ export async function getVNTodayString(): Promise<string> {
 }
 
 /** Get KTV's attendance status for today */
-export async function getKTVTodayAttendance(currentUser?: any) {
+export async function getKTVTodayAttendance(currentUser?: CurrentUser) {
   const supabase = await createClient();
   const user = currentUser || await getCurrentUser();
   if (!user || user.role !== 'ktv') return null;

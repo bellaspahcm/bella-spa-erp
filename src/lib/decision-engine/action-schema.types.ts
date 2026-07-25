@@ -12,7 +12,7 @@ export interface ActionParam {
   label: string;                // e.g., 'Priority Value'
   type: FieldType;
   required?: boolean;
-  defaultValue?: any;
+  defaultValue?: unknown;
   enumValues?: EnumOption[];
   validation?: FieldValidation;
   description?: string;

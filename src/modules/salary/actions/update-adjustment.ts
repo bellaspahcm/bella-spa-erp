@@ -2,6 +2,9 @@
 
 import { createClient } from '@/lib/supabase-server';
 import { revalidatePath } from 'next/cache';
+import type { Database } from '@/types/database.types';
+
+type SalaryAdjustmentUpdate = Database['public']['Tables']['salary_adjustments']['Update'];
 
 interface UpdateAdjustmentParams {
   adjustmentId: string;
@@ -33,7 +36,7 @@ export async function updateAdjustment(
     }
 
     // Get adjustment details
-    const { data: adjustment, error: fetchError } = await (supabase as any)
+    const { data: adjustment, error: fetchError } = await supabase
       .from('salary_adjustments')
       .select('id, status, created_by_id')
       .eq('id', params.adjustmentId)
@@ -71,7 +74,7 @@ export async function updateAdjustment(
     }
 
     // Build update object
-    const updates: any = {};
+    const updates: SalaryAdjustmentUpdate = {};
 
     if (params.category !== undefined) {
       if (!params.category.trim()) {
@@ -104,7 +107,7 @@ export async function updateAdjustment(
     }
 
     // Update adjustment
-    const { error: updateError } = await (supabase as any)
+    const { error: updateError } = await supabase
       .from('salary_adjustments')
       .update(updates)
       .eq('id', params.adjustmentId);

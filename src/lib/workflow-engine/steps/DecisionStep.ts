@@ -33,7 +33,7 @@ export interface DecisionContext {
   module: string;
   decisionType: string;
   ruleType: string;
-  rule: any;
+  rule: Record<string, unknown>;
   data: Record<string, unknown>;
   user?: { id?: string };
   correlationId?: string;
@@ -57,7 +57,7 @@ export interface DecisionStepConfig {
   ruleType: string;
   
   /** Rule definition (passed to Decision Engine) */
-  rule: any;
+  rule: Record<string, unknown>;
   
   /** Output key (where to store result in workflow context) */
   outputKey: string;

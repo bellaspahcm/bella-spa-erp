@@ -23,7 +23,7 @@ export function RetentionCurveChart({ data, height = 350 }: RetentionCurveChartP
     }));
 
   // Custom tooltips matching glassmorphism
-  const CustomTooltip = ({ active, payload }: any) => {
+  const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ value: number; payload: { cohort: string; size: number } }> }) => {
     if (active && payload && payload.length) {
       const entry = payload[0];
       return (

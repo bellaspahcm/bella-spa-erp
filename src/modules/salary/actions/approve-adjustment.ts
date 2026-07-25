@@ -3,6 +3,9 @@
 import { createClient } from '@/lib/supabase-server';
 import { revalidatePath } from 'next/cache';
 import { recalculateAndSaveSalaryRecordEngine } from '@/modules/hr-salary/actions/salary-recalculation-engine';
+import type { Database } from '@/types/database.types';
+
+type SalaryAdjustmentUpdate = Database['public']['Tables']['salary_adjustments']['Update'];
 
 interface ApproveAdjustmentParams {
   adjustmentId: string;
@@ -46,7 +49,7 @@ export async function approveAdjustment(
     }
 
     // Get adjustment details
-    const { data: adjustment, error: fetchError } = await (supabase as any)
+    const { data: adjustment, error: fetchError } = await supabase
       .from('salary_adjustments')
       .select('id, ktv_id, month_year, tenant_id, status')
       .eq('id', params.adjustmentId)
@@ -61,13 +64,14 @@ export async function approveAdjustment(
     }
 
     // Update adjustment status to approved
-    const { error: updateError } = await (supabase as any)
+    const approvePayload: SalaryAdjustmentUpdate = {
+      status: 'approved',
+      approved_by_id: user.id,
+      approved_at: new Date().toISOString(),
+    };
+    const { error: updateError } = await supabase
       .from('salary_adjustments')
-      .update({
-        status: 'approved',
-        approved_by_id: user.id,
-        approved_at: new Date().toISOString(),
-      })
+      .update(approvePayload)
       .eq('id', params.adjustmentId);
 
     if (updateError) {
@@ -84,7 +88,7 @@ export async function approveAdjustment(
 
     try {
       await recalculateAndSaveSalaryRecordEngine(
-        supabase as any,
+        supabase,
         adjustment.ktv_id,
         adjustment.tenant_id,
         monthStr

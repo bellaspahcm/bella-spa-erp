@@ -340,7 +340,7 @@ export class PayrollConfigService {
       }
 
       // Restore old value
-      const oldValue = history.old_value as any;
+      const oldValue = history.old_value as unknown as Partial<UpdateProviderConfigRequest>;
       return await this.updateProviderConfig(
         tenantId,
         providerKey,

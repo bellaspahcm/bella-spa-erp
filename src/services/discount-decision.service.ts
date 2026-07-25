@@ -159,7 +159,7 @@ export async function calculateTierDiscount(
     }
 
     // Step 3: Filter rules by order type (applies_to)
-    const applicableRules = rules.filter((rule: any) => {
+    const applicableRules = rules.filter((rule) => {
       const appliesTo = rule.applies_to || [];
       return (
         appliesTo.includes('all') ||
@@ -288,7 +288,8 @@ export async function applyCampaignPromotion(
     }
 
     // Step 3: Filter campaigns by eligibility
-    const eligibleCampaigns: any[] = [];
+    type CampaignRow = (typeof campaigns)[number];
+    const eligibleCampaigns: CampaignRow[] = [];
 
     for (const campaign of campaigns) {
       // Check minimum purchase
@@ -364,7 +365,7 @@ export async function applyCampaignPromotion(
       discountAmount: Math.round(discountAmount),
       freeItem,
       reason: `Campaign "${bestCampaign.campaign_name}" applied`,
-      validUntil: bestCampaign.end_date,
+      validUntil: bestCampaign.end_date ?? undefined,
       executionTime: performance.now() - startTime,
     };
   } catch (error) {
@@ -520,7 +521,7 @@ export async function trackDiscountUsage(params: {
   discountAmount: number;
   originalAmount: number;
   finalAmount: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }): Promise<{ success: boolean; error?: string }> {
   try {
     const supabase = await createClient();

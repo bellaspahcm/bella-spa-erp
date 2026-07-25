@@ -579,9 +579,9 @@ export async function createUser(formData: CreateUserInput) {
       );
       emailSent = mailResult.success;
       emailError = mailResult.error;
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[createUser] Error calling sendTemporaryPasswordEmail:', err);
-      emailError = err?.message || 'UNKNOWN_MAIL_ERROR';
+      emailError = getErrorMessage(err, 'UNKNOWN_MAIL_ERROR');
     }
 
     return {
@@ -674,7 +674,7 @@ export async function updateUser(
     .select('full_name, role, position_tier, hire_date')
     .eq('id', id)
     .eq('tenant_id', tenantId)
-    .single() as { data: any; error: any };
+    .single();
 
   if (snapshotError || !previousUser) {
     return { error: snapshotError?.message || 'User not found' };
@@ -687,10 +687,10 @@ export async function updateUser(
 
   // Only update position_tier and hire_date if provided (use type assertion for new fields)
   if (formData.position_tier !== undefined) {
-    (updatePayload as any).position_tier = formData.position_tier || 'junior';
+    updatePayload.position_tier = formData.position_tier ?? 'junior';
   }
   if (formData.hire_date !== undefined) {
-    (updatePayload as any).hire_date = formData.hire_date;
+    updatePayload.hire_date = formData.hire_date;
   }
 
   const { error } = await supabase
@@ -722,7 +722,7 @@ export async function updateUser(
     const rollbackError = await rollbackUserUpdate(supabase, id, {
       full_name: previousUser?.full_name,
       role: previousUser?.role,
-    } as any, tenantId);
+    } as UserUpdate, tenantId);
     const rollbackNote = rollbackError ? `; rollback failed: ${rollbackError}` : '';
     return { error: `Failed to record user update audit log: ${getErrorMessage(auditError)}${rollbackNote}` };
   }

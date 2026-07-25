@@ -144,7 +144,7 @@ export function buildCacheKey(
   prefix: string,
   tenantId: string,
   functionName: string,
-  params: Record<string, any> = {}
+  params: Record<string, unknown> = {}
 ): string {
   // Sort params by key for consistent cache keys
   const sortedParams = Object.keys(params)
@@ -163,7 +163,7 @@ export function buildCacheKey(
 /**
  * Serialize parameter value for cache key.
  */
-function serializeParamValue(value: any): string {
+function serializeParamValue(value: unknown): string {
   if (value === null || value === undefined) {
     return 'null';
   }

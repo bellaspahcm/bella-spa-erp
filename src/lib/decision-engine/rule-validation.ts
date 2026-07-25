@@ -54,7 +54,7 @@ export function validateCondition(
 
     // Type-specific validation
     if (fieldSchema.type === 'number') {
-      const numValue = typeof condition.value === 'number' ? condition.value : parseFloat(condition.value);
+      const numValue = typeof condition.value === 'number' ? condition.value : parseFloat(String(condition.value));
       if (isNaN(numValue)) {
         return { key: `${key}-value`, error: 'Please enter a valid number' };
       }
@@ -82,7 +82,7 @@ export function validateCondition(
           return { key: `${key}-value`, error: `Invalid value(s): ${invalidValues.join(', ')}` };
         }
       } else {
-        if (!validValues.includes(condition.value.toString())) {
+        if (!validValues.includes(String(condition.value))) {
           return { key: `${key}-value`, error: `Value must be one of: ${validValues.join(', ')}` };
         }
       }
@@ -156,7 +156,7 @@ export function validateAction(
     const value = action.params?.[param.key];
     if (value !== null && value !== undefined && value !== '') {
       if (param.type === 'number') {
-        const numValue = typeof value === 'number' ? value : parseFloat(value);
+        const numValue = typeof value === 'number' ? value : parseFloat(String(value));
         if (isNaN(numValue)) {
           errors[param.key] = 'Please enter a valid number';
         } else if (param.validation) {
@@ -172,7 +172,7 @@ export function validateAction(
       // Enum validation
       if (param.type === 'enum' && param.enumValues) {
         const validValues = param.enumValues.map(e => e.value.toString());
-        if (!validValues.includes(value.toString())) {
+        if (!validValues.includes(String(value))) {
           errors[param.key] = `Value must be one of: ${validValues.join(', ')}`;
         }
       }

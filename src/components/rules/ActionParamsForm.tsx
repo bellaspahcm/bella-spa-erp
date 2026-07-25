@@ -12,8 +12,8 @@ import { ActionParam } from '@/lib/decision-engine/action-schema.types';
 interface ActionParamsFormProps {
   provider: string;
   actionType: string;
-  params: Record<string, any>;
-  onChange: (params: Record<string, any>) => void;
+  params: Record<string, unknown>;
+  onChange: (params: Record<string, unknown>) => void;
   errors?: Record<string, string>;
   disabled?: boolean;
 }
@@ -39,7 +39,7 @@ export function ActionParamsForm({ provider, actionType, params, onChange, error
     );
   }
 
-  const handleParamChange = (paramKey: string, value: any) => {
+  const handleParamChange = (paramKey: string, value: unknown) => {
     onChange({
       ...params,
       [paramKey]: value,
@@ -124,7 +124,7 @@ export function ActionParamsForm({ provider, actionType, params, onChange, error
           <Input
             id={inputId}
             type="number"
-            value={value ?? ''}
+            value={(value as string | number) ?? ''}
             onChange={(e) => {
               const num = e.target.value === '' ? null : parseFloat(e.target.value);
               handleParamChange(param.key, num);
@@ -155,7 +155,7 @@ export function ActionParamsForm({ provider, actionType, params, onChange, error
           </Label>
           <Textarea
             id={inputId}
-            value={value || ''}
+            value={(value as string) || ''}
             onChange={(e) => handleParamChange(param.key, e.target.value)}
             placeholder={param.placeholder}
             disabled={disabled}
@@ -180,7 +180,7 @@ export function ActionParamsForm({ provider, actionType, params, onChange, error
         <Input
           id={inputId}
           type="text"
-          value={value || ''}
+          value={(value as string) || ''}
           onChange={(e) => handleParamChange(param.key, e.target.value)}
           placeholder={param.placeholder}
           disabled={disabled}

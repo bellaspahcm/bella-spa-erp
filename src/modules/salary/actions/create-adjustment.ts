@@ -2,6 +2,9 @@
 
 import { createClient } from '@/lib/supabase-server';
 import { revalidatePath } from 'next/cache';
+import type { Database } from '@/types/database.types';
+
+type SalaryAdjustmentInsert = Database['public']['Tables']['salary_adjustments']['Insert'];
 
 interface CreateAdjustmentParams {
   tenantId: string;
@@ -55,7 +58,7 @@ export async function createAdjustment(
     // ✅ CRITICAL BUSINESS RULE: Check if salary record is finalized or locked
     // Finalized/locked records are immutable - no adjustments allowed
     // This prevents data corruption after accounting finalization
-    const { data: salaryRecord, error: salaryError } = await (supabase as any)
+    const { data: salaryRecord, error: salaryError } = await supabase
       .from('salary_records')
       .select('status, is_locked')
       .eq('ktv_id', params.ktvId)
@@ -88,20 +91,21 @@ export async function createAdjustment(
     }
 
     // Insert adjustment
-    const { data, error: insertError } = await (supabase as any)
+    const adjustmentPayload: SalaryAdjustmentInsert = {
+      tenant_id: params.tenantId,
+      ktv_id: params.ktvId,
+      month_year: monthYear,
+      adjustment_type: params.adjustmentType,
+      category: params.category,
+      amount: params.amount,
+      reason: params.reason,
+      notes: params.notes,
+      status: 'draft',
+      created_by_id: user.id,
+    };
+    const { data, error: insertError } = await supabase
       .from('salary_adjustments')
-      .insert({
-        tenant_id: params.tenantId,
-        ktv_id: params.ktvId,
-        month_year: monthYear,
-        adjustment_type: params.adjustmentType,
-        category: params.category,
-        amount: params.amount,
-        reason: params.reason,
-        notes: params.notes,
-        status: 'draft',
-        created_by_id: user.id,
-      })
+      .insert(adjustmentPayload)
       .select('id')
       .single();
 

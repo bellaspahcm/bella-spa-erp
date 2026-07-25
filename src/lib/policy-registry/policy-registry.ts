@@ -55,7 +55,7 @@ export class PolicyRegistry {
    * @returns Registered policy ID
    */
   public async register(
-    policy: any,
+    policy: unknown,
     metadata: Omit<PolicyMetadata, 'createdAt' | 'updatedAt'>,
     options?: PolicyRegistrationOptions
   ): Promise<string> {

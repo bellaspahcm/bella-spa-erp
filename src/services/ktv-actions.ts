@@ -116,6 +116,25 @@ interface NotificationRow {
   isRead?: boolean | null;
 }
 
+interface LeaderboardRow {
+  ktv_id: string;
+  full_name: string | null;
+  total_sessions: number | null;
+  rating_avg: number | null;
+  kpi_score: number | null;
+  rank: number | null;
+  // Additional fields returned by get_ktv_leaderboard RPC
+  sessions: number | null;
+  commissions: number | null;
+  average_rating: number | null;
+  customer_rating: number | null;
+  discipline_score: number | null;
+  absent_days: number | null;
+  late_days: number | null;
+  max_late_streak: number | null;
+  total_kpi_bonus: number | null;
+}
+
 /**
  * Lấy các buổi chăm sóc đang thực hiện của KTV hiện tại
  */
@@ -766,7 +785,7 @@ export async function getKTVLeaderboard(month: string, currentUser?: CurrentUser
   const cacheKey = `leaderboard:${tenantId}:${monthStart}`;
   const { getCache, setCache, CacheTTL } = await import('@/lib/redis-cache');
   
-  const cached = await getCache<any[]>(cacheKey);
+  const cached = await getCache<LeaderboardRow[]>(cacheKey);
   if (cached) return cached;
 
   const { data, error } = await supabase.rpc('get_ktv_leaderboard', {
@@ -922,7 +941,7 @@ export async function getKTVEarningsPageData(selectedMonth: string) {
     throw new Error(`Failed to fetch sessions: ${sessionsResult.error.message}`);
   }
 
-  const myStats = leaderboard.find((k: any) => k.ktv_id === user.id) || null;
+  const myStats = (leaderboard as unknown as LeaderboardRow[]).find((k) => k.ktv_id === user.id) || null;
 
   return {
     user,

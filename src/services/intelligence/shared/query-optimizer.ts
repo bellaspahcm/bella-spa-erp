@@ -56,7 +56,7 @@ export function getAverageQueryTime(queryName: string): number {
 interface BatchedQuery<T> {
   query: () => Promise<T>;
   resolve: (value: T) => void;
-  reject: (error: any) => void;
+  reject: (error: unknown) => void;
 }
 
 const queryBatches = new Map<string, BatchedQuery<any>[]>();

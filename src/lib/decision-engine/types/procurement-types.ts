@@ -76,7 +76,7 @@ export interface ProcurementDecisionContext extends DecisionContext {
     escalationThresholdDays?: number;
     restrictedCategories?: string[];
     restrictedSuppliers?: string[];
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
 

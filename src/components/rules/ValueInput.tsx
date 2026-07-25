@@ -12,8 +12,8 @@ interface ValueInputProps {
   provider: string;
   fieldKey?: string;
   operator?: ComparisonOperator;
-  value: any;
-  onChange: (value: any) => void;
+  value: unknown;
+  onChange: (value: unknown) => void;
   placeholder?: string;
   disabled?: boolean;
 }
@@ -70,7 +70,7 @@ export function ValueInput({ provider, fieldKey, operator, value, onChange, plac
       return (
         <Input
           type="text"
-          value={Array.isArray(value) ? value.join(', ') : value || ''}
+          value={Array.isArray(value) ? value.join(', ') : (value as string) || ''}
           onChange={(e) => {
             const values = e.target.value.split(',').map(v => v.trim()).filter(Boolean);
             onChange(values);
@@ -109,7 +109,7 @@ export function ValueInput({ provider, fieldKey, operator, value, onChange, plac
     return (
       <Input
         type="number"
-        value={value ?? ''}
+        value={(value as string | number) ?? ''}
         onChange={(e) => {
           const num = e.target.value === '' ? null : parseFloat(e.target.value);
           onChange(num);
@@ -128,7 +128,7 @@ export function ValueInput({ provider, fieldKey, operator, value, onChange, plac
     return (
       <Input
         type="date"
-        value={value || ''}
+        value={(value as string) || ''}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
         className="h-11 !rounded-xl bg-slate-50/50 dark:bg-zinc-900/40 border-slate-200/80 dark:border-zinc-800/80 hover:bg-slate-50 hover:border-slate-300 dark:hover:bg-zinc-900/60 dark:hover:border-zinc-700 focus-visible:bg-white dark:focus-visible:bg-zinc-950 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary shadow-sm transition-all duration-200 text-sm w-full"
@@ -141,7 +141,7 @@ export function ValueInput({ provider, fieldKey, operator, value, onChange, plac
     return (
       <Input
         type="datetime-local"
-        value={value || ''}
+        value={(value as string) || ''}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
         className="h-11 !rounded-xl bg-slate-50/50 dark:bg-zinc-900/40 border-slate-200/80 dark:border-zinc-800/80 hover:bg-slate-50 hover:border-slate-300 dark:hover:bg-zinc-900/60 dark:hover:border-zinc-700 focus-visible:bg-white dark:focus-visible:bg-zinc-950 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary shadow-sm transition-all duration-200 text-sm w-full"
@@ -153,7 +153,7 @@ export function ValueInput({ provider, fieldKey, operator, value, onChange, plac
   return (
     <Input
       type="text"
-      value={value || ''}
+      value={(value as string) || ''}
       onChange={(e) => onChange(e.target.value)}
       placeholder={effectivePlaceholder}
       disabled={disabled}

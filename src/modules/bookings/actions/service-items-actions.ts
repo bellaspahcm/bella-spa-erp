@@ -18,6 +18,8 @@ import {
 } from '@/lib/supabase-commission-queries';
 import type { BookingServiceItem } from '@/types/commission-types';
 
+type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
+
 export interface ServiceItemInput {
   bookingId: string;
   tenantId: string;
@@ -32,7 +34,7 @@ export interface ServiceItemInput {
 
 export interface ServiceItemResult {
   success: boolean;
-  data?: any;
+  data?: BookingServiceItem | null;
   error?: string;
 }
 
@@ -44,7 +46,7 @@ function extractMonthYear(dateStr: string | null | undefined): string {
 }
 
 async function verifySalaryRecordNotLocked(
-  supabase: any,
+  supabase: SupabaseClient,
   ktvId: string | null,
   monthYear: string,
   tenantId: string

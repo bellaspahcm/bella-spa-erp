@@ -11,6 +11,7 @@ import {
   calculatePositionBonus,
   calculateSeniorityBonus,
   aggregateManualAdjustments,
+  type CommissionConfig,
 } from '@/lib/business-rules/commission';
 import { BUSINESS_RULES } from '@bella/shared';
 
@@ -208,7 +209,7 @@ export async function getMonthlyPnL(month?: string) {
         .eq('id', tenantId)
         .maybeSingle();
 
-      const commissionConfig = (tenantData?.commission_config as unknown as any) || {};
+      const commissionConfig = (tenantData?.commission_config as unknown as Partial<CommissionConfig>) || {};
       const positionMultipliers = commissionConfig.position_multipliers || { junior: 1.0, senior: 1.2, lead: 1.5 };
       const seniorityBonusRates = commissionConfig.seniority_bonus_rates || {
         '0_to_1_year': 0.00,
@@ -218,29 +219,28 @@ export async function getMonthlyPnL(month?: string) {
       };
 
       // Fetch advanced commission data
-      const rawClient = supabase as any;
       const [serviceItemsRes, productSalesRes, adjustmentsRes, kpiRecordsRes] = await Promise.all([
-        rawClient
+        supabase
           .from('booking_service_items')
           .select('ktv_id, calculated_commission')
           .eq('status', 'completed')
           .gte('completed_date', startDate)
           .lt('completed_date', endDate)
           .eq('tenant_id', tenantId),
-        rawClient
+        supabase
           .from('product_sales')
           .select('ktv_id, calculated_commission')
           .eq('status', 'completed')
           .gte('sale_date', startDate)
           .lt('sale_date', endDate)
           .eq('tenant_id', tenantId),
-        rawClient
+        supabase
           .from('salary_adjustments')
           .select('ktv_id, adjustment_type, amount, status')
           .eq('status', 'approved')
           .eq('month_year', startDate)
           .eq('tenant_id', tenantId),
-        rawClient
+        supabase
           .from('kpi_records')
           .select('ktv_id, bonus_amount')
           .eq('month_year', startDate)
@@ -331,6 +331,13 @@ export async function getMonthlyPnL(month?: string) {
         );
 
         // If no attendance at all → no salary accrued (KTV hasn't worked this month)
+        const positionTier0 = (ktv.position_tier || 'junior') as 'junior' | 'senior' | 'lead';
+        const positionBonus0 = calculatePositionBonus({
+          baseCommission: serviceItemsCommissionByKtv.get(ktv.id) ?? 0,
+          positionTier: positionTier0,
+          multipliers: positionMultipliers,
+        });
+
         if (actualDays === 0) {
           // Still add session commissions if any (edge case: completed session without checkin)
           accruedSalaries += calculateSalaryTotal({
@@ -339,11 +346,7 @@ export async function getMonthlyPnL(month?: string) {
             serviceCommission: serviceItemsCommissionByKtv.get(ktv.id) ?? 0,
             productSalesCommission: productSalesCommissionByKtv.get(ktv.id) ?? 0,
             kpiBonus: kpiBonusByKtv.get(ktv.id) ?? 0,
-            positionBonus: calculatePositionBonus({
-              baseCommission: serviceItemsCommissionByKtv.get(ktv.id) ?? 0,
-              positionTier: (ktv.position_tier || 'junior') as any,
-              multipliers: positionMultipliers,
-            }),
+            positionBonus: positionBonus0,
             seniorityBonus: 0,
             manualAdjustments: aggregateManualAdjustments({
               adjustments: manualAdjustmentsByKtv.get(ktv.id) ?? [],
@@ -362,7 +365,7 @@ export async function getMonthlyPnL(month?: string) {
         const manualAdjustments = aggregateManualAdjustments({
           adjustments: manualAdjustmentsByKtv.get(ktv.id) ?? [],
         });
-        const positionTier = (ktv.position_tier || 'junior') as any;
+        const positionTier = (ktv.position_tier || 'junior') as 'junior' | 'senior' | 'lead';
         const positionBonus = calculatePositionBonus({
           baseCommission: serviceCommission,
           positionTier,

@@ -83,7 +83,7 @@ export abstract class NotificationProvider {
     if (error instanceof Error) {
       return {
         message: error.message,
-        code: (error as any).code || 'UNKNOWN_ERROR',
+        code: (error as NodeJS.ErrnoException).code || 'UNKNOWN_ERROR',
       };
     }
     return {

@@ -162,7 +162,7 @@ export default function KTVLeaderboardPage() {
                     <div className="flex items-center gap-4">
                      <span className="text-xs font-black text-slate-800 dark:text-[#D4C5B6] w-4">{index + 4}</span>
                        <div className="w-10 h-10 bg-slate-50 dark:bg-[#292623] rounded-xl flex items-center justify-center border border-slate-100 dark:border-[#3E3A35]">
-                          <span className="text-xs font-black text-slate-800 dark:text-[#D4C5B6]">{item.full_name.charAt(0)}</span>
+                          <span className="text-xs font-black text-slate-800 dark:text-[#D4C5B6]">{(item.full_name ?? '?').charAt(0)}</span>
                        </div>
                        <div>
                           <h4 className="text-sm font-black text-slate-900 dark:text-[#EFE9E1]">{item.full_name}</h4>

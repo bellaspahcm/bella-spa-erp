@@ -183,8 +183,7 @@ export async function createBookingServiceItems(
     }
 
     // Insert all service items in one query
-    // Note: Using 'as any' because booking_service_items table might not be in generated types yet
-    const { error: insertError } = await (supabase as any)
+    const { error: insertError } = await supabase
       .from('booking_service_items')
       .insert(insertPayloads);
 

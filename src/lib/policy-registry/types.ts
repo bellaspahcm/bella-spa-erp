@@ -98,7 +98,7 @@ export interface RegisteredPolicy {
   metadata: PolicyMetadata;
   
   /** Policy instance (the actual policy class) */
-  policy: any; // Using any to allow flexibility across different policy types
+  policy: unknown; // Using unknown to allow flexibility across different policy types
   
   /** Registration timestamp */
   registeredAt: string;

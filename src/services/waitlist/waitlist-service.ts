@@ -225,11 +225,11 @@ export async function addToWaitlist(
         priorityScore: e.priority_score,
         position: e.position,
         waitMinutes: e.wait_minutes || 0,
-        status: (e.status as any) || 'active',
+        status: (e.status as WaitlistEntry['status']) || 'active',
         createdAt: e.created_at,
         expiresAt: e.expires_at,
         updatedAt: e.updated_at,
-      })) as any,
+      })) as WaitlistManagementInput['existingWaitlist'],
       config: {
         enablePriorityRanking: true,
         enableAutoNotification: true,

@@ -77,7 +77,7 @@ export default async function EditRulePage({
         </div>
 
         <Suspense fallback={<RuleEditorSkeleton />}>
-          <RuleEditor mode="edit" ruleId={ruleId} initialData={rule} />
+          <RuleEditor mode="edit" ruleId={ruleId} initialData={rule as unknown as Partial<import('@/components/rules/RuleEditor').RuleFormData>} />
         </Suspense>
       </div>
     </div>
