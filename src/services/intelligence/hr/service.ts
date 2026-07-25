@@ -90,7 +90,7 @@ export class HRIntelligenceService implements IntelligenceService {
     dateRange?: DateRange | TimePeriod
   ): Promise<IntelligenceResponse<WorkforceAnalytics>> {
     const startTime = Date.now();
-    const parsedRange = dateRange ? parseDateRange(dateRange as any) : undefined;
+    const parsedRange = dateRange ? parseDateRange(dateRange) : undefined;
 
     try {
       // Build cache key
@@ -174,7 +174,7 @@ export class HRIntelligenceService implements IntelligenceService {
     ktvId?: string
   ): Promise<IntelligenceResponse<AttendanceReport[]>> {
     const startTime = Date.now();
-    const parsedRange = dateRange ? parseDateRange(dateRange as any) : undefined;
+    const parsedRange = dateRange ? parseDateRange(dateRange) : undefined;
 
     try {
       // Build cache key
@@ -344,7 +344,7 @@ export class HRIntelligenceService implements IntelligenceService {
     limit?: number
   ): Promise<IntelligenceResponse<EmployeePerformance[]>> {
     const startTime = Date.now();
-    const parsedRange = dateRange ? parseDateRange(dateRange as any) : undefined;
+    const parsedRange = dateRange ? parseDateRange(dateRange) : undefined;
 
     try {
       // Build cache key
@@ -429,7 +429,7 @@ export class HRIntelligenceService implements IntelligenceService {
     dateRange?: DateRange | TimePeriod
   ): Promise<IntelligenceResponse<RecruitmentMetrics[]>> {
     const startTime = Date.now();
-    const parsedRange = dateRange ? parseDateRange(dateRange as any) : undefined;
+    const parsedRange = dateRange ? parseDateRange(dateRange) : undefined;
 
     try {
       // Build cache key
@@ -511,7 +511,7 @@ export class HRIntelligenceService implements IntelligenceService {
     dateRange?: DateRange | TimePeriod
   ): Promise<IntelligenceResponse<TrainingMetrics[]>> {
     const startTime = Date.now();
-    const parsedRange = dateRange ? parseDateRange(dateRange as any) : undefined;
+    const parsedRange = dateRange ? parseDateRange(dateRange) : undefined;
 
     try {
       // Build cache key
@@ -593,7 +593,7 @@ export class HRIntelligenceService implements IntelligenceService {
     dateRange?: DateRange | TimePeriod
   ): Promise<IntelligenceResponse<RetentionAnalysis | null>> {
     const startTime = Date.now();
-    const parsedRange = dateRange ? parseDateRange(dateRange as any) : undefined;
+    const parsedRange = dateRange ? parseDateRange(dateRange) : undefined;
 
     try {
       // Build cache key
@@ -674,7 +674,7 @@ export class HRIntelligenceService implements IntelligenceService {
     dateRange?: DateRange | TimePeriod
   ): Promise<IntelligenceResponse<ProductivityTrends[]>> {
     const startTime = Date.now();
-    const parsedRange = dateRange ? parseDateRange(dateRange as any) : undefined;
+    const parsedRange = dateRange ? parseDateRange(dateRange) : undefined;
 
     try {
       // Build cache key

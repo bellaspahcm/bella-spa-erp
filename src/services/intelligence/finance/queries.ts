@@ -56,6 +56,78 @@ async function createServiceRoleClient() {
 
 // ─── Type Definitions ───────────────────────────────────────────────────────
 
+interface MvMonthlyPnlRow {
+  tenant_id: string;
+  month: string;
+  booking_revenue?: number;
+  product_revenue?: number;
+  package_revenue?: number;
+  other_revenue?: number;
+  total_revenue?: number;
+  gross_revenue?: number;
+  total_ktv_salaries?: number;
+  total_operating_expenses?: number;
+  supplies_expense?: number;
+  marketing_expense?: number;
+  utilities_expense?: number;
+  maintenance_expense?: number;
+  other_operating_expense?: number;
+  total_expenses?: number;
+  total_expense?: number;
+  net_profit?: number;
+  profit_margin_pct?: number;
+  gross_margin_pct?: number;
+  net_margin_pct?: number;
+  computed_at: string;
+}
+
+interface MvCashFlowRow {
+  tenant_id: string;
+  month: string;
+  cash_sales_inflow?: number;
+  card_sales_inflow?: number;
+  transfer_inflow?: number;
+  deposit_inflow?: number;
+  other_inflow?: number;
+  total_inflow?: number;
+  salary_outflow?: number;
+  supplier_outflow?: number;
+  rent_outflow?: number;
+  utility_outflow?: number;
+  marketing_outflow?: number;
+  other_outflow?: number;
+  total_outflow?: number;
+  net_cash_flow?: number;
+  opening_balance?: number;
+  closing_balance?: number;
+  computed_at: string;
+}
+
+interface MvBudgetVarianceRow {
+  tenant_id: string;
+  month: string;
+  category: string;
+  budgeted_amount?: number;
+  actual_amount?: number;
+  variance?: number;
+  variance_pct?: number;
+  status?: 'under_budget' | 'on_budget' | 'over_budget';
+  computed_at: string;
+}
+
+interface ExpenseRow {
+  category: string;
+  amount: number;
+  expense_date?: string;
+}
+
+interface RevenueRow {
+  revenue_type?: string;
+  payment_method?: string;
+  amount: number;
+  received_date?: string;
+}
+
 /**
  * Monthly Profit & Loss Statement
  */
@@ -324,7 +396,7 @@ export async function getMonthlyPnL(
     
     // Query materialized view
     const { data, error } = await supabase
-      .from('mv_monthly_pnl' as any)
+      .from('mv_monthly_pnl' as never)
       .select('*')
       .eq('tenant_id', tenantId)
       .gte('month', formatDate(range.startDate))
@@ -338,8 +410,9 @@ export async function getMonthlyPnL(
       );
     }
     
+    const rows = (data || []) as unknown as MvMonthlyPnlRow[];
     // Map database columns to camelCase (matching actual mv_monthly_pnl view schema)
-    return (data || []).map((row: any) => ({
+    return rows.map((row) => ({
       tenantId: row.tenant_id,
       month: row.month,
       serviceRevenue: row.booking_revenue || 0,       // view: booking_revenue
@@ -358,8 +431,8 @@ export async function getMonthlyPnL(
       grossProfit: row.gross_revenue || 0,             // view: gross_revenue (same as total_revenue before expenses)
       operatingProfit: (row.total_revenue || 0) - (row.total_operating_expenses || 0),
       netProfit: row.net_profit || 0,
-      grossMarginPct: row.total_revenue > 0 ? (row.gross_revenue / row.total_revenue * 100) : 0,
-      operatingMarginPct: row.total_revenue > 0 ? ((row.total_revenue - row.total_operating_expenses) / row.total_revenue * 100) : 0,
+      grossMarginPct: row.total_revenue && row.total_revenue > 0 && row.gross_revenue ? (row.gross_revenue / row.total_revenue * 100) : 0,
+      operatingMarginPct: row.total_revenue && row.total_revenue > 0 ? ((row.total_revenue - (row.total_operating_expenses || 0)) / row.total_revenue * 100) : 0,
       netMarginPct: row.profit_margin_pct || 0,
       computedAt: row.computed_at,
     }));
@@ -400,7 +473,7 @@ export async function getCashFlowAnalysis(
     
     // Query materialized view
     const { data, error } = await supabase
-      .from('mv_cash_flow' as any)
+      .from('mv_cash_flow' as never)
       .select('*')
       .eq('tenant_id', tenantId)
       .gte('month', formatDate(range.startDate))
@@ -414,8 +487,9 @@ export async function getCashFlowAnalysis(
       );
     }
     
+    const rows = (data || []) as unknown as MvCashFlowRow[];
     // Map database columns to camelCase
-    return (data || []).map((row: any) => ({
+    return rows.map((row) => ({
       tenantId: row.tenant_id,
       month: row.month,
       cashSalesInflow: row.cash_sales_inflow || 0,
@@ -470,7 +544,7 @@ export async function getBudgetVariance(
     
     // Query materialized view
     const { data, error } = await supabase
-      .from('mv_budget_variance' as any)
+      .from('mv_budget_variance' as never)
       .select('*')
       .eq('tenant_id', tenantId)
       .eq('month', month)
@@ -483,8 +557,9 @@ export async function getBudgetVariance(
       );
     }
     
+    const rows = (data || []) as unknown as MvBudgetVarianceRow[];
     // Map database columns to camelCase
-    return (data || []).map((row: any) => ({
+    return rows.map((row) => ({
       tenantId: row.tenant_id,
       month: row.month,
       category: row.category,
@@ -588,14 +663,14 @@ export async function getExpenseBreakdown(
     
     // Aggregate by category
     const categoryMap = new Map<string, number>();
-    (expenses || []).forEach((exp: any) => {
+    ((expenses || []) as ExpenseRow[]).forEach((exp) => {
       const current = categoryMap.get(exp.category) || 0;
       categoryMap.set(exp.category, current + (exp.amount || 0));
     });
     
     // Aggregate previous period by category for trend
     const prevCategoryMap = new Map<string, number>();
-    (prevExpenses || []).forEach((exp: any) => {
+    ((prevExpenses || []) as ExpenseRow[]).forEach((exp) => {
       const current = prevCategoryMap.get(exp.category) || 0;
       prevCategoryMap.set(exp.category, current + (exp.amount || 0));
     });
@@ -623,7 +698,7 @@ export async function getExpenseBreakdown(
     
     // Aggregate payment methods from revenue (as proxy for cash flow patterns)
     const methodMap = new Map<string, number>();
-    (revenueData || []).forEach((rev: any) => {
+    ((revenueData || []) as RevenueRow[]).forEach((rev) => {
       const method = rev.payment_method || 'cash';
       const current = methodMap.get(method) || 0;
       methodMap.set(method, current + (rev.amount || 0));
@@ -722,7 +797,7 @@ export async function getRevenueBreakdown(
     
     // Aggregate by type
     const typeMap = new Map<string, number>();
-    (data || []).forEach((rev: any) => {
+    ((data || []) as RevenueRow[]).forEach((rev) => {
       const type = rev.revenue_type || 'other';
       const current = typeMap.get(type) || 0;
       typeMap.set(type, current + (rev.amount || 0));
@@ -730,7 +805,7 @@ export async function getRevenueBreakdown(
     
     // Aggregate previous period by type for trend
     const prevTypeMap = new Map<string, number>();
-    (prevData || []).forEach((rev: any) => {
+    ((prevData || []) as RevenueRow[]).forEach((rev) => {
       const type = rev.revenue_type || 'other';
       const current = prevTypeMap.get(type) || 0;
       prevTypeMap.set(type, current + (rev.amount || 0));
@@ -750,7 +825,7 @@ export async function getRevenueBreakdown(
     
     // Aggregate by payment method
     const methodMap = new Map<string, number>();
-    (data || []).forEach((rev: any) => {
+    ((data || []) as RevenueRow[]).forEach((rev) => {
       const method = rev.payment_method || 'cash';
       const current = methodMap.get(method) || 0;
       methodMap.set(method, current + (rev.amount || 0));
@@ -817,7 +892,7 @@ export async function getCashFlowForecast(
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
     
     const { data, error } = await supabase
-      .from('mv_cash_flow' as any)
+      .from('mv_cash_flow' as never)
       .select('*')
       .eq('tenant_id', tenantId)
       .gte('month', formatDate(sixMonthsAgo))
@@ -834,12 +909,13 @@ export async function getCashFlowForecast(
       throw new QueryError('Insufficient historical data for forecasting', undefined);
     }
     
+    const rows = data as unknown as MvCashFlowRow[];
     // Calculate moving averages
-    const avgInflow = (data || []).reduce((sum: number, row: any) => sum + (row.total_inflow || 0), 0) / data.length;
-    const avgOutflow = (data || []).reduce((sum: number, row: any) => sum + (row.total_outflow || 0), 0) / data.length;
+    const avgInflow = rows.reduce((sum: number, row) => sum + (row.total_inflow || 0), 0) / rows.length;
+    const avgOutflow = rows.reduce((sum: number, row) => sum + (row.total_outflow || 0), 0) / rows.length;
     
     // Get last known closing balance
-    const lastRecord = data[data.length - 1] as any;
+    const lastRecord = rows[rows.length - 1];
     let runningBalance = lastRecord?.closing_balance || 0;
     
     // Generate forecasts
@@ -906,7 +982,7 @@ export async function getProfitabilityTrends(
     
     // Query monthly P&L data
     const { data, error } = await supabase
-      .from('mv_monthly_pnl' as any)
+      .from('mv_monthly_pnl' as never)
       .select('*')
       .eq('tenant_id', tenantId)
       .gte('month', formatDate(range.startDate))
@@ -924,11 +1000,12 @@ export async function getProfitabilityTrends(
       throw new QueryError('No data available for profitability trends', undefined);
     }
     
+    const rows = data as unknown as MvMonthlyPnlRow[];
     // Map monthly trends
-    const monthlyTrends = (data || []).map((row: any) => ({
+    const monthlyTrends = rows.map((row) => ({
       month: row.month,
       totalRevenue: row.total_revenue || 0,
-      totalExpense: row.total_expense || 0,
+      totalExpense: row.total_expense || row.total_expenses || 0,
       netProfit: row.net_profit || 0,
       grossMarginPct: row.gross_margin_pct || 0,
       netMarginPct: row.net_margin_pct || 0,
@@ -1021,7 +1098,7 @@ export async function getFinancialRatios(
     
     // Query P&L data for the month
     const { data: pnlData, error: pnlError } = await supabase
-      .from('mv_monthly_pnl' as any)
+      .from('mv_monthly_pnl' as never)
       .select('*')
       .eq('tenant_id', tenantId)
       .eq('month', month)
@@ -1036,7 +1113,7 @@ export async function getFinancialRatios(
     
     // Query cash flow data for the month
     const { data: cashFlowData, error: cashFlowError } = await supabase
-      .from('mv_cash_flow' as any)
+      .from('mv_cash_flow' as never)
       .select('*')
       .eq('tenant_id', tenantId)
       .eq('month', month)
@@ -1050,8 +1127,8 @@ export async function getFinancialRatios(
     }
     
     // Calculate ratios (simplified without balance sheet)
-    const pnl = pnlData as any;
-    const cashFlow = cashFlowData as any;
+    const pnl = pnlData as unknown as MvMonthlyPnlRow;
+    const cashFlow = cashFlowData as unknown as MvCashFlowRow;
     
     const totalRevenue = pnl?.total_revenue || 0;
     const totalExpense = pnl?.total_expense || 0;

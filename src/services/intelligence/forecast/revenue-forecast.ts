@@ -158,9 +158,8 @@ async function selectBestModel(
   tenantId: string,
   forecastType: string
 ): Promise<ModelName> {
-  // Query mv_forecast_accuracy to get best model
-  // Note: View not in generated types yet, using type cast
-  const { data, error} = await (supabase as any)
+  type SupabaseFrom = { from: (t: string) => any };
+  const { data, error} = await (supabase as unknown as SupabaseFrom)
     .from('mv_forecast_accuracy')
     .select('model_name')
     .eq('tenant_id', tenantId)
@@ -184,8 +183,8 @@ async function enrichWithActualValues(
   // Fetch actual revenue for dates that have passed
   const dates = forecasts.map((f) => f.date);
   
-  // Note: View not in generated types yet, using type cast
-  const { data, error } = await (supabase as any)
+  type SupabaseFrom = { from: (t: string) => any };
+  const { data, error } = await (supabase as unknown as SupabaseFrom)
     .from('mv_monthly_pnl')
     .select('period_month, total_revenue')
     .eq('tenant_id', tenantId)
@@ -196,7 +195,7 @@ async function enrichWithActualValues(
   }
   
   const actualMap = new Map(
-    data.map((row: any) => [row.period_month, Number(row.total_revenue) || 0])
+    (data as unknown as Record<string, unknown>[]).map((row) => [row.period_month as string, Number(row.total_revenue) || 0])
   );
   
   return forecasts.map((forecast): RevenueForecastPoint => {
@@ -467,8 +466,8 @@ async function saveForecastResults(
     accuracy_pct: forecast.accuracyPct || null,
   }));
   
-  // Note: Table not in generated types yet, using type cast
-  const { error } = await (supabase as any)
+  type SupabaseFrom = { from: (t: string) => any };
+  const { error } = await (supabase as unknown as SupabaseFrom)
     .from('forecast_results')
     .upsert(forecastRecords, {
       onConflict: 'tenant_id,forecast_type,model_name,model_version,forecast_date,forecast_horizon',

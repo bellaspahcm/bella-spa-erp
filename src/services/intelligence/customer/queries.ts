@@ -248,7 +248,7 @@ export async function getCustomerSegmentation(
   const supabase = await createServiceRoleClient();
   
   let query = supabase
-    .from('mv_customer_segments' as any) // Materialized view not in generated types yet
+    .from('mv_customer_segments' as never) // Materialized view not in generated types yet
     .select('*')
     .eq('tenant_id', tenantId);
   
@@ -268,8 +268,6 @@ export async function getCustomerSegmentation(
     throw new QueryError(`Failed to fetch customer segmentation: ${error.message}`, error);
   }
   
-  // After error check, data is guaranteed to be array. Cast through unknown is necessary
-  // because materialized view is not in generated types (using 'as any' in .from())
   return ((data ?? []) as unknown as Record<string, unknown>[]).map((row) => snakeToCamel<CustomerSegment>(row));
 }
 
@@ -292,7 +290,7 @@ export async function getCustomerLTV(
   const supabase = await createServiceRoleClient();
   
   let query = supabase
-    .from('mv_customer_ltv' as any) // Materialized view not in generated types yet
+    .from('mv_customer_ltv' as never) // Materialized view not in generated types yet
     .select('*')
     .eq('tenant_id', tenantId);
   
@@ -317,8 +315,6 @@ export async function getCustomerLTV(
     throw new QueryError(`Failed to fetch customer LTV: ${error.message}`, error);
   }
   
-  // After error check, data is guaranteed to be array. Cast through unknown is necessary
-  // because materialized view is not in generated types (using 'as any' in .from())
   return ((data ?? []) as unknown as Record<string, unknown>[]).map((row) => snakeToCamel<CustomerLTV>(row));
 }
 
@@ -339,7 +335,7 @@ export async function getChurnRiskAnalysis(
   const supabase = await createServiceRoleClient();
   
   let query = supabase
-    .from('mv_customer_activity_summary' as any) // Materialized view not in generated types yet
+    .from('mv_customer_activity_summary' as never) // Materialized view not in generated types yet
     .select('*')
     .eq('tenant_id', tenantId);
   
@@ -359,8 +355,6 @@ export async function getChurnRiskAnalysis(
     throw new QueryError(`Failed to fetch churn risk analysis: ${error.message}`, error);
   }
   
-  // After error check, data is guaranteed to be array. Cast through unknown is necessary
-  // because materialized view is not in generated types (using 'as any' in .from())
   return ((data ?? []) as unknown as Record<string, unknown>[]).map((row) => snakeToCamel<CustomerActivitySummary>(row));
 }
 
@@ -393,7 +387,7 @@ export async function getSegmentDistribution(
   
   // Aggregate from customer segments MV
   const { data, error } = await supabase
-    .from('mv_customer_segments' as any)
+    .from('mv_customer_segments' as never)
     .select('*')
     .eq('tenant_id', tenantId);
   
@@ -406,11 +400,16 @@ export async function getSegmentDistribution(
   }
   
   // Cast data to proper type after error check and null check
-  const rows = data as unknown as Record<string, any>[];
+  interface SegmentRow {
+    segment?: string;
+    total_revenue?: number;
+    rfm_score?: number;
+  }
+  const rows = data as unknown as SegmentRow[];
   
   // Group by segment and aggregate
   const segmentMap = rows.reduce((acc, row) => {
-    const segment = row.segment as string;
+    const segment = row.segment || 'Other';
     if (!acc[segment]) {
       acc[segment] = {
         tenantId,
@@ -423,9 +422,9 @@ export async function getSegmentDistribution(
       };
     }
     acc[segment].customerCount += 1;
-    acc[segment].totalRevenue += row.total_revenue || 0;
-    acc[segment].avgRfmScore += row.rfm_score || 0;
-    acc[segment].avgLifetimeValue += row.total_revenue || 0;
+    acc[segment].totalRevenue += Number(row.total_revenue || 0);
+    acc[segment].avgRfmScore += Number(row.rfm_score || 0);
+    acc[segment].avgLifetimeValue += Number(row.total_revenue || 0);
     return acc;
   }, {} as Record<string, SegmentDistribution>);
   
@@ -454,7 +453,7 @@ export async function getCohortAnalysis(
   const supabase = await createServiceRoleClient();
   
   const { data, error } = await supabase
-    .from('mv_customer_ltv' as any)
+    .from('mv_customer_ltv' as never)
     .select('*')
     .eq('tenant_id', tenantId)
     .order('cohort_month', { ascending: false })
@@ -468,33 +467,42 @@ export async function getCohortAnalysis(
     return [];
   }
   
-  // Cast data to proper type after error check and null check
-  const rows = data as unknown as Record<string, any>[];
+  interface CohortRow {
+    cohort_month?: string;
+    cohort_year?: number;
+    cohort_size?: number;
+    avg_cohort_ltv?: number;
+    cohort_retention_rate_pct?: number;
+    lifetime_revenue?: number;
+    active_months?: number;
+    customer_value_tier?: string;
+  }
+  const rows = data as unknown as CohortRow[];
   
   // Group by cohort month and aggregate
   const cohortMap = rows.reduce((acc, row) => {
-    const cohortMonth = row.cohort_month as string;
+    const cohortMonth = row.cohort_month || 'Unknown';
     if (!acc[cohortMonth]) {
       acc[cohortMonth] = {
         tenantId,
         cohortMonth,
-        cohortYear: row.cohort_year as number,
-        cohortSize: row.cohort_size as number,
+        cohortYear: Number(row.cohort_year || 0),
+        cohortSize: Number(row.cohort_size || 0),
         totalRevenue: 0,
-        avgLtv: row.avg_cohort_ltv as number,
-        retentionRatePct: row.cohort_retention_rate_pct as number,
+        avgLtv: Number(row.avg_cohort_ltv || 0),
+        retentionRatePct: Number(row.cohort_retention_rate_pct || 0),
         avgActiveMonths: 0,
         topValueTier: '',
         customerCount: 0,
         valueTiers: {} as Record<string, number>,
       };
     }
-    acc[cohortMonth].totalRevenue += row.lifetime_revenue || 0;
-    acc[cohortMonth].avgActiveMonths += row.active_months || 0;
+    acc[cohortMonth].totalRevenue += Number(row.lifetime_revenue || 0);
+    acc[cohortMonth].avgActiveMonths += Number(row.active_months || 0);
     acc[cohortMonth].customerCount += 1;
     
     // Track value tier distribution
-    const tier = row.customer_value_tier as string;
+    const tier = row.customer_value_tier || 'Standard';
     acc[cohortMonth].valueTiers[tier] = (acc[cohortMonth].valueTiers[tier] || 0) + 1;
     
     return acc;

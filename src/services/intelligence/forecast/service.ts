@@ -104,7 +104,8 @@ export class ForecastService {
           computationTime,
         },
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { message?: string };
       return {
         success: false,
         data: {} as RevenueForecastResult,
@@ -118,7 +119,7 @@ export class ForecastService {
         },
         error: {
           code: 'FORECAST_ERROR',
-          message: error.message || 'Failed to generate revenue forecast',
+          message: err.message || 'Failed to generate revenue forecast',
           details: error,
         },
       };
@@ -182,7 +183,8 @@ export class ForecastService {
           computationTime,
         },
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { message?: string };
       return {
         success: false,
         data: {} as ChurnForecastResult,
@@ -196,7 +198,7 @@ export class ForecastService {
         },
         error: {
           code: 'FORECAST_ERROR',
-          message: error.message || 'Failed to generate churn forecast',
+          message: err.message || 'Failed to generate churn forecast',
           details: error,
         },
       };
@@ -261,7 +263,8 @@ export class ForecastService {
           computationTime,
         },
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { message?: string };
       return {
         success: false,
         data: {} as DemandForecastResult,
@@ -275,7 +278,7 @@ export class ForecastService {
         },
         error: {
           code: 'FORECAST_ERROR',
-          message: error.message || 'Failed to generate demand forecast',
+          message: err.message || 'Failed to generate demand forecast',
           details: error,
         },
       };
@@ -343,8 +346,8 @@ export class ForecastService {
     const supabase = await createClient();
     
     try {
-      // Note: View not in generated types yet, using type cast
-      const { data, error } = await (supabase as any)
+      type SupabaseFrom = { from: (t: string) => any };
+      const { data, error } = await (supabase as unknown as SupabaseFrom)
         .from('mv_forecast_accuracy')
         .select('*')
         .eq('tenant_id', tenantId)
@@ -370,8 +373,8 @@ export class ForecastService {
   ): Promise<ModelComparisonResult[]> {
     const supabase = await createClient();
     
-    // Note: RPC not in generated types yet, using type cast
-    const { data, error } = await (supabase as any).rpc('compare_forecast_models', {
+    type SupabaseRpc = { rpc: (fn: string, params: Record<string, unknown>) => any };
+    const { data, error } = await (supabase as unknown as SupabaseRpc).rpc('compare_forecast_models', {
       p_tenant_id: tenantId,
       p_forecast_type: forecastType,
       p_forecast_horizon: forecastHorizon,

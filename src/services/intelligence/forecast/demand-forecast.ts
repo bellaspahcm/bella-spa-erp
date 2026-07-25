@@ -164,10 +164,11 @@ async function fetchHistoricalDemand(
     .split('T')[0];
   
   try {
+    type SupabaseRpc = { rpc: (fn: string, params: Record<string, unknown>) => any };
     if (itemType === 'service') {
       // Get service demand from sessions
       // Note: RPC not in generated types yet, using type cast
-      const { data, error } = await (supabase as any).rpc('get_service_demand_history', {
+      const { data, error } = await (supabase as unknown as SupabaseRpc).rpc('get_service_demand_history', {
         p_tenant_id: tenantId,
         p_start_date: startDate || defaultStartDate,
         p_end_date: endDate,
@@ -177,11 +178,11 @@ async function fetchHistoricalDemand(
         throw error;
       }
       
-      return (data || []).map(transformServiceDemand);
+      return ((data || []) as unknown as Record<string, unknown>[]).map(transformServiceDemand);
     } else {
       // Get package demand from bookings
       // Note: RPC not in generated types yet, using type cast
-      const { data, error } = await (supabase as any).rpc('get_package_demand_history', {
+      const { data, error } = await (supabase as unknown as SupabaseRpc).rpc('get_package_demand_history', {
         p_tenant_id: tenantId,
         p_start_date: startDate || defaultStartDate,
         p_end_date: endDate,
@@ -191,7 +192,7 @@ async function fetchHistoricalDemand(
         throw error;
       }
       
-      return (data || []).map(transformPackageDemand);
+      return ((data || []) as unknown as Record<string, unknown>[]).map(transformPackageDemand);
     }
   } catch (rpcError) {
     console.warn('[Demand Forecast] RPC not available, falling back to base table query:', rpcError);
@@ -274,12 +275,13 @@ async function fetchHistoricalDemand(
   }
 }
 
-function transformServiceDemand(row: any): HistoricalDemandData {
-  const date = new Date(row.date);
+function transformServiceDemand(row: Record<string, unknown>): HistoricalDemandData {
+  const dateStr = String(row.date);
+  const date = new Date(dateStr);
   return {
-    date: row.date,
-    itemId: row.service_id,
-    itemName: row.service_name,
+    date: dateStr,
+    itemId: String(row.service_id),
+    itemName: String(row.service_name),
     itemType: 'service',
     demand: Number(row.demand) || 0,
     dayOfWeek: date.getDay(),
@@ -288,12 +290,13 @@ function transformServiceDemand(row: any): HistoricalDemandData {
   };
 }
 
-function transformPackageDemand(row: any): HistoricalDemandData {
-  const date = new Date(row.date);
+function transformPackageDemand(row: Record<string, unknown>): HistoricalDemandData {
+  const dateStr = String(row.date);
+  const date = new Date(dateStr);
   return {
-    date: row.date,
-    itemId: row.package_id,
-    itemName: row.package_name,
+    date: dateStr,
+    itemId: String(row.package_id),
+    itemName: String(row.package_name),
     itemType: 'package',
     demand: Number(row.demand) || 0,
     dayOfWeek: date.getDay(),
@@ -307,7 +310,8 @@ async function getDemandAccuracy(
   tenantId: string
 ): Promise<{ avgAccuracyPct: number; avgMape: number } | null> {
   // Note: View not in generated types yet, using type cast
-  const { data, error } = await (supabase as any)
+  type SupabaseFrom = { from: (t: string) => any };
+  const { data, error } = await (supabase as unknown as SupabaseFrom)
     .from('mv_forecast_accuracy')
     .select('avg_accuracy_pct, avg_mape')
     .eq('tenant_id', tenantId)
@@ -558,8 +562,8 @@ async function saveDemandForecasts(
     },
   }));
   
-  // Note: Table not in generated types yet, using type cast
-  const { error } = await (supabase as any)
+  type SupabaseFrom = { from: (t: string) => any };
+  const { error } = await (supabase as unknown as SupabaseFrom)
     .from('forecast_results')
     .upsert(forecastRecords, {
       onConflict: 'tenant_id,forecast_type,model_name,model_version,forecast_date,forecast_horizon',

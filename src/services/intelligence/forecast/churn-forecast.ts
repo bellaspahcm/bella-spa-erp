@@ -137,8 +137,9 @@ async function fetchCustomerData(
 ): Promise<CustomerData[]> {
   // Fetch customer data from mv_customer_segments (has RFM scores)
   // Note: View not in generated types yet, using type cast
+  type SupabaseDynamic = { from: (table: string) => any };
   try {
-    const { data, error } = await (supabase as any)
+    const { data, error } = await (supabase as unknown as SupabaseDynamic)
       .from('mv_customer_segments')
       .select('*')
       .eq('tenant_id', tenantId);
@@ -147,25 +148,25 @@ async function fetchCustomerData(
       throw error;
     }
     
-    if (!data || data.length === 0) {
+    if (!data || (data as unknown[]).length === 0) {
       return [];
     }
     
     // Transform to CustomerData format
-    return data.map((row: any) => ({
-      customerId: row.customer_id,
-      customerName: row.customer_name || 'Unknown',
-      lastPurchaseDate: row.last_purchase_date,
-      daysSinceLastPurchase: row.days_since_last_purchase,
-      totalOrders: row.total_orders,
-      totalRevenue: Number(row.total_revenue) || 0,
-      avgOrderValue: Number(row.avg_order_value) || 0,
+    return (data as unknown as Record<string, unknown>[]).map((row) => ({
+      customerId: String(row.customer_id),
+      customerName: String(row.customer_name || 'Unknown'),
+      lastPurchaseDate: String(row.last_purchase_date || ''),
+      daysSinceLastPurchase: Number(row.days_since_last_purchase || 0),
+      totalOrders: Number(row.total_orders || 0),
+      totalRevenue: Number(row.total_revenue || 0),
+      avgOrderValue: Number(row.avg_order_value || 0),
       avgRating: row.avg_rating ? Number(row.avg_rating) : null,
-      lifetimeValue: Number(row.total_revenue) || 0,
-      segment: row.segment || 'Unknown',
-      recencyScore: row.recency_score,
-      frequencyScore: row.frequency_score,
-      monetaryScore: row.monetary_score,
+      lifetimeValue: Number(row.total_revenue || 0),
+      segment: String(row.segment || 'Unknown'),
+      recencyScore: Number(row.recency_score || 0),
+      frequencyScore: Number(row.frequency_score || 0),
+      monetaryScore: Number(row.monetary_score || 0),
     }));
   } catch (viewError) {
     console.warn('[Churn Forecast] mv_customer_segments not available, falling back to base tables:', viewError);
@@ -196,7 +197,7 @@ async function fetchCustomerData(
     }
     
     const now = Date.now();
-    const bookingsByCustomer = new Map<string, any[]>();
+    const bookingsByCustomer = new Map<string, { customer_id: string; created_at: string | null; deposit_amount: number | null; full_price: number | null }[]>();
     (bookings || []).forEach(b => {
       if (!bookingsByCustomer.has(b.customer_id)) bookingsByCustomer.set(b.customer_id, []);
       bookingsByCustomer.get(b.customer_id)!.push(b);
@@ -204,7 +205,7 @@ async function fetchCustomerData(
     
     return customers.map(c => {
       const custBookings = bookingsByCustomer.get(c.id) || [];
-      const dates = custBookings.map(b => new Date(b.created_at).getTime()).sort((a, z) => z - a);
+      const dates = custBookings.map(b => b.created_at ? new Date(b.created_at).getTime() : 0).sort((a, z) => z - a);
       const lastTs = dates[0] || (c.created_at ? new Date(c.created_at).getTime() : now);
       const daysSince = Math.floor((now - lastTs) / (1000 * 60 * 60 * 24));
       const totalRevenue = custBookings.reduce((s, b) => s + Number(b.full_price || 0), 0);
@@ -215,7 +216,7 @@ async function fetchCustomerData(
       const monetaryScore = Math.min(1, totalRevenue / 10_000_000);
       return {
         customerId: c.id,
-        customerName: (c as any).name_mother || 'Unknown',
+        customerName: c.name_mother || 'Unknown',
         lastPurchaseDate: new Date(lastTs).toISOString().split('T')[0],
         daysSinceLastPurchase: daysSince,
         totalOrders,
@@ -239,7 +240,8 @@ async function getChurnAccuracy(
 ): Promise<{ avgAccuracyPct: number; precision: number; recall: number; f1Score: number } | null> {
   // Query mv_forecast_accuracy for churn model metrics
   // Note: View not in generated types yet, using type cast
-  const { data, error } = await (supabase as any)
+  type SupabaseDynamic = { from: (table: string) => any };
+  const { data, error } = await (supabase as unknown as SupabaseDynamic)
     .from('mv_forecast_accuracy')
     .select('avg_accuracy_pct, avg_mape')
     .eq('tenant_id', tenantId)
@@ -479,7 +481,8 @@ async function saveChurnPredictions(
   }
   
   // Note: Table not in generated types yet, using type cast
-  const { error } = await (supabase as any)
+  type SupabaseDynamic = { from: (table: string) => any };
+  const { error } = await (supabase as unknown as SupabaseDynamic)
     .from('forecast_results')
     .upsert(forecastRecords, {
       onConflict: 'tenant_id,forecast_type,model_name,model_version,forecast_date,forecast_horizon',

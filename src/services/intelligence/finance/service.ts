@@ -84,7 +84,7 @@ export class FinanceIntelligenceService implements IntelligenceService {
     dateRange: DateRange | TimePeriod
   ): Promise<IntelligenceResponse<MonthlyPnL[]>> {
     const startTime = Date.now();
-    const parsedRange = parseDateRange(dateRange as any);
+    const parsedRange = parseDateRange(dateRange);
 
     try {
       // Build cache key
@@ -166,7 +166,7 @@ export class FinanceIntelligenceService implements IntelligenceService {
     dateRange: DateRange | TimePeriod
   ): Promise<IntelligenceResponse<CashFlowAnalysis[]>> {
     const startTime = Date.now();
-    const parsedRange = parseDateRange(dateRange as any);
+    const parsedRange = parseDateRange(dateRange);
 
     try {
       // Build cache key
@@ -326,7 +326,7 @@ export class FinanceIntelligenceService implements IntelligenceService {
     dateRange: DateRange | TimePeriod
   ): Promise<IntelligenceResponse<ExpenseBreakdown>> {
     const startTime = Date.now();
-    const parsedRange = parseDateRange(dateRange as any);
+    const parsedRange = parseDateRange(dateRange);
 
     try {
       // Build cache key
@@ -408,7 +408,7 @@ export class FinanceIntelligenceService implements IntelligenceService {
     dateRange: DateRange | TimePeriod
   ): Promise<IntelligenceResponse<RevenueBreakdown>> {
     const startTime = Date.now();
-    const parsedRange = parseDateRange(dateRange as any);
+    const parsedRange = parseDateRange(dateRange);
 
     try {
       // Build cache key
@@ -568,7 +568,7 @@ export class FinanceIntelligenceService implements IntelligenceService {
     dateRange: DateRange | TimePeriod
   ): Promise<IntelligenceResponse<ProfitabilityTrends>> {
     const startTime = Date.now();
-    const parsedRange = parseDateRange(dateRange as any);
+    const parsedRange = parseDateRange(dateRange);
 
     try {
       // Build cache key
@@ -648,7 +648,7 @@ export class FinanceIntelligenceService implements IntelligenceService {
   async getFinancialRatios(
     tenantId: string,
     month: string
-  ): Promise<IntelligenceResponse<any>> {
+  ): Promise<IntelligenceResponse<unknown>> {
     const startTime = Date.now();
 
     try {
@@ -661,9 +661,9 @@ export class FinanceIntelligenceService implements IntelligenceService {
       );
 
       // Check cache (fallback to DB if cache read fails)
-      let cached: any | null = null;
+      let cached: unknown | null = null;
       try {
-        cached = await this.cache.get<any>(cacheKey);
+        cached = await this.cache.get<unknown>(cacheKey);
       } catch (cacheError) {
         console.warn('[FinanceIntelligence.getFinancialRatios] Cache read error, falling back to database:', cacheError);
         // Continue to database query

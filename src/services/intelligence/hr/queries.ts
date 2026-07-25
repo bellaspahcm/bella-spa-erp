@@ -327,7 +327,7 @@ export async function getWorkforceAnalytics(
   }
   
   // After error check, data is guaranteed to be array. Cast through unknown is necessary
-  // because materialized view is not in generated types (using 'as any' in .from())
+  // because materialized view is not in generated types (using 'as never' in .from())
   return ((data ?? []) as unknown as Record<string, unknown>[]).map((row) => snakeToCamel<WorkforceAnalytics>(row));
 }
 
@@ -348,7 +348,7 @@ export async function getAttendanceReport(
   const supabase = await createServiceRoleClient();
   
   let query = supabase
-    .from('mv_attendance_summary' as any) // Materialized view not in generated types yet
+    .from('mv_attendance_summary' as never) // Materialized view not in generated types yet
     .select('*')
     .eq('tenant_id', tenantId);
   
@@ -378,7 +378,7 @@ export async function getAttendanceReport(
   }
   
   // After error check, data is guaranteed to be array. Cast through unknown is necessary
-  // because materialized view is not in generated types (using 'as any' in .from())
+  // because materialized view is not in generated types (using 'as never' in .from())
   return ((data ?? []) as unknown as Record<string, unknown>[]).map((row) => snakeToCamel<AttendanceReport>(row));
 }
 
@@ -404,7 +404,7 @@ export async function getPayrollSummary(
     : month;
 
   let query = supabase
-    .from('mv_payroll_summary' as any) // Materialized view not in generated types yet
+    .from('mv_payroll_summary' as never) // Materialized view not in generated types yet
     .select('*')
     .eq('tenant_id', tenantId)
     .eq('month', formattedMonth);

@@ -233,6 +233,21 @@ export interface PayrollDecisionContext extends DecisionContext {
     bonus4Star?: number;
     minBaseSalary?: number;
     maxBaseSalary?: number;
+    sessionCommissionRate?: number;
+    serviceCommissionRate?: number;
+    productCommissionRate?: number;
+    performanceThresholdHigh?: number;
+    performanceBonusHigh?: number;
+    performanceThresholdMid?: number;
+    performanceBonusMid?: number;
+    positionMultiplierSenior?: number;
+    positionMultiplierLead?: number;
+    volumeBonusThreshold?: number;
+    volumeBonusAmount?: number;
+    minCompensationFloor?: number;
+    maxCompensationCap?: number;
+    minSessionsForCommission?: number;
+    maxCompensationPerMonth?: number;
     [key: string]: unknown;
   };
 }
