@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
     
     // Parse optional parameters
     const limit = parseInt(searchParams.get('limit') || '3');
-    const algorithm = (searchParams.get('algorithm') as any) || undefined;
+    const algorithm = (searchParams.get('algorithm') as PackageRecommendationInput['algorithm']) || undefined;
     
     // Parse filters
     const minPrice = searchParams.get('min_price') ? parseFloat(searchParams.get('min_price')!) : undefined;

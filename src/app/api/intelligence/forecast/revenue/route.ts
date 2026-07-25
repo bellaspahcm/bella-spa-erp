@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     
     // Parse query parameters — accept 'months' as alias for 'horizon'
     const horizon = parseInt(searchParams.get('months') || searchParams.get('horizon') || '12');
-    const modelName = (searchParams.get('model') as any) || undefined;
+    const modelName = (searchParams.get('model') as ForecastInput['modelName']) || undefined;
     const confidenceLevel = parseFloat(searchParams.get('confidence') || '0.95');
     
     if (horizon < 1 || horizon > 12) {

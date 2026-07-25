@@ -70,6 +70,10 @@ export {
   // Convenience Hooks
   useAllFinanceData,
   
+  // Trend & Refresh Hooks
+  useProfitabilityTrends,
+  useRefreshFinanceData,
+  
   // Types
   type FinanceIntelligenceResponse,
   type MonthlyPnLData,

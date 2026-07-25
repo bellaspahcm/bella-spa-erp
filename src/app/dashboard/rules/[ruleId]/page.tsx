@@ -59,9 +59,20 @@ export default async function RuleDetailPage({
   const { ruleId } = await params;
   const rule = await getRuleData(ruleId);
 
+  interface RuleCondition {
+    field: string;
+    operator: string;
+    value: unknown;
+  }
+
+  interface RuleAction {
+    type: string;
+    value: unknown;
+  }
+
   // Parse conditions and actions safely
-  const conditions = Array.isArray(rule.conditions) ? rule.conditions : [];
-  const actions = Array.isArray(rule.actions) ? rule.actions : [];
+  const conditions = (Array.isArray(rule.conditions) ? rule.conditions : []) as unknown as RuleCondition[];
+  const actions = (Array.isArray(rule.actions) ? rule.actions : []) as unknown as RuleAction[];
 
   return (
     <div className="container mx-auto py-6 max-w-5xl space-y-8 animate-in fade-in duration-500">
@@ -170,7 +181,7 @@ export default async function RuleDetailPage({
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {conditions.map((condition: any, idx: number) => (
+                  {conditions.map((condition, idx: number) => (
                     <div
                       key={idx}
                       className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg border bg-accent/20 border-border/40 gap-2"
@@ -217,7 +228,7 @@ export default async function RuleDetailPage({
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {actions.map((action: any, idx: number) => (
+                  {actions.map((action, idx: number) => (
                     <div
                       key={idx}
                       className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg border bg-accent/20 border-border/40 gap-2"

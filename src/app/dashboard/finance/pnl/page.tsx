@@ -31,14 +31,14 @@ import {
   useMonthlyPnL,
   useRevenueBreakdown,
   useExpenseBreakdown,
+  useProfitabilityTrends,
+  useRefreshFinanceData,
 } from '@/hooks/intelligence';
-// TODO: Finance chart components - using stub implementation
 import {
   PnLStatementChart,
   RevenueBreakdownChart,
   ExpenseBreakdownChart,
-  // TODO: Uncomment when ProfitabilityTrendChart data is available
-  // ProfitabilityTrendChart,
+  ProfitabilityTrendChart,
 } from '@/components/finance/charts';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -72,32 +72,27 @@ export default function PnLDashboardPage() {
   const monthlyPnL = useMonthlyPnL(month, year);
   const revenueBreakdown = useRevenueBreakdown(month, year);
   const expenseBreakdown = useExpenseBreakdown(month, year);
-  // TODO: Implement useProfitabilityTrends hook
-  // const profitabilityTrends = useProfitabilityTrends(month, year);
+  const profitabilityTrends = useProfitabilityTrends(month, year);
 
   // Manual refresh mutation
-  // TODO: Implement useRefreshFinanceData hook
-  // const { mutate: refreshData, isPending: isRefreshing } = useRefreshFinanceData();
+  const { mutate: refreshData, isPending: isRefreshing } = useRefreshFinanceData();
 
   // Combined loading state
   const isLoading =
     monthlyPnL.isLoading ||
     revenueBreakdown.isLoading ||
     expenseBreakdown.isLoading;
-    // profitabilityTrends.isLoading;
 
   // Handle manual refresh
   const handleRefresh = () => {
-    // TODO: Implement manual refresh when useRefreshFinanceData is available
-    toast.info('Chức năng làm mới đang được phát triển');
-    // refreshData('all', {
-    //   onSuccess: () => {
-    //     toast.success('Dữ liệu đã được cập nhật');
-    //   },
-    //   onError: (error) => {
-    //     toast.error(`Lỗi làm mới: ${error.message}`);
-    //   },
-    // });
+    refreshData('all', {
+      onSuccess: () => {
+        toast.success('Dữ liệu tài chính đã được làm mới');
+      },
+      onError: (error: Error) => {
+        toast.error(`Lỗi làm mới: ${error.message}`);
+      },
+    });
   };
 
   // ───────────────────────────────────────────────────────────────────────────
@@ -131,18 +126,36 @@ export default function PnLDashboardPage() {
     return monthlyPnL.data.data[0]; // Latest month
   };
 
-  const _getProfitabilityTrendData = () => {
-    // TODO: useProfitabilityTrends hook was commented out - mock data until API is fixed
-    return [];
-    
-    // Original code (commented out):
-    // if (!profitabilityTrends.data || !profitabilityTrends.data.data) return [];
-    // return profitabilityTrends.data.data.monthlyTrends.map(trend => ({
-    //   date: trend.month.substring(5, 7) + '/' + trend.month.substring(0, 4), // MM/YYYY
-    //   revenue: trend.totalRevenue,
-    //   expenses: trend.totalExpense,
-    //   profit: trend.netProfit,
-    // }));
+  const getProfitabilityTrendData = () => {
+    if (!profitabilityTrends.data?.data?.monthlyTrends) return [];
+    return profitabilityTrends.data.data.monthlyTrends.map((trend) => ({
+      date: trend.month.substring(5, 7) + '/' + trend.month.substring(0, 4),
+      revenue: trend.totalRevenue ?? 0,
+      expenses: trend.totalExpense ?? 0,
+      profit: trend.netProfit ?? 0,
+    }));
+  };
+
+  const calculateMoMGrowth = () => {
+    const trends = profitabilityTrends.data?.data?.monthlyTrends;
+    if (!trends || trends.length < 2) return 0;
+    const current = trends[trends.length - 1].netProfit ?? 0;
+    const previous = trends[trends.length - 2].netProfit ?? 0;
+    if (previous === 0) return 0;
+    return ((current - previous) / Math.abs(previous)) * 100;
+  };
+
+  const calculateYoYGrowth = () => {
+    const trends = profitabilityTrends.data?.data?.monthlyTrends;
+    if (!trends || trends.length < 12) return 0;
+    const current = trends[trends.length - 1].netProfit ?? 0;
+    const lastYear = trends[trends.length - 12].netProfit ?? 0;
+    if (lastYear === 0) return 0;
+    return ((current - lastYear) / Math.abs(lastYear)) * 100;
+  };
+
+  const formatPercent = (value: number) => {
+    return `${value >= 0 ? '+' : ''}${formatNumber(value, 2)}%`;
   };
 
   const getRevenueBreakdownData = () => {
@@ -173,33 +186,6 @@ export default function PnLDashboardPage() {
   // Calculate growth percentages
   // ───────────────────────────────────────────────────────────────────────────
 
-  const _calculateMoMGrowth = () => {
-    // TODO: useProfitabilityTrends hook was commented out - return 0 until API is fixed
-    return 0;
-    
-    // Original code (commented out):
-    // if (!profitabilityTrends.data || !profitabilityTrends.data.data) return 0;
-    // const trends = profitabilityTrends.data.data.monthlyTrends;
-    // if (trends.length < 2) return 0;
-    // const current = trends[trends.length - 1].netProfit;
-    // const previous = trends[trends.length - 2].netProfit;
-    // if (previous === 0) return 0;
-    // return ((current - previous) / Math.abs(previous)) * 100;
-  };
-
-  const _calculateYoYGrowth = () => {
-    // TODO: useProfitabilityTrends hook was commented out - return 0 until API is fixed
-    return 0;
-    
-    // Original code (commented out):
-    // if (!profitabilityTrends.data || !profitabilityTrends.data.data) return 0;
-    // const trends = profitabilityTrends.data.data.monthlyTrends;
-    // if (trends.length < 12) return 0;
-    // const current = trends[trends.length - 1].netProfit;
-    // const lastYear = trends[trends.length - 12].netProfit;
-    // if (lastYear === 0) return 0;
-    // return ((current - lastYear) / Math.abs(lastYear)) * 100;
-  };
 
   // ───────────────────────────────────────────────────────────────────────────
   // Render loading state
@@ -263,15 +249,13 @@ export default function PnLDashboardPage() {
           )}
 
           {/* Refresh Button */}
-          {/* TODO: isRefreshing from useRefreshFinanceData was commented out */}
           <button
             onClick={handleRefresh}
-            disabled={false}
+            disabled={isRefreshing}
             className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {/* TODO: animate-spin removed since isRefreshing undefined */}
-            <RefreshCw className="h-4 w-4" />
-            Làm mới
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            {isRefreshing ? 'Đang làm mới...' : 'Làm mới'}
           </button>
         </div>
       </div>
@@ -440,61 +424,50 @@ export default function PnLDashboardPage() {
               <div className="p-3 bg-purple-100 rounded-lg">
                 <LineChart className="h-6 w-6 text-purple-600" />
               </div>
-              <h3 className="text-lg font-semibold text-slate-900">Xu Hướng Lợi Nhuận</h3>
+              <h3 className="text-lg font-semibold text-slate-900">Xu Hướng Lợi Nhuận (6 tháng)</h3>
             </div>
-            {/* TODO: profitabilityTrends was commented out */}
-            {false && (
+            {profitabilityTrends.data?.metadata?.cached && (
               <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">Cache</span>
             )}
           </div>
 
-          {/* TODO: Uncomment when useProfitabilityTrends hook is implemented */}
-          {/* {profitabilityTrends.data ? (
+          {profitabilityTrends.isLoading ? (
+            <div className="flex items-center justify-center h-32">
+              <RefreshCw className="h-6 w-6 animate-spin text-purple-400" />
+            </div>
+          ) : profitabilityTrends.data?.data?.monthlyTrends && profitabilityTrends.data.data.monthlyTrends.length > 0 ? (
             <>
               <ProfitabilityTrendChart data={getProfitabilityTrendData()} height={250} />
 
               <div className="grid grid-cols-2 gap-6 mt-4 pt-4 border-t border-slate-100">
                 <div>
                   <p className="text-sm text-slate-600">Tăng trưởng MoM</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    {calculateMoMGrowth() >= 0 ? (
-                      <TrendingUp className="h-5 w-5 text-green-600" />
-                    ) : (
-                      <TrendingDown className="h-5 w-5 text-red-600" />
-                    )}
-                    <span className={`text-xl font-bold ${calculateMoMGrowth() >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {formatPercent(calculateMoMGrowth())}
-                    </span>
-                  </div>
+                  <p className={`text-xl font-bold mt-1 ${
+                    calculateMoMGrowth() >= 0 ? 'text-green-600' : 'text-red-600'
+                  }`}>
+                    {formatPercent(calculateMoMGrowth())}
+                  </p>
                 </div>
 
                 <div>
                   <p className="text-sm text-slate-600">Tăng trưởng YoY</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    {calculateYoYGrowth() >= 0 ? (
-                      <TrendingUp className="h-5 w-5 text-green-600" />
-                    ) : (
-                      <TrendingDown className="h-5 w-5 text-red-600" />
+                  <p className={`text-xl font-bold mt-1 ${
+                    calculateYoYGrowth() >= 0 ? 'text-green-600' : 'text-red-600'
+                  }`}>
+                    {formatPercent(calculateYoYGrowth())}
+                    {profitabilityTrends.data.data.monthlyTrends.length < 12 && (
+                      <span className="text-xs font-normal text-slate-400 ml-1">(Chưa đủ 12 tháng)</span>
                     )}
-                    <span className={`text-xl font-bold ${calculateYoYGrowth() >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {formatPercent(calculateYoYGrowth())}
-                    </span>
-                  </div>
+                  </p>
                 </div>
               </div>
             </>
           ) : (
             <div className="flex items-center justify-center h-32">
               <AlertCircle className="h-6 w-6 text-slate-400" />
+              <p className="text-sm text-slate-500 ml-2">Chưa có dữ liệu xu hướng</p>
             </div>
-          )} */}
-
-          {/* Temporary placeholder until profitability trends are implemented */}
-          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-sm text-blue-700">
-              📊 Biểu đồ xu hướng lợi nhuận đang được phát triển
-            </p>
-          </div>
+          )}
         </motion.div>
 
         {/* Card 4: Expense Breakdown (col-span-1) */}

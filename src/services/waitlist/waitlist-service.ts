@@ -174,8 +174,18 @@ export async function addToWaitlist(
     }
 
     // 7. Check capacity limit
-    // TODO: Fetch from tenant config (for now, hardcode 10)
-    const maxWaitlistSize = 10;
+    // Fetch from tenant config
+    const { data: tenantData } = await supabase
+      .from('tenants')
+      .select('contact_phone, metadata')
+      .eq('id', input.tenant_id)
+      .single();
+
+    const tenantMetadata = tenantData?.metadata as Record<string, unknown> | null;
+    const maxWaitlistSize = typeof tenantMetadata?.max_waitlist_size === 'number'
+      ? tenantMetadata.max_waitlist_size
+      : 10;
+
     if (existingWaitlist && existingWaitlist.length >= maxWaitlistSize) {
       return {
         success: false,
@@ -683,6 +693,14 @@ export async function processSlotAvailable(
     const toNotify = goodMatches.slice(0, 3);
     const notifiedCustomers: ProcessSlotResult['notified_customers'] = [];
 
+    // Fetch tenant contact phone
+    const { data: tenantData } = await supabase
+      .from('tenants')
+      .select('contact_phone')
+      .eq('id', slot.tenant_id)
+      .single();
+    const contactPhone = tenantData?.contact_phone || '1900xxxx';
+
     for (const { entry, matchScore } of toNotify) {
       // Determine notification channel (prefer Zalo for VIP)
       const channel: NotificationChannel = entry.customer_tier === 'vip' ? 'zalo' : 'sms';
@@ -699,7 +717,7 @@ export async function processSlotAvailable(
           serviceName: entry.package_name,
           date: slot.date,
           time: slot.start_time,
-          contactPhone: '1900xxxx', // TODO: Get from tenant config
+          contactPhone,
         },
       });
 
@@ -793,6 +811,14 @@ export async function expireOldEntries(tenantId: string): Promise<{ expired_coun
       return { expired_count: 0 };
     }
 
+    // Fetch tenant contact phone
+    const { data: tenantData } = await supabase
+      .from('tenants')
+      .select('contact_phone')
+      .eq('id', tenantId)
+      .single();
+    const contactPhone = tenantData?.contact_phone || '1900xxxx';
+
     // Send expiry notifications via notification service
     for (const entry of expiredEntries) {
       await sendNotification({
@@ -803,7 +829,7 @@ export async function expireOldEntries(tenantId: string): Promise<{ expired_coun
         data: {
           customerName: entry.customer_name,
           serviceName: entry.package_name,
-          contactPhone: '1900xxxx', // TODO: Get from tenant config
+          contactPhone,
         },
       });
     }

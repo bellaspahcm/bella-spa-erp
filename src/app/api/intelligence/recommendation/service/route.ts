@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
     
     // Parse optional parameters
     const limit = parseInt(searchParams.get('limit') || '5');
-    const algorithm = (searchParams.get('algorithm') as any) || undefined;
+    const algorithm = (searchParams.get('algorithm') as ServiceRecommendationInput['algorithm']) || undefined;
     const excludeServices = searchParams.get('exclude')?.split(',') || [];
     
     // Parse filters

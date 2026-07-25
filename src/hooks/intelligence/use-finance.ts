@@ -3,7 +3,7 @@
  * Phase 8 Task #4: Dashboard Integration
  */
 
-import { useQuery, UseQueryOptions } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, UseQueryOptions } from '@tanstack/react-query';
 
 // ============================================================================
 // TYPES
@@ -333,4 +333,72 @@ export function useAllFinanceData(tenantId: string, month: string) {
     error: pnl.error || cashFlow.error || budgetVariance.error || 
            expenses.error || revenue.error || ratios.error
   };
+}
+
+/**
+ * Hook for profitability trends (past 6 months)
+ */
+export function useProfitabilityTrends(
+  month: string,
+  year: string,
+  queryOptions?: Omit<UseQueryOptions<FinanceIntelligenceResponse<{ monthlyTrends: MonthlyPnLData[] }>>, 'queryKey' | 'queryFn'>
+) {
+  return useQuery({
+    queryKey: ['finance', 'profitability-trends', year, month],
+    queryFn: async () => {
+      const targetDate = new Date(Number(year), Number(month) - 1, 1);
+      const startRange = new Date(targetDate);
+      startRange.setMonth(startRange.getMonth() - 5);
+      
+      const startDate = `${startRange.getFullYear()}-${String(startRange.getMonth() + 1).padStart(2, '0')}-01`;
+      const lastDay = new Date(Number(year), Number(month), 0).getDate();
+      const endDate = `${year}-${month.padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+      
+      const params = new URLSearchParams({ startDate, endDate });
+      const response = await fetch(`/api/intelligence/finance/monthly-pnl?${params}`);
+      
+      if (!response.ok) {
+        throw new Error(`Profitability trends failed: ${response.statusText}`);
+      }
+      
+      const json = await response.json();
+      const trends = (json.data || []).slice().reverse();
+      return {
+        success: json.success,
+        data: {
+          monthlyTrends: trends
+        },
+        metadata: json.metadata
+      };
+    },
+    enabled: !!(month && year),
+    staleTime: 1 * 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    ...queryOptions
+  });
+}
+
+/**
+ * Hook for manual finance data refresh (bypasses cache)
+ */
+export function useRefreshFinanceData() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (type: 'pnl' | 'cashflow' | 'budget' | 'expenses' | 'revenue' | 'ratios' | 'all' = 'all') => {
+      const queryKeyPrefixes = {
+        pnl: ['finance', 'monthly-pnl'],
+        cashflow: ['finance', 'cash-flow'],
+        budget: ['finance', 'budget-variance'],
+        expenses: ['finance', 'expense-breakdown'],
+        revenue: ['finance', 'revenue-breakdown'],
+        ratios: ['finance', 'financial-ratios'],
+        all: ['finance'],
+      };
+      
+      const queryKey = queryKeyPrefixes[type];
+      await queryClient.invalidateQueries({ queryKey });
+      return { success: true };
+    }
+  });
 }

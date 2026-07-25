@@ -701,9 +701,21 @@ export async function getCapacityUtilization(
       );
     }
     
-    // Query total capacity (assuming 10 KTVs × 8 hours × 4 sessions/hour = 320 sessions per day)
-    // TODO: Make this dynamic based on actual KTV count and working hours
-    const totalCapacityPerDay = 320;
+    // Query active KTVs to calculate dynamic capacity
+    const { count: activeKtvCount, error: ktvCountError } = await supabase
+      .from('users')
+      .select('*', { count: 'exact', head: true })
+      .eq('tenant_id', tenantId)
+      .eq('role', 'ktv')
+      .eq('status', 'active');
+
+    if (ktvCountError) {
+      console.warn('[getCapacityUtilization] Error fetching active KTV count, falling back to 10 KTVs:', ktvCountError.message);
+    }
+
+    const activeKtvs = activeKtvCount || 10;
+    // Capacity = active KTVs * 8 hours/day * 4 slots/hour = active KTVs * 32
+    const totalCapacityPerDay = activeKtvs * 32;
     
     // Calculate utilization for each day (type-safe with MV interface, use unknown bridge)
     return ((sessionData || []) as unknown as MvSessionAnalytics[]).map((row) => {

@@ -534,18 +534,88 @@ export async function getRetentionAnalysis(
   const totalTerminations = rows.reduce((sum, row) => sum + (row.terminations || 0), 0);
   const avgTenure = rows.reduce((sum, row) => sum + (row.avg_tenure_months || 0), 0) / rows.length;
   
+  // Fetch active users to compute tenure distribution
+  const { data: usersData } = await supabase
+    .from('users')
+    .select('hire_date')
+    .eq('tenant_id', tenantId)
+    .eq('role', 'ktv');
+
+  let employeesUnder6Months = 0;
+  let employees6To12Months = 0;
+  let employees1To2Years = 0;
+  let employeesOver2Years = 0;
+  let computedAvgTenureMonths = avgTenure;
+
+  if (usersData && usersData.length > 0) {
+    const now = new Date();
+    let totalMonths = 0;
+    let hiredCount = 0;
+
+    usersData.forEach((u) => {
+      if (!u.hire_date) return;
+      const hire = new Date(u.hire_date);
+      const diffMonths = Math.max(0, (now.getFullYear() - hire.getFullYear()) * 12 + now.getMonth() - hire.getMonth());
+      totalMonths += diffMonths;
+      hiredCount++;
+
+      if (diffMonths < 6) {
+        employeesUnder6Months++;
+      } else if (diffMonths <= 12) {
+        employees6To12Months++;
+      } else if (diffMonths <= 24) {
+        employees1To2Years++;
+      } else {
+        employeesOver2Years++;
+      }
+    });
+
+    if (hiredCount > 0) {
+      computedAvgTenureMonths = totalMonths / hiredCount;
+    }
+  }
+
+  // Fetch employee performance metrics to compute risk categories
+  const { data: perfData } = await supabase
+    .from('mv_employee_performance' as any)
+    .select('ktv_id, avg_star_rating, working_days, absent_days')
+    .eq('tenant_id', tenantId);
+
+  let highRiskEmployees = 0;
+  let mediumRiskEmployees = 0;
+  let lowRiskEmployees = 0;
+
+  if (perfData && perfData.length > 0) {
+    (perfData as any[]).forEach((p) => {
+      const rating = p.avg_star_rating || 5.0;
+      const working = p.working_days || 26;
+      const absent = p.absent_days || 0;
+      const attendanceRatePct = working > 0 ? ((working - absent) / working) * 100 : 100;
+
+      if (rating < 3.8 || attendanceRatePct < 80) {
+        highRiskEmployees++;
+      } else if (rating < 4.3 || attendanceRatePct < 90) {
+        mediumRiskEmployees++;
+      } else {
+        lowRiskEmployees++;
+      }
+    });
+  } else {
+    lowRiskEmployees = totalHeadcount;
+  }
+
   return {
     tenantId,
     month: rows[0].month,
     attritionRatePct: totalHeadcount > 0 ? (totalTerminations / totalHeadcount) * 100 : 0,
-    highRiskEmployees: 0, // TODO: Implement risk scoring
-    mediumRiskEmployees: 0,
-    lowRiskEmployees: totalHeadcount,
-    avgTenureMonths: avgTenure,
-    employeesUnder6Months: 0, // TODO: Calculate from tenure distribution
-    employees6To12Months: 0,
-    employees1To2Years: 0,
-    employeesOver2Years: 0,
+    highRiskEmployees,
+    mediumRiskEmployees,
+    lowRiskEmployees,
+    avgTenureMonths: computedAvgTenureMonths,
+    employeesUnder6Months,
+    employees6To12Months,
+    employees1To2Years,
+    employeesOver2Years,
     retentionRatePct: totalHeadcount > 0 ? ((totalHeadcount - totalTerminations) / totalHeadcount) * 100 : 0,
   };
 }
@@ -614,20 +684,51 @@ export async function getProductivityTrends(
     return acc;
   }, {} as Record<string, { totalSessions: number; totalRevenue: number; employeeCount: number; totalWorkingDays: number }>);
   
-  // Convert to ProductivityTrends array
-  return Object.entries(monthlyData).map(([month, metrics]) => ({
-    tenantId,
-    month,
-    totalSessions: metrics.totalSessions,
-    avgSessionsPerEmployee: metrics.employeeCount > 0 ? metrics.totalSessions / metrics.employeeCount : 0,
-    sessionsGrowthPct: 0, // TODO: Calculate month-over-month growth
-    totalRevenue: metrics.totalRevenue,
-    avgRevenuePerEmployee: metrics.employeeCount > 0 ? metrics.totalRevenue / metrics.employeeCount : 0,
-    revenueGrowthPct: 0, // TODO: Calculate month-over-month growth
-    revenuePerSession: metrics.totalSessions > 0 ? metrics.totalRevenue / metrics.totalSessions : 0,
-    sessionsPerWorkingDay: metrics.totalWorkingDays > 0 ? metrics.totalSessions / metrics.totalWorkingDays : 0,
-    utilizationRatePct: 0, // TODO: Calculate capacity utilization
-  }));
+  // Convert to ProductivityTrends array with MoM calculations
+  const sortedMonths = Object.keys(monthlyData).sort();
+  
+  return sortedMonths.map((month, idx) => {
+    const metrics = monthlyData[month];
+    let sessionsGrowthPct = 0;
+    let revenueGrowthPct = 0;
+    
+    if (idx > 0) {
+      const prevMonth = sortedMonths[idx - 1];
+      const prevMetrics = monthlyData[prevMonth];
+      if (prevMetrics.totalSessions > 0) {
+        sessionsGrowthPct = ((metrics.totalSessions - prevMetrics.totalSessions) / prevMetrics.totalSessions) * 100;
+      }
+      if (prevMetrics.totalRevenue > 0) {
+        revenueGrowthPct = ((metrics.totalRevenue - prevMetrics.totalRevenue) / prevMetrics.totalRevenue) * 100;
+      }
+    }
+    
+    // Capacity = employees * 32 (8 hours * 4 slots/hour = 32 capacity units per employee per day)
+    // If working days exist, capacity = employees * workingDays * 4 (slots/hour)
+    // Let's assume standard capacity is metrics.employeeCount * 32 per day.
+    // For the month, capacity = employeeCount * 32 * 26 working days (approx) or employeeCount * totalWorkingDays * 4.
+    // Let's use totalWorkingDays * 4 as max capacity if totalWorkingDays > 0, else employeeCount * 32 * 26.
+    const maxCapacity = metrics.totalWorkingDays > 0 
+      ? metrics.totalWorkingDays * 4 
+      : metrics.employeeCount * 32 * 26;
+    const utilizationRatePct = maxCapacity > 0 
+      ? Math.min(100, Math.round((metrics.totalSessions / maxCapacity) * 100)) 
+      : 0;
+
+    return {
+      tenantId,
+      month,
+      totalSessions: metrics.totalSessions,
+      avgSessionsPerEmployee: metrics.employeeCount > 0 ? metrics.totalSessions / metrics.employeeCount : 0,
+      sessionsGrowthPct,
+      totalRevenue: metrics.totalRevenue,
+      avgRevenuePerEmployee: metrics.employeeCount > 0 ? metrics.totalRevenue / metrics.employeeCount : 0,
+      revenueGrowthPct,
+      revenuePerSession: metrics.totalSessions > 0 ? metrics.totalRevenue / metrics.totalSessions : 0,
+      sessionsPerWorkingDay: metrics.totalWorkingDays > 0 ? metrics.totalSessions / metrics.totalWorkingDays : 0,
+      utilizationRatePct,
+    };
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
