@@ -106,9 +106,9 @@ export async function DELETE(_req: NextRequest) {
       message: 'Sandbox data reset and re-seeded successfully',
     });
 
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Sandbox reset error:', err);
-    return errorResponse(req, 'INTERNAL_ERROR', err.message || 'An error occurred', 500);
+    return errorResponse(req, 'INTERNAL_ERROR', err instanceof Error ? err.message : 'An error occurred', 500);
   }
   */
 }

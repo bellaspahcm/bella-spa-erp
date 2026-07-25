@@ -90,7 +90,7 @@ export async function GET(_req: NextRequest) {
       .single();
 
     // Get sandbox data counts (if sandbox mode)
-    let dataCounts: any = null;
+    let dataCounts: Record<string, number> | null = null;
     if (environment === 'sandbox') {
       const schema = 'sandbox';
       
@@ -126,9 +126,9 @@ export async function GET(_req: NextRequest) {
       sandbox_available: environment === 'sandbox',
     });
 
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Sandbox status error:', err);
-    return errorResponse(req, 'INTERNAL_ERROR', err.message || 'An error occurred', 500);
+    return errorResponse(req, 'INTERNAL_ERROR', err instanceof Error ? err.message : 'An error occurred', 500);
   }
   */
 }
