@@ -16,7 +16,6 @@ import type {
   PolicyHistoryEntry,
   GovernanceCheckResult,
   DecisionOutcome,
-  PolicyStatus,
 } from './types';
 import {
   PolicyNotFoundError,
@@ -24,18 +23,13 @@ import {
   GovernanceValidationError,
 } from './types';
 import { PolicyRepository } from './PolicyRepository';
-import { writeAudit, getHistory, queryHistory, getRecentChanges } from './audit';
+import { writeAudit, getHistory, getRecentChanges } from './audit';
 import {
   validatePolicy,
   validateVersion,
-  validateEmail,
-  validateISODate,
   validateStatusTransition,
 } from './validation';
 import { GOVERNANCE_DEFAULTS } from './constants';
-import { createClient } from '@/lib/supabase-server';
-import type { SupabaseClient } from '@supabase/supabase-js';
-import type { PolicyRegistryDatabase } from './database-types';
 
 /**
  * PolicyRegistry
@@ -601,7 +595,7 @@ export class PolicyRegistry {
    * Get policies expiring soon
    */
   static async getExpiringPolicies(
-    daysThreshold: number = GOVERNANCE_DEFAULTS.expiryWarningDays
+    _daysThreshold: number = GOVERNANCE_DEFAULTS.expiryWarningDays
   ): Promise<PolicyRegistryEntry[]> {
     const result = await PolicyRepository.findAll({
       status: 'active',
@@ -1039,7 +1033,7 @@ export class PolicyRegistry {
   /**
    * Check user permission
    */
-  private static async requirePermission(userId: string, permission: string): Promise<void> {
+  private static async requirePermission(_userId: string, _permission: string): Promise<void> {
     // For now, no-op (always allow in development)
     return Promise.resolve();
   }
@@ -1047,7 +1041,7 @@ export class PolicyRegistry {
   /**
    * Emit policy event
    */
-  private static async emitPolicyEvent(eventName: string, payload: unknown): Promise<void> {
+  private static async emitPolicyEvent(_eventName: string, _payload: unknown): Promise<void> {
     // For now, no-op
     return Promise.resolve();
   }
@@ -1055,7 +1049,7 @@ export class PolicyRegistry {
   /**
    * Invalidate policy cache
    */
-  private static async invalidatePolicyCache(policyId: string): Promise<void> {
+  private static async invalidatePolicyCache(_policyId: string): Promise<void> {
     // For now, no-op
     return Promise.resolve();
   }
@@ -1064,9 +1058,9 @@ export class PolicyRegistry {
    * Publish metric
    */
   private static async publishMetric(
-    metricName: string,
-    value: number,
-    tags?: Record<string, string>
+    _metricName: string,
+    _value: number,
+    _tags?: Record<string, string>
   ): Promise<void> {
     // For now, no-op
     return Promise.resolve();

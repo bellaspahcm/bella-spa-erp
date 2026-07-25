@@ -361,3 +361,56 @@ export function sanitizeTime(raw: unknown): string | null {
   if (/^\d{1,2}$/.test(value)) return `${value.padStart(2, '0')}:00`;
   return null;
 }
+
+/**
+ * Copy text to clipboard using the best available method, including falling back
+ * to standard document.execCommand if navigator.clipboard is not supported or fails (e.g. on mobile/Safari or HTTP).
+ */
+export async function copyToClipboard(text: string): Promise<boolean> {
+  // Try navigator.clipboard.writeText first (needs secure context)
+  if (typeof navigator !== 'undefined' && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (err) {
+      console.warn('navigator.clipboard.writeText failed, trying fallback:', err);
+    }
+  }
+
+  // Fallback for older browsers, iOS/Safari async context, or non-secure contexts (HTTP)
+  try {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    
+    // Prevent scrolling and zoom issues on mobile browsers
+    textArea.style.position = 'fixed';
+    textArea.style.top = '0';
+    textArea.style.left = '0';
+    textArea.style.width = '2em';
+    textArea.style.height = '2em';
+    textArea.style.padding = '0';
+    textArea.style.border = 'none';
+    textArea.style.outline = 'none';
+    textArea.style.boxShadow = 'none';
+    textArea.style.background = 'transparent';
+    
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    // Support iOS/Safari selection
+    textArea.setSelectionRange(0, 99999);
+    
+    const successful = document.execCommand('copy');
+    document.body.removeChild(textArea);
+    
+    if (successful) {
+      return true;
+    }
+  } catch (err) {
+    console.error('Fallback copy method failed:', err);
+  }
+  
+  return false;
+}
+

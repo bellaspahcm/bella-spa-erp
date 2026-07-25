@@ -104,9 +104,9 @@ export async function POST(
     let actualOutput: unknown;
     let passed = true;
     let errorMessage: string | null = null;
-    let trace: Array<{ step: string; result: unknown }> = [];
-    let matchedConditions: Array<unknown> = [];
-    let executedActions: Array<unknown> = [];
+    const trace: Array<{ step: string; result: unknown }> = [];
+    const matchedConditions: Array<unknown> = [];
+    const executedActions: Array<unknown> = [];
 
     try {
       // Evaluate conditions
@@ -162,7 +162,7 @@ export async function POST(
           reason?: string;
         }>;
 
-        let modifiedOutput = { ...body.inputData };
+        const modifiedOutput = { ...body.inputData };
 
         for (const action of actions) {
           trace.push({ step: `Action: ${action.type}`, result: 'executing' });

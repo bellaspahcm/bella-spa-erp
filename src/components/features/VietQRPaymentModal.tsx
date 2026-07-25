@@ -1,10 +1,12 @@
 "use client";
+"use client";
 
 import { formatCurrency } from '@bella/shared';;
 import { AnimatePresence,motion } from "framer-motion";
 import { Copy,CreditCard,QrCode,Sparkles,X } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
+import { copyToClipboard } from "@/lib/utils";
 
 interface TenantBankInfo {
   qr_bank_code?: string | null;
@@ -37,9 +39,13 @@ export default function VietQRPaymentModal({
   const transferMemo = `BELLA ${bookingNumber}`;
   const qrUrl = `https://img.vietqr.io/image/${bankCode}-${accountNumber}-compact.png?amount=${amount}&addInfo=${encodeURIComponent(transferMemo)}&accountName=${encodeURIComponent(accountName)}`;
 
-  const handleCopy = (text: string, field: string) => {
-    navigator.clipboard.writeText(text);
-    toast.success(`Đã sao chép ${field}`);
+  const handleCopy = async (text: string, field: string) => {
+    const success = await copyToClipboard(text);
+    if (success) {
+      toast.success(`Đã sao chép ${field}`);
+    } else {
+      toast.error(`Không thể tự động sao chép ${field}. Vui lòng tự sao chép.`);
+    }
   };
 
   const hasConfiguredBank = bankCode && accountNumber;

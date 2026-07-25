@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from 'next/server';
  */
 async function getTenantIdForUser(supabase: any, user: any): Promise<string | null> {
   // Try metadata first
-  let tenantId = user.user_metadata?.tenant_id;
+  const tenantId = user.user_metadata?.tenant_id;
   
   if (tenantId) return tenantId;
   

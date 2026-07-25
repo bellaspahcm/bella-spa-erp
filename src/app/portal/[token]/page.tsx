@@ -28,6 +28,7 @@ import { calculatePortalPaymentSummary } from './payment-utils';
 import { TenantBrandLogo } from '@/components/common/TenantBrandLogo';
 import { resolveTenantBrandIdentity } from '@/lib/business-rules/tenant-modules';
 import type { CustomerPortalBooking } from '@/services/customer-actions';
+import { copyToClipboard as copyToClipboardHelper } from '@/lib/utils';
 
 type CustomerPortalSession = NonNullable<CustomerPortalBooking['session_logs']>[number];
 
@@ -45,9 +46,13 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentTab, setPaymentTab] = useState<'deposit' | 'full'>('deposit');
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast.success('Đã sao chép vào bộ nhớ tạm');
+  const copyToClipboard = async (text: string) => {
+    const success = await copyToClipboardHelper(text);
+    if (success) {
+      toast.success('Đã sao chép vào bộ nhớ tạm');
+    } else {
+      toast.error('Không thể tự động sao chép. Vui lòng tự chọn và sao chép.');
+    }
   };
 
   const fetchData = useCallback(async () => {

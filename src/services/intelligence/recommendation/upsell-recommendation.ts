@@ -16,7 +16,7 @@ import type {
   RecommendationContext,
   CoPurchasedItem,
 } from './types';
-import { generateCacheKey, calculateDiversityScore } from './utils';
+import { calculateDiversityScore } from './utils';
 
 // ============================================================================
 // TYPE EXTENSIONS

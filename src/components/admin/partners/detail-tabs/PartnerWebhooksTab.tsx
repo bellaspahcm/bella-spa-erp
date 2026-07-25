@@ -17,7 +17,6 @@ import {
   Link as LinkIcon, 
   Key, 
   Check, 
-  AlertCircle, 
   Send,
   Clock,
   CheckCircle2,
@@ -29,16 +28,6 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import type { APIPartner } from '@/types/api-gateway';
 
@@ -133,7 +122,7 @@ export function PartnerWebhooksTab({ partner }: PartnerWebhooksTabProps) {
       toast.success('Đã cập nhật cấu hình webhook');
       setHasChanges(false);
       router.refresh();
-    } catch (error) {
+    } catch (_error) {
       toast.error('Không thể cập nhật cấu hình webhook');
     } finally {
       setLoading(false);

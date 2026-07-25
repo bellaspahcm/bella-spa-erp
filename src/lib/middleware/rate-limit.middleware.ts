@@ -44,7 +44,7 @@ import type { PartnerContext, RequestWithPartner } from './api-key.middleware';
 
 // Redis client (lazy initialization)
 let redisClient: Redis | null = null;
-let redisStatus: 'connected' | 'disconnected' | 'unknown' = 'unknown';
+let _redisStatus: 'connected' | 'disconnected' | 'unknown' = 'unknown';
 let lastRedisCheckTime = 0;
 
 // Circuit Breaker State
@@ -91,7 +91,7 @@ export function resetRateLimitStateForTests(): void {
   }
 
   redisClient = null;
-  redisStatus = 'unknown';
+  _redisStatus = 'unknown';
   lastRedisCheckTime = 0;
   circuitBreaker.state = 'CLOSED';
   circuitBreaker.failureCount = 0;
@@ -217,7 +217,7 @@ function recordRedisFailure(): void {
   if (circuitBreaker.failureCount >= CIRCUIT_CONFIG.FAILURE_THRESHOLD && circuitBreaker.state !== 'OPEN') {
     circuitBreaker.state = 'OPEN';
     circuitBreaker.nextAttemptTime = now + CIRCUIT_CONFIG.OPEN_TIMEOUT;
-    redisStatus = 'disconnected';
+    _redisStatus = 'disconnected';
     
     console.error('🚨 Circuit breaker OPENED: Redis marked unavailable', {
       failures: circuitBreaker.failureCount,
@@ -242,7 +242,7 @@ function recordRedisSuccess(): void {
     // Transition to CLOSED after threshold successes
     if (circuitBreaker.successCount >= CIRCUIT_CONFIG.SUCCESS_THRESHOLD) {
       circuitBreaker.state = 'CLOSED';
-      redisStatus = 'connected';
+      _redisStatus = 'connected';
       
       console.log('✅ Circuit breaker CLOSED: Redis fully recovered', {
         successes: circuitBreaker.successCount,
@@ -258,7 +258,7 @@ function recordRedisSuccess(): void {
     console.log('🔄 Circuit breaker → HALF_OPEN: Testing Redis recovery');
   } else {
     // Already CLOSED, just ensure status is correct
-    redisStatus = 'connected';
+    _redisStatus = 'connected';
   }
 }
 
@@ -833,7 +833,7 @@ async function sendRateLimitAlert(
  * TODO: Telegram Integration
  * Send alert to Telegram channel via bot
  */
-async function sendTelegramAlert(alert: unknown): Promise<void> {
+async function _sendTelegramAlert(_alert: unknown): Promise<void> {
   // Implementation:
   // const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
   // const TELEGRAM_CHAT_ID = process.env.TELEGRAM_ALERTS_CHAT_ID;
@@ -853,7 +853,7 @@ async function sendTelegramAlert(alert: unknown): Promise<void> {
  * TODO: Sentry Integration
  * Create Sentry event with proper severity
  */
-async function sendSentryEvent(level: 'error' | 'warning' | 'info', alert: unknown): Promise<void> {
+async function _sendSentryEvent(_level: 'error' | 'warning' | 'info', _alert: unknown): Promise<void> {
   // Implementation:
   // const Sentry = require('@sentry/node');
   // 
@@ -871,7 +871,7 @@ async function sendSentryEvent(level: 'error' | 'warning' | 'info', alert: unkno
  * TODO: Email Integration
  * Send email alert for critical issues
  */
-async function sendEmailAlert(to: string, alert: unknown): Promise<void> {
+async function _sendEmailAlert(_to: string, _alert: unknown): Promise<void> {
   // Implementation using SendGrid, AWS SES, or similar:
   // const sgMail = require('@sendgrid/mail');
   // sgMail.setApiKey(process.env.SENDGRID_API_KEY);
@@ -898,7 +898,6 @@ export async function getPartnerUsageStats(partnerId: string): Promise<{
 }> {
   const redis = await getRedisClient();
   const tier = await getPartnerTier(partnerId);
-  const mode: 'normal' | 'degraded' = redis ? 'normal' : 'degraded';
 
   if (!redis) {
     // Degraded mode: return emergency limits (using read limits as default)

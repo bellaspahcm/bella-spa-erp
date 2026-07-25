@@ -3,12 +3,11 @@
 import './styles.css';
 import { useState, useEffect } from 'react';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Brain, Search, RefreshCw, TrendingUp, Package, Star, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Brain, Search, TrendingUp, Package, Star } from 'lucide-react';
 import { 
   useServiceRecommendations,
   usePackageRecommendations,
@@ -31,7 +30,7 @@ function RecommendationsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [algorithm, setAlgorithm] = useState<'hybrid' | 'collaborative_filtering' | 'content_based' | 'rfm_based'>('hybrid');
   const [limit, setLimit] = useState(5);
-  const [budget, setBudget] = useState(5000000);
+  const [budget] = useState(5000000);
   const [tenantId, setTenantId] = useState('');
   const [isLoadingTenant, setIsLoadingTenant] = useState(true);
 

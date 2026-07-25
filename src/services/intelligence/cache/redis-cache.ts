@@ -275,7 +275,7 @@ export class RedisCache implements CacheService {
         totalKeys,
         memoryUsedBytes,
       };
-    } catch (error) {
+    } catch (_error) {
       // Return local stats if Redis INFO fails
       console.warn('[RedisCache] Failed to get Redis stats, using local approximation');
       const totalRequests = this.stats.hits + this.stats.misses;

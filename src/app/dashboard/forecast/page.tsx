@@ -5,37 +5,26 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { 
   useRevenueForecast, 
   useChurnForecast, 
-  useDemandForecast,
-  useForecastAccuracy 
+  useDemandForecast
 } from '@/hooks/intelligence';
 import { createClient } from '@/lib/supabase-client';
 import { 
   TrendingUp, 
-  TrendingDown, 
   Users, 
   DollarSign, 
   Calendar,
-  AlertTriangle,
   RefreshCw,
-  BarChart3,
-  Activity,
   AlertCircle,
   ArrowLeft
 } from 'lucide-react';
 import {
   IntelligenceLayout,
-  IntelligenceHeader,
-  IntelligenceSection,
-  IntelligenceButton,
-  IntelligenceStatCard,
-  IntelligenceStatsGrid,
   IntelligenceLoading,
   IntelligenceError
 } from '@/components/intelligence';
@@ -216,12 +205,6 @@ function ForecastDashboard() {
     months: demandHorizon,
     enabled: !!tenantId
   }, {
-    retry: false,
-    throwOnError: false
-  });
-
-  const forecastAccuracy = useForecastAccuracy(tenantId, {
-    enabled: !!tenantId,
     retry: false,
     throwOnError: false
   });

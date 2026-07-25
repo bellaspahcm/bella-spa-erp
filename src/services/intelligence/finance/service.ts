@@ -29,7 +29,7 @@ import type { IntelligenceService, DateRange, TimePeriod, IntelligenceResponse, 
 import { IntelligenceError, QueryError } from '../shared/types';
 import { getCache } from '../cache';
 import { buildCacheKey, parseDateRange, formatDate } from '../shared/helpers';
-import { DEFAULT_CACHE_TTL, CACHE_KEY_PREFIX } from '../shared/constants';
+import { CACHE_KEY_PREFIX } from '../shared/constants';
 import type {
   MonthlyPnL,
   CashFlowAnalysis,
@@ -38,7 +38,6 @@ import type {
   RevenueBreakdown,
   CashFlowForecast,
   ProfitabilityTrends,
-  FinancialRatios,
 } from './queries';
 import {
   getMonthlyPnL as queryMonthlyPnL,
@@ -48,7 +47,6 @@ import {
   getRevenueBreakdown as queryRevenueBreakdown,
   getCashFlowForecast as queryCashFlowForecast,
   getProfitabilityTrends as queryProfitabilityTrends,
-  getFinancialRatios as queryFinancialRatios,
 } from './queries';
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -1352,6 +1352,20 @@ html[data-tenant-module="beauty_spa"] .text-primary > svg {
   color: #074e44 !important; /* Beauty Spa primary green */
 }
 
+/* Allow primary icons to change color dynamically on hover */
+html[data-tenant-module="beauty_spa"] .text-primary:hover > svg,
+html[data-tenant-module="beauty_spa"] svg.text-primary:hover {
+  color: currentColor !important;
+}
+
+/* Force white color for icons inside buttons/elements with hover:text-white */
+html[data-tenant-module="beauty_spa"] .hover\:text-white:hover svg,
+html[data-tenant-module="beauty_spa"] .hover\:text-white:hover > svg,
+html[data-tenant-module="beauty_spa"] [class*="hover:text-white"]:hover svg,
+html[data-tenant-module="beauty_spa"] [class*="hover:text-white"]:hover > svg {
+  color: #ffffff !important;
+}
+
 /* Beauty Spa: Override CHECK-IN icon color */
 html[data-tenant-module="beauty_spa"] .text-rose-600 {
   color: #059669 !important; /* emerald-600 */

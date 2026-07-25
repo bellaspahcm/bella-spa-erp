@@ -384,7 +384,7 @@ export async function getKTVPerformance(tenantId: string, ktvId: string) {
 /**
  * Get Inventory Forecast - Placeholder
  */
-export async function getInventoryForecast(tenantId: string, productId: string) {
+export async function getInventoryForecast(_tenantId: string, _productId: string) {
   return null;
 }
 

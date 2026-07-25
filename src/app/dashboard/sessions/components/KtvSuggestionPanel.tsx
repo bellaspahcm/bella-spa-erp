@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useTransition } from 'react';
+import React, { useEffect, useState, useTransition, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Sparkles, Loader2, Award, UserCheck, ShieldAlert, Cpu } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -35,7 +35,7 @@ export function KtvSuggestionPanel({
   const [isPending, startTransition] = useTransition();
   const [applyingKtvId, setApplyingKtvId] = useState<string | null>(null);
 
-  const fetchSuggestions = async () => {
+  const fetchSuggestions = useCallback(async () => {
     if (!bookingId || !tenantId || !requestedDate || !requestedStartTime) return;
     setLoading(true);
     setError(null);
@@ -63,11 +63,11 @@ export function KtvSuggestionPanel({
     } finally {
       setLoading(false);
     }
-  };
+  }, [bookingId, tenantId, requestedDate, requestedStartTime, durationMinutes]);
 
   useEffect(() => {
     fetchSuggestions();
-  }, [bookingId, tenantId, requestedDate, requestedStartTime, durationMinutes]);
+  }, [fetchSuggestions]);
 
   const handleSelect = async (ktvId: string, ktvName: string) => {
     setApplyingKtvId(ktvId);

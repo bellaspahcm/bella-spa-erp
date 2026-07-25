@@ -597,13 +597,13 @@ export function Sidebar() {
               )}>
                 {tenantBrand.displayName.toLowerCase().endsWith('headquarter') ? (
                   <span className="flex flex-col items-center">
-                    <span className="leading-[0.8] text-[#A91555] dark:text-[#F8A5C2]">{tenantBrand.displayName.slice(0, -11).trim()}</span>
-                    <span className="text-[0.95rem] mt-2 leading-[0.8] font-sans font-black tracking-widest uppercase text-slate-500 dark:text-zinc-400">
+                    <span className="leading-tight text-[#A91555] dark:text-[#F8A5C2]">{tenantBrand.displayName.slice(0, -11).trim()}</span>
+                    <span className="text-[0.95rem] mt-2 leading-none font-sans font-black tracking-widest uppercase text-slate-500 dark:text-zinc-400">
                       Headquarter
                     </span>
                   </span>
                 ) : (
-                  <span className="block truncate leading-[0.8] text-[#A91555] dark:text-[#F8A5C2]">{tenantBrand.displayName}</span>
+                  <span className="block truncate leading-tight text-[#A91555] dark:text-[#F8A5C2]">{tenantBrand.displayName}</span>
                 )}
               </h2>
               <span className={cn(

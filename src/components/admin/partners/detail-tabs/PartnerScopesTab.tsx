@@ -12,24 +12,13 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Trash2, Check, Shield, Lock, Unlock } from 'lucide-react';
+import { Check, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import type { APIPartner, APIScope, PartnerType } from '@/types/api-gateway';
+import type { APIPartner, APIScope } from '@/types/api-gateway';
 import { SCOPE_PRESETS } from '@/types/api-gateway';
 
 interface PartnerScopesTabProps {
@@ -157,7 +146,7 @@ export function PartnerScopesTab({ partner }: PartnerScopesTabProps) {
       toast.success('Đã cập nhật phân quyền thành công');
       setHasChanges(false);
       router.refresh();
-    } catch (error) {
+    } catch (_error) {
       toast.error('Không thể cập nhật phân quyền');
     } finally {
       setLoading(false);

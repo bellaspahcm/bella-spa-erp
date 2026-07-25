@@ -11,7 +11,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   TrendingUp,
   TrendingDown,
@@ -108,7 +108,7 @@ export function AdvancedAnalyticsDashboard({
   }, [partners]);
 
   // Fetch analytics data
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     if (selectedPartners.length === 0) {
       setAnalyticsData([]);
       setLoading(false);
@@ -134,11 +134,11 @@ export function AdvancedAnalyticsDashboard({
     } finally {
       setLoading(false);
     }
-  };
+  }, [timeRange, selectedPartners]);
 
   useEffect(() => {
     fetchAnalytics();
-  }, [timeRange, selectedPartners]);
+  }, [fetchAnalytics]);
 
   // Calculate aggregated metrics
   const aggregatedMetrics = useMemo<AggregatedMetrics>(() => {

@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kế Hoạch Chào Mời Sử Dụng Hệ Thống Quản Lý Beauty Spa</title>
+  <style>
+    :root {
+      --ink: #111827;
+      --muted: #64748b;
+      --paper: #ffffff;
+      --line: #e5e7eb;
+      --rose: #b0175a;
+      --rose-2: #e11d72;
+      --plum: #5b1744;
+      --gold: #c88a2d;
+      --mint: #0f9f7a;
+      --blue: #2563eb;
+      --soft: #fff7fb;
+      --shadow: 0 22px 60px rgba(15, 23, 42, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(225, 29, 114, 0.14), transparent 32rem),
+        radial-gradient(circle at bottom right, rgba(37, 99, 235, 0.1), transparent 34rem),
+        var(--soft);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.58;
+    }
+
+    .page {
+      width: min(1180px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 36px 0 72px;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      min-height: 520px;
+      color: white;
+      border-radius: 30px;
+      padding: 46px;
+      background:
+        linear-gradient(135deg, rgba(17, 24, 39, 0.95), rgba(91, 23, 68, 0.92)),
+        url("../Bella Banner.png");
+      background-size: cover;
+      background-position: center;
+      box-shadow: var(--shadow);
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, rgba(17, 24, 39, 0.9), rgba(17, 24, 39, 0.55), rgba(176, 23, 90, 0.28));
+      pointer-events: none;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+      max-width: 880px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 14px;
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.1);
+      color: #ffd7e8;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      max-width: 840px;
+      margin: 26px 0 18px;
+      color: #fff;
+      font-size: clamp(38px, 6vw, 72px);
+      line-height: 0.98;
+      letter-spacing: 0;
+    }
+
+    .hero-lead {
+      max-width: 760px;
+      margin: 0;
+      color: rgba(255, 255, 255, 0.84);
+      font-size: 19px;
+    }
+
+    .hero-grid {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-top: 54px;
+    }
+
+    .hero-metric {
+      min-height: 122px;
+      padding: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(16px);
+    }
+
+    .hero-metric strong {
+      display: block;
+      color: white;
+      font-size: 30px;
+      line-height: 1;
+      margin-bottom: 12px;
+    }
+
+    .hero-metric span {
+      display: block;
+      color: rgba(255, 255, 255, 0.76);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .section {
+      margin-top: 28px;
+      padding: 34px;
+      border: 1px solid rgba(176, 23, 90, 0.12);
+      border-radius: 28px;
+      background: rgba(255, 255, 255, 0.88);
+      box-shadow: 0 14px 38px rgba(176, 23, 90, 0.08);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    .section-kicker {
+      color: var(--rose);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    h2 {
+      margin: 8px 0 0;
+      font-size: clamp(26px, 4vw, 42px);
+      line-height: 1.08;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 0 0 12px;
+      font-size: 19px;
+      line-height: 1.25;
+    }
+
+    p {
+      margin: 0 0 14px;
+      color: #334155;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      border-radius: 999px;
+      padding: 10px 14px;
+      background: #fff0f6;
+      color: var(--rose);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    .card {
+      padding: 24px;
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: var(--paper);
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+    }
+
+    .card.accent {
+      border-color: rgba(176, 23, 90, 0.2);
+      background: linear-gradient(180deg, #fff, #fff5fa);
+    }
+
+    .card.dark {
+      color: white;
+      border-color: transparent;
+      background: linear-gradient(135deg, var(--ink), var(--plum));
+    }
+
+    .card.dark p,
+    .card.dark li {
+      color: rgba(255, 255, 255, 0.78);
+    }
+
+    .number-card strong {
+      display: block;
+      color: var(--rose);
+      font-size: 36px;
+      line-height: 1;
+      margin-bottom: 12px;
+    }
+
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .tag {
+      padding: 8px 11px;
+      border-radius: 999px;
+      background: #f1f5f9;
+      color: #475569;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .tag.rose {
+      background: #fff0f6;
+      color: var(--rose);
+    }
+
+    .tag.mint {
+      background: #ecfdf5;
+      color: var(--mint);
+    }
+
+    .tag.gold {
+      background: #fff7ed;
+      color: var(--gold);
+    }
+
+    ul {
+      margin: 14px 0 0;
+      padding-left: 19px;
+      color: #334155;
+    }
+
+    li {
+      margin: 8px 0;
+    }
+
+    .feature-list {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
+    .feature-item {
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: white;
+    }
+
+    .feature-item b {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--ink);
+      font-size: 16px;
+    }
+
+    .journey {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 14px;
+    }
+
+    .journey-step {
+      min-height: 216px;
+      padding: 20px;
+      border-radius: 22px;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .journey-step span {
+      display: inline-flex;
+      width: 38px;
+      height: 38px;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      border-radius: 12px;
+      background: var(--ink);
+      color: white;
+      font-weight: 900;
+    }
+
+    .journey-step:nth-child(2) span { background: var(--rose); }
+    .journey-step:nth-child(3) span { background: var(--gold); }
+    .journey-step:nth-child(4) span { background: var(--mint); }
+    .journey-step:nth-child(5) span { background: var(--blue); }
+
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: white;
+    }
+
+    th,
+    td {
+      padding: 18px;
+      text-align: left;
+      vertical-align: top;
+      border-bottom: 1px solid var(--line);
+    }
+
+    th {
+      background: #f8fafc;
+      color: #64748b;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .callout {
+      padding: 24px;
+      border-radius: 22px;
+      border: 1px solid rgba(15, 159, 122, 0.22);
+      background: linear-gradient(135deg, #ecfdf5, #ffffff);
+    }
+
+    .quote {
+      padding: 28px;
+      border-radius: 24px;
+      color: white;
+      background: linear-gradient(135deg, var(--rose), var(--plum));
+      box-shadow: 0 20px 40px rgba(176, 23, 90, 0.18);
+    }
+
+    .quote p {
+      color: rgba(255, 255, 255, 0.86);
+      font-size: 18px;
+    }
+
+    .footer {
+      margin-top: 28px;
+      padding: 30px 34px;
+      border-radius: 24px;
+      color: white;
+      background: linear-gradient(135deg, var(--ink), var(--plum));
+      box-shadow: var(--shadow);
+    }
+
+    .footer p {
+      max-width: 900px;
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    @media (max-width: 980px) {
+      .hero,
+      .section {
+        padding: 26px;
+      }
+
+      .hero-grid,
+      .grid-2,
+      .grid-3,
+      .grid-4,
+      .feature-list,
+      .journey {
+        grid-template-columns: 1fr;
+      }
+
+      .section-header {
+        flex-direction: column;
+      }
+
+      table {
+        min-width: 760px;
+      }
+
+      .table-scroll {
+        overflow-x: auto;
+        padding-bottom: 8px;
+      }
+    }
+
+    @media print {
+      body {
+        background: white;
+      }
+
+      .page {
+        width: 100%;
+        padding: 0;
+      }
+
+      .hero,
+      .section,
+      .footer {
+        box-shadow: none;
+        break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <div class="hero-content">
+        <div class="eyebrow">Giải pháp quản lý dành cho chủ Beauty Spa</div>
+        <h1>Quản lý spa dễ hơn, chính xác hơn, sinh lời rõ hơn</h1>
+        <p class="hero-lead">
+          Một hệ thống giúp chủ spa kiểm soát lịch hẹn, khách hàng, liệu trình, nhân sự,
+          doanh thu, kho hàng, hoa hồng và báo cáo vận hành trong cùng một nơi.
+        </p>
+      </div>
+      <div class="hero-grid">
+        <div class="hero-metric">
+          <strong>01</strong>
+          <span>Một nơi quản lý toàn bộ hoạt động spa hằng ngày</span>
+        </div>
+        <div class="hero-metric">
+          <strong>24/7</strong>
+          <span>Theo dõi dữ liệu mọi lúc trên điện thoại hoặc máy tính</span>
+        </div>
+        <div class="hero-metric">
+          <strong>30-50%</strong>
+          <span>Giảm thời gian tổng hợp thủ công, nhập liệu và đối soát</span>
+        </div>
+        <div class="hero-metric">
+          <strong>Nhiều CN</strong>
+          <span>Sẵn sàng mở rộng từ một spa nhỏ thành chuỗi chi nhánh</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-header">
+        <div>
+          <div class="section-kicker">Dành cho chủ spa</div>
+          <h2>Vì sao spa cần một hệ thống quản lý chuyên nghiệp?</h2>
+        </div>
+        <div class="pill">Tập trung vào lợi nhuận</div>
+      </div>
+      <div class="grid-2">
+        <div class="card accent">
+          <h3>Vấn đề thường gặp khi quản lý thủ công</h3>
+          <p>
+            Khi spa phát triển, sổ tay, file rời, tin nhắn và ghi nhớ cá nhân không còn đủ để quản lý chính xác.
+            Chủ spa dễ mất thời gian hỏi lại nhân viên, kiểm tra lịch, đối chiếu tiền, xem liệu trình còn bao nhiêu buổi
+            và tính hoa hồng cuối tháng.
+          </p>
+          <ul>
+            <li>Lịch hẹn dễ trùng giường, trùng phòng, trùng kỹ thuật viên.</li>
+            <li>Khách mua liệu trình nhưng khó theo dõi số buổi còn lại.</li>
+            <li>Doanh thu, công nợ, tiền cọc và thanh toán còn lại dễ lệch.</li>
+            <li>Kho mỹ phẩm, vật tư và chi phí sử dụng không được kiểm soát sát.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Giải pháp đề xuất</h3>
+          <p>
+            Hệ thống Beauty Spa ERP giúp đưa toàn bộ quy trình vận hành spa vào một màn hình quản lý thống nhất.
+            Chủ spa không cần chờ cuối ngày hoặc cuối tháng mới biết tình hình. Mọi dữ liệu quan trọng được cập nhật
+            theo hoạt động thực tế: khách đặt lịch, nhân viên hoàn thành buổi, khách thanh toán, kho được dùng và doanh thu phát sinh.
+          </p>
+          <div class="tag-row">
+            <span class="tag rose">Dễ quản lý</span>
+            <span class="tag mint">Ít sai sót</span>
+            <span class="tag gold">Tiết kiệm thời gian</span>
+            <span class="tag">Mở rộng tốt</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-header">
+        <div>
+          <div class="section-kicker">Lợi ích cốt lõi</div>
+          <h2>Chủ spa nhận được gì?</h2>
+        </div>
+      </div>
+      <div class="grid-4">
+        <div class="card number-card">
+          <strong>1</strong>
+          <h3>Quản lý dễ hơn</h3>
+          <p>Mọi thông tin quan trọng nằm trong một hệ thống: khách hàng, lịch hẹn, liệu trình, thanh toán, nhân sự và kho.</p>
+        </div>
+        <div class="card number-card">
+          <strong>2</strong>
+          <h3>Tiết kiệm thời gian</h3>
+          <p>Giảm việc hỏi lại nhân viên, tổng hợp thủ công, đối soát cuối ngày và tìm kiếm dữ liệu rời rạc.</p>
+        </div>
+        <div class="card number-card">
+          <strong>3</strong>
+          <h3>Kiểm soát tiền tốt hơn</h3>
+          <p>Theo dõi tiền cọc, khoản còn lại, công nợ, doanh thu, chi phí và lợi nhuận theo ngày, tháng, chi nhánh.</p>
+        </div>
+        <div class="card number-card">
+          <strong>4</strong>
+          <h3>Mở rộng bền vững</h3>
+          <p>Khi có thêm nhân viên hoặc chi nhánh, quy trình vẫn rõ ràng, dữ liệu vẫn tách biệt và dễ giám sát.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-header">
+        <div>
+          <div class="section-kicker">Tính năng nổi bật</div>
+          <h2>Một hệ thống cho toàn bộ quy trình spa</h2>
+        </div>
+      </div>
+      <div class="feature-list">
+        <div class="feature-item">
+          <b>Quản lý khách hàng và hồ sơ chăm sóc</b>
+          <p>Lưu thông tin khách, nhu cầu, lịch sử tư vấn, tình trạng da/body, hình ảnh trước sau, ghi chú dị ứng và lịch sử sử dụng dịch vụ.</p>
+        </div>
+        <div class="feature-item">
+          <b>Lịch hẹn thông minh</b>
+          <p>Sắp lịch theo kỹ thuật viên, giường, phòng, máy, chi nhánh và thời lượng dịch vụ để hạn chế trùng lịch hoặc bỏ sót ca.</p>
+        </div>
+        <div class="feature-item">
+          <b>Thẻ liệu trình beauty</b>
+          <p>Theo dõi từng gói dịch vụ: số buổi đã làm, số buổi còn lại, buổi tiếp theo, kỹ thuật viên phụ trách và trạng thái hoàn thành.</p>
+        </div>
+        <div class="feature-item">
+          <b>Quản lý thanh toán và công nợ</b>
+          <p>Ghi nhận tiền cọc, thanh toán thêm, thanh toán nốt, khoản còn nợ và lịch sử thu tiền để giảm thất thoát.</p>
+        </div>
+        <div class="feature-item">
+          <b>Kho mỹ phẩm và vật tư</b>
+          <p>Theo dõi nhập, xuất, tồn, vật tư dùng cho từng dịch vụ, cảnh báo khi gần hết hàng và hỗ trợ kiểm soát chi phí dịch vụ.</p>
+        </div>
+        <div class="feature-item">
+          <b>Lương và hoa hồng linh hoạt</b>
+          <p>Hỗ trợ chính sách theo dịch vụ, liệu trình, sản phẩm, doanh số, vai trò nhân viên và chi nhánh để phù hợp từng spa.</p>
+        </div>
+        <div class="feature-item">
+          <b>Báo cáo quản trị</b>
+          <p>Xem doanh thu, chi phí, công nợ, hiệu suất nhân viên, hiệu quả dịch vụ, lượng khách quay lại và tình hình từng chi nhánh.</p>
+        </div>
+        <div class="feature-item">
+          <b>Chăm sóc khách và marketing</b>
+          <p>Hỗ trợ nhắc lịch, theo dõi khách cần chăm sóc lại, ghi nhận nguồn khách, chiến dịch quảng cáo và dữ liệu phục vụ bán thêm.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-header">
+        <div>
+          <div class="section-kicker">Thuận tiện và dễ dùng</div>
+          <h2>Nhân viên dễ thao tác, chủ spa dễ kiểm soát</h2>
+        </div>
+        <div class="pill">Dùng được hằng ngày</div>
+      </div>
+      <div class="grid-3">
+        <div class="card">
+          <h3>Dễ nhìn, dễ nhập, dễ tìm</h3>
+          <p>
+            Giao diện được thiết kế cho công việc lặp lại hằng ngày: xem lịch, tìm khách, cập nhật buổi,
+            ghi nhận thanh toán, kiểm tra công nợ và xem báo cáo nhanh.
+          </p>
+        </div>
+        <div class="card accent">
+          <h3>Làm việc trên điện thoại</h3>
+          <p>
+            Chủ spa, quản lý và nhân viên có thể xem thông tin quan trọng trên điện thoại.
+            Điều này đặc biệt hữu ích khi cần kiểm tra lịch, xem khách hoặc xử lý công việc ngoài quầy lễ tân.
+          </p>
+        </div>
+        <div class="card">
+          <h3>Giảm phụ thuộc vào một người</h3>
+          <p>
+            Khi dữ liệu nằm trong hệ thống, spa không còn phụ thuộc quá nhiều vào ghi nhớ của từng nhân viên.
+            Người mới vào việc cũng dễ nắm quy trình hơn.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-header">
+        <div>
+          <div class="section-kicker">Bảo mật và phân quyền</div>
+          <h2>Dữ liệu spa được quản lý riêng và đúng quyền</h2>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card dark">
+          <h3>Điểm cốt lõi về an toàn dữ liệu</h3>
+          <p>
+            Mỗi spa có không gian dữ liệu riêng. Nhân viên chỉ nhìn thấy phần được giao.
+            Chủ spa và quản lý có quyền xem báo cáo, kiểm tra hoạt động và truy vết các thay đổi quan trọng.
+          </p>
+          <ul>
+            <li>Dữ liệu khách hàng, doanh thu và chi nhánh được tách riêng.</li>
+            <li>Phân quyền theo vai trò: chủ spa, quản lý, lễ tân, kỹ thuật viên, kế toán.</li>
+            <li>Lưu lịch sử thao tác để dễ kiểm tra khi có sai lệch.</li>
+            <li>Hạn chế nhân viên xem thông tin không liên quan đến công việc.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Lợi ích thực tế cho chủ spa</h3>
+          <p>
+            Chủ spa không chỉ cần phần mềm đẹp, mà cần sự yên tâm: biết ai đã làm gì, tiền ở đâu,
+            khách nào còn nợ, liệu trình nào chưa xong, kho còn bao nhiêu và chi nhánh nào đang vận hành hiệu quả.
+          </p>
+          <div class="tag-row">
+            <span class="tag rose">Tách dữ liệu</span>
+            <span class="tag mint">Đúng quyền</span>
+            <span class="tag gold">Có lịch sử</span>
+            <span class="tag">Dễ kiểm tra</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-header">
+        <div>
+          <div class="section-kicker">Tài chính và hiệu quả</div>
+          <h2>Tiết kiệm thời gian, giảm thất thoát, tăng khả năng sinh lời</h2>
+        </div>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Nhu cầu của chủ spa</th>
+              <th>Cách hệ thống hỗ trợ</th>
+              <th>Lợi ích kinh doanh</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Biết tiền vào, tiền ra</strong></td>
+              <td>Theo dõi doanh thu, chi phí, tiền cọc, thanh toán còn lại, công nợ và báo cáo theo tháng.</td>
+              <td>Giảm lệch tiền, dễ đối soát và ra quyết định nhanh hơn.</td>
+            </tr>
+            <tr>
+              <td><strong>Không bỏ sót khách</strong></td>
+              <td>Quản lý lịch hẹn, nhắc lịch, khách cần chăm sóc lại và liệu trình chưa hoàn tất.</td>
+              <td>Tăng tỷ lệ khách quay lại và giảm tình trạng mất khách vì quên chăm sóc.</td>
+            </tr>
+            <tr>
+              <td><strong>Tính hoa hồng rõ ràng</strong></td>
+              <td>Ghi nhận dịch vụ, sản phẩm, người thực hiện, vai trò và chính sách hoa hồng tương ứng.</td>
+              <td>Nhân viên tin tưởng, chủ spa giảm tranh cãi cuối tháng.</td>
+            </tr>
+            <tr>
+              <td><strong>Kiểm soát kho</strong></td>
+              <td>Theo dõi vật tư, mỹ phẩm, định mức sử dụng và cảnh báo tồn kho thấp.</td>
+              <td>Giảm thất thoát, tránh thiếu hàng và hiểu rõ chi phí từng dịch vụ.</td>
+            </tr>
+            <tr>
+              <td><strong>Mở thêm chi nhánh</strong></td>
+              <td>Mỗi chi nhánh có dữ liệu riêng, chủ spa xem được báo cáo tổng hợp và so sánh hiệu suất.</td>
+              <td>Mở rộng có kiểm soát, không phải quản lý bằng nhiều file rời.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-header">
+        <div>
+          <div class="section-kicker">Từ một spa đến chuỗi spa</div>
+          <h2>Dễ mở rộng theo từng giai đoạn</h2>
+        </div>
+      </div>
+      <div class="journey">
+        <div class="journey-step">
+          <span>1</span>
+          <h3>Spa nhỏ</h3>
+          <p>Quản lý khách hàng, lịch hẹn, dịch vụ, thu chi và liệu trình cơ bản.</p>
+        </div>
+        <div class="journey-step">
+          <span>2</span>
+          <h3>Spa đang tăng trưởng</h3>
+          <p>Thêm quản lý kho, nhân sự, hoa hồng, công nợ, báo cáo doanh thu và chăm sóc khách.</p>
+        </div>
+        <div class="journey-step">
+          <span>3</span>
+          <h3>Spa nhiều dịch vụ</h3>
+          <p>Quản lý giường, phòng, máy, liệu trình chuyên sâu, bán mỹ phẩm và hiệu quả từng dịch vụ.</p>
+        </div>
+        <div class="journey-step">
+          <span>4</span>
+          <h3>Nhiều chi nhánh</h3>
+          <p>Chủ spa xem tổng quan toàn hệ thống, từng chi nhánh vận hành riêng và có báo cáo so sánh.</p>
+        </div>
+        <div class="journey-step">
+          <span>5</span>
+          <h3>Thương hiệu riêng</h3>
+          <p>Đổi logo, màu sắc, mẫu báo giá, portal khách hàng và quy trình theo phong cách của spa.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-header">
+        <div>
+          <div class="section-kicker">Nhận diện thương hiệu</div>
+          <h2>Hệ thống có thể mang phong cách riêng của từng spa</h2>
+        </div>
+        <div class="pill">White-label</div>
+      </div>
+      <div class="grid-2">
+        <div class="card accent">
+          <h3>Đổi theo thương hiệu khách hàng</h3>
+          <p>
+            Mỗi spa có thể dùng logo, màu sắc, tên thương hiệu, thông tin liên hệ, mẫu báo giá,
+            mẫu hóa đơn và giao diện khách hàng riêng. Điều này giúp chủ spa có cảm giác sở hữu một hệ thống
+            được thiết kế cho chính thương hiệu của mình.
+          </p>
+        </div>
+        <div class="card">
+          <h3>Thiết kế riêng khi cần</h3>
+          <p>
+            Với spa lớn hoặc chuỗi chi nhánh, hệ thống có thể được cấu hình sâu hơn theo quy trình vận hành thực tế:
+            dashboard riêng, báo cáo riêng, chính sách hoa hồng riêng và trải nghiệm khách hàng riêng.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-header">
+        <div>
+          <div class="section-kicker">Điểm cốt lõi đã sẵn sàng</div>
+          <h2>Nền tảng vận hành đã có chiều sâu</h2>
+        </div>
+      </div>
+      <div class="grid-3">
+        <div class="card">
+          <h3>Quản trị vận hành</h3>
+          <p>
+            Hệ thống đã có các phần quản lý quan trọng như khách hàng, lịch hẹn, thẻ liệu trình,
+            nhân sự, kho, báo cáo, cài đặt chi nhánh và phân quyền sử dụng.
+          </p>
+        </div>
+        <div class="card accent">
+          <h3>Quản trị tài chính</h3>
+          <p>
+            Có khả năng theo dõi thu, chi, công nợ, thanh toán, doanh thu, chi phí,
+            báo cáo kết quả kinh doanh và các dữ liệu cần thiết để chủ spa nhìn thấy hiệu quả thật.
+          </p>
+        </div>
+        <div class="card">
+          <h3>Quản trị tăng trưởng</h3>
+          <p>
+            Hỗ trợ chăm sóc khách, dữ liệu quảng cáo, nhắc lịch, báo cáo hiệu suất và khả năng mở rộng
+            sang nhiều chi nhánh hoặc nhiều mô hình spa khác nhau.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-header">
+        <div>
+          <div class="section-kicker">Gói triển khai đề xuất</div>
+          <h2>Linh hoạt theo quy mô từng spa</h2>
+        </div>
+      </div>
+      <div class="grid-3">
+        <div class="card">
+          <h3>Gói khởi động</h3>
+          <p>Phù hợp spa nhỏ muốn thay sổ tay và file rời bằng hệ thống quản lý gọn gàng.</p>
+          <ul>
+            <li>Khách hàng, lịch hẹn, dịch vụ.</li>
+            <li>Thu tiền, công nợ, báo cáo cơ bản.</li>
+            <li>Đổi logo và màu thương hiệu.</li>
+          </ul>
+        </div>
+        <div class="card accent">
+          <h3>Gói chuyên nghiệp</h3>
+          <p>Phù hợp spa beauty vận hành nhiều liệu trình, nhiều nhân viên và cần kiểm soát lương, kho, doanh thu.</p>
+          <ul>
+            <li>Thẻ liệu trình, giường/phòng/máy.</li>
+            <li>Hoa hồng linh hoạt.</li>
+            <li>Kho mỹ phẩm, báo cáo quản trị.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Gói thiết kế riêng</h3>
+          <p>Phù hợp spa lớn hoặc chuỗi chi nhánh muốn hệ thống theo đúng quy trình và nhận diện thương hiệu riêng.</p>
+          <ul>
+            <li>Nhiều chi nhánh.</li>
+            <li>Báo cáo và dashboard riêng.</li>
+            <li>Quy trình vận hành tùy chỉnh.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="quote">
+        <h2>Thông điệp chào mời</h2>
+        <p>
+          Hệ thống không chỉ giúp spa ghi nhận dữ liệu, mà giúp chủ spa nhìn thấy toàn bộ bức tranh vận hành:
+          hôm nay có bao nhiêu lịch, khách nào còn liệu trình, tiền nào đã thu, khoản nào còn nợ,
+          nhân viên nào hiệu quả, kho nào sắp hết và chi nhánh nào đang sinh lời tốt nhất.
+        </p>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <h2>Kết luận dành cho chủ spa</h2>
+      <p>
+        Beauty Spa ERP là giải pháp giúp spa vận hành chuyên nghiệp hơn, giảm phụ thuộc vào quản lý thủ công,
+        hạn chế thất thoát, chăm sóc khách tốt hơn và mở rộng chi nhánh dễ hơn.
+        Với khả năng đổi nhận diện thương hiệu và cấu hình theo quy trình riêng, hệ thống phù hợp từ spa nhỏ
+        đến chuỗi beauty spa đang muốn tăng trưởng bài bản.
+      </p>
+    </footer>
+  </main>
+</body>
+</html>

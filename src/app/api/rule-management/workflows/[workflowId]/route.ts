@@ -153,7 +153,7 @@ export async function PATCH(
     const body: UpdateWorkflowRequest = await request.json();
 
     // Get current workflow
-    const { data: currentWorkflow, error: getError } = await supabase
+    const { error: getError } = await supabase
       .from('workflow_definitions')
       .select('*')
       .eq('id', workflowId)
@@ -265,7 +265,7 @@ export async function PATCH(
  * Delete workflow definition (soft delete by archiving)
  */
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: RouteParams
 ) {
   try {

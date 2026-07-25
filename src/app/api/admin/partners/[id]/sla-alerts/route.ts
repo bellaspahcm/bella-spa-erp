@@ -223,7 +223,7 @@ export async function POST(
   try {
     const { id: partnerId } = await context.params;
     const body = await request.json();
-    const { action, alert_id, notes } = body;
+    const { action, alert_id, notes: _notes } = body;
 
     if (!action || !alert_id) {
       return NextResponse.json(

@@ -183,7 +183,7 @@ export class BaseSalaryProvider implements PayrollProvider<SalaryComponent> {
     employee: EmployeeData,
     attendance: AttendanceData | undefined,
     monthYear: string,
-    tenantConfig: PayrollDecisionContext['tenantConfig']
+    _tenantConfig: PayrollDecisionContext['tenantConfig']
   ): Promise<SalaryComponent> {
     const baseSalary = employee.baseSalary || 0;
 

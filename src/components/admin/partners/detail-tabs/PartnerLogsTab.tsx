@@ -10,7 +10,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Search, Filter, Download, RefreshCw, Eye, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -79,7 +79,7 @@ export function PartnerLogsTab({ partnerId }: PartnerLogsTabProps) {
   });
 
   // Fetch logs
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams({
@@ -108,11 +108,11 @@ export function PartnerLogsTab({ partnerId }: PartnerLogsTabProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [partnerId, pagination.limit, pagination.offset, search, methodFilter, statusFilter]);
 
   useEffect(() => {
     fetchLogs();
-  }, [search, methodFilter, statusFilter, pagination.offset]);
+  }, [fetchLogs]);
 
   // Handlers
   const handleViewDetails = (log: APIRequestLog) => {

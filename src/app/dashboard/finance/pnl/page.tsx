@@ -20,12 +20,9 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
-  TrendingUp,
-  TrendingDown,
   BarChart3,
   PieChart,
   LineChart,
-  Calendar,
   RefreshCw,
   AlertCircle,
 } from 'lucide-react';
@@ -121,7 +118,7 @@ export default function PnLDashboardPage() {
     }).format(value);
   };
 
-  const formatPercent = (value: number) => {
+  const _formatPercent = (value: number) => {
     return `${value >= 0 ? '+' : ''}${formatNumber(value, 2)}%`;
   };
 
@@ -134,7 +131,7 @@ export default function PnLDashboardPage() {
     return monthlyPnL.data.data[0]; // Latest month
   };
 
-  const getProfitabilityTrendData = () => {
+  const _getProfitabilityTrendData = () => {
     // TODO: useProfitabilityTrends hook was commented out - mock data until API is fixed
     return [];
     
@@ -176,7 +173,7 @@ export default function PnLDashboardPage() {
   // Calculate growth percentages
   // ───────────────────────────────────────────────────────────────────────────
 
-  const calculateMoMGrowth = () => {
+  const _calculateMoMGrowth = () => {
     // TODO: useProfitabilityTrends hook was commented out - return 0 until API is fixed
     return 0;
     
@@ -190,7 +187,7 @@ export default function PnLDashboardPage() {
     // return ((current - previous) / Math.abs(previous)) * 100;
   };
 
-  const calculateYoYGrowth = () => {
+  const _calculateYoYGrowth = () => {
     // TODO: useProfitabilityTrends hook was commented out - return 0 until API is fixed
     return 0;
     

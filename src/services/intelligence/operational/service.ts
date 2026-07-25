@@ -27,9 +27,6 @@ import { getCache } from '../cache';
 import { buildCacheKey, parseDateRange, formatDate } from '../shared/helpers';
 import { DEFAULT_CACHE_TTL, CACHE_KEY_PREFIX } from '../shared/constants';
 import type {
-  KtvPerformance,
-  KtvLeaderboardEntry,
-  InventoryStatus as InventoryStatusOld,
   InventoryForecast,
 } from './queries';
 import {

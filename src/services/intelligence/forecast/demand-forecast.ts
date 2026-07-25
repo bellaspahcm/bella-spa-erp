@@ -88,7 +88,7 @@ export async function forecastDemand(
   // Generate forecasts for each item
   const allForecasts: ItemDemandForecast[] = [];
   
-  for (const [itemKey, itemData] of Object.entries(itemGroups)) {
+  for (const [_itemKey, itemData] of Object.entries(itemGroups)) {
     if (itemData.length < 14) {
       // Need at least 2 weeks of data
       continue;

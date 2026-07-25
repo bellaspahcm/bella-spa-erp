@@ -85,7 +85,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     const oldKeyPrefix = partnerData.api_key.substring(0, 12);
 
     // Update partner with new key
-    const { data: updatedPartner, error: updateError } = await supabase
+    const { error: updateError } = await supabase
       .from('api_partners' as never)
       .update({
         api_key: newApiKey,

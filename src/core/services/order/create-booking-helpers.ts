@@ -298,7 +298,7 @@ export async function buildBookingPayload(params: {
   // TODO: Restore booking-decision-service after provider integration is complete
   // File was moved to archive during refactor, will re-integrate in Phase 2
   let bookingStatus: string;
-  let requiredDepositAmount = 0;
+  const requiredDepositAmount = 0;
   
   // Fallback to legacy logic (Decision Engine temporarily disabled)
   bookingStatus = hasConfirmedDeposit ? 'booked' : 'deposit_pending';

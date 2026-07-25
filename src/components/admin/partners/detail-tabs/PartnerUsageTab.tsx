@@ -11,7 +11,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { 
   Activity, 
   TrendingUp, 
@@ -70,7 +70,7 @@ export function PartnerUsageTab({ partnerId }: PartnerUsageTabProps) {
   const [timeRange, setTimeRange] = useState<'7d' | '30d'>('7d');
 
   // Fetch usage stats
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch(
@@ -89,11 +89,11 @@ export function PartnerUsageTab({ partnerId }: PartnerUsageTabProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [partnerId, timeRange]);
 
   useEffect(() => {
     fetchStats();
-  }, [timeRange]);
+  }, [fetchStats]);
 
   // Calculate percentage
   const getPercentage = (value: number, total: number) => {

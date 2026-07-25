@@ -17,9 +17,8 @@
  * @phase Intelligence Layer Priority 3 Task #3
  */
 
-import { createClient } from '@/lib/supabase-server';
 import { QueryError } from '../shared/types';
-import { getBalanceSheet, getBalanceSheetTrend } from './balance-sheet';
+import { getBalanceSheet } from './balance-sheet';
 import { getMonthlyPnL } from './queries';
 import type {
   FinancialRatios,
@@ -62,7 +61,7 @@ function safeDivide(numerator: number, denominator: number): number {
 export async function getFinancialRatios(
   params: FinancialRatiosParams
 ): Promise<FinancialRatios> {
-  const { tenantId, period, compareWithPreviousPeriod } = params;
+  const { tenantId, period, compareWithPreviousPeriod: _compareWithPreviousPeriod } = params;
 
   try {
     // Determine the period

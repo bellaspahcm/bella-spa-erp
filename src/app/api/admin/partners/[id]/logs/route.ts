@@ -9,9 +9,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
-import { getPartnerById } from '@/services/api-gateway/partner.service';
 
-async function checkAdminRole(req: NextRequest) {
+async function checkAdminRole(_req: NextRequest) {
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   
@@ -76,10 +75,9 @@ async function checkAdminRole(req: NextRequest) {
  */
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params: _params }: { params: Promise<{ id: string }> }
 ) {
-  const { id: partner_id } = await params;
-  const { user, tenant_id, is_super_admin, error } = await checkAdminRole(req);
+  const { error } = await checkAdminRole(req);
   if (error) return error;
   
   // Temporarily return "not implemented" until database types are regenerated

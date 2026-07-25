@@ -1,3 +1,7 @@
+const { loadLocalEnv } = require('./load-local-env.cjs');
+
+loadLocalEnv();
+
 const CRITICAL = 'critical';
 const WARNING = 'warning';
 const MONEY_TOLERANCE = 1;
@@ -1428,3 +1432,4 @@ module.exports = {
   runBusinessInvariantChecksOnDataset,
   summarizeBusinessInvariantResults,
 };
+

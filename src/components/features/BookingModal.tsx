@@ -273,12 +273,13 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
 
     if (baseSessions === 1) {
       const calculatedPrice = basePrice * formData.total_sessions;
-      if (formData.full_price !== calculatedPrice) {
-        setFormData(prev => ({
+      setFormData(prev => {
+        if (prev.full_price === calculatedPrice) return prev;
+        return {
           ...prev,
           full_price: calculatedPrice
-        }));
-      }
+        };
+      });
     }
   }, [formData.package_id, formData.total_sessions, packages]);
 

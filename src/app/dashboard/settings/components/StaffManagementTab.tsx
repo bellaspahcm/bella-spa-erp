@@ -2,7 +2,7 @@
 
 import { PremiumSelect } from "@/components/ui/PremiumSelect";
 import { getSupabase } from "@/lib/supabase-client";
-import { cn } from "@/lib/utils";
+import { cn, copyToClipboard } from "@/lib/utils";
 import {
 createUser,
 deleteUser,
@@ -172,10 +172,14 @@ export default function StaffManagementTab() {
                   </code>
                   <button
                     type="button"
-                    onClick={(evt) => {
+                    onClick={async (evt) => {
                       evt.stopPropagation();
-                      navigator.clipboard.writeText(pwd);
-                      toast.success("Đã sao chép mật khẩu!", { id: "copy-toast" });
+                      const success = await copyToClipboard(pwd);
+                      if (success) {
+                        toast.success("Đã sao chép mật khẩu!", { id: "copy-toast" });
+                      } else {
+                        toast.error("Không thể tự động sao chép mật khẩu");
+                      }
                     }}
                     className="px-2.5 py-1 bg-emerald-600 text-white text-xs font-bold rounded flex items-center gap-1 hover:bg-emerald-700 transition-all active:scale-95 cursor-pointer shadow-sm"
                   >
@@ -831,12 +835,16 @@ export default function StaffManagementTab() {
                     </code>
                     <button
                       type="button"
-                      onClick={() => {
+                      onClick={async () => {
                         if (createdStaffResult.password) {
-                          navigator.clipboard.writeText(createdStaffResult.password);
-                          setCopiedPwd(true);
-                          toast.success("Đã sao chép mật khẩu vào bộ nhớ tạm!");
-                          setTimeout(() => setCopiedPwd(false), 3000);
+                          const success = await copyToClipboard(createdStaffResult.password);
+                          if (success) {
+                            setCopiedPwd(true);
+                            toast.success("Đã sao chép mật khẩu vào bộ nhớ tạm!");
+                            setTimeout(() => setCopiedPwd(false), 3000);
+                          } else {
+                            toast.error("Không thể tự động sao chép mật khẩu");
+                          }
                         }
                       }}
                       className={cn(

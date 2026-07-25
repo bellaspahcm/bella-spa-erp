@@ -75,7 +75,7 @@ export class WorkflowExecutor implements IWorkflowExecutor {
     definition: WorkflowDefinition,
     execution: WorkflowExecution
   ): Promise<WorkflowExecutionResult> {
-    let context = execution.context;
+    const context = execution.context;
     const results: StepExecutionResult[] = [];
     const startTime = Date.now();
     let shouldPause = false;

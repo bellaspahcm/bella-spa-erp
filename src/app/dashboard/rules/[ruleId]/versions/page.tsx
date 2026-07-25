@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -41,7 +41,7 @@ export default function RuleVersionsPage({ params }: VersionsPageProps) {
   const [selectedVersion, setSelectedVersion] = useState<any>(null);
   const [isRollingBack, setIsRollingBack] = useState(false);
 
-  const fetchRuleAndVersions = async () => {
+  const fetchRuleAndVersions = useCallback(async () => {
     setIsLoading(true);
     try {
       // Fetch current rule data
@@ -60,11 +60,11 @@ export default function RuleVersionsPage({ params }: VersionsPageProps) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [ruleId]);
 
   useEffect(() => {
     fetchRuleAndVersions();
-  }, [ruleId]);
+  }, [fetchRuleAndVersions]);
 
   const handleRollbackConfirm = (versionItem: any) => {
     if (rule?.status === 'active') {

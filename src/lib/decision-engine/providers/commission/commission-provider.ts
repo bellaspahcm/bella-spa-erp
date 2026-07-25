@@ -31,9 +31,7 @@ import type {
   ManualAdjustment,
   VolumeTier,
   PerformanceTier,
-  CommissionStrategy,
 } from './types';
-import { allCommissionRules } from './rules';
 
 /**
  * CommissionProvider Options
@@ -328,7 +326,7 @@ export class CommissionProvider {
    */
   private async checkGates(
     input: CommissionDecisionInput,
-    context: any
+    _context: any
   ): Promise<{ rejected: boolean; reason?: string; gateType?: string }> {
     const config = input.config;
 
@@ -409,7 +407,7 @@ export class CommissionProvider {
    */
   private async evaluateBaseCommission(
     input: CommissionDecisionInput,
-    context: any
+    _context: any
   ): Promise<{ service: number; product: number; total: number }> {
     const config = input.config;
 
@@ -526,7 +524,7 @@ export class CommissionProvider {
    */
   private async evaluateVolumeTier(
     input: CommissionDecisionInput,
-    context: any
+    _context: any
   ): Promise<{ tier: VolumeTier; multiplier: number }> {
     const totalSessions = input.totalSessions ?? 0;
     const config = input.config;
@@ -569,7 +567,7 @@ export class CommissionProvider {
    */
   private async evaluatePerformanceTier(
     input: CommissionDecisionInput,
-    context: any
+    _context: any
   ): Promise<{ tier: PerformanceTier; multiplier: number }> {
     const avgRating = input.avgRating ?? 0;
     const config = input.config;

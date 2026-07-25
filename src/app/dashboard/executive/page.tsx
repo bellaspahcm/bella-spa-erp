@@ -13,7 +13,7 @@
  * Data flows through Intelligence Layer with automatic caching.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -147,7 +147,7 @@ function ExecutiveDashboardPage() {
   // Fetch all metrics
   // ───────────────────────────────────────────────────────────────────────────
 
-  const fetchAllMetrics = async (refresh = false) => {
+  const fetchAllMetrics = useCallback(async (refresh = false) => {
     if (!tenantId) return;
 
     if (refresh) setIsRefreshing(true);
@@ -282,13 +282,13 @@ function ExecutiveDashboardPage() {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  };
+  }, [tenantId, period]);
 
   useEffect(() => {
     if (tenantId) {
       fetchAllMetrics();
     }
-  }, [tenantId, period]);
+  }, [tenantId, fetchAllMetrics]);
 
   // ───────────────────────────────────────────────────────────────────────────
   // Helper functions

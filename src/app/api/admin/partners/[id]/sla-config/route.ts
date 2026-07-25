@@ -14,7 +14,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
 import {
   SLAConfig,
-  SLAThresholds,
   SLAAlertRule,
   UpsertSLAConfigInput,
   SLA_TIER_PRESETS,

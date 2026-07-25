@@ -33,6 +33,7 @@ import { LandingPackagesSection } from '@/components/features/landing/LandingPac
 import { useLandingPackages, useLandingPromotions, useLandingTenantContact } from '@/components/features/landing/useLandingData';
 import type { LandingCategoryKey } from '@/components/features/landing/landing-data';
 import { submitOnlineBooking } from '@/core/services/order';
+import { copyToClipboard as copyToClipboardHelper } from '@/lib/utils';
 
 export default function LandingPage() {
   const [activeTab, setActiveTab] = useState<LandingCategoryKey>('combo');
@@ -74,9 +75,13 @@ export default function LandingPage() {
   } = useLandingPromotions();
   const { tenantPhone } = useLandingTenantContact();
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast.success('Đã sao chép mã ưu đãi vào bộ nhớ tạm 🌸');
+  const copyToClipboard = async (text: string) => {
+    const success = await copyToClipboardHelper(text);
+    if (success) {
+      toast.success('Đã sao chép mã ưu đãi vào bộ nhớ tạm 🌸');
+    } else {
+      toast.error('Không thể tự động sao chép. Vui lòng tự chọn và sao chép.');
+    }
   };
 
   const scrollToBooking = () => {

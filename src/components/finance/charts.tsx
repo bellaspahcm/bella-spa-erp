@@ -23,44 +23,44 @@ function ChartPlaceholder({ title, icon: Icon }: { title: string; icon: React.El
 }
 
 // Budget Charts
-export function BudgetVarianceChart({ data, height }: { data: any; height: number }) {
+export function BudgetVarianceChart({ data: _data, height }: { data: any; height: number }) {
   return <div style={{ height }}><ChartPlaceholder title="Budget Variance Chart" icon={BarChart3} /></div>;
 }
 
-export function BudgetUtilizationChart({ data, height }: { data: any; height: number }) {
+export function BudgetUtilizationChart({ data: _data, height }: { data: any; height: number }) {
   return <div style={{ height }}><ChartPlaceholder title="Budget Utilization Chart" icon={PieChart} /></div>;
 }
 
-export function VarianceTrendChart({ data, categories, height }: { data: any; categories: any; height: number }) {
+export function VarianceTrendChart({ data: _data, categories: _categories, height }: { data: any; categories: any; height: number }) {
   return <div style={{ height }}><ChartPlaceholder title="Variance Trend Chart" icon={LineChart} /></div>;
 }
 
-export function BudgetStatusChart({ data, height }: { data: any; height: number }) {
+export function BudgetStatusChart({ data: _data, height }: { data: any; height: number }) {
   return <div style={{ height }}><ChartPlaceholder title="Budget Status Chart" icon={PieChart} /></div>;
 }
 
 // Cash Flow Charts
-export function CashFlowAnalysisChart({ data, height }: { data: any; height: number }) {
+export function CashFlowAnalysisChart({ data: _data, height }: { data: any; height: number }) {
   return <div style={{ height }}><ChartPlaceholder title="Cash Flow Analysis Chart" icon={BarChart3} /></div>;
 }
 
-export function BurnRateChart({ data, height }: { data: any; height: number }) {
+export function BurnRateChart({ data: _data, height }: { data: any; height: number }) {
   return <div style={{ height }}><ChartPlaceholder title="Burn Rate Chart" icon={TrendingUp} /></div>;
 }
 
-export function CashFlowForecastChart({ data, height }: { data: any; height: number }) {
+export function CashFlowForecastChart({ data: _data, height }: { data: any; height: number }) {
   return <div style={{ height }}><ChartPlaceholder title="Cash Flow Forecast Chart" icon={LineChart} /></div>;
 }
 
 // P&L Charts
-export function PnLStatementChart({ data, height }: { data: any; height: number }) {
+export function PnLStatementChart({ data: _data, height }: { data: any; height: number }) {
   return <div style={{ height }}><ChartPlaceholder title="P&L Statement Chart" icon={BarChart3} /></div>;
 }
 
-export function RevenueBreakdownChart({ data, height }: { data: any; height: number }) {
+export function RevenueBreakdownChart({ data: _data, height }: { data: any; height: number }) {
   return <div style={{ height }}><ChartPlaceholder title="Revenue Breakdown Chart" icon={PieChart} /></div>;
 }
 
-export function ExpenseBreakdownChart({ data, height }: { data: any; height: number }) {
+export function ExpenseBreakdownChart({ data: _data, height }: { data: any; height: number }) {
   return <div style={{ height }}><ChartPlaceholder title="Expense Breakdown Chart" icon={PieChart} /></div>;
 }

@@ -518,7 +518,7 @@ export async function getInventoryStatus(
  */
 export async function getInventoryForecast(
   productId: string,
-  days: number = 30
+  _days: number = 30
 ): Promise<InventoryForecast> {
   try {
     const supabase = await createServiceRoleClient();

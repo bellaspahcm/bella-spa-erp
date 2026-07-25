@@ -11,7 +11,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
 import { getTenantPartnerStats } from '@/services/api-gateway/partner.service';
 
-async function checkAdminRole(req: NextRequest) {
+async function checkAdminRole(_req: NextRequest) {
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   
@@ -59,7 +59,7 @@ async function checkAdminRole(req: NextRequest) {
  * - tenant_id: Tenant ID (super_admin only)
  */
 export async function GET(req: NextRequest) {
-  const { user, tenant_id, is_super_admin, error } = await checkAdminRole(req);
+  const { tenant_id, is_super_admin, error } = await checkAdminRole(req);
   if (error) return error;
   
   try {

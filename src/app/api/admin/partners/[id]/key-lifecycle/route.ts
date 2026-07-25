@@ -53,7 +53,7 @@ interface LogEntry {
  * GET /api/admin/partners/[id]/key-lifecycle
  * Get API key lifecycle data including rotation history
  */
-export async function GET(request: NextRequest, context: RouteContext) {
+export async function GET(_request: NextRequest, context: RouteContext) {
   try {
     const supabase = await createClient();
     const { id: partnerId } = await context.params;
@@ -83,7 +83,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     // Fetch rotation history from logs
     // In a real implementation, query from a dedicated rotation_history table
-    const { data: logs, error: logsError } = await supabase
+    const { data: logs } = await supabase
       .from('api_request_logs' as never)
       .select('*')
       .eq('partner_id', partnerId)

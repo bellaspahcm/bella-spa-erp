@@ -613,7 +613,7 @@ export async function getExpenseBreakdown(
     }).sort((a, b) => b.amount - a.amount);
     
     // Query revenue for payment method breakdown (expenses table doesn't have payment_method)
-    const { data: revenueData, error: revError } = await supabase
+    const { data: revenueData, error: _revError } = await supabase
       .from('revenue')
       .select('payment_method, amount')
       .eq('tenant_id', tenantId)

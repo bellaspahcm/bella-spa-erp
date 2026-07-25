@@ -11,7 +11,6 @@
  */
 
 import { createClient } from '@/lib/supabase-server';
-import type { ExternalAdsDataRow } from './types';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -218,7 +217,7 @@ export class MarketingIntelligenceService {
     // Upsert data into external_ads_data table
     const supabase = await createClient();
     let inserted = 0;
-    let updated = 0;
+    const _updated = 0;
     let failed = 0;
     
     for (const insight of insights) {
@@ -277,8 +276,8 @@ export class MarketingIntelligenceService {
    * Sync Google Ads data (placeholder)
    */
   private async syncGoogleAds(
-    tenantId: string,
-    credentials: TenantAdsCredentials
+    _tenantId: string,
+    _credentials: TenantAdsCredentials
   ): Promise<SyncPlatformResult> {
     // TODO: Implement Google Ads connector
     console.log('[MarketingIntelligence] Google Ads sync not implemented yet');
@@ -292,8 +291,8 @@ export class MarketingIntelligenceService {
    * Sync TikTok Ads data (placeholder)
    */
   private async syncTikTokAds(
-    tenantId: string,
-    credentials: TenantAdsCredentials
+    _tenantId: string,
+    _credentials: TenantAdsCredentials
   ): Promise<SyncPlatformResult> {
     // TODO: Implement TikTok Ads connector
     console.log('[MarketingIntelligence] TikTok Ads sync not implemented yet');
@@ -331,7 +330,7 @@ export class MarketingIntelligenceService {
     // Upsert data into external_ads_data table
     const supabase = await createClient();
     let inserted = 0;
-    let updated = 0;
+    const _updated = 0;
     let failed = 0;
     
     for (const insight of insights) {
@@ -481,7 +480,7 @@ export class MarketingIntelligenceService {
     const supabase = await createClient();
 
     let inserted = 0;
-    let updated = 0;
+    const updated = 0;
     let failed = 0;
 
     // Process records in batches of 100 (Supabase limit)

@@ -205,7 +205,7 @@ describe.skip('RedisCache', () => {
       await cache.set('key1', 'value1', { ttl: 1 }); // 1 second
       
       // Should exist immediately
-      let value = await cache.get('key1');
+      const value = await cache.get('key1');
       expect(value).toBe('value1');
     });
 

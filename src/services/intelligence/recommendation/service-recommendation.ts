@@ -17,7 +17,7 @@ import type {
   SimilarCustomer,
   CustomerItemInteraction,
 } from './types';
-import { generateCacheKey, calculateDiversityScore } from './utils';
+import { calculateDiversityScore } from './utils';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -98,19 +98,6 @@ interface PopularService {
   total_reviews: number;
 }
 
-interface CustomerSegment {
-  tenant_id: string;
-  customer_id: string;
-  segment: string;
-  recency_score: number;
-  frequency_score: number;
-  monetary_score: number;
-  total_orders: number;
-  avg_order_value: number;
-  last_purchase_date: string;
-  [key: string]: unknown; // Allow additional fields
-}
-
 // Partial definition for missing 'services' table
 // Note: Full table exists in database but not in generated types yet
 interface ServiceRow {
@@ -131,8 +118,8 @@ interface ServiceRow {
 const ALGORITHM_VERSION = 'v1.0';
 const DEFAULT_LIMIT = 5;
 const MIN_SIMILAR_CUSTOMERS = 3;
-const MIN_COMMON_ITEMS = 2;
-const SIMILARITY_THRESHOLD = 0.3;
+const _MIN_COMMON_ITEMS = 2;
+const _SIMILARITY_THRESHOLD = 0.3;
 
 // ============================================================================
 // MAIN RECOMMENDATION FUNCTION

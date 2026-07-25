@@ -87,8 +87,6 @@ export async function GET(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Partner not found' }, { status: 404 });
     }
 
-    const partnerData = partner as unknown;
-
     // Collect all activity events from different sources
     const events: ActivityEvent[] = [];
 
@@ -104,7 +102,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       logsQuery = logsQuery.gte('created_at', dateFrom.toISOString());
     }
 
-    const { data: logs, error: logsError } = await logsQuery;
+    const { data: logs } = await logsQuery;
 
     if (logs && logs.length > 0) {
       logs.forEach((log: LogEntry) => {

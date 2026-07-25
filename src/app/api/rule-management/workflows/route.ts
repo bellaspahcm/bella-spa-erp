@@ -8,7 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-client';
 import type { CreateWorkflowRequest } from '@/types/rule-management.types';
-import type { Database, Json } from '@/types/database.types';
+import type { Json } from '@/types/database.types';
 
 /**
  * GET /api/rule-management/workflows

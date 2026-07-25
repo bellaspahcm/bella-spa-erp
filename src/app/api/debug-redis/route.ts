@@ -4,7 +4,7 @@
  * Test: https://bellaspa-erp.vercel.app/api/debug-redis
  */
 
-import { getCache, setCache, deleteCache, CacheKeys } from '@/lib/redis-cache';
+import { getCache, setCache, deleteCache } from '@/lib/redis-cache';
 import { NextResponse } from 'next/server';
 
 export async function GET() {

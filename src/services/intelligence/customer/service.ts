@@ -24,23 +24,21 @@
  * - session_reviews.approved → Invalidates customer:*
  */
 
-import type { IntelligenceService, DateRange, TimePeriod, IntelligenceResponse, CacheService } from '../shared/types';
+import type { IntelligenceService, IntelligenceResponse, CacheService } from '../shared/types';
 import { IntelligenceError, QueryError } from '../shared/types';
 import { getCache } from '../cache';
-import { buildCacheKey, parseDateRange, formatDate } from '../shared/helpers';
-import { DEFAULT_CACHE_TTL, CACHE_KEY_PREFIX } from '../shared/constants';
+import { buildCacheKey } from '../shared/helpers';
+import { CACHE_KEY_PREFIX } from '../shared/constants';
 import {
   getCustomerSegmentation as queryCustomerSegmentation,
   getCustomerLTV as queryCustomerLTV,
   getChurnRiskAnalysis as queryChurnRiskAnalysis,
-  getRFMAnalysis as queryRFMAnalysis,
   getCohortAnalysis as queryCohortAnalysis,
   getSegmentDistribution as querySegmentDistribution,
   CustomerSegmentation,
   CustomerLTV,
   ChurnRiskAnalysis,
   CohortAnalysis,
-  RFMAnalysis,
   SegmentDistribution,
 } from './queries-simple';
 

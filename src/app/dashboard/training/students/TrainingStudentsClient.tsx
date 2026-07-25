@@ -3,6 +3,7 @@
 import { useState, useTransition, type FormEvent } from 'react';
 import { CheckCircle2, Copy, Loader2, Mail, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
+import { copyToClipboard } from '@/lib/utils';
 
 import { createTrainingStudentAccount } from '@/services/training-actions';
 import type { TrainingStudentAccountOverview } from '@/types/training';
@@ -44,8 +45,12 @@ export function TrainingStudentsClient({ initialData }: { initialData: TrainingS
 
   const copyPassword = async () => {
     if (!createdPassword) return;
-    await navigator.clipboard.writeText(createdPassword);
-    toast.success('Đã copy mật khẩu tạm');
+    const success = await copyToClipboard(createdPassword);
+    if (success) {
+      toast.success('Đã copy mật khẩu tạm');
+    } else {
+      toast.error('Không thể tự động sao chép mật khẩu');
+    }
   };
 
   return (

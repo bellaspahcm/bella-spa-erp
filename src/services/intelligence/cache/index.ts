@@ -369,7 +369,7 @@ export function resetCache(): void {
   if (multiTierCacheInstance) {
     try {
       multiTierCacheInstance.clear();
-    } catch (e) {
+    } catch (_e) {
       // Ignore errors during cleanup
     }
   }

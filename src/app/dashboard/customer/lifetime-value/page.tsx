@@ -12,7 +12,7 @@
  * Data flows through Customer Intelligence Layer with automatic caching.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -67,7 +67,7 @@ function CustomerLTVDashboard() {
     initTenant();
   }, [router]);
 
-  const fetchData = async (refresh = false) => {
+  const fetchData = useCallback(async (refresh = false) => {
     if (!tenantId) return;
     if (refresh) setIsRefreshing(true);
     else setIsLoading(true);
@@ -92,11 +92,11 @@ function CustomerLTVDashboard() {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  };
+  }, [tenantId]);
 
   useEffect(() => {
     if (tenantId) fetchData();
-  }, [tenantId]);
+  }, [tenantId, fetchData]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('vi-VN', {

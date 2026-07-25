@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { 
   Activity, 
   Key, 
@@ -85,7 +85,7 @@ export function PartnerActivityTimeline({
   const [dateRange, setDateRange] = useState<'24h' | '7d' | '30d' | 'all'>('7d');
 
   // Fetch activity data
-  const fetchActivity = async () => {
+  const fetchActivity = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -117,11 +117,11 @@ export function PartnerActivityTimeline({
     } finally {
       setLoading(false);
     }
-  };
+  }, [partnerId, eventTypeFilter, dateRange, searchQuery]);
 
   useEffect(() => {
     fetchActivity();
-  }, [partnerId, eventTypeFilter, dateRange, searchQuery]);
+  }, [fetchActivity]);
 
   // Export to CSV
   const handleExport = async () => {

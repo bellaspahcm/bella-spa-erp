@@ -84,7 +84,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     // Update or insert rotation policy
     // Note: In a real implementation, you would have a separate table for rotation policies
     // For now, we'll store it in the api_partners table or a metadata field
-    const { data: updatedPartner, error: updateError } = await supabase
+    const { error: updateError } = await supabase
       .from('api_partners' as never)
       .update({
         rotation_policy: policy,
@@ -141,7 +141,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
  * GET /api/admin/partners/[id]/rotation-policy
  * Get rotation policy for a partner
  */
-export async function GET(request: NextRequest, context: RouteContext) {
+export async function GET(_request: NextRequest, context: RouteContext) {
   try {
     const supabase = await createClient();
     const { id: partnerId } = await context.params;

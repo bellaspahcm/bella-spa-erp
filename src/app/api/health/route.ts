@@ -79,7 +79,7 @@ export async function GET() {
 async function checkDatabase(): Promise<{ healthy: boolean; error?: string }> {
   try {
     const db = getPrimaryClient();
-    const { data, error } = await db.from('tenants').select('id').limit(1);
+    const { error } = await db.from('tenants').select('id').limit(1);
 
     if (error) throw error;
 

@@ -279,7 +279,7 @@ export class ZaloOAConnector {
    * 
    * This is useful for customer segmentation and targeting.
    */
-  async getFollowerDemographics(startDate: string, endDate: string): Promise<{
+  async getFollowerDemographics(_startDate: string, _endDate: string): Promise<{
     ageGroups: Array<{ range: string; count: number; percentage: number }>;
     genderDistribution: Array<{ gender: string; count: number; percentage: number }>;
     topLocations: Array<{ city: string; count: number; percentage: number }>;

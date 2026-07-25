@@ -5,8 +5,6 @@
  * Utilities for optimizing database queries
  */
 
-import { createClient } from '@/lib/supabase-server';
-
 // ============================================================================
 // QUERY PERFORMANCE MONITORING
 // ============================================================================

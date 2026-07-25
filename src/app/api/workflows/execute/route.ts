@@ -10,7 +10,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getWorkflowEngineService, WORKFLOW_ENGINE_FEATURE_FLAGS } from '@/services/workflow-engine-service';
+import { WORKFLOW_ENGINE_FEATURE_FLAGS } from '@/services/workflow-engine-service';
 import { executeBookingFulfillment } from '@/services/workflows/booking-fulfillment-workflow';
 import { createClient } from '@/lib/supabase-client';
 

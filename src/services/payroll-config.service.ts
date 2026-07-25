@@ -24,8 +24,7 @@ import type {
   ProviderConfig,
   TenantPayrollConfig,
   TenantPayrollConfigHistory,
-  UpdateProviderConfigRequest,
-  DEFAULT_CONFIGS
+  UpdateProviderConfigRequest
 } from '@/types/payroll-config';
 import { DEFAULT_CONFIGS as DEFAULT_CONFIG_MAP } from '@/types/payroll-config';
 import type { Database } from '@/types/database.types';

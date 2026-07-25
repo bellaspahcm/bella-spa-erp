@@ -55,10 +55,10 @@ const STATUS_TONE: Record<SystemMonitorStatus, {
   critical: {
     label: 'Nguy cấp',
     icon: AlertTriangle,
-    bg: 'bg-rose-50 dark:bg-rose-500/10',
-    border: 'border-rose-200 dark:border-rose-500/30',
-    text: 'text-rose-700 dark:text-rose-400',
-    solid: 'bg-rose-600 text-white dark:bg-rose-500 dark:text-[#11100F]',
+    bg: 'bg-red-50 dark:bg-red-500/10',
+    border: 'border-red-200 dark:border-red-500/30',
+    text: 'text-red-700 dark:text-red-400',
+    solid: 'bg-red-600 text-white dark:bg-red-500 dark:text-[#11100F]',
   },
 };
 
@@ -446,19 +446,19 @@ function AlertRow({ alert }: { alert: SystemMonitorOpenAlert }) {
         className={cn(
           'group inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg px-3 text-4xs font-black uppercase tracking-widest transition-all duration-150 active:scale-95',
           clicked
-            ? 'cursor-wait bg-rose-100/70 text-rose-400 dark:bg-rose-500/10 dark:text-rose-500/50'
-            : 'bg-white/70 text-rose-700 hover:bg-white hover:shadow-sm dark:bg-rose-500/10 dark:text-rose-400 dark:hover:bg-rose-500/20'
+            ? 'cursor-wait bg-red-100/70 text-red-400 dark:bg-red-500/10 dark:text-red-500/50'
+            : 'bg-white/70 text-red-700 hover:bg-white hover:shadow-sm dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20'
         )}
       >
         {clicked ? (
           <>
-            <RefreshCw className="h-3 w-3 animate-spin" />
+            <RefreshCw className="h-3.5 w-3.5 animate-spin" />
             <span>Đang mở...</span>
           </>
         ) : (
           <>
             Xem
-            <ExternalLink className="h-3 w-3 transition-transform duration-150 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+            <ExternalLink className="h-3.5 w-3.5 transition-transform duration-150 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
           </>
         )}
       </Link>
@@ -469,11 +469,11 @@ function AlertRow({ alert }: { alert: SystemMonitorOpenAlert }) {
 function OpenAlertsPanel({ alerts }: { alerts: SystemMonitorOpenAlert[] }) {
 
   return (
-    <section className="rounded-3xl md:rounded-[2rem] bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 p-5 md:p-8 shadow-sm">
+    <section className="rounded-3xl md:rounded-[2rem] bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 p-5 md:p-8 shadow-sm">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-5">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-rose-100 dark:bg-rose-500/20">
-            <BellRing className="h-5 w-5 text-rose-600 dark:text-rose-400" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-red-100 dark:bg-red-500/20">
+            <BellRing className="h-5 w-5 text-red-600 dark:text-red-400" />
           </div>
           <div>
             <h2 className="text-sm font-black uppercase tracking-wider text-slate-950 dark:text-[#EFE9E1]">
@@ -486,7 +486,7 @@ function OpenAlertsPanel({ alerts }: { alerts: SystemMonitorOpenAlert[] }) {
         </div>
       </div>
 
-      <div className="divide-y divide-rose-100 dark:divide-rose-500/20">
+      <div className="divide-y divide-red-100 dark:divide-red-500/20">
         {alerts.map((alert) => (
           <AlertRow key={alert.id} alert={alert} />
         ))}

@@ -13,9 +13,7 @@
  * @module api/v1/orders
  */
 
-import { NextRequest } from 'next/server';
-import { success, paginated, created, notFound, internalError, withAPIMiddleware } from '@/lib/api/response';
-import { createOrderSchema, listOrdersQuerySchema } from '@/lib/validation/api-schemas';
+import { paginated, created, internalError } from '@/lib/api/response';
 import { withSandbox, getSandboxAwareSupabaseClient } from '@/lib/middleware/sandbox.middleware';
 
 /**

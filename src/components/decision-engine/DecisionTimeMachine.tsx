@@ -24,6 +24,8 @@
 
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
+import { copyToClipboard } from '@/lib/utils';
 
 interface PolicyVersion {
   version: string;
@@ -144,7 +146,7 @@ export default function DecisionTimeMachine({
   };
 
   // Copy diff report
-  const copyDiffReport = () => {
+  const copyDiffReport = async () => {
     if (!replayResult) return;
 
     const report = `
@@ -178,8 +180,12 @@ ${JSON.stringify(replayResult.originalResult.output, null, 2)}
 ${JSON.stringify(replayResult.replayedResult.output, null, 2)}
     `.trim();
 
-    navigator.clipboard.writeText(report);
-    // TODO: Show toast notification
+    const success = await copyToClipboard(report);
+    if (success) {
+      toast.success('Đã sao chép báo cáo so sánh');
+    } else {
+      toast.error('Không thể tự động sao chép báo cáo');
+    }
   };
 
   return (

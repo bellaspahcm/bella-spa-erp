@@ -389,9 +389,9 @@ export class ForecastService {
   // ==========================================================================
   
   private async getCachedForecast<T>(
-    tenantId: string,
-    forecastType: string,
-    cacheKey: string | number
+    _tenantId: string,
+    _forecastType: string,
+    _cacheKey: string | number
   ): Promise<T | null> {
     // Simple in-memory cache (could be replaced with Redis)
     // For now, return null to always compute fresh
@@ -399,11 +399,11 @@ export class ForecastService {
   }
   
   private async cacheForecast<T>(
-    tenantId: string,
-    forecastType: string,
-    cacheKey: string | number,
-    data: T,
-    ttl: number
+    _tenantId: string,
+    _forecastType: string,
+    _cacheKey: string | number,
+    _data: T,
+    _ttl: number
   ): Promise<void> {
     // Simple in-memory cache (could be replaced with Redis)
     // For now, do nothing

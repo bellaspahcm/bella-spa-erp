@@ -16,7 +16,6 @@ import { QueryError } from '../shared/types';
 import type { DateRange } from '../shared/types';
 import { formatDate, calculatePercentageChange, roundNumber } from '../shared/helpers';
 import { DEFAULT_KTV_SESSION_COMMISSION } from '@/lib/business-rules/salary';
-import { BUSINESS_RULES } from '@bella/shared';
 import { getSupabaseAdminUrl, getSupabaseAdminKey } from '@/lib/supabase-admin-env';
 
 /**
@@ -49,11 +48,6 @@ async function createServiceRoleClient() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 type RevenueRow = Database['public']['Tables']['revenue']['Row'];
-type ExpenseRow = Database['public']['Tables']['expenses']['Row'];
-type BookingRow = Database['public']['Tables']['bookings']['Row'];
-type SessionRow = Database['public']['Tables']['session_logs']['Row'];
-type CustomerRow = Database['public']['Tables']['customers']['Row'];
-type UserRow = Database['public']['Tables']['users']['Row'];
 
 /**
  * Monthly Revenue Summary Response

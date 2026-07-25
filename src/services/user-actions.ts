@@ -338,7 +338,7 @@ function toUserAuditSnapshot(user: UserRow) {
   return toUserInsertSnapshot(user);
 }
 
-function toStaffLeaveInsertSnapshot(leave: StaffLeaveRow): StaffLeaveInsert {
+function _toStaffLeaveInsertSnapshot(leave: StaffLeaveRow): StaffLeaveInsert {
   return {
     approved_by: leave.approved_by,
     created_at: leave.created_at,
@@ -354,7 +354,7 @@ function toStaffLeaveInsertSnapshot(leave: StaffLeaveRow): StaffLeaveInsert {
   };
 }
 
-async function restoreDeletedUser(
+async function _restoreDeletedUser(
   supabase: SupabaseClient,
   payload: UserInsert,
 ) {
@@ -365,7 +365,7 @@ async function restoreDeletedUser(
   return error?.message || '';
 }
 
-async function restoreDeletedStaffLeaves(
+async function _restoreDeletedStaffLeaves(
   supabase: SupabaseClient,
   payloads: StaffLeaveInsert[],
 ) {
@@ -780,10 +780,8 @@ export async function deleteUser(id: string) {
     return { error: snapshotError?.message || 'User not found' };
   }
 
-  const restorePayload = toUserInsertSnapshot(previousUser);
-
   const {
-    data: previousStaffLeaves,
+    data: _previousStaffLeaves,
     error: staffLeavesSnapshotError,
   }: { data: StaffLeaveRow[] | null; error: { message?: string } | null } = await supabase
     .from('staff_leaves')
@@ -794,8 +792,6 @@ export async function deleteUser(id: string) {
   if (staffLeavesSnapshotError) {
     return { error: staffLeavesSnapshotError.message || 'Failed to snapshot staff leaves' };
   }
-
-  const staffLeaveRestorePayloads = (previousStaffLeaves || []).map(toStaffLeaveInsertSnapshot);
   
   // Always use soft delete to prevent foreign key constraint violations
   // Many tables reference users: bookings, attendance, sessions, salary_records, 

@@ -283,16 +283,6 @@ function snakeToCamel<T = Record<string, unknown>>(obj: Record<string, unknown>)
   return result as T;
 }
 
-/**
- * Parse date range string to Date objects
- */
-function parseMonthRange(range: string): { startDate: Date; endDate: Date } {
-  const [year, month] = range.split('-').map(Number);
-  const startDate = new Date(year, month - 1, 1);
-  const endDate = new Date(year, month, 0); // Last day of month
-  return { startDate, endDate };
-}
-
 // ─── Query Builders ─────────────────────────────────────────────────────────
 
 /**

@@ -10,9 +10,6 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-import { success, error as errorResponse, badRequest } from '@/lib/api/response';
-import type { Database } from '@/types/database.types';
 
 /**
  * Reset sandbox data for a partner
@@ -38,7 +35,7 @@ import type { Database } from '@/types/database.types';
  *   -d '{"partner_id": "uuid-here"}'
  * ```
  */
-export async function DELETE(req: NextRequest) {
+export async function DELETE(_req: NextRequest) {
   // Temporarily return "not implemented" until database types are regenerated
   return NextResponse.json(
     {

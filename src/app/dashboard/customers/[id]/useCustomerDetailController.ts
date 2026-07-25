@@ -15,7 +15,7 @@ import {
 } from '@/lib/business-rules/tenant-modules';
 import { createClient } from '@/lib/supabase-client';
 import { parseMoneyInput } from '@bella/shared';
-import { parseIntegerInput, formatViDate } from '@/lib/utils';
+import { parseIntegerInput, formatViDate, copyToClipboard } from '@/lib/utils';
 import { generateShareToken, getBookingsByCustomerId, recordRemainingPayment, reusePackage, updateBooking } from '@/core/services/order';
 import { getCustomerById, updateCustomer } from '@/services/customer-actions';
 import { getTenantSettings } from '@/services/tenant-actions';
@@ -771,8 +771,12 @@ export function useCustomerDetailController() {
       // Build URL: /portal/[token1]?bundle=[token2]&bundle=[token3]...
       const bundleParams = tokens.slice(1).map(t => `bundle=${encodeURIComponent(t)}`).join('&');
       const url = `${window.location.origin}/portal/${tokens[0]}?${bundleParams}`;
-      void navigator.clipboard.writeText(url);
-      toast.success(`Đã sao chép link gộp ${tokens.length} gói dịch vụ!`, { id: 'combined-portal' });
+      const success = await copyToClipboard(url);
+      if (success) {
+        toast.success(`Đã sao chép link gộp ${tokens.length} gói dịch vụ!`, { id: 'combined-portal' });
+      } else {
+        toast.error('Không thể tự động sao chép link gộp. Vui lòng thử lại.', { id: 'combined-portal' });
+      }
     } catch (error) {
       toast.error('Lỗi: ' + getErrorMessage(error), { id: 'combined-portal' });
     }
@@ -810,8 +814,12 @@ export function useCustomerDetailController() {
     }
 
     const url = `${window.location.origin}/portal/${token}`;
-    void navigator.clipboard.writeText(url);
-    toast.success('Đã sao chép link Cổng thông tin khách hàng');
+    const success = await copyToClipboard(url);
+    if (success) {
+      toast.success('Đã sao chép link Cổng thông tin khách hàng');
+    } else {
+      toast.error('Không thể tự động sao chép link. Vui lòng tự sao chép.');
+    }
   }, [activeBooking]);
 
   const handleExportContract = useCallback(() => {

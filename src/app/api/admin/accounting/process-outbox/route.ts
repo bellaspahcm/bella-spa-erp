@@ -20,7 +20,7 @@ import { GET as cronWorkerHandler } from '@/app/api/cron/accounting-worker/route
  * - errors: number of entries that failed
  * - total: total pending entries found
  */
-export async function POST(request: Request) {
+export async function POST(_request: Request) {
   try {
     const currentUser = await getCurrentUser();
     
@@ -113,7 +113,7 @@ export async function POST(request: Request) {
  * 
  * GET /api/admin/accounting/process-outbox
  */
-export async function GET(request: Request) {
+export async function GET(_request: Request) {
   try {
     const currentUser = await getCurrentUser();
     

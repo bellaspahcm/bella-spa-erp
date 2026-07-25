@@ -12,7 +12,7 @@
  * Data flows through HR Intelligence Layer with automatic caching.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
@@ -106,7 +106,7 @@ export default function EmployeePerformanceDashboard() {
   // Fetch performance metrics
   // ───────────────────────────────────────────────────────────────────────────
 
-  const fetchPerformanceMetrics = async (refresh = false) => {
+  const fetchPerformanceMetrics = useCallback(async (refresh = false) => {
     if (!tenantId) return;
 
     if (refresh) setIsRefreshing(true);
@@ -135,13 +135,13 @@ export default function EmployeePerformanceDashboard() {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  };
+  }, [tenantId, month]);
 
   useEffect(() => {
     if (tenantId) {
       fetchPerformanceMetrics();
     }
-  }, [tenantId, month]);
+  }, [tenantId, fetchPerformanceMetrics]);
 
   // ───────────────────────────────────────────────────────────────────────────
   // Helper functions

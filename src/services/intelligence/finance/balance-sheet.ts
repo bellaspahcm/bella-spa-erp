@@ -55,17 +55,6 @@ interface AccountBalance {
   balance: number; // Net balance (debit - credit for assets, credit - debit for liabilities/equity)
 }
 
-interface JournalLineRow {
-  account_id: string;
-  debit_amount: number;
-  credit_amount: number;
-  accounting_accounts: {
-    account_code: string;
-    account_name: string;
-    account_type: string;
-  };
-}
-
 // ─── Helper Functions ───────────────────────────────────────────────────────
 
 /**

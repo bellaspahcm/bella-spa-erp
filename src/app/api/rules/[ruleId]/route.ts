@@ -277,7 +277,7 @@ export async function PATCH(
  * Archive rule (soft delete - sets status to 'archived')
  */
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: RouteParams
 ) {
   try {
@@ -315,7 +315,7 @@ export async function DELETE(
     }
 
     // Soft delete by setting status to archived
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('rules')
       .update({
         status: 'archived',

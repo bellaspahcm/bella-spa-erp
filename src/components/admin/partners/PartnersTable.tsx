@@ -41,7 +41,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { cn, copyToClipboard } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import {
   AlertDialog,
@@ -89,10 +89,10 @@ export function PartnersTable({ partners, loading, onRefresh }: PartnersTablePro
   };
 
   const handleCopyApiKey = async (apiKey: string) => {
-    try {
-      await navigator.clipboard.writeText(apiKey);
+    const success = await copyToClipboard(apiKey);
+    if (success) {
       toast.success('API key copied to clipboard');
-    } catch (_error) {
+    } else {
       toast.error('Failed to copy API key to clipboard');
     }
   };

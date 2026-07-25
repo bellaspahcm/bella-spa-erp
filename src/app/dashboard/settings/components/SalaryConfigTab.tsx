@@ -223,6 +223,7 @@ export default function SalaryConfigTab({
     }
 
     loadConfigs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tenantId]); // Removed generalSettings.salary_config to prevent re-load after save
 
   // Save configurations

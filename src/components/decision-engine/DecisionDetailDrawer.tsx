@@ -19,6 +19,8 @@
 
 import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
+import { copyToClipboard } from '@/lib/utils';
 import DecisionTimeMachine from './DecisionTimeMachine';
 
 interface DecisionDetail {
@@ -111,9 +113,13 @@ export default function DecisionDetailDrawer({
   }, [onClose]);
 
   // Copy JSON to clipboard
-  const copyJSON = (obj: any) => {
-    navigator.clipboard.writeText(JSON.stringify(obj, null, 2));
-    // TODO: Show toast notification
+  const copyJSON = async (obj: any) => {
+    const success = await copyToClipboard(JSON.stringify(obj, null, 2));
+    if (success) {
+      toast.success('Đã sao chép dữ liệu JSON');
+    } else {
+      toast.error('Không thể tự động sao chép JSON');
+    }
   };
 
   return (

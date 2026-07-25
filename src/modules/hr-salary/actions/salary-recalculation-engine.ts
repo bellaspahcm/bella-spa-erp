@@ -19,8 +19,6 @@ import {
   isDraftSalaryRecord,
 } from '@/lib/business-rules/salary';
 import {
-  calculateServiceCommission,
-  calculateProductSalesCommission,
   calculatePositionBonus,
   calculateSeniorityBonus,
   aggregateManualAdjustments,
@@ -237,7 +235,7 @@ export async function recalculateAndSaveSalaryRecordEngine(
       positionTier = ((cd.position_tier || 'junior') as 'junior' | 'senior' | 'lead');
       hireDate = cd.hire_date || null;
     }
-  } catch (err) {
+  } catch (_err) {
     // Columns don't exist yet, use defaults
     console.log('Commission fields not yet available in database, using defaults');
   }
@@ -274,7 +272,7 @@ export async function recalculateAndSaveSalaryRecordEngine(
       const cd = commissionData as unknown as { commission_config?: CommissionConfig };
       commissionConfig = cd.commission_config || {};
     }
-  } catch (err) {
+  } catch (_err) {
     // Column doesn't exist yet, use defaults
     console.log('Commission config not yet available in database, using defaults');
   }
@@ -443,8 +441,6 @@ export async function recalculateAndSaveSalaryRecordEngine(
 
   // leaderboard + avgRating already computed above (hoisted for provider contexts)
   // Reassign to keep the rest of the function unchanged
-  const leaderboard = leaderboardEarly;
-  const ktvRow = ktvRowEarly;
   const liveAttendanceComponents = calculateLiveAttendanceSalaryComponents({
     attendanceLogs: attendanceListTyped,
     rawBaseSalary: ktv?.base_salary ?? 6000000,

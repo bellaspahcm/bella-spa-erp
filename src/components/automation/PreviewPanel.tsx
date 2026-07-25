@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { Copy, Code } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, copyToClipboard } from '@/lib/utils';
 import { useState } from 'react';
 
 interface PreviewPanelProps {
@@ -43,7 +43,7 @@ export function PreviewPanel({
   const [showJson, setShowJson] = useState(false);
   const [copied, setCopied] = useState(false);
   
-  const handleCopy = () => {
+  const handleCopy = async () => {
     const text = `
 Khi:
 ${conditions.map(c => `• ${c}`).join('\n')}
@@ -53,9 +53,11 @@ ${actions.map(a => `• ${a}`).join('\n')}
 ${exampleScenario ? `\nVí dụ:\n${exampleScenario.customer} đặt ${exampleScenario.service} ${formatMoney(exampleScenario.originalPrice)} → Giảm ${formatMoney(exampleScenario.discount)} → Trả ${formatMoney(exampleScenario.finalPrice)}` : ''}
     `.trim();
     
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    const success = await copyToClipboard(text);
+    if (success) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
   
   return (

@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kế Hoạch Thương Mại Hóa Nền Tảng Beauty Spa ERP</title>
+  <style>
+    :root {
+      --ink: #111827;
+      --muted: #64748b;
+      --soft: #f8fafc;
+      --paper: #ffffff;
+      --line: #e5e7eb;
+      --rose: #b0175a;
+      --rose-2: #e11d72;
+      --plum: #5b1744;
+      --gold: #c88a2d;
+      --mint: #0f9f7a;
+      --blue: #2563eb;
+      --shadow: 0 22px 60px rgba(15, 23, 42, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(225, 29, 114, 0.14), transparent 32rem),
+        radial-gradient(circle at bottom right, rgba(37, 99, 235, 0.1), transparent 34rem),
+        #fff7fb;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+    }
+
+    .page {
+      width: min(1180px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 36px 0 72px;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      min-height: 520px;
+      color: white;
+      border-radius: 30px;
+      padding: 46px;
+      background:
+        linear-gradient(135deg, rgba(17, 24, 39, 0.95), rgba(91, 23, 68, 0.92)),
+        url("../Bella Banner.png");
+      background-size: cover;
+      background-position: center;
+      box-shadow: var(--shadow);
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, rgba(17, 24, 39, 0.9), rgba(17, 24, 39, 0.55), rgba(176, 23, 90, 0.28));
+      pointer-events: none;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+      max-width: 850px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 14px;
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.1);
+      color: #ffd7e8;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      max-width: 780px;
+      margin: 26px 0 18px;
+      font-size: clamp(38px, 6vw, 72px);
+      line-height: 0.98;
+      letter-spacing: 0;
+    }
+
+    .hero-lead {
+      max-width: 720px;
+      margin: 0;
+      color: rgba(255, 255, 255, 0.82);
+      font-size: 19px;
+    }
+
+    .hero-grid {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-top: 54px;
+    }
+
+    .hero-metric {
+      min-height: 122px;
+      padding: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(16px);
+    }
+
+    .hero-metric strong {
+      display: block;
+      color: white;
+      font-size: 30px;
+      line-height: 1;
+      margin-bottom: 12px;
+    }
+
+    .hero-metric span {
+      display: block;
+      color: rgba(255, 255, 255, 0.74);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .section {
+      margin-top: 28px;
+      padding: 34px;
+      border: 1px solid rgba(176, 23, 90, 0.12);
+      border-radius: 28px;
+      background: rgba(255, 255, 255, 0.86);
+      box-shadow: 0 14px 38px rgba(176, 23, 90, 0.08);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    .section-kicker {
+      color: var(--rose);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    h2 {
+      margin: 8px 0 0;
+      font-size: clamp(26px, 4vw, 42px);
+      line-height: 1.08;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 0 0 12px;
+      font-size: 19px;
+      line-height: 1.25;
+    }
+
+    p {
+      margin: 0 0 14px;
+      color: #334155;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      border-radius: 999px;
+      padding: 10px 14px;
+      background: #fff0f6;
+      color: var(--rose);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+
+    .card {
+      padding: 24px;
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: var(--paper);
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+    }
+
+    .card.accent {
+      border-color: rgba(176, 23, 90, 0.2);
+      background: linear-gradient(180deg, #fff, #fff5fa);
+    }
+
+    .card.dark {
+      color: white;
+      border-color: transparent;
+      background: linear-gradient(135deg, var(--ink), var(--plum));
+    }
+
+    .card.dark p,
+    .card.dark li {
+      color: rgba(255, 255, 255, 0.78);
+    }
+
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .tag {
+      padding: 8px 11px;
+      border-radius: 999px;
+      background: #f1f5f9;
+      color: #475569;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .tag.rose {
+      background: #fff0f6;
+      color: var(--rose);
+    }
+
+    .tag.mint {
+      background: #ecfdf5;
+      color: var(--mint);
+    }
+
+    .tag.gold {
+      background: #fff7ed;
+      color: var(--gold);
+    }
+
+    ul {
+      margin: 14px 0 0;
+      padding-left: 19px;
+      color: #334155;
+    }
+
+    li {
+      margin: 8px 0;
+    }
+
+    .timeline {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .phase {
+      position: relative;
+      min-height: 250px;
+      padding: 20px;
+      border-radius: 22px;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .phase-number {
+      width: 38px;
+      height: 38px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      border-radius: 12px;
+      background: var(--ink);
+      color: white;
+      font-weight: 900;
+    }
+
+    .phase:nth-child(2) .phase-number { background: var(--rose); }
+    .phase:nth-child(3) .phase-number { background: var(--gold); }
+    .phase:nth-child(4) .phase-number { background: var(--mint); }
+    .phase:nth-child(5) .phase-number { background: var(--blue); }
+
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: white;
+    }
+
+    th,
+    td {
+      padding: 18px;
+      text-align: left;
+      vertical-align: top;
+      border-bottom: 1px solid var(--line);
+    }
+
+    th {
+      background: #f8fafc;
+      color: #64748b;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 16px;
+      margin-top: 20px;
+    }
+
+    .flow-step {
+      position: relative;
+      min-height: 160px;
+      padding: 22px;
+      border-radius: 22px;
+      background: #fff;
+      border: 1px solid var(--line);
+    }
+
+    .flow-step strong {
+      display: inline-flex;
+      width: 30px;
+      height: 30px;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 14px;
+      border-radius: 10px;
+      background: #fff0f6;
+      color: var(--rose);
+      font-size: 13px;
+    }
+
+    .callout {
+      padding: 22px;
+      border-radius: 22px;
+      border: 1px solid rgba(15, 159, 122, 0.22);
+      background: linear-gradient(135deg, #ecfdf5, #ffffff);
+    }
+
+    .risk {
+      border-color: rgba(200, 138, 45, 0.28);
+      background: linear-gradient(135deg, #fff7ed, #ffffff);
+    }
+
+    .footer {
+      margin-top: 28px;
+      padding: 26px 34px;
+      border-radius: 24px;
+      color: white;
+      background: linear-gradient(135deg, var(--ink), var(--plum));
+      box-shadow: var(--shadow);
+    }
+
+    .footer p {
+      max-width: 860px;
+      color: rgba(255, 255, 255, 0.78);
+    }
+
+    @media (max-width: 980px) {
+      .hero,
+      .section {
+        padding: 26px;
+      }
+
+      .hero-grid,
+      .grid-2,
+      .grid-3,
+      .timeline,
+      .flow {
+        grid-template-columns: 1fr;
+      }
+
+      .section-header {
+        flex-direction: column;
+      }
+
+      table {
+        min-width: 760px;
+      }
+
+      .table-scroll {
+        overflow-x: auto;
+        padding-bottom: 8px;
+      }
+    }
+
+    @media print {
+      body {
+        background: white;
+      }
+
+      .page {
+        width: 100%;
+        padding: 0;
+      }
+
+      .hero,
+      .section,
+      .footer {
+        box-shadow: none;
+        break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <div class="hero-content">
+        <div class="eyebrow">Kế hoạch thương mại hóa · Beauty Spa ERP</div>
+        <h1>Nền tảng SaaS Beauty Spa dùng lõi Multi ERP Service</h1>
+        <p class="hero-lead">
+          Kế hoạch triển khai thực tế để bán gói dịch vụ, white-label theo thương hiệu khách hàng,
+          và thiết kế riêng cho từng spa beauty mà vẫn bảo vệ hệ thống Multi ERP Service đang vận hành.
+        </p>
+      </div>
+      <div class="hero-grid">
+        <div class="hero-metric">
+          <strong>01</strong>
+          <span>Lõi vận hành chung, không sửa phá hệ thống hiện tại</span>
+        </div>
+        <div class="hero-metric">
+          <strong>03</strong>
+          <span>Gói thương mại: SaaS, white-label, custom triển khai</span>
+        </div>
+        <div class="hero-metric">
+          <strong>05</strong>
+          <span>Giai đoạn rollout có kiểm soát, mặc định tắt module mới</span>
+        </div>
+        <div class="hero-metric">
+          <strong>100%</strong>
+          <span>Dữ liệu, quyền, giao diện tách theo từng spa/chi nhánh</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-header">
+        <div>
+          <div class="section-kicker">Tóm tắt điều hành</div>
+          <h2>Hướng đi phù hợp nhất</h2>
+        </div>
+        <div class="pill">Không over engineering</div>
+      </div>
+      <div class="grid-2">
+        <div class="card accent">
+          <h3>Mô hình nên làm</h3>
+          <p>
+            Xây Multi ERP Service thành nền tảng lõi dùng chung, sau đó mở rộng bằng các module ngành.
+            Beauty Spa là một module được bật theo từng khách hàng, từng thương hiệu hoặc từng chi nhánh.
+          </p>
+          <div class="tag-row">
+            <span class="tag rose">Core ERP</span>
+            <span class="tag mint">Beauty Module</span>
+            <span class="tag gold">White-label</span>
+            <span class="tag">Tenant Config</span>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Điều không nên làm</h3>
+          <p>
+            Không nên fork mỗi khách một hệ thống riêng nếu chưa phải khách Enterprise lớn. Càng nhiều bản riêng,
+            chi phí bảo trì, sửa lỗi, nâng cấp và kiểm soát bảo mật càng tăng mạnh.
+          </p>
+          <ul>
+            <li>Không sửa trực tiếp logic Multi ERP Service hiện tại để phục vụ Beauty Spa.</li>
+            <li>Không tạo plugin runtime phức tạp ở giai đoạn đầu.</li>
+            <li>Không để dữ liệu beauty lẫn vào quy trình babycare nếu không dùng chung.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-header">
+        <div>
+          <div class="section-kicker">Kiến trúc thương mại</div>
+          <h2>4 lớp để bán cho nhiều spa</h2>
+        </div>
+      </div>
+      <div class="flow">
+        <div class="flow-step">
+          <strong>1</strong>
+          <h3>Lõi dùng chung</h3>
+          <p>Khách hàng, lịch hẹn, thanh toán, kho, nhân sự, phân quyền, báo cáo, audit và subscription.</p>
+        </div>
+        <div class="flow-step">
+          <strong>2</strong>
+          <h3>Module ngành</h3>
+          <p>Beauty Spa, Babycare, Clinic, Nail, Massage. Mỗi module chỉ bật khi tenant được cấp quyền sử dụng.</p>
+        </div>
+        <div class="flow-step">
+          <strong>3</strong>
+          <h3>White-label</h3>
+          <p>Logo, màu sắc, tên thương hiệu, portal khách hàng, mẫu báo giá, mẫu hóa đơn và tên miền riêng.</p>
+        </div>
+        <div class="flow-step">
+          <strong>4</strong>
+          <h3>Cấu hình riêng</h3>
+          <p>Dịch vụ, bảng giá, hoa hồng, liệu trình, chi nhánh, phòng/giường/máy và phân quyền theo spa.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-header">
+        <div>
+          <div class="section-kicker">Cấu hình khi khách mua gói</div>
+          <h2>Quy trình onboarding một spa beauty</h2>
+        </div>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Bước</th>
+              <th>Nội dung cấu hình</th>
+              <th>Kết quả vận hành</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>1. Tạo hồ sơ spa</strong></td>
+              <td>Tên thương hiệu, người sở hữu, gói dịch vụ, số chi nhánh, hạn mức nhân sự, hạn mức khách hàng.</td>
+              <td>Spa có một không gian sử dụng riêng, dữ liệu riêng và quyền riêng.</td>
+            </tr>
+            <tr>
+              <td><strong>2. Bật module ngành</strong></td>
+              <td>Bật Beauty Spa, chọn template ngành phù hợp: facial, body, laser, clinic-lite, nail/salon.</td>
+              <td>Menu và chức năng ngành chỉ hiện với spa đã mua gói tương ứng.</td>
+            </tr>
+            <tr>
+              <td><strong>3. White-label</strong></td>
+              <td>Logo, màu chính, màu phụ, favicon, ảnh banner, thông tin liên hệ, mẫu báo giá và portal.</td>
+              <td>Khách hàng cuối cảm nhận đây là hệ thống riêng của spa đó.</td>
+            </tr>
+            <tr>
+              <td><strong>4. Thiết lập vận hành</strong></td>
+              <td>Dịch vụ, bảng giá, liệu trình, giường/phòng/máy, nhân sự, kho mỹ phẩm, phân quyền.</td>
+              <td>Spa có thể bắt đầu nhận lịch, bán liệu trình, chăm sóc khách và thu tiền.</td>
+            </tr>
+            <tr>
+              <td><strong>5. Thiết lập tài chính</strong></td>
+              <td>Chính sách cọc, thanh toán, công nợ, hoa hồng, thưởng, báo cáo doanh thu và chi phí.</td>
+              <td>Chủ spa theo dõi được tiền, hiệu suất nhân viên và lợi nhuận.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-header">
+        <div>
+          <div class="section-kicker">Beauty Spa Module</div>
+          <h2>Các phần thay đổi cần hỗ trợ</h2>
+        </div>
+      </div>
+      <div class="grid-3">
+        <div class="card">
+          <h3>Quản lý giường, phòng, máy</h3>
+          <p>
+            Dùng khái niệm tài nguyên đặt lịch để không bị bó hẹp vào một ngành.
+            Tài nguyên có thể là giường facial, phòng body, máy laser, ghế nail hoặc phòng VIP.
+          </p>
+          <ul>
+            <li>Trạng thái: đang dùng, trống, bảo trì, ngưng sử dụng.</li>
+            <li>Gắn với chi nhánh cụ thể.</li>
+            <li>Kiểm tra trùng lịch theo thời lượng dịch vụ.</li>
+          </ul>
+        </div>
+        <div class="card accent">
+          <h3>Thẻ liệu trình beauty</h3>
+          <p>
+            Mỗi liệu trình là một hồ sơ chăm sóc có số buổi, tiến độ, hình ảnh trước/sau,
+            ghi chú tình trạng da/body và sản phẩm đã sử dụng.
+          </p>
+          <ul>
+            <li>Liệu trình có thể theo template riêng từng spa.</li>
+            <li>Theo dõi buổi đã làm, còn lại, tạm dừng, hoàn tất.</li>
+            <li>Gắn với thanh toán, công nợ và lịch hẹn tiếp theo.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Hồ sơ khách beauty</h3>
+          <p>
+            Khách hàng vẫn dùng lõi khách hàng chung, nhưng beauty có hồ sơ mở rộng:
+            tình trạng da, chỉ số body, tiền sử dị ứng, ảnh tư vấn và lịch sử chăm sóc.
+          </p>
+          <ul>
+            <li>Không ảnh hưởng hồ sơ babycare hiện tại.</li>
+            <li>Có thể bật/tắt theo module beauty.</li>
+            <li>Phù hợp tư vấn lại và upsell liệu trình.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-header">
+        <div>
+          <div class="section-kicker">Mô hình chi nhánh</div>
+          <h2>Beauty Spa cấp 1 - cấp 2</h2>
+        </div>
+        <div class="pill">Đủ dùng cho chuỗi spa</div>
+      </div>
+      <div class="grid-2">
+        <div class="card dark">
+          <h3>Cấp 1: Chủ thương hiệu / Spa Group</h3>
+          <p>Quản lý toàn hệ thống, xem báo cáo tổng hợp và cấu hình chính sách áp dụng cho các chi nhánh.</p>
+          <ul>
+            <li>Doanh thu toàn chuỗi.</li>
+            <li>Hiệu suất từng chi nhánh.</li>
+            <li>Quản lý gói SaaS và hạn mức sử dụng.</li>
+            <li>Cấu hình thương hiệu, bảng giá mẫu, chính sách hoa hồng mẫu.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Cấp 2: Chi nhánh con</h3>
+          <p>Vận hành hằng ngày tại từng địa điểm, chỉ thấy dữ liệu và nhân sự thuộc chi nhánh mình.</p>
+          <ul>
+            <li>Lịch hẹn, phòng/giường/máy tại chi nhánh.</li>
+            <li>Khách hàng và liệu trình đang chăm sóc.</li>
+            <li>Kho vật tư, mỹ phẩm, doanh thu, công nợ.</li>
+            <li>Lương, hoa hồng và báo cáo nội bộ chi nhánh.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="callout" style="margin-top: 18px;">
+        <h3>Khuyến nghị triển khai</h3>
+        <p>
+          Giai đoạn đầu chỉ nên hỗ trợ 2 tầng: chủ thương hiệu và chi nhánh. Không cần làm cây tổ chức nhiều tầng
+          nếu chưa có khách Enterprise thật sự yêu cầu, vì sẽ làm quyền và báo cáo phức tạp không cần thiết.
+        </p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-header">
+        <div>
+          <div class="section-kicker">Hoa hồng linh hoạt</div>
+          <h2>Không dùng công thức cố định</h2>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <h3>Các kiểu hoa hồng cần hỗ trợ</h3>
+          <ul>
+            <li>Theo phần trăm dịch vụ.</li>
+            <li>Theo số tiền cố định mỗi buổi.</li>
+            <li>Theo bán mỹ phẩm hoặc sản phẩm retail.</li>
+            <li>Theo liệu trình trọn gói, chia theo buổi hoàn thành.</li>
+            <li>Theo vai trò: KTV chính, KTV phụ, tư vấn viên, bác sĩ.</li>
+            <li>Theo bậc doanh số tháng hoặc KPI cá nhân.</li>
+          </ul>
+        </div>
+        <div class="card accent">
+          <h3>Nguyên tắc để tính đúng</h3>
+          <ul>
+            <li>Mỗi rule phải có ngày hiệu lực và lịch sử thay đổi.</li>
+            <li>Lương đã chốt không bị tính lại tự động khi đổi chính sách mới.</li>
+            <li>Hoa hồng phải gắn với dịch vụ, sản phẩm, buổi hoàn thành và chi nhánh.</li>
+            <li>Cần màn hình mô phỏng trước khi áp dụng rule mới.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="table-scroll" style="margin-top: 20px;">
+        <table>
+          <thead>
+            <tr>
+              <th>Tình huống</th>
+              <th>Ví dụ chính sách</th>
+              <th>Cách hệ thống xử lý</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Dịch vụ facial lẻ</td>
+              <td>KTV hưởng 8% trên giá trị dịch vụ đã thu.</td>
+              <td>Tính khi buổi hoàn thành và thanh toán được ghi nhận.</td>
+            </tr>
+            <tr>
+              <td>Liệu trình 10 buổi</td>
+              <td>Hoa hồng chia theo từng buổi, không trả hết ngay khi bán gói.</td>
+              <td>Mỗi buổi hoàn thành tạo phần hoa hồng tương ứng.</td>
+            </tr>
+            <tr>
+              <td>Bán mỹ phẩm</td>
+              <td>Nhân viên tư vấn hưởng 12% doanh số sản phẩm.</td>
+              <td>Gắn hoa hồng với đơn bán hàng và người tư vấn.</td>
+            </tr>
+            <tr>
+              <td>Dịch vụ công nghệ cao</td>
+              <td>Bác sĩ 10%, KTV 5%, tư vấn viên 3%.</td>
+              <td>Chia nhiều người hưởng theo vai trò trong cùng dịch vụ.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-header">
+        <div>
+          <div class="section-kicker">Gói thương mại</div>
+          <h2>Cách bán dịch vụ</h2>
+        </div>
+      </div>
+      <div class="grid-3">
+        <div class="card">
+          <h3>Starter</h3>
+          <p>Dành cho spa nhỏ cần dùng nhanh với template có sẵn.</p>
+          <ul>
+            <li>1 chi nhánh.</li>
+            <li>White-label cơ bản.</li>
+            <li>Dịch vụ, lịch hẹn, khách hàng, thu chi.</li>
+            <li>Không custom sâu.</li>
+          </ul>
+        </div>
+        <div class="card accent">
+          <h3>Professional</h3>
+          <p>Gói nên bán chủ lực cho beauty spa đang vận hành ổn định.</p>
+          <ul>
+            <li>Nhiều nhân sự và nhiều liệu trình.</li>
+            <li>Giường/phòng/máy.</li>
+            <li>Hoa hồng linh hoạt.</li>
+            <li>Kho mỹ phẩm và báo cáo quản trị.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Enterprise / Custom</h3>
+          <p>Dành cho chuỗi spa hoặc khách cần thiết kế riêng.</p>
+          <ul>
+            <li>Nhiều chi nhánh.</li>
+            <li>Dashboard riêng.</li>
+            <li>Workflow riêng.</li>
+            <li>Tên miền riêng và triển khai có tư vấn.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-header">
+        <div>
+          <div class="section-kicker">Lộ trình triển khai</div>
+          <h2>5 phase an toàn</h2>
+        </div>
+      </div>
+      <div class="timeline">
+        <div class="phase">
+          <div class="phase-number">1</div>
+          <h3>Nền tảng thương mại hóa</h3>
+          <p>Tenant, module bật/tắt, white-label cơ bản, gói SaaS, hạn mức sử dụng và phân quyền chủ spa.</p>
+        </div>
+        <div class="phase">
+          <div class="phase-number">2</div>
+          <h3>Beauty vận hành cơ bản</h3>
+          <p>Dịch vụ beauty, liệu trình, lịch hẹn, khách hàng, thẻ liệu trình, ảnh trước/sau và ghi chú chăm sóc.</p>
+        </div>
+        <div class="phase">
+          <div class="phase-number">3</div>
+          <h3>Tài nguyên, kho & in bill</h3>
+          <p>Giường, phòng, máy, kho mỹ phẩm, định mức vật tư theo dịch vụ, in hóa đơn (bill) tính tiền tại quầy và kết nối máy in nhiệt K80/K57.</p>
+        </div>
+        <div class="phase">
+          <div class="phase-number">4</div>
+          <h3>Hoa hồng, báo cáo & E-Bill</h3>
+          <p>Rule hoa hồng linh hoạt, lương KTV, xuất hóa đơn điện tử (Digital Receipt) tự động gửi khách hàng khi check-out qua cổng Portal/Zalo.</p>
+        </div>
+        <div class="phase">
+          <div class="phase-number">5</div>
+          <h3>Chuỗi spa, custom & máy POS</h3>
+          <p>Cấp 1 - cấp 2, báo cáo toàn chuỗi, kết nối máy POS cà thẻ tự động đồng bộ doanh số và hạn chế sai lệch thanh toán.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-header">
+        <div>
+          <div class="section-kicker">Bảo vệ hệ thống hiện tại</div>
+          <h2>Nguyên tắc không ảnh hưởng Multi ERP Service</h2>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="callout">
+          <h3>Guardrails bắt buộc</h3>
+          <ul>
+            <li>Beauty Spa mặc định tắt với hệ thống Multi ERP Service đang vận hành.</li>
+            <li>Mọi dữ liệu mới phải tách theo spa, chi nhánh và module.</li>
+            <li>Không sửa logic babycare nếu không có nhu cầu dùng chung rõ ràng.</li>
+            <li>Chỉ bật module cho tenant thử nghiệm trước khi bán rộng.</li>
+            <li>Test hồi quy Multi ERP Service phải pass trước mỗi lần phát hành.</li>
+          </ul>
+        </div>
+        <div class="callout risk">
+          <h3>Rủi ro cần tránh</h3>
+          <ul>
+            <li>Khách custom nhỏ nhưng yêu cầu sửa lõi chung.</li>
+            <li>Hoa hồng không có ngày hiệu lực, dẫn tới sai lương quá khứ.</li>
+            <li>Quyền cấp 1 - cấp 2 không rõ, làm lộ dữ liệu chi nhánh.</li>
+            <li>Thiết kế quá nhiều theme riêng trước khi có doanh thu thật.</li>
+            <li>Làm plugin phức tạp khi module bật/tắt đã đủ giải quyết bài toán.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-header">
+        <div>
+          <div class="section-kicker">Quyết định đề xuất</div>
+          <h2>Nên bắt đầu từ đâu</h2>
+        </div>
+      </div>
+      <div class="card dark">
+        <h3>Ưu tiên 90 ngày đầu</h3>
+        <p>
+          Không xây ngay toàn bộ Beauty Spa hoàn chỉnh. Nên tạo phiên bản thương mại tối thiểu:
+          white-label, module bật/tắt, dịch vụ beauty, thẻ liệu trình, tài nguyên đặt lịch và hoa hồng cơ bản.
+          Sau đó chọn 1 spa thật làm khách pilot để tinh chỉnh quy trình.
+        </p>
+        <div class="tag-row">
+          <span class="tag rose">Pilot trước</span>
+          <span class="tag mint">Bật theo tenant</span>
+          <span class="tag gold">Không fork code</span>
+          <span class="tag">Custom có kiểm soát</span>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <h2>Kết luận</h2>
+      <p>
+        Hướng phù hợp nhất là phát triển Multi ERP Service thành nền tảng SaaS đa spa: lõi chung ổn định,
+        Beauty Spa là module ngành bật/tắt, mỗi khách có cấu hình và nhận diện riêng.
+        Cách này cho phép bán gói dịch vụ nhanh, hỗ trợ custom có kiểm soát, và không làm ảnh hưởng hệ thống Multi ERP Service hiện tại.
+      </p>
+    </footer>
+  </main>
+</body>
+</html>

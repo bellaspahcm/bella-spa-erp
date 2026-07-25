@@ -79,20 +79,6 @@ import type {
   Platform,
 } from './types';
 
-// ─── Supabase Query Response Types ─────────────────────────────────────────
-
-// These types represent the actual response from Supabase queries
-// Using unknown and then type assertions for safety
-type SupabaseQueryResult<T> = {
-  data: T | null;
-  error: Error | null;
-};
-
-type CampaignPerformanceQueryResult = Record<string, unknown>;
-type ChannelPerformanceQueryResult = Record<string, unknown>;
-type ExternalAdsDataQueryResult = Record<string, unknown>;
-type MarketingCampaignQueryResult = Record<string, unknown>;
-
 // ─── Helper Functions ───────────────────────────────────────────────────────
 
 /**
@@ -866,7 +852,7 @@ export async function getTopPerformingAds(
       .map(row => row.internal_campaign_id)
       .filter(id => id !== null) as string[];
 
-    let campaignNames = new Map<string, string>();
+    const campaignNames = new Map<string, string>();
     if (campaignIds.length > 0) {
       const { data: campaigns } = await supabase
         .from('marketing_campaigns' as any)

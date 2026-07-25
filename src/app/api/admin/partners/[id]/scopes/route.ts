@@ -17,7 +17,7 @@ import {
   removeScopes,
   applySecurePreset,
 } from '@/services/api-gateway/partner.service';
-import { APIScope, SCOPE_PRESETS } from '@/types/api-gateway';
+import { SCOPE_PRESETS } from '@/types/api-gateway';
 
 interface ServiceError {
   code?: string;
@@ -26,7 +26,7 @@ interface ServiceError {
   status_code?: number;
 }
 
-async function checkAdminRole(req: NextRequest) {
+async function checkAdminRole(_req: NextRequest) {
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   

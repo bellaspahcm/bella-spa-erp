@@ -24,14 +24,12 @@ import { WaitlistManagementProvider } from '@/lib/decision-engine/providers/book
 import { sendNotification } from '@/services/notifications/notification-service';
 import type {
   WaitlistEntry,
-  WaitlistNotificationLog,
   AddToWaitlistInput,
   AddToWaitlistOutput,
   WaitlistFilters,
   WaitlistListResponse,
   AvailableSlot,
   ProcessSlotResult,
-  WaitlistConfig,
   WaitlistStats,
   CustomerTier,
   NotificationChannel,
@@ -39,9 +37,6 @@ import type {
 import type {
   WaitlistManagementInput,
 } from '@/lib/decision-engine/providers/booking/types';
-
-// Initialize Decision Engine Provider
-const waitlistProvider = new WaitlistManagementProvider({ debug: false });
 
 /**
  * Add Customer to Waitlist

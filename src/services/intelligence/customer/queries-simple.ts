@@ -6,7 +6,6 @@
  */
 
 import type { Database } from '@/types/database.types';
-import { QueryError } from '../shared/types';
 import { getSupabaseAdminUrl, getSupabaseAdminKey } from '@/lib/supabase-admin-env';
 
 /**
@@ -127,7 +126,7 @@ export async function getCustomerLTV(
   const supabase = await createServiceRoleClient();
 
   // Query customers table
-  let query = supabase
+  const query = supabase
     .from('customers')
     .select('id, name_mother, phone, created_at')
     .eq('tenant_id', tenantId);

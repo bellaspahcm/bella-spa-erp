@@ -335,7 +335,7 @@ export class MemoryCache implements CacheService {
    */
   private patternToRegex(pattern: string): RegExp {
     // Escape special regex characters except *, ?, [, ]
-    let regexStr = pattern
+    const regexStr = pattern
       .replace(/[.+^${}()|\\]/g, '\\$&')
       .replace(/\*/g, '.*')
       .replace(/\?/g, '.{1}');

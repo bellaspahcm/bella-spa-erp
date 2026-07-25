@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
-import type { Database, Json } from '@/types/database.types';
+import type { Json } from '@/types/database.types';
 
 export interface CreateRuleRequest {
   name: string;

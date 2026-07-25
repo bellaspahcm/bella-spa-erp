@@ -8,7 +8,6 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase-server';
 import { addToWaitlist, getWaitlistEntries } from '@/services/waitlist/waitlist-service';
 import { getCurrentUser } from '@/services/user-actions';
 import type { WaitlistFilters, AddToWaitlistInput } from '@/types/waitlist';

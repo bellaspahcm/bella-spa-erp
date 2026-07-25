@@ -11,7 +11,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Send,
   CheckCircle,
@@ -99,7 +99,7 @@ export function PartnerWebhookLogsTab({ partnerId }: PartnerWebhookLogsTabProps)
   const [selectedLogDetails, setSelectedLogDetails] = useState<WebhookLog | null>(null);
 
   // Fetch webhook logs
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch(`/api/admin/partners/${partnerId}/webhook-logs`);
@@ -116,14 +116,14 @@ export function PartnerWebhookLogsTab({ partnerId }: PartnerWebhookLogsTabProps)
     } finally {
       setLoading(false);
     }
-  };
+  }, [partnerId]);
 
   useEffect(() => {
     fetchLogs();
     // Auto-refresh every 30 seconds
     const interval = setInterval(fetchLogs, 30000);
     return () => clearInterval(interval);
-  }, [partnerId]);
+  }, [fetchLogs]);
 
   // Retry single webhook
   const retryWebhook = async (logId: string) => {

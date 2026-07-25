@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { X, Loader2, Package, Clock, User } from 'lucide-react';
 import { toast } from 'sonner';
 import type { AddToWaitlistInput } from '@/types/waitlist';
@@ -69,7 +69,7 @@ export function AddToWaitlistModal({
     flexibilityBonus: 0,
   });
 
-  const fetchCustomers = async () => {
+  const fetchCustomers = useCallback(async () => {
     setIsLoadingCustomers(true);
     try {
       const params = new URLSearchParams({
@@ -88,9 +88,9 @@ export function AddToWaitlistModal({
     } finally {
       setIsLoadingCustomers(false);
     }
-  };
+  }, [tenantId, searchQuery]);
 
-  const fetchPackages = async () => {
+  const fetchPackages = useCallback(async () => {
     setIsLoadingPackages(true);
     try {
       const response = await fetch(`/api/packages?tenant_id=${tenantId}&limit=100`);
@@ -103,9 +103,9 @@ export function AddToWaitlistModal({
     } finally {
       setIsLoadingPackages(false);
     }
-  };
+  }, [tenantId]);
 
-  const fetchKtvs = async () => {
+  const fetchKtvs = useCallback(async () => {
     setIsLoadingKtvs(true);
     try {
       const response = await fetch(`/api/users?tenant_id=${tenantId}&role=ktv&limit=100`);
@@ -118,9 +118,9 @@ export function AddToWaitlistModal({
     } finally {
       setIsLoadingKtvs(false);
     }
-  };
+  }, [tenantId]);
 
-  const calculatePriorityPreview = async () => {
+  const calculatePriorityPreview = useCallback(async () => {
     const customer = customers.find((c) => c.id === formData.customer_id);
     const pkg = packages.find((p) => p.id === formData.package_id);
 
@@ -148,7 +148,7 @@ export function AddToWaitlistModal({
       valueScore,
       flexibilityBonus,
     });
-  };
+  }, [customers, packages, formData.customer_id, formData.package_id, formData.is_flexible]);
 
   // Fetch customers (with debounce for search)
   useEffect(() => {
@@ -159,21 +159,21 @@ export function AddToWaitlistModal({
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [isOpen, tenantId, searchQuery]);
+  }, [isOpen, tenantId, fetchCustomers]);
 
   // Fetch packages and KTVs on open
   useEffect(() => {
     if (!isOpen || !tenantId) return;
     void fetchPackages();
     void fetchKtvs();
-  }, [isOpen, tenantId]);
+  }, [isOpen, tenantId, fetchPackages, fetchKtvs]);
 
   // Calculate priority preview when form changes
   useEffect(() => {
     if (formData.customer_id && formData.package_id) {
       void calculatePriorityPreview();
     }
-  }, [formData.customer_id, formData.package_id, formData.is_flexible]);
+  }, [formData.customer_id, formData.package_id, calculatePriorityPreview]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -15,7 +15,7 @@ import type {
   PackageRecommendationItem,
   RecommendationContext,
 } from './types';
-import { generateCacheKey, calculateDiversityScore, getRfmWeight } from './utils';
+import { calculateDiversityScore, getRfmWeight } from './utils';
 
 // ============================================================================
 // CONSTANTS

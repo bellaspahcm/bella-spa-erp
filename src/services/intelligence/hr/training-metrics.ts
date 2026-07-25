@@ -258,7 +258,6 @@ export async function getTrainingMetrics(
     });
     
     // Calculate previous period average ratings for each KTV
-    const prevRatingsMap = new Map<string, number>();
     const prevAvgRatings = new Map<string, number>();
     const prevRatingCounts = new Map<string, number[]>();
     

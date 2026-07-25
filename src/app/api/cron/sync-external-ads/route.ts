@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
       if (text) {
         body = JSON.parse(text);
       }
-    } catch (parseError) {
+    } catch (_parseError) {
       return NextResponse.json(
         { error: 'Invalid JSON in request body' },
         { status: 400 }

@@ -10,9 +10,6 @@
  */
 
 import { NextRequest } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-import { success, error as errorResponse, notFound } from '@/lib/api/response';
-import type { Database } from '@/types/database.types';
 
 /**
  * Get sandbox status for a partner
@@ -36,7 +33,7 @@ import type { Database } from '@/types/database.types';
  *   -H "Authorization: Bearer <session_token>"
  * ```
  */
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   // Temporarily return "not implemented" until database types are regenerated
   return new Response(
     JSON.stringify({

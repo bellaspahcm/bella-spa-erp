@@ -12,7 +12,6 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase-server';
 import { processSlotAvailable } from '@/services/waitlist/waitlist-service';
 import { getCurrentUser } from '@/services/user-actions';
 import type { AvailableSlot } from '@/types/waitlist';

@@ -12,6 +12,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { copyToClipboard } from "@/lib/utils";
 import { createClient } from "@/lib/supabase-client";
 import {
   enrollTotp,
@@ -168,9 +169,13 @@ export default function SecurityTab() {
 
   const handleCopySecret = async () => {
     if (enrollState.stage !== "verifying" && enrollState.stage !== "submitting") return;
-    await navigator.clipboard.writeText(enrollState.secret);
-    setSecretCopied(true);
-    setTimeout(() => setSecretCopied(false), 1500);
+    const success = await copyToClipboard(enrollState.secret);
+    if (success) {
+      setSecretCopied(true);
+      setTimeout(() => setSecretCopied(false), 1500);
+    } else {
+      toast.error("Không thể tự động sao chép secret key");
+    }
   };
 
   return (

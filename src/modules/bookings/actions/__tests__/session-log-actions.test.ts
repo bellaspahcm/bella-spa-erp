@@ -46,8 +46,8 @@ import {
 } from '../session-log-actions';
 
 describe('Session Log Actions', () => {
-  let mockSupabase: any; // eslint-disable-line @typescript-eslint/no-explicit-any
-  let mockQueryBuilder: any; // eslint-disable-line @typescript-eslint/no-explicit-any
+  let mockSupabase: any;  
+  let mockQueryBuilder: any;  
 
   beforeEach(() => {
     // Reset all mocks before each test
@@ -62,7 +62,7 @@ describe('Session Log Actions', () => {
       eq: jest.fn().mockReturnThis(),
       single: jest.fn(),
       maybeSingle: jest.fn(),
-      then: jest.fn((onfulfilled: any) => onfulfilled({ data: null, error: null })), // eslint-disable-line @typescript-eslint/no-explicit-any
+      then: jest.fn((onfulfilled: any) => onfulfilled({ data: null, error: null })),  
     };
 
     // Mock Supabase client
@@ -602,7 +602,7 @@ describe('Session Log Actions', () => {
         error: null,
       });
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       mockQueryBuilder.then.mockImplementationOnce((onfulfilled: any) => onfulfilled({
         error: new Error('Foreign key constraint'),
       }));

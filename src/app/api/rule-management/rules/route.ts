@@ -172,7 +172,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify workflow exists and belongs to tenant
-    const { data: workflow, error: workflowError } = await supabase
+    const { error: workflowError } = await supabase
       .from('workflow_definitions')
       .select('id')
       .eq('id', body.workflowId)

@@ -13,7 +13,6 @@ import type {
   ForecastInput,
   RevenueForecastResult,
   RevenueForecastPoint,
-  TimeSeriesDataPoint,
   ModelName,
 } from './types';
 
@@ -118,7 +117,7 @@ export async function forecastRevenue(
 async function fetchHistoricalRevenue(
   supabase: Awaited<ReturnType<typeof createClient>>,
   tenantId: string,
-  startDate?: string
+  _startDate?: string
 ): Promise<HistoricalRevenueData[]> {
   // Query revenue table directly
   const { data, error } = await supabase
@@ -605,7 +604,7 @@ export function calculateLinearRegression(
 }
 
 export async function generateRevenueForecast(
-  tenantId: string,
+  _tenantId: string,
   options: {
     historical_data: { month: string; revenue: number }[];
     forecast_periods: number;
@@ -629,12 +628,12 @@ export async function generateRevenueForecast(
   const periods = options.forecast_periods || 1;
   
   // Run all three models
-  const sma = calculateSimpleMovingAverage(data, 3);
+  const _sma = calculateSimpleMovingAverage(data, 3);
   const es = calculateExponentialSmoothing(data, 0.3);
   let lr;
   try {
     lr = calculateLinearRegression(data);
-  } catch (e) {
+  } catch (_e) {
     // If not enough data, use es or sma
   }
   

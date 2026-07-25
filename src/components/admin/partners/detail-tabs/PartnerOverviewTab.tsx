@@ -44,6 +44,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import type { APIPartner } from '@/types/api-gateway';
 import { RateLimitCustomizationDialog } from '../RateLimitCustomizationDialog';
+import { copyToClipboard } from '@/lib/utils';
 
 interface PartnerOverviewTabProps {
   partner: APIPartner;
@@ -58,10 +59,10 @@ export function PartnerOverviewTab({ partner }: PartnerOverviewTabProps) {
 
   // Copy API key
   const handleCopyApiKey = async () => {
-    try {
-      await navigator.clipboard.writeText(partner.api_key);
+    const success = await copyToClipboard(partner.api_key);
+    if (success) {
       toast.success('Đã sao chép API key');
-    } catch (error) {
+    } else {
       toast.error('Không thể sao chép API key');
     }
   };

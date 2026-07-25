@@ -1,3 +1,7 @@
+const { loadLocalEnv } = require('./load-local-env.cjs');
+
+loadLocalEnv();
+
 const DEFAULT_DATA_ACCESS_CHECKS = [
   { table: 'customers', reason: 'customer debt and booking lookup' },
   { table: 'bookings', reason: 'booking, package, and portal payment state' },
@@ -169,3 +173,4 @@ module.exports = {
   parseResponseError,
   summarizeAccessResults,
 };
+

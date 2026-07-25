@@ -247,7 +247,7 @@ export default function FinancePage() {
       setIsRefreshing(false);
       setIsLoading(false);
     }
-  }, [selectedMonth, monthlyPnLQuery.data]);
+  }, [selectedMonth]);
 
 
   const handleMonthChange = (newMonth: string) => {
