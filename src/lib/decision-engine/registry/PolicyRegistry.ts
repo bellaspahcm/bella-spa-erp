@@ -22,12 +22,16 @@ import {
   InvalidStatusTransitionError,
   GovernanceValidationError,
 } from './types';
+import { createClient } from '@/lib/supabase-server';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { PolicyRepository } from './PolicyRepository';
 import { writeAudit, getHistory, getRecentChanges } from './audit';
 import {
   validatePolicy,
   validateVersion,
   validateStatusTransition,
+  validateEmail,
+  validateISODate,
 } from './validation';
 import { GOVERNANCE_DEFAULTS } from './constants';
 

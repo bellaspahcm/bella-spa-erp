@@ -337,7 +337,7 @@ async function getRedisClient(): Promise<Redis | null> {
   if (!redisUrl) {
     console.warn('⚠️ REDIS_URL not configured, rate limiting will use degraded mode');
     circuitBreaker.state = 'OPEN';
-    redisStatus = 'disconnected';
+    _redisStatus = 'disconnected';
     return null;
   }
 
