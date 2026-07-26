@@ -489,6 +489,39 @@ export default function KTVDashboard() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Run only ONCE on mount - fetchData is stable
 
+  // Realtime subscription for KTV-specific assignments and updates
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const supabase = createClient();
+    console.log(`[KTV Dashboard] 📡 Subscribing to realtime updates for KTV: ${user.id}`);
+
+    const channel = supabase
+      .channel(`ktv-dashboard-realtime-${user.id}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'session_logs' },
+        (payload) => {
+          console.log('[KTV Dashboard] ⚡ session_logs changed:', payload.eventType);
+          void fetchData();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'bookings' },
+        (payload) => {
+          console.log('[KTV Dashboard] ⚡ bookings changed:', payload.eventType);
+          void fetchData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log(`[KTV Dashboard] 🔌 Unsubscribing from realtime updates for KTV: ${user.id}`);
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, fetchData]);
+
   const handleCheckIn = async () => {
     setIsAttendanceLoading(true);
     try {
