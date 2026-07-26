@@ -97,6 +97,22 @@ function getSessionHourBlock(timeStr?: string | null) {
   return match ? parseInt(match[1], 10) : 9;
 }
 
+function checkIfSessionIsLate(session: TimelineSession) {
+  if (session.status !== 'scheduled' || !session.assigned_date || !session.assigned_time) {
+    return false;
+  }
+  try {
+    const nowVN = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' }));
+    const [year, month, day] = session.assigned_date.split('-').map(Number);
+    const [hour, minute] = session.assigned_time.split(':').map(Number);
+    const scheduledDateTime = new Date(year, month - 1, day, hour, minute, 0, 0);
+    const diffMinutes = (nowVN.getTime() - scheduledDateTime.getTime()) / (1000 * 60);
+    return diffMinutes > 15;
+  } catch (err) {
+    return false;
+  }
+}
+
 export function BookingsTimelineGrid({
   sessions,
   ktvs,
@@ -216,6 +232,7 @@ export function BookingsTimelineGrid({
                               const isCompleted = session.status === 'completed';
                               const isInProgress = session.status === 'in_progress';
                               const isScheduled = session.status === 'scheduled';
+                              const isLate = isScheduled && checkIfSessionIsLate(session);
 
                               return (
                                 <div
@@ -226,9 +243,11 @@ export function BookingsTimelineGrid({
                                       ? 'bg-emerald-50/80 border-emerald-100/80 hover:border-emerald-300 hover:bg-emerald-50'
                                       : isInProgress
                                         ? 'bg-sky-50/80 border-sky-100 hover:border-sky-300 hover:bg-sky-50'
-                                        : isScheduled
-                                          ? 'bg-rose-50/40 border-rose-100/50 hover:border-rose-200 hover:bg-rose-50'
-                                          : 'bg-slate-50 border-slate-100 hover:bg-slate-100'
+                                        : isLate
+                                          ? 'bg-red-50 border-red-200 hover:border-red-400 hover:bg-red-100/60 shadow-sm animate-pulse'
+                                          : isScheduled
+                                            ? 'bg-rose-50/40 border-rose-100/50 hover:border-rose-200 hover:bg-rose-50'
+                                            : 'bg-slate-50 border-slate-100 hover:bg-slate-100'
                                   }`}
                                 >
                                   <div className="flex items-center justify-between gap-1.5 mb-1">
@@ -238,12 +257,14 @@ export function BookingsTimelineGrid({
                                           ? 'bg-emerald-100 text-emerald-700'
                                           : isInProgress
                                             ? 'bg-sky-100 text-sky-700'
-                                            : isScheduled
-                                              ? 'bg-rose-100 text-rose-700'
-                                              : 'bg-slate-100 text-slate-700'
+                                            : isLate
+                                              ? 'bg-red-600 text-white animate-bounce'
+                                              : isScheduled
+                                                ? 'bg-rose-100 text-rose-700'
+                                                : 'bg-slate-100 text-slate-700'
                                       }`}
                                     >
-                                      {isCompleted ? 'Xong' : isInProgress ? 'Chạy' : 'Sắp'}
+                                      {isCompleted ? 'Xong' : isInProgress ? 'Chạy' : isLate ? 'TRỄ' : 'Sắp'}
                                     </span>
                                     <span className="text-[10px] font-black text-slate-400 flex items-center gap-0.5 shrink-0">
                                       <Clock className="w-2.5 h-2.5 text-rose-400" />
