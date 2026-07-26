@@ -113,6 +113,22 @@ export async function getSessionsWithDetails(options: GetSessionsWithDetailsOpti
     throw new BookingError('Failed to fetch sessions with details: missing tenant scope', 'BOOKING_MISSING_TENANT_SCOPE');
   }
 
+  // Trigger check and generate admin notifications for late check-ins
+  if (
+    currentUser?.role?.toLowerCase() === 'admin' || 
+    currentUser?.role?.toLowerCase() === 'super_admin' || 
+    currentUser?.role?.toLowerCase() === 'hq_staff' ||
+    currentUser?.role?.toLowerCase() === 'accountant' ||
+    currentUser?.role?.toLowerCase() === 'hr'
+  ) {
+    try {
+      const { checkAndGenerateAdminAlertNotifications } = await import('@/services/notification-helpers');
+      void checkAndGenerateAdminAlertNotifications(tenantId);
+    } catch (err) {
+      console.error('Failed to run checkAndGenerateAdminAlertNotifications:', err);
+    }
+  }
+
   let query = supabase
     .from('bookings')
     .select(`

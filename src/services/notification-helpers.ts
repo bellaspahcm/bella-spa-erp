@@ -151,3 +151,106 @@ export async function checkAndGenerateKtvAlertNotifications(userId: string, tena
     console.error('[checkAndGenerateKtvAlertNotifications] Exception:', err);
   }
 }
+
+export async function checkAndGenerateAdminAlertNotifications(tenantId: string) {
+  try {
+    const supabase = await createClient();
+
+    // 1. Get current date in Vietnam (YYYY-MM-DD)
+    const nowVN = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' }));
+    const todayStr = nowVN.toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
+
+    // 2. Fetch scheduled sessions of today for this tenant
+    const { data: scheduledSessions } = await supabase
+      .from('session_logs')
+      .select(`
+        id,
+        session_number,
+        assigned_date,
+        assigned_time,
+        completed_by_ktv_id,
+        bookings (
+          assigned_ktv_id,
+          package_name,
+          customers (
+            name_mother
+          )
+        )
+      `)
+      .eq('tenant_id', tenantId)
+      .eq('status', 'scheduled')
+      .eq('assigned_date', todayStr);
+
+    if (scheduledSessions && scheduledSessions.length > 0) {
+      // Fetch all Admin/Accountant users of this tenant to notify
+      const { data: adminUsers } = await supabase
+        .from('users')
+        .select('id')
+        .eq('tenant_id', tenantId)
+        .in('role', ['admin', 'super_admin', 'admin_staff', 'accountant', 'hq_staff']);
+
+      if (!adminUsers || adminUsers.length === 0) return;
+
+      for (const session of scheduledSessions) {
+        if (!session.assigned_time) continue;
+
+        // Parse assigned_time (HH:MM) to compare with nowVN
+        const [hourStr, minStr] = session.assigned_time.split(':');
+        const scheduledTime = new Date(nowVN);
+        scheduledTime.setHours(Number(hourStr), Number(minStr), 0, 0);
+
+        const diffMinutes = (nowVN.getTime() - scheduledTime.getTime()) / (1000 * 60);
+
+        // If current time is > 15 minutes after scheduled starting time
+        if (diffMinutes > 15) {
+          // Fetch KTV name
+          const targetKtvId = session.completed_by_ktv_id || (session.bookings as any)?.assigned_ktv_id;
+          let ktvName = 'Chưa phân công KTV';
+
+          if (targetKtvId) {
+            const { data: ktvUser } = await supabase
+              .from('users')
+              .select('full_name')
+              .eq('id', targetKtvId)
+              .maybeSingle();
+            
+            if (ktvUser?.full_name) {
+              ktvName = ktvUser.full_name;
+            }
+          }
+
+          const booking = Array.isArray(session.bookings) ? session.bookings[0] : session.bookings;
+          const customerName = (booking as any)?.customers?.name_mother || 'Khách hàng';
+          const packageName = (booking as any)?.package_name || 'Dịch vụ';
+
+          for (const admin of adminUsers) {
+            const notifId = `session_no_checkin_${session.id}_${admin.id}`;
+
+            // Check if notification already exists to avoid duplicate insertions
+            const { data: existingNotif } = await supabase
+              .from('Notification')
+              .select('id')
+              .eq('id', notifId)
+              .maybeSingle();
+
+            if (!existingNotif) {
+              await supabase.from('Notification').insert({
+                id: notifId,
+                userId: admin.id,
+                title: 'Trễ check-in ca làm 🚨',
+                message: `KTV ${ktvName} chưa check-in ca số ${session.session_number} gói ${packageName} của khách ${customerName} (Lịch hẹn lúc ${session.assigned_time} hôm nay). Trễ hơn 15 phút.`,
+                tenantId,
+                type: 'alert',
+                isRead: false,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+              });
+            }
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error('[checkAndGenerateAdminAlertNotifications] Exception:', err);
+  }
+}
