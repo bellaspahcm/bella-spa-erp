@@ -121,7 +121,8 @@ function SessionsContent() {
   const [pendingLeaves, setPendingLeaves] = useState<LeaveRequest[]>([]);
   const [isLeavesOpen, setIsLeavesOpen] = useState(false);
 
-  const statusOptions = ['Tất cả trạng thái', `Đang ${vocab.service.singular.toLowerCase()}`, 'Hoàn thành'];
+  const today = new Date().toLocaleDateString('sv-SE');
+  const statusOptions = ['Tất cả trạng thái', `Đang ${vocab.service.singular.toLowerCase()}`, 'Hoàn thành', 'Quá hạn (Trễ lịch)'];
   const [monthFilter, setMonthFilter] = useState('all');
   const [yearFilter, setYearFilter] = useState(String(new Date().getFullYear()));
   const currentYear = new Date().getFullYear();
@@ -263,6 +264,14 @@ function SessionsContent() {
         result = result.filter(s => (s.completed_sessions || 0) < (s.total_sessions || 15));
       } else if (status === 'Hoàn thành') {
         result = result.filter(s => (s.completed_sessions || 0) >= (s.total_sessions || 15));
+      } else if (status === 'Quá hạn (Trễ lịch)') {
+        // Buổi scheduled nhưng next_session_date đã qua, admin chưa dời lịch
+        result = result.filter(s =>
+          s.status !== 'cancelled' &&
+          (s.completed_sessions || 0) < (s.total_sessions || 15) &&
+          !!s.next_session_date &&
+          s.next_session_date < today
+        );
       }
     }
 

@@ -33,7 +33,7 @@ import { KtvLeaveHistoryModal, KtvLeaveRequestModal, type KtvLeaveHistoryItem, t
 import { KtvNotificationDetailModal } from './components/KtvNotificationDetailModal';
 import { KtvOfflineSyncBanner } from './components/KtvOfflineSyncBanner';
 import { KtvProfileDrawer, type KtvOfflineAction, type KtvProfileUser } from './components/KtvProfileDrawer';
-import { KtvSessionSections, type KtvDashboardSession } from './components/KtvSessionSections';
+import { KtvSessionSections, type KtvDashboardOverdueSession, type KtvDashboardSession } from './components/KtvSessionSections';
 import { getCachedCurrentUser, getCachedTenantSettings } from '@/lib/dashboard-client-context';
 import { getLocalDateString } from '@/lib/utils';
 
@@ -61,6 +61,7 @@ export default function KTVDashboard() {
   const [user, setUser] = useState<KtvUser | null>(null);
   const [activeSessions, setActiveSessions] = useState<KtvDashboardSession[]>([]);
   const [upcomingSessions, setUpcomingSessions] = useState<KtvDashboardSession[]>([]);
+  const [overdueSessions, setOverdueSessions] = useState<KtvDashboardOverdueSession[]>([]);
   const [earnings, setEarnings] = useState({ total: 0, sessions: 0 });
   const [myRating, setMyRating] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -423,6 +424,7 @@ export default function KTVDashboard() {
         if (data) {
           setActiveSessions(data.active as KtvDashboardSession[]);
           setUpcomingSessions(data.upcoming as KtvDashboardSession[]);
+          setOverdueSessions((data.overdue ?? []) as KtvDashboardOverdueSession[]);
           void setCachedSessions(u.id, data.active, data.upcoming);
         }
         setIsLoading(false); // Show UI after fetch
@@ -441,6 +443,7 @@ export default function KTVDashboard() {
         
         setActiveSessions(data.active);
         setUpcomingSessions(data.upcoming);
+        setOverdueSessions((data.overdue ?? []) as KtvDashboardOverdueSession[]);
         setTodayAttendance(data.attendance);
         setEarnings(data.earnings);
         setNotifications(data.notifications);
@@ -760,6 +763,7 @@ export default function KTVDashboard() {
       <KtvSessionSections
         activeSessions={activeSessions}
         upcomingSessions={upcomingSessions}
+        overdueSessions={overdueSessions}
         currentUserId={user?.id}
         tenantModuleKey={tenantModuleKey}
         isActionLoading={isActionLoading}

@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Baby, CheckCircle2, MapPin, Phone, Play, UserRound } from 'lucide-react';
+import { AlertTriangle, Baby, CheckCircle2, MapPin, Phone, Play, UserRound } from 'lucide-react';
 
 import { getTenantModulePresentationOrNeutral } from '@/lib/business-rules/tenant-module-presentation';
 import type { TenantModuleKey } from '@/lib/business-rules/tenant-modules';
@@ -29,9 +29,25 @@ export type KtvDashboardSession = {
   } | null;
 };
 
+export type KtvDashboardOverdueSession = {
+  id: string;
+  session_number: number;
+  assigned_date: string;   // YYYY-MM-DD, already in the past
+  booking_id: string;
+  bookings: {
+    package_name: string | null;
+    total_sessions: number | null;
+    customers: {
+      name_mother: string | null;
+      name_baby: string | null;
+    } | null;
+  } | null;
+};
+
 type KtvSessionSectionsProps = {
   activeSessions: KtvDashboardSession[];
   upcomingSessions: KtvDashboardSession[];
+  overdueSessions?: KtvDashboardOverdueSession[];
   currentUserId?: string | null;
   tenantModuleKey: TenantModuleKey | null;
   isActionLoading: string | null;
@@ -62,6 +78,7 @@ function formatStartTime(value?: string | number | Date | null) {
 export function KtvSessionSections({
   activeSessions,
   upcomingSessions,
+  overdueSessions = [],
   currentUserId,
   tenantModuleKey,
   isActionLoading,
@@ -71,8 +88,58 @@ export function KtvSessionSections({
   const customerLabels = getTenantModulePresentationOrNeutral(tenantModuleKey);
   const SecondaryIcon = tenantModuleKey === 'babycare' ? Baby : UserRound;
 
+  function formatOverdueDate(dateStr: string) {
+    const [y, m, d] = dateStr.split('-');
+    return `${d}/${m}/${y}`;
+  }
+
   return (
     <div className="px-6 mt-8 space-y-8">
+      {/* ── Cảnh báo buổi quá hạn ── */}
+      {overdueSessions.length > 0 && (
+        <motion.section
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-2xl border border-amber-200 bg-amber-50 p-4"
+        >
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0 mt-0.5">
+              <AlertTriangle className="w-5 h-5 text-amber-500" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-black uppercase tracking-widest text-amber-700 mb-1">
+                {overdueSessions.length} buổi chưa được ghi nhận từ ngày trước
+              </p>
+              <p className="text-[11px] text-amber-600 mb-3">
+                Admin chưa dời lịch hoặc chưa xử lý các buổi dưới đây — số thứ tự buổi có thể bị lệch.
+                Vui lòng liên hệ Admin để điều chỉnh.
+              </p>
+              <div className="space-y-1.5">
+                {overdueSessions.map((s) => {
+                  const pkgName = s.bookings?.package_name || 'Gói dịch vụ';
+                  const motherName = s.bookings?.customers?.name_mother || '';
+                  return (
+                    <div
+                      key={s.id}
+                      className="flex items-center gap-2 text-[11px] text-amber-800 font-bold bg-amber-100/60 rounded-xl px-3 py-2"
+                    >
+                      <span className="flex-shrink-0 w-5 h-5 rounded-full bg-amber-200 text-amber-700 text-[10px] font-black flex items-center justify-center">
+                        {s.session_number}
+                      </span>
+                      <span className="truncate">
+                        {pkgName}{motherName ? ` — ${motherName}` : ''}
+                      </span>
+                      <span className="ml-auto flex-shrink-0 text-amber-500 font-black">
+                        {formatOverdueDate(s.assigned_date)}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </motion.section>
+      )}
       <section>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xs font-black text-rose-700 dark:text-[#A67D44] uppercase tracking-widest">Đang thực hiện</h2>

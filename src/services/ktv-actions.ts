@@ -362,6 +362,11 @@ export async function getKTVUpcomingSessions(currentUser?: CurrentUser) {
 
     let lastKnownDate: string | null = null;
     let lastKnownSessionNum = 0;
+    // Track if this booking already has a session in_progress today.
+    // If so, do NOT show any further scheduled sessions for the same booking
+    // in the upcoming list — prevents "buổi 12 active, buổi 13 upcoming" confusion
+    // when only 1 session per day is expected.
+    let hasInProgressSessionToday = false;
 
     for (const s of bookingSessions) {
       const booking = (Array.isArray(s.bookings) ? s.bookings[0] : s.bookings) as InnerBooking | null;
@@ -392,11 +397,25 @@ export async function getKTVUpcomingSessions(currentUser?: CurrentUser) {
         lastKnownSessionNum = s.session_number;
       }
 
+      // If this session is in_progress for today, mark the booking so subsequent
+      // scheduled sessions on the same day are suppressed from the upcoming list.
+      if (s.status === 'in_progress' && finalDate === today) {
+        hasInProgressSessionToday = true;
+      }
+
       // We only care about scheduled sessions for the upcoming list
       const bookingTotal = booking?.total_sessions || 0;
       const isBookingCompleted = booking?.status === 'completed';
 
-      if (s.status === 'scheduled' && finalDate === today && s.session_number <= bookingTotal && !isBookingCompleted) {
+      // Skip scheduled sessions when an in_progress session already exists today
+      // for the same booking — this prevents the N+1 phantom entry in "Lịch hôm nay".
+      if (
+        s.status === 'scheduled' &&
+        finalDate === today &&
+        s.session_number <= bookingTotal &&
+        !isBookingCompleted &&
+        !hasInProgressSessionToday
+      ) {
         processedSessionsList.push({
           ...s,
           assigned_date: finalDate,
@@ -421,6 +440,73 @@ export async function getKTVUpcomingSessions(currentUser?: CurrentUser) {
   console.log(`[getKTVUpcomingSessions] TOTAL TIME: ${Date.now() - perfStart}ms`);
 
   return processedSessionsList;
+}
+
+/**
+ * Lấy các buổi đã QUÁ HẠN: trạng thái vẫn 'scheduled' nhưng assigned_date < hôm nay.
+ * Xảy ra khi admin không dời lịch hoặc không ghi nhận buổi bị bỏ.
+ * Dùng để hiển thị cảnh báo cho cả KTV và Admin.
+ */
+export async function getKTVOverdueSessions(currentUser?: CurrentUser) {
+  const supabase = await createClient();
+  const user = currentUser || await getCurrentUser();
+  if (!user || user.role !== 'ktv') return [];
+
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
+
+  const { data, error } = await supabase
+    .from('session_logs')
+    .select(`
+      id,
+      session_number,
+      assigned_date,
+      assigned_time,
+      booking_id,
+      bookings!inner (
+        id,
+        booking_number,
+        package_name,
+        total_sessions,
+        assigned_ktv_id,
+        packages ( name ),
+        customers (
+          name_mother,
+          name_baby,
+          phone
+        )
+      )
+    `)
+    .eq('status', 'scheduled')
+    .lt('assigned_date', today)          // explicit past date, still scheduled
+    .eq('bookings.assigned_ktv_id', user.id)
+    .order('assigned_date', { ascending: true });
+
+  if (error) {
+    // Non-fatal: just return empty rather than crashing dashboard
+    console.error('[getKTVOverdueSessions] error:', error.message);
+    return [];
+  }
+
+  return (data || []) as Array<{
+    id: string;
+    session_number: number;
+    assigned_date: string;
+    assigned_time: string | null;
+    booking_id: string;
+    bookings: {
+      id: string;
+      booking_number: string | null;
+      package_name: string | null;
+      total_sessions: number | null;
+      assigned_ktv_id: string | null;
+      packages: { name: string } | null;
+      customers: {
+        name_mother: string | null;
+        name_baby: string | null;
+        phone: string | null;
+      } | null;
+    } | null;
+  }>;
 }
 
 /**
@@ -877,7 +963,8 @@ export async function getKTVDashboardData(monthStr: string) {
     attendance,
     earnings,
     notifications,
-    leaderboard
+    leaderboard,
+    overdue
   ] = await Promise.all([
     getKTVActiveSessions(user),
     getKTVUpcomingSessions(user),
@@ -885,6 +972,7 @@ export async function getKTVDashboardData(monthStr: string) {
     getKTVEarnings(monthStr, user),
     getKTVNotifications(user),
     getKTVLeaderboard(monthStr, user),
+    getKTVOverdueSessions(user),
   ]);
 
   return {
@@ -893,7 +981,10 @@ export async function getKTVDashboardData(monthStr: string) {
     attendance,
     earnings,
     notifications,
-    leaderboard
+    leaderboard,
+    // Buổi quá hạn: assigned_date đã qua nhưng vẫn còn 'scheduled'
+    // Admin chưa dời lịch hoặc chưa ghi nhận missed → gây lệch số buổi
+    overdue,
   };
 }
 

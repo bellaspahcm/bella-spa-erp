@@ -10,7 +10,8 @@ import {
   CheckCircle2, 
   Loader2, 
   TrendingUp, 
-  AlertCircle, 
+  AlertCircle,
+  AlertTriangle,
   UserCircle, 
   MessageSquare, 
   History, 
@@ -61,6 +62,12 @@ export function SessionCard({
   const alreadyDoneToday = booking.last_updated_date === today;
   const isScheduledForToday = booking.next_session_date === today;
   const hasKtv = !!booking.assigned_ktv_id;
+  // Buổi quá hạn: có lịch nhưng ngày đã qua, admin chưa dời lịch hoặc ghi nhận
+  const isOverdue =
+    !isFullyCompleted &&
+    booking.status !== 'cancelled' &&
+    !!booking.next_session_date &&
+    booking.next_session_date < today;
 
   const handleUpdateClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -147,6 +154,13 @@ export function SessionCard({
             <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border bg-amber-50 text-amber-600 border-amber-200">
               <AlertCircle className="w-3 h-3" />
               Chưa phân {vocab.worker.short}
+            </span>
+          )}
+          {/* Badge cảnh báo buổi quá hạn — admin chưa dời lịch */}
+          {isOverdue && (
+            <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border bg-red-50 text-red-600 border-red-200 animate-pulse">
+              <AlertTriangle className="w-3 h-3" />
+              Trễ lịch {booking.next_session_date}
             </span>
           )}
         </div>
