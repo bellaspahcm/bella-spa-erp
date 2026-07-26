@@ -43,6 +43,7 @@ import {
 import { createPageRefreshEvent } from '@/lib/page-refresh';
 import ThemeToggle from '@/components/common/ThemeToggle';
 import { TenantBrandLogo } from '@/components/common/TenantBrandLogo';
+import AdminNotificationBell from '@/components/common/AdminNotificationBell';
 import type { CurrentUser } from '@/types/domain';
 import {
   isSidebarItemAllowed,
@@ -526,7 +527,11 @@ export function Sidebar() {
           </span>
         </div>
 
-        <div className="flex w-20 items-center justify-end gap-2">
+        <div className="flex items-center justify-end gap-2 relative">
+          {user?.role && user.role !== 'customer' && (
+            <AdminNotificationBell position="bottom" className="shrink-0" />
+          )}
+
           <button
             type="button"
             onClick={handleMobileRefresh}
@@ -578,27 +583,27 @@ export function Sidebar() {
         )} />
 
         {/* ── Logo & Mobile Close Button ── */}
-        <div className="px-8 pt-10 pb-6 shrink-0 relative z-10 flex items-center justify-between lg:block">
+        <div className="px-8 pt-6 pb-4 shrink-0 relative z-10 flex items-center justify-between lg:block">
           <Link href="/dashboard" onClick={handleNavigation} className="flex flex-col items-center group">
-            <div className="relative mb-4">
+            <div className="relative mb-2">
               <div className="absolute inset-0 bg-primary/20 dark:bg-[#A67D44]/15 blur-2xl rounded-full scale-75 group-hover:scale-110 transition-transform duration-500" />
               <TenantBrandLogo
                 displayName={tenantBrand.displayName}
                 logoUrl={tenantBrand.logoUrl}
                 monogram={tenantBrand.monogram}
-                className="w-24 h-24 relative z-10 transform group-hover:rotate-[5deg] transition-transform duration-500 text-2xl"
+                className="w-16 h-16 relative z-10 transform group-hover:rotate-[5deg] transition-transform duration-500 text-xl"
                 markClassName={cn("rounded-[1.75rem]", (isBeautySpaShell || isIndustrialCleaningShell) && "beauty-erp-logo-mark beauty-erp-logo-mark-large")}
               />
             </div>
             <div className="text-center">
               <h2 className={cn(
-                "max-w-64 text-[2.24rem] font-handwriting mb-2 drop-shadow-sm text-primary dark:text-[#A67D44] text-center",
+                "max-w-64 text-[1.9rem] font-handwriting mb-1 drop-shadow-sm text-primary dark:text-[#A67D44] text-center",
                 (isBeautySpaShell || isIndustrialCleaningShell) && "beauty-erp-brand-script"
               )}>
                 {tenantBrand.displayName.toLowerCase().endsWith('headquarter') ? (
                   <span className="flex flex-col items-center">
                     <span className="leading-tight text-[#A91555] dark:text-[#F8A5C2]">{tenantBrand.displayName.slice(0, -11).trim()}</span>
-                    <span className="text-[0.95rem] mt-2 leading-none font-sans font-black tracking-widest uppercase text-slate-500 dark:text-zinc-400">
+                    <span className="text-[0.8rem] mt-1 leading-none font-sans font-black tracking-widest uppercase text-slate-500 dark:text-zinc-400">
                       Headquarter
                     </span>
                   </span>
@@ -607,7 +612,7 @@ export function Sidebar() {
                 )}
               </h2>
               <span className={cn(
-                "text-[7px] font-extrabold text-[#8A6D7C] dark:text-[#CDBCAB] uppercase tracking-[0.25em] block mt-1",
+                "text-[7px] font-extrabold text-[#8A6D7C] dark:text-[#CDBCAB] uppercase tracking-[0.25em] block mt-0.5",
                 (isBeautySpaShell || isIndustrialCleaningShell) && "beauty-erp-brand-subtitle"
               )}>
                 {tenantBrand.subtitle}
@@ -729,10 +734,15 @@ export function Sidebar() {
               (isBeautySpaShell || isIndustrialCleaningShell) && "beauty-erp-profile-divider"
             )} />
             
-            <div className="flex items-center justify-between p-2">
+            <div className="flex items-center justify-between p-2 gap-2">
                <div className="flex-1 px-2">
                  <ThemeToggle />
                </div>
+               
+               {user?.role && user.role !== 'customer' && (
+                 <AdminNotificationBell position="top" className="shrink-0" />
+               )}
+
                <button 
                  onClick={handleLogout} 
                  title="Đăng xuất"
