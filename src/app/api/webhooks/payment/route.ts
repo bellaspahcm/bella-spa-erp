@@ -413,7 +413,12 @@ export async function POST(request: NextRequest) {
       // Service-role client bypasses RLS so we verify tenant_id after fetch (defense-in-depth).
       const { data: booking, error: bookingErr } = await supabase
         .from("bookings")
-        .select("*")
+        .select(`
+          *,
+          customers (
+            name_mother
+          )
+        `)
         .eq("booking_number", bookingNumber)
         .not("tenant_id", "is", null)
         .maybeSingle();
@@ -602,6 +607,52 @@ export async function POST(request: NextRequest) {
         console.error('[Payment Webhook] Failed to ensure revenue side effects for "%s":', newRevenue.id, ensureErr);
         await rollbackWebhookRevenue(ensureErr);
         continue;
+      }
+
+      // Send real-time payment success notifications to all Admin users of this tenant
+      try {
+        const { data: adminUsers } = await supabase
+          .from("users")
+          .select("id")
+          .eq("tenant_id", booking.tenant_id)
+          .in("role", ["admin", "super_admin", "admin_staff", "accountant", "hq_staff"]);
+
+        if (adminUsers && adminUsers.length > 0) {
+          const customerName = (booking as any)?.customers?.name_mother || "Khách hàng";
+          const packageName = booking.package_name || "Gói dịch vụ";
+          const amountFormatted = new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
+          
+          // Parse received transaction date
+          const txDate = receivedDate ? new Date(receivedDate) : new Date();
+          const timeFormatted = txDate.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) + " " + txDate.toLocaleDateString("vi-VN");
+
+          for (const admin of adminUsers) {
+            const notifId = `payment_success_${transactionId}_${admin.id}`;
+            
+            // Check if notification already exists to prevent duplicate inserts on retries
+            const { data: existingNotif } = await supabase
+              .from("Notification")
+              .select("id")
+              .eq("id", notifId)
+              .maybeSingle();
+
+            if (!existingNotif) {
+              await supabase.from("Notification").insert({
+                id: notifId,
+                userId: admin.id,
+                title: "Khách thanh toán thành công 💰",
+                message: `Khách hàng ${customerName} đã thanh toán thành công số tiền ${amountFormatted} cho gói ${packageName} lúc ${timeFormatted}.`,
+                tenantId: booking.tenant_id,
+                type: "payment",
+                isRead: false,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+              });
+            }
+          }
+        }
+      } catch (notifErr) {
+        console.error("[Payment Webhook] Failed to send admin payment notification:", notifErr);
       }
 
       results.push({ transactionId, bookingNumber, status: "success", revenueId: newRevenue.id });
