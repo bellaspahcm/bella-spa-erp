@@ -35,6 +35,7 @@ import type {
   DashboardAlert 
 } from '@/core/services/analytics/dashboard-actions';
 import { markNotificationAsRead } from '@/core/services/notification/notification-actions';
+import AdminNotificationBell from '@/components/common/AdminNotificationBell';
 import { AnimatePresence,motion } from 'framer-motion';
 import {
 AlertTriangle,
@@ -409,98 +410,7 @@ export default function DashboardPage() {
            * Spa: KTV checkout, session overdue, booking near end, leave requests. 
            * Future: Core notification system với module-specific alert providers.
            */}
-          <div className="relative">
-            <button 
-              onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-              className={`p-4 rounded-2xl transition-all shadow-sm relative group active:scale-95 border ${
-                isNotificationsOpen ? 'bg-primary text-white border-primary shadow-lg shadow-pink-100 dark:shadow-none' : 'bg-white/80 border-border text-foreground hover:bg-white'
-              }`}
-            >
-              <Bell className={`w-6 h-6 transition-colors ${isNotificationsOpen ? 'text-white' : 'group-hover:text-primary'}`} />
-              {alerts.length > 0 && !isNotificationsOpen && (
-                <span className="absolute top-4 right-4 w-2.5 h-2.5 bg-accent rounded-full border-2 border-white shadow-[0_0_8px_rgba(255,133,162,0.5)] animate-pulse"></span>
-              )}
-            </button>
-
-            {/* Notifications Popover */}
-            <AnimatePresence>
-              {isNotificationsOpen && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setIsNotificationsOpen(false)} />
-                  <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute right-0 mt-4 w-96 bg-white rounded-[2rem] shadow-2xl shadow-pink-200/50 dark:shadow-none border border-pink-100 p-6 z-50 overflow-hidden"
-                  >
-                    <div className="flex items-center justify-between mb-6">
-                      <h3 className="font-black uppercase tracking-widest text-sm text-foreground">Thông báo</h3>
-                      <span className="px-3 py-1 bg-primary/10 text-primary text-[10px] font-black rounded-full uppercase">
-                        {alerts.length} Mới
-                      </span>
-                    </div>
-                    <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                      {alerts.length > 0 ? (
-                        alerts.slice(0, 5).map((alert, idx) => (
-                          <div 
-                            key={idx}
-                            onClick={async () => {
-                              if (alert.isAppNotification && alert.id) {
-                                const result = await markNotificationAsRead(alert.id);
-                                if (!result.success) {
-                                  toast.error(result.error);
-                                  return;
-                                }
-                              }
-                              if (alert.link) {
-                                router.push(alert.link);
-                                setIsNotificationsOpen(false);
-                              }
-                            }}
-                            className={`p-4 rounded-2xl border transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer ${
-                              alert.type === 'warning' ? 'bg-amber-50/50 border-amber-100' :
-                              alert.type === 'success' ? 'bg-emerald-50/50 border-emerald-100' :
-                              'bg-blue-50/50 border-blue-100'
-                            }`}
-                          >
-                            <div className="flex gap-4">
-                              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                                alert.type === 'warning' ? 'bg-amber-100 text-amber-600' :
-                                alert.type === 'success' ? 'bg-emerald-100 text-emerald-600' :
-                                'bg-blue-100 text-blue-600'
-                              }`}>
-                                {alert.icon === 'alert' ? <AlertTriangle className="w-5 h-5" /> :
-                                 alert.icon === 'checkCircle' ? <CheckCircle2 className="w-5 h-5" /> :
-                                 <Lightbulb className="w-5 h-5" />}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <h4 className="font-bold text-sm text-foreground mb-1 truncate">{alert.title}</h4>
-                                <p className="text-xs text-muted-foreground leading-relaxed font-semibold">{alert.message}</p>
-                              </div>
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="py-12 text-center">
-                          <Bell className="w-12 h-12 text-slate-200 mx-auto mb-4" />
-                          <p className="text-slate-400 font-bold italic">Không có thông báo mới</p>
-                        </div>
-                      )}
-                    </div>
-                    <button 
-                      onClick={() => {
-                        setIsNotificationsOpen(false);
-                        setIsAllNotificationsOpen(true);
-                      }}
-                      className="w-full mt-6 py-3 text-xs font-black uppercase text-primary hover:bg-primary/5 rounded-xl transition-all tracking-widest"
-                    >
-                      Xem tất cả thông báo
-                    </button>
-                  </motion.div>
-                </>
-              )}
-            </AnimatePresence>
-          </div>
+          <AdminNotificationBell position="bottom" className="shrink-0" />
           
           {/**
            * @widget-type spa
@@ -569,7 +479,7 @@ export default function DashboardPage() {
               [1, 2, 3].map((i) => (
                 <div 
                   key={i}
-                  className="dashboard-schedule-card bg-white/30 p-6 md:p-7 rounded-[2.5rem] border border-white/40 shadow-sm relative mb-5 flex flex-col justify-between gap-6 md:gap-8 backdrop-blur-md animate-pulse"
+                  className="dashboard-schedule-card bg-white/80 p-6 md:p-7 rounded-[2.5rem] border border-white/60 shadow-md shadow-pink-100/20 relative mb-5 flex flex-col justify-between gap-6 md:gap-8 backdrop-blur-md animate-pulse dark:bg-slate-900/70 dark:border-white/5"
                 >
                   <div className="flex flex-1 items-start gap-5 md:gap-7">
                     <SkeletonLoader variant="circular" width={80} height={80} className="shrink-0" />
@@ -618,7 +528,7 @@ export default function DashboardPage() {
                   return (
                     <div 
                       key={session.id}
-                      className="dashboard-schedule-card group bg-white/30 hover:bg-white/60 p-6 md:p-7 rounded-[2.5rem] transition-all border border-white/40 hover:border-primary/10 shadow-sm hover:shadow-2xl hover:shadow-pink-100/30 dark:hover:shadow-none relative mb-5 last:mb-0 backdrop-blur-md"
+                      className="dashboard-schedule-card group bg-white/80 hover:bg-white p-6 md:p-7 rounded-[2.5rem] transition-all border border-white/60 hover:border-primary/20 shadow-md shadow-pink-100/20 hover:shadow-2xl hover:shadow-pink-100/40 dark:bg-slate-900/70 dark:hover:bg-slate-900 dark:border-white/5 relative mb-5 last:mb-0 backdrop-blur-md"
                     >
                       <div className="flex flex-col justify-between gap-6 md:gap-8">
                         <div className="flex flex-1 items-start gap-3 md:gap-7">

@@ -54,6 +54,11 @@ jest.mock('../modules/hr-salary/actions/salary-recalculation-engine', () => ({
   recalculateAndSaveSalaryRecordEngine: (...args: unknown[]) => mockRecalculateAndSaveSalaryRecordEngine(...args),
 }));
 
+jest.mock('@/services/notification-helpers', () => ({
+  createSystemNotification: jest.fn(() => Promise.resolve()),
+}));
+
+
 type DbOperation = 'select' | 'insert' | 'update' | 'delete';
 
 type ScriptedResult = {

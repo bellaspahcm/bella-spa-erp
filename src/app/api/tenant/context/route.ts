@@ -1,8 +1,45 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { createClient } from '@/lib/supabase-server';
+import { cookies, headers } from 'next/headers';
+import { createServerClient as createSupabaseServerClient } from '@supabase/ssr';
+import { createClient as createSupabaseJsClient } from '@supabase/supabase-js';
+import { getSupabaseAdminUrl, getSupabaseAdminKey } from '@/lib/supabase-admin-env';
 import type { TenantContext } from '@/core/types/tenant';
 import type { Database } from '@/types/database.types';
+
+/**
+ * Create a fresh Supabase server client for this Route Handler.
+ * We do NOT use the cached `createClient` from supabase-server.ts because
+ * React's cache() wrapper is incompatible with Next.js Route Handler context.
+ */
+async function createRouteHandlerClient() {
+  const cookieStore = await cookies();
+  return createSupabaseServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+        set(name: string, value: string, options) {
+          try {
+            cookieStore.set({ name, value, ...options });
+          } catch {
+            // Route handlers cannot always set cookies; ignore
+          }
+        },
+        remove(name: string, options) {
+          try {
+            cookieStore.set({ name, value: '', ...options });
+          } catch {
+            // Route handlers cannot always remove cookies; ignore
+          }
+        },
+      },
+    }
+  );
+}
 
 /**
  * Type for tenant row from database.
@@ -36,7 +73,46 @@ type TenantRow = Database['public']['Tables']['tenants']['Row'];
  */
 export async function GET(_request: NextRequest) {
   try {
-    const supabase = await createClient();
+    // ── Development mock bypass ──────────────────────────────────────────────
+    // proxy.ts injects x-mock-user-email when mock_user_email cookie is set.
+    // API Route Handlers don't receive the cookie-based session in this case,
+    // so we use the admin client to look up the user by email.
+    if (process.env.NODE_ENV === 'development') {
+      const reqHeaders = await headers();
+      const mockEmail = reqHeaders.get('x-mock-user-email');
+      const adminUrl = getSupabaseAdminUrl();
+      const adminKey = getSupabaseAdminKey();
+
+      if (mockEmail && adminUrl && adminKey) {
+        const admin = createSupabaseJsClient<Database>(adminUrl, adminKey, {
+          auth: { persistSession: false, autoRefreshToken: false },
+        });
+
+        const { data: mockUserProfile } = await admin
+          .from('users')
+          .select('id, tenant_id')
+          .eq('email', mockEmail)
+          .single();
+
+        if (mockUserProfile?.tenant_id) {
+          const { data: mockTenant } = await admin
+            .from('tenants')
+            .select('*')
+            .eq('id', mockUserProfile.tenant_id)
+            .single();
+
+          if (mockTenant) {
+            return NextResponse.json(transformTenantRowToContext(mockTenant), {
+              status: 200,
+              headers: { 'Cache-Control': 'private, max-age=60' },
+            });
+          }
+        }
+      }
+    }
+    // ── End dev bypass ───────────────────────────────────────────────────────
+
+    const supabase = await createRouteHandlerClient();
 
     // Get authenticated user from session
     const {

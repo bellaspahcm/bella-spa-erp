@@ -62,12 +62,23 @@ function isMissingSingleRowError(error: SupabaseQueryError) {
 
 function isMissingAuthSessionError(error: unknown) {
   const message = getErrorMessage(error, '').toLowerCase();
+  
+  if (typeof error === 'object' && error !== null) {
+    const errObj = error as Record<string, unknown>;
+    if (errObj.code === 'refresh_token_not_found' || errObj.status === 400) {
+      return true;
+    }
+  }
+
   return (
     message.includes('auth session missing') ||
     message.includes('session missing') ||
-    message.includes('no current user')
+    message.includes('no current user') ||
+    message.includes('refresh token') ||
+    message.includes('invalid refresh token')
   );
 }
+
 
 function assertNonMissingQueryError(error: SupabaseQueryError, context: string) {
   if (!error || isMissingSingleRowError(error)) return;

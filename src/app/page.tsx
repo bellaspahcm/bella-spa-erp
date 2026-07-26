@@ -107,6 +107,15 @@ export default function LandingPage() {
         ::-webkit-scrollbar-thumb:hover {
           background: #3b82f6;
         }
+
+        .bella-spa-hero-btn {
+          background-color: #ffffff !important;
+          color: #dc2626 !important;
+        }
+        .bella-spa-hero-btn:hover {
+          background-color: #fee2e2 !important;
+          color: #b91c1c !important;
+        }
       `}} />
 
       <div
@@ -304,7 +313,7 @@ export default function LandingPage() {
                     </Link>
                     <Link
                       href="/bellaspa"
-                      className="px-7 py-4 bg-white/12 hover:bg-white/20 border border-white/25 text-white rounded-full font-black text-xs uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2"
+                      className="bella-spa-hero-btn px-7 py-4 rounded-full font-black text-xs uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2 shadow-lg shadow-red-600/10"
                     >
                       Phân hệ Bella Spa
                       <ArrowUpRight className="w-4 h-4" />
