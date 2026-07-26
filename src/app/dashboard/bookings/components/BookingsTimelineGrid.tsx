@@ -286,6 +286,23 @@ export function BookingsTimelineGrid({
                                       }).replace(/^.* - /, '')}
                                     </p>
                                   )}
+                                  {/* Session progress badge */}
+                                  {(session.session_number || session.bookings?.total_sessions) && (
+                                    <div className="flex items-center gap-1 mt-1">
+                                      <span className={`text-[9px] font-black px-2 py-0.5 rounded-full border ${
+                                        isCompleted
+                                          ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
+                                          : isLate
+                                            ? 'bg-red-100 text-red-700 border-red-200'
+                                            : 'bg-violet-50 text-violet-700 border-violet-200'
+                                      }`}>
+                                        Buổi {session.session_number ?? '?'}
+                                        {session.bookings?.total_sessions
+                                          ? `/${session.bookings.total_sessions}`
+                                          : ''}
+                                      </span>
+                                    </div>
+                                  )}
                                   <p className="text-[9px] font-bold text-slate-400 truncate mt-0.5">
                                     {session.bookings?.packages?.name || session.bookings?.package_name || 'Liệu trình'}
                                   </p>
