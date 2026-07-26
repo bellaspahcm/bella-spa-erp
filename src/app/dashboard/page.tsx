@@ -410,7 +410,7 @@ export default function DashboardPage() {
            * Spa: KTV checkout, session overdue, booking near end, leave requests. 
            * Future: Core notification system với module-specific alert providers.
            */}
-          <AdminNotificationBell position="bottom" className="shrink-0" />
+          <AdminNotificationBell position="bottom" className="hidden md:block shrink-0" />
           
           {/**
            * @widget-type spa

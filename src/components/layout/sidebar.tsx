@@ -528,10 +528,6 @@ export function Sidebar() {
         </div>
 
         <div className="flex items-center justify-end gap-2 relative">
-          {user?.role && user.role !== 'customer' && (
-            <AdminNotificationBell position="bottom" className="shrink-0" />
-          )}
-
           <button
             type="button"
             onClick={handleMobileRefresh}
@@ -546,12 +542,9 @@ export function Sidebar() {
             <RefreshCw className={cn('h-4 w-4', isMobileRefreshing && 'animate-spin')} />
           </button>
 
-          <div className={cn(
-            "w-8 h-8 rounded-full bg-primary/10 dark:bg-[#5D1C34]/40 flex items-center justify-center text-primary dark:text-[#A67D44] font-black text-xs border border-pink-100 dark:border-[#3E3A35]",
-            (isBeautySpaShell || isIndustrialCleaningShell) && "beauty-erp-avatar"
-          )}>
-            {user?.full_name?.charAt(0)?.toUpperCase() || 'A'}
-          </div>
+          {user?.role && user.role !== 'customer' && (
+            <AdminNotificationBell position="bottom" className="shrink-0" />
+          )}
         </div>
       </div>
 
