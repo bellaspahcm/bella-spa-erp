@@ -166,7 +166,7 @@ export function KtvDashboardHeader({
           )}
         </div>
 
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-3 shrink-0 ml-auto">
           <div className="relative">
             <button
               onClick={onToggleNotifications}
@@ -199,7 +199,7 @@ export function KtvDashboardHeader({
                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute right-0 mt-2 w-80 bg-white rounded-3xl shadow-2xl border border-slate-100 p-5 z-50 overflow-hidden"
+                    className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2.5rem)] sm:w-96 bg-white rounded-3xl shadow-2xl border border-slate-100 p-5 z-50 overflow-hidden"
                   >
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="font-black uppercase tracking-widest text-xs text-slate-900">Thông báo</h3>
