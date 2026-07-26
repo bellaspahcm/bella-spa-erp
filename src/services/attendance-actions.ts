@@ -621,7 +621,20 @@ export async function approveLeaveRequest(
     for (const r of reassignments) {
       const { data: sessionLog, error: snapshotErr } = await supabase
         .from('session_logs')
-        .select('completed_by_ktv_id, notes')
+        .select(`
+          completed_by_ktv_id, 
+          notes,
+          session_number,
+          assigned_date,
+          assigned_time,
+          tenant_id,
+          bookings (
+            package_name,
+            customers (
+              name_mother
+            )
+          )
+        `)
         .eq('id', r.sessionLogId)
         .single();
 
@@ -652,6 +665,25 @@ export async function approveLeaveRequest(
           success: false,
           error: `Có lỗi xảy ra khi điều chuyển ca làm việc: ${reassignErr.message}${rollbackNote}`,
         };
+      }
+
+      // Send real-time notification to the substitute KTV
+      try {
+        const booking = Array.isArray(sessionLog.bookings) ? sessionLog.bookings[0] : sessionLog.bookings;
+        const customerName = (booking as any)?.customers?.name_mother || 'Khách hàng';
+        const packageName = (booking as any)?.package_name || 'Dịch vụ';
+        const dateStr = sessionLog.assigned_date ? sessionLog.assigned_date.split('-').reverse().join('/') : '';
+        
+        const { createSystemNotification } = await import('./notification-helpers');
+        await createSystemNotification({
+          userId: r.newKtvId,
+          title: 'Phân công ca làm thay mới 🔄',
+          message: `Bạn được phân công làm thay ca số ${sessionLog.session_number} gói ${packageName} cho khách ${customerName} ngày ${dateStr} (${sessionLog.assigned_time || 'Chưa định giờ'}).`,
+          tenantId: sessionLog.tenant_id || leave.tenant_id || '',
+          type: 'assignment'
+        });
+      } catch (notifErr) {
+        console.error('Failed to send leave substitute notification:', notifErr);
       }
 
       reassignmentSnapshots.push({

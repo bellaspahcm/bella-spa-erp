@@ -174,6 +174,46 @@ export async function rescheduleSession(sessionId: string, newDate: string) {
     };
   }
 
+  // Send notification for rescheduled session
+  try {
+    const { data: updatedSession } = await supabase
+      .from('session_logs')
+      .select(`
+        completed_by_ktv_id,
+        bookings (
+          assigned_ktv_id,
+          package_name,
+          customers (
+            name_mother
+          )
+        )
+      `)
+      .eq('id', sessionId)
+      .single();
+      
+    if (updatedSession) {
+      const booking = Array.isArray(updatedSession.bookings) ? updatedSession.bookings[0] : updatedSession.bookings;
+      const targetKtvId = updatedSession.completed_by_ktv_id || (booking as any)?.assigned_ktv_id;
+      
+      if (targetKtvId) {
+        const { createSystemNotification } = await import('@/services/notification-helpers');
+        const customerName = (booking as any)?.customers?.name_mother || 'Khách hàng';
+        const packageName = booking?.package_name || 'Dịch vụ';
+        const formattedNewDate = newDate.split('-').reverse().join('/');
+        
+        await createSystemNotification({
+          userId: targetKtvId,
+          title: 'Thay đổi lịch hẹn ca 🕒',
+          message: `Ca số ${session.session_number} gói ${packageName} cho khách ${customerName} đã được dời lịch sang ngày ${formattedNewDate} (${session.assigned_time || 'Chưa định giờ'}).`,
+          tenantId,
+          type: 'system'
+        });
+      }
+    }
+  } catch (notifErr) {
+    console.error('Failed to send reschedule notifications:', notifErr);
+  }
+
   const { data: bookingData } = await supabase
     .from('bookings')
     .select('customer_id')

@@ -110,6 +110,58 @@ export async function updateSessionLog(id: string, payload: UpdateSessionLogInpu
         error: auditErr instanceof Error ? auditErr.message : 'Failed to record updateSessionLog audit log'
       };
     }
+    // Send notifications if KTV assignment for this specific session log changes
+    const newKtvId = safeUpdates.completed_by_ktv_id;
+    const oldKtvId = existingLog.completed_by_ktv_id;
+    
+    if (newKtvId !== undefined && newKtvId !== oldKtvId) {
+      try {
+        const { createSystemNotification } = await import('@/services/notification-helpers');
+        
+        // Fetch booking & customer details
+        const { data: booking } = await supabase
+          .from('bookings')
+          .select(`
+            package_name,
+            customers (
+              name_mother
+            )
+          `)
+          .eq('id', bookingId)
+          .single();
+          
+        const customerName = (booking as any)?.customers?.name_mother || 'Khách hàng';
+        const packageName = booking?.package_name || 'Dịch vụ';
+        
+        const dateVal = safeUpdates.assigned_date || existingLog.assigned_date || '';
+        const dateStr = dateVal ? dateVal.split('-').reverse().join('/') : '';
+        const timeStr = safeUpdates.assigned_time || existingLog.assigned_time || 'Chưa định giờ';
+        
+        // 1. Notify the new substitute/assigned KTV
+        if (newKtvId) {
+          await createSystemNotification({
+            userId: newKtvId,
+            title: 'Phân công ca làm việc mới 🔄',
+            message: `Bạn được phân công làm ca số ${existingLog.session_number} gói ${packageName} cho khách ${customerName} ngày ${dateStr} (${timeStr}).`,
+            tenantId: tenantId,
+            type: 'assignment'
+          });
+        }
+        
+        // 2. Notify the old substitute KTV (if there was one)
+        if (oldKtvId) {
+          await createSystemNotification({
+            userId: oldKtvId,
+            title: 'Hủy phân công ca làm việc ⚠️',
+            message: `Bạn đã thôi phân công ca số ${existingLog.session_number} gói ${packageName} của khách ${customerName} ngày ${dateStr}.`,
+            tenantId: tenantId,
+            type: 'system'
+          });
+        }
+      } catch (notifErr) {
+        console.error('Failed to send session reassign notifications:', notifErr);
+      }
+    }
   }
 
   if (isCompletingSession(safeUpdates, existingLog)) {

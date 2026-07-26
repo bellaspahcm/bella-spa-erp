@@ -239,6 +239,51 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
       };
     }
 
+    // Send notification if primary KTV assignment changes
+    if (
+      finalPayload.assigned_ktv_id !== undefined && 
+      oldBooking && 
+      finalPayload.assigned_ktv_id !== oldBooking.assigned_ktv_id
+    ) {
+      try {
+        const { createSystemNotification } = await import('@/services/notification-helpers');
+        
+        // Fetch customer name for notification message
+        const { data: customer } = await supabase
+          .from('customers')
+          .select('name_mother')
+          .eq('id', oldBooking.customer_id)
+          .single();
+          
+        const customerName = customer?.name_mother || 'Khách hàng';
+        const packageName = finalPayload.package_name || oldBooking.package_name || 'Dịch vụ';
+        
+        // 1. Notify the new KTV
+        if (finalPayload.assigned_ktv_id) {
+          await createSystemNotification({
+            userId: finalPayload.assigned_ktv_id,
+            title: 'Phân công ca chính mới 📅',
+            message: `Bạn được phân công làm KTV chính gói ${packageName} cho khách ${customerName}.`,
+            tenantId: tenantId,
+            type: 'assignment'
+          });
+        }
+        
+        // 2. Notify the old KTV (if there was one)
+        if (oldBooking.assigned_ktv_id) {
+          await createSystemNotification({
+            userId: oldBooking.assigned_ktv_id,
+            title: 'Thay đổi phân công ca chính ⚠️',
+            message: `Bạn đã được điều chuyển và thôi phân công làm KTV chính gói ${packageName} của khách ${customerName}.`,
+            tenantId: tenantId,
+            type: 'system'
+          });
+        }
+      } catch (notifErr) {
+        console.error('Failed to send booking reassign notifications:', notifErr);
+      }
+    }
+
     // Sync scheduled sessions' assigned_time with the new preferred_time
     if (finalPayload.preferred_time !== undefined) {
       const { error: logsTimeError } = await supabase
