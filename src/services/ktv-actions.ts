@@ -959,6 +959,16 @@ export async function getKTVDashboardData(monthStr: string) {
     return null;
   }
 
+  // Auto-generate check-out and session alerts if they forgot
+  if (user.tenant_id) {
+    try {
+      const { checkAndGenerateKtvAlertNotifications } = await import('./notification-helpers');
+      await checkAndGenerateKtvAlertNotifications(user.id, user.tenant_id);
+    } catch (err) {
+      console.error('Error running checkAndGenerateKtvAlertNotifications:', err);
+    }
+  }
+
   const [
     active,
     upcoming,

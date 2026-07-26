@@ -450,6 +450,21 @@ export async function publishSalaryRecord(ktvId: string) {
       };
     }
 
+    // Send notification for published salary (đối soát lương)
+    try {
+      const { createSystemNotification } = await import('@/services/notification-helpers');
+      const monthLabel = monthYear.split('-').slice(0, 2).reverse().join('/');
+      await createSystemNotification({
+        userId: ktvId,
+        title: 'Đối soát bảng lương mới 📊',
+        message: `Bảng lương tháng ${monthLabel} của bạn đã được công bố. Vui lòng kiểm tra và xác nhận đối soát.`,
+        tenantId: tenantId,
+        type: 'salary'
+      });
+    } catch (notifErr) {
+      console.error('Failed to send salary publish notification:', notifErr);
+    }
+
     revalidateSalaryPage();
     return { success: true };
   } catch (e: unknown) {
@@ -847,6 +862,20 @@ export async function finalizeSalaryRecord(ktvId: string) {
       error: `Failed to record finalize salary audit log: ${getErrorMessage(error, 'Unknown audit error')}.${formatRollbackErrors(rollbackErrors)}`,
     };
   }
+  // Send notification for finalized salary (chốt lương)
+  try {
+    const { createSystemNotification } = await import('@/services/notification-helpers');
+    await createSystemNotification({
+      userId: ktvId,
+      title: 'Bảng lương đã được chốt 💸',
+      message: `Bảng lương tháng ${monthLabel} của bạn đã được chốt và hoàn tất thanh toán.`,
+      tenantId: tenantId,
+      type: 'salary'
+    });
+  } catch (notifErr) {
+    console.error('Failed to send salary finalize notification:', notifErr);
+  }
+
   revalidateSalaryAndFinancePages();
   return { success: true };
 }
