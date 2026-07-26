@@ -19,6 +19,7 @@ import {
   processSlotAvailable,
   expireOldEntries,
   recalculatePositions,
+  convertToBooking,
 } from '../waitlist-service';
 
 import {
@@ -52,6 +53,30 @@ import { WaitlistManagementProvider } from '@/lib/decision-engine/providers/book
 // Mock Notification Service
 jest.mock('@/services/notifications/notification-service');
 import { sendNotification } from '@/services/notifications/notification-service';
+
+// Mock User Actions
+jest.mock('@/services/user-actions', () => ({
+  getCurrentUser: jest.fn().mockResolvedValue({
+    id: 'test-user-id',
+    role: 'admin',
+    tenant_id: 'tenant-bella-spa',
+    email: 'test@example.com',
+  }),
+}));
+
+// Mock Audit Actions
+jest.mock('@/services/audit-actions', () => ({
+  recordAuditLog: jest.fn().mockResolvedValue({ success: true }),
+}));
+jest.mock('@/core/services/audit/audit-actions', () => ({
+  recordAuditLog: jest.fn().mockResolvedValue({ success: true }),
+}));
+
+// Mock Booking Actions
+jest.mock('@/core/services/order/create-booking-action', () => ({
+  createBooking: jest.fn(),
+}));
+import { createBooking } from '@/core/services/order/create-booking-action';
 
 describe('Waitlist Service - addToWaitlist()', () => {
   let mockSupabase: any;
@@ -316,5 +341,137 @@ describe('Waitlist Service - Edge Cases', () => {
 
     expect(result.success).toBe(false);
     expect(result.error_code).toBe('DATABASE_ERROR');
+  });
+});
+
+describe('Waitlist Service - convertToBooking()', () => {
+  let mockSupabase: any;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockSupabase = createClient();
+    (createClient as jest.Mock).mockReturnValue(mockSupabase);
+  });
+
+  test('✅ Success: Converts waitlist entry and creates booking', async () => {
+    const mockEntry = {
+      ...mockWaitlistEntries[0],
+      status: 'active',
+      preferred_start_time: '14:00:00',
+    };
+    const mockPackage = { price: 12500000, total_sessions: 15 };
+    const mockBooking = { id: 'booking-123' };
+
+    (createBooking as jest.Mock).mockResolvedValue({ data: mockBooking });
+
+    mockSupabase.from.mockImplementation((table: string) => {
+      if (table === 'waitlist_entries') {
+        return {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockImplementation((col, val) => {
+            return {
+              single: jest.fn().mockResolvedValue({ data: mockEntry, error: null }),
+              in: jest.fn().mockReturnThis(),
+              order: jest.fn().mockReturnThis(),
+            };
+          }),
+          update: jest.fn().mockReturnThis(),
+        };
+      }
+      if (table === 'packages') {
+        return {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          single: jest.fn().mockResolvedValue({ data: mockPackage, error: null }),
+        };
+      }
+      return {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        single: jest.fn().mockResolvedValue({ data: null, error: null }),
+      };
+    });
+
+    const result = await convertToBooking(mockEntry.id);
+
+    expect(result.success).toBe(true);
+    expect(result.booking).toBeDefined();
+    expect(result.booking.id).toBe('booking-123');
+    expect(createBooking).toHaveBeenCalledWith(
+      expect.objectContaining({
+        customer_id: mockEntry.customer_id,
+        package_id: mockEntry.package_id,
+        start_date: mockEntry.preferred_date,
+        preferred_time: '14:00',
+      })
+    );
+  });
+
+  test('❌ Error: Entry not found', async () => {
+    mockSupabase.from.mockImplementation(() => ({
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      single: jest.fn().mockResolvedValue({ data: null, error: { message: 'Not found' } }),
+    }));
+
+    const result = await convertToBooking('non-existent-id');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('Không tìm thấy');
+  });
+
+  test('❌ Error: Entry already converted', async () => {
+    const mockEntry = {
+      ...mockWaitlistEntries[0],
+      status: 'converted',
+    };
+
+    mockSupabase.from.mockImplementation(() => ({
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      single: jest.fn().mockResolvedValue({ data: mockEntry, error: null }),
+    }));
+
+    const result = await convertToBooking(mockEntry.id);
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('đã được chuyển sang lịch hẹn');
+  });
+
+  test('❌ Error: Booking creation fails', async () => {
+    const mockEntry = {
+      ...mockWaitlistEntries[0],
+      status: 'active',
+    };
+    const mockPackage = { price: 12500000, total_sessions: 15 };
+
+    (createBooking as jest.Mock).mockResolvedValue({ error: 'Validation error: duplicate time' });
+
+    mockSupabase.from.mockImplementation((table: string) => {
+      if (table === 'waitlist_entries') {
+        return {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          single: jest.fn().mockResolvedValue({ data: mockEntry, error: null }),
+        };
+      }
+      if (table === 'packages') {
+        return {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          single: jest.fn().mockResolvedValue({ data: mockPackage, error: null }),
+        };
+      }
+      return {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        single: jest.fn().mockResolvedValue({ data: null, error: null }),
+      };
+    });
+
+    const result = await convertToBooking(mockEntry.id);
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe('Validation error: duplicate time');
   });
 });

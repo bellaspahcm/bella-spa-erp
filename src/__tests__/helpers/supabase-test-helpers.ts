@@ -48,11 +48,12 @@ export function createChainableMock(finalData: any, finalError: any = null) {
     limit: jest.fn(),
     range: jest.fn(),
     single: jest.fn(),
+    maybeSingle: jest.fn(),
   };
 
   // Make all methods return the same object for chaining
   Object.keys(chainMethods).forEach((key) => {
-    if (key === 'single') {
+    if (key === 'single' || key === 'maybeSingle') {
       chainMethods[key].mockResolvedValue({ data: finalData, error: finalError });
     } else {
       chainMethods[key].mockReturnValue(chainMethods);
@@ -71,47 +72,31 @@ export function createChainableMock(finalData: any, finalError: any = null) {
  * Setup mock for addToWaitlist success scenario
  */
 export function mockAddToWaitlistSuccess(mockSupabase: any, customer: any, packageData: any, tier: string, entry: any) {
-  let callCount = 0;
-  
   mockSupabase.from.mockImplementation((table: string) => {
-    callCount++;
-    
-    // Call 1: Check for duplicates (empty)
-    if (callCount === 1) {
-      return createChainableMock([]);
+    if (table === 'waitlist_entries') {
+      const mock = createChainableMock([]);
+      mock.insert = jest.fn().mockImplementation(() => createChainableMock(entry));
+      return mock;
     }
-    
-    // Call 2: Fetch customer
-    if (callCount === 2) {
+    if (table === 'customers') {
       return createChainableMock(customer);
     }
-    
-    // Call 3: Fetch membership tier
-    if (callCount === 3) {
+    if (table === 'bookings') {
+      const mock = createChainableMock([]);
+      (mock as any).then = (callback: any) => {
+        return Promise.resolve({ data: [], error: null, count: 5 }).then(callback);
+      };
+      return mock;
+    }
+    if (table === 'membership_records') {
       return createChainableMock({ tier });
     }
-    
-    // Call 4: Fetch package
-    if (callCount === 4) {
+    if (table === 'packages') {
       return createChainableMock(packageData);
     }
-    
-    // Call 5: Fetch existing waitlist (empty)
-    if (callCount === 5) {
-      return createChainableMock([]);
-    }
-    
-    // Call 6: Fetch preferred KTV (return mock KTV name)
-    if (callCount === 6) {
+    if (table === 'users') {
       return createChainableMock({ full_name: 'KTV Senior' });
     }
-    
-    // Call 7: Insert new entry
-    if (callCount === 7) {
-      return createChainableMock(entry);
-    }
-    
-    // Default
     return createChainableMock(null);
   });
 }
@@ -129,38 +114,32 @@ export function mockAddToWaitlistDuplicate(mockSupabase: any, existingEntry: any
  * Setup mock for capacity full scenario
  */
 export function mockAddToWaitlistCapacityFull(mockSupabase: any, customer: any, packageData: any, tier: string) {
-  let callCount = 0;
-  
-  mockSupabase.from.mockImplementation(() => {
-    callCount++;
-    
-    // Call 1: Check for duplicates (empty)
-    if (callCount === 1) {
-      return createChainableMock([]);
-    }
-    
-    // Call 2: Fetch customer
-    if (callCount === 2) {
-      return createChainableMock(customer);
-    }
-    
-    // Call 3: Fetch membership tier
-    if (callCount === 3) {
-      return createChainableMock({ tier });
-    }
-    
-    // Call 4: Fetch package
-    if (callCount === 4) {
-      return createChainableMock(packageData);
-    }
-    
-    // Call 5: Fetch existing waitlist (full - 10 entries)
-    if (callCount === 5) {
+  let waitlistCallCount = 0;
+  mockSupabase.from.mockImplementation((table: string) => {
+    if (table === 'waitlist_entries') {
+      waitlistCallCount++;
+      if (waitlistCallCount === 1) {
+        return createChainableMock([]);
+      }
       const fullWaitlist = Array(10).fill({ id: 'entry-x' });
       return createChainableMock(fullWaitlist);
     }
-    
-    // Default
+    if (table === 'customers') {
+      return createChainableMock(customer);
+    }
+    if (table === 'bookings') {
+      const mock = createChainableMock([]);
+      (mock as any).then = (callback: any) => {
+        return Promise.resolve({ data: [], error: null, count: 5 }).then(callback);
+      };
+      return mock;
+    }
+    if (table === 'membership_records') {
+      return createChainableMock({ tier });
+    }
+    if (table === 'packages') {
+      return createChainableMock(packageData);
+    }
     return createChainableMock(null);
   });
 }
@@ -169,22 +148,14 @@ export function mockAddToWaitlistCapacityFull(mockSupabase: any, customer: any, 
  * Setup mock for processSlotAvailable success
  */
 export function mockProcessSlotSuccess(mockSupabase: any, entries: any[]) {
-  let callCount = 0;
-  
-  mockSupabase.from.mockImplementation(() => {
-    callCount++;
-    
-    // Call 1: Fetch matching entries
-    if (callCount === 1) {
+  mockSupabase.from.mockImplementation((table: string) => {
+    if (table === 'waitlist_entries') {
       return createChainableMock(entries);
     }
-    
-    // Subsequent calls: Update status (return null data, null error)
-    return {
-      update: jest.fn().mockReturnValue({
-        eq: jest.fn().mockResolvedValue({ data: null, error: null }),
-      }),
-    };
+    if (table === 'tenants') {
+      return createChainableMock({ contact_phone: '1900xxxx' });
+    }
+    return createChainableMock(null);
   });
 }
 
@@ -192,22 +163,14 @@ export function mockProcessSlotSuccess(mockSupabase: any, entries: any[]) {
  * Setup mock for expireOldEntries success
  */
 export function mockExpireEntriesSuccess(mockSupabase: any, expiredEntries: any[]) {
-  let callCount = 0;
-  
-  mockSupabase.from.mockImplementation(() => {
-    callCount++;
-    
-    // Call 1: Fetch expired entries
-    if (callCount === 1) {
+  mockSupabase.from.mockImplementation((table: string) => {
+    if (table === 'waitlist_entries') {
       return createChainableMock(expiredEntries);
     }
-    
-    // Call 2: Update status to expired
-    return {
-      update: jest.fn().mockReturnValue({
-        in: jest.fn().mockResolvedValue({ data: null, error: null }),
-      }),
-    };
+    if (table === 'tenants') {
+      return createChainableMock({ contact_phone: '1900xxxx' });
+    }
+    return createChainableMock(null);
   });
 }
 

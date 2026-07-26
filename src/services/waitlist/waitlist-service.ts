@@ -1040,6 +1040,127 @@ export async function getWaitlistStats(
   }
 }
 
+/**
+ * Convert Waitlist Entry to Booking
+ * 
+ * Flow:
+ * 1. Fetch waitlist entry
+ * 2. Fetch package details to get price and total sessions
+ * 3. Create booking using createBooking server action
+ * 4. Update waitlist entry status to 'converted'
+ * 5. Recalculate queue positions
+ * 
+ * @param entryId - Waitlist entry UUID
+ * @returns Success/failure and created booking
+ */
+export async function convertToBooking(
+  entryId: string
+): Promise<{ success: boolean; booking?: any; error?: string }> {
+  const supabase = createClient();
+
+  try {
+    // 1. Fetch waitlist entry
+    const entry = await getWaitlistEntry(entryId);
+    if (!entry) {
+      return { success: false, error: 'Không tìm thấy khách hàng trong danh sách chờ' };
+    }
+
+    if (entry.status === 'converted') {
+      return { success: false, error: 'Khách hàng này đã được chuyển sang lịch hẹn trước đó' };
+    }
+
+    // 2. Fetch package details
+    const { data: packageData, error: pkgError } = await supabase
+      .from('packages')
+      .select('price, total_sessions')
+      .eq('id', entry.package_id)
+      .single();
+
+    if (pkgError) {
+      console.error('[waitlist-service] Error fetching package:', pkgError);
+      return { success: false, error: 'Lỗi khi tải thông tin gói dịch vụ: ' + pkgError.message };
+    }
+
+    if (!packageData) {
+      return { success: false, error: 'Gói dịch vụ không tồn tại trong hệ thống' };
+    }
+
+    // 3. Create booking
+    const { createBooking } = await import('@/core/services/order/create-booking-action');
+    
+    // Ensure preferred time is in HH:mm format
+    const preferredTime = entry.preferred_start_time 
+      ? entry.preferred_start_time.substring(0, 5) 
+      : undefined;
+
+    const bookingResult = await createBooking({
+      customer_id: entry.customer_id,
+      package_id: entry.package_id,
+      package_name: entry.package_name,
+      full_price: entry.booking_value || packageData.price || 0,
+      deposit_amount: 0,
+      total_sessions: packageData.total_sessions || 15,
+      start_date: entry.preferred_date,
+      assigned_ktv_id: entry.preferred_ktv_id || undefined,
+      preferred_time: preferredTime,
+      metadata: {
+        waitlist_entry_id: entry.id,
+      }
+    });
+
+    if ('error' in bookingResult) {
+      return { success: false, error: bookingResult.error };
+    }
+
+    const booking = bookingResult.data;
+
+    // 4. Update waitlist entry status to 'converted'
+    const { error: updateError } = await supabase
+      .from('waitlist_entries')
+      .update({
+        status: 'converted',
+        converted_to_booking_id: booking.id,
+        converted_at: new Date().toISOString(),
+      })
+      .eq('id', entryId);
+
+    if (updateError) {
+      console.error('[waitlist-service] Error updating converted status:', updateError);
+      return { 
+        success: false, 
+        error: 'Tạo lịch hẹn thành công nhưng không thể cập nhật trạng thái hàng chờ: ' + updateError.message 
+      };
+    }
+
+    // 5. Recalculate queue positions
+    await recalculatePositions(entry.tenant_id, entry.package_id, entry.preferred_date);
+
+    // 6. Audit log
+    try {
+      const { recordAuditLog } = await import('@/services/audit-actions');
+      await recordAuditLog({
+        action: 'UPDATE',
+        table_name: 'waitlist_entries',
+        record_id: entryId,
+        new_data: { status: 'converted', converted_to_booking_id: booking.id },
+      });
+    } catch (auditErr) {
+      console.error('[waitlist-service] Failed to record waitlist convert audit log:', auditErr);
+    }
+
+    return {
+      success: true,
+      booking,
+    };
+  } catch (error) {
+    console.error('[waitlist-service] Unexpected error in convertToBooking:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Lỗi hệ thống không xác định',
+    };
+  }
+}
+
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================

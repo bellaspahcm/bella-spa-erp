@@ -73,7 +73,24 @@ export function WaitlistTableRow({ entry, onRefresh }: WaitlistTableRowProps) {
   };
 
   const handleConvert = async () => {
-    toast.info(`Chức năng chuyển đổi sang ${vocab.booking.singular.toLowerCase()} đang được phát triển`);
+    setIsProcessing(true);
+    try {
+      const response = await fetch(`/api/waitlist/${entry.id}/convert`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Không thể chuyển đổi sang ${vocab.booking.singular.toLowerCase()}`);
+      }
+
+      toast.success(`Đã chuyển đổi sang ${vocab.booking.singular.toLowerCase()} thành công`);
+      await onRefresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Lỗi khi chuyển đổi');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleCancel = async () => {

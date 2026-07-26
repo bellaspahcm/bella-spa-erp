@@ -127,8 +127,25 @@ export function WaitlistDetailContent({ entryId }: WaitlistDetailContentProps) {
   };
 
   const handleConvert = async () => {
-    toast.info('Chức năng chuyển đổi sang lịch hẹn đang được phát triển');
-    setIsActionsOpen(false);
+    setIsProcessing(true);
+    try {
+      const response = await fetch(`/api/waitlist/${entryId}/convert`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Không thể chuyển đổi sang lịch hẹn');
+      }
+
+      toast.success('Đã chuyển đổi sang lịch hẹn thành công');
+      await fetchEntry();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Lỗi khi chuyển đổi');
+    } finally {
+      setIsProcessing(false);
+      setIsActionsOpen(false);
+    }
   };
 
   const handleCancel = async () => {
