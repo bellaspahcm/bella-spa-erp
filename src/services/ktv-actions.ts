@@ -29,6 +29,7 @@ interface SessionLogWithBooking {
     booking_number: string | null;
     package_name: string | null;
     customer_id: string | null;
+    assigned_ktv_id: string | null;
     total_sessions: number | null;
     completed_sessions: number | null;
     status?: string | null;
@@ -158,6 +159,7 @@ export async function getKTVActiveSessions(currentUser?: CurrentUser) {
         booking_number,
         package_name,
         customer_id,
+        assigned_ktv_id,
         total_sessions,
         completed_sessions,
         packages (
