@@ -769,6 +769,21 @@ export async function approveLeaveRequest(
     new_data: { status: 'approved', approved_by: currentUser.id }
   });
 
+  // Send notification to KTV who requested leave
+  try {
+    const { createSystemNotification } = await import('./notification-helpers');
+    const dateStr = leave.leave_date ? leave.leave_date.split('-').reverse().join('/') : '';
+    await createSystemNotification({
+      userId: leave.user_id,
+      title: 'Đơn nghỉ phép được duyệt ✔️',
+      message: `Yêu cầu nghỉ phép ngày ${dateStr} của bạn đã được phê duyệt.`,
+      tenantId: leave.tenant_id || '',
+      type: 'leave_approval'
+    });
+  } catch (notifErr) {
+    console.error('Failed to send leave approval notification:', notifErr);
+  }
+
   revalidatePath('/dashboard/sessions');
   revalidatePath('/ktv/dashboard');
   revalidatePath('/dashboard/salary');
@@ -782,6 +797,13 @@ export async function rejectLeaveRequest(leaveId: string, rejectReason?: string)
   if (!currentUser || currentUser.role !== 'admin' && currentUser.role !== 'ktv_lead' && currentUser.role !== 'admin_staff' && currentUser.role !== 'accountant' && currentUser.role !== 'hr') {
     return { success: false, error: 'Không có quyền thực hiện' };
   }
+
+  // Fetch leave details first for notification context
+  const { data: leave } = await supabase
+    .from('staff_leaves')
+    .select('*')
+    .eq('id', leaveId)
+    .single();
 
   const { error } = await supabase
     .from('staff_leaves')
@@ -800,6 +822,24 @@ export async function rejectLeaveRequest(leaveId: string, rejectReason?: string)
     record_id: leaveId,
     new_data: { status: 'rejected', approved_by: currentUser.id, rejection_reason: rejectReason }
   });
+
+  // Send notification to KTV who requested leave
+  if (leave) {
+    try {
+      const { createSystemNotification } = await import('./notification-helpers');
+      const dateStr = leave.leave_date ? leave.leave_date.split('-').reverse().join('/') : '';
+      const reasonPart = rejectReason ? ` Lý do: ${rejectReason}` : '';
+      await createSystemNotification({
+        userId: leave.user_id,
+        title: 'Đơn nghỉ phép bị từ chối ❌',
+        message: `Yêu cầu nghỉ phép ngày ${dateStr} của bạn đã bị từ chối.${reasonPart}`,
+        tenantId: leave.tenant_id || '',
+        type: 'leave_rejection'
+      });
+    } catch (notifErr) {
+      console.error('Failed to send leave rejection notification:', notifErr);
+    }
+  }
 
   revalidatePath('/dashboard/sessions');
   revalidatePath('/ktv/dashboard');
