@@ -317,6 +317,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const isDashboardHome = pathname?.replace(/\/+$/, '') === '/dashboard';
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [rolePermissions, setRolePermissions] = useState<RolePermissions | null>(null);
   const [tenantBrand, setTenantBrand] = useState<TenantBrandDisplay>(NEUTRAL_SIDEBAR_BRAND);
@@ -732,7 +733,7 @@ export function Sidebar() {
                  <ThemeToggle />
                </div>
                
-               {user?.role && user.role !== 'customer' && (
+               {user?.role && user.role !== 'customer' && !isDashboardHome && (
                  <AdminNotificationBell position="top" className="shrink-0" />
                )}
 
