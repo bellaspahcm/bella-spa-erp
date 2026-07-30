@@ -239,6 +239,16 @@ async function getPartnerMetadata(partnerId: string): Promise<Record<string, unk
 }
 
 /**
+ * Helper to validate if string is a valid IPv4 or IPv6 address for PostgreSQL INET column
+ */
+function isValidIP(ip: string): boolean {
+  if (!ip || typeof ip !== 'string') return false;
+  const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/;
+  const ipv6Regex = /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/;
+  return ipv4Regex.test(ip) || ipv6Regex.test(ip) || ip === '::1' || ip === '127.0.0.1';
+}
+
+/**
  * Log API request to database (async, non-blocking)
  * 
  * NOTE: The api_request_logs table exists in the database but TypeScript
@@ -247,9 +257,18 @@ async function getPartnerMetadata(partnerId: string): Promise<Record<string, unk
  */
 export async function logAPIRequest(logData: CreateAPIRequestLogInput): Promise<void> {
   const supabase = getAdminSupabaseClient();
+  const payload = { ...logData };
+
+  // PostgreSQL api_request_logs.ip_address is type INET.
+  // Passing non-IP strings like 'unknown' causes ERROR 22P02 (invalid input syntax for type inet).
+  // Sanitize to undefined if not a valid IP so Supabase inserts NULL safely.
+  if (payload.ip_address && !isValidIP(payload.ip_address)) {
+    delete payload.ip_address;
+  }
+
   const { error } = await supabase
     .from('api_request_logs')
-    .insert(logData);
+    .insert(payload);
 
   if (error) {
     throw new APIError(
