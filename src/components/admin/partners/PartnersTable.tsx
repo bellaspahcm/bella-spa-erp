@@ -215,7 +215,7 @@ export function PartnersTable({ partners, loading, onRefresh }: PartnersTablePro
 
   return (
     <>
-      <div className="rounded-md border">
+      <div className="rounded-md border bg-white">
         <Table>
           <TableHeader>
             <TableRow>

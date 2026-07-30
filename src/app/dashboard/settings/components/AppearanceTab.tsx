@@ -418,7 +418,7 @@ export default function AppearanceTab() {
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : (
-          <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+          <div className="space-y-6">
             <div className="grid gap-4 md:grid-cols-2">
               <label className="space-y-2">
                 <FieldLabel>Tên thương hiệu</FieldLabel>
@@ -591,73 +591,38 @@ export default function AppearanceTab() {
               </div>
             </div>
 
-            {/* Only show module selection for Baby Care and Beauty Spa, not Industrial Cleaning */}
+            {/* Notification bar at bottom instead of large sidebar box */}
             {tenantModuleKey !== 'industrial_cleaning' && (
-              <div className="space-y-4 rounded-[2rem] border border-rose-100 bg-white p-5 shadow-sm">
+              <div className="mt-4 rounded-2xl border border-rose-100/80 bg-rose-50/70 p-4 text-xs font-bold text-slate-700 shadow-sm flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <BadgeCheck className="h-5 w-5 text-primary" />
-                  <h4 className="text-base font-black text-slate-900">Module đang cấp cho spa</h4>
-                </div>
-
-              <div className="space-y-3">
-                <div
-                  className={cn(
-                    'w-full rounded-2xl border px-5 py-4 text-left',
-                    enabledModules.babycare
-                      ? 'border-emerald-100 bg-emerald-50 text-slate-900 shadow-sm'
-                      : 'border-slate-100 bg-slate-50 text-slate-400',
-                  )}
-                >
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <p className="text-sm font-black text-slate-900">Bella Mother & Baby</p>
-                      <p className="text-xs font-bold text-slate-500">
-                        Bật riêng cho tenant vận hành theo mô hình Mother & Baby.
-                      </p>
-                    </div>
-                    <span className={cn(
-                      'rounded-full px-3 py-1 text-[10px] font-black uppercase',
-                      enabledModules.babycare
-                        ? 'bg-emerald-100 text-emerald-700'
-                        : 'bg-slate-200 text-slate-500',
-                    )}>
-                      {enabledModules.babycare ? 'Đang bật' : 'Đang tắt'}
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <BadgeCheck className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <span className="font-black text-slate-900 text-sm">Module ngành đang cấp cho Spa: </span>
+                    <span className="inline-flex flex-wrap items-center gap-2 ml-1 mt-1 lg:mt-0">
+                      {enabledModules.babycare && (
+                        <span className="rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-black text-emerald-800 border border-emerald-200/60">
+                          ✓ Bella Mother & Baby (Đang bật)
+                        </span>
+                      )}
+                      {enabledModules.beauty_spa && (
+                        <span className="rounded-full bg-primary px-3 py-1 text-[11px] font-black text-white shadow-sm">
+                          ✓ Beauty Spa (Đang bật)
+                        </span>
+                      )}
+                      {!enabledModules.babycare && !enabledModules.beauty_spa && (
+                        <span className="rounded-full bg-slate-200 px-3 py-1 text-[11px] font-black text-slate-600">
+                          Mặc định hệ thống
+                        </span>
+                      )}
                     </span>
                   </div>
                 </div>
-
-                <div
-                  className={cn(
-                    'w-full rounded-2xl border px-5 py-4 text-left',
-                    enabledModules.beauty_spa
-                      ? 'border-primary bg-primary text-white shadow-lg shadow-pink-200/60'
-                      : 'border-slate-100 bg-slate-50 text-slate-400',
-                  )}
-                >
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <p className="text-sm font-black">Beauty Spa</p>
-                      <p className={cn('text-xs font-bold', enabledModules.beauty_spa ? 'text-white/75' : 'text-slate-500')}>
-                        Bật khi triển khai spa làm đẹp, liệu trình, giường/phòng và rule riêng.
-                      </p>
-                    </div>
-                    <span className={cn(
-                      'rounded-full px-3 py-1 text-[10px] font-black uppercase',
-                      enabledModules.beauty_spa
-                        ? 'bg-white/20 text-white'
-                        : 'bg-slate-200 text-slate-500',
-                    )}>
-                      {enabledModules.beauty_spa ? 'Đang bật' : 'Đang tắt'}
-                    </span>
-                  </div>
-                </div>
+                <p className="text-[11px] text-slate-500 font-semibold lg:text-right max-w-lg leading-relaxed">
+                  💡 Module ngành được cấu hình khi setup tenant. Admin spa chỉ quản lý vận hành trong ngành đã được cấp và không thể tự chuyển đổi mô hình.
+                </p>
               </div>
-
-              <p className="text-xs font-bold leading-relaxed text-slate-500">
-                Module ngành được cấu hình khi setup tenant. Admin của từng spa chỉ quản lý vận hành trong
-                ngành đã được cấp, không thể tự chuyển đổi giữa các mô hình kinh doanh khác nhau.
-              </p>
-            </div>
             )}
           </div>
         )}

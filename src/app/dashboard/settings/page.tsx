@@ -262,7 +262,7 @@ function SettingsContent() {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         {/* Navigation Sidebar */}
-        <div className="lg:col-span-1 space-y-1.5 bg-white/40 dark:bg-[#1C1B19]/40 p-4 rounded-[2.5rem] border border-slate-200/40 dark:border-[#3E3A35]/40 h-fit max-h-[85vh] overflow-y-auto custom-scrollbar">
+        <div className="lg:col-span-1 space-y-1.5 bg-white/40 dark:bg-[#1C1B19]/40 p-4 rounded-[2.5rem] border border-slate-200/40 dark:border-[#3E3A35]/40 h-fit">
           {TABS.map((tab, idx) => {
             if ("type" in tab && tab.type === "header") {
               return (

@@ -41,7 +41,7 @@ export default async function NewPartnerPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6 md:p-8 lg:p-10 space-y-6">
+    <div className="min-h-screen bg-white p-6 md:p-8 lg:p-10 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4 bg-white dark:bg-gray-900 p-4 rounded-lg shadow">
         <Link href="/dashboard/admin/partners">

@@ -85,7 +85,7 @@ export default async function PartnerDetailPage({
   const isEmbedded = embedded === 'true';
 
   return (
-    <div className={`space-y-8 w-full ${isEmbedded ? 'px-4 md:px-6 py-2' : 'p-6 md:p-8 lg:p-10 max-w-7xl mx-auto'}`}>
+    <div className={`space-y-8 w-full bg-white min-h-screen ${isEmbedded ? 'px-4 md:px-6 py-2' : 'p-6 md:p-8 lg:p-10 max-w-7xl mx-auto'}`}>
       {/* Redesigned Premium Header Component */}
       <PartnerDetailHeader partner={partnerData} />
 

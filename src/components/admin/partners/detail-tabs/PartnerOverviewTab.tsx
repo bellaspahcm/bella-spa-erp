@@ -167,6 +167,12 @@ print(response.json())`;
     },
     {
       method: 'GET',
+      path: '/analytics',
+      scope: 'analytics:read',
+      desc: 'Lấy dữ liệu báo cáo phân tích cho trang CEO và Trung tâm phân tích',
+    },
+    {
+      method: 'GET',
       path: '/orders',
       scope: 'order:read',
       desc: 'Lấy danh sách đơn hàng của Spa',
@@ -602,9 +608,43 @@ print(response.json())`;
                       <Copy className="h-3 w-3" />
                     </Button>
                   </div>
-                  <p className="text-[11px] text-emerald-700 bg-emerald-50/70 p-1.5 rounded border border-emerald-200/50 mt-1.5">
-                    💡 <strong>Bella EOS Link Endpoint:</strong> <code className="font-mono text-emerald-800 font-bold">https://bella-spa-erp.vercel.app/api/v1/overview</code>
-                  </p>
+                  <div className="mt-2 space-y-2">
+                    <div className="bg-emerald-50/70 p-2 rounded border border-emerald-200/50 flex items-center justify-between gap-2">
+                      <div className="text-[11px] text-emerald-900 leading-tight">
+                        💡 <strong>Bella EOS Link Endpoint (Ping):</strong>{' '}
+                        <code className="font-mono text-emerald-800 font-bold text-xs select-all">
+                          https://bella-spa-erp.vercel.app/api/v1/overview
+                        </code>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-emerald-700 hover:text-emerald-950 hover:bg-emerald-100/50 shrink-0"
+                        onClick={() => handleCopyText('https://bella-spa-erp.vercel.app/api/v1/overview', 'Đã sao chép link Overview')}
+                        title="Sao chép link overview"
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+
+                    <div className="bg-emerald-50/70 p-2 rounded border border-emerald-200/50 flex items-center justify-between gap-2">
+                      <div className="text-[11px] text-emerald-900 leading-tight">
+                        📊 <strong>Bella Analytics Endpoint (CEO & Center):</strong>{' '}
+                        <code className="font-mono text-emerald-800 font-bold text-xs select-all">
+                          https://bella-spa-erp.vercel.app/api/v1/analytics
+                        </code>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-emerald-700 hover:text-emerald-950 hover:bg-emerald-100/50 shrink-0"
+                        onClick={() => handleCopyText('https://bella-spa-erp.vercel.app/api/v1/analytics', 'Đã sao chép link Analytics')}
+                        title="Sao chép link analytics"
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
                 </div>
 
                 <div>

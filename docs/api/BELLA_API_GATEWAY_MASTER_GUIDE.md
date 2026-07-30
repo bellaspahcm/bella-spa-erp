@@ -489,6 +489,9 @@ npm run build
 ### Products API
 - `GET /api/v1/products` - List sản phẩm/dịch vụ
 
+### Analytics API
+- `GET /api/v1/analytics` - Lấy dữ liệu báo cáo phân tích cho trang CEO và Trung tâm phân tích
+
 ---
 
 ## 7. Security & Best Practices

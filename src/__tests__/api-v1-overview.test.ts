@@ -12,9 +12,21 @@ jest.mock('@/lib/supabase-server', () => ({
 }));
 
 const mockAdminFrom = jest.fn();
+const mockQueryBuilder = {
+  select: jest.fn().mockReturnThis(),
+  eq: jest.fn().mockReturnThis(),
+  neq: jest.fn().mockReturnThis(),
+  gte: jest.fn().mockReturnThis(),
+  lt: jest.fn().mockReturnThis(),
+  single: jest.fn().mockImplementation(() => Promise.resolve({ data: { metadata: {} }, error: null })),
+  then(resolve: any) {
+    resolve({ data: [], count: 0, error: null });
+  },
+};
 jest.mock('@supabase/supabase-js', () => ({
   createClient: jest.fn(() => ({
     from: mockAdminFrom,
+    rpc: mockRpc,
   })),
 }));
 
@@ -58,13 +70,7 @@ describe('/api/v1/overview Route - Partner Connection Test', () => {
       insert: mockInsert,
     }));
 
-    mockAdminFrom.mockImplementation(() => ({
-      select: () => ({
-        eq: () => ({
-          single: () => Promise.resolve({ data: { metadata: {} }, error: null }),
-        }),
-      }),
-    }));
+    mockAdminFrom.mockImplementation(() => mockQueryBuilder);
   });
 
   it('GET /api/v1/overview returns 200 with partner details and logs request', async () => {
@@ -84,12 +90,12 @@ describe('/api/v1/overview Route - Partner Connection Test', () => {
     expect(body.data.tenant_id).toBe(MOCK_TENANT_ID);
     expect(body.data.status).toBe('active');
 
-    expect(mockInsert).toHaveBeenCalledWith(expect.objectContaining({
-      partner_id: 'partner_bella_eos',
-      tenant_id: MOCK_TENANT_ID,
-      endpoint: '/api/v1/overview',
-      status_code: 200,
-      is_error: false,
+    expect(mockRpc).toHaveBeenCalledWith('log_api_request', expect.objectContaining({
+      p_partner_id: 'partner_bella_eos',
+      p_tenant_id: MOCK_TENANT_ID,
+      p_endpoint: '/api/v1/overview',
+      p_status_code: 200,
+      p_is_error: false,
     }));
   });
 

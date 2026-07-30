@@ -31,7 +31,7 @@ export default async function PartnersPage({ searchParams }: PartnersPageProps) 
   const isEmbedded = sParams?.embedded === 'true';
 
   return (
-    <div className={`space-y-8 ${isEmbedded ? 'px-4 md:px-6 py-2' : 'p-6 md:p-8 lg:p-10'}`}>
+    <div className={`space-y-8 bg-white min-h-screen ${isEmbedded ? 'px-4 md:px-6 py-2' : 'p-6 md:p-8 lg:p-10'}`}>
       {/* Breadcrumbs & Navigation */}
       {!isEmbedded && (
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-emerald-950/5 pb-4">
