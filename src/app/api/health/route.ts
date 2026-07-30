@@ -95,7 +95,7 @@ async function checkDatabase(): Promise<{ healthy: boolean; error?: string }> {
 async function checkSupabase(): Promise<{ healthy: boolean; error?: string }> {
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/`,
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/tenants?select=id&limit=1`,
       {
         method: 'HEAD',
         headers: {
