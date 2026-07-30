@@ -257,27 +257,56 @@ function isValidIP(ip: string): boolean {
  */
 export async function logAPIRequest(logData: CreateAPIRequestLogInput): Promise<void> {
   const supabase = getAdminSupabaseClient();
-  const payload = { ...logData };
 
-  // PostgreSQL api_request_logs.ip_address is type INET.
-  // Passing non-IP strings like 'unknown' causes ERROR 22P02 (invalid input syntax for type inet).
-  // Sanitize to undefined if not a valid IP so Supabase inserts NULL safely.
-  if (payload.ip_address && !isValidIP(payload.ip_address)) {
-    delete payload.ip_address;
+  // Primary: Use SECURITY DEFINER RPC log_api_request for safe INET handling and RLS bypass
+  const { error: rpcError } = await supabase.rpc('log_api_request' as any, {
+    p_partner_id: logData.partner_id,
+    p_tenant_id: logData.tenant_id,
+    p_method: logData.method,
+    p_endpoint: logData.endpoint,
+    p_status_code: logData.status_code,
+    p_response_time_ms: logData.response_time_ms,
+    p_is_error: logData.is_error ?? false,
+    p_error_code: logData.error_code ?? null,
+    p_error_message: logData.error_message ?? null,
+    p_ip_address: logData.ip_address ?? null,
+    p_user_agent: logData.user_agent ?? null,
+    p_request_id: logData.request_id ?? null,
+  });
+
+  if (!rpcError) {
+    return;
   }
 
-  const { error } = await supabase
-    .from('api_request_logs')
-    .insert(payload);
+  // If RPC is missing (e.g. before migration), attempt fallback direct insert
+  if (rpcError.code === 'PGRST202' || rpcError.message?.includes('function') || rpcError.message?.includes('does not exist')) {
+    const payload = { ...logData };
+    if (payload.ip_address && !isValidIP(payload.ip_address)) {
+      delete payload.ip_address;
+    }
 
-  if (error) {
-    throw new APIError(
-      'SERVER_002',
-      'Failed to persist API request audit log',
-      { code: error.code, message: error.message },
-      500
-    );
+    const { error: insertError } = await supabase
+      .from('api_request_logs')
+      .insert(payload);
+
+    if (insertError) {
+      throw new APIError(
+        'SERVER_002',
+        'Failed to persist API request audit log',
+        { code: insertError.code, message: insertError.message },
+        500
+      );
+    }
+    return;
   }
+
+  // If RPC returned a database error, throw APIError
+  throw new APIError(
+    'SERVER_002',
+    'Failed to persist API request audit log',
+    { code: rpcError.code, message: rpcError.message },
+    500
+  );
 }
 
 /**

@@ -45,6 +45,22 @@ describe('API Key Middleware - Security Tests', () => {
     mockInsert.mockResolvedValue({ data: null, error: null });
     
     mockRpc.mockImplementation((fn, params) => {
+      if (fn === 'log_api_request') {
+        return mockInsert({
+          partner_id: params.p_partner_id,
+          tenant_id: params.p_tenant_id,
+          method: params.p_method,
+          endpoint: params.p_endpoint,
+          status_code: params.p_status_code,
+          response_time_ms: params.p_response_time_ms,
+          is_error: params.p_is_error,
+          error_code: params.p_error_code,
+          error_message: params.p_error_message,
+          ip_address: params.p_ip_address,
+          user_agent: params.p_user_agent,
+          request_id: params.p_request_id,
+        });
+      }
       if (params.p_api_key === MOCK_API_KEY_A) {
         return Promise.resolve({
           data: [{
