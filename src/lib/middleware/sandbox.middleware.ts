@@ -254,24 +254,81 @@ export function withSandbox(
   ) => Promise<Response>
 ) {
   return async (req: NextRequest, _routeContext?: unknown): Promise<Response> => {
+    const startTime = Date.now();
+    (req as unknown as Record<string, unknown>)._willLogResponse = true;
+
     // Import withAPIKey to avoid circular dependency
-    const { withAPIKey } = await import('./api-key.middleware');
+    const { withAPIKey, logAPIRequest, getClientIP } = await import('./api-key.middleware');
     
     // Authenticate
-    await withAPIKey(req);
+    const authResult = await withAPIKey(req);
+    if (authResult.error) {
+      return authResult.error;
+    }
     
     // Detect sandbox mode
     const sandbox = detectSandboxMode(req);
     
-    // Execute handler
-    const response = await handler(req, {
-      sandbox,
-      partner: (req as RequestWithPartner).partner!,
-    });
+    let response: Response;
+    let isError = false;
+    let errorCode: string | undefined;
+    let errorMessage: string | undefined;
+
+    try {
+      // Execute handler
+      response = await handler(req, {
+        sandbox,
+        partner: (req as RequestWithPartner).partner!,
+      });
+      if (response.status >= 400) {
+        isError = true;
+      }
+    } catch (err: unknown) {
+      isError = true;
+      const errorObj = err instanceof Error ? err : new Error(String(err));
+      errorMessage = errorObj.message;
+      errorCode = (err as { code?: string })?.code || 'SERVER_001';
+      response = new Response(
+        JSON.stringify({
+          success: false,
+          error: {
+            code: errorCode,
+            message: errorMessage,
+          },
+        }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
     
     // Add sandbox headers to response
     addSandboxHeaders(req, response.headers);
-    
+
+    // Log complete API request with ACTUAL response status and execution time
+    const partner = (req as RequestWithPartner).partner;
+    if (partner) {
+      try {
+        await logAPIRequest({
+          partner_id: partner.partner_id,
+          tenant_id: partner.tenant_id,
+          method: req.method as any,
+          endpoint: req.nextUrl.pathname,
+          status_code: response.status,
+          response_time_ms: Date.now() - startTime,
+          is_error: isError,
+          error_code: errorCode,
+          error_message: errorMessage,
+          ip_address: getClientIP(req),
+          user_agent: req.headers.get('user-agent') || undefined,
+          request_id: (req as RequestWithPartner).request_id,
+        });
+      } catch (logErr) {
+        console.error('Failed to persist API request audit log:', logErr);
+      }
+    }
+
     return response;
   };
 }

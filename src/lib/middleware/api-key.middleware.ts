@@ -115,7 +115,7 @@ function generateRequestId(): string {
  * Get client IP address from request
  * NextRequest doesn't have .ip property, need to extract from headers
  */
-function getClientIP(req: NextRequest): string {
+export function getClientIP(req: NextRequest): string {
   // Try various headers in order of reliability
   return (
     req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
@@ -227,7 +227,7 @@ async function getPartnerMetadata(partnerId: string): Promise<Record<string, unk
  * types haven't been regenerated yet. Using type assertion as temporary workaround.
  * TODO: Regenerate types with: npx supabase gen types typescript --project-id <id>
  */
-async function logAPIRequest(logData: CreateAPIRequestLogInput): Promise<void> {
+export async function logAPIRequest(logData: CreateAPIRequestLogInput): Promise<void> {
   const supabase = asAPIKeySupabaseClient(await createClient());
   const { error } = await supabase
     .from('api_request_logs')
@@ -329,20 +329,12 @@ export async function apiKeyMiddleware(
   const partnerInfo = await validateAPIKey(apiKey);
   
   if (!partnerInfo) {
-    // Log failed attempt
-    await logAPIRequest({
-      partner_id: 'unknown',
-      tenant_id: 'unknown',
-      method,
+    // Log failed attempt as security warning (avoid inserting non-UUID 'unknown' into DB)
+    console.warn('[SECURITY] Invalid API key attempt:', {
+      ip: getClientIP(req),
       endpoint: pathname,
-      status_code: 401,
-      response_time_ms: Date.now() - startTime,
-      is_error: true,
-      error_code: 'AUTH_001',
-      error_message: 'Invalid API key',
-      ip_address: getClientIP(req),
-      user_agent: req.headers.get('user-agent') || undefined,
       request_id: requestId,
+      api_key_prefix: apiKey.substring(0, 8),
     });
     
     return createErrorResponse(
@@ -495,18 +487,22 @@ export async function apiKeyMiddleware(
   // STEP 5: Success - Continue to Route Handler
   // ============================================================
   
-  await logAPIRequest({
-    partner_id: partnerInfo.partner_id,
-    tenant_id: partnerInfo.tenant_id,
-    method,
-    endpoint: pathname,
-    status_code: 200, // Will be updated by route handler
-    response_time_ms: Date.now() - startTime,
-    is_error: false,
-    ip_address: getClientIP(req),
-    user_agent: req.headers.get('user-agent') || undefined,
-    request_id: requestId,
-  });
+  // If response wrapper (like withSandbox) will log the request with actual response status,
+  // skip logging premature status_code 200 here to prevent double logs and incorrect status codes.
+  if (!(req as unknown as Record<string, unknown>)._willLogResponse) {
+    await logAPIRequest({
+      partner_id: partnerInfo.partner_id,
+      tenant_id: partnerInfo.tenant_id,
+      method,
+      endpoint: pathname,
+      status_code: 200,
+      response_time_ms: Date.now() - startTime,
+      is_error: false,
+      ip_address: getClientIP(req),
+      user_agent: req.headers.get('user-agent') || undefined,
+      request_id: requestId,
+    });
+  }
   
   // Continue to next middleware or route handler
   return null;

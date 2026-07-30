@@ -111,20 +111,26 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const p95Index = Math.floor(sortedTimes.length * 0.95);
     const p95ResponseTime = sortedTimes[p95Index] || 0;
 
-    // Group by day
-    const requestsByDay: Record<string, { count: number; errors: number }> = {};
+    // Group by day - fill all dates in selected range
+    const requestsByDayMap = new Map<string, { count: number; errors: number }>();
+    for (let i = days - 1; i >= 0; i--) {
+      const d = subDays(endDate, i);
+      const dateStr = d.toISOString().split('T')[0];
+      requestsByDayMap.set(dateStr, { count: 0, errors: 0 });
+    }
+
     allLogs.forEach((log: LogEntry) => {
-      const date = log.created_at.split('T')[0];
-      if (!requestsByDay[date]) {
-        requestsByDay[date] = { count: 0, errors: 0 };
-      }
-      requestsByDay[date].count++;
-      if (log.is_error) {
-        requestsByDay[date].errors++;
+      const dateStr = log.created_at.split('T')[0];
+      if (requestsByDayMap.has(dateStr)) {
+        const item = requestsByDayMap.get(dateStr)!;
+        item.count++;
+        if (log.is_error) {
+          item.errors++;
+        }
       }
     });
 
-    const requestsByDayArray = Object.entries(requestsByDay).map(([date, data]) => ({
+    const requestsByDayArray = Array.from(requestsByDayMap.entries()).map(([date, data]) => ({
       date,
       ...data,
     }));
@@ -149,11 +155,15 @@ export async function GET(request: NextRequest, context: RouteContext) {
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
 
-    // Rate limit status (mock - would come from real-time data)
+    // Calculate actual requests in the last 60 seconds
+    const oneMinuteAgo = new Date(Date.now() - 60 * 1000).toISOString();
+    const currentUsageMinute = allLogs.filter((l: LogEntry) => l.created_at >= oneMinuteAgo).length;
+
+    // Rate limit status based on real log counters
     const rateLimitStatus = {
       limit_per_minute: partnerData.rate_limit_per_minute || 100,
       limit_per_day: partnerData.rate_limit_per_day || 5000,
-      current_usage_minute: Math.floor(Math.random() * (partnerData.rate_limit_per_minute || 100) * 0.3),
+      current_usage_minute: currentUsageMinute,
       current_usage_day: totalRequests,
     };
 
