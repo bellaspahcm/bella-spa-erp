@@ -78,8 +78,15 @@ Tài liệu này hướng dẫn chi tiết cách cấu hình và kiểm tra kế
 
 ---
 
-## 6. Xử Lý Lỗi Thường Gặp (Troubleshooting)
+## 6. Xử Lý Lỗi Thường Gặp & Incident Playbook
 
-* **Bộ đếm vẫn bằng 0 nhưng EOS báo HTTP 200**: Check lại EIP Endpoint URL đã có `/api/v1/overview` chưa. Nếu chỉ nhập domain trang chủ, Next.js sẽ trả về trang HTML web làm EOS báo HTTP 200 nhưng không qua middleware ghi log.
+* **Bộ đếm vẫn bằng 0 nhưng EOS báo HTTP 200**:
+  - Check EIP Endpoint URL đã bao gồm `/api/v1/overview` chưa.
+  - Check định dạng IP address: PostgreSQL yêu cầu kiểu `INET` chuẩn (không truyền chuỗi `"unknown"`). Hệ thống đã tự động sanitize về `NULL`.
+  - Đảm bảo Supabase có Stored Procedure `public.log_api_request` với `SECURITY DEFINER` (Xem file migration `20260730130000_create_log_api_request_rpc.sql`).
+* **Lỗi HTTP 500 (SERVER_002 / Postgres 42804)**:
+  - Do lệch kiểu trả về của Stored Procedure `validate_api_partner`. Đã được sửa bằng cách ép kiểu `ap.partner_name::TEXT` trong file migration `20260730120000_fix_validate_api_partner_type_mismatch.sql`.
 * **Lỗi HTTP 401 (AUTH_001)**: API Key không chính xác hoặc đã bị revoked. Bấm "Tạo Lại API Key" trên EIP Console và dán key mới vào EOS.
 * **Lỗi HTTP 403 (AUTH_002 / AUTHZ_001)**: Đối tác đang ở trạng thái Inactive hoặc IP gửi request không nằm trong danh sách Whitelist IP.
+
+> 📖 **Xem Nhật Ký Sự Cố Chi Tiết**: [docs/INCIDENTS/2026-07-30-api-gateway-counter-fix.md](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/docs/INCIDENTS/2026-07-30-api-gateway-counter-fix.md)
