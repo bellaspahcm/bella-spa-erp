@@ -161,6 +161,12 @@ print(response.json())`;
   const commonEndpoints = [
     {
       method: 'GET',
+      path: '/overview',
+      scope: 'analytics:read',
+      desc: 'Kiểm tra kết nối Healthcheck & tổng quan Partner (Bella EOS Ping)',
+    },
+    {
+      method: 'GET',
       path: '/orders',
       scope: 'order:read',
       desc: 'Lấy danh sách đơn hàng của Spa',
@@ -596,6 +602,9 @@ print(response.json())`;
                       <Copy className="h-3 w-3" />
                     </Button>
                   </div>
+                  <p className="text-[11px] text-emerald-700 bg-emerald-50/70 p-1.5 rounded border border-emerald-200/50 mt-1.5">
+                    💡 <strong>Bella EOS Link Endpoint:</strong> <code className="font-mono text-emerald-800 font-bold">https://bella-spa-erp.vercel.app/api/v1/overview</code>
+                  </p>
                 </div>
 
                 <div>
