@@ -349,14 +349,14 @@ RETURNS TABLE (
 BEGIN
   RETURN QUERY
   SELECT 
-    ap.id,
-    ap.tenant_id,
-    ap.partner_name,
-    ap.allowed_scopes,
-    ap.is_active,
-    ap.is_sandbox,
-    ap.rate_limit_per_minute,
-    ap.rate_limit_per_day
+    ap.id AS partner_id,
+    ap.tenant_id AS tenant_id,
+    ap.partner_name::TEXT AS partner_name,
+    ap.allowed_scopes AS allowed_scopes,
+    ap.is_active AS is_active,
+    ap.is_sandbox AS is_sandbox,
+    ap.rate_limit_per_minute AS rate_limit_per_minute,
+    ap.rate_limit_per_day AS rate_limit_per_day
   FROM public.api_partners ap
   WHERE ap.api_key = p_api_key
     AND ap.is_active = TRUE;
