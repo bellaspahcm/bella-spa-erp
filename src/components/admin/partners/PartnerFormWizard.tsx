@@ -14,7 +14,7 @@
 
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Check, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import {
@@ -111,6 +111,15 @@ export function PartnerFormWizard({
   const goToPreviousStep = () => {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
+    }
+  };
+
+  // Handle cancel form edit
+  const handleCancel = () => {
+    if (mode === 'edit' && existingPartner?.id) {
+      router.push(`/dashboard/admin/partners/${existingPartner.id}${isEmbedded ? '?embedded=true' : ''}`);
+    } else {
+      router.push(`/dashboard/admin/partners${isEmbedded ? '?embedded=true' : ''}`);
     }
   };
 
@@ -233,9 +242,9 @@ export function PartnerFormWizard({
   };
 
   return (
-    <div className={`max-w-4xl mx-auto space-y-8 ${isEmbedded ? 'px-4 md:px-6' : 'p-6'}`}>
+    <div className={`max-w-4xl mx-auto space-y-6 ${isEmbedded ? 'px-4 md:px-6' : ''}`}>
       {/* Progress Indicator */}
-      <nav aria-label="Progress" className="bg-white dark:bg-gray-800 p-4 rounded-lg">
+      <nav aria-label="Progress" className="py-2">
         <ol className="flex items-center justify-between">
           {STEPS.map((step, stepIdx) => (
             <li key={step.id} className="relative flex-1">
@@ -243,7 +252,7 @@ export function PartnerFormWizard({
               {stepIdx !== STEPS.length - 1 && (
                 <div className="absolute top-4 left-1/2 w-full h-0.5 -z-10">
                   <div
-                    className={`h-full ${
+                    className={`h-full transition-colors duration-200 ${
                       currentStep > step.id ? 'bg-primary' : 'bg-gray-200'
                     }`}
                   />
@@ -252,19 +261,20 @@ export function PartnerFormWizard({
 
               {/* Step Button */}
               <button
+                type="button"
                 onClick={() => currentStep > step.id && setCurrentStep(step.id)}
                 disabled={currentStep < step.id}
-                className={`relative flex flex-col items-center group ${
-                  currentStep >= step.id ? 'cursor-pointer' : 'cursor-not-allowed'
+                className={`relative flex flex-col items-center group transition-all ${
+                  currentStep >= step.id ? 'cursor-pointer hover:opacity-90' : 'cursor-not-allowed opacity-60'
                 }`}
               >
                 <span
-                  className={`flex h-8 w-8 items-center justify-center rounded-full border-2 transition-colors ${
+                  className={`flex h-8 w-8 items-center justify-center rounded-full border-2 transition-all duration-200 shadow-sm ${
                     currentStep > step.id
-                      ? 'bg-primary border-primary text-white'
+                      ? 'bg-primary border-primary text-white hover:bg-primary/90 hover:scale-105 active:scale-95'
                       : currentStep === step.id
-                      ? 'border-primary bg-white text-primary'
-                      : 'border-gray-300 bg-white text-gray-400'
+                      ? 'border-primary bg-white text-primary ring-2 ring-primary/20 font-bold scale-105'
+                      : 'border-gray-300 bg-white text-gray-400 hover:border-gray-400'
                   }`}
                 >
                   {currentStep > step.id ? (
@@ -273,7 +283,11 @@ export function PartnerFormWizard({
                     <span className="text-sm font-semibold">{step.id}</span>
                   )}
                 </span>
-                <span className="mt-2 text-xs font-medium text-center">
+                <span
+                  className={`mt-2 text-xs font-medium text-center transition-colors ${
+                    currentStep === step.id ? 'text-primary font-bold' : 'text-slate-600'
+                  }`}
+                >
                   {step.name}
                 </span>
               </button>
@@ -283,7 +297,7 @@ export function PartnerFormWizard({
       </nav>
 
       {/* Step Content */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-8 shadow-sm">
+      <div className="py-2">
         {currentStep === 1 && (
           <BasicInfoStep formData={formData} updateFormData={updateFormData} />
         )}
@@ -297,33 +311,53 @@ export function PartnerFormWizard({
       </div>
 
       {/* Navigation Buttons */}
-      <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-        <Button
-          variant="outline"
-          onClick={goToPreviousStep}
-          disabled={currentStep === 1 || loading}
-        >
-          <ChevronLeft className="mr-2 h-4 w-4" />
-          Back
-        </Button>
+      <div className="flex items-center justify-between border-t border-slate-200 pt-6">
+        <div className="flex items-center gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={goToPreviousStep}
+            disabled={currentStep === 1 || loading}
+            className="hover:bg-slate-100 hover:text-slate-900 border-slate-300 active:scale-95 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <ChevronLeft className="mr-1 h-4 w-4" />
+            Quay lại
+          </Button>
 
-        <div className="text-sm text-muted-foreground">
-          Step {currentStep} of {STEPS.length}
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleCancel}
+            disabled={loading}
+            className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300 active:scale-95 transition-all cursor-pointer"
+          >
+            <X className="mr-1.5 h-4 w-4" />
+            Hủy sửa đổi
+          </Button>
         </div>
 
-        <Button onClick={handleNext} disabled={loading}>
+        <div className="text-sm font-medium text-slate-500">
+          Bước {currentStep} / {STEPS.length}
+        </div>
+
+        <Button
+          type="button"
+          onClick={handleNext}
+          disabled={loading}
+          className="bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-md active:scale-95 transition-all cursor-pointer font-medium px-5"
+        >
           {loading ? (
-            'Saving...'
+            'Đang lưu...'
           ) : currentStep === STEPS.length ? (
             mode === 'create' ? (
-              'Create Partner'
+              'Tạo mới Partner'
             ) : (
-              'Update Partner'
+              'Cập nhật Partner'
             )
           ) : (
             <>
-              Next
-              <ChevronRight className="ml-2 h-4 w-4" />
+              Tiếp theo
+              <ChevronRight className="ml-1 h-4 w-4" />
             </>
           )}
         </Button>

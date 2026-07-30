@@ -3,6 +3,7 @@
 import * as React from "react"
 import { AlertDialog as AlertDialogPrimitive } from "@base-ui/react/alert-dialog"
 
+import { createPortal } from "react-dom"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
@@ -16,10 +17,23 @@ function AlertDialogTrigger({ ...props }: AlertDialogPrimitive.Trigger.Props) {
   )
 }
 
-function AlertDialogPortal({ ...props }: AlertDialogPrimitive.Portal.Props) {
-  return (
-    <AlertDialogPrimitive.Portal data-slot="alert-dialog-portal" {...props} />
-  )
+function AlertDialogPortal({
+  children,
+  ...props
+}: AlertDialogPrimitive.Portal.Props & { children?: React.ReactNode }) {
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted || typeof document === "undefined") return null;
+
+  return createPortal(
+    <AlertDialogPrimitive.Portal data-slot="alert-dialog-portal" {...props}>
+      {children}
+    </AlertDialogPrimitive.Portal>,
+    document.body
+  );
 }
 
 function AlertDialogOverlay({
@@ -30,7 +44,7 @@ function AlertDialogOverlay({
     <AlertDialogPrimitive.Backdrop
       data-slot="alert-dialog-overlay"
       className={cn(
-        "fixed inset-0 isolate z-50 bg-black/10 duration-100 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+        "fixed inset-0 isolate z-[9998] bg-black/40 duration-100 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
         className
       )}
       {...props}
@@ -41,6 +55,7 @@ function AlertDialogOverlay({
 function AlertDialogContent({
   className,
   size = "default",
+  children,
   ...props
 }: AlertDialogPrimitive.Popup.Props & {
   size?: "default" | "sm"
@@ -48,15 +63,19 @@ function AlertDialogContent({
   return (
     <AlertDialogPortal>
       <AlertDialogOverlay />
-      <AlertDialogPrimitive.Popup
-        data-slot="alert-dialog-content"
-        data-size={size}
-        className={cn(
-          "group/alert-dialog-content fixed top-1/2 left-1/2 z-50 grid w-full -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none data-[size=default]:max-w-xs data-[size=sm]:max-w-xs data-[size=default]:sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
-          className
-        )}
-        {...props}
-      />
+      <div className="fixed inset-0 z-[99999] flex items-start justify-center p-4 pt-20 md:pt-28 overflow-y-auto pointer-events-none">
+        <AlertDialogPrimitive.Popup
+          data-slot="alert-dialog-content"
+          data-size={size}
+          className={cn(
+            "pointer-events-auto group/alert-dialog-content relative w-full gap-4 rounded-2xl bg-popover p-6 text-popover-foreground shadow-2xl ring-1 ring-foreground/10 duration-100 outline-none data-[size=default]:max-w-md data-[size=sm]:max-w-xs data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+            className
+          )}
+          {...props}
+        >
+          {children}
+        </AlertDialogPrimitive.Popup>
+      </div>
     </AlertDialogPortal>
   )
 }

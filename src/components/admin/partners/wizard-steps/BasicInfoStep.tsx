@@ -160,7 +160,7 @@ export function BasicInfoStep({ formData, updateFormData }: BasicInfoStepProps) 
               role="switch"
               aria-checked={formData.is_sandbox}
               onClick={() => updateFormData({ is_sandbox: !formData.is_sandbox })}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 cursor-pointer hover:opacity-90 active:scale-95 ${
                 formData.is_sandbox ? 'bg-primary' : 'bg-gray-200'
               }`}
             >

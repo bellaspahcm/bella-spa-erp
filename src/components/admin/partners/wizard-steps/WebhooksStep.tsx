@@ -117,8 +117,8 @@ export function WebhooksStep({ formData, updateFormData }: WebhooksStepProps) {
                   key={event.value}
                   type="button"
                   onClick={() => toggleEvent(event.value)}
-                  className={`flex items-start gap-3 p-3 border rounded-lg hover:border-primary transition-colors ${
-                    isSelected ? 'border-primary bg-primary/5' : ''
+                  className={`flex items-start gap-3 p-3 border rounded-lg hover:border-primary hover:shadow-sm active:scale-98 transition-all cursor-pointer ${
+                    isSelected ? 'border-primary bg-primary/5' : 'hover:bg-slate-50'
                   }`}
                 >
                   <div

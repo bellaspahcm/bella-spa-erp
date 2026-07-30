@@ -43,26 +43,29 @@ export default async function NewPartnerPage() {
   return (
     <div className="min-h-screen bg-white p-6 md:p-8 lg:p-10 space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4 bg-white dark:bg-gray-900 p-4 rounded-lg shadow">
+      <div className="flex items-center gap-4 border-b border-slate-100 pb-4">
         <Link href="/dashboard/admin/partners">
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="h-4 w-4" />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hover:bg-slate-100 active:scale-95 transition-all cursor-pointer"
+            title="Quay lại danh sách"
+          >
+            <ArrowLeft className="h-5 w-5 text-slate-700" />
           </Button>
         </Link>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900">
             Create New Partner
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-slate-500 mt-0.5">
             Set up a new API partner with authentication and permissions
           </p>
         </div>
       </div>
 
       {/* Form Wizard */}
-      <div className="bg-white dark:bg-gray-900 rounded-lg shadow">
-        <PartnerFormWizard mode="create" tenantId={profile.tenant_id} />
-      </div>
+      <PartnerFormWizard mode="create" tenantId={profile.tenant_id} />
     </div>
   );
 }

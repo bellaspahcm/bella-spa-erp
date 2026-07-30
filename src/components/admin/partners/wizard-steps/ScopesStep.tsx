@@ -139,8 +139,8 @@ export function ScopesStep({ formData, updateFormData }: ScopesStepProps) {
               key={preset.key}
               type="button"
               onClick={() => applyPreset(preset.key)}
-              className={`p-3 text-left border rounded-lg hover:border-primary transition-colors ${
-                selectedPreset === preset.key ? 'border-primary bg-primary/5' : ''
+              className={`p-3 text-left border rounded-lg hover:border-primary hover:shadow-sm active:scale-98 transition-all cursor-pointer ${
+                selectedPreset === preset.key ? 'border-primary bg-primary/5' : 'hover:bg-slate-50'
               }`}
             >
               <div className="font-medium text-sm">{preset.label}</div>
@@ -148,7 +148,13 @@ export function ScopesStep({ formData, updateFormData }: ScopesStepProps) {
             </button>
           ))}
         </div>
-        <Button type="button" variant="outline" size="sm" onClick={clearAllScopes}>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={clearAllScopes}
+          className="hover:bg-slate-100 border-slate-300 active:scale-95 transition-all cursor-pointer"
+        >
           Clear All Scopes
         </Button>
       </div>
@@ -174,8 +180,8 @@ export function ScopesStep({ formData, updateFormData }: ScopesStepProps) {
                       key={scope.value}
                       type="button"
                       onClick={() => toggleScope(scope.value as APIScope)}
-                      className={`w-full flex items-start gap-3 p-3 border rounded-lg hover:border-primary transition-colors ${
-                        isSelected ? 'border-primary bg-primary/5' : ''
+                      className={`w-full flex items-start gap-3 p-3 border rounded-lg hover:border-primary hover:shadow-sm active:scale-98 transition-all cursor-pointer ${
+                        isSelected ? 'border-primary bg-primary/5' : 'hover:bg-slate-50'
                       }`}
                     >
                       <div
