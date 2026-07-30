@@ -161,6 +161,24 @@ function requiresAPIKey(pathname: string): boolean {
 }
 
 /**
+ * Helper to get service_role Supabase client for API Gateway middleware operations
+ * (Bypasses RLS restrictions on api_request_logs and partner validation queries)
+ */
+function getAdminSupabaseClient(): APIKeySupabaseClient {
+  const adminUrl = getSupabaseAdminUrl();
+  const adminKey = getSupabaseAdminKey();
+  if (adminUrl && adminKey) {
+    return asAPIKeySupabaseClient(createSupabaseClient(adminUrl, adminKey));
+  }
+  return asAPIKeySupabaseClient(
+    createSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+  );
+}
+
+/**
  * Validate API key and get partner info from database
  * 
  * NOTE: The validate_api_partner RPC exists in the database but TypeScript
@@ -168,7 +186,7 @@ function requiresAPIKey(pathname: string): boolean {
  * TODO: Regenerate types with: npx supabase gen types typescript --project-id <id>
  */
 async function validateAPIKey(apiKey: string): Promise<PartnerValidationResult | null> {
-  const supabase = asAPIKeySupabaseClient(await createClient());
+  const supabase = getAdminSupabaseClient();
   const { data, error } = await supabase
     .rpc('validate_api_partner', { p_api_key: apiKey });
 
@@ -228,7 +246,7 @@ async function getPartnerMetadata(partnerId: string): Promise<Record<string, unk
  * TODO: Regenerate types with: npx supabase gen types typescript --project-id <id>
  */
 export async function logAPIRequest(logData: CreateAPIRequestLogInput): Promise<void> {
-  const supabase = asAPIKeySupabaseClient(await createClient());
+  const supabase = getAdminSupabaseClient();
   const { error } = await supabase
     .from('api_request_logs')
     .insert(logData);

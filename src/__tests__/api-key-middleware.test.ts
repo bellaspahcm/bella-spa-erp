@@ -14,7 +14,11 @@ jest.mock('@/lib/supabase-server', () => ({
 const mockAdminFrom = jest.fn();
 jest.mock('@supabase/supabase-js', () => ({
   createClient: jest.fn(() => ({
-    from: mockAdminFrom,
+    rpc: mockRpc,
+    from: (table: string) => {
+      if (table === 'api_partners') return mockAdminFrom(table);
+      return mockFrom(table);
+    },
   })),
 }));
 
