@@ -8,34 +8,34 @@
 
 /* ─── Design Tokens ─────────────────────────────────────────────────────────── */
 [data-re-layout] {
-  --re-navy:         #0b1f3a;
-  --re-navy-mid:     #102a4c;
-  --re-navy-light:   #1a3a5c;
-  --re-gold:         #c8971f;
-  --re-gold-light:   #e6b84a;
+  --re-navy:         #0f172a; /* Clean high-contrast slate-900 */
+  --re-navy-mid:     #1e293b;
+  --re-navy-light:   #334155;
+  --re-gold:         #b45309; /* Compliant AAA text contrast amber */
+  --re-gold-light:   #d97706;
   --re-gold-pale:    #fef3c7;
-  --re-cream:        #faf7f2;
   --re-surface:      #ffffff;
-  --re-border:       rgba(200, 151, 31, 0.20);
-  --re-border-soft:  rgba(200, 151, 31, 0.10);
-  --re-shadow-gold:  0 4px 24px rgba(200, 151, 31, 0.12);
-  --re-shadow-card:  0 2px 16px rgba(11, 31, 58, 0.06);
-  --re-radius:       16px;
-  --re-radius-sm:    10px;
+  --re-border:       #e2e8f0; /* Crisp slate-200 border */
+  --re-border-soft:  #f1f5f9; /* Slate-100 border */
+  --re-shadow-gold:  0 10px 15px -3px rgba(217, 119, 6, 0.1), 0 4px 6px -2px rgba(217, 119, 6, 0.05);
+  --re-shadow-card:  0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  --re-radius:       20px;
+  --re-radius-sm:    12px;
 }
 
 /* ─── Root Background ────────────────────────────────────────────────────────── */
 .re-layout-root {
-  min-height: 100%;
+  min-height: 100vh;
   background:
-    radial-gradient(ellipse 80% 40% at 50% -10%, rgba(200, 151, 31, 0.05) 0%, transparent 70%),
-    linear-gradient(180deg, #faf7f2 0%, #fdfcfa 100%);
+    radial-gradient(circle at 10% 20%, rgba(243, 244, 246, 0.8) 0%, rgba(229, 231, 235, 0.3) 90%),
+    linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  padding: 1.5rem;
 }
 
 :global(html.dark) .re-layout-root {
   background:
-    radial-gradient(ellipse 80% 40% at 50% -10%, rgba(200, 151, 31, 0.07) 0%, transparent 70%),
-    linear-gradient(180deg, #0b1329 0%, #0f1c30 100%);
+    radial-gradient(circle at 10% 20%, rgba(15, 23, 42, 0.85) 0%, rgba(9, 15, 32, 0.95) 90%),
+    linear-gradient(135deg, #0b1329 0%, #020617 100%);
 }
 
 /* ─── Page Headers ───────────────────────────────────────────────────────────── */
