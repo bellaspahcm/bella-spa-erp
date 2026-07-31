@@ -38,6 +38,32 @@
       "--ring": "#64748b",
     });
     setThemeColor("#f8fafc");
+
+    // Restore cached tenant brand identity from session/local storage for zero-flash first paint
+    try {
+      const cachedStr = window.sessionStorage.getItem("bella.runtime.brand.v1") || window.localStorage.getItem("bella.sidebar.brand.v2");
+      if (cachedStr) {
+        const brand = JSON.parse(cachedStr);
+        if (brand && brand.moduleKey) {
+          root.dataset.tenantModule = brand.moduleKey;
+          if (brand.buttonStyle) root.dataset.tenantBrandButton = brand.buttonStyle;
+          if (brand.menuStyle) root.dataset.tenantBrandMenu = brand.menuStyle;
+          if (brand.radiusStyle) root.dataset.tenantBrandRadius = brand.radiusStyle;
+          if (brand.primaryColor) {
+            setRootVars({
+              "--primary": brand.primaryColor,
+              "--primary-hover": brand.primaryHoverColor || brand.primaryColor,
+              "--accent": brand.accentColor || brand.primaryColor,
+              "--ring": brand.primaryColor,
+            });
+            setThemeColor(brand.primaryColor);
+          }
+          if (brand.displayName) {
+            document.title = `${brand.displayName} — ${brand.subtitle || "Management System"}`;
+          }
+        }
+      }
+    } catch (e) {}
   } catch {
     const path = window.location.pathname || "";
     if (

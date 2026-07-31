@@ -124,18 +124,18 @@ export default function OverbookingConfigSection({
       <div className="flex items-start gap-3 p-4 bg-blue-50/80 border border-blue-100 rounded-2xl mb-5 text-sm">
         <Info className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
         <p className="text-blue-700 font-medium leading-relaxed">
-          Spa nhỏ không sử dụng phòng riêng hoặc thiết bị cố định có thể tắt kiểm tra tương ứng để tránh cảnh báo không cần thiết.
-          Kiểm tra trùng lịch KTV luôn bật để đảm bảo chất lượng dịch vụ.
+          Doanh nghiệp có thể tắt bớt kiểm tra phòng hoặc thiết bị cố định nếu không sử dụng để tránh cảnh báo không cần thiết.
+          Kiểm tra trùng lịch làm việc nhân sự luôn được bật mặc định.
         </p>
       </div>
 
       <div className="space-y-3">
-        {/* KTV - always on, non-toggleable */}
+        {/* Worker - always on, non-toggleable */}
         <ToggleRow
-          id="conflict-toggle-ktv"
+          id="conflict-toggle-worker"
           icon={<Users className="w-5 h-5" />}
-          label="Trùng lịch KTV"
-          description="Ngăn xếp lịch 2 khách cho cùng 1 KTV trong cùng khung giờ. Tính năng cốt lõi, không thể tắt."
+          label="Trùng lịch nhân sự"
+          description="Ngăn xếp lịch 2 khách cho cùng 1 nhân sự trong cùng khung giờ. Tính năng cốt lõi, không thể tắt."
           checked={true}
           disabled={true}
           disabledReason="Bắt buộc"

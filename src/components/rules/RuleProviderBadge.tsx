@@ -18,6 +18,7 @@ import {
   Package,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
 
 interface RuleProviderBadgeProps {
   provider: string;
@@ -53,6 +54,23 @@ const PROVIDER_CONFIG = {
 } as const;
 
 export function RuleProviderBadge({ provider, className }: RuleProviderBadgeProps) {
+  const vocab = useModuleVocabulary();
+  const isRealEstate = vocab.booking.singular.includes('giữ chỗ') || vocab.worker.short === 'CVTV';
+  const isCleaning = vocab.worker.short === 'NVS';
+
+  let dynamicLabel: string = provider;
+  if (provider === 'booking') {
+    dynamicLabel = isRealEstate ? 'Giữ chỗ' : isCleaning ? 'Phiếu công việc' : 'Đặt lịch';
+  } else if (provider === 'discount') {
+    dynamicLabel = 'Chiết khấu';
+  } else if (provider === 'payroll') {
+    dynamicLabel = 'Tính lương';
+  } else if (provider === 'commission') {
+    dynamicLabel = 'Hoa hồng';
+  } else if (provider === 'inventory') {
+    dynamicLabel = isRealEstate ? 'Giỏ hàng' : 'Kho hàng';
+  }
+
   const config = PROVIDER_CONFIG[provider as keyof typeof PROVIDER_CONFIG] || {
     label: provider,
     icon: Package,
@@ -64,10 +82,10 @@ export function RuleProviderBadge({ provider, className }: RuleProviderBadgeProp
   return (
     <Badge
       variant="outline"
-      className={cn('flex items-center gap-1.5 w-fit', config.className, className)}
+      className={cn('flex items-center gap-1.5 w-fit font-bold', config.className, className)}
     >
       <Icon className="h-3 w-3" />
-      <span>{config.label}</span>
+      <span>{dynamicLabel}</span>
     </Badge>
   );
 }

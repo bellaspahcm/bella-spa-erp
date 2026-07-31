@@ -23,20 +23,13 @@ import { Button } from '@/components/ui/button';
 import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
 
 
+import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
+
 interface RulesFiltersProps {
   initialProvider?: string;
   initialStatus?: string;
   initialSearch?: string;
 }
-
-const PROVIDERS = [
-  { value: 'all', label: 'Tất cả nghiệp vụ' },
-  { value: 'booking', label: 'Đặt lịch' },
-  { value: 'discount', label: 'Chiết khấu' },
-  { value: 'payroll', label: 'Tính lương' },
-  { value: 'commission', label: 'Hoa hồng' },
-  { value: 'inventory', label: 'Kho hàng' },
-];
 
 const STATUSES = [
   { value: 'all', label: 'Tất cả trạng thái' },
@@ -94,6 +87,19 @@ export function RulesFilters({
   const isBeautySpa = tenantModuleKey === 'beauty_spa';
   const isIndustrialCleaning = tenantModuleKey === 'industrial_cleaning';
 
+  const vocab = useModuleVocabulary();
+  const isRealEstate = vocab.booking.singular.includes('giữ chỗ') || vocab.worker.short === 'CVTV';
+  const isCleaning = vocab.worker.short === 'NVS';
+
+  const providers = [
+    { value: 'all', label: 'Tất cả nghiệp vụ' },
+    { value: 'booking', label: isRealEstate ? 'Đơn giữ chỗ & Hợp đồng' : isCleaning ? 'Phiếu công việc' : 'Đặt lịch & Hẹn dịch vụ' },
+    { value: 'discount', label: 'Chiết khấu & Ưu đãi' },
+    { value: 'payroll', label: 'Tính lương & Thưởng' },
+    { value: 'commission', label: 'Hoa hồng & Doanh số' },
+    { value: 'inventory', label: isRealEstate ? 'Giỏ hàng & Căn hộ' : isCleaning ? 'Vật tư & Trang thiết bị' : 'Kho hàng & Sản phẩm' },
+  ];
+
   const buttonActive = isBeautySpa
     ? 'hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-950/20 dark:hover:text-emerald-400 border-emerald-200 dark:border-emerald-800/60'
     : isIndustrialCleaning
@@ -111,11 +117,11 @@ export function RulesFilters({
         <div className="flex flex-1 flex-col gap-4 md:flex-row md:items-center">
           {/* Provider Filter */}
           <Select value={initialProvider} onValueChange={handleProviderChange}>
-            <SelectTrigger className="w-full md:w-[200px] rounded-lg bg-white/80 dark:bg-[#1c1b19]/80 border-slate-200 dark:border-slate-800 text-sm font-semibold focus:ring-0 focus:ring-offset-0 focus:border-slate-300 dark:focus:border-slate-700">
+            <SelectTrigger className="w-full md:w-[220px] rounded-lg bg-white/80 dark:bg-[#1c1b19]/80 border-slate-200 dark:border-slate-800 text-sm font-semibold focus:ring-0 focus:ring-offset-0 focus:border-slate-300 dark:focus:border-slate-700">
               <SelectValue placeholder="Chọn nghiệp vụ" />
             </SelectTrigger>
             <SelectContent className="rounded-xl">
-              {PROVIDERS.map((provider) => (
+              {providers.map((provider) => (
                 <SelectItem key={provider.value} value={provider.value} className="text-sm font-medium">
                   {provider.label}
                 </SelectItem>

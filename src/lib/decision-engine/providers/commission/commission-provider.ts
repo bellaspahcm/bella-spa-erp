@@ -479,9 +479,6 @@ export class CommissionProvider {
     return total;
   }
 
-  /**
-   * Calculates product sales commission
-   */
   private calculateProductSalesCommission(
     sales: ProductSale[],
     config: CommissionConfig
@@ -496,12 +493,32 @@ export class CommissionProvider {
     for (const sale of sales) {
       const salesAmount = sale.salesAmount ?? 0;
 
-      // Check sale-level override
+      // Priority 1: Override commission (flexible / dynamic override on the sale)
       if (sale.overrideType && sale.overrideValue !== null && sale.overrideValue !== undefined) {
         if (sale.overrideType === 'fixed') {
           total += sale.overrideValue;
         } else if (sale.overrideType === 'percentage') {
           total += Math.round((salesAmount * sale.overrideValue) / 100);
+        }
+        continue;
+      }
+
+      // Priority 2: Property-level commission
+      if (sale.productCommissionType && sale.productCommissionValue !== null && sale.productCommissionValue !== undefined) {
+        if (sale.productCommissionType === 'fixed') {
+          total += sale.productCommissionValue;
+        } else if (sale.productCommissionType === 'percentage') {
+          total += Math.round((salesAmount * sale.productCommissionValue) / 100);
+        }
+        continue;
+      }
+
+      // Priority 3: Project-level commission
+      if (sale.projectCommissionType && sale.projectCommissionValue !== null && sale.projectCommissionValue !== undefined) {
+        if (sale.projectCommissionType === 'fixed') {
+          total += sale.projectCommissionValue;
+        } else if (sale.projectCommissionType === 'percentage') {
+          total += Math.round((salesAmount * sale.projectCommissionValue) / 100);
         }
         continue;
       }

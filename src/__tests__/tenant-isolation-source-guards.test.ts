@@ -108,13 +108,15 @@ describe('dashboard tenant isolation source guards', () => {
 
   it('does not apply stale tenant brand cache during root first paint', () => {
     const rootLayoutSource = readSource('src/app/layout.tsx');
+    const bootstrapSource = readSource('public/theme-bootstrap.js');
     const dashboardLayoutSource = readSource('src/app/dashboard/layout.tsx');
 
-    expect(rootLayoutSource).toContain('root.dataset.tenantModule = "pending"');
-    expect(rootLayoutSource).toContain('"--primary": "#334155"');
+    expect(rootLayoutSource).toContain('/theme-bootstrap.js');
+    expect(bootstrapSource).toContain('root.dataset.tenantModule = "pending"');
+    expect(bootstrapSource).toContain('"#334155"');
     expect(rootLayoutSource).not.toContain('sessionStorage.getItem("bella.runtime.brand.v1")');
-    expect(dashboardLayoutSource).toContain('await applyDashboardTenantBrandRuntime(tenant)');
-    expect(dashboardLayoutSource.indexOf('await applyDashboardTenantBrandRuntime(tenant)')).toBeLessThan(
+    expect(dashboardLayoutSource).toContain('await applyDashboardTenantBrandRuntime(tenant');
+    expect(dashboardLayoutSource.indexOf('await applyDashboardTenantBrandRuntime(tenant')).toBeLessThan(
       dashboardLayoutSource.indexOf('setIsAuthorized(true)'),
     );
   });

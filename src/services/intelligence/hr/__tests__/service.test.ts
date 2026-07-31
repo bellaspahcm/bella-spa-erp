@@ -69,14 +69,16 @@ jest.mock('../../cache', () => ({
 }));
 
 import {
-  getWorkforceAnalytics,
   getAttendanceReport,
   getPayrollSummary,
   getEmployeePerformance,
-  getRecruitmentMetrics,
-  getTrainingMetrics,
   getRetentionAnalysis,
   getProductivityTrends,
+} from '../queries';
+import {
+  getWorkforceAnalytics,
+  getRecruitmentMetrics,
+  getTrainingMetrics,
 } from '../queries-simple';
 
 // ─────────────────────────────────────────────────────────────────────────────

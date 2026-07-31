@@ -198,21 +198,11 @@ export function normalizeEnabledModules(value: unknown): TenantEnabledModules {
   }
 
   return {
-    babycare: typeof source.babycare === 'boolean'
-      ? source.babycare
-      : false,
-    beauty_spa: typeof source.beauty_spa === 'boolean'
-      ? source.beauty_spa
-      : false,
-    student_training: typeof source.student_training === 'boolean'
-      ? source.student_training
-      : false,
-    industrial_cleaning: typeof source.industrial_cleaning === 'boolean'
-      ? source.industrial_cleaning
-      : false,
-    real_estate: typeof source.real_estate === 'boolean'
-      ? source.real_estate
-      : false,
+    babycare: typeof source.babycare === 'boolean' ? source.babycare : false,
+    beauty_spa: typeof source.beauty_spa === 'boolean' ? source.beauty_spa : false,
+    student_training: typeof source.student_training === 'boolean' ? source.student_training : false,
+    industrial_cleaning: typeof source.industrial_cleaning === 'boolean' ? source.industrial_cleaning : false,
+    real_estate: typeof source.real_estate === 'boolean' ? source.real_estate : false,
   };
 }
 
@@ -225,10 +215,25 @@ export function normalizeEnabledModulesForSave(value: unknown): TenantEnabledMod
   };
 }
 
-export function getDefaultTenantModuleKey(value: unknown): TenantPrimaryBusinessModuleKey {
+export function getDefaultTenantModuleKey(value: unknown, tenantName?: string | null): TenantPrimaryBusinessModuleKey {
   const modules = normalizeEnabledModulesForSave(value);
   if (modules.real_estate) return 'real_estate';
   if (modules.industrial_cleaning) return 'industrial_cleaning';
+  if (modules.beauty_spa) return 'beauty_spa';
+
+  if (tenantName) {
+    const lower = tenantName.toLowerCase();
+    if (lower.includes('land') || lower.includes('bđs') || lower.includes('real estate') || lower.includes('bất động sản')) {
+      return 'real_estate';
+    }
+    if (lower.includes('cleaning') || lower.includes('vệ sinh') || lower.includes('sạch')) {
+      return 'industrial_cleaning';
+    }
+    if (lower.includes('beauty') || lower.includes('spa') || lower.includes('thẩm mỹ')) {
+      return 'beauty_spa';
+    }
+  }
+
   return modules.babycare ? 'babycare' : 'beauty_spa';
 }
 
@@ -239,6 +244,8 @@ export function getDefaultTenantBrandThemeForModule(moduleKey: TenantModuleKey):
   return DEFAULT_TENANT_BRAND_THEME;
 }
 
+const LEGACY_DEFAULT_PINKS = ['#A91555', '#DB2777', '#F43F5E', '#BE123C', '#E11D48', '#881337'];
+
 export function normalizeTenantBrandThemeForModule(
   value: unknown,
   moduleKey: TenantModuleKey,
@@ -246,14 +253,25 @@ export function normalizeTenantBrandThemeForModule(
   const source = isPlainRecord(value) ? value : {};
   const fallback = getDefaultTenantBrandThemeForModule(moduleKey);
 
+  let rawPrimary = cleanColor(source.primaryColor, fallback.primaryColor);
+  let rawAccent = cleanColor(source.accentColor, fallback.accentColor);
+  let rawStylePreset = cleanChoice(source.stylePreset, TENANT_BRAND_STYLE_PRESETS, fallback.stylePreset);
+
+  // Upgrade legacy default pink brand theme to target module signature colors
+  if (moduleKey !== 'babycare' && (LEGACY_DEFAULT_PINKS.includes(rawPrimary.toUpperCase()) || rawStylePreset === 'bella_rose')) {
+    rawPrimary = fallback.primaryColor;
+    rawAccent = fallback.accentColor;
+    rawStylePreset = fallback.stylePreset;
+  }
+
   return {
     brandName: cleanText(source.brandName, TEXT_LIMITS.brandName),
     logoUrl: cleanLogoUrl(source.logoUrl),
-    primaryColor: cleanColor(source.primaryColor, fallback.primaryColor),
-    accentColor: cleanColor(source.accentColor, fallback.accentColor),
+    primaryColor: rawPrimary,
+    accentColor: rawAccent,
     portalDisplayName: cleanText(source.portalDisplayName, TEXT_LIMITS.portalDisplayName),
     invoiceDisplayName: cleanText(source.invoiceDisplayName, TEXT_LIMITS.invoiceDisplayName),
-    stylePreset: cleanChoice(source.stylePreset, TENANT_BRAND_STYLE_PRESETS, fallback.stylePreset),
+    stylePreset: rawStylePreset,
     radiusStyle: cleanChoice(source.radiusStyle, TENANT_BRAND_RADIUS_STYLES, fallback.radiusStyle),
     buttonStyle: cleanChoice(source.buttonStyle, TENANT_BRAND_BUTTON_STYLES, fallback.buttonStyle),
     menuStyle: cleanChoice(source.menuStyle, TENANT_BRAND_MENU_STYLES, fallback.menuStyle),

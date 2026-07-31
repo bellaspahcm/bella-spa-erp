@@ -66,21 +66,35 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
           headers: {
             'Content-Type': 'application/json',
           },
-          // Include credentials to ensure session cookies are sent
           credentials: 'same-origin',
         });
 
+        // 1. If 401 Unauthorized, redirect to login page gracefully
+        if (response.status === 401) {
+          console.warn('[TenantContextProvider] User not authenticated, redirecting to login');
+          window.location.href = '/login';
+          return;
+        }
+
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-          
-          // If 401 Unauthorized, redirect to login page
-          if (response.status === 401) {
-            console.warn('[TenantContextProvider] User not authenticated, redirecting to login');
-            window.location.href = '/login';
-            return; // Stop execution to prevent error state
+          const errorData = await response.json().catch(() => ({ error: `HTTP ${response.status}: ${response.statusText}` }));
+          const msg = errorData.error || `HTTP ${response.status}: ${response.statusText}`;
+
+          // In development mode, fallback to default tenant context if backend authentication is transient
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('[TenantContextProvider] Dev fallback tenant context activated due to:', msg);
+            setContext({
+              tenantId: 'dev-tenant',
+              tenantName: 'Bella Land (Dev)',
+              enabledModules: ['real_estate', 'beauty_spa', 'industrial_cleaning'],
+              subscriptionPlan: 'enterprise',
+              featureFlags: {},
+              settings: {},
+            });
+            return;
           }
-          
-          throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+
+          throw new Error(msg);
         }
 
         const data = await response.json();
@@ -91,9 +105,21 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
 
         setContext(data as TenantContext);
       } catch (err) {
-        console.error('[TenantContextProvider] Failed to load tenant context:', err);
         const errorMessage = err instanceof Error ? err.message : String(err);
-        setError(errorMessage);
+        console.warn('[TenantContextProvider] Failed to load tenant context: %s', errorMessage);
+        
+        if (process.env.NODE_ENV === 'development') {
+          setContext({
+            tenantId: 'dev-tenant',
+            tenantName: 'Bella Land (Dev)',
+            enabledModules: ['real_estate', 'beauty_spa', 'industrial_cleaning'],
+            subscriptionPlan: 'enterprise',
+            featureFlags: {},
+            settings: {},
+          });
+        } else {
+          setError(errorMessage);
+        }
       } finally {
         setLoading(false);
       }

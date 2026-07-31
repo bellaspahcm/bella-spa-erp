@@ -83,6 +83,7 @@ type TenantBrandDisplay = Pick<
   | 'radiusStyle'
   | 'isBeautySpa'
   | 'fontHeading'
+  | 'stylePreset'
 >;
 type CachedTenantBrandDisplay = TenantBrandDisplay & {
   tenantId: string;
@@ -218,6 +219,7 @@ function applyTenantBrandRuntime(brand: TenantBrandDisplay) {
   root.dataset.tenantBrandButton = brand.buttonStyle;
   root.dataset.tenantBrandMenu = brand.menuStyle;
   root.dataset.tenantBrandRadius = brand.radiusStyle;
+  root.dataset.tenantBrandPreset = brand.stylePreset || (brand.primaryColor === '#074E44' ? 'jade_wellness' : brand.primaryColor === '#1E3A8A' ? 'luxury_navy' : brand.primaryColor === '#1E40AF' ? 'ocean_clean' : brand.primaryColor === '#18181B' ? 'graphite_luxe' : 'bella_rose');
 
   for (const token of ['--background', '--foreground', '--border', '--input']) {
     root.style.removeProperty(token);
@@ -327,6 +329,7 @@ const realEstateMenuItems: SidebarMenuItem[] = [
   { icon: FileText,        label: 'Hợp Đồng & Đặt Cọc',  href: '/dashboard/real-estate/contracts' },
   { icon: Users,           label: 'Khách Hàng Đầu Tư',   href: '/dashboard/real-estate/customers' },
   { icon: FolderKanban,    label: 'Marketing & Lead',     href: '/dashboard/real-estate/marketing' },
+  { icon: Users,           label: 'Sơ đồ tổ chức',        href: '/dashboard/organization' },
 
   { type: 'header', label: 'Tài Chính & Hệ Thống' },
   { icon: Wallet,          label: 'Sổ Cái Kế Toán',      href: '/dashboard/accounting' },
@@ -661,25 +664,28 @@ export function Sidebar() {
                 markClassName={cn("rounded-[1.75rem]", (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell) && "beauty-erp-logo-mark beauty-erp-logo-mark-large")}
               />
             </div>
-            <div className="text-center">
+            <div className="text-center w-full px-2">
               <h2 className={cn(
-                "max-w-64 text-[1.9rem] font-handwriting mb-1 drop-shadow-sm text-primary dark:text-[#A67D44] text-center",
-                (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell) && "beauty-erp-brand-script"
+                "mb-1 drop-shadow-sm text-center transition-all duration-300",
+                isBeautySpaShell 
+                  ? "text-[1.8rem] font-handwriting beauty-erp-brand-script" 
+                  : "text-lg font-extrabold tracking-tight uppercase font-sans beauty-erp-brand-script"
               )}>
                 {tenantBrand.displayName.toLowerCase().endsWith('headquarter') ? (
                   <span className="flex flex-col items-center">
-                    <span className="leading-tight text-primary dark:text-[#F8A5C2]">{tenantBrand.displayName.slice(0, -11).trim()}</span>
-                    <span className="text-[0.8rem] mt-1 leading-none font-sans font-black tracking-widest uppercase text-slate-500 dark:text-zinc-400">
+                    <span className="leading-tight block break-words whitespace-normal">{tenantBrand.displayName.slice(0, -11).trim()}</span>
+                    <span className="text-[0.75rem] mt-1 leading-none font-sans font-black tracking-widest uppercase opacity-75">
                       Headquarter
                     </span>
                   </span>
                 ) : (
-                  <span className="block truncate leading-tight text-primary dark:text-[#F8A5C2]">{tenantBrand.displayName}</span>
+                  <span className="block break-words whitespace-normal leading-snug px-1">
+                    {tenantBrand.displayName}
+                  </span>
                 )}
               </h2>
               <span className={cn(
-                "text-[7px] font-extrabold text-[#8A6D7C] dark:text-[#CDBCAB] uppercase tracking-[0.25em] block mt-0.5",
-                (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell) && "beauty-erp-brand-subtitle"
+                "text-[8px] font-extrabold uppercase tracking-[0.25em] block mt-0.5 opacity-80 beauty-erp-brand-subtitle"
               )}>
                 {tenantBrand.subtitle}
               </span>

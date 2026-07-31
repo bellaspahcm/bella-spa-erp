@@ -151,7 +151,7 @@ export default function CommissionSettingsTab({ className }: CommissionSettingsT
           <div>
             <h2 className="text-2xl font-bold text-foreground">Cấu hình hoa hồng</h2>
             <p className="text-sm font-semibold text-muted-foreground">
-              Thiết lập mức hoa hồng mặc định cho Beauty Spa
+              Thiết lập mức hoa hồng mặc định cho hoạt động kinh doanh & bán hàng
             </p>
           </div>
         </div>
@@ -183,8 +183,8 @@ export default function CommissionSettingsTab({ className }: CommissionSettingsT
             <DollarSign className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="text-base font-black text-slate-900 uppercase tracking-wide">Hoa hồng dịch vụ</h3>
-            <p className="text-xs text-slate-500 font-semibold">Cấu hình mức hoa hồng mặc định cho các dịch vụ spa</p>
+            <h3 className="text-base font-black text-slate-900 uppercase tracking-wide">Hoa hồng dịch vụ & tư vấn</h3>
+            <p className="text-xs text-slate-500 font-semibold">Cấu hình mức hoa hồng mặc định cho các dịch vụ & giao dịch</p>
           </div>
         </div>
 
@@ -224,8 +224,8 @@ export default function CommissionSettingsTab({ className }: CommissionSettingsT
         </div>
         <p className="text-xs font-semibold text-slate-500 mt-2">
           Ví dụ: {serviceType === 'fixed' 
-            ? `${Number(serviceValue).toLocaleString('vi-VN')}đ mỗi dịch vụ` 
-            : `${serviceValue}% trên giá trị dịch vụ`}
+            ? `${Number(serviceValue).toLocaleString('vi-VN')}đ mỗi giao dịch` 
+            : `${serviceValue}% trên giá trị hợp đồng / dịch vụ`}
         </p>
       </div>
 
@@ -236,8 +236,8 @@ export default function CommissionSettingsTab({ className }: CommissionSettingsT
             <Percent className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="text-base font-black text-slate-900 uppercase tracking-wide">Hoa hồng bán sản phẩm</h3>
-            <p className="text-xs text-slate-500 font-semibold">Cấu hình mức hoa hồng mặc định cho việc bán các sản phẩm spa</p>
+            <h3 className="text-base font-black text-slate-900 uppercase tracking-wide">Hoa hồng bán hàng & sản phẩm</h3>
+            <p className="text-xs text-slate-500 font-semibold">Cấu hình mức hoa hồng mặc định cho việc bán hàng & sản phẩm / bất động sản</p>
           </div>
         </div>
 
@@ -412,7 +412,7 @@ export default function CommissionSettingsTab({ className }: CommissionSettingsT
           </div>
         </div>
         <p className="text-xs font-semibold text-slate-500 mt-2">
-          Thưởng thâm niên tính trên lương cơ bản. Áp dụng tự động theo số năm làm việc của KTV.
+          Thưởng thâm niên tính trên lương cơ bản. Áp dụng tự động theo số năm làm việc của nhân sự.
         </p>
       </div>
     </div>

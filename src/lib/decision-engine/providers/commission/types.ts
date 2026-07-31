@@ -58,6 +58,18 @@ export interface ProductSale {
   
   /** Override commission value (amount or percentage) */
   overrideValue?: number | null;
+
+  /** Property-specific commission type */
+  productCommissionType?: CommissionType | null;
+
+  /** Property-specific commission value */
+  productCommissionValue?: number | null;
+
+  /** Project-specific commission type */
+  projectCommissionType?: CommissionType | null;
+
+  /** Project-specific commission value */
+  projectCommissionValue?: number | null;
 }
 
 /**

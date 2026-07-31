@@ -2621,3 +2621,45 @@ Trước khi release module mới:
 **Commits tham khảo**:
 - `78093493` - Fix UI color contrast: replace pale pink/beige with stronger rose colors
 - `2da08645` - Fix skeleton colors: visible pink tint on light background
+
+---
+
+## Phase 7 — Capability Platform Architectural Constitution Standards
+
+> Cap nhat lan dau: 2026-07-31  
+> Ly do tao: Chuan hoa kien truc Bella EIP Capability Platform (Layer 0 den Layer 4) cho moi phan he nganh moi trong 15-20 nam toi.
+
+### Quy Tac Phân Tầng Bắt Buộc (5 Layered Architecture)
+
+Mọi phân hệ ngành mới (Lead, Real Estate, Support Ticket, Complaint, Contract, Approval, Insurance Claim) **KHÔNG ĐƯỢC XÂY ENGINE RIÊNG**. Bắt buộc phải đóng vai trò là một **Resource Provider** đăng ký vào `ResourceRegistry` và tiêu thụ các Capability có sẵn.
+
+1. **Layer 0: Shared Contracts**
+   - **ResourceRef Identity Tuple**: Luôn sử dụng tuple `{ tenantId, resourceType, resourceId }` thay vì truyền biến rời rạc.
+   - **Universal ExecutionContext**: Luôn tiêm `UniversalExecutionContext` chứa `tenant`, `actor`, `security`, `runtime` và `services` container (`logger`, `now`, `generateId`).
+   - **Interface Segregation (ISP)**: Tuân thủ các hợp đồng segregated: `AssignableResource`, `WorkflowResource`, `AuditableResource`.
+   - **Event Contracts (v1)**: Sử dụng các sự kiện chuẩn hóa `DomainEventV1` (`resource.assigned.v1`, `resource.closed.v1`) và `IntegrationEventV1` (`crm.customer.created.v1`).
+
+2. **Layer 1: Capability Foundation**
+   - Tái sử dụng 100% các Capability Foundation Engine: `AssignmentCapability`, `WorkflowCapability`, `SLACapability`, `RotationCapability`, `AuditCapability`, `RuleEvaluationCapability`.
+   - **Bảo Vệ Không Cross-Injection**: Các Capability tuyệt đối KHÔNG inject trực tiếp Capability khác trong constructor. Tất cả giao tiếp qua Event!
+
+3. **Layer 2: Resource Foundation**
+   - **Typed Provider Map**: Đăng ký Resource Provider qua `Map<KnownCapabilityKey, CapabilityProviderFactory>`.
+   - **ResourceSnapshot**: Cung cấp CQRS-Lite read model cho tra cứu siêu tốc.
+
+4. **Layer 3: Capability Runtime**
+   - **Generic SQL Schema**: Sử dụng các bảng dữ liệu generic: `resource_snapshots`, `resource_assignments`, `resource_sla_logs`, `resource_rotations`, `resource_audit_logs`.
+   - **Notification & Escalation**: Tiêu thụ `NotificationCapability` (In-app, Zalo OA) và `EscalationCapability` (Cảnh báo Quản lý).
+
+5. **Layer 4: Capability Intelligence**
+   - Tiêu thụ `WorkflowDSL`, `RuleDSL` và `AI Decision Engine` cho phân tích & tự động hóa cấp cao.
+
+---
+
+### Architectural Invariant 01 — Zero Regression & Freeze Policy
+
+- **Production Tenants (`beauty_spa`, `babycare`) LÀ TỰYỆT ĐỐI BẤT BIẾN & ĐÓNG BĂNG**.
+- Default behavior của mọi capability/schema/route mới **LUÔN LUÔN LÀ OFF**.
+- Mọi thay đổi DB cho ngành mới bắt buộc là **additive** (`CREATE TABLE IF NOT EXISTS`).
+- Bộ kiểm thử `npm run test:critical` phải vượt qua **100% (0 failures)** trước khi commit.
+

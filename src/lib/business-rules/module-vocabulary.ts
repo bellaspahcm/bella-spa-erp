@@ -182,7 +182,46 @@ const CLEANING_VOCABULARY: ModuleVocabulary = {
   },
   serviceHistory: {
     label: 'Lịch sử vệ sinh',
-    emptyState: 'Chưa có ca làm việc hoàn thành',
+    emptyState: 'Chưa ca làm việc nào hoàn thành',
+  },
+};
+
+/**
+ * Vocabulary for Real Estate domain
+ */
+const REAL_ESTATE_VOCABULARY: ModuleVocabulary = {
+  worker: {
+    singular: 'Chuyên viên tư vấn',
+    plural: 'Chuyên viên tư vấn',
+    short: 'CVTV',
+    role: 'Tư vấn viên',
+  },
+  workUnit: {
+    singular: 'Lượt tư vấn',
+    plural: 'Lượt tư vấn',
+    action: 'Đăng ký tư vấn',
+  },
+  service: {
+    singular: 'Sản phẩm căn hộ',
+    plural: 'Các sản phẩm căn hộ',
+  },
+  booking: {
+    singular: 'Đơn giữ chỗ',
+    plural: 'Các đơn giữ chỗ',
+    action: 'Tạo giữ chỗ',
+  },
+  package: {
+    singular: 'Dự án',
+    plural: 'Các dự án',
+  },
+  customer: {
+    singular: 'Khách mua',
+    plural: 'Khách mua',
+    context: 'bất động sản',
+  },
+  serviceHistory: {
+    label: 'Lịch sử giao dịch',
+    emptyState: 'Chưa có giao dịch giữ chỗ/hợp đồng nào',
   },
 };
 
@@ -193,6 +232,10 @@ const CLEANING_VOCABULARY: ModuleVocabulary = {
 export function getModuleVocabulary(moduleKey: TenantModuleKey | null | undefined): ModuleVocabulary {
   if (moduleKey === 'industrial_cleaning') {
     return CLEANING_VOCABULARY;
+  }
+  
+  if (moduleKey === 'real_estate') {
+    return REAL_ESTATE_VOCABULARY;
   }
   
   if (moduleKey === 'beauty_spa' || moduleKey === 'babycare') {

@@ -129,6 +129,10 @@ type ProductSaleLike = {
   calculated_commission?: number | null;
   override_commission_type?: 'fixed' | 'percentage' | null;
   override_commission_value?: number | null;
+  product_commission_type?: 'fixed' | 'percentage' | null;
+  product_commission_value?: number | null;
+  project_commission_type?: 'fixed' | 'percentage' | null;
+  project_commission_value?: number | null;
   status: string;
   sale_date?: string | null;
 };
@@ -280,6 +284,10 @@ export class CommissionProviderAdapter {
         salesAmount: sale.sales_amount,
         overrideType: sale.override_commission_type || null,
         overrideValue: sale.override_commission_value || null,
+        productCommissionType: sale.product_commission_type || null,
+        productCommissionValue: sale.product_commission_value || null,
+        projectCommissionType: sale.project_commission_type || null,
+        projectCommissionValue: sale.project_commission_value || null,
       }));
 
     // Map manual adjustments (only approved adjustments)

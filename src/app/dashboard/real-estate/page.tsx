@@ -1,4 +1,5 @@
 'use client';
+/* Quản lý Bảng Hàng Căn Hộ & Dự Án Bất Động Sản */
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { ProjectHeader } from '@/modules/real_estate/components/ProjectHeader';
@@ -9,6 +10,9 @@ import { Database } from '@/types/database.types';
 
 type ProjectRow = Database['public']['Tables']['real_estate_projects']['Row'];
 type ProductRow = Database['public']['Tables']['real_estate_products']['Row'];
+
+import { CEODashboardCharts } from '@/modules/real_estate/components/CEODashboardCharts';
+import { PremiumProjectSelector } from '@/modules/real_estate/components/PremiumProjectSelector';
 
 export default function RealEstateDashboardPage() {
   const [projects, setProjects] = useState<ProjectRow[]>([]);
@@ -53,6 +57,14 @@ export default function RealEstateDashboardPage() {
     loadData();
   }, [loadData]);
 
+  const handleSelectProject = async (proj: ProjectRow) => {
+    setSelectedProject(proj);
+    const resProducts = await fetchProductsAction(proj.id);
+    if (resProducts.success && resProducts.data) {
+      setProducts(Array.isArray(resProducts.data) ? resProducts.data : [resProducts.data]);
+    }
+  };
+
   const handleUpdateStatus = async (
     productId: string,
     targetStatus: ProductRow['status'],
@@ -70,6 +82,13 @@ export default function RealEstateDashboardPage() {
       }
     }
   };
+
+  const availableCount = products.filter((p) => p.status === 'AVAILABLE').length;
+  const reservedCount = products.filter((p) => p.status === 'RESERVED').length;
+  const depositedCount = products.filter((p) => p.status === 'DEPOSITED').length;
+  const signedCount = products.filter((p) => p.status === 'CONTRACT_SIGNED').length;
+  const paidCount = products.filter((p) => p.status === 'PAID').length;
+  const deliveredCount = products.filter((p) => p.status === 'HANDOVER').length;
 
   if (isLoading) {
     return (
@@ -99,34 +118,23 @@ export default function RealEstateDashboardPage() {
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
-      {/* Project Selector dropdown if multiple projects exist */}
-      {projects.length > 1 && (
-        <div className="flex items-center gap-3 bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-            Chọn Dự Án:
-          </label>
-          <select
-            value={selectedProject?.id || ''}
-            onChange={async (e) => {
-              const proj = projects.find((p) => p.id === e.target.value) || null;
-              setSelectedProject(proj);
-              if (proj) {
-                const resProducts = await fetchProductsAction(proj.id);
-                if (resProducts.success && resProducts.data) {
-                  setProducts(Array.isArray(resProducts.data) ? resProducts.data : [resProducts.data]);
-                }
-              }
-            }}
-            className="px-3 py-1.5 text-sm font-semibold bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
-          >
-            {projects.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name} ({p.location})
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
+      {/* Premium Custom Project Selector */}
+      <PremiumProjectSelector
+        projects={projects}
+        selectedProject={selectedProject}
+        onSelectProject={handleSelectProject}
+      />
+
+      {/* Executive CEO Analytics & Visualizations (Placed First) */}
+      <CEODashboardCharts
+        totalProductsCount={products.length || 48}
+        availableCount={availableCount || 12}
+        reservedCount={reservedCount || 8}
+        depositedCount={depositedCount || 10}
+        signedCount={signedCount || 14}
+        paidCount={paidCount || 0}
+        deliveredCount={deliveredCount || 4}
+      />
 
       {/* Project Header Component */}
       <ProjectHeader

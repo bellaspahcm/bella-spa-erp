@@ -1067,18 +1067,174 @@ html[data-tenant-module="pending"] [class*="to-pink-"] {
 }
 
 /* =========================================================================
+   DYNAMIC BRAND PRESET SIDEBAR OVERRIDES (WCAG 2.1 AA Compliant)
+   Dynamically styles the sidebar according to the selected brand preset
+   ========================================================================= */
+
+/* 1. JADE WELLNESS (Emerald Green #074E44 / #C8A97A Warm Gold) */
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-sidebar,
+html[data-tenant-brand-preset="jade_wellness"] aside.beauty-erp-sidebar,
+html[data-tenant-brand-preset="jade_wellness"] aside[class*="bg-"] {
+  background: linear-gradient(158deg, #052f2a 0%, #073f37 42%, #0b2240 100%) !important;
+  border-color: rgba(200, 169, 122, 0.34) !important;
+  box-shadow: 16px 0 44px rgba(11, 34, 64, 0.18) !important;
+  color: #f8f6f2 !important;
+}
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-logo-mark {
+  background: linear-gradient(145deg, #074e44 0%, #0b2240 100%) !important;
+  border: 1px solid rgba(200, 169, 122, 0.72) !important;
+  color: #c8a97a !important;
+}
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-brand-script { color: #f8f6f2 !important; }
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-brand-subtitle,
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-header { color: #c8a97a !important; }
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item { color: rgba(248, 246, 242, 0.82) !important; }
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item:hover { color: #ffffff !important; background: rgba(200, 169, 122, 0.15) !important; }
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active {
+  background: linear-gradient(135deg, #074e44 0%, #0a6357 100%) !important;
+  border-color: rgba(200, 169, 122, 0.52) !important;
+  color: #ffffff !important;
+}
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-profile-card,
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-avatar,
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-icon-button {
+  background: rgba(7, 78, 68, 0.35) !important;
+  border-color: rgba(200, 169, 122, 0.36) !important;
+  color: #c8a97a !important;
+}
+
+/* 2. LUXURY NAVY & GOLD (#1E3A8A / #D97706 Amber Gold) */
+html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-sidebar,
+html[data-tenant-brand-preset="luxury_navy"] aside.beauty-erp-sidebar,
+html[data-tenant-brand-preset="luxury_navy"] aside[class*="bg-"] {
+  background: linear-gradient(158deg, #0b192c 0%, #1e3a8a 52%, #0f172a 100%) !important;
+  border-color: rgba(217, 119, 6, 0.34) !important;
+  box-shadow: 16px 0 44px rgba(11, 25, 44, 0.28) !important;
+  color: #f8fafc !important;
+}
+html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-logo-mark {
+  background: linear-gradient(145deg, #1e3a8a 0%, #0b192c 100%) !important;
+  border: 1px solid rgba(217, 119, 6, 0.72) !important;
+  color: #d97706 !important;
+}
+html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-brand-script { color: #f8fafc !important; }
+html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-brand-subtitle,
+html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-header { color: #f59e0b !important; }
+html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-item { color: rgba(248, 250, 252, 0.82) !important; }
+html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-item:hover { color: #ffffff !important; background: rgba(217, 119, 6, 0.15) !important; }
+html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-item-active {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%) !important;
+  border-color: rgba(255, 255, 255, 0.32) !important;
+  color: #ffffff !important;
+}
+html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-profile-card,
+html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-avatar,
+html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-icon-button {
+  background: rgba(15, 23, 42, 0.72) !important;
+  border-color: rgba(217, 119, 6, 0.28) !important;
+  color: #ffffff !important;
+}
+
+/* 3. OCEAN CLEAN (Ocean Blue #1E40AF / #3B82F6 Bright Blue) */
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-sidebar,
+html[data-tenant-brand-preset="ocean_clean"] aside.beauty-erp-sidebar,
+html[data-tenant-brand-preset="ocean_clean"] aside[class*="bg-"] {
+  background: linear-gradient(158deg, #001c44 0%, #1e40af 42%, #0c3776 100%) !important;
+  border-color: rgba(59, 130, 246, 0.34) !important;
+  box-shadow: 16px 0 44px rgba(0, 28, 68, 0.18) !important;
+  color: #f8f9fa !important;
+}
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-logo-mark {
+  background: linear-gradient(145deg, #1e40af 0%, #001c44 100%) !important;
+  border: 1px solid rgba(59, 130, 246, 0.72) !important;
+  color: #60a5fa !important;
+}
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-brand-script { color: #f8f9fa !important; }
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-brand-subtitle,
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-header { color: #93c5fd !important; }
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item { color: rgba(248, 249, 250, 0.82) !important; }
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item:hover { color: #ffffff !important; background: rgba(59, 130, 246, 0.15) !important; }
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item-active {
+  background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%) !important;
+  border-color: rgba(96, 165, 250, 0.52) !important;
+  color: #ffffff !important;
+}
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-profile-card,
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-avatar,
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-icon-button {
+  background: rgba(30, 64, 175, 0.28) !important;
+  border-color: rgba(96, 165, 250, 0.36) !important;
+  color: #ffffff !important;
+}
+
+/* 4. GRAPHITE LUXE (Dark Charcoal #18181B / #71717A Silver) */
+html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-sidebar,
+html[data-tenant-brand-preset="graphite_luxe"] aside.beauty-erp-sidebar,
+html[data-tenant-brand-preset="graphite_luxe"] aside[class*="bg-"] {
+  background: linear-gradient(158deg, #09090b 0%, #18181b 52%, #27272a 100%) !important;
+  border-color: rgba(161, 161, 170, 0.34) !important;
+  box-shadow: 16px 0 44px rgba(9, 9, 11, 0.28) !important;
+  color: #f4f4f5 !important;
+}
+html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-logo-mark {
+  background: linear-gradient(145deg, #27272a 0%, #09090b 100%) !important;
+  border: 1px solid rgba(161, 161, 170, 0.72) !important;
+  color: #e4e4e7 !important;
+}
+html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-brand-script { color: #f4f4f5 !important; }
+html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-brand-subtitle,
+html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-nav-header { color: #a1a1aa !important; }
+html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-nav-item { color: rgba(244, 244, 245, 0.82) !important; }
+html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-nav-item:hover { color: #ffffff !important; background: rgba(161, 161, 170, 0.15) !important; }
+html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-nav-item-active {
+  background: linear-gradient(135deg, #3f3f46 0%, #27272a 100%) !important;
+  border-color: rgba(161, 161, 170, 0.52) !important;
+  color: #ffffff !important;
+}
+html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-profile-card,
+html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-avatar,
+html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-icon-button {
+  background: rgba(39, 39, 42, 0.72) !important;
+  border-color: rgba(161, 161, 170, 0.28) !important;
+  color: #ffffff !important;
+}
+
+/* 5. BELLA ROSE (Soft Rose #FFF0F3 Light Pink / #831843 Deep Burgundy) */
+html[data-tenant-brand-preset="bella_rose"] .beauty-erp-sidebar,
+html[data-tenant-brand-preset="bella_rose"] aside.beauty-erp-sidebar {
+  background: #FFF0F3 !important;
+  border-color: rgba(236, 72, 153, 0.15) !important;
+  color: #831843 !important;
+}
+html[data-tenant-brand-preset="bella_rose"] .beauty-erp-logo-mark {
+  background: linear-gradient(145deg, #a91555 0%, #881337 100%) !important;
+  border: 1px solid rgba(248, 165, 194, 0.72) !important;
+  color: #ffffff !important;
+}
+html[data-tenant-brand-preset="bella_rose"] .beauty-erp-brand-script { color: #831843 !important; }
+html[data-tenant-brand-preset="bella_rose"] .beauty-erp-brand-subtitle,
+html[data-tenant-brand-preset="bella_rose"] .beauty-erp-nav-header { color: #9d174d !important; }
+html[data-tenant-brand-preset="bella_rose"] .beauty-erp-nav-item { color: #831843 !important; }
+html[data-tenant-brand-preset="bella_rose"] .beauty-erp-nav-item:hover { color: #831843 !important; background: rgba(251, 207, 232, 0.5) !important; }
+html[data-tenant-brand-preset="bella_rose"] .beauty-erp-nav-item-active {
+  background: linear-gradient(135deg, #a91555 0%, #9d174d 100%) !important;
+  border-color: rgba(248, 165, 194, 0.52) !important;
+  color: #ffffff !important;
+}
+
+/* =========================================================================
    BABY CARE / DEFAULT THEME - Pink Sidebar Override
    Baby Care (babycare module or no module) uses pink theme
    Stronger selectors to override Tailwind inline bg-[#FAFAFA] class
    ========================================================================= */
 
 /* Override sidebar background for Baby Care / Default theme */
-html[data-tenant-module="baby_care"] .beauty-erp-sidebar,
-html[data-tenant-module="babycare"] .beauty-erp-sidebar,
-html[data-tenant-module="baby_care"] aside.beauty-erp-sidebar,
-html[data-tenant-module="babycare"] aside.beauty-erp-sidebar,
-html[data-tenant-module="baby_care"] .beauty-erp-sidebar nav,
-html[data-tenant-module="babycare"] .beauty-erp-sidebar nav {
+html:not([data-tenant-brand-preset])[data-tenant-module="baby_care"] .beauty-erp-sidebar,
+html:not([data-tenant-brand-preset])[data-tenant-module="babycare"] .beauty-erp-sidebar,
+html:not([data-tenant-brand-preset])[data-tenant-module="baby_care"] aside.beauty-erp-sidebar,
+html:not([data-tenant-brand-preset])[data-tenant-module="babycare"] aside.beauty-erp-sidebar,
+html:not([data-tenant-brand-preset])[data-tenant-module="baby_care"] .beauty-erp-sidebar nav,
+html:not([data-tenant-brand-preset])[data-tenant-module="babycare"] .beauty-erp-sidebar nav {
   background: #FFF0F3 !important;
   background-color: #FFF0F3 !important;
   background-image: none !important;
@@ -1427,6 +1583,111 @@ html[data-tenant-module="beauty_spa"] .glass-pink {
 html[data-tenant-module="beauty_spa"] .luxury-card-white {
   border-color: rgba(200, 169, 122, 0.22) !important;
   box-shadow: 0 16px 36px rgba(11, 34, 64, 0.07) !important;
+}
+
+/* =========================================================================
+   REAL ESTATE (BELLA LAND) THEME - System-wide Overrides
+   ========================================================================= */
+html[data-tenant-module="real_estate"] body {
+  background-color: #f8fafc !important;
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.74) 0%, rgba(248, 250, 252, 0.96) 38%, rgba(241, 245, 249, 0.86) 100%),
+    radial-gradient(ellipse 70% 46% at 8% 0%, rgba(30, 58, 138, 0.08) 0%, transparent 58%),
+    radial-gradient(ellipse 58% 42% at 100% 14%, rgba(217, 119, 6, 0.12) 0%, transparent 55%) !important;
+}
+
+html[data-tenant-module="real_estate"] .beauty-erp-sidebar {
+  background: linear-gradient(158deg, #0b192c 0%, #1e3a8a 52%, #0f172a 100%) !important;
+  border-color: rgba(217, 119, 6, 0.34) !important;
+  box-shadow: 16px 0 44px rgba(11, 25, 44, 0.28) !important;
+  color: #f8fafc !important;
+}
+
+html[data-tenant-module="real_estate"] aside.beauty-erp-sidebar,
+html[data-tenant-module="real_estate"] aside[class*="bg-[#FFF0F3]"],
+html[data-tenant-module="real_estate"] aside[class*="bg-[#FAFAFA]"],
+html[data-tenant-module="real_estate"] aside[class*="border-[#FBCFE8]"] {
+  background: linear-gradient(158deg, #0b192c 0%, #1e3a8a 52%, #0f172a 100%) !important;
+  border-color: rgba(217, 119, 6, 0.34) !important;
+  color: #f8fafc !important;
+}
+
+html[data-tenant-module="real_estate"] .beauty-erp-sidebar::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 22px !important;
+  pointer-events: none !important;
+  border: 1px solid rgba(217, 119, 6, 0.18) !important;
+  border-radius: 30px !important;
+}
+
+html[data-tenant-module="real_estate"] .beauty-erp-logo-mark {
+  background: linear-gradient(145deg, #1e3a8a 0%, #0b192c 100%) !important;
+  border: 1px solid rgba(217, 119, 6, 0.72) !important;
+  color: #d97706 !important;
+  box-shadow: 0 14px 30px rgba(11, 25, 44, 0.22) !important;
+}
+
+html[data-tenant-module="real_estate"] .beauty-erp-brand-script {
+  color: #f8fafc !important;
+  text-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+}
+
+html[data-tenant-module="real_estate"] .beauty-erp-brand-subtitle,
+html[data-tenant-module="real_estate"] .beauty-erp-nav-header,
+html[data-tenant-module="real_estate"] .beauty-erp-profile-role {
+  color: rgba(217, 119, 6, 0.86) !important;
+}
+
+html[data-tenant-module="real_estate"] .beauty-erp-nav-item {
+  color: rgba(248, 250, 252, 0.74) !important;
+  border-color: transparent !important;
+}
+
+html[data-tenant-module="real_estate"] .beauty-erp-nav-item:hover {
+  background: rgba(248, 250, 252, 0.08) !important;
+  border-color: rgba(217, 119, 6, 0.24) !important;
+  color: #ffffff !important;
+}
+
+html[data-tenant-module="real_estate"] .beauty-erp-nav-item-active {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%) !important;
+  border-color: rgba(255, 255, 255, 0.32) !important;
+  color: #ffffff !important;
+  box-shadow: 0 12px 30px rgba(217, 119, 6, 0.35) !important;
+}
+
+html[data-tenant-module="real_estate"] .beauty-erp-profile-card,
+html[data-tenant-module="real_estate"] .beauty-erp-avatar,
+html[data-tenant-module="real_estate"] .beauty-erp-icon-button {
+  background: rgba(15, 23, 42, 0.72) !important;
+  border-color: rgba(217, 119, 6, 0.28) !important;
+  color: #ffffff !important;
+}
+
+/* Real Estate: Override pink/rose utility classes to Navy/Amber */
+html[data-tenant-module="real_estate"] .bg-rose-50,
+html[data-tenant-module="real_estate"] .bg-pink-50 {
+  background-color: #f0f9ff !important;
+}
+
+html[data-tenant-module="real_estate"] .bg-rose-100,
+html[data-tenant-module="real_estate"] .bg-pink-100 {
+  background-color: #e0f2fe !important;
+}
+
+html[data-tenant-module="real_estate"] .border-rose-100,
+html[data-tenant-module="real_estate"] .border-pink-100 {
+  border-color: #bae6fd !important;
+}
+
+html[data-tenant-module="real_estate"] .hover\:border-rose-200:hover {
+  border-color: #7dd3fc !important;
+}
+
+html[data-tenant-module="real_estate"] .text-rose-500,
+html[data-tenant-module="real_estate"] .text-pink-500 {
+  color: #0284c7 !important;
 }
 
 html[data-tenant-module="beauty_spa"] .luxury-card-pink {
@@ -2837,6 +3098,29 @@ html[data-tenant-module="industrial_cleaning"] .beauty-theme-toggle-active-dark 
   box-shadow: 0 4px 12px rgba(12, 55, 118, 0.24) !important;
 }
 
+/* Theme Toggle Box - Real Estate Tenant Overrides */
+html[data-tenant-module="real_estate"] .beauty-theme-toggle {
+  background: #f1f5f9 !important; /* slate-100 */
+  border-color: #cbd5e1 !important; /* slate-300 */
+}
+
+html.dark[data-tenant-module="real_estate"] .beauty-theme-toggle {
+  background: #0f172a !important; /* slate-900 */
+  border-color: #1e293b !important; /* slate-800 */
+}
+
+html[data-tenant-module="real_estate"] .beauty-theme-toggle-active-light {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.1) !important;
+}
+
+html[data-tenant-module="real_estate"] .beauty-theme-toggle-active-dark {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
+  border-color: #334155 !important;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.3) !important;
+}
+
 html[data-tenant-module="industrial_cleaning"] .glass-pink {
   background: rgba(255, 255, 255, 0.72) !important;
   border-color: rgba(45, 147, 174, 0.26) !important;
@@ -3918,17 +4202,206 @@ html[data-tenant-module="beauty_spa"] .luxury-card-pink *:not(.bg-white):not(.bg
 html[data-tenant-module="beauty_spa"] .luxury-card-pink .text-primary {
   color: #34d399 !important;
 }
+html[data-tenant-module="beauty_spa"] .border-rose-200 {
+  border-color: #a7f3d0 !important;
+}
+
+html[data-tenant-module="beauty_spa"] .border-pink-100 {
+  border-color: #d1fae5 !important;
+}
+
+/* Hover States */
+html[data-tenant-module="beauty_spa"] .hover\:bg-rose-50:hover,
+html[data-tenant-module="beauty_spa"] button.hover\:bg-rose-50:hover {
+  background-color: #ecfdf5 !important;
+}
+
+html[data-tenant-module="beauty_spa"] .hover\:bg-rose-600:hover {
+  background-color: #059669 !important;
+}
+
+html[data-tenant-module="beauty_spa"] .hover\:bg-pink-50:hover {
+  background-color: #ecfdf5 !important;
+}
+
+/* Shadow Colors */
+html[data-tenant-module="beauty_spa"] .shadow-rose-100 {
+  --tw-shadow-color: #d1fae5 !important;
+  --tw-shadow: var(--tw-shadow-colored) !important;
+}
+
+html[data-tenant-module="beauty_spa"] .shadow-rose-200 {
+  --tw-shadow-color: #a7f3d0 !important;
+  --tw-shadow: var(--tw-shadow-colored) !important;
+}
+
+/* Loader/Spinner */
+html[data-tenant-module="beauty_spa"] .animate-spin.text-rose-500 {
+  color: #10b981 !important;
+}
+
+/* Opacity variants */
+html[data-tenant-module="beauty_spa"] .bg-rose-50\/40 {
+  background-color: rgba(236, 253, 245, 0.4) !important;
+}
+
+html[data-tenant-module="beauty_spa"] .bg-rose-50\/50 {
+  background-color: rgba(236, 253, 245, 0.5) !important;
+}
+
+html[data-tenant-module="beauty_spa"] .bg-pink-50\/40 {
+  background-color: rgba(236, 253, 245, 0.4) !important;
+}
+
+html[data-tenant-module="beauty_spa"] .border-rose-100\/50 {
+  border-color: rgba(209, 250, 229, 0.5) !important;
+}
+
+/* END BEAUTY SPA OVERRIDES */
+
+/* Intelligence Dashboard Tabs - Active State Override */
+[data-state="active"][role="tab"] {
+  background-color: #E91E63 !important;
+  color: white !important;
+  border-color: #E91E63 !important;
+}
+
+/* KTV Performance Table Full Width Fix */
+.beauty-top-ktv-table-wrap {
+  width: 100% !important;
+}
+.beauty-top-ktv-table {
+  width: 100% !important;
+  table-layout: fixed !important;
+}
+
+/* Salary Reconciliation Table Full Width Fix */
+.salary-reconciliation-table {
+  width: 100% !important;
+  min-width: 64rem !important;
+}
+
+
+/* ============================================
+   Automation Studio Design Tokens
+   ============================================ */
+
+:root {
+  /* Automation-specific colors */
+  --color-automation-primary: #f43f5e; /* rose-500 */
+  --color-automation-primary-light: #ffe4e6; /* rose-50 */
+  --color-automation-primary-dark: #be123c; /* rose-700 */
+  
+  /* Semantic colors for automation states */
+  --color-automation-success: #10b981; /* green-500 */
+  --color-automation-error: #ef4444; /* red-500 */
+  --color-automation-warning: #f59e0b; /* amber-500 */
+  --color-automation-info: #3b82f6; /* blue-500 */
+  
+  /* Automation spacing */
+  --spacing-automation-xs: 4px;
+  --spacing-automation-sm: 8px;
+  --spacing-automation-md: 16px;
+  --spacing-automation-lg: 24px;
+  --spacing-automation-xl: 32px;
+  --spacing-automation-card: 20px;
+  
+  /* Automation shadows */
+  --shadow-automation-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-automation-md: 0 4px 8px rgba(0, 0, 0, 0.1);
+  --shadow-automation-lg: 0 8px 16px rgba(0, 0, 0, 0.15);
+  --shadow-automation-xl: 0 16px 32px rgba(0, 0, 0, 0.2);
+  --shadow-automation-rose: 0 4px 12px rgba(244, 63, 94, 0.2);
+  --shadow-automation-blue: 0 4px 12px rgba(59, 130, 246, 0.2);
+  
+  /* Automation border radius */
+  --radius-automation-sm: 8px;
+  --radius-automation-md: 12px;
+  --radius-automation-lg: 16px;
+  --radius-automation-xl: 24px;
+  
+  /* Automation transitions */
+  --transition-automation-fast: 100ms ease-out;
+  --transition-automation-default: 200ms ease-out;
+  --transition-automation-medium: 300ms ease-in-out;
+  --transition-automation-slow: 500ms ease-in-out;
+}
+
+/* Automation Studio utility classes */
+.automation-card-hover {
+  transition: transform var(--transition-automation-default), 
+              box-shadow var(--transition-automation-default);
+}
+
+.automation-card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-automation-lg);
+}
+
+.automation-btn-press {
+  transition: transform var(--transition-automation-fast), 
+              background var(--transition-automation-default);
+}
+
+.automation-btn-press:active {
+  transform: scale(0.98);
+}
+
+/* Command Palette backdrop */
+.command-palette-backdrop {
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+/* Empty state gradients */
+.automation-empty-state {
+  background: linear-gradient(135deg, var(--color-automation-primary-light) 0%, white 100%);
+}
+
+/* Version timeline */
+.automation-timeline-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--color-automation-primary);
+}
+
+.automation-timeline-line {
+  width: 2px;
+  background: #fda4af; /* rose-300 */
+}
+
+/* ============================================
+   Bella Spa ERP Viewport & Zoom Lock Override
+   ============================================ */
+html, body {
+  touch-action: pan-x pan-y !important;
+  -webkit-text-size-adjust: 100% !important;
+  -moz-text-size-adjust: 100% !important;
+  text-size-adjust: 100% !important;
+  overflow-x: hidden !important;
+  max-width: 100vw !important;
+}
+
+/* ============================================
+   Beauty Spa Text Contrast & Visibility Overrides
+   ============================================ */
+html[data-tenant-module="beauty_spa"] .luxury-card-pink,
+html[data-tenant-module="beauty_spa"] .luxury-card-pink *:not(.bg-white):not(.bg-white *):not([class*="bg-white"]):not([class*="bg-white"] *):not(.bg-slate-50):not(.bg-slate-50 *):not([class*="bg-slate-50"]):not([class*="bg-slate-50"] *):not([class*="bg-gradient-to-b"]):not([class*="bg-gradient-to-b"] *):not(.bg-amber-50):not(.bg-amber-50 *),
+.reconciliation-kpi-card,
+.reconciliation-kpi-card * {
+  color: #ffffff !important;
+}
+
+/* Specific override for beauty_spa payment amount contrast in luxury-card-pink */
+html[data-tenant-module="beauty_spa"] .luxury-card-pink .text-primary {
+  color: #34d399 !important;
+}
 
 /* Specific override for beauty_spa cancelled status indicators to remain red */
 html[data-tenant-module="beauty_spa"] .session-status-dot-cancelled {
   background-color: #f43f5e !important;
   box-shadow: 0 0 8px rgba(244, 63, 94, 0.5) !important;
-}
-
-html[data-tenant-module="beauty_spa"] .session-status-badge-cancelled {
-  background-color: #fff1f2 !important;
-  border-color: #fecdd3 !important;
-  color: #e11d48 !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] .bella-data-table td,
@@ -3938,4 +4411,73 @@ html.dark[data-tenant-module="beauty_spa"] .bella-data-table td .text-slate-500,
 html.dark[data-tenant-module="beauty_spa"] .bella-data-table td .text-slate-400 {
   color: #ffffff !important;
   --font-heading: var(--font-sans, system-ui, sans-serif);
+}
+
+/* ============================================
+   Tenant Brand Styling Engine (Appearance Engine)
+   ============================================ */
+
+/* --- 1. BO GÓC (Radius Style) --- */
+html[data-tenant-brand-radius="soft"] {
+  --radius: 1.25rem;
+}
+html[data-tenant-brand-radius="soft"] .card,
+html[data-tenant-brand-radius="soft"] .rounded-2xl {
+  border-radius: 1.5rem !important;
+}
+
+html[data-tenant-brand-radius="balanced"] {
+  --radius: 0.875rem;
+}
+html[data-tenant-brand-radius="balanced"] .card,
+html[data-tenant-brand-radius="balanced"] .rounded-2xl {
+  border-radius: 1rem !important;
+}
+
+html[data-tenant-brand-radius="compact"] {
+  --radius: 0.5rem;
+}
+html[data-tenant-brand-radius="compact"] .card,
+html[data-tenant-brand-radius="compact"] .rounded-2xl,
+html[data-tenant-brand-radius="compact"] .rounded-3xl,
+html[data-tenant-brand-radius="compact"] .rounded-xl {
+  border-radius: 0.625rem !important;
+}
+
+/* --- 2. KIỂU NÚT (Button Style) --- */
+html[data-tenant-brand-button="pill"] button:not(.no-pill),
+html[data-tenant-brand-button="pill"] .btn {
+  border-radius: 9999px !important;
+}
+
+html[data-tenant-brand-button="rounded"] button:not(.no-pill),
+html[data-tenant-brand-button="rounded"] .btn {
+  border-radius: 0.875rem !important;
+}
+
+html[data-tenant-brand-button="minimal"] button:not(.no-pill),
+html[data-tenant-brand-button="minimal"] .btn {
+  border-radius: 0.5rem !important;
+  box-shadow: none !important;
+}
+
+/* --- 3. MENU STYLE --- */
+html[data-tenant-brand-menu="comfortable"] aside nav a > div {
+  padding-top: 0.875rem !important;
+  padding-bottom: 0.875rem !important;
+  font-size: 0.875rem !important;
+}
+
+html[data-tenant-brand-menu="compact"] aside nav a > div {
+  padding-top: 0.4rem !important;
+  padding-bottom: 0.4rem !important;
+  padding-left: 0.875rem !important;
+  padding-right: 0.875rem !important;
+  font-size: 0.8125rem !important;
+  min-height: 2.25rem !important;
+}
+html[data-tenant-brand-menu="compact"] aside nav .beauty-erp-nav-header {
+  padding-top: 0.375rem !important;
+  padding-bottom: 0.125rem !important;
+  margin-top: 0.375rem !important;
 }

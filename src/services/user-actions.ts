@@ -10,7 +10,7 @@ import { randomBytes } from 'crypto';
 import type { Database } from '@/types/database.types';
 import { getMonthStart } from '@/lib/utils';
 import type { SupabaseClient as SupabaseJsClient } from '@supabase/supabase-js';
-import { recalculateAndSaveSalaryRecordEngine } from '@/modules/hr-salary/actions/salary-recalculation-engine';
+
 import { cache } from 'react';
 import { sendTemporaryPasswordEmail } from '@/lib/mail';
 
@@ -421,6 +421,7 @@ async function recalculateCurrentMonthSalary(
   ktvId: string,
   tenantId: string,
 ) {
+  const { recalculateAndSaveSalaryRecordEngine } = await import('@/modules/hr-salary/actions/salary-recalculation-engine');
   return recalculateAndSaveSalaryRecordEngine(
     supabase as unknown as SalarySupabaseClient,
     ktvId,
@@ -752,6 +753,7 @@ export async function updateUser(
       const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
       
       // Recalculate salary for current month
+      const { recalculateAndSaveSalaryRecordEngine } = await import('@/modules/hr-salary/actions/salary-recalculation-engine');
       await recalculateAndSaveSalaryRecordEngine(
         supabase,
         id,

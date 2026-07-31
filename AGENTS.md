@@ -11,7 +11,24 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # CRITICAL BELLA ERP DEVELOPMENT & TESTING RULES
 
-You must strictly adhere to the following rules when working on this codebase to prevent regression bugs:
+## 0. Architectural Invariant 01 — Zero Regression & Freeze Policy
+- **Production tenants are IMMUTABLE & FROZEN** (`beauty_spa`, `babycare`).
+  - No new feature, module, engine, provider, route, database migration, menu, workflow, capability, or registry registration may alter the runtime behavior of existing production tenants unless explicitly enabled.
+  - **Default behavior is ALWAYS OFF**.
+- **Capability First Enforcement**:
+  - Core never renders new menus or executes new routes/providers unless `manifest.enabledCapabilities.includes(...)` is true.
+  - If capability is missing: No render, no routing, no provider loading, no database queries.
+- **Provider Optional**:
+  - Core MUST NOT assume a Provider exists (`if (!manifest.providers?.domain) return notFound()`).
+- **Database & Migration Isolation**:
+  - NEVER alter legacy production tables (`spa_booking`, `spa_customer`, `payroll`, `commission`, `inventory`) with breaking constraints (`ALTER TABLE`, `NOT NULL`, `FOREIGN KEY`, triggers).
+  - New features MUST use dedicated, additive new tables (`organization_units`, `lead_rotations`, etc.).
+- **Engine Isolation**:
+  - Legacy engines (`BookingEngine`, `CommissionEngine`, `PayrollEngine`, `InventoryEngine`, `TreatmentEngine`) MUST NOT be refactored or altered.
+  - New engines (`LeadEngine`, `OrganizationEngine`, `RotationEngine`, `SLAEngine`) MUST be built as standalone, decoupled engines.
+- **Production Vertical Freeze**:
+  - `beauty_spa` and `babycare` are **FROZEN**: ❌ No refactoring, ❌ No schema alterations, ❌ No workflow changes, ❌ No menu changes.
+  - ✅ Only bug fixes, performance optimizations, and opt-in capability additions are permitted.
 
 ## 1. Zero Silent Database Failures
 - **NEVER swallow database execution errors.** Do not wrap database operations in `try/catch` blocks that only log the error (e.g. `console.error`) and return a successful response or status.

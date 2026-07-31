@@ -73,13 +73,14 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
         type="button"
         disabled={disabled}
         onClick={() => setIsOpen(!isOpen)}
-        className={buttonClassName || cn(
+        className={cn(
           "w-full min-w-0 max-w-full overflow-hidden flex items-center justify-between px-5 py-3.5 rounded-2xl border transition-all duration-300",
           "bg-white shadow-sm hover:shadow-md active:scale-[0.98]",
           isOpen 
             ? "border-primary/35 ring-4 ring-primary/10 ring-offset-0 shadow-primary/5 dark:shadow-none" 
             : "border-slate-100 hover:border-primary/20",
-          disabled && "opacity-50 cursor-not-allowed bg-slate-50 grayscale-[0.5]"
+          disabled && "opacity-50 cursor-not-allowed bg-slate-50 grayscale-[0.5]",
+          buttonClassName
         )}
       >
         <div className="flex items-center gap-3 min-w-0">

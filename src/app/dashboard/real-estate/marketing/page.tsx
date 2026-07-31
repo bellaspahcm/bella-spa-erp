@@ -1,141 +1,313 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
-  Megaphone, UserPlus, Phone, Mail, MapPin, Calendar,
-  TrendingUp, Filter, Search, ChevronRight,
-  CheckCircle2, Clock, XCircle, Zap, Star,
-  BarChart2, ArrowUpRight,
+  Megaphone, UserPlus, Phone, Mail, Clock,
+  Filter, Search, ChevronRight,
+  CheckCircle2, Zap, Settings, ArrowRightLeft, Eye, PhoneCall,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-// ─── Types ───────────────────────────────────────────────────────────────────
-type LeadStatus = 'new' | 'contacted' | 'qualified' | 'converted' | 'lost';
+import {
+  LeadEngineFacade,
+  ManagedLead,
+  LeadOutcome,
+  SalesAgent,
+  LeadRuleConfig,
+} from '@/platform/lead-engine';
 
-interface MarketingLead {
-  id: string;
-  fullName: string;
-  phone: string;
-  email: string;
-  source: 'facebook' | 'zalo' | 'referral' | 'website' | 'event';
-  interestedProject: string;
-  budget: string;
-  status: LeadStatus;
-  createdAt: string;
-  notes: string;
-}
+import { LeadSLABadge } from '@/components/lead-engine/LeadSLABadge';
+import { LeadTimelineDrawer } from '@/components/lead-engine/LeadTimelineDrawer';
+import { LeadActionModal } from '@/components/lead-engine/LeadActionModal';
+import { LeadRuleConfigTab } from '@/components/lead-engine/LeadRuleConfigTab';
 
-// ─── Mock Data ────────────────────────────────────────────────────────────────
-const INITIAL_LEADS: MarketingLead[] = [
+// ─── Available Sales Agents ───────────────────────────────────────────────────
+const AVAILABLE_SALES: SalesAgent[] = [
+  { id: 'sale-001', name: 'Nguyễn Văn A', role: 'Senior Sales Specialist' },
+  { id: 'sale-002', name: 'Trần Thị B', role: 'Real Estate Consultant' },
+  { id: 'sale-003', name: 'Lê Hoàng C', role: 'Sales Executive' },
+  { id: 'sale-004', name: 'Phạm Thanh D', role: 'Junior Agent' },
+];
+
+// ─── Mock Managed Leads ───────────────────────────────────────────────────────
+const INITIAL_MANAGED_LEADS: ManagedLead[] = [
   {
-    id: 'lead-001', fullName: 'Nguyễn Văn Minh', phone: '0901234567',
-    email: 'minh.nv@gmail.com', source: 'facebook',
+    id: 'lead-001',
+    tenantId: 'tenant-re-01',
+    moduleKey: 'real_estate',
+    fullName: 'Nguyễn Văn Minh',
+    phone: '0901234567',
+    email: 'minh.nv@gmail.com',
+    source: 'facebook',
     interestedProject: 'Elyse Island – Shophouse Marina',
-    budget: '5 – 8 tỷ', status: 'qualified', createdAt: '2026-07-28',
+    budget: '5 – 8 tỷ',
+    state: 'waiting_accept',
+    currentOutcome: 'NEW',
+    currentSaleId: 'sale-001',
+    currentSaleName: 'Nguyễn Văn A',
+    assignedAt: new Date().toISOString(),
+    noAnswerCount: 0,
+    rotationCount: 0,
+    rotationHistory: [],
+    auditTimeline: [
+      {
+        id: 'evt-001',
+        leadId: 'lead-001',
+        eventType: 'lead_assigned',
+        actorId: 'admin-01',
+        actorName: 'Admin Hệ Thống',
+        description: 'Đã phân bổ Lead cho Sale [Nguyễn Văn A]. Hạn chót nhận lead: 30 phút.',
+        timestamp: new Date().toISOString(),
+      },
+    ],
+    activeSLATimer: {
+      id: 'sla-001',
+      leadId: 'lead-001',
+      stage: 'accept',
+      startTime: new Date().toISOString(),
+      deadlineTime: new Date(Date.now() + 20 * 60 * 1000).toISOString(),
+      isBreached: false,
+      isCompleted: false,
+    },
     notes: 'Khách quan tâm căn góc tầng cao, cần tư vấn thêm pháp lý.',
+    createdAt: '2026-07-28',
+    updatedAt: new Date().toISOString(),
   },
   {
-    id: 'lead-002', fullName: 'Trần Thị Lan', phone: '0912345678',
-    email: 'lan.tt@outlook.com', source: 'zalo',
+    id: 'lead-002',
+    tenantId: 'tenant-re-01',
+    moduleKey: 'real_estate',
+    fullName: 'Trần Thị Lan',
+    phone: '0912345678',
+    email: 'lan.tt@outlook.com',
+    source: 'zalo',
     interestedProject: 'Elyse Island – Shophouse Marina',
-    budget: '3 – 5 tỷ', status: 'contacted', createdAt: '2026-07-29',
+    budget: '3 – 5 tỷ',
+    state: 'in_progress',
+    currentOutcome: 'CONTACTED',
+    currentSaleId: 'sale-002',
+    currentSaleName: 'Trần Thị B',
+    assignedAt: new Date().toISOString(),
+    acceptedAt: new Date().toISOString(),
+    noAnswerCount: 0,
+    rotationCount: 0,
+    rotationHistory: [],
+    auditTimeline: [
+      {
+        id: 'evt-002',
+        leadId: 'lead-002',
+        eventType: 'lead_accepted',
+        actorId: 'sale-002',
+        actorName: 'Trần Thị B',
+        description: 'Sale [Trần Thị B] đã bấm Nhận Lead thành công.',
+        timestamp: new Date().toISOString(),
+      },
+    ],
+    activeSLATimer: {
+      id: 'sla-002',
+      leadId: 'lead-002',
+      stage: 'followup_1',
+      startTime: new Date().toISOString(),
+      deadlineTime: new Date(Date.now() + 90 * 60 * 1000).toISOString(),
+      isBreached: false,
+      isCompleted: false,
+    },
     notes: 'Đã gọi điện xác nhận. Hẹn gặp trực tiếp thứ 6.',
+    createdAt: '2026-07-29',
+    updatedAt: new Date().toISOString(),
   },
   {
-    id: 'lead-003', fullName: 'Phạm Hùng Cường', phone: '0923456789',
-    email: 'cuong.ph@company.vn', source: 'referral',
+    id: 'lead-003',
+    tenantId: 'tenant-re-01',
+    moduleKey: 'real_estate',
+    fullName: 'Phạm Hùng Cường',
+    phone: '0923456789',
+    email: 'cuong.ph@company.vn',
+    source: 'referral',
     interestedProject: 'Elyse Island – Shophouse Marina',
-    budget: '8 – 12 tỷ', status: 'converted', createdAt: '2026-07-25',
+    budget: '8 – 12 tỷ',
+    state: 'converted',
+    currentOutcome: 'BOOKING',
+    currentSaleId: 'sale-003',
+    currentSaleName: 'Lê Hoàng C',
+    assignedAt: new Date().toISOString(),
+    acceptedAt: new Date().toISOString(),
+    noAnswerCount: 0,
+    rotationCount: 0,
+    rotationHistory: [],
+    auditTimeline: [
+      {
+        id: 'evt-003',
+        leadId: 'lead-003',
+        eventType: 'lead_converted',
+        actorId: 'sale-003',
+        actorName: 'Lê Hoàng C',
+        description: '🎉 Chúc mừng! Lead đã chốt thành công Booking / Hợp đồng căn A1-301.',
+        timestamp: new Date().toISOString(),
+      },
+    ],
     notes: 'Đã ký HĐMB căn A1-301. Khách VIP.',
-  },
-  {
-    id: 'lead-004', fullName: 'Lê Thị Hoa', phone: '0934567890',
-    email: 'hoa.lt@gmail.com', source: 'website',
-    interestedProject: 'Elyse Island – Shophouse Marina',
-    budget: '2 – 3 tỷ', status: 'new', createdAt: '2026-07-31',
-    notes: 'Vừa điền form đăng ký trên website.',
-  },
-  {
-    id: 'lead-005', fullName: 'Đặng Quốc Bảo', phone: '0945678901',
-    email: 'bao.dq@mail.com', source: 'event',
-    interestedProject: 'Elyse Island – Shophouse Marina',
-    budget: '4 – 6 tỷ', status: 'lost', createdAt: '2026-07-20',
-    notes: 'Đã mua dự án khác. Lưu để follow up dự án mới.',
+    createdAt: '2026-07-25',
+    updatedAt: new Date().toISOString(),
   },
 ];
 
-// ─── Config ───────────────────────────────────────────────────────────────────
-const STATUS_CONFIG: Record<LeadStatus, { label: string; color: string; icon: React.ElementType }> = {
-  new:       { label: 'Khách Mới',     color: 'bg-blue-50 text-blue-700 dark:bg-blue-950/30',     icon: Zap },
-  contacted: { label: 'Đã Liên Hệ',   color: 'bg-amber-50 text-amber-700 dark:bg-amber-950/30',  icon: Clock },
-  qualified: { label: 'Tiềm Năng',    color: 'bg-violet-50 text-violet-700 dark:bg-violet-950/30', icon: Star },
-  converted: { label: 'Đã Chuyển Đổi', color: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30', icon: CheckCircle2 },
-  lost:      { label: 'Không Tiếp',   color: 'bg-rose-50 text-rose-600 dark:bg-rose-950/30',     icon: XCircle },
-};
-
-const SOURCE_LABELS: Record<MarketingLead['source'], string> = {
-  facebook: '📘 Facebook',
-  zalo:     '💬 Zalo',
-  referral: '🤝 Giới thiệu',
+const SOURCE_LABELS: Record<string, string> = {
+  facebook: '📘 Facebook Ads',
+  zalo:     '💬 Zalo OA',
+  referral: '🤝 Người giới thiệu',
   website:  '🌐 Website',
   event:    '🎪 Sự kiện',
 };
 
-const STATUS_ORDER: LeadStatus[] = ['new', 'contacted', 'qualified', 'converted', 'lost'];
-
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function RealEstateMarketingPage() {
-  const [leads, setLeads] = useState<MarketingLead[]>(INITIAL_LEADS);
+  const [leadEngine] = useState(() => new LeadEngineFacade());
+  const [leads, setLeads] = useState<ManagedLead[]>(INITIAL_MANAGED_LEADS);
+
+  // Tab & View Controls
+  const [activeTab, setActiveTab] = useState<'pipeline' | 'rules'>('pipeline');
   const [search, setSearch] = useState('');
-  const [filterStatus, setFilterStatus] = useState<LeadStatus | 'all'>('all');
-  const [view, setView] = useState<'list' | 'pipeline'>('list');
+  const [filterState, setFilterState] = useState<string>('all');
+  
+  // Modals & Drawers
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [timelineLead, setTimelineLead] = useState<ManagedLead | null>(null);
+  const [actionLead, setActionLead] = useState<ManagedLead | null>(null);
 
-  // ─── Stats ────────────────────────────────────────────────────────────────
-  const stats = {
-    total:     leads.length,
-    new:       leads.filter(l => l.status === 'new').length,
-    qualified: leads.filter(l => l.status === 'qualified').length,
-    converted: leads.filter(l => l.status === 'converted').length,
-    convRate:  leads.length > 0
-      ? Math.round((leads.filter(l => l.status === 'converted').length / leads.length) * 100)
-      : 0,
-  };
-
-  // ─── Filtered list ────────────────────────────────────────────────────────
-  const filtered = leads.filter(l => {
-    const matchSearch = l.fullName.toLowerCase().includes(search.toLowerCase()) ||
-      l.phone.includes(search) ||
-      l.email.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = filterStatus === 'all' || l.status === filterStatus;
-    return matchSearch && matchStatus;
+  // Form State
+  const [newLead, setNewLead] = useState({
+    fullName: '',
+    phone: '',
+    email: '',
+    source: 'facebook',
+    interestedProject: 'Elyse Island – Shophouse Marina',
+    budget: '',
+    notes: '',
   });
 
-  // ─── Advance status ───────────────────────────────────────────────────────
-  function handleAdvanceStatus(leadId: string) {
-    setLeads(prev => prev.map(l => {
-      if (l.id !== leadId) return l;
-      const currentIdx = STATUS_ORDER.indexOf(l.status);
-      if (currentIdx >= STATUS_ORDER.length - 2) {
-        toast.info('Lead đã ở trạng thái cuối, không thể tiến thêm.');
-        return l;
-      }
-      const next = STATUS_ORDER[currentIdx + 1];
-      toast.success(`Cập nhật ${l.fullName}: ${STATUS_CONFIG[l.status].label} → ${STATUS_CONFIG[next].label}`);
-      return { ...l, status: next };
-    }));
+  // ─── Stats ────────────────────────────────────────────────────────────────
+  const stats = useMemo(() => {
+    return {
+      total: leads.length,
+      waiting: leads.filter(l => l.state === 'waiting_accept').length,
+      inProgress: leads.filter(l => l.state === 'in_progress').length,
+      converted: leads.filter(l => l.state === 'converted').length,
+      rotated: leads.filter(l => l.rotationCount > 0).length,
+    };
+  }, [leads]);
+
+  // ─── Filtered list ────────────────────────────────────────────────────────
+  const filteredLeads = useMemo(() => {
+    return leads.filter(l => {
+      const matchSearch =
+        l.fullName.toLowerCase().includes(search.toLowerCase()) ||
+        l.phone.includes(search) ||
+        (l.email && l.email.toLowerCase().includes(search.toLowerCase()));
+      const matchState = filterState === 'all' || l.state === filterState;
+      return matchSearch && matchState;
+    });
+  }, [leads, search, filterState]);
+
+  // ─── Handlers ─────────────────────────────────────────────────────────────
+  function handleCreateLead(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newLead.fullName.trim() || !newLead.phone.trim()) {
+      toast.error('Vui lòng nhập Họ tên và Số điện thoại');
+      return;
+    }
+
+    const assignedSale = AVAILABLE_SALES[Math.floor(Math.random() * AVAILABLE_SALES.length)];
+
+    let createdLead: ManagedLead = {
+      id: `lead-${Date.now()}`,
+      tenantId: 'tenant-re-01',
+      moduleKey: 'real_estate',
+      fullName: newLead.fullName.trim(),
+      phone: newLead.phone.trim(),
+      email: newLead.email.trim() || 'chua_co_email@domain.com',
+      source: newLead.source,
+      interestedProject: newLead.interestedProject,
+      budget: newLead.budget.trim() || 'Chưa xác định',
+      state: 'unassigned',
+      currentOutcome: 'NEW',
+      noAnswerCount: 0,
+      rotationCount: 0,
+      rotationHistory: [],
+      auditTimeline: [],
+      notes: newLead.notes.trim(),
+      createdAt: new Date().toISOString().slice(0, 10),
+      updatedAt: new Date().toISOString(),
+    };
+
+    // Phân bổ Lead & Kích hoạt Accept SLA qua Engine
+    createdLead = leadEngine.assignmentEngine.assignLead(
+      createdLead,
+      assignedSale,
+      'admin-01',
+      'Admin Marketing'
+    );
+
+    setLeads(prev => [createdLead, ...prev]);
+    toast.success(`Đã tạo và phân lead cho Sale [${assignedSale.name}]! (SLA: 30 ph)`);
+    setShowAddModal(false);
+    setNewLead({
+      fullName: '',
+      phone: '',
+      email: '',
+      source: 'facebook',
+      interestedProject: 'Elyse Island – Shophouse Marina',
+      budget: '',
+      notes: '',
+    });
   }
 
-  function handleMarkLost(leadId: string) {
-    setLeads(prev => prev.map(l => {
-      if (l.id !== leadId) return l;
-      toast.warning(`Đã đánh dấu ${l.fullName} là "Không Tiếp Tục"`);
-      return { ...l, status: 'lost' };
-    }));
+  function handleAcceptLead(leadId: string) {
+    setLeads(prev =>
+      prev.map(lead => {
+        if (lead.id !== leadId) return lead;
+        const updated = leadEngine.workflowEngine.acceptLead(
+          lead,
+          lead.currentSaleId || 'sale-001',
+          lead.currentSaleName || 'Sale'
+        );
+        toast.success(`Sale [${lead.currentSaleName}] đã xác nhận nhận lead! SLA Followup #1 được kích hoạt.`);
+        return updated;
+      })
+    );
+  }
+
+  function handleSubmitOutcome(leadId: string, outcome: LeadOutcome, notes: string) {
+    setLeads(prev =>
+      prev.map(lead => {
+        if (lead.id !== leadId) return lead;
+        const updated = leadEngine.workflowEngine.submitOutcome(
+          lead,
+          outcome,
+          notes,
+          lead.currentSaleId || 'sale-001',
+          lead.currentSaleName || 'Sale Specialist',
+          AVAILABLE_SALES
+        );
+
+        if (updated.state === 'converted') {
+          toast.success(`🎉 Tuyệt vời! Lead ${lead.fullName} đã chốt Booking thành công!`);
+        } else if (updated.rotationCount > lead.rotationCount) {
+          toast.warning(`🔄 Lead ${lead.fullName} đã tự động xoay sang Sale [${updated.currentSaleName}]!`);
+        } else {
+          toast.info(`Đã lưu kết quả [${outcome}] cho Lead ${lead.fullName}.`);
+        }
+        return updated;
+      })
+    );
+  }
+
+  function handleUpdateRulesConfig(newConfig: LeadRuleConfig) {
+    leadEngine.ruleEngine.updateConfig(newConfig);
   }
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
-
       {/* ── Header ── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -143,33 +315,43 @@ export default function RealEstateMarketingPage() {
             <span className="flex items-center justify-center w-9 h-9 rounded-xl bg-violet-100 dark:bg-violet-950/40">
               <Megaphone className="w-5 h-5 text-violet-600 dark:text-violet-400" />
             </span>
-            Marketing &amp; Lead Pipeline
+            Marketing &amp; Lead Governance Subsystem
           </h1>
-          <p className="text-sm text-slate-500 mt-0.5">Quản lý khách hàng tiềm năng và chiến dịch Marketing BĐS</p>
+          <p className="text-sm text-slate-500 mt-0.5">
+            Phân phối Lead • SLA Engine • Auto Rotation • Timelines Audit Trail
+          </p>
         </div>
+
         <div className="flex items-center gap-2">
-          {/* View toggle */}
+          {/* Main Tab Toggle */}
           <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-xl p-1 gap-1">
             <button
-              onClick={() => setView('list')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${view === 'list'
-                ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
-                : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+              onClick={() => setActiveTab('pipeline')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                activeTab === 'pipeline'
+                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+              }`}
             >
-              Danh Sách
+              <Megaphone className="w-3.5 h-3.5" />
+              Lead Pipeline
             </button>
             <button
-              onClick={() => setView('pipeline')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${view === 'pipeline'
-                ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
-                : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+              onClick={() => setActiveTab('rules')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                activeTab === 'rules'
+                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+              }`}
             >
-              Pipeline
+              <Settings className="w-3.5 h-3.5" />
+              Cấu Hình SLA &amp; Rules
             </button>
           </div>
+
           <button
-            onClick={() => toast.info('Tính năng thêm lead thủ công đang phát triển')}
-            className="flex items-center gap-1.5 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-xl transition-all shadow-sm"
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center gap-1.5 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-xl transition-all shadow-sm active:scale-95"
           >
             <UserPlus className="w-4 h-4" />
             Thêm Lead
@@ -177,192 +359,291 @@ export default function RealEstateMarketingPage() {
         </div>
       </div>
 
-      {/* ── Stats Cards ── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: 'Tổng Lead',       value: stats.total,     icon: Megaphone, color: 'text-slate-600', bg: 'bg-slate-50 dark:bg-slate-800/60' },
-          { label: 'Khách Mới',       value: stats.new,       icon: Zap,       color: 'text-blue-600',   bg: 'bg-blue-50 dark:bg-blue-950/20' },
-          { label: 'Tiềm Năng',       value: stats.qualified, icon: Star,      color: 'text-violet-600', bg: 'bg-violet-50 dark:bg-violet-950/20' },
-          { label: 'Tỷ Lệ Chuyển Đổi', value: `${stats.convRate}%`, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-950/20' },
-        ].map(({ label, value, icon: Icon, color, bg }) => (
-          <div key={label} className={`p-5 rounded-2xl border border-slate-200 dark:border-slate-800 ${bg} flex items-center gap-4`}>
-            <div className="flex-shrink-0">
-              <Icon className={`w-7 h-7 ${color}`} />
+      {/* ── Main Tab 1: Lead Pipeline ── */}
+      {activeTab === 'pipeline' && (
+        <div className="space-y-6">
+          {/* Stats Bar */}
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+              <p className="text-xs text-slate-500 font-semibold">Tổng Số Lead</p>
+              <p className="text-xl font-bold text-slate-900 dark:text-white mt-1">{stats.total}</p>
             </div>
-            <div>
-              <p className="text-2xl font-bold text-slate-900 dark:text-white">{value}</p>
-              <p className="text-xs text-slate-500 mt-0.5">{label}</p>
+            <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-amber-500/20 shadow-sm">
+              <p className="text-xs text-amber-600 font-semibold">⏳ Chờ Sale Nhận</p>
+              <p className="text-xl font-bold text-amber-600 mt-1">{stats.waiting}</p>
+            </div>
+            <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-blue-500/20 shadow-sm">
+              <p className="text-xs text-blue-600 font-semibold">📞 Đang Chăm Sóc</p>
+              <p className="text-xl font-bold text-blue-600 mt-1">{stats.inProgress}</p>
+            </div>
+            <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-emerald-500/20 shadow-sm">
+              <p className="text-xs text-emerald-600 font-semibold">🎉 Đã Chốt HĐ (Booking)</p>
+              <p className="text-xl font-bold text-emerald-600 mt-1">{stats.converted}</p>
+            </div>
+            <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-purple-500/20 shadow-sm col-span-2 sm:col-span-1">
+              <p className="text-xs text-purple-600 font-semibold">🔄 Đã Xoay Vòng</p>
+              <p className="text-xl font-bold text-purple-600 mt-1">{stats.rotated}</p>
             </div>
           </div>
-        ))}
-      </div>
 
-      {/* ── Filters ── */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Tìm kiếm theo tên, SĐT, email..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-400 transition"
-          />
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <Filter className="w-4 h-4 text-slate-400 shrink-0" />
-          {(['all', ...STATUS_ORDER] as const).map(s => (
-            <button
-              key={s}
-              onClick={() => setFilterStatus(s)}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all ${
-                filterStatus === s
-                  ? 'bg-violet-600 text-white border-violet-600'
-                  : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-violet-400'
-              }`}
-            >
-              {s === 'all' ? 'Tất Cả' : STATUS_CONFIG[s].label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Content: List View ── */}
-      {view === 'list' && (
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
-          {filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-              <BarChart2 className="w-12 h-12 mb-3 opacity-30" />
-              <p className="text-sm font-medium">Không tìm thấy lead phù hợp</p>
+          {/* Filter Bar */}
+          <div className="flex flex-col sm:flex-row gap-3 items-center justify-between bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div className="relative w-full sm:w-80">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Tìm theo tên, SĐT, email..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/30"
+              />
             </div>
-          ) : (
-            <div className="divide-y divide-slate-100 dark:divide-slate-800">
-              {filtered.map(lead => {
-                const cfg = STATUS_CONFIG[lead.status];
-                const StatusIcon = cfg.icon;
-                return (
-                  <div
-                    key={lead.id}
-                    className="p-5 hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors group"
-                  >
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                      {/* Lead info */}
-                      <div className="flex items-start gap-4 min-w-0">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-400 to-indigo-500 flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-md">
-                          {lead.fullName.charAt(0)}
-                        </div>
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className="font-bold text-slate-900 dark:text-white text-sm">{lead.fullName}</h3>
-                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${cfg.color}`}>
-                              <StatusIcon className="w-3 h-3" />
-                              {cfg.label}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-3 mt-1 text-xs text-slate-400 flex-wrap">
-                            <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{lead.phone}</span>
-                            <span className="flex items-center gap-1"><Mail className="w-3 h-3" />{lead.email}</span>
-                            <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{lead.interestedProject}</span>
-                          </div>
-                          <div className="flex items-center gap-3 mt-1.5 text-xs flex-wrap">
-                            <span className="text-slate-500">Ngân sách: <span className="font-semibold text-slate-700 dark:text-slate-300">{lead.budget}</span></span>
-                            <span className="text-slate-400">{SOURCE_LABELS[lead.source]}</span>
-                            <span className="text-slate-400 flex items-center gap-1">
-                              <Calendar className="w-3 h-3" />{lead.createdAt}
-                            </span>
-                          </div>
-                          {lead.notes && (
-                            <p className="mt-1.5 text-xs text-slate-500 italic truncate max-w-lg">"{lead.notes}"</p>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex items-center gap-2 shrink-0 md:opacity-0 group-hover:opacity-100 transition-opacity">
-                        {lead.status !== 'converted' && lead.status !== 'lost' && (
-                          <>
-                            <button
-                              onClick={() => handleAdvanceStatus(lead.id)}
-                              className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold rounded-lg transition-all"
-                            >
-                              <ArrowUpRight className="w-3.5 h-3.5" />
-                              Tiến Bước
-                            </button>
-                            <button
-                              onClick={() => handleMarkLost(lead.id)}
-                              className="flex items-center gap-1.5 px-3 py-1.5 border border-rose-200 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-xs font-bold rounded-lg transition-all"
-                            >
-                              <XCircle className="w-3.5 h-3.5" />
-                              Bỏ Qua
-                            </button>
-                          </>
-                        )}
-                        {lead.status === 'converted' && (
-                          <span className="flex items-center gap-1 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 text-xs font-bold rounded-lg">
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            Đã Chốt
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <Filter className="w-4 h-4 text-slate-400" />
+              <select
+                value={filterState}
+                onChange={e => setFilterState(e.target.value)}
+                className="px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/30 font-medium"
+              >
+                <option value="all">Tất cả trạng thái</option>
+                <option value="waiting_accept">⏳ Chờ nhận lead</option>
+                <option value="in_progress">📞 Đang chăm sóc</option>
+                <option value="converted">🎉 Đã chốt HĐ</option>
+                <option value="lost">❌ Thất bại / Đóng</option>
+                <option value="archived">🔒 Đã xoay hết vòng (Archived)</option>
+              </select>
             </div>
-          )}
-        </div>
-      )}
+          </div>
 
-      {/* ── Content: Pipeline View ── */}
-      {view === 'pipeline' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-start">
-          {STATUS_ORDER.map(status => {
-            const cfg = STATUS_CONFIG[status];
-            const StatusIcon = cfg.icon;
-            const statusLeads = leads.filter(l => l.status === status);
-            return (
-              <div key={status} className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-3 space-y-3">
-                {/* Column header */}
-                <div className={`flex items-center justify-between px-3 py-2 rounded-xl ${cfg.color} bg-opacity-60`}>
-                  <div className="flex items-center gap-1.5">
-                    <StatusIcon className="w-3.5 h-3.5" />
-                    <span className="text-xs font-bold">{cfg.label}</span>
-                  </div>
-                  <span className="text-xs font-bold opacity-70">{statusLeads.length}</span>
-                </div>
-                {/* Cards */}
-                {statusLeads.length === 0 ? (
-                  <p className="text-center text-xs text-slate-400 py-4">Trống</p>
+          {/* Lead Table */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-slate-500 font-bold uppercase tracking-wider">
+                <tr>
+                  <th className="p-4">Khách Hàng</th>
+                  <th className="p-4">Dự Án / Nguồn</th>
+                  <th className="p-4">Sale Phụ Trách</th>
+                  <th className="p-4">SLA Engine Status</th>
+                  <th className="p-4">Kết Quả Cuối</th>
+                  <th className="p-4 text-right">Thao Tác</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                {filteredLeads.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="text-center py-10 text-slate-400">
+                      Không tìm thấy Lead phù hợp
+                    </td>
+                  </tr>
                 ) : (
-                  statusLeads.map(lead => (
-                    <div
-                      key={lead.id}
-                      className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 space-y-2 shadow-sm hover:shadow-md transition-shadow"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-violet-400 to-indigo-500 flex items-center justify-center text-white font-bold text-xs shrink-0">
-                          {lead.fullName.charAt(0)}
+                  filteredLeads.map(lead => (
+                    <tr key={lead.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition">
+                      <td className="p-4">
+                        <p className="font-bold text-slate-900 dark:text-white text-sm">{lead.fullName}</p>
+                        <p className="text-slate-500">{lead.phone} • {lead.email || 'N/A'}</p>
+                      </td>
+                      <td className="p-4">
+                        <p className="font-medium text-slate-800 dark:text-slate-200">{lead.interestedProject || 'Chưa chọn'}</p>
+                        <span className="inline-block mt-0.5 text-[11px] text-slate-400">
+                          {SOURCE_LABELS[lead.source] || lead.source}
+                        </span>
+                      </td>
+                      <td className="p-4">
+                        <div className="flex items-center gap-1.5 font-semibold text-violet-600 dark:text-violet-400">
+                          <span>{lead.currentSaleName || 'Chưa phân'}</span>
                         </div>
-                        <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{lead.fullName}</p>
-                      </div>
-                      <p className="text-xs text-slate-500">{lead.budget}</p>
-                      <p className="text-xs text-slate-400">{SOURCE_LABELS[lead.source]}</p>
-                      {status !== 'converted' && status !== 'lost' && (
+                      </td>
+                      <td className="p-4">
+                        <LeadSLABadge lead={lead} slaEngine={leadEngine.slaEngine} />
+                      </td>
+                      <td className="p-4 font-semibold">
+                        <span className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded-md text-slate-700 dark:text-slate-300">
+                          {lead.currentOutcome}
+                        </span>
+                      </td>
+                      <td className="p-4 text-right space-x-2">
+                        {lead.state === 'waiting_accept' && (
+                          <button
+                            onClick={() => handleAcceptLead(lead.id)}
+                            className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg transition active:scale-95 inline-flex items-center gap-1"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            Nhận Lead
+                          </button>
+                        )}
+                        {lead.state === 'in_progress' && (
+                          <button
+                            onClick={() => setActionLead(lead)}
+                            className="px-2.5 py-1.5 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-lg transition active:scale-95 inline-flex items-center gap-1"
+                          >
+                            <PhoneCall className="w-3.5 h-3.5" />
+                            Chăm Sóc
+                          </button>
+                        )}
                         <button
-                          onClick={() => handleAdvanceStatus(lead.id)}
-                          className="w-full flex items-center justify-center gap-1 py-1 text-xs font-semibold text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-950/20 rounded-lg transition-colors"
+                          onClick={() => setTimelineLead(lead)}
+                          className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium rounded-lg transition inline-flex items-center gap-1"
                         >
-                          Tiến <ChevronRight className="w-3 h-3" />
+                          <Eye className="w-3.5 h-3.5 text-slate-500" />
+                          Timeline
                         </button>
-                      )}
-                    </div>
+                      </td>
+                    </tr>
                   ))
                 )}
-              </div>
-            );
-          })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
+
+      {/* ── Main Tab 2: Admin SLA & Rules Config ── */}
+      {activeTab === 'rules' && (
+        <LeadRuleConfigTab
+          initialConfig={leadEngine.ruleEngine.getConfig()}
+          onSaveConfig={handleUpdateRulesConfig}
+        />
+      )}
+
+      {/* ── Modal: Thêm Lead Mới ── */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-2xl w-full max-w-lg border border-slate-200 dark:border-slate-800 space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <UserPlus className="w-5 h-5 text-violet-600" />
+                Thêm Lead Khách Hàng Mới
+              </h2>
+              <button
+                type="button"
+                onClick={() => setShowAddModal(false)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-sm p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateLead} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Họ và Tên *</label>
+                  <input
+                    type="text"
+                    required
+                    value={newLead.fullName}
+                    onChange={e => setNewLead({ ...newLead, fullName: e.target.value })}
+                    className="w-full mt-1 px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/30"
+                    placeholder="Nguyễn Văn A"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Số Điện Thoại *</label>
+                  <input
+                    type="text"
+                    required
+                    value={newLead.phone}
+                    onChange={e => setNewLead({ ...newLead, phone: e.target.value })}
+                    className="w-full mt-1 px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/30"
+                    placeholder="0912345678"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Email</label>
+                  <input
+                    type="email"
+                    value={newLead.email}
+                    onChange={e => setNewLead({ ...newLead, email: e.target.value })}
+                    className="w-full mt-1 px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/30"
+                    placeholder="khachhang@email.com"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Nguồn Lead</label>
+                  <select
+                    value={newLead.source}
+                    onChange={e => setNewLead({ ...newLead, source: e.target.value })}
+                    className="w-full mt-1 px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/30"
+                  >
+                    <option value="facebook">📘 Facebook Ads</option>
+                    <option value="zalo">💬 Zalo OA / Personal</option>
+                    <option value="referral">🤝 Người giới thiệu</option>
+                    <option value="website">🌐 Form Website</option>
+                    <option value="event">🎪 Sự kiện mở bán</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Dự Án Quan Tâm</label>
+                  <select
+                    value={newLead.interestedProject}
+                    onChange={e => setNewLead({ ...newLead, interestedProject: e.target.value })}
+                    className="w-full mt-1 px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/30"
+                  >
+                    <option value="Elyse Island – Shophouse Marina">Elyse Island – Shophouse Marina</option>
+                    <option value="Vinhomes Saigon Park">Vinhomes Saigon Park</option>
+                    <option value="Bella Gold Tower">Bella Gold Tower</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Ngân Sách Dự Kiến</label>
+                  <input
+                    type="text"
+                    value={newLead.budget}
+                    onChange={e => setNewLead({ ...newLead, budget: e.target.value })}
+                    className="w-full mt-1 px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/30"
+                    placeholder="Ví dụ: 3 – 5 tỷ"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Ghi Chú Nhu Cầu</label>
+                <textarea
+                  value={newLead.notes}
+                  onChange={e => setNewLead({ ...newLead, notes: e.target.value })}
+                  className="w-full mt-1 px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/30 h-20 resize-none"
+                  placeholder="Nhu cầu cụ thể: tầng cao, căn góc, xem nhà mẫu..."
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-semibold text-slate-600 dark:text-slate-300 transition"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-xs font-semibold shadow-sm transition active:scale-95"
+                >
+                  Xác Nhận Thêm Lead
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal: Action Chăm Sóc / Nhận Lead ── */}
+      <LeadActionModal
+        lead={actionLead}
+        onClose={() => setActionLead(null)}
+        onAccept={handleAcceptLead}
+        onSubmitOutcome={handleSubmitOutcome}
+      />
+
+      {/* ── Drawer: Timeline Events Audit Log ── */}
+      <LeadTimelineDrawer
+        lead={timelineLead}
+        onClose={() => setTimelineLead(null)}
+      />
     </div>
   );
 }

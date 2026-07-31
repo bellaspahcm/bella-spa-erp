@@ -84,7 +84,38 @@ describe('Commission Business Logic', () => {
       expect(result).toBe(50000);
     });
 
-    it('should use system default (10% percentage)', () => {
+    it('should use property-level commission when no override is provided', () => {
+      const result = calculateProductSalesCommission({
+        totalSalesAmount: 1000000,
+        productCommissionType: 'percentage',
+        productCommissionValue: 1.5,
+        projectCommissionType: 'percentage',
+        projectCommissionValue: 2,
+      });
+      expect(result).toBe(15000); // 1.5% of 1M
+    });
+
+    it('should use project-level commission when no override or property commission is provided', () => {
+      const result = calculateProductSalesCommission({
+        totalSalesAmount: 1000000,
+        projectCommissionType: 'percentage',
+        projectCommissionValue: 2,
+        defaultType: 'percentage',
+        defaultValue: 5,
+      });
+      expect(result).toBe(20000); // 2% of 1M
+    });
+
+    it('should use tenant default when no override, property, or project commission is provided', () => {
+      const result = calculateProductSalesCommission({
+        totalSalesAmount: 1000000,
+        defaultType: 'percentage',
+        defaultValue: 5,
+      });
+      expect(result).toBe(50000); // 5% of 1M
+    });
+
+    it('should use system default (10% percentage) when no other config is provided', () => {
       const result = calculateProductSalesCommission({
         totalSalesAmount: 500000,
       });

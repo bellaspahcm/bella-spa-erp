@@ -14,9 +14,11 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getTenantSettings, saveTenantSettings } from '@/services/tenant-actions';
+import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
 import {
   DEFAULT_ENABLED_MODULES,
   DEFAULT_TENANT_BRAND_THEME,
+  getDefaultTenantBrandThemeForModule,
   getDefaultTenantModuleKey,
   normalizeEnabledModules,
   normalizeTenantBrandThemeForModule,
@@ -59,23 +61,30 @@ const brandPresetOptions: Array<{
   {
     value: 'jade_wellness',
     label: 'Jade Wellness',
-    description: 'Xanh ngọc sạch, an tâm, phù hợp Beauty Spa/wellness.',
-    primaryColor: '#087F6B',
-    accentColor: '#7DD3C7',
+    description: 'Xanh ngọc sang trọng, thanh lịch, phù hợp Beauty Spa.',
+    primaryColor: '#074E44',
+    accentColor: '#C8A97A',
   },
   {
-    value: 'bella_rose',
-    label: 'Bella Rose',
-    description: 'Hồng thương hiệu Bella, dùng cho Mother & Baby/Bella ERP gốc.',
-    primaryColor: '#A91555',
-    accentColor: '#F8A5C2',
+    value: 'luxury_navy',
+    label: 'Luxury Navy & Gold',
+    description: 'Xanh navy quý phái, đẳng cấp, phù hợp Quản lý Bất động sản.',
+    primaryColor: '#1E3A8A',
+    accentColor: '#D97706',
   },
   {
     value: 'graphite_luxe',
     label: 'Graphite Luxe',
-    description: 'Đen/xám cao cấp cho clinic phong cách premium.',
-    primaryColor: '#1F2937',
-    accentColor: '#C4A46A',
+    description: 'Đen xám kim loại, hiện đại, dành cho trung tâm đào tạo & văn phòng.',
+    primaryColor: '#18181B',
+    accentColor: '#64748B',
+  },
+  {
+    value: 'bella_rose',
+    label: 'Soft Rose',
+    description: 'Hồng êm dịu, ấm áp, nguyên bản cho dịch vụ Mẹ & Bé.',
+    primaryColor: '#A91555',
+    accentColor: '#F8A5C2',
   },
 ];
 
@@ -128,6 +137,7 @@ function applyBrandThemePreview(input: {
   root.dataset.tenantBrandButton = brand.buttonStyle;
   root.dataset.tenantBrandMenu = brand.menuStyle;
   root.dataset.tenantBrandRadius = brand.radiusStyle;
+  root.dataset.tenantBrandPreset = brand.stylePreset || (brand.primaryColor === '#074E44' ? 'jade_wellness' : brand.primaryColor === '#1E3A8A' ? 'luxury_navy' : brand.primaryColor === '#1E40AF' ? 'ocean_clean' : brand.primaryColor === '#18181B' ? 'graphite_luxe' : 'bella_rose');
   root.style.setProperty('--primary', brand.primaryColor);
   root.style.setProperty('--primary-hover', brand.primaryHoverColor);
   root.style.setProperty('--accent', brand.accentColor);
@@ -149,15 +159,44 @@ function applyBrandThemePreview(input: {
   }
 }
 
+function getInitialTenantModuleKey(hookValue: TenantModuleKey | null): TenantModuleKey {
+  if (hookValue) return hookValue;
+  if (typeof document !== 'undefined') {
+    const dsModule = document.documentElement.dataset.tenantModule;
+    if (dsModule && dsModule !== 'pending' && dsModule !== 'null') {
+      return dsModule as TenantModuleKey;
+    }
+    try {
+      const cached = window.sessionStorage.getItem(RUNTIME_BRAND_CACHE_KEY) || window.localStorage.getItem(SIDEBAR_BRAND_CACHE_KEY);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed?.moduleKey) return parsed.moduleKey as TenantModuleKey;
+      }
+    } catch {}
+  }
+  return 'real_estate';
+}
+
 export default function AppearanceTab() {
+  const { tenantModuleKey: hookTenantModuleKey } = useTenantModuleKey();
+  const activeModuleKey = getInitialTenantModuleKey(hookTenantModuleKey);
+  const initialBrandTheme = getDefaultTenantBrandThemeForModule(activeModuleKey);
+
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
-  const [brandTheme, setBrandTheme] = useState<TenantBrandTheme>(DEFAULT_TENANT_BRAND_THEME);
+  const [brandTheme, setBrandTheme] = useState<TenantBrandTheme>(initialBrandTheme);
   const [logoUrl, setLogoUrl] = useState('');
   const [enabledModules, setEnabledModules] = useState<TenantEnabledModules>(DEFAULT_ENABLED_MODULES);
   const [tenantId, setTenantId] = useState('');
-  const [tenantModuleKey, setTenantModuleKey] = useState<TenantModuleKey>('babycare');
+  const [tenantModuleKey, setTenantModuleKey] = useState<TenantModuleKey>(activeModuleKey);
   const [isLoadingTenantConfig, setIsLoadingTenantConfig] = useState(true);
   const [isSavingTenantConfig, setIsSavingTenantConfig] = useState(false);
+
+  useEffect(() => {
+    if (hookTenantModuleKey && isLoadingTenantConfig) {
+      setTenantModuleKey(hookTenantModuleKey);
+      setBrandTheme(getDefaultTenantBrandThemeForModule(hookTenantModuleKey));
+    }
+  }, [hookTenantModuleKey, isLoadingTenantConfig]);
 
   useEffect(() => {
     const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
@@ -167,7 +206,7 @@ export default function AppearanceTab() {
   const loadTenantDisplayConfig = useCallback(async () => {
     setIsLoadingTenantConfig(true);
     try {
-      const tenant = await getTenantSettings();
+      const tenant = await getCachedTenantSettings();
       if (!tenant) return;
 
       const nextModuleKey = getDefaultTenantModuleKey(tenant.enabled_modules);
@@ -178,8 +217,7 @@ export default function AppearanceTab() {
       setEnabledModules(normalizeEnabledModules(tenant.enabled_modules));
       setTenantModuleKey(nextModuleKey);
     } catch (error) {
-      console.error('Tenant display config load failed', error);
-      toast.error('Không thể tải cấu hình giao diện chi nhánh');
+      console.warn('Tenant display config load fallback:', error);
     } finally {
       setIsLoadingTenantConfig(false);
     }
@@ -304,7 +342,7 @@ export default function AppearanceTab() {
           <div>
             <h2 className="text-2xl font-bold text-foreground">Giao diện & Module</h2>
             <p className="text-sm font-semibold text-muted-foreground">
-              Cấu hình phong cách hiển thị, nhận diện thương hiệu và module theo từng spa.
+              Cấu hình phong cách hiển thị, nhận diện thương hiệu và module theo từng doanh nghiệp & chi nhánh.
             </p>
           </div>
         </div>
@@ -398,7 +436,7 @@ export default function AppearanceTab() {
             <div>
               <h3 className="text-lg font-black text-slate-900">Nhận diện thương hiệu riêng</h3>
               <p className="text-sm font-semibold text-muted-foreground">
-                Dùng cho mô hình white-label khi bán gói dịch vụ cho spa khác.
+                Dùng cho mô hình white-label khi bán gói dịch vụ cho doanh nghiệp khác.
               </p>
             </div>
           </div>
@@ -599,8 +637,18 @@ export default function AppearanceTab() {
                     <BadgeCheck className="h-5 w-5" />
                   </div>
                   <div>
-                    <span className="font-black text-slate-900 text-sm">Module ngành đang cấp cho Spa: </span>
+                    <span className="font-black text-slate-900 text-sm">Module ngành đang cấp cho Doanh nghiệp: </span>
                     <span className="inline-flex flex-wrap items-center gap-2 ml-1 mt-1 lg:mt-0">
+                      {enabledModules.real_estate && (
+                        <span className="rounded-full bg-indigo-600 px-3 py-1 text-[11px] font-black text-white shadow-sm">
+                          ✓ Bella Land (Đang bật)
+                        </span>
+                      )}
+                      {enabledModules.industrial_cleaning && (
+                        <span className="rounded-full bg-teal-600 px-3 py-1 text-[11px] font-black text-white shadow-sm">
+                          ✓ Industrial Cleaning (Đang bật)
+                        </span>
+                      )}
                       {enabledModules.babycare && (
                         <span className="rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-black text-emerald-800 border border-emerald-200/60">
                           ✓ Bella Mother & Baby (Đang bật)
@@ -611,7 +659,7 @@ export default function AppearanceTab() {
                           ✓ Beauty Spa (Đang bật)
                         </span>
                       )}
-                      {!enabledModules.babycare && !enabledModules.beauty_spa && (
+                      {!enabledModules.real_estate && !enabledModules.industrial_cleaning && !enabledModules.babycare && !enabledModules.beauty_spa && (
                         <span className="rounded-full bg-slate-200 px-3 py-1 text-[11px] font-black text-slate-600">
                           Mặc định hệ thống
                         </span>
@@ -620,7 +668,7 @@ export default function AppearanceTab() {
                   </div>
                 </div>
                 <p className="text-[11px] text-slate-500 font-semibold lg:text-right max-w-lg leading-relaxed">
-                  💡 Module ngành được cấu hình khi setup tenant. Admin spa chỉ quản lý vận hành trong ngành đã được cấp và không thể tự chuyển đổi mô hình.
+                  💡 Module ngành được cấu hình khi setup tenant. Quản trị viên chỉ quản lý vận hành trong ngành đã được cấp và không thể tự chuyển đổi mô hình.
                 </p>
               </div>
             )}

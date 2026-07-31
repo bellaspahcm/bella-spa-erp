@@ -64,6 +64,10 @@ export interface ProductSalesCommissionInput {
   totalSalesAmount: number;
   overrideType?: CommissionType | null;
   overrideValue?: number | null;
+  productCommissionType?: CommissionType | null;
+  productCommissionValue?: number | null;
+  projectCommissionType?: CommissionType | null;
+  projectCommissionValue?: number | null;
   defaultType?: CommissionType;
   defaultValue?: number;
 }
@@ -293,17 +297,27 @@ export function calculateServiceCommission(input: ServiceCommissionInput): numbe
  * ```
  */
 export function calculateProductSalesCommission(input: ProductSalesCommissionInput): number {
-  // Priority 1: Override commission
+  // Priority 1: Override commission (flexible / dynamic override on the sale)
   if (input.overrideType && input.overrideValue !== null && input.overrideValue !== undefined) {
     return parseCommissionInput(input.overrideType, input.overrideValue, input.totalSalesAmount);
   }
+
+  // Priority 2: Property-level commission
+  if (input.productCommissionType && input.productCommissionValue !== null && input.productCommissionValue !== undefined) {
+    return parseCommissionInput(input.productCommissionType, input.productCommissionValue, input.totalSalesAmount);
+  }
+
+  // Priority 3: Project-level commission
+  if (input.projectCommissionType && input.projectCommissionValue !== null && input.projectCommissionValue !== undefined) {
+    return parseCommissionInput(input.projectCommissionType, input.projectCommissionValue, input.totalSalesAmount);
+  }
   
-  // Priority 2: Tenant default commission
+  // Priority 4: Tenant default commission
   if (input.defaultType && input.defaultValue !== null && input.defaultValue !== undefined) {
     return parseCommissionInput(input.defaultType, input.defaultValue, input.totalSalesAmount);
   }
   
-  // Priority 3: System default (10% of sales)
+  // Priority 5: System default (10% of sales)
   return parseCommissionInput(
     DEFAULT_COMMISSION_CONFIG.product_sales_commission_default.type,
     DEFAULT_COMMISSION_CONFIG.product_sales_commission_default.value,

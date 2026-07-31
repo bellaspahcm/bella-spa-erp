@@ -114,44 +114,42 @@ async function rollbackTenantSettings(
 }
 
 export async function getTenantSettings(): Promise<TenantRow | null> {
-  const perfStart = Date.now();
-  const supabase = await createClient();
-  const userStart = Date.now();
-  const currentUser = await getCurrentUser();
-  console.log(`[getTenantSettings] getCurrentUser took ${Date.now() - userStart}ms`);
-  
-  const tenantId = currentUser?.tenant_id;
+  try {
+    const supabase = await createClient();
+    const currentUser = await getCurrentUser();
+    const tenantId = currentUser?.tenant_id;
 
-  if (!tenantId) {
-    console.warn('[getTenantSettings] Không có tenantId cho người dùng hiện tại');
+    if (!tenantId) {
+      console.warn('[getTenantSettings] Không có tenantId cho người dùng hiện tại');
+      return null;
+    }
+
+    try {
+      const { getCache, setCache, CacheKeys, CacheTTL } = await import('@/lib/redis-cache');
+      const cached = await getCache<TenantRow>(CacheKeys.tenant(tenantId));
+      if (cached) {
+        return cached;
+      }
+    } catch (cacheErr) {
+      console.warn('[getTenantSettings] Redis cache bypass:', cacheErr);
+    }
+
+    const { data, error } = await fetchTenantSnapshot(supabase, tenantId);
+    if (error || !data) {
+      console.warn(`[getTenantSettings] Failed to load tenant settings: ${error || 'Tenant not found'}`);
+      return null;
+    }
+
+    try {
+      const { setCache, CacheKeys, CacheTTL } = await import('@/lib/redis-cache');
+      void setCache(CacheKeys.tenant(tenantId), data, CacheTTL.long);
+    } catch {}
+
+    return data;
+  } catch (error) {
+    console.error('[getTenantSettings] Exception:', error);
     return null;
   }
-
-  // Try Redis cache first
-  const cacheStart = Date.now();
-  const { getCache, setCache, CacheKeys, CacheTTL } = await import('@/lib/redis-cache');
-  const cached = await getCache<TenantRow>(CacheKeys.tenant(tenantId));
-  console.log(`[getTenantSettings] Redis cache check took ${Date.now() - cacheStart}ms`);
-  
-  if (cached) {
-    console.log(`[getTenantSettings] CACHE HIT - returning in ${Date.now() - perfStart}ms`);
-    return cached;
-  }
-  console.log(`[getTenantSettings] Cache MISS - fetching from DB`);
-
-  const fetchStart = Date.now();
-  const { data, error } = await fetchTenantSnapshot(supabase, tenantId);
-  console.log(`[getTenantSettings] fetchTenantSnapshot took ${Date.now() - fetchStart}ms`);
-  
-  if (error || !data) {
-    throw new Error(`[getTenantSettings] Failed to load tenant settings: ${error || 'Tenant not found'}`);
-  }
-
-  // Cache the result (5 minutes TTL - tenant settings change rarely)
-  void setCache(CacheKeys.tenant(tenantId), data, CacheTTL.long);
-
-  console.log(`[getTenantSettings] TOTAL TIME: ${Date.now() - perfStart}ms`);
-  return data;
 }
 
 export async function saveTenantSettings(settings: {
@@ -206,9 +204,7 @@ export async function saveTenantSettings(settings: {
     }
     if (settings.brand_theme !== undefined) {
       const moduleKey = getDefaultTenantModuleKey(settings.enabled_modules ?? oldSettings.enabled_modules);
-      updatePayload.brand_theme = moduleKey === 'beauty_spa'
-        ? toTenantBrandThemeJsonForModule(settings.brand_theme, moduleKey)
-        : toTenantBrandThemeJson(settings.brand_theme);
+      updatePayload.brand_theme = toTenantBrandThemeJsonForModule(settings.brand_theme, moduleKey);
     }
     if (settings.qr_bank_code !== undefined) updatePayload.qr_bank_code = settings.qr_bank_code;
     if (settings.qr_account_number !== undefined) updatePayload.qr_account_number = settings.qr_account_number;

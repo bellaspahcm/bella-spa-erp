@@ -242,11 +242,14 @@ export async function recalculateAndSaveSalaryRecordEngine(
 
   const { data: tenantData, error: tenantError } = await supabase
     .from('tenants')
-    .select('salary_config')
+    .select('enabled_modules, salary_config')
     .eq('id', tenantId)
     .maybeSingle();
 
   if (tenantError) throw tenantError;
+  const { getDefaultTenantModuleKey } = await import('@/lib/business-rules/tenant-modules');
+  const moduleKey = getDefaultTenantModuleKey(tenantData?.enabled_modules);
+  const isRealEstate = moduleKey === 'real_estate';
   const stored = (tenantData?.salary_config as unknown as Partial<TenantSalaryConfig>) || {};
   const salaryConfig: TenantSalaryConfig = {
     bonus_5_star: stored.bonus_5_star ?? 50000,
@@ -877,12 +880,63 @@ export async function recalculateAndSaveSalaryRecordEngine(
 
       const { data: fullProductSales } = await rawClient
         .from('product_sales')
-        .select('id, ktv_id, sales_amount, calculated_commission, override_commission_type, override_commission_value, status, sale_date')
+        .select('id, ktv_id, sales_amount, calculated_commission, override_commission_type, override_commission_value, status, sale_date, product_sku')
         .eq('ktv_id', ktvId)
         .eq('tenant_id', tenantId)
         .eq('status', 'completed')
         .gte('sale_date', startOfMonthStr)
         .lt('sale_date', endOfMonthStr);
+
+      interface RawProductSale {
+        id: string;
+        ktv_id: string;
+        sales_amount: number;
+        calculated_commission: number;
+        override_commission_type: string | null;
+        override_commission_value: number | null;
+        status: string;
+        sale_date: string;
+        product_sku: string | null;
+      }
+
+      const productDetailsMap = new Map<string, { project_id: string }>();
+      if (isRealEstate) {
+        const { data: products } = await rawClient
+          .from('real_estate_products')
+          .select('id, project_id')
+          .eq('tenant_id', tenantId);
+        if (products) {
+          products.forEach(p => {
+            productDetailsMap.set(p.id, { project_id: p.project_id });
+          });
+        }
+      }
+
+      const projectCommissions = ((commissionConfig as Record<string, unknown>).real_estate_project_commissions || {}) as Record<string, { type: 'fixed' | 'percentage'; value: number }>;
+      const productCommissions = ((commissionConfig as Record<string, unknown>).real_estate_product_commissions || {}) as Record<string, { type: 'fixed' | 'percentage'; value: number }>;
+
+      const mappedProductSales = ((fullProductSales || []) as unknown as RawProductSale[]).map(sale => {
+        const productSku = sale.product_sku || '';
+        const productInfo = productDetailsMap.get(productSku);
+        const projectId = productInfo?.project_id || '';
+        const productComm = productCommissions[productSku];
+        const projectComm = projectCommissions[projectId];
+
+        return {
+          id: sale.id,
+          ktv_id: sale.ktv_id,
+          sales_amount: sale.sales_amount || 0,
+          calculated_commission: sale.calculated_commission,
+          override_commission_type: sale.override_commission_type as 'fixed' | 'percentage' | null,
+          override_commission_value: sale.override_commission_value,
+          product_commission_type: (productComm?.type || null) as 'fixed' | 'percentage' | null,
+          product_commission_value: productComm?.value || null,
+          project_commission_type: (projectComm?.type || null) as 'fixed' | 'percentage' | null,
+          project_commission_value: projectComm?.value || null,
+          status: sale.status,
+          sale_date: sale.sale_date,
+        };
+      });
 
       // Transform to CommissionCalculationContext
       const commissionContext = {
@@ -890,7 +944,7 @@ export async function recalculateAndSaveSalaryRecordEngine(
         employeeId: ktvId,
         monthYear,
         serviceItems: fullServiceItems || [],
-        productSales: fullProductSales || [],
+        productSales: mappedProductSales,
         sessions: sessionsTyped.map(s => ({
           id: s.id,
           rating: s.rating,
@@ -1018,20 +1072,55 @@ export async function recalculateAndSaveSalaryRecordEngine(
     }
   }
 
-  const calculatedTotalSalary = calculateSalaryTotal({
-    baseSalary: finalBaseSalary,
-    sessionBonus,
-    ratingBonus: finalRatingBonus,
-    kpiBonus: finalKpiBonus,
-    deductions,
-    advances,
-    // Advanced commission components (Task 28-32)
-    serviceCommission: finalServiceCommission,
-    productSalesCommission: finalProductCommission,
-    positionBonus: finalPositionBonus,
-    seniorityBonus: finalSeniorityBonus,
-    manualAdjustments: finalManualAdjustments,
-  });
+
+  let calculatedTotalSalary: number;
+  let finalSessionBonusValue = sessionBonus;
+  let finalRatingBonusValue = finalRatingBonus;
+  let finalKpiBonusValue = finalKpiBonus;
+  let finalServiceCommissionValue = finalServiceCommission;
+  let finalPositionBonusValue = finalPositionBonus;
+  let finalSeniorityBonusValue = finalSeniorityBonus;
+  let finalSessionsCountValue = sessionsCount;
+
+  if (isRealEstate) {
+    // Under Real Estate: Salary = Base Salary + Property Sales Commission + Manual Adjustments - Deductions - Advances
+    calculatedTotalSalary = calculateSalaryTotal({
+      baseSalary: finalBaseSalary,
+      sessionBonus: 0,
+      ratingBonus: 0,
+      kpiBonus: 0,
+      deductions: overrides?.violations_deduction !== undefined ? overrides.violations_deduction : (existing?.violations_deduction ?? 0),
+      advances: overrides?.service_percentage_bonus !== undefined ? overrides.service_percentage_bonus : (existing?.service_percentage_bonus ?? 0),
+      serviceCommission: 0,
+      productSalesCommission: finalProductCommission,
+      positionBonus: 0,
+      seniorityBonus: 0,
+      manualAdjustments: finalManualAdjustments,
+    });
+    finalSessionBonusValue = 0;
+    finalRatingBonusValue = 0;
+    finalKpiBonusValue = 0;
+    finalServiceCommissionValue = 0;
+    finalPositionBonusValue = 0;
+    finalSeniorityBonusValue = 0;
+    finalSessionsCountValue = 0;
+  } else {
+    calculatedTotalSalary = calculateSalaryTotal({
+      baseSalary: finalBaseSalary,
+      sessionBonus,
+      ratingBonus: finalRatingBonus,
+      kpiBonus: finalKpiBonus,
+      deductions,
+      advances,
+      // Advanced commission components (Task 28-32)
+      serviceCommission: finalServiceCommission,
+      productSalesCommission: finalProductCommission,
+      positionBonus: finalPositionBonus,
+      seniorityBonus: finalSeniorityBonus,
+      manualAdjustments: finalManualAdjustments,
+    });
+  }
+
   const totalSalary =
     shouldUseStoredTotalSalary && existing?.total_salary !== null && existing?.total_salary !== undefined
       ? Number(existing.total_salary)
@@ -1042,22 +1131,26 @@ export async function recalculateAndSaveSalaryRecordEngine(
     ktv_id: ktvId,
     month_year: monthYear,
     base_salary: finalBaseSalary,
-    session_bonus: sessionBonus,
-    rating_bonus: finalRatingBonus,
-    kpi_bonus: finalKpiBonus,
-    violations_deduction: deductions,
-    service_percentage_bonus: advances,
-    total_sessions: sessionsCount,
+    session_bonus: finalSessionBonusValue,
+    rating_bonus: finalRatingBonusValue,
+    kpi_bonus: finalKpiBonusValue,
+    violations_deduction: isRealEstate
+      ? (overrides?.violations_deduction !== undefined ? overrides.violations_deduction : (existing?.violations_deduction ?? 0))
+      : deductions,
+    service_percentage_bonus: isRealEstate
+      ? (overrides?.service_percentage_bonus !== undefined ? overrides.service_percentage_bonus : (existing?.service_percentage_bonus ?? 0))
+      : advances,
+    total_sessions: finalSessionsCountValue,
     total_salary: totalSalary,
     status,
     published_at: overrides?.status === 'published' ? new Date().toISOString() : (existing?.published_at || null),
     notes: proRataNote || null,
     tenant_id: tenantId,
     // Advanced commission components (Task 28-32)
-    service_commission: finalServiceCommission,
+    service_commission: finalServiceCommissionValue,
     product_sales_commission: finalProductCommission,
-    position_bonus: finalPositionBonus,
-    seniority_bonus: finalSeniorityBonus,
+    position_bonus: finalPositionBonusValue,
+    seniority_bonus: finalSeniorityBonusValue,
     manual_adjustments: finalManualAdjustments,
   } satisfies Database['public']['Tables']['salary_records']['Update'];
 

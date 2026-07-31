@@ -30,13 +30,16 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Bella Spa - Chăm Sóc Mẹ Và Bé | Chăm Sóc Trọn Yêu Thương",
-  description: "Dịch vụ chăm sóc sức khỏe và sắc đẹp chuẩn y khoa cho mẹ bầu, mẹ sau sinh và bé yêu. Trải nghiệm dịch vụ 5 sao nâng niu từng khoảnh khắc.",
+  title: {
+    default: "Bella EIP — Enterprise Platform",
+    template: "%s | Bella EIP",
+  },
+  description: "Nền tảng Quản trị Doanh nghiệp Đa ngành Bella EIP",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Bella ERP",
+    title: "Bella EIP",
   },
   icons: {
     apple: "/icons/icon-192x192.png",

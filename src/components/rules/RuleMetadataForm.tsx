@@ -3,7 +3,8 @@
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
+import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
 import RulePrioritySlider from './RulePrioritySlider';
 
 interface RuleMetadataFormProps {
@@ -11,47 +12,12 @@ interface RuleMetadataFormProps {
   onChange: (data: Record<string, unknown>) => void;
 }
 
-const PROVIDERS = [
-  { value: 'booking', label: 'Đặt lịch' },
-  { value: 'discount', label: 'Chiết khấu' },
-  { value: 'payroll', label: 'Tính lương' },
-  { value: 'commission', label: 'Hoa hồng' },
-  { value: 'inventory', label: 'Kho hàng' },
-];
-
 const CATEGORIES_BY_PROVIDER: Record<string, string[]> = {
   booking: ['assignment', 'capacity', 'conflict', 'waitlist', 'priority'],
   discount: ['membership', 'campaign', 'bundle', 'referral'],
   payroll: ['kpi_bonus', 'attendance_deduction', 'session_bonus', 'rating_bonus'],
   commission: ['service_commission', 'product_commission', 'performance_bonus'],
   inventory: ['reorder', 'allocation', 'expiry'],
-};
-
-const CATEGORY_LABELS: Record<string, string> = {
-  // booking
-  assignment: 'Phân bổ ca',
-  capacity: 'Công suất',
-  conflict: 'Xung đột lịch',
-  waitlist: 'Danh sách chờ',
-  priority: 'Ưu tiên',
-  // discount
-  membership: 'Hạng thành viên',
-  campaign: 'Chiến dịch',
-  bundle: 'Gói combo',
-  referral: 'Giới thiệu',
-  // payroll
-  kpi_bonus: 'Thưởng KPI',
-  attendance_deduction: 'Khấu trừ chuyên cần',
-  session_bonus: 'Hoa hồng ca làm',
-  rating_bonus: 'Thưởng đánh giá',
-  // commission
-  service_commission: 'Hoa hồng dịch vụ',
-  product_commission: 'Hoa hồng sản phẩm',
-  performance_bonus: 'Thưởng hiệu suất',
-  // inventory
-  reorder: 'Đặt hàng lại',
-  allocation: 'Phân bổ kho',
-  expiry: 'Hạn sử dụng',
 };
 
 const STATUSES = [
@@ -62,6 +28,51 @@ const STATUSES = [
 ];
 
 export default function RuleMetadataForm({ data, onChange }: RuleMetadataFormProps) {
+  const vocab = useModuleVocabulary();
+  const isRealEstate = vocab.booking.singular.includes('giữ chỗ') || vocab.worker.short === 'CVTV';
+  const isCleaning = vocab.worker.short === 'NVS';
+
+  const providers = [
+    {
+      value: 'booking',
+      label: isRealEstate ? 'Đơn giữ chỗ & Hợp đồng' : isCleaning ? 'Phiếu công việc & Ca làm' : 'Đặt lịch & Hẹn dịch vụ',
+    },
+    { value: 'discount', label: 'Chiết khấu & Ưu đãi' },
+    { value: 'payroll', label: 'Tính lương & Thưởng' },
+    { value: 'commission', label: 'Hoa hồng & Doanh số' },
+    {
+      value: 'inventory',
+      label: isRealEstate ? 'Giỏ hàng & Căn hộ' : isCleaning ? 'Vật tư & Trang thiết bị' : 'Kho hàng & Sản phẩm',
+    },
+  ];
+
+  const categoryLabels: Record<string, string> = {
+    // booking
+    assignment: isRealEstate ? 'Phân bổ tư vấn viên' : isCleaning ? 'Phân bổ nhân viên vệ sinh' : 'Phân bổ ca làm',
+    capacity: isRealEstate ? 'Hạn mức giữ chỗ' : 'Công suất phục vụ',
+    conflict: 'Xung đột lịch',
+    waitlist: isRealEstate ? 'Danh sách giữ chỗ hàng chờ' : 'Danh sách chờ',
+    priority: 'Độ ưu tiên xử lý',
+    // discount
+    membership: 'Hạng thành viên / VIP',
+    campaign: 'Chiến dịch ưu đãi',
+    bundle: 'Gói sản phẩm / Combo',
+    referral: 'Giới thiệu khách hàng',
+    // payroll
+    kpi_bonus: 'Thưởng KPI',
+    attendance_deduction: 'Khấu trừ chuyên cần',
+    session_bonus: isRealEstate ? 'Thưởng giao dịch' : 'Hoa hồng ca làm',
+    rating_bonus: 'Thưởng đánh giá',
+    // commission
+    service_commission: isRealEstate ? 'Hoa hồng tư vấn' : 'Hoa hồng dịch vụ',
+    product_commission: isRealEstate ? 'Hoa hồng bán căn hộ' : 'Hoa hồng bán sản phẩm',
+    performance_bonus: 'Thưởng hiệu suất',
+    // inventory
+    reorder: isRealEstate ? 'Cập nhật bảng hàng' : 'Đặt hàng lại',
+    allocation: isRealEstate ? 'Phân bổ giỏ hàng' : 'Phân bổ kho',
+    expiry: isRealEstate ? 'Hạn giữ chỗ căn' : 'Hạn sử dụng',
+  };
+
   const handleChange = (field: string, value: unknown) => {
     onChange({ ...data, [field]: value });
   };
@@ -74,12 +85,6 @@ export default function RuleMetadataForm({ data, onChange }: RuleMetadataFormPro
   const priorityNum = (data.priority as number) ?? 100;
 
   const categories = CATEGORIES_BY_PROVIDER[providerStr] || [];
-
-  const selectedProvider = PROVIDERS.find((p) => p.value === providerStr);
-  const selectedCategoryLabel = categoryStr
-    ? CATEGORY_LABELS[categoryStr] || categoryStr.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())
-    : undefined;
-  const selectedStatus = STATUSES.find((s) => s.value === statusStr);
 
   return (
     <div className="space-y-6">
@@ -95,7 +100,7 @@ export default function RuleMetadataForm({ data, onChange }: RuleMetadataFormPro
           id="name"
           value={nameStr}
           onChange={(e) => handleChange('name', e.target.value)}
-          placeholder="Ví dụ: Quy tắc phân bổ KTV cho khách hàng VIP"
+          placeholder="Ví dụ: Quy tắc phân bổ nhân sự cho khách hàng VIP"
           required
           className="h-11 !rounded-xl bg-slate-50/50 dark:bg-zinc-900/40 border-slate-200/80 dark:border-zinc-800/80 hover:bg-slate-50 hover:border-slate-300 dark:hover:bg-zinc-900/60 dark:hover:border-zinc-700 focus-visible:bg-white dark:focus-visible:bg-zinc-950 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary shadow-sm transition-all duration-200 text-sm"
         />
@@ -135,29 +140,17 @@ export default function RuleMetadataForm({ data, onChange }: RuleMetadataFormPro
           >
             Nghiệp vụ áp dụng <span className="text-destructive font-black text-sm">*</span>
           </Label>
-          <Select
+          <PremiumSelect
             value={providerStr}
-            onValueChange={(value) => {
+            onChange={(value) => {
               handleChange('provider', value);
               handleChange('category', ''); // Reset category when provider changes
             }}
-          >
-            <SelectTrigger
-              id="provider"
-              className="h-11 !rounded-xl bg-slate-50/50 dark:bg-zinc-900/40 border-slate-200/80 dark:border-zinc-800/80 hover:bg-slate-50 hover:border-slate-300 dark:hover:bg-zinc-900/60 dark:hover:border-zinc-700 focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-sm transition-all duration-200 text-sm"
-            >
-              <SelectValue placeholder="Chọn nghiệp vụ">
-                {selectedProvider ? selectedProvider.label : undefined}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent className="rounded-xl border-slate-200 dark:border-zinc-800 shadow-xl">
-              {PROVIDERS.map((provider) => (
-                <SelectItem key={provider.value} value={provider.value} className="text-sm rounded-lg py-2.5">
-                  {provider.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            options={providers}
+            placeholder="Chọn nghiệp vụ"
+            buttonClassName="h-11 !rounded-xl bg-slate-50/50 dark:bg-zinc-900/40 border-slate-200/80 dark:border-zinc-800/80 hover:bg-slate-50 hover:border-slate-300 dark:hover:bg-zinc-900/60 dark:hover:border-zinc-700 focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-sm transition-all duration-200 text-sm font-medium text-slate-800 dark:text-zinc-200"
+            dropdownClassName="shadow-[0_12px_40px_rgba(0,0,0,0.12)] border-slate-200/80 dark:border-zinc-800"
+          />
         </div>
 
         {/* Category */}
@@ -168,27 +161,18 @@ export default function RuleMetadataForm({ data, onChange }: RuleMetadataFormPro
           >
             Phân loại cụ thể <span className="text-destructive font-black text-sm">*</span>
           </Label>
-          <Select
+          <PremiumSelect
             value={categoryStr}
-            onValueChange={(value) => handleChange('category', value)}
+            onChange={(value) => handleChange('category', value)}
             disabled={!providerStr}
-          >
-            <SelectTrigger
-              id="category"
-              className="h-11 !rounded-xl bg-slate-50/50 dark:bg-zinc-900/40 border-slate-200/80 dark:border-zinc-800/80 hover:bg-slate-50 hover:border-slate-300 dark:hover:bg-zinc-900/60 dark:hover:border-zinc-700 focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-sm transition-all duration-200 text-sm"
-            >
-              <SelectValue placeholder="Chọn phân loại">
-                {selectedCategoryLabel}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent className="rounded-xl border-slate-200 dark:border-zinc-800 shadow-xl">
-              {categories.map((category) => (
-                <SelectItem key={category} value={category} className="text-sm rounded-lg py-2.5">
-                  {CATEGORY_LABELS[category] || category.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            options={categories.map((c) => ({
+              value: c,
+              label: categoryLabels[c] || c.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
+            }))}
+            placeholder="Chọn phân loại"
+            buttonClassName="h-11 !rounded-xl bg-slate-50/50 dark:bg-zinc-900/40 border-slate-200/80 dark:border-zinc-800/80 hover:bg-slate-50 hover:border-slate-300 dark:hover:bg-zinc-900/60 dark:hover:border-zinc-700 focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-sm transition-all duration-200 text-sm font-medium text-slate-800 dark:text-zinc-200"
+            dropdownClassName="shadow-[0_12px_40px_rgba(0,0,0,0.12)] border-slate-200/80 dark:border-zinc-800"
+          />
         </div>
       </div>
 
@@ -222,26 +206,14 @@ export default function RuleMetadataForm({ data, onChange }: RuleMetadataFormPro
         >
           Trạng thái cấu hình
         </Label>
-        <Select
+        <PremiumSelect
           value={statusStr}
-          onValueChange={(value) => handleChange('status', value)}
-        >
-          <SelectTrigger
-            id="status"
-            className="h-11 !rounded-xl bg-slate-50/50 dark:bg-zinc-900/40 border-slate-200/80 dark:border-zinc-800/80 hover:bg-slate-50 hover:border-slate-300 dark:hover:bg-zinc-900/60 dark:hover:border-zinc-700 focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-sm transition-all duration-200 text-sm"
-          >
-            <SelectValue placeholder="Chọn trạng thái">
-              {selectedStatus ? selectedStatus.label : undefined}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent className="rounded-xl border-slate-200 dark:border-zinc-800 shadow-xl">
-            {STATUSES.map((status) => (
-              <SelectItem key={status.value} value={status.value} className="text-sm rounded-lg py-2.5">
-                {status.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          onChange={(value) => handleChange('status', value)}
+          options={STATUSES}
+          placeholder="Chọn trạng thái"
+          buttonClassName="h-11 !rounded-xl bg-slate-50/50 dark:bg-zinc-900/40 border-slate-200/80 dark:border-zinc-800/80 hover:bg-slate-50 hover:border-slate-300 dark:hover:bg-zinc-900/60 dark:hover:border-zinc-700 focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-sm transition-all duration-200 text-sm font-medium text-slate-800 dark:text-zinc-200"
+          dropdownClassName="shadow-[0_12px_40px_rgba(0,0,0,0.12)] border-slate-200/80 dark:border-zinc-800"
+        />
         <p className="text-[11px] text-slate-500 dark:text-zinc-400">
           Chỉ các quy tắc &ldquo;Hoạt động&rdquo; mới được nạp vào Decision Engine thời gian thực.
         </p>

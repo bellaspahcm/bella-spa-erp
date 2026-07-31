@@ -32,6 +32,11 @@ async function applyDashboardTenantBrandRuntime(
   root.dataset.tenantBrandMenu = brand.menuStyle;
   root.dataset.tenantBrandRadius = brand.radiusStyle;
 
+  // Dynamically set browser title to match current tenant & module identity
+  if (brand.displayName) {
+    document.title = `${brand.displayName} — ${brand.subtitle}`;
+  }
+
   for (const token of ['--background', '--foreground', '--border', '--input']) {
     root.style.removeProperty(token);
   }

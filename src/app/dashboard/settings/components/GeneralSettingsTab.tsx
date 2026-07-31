@@ -5,6 +5,7 @@ import { Store, Phone, Mail, MapPin, Camera, Database } from "lucide-react";
 import { PremiumSelect } from "@/components/ui/PremiumSelect";
 import { TenantGeneralSettings, DEFAULT_CONFLICT_DETECTION_CONFIG } from "@/types/domain";
 import OverbookingConfigSection from "./OverbookingConfigSection";
+import { useTenantModuleKey } from "@/hooks/useTenantModuleKey";
 
 const POPULAR_BANKS = [
   { code: "MB", name: "MB Bank (Ngân hàng Quân Đội)" },
@@ -29,6 +30,10 @@ export default function GeneralSettingsTab({
   setGeneralSettings,
   isLoadingSettings,
 }: GeneralSettingsTabProps) {
+  const { tenantModuleKey } = useTenantModuleKey();
+  const isRealEstate = tenantModuleKey === "real_estate";
+  const isIndustrialCleaning = tenantModuleKey === "industrial_cleaning";
+
   if (isLoadingSettings) {
     return (
       <div className="py-20 text-center">
@@ -40,6 +45,16 @@ export default function GeneralSettingsTab({
     );
   }
 
+  const titleText = isRealEstate 
+    ? "Thông tin Doanh nghiệp" 
+    : isIndustrialCleaning 
+    ? "Thông tin Công ty" 
+    : "Thông tin Spa";
+
+  const subtitleText = isRealEstate
+    ? "Cấu hình thông tin cơ bản hiển thị trên hợp đồng, hóa đơn và hệ thống"
+    : "Cấu hình thông tin cơ bản hiển thị trên hóa đơn và hệ thống";
+
   return (
     <div className="space-y-8">
       <div className="flex items-center gap-4 mb-2">
@@ -48,10 +63,10 @@ export default function GeneralSettingsTab({
         </div>
         <div>
           <h2 className="text-2xl font-bold text-foreground">
-            Thông tin Spa
+            {titleText}
           </h2>
           <p className="text-sm text-muted-foreground font-semibold">
-            Cấu hình thông tin cơ bản hiển thị trên hóa đơn và hệ thống
+            {subtitleText}
           </p>
         </div>
       </div>
@@ -179,18 +194,20 @@ export default function GeneralSettingsTab({
       </div>
 
       {/* Advanced Conflict Detection Toggles */}
-      <OverbookingConfigSection
-        config={(generalSettings.salary_config.conflict_detection as unknown as import('@/types/domain').ConflictDetectionConfig) ?? DEFAULT_CONFLICT_DETECTION_CONFIG}
-        onChange={(updatedCd) =>
-          setGeneralSettings({
-            ...generalSettings,
-            salary_config: {
-              ...generalSettings.salary_config,
-              conflict_detection: updatedCd as unknown as import('@/types/database.types').Json,
-            },
-          })
-        }
-      />
+      {!isRealEstate && (
+        <OverbookingConfigSection
+          config={(generalSettings.salary_config.conflict_detection as unknown as import('@/types/domain').ConflictDetectionConfig) ?? DEFAULT_CONFLICT_DETECTION_CONFIG}
+          onChange={(updatedCd) =>
+            setGeneralSettings({
+              ...generalSettings,
+              salary_config: {
+                ...generalSettings.salary_config,
+                conflict_detection: updatedCd as unknown as import('@/types/database.types').Json,
+              },
+            })
+          }
+        />
+      )}
     </div>
   );
 }

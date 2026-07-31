@@ -558,7 +558,7 @@ export default function SalaryConfigTab({
 
         {!kpiEnabled && (
           <div className="bg-slate-50 dark:bg-[#11100F] border border-slate-100 dark:border-[#3E3A35] rounded-xl px-4 py-3 text-xs text-slate-500 dark:text-[#CDBCAB] font-medium">
-            ⚠️ Thưởng KPI hiện đang <strong>tắt</strong>. KTV sẽ không nhận thưởng khi đạt mục tiêu.
+            ⚠️ Thưởng KPI hiện đang <strong>tắt</strong>. Nhân sự sẽ không nhận thưởng khi đạt mục tiêu.
           </div>
         )}
       </section>
@@ -631,7 +631,7 @@ export default function SalaryConfigTab({
 
         {!attendanceEnabled && (
           <div className="bg-rose-50 dark:bg-[#5D1C34]/20 border border-rose-100 dark:border-[#5D1C34] rounded-xl px-4 py-3 text-xs text-rose-600 dark:text-[#EFE9E1] font-medium">
-            ⚠️ Phạt kỷ luật hiện đang <strong>tắt</strong>. Hệ thống sẽ không tự động trừ lương khi KTV đi trễ hoặc vắng mặt.
+            ⚠️ Phạt kỷ luật hiện đang <strong>tắt</strong>. Hệ thống sẽ không tự động trừ lương khi nhân sự đi trễ hoặc vắng mặt.
           </div>
         )}
       </section>
@@ -817,7 +817,7 @@ export default function SalaryConfigTab({
 
         {!ratingEnabled && (
           <div className="bg-amber-50 dark:bg-[#A67D44]/20 border border-amber-100 dark:border-[#A67D44] rounded-xl px-4 py-3 text-xs text-amber-700 dark:text-[#EFE9E1] font-medium">
-            ⚠️ Thưởng chất lượng hiện đang <strong>tắt</strong>. KTV sẽ không nhận thưởng khi có đánh giá cao.
+            ⚠️ Thưởng chất lượng hiện đang <strong>tắt</strong>. Nhân sự sẽ không nhận thưởng khi có đánh giá cao.
           </div>
         )}
       </section>
@@ -1208,7 +1208,7 @@ export default function SalaryConfigTab({
 
         {!commissionEnabled && (
           <div className="bg-emerald-50 dark:bg-[#2E5D3E]/20 border border-emerald-100 dark:border-[#2E5D3E] rounded-xl px-4 py-3 text-xs text-emerald-700 dark:text-[#EFE9E1] font-medium">
-            ⚠️ Hoa hồng ca hiện đang <strong>tắt</strong>. KTV sẽ không nhận hoa hồng khi làm ca.
+            ⚠️ Hoa hồng ca hiện đang <strong>tắt</strong>. Nhân sự sẽ không nhận hoa hồng khi làm ca.
           </div>
         )}
       </section>
