@@ -1994,10 +1994,77 @@
   - `src/core/services/audit/audit-actions.ts`
   - `src/core/services/order/create-booking-helpers.ts`
   - `src/services/intelligence/operational/queries-simple.ts`
-  - `src/app/dashboard/customers/[id]/useCustomerDetailController.ts`
+- `src/app/dashboard/customers/[id]/useCustomerDetailController.ts`
   - `src/modules/hr-salary/actions/salary-recalculation-engine.ts`
   - `scripts/check-api-docs.mjs`
   - `scripts/check-api-versioning.mjs`
   - `docs/api-reference.md`
   - `docs/KNOWLEDGE_MAINTENANCE_LOG.md`
   - `docs/DEVELOPMENT_LOG.md`
+
+---
+
+### 31/07/2026: Triển Khai Hoàn Tất Phân Hệ Bất Động Sản (Real Estate Vertical Module)
+
+* **Bối cảnh**:
+  * Triển khai phân hệ nghiệp vụ Bất động sản (**Real Estate Vertical**) — vertical thứ 4 sau Beauty Spa, Babycare và Industrial Cleaning.
+  * Yêu cầu: cô lập tuyệt đối khỏi Spa/Babycare, tuân thủ DDD + CQRS + BELLA EIP Constitution v3.2, sẵn sàng Staging/Canary Release.
+
+* **Thay đổi & Giải pháp**:
+  * **Domain Layer — 6 Bounded Contexts**:
+    * `inventory/`: Apartment State Machine (`available → reserved → deposited → sold | cancelled`), quản lý cấu trúc cây `Project ➔ Phase ➔ Block ➔ Floor ➔ Unit`.
+    * `sales/`: Booking với Auto-Release Timer 24h-48h, Deposit, Transfer Booking — CQRS Commands.
+    * `crm/`: Hồ sơ 360° nhà đầu tư, hành trình Lead → Owner.
+    * `contract/`: HĐMB state machine (`draft → active → completed | terminated`), lịch thanh toán tiến độ, lãi phạt trả chậm.
+    * `finance/`: Accounting Outbox (TT133) sinh bút toán tự động cho từng event.
+    * `marketing/`: Pipeline Lead đa kênh (Facebook Ads, TikTok, Zalo, Website).
+  * **UI Layer — Premium Real Estate Design System**:
+    * 6 routes: `/dashboard/real-estate`, `/projects`, `/apartments`, `/contracts`, `/customers`, `/marketing`.
+    * CSS cô lập 100% qua `[data-re-layout]` scope — Spa/Babycare hoàn toàn không bị ảnh hưởng.
+    * Design tokens Deep Navy (`#0b1f3a`) + Gold (`#c8971f`) — premium luxury real estate aesthetic.
+    * Sidebar tự động hiển thị menu riêng cho Real Estate tenant (không dùng chung với Spa).
+  * **Plugin Layer — Inbound & Outbound**:
+    * `src/plugins/inbound/facebook/adapter.ts`: Facebook Lead Ads Webhook → InboundInboxItem → MarketingLead.
+    * `src/plugins/outbound/misa/adapter.ts`: MISA ERP Financial Sync — retry exponential backoff, idempotency key, mock mode, TT133 journal entries.
+  * **Brand Identity**:
+    * Tenant brand: `Bella Land`, style preset `luxury_navy`, primary `#1E3A8A`, accent `#D97706`.
+    * `resolveTenantBrandIdentity()` tự phát hiện `moduleKey = 'real_estate'` — không cần cấu hình thủ công.
+  * **Test Fix**:
+    * Căn chỉnh expectation trong `apartment.test.ts`: dùng đúng thông báo lỗi tiếng Việt từ domain model (`"Không thể chuyển đổi trạng thái căn hộ B-202 từ handed_over sang available"`).
+
+* **Kiểm tra**:
+  * ✅ `tsc --noEmit` — 0 lỗi TypeScript.
+  * ✅ `npm run architecture:test` — 0 cross-import violations.
+  * ✅ Domain Unit Tests — 22/22 passed (State Machines + CQRS Commands).
+  * ✅ Real Estate Module Isolation Suite — 13/13 passed.
+  * ✅ MISA Outbound Plugin Tests — 11/11 passed.
+  * ✅ `npm run lint` — 0 errors.
+  * ✅ `npm run security:secrets` — 0 leaks.
+  * ✅ `npm run security:audit` — 0 unallowlisted high/critical.
+  * ✅ `npm run build` (Turbopack) — 227 routes compiled, 0 errors. Bao gồm đầy đủ `/dashboard/real-estate/*`.
+  * ✅ `npm run dev` — Hot reload hoạt động bình thường.
+
+* **Files Mới Tạo (Real Estate Vertical)**:
+  - `src/app/dashboard/real-estate/layout.tsx` ← Route wrapper, import CSS isolated
+  - `src/app/dashboard/real-estate/re-layout.css` ← Premium Real Estate CSS — scoped [data-re-layout]
+  - `src/app/dashboard/real-estate/page.tsx` ← Dashboard tổng quan
+  - `src/app/dashboard/real-estate/projects/page.tsx` ← Quản lý dự án
+  - `src/app/dashboard/real-estate/apartments/page.tsx` ← Bảng hàng căn hộ
+  - `src/app/dashboard/real-estate/contracts/page.tsx` ← Hợp đồng & Đặt cọc
+  - `src/app/dashboard/real-estate/customers/page.tsx` ← CRM nhà đầu tư
+  - `src/app/dashboard/real-estate/marketing/page.tsx` ← Pipeline Marketing & Lead
+  - `src/modules/real_estate/manifest.ts` ← Vertical Metadata Manifest
+  - `src/modules/real_estate/public/internal/contracts.ts` ← Public Internal Contracts
+  - `src/modules/real_estate/contexts/inventory/domain/apartment.ts` ← Apartment State Machine
+  - `src/modules/real_estate/contexts/marketing/domain/marketing-lead.ts` ← Marketing Lead Context
+  - `src/plugins/inbound/facebook/adapter.ts` ← Facebook Inbound Adapter
+  - `src/plugins/outbound/misa/adapter.ts` ← MISA Financial Sync Adapter
+  - `src/modules/real_estate/components/ProjectHeader.tsx` ← UI Component
+  - `docs/reports/REAL_ESTATE_MODULE_EXECUTION_REPORT.md` ← Báo cáo thực thi
+
+* **Files Thay Đổi (Bổ sung, không phá vỡ)**:
+  - `src/components/layout/sidebar.tsx` ← Thêm realEstateMenuItems + branch logic
+  - `src/lib/business-rules/tenant-modules.ts` ← Thêm DEFAULT_REAL_ESTATE_TENANT_BRAND_THEME
+  - `src/platform/registry/vertical-registry.ts` ← Đăng ký Real Estate Vertical
+  - `src/modules/real_estate/contexts/inventory/__tests__/apartment.test.ts` ← Fix test expectation Vietnamese
+  - `docs/index.md` ← Thêm link báo cáo Real Estate
