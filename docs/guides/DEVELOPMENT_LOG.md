@@ -2068,3 +2068,5 @@
   - `src/platform/registry/vertical-registry.ts` ← Đăng ký Real Estate Vertical
   - `src/modules/real_estate/contexts/inventory/__tests__/apartment.test.ts` ← Fix test expectation Vietnamese
   - `docs/index.md` ← Thêm link báo cáo Real Estate
+  - `src/app/dashboard/page.tsx` ← Di chuyển hook declarations lên trên cùng để tránh lỗi Rules of Hooks khi return sớm
+  - `src/platform/messaging/event-bus/event-bus.ts` ← Đổi type 'any' thành 'unknown' và sửa log constant format để qua cổng bảo mật/linter
