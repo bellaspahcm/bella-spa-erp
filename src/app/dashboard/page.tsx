@@ -82,25 +82,6 @@ const RealEstateDashboardPage = dynamic(
 export default function DashboardPage() {
   const router = useRouter();
   const { tenantModuleKey, isTenantModuleLoading } = useTenantModuleKey();
-
-  if (isTenantModuleLoading) {
-    return (
-      <div className="flex-1 p-8 space-y-6 animate-pulse bg-slate-50 dark:bg-slate-950 min-h-screen">
-        <div className="h-20 bg-slate-200 dark:bg-slate-800 rounded-2xl w-full" />
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="h-32 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
-          <div className="h-32 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
-          <div className="h-32 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
-          <div className="h-32 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
-        </div>
-        <div className="h-96 bg-slate-200 dark:bg-slate-800 rounded-3xl w-full" />
-      </div>
-    );
-  }
-
-  if (tenantModuleKey === 'real_estate') {
-    return <RealEstateDashboardPage />;
-  }
   const [stats, setStats] = useState<DashboardStatsViewModel[]>([]);
   const [sessions, setSessions] = useState<DashboardSessionViewModel[]>([]);
   const [topKTVs, setTopKTVs] = useState<KtvPerformanceViewModel[]>([]);
@@ -156,6 +137,7 @@ export default function DashboardPage() {
   const { user: profile } = useUser();
 
   useEffect(() => {
+    if (isTenantModuleLoading || tenantModuleKey === 'real_estate') return;
     if (!profile) return;
     setTenantId(profile.tenant_id || null);
     const role = profile.role?.toLowerCase();
@@ -164,9 +146,7 @@ export default function DashboardPage() {
       return;
     }
     setUserRole(role === 'admin' ? 'admin' : 'ktv');
-  }, [profile, router]);
-
-
+  }, [profile, router, isTenantModuleLoading, tenantModuleKey]);
 
   const getMonthRange = (month: number, year: number) => {
     // Manually construct YYYY-MM-DD to avoid timezone shifts from .toISOString()
@@ -201,6 +181,7 @@ export default function DashboardPage() {
   }, [userRole, vocab.worker.short]);
 
   const fetchPrimaryData = useCallback(async () => {
+    if (isTenantModuleLoading || tenantModuleKey === 'real_estate') return;
     if (userRole === null) return; // Wait for role to be identified
     if (!tenantId) return;
 
@@ -224,9 +205,10 @@ export default function DashboardPage() {
       setIsRefreshing(false);
       setIsLoading(false);
     }
-  }, [buildDashboardStats, selectedMonth, selectedYear, tenantId, userRole]);
+  }, [buildDashboardStats, selectedMonth, selectedYear, tenantId, userRole, isTenantModuleLoading, tenantModuleKey]);
 
   const fetchSecondaryData = useCallback(async () => {
+    if (isTenantModuleLoading || tenantModuleKey === 'real_estate') return;
     if (userRole === null) return;
     if (!tenantId) return;
 
@@ -245,9 +227,10 @@ export default function DashboardPage() {
     } finally {
       setIsSecondaryLoading(false);
     }
-  }, [tenantId, userRole]);
+  }, [tenantId, userRole, isTenantModuleLoading, tenantModuleKey]);
 
   const fetchAlertsData = useCallback(async () => {
+    if (isTenantModuleLoading || tenantModuleKey === 'real_estate') return;
     if (userRole === null) return;
     if (!tenantId) return;
 
@@ -258,7 +241,7 @@ export default function DashboardPage() {
       console.error('Error fetching dashboard alerts:', error);
       toast.error('Không thể tải thông báo dashboard');
     }
-  }, [tenantId, userRole]);
+  }, [tenantId, userRole, isTenantModuleLoading, tenantModuleKey]);
 
   // fetchData = manual refresh (e.g. realtime trigger) — runs both phases in parallel
   const fetchData = useCallback(async () => {
@@ -266,10 +249,10 @@ export default function DashboardPage() {
     await Promise.all([fetchPrimaryData(), fetchSecondaryData()]);
   }, [fetchPrimaryData, fetchSecondaryData]);
 
-
   usePageRefresh(fetchData);
 
   useEffect(() => {
+    if (isTenantModuleLoading || tenantModuleKey === 'real_estate') return;
     // ── Progressive initial load ─────────────────────────────────────
     // Phase 1: today's schedule (sessions + stats) — clears the main spinner
     // Phase 2: KTV leaderboard + alerts — deferred 200ms so it never races
@@ -279,8 +262,7 @@ export default function DashboardPage() {
     const t = setTimeout(() => { void fetchSecondaryData(); }, 200);
     return () => clearTimeout(t);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenantId]); // re-run only if tenant changes, not on every userRole update
-
+  }, [tenantId, isTenantModuleLoading, tenantModuleKey]); // re-run only if tenant changes, not on every userRole update
 
   const scheduleDashboardRefresh = useCallback(() => {
     if (dashboardRefreshTimerRef.current) {
@@ -305,6 +287,7 @@ export default function DashboardPage() {
   }, [fetchAlertsData]);
 
   useEffect(() => {
+    if (isTenantModuleLoading || tenantModuleKey === 'real_estate') return;
     // REALTIME SUBSCRIPTION
     const supabase = createClient();
     const channel = supabase
@@ -335,7 +318,27 @@ export default function DashboardPage() {
       }
       supabase.removeChannel(channel);
     };
-  }, [scheduleDashboardAlertsRefresh, scheduleDashboardRefresh]);
+  }, [scheduleDashboardAlertsRefresh, scheduleDashboardRefresh, isTenantModuleLoading, tenantModuleKey]);
+
+  // Now perform conditional early returns safe from Rule of Hooks violation
+  if (isTenantModuleLoading) {
+    return (
+      <div className="flex-1 p-8 space-y-6 animate-pulse bg-slate-50 dark:bg-slate-950 min-h-screen">
+        <div className="h-20 bg-slate-200 dark:bg-slate-800 rounded-2xl w-full" />
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="h-32 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
+          <div className="h-32 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
+          <div className="h-32 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
+          <div className="h-32 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
+        </div>
+        <div className="h-96 bg-slate-200 dark:bg-slate-800 rounded-3xl w-full" />
+      </div>
+    );
+  }
+
+  if (tenantModuleKey === 'real_estate') {
+    return <RealEstateDashboardPage />;
+  }
 
   const handleCompleteSession = async (sessionId: string, bookingId: string, note: string) => {
     setUpdatingId(sessionId);
