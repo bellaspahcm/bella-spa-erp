@@ -10,6 +10,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "architecture:test": "ts-node src/architecture/fitness/dependency-test.ts",
     "lint:strict": "eslint --config eslint.strict.config.mjs \"src/**/*.{ts,tsx}\"",
     "env:check": "node scripts/check-required-env.mjs",
     "docs:api:check": "node scripts/check-api-docs.mjs",

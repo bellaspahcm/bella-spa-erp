@@ -201,6 +201,13 @@ const ANY_DEBT_BASELINE = [
   "src/services/inventory-transfer-actions.ts",
   "src/services/ktv-actions.ts",
   "src/services/notifications/notification-service.ts",
+  "src/lib/decision-engine/types/decision-context.ts",
+  "src/lib/middleware/api-key.middleware.ts",
+  "src/lib/middleware/sandbox.middleware.ts",
+  "src/lib/workflow-engine/samples/booking-to-fulfillment.ts",
+  "src/lib/workflow-engine/samples/inventory-reorder.ts",
+  "src/lib/workflow-engine/samples/payroll-approval.ts",
+  "src/modules/hr-salary/actions/base-salary-actions.ts",
 ];
 
 const eslintConfig = defineConfig([

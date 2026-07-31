@@ -193,11 +193,12 @@ export async function rescheduleSession(sessionId: string, newDate: string) {
       
     if (updatedSession) {
       const booking = Array.isArray(updatedSession.bookings) ? updatedSession.bookings[0] : updatedSession.bookings;
-      const targetKtvId = updatedSession.completed_by_ktv_id || (booking as any)?.assigned_ktv_id;
+      const bookingTyped = booking as Record<string, unknown> & { assigned_ktv_id?: string; package_name?: string; customers?: { name_mother?: string } };
+      const targetKtvId = updatedSession.completed_by_ktv_id || bookingTyped?.assigned_ktv_id;
       
       if (targetKtvId) {
         const { createSystemNotification } = await import('@/services/notification-helpers');
-        const customerName = (booking as any)?.customers?.name_mother || 'Khách hàng';
+        const customerName = bookingTyped?.customers?.name_mother || 'Khách hàng';
         const packageName = booking?.package_name || 'Dịch vụ';
         const formattedNewDate = newDate.split('-').reverse().join('/');
         

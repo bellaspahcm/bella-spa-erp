@@ -1055,7 +1055,7 @@ export async function getWaitlistStats(
  */
 export async function convertToBooking(
   entryId: string
-): Promise<{ success: boolean; booking?: any; error?: string }> {
+): Promise<{ success: boolean; booking?: unknown; error?: string }> {
   const supabase = createClient();
 
   try {

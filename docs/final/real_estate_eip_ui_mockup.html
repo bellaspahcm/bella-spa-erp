@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bella Real Estate — Executive EIP</title>
+    <!-- Premium Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            /* Luxury Real Estate EIP Palette */
+            --bg-workspace: #F4F5F7; /* Soft Warm Gray */
+            --bg-sidebar: #091224;  /* Deep Navy */
+            --bg-card: #FFFFFF;      /* Pure White */
+            --bg-glass: rgba(255, 255, 255, 0.7);
+            
+            /* Main Semantic Colors */
+            --color-primary: #102A5C;   /* Deep Navy */
+            --color-secondary: #3B82F6; /* Royal Blue */
+            --color-accent: #C8A45B;    /* Luxury Gold */
+            --color-accent-subtle: rgba(200, 164, 91, 0.08);
+            
+            /* Status Colors (Soft & Classy) */
+            --status-av-bg: #E6F4EA;
+            --status-av-text: #137333;
+            --status-bk-bg: #FEF7E0;
+            --status-bk-text: #B06000;
+            --status-dp-bg: #FCE8E6;
+            --status-dp-text: #C5221F;
+            --status-ct-bg: #E8F0FE;
+            --status-ct-text: #1A73E8;
+
+            /* Visual Hierarchy Typography Colors */
+            --text-main: #090E1A;
+            --text-secondary: #4A5568;
+            --text-muted: #718096;
+            --text-dim: #A0AEC0;
+            
+            /* Soft Elevation & Premium Lighting Shadows */
+            --shadow-card: 0 12px 30px -10px rgba(16, 42, 92, 0.04), 0 2px 4px rgba(16, 42, 92, 0.01);
+            --shadow-card-hover: 0 20px 40px -12px rgba(16, 42, 92, 0.08), 0 4px 8px rgba(16, 42, 92, 0.02);
+            --shadow-glass: 0 8px 32px 0 rgba(16, 42, 92, 0.03);
+            --shadow-sidebar-active: 0 4px 12px rgba(200, 164, 91, 0.15);
+            
+            /* Layout Spacing Constants */
+            --radius-main: 16px;
+            --radius-button: 8px;
+            --spacing-large: 32px;
+            --spacing-medium: 16px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background-color: var(--bg-workspace);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Ambient Lighting Overlay for Premium Feel */
+        .ambient-glow {
+            position: absolute;
+            top: -10%;
+            right: 5%;
+            width: 400px;
+            height: 400px;
+            background: rgba(200, 164, 91, 0.03);
+            filter: blur(150px);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* 1. Fixed Premium Sidebar */
+        .sidebar {
+            width: 260px;
+            background: var(--bg-sidebar);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            flex-shrink: 0;
+            padding: var(--spacing-large) 20px;
+            z-index: 10;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0 8px 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .brand-icon {
+            width: 26px;
+            height: 26px;
+            border-radius: 6px;
+            background: var(--color-accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 13px;
+            color: var(--bg-sidebar);
+            box-shadow: var(--shadow-sidebar-active);
+        }
+
+        .brand-text {
+            font-family: 'Cinzel', serif;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: var(--color-accent);
+        }
+
+        .nav-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex: 1;
+            padding-top: 24px;
+        }
+
+        .nav-section {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(255, 255, 255, 0.3);
+            padding: 16px 12px 6px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            border-radius: var(--radius-button);
+            color: rgba(255, 255, 255, 0.6);
+            font-weight: 500;
+            font-size: 13px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.03);
+            color: #FFFFFF;
+        }
+
+        .nav-item.active {
+            background: rgba(200, 164, 91, 0.08);
+            color: var(--color-accent);
+            font-weight: 600;
+            box-shadow: inset 3px 0 0 var(--color-accent);
+        }
+
+        .nav-icon {
+            font-size: 14px;
+            width: 18px;
+            opacity: 0.8;
+        }
+
+        .user-panel {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 11px;
+            color: var(--color-accent);
+        }
+
+        /* Main Workspace Container */
+        .workspace {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 5;
+            position: relative;
+        }
+
+        /* 2. Floating Top Navigation (Glassmorphic) */
+        .topbar {
+            height: 64px;
+            background: var(--bg-glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(16, 42, 92, 0.04);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 var(--spacing-large);
+            z-index: 9;
+        }
+
+        .project-selector {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--text-main);
+            cursor: pointer;
+            padding: 6px 12px;
+            border-radius: var(--radius-button);
+            background: #FFFFFF;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+            border: 1px solid rgba(16, 42, 92, 0.04);
+        }
+
+        .project-selector select {
+            border: none;
+            background: transparent;
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--text-main);
+            outline: none;
+            cursor: pointer;
+        }
+
+        .topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .search-trigger {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #FFFFFF;
+            border: 1px solid rgba(16, 42, 92, 0.04);
+            padding: 6px 14px;
+            border-radius: var(--radius-button);
+            width: 220px;
+            color: var(--text-muted);
+            font-size: 12px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        }
+
+        .search-trigger input {
+            border: none;
+            background: transparent;
+            outline: none;
+            font-size: 12px;
+            width: 100%;
+            color: var(--text-main);
+        }
+
+        .icon-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #FFFFFF;
+            border: 1px solid rgba(16, 42, 92, 0.04);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            cursor: pointer;
+            position: relative;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        }
+
+        .icon-btn .badge {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            width: 8px;
+            height: 8px;
+            background: var(--color-accent);
+            border-radius: 50%;
+        }
+
+        /* Main Scrollable Canvas */
+        .canvas {
+            flex: 1;
+            padding: var(--spacing-large);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-large);
+        }
+
+        /* Large Page Titles & Header */
+        .canvas-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .canvas-title {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            color: var(--color-primary);
+        }
+
+        .canvas-desc {
+            font-size: 13.5px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            background: var(--bg-card);
+            color: var(--text-main);
+            padding: 8px 20px;
+            border-radius: var(--radius-button);
+            font-weight: 600;
+            font-size: 12.5px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: none;
+            box-shadow: var(--shadow-card);
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-card-hover);
+        }
+
+        .btn-gold {
+            background: var(--color-accent);
+            color: #FFFFFF;
+            box-shadow: 0 4px 15px rgba(200, 164, 91, 0.2);
+        }
+
+        .btn-gold:hover {
+            opacity: 0.95;
+            box-shadow: 0 6px 20px rgba(200, 164, 91, 0.3);
+        }
+
+        /* 3. Large Executive KPI Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+        }
+
+        .kpi-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-main);
+            padding: 24px;
+            box-shadow: var(--shadow-card);
+            position: relative;
+            transition: all 0.2s ease;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-card-hover);
+        }
+
+        .kpi-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+        }
+
+        .kpi-val {
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--color-primary);
+            margin: 8px 0 4px;
+            letter-spacing: -0.6px;
+        }
+
+        .kpi-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* 4. AI Insight Panel / Decision Recommendation */
+        .ai-panel {
+            background: linear-gradient(135deg, #091224 0%, #152646 100%);
+            border-radius: var(--radius-main);
+            padding: 28px;
+            color: #FFFFFF;
+            box-shadow: var(--shadow-card);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ai-panel::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 300px;
+            height: 300px;
+            background: rgba(200, 164, 91, 0.1);
+            filter: blur(100px);
+            border-radius: 50%;
+        }
+
+        .ai-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(200, 164, 91, 0.15);
+            color: var(--color-accent);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 16px;
+            border: 1px solid rgba(200, 164, 91, 0.3);
+        }
+
+        .ai-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            letter-spacing: -0.2px;
+        }
+
+        .ai-desc {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.6;
+            margin-bottom: 16px;
+        }
+
+        .ai-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        /* 5. Inventory Board Matrix (16px Radius, 32px Spacing) */
+        .board {
+            background: var(--bg-card);
+            border-radius: var(--radius-main);
+            padding: var(--spacing-large);
+            box-shadow: var(--shadow-card);
+        }
+
+        .board-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--bg-workspace);
+        }
+
+        .board-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--color-primary);
+        }
+
+        .board-filters {
+            display: flex;
+            gap: 4px;
+            background: var(--bg-workspace);
+            padding: 4px;
+            border-radius: 20px;
+        }
+
+        .tab-btn {
+            border: none;
+            background: transparent;
+            padding: 6px 16px;
+            font-size: 11.5px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: 16px;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn.active {
+            background: var(--bg-card);
+            color: var(--text-main);
+            box-shadow: 0 2px 6px rgba(16, 42, 92, 0.04);
+        }
+
+        /* Floor by Floor Layout with generous spacing */
+        .floor-row {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            padding: 16px 0;
+            border-bottom: 1px solid var(--bg-workspace);
+        }
+
+        .floor-row:last-child {
+            border-bottom: none;
+        }
+
+        .floor-label {
+            width: 70px;
+            font-size: 11.5px;
+            font-weight: 700;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .unit-list {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        /* 6. Handcrafted Interactive Unit Card */
+        .unit-card {
+            width: 125px;
+            background: var(--bg-card);
+            border-radius: 10px;
+            padding: 14px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            box-shadow: 0 2px 8px rgba(16, 42, 92, 0.02);
+            border: 1px solid rgba(16, 42, 92, 0.03);
+            position: relative;
+        }
+
+        .unit-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-card-hover);
+            border-color: var(--color-accent);
+        }
+
+        .unit-card.active {
+            border-color: var(--color-accent);
+            background: var(--color-accent-subtle);
+            box-shadow: 0 4px 15px rgba(200, 164, 91, 0.15);
+        }
+
+        .unit-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .unit-id {
+            font-weight: 700;
+            font-size: 13px;
+            color: var(--color-primary);
+        }
+
+        .unit-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+
+        .dot-av { background-color: var(--status-av-text); }
+        .dot-bk { background-color: var(--status-bk-text); }
+        .dot-dp { background-color: var(--status-dp-text); }
+        .dot-ct { background-color: var(--status-ct-text); }
+
+        .unit-area {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .unit-price {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .unit-status-badge {
+            font-size: 9px;
+            font-weight: 700;
+            padding: 1px 6px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-top: 6px;
+        }
+
+        .badge-av { background: var(--status-av-bg); color: var(--status-av-text); }
+        .badge-bk { background: var(--status-bk-bg); color: var(--status-bk-text); }
+        .badge-dp { background: var(--status-dp-bg); color: var(--status-dp-text); }
+        .badge-ct { background: var(--status-ct-bg); color: var(--status-ct-text); }
+
+        /* Premium Drawer Details Component */
+        .drawer-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(9, 18, 36, 0.15);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 100;
+            display: none;
+            justify-content: flex-end;
+        }
+
+        .drawer {
+            width: 440px;
+            height: 100%;
+            background: var(--bg-card);
+            border-left: 1px solid var(--border-subtle);
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: -10px 0 40px rgba(9, 18, 36, 0.05);
+            animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .drawer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--bg-workspace);
+        }
+
+        .drawer-close {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 20px;
+            color: var(--text-muted);
+        }
+
+        .spec-list {
+            margin-top: 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .spec-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            padding-bottom: 12px;
+            border-bottom: 1px dashed var(--border-subtle);
+        }
+
+        .spec-lbl { color: var(--text-secondary); }
+        .spec-val { font-weight: 700; color: var(--text-main); }
+    </style>
+</head>
+<body>
+
+    <!-- Ambient Glow Spheres -->
+    <div class="ambient-glow"></div>
+
+    <!-- 1. Fixed Premium Sidebar (Dark Navy Background) -->
+    <aside class="sidebar">
+        <div>
+            <div class="brand">
+                <div class="brand-icon">B</div>
+                <span class="brand-text">Bella Real Estate</span>
+            </div>
+
+            <nav class="nav-menu">
+                <div class="nav-section">Tổng quan</div>
+                <a href="#" class="nav-item active">
+                    <i class="fa-solid fa-chart-pie nav-icon"></i> Executive Dashboard
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fa-solid fa-city nav-icon"></i> Phân khu & Dự án
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fa-solid fa-border-all nav-icon"></i> Ma trận tồn kho
+                </a>
+
+                <div class="nav-section">Giao dịch</div>
+                <a href="#" class="nav-item">
+                    <i class="fa-solid fa-file-invoice nav-icon"></i> Booking & Giữ chỗ
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fa-solid fa-file-contract nav-icon"></i> Hợp đồng Mua bán
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fa-solid fa-sack-dollar nav-icon"></i> Đối soát hoa hồng
+                </a>
+
+                <div class="nav-section">Tài chính</div>
+                <a href="#" class="nav-item">
+                    <i class="fa-solid fa-vault nav-icon"></i> Sổ cái TT133
+                </a>
+            </nav>
+        </div>
+
+        <div class="user-panel">
+            <div class="user-avatar">BDH</div>
+            <div>
+                <div style="font-weight: 700; color: #FFFFFF; font-size: 13px;">Ban Điều Hành</div>
+                <div style="font-size: 11px; color: rgba(255, 255, 255, 0.4);">CEO Platform</div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <div class="workspace">
+        <!-- 2. Floating Top Navigation (Glassmorphic) -->
+        <header class="topbar">
+            <div class="project-selector">
+                <i class="fa-solid fa-location-dot" style="color: var(--color-accent);"></i>
+                <select>
+                    <option>Vinhomes Green Paradise — Grand Island</option>
+                    <option>Vinhomes Saigon Park — Block Diamond</option>
+                    <option>Elyse Island — Shophouse Marina</option>
+                </select>
+            </div>
+
+            <div class="topbar-actions">
+                <div class="search-trigger">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" placeholder="Tìm kiếm nhanh... ⌘K">
+                </div>
+                <div class="icon-btn">
+                    <i class="fa-solid fa-bell"></i>
+                    <span class="badge"></span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 3. Large Content Canvas -->
+        <main class="canvas">
+            <!-- Canvas Header -->
+            <div class="canvas-header">
+                <div>
+                    <h1 class="canvas-title">Executive Dashboard</h1>
+                    <p class="canvas-desc">Phân tích chuyên sâu tồn kho dự án cao cấp và hiệu quả dòng tiền thời gian thực.</p>
+                </div>
+                <div class="btn-group">
+                    <button class="btn"><i class="fa-solid fa-file-excel"></i> Xuất Excel</button>
+                    <button class="btn btn-gold">+ Khởi tạo Booking</button>
+                </div>
+            </div>
+
+            <!-- KPI Metric Cards -->
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-label">Tổng tồn kho</div>
+                    <div class="kpi-val">12,850 Tỷ</div>
+                    <div class="kpi-desc">
+                        <span>1,250 Căn hộ cao cấp</span>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Doanh thu dự thu</div>
+                    <div class="kpi-val" style="color: var(--color-secondary);">4,520 Tỷ</div>
+                    <div class="kpi-desc">
+                        <span style="color: var(--status-av-text);"><i class="fa-solid fa-arrow-trend-up"></i> +12.5%</span>
+                        <span>tháng này</span>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Booking / Đang cọc</div>
+                    <div class="kpi-val" style="color: var(--color-accent);">352 Căn</div>
+                    <div class="kpi-desc">
+                        <span>142 Giữ chỗ | 210 Đã cọc</span>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Công nợ quá hạn</div>
+                    <div class="kpi-val" style="color: var(--status-dp-text);">128 Tỷ</div>
+                    <div class="kpi-desc">
+                        <span>42 Trường hợp trễ hạn đợt</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Insight Panel -->
+            <div class="ai-panel">
+                <div class="ai-badge">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> AI Forecast
+                </div>
+                <h3 class="ai-title">Khuyến nghị điều chỉnh giá trần Block A1</h3>
+                <p class="ai-desc">
+                    Phân tích cho thấy tốc độ hấp thụ phân khúc Căn hộ 3PN View Biển tại Tầng 24-25 đang vượt 40% kế hoạch. AI khuyến nghị tăng giá trần 2.5% đối với các căn trống còn lại (A24.02, A25.01) để tối ưu hóa tỷ suất lợi nhuận trước khi kết thúc đợt mở bán lần 1.
+                </p>
+                <div class="ai-actions">
+                    <button class="btn btn-gold" style="padding: 6px 16px; font-size: 11.5px;">Phê duyệt điều chỉnh</button>
+                    <button class="btn" style="padding: 6px 16px; font-size: 11.5px; background: transparent; color: #FFFFFF; border: 1px solid rgba(255,255,255,0.2);">Xem báo cáo chi tiết</button>
+                </div>
+            </div>
+
+            <!-- Inventory Matrix Page Section -->
+            <div class="board">
+                <div class="board-header">
+                    <span class="board-title">Sơ đồ căn hộ phân khu Sun Tower (Block A1)</span>
+                    <div class="board-filters">
+                        <button class="tab-btn active">Tất cả</button>
+                        <button class="tab-btn">Available</button>
+                        <button class="tab-btn">Booked</button>
+                        <button class="tab-btn">Deposited</button>
+                        <button class="tab-btn">Contracted</button>
+                    </div>
+                </div>
+
+                <div>
+                    <!-- Floor 25 -->
+                    <div class="floor-row">
+                        <div class="floor-label">Tầng 25</div>
+                        <div class="unit-list">
+                            <div class="unit-card" onclick="openDrawer('A25.01', 'Penthouse VIP 1', '35.0 Tỷ', 'Available', '320 m²', 'Trần Văn Thịnh')">
+                                <div class="unit-top">
+                                    <span class="unit-id">A25.01</span>
+                                    <span class="unit-dot dot-av"></span>
+                                </div>
+                                <div class="unit-area">320 m²</div>
+                                <div class="unit-price">35.0 Tỷ</div>
+                                <span class="unit-status-badge badge-av">Available</span>
+                            </div>
+                            <div class="unit-card" onclick="openDrawer('A25.02', 'Penthouse VIP 2', '32.5 Tỷ', 'Booked', '290 m²', 'Nguyễn Thị Hoa')">
+                                <div class="unit-top">
+                                    <span class="unit-id">A25.02</span>
+                                    <span class="unit-dot dot-bk"></span>
+                                </div>
+                                <div class="unit-area">290 m²</div>
+                                <div class="unit-price">32.5 Tỷ</div>
+                                <span class="unit-status-badge badge-bk">Giữ chỗ</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Floor 24 -->
+                    <div class="floor-row">
+                        <div class="floor-label">Tầng 24</div>
+                        <div class="unit-list">
+                            <div class="unit-card" onclick="openDrawer('A24.01', 'Căn Hộ 3PN View Biển', '12.8 Tỷ', 'Contracted', '115 m²', 'Phạm Minh Đức')">
+                                <div class="unit-top">
+                                    <span class="unit-id">A24.01</span>
+                                    <span class="unit-dot dot-ct"></span>
+                                </div>
+                                <div class="unit-area">115 m²</div>
+                                <div class="unit-price">12.8 Tỷ</div>
+                                <span class="unit-status-badge badge-ct">HĐMB</span>
+                            </div>
+                            <div class="unit-card" onclick="openDrawer('A24.02', 'Căn Hộ 2PN Direct Ocean', '8.5 Tỷ', 'Available', '85 m²', 'Chưa có chủ sở hữu')">
+                                <div class="unit-top">
+                                    <span class="unit-id">A24.02</span>
+                                    <span class="unit-dot dot-av"></span>
+                                </div>
+                                <div class="unit-area">85 m²</div>
+                                <div class="unit-price">8.5 Tỷ</div>
+                                <span class="unit-status-badge badge-av">Available</span>
+                            </div>
+                            <div class="unit-card" onclick="openDrawer('A24.03', 'Căn Hộ 2PN Garden View', '7.9 Tỷ', 'Deposited', '82 m²', 'Nguyễn Văn An')">
+                                <div class="unit-top">
+                                    <span class="unit-id">A24.03</span>
+                                    <span class="unit-dot dot-dp"></span>
+                                </div>
+                                <div class="unit-area">82 m²</div>
+                                <div class="unit-price">7.9 Tỷ</div>
+                                <span class="unit-status-badge badge-dp">Đã cọc</span>
+                            </div>
+                            <div class="unit-card" onclick="openDrawer('A24.04', 'Căn Hộ 1PN Corner', '5.2 Tỷ', 'Contracted', '55 m²', 'Hoàng Kim Khánh')">
+                                <div class="unit-top">
+                                    <span class="unit-id">A24.04</span>
+                                    <span class="unit-dot dot-ct"></span>
+                                </div>
+                                <div class="unit-area">55 m²</div>
+                                <div class="unit-price">5.2 Tỷ</div>
+                                <span class="unit-status-badge badge-ct">HĐMB</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Slide-over Right Sidebar Drawer Details -->
+    <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()">
+        <div class="drawer" onclick="event.stopPropagation()">
+            <div>
+                <div class="drawer-header">
+                    <div>
+                        <h2 class="drawer-unit-id" id="dCode">A24.02</h2>
+                        <div class="drawer-unit-type" id="dType">Căn Hộ 2PN Direct Ocean</div>
+                    </div>
+                    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+                </div>
+
+                <div class="spec-list">
+                    <div class="spec-row">
+                        <span class="spec-lbl">Đơn giá bán niêm yết</span>
+                        <span class="spec-val" id="dPrice" style="color: var(--color-accent); font-size: 15px;">8.5 Tỷ VNĐ</span>
+                    </div>
+                    <div class="spec-row">
+                        <span class="spec-lbl">Diện tích tim tường/thông thủy</span>
+                        <span class="spec-val" id="dArea">85 m²</span>
+                    </div>
+                    <div class="spec-row">
+                        <span class="spec-lbl">Chủ sở hữu hiện tại</span>
+                        <span class="spec-val" id="dOwner">Chưa có chủ sở hữu</span>
+                    </div>
+                    <div class="spec-row">
+                        <span class="spec-lbl">Trạng thái giao dịch</span>
+                        <span class="spec-val" id="dStatus">Available</span>
+                    </div>
+                    <div class="spec-row">
+                        <span class="spec-lbl">Chính sách chiết khấu</span>
+                        <span class="spec-val">Chiết khấu thanh toán sớm 6%</span>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <button class="btn btn-gold" style="width: 100%; justify-content: center; padding: 12px;" onclick="alert('Đã khởi tạo phiếu giữ giữ chỗ thành công!')">
+                    Xác nhận giữ chỗ (Booking)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openDrawer(code, type, price, status, area, owner) {
+            document.getElementById('dCode').innerText = code;
+            document.getElementById('dType').innerText = type;
+            document.getElementById('dPrice').innerText = price;
+            document.getElementById('dStatus').innerText = status;
+            document.getElementById('dArea').innerText = area;
+            document.getElementById('dOwner').innerText = owner;
+            document.getElementById('drawerOverlay').style.display = 'flex';
+        }
+
+        function closeDrawer() {
+            document.getElementById('drawerOverlay').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

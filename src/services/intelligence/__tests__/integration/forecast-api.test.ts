@@ -99,10 +99,18 @@ describe('Forecast API - Integration Tests', () => {
   beforeAll(async () => {
     jest.setTimeout(30000);
     supabase = getTestSupabaseClient();
+    // Ensure test tenant exists
+    await supabase.from('tenants').upsert({
+      id: TEST_TENANT_ID,
+      name: 'Test Integration Tenant',
+      status: 'active'
+    });
   });
 
   afterAll(async () => {
     await cleanupTestData();
+    // Clean up test tenant
+    await supabase.from('tenants').delete().eq('id', TEST_TENANT_ID);
   });
 
   beforeEach(async () => {
@@ -232,13 +240,14 @@ describe('Forecast API - Integration Tests', () => {
       const bookings = [];
       const sessions = [];
 
+      const phoneSeed = Math.floor(100000 + Math.random() * 900000).toString();
       for (let i = 0; i < 20; i++) {
         const customerId = `00000000-0000-0000-0000-${String(i).padStart(12, '0')}`;
         customers.push({
           id: customerId,
           tenant_id: TEST_TENANT_ID,
           name_mother: `Customer ${i}`,
-          phone: `09000000${String(i).padStart(2, '0')}`
+          phone: `09${phoneSeed}${String(i).padStart(2, '0')}`
         });
 
         const sessionCount = 2;
@@ -310,11 +319,12 @@ describe('Forecast API - Integration Tests', () => {
       await supabase.from('bookings').delete().eq('tenant_id', TEST_TENANT_ID);
       await supabase.from('customers').delete().eq('tenant_id', TEST_TENANT_ID);
       
+      const randomPhone = '09' + Math.floor(10000000 + Math.random() * 90000000).toString();
       const { error: customerError } = await supabase.from('customers').insert({
         id: customerId,
         tenant_id: TEST_TENANT_ID,
         name_mother: 'Test Customer',
-        phone: '0900000007'
+        phone: randomPhone
       });
       expect(customerError).toBeNull();
 

@@ -3908,6 +3908,124 @@ export type Database = {
           },
         ]
       }
+      real_estate_products: {
+        Row: {
+          area: number
+          block: string | null
+          created_at: string
+          floor: string | null
+          id: string
+          owner_name: string | null
+          product_code: string
+          product_type: string
+          project_id: string
+          status: string
+          tenant_id: string
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          area?: number
+          block?: string | null
+          created_at?: string
+          floor?: string | null
+          id?: string
+          owner_name?: string | null
+          product_code: string
+          product_type?: string
+          project_id: string
+          status?: string
+          tenant_id: string
+          unit_price?: number
+          updated_at?: string
+        }
+        Update: {
+          area?: number
+          block?: string | null
+          created_at?: string
+          floor?: string | null
+          id?: string
+          owner_name?: string | null
+          product_code?: string
+          product_type?: string
+          project_id?: string
+          status?: string
+          tenant_id?: string
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "real_estate_products_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "real_estate_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "real_estate_products_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "real_estate_products_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      real_estate_projects: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          location: string | null
+          name: string
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          location?: string | null
+          name: string
+          status?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          location?: string | null
+          name?: string
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "real_estate_projects_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "real_estate_projects_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recruitment_candidates: {
         Row: {
           applied_at: string

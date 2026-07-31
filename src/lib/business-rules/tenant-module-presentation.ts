@@ -199,7 +199,40 @@ const INDUSTRIAL_CLEANING_SPECIALTIES: SpecialtyOption[] = [
   { id: 'facial', label: 'Cleanroom / đặc biệt' },
 ];
 
+const REAL_ESTATE_CUSTOMER_PRESENTATION: CustomerPresentation = {
+  customerListSubtitle: 'Quản lý hồ sơ nhà đầu tư & khách mua BĐS',
+  customerSearchPlaceholder: 'Tìm tên khách, SĐT, dự án, căn hộ, nhu cầu...',
+  editDescription: 'Chỉnh sửa hồ sơ khách mua BĐS',
+  createDescription: 'Nhập thông tin nhà đầu tư / khách hàng mua BĐS',
+  primaryNameLabel: 'Họ tên nhà đầu tư / Khách mua',
+  primaryNamePlaceholder: 'VD: Nguyễn Minh Hoàng',
+  secondaryNameLabel: 'Nhu cầu đầu tư / Sản phẩm quan tâm',
+  secondaryNamePlaceholder: 'VD: Căn 2PN Vinhomes Green Paradise',
+  secondaryDateLabel: 'Ngày tạo nhu cầu',
+  secondaryGenderLabel: 'Phân loại nhà đầu tư',
+  secondaryInfoTitle: 'Thông tin căn hộ quan tâm',
+  secondaryInfoNameLabel: 'Dự án / Căn hộ quan tâm',
+  secondaryInfoDateLabel: 'Ngày liên hệ',
+  activeCareBadge: 'Đang giữ chỗ / đặt cọc',
+  activeStatusLabel: 'Đang giao dịch',
+  depositStatusLabel: 'Đã giữ chỗ / cọc',
+  leadStatusLabel: 'Khách hàng mới (Lead)',
+  customerPrefix: 'Khách mua',
+  secondaryPrefix: 'Căn hộ',
+  secondaryFallback: 'Chưa chọn căn',
+  locationLatitudeLabel: 'Vĩ độ địa chỉ (Latitude)',
+  locationLongitudeLabel: 'Kinh độ địa chỉ (Longitude)',
+  genderOptions: [
+    { id: 'boy', label: 'Căn hộ', tone: 'blue' },
+    { id: 'girl', label: 'Biệt thự / Shophouse', tone: 'rose' },
+    { id: 'unknown', label: 'Khác', tone: 'slate' },
+  ],
+};
+
 export function getTenantModulePresentation(moduleKey: TenantModuleKey): CustomerPresentation {
+  if (moduleKey === 'real_estate') {
+    return REAL_ESTATE_CUSTOMER_PRESENTATION;
+  }
   if (moduleKey === 'beauty_spa') {
     return BEAUTY_SPA_CUSTOMER_PRESENTATION;
   }
@@ -212,6 +245,9 @@ export function getTenantModulePresentation(moduleKey: TenantModuleKey): Custome
 export function getTenantModulePresentationOrNeutral(
   moduleKey: TenantModuleKey | null | undefined,
 ): CustomerPresentation {
+  if (moduleKey === 'real_estate') {
+    return REAL_ESTATE_CUSTOMER_PRESENTATION;
+  }
   if (moduleKey === 'beauty_spa') {
     return BEAUTY_SPA_CUSTOMER_PRESENTATION;
   }

@@ -118,16 +118,18 @@ export function PartnerOverviewTab({ partner }: PartnerOverviewTabProps) {
   // Helper check scope
   const hasScope = (requiredScope: string) => {
     if (!partner.allowed_scopes) return false;
+
+    const scopes = partner.allowed_scopes as string[];
     
     // Check direct match
-    if (partner.allowed_scopes.includes(requiredScope as any)) return true;
+    if (scopes.includes(requiredScope)) return true;
     
     // Check wildcard match (e.g., 'order:*' matches 'order:read', 'order:write')
     const [category] = requiredScope.split(':');
-    if (partner.allowed_scopes.includes(`${category}:*` as any)) return true;
+    if (scopes.includes(`${category}:*`)) return true;
     
     // Check admin wildcard
-    if (partner.allowed_scopes.includes('admin' as any)) return true;
+    if (scopes.includes('admin')) return true;
     
     return false;
   };

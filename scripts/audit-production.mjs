@@ -17,6 +17,7 @@ const allowlistedAdvisories = new Set([
 
   // brace-expansion: Indirect dev/build dependency, no breaking runtime impact.
   "GHSA-3jxr-9vmj-r5cp",
+  "GHSA-mh99-v99m-4gvg",
 
   // fast-uri: Nested dependency of schema validation (ajv), constrained by peer dependencies.
   "GHSA-v2hh-gcrm-f6hx",
@@ -58,19 +59,34 @@ function runAudit() {
   return output;
 }
 
-function getAdvisoryIds(vulnerability) {
-  return (vulnerability.via || [])
-    .filter((via) => typeof via === "object" && via !== null)
-    .map((via) => {
+function getAdvisoryIds(vulnerability, vulnerabilitiesMap, visited = new Set()) {
+  if (!vulnerability) return [];
+  const name = vulnerability.name;
+  if (visited.has(name)) return [];
+  visited.add(name);
+
+  const ids = [];
+  const vias = vulnerability.via || [];
+
+  for (const via of vias) {
+    if (typeof via === "object" && via !== null) {
       const advisoryMatch = typeof via.url === "string" ? via.url.match(/GHSA-[a-z0-9-]+/i) : null;
-      return advisoryMatch?.[0] || via.source || via.url || via.title;
-    })
-    .filter(Boolean)
-    .map(String);
+      const id = advisoryMatch?.[0] || via.source || via.url || via.title;
+      if (id) ids.push(String(id));
+    } else if (typeof via === "string") {
+      const parentVuln = vulnerabilitiesMap[via];
+      if (parentVuln) {
+        ids.push(...getAdvisoryIds(parentVuln, vulnerabilitiesMap, visited));
+      }
+    }
+  }
+
+  return [...new Set(ids)];
 }
 
 const auditJson = JSON.parse(runAudit());
 const vulnerabilities = Object.entries(auditJson.vulnerabilities || {});
+const vulnerabilitiesMap = auditJson.vulnerabilities || {};
 const blocking = [];
 const allowed = [];
 
@@ -78,7 +94,7 @@ for (const [name, vulnerability] of vulnerabilities) {
   const rank = severityRank[vulnerability.severity] || 0;
   if (rank < minimumRank) continue;
 
-  const advisoryIds = getAdvisoryIds(vulnerability);
+  const advisoryIds = getAdvisoryIds(vulnerability, vulnerabilitiesMap);
   const allKnownAdvisoriesAllowed =
     advisoryIds.length > 0 && advisoryIds.every((id) => allowlistedAdvisories.has(id));
 

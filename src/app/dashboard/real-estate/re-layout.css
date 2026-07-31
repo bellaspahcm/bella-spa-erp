@@ -1,0 +1,264 @@
+/**
+ * Real Estate Module — Premium Layout Stylesheet
+ *
+ * Imported ONLY by /app/dashboard/real-estate/layout.tsx
+ * CSS is scoped via [data-re-layout] attribute — zero global side effects.
+ * Spa / Babycare / Industrial Cleaning tenants never load this file.
+ */
+
+/* ─── Design Tokens ─────────────────────────────────────────────────────────── */
+[data-re-layout] {
+  --re-navy:         #0b1f3a;
+  --re-navy-mid:     #102a4c;
+  --re-navy-light:   #1a3a5c;
+  --re-gold:         #c8971f;
+  --re-gold-light:   #e6b84a;
+  --re-gold-pale:    #fef3c7;
+  --re-cream:        #faf7f2;
+  --re-surface:      #ffffff;
+  --re-border:       rgba(200, 151, 31, 0.20);
+  --re-border-soft:  rgba(200, 151, 31, 0.10);
+  --re-shadow-gold:  0 4px 24px rgba(200, 151, 31, 0.12);
+  --re-shadow-card:  0 2px 16px rgba(11, 31, 58, 0.06);
+  --re-radius:       16px;
+  --re-radius-sm:    10px;
+}
+
+/* ─── Root Background ────────────────────────────────────────────────────────── */
+.re-layout-root {
+  min-height: 100%;
+  background:
+    radial-gradient(ellipse 80% 40% at 50% -10%, rgba(200, 151, 31, 0.05) 0%, transparent 70%),
+    linear-gradient(180deg, #faf7f2 0%, #fdfcfa 100%);
+}
+
+:global(html.dark) .re-layout-root {
+  background:
+    radial-gradient(ellipse 80% 40% at 50% -10%, rgba(200, 151, 31, 0.07) 0%, transparent 70%),
+    linear-gradient(180deg, #0b1329 0%, #0f1c30 100%);
+}
+
+/* ─── Page Headers ───────────────────────────────────────────────────────────── */
+[data-re-layout] h1 {
+  color: var(--re-navy);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+}
+
+[data-re-layout] h1 svg {
+  color: var(--re-gold);
+}
+
+/* ─── Stat / KPI Cards ───────────────────────────────────────────────────────── */
+[data-re-layout] .re-stat-card {
+  background: linear-gradient(135deg, #ffffff 0%, #faf6ee 100%);
+  border: 1px solid var(--re-border-soft);
+  border-radius: var(--re-radius);
+  box-shadow: var(--re-shadow-card);
+  position: relative;
+  overflow: hidden;
+}
+
+[data-re-layout] .re-stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--re-gold), var(--re-gold-light));
+}
+
+/* ─── Generic Cards ──────────────────────────────────────────────────────────── */
+[data-re-layout] .re-card {
+  background: var(--re-surface);
+  border: 1px solid var(--re-border);
+  border-radius: var(--re-radius);
+  box-shadow: var(--re-shadow-card);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+[data-re-layout] .re-card:hover {
+  box-shadow: var(--re-shadow-gold);
+  transform: translateY(-2px);
+}
+
+/* ─── Gold Badge ─────────────────────────────────────────────────────────────── */
+[data-re-layout] .re-badge-gold {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  background: linear-gradient(90deg, rgba(200, 151, 31, 0.12), rgba(230, 184, 74, 0.10));
+  border: 1px solid rgba(200, 151, 31, 0.25);
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: #92690f;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* ─── Buttons ────────────────────────────────────────────────────────────────── */
+[data-re-layout] .re-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  background: linear-gradient(135deg, var(--re-navy) 0%, var(--re-navy-mid) 100%);
+  color: #ffffff;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  border-radius: var(--re-radius-sm);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 12px rgba(11, 31, 58, 0.20);
+  letter-spacing: 0.02em;
+}
+
+[data-re-layout] .re-btn-primary:hover {
+  background: linear-gradient(135deg, var(--re-navy-mid) 0%, var(--re-navy-light) 100%);
+  box-shadow: 0 4px 20px rgba(11, 31, 58, 0.30);
+  transform: translateY(-1px);
+}
+
+[data-re-layout] .re-btn-gold {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  background: linear-gradient(135deg, var(--re-gold) 0%, var(--re-gold-light) 100%);
+  color: #ffffff;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  border-radius: var(--re-radius-sm);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 12px rgba(200, 151, 31, 0.30);
+}
+
+[data-re-layout] .re-btn-gold:hover {
+  filter: brightness(1.08);
+  box-shadow: 0 4px 20px rgba(200, 151, 31, 0.40);
+  transform: translateY(-1px);
+}
+
+[data-re-layout] .re-btn-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: transparent;
+  color: var(--re-navy);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  border-radius: var(--re-radius-sm);
+  border: 1.5px solid var(--re-border);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+[data-re-layout] .re-btn-outline:hover {
+  background: var(--re-gold-pale);
+  border-color: var(--re-gold);
+}
+
+/* ─── Table with dark navy header ────────────────────────────────────────────── */
+[data-re-layout] .re-table-wrapper {
+  background: var(--re-surface);
+  border: 1px solid var(--re-border-soft);
+  border-radius: var(--re-radius);
+  box-shadow: var(--re-shadow-card);
+  overflow: hidden;
+}
+
+[data-re-layout] .re-table-wrapper table thead tr {
+  background: linear-gradient(90deg, var(--re-navy) 0%, var(--re-navy-mid) 100%);
+}
+
+[data-re-layout] .re-table-wrapper table thead th {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 14px 16px;
+}
+
+[data-re-layout] .re-table-wrapper table tbody tr {
+  border-bottom: 1px solid var(--re-border-soft);
+  transition: background 0.15s ease;
+}
+
+[data-re-layout] .re-table-wrapper table tbody tr:hover {
+  background: rgba(200, 151, 31, 0.04);
+}
+
+/* ─── Section Title with trailing rule ───────────────────────────────────────── */
+[data-re-layout] .re-section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--re-navy);
+  margin-bottom: 16px;
+}
+
+[data-re-layout] .re-section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--re-border), transparent);
+}
+
+/* ─── Focus ring — gold override ─────────────────────────────────────────────── */
+[data-re-layout] input:focus,
+[data-re-layout] select:focus,
+[data-re-layout] textarea:focus {
+  outline: none;
+  border-color: var(--re-gold) !important;
+  box-shadow: 0 0 0 3px rgba(200, 151, 31, 0.12) !important;
+}
+
+/* ─── Apartment/Unit Status Pills ────────────────────────────────────────────── */
+[data-re-layout] .re-status-available {
+  background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; border-radius: 999px;
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; font-size: 0.6875rem; font-weight: 700;
+}
+[data-re-layout] .re-status-reserved {
+  background: #fef3c7; color: #b45309; border: 1px solid #fde68a; border-radius: 999px;
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; font-size: 0.6875rem; font-weight: 700;
+}
+[data-re-layout] .re-status-deposited {
+  background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; border-radius: 999px;
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; font-size: 0.6875rem; font-weight: 700;
+}
+[data-re-layout] .re-status-sold {
+  background: rgba(200, 151, 31, 0.10); color: #92690f;
+  border: 1px solid rgba(200, 151, 31, 0.25); border-radius: 999px;
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; font-size: 0.6875rem; font-weight: 700;
+}
+[data-re-layout] .re-status-cancelled {
+  background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; border-radius: 999px;
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; font-size: 0.6875rem; font-weight: 700;
+}
+
+/* ─── Page entry animation ────────────────────────────────────────────────────── */
+@keyframes re-page-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+[data-re-layout] > * {
+  animation: re-page-in 0.25s ease both;
+}

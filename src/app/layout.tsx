@@ -55,12 +55,14 @@ import { QueryClientProvider } from "@/components/providers/QueryClientProvider"
 
 // Register module adapters on app startup
 import { registerSpaModule } from "@/modules/spa/register";
+import { registerRealEstateModule } from "@/modules/real_estate/register";
 import { cn } from "@/lib/utils";
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 
 registerSpaModule();
+registerRealEstateModule();
 
 export default async function RootLayout({
   children,

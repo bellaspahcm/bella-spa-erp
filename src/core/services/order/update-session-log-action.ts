@@ -130,8 +130,9 @@ export async function updateSessionLog(id: string, payload: UpdateSessionLogInpu
           .eq('id', bookingId)
           .single();
           
-        const customerName = (booking as any)?.customers?.name_mother || 'Khách hàng';
-        const packageName = booking?.package_name || 'Dịch vụ';
+        const bookingTyped = booking as Record<string, unknown> & { package_name?: string; customers?: { name_mother?: string } };
+        const customerName = bookingTyped?.customers?.name_mother || 'Khách hàng';
+        const packageName = bookingTyped?.package_name || 'Dịch vụ';
         
         const dateVal = safeUpdates.assigned_date || existingLog.assigned_date || '';
         const dateStr = dateVal ? dateVal.split('-').reverse().join('/') : '';

@@ -79,7 +79,8 @@ Tài liệu đã được tổ chức lại thành các thư mục chuyên biệ
 - Testing guides, runbooks, monitoring guides
 
 ### 4️⃣ Reports (`docs/reports/`)
-**Completion reports, status updates, bug fixes** - 181 files
+**Completion reports, status updates, bug fixes** - 182 files
+- **`REAL_ESTATE_MODULE_EXECUTION_REPORT.md`** - Báo cáo thực thi phân hệ Bất động sản (MỚI)
 - Completion summaries cho tất cả major features
 - Bug fix reports and verification reports
 - Test status reports and coverage analysis
@@ -129,6 +130,7 @@ Tài liệu đã được tổ chức lại thành các thư mục chuyên biệ
 - `docs/providers/` - Provider-specific docs
 - `docs/security/` - Security documentation
 - `docs/troubleshooting/` - Troubleshooting guides
+- `docs/workflow/` - Workflow engine documentation
 
 ---
 
@@ -137,6 +139,7 @@ Tài liệu đã được tổ chức lại thành các thư mục chuyên biệ
 | Nhu cầu | Đọc tại |
 | --- | --- |
 | **📖 Tổng quan toàn bộ tính năng hệ thống** | `docs/FEATURES.md` ⭐ NEW |
+| **📊 Báo cáo thực thi phân hệ Bất động sản** | `docs/reports/REAL_ESTATE_MODULE_EXECUTION_REPORT.md` ⭐ NEW |
 | Người mới hoặc AI agent bắt đầu | `docs/guides/AI_AGENT_ONBOARDING.md` |
 | Quy tắc lưu trữ context và handoff | `docs/guides/KNOWLEDGE_STORAGE_PROCESS.md` |
 | Quy trình phát triển phân hệ ngành mới | `docs/guides/INDUSTRY_MODULE_DEVELOPMENT_PLAYBOOK.md` |

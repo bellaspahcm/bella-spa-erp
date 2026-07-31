@@ -57,6 +57,7 @@ const EMPTY_ENABLED_MODULES: TenantEnabledModules = {
   beauty_spa: false,
   student_training: false,
   industrial_cleaning: false,
+  real_estate: false,
 };
 
 const createDefaultPackages = (moduleKey: ServiceModuleKey): PackageActionInput[] => {

@@ -65,31 +65,63 @@ export async function GET(request: Request): Promise<Response> {
       );
     }
 
+    let tenantId: string | null = null;
+
+    // ── Development mock bypass ──────────────────────────────────────────────
+    if (process.env.NODE_ENV === 'development') {
+      const { headers } = await import('next/headers');
+      const reqHeaders = await headers();
+      const mockEmail = reqHeaders.get('x-mock-user-email');
+      const { getSupabaseAdminUrl, getSupabaseAdminKey } = await import('@/lib/supabase-admin-env');
+      const adminUrl = getSupabaseAdminUrl();
+      const adminKey = getSupabaseAdminKey();
+
+      if (mockEmail && adminUrl && adminKey) {
+        const { createClient: createSupabaseJsClient } = await import('@supabase/supabase-js');
+        const admin = createSupabaseJsClient(adminUrl, adminKey, {
+          auth: { persistSession: false, autoRefreshToken: false },
+        });
+
+        const { data: mockUserProfile } = await admin
+          .from('users')
+          .select('tenant_id')
+          .eq('email', mockEmail)
+          .single();
+
+        if (mockUserProfile?.tenant_id) {
+          tenantId = mockUserProfile.tenant_id;
+        }
+      }
+    }
+    // ── End dev bypass ───────────────────────────────────────────────────────
+
     const supabase = await createClient();
 
-    // 1. Get current user's tenant
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json<ForecastResponse>(
-        { success: false, forecast: [], totalBookings: 0, forecastPeriodDays: 0, error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (!tenantId) {
+      // 1. Get current user's tenant
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        return NextResponse.json<ForecastResponse>(
+          { success: false, forecast: [], totalBookings: 0, forecastPeriodDays: 0, error: 'Unauthorized' },
+          { status: 401 }
+        );
+      }
+
+      const { data: profile } = await supabase
+        .from('users')
+        .select('tenant_id')
+        .eq('id', user.id)
+        .single();
+
+      if (!profile?.tenant_id) {
+        return NextResponse.json<ForecastResponse>(
+          { success: false, forecast: [], totalBookings: 0, forecastPeriodDays: 0, error: 'Tenant not found' },
+          { status: 404 }
+        );
+      }
+
+      tenantId = profile.tenant_id;
     }
-
-    const { data: profile } = await supabase
-      .from('users')
-      .select('tenant_id')
-      .eq('id', user.id)
-      .single();
-
-    if (!profile?.tenant_id) {
-      return NextResponse.json<ForecastResponse>(
-        { success: false, forecast: [], totalBookings: 0, forecastPeriodDays: 0, error: 'Tenant not found' },
-        { status: 404 }
-      );
-    }
-
-    const tenantId = profile.tenant_id;
     const today = new Date();
     const forecastEndDate = new Date(today);
     forecastEndDate.setDate(today.getDate() + forecastDays);

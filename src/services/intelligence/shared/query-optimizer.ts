@@ -59,6 +59,7 @@ interface BatchedQuery<T> {
   reject: (error: unknown) => void;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const queryBatches = new Map<string, BatchedQuery<any>[]>();
 const batchTimers = new Map<string, NodeJS.Timeout>();
 

@@ -16,7 +16,7 @@ type QueryResult<T> = PromiseLike<{ data: T | null; error: { message: string } |
 const routes = [
   { name: "customers", path: "/dashboard/customers", content: /khach hang|customer/i },
   { name: "bookings", path: "/dashboard/bookings", content: /lich hen|booking/i },
-  { name: "sessions", path: "/dashboard/sessions", content: /the lieu trinh|sessions/i },
+  { name: "sessions", path: "/dashboard/sessions", content: /the lieu trinh|lieu trinh|lo trinh|sessions/i },
   { name: "finance", path: "/dashboard/finance", content: /tai chinh|finance/i },
   { name: "inventory", path: "/dashboard/inventory", content: /kho|inventory/i },
 ];

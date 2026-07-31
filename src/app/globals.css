@@ -3021,6 +3021,191 @@ html[data-tenant-brand-button="minimal"][data-tenant-module="industrial_cleaning
 }
 
 
+/* =========================================================================
+   REAL ESTATE THEME OVERRIDES
+   ========================================================================= */
+/* Real Estate tenant shell: premium navy and amber theme, scoped by runtime module marker */
+html[data-tenant-module="real_estate"] {
+  --primary: #1e3a8a; /* Deep Navy - primary action color */
+  --primary-hover: #1d4ed8; /* Blue-700 - hover state */
+  --primary-foreground: #ffffff;
+  --secondary: #0f172a; /* Slate-900 - secondary elements */
+  --secondary-foreground: #ffffff;
+  --accent: #d97706; /* Amber Gold - accent color for highlights */
+  --accent-foreground: #ffffff;
+  --background: #fffbeb; /* Warm Cream background */
+  --foreground: #0f172a; /* Slate-900 text */
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --muted: #fef3c7; /* Amber-100 */
+  --muted-foreground: #334155;
+  --border: rgba(217, 119, 6, 0.24); /* Amber border */
+  --input: rgba(217, 119, 6, 0.22); /* Amber input border */
+  --ring: #d97706; /* Amber focus ring */
+}
+
+html[data-tenant-module="real_estate"] body {
+  background-color: #fffbeb;
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.74) 0%, rgba(255, 251, 235, 0.96) 38%, rgba(254, 243, 199, 0.86) 100%),
+    radial-gradient(ellipse 70% 46% at 8% 0%, rgba(30, 58, 138, 0.08) 0%, transparent 58%),
+    radial-gradient(ellipse 58% 42% at 100% 14%, rgba(217, 119, 6, 0.12) 0%, transparent 55%);
+}
+
+/* Overrides to map pink/rose colors to real estate navy/amber theme */
+html[data-tenant-module="real_estate"] .bg-pink-50,
+html[data-tenant-module="real_estate"] .bg-pink-100,
+html[data-tenant-module="real_estate"] .bg-rose-50,
+html[data-tenant-module="real_estate"] .bg-rose-100 {
+  background-color: rgba(217, 119, 6, 0.10) !important; /* Amber-50/100 equivalent */
+}
+
+html[data-tenant-module="real_estate"] button[class*="bg-rose-500"],
+html[data-tenant-module="real_estate"] button[class*="bg-rose-600"],
+html[data-tenant-module="real_estate"] a[class*="bg-rose-500"],
+html[data-tenant-module="real_estate"] a[class*="bg-rose-600"] {
+  background-color: #d97706 !important; /* Amber-600 */
+}
+
+html[data-tenant-module="real_estate"] button[class*="bg-rose-500"]:hover,
+html[data-tenant-module="real_estate"] button[class*="bg-rose-600"]:hover,
+html[data-tenant-module="real_estate"] a[class*="bg-rose-500"]:hover,
+html[data-tenant-module="real_estate"] a[class*="bg-rose-600"]:hover {
+  background-color: #b45309 !important; /* Amber-700 */
+}
+
+html[data-tenant-module="real_estate"] [class*="text-pink-"],
+html[data-tenant-module="real_estate"] [class*="text-rose-400"],
+html[data-tenant-module="real_estate"] [class*="text-rose-500"],
+html[data-tenant-module="real_estate"] [class*="text-rose-600"],
+html[data-tenant-module="real_estate"] [class*="text-rose-700"] {
+  color: #1e3a8a !important; /* Navy instead of pink */
+}
+
+html[data-tenant-module="real_estate"] [class*="border-pink-"],
+html[data-tenant-module="real_estate"] [class*="border-rose-100"],
+html[data-tenant-module="real_estate"] [class*="border-rose-200"] {
+  border-color: rgba(217, 119, 6, 0.28) !important; /* Amber border */
+}
+
+html[data-tenant-module="real_estate"] [class*="shadow-rose-"],
+html[data-tenant-module="real_estate"] [class*="shadow-pink-"] {
+  --tw-shadow-color: rgba(217, 119, 6, 0.3) !important;
+  --tw-shadow: var(--tw-shadow-colored) !important;
+}
+
+html[data-tenant-module="real_estate"] .beauty-erp-mobile-header,
+html[data-tenant-module="real_estate"] .beauty-erp-sidebar {
+  background: linear-gradient(180deg, #0b1329 0%, #1e3a8a 100%) !important;
+  border-right: 1px solid rgba(217, 119, 6, 0.16) !important;
+  border-color: rgba(217, 119, 6, 0.16) !important;
+  box-shadow: 10px 0 40px rgba(11, 19, 41, 0.4) !important;
+  color: #ffffff !important;
+}
+
+html[data-tenant-module="real_estate"] .beauty-erp-sidebar::before {
+  content: "";
+  position: absolute;
+  inset: 12px;
+  pointer-events: none;
+  border: 1px solid rgba(217, 119, 6, 0.12);
+  border-radius: 24px;
+}
+
+html[data-tenant-module="real_estate"] .beauty-erp-logo-mark {
+  background: linear-gradient(145deg, #1e3a8a 0%, #0b1329 100%) !important;
+  border: 1px solid rgba(217, 119, 6, 0.6) !important;
+  color: #f59e0b !important;
+  box-shadow: 0 8px 24px rgba(11, 19, 41, 0.3) !important;
+}
+
+html[data-tenant-module="real_estate"] .beauty-erp-brand-script {
+  font-family: var(--font-sans, system-ui, sans-serif) !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.02em !important;
+  color: #ffffff !important;
+  text-transform: uppercase !important;
+  font-style: normal !important;
+}
+
+html[data-tenant-module="real_estate"] .beauty-erp-brand-script span {
+  color: #ffffff !important;
+  font-family: var(--font-sans, system-ui, sans-serif) !important;
+  font-style: normal !important;
+}
+
+html[data-tenant-module="real_estate"] .beauty-erp-brand-subtitle {
+  color: #f59e0b !important;
+  letter-spacing: 0.18em !important;
+}
+
+html[data-tenant-module="real_estate"] .beauty-erp-nav-item {
+  color: #94a3b8 !important;
+  background: transparent !important;
+  border-color: transparent !important;
+}
+
+html[data-tenant-module="real_estate"] .beauty-erp-nav-item svg {
+  color: #64748b !important;
+}
+
+html[data-tenant-module="real_estate"] .beauty-erp-nav-item:hover:not(.beauty-erp-nav-item-active) {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+html[data-tenant-module="real_estate"] .beauty-erp-nav-item:hover:not(.beauty-erp-nav-item-active) svg {
+  color: #cbd5e1 !important;
+}
+
+html[data-tenant-module="real_estate"] .beauty-erp-nav-item-active {
+  background: linear-gradient(135deg, #2563eb 0%, #1e3a8a 100%) !important;
+  border-color: rgba(217, 119, 6, 0.4) !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.25) !important;
+}
+
+html[data-tenant-module="real_estate"] .beauty-erp-nav-item-active svg,
+html[data-tenant-module="real_estate"] .beauty-erp-nav-item-active span {
+  color: #ffffff !important;
+}
+
+html[data-tenant-module="real_estate"] .beauty-erp-profile-card {
+  background: rgba(15, 23, 42, 0.5) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+html[data-tenant-module="real_estate"] .beauty-erp-profile-name {
+  color: #ffffff !important;
+}
+
+html[data-tenant-module="real_estate"] .beauty-erp-profile-role {
+  color: #f59e0b !important;
+}
+
+html[data-tenant-module="real_estate"] .beauty-erp-avatar {
+  background-color: rgba(217, 119, 6, 0.2) !important;
+  color: #f59e0b !important;
+}
+
+html[data-tenant-module="real_estate"] .beauty-erp-profile-divider {
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.08), transparent) !important;
+}
+
+html[data-tenant-module="real_estate"] .beauty-erp-nav-header {
+  color: rgba(255, 255, 255, 0.35) !important;
+}
+
+html[data-tenant-module="real_estate"] .beauty-erp-icon-button {
+  color: #94a3b8 !important;
+}
+
+html[data-tenant-module="real_estate"] .beauty-erp-icon-button:hover {
+  color: #ffffff !important;
+  background-color: rgba(255, 255, 255, 0.06) !important;
+}
 
 /* =========================================================================
    BELLA (BABY_CARE) TENANT TEXT CONTRAST IMPROVEMENTS
@@ -3702,20 +3887,5 @@ html.dark[data-tenant-module="beauty_spa"] .bella-data-table td .text-slate-600,
 html.dark[data-tenant-module="beauty_spa"] .bella-data-table td .text-slate-500,
 html.dark[data-tenant-module="beauty_spa"] .bella-data-table td .text-slate-400 {
   color: #ffffff !important;
+  --font-heading: var(--font-sans, system-ui, sans-serif);
 }
-
-/* ============================================
-   Scrollbar Hide Utility
-   ============================================ */
-.scrollbar-none::-webkit-scrollbar {
-  display: none !important;
-  width: 0 !important;
-  height: 0 !important;
-}
-
-.scrollbar-none {
-  -ms-overflow-style: none !important;  /* IE and Edge */
-  scrollbar-width: none !important;  /* Firefox */
-}
-
-

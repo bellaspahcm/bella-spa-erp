@@ -25,7 +25,11 @@ import {
   ClipboardList,
   LineChart,
   Sliders,
-  ShoppingCart
+  ShoppingCart,
+  Building2,
+  FolderKanban,
+  Grid,
+  FileText
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -33,6 +37,7 @@ import {
   resolveTenantBrandIdentity,
   type ResolvedTenantBrandIdentity,
 } from '@/lib/business-rules/tenant-modules';
+import { verticalRegistry } from '@/platform/registry/vertical-registry';
 
 import { createClient } from '@/lib/supabase-client';
 import {
@@ -116,7 +121,11 @@ function isTenantBrandDisplay(value: unknown): value is CachedTenantBrandDisplay
     typeof source.displayName === 'string' &&
     typeof source.logoUrl === 'string' &&
     typeof source.subtitle === 'string' &&
-    (source.moduleKey === 'babycare' || source.moduleKey === 'beauty_spa' || source.moduleKey === 'student_training') &&
+    (source.moduleKey === 'babycare' ||
+      source.moduleKey === 'beauty_spa' ||
+      source.moduleKey === 'student_training' ||
+      source.moduleKey === 'industrial_cleaning' ||
+      source.moduleKey === 'real_estate') &&
     typeof source.primaryColor === 'string' &&
     typeof source.accentColor === 'string' &&
     typeof source.primaryHoverColor === 'string' &&
@@ -306,12 +315,56 @@ const menuItems: SidebarMenuItem[] = [
   { icon: Settings,        label: 'Cài đặt',             href: '/dashboard/settings' },
 ];
 
+// ─── Real Estate Module Menu (isolated — only shown for real_estate moduleKey) ───
+const realEstateMenuItems: SidebarMenuItem[] = [
+  { type: 'header', label: 'Tổng quan & AI' },
+  { icon: LayoutDashboard, label: 'Dashboard',            href: '/dashboard/real-estate' },
+  { icon: Sparkles,        label: 'AI Copilot',           href: '/dashboard/ai-copilot' },
+
+  { type: 'header', label: 'Bất Động Sản' },
+  { icon: Building2,       label: 'Dự Án BĐS',           href: '/dashboard/real-estate/projects' },
+  { icon: Grid,            label: 'Bảng Hàng Căn Hộ',    href: '/dashboard/real-estate/apartments' },
+  { icon: FileText,        label: 'Hợp Đồng & Đặt Cọc',  href: '/dashboard/real-estate/contracts' },
+  { icon: Users,           label: 'Khách Hàng Đầu Tư',   href: '/dashboard/real-estate/customers' },
+  { icon: FolderKanban,    label: 'Marketing & Lead',     href: '/dashboard/real-estate/marketing' },
+
+  { type: 'header', label: 'Tài Chính & Hệ Thống' },
+  { icon: Wallet,          label: 'Sổ Cái Kế Toán',      href: '/dashboard/accounting' },
+  { icon: BarChart3,       label: 'Bảng Quản Trị CEO',   href: '/dashboard/executive' },
+  { icon: Settings,        label: 'Cài Đặt',              href: '/dashboard/settings' },
+];
+
 const customerMenuItems: SidebarMenuItem[] = [
   { icon: Flower2,       label: 'Tiến trình liệu trình', href: '/dashboard/customer' },
   { icon: Calendar,      label: 'Lịch sử buổi làm',      href: '/dashboard/customer/history' },
   { icon: MessageSquare, label: 'Thông báo',              href: '/dashboard/customer/notifications' },
   { icon: Settings,      label: 'Hồ sơ cá nhân',          href: '/dashboard/customer/profile' },
 ];
+
+const LUCIDE_ICONS_MAP: Record<string, LucideIcon> = {
+  Building2,
+  FolderKanban,
+  Grid,
+  FileText,
+  Users,
+  LayoutDashboard,
+  Sparkles,
+  Wallet,
+  DollarSign,
+  HelpCircle,
+  Settings,
+  Flower2,
+  Calendar,
+  MessageSquare,
+  Package,
+  ShoppingCart,
+  Banknote,
+  ClipboardList,
+  LineChart,
+  Sliders,
+  BarChart3,
+};
+
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -395,8 +448,25 @@ export function Sidebar() {
     }
   };
 
+  // ── Menu resolution: Real Estate tenant always gets isolated real estate menu ──
+  // This check runs BEFORE verticalRegistry to ensure manifest import order
+  // does not affect other tenants (Spa, Babycare, Cleaning).
   const baseMenuItems: SidebarMenuItem[] = user?.role?.toLowerCase() === 'customer'
     ? customerMenuItems
+    : tenantBrand.moduleKey === 'real_estate'
+    ? realEstateMenuItems
+    : verticalRegistry.has(tenantBrand.moduleKey)
+    ? [
+        { type: 'header', label: verticalRegistry.get(tenantBrand.moduleKey)?.name || 'Phân hệ' },
+        ...(verticalRegistry.get(tenantBrand.moduleKey)?.menus.map(m => ({
+          icon: m.icon ? (LUCIDE_ICONS_MAP[m.icon] || LayoutDashboard) : LayoutDashboard,
+          label: m.label,
+          href: m.href
+        })) || []),
+        { type: 'header', label: 'Tài chính & Hệ thống' },
+        { icon: Wallet,          label: 'Outbox Kế toán TT133', href: '/dashboard/accounting' },
+        { icon: Settings,        label: 'Cài đặt',              href: '/dashboard/settings' },
+      ]
     : menuItems.filter(item => {
         if (isMenuHeader(item)) {
           return true; // Keep headers for post-processing cleanup
@@ -488,22 +558,23 @@ export function Sidebar() {
     : user?.role?.toLowerCase() === 'customer' ? 'Khách hàng'
     : 'Quản trị viên';
   const isPendingTenantBrand = !isTenantBrandResolved;
-  const isBeautySpaShell = tenantBrand.isBeautySpa || isPendingTenantBrand;
+  const isBeautySpaShell = tenantBrand.isBeautySpa;
   const isIndustrialCleaningShell = tenantBrand.moduleKey === 'industrial_cleaning';
+  const isRealEstateShell = tenantBrand.moduleKey === 'real_estate';
 
   return (
     <>
       {/* ── Mobile Top Header Bar (lg:hidden) ── */}
       <div className={cn(
         "lg:hidden fixed top-0 left-0 right-0 h-16 bg-white/90 dark:bg-[#11100F]/95 border-b border-[#FFE4E6] dark:border-[#3E3A35] backdrop-blur-md z-30 px-6 flex items-center justify-between shadow-[0_2px_15px_rgba(0,0,0,0.02)] transition-colors duration-300",
-        (isBeautySpaShell || isIndustrialCleaningShell) && "beauty-erp-mobile-header"
+        (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell) && "beauty-erp-mobile-header"
       )}>
         <div className="flex w-20 items-center justify-start">
           <button
             onClick={() => setIsOpen(true)}
             className={cn(
               "p-2.5 rounded-xl text-primary dark:text-[#A67D44] hover:bg-rose-50 dark:hover:bg-[#1C1B19] active:scale-95 transition-all",
-              (isBeautySpaShell || isIndustrialCleaningShell) && "beauty-erp-icon-button"
+              (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell) && "beauty-erp-icon-button"
             )}
           >
             <Menu className="w-5.5 h-5.5" />
@@ -516,11 +587,11 @@ export function Sidebar() {
             logoUrl={tenantBrand.logoUrl}
             monogram={tenantBrand.monogram}
             className="w-7 h-7 text-[10px]"
-            markClassName={cn("rounded-xl", (isBeautySpaShell || isIndustrialCleaningShell) && "beauty-erp-logo-mark")}
+            markClassName={cn("rounded-xl", (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell) && "beauty-erp-logo-mark")}
           />
           <span className={cn(
             "max-w-[9rem] truncate font-handwriting text-2xl text-primary dark:text-[#A67D44] leading-none mt-1",
-            (isBeautySpaShell || isIndustrialCleaningShell) && "beauty-erp-brand-script"
+            (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell) && "beauty-erp-brand-script"
           )}>
             {tenantBrand.displayName.toLowerCase().endsWith('headquarter')
               ? tenantBrand.displayName.slice(0, -11).trim()
@@ -537,7 +608,7 @@ export function Sidebar() {
             title="Làm mới dữ liệu"
             className={cn(
               "flex h-10 w-10 items-center justify-center rounded-full border border-pink-100 bg-white/80 text-primary shadow-sm transition-all hover:bg-rose-50 active:scale-95 disabled:opacity-70 dark:border-[#3E3A35] dark:bg-[#1C1B19] dark:text-[#A67D44] dark:hover:bg-[#5D1C34]/30",
-              (isBeautySpaShell || isIndustrialCleaningShell) && "beauty-erp-icon-button"
+              (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell) && "beauty-erp-icon-button"
             )}
           >
             <RefreshCw className={cn('h-4 w-4', isMobileRefreshing && 'animate-spin')} />
@@ -566,6 +637,7 @@ export function Sidebar() {
         "w-80 bg-[#FAFAFA] border-r border-slate-200/50 dark:bg-[#1C1B19] dark:border-[#3E3A35] flex flex-col h-screen fixed inset-y-0 left-0 z-50 transform lg:translate-x-0 lg:relative lg:inset-auto lg:z-auto transition-transform duration-300 ease-in-out overflow-hidden shadow-[10px_0_40px_rgba(0,0,0,0.02)] dark:shadow-[10px_0_40px_rgba(0,0,0,0.5)] beauty-erp-sidebar shrink-0",
         isBeautySpaShell && "beauty-erp-sidebar",
         isIndustrialCleaningShell && "beauty-erp-sidebar", // Apply same class for theme CSS
+        isRealEstateShell && "beauty-erp-sidebar",
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         {/* Soft decorative light glows */}
@@ -578,7 +650,7 @@ export function Sidebar() {
 
         {/* ── Logo & Mobile Close Button ── */}
         <div className="px-8 pt-6 pb-4 shrink-0 relative z-10 flex items-center justify-between lg:block">
-          <Link href="/dashboard" onClick={handleNavigation} className="flex flex-col items-center group">
+          <Link href={tenantBrand.moduleKey === 'real_estate' ? "/dashboard/real-estate" : "/dashboard"} onClick={handleNavigation} className="flex flex-col items-center group">
             <div className="relative mb-2">
               <div className="absolute inset-0 bg-primary/20 dark:bg-[#A67D44]/15 blur-2xl rounded-full scale-75 group-hover:scale-110 transition-transform duration-500" />
               <TenantBrandLogo
@@ -586,28 +658,28 @@ export function Sidebar() {
                 logoUrl={tenantBrand.logoUrl}
                 monogram={tenantBrand.monogram}
                 className="w-16 h-16 relative z-10 transform group-hover:rotate-[5deg] transition-transform duration-500 text-xl"
-                markClassName={cn("rounded-[1.75rem]", (isBeautySpaShell || isIndustrialCleaningShell) && "beauty-erp-logo-mark beauty-erp-logo-mark-large")}
+                markClassName={cn("rounded-[1.75rem]", (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell) && "beauty-erp-logo-mark beauty-erp-logo-mark-large")}
               />
             </div>
             <div className="text-center">
               <h2 className={cn(
                 "max-w-64 text-[1.9rem] font-handwriting mb-1 drop-shadow-sm text-primary dark:text-[#A67D44] text-center",
-                (isBeautySpaShell || isIndustrialCleaningShell) && "beauty-erp-brand-script"
+                (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell) && "beauty-erp-brand-script"
               )}>
                 {tenantBrand.displayName.toLowerCase().endsWith('headquarter') ? (
                   <span className="flex flex-col items-center">
-                    <span className="leading-tight text-[#A91555] dark:text-[#F8A5C2]">{tenantBrand.displayName.slice(0, -11).trim()}</span>
+                    <span className="leading-tight text-primary dark:text-[#F8A5C2]">{tenantBrand.displayName.slice(0, -11).trim()}</span>
                     <span className="text-[0.8rem] mt-1 leading-none font-sans font-black tracking-widest uppercase text-slate-500 dark:text-zinc-400">
                       Headquarter
                     </span>
                   </span>
                 ) : (
-                  <span className="block truncate leading-tight text-[#A91555] dark:text-[#F8A5C2]">{tenantBrand.displayName}</span>
+                  <span className="block truncate leading-tight text-primary dark:text-[#F8A5C2]">{tenantBrand.displayName}</span>
                 )}
               </h2>
               <span className={cn(
                 "text-[7px] font-extrabold text-[#8A6D7C] dark:text-[#CDBCAB] uppercase tracking-[0.25em] block mt-0.5",
-                (isBeautySpaShell || isIndustrialCleaningShell) && "beauty-erp-brand-subtitle"
+                (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell) && "beauty-erp-brand-subtitle"
               )}>
                 {tenantBrand.subtitle}
               </span>
@@ -619,7 +691,7 @@ export function Sidebar() {
             onClick={() => setIsOpen(false)}
             className={cn(
               "lg:hidden p-2 rounded-xl text-primary dark:text-[#A67D44] hover:bg-white/60 dark:hover:bg-[#1C1B19]/50 active:scale-95 transition-all",
-              (isBeautySpaShell || isIndustrialCleaningShell) && "beauty-erp-icon-button"
+              (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell) && "beauty-erp-icon-button"
             )}
           >
             <X className="w-5 h-5" />
@@ -629,10 +701,10 @@ export function Sidebar() {
         {/* ── Nav (scrollable) ── */}
         <nav className={cn(
           "flex-1 min-h-0 px-5 space-y-1.5 overflow-y-auto relative z-10 pb-2 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:transparent [&::-webkit-scrollbar-thumb]:rounded-full",
-          isBeautySpaShell || isIndustrialCleaningShell 
+          isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell
             ? "" 
             : "[&::-webkit-scrollbar-thumb]:bg-rose-200/60 dark:[&::-webkit-scrollbar-thumb]:bg-[#3E3A35]",
-          (isBeautySpaShell || isIndustrialCleaningShell) && "beauty-erp-nav-scroll"
+          (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell) && "beauty-erp-nav-scroll"
         )}>
           {finalMenuItems.map((item, idx) => {
             if (isMenuHeader(item)) {
@@ -641,7 +713,7 @@ export function Sidebar() {
                   key={`header-${idx}`} 
                   className={cn(
                     "px-5 pt-3 pb-1 text-[9.5px] font-extrabold text-primary/60 dark:text-[#A67D44]/60 uppercase tracking-[0.2em] relative z-10 select-none pointer-events-none mt-4 first:mt-1",
-                    (isBeautySpaShell || isIndustrialCleaningShell) && "beauty-erp-nav-header"
+                    (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell) && "beauty-erp-nav-header"
                   )}
                 >
                   {item.label}
@@ -656,8 +728,8 @@ export function Sidebar() {
                   whileHover={{ x: 4 }}
                   className={cn(
                     "flex items-center gap-4 px-5 py-3.5 rounded-[1.5rem] transition-all duration-300 relative group cursor-pointer border",
-                    (isBeautySpaShell || isIndustrialCleaningShell) && "beauty-erp-nav-item",
-                    (isBeautySpaShell || isIndustrialCleaningShell) && isActive && "beauty-erp-nav-item-active",
+                    (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell) && "beauty-erp-nav-item",
+                    (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell) && isActive && "beauty-erp-nav-item-active",
                     isActive
                       ? "bg-white text-primary border-primary/20 shadow-[0_8px_20px_rgba(219,39,119,0.12)] ring-1 ring-primary/20 dark:bg-[#5D1C34]/30 dark:text-[#EFE9E1] dark:border-[#A67D44]/40 dark:ring-[#A67D44]/20 dark:shadow-none"
                       : "text-[#8A6D7C] bg-transparent border-transparent hover:bg-white/70 hover:text-primary hover:shadow-[0_4px_12px_rgba(219,39,119,0.03)] hover:border-[#FFE4E6]/50 dark:text-[#CDBCAB] dark:hover:bg-[#1C1B19]/50 dark:hover:text-[#EFE9E1] dark:hover:border-[#3E3A35]/50"
@@ -699,13 +771,13 @@ export function Sidebar() {
           {/* Unified Profile & Actions Panel */}
           <div className={cn(
             "bg-white/80 dark:bg-[#1C1B19] rounded-[1.25rem] shadow-[0_4px_20px_rgba(219,39,119,0.06)] dark:shadow-none border border-[#FFE4E6] dark:border-[#3E3A35] flex flex-col overflow-hidden transition-all duration-300 hover:border-rose-300 dark:hover:border-[#A67D44]/30",
-            (isBeautySpaShell || isIndustrialCleaningShell) && "beauty-erp-profile-card"
+            (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell) && "beauty-erp-profile-card"
           )}>
             <div className="p-3 flex items-center gap-3">
               <div className="relative shrink-0">
                 <div className={cn(
                   "w-9 h-9 bg-primary/10 dark:bg-[#5D1C34]/40 rounded-full flex items-center justify-center text-primary dark:text-[#A67D44] font-extrabold text-sm shadow-sm transition-transform duration-300 group-hover:scale-105",
-                  (isBeautySpaShell || isIndustrialCleaningShell) && "beauty-erp-avatar"
+                  (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell) && "beauty-erp-avatar"
                 )}>
                   {user?.full_name?.charAt(0)?.toUpperCase() || 'A'}
                 </div>
@@ -714,18 +786,18 @@ export function Sidebar() {
               <div className="min-w-0 flex-1">
                 <p className={cn(
                   "text-[13px] font-extrabold text-[#4C243B] dark:text-[#EFE9E1] truncate leading-tight",
-                  (isBeautySpaShell || isIndustrialCleaningShell) && "beauty-erp-profile-name"
+                  (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell) && "beauty-erp-profile-name"
                 )}>{user?.full_name || 'Admin Spa'}</p>
                 <p className={cn(
                   "text-[9px] text-primary dark:text-[#A67D44] font-black uppercase tracking-[0.1em] mt-0.5",
-                  (isBeautySpaShell || isIndustrialCleaningShell) && "beauty-erp-profile-role"
+                  (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell) && "beauty-erp-profile-role"
                 )}>{roleLabel}</p>
               </div>
             </div>
             
             <div className={cn(
               "h-px w-full bg-gradient-to-r from-transparent via-[#FFE4E6] dark:via-[#3E3A35] to-transparent",
-              (isBeautySpaShell || isIndustrialCleaningShell) && "beauty-erp-profile-divider"
+              (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell) && "beauty-erp-profile-divider"
             )} />
             
             <div className="flex items-center justify-between p-2 gap-2">
@@ -742,7 +814,7 @@ export function Sidebar() {
                  title="Đăng xuất"
                  className={cn(
                    "p-2 mr-1 rounded-xl text-[#8A6D7C] dark:text-[#CDBCAB] hover:bg-rose-50 hover:text-primary dark:hover:bg-[#5D1C34]/40 dark:hover:text-[#A67D44] transition-all",
-                   (isBeautySpaShell || isIndustrialCleaningShell) && "beauty-erp-icon-button"
+                   (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell) && "beauty-erp-icon-button"
                  )}
                >
                  <LogOut className="w-4 h-4" />

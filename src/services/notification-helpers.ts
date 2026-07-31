@@ -128,7 +128,7 @@ export async function checkAndGenerateKtvAlertNotifications(userId: string, tena
 
           if (!existingNotif) {
             const booking = Array.isArray(session.bookings) ? session.bookings[0] : session.bookings;
-            const customerName = (booking as any)?.customers?.name_mother || 'Khách hàng';
+            const customerName = (booking as Record<string, unknown> & { customers?: { name_mother?: string } })?.customers?.name_mother || 'Khách hàng';
             const packageName = booking?.package_name || 'Dịch vụ';
             const startTimeFormatted = startTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) + ' ' + startTime.toLocaleDateString('vi-VN');
 
@@ -204,7 +204,7 @@ export async function checkAndGenerateAdminAlertNotifications(tenantId: string) 
         // If current time is > 15 minutes after scheduled starting time
         if (diffMinutes > 15) {
           // Fetch KTV name
-          const targetKtvId = session.completed_by_ktv_id || (session.bookings as any)?.assigned_ktv_id;
+          const targetKtvId = session.completed_by_ktv_id || (session.bookings as Record<string, unknown> & { assigned_ktv_id?: string })?.assigned_ktv_id;
           let ktvName = 'Chưa phân công KTV';
 
           if (targetKtvId) {
@@ -220,8 +220,8 @@ export async function checkAndGenerateAdminAlertNotifications(tenantId: string) 
           }
 
           const booking = Array.isArray(session.bookings) ? session.bookings[0] : session.bookings;
-          const customerName = (booking as any)?.customers?.name_mother || 'Khách hàng';
-          const packageName = (booking as any)?.package_name || 'Dịch vụ';
+          const customerName = (booking as Record<string, unknown> & { customers?: { name_mother?: string } })?.customers?.name_mother || 'Khách hàng';
+          const packageName = (booking as Record<string, unknown> & { package_name?: string })?.package_name || 'Dịch vụ';
 
           for (const admin of adminUsers) {
             const notifId = `session_no_checkin_${session.id}_${admin.id}`;

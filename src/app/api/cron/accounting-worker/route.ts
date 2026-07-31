@@ -610,6 +610,41 @@ export async function GET(req: NextRequest) {
             throw new Error(`Failed to mark outbox completed: ${completeErr.message}`);
           }
           console.log(`[Accounting Worker] Event ${event.id} processed successfully. Entry: ${journalEntryId}`);
+
+          // Trigger Outbound MISA sync
+          try {
+            const { MisaOutboundAdapter } = await import('@/plugins/outbound/misa/adapter');
+            const misaAdapter = new MisaOutboundAdapter();
+
+            let action: 'sync_invoice' | 'sync_expense' | 'sync_salary' | 'sync_journal' = 'sync_journal';
+            if (eventType === 'PACKAGE_SALE') {
+              action = 'sync_invoice';
+            } else if (eventType === 'EXPENSE_RECORDED') {
+              action = 'sync_expense';
+            } else if (eventType === 'SALARY_PAID') {
+              action = 'sync_salary';
+            }
+
+            const syncResult = await misaAdapter.send({
+              action,
+              data: {
+                ...payload,
+                journal_entry_id: journalEntryId,
+                synced_event_id: event.id,
+              },
+              tenantId,
+              idempotencyKey: `misa-sync-${event.id}`,
+            });
+
+            if (syncResult.success) {
+              console.log(`[Accounting Worker] MISA sync successful for event ${event.id}`);
+            } else {
+              console.error(`[Accounting Worker] MISA sync failed for event ${event.id}: ${syncResult.error}`);
+            }
+          } catch (misaErr) {
+            console.error(`[Accounting Worker] MISA Adapter trigger error for event ${event.id}:`, misaErr);
+          }
+
           successCount++;
           details.push({
             eventId: event.id,

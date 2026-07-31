@@ -74,8 +74,33 @@ const OnboardingTour = dynamic(
   () => import('@/components/features/dashboard/OnboardingTour'),
   { ssr: false }
 );
+const RealEstateDashboardPage = dynamic(
+  () => import('@/app/dashboard/real-estate/page'),
+  { ssr: false }
+);
+
 export default function DashboardPage() {
   const router = useRouter();
+  const { tenantModuleKey, isTenantModuleLoading } = useTenantModuleKey();
+
+  if (isTenantModuleLoading) {
+    return (
+      <div className="flex-1 p-8 space-y-6 animate-pulse bg-slate-50 dark:bg-slate-950 min-h-screen">
+        <div className="h-20 bg-slate-200 dark:bg-slate-800 rounded-2xl w-full" />
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="h-32 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
+          <div className="h-32 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
+          <div className="h-32 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
+          <div className="h-32 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
+        </div>
+        <div className="h-96 bg-slate-200 dark:bg-slate-800 rounded-3xl w-full" />
+      </div>
+    );
+  }
+
+  if (tenantModuleKey === 'real_estate') {
+    return <RealEstateDashboardPage />;
+  }
   const [stats, setStats] = useState<DashboardStatsViewModel[]>([]);
   const [sessions, setSessions] = useState<DashboardSessionViewModel[]>([]);
   const [topKTVs, setTopKTVs] = useState<KtvPerformanceViewModel[]>([]);
@@ -101,7 +126,6 @@ export default function DashboardPage() {
   const sessionsRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dashboardRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dashboardAlertsRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const { tenantModuleKey } = useTenantModuleKey();
   const customerLabels = getTenantModulePresentationOrNeutral(tenantModuleKey);
   const vocab = useModuleVocabulary();
   
@@ -141,6 +165,8 @@ export default function DashboardPage() {
     }
     setUserRole(role === 'admin' ? 'admin' : 'ktv');
   }, [profile, router]);
+
+
 
   const getMonthRange = (month: number, year: number) => {
     // Manually construct YYYY-MM-DD to avoid timezone shifts from .toISOString()

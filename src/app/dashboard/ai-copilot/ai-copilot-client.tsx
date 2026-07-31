@@ -47,6 +47,10 @@ function getErrorMessage(error: unknown, fallback: string) {
 }
 
 function getAiWelcomeMessage(moduleKey: TenantModuleKey | null) {
+  if (moduleKey === "real_estate") {
+    return "Xin chào Ban điều hành! Tôi là AI COO - trợ lý vận hành cho Bella Land. Tôi có thể hỗ trợ kiểm tra giỏ hàng căn hộ, tiến độ hợp đồng cọc, doanh thu dự án, tính hoa hồng môi giới, CRM nhà đầu tư và các báo cáo phân tích bất động sản trong ngày. Anh/chị cần tôi kiểm tra mảng nào hôm nay?";
+  }
+
   if (moduleKey === "industrial_cleaning") {
     return "Xin chào Ban điều hành! Tôi là AI COO - trợ lý vận hành cho CleanPro. Tôi có thể hỗ trợ theo dõi lịch làm việc, hồ sơ khách hàng doanh nghiệp, doanh thu, chấm công & lương nhân viên vệ sinh, CRM/Zalo và các điểm bất thường cần xử lý trong ngày. Anh/chị cần tôi kiểm tra mảng nào hôm nay?";
   }
@@ -60,6 +64,16 @@ function getAiWelcomeMessage(moduleKey: TenantModuleKey | null) {
   }
 
   return "Xin chào Ban điều hành! Tôi là AI COO - trợ lý vận hành của hệ thống. Tôi có thể hỗ trợ phân tích lịch dịch vụ, hồ sơ khách hàng, tài chính, nhân sự, CRM/Zalo và các điểm bất thường cần xử lý. Anh/chị cần tôi kiểm tra mảng nào hôm nay?";
+}
+
+function getPlaceholderText(moduleKey: TenantModuleKey | null) {
+  if (moduleKey === "real_estate") {
+    return "Nhập yêu cầu (ví dụ: 'Kiểm tra căn hộ trống', 'Tính hoa hồng dự án'...)";
+  }
+  if (moduleKey === "industrial_cleaning") {
+    return "Nhập yêu cầu (ví dụ: 'Xem phiếu công việc', 'Tính công nhân viên'...)";
+  }
+  return "Nhập yêu cầu (ví dụ: 'Đối soát quỹ', 'Tính lương KTV Hoa'...)";
 }
 
 export default function AICopilotClient() {
@@ -288,7 +302,7 @@ export default function AICopilotClient() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               disabled={isLoading}
-              placeholder="Nhập yêu cầu (ví dụ: 'Đối soát quỹ', 'Tính lương KTV Hoa'...)"
+              placeholder={getPlaceholderText(tenantModuleKey)}
               className="min-w-0 flex-1 bg-muted border border-border rounded-2xl px-4 sm:px-5 py-3.5 sm:py-4 text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all disabled:opacity-50"
             />
             <button 

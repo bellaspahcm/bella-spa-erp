@@ -114,12 +114,14 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
     let moduleKey: string = 'baby_care'; // Default fallback
 
     // Determine primary module key
-    // API now returns array of enabled module names: ['beauty_spa'] or ['babycare'] or ['industrial_cleaning']
+    // API now returns array of enabled module names: ['beauty_spa'] or ['babycare'] or ['industrial_cleaning'] or ['real_estate']
     if (Array.isArray(enabledModules)) {
       console.log('[TenantContextProvider] Processing array format:', enabledModules);
       
-      // Priority order: industrial_cleaning > beauty_spa > babycare/spa
-      if (enabledModules.includes('industrial_cleaning')) {
+      // Priority order: real_estate > industrial_cleaning > beauty_spa > babycare/spa
+      if (enabledModules.includes('real_estate')) {
+        moduleKey = 'real_estate';
+      } else if (enabledModules.includes('industrial_cleaning')) {
         moduleKey = 'industrial_cleaning';
       } else if (enabledModules.includes('beauty_spa')) {
         moduleKey = 'beauty_spa';
@@ -131,7 +133,9 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
       console.log('[TenantContextProvider] Processing legacy object format');
       
       const modules = enabledModules as any;
-      if (modules.industrial_cleaning === true) {
+      if (modules.real_estate === true) {
+        moduleKey = 'real_estate';
+      } else if (modules.industrial_cleaning === true) {
         moduleKey = 'industrial_cleaning';
       } else if (modules.beauty_spa === true) {
         moduleKey = 'beauty_spa';
@@ -151,6 +155,7 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
         baby_care: '#FDF2F8',
         beauty_spa: '#F0FDF4',
         industrial_cleaning: '#F8FAFC',
+        real_estate: '#FFFBEB',
       };
       themeMeta.setAttribute('content', themeColors[moduleKey] || themeColors.baby_care);
     }
