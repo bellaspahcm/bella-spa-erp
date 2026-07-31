@@ -37,6 +37,6 @@ describe('ApartmentDomainModel State Machine', () => {
     });
 
     expect(apartment.canTransitionTo('available')).toBe(false);
-    expect(() => apartment.transitionTo('available')).toThrow('Cannot transition apartment B-202 from handed_over to available');
+    expect(() => apartment.transitionTo('available')).toThrow('Không thể chuyển đổi trạng thái căn hộ B-202 từ handed_over sang available');
   });
 });
