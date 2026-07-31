@@ -1088,8 +1088,10 @@ html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-logo-mark {
 html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-brand-script { color: #f8f6f2 !important; }
 html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-brand-subtitle,
 html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-header { color: #c8a97a !important; }
-html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item { color: rgba(248, 246, 242, 0.82) !important; }
-html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item:hover { color: #ffffff !important; background: rgba(200, 169, 122, 0.15) !important; }
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item { color: rgba(248, 246, 242, 0.85) !important; }
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item:hover { color: #ffffff !important; background: rgba(200, 169, 122, 0.22) !important; }
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item:hover svg,
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item:hover * { color: #ffffff !important; }
 html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active {
   background: linear-gradient(135deg, #074e44 0%, #0a6357 100%) !important;
   border-color: rgba(200, 169, 122, 0.52) !important;
@@ -1120,8 +1122,10 @@ html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-logo-mark {
 html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-brand-script { color: #f8fafc !important; }
 html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-brand-subtitle,
 html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-header { color: #f59e0b !important; }
-html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-item { color: rgba(248, 250, 252, 0.82) !important; }
-html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-item:hover { color: #ffffff !important; background: rgba(217, 119, 6, 0.15) !important; }
+html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-item { color: rgba(248, 250, 252, 0.85) !important; }
+html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-item:hover { color: #ffffff !important; background: rgba(217, 119, 6, 0.22) !important; }
+html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-item:hover svg,
+html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-item:hover * { color: #ffffff !important; }
 html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-item-active {
   background: linear-gradient(135deg, #d97706 0%, #b45309 100%) !important;
   border-color: rgba(255, 255, 255, 0.32) !important;
@@ -1152,8 +1156,10 @@ html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-logo-mark {
 html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-brand-script { color: #f8f9fa !important; }
 html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-brand-subtitle,
 html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-header { color: #93c5fd !important; }
-html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item { color: rgba(248, 249, 250, 0.82) !important; }
-html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item:hover { color: #ffffff !important; background: rgba(59, 130, 246, 0.15) !important; }
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item { color: rgba(248, 249, 250, 0.85) !important; }
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item:hover { color: #ffffff !important; background: rgba(59, 130, 246, 0.22) !important; }
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item:hover svg,
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item:hover * { color: #ffffff !important; }
 html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item-active {
   background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%) !important;
   border-color: rgba(96, 165, 250, 0.52) !important;
@@ -1184,8 +1190,10 @@ html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-logo-mark {
 html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-brand-script { color: #f4f4f5 !important; }
 html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-brand-subtitle,
 html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-nav-header { color: #a1a1aa !important; }
-html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-nav-item { color: rgba(244, 244, 245, 0.82) !important; }
-html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-nav-item:hover { color: #ffffff !important; background: rgba(161, 161, 170, 0.15) !important; }
+html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-nav-item { color: rgba(244, 244, 245, 0.85) !important; }
+html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-nav-item:hover { color: #ffffff !important; background: rgba(161, 161, 170, 0.22) !important; }
+html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-nav-item:hover svg,
+html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-nav-item:hover * { color: #ffffff !important; }
 html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-nav-item-active {
   background: linear-gradient(135deg, #3f3f46 0%, #27272a 100%) !important;
   border-color: rgba(161, 161, 170, 0.52) !important;
@@ -1215,7 +1223,9 @@ html[data-tenant-brand-preset="bella_rose"] .beauty-erp-brand-script { color: #8
 html[data-tenant-brand-preset="bella_rose"] .beauty-erp-brand-subtitle,
 html[data-tenant-brand-preset="bella_rose"] .beauty-erp-nav-header { color: #9d174d !important; }
 html[data-tenant-brand-preset="bella_rose"] .beauty-erp-nav-item { color: #831843 !important; }
-html[data-tenant-brand-preset="bella_rose"] .beauty-erp-nav-item:hover { color: #831843 !important; background: rgba(251, 207, 232, 0.5) !important; }
+html[data-tenant-brand-preset="bella_rose"] .beauty-erp-nav-item:hover { color: #500724 !important; background: rgba(251, 207, 232, 0.65) !important; }
+html[data-tenant-brand-preset="bella_rose"] .beauty-erp-nav-item:hover svg,
+html[data-tenant-brand-preset="bella_rose"] .beauty-erp-nav-item:hover * { color: #500724 !important; }
 html[data-tenant-brand-preset="bella_rose"] .beauty-erp-nav-item-active {
   background: linear-gradient(135deg, #a91555 0%, #9d174d 100%) !important;
   border-color: rgba(248, 165, 194, 0.52) !important;
