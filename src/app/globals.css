@@ -26,9 +26,9 @@
 }
 
 :root {
-  /* Option C: Deep Rose Luxury (Refined & Softened) */
-  --primary: #E91E63;
-  --primary-hover: #C2185B;
+  /* Default System Primary Theme (Neutral Dark Slate) */
+  --primary: #0F172A;
+  --primary-hover: #1E293B;
   --primary-foreground: oklch(0.985 0 0);
 
   --secondary: oklch(0.97 0 0);
