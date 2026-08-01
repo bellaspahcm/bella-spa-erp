@@ -478,7 +478,7 @@ export default function FinancePage() {
           {/* Financial Overview */}
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-          <SkeletonLoader variant="card" className="w-full h-48 bg-gradient-to-r from-pink-500/10 via-rose-500/10 to-pink-500/10 border-pink-200/20 animate-pulse" />
+          <SkeletonLoader variant="card" className="w-full h-48 bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-emerald-500/10 border-emerald-200/20 animate-pulse" />
           <SkeletonLoader variant="card" className="w-full h-48 bg-white/40 dark:bg-zinc-800/40 animate-pulse" />
           <SkeletonLoader variant="card" className="w-full h-48 bg-white/40 dark:bg-zinc-800/40 animate-pulse" />
         </div>
@@ -705,7 +705,7 @@ export default function FinancePage() {
                   onClick={() => setCurrentPage(i + 1)}
                   className={`w-8 h-8 rounded-lg text-xs font-black transition-all ${
                     currentPage === i + 1 
-                      ? 'bg-rose-500 text-white shadow-lg shadow-rose-100 dark:shadow-none' 
+                      ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-100 dark:shadow-none' 
                       : 'text-slate-400 hover:bg-white hover:text-slate-600'
                   }`}
                 >
