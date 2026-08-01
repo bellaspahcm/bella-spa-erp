@@ -543,7 +543,12 @@ export default function PnLDashboardPage() {
                 <p className="text-sm text-slate-600">Tổng chi phí</p>
                 <p className="text-2xl font-bold text-slate-900">
                   {/* TODO: expenseBreakdown.data.data is array, calculate sum or use mock */}
-                  {formatCurrency((expenseBreakdown.data.data || []).reduce((sum, item) => sum + item.amount, 0))}
+                  {formatCurrency(
+                    (Array.isArray(expenseBreakdown.data.data) ? expenseBreakdown.data.data : []).reduce(
+                      (sum, item) => sum + (item.amount || 0),
+                      0
+                    )
+                  )}
                 </p>
               </div>
 
@@ -554,7 +559,7 @@ export default function PnLDashboardPage() {
               <div className="mt-4 pt-4 border-t border-slate-100">
                 <p className="text-sm font-medium text-slate-700 mb-2">Danh mục chi phí hàng đầu:</p>
                 {/* TODO: expenseBreakdown.data.data is array, not nested object with byCategory */}
-                {(expenseBreakdown.data.data || []).slice(0, 3).map((item, idx) => (
+                {(Array.isArray(expenseBreakdown.data.data) ? expenseBreakdown.data.data : []).slice(0, 3).map((item, idx) => (
                   <div key={idx} className="flex items-center justify-between text-sm mb-1">
                     <span className="text-slate-600">{item.category}</span>
                     <span className="font-medium text-red-600">{item.percentage}%</span>
