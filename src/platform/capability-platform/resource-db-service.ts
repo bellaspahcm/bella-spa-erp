@@ -3,7 +3,8 @@
  * Safely persists and retrieves Resource Snapshots, Assignments, SLA Logs, Rotations, and Audit Events
  */
 
-import { supabase } from '@/lib/supabase';
+import { supabase as typedSupabase } from '@/lib/supabase';
+const supabase = typedSupabase as any;
 import {
   ResourceRef,
   ResourceSnapshot,

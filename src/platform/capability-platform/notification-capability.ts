@@ -29,12 +29,15 @@ export class NotificationCapability {
     try {
       const dbPayload = {
         tenant_id: payload.tenantId,
-        user_id: payload.recipientId,
         title: payload.title,
         message: payload.message,
         type: payload.type || 'SLA_WARNING',
         is_read: false,
         created_at: new Date().toISOString(),
+        data: {
+          recipientId: payload.recipientId,
+          ...(payload.metadata || {}),
+        }
       };
 
       const { error } = await supabase.from('app_notifications').insert(dbPayload);

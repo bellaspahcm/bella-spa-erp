@@ -46,7 +46,7 @@ export class SLACapability {
       const manifest = resourceRegistry.get(event.resourceType);
       if (!manifest) return;
 
-      const acceptStage = manifest.slaMetadata.stages.find(s => s.stage === 'accept');
+      const acceptStage = manifest.slaMetadata?.stages?.find(s => s.stage === 'accept');
       const timeoutMinutes = acceptStage ? acceptStage.timeoutMinutes : 30;
 
       const deadline = new Date(Date.now() + timeoutMinutes * 60 * 1000).toISOString();
@@ -80,7 +80,7 @@ export class WorkflowCapability {
     notes?: string
   ): Promise<ResourceEvent> {
     const manifest = resourceRegistry.get(resource.resourceType);
-    const transition = manifest?.workflowMetadata.transitions.find(t => t.actionCode === actionCode);
+    const transition = manifest?.workflowMetadata?.transitions?.find(t => t.actionCode === actionCode);
 
     const event: ResourceEvent = {
       id: `wf-${Date.now()}`,

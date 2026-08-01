@@ -196,6 +196,18 @@ export interface ResourceProviderManifest {
     }>;
   };
   getEligibleAssignees?: (resource: ResourceRef) => AssigneeUser[];
-  getNextRotationAssignee?: (resource: ResourceRef, currentAssigneeId?: string) => AssigneeUser;
+  getNextRotationAssignee?: (resource: ResourceRef, currentAssigneeId?: string, strategy?: string) => AssigneeUser;
   formatNotification?: (event: any) => { title: string; body: string };
 }
+
+export interface ResourceEvent {
+  id: string;
+  resourceType: string;
+  resourceId: string;
+  eventType: string;
+  actorId: string;
+  actorName: string;
+  payload: Record<string, any>;
+  timestamp: string;
+}
+
