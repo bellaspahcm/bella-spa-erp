@@ -81,7 +81,7 @@ export default function GeneralSettingsTab({
               type="text"
               value={generalSettings.name}
               onChange={(e) => setGeneralSettings({ ...generalSettings, name: e.target.value })}
-              className="w-full px-6 py-4 bg-white/50 border border-pink-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold"
+              className="w-full px-6 py-4 bg-white/50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold"
             />
           </div>
           <div className="space-y-2">
@@ -92,7 +92,7 @@ export default function GeneralSettingsTab({
               type="text"
               value={generalSettings.phone}
               onChange={(e) => setGeneralSettings({ ...generalSettings, phone: e.target.value })}
-              className="w-full px-6 py-4 bg-white/50 border border-pink-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold"
+              className="w-full px-6 py-4 bg-white/50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold"
             />
           </div>
           <div className="space-y-2">
@@ -103,7 +103,7 @@ export default function GeneralSettingsTab({
               type="email"
               value={generalSettings.email}
               onChange={(e) => setGeneralSettings({ ...generalSettings, email: e.target.value })}
-              className="w-full px-6 py-4 bg-white/50 border border-pink-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold"
+              className="w-full px-6 py-4 bg-white/50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold"
             />
           </div>
         </div>
@@ -117,12 +117,12 @@ export default function GeneralSettingsTab({
               value={generalSettings.address}
               onChange={(e) => setGeneralSettings({ ...generalSettings, address: e.target.value })}
               rows={4}
-              className="w-full px-6 py-4 bg-white/50 border border-pink-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold resize-none"
+              className="w-full px-6 py-4 bg-white/50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold resize-none"
             />
           </div>
-          <div className="p-6 bg-white/40 rounded-[2rem] border border-white flex items-center justify-between">
+          <div className="p-6 bg-white/40 dark:bg-slate-800/40 rounded-[2rem] border border-slate-200/80 dark:border-slate-700 flex items-center justify-between">
             <div>
-              <p className="font-black text-slate-900">
+              <p className="font-black text-foreground">
                 Logo thương hiệu
               </p>
               <p className="text-xs text-muted-foreground font-bold mt-1">
@@ -137,7 +137,7 @@ export default function GeneralSettingsTab({
       </div>
 
       {/* VietQR Bank Configuration */}
-      <div className="mt-8 pt-8 border-t border-pink-100/50">
+      <div className="mt-8 pt-8 border-t border-slate-200/80 dark:border-slate-800">
         <div className="flex items-center gap-4 mb-6">
           <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
             <Database className="w-6 h-6" />
@@ -174,7 +174,7 @@ export default function GeneralSettingsTab({
               value={generalSettings.qr_account_number}
               onChange={(e) => setGeneralSettings({ ...generalSettings, qr_account_number: e.target.value.replace(/\s+/g, "") })}
               placeholder="Nhập số tài khoản"
-              className="w-full px-6 py-4 bg-white/50 border border-pink-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold"
+              className="w-full px-6 py-4 bg-white/50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold"
             />
           </div>
 
@@ -187,7 +187,7 @@ export default function GeneralSettingsTab({
               value={generalSettings.qr_account_name}
               onChange={(e) => setGeneralSettings({ ...generalSettings, qr_account_name: e.target.value.toUpperCase() })}
               placeholder="VD: NGUYEN VAN A"
-              className="w-full px-6 py-4 bg-white/50 border border-pink-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold"
+              className="w-full px-6 py-4 bg-white/50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold"
             />
           </div>
         </div>

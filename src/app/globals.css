@@ -1232,6 +1232,18 @@ html[data-tenant-brand-preset="bella_rose"] .beauty-erp-nav-item-active {
   color: #ffffff !important;
 }
 
+/* Universal Active Nav Item Child High-Contrast Overrides */
+html[data-tenant-module] .beauty-erp-nav-item-active *,
+html[data-tenant-module] .beauty-erp-nav-item-active svg,
+html[data-tenant-module] .beauty-erp-nav-item-active span,
+html[data-tenant-module] .beauty-erp-nav-item-active p,
+html[data-tenant-brand-preset] .beauty-erp-nav-item-active *,
+html[data-tenant-brand-preset] .beauty-erp-nav-item-active svg,
+html[data-tenant-brand-preset] .beauty-erp-nav-item-active span,
+html[data-tenant-brand-preset] .beauty-erp-nav-item-active p {
+  color: #ffffff !important;
+}
+
 /* =========================================================================
    BABY CARE / DEFAULT THEME - Pink Sidebar Override
    Baby Care (babycare module or no module) uses pink theme

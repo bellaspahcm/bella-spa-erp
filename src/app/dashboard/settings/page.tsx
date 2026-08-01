@@ -287,7 +287,7 @@ function SettingsContent() {
                 className={cn(
                   "w-full flex items-center gap-4 px-5 py-3.5 rounded-2xl transition-all duration-300 font-bold group text-left border",
                   isTabActive
-                    ? "bg-white dark:bg-[#5D1C34]/30 text-primary dark:text-[#EFE9E1] shadow-lg shadow-pink-100/50 dark:shadow-none border-pink-50 dark:border-[#A67D44]/30"
+                    ? "bg-white dark:bg-slate-800/80 text-primary shadow-md border-primary/30"
                     : "text-muted-foreground hover:bg-white/60 hover:text-primary border-transparent",
                 )}
               >
@@ -354,7 +354,7 @@ function SettingsContent() {
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
-                className="glass-pink rounded-[3rem] p-10 shadow-sm border border-white h-full"
+                className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-[3rem] p-10 shadow-lg border border-slate-200/60 dark:border-slate-800 h-full"
               >
                 {activeTab === "general" && (
                   <GeneralSettingsTab

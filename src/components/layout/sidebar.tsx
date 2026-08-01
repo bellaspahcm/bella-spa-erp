@@ -748,22 +748,27 @@ export function Sidebar() {
                     />
                   )}
                   <item.icon className={cn(
-                    "w-[18px] h-[18px] transition-all duration-300",
-                    isActive
-                      ? "text-primary dark:text-[#A67D44] scale-105"
-                      : "text-[#A07888] dark:text-[#CDBCAB]/80 group-hover:text-primary dark:group-hover:text-[#A67D44]"
+                    "w-[18px] h-[18px] transition-all duration-300 shrink-0",
+                    (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell)
+                      ? (isActive ? "text-white scale-105" : "text-inherit opacity-85 group-hover:text-white group-hover:opacity-100")
+                      : (isActive ? "text-primary dark:text-[#A67D44] scale-105" : "text-[#A07888] dark:text-[#CDBCAB]/80 group-hover:text-primary dark:group-hover:text-[#A67D44]")
                   )} />
                   <span className={cn(
-                    "text-[14px] tracking-tight transition-all duration-300",
-                    isActive
-                      ? "font-extrabold text-primary dark:text-[#EFE9E1]"
-                      : "font-semibold"
+                    "text-[14px] tracking-tight transition-all duration-300 truncate",
+                    (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell)
+                      ? (isActive ? "font-extrabold text-white" : "font-semibold text-inherit group-hover:text-white")
+                      : (isActive ? "font-extrabold text-primary dark:text-[#EFE9E1]" : "font-semibold")
                   )}>{item.label}</span>
 
                   {isActive && (
                     <motion.div
                       layoutId="active-indicator"
-                      className="absolute right-5 w-1.5 h-1.5 bg-primary dark:bg-[#A67D44] rounded-full shadow-[0_0_6px_rgba(219,39,119,0.4)] dark:shadow-[0_0_6px_rgba(166,125,68,0.4)]"
+                      className={cn(
+                        "absolute right-5 w-1.5 h-1.5 rounded-full",
+                        (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell)
+                          ? "bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]"
+                          : "bg-primary dark:bg-[#A67D44] shadow-[0_0_6px_rgba(219,39,119,0.4)] dark:shadow-[0_0_6px_rgba(166,125,68,0.4)]"
+                      )}
                     />
                   )}
                 </motion.div>
