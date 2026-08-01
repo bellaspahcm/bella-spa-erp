@@ -75,8 +75,9 @@ Bang nay la nhat ky bai hoc thuc te. Khi lam nganh moi, bat buoc doi chieu tung 
 | Loading fallback | F5 hien Bella Spa mot luc roi moi chuyen Beauty Spa | Fallback mac dinh ve Bella/Babycare truoc khi tenant brand/module load xong | Non-Bella tenant khong fallback Bella; dung loading/neutral state den khi co tenant context |
 | First-paint theme flash | F5 Beauty/Bella hien mau hoac brand cua tenant truoc do truoc khi vao dung dashboard | CSS root/meta theme-color mac dinh Bella hoac root bootstrap doc runtime cache cu truoc khi xac thuc tenant hien tai | App shell phai bootstrap neutral truoc paint; khong doc runtime cache tenant cu tai root; protected layout phai apply tenant brand runtime truoc khi render dashboard children; session runtime cache chi duoc ghi sau khi tenant da xac thuc |
 | Brand isolation | Sidebar/header/portal co nguy co dung logo/mau Bella | Branding doc tu default chung hoac cache khong gan tenant | Cache brand phai kem `tenantId`; fallback Beauty trung tinh, khong fallback Bella |
-| Brand controls no-op | Mau he thong/bo goc/kieu nut/menu trong Setting co the luu nhung giao dien khong doi | UI setting cap nhat `brand_theme` nhung runtime root va CSS module khong tieu thu cac gia tri `primaryColor`, `radiusStyle`, `buttonStyle`, `menuStyle` | Setting preview phai apply CSS variables + `data-tenant-brand-*`; CSS chi scope theo module, vi du `html[data-tenant-module="beauty_spa"]`; them source guard |
+| Brand controls no-op | Mau he thong/bo goc/kieu nut/menu trong Setting co the luu nhung giao dien khong doi | UI setting cap nhat `brand_theme` nhung runtime root va CSS module khong tieu thu cac gia tri `primaryColor`, `radiusStyle`, `buttonStyle`, `menuStyle` | Setting preview phai apply CSS variables + `data-tenant-brand-*`; CSS chi scope theo module, vi du `html[data-tenant-module="beauty_spa"] |
 | Visual theme leakage | Giao dien rieng cua Beauty co nguy co doi mau/layout Bella ERP | CSS/class rieng cua nganh moi viet global, khong scope theo module marker | Moi theme UI rieng phai nam sau `html[data-tenant-module="..."]`; them source guard khoa selector khong duoc unscoped |
+| Brand preset color bleed | Chọn giao diện `jade_wellness` (xanh lá) nhưng sidebar/body vẫn hiển thị màu navy xanh dương của preset `luxury_navy` | `globals.css` có 2 khối CSS riêng scope theo `data-tenant-module` mà không thêm `:not([data-tenant-brand-preset])` — khối sau xuất hiện muộn hơn nên ghi đè rule preset-specific dù cả hai đều dùng `!important` | Mọi selector `html[data-tenant-module="X"]` trong block mặc định phải kèm `:not([data-tenant-brand-preset="Y"])` cho từng preset không phải mặc định; chạy `Select-String 'data-tenant-module="X"](?!\:not)' globals.css` để tìm selector chưa scope; xem **Phase 4e** |
 | CTA/badge/active-state contrast | Nut chinh, badge quan trong hoac ngay/filter dang chon bi mo/gan nhu mat chu | Selector theme qua rong match ca class mau dam/gradient, hoac dung animation giam opacity nhu `animate-pulse` | CTA/badge/trang thai active phai co class rieng theo module, mau nen/chu dat contrast ro; neu can nhap nhay thi dung glow/brightness, khong giam opacity |
 | Dark dashboard surfaces | Beauty dark mode con alert pastel sang, chu chim va bang Top KTV khong lap day card | Dark skin chi override mau chung, thieu class rieng cho table/list quan trong | Table/list quan trong phai co class rieng nhu `beauty-top-ktv-table` va `beauty-alert-item`; dark CSS chi bam vao class do de khong anh huong Bella |
 | Dark data table scroll | Bang Beauty dark co thanh truot ngang sang mau, nam lo ra ngoai cam giac khong thuoc card, hoac row/table khong lap day box | Wrapper/table khong dung chung `custom-scrollbar` + `bella-data-table`, hoac table dang `width: max-content` nen tao mang nen bi tach o mep phai | Moi bang du lieu Beauty phai dung table pattern chung; dark CSS module-scoped phai dat table `width: 100%`, wrapper scroll nam trong box, scrollbar theo tone xanh-vang va khong override Bella |
@@ -446,6 +447,128 @@ Trước khi tối ưu, kiểm tra:
 - https://webaim.org/resources/contrastchecker/
 - Take screenshot → convert to grayscale → vẫn thấy rõ hierarchy
 
+### Phase 4e — Brand Preset CSS Scoping (Chống Màu Rò Giữa Các Preset)
+
+> **Thêm 2026-08-01.** Root cause của bug thực tế: chọn giao diện `jade_wellness` (xanh lá) nhưng sidebar vẫn hiện màu navy xanh dương do CSS specificity waterfall.
+
+#### Kiến Trúc CSS Preset Hiện Tại
+
+`globals.css` có **hai khối CSS riêng biệt** cho mỗi module, tại các vị trí khác nhau trong file:
+
+| Khối | Mục đích |
+|------|----------|
+| **Block 1** (xuất hiện trước ~dòng 1070) | Rules riêng từng preset: `jade_wellness`, `ocean_clean`, `graphite_luxe`, `bella_rose` |
+| **Block 2** (xuất hiện sau ~dòng 3400) | Rules mặc định cho module (ví dụ: `luxury_navy` với navy/amber cho `real_estate`) |
+
+**Quy tắc CSS waterfall**: Block 2 xuất hiện **sau** Block 1 → Block 2 luôn thắng khi cùng specificity dù cả hai dùng `!important`.
+
+#### Nguyên Nhân Gốc Rễ
+
+```css
+/* Block 2 - UNSCOPED, áp dụng cho MỌI real_estate tenant dù đang chọn preset nào */
+html[data-tenant-module="real_estate"] .beauty-erp-sidebar {
+  background: linear-gradient(180deg, #0b1329 0%, #1e3a8a 100%) !important; /* NAVY */
+}
+
+/* Block 1 - jade_wellness, xuất hiện TRƯỚC → bị Block 2 ghi đè */
+html[data-tenant-module="real_estate"][data-tenant-brand-preset="jade_wellness"] .beauty-erp-sidebar {
+  background: linear-gradient(158deg, #1a4731 0%, #2d6a4f 52%) !important; /* XANH LÁ */
+}
+```
+
+Kết quả: user chọn `jade_wellness` nhưng thấy navy, vì Block 2 (dòng ~3530) ghi đè Block 1 (dòng ~1075).
+
+#### Cách Phát Hiện Nhanh
+
+Chạy lệnh này để tìm **tất cả selector chưa scope** theo preset trong một module:
+
+```powershell
+# Thay "real_estate" bằng module_key cần kiểm tra
+Select-String -Pattern 'html\[data-tenant-module=\"real_estate\"\](?!\:not)' `
+  -Path "src\app\globals.css" | Select-Object LineNumber, Line
+```
+
+Mọi dòng kết quả **đều là bug tiềm năng** — cần thêm `:not([data-tenant-brand-preset="..."])` nếu rule đó áp dụng màu mặc định của module.
+
+#### Pattern Fix Chuẩn
+
+```css
+/* ❌ SAI — áp dụng navy cho MỌI real_estate tenant dù chọn preset nào */
+html[data-tenant-module="real_estate"] .beauty-erp-sidebar {
+  background: linear-gradient(180deg, #0b1329 0%, #1e3a8a 100%) !important;
+}
+
+/* ✅ ĐÚNG — chỉ áp dụng khi KHÔNG có preset nào được chọn (tức luxury_navy default) */
+html[data-tenant-module="real_estate"]
+  :not([data-tenant-brand-preset="jade_wellness"])
+  :not([data-tenant-brand-preset="ocean_clean"])
+  :not([data-tenant-brand-preset="graphite_luxe"])
+  :not([data-tenant-brand-preset="bella_rose"]) .beauty-erp-sidebar {
+  background: linear-gradient(180deg, #0b1329 0%, #1e3a8a 100%) !important;
+}
+```
+
+#### Body Background Phải Có Rule Riêng Cho Từng Preset
+
+```css
+/* luxury_navy (default — không có preset attribute) */
+html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"])
+  :not([data-tenant-brand-preset="ocean_clean"])... body {
+  background-color: #f8fafc;
+  background-image: ..., rgba(30, 58, 138, 0.08); /* navy tint */
+}
+
+/* jade_wellness — KHÔNG được có navy tint */
+html[data-tenant-module="real_estate"][data-tenant-brand-preset="jade_wellness"] body {
+  background-color: #f0f7f5;
+  background-image: ..., rgba(7, 78, 68, 0.07); /* emerald tint */
+}
+
+/* ocean_clean */
+html[data-tenant-module="real_estate"][data-tenant-brand-preset="ocean_clean"] body {
+  background-color: #f0f4ff;
+  background-image: ..., rgba(30, 64, 175, 0.06); /* sky blue tint */
+}
+```
+
+#### Danh Sách Các Rule Phải Scope Khi Thêm Module/Preset Mới
+
+Khi thêm module mới với nhiều preset, bắt buộc scope **tất cả** các rule sau trong Block 2 mặc định:
+
+- [ ] CSS variables: `--primary`, `--primary-hover`, `--accent`, `--background`, `--border`, `--ring`
+- [ ] `body` — `background-color` + `background-image`
+- [ ] `.beauty-erp-sidebar` / `.beauty-erp-mobile-header` — background + border + box-shadow
+- [ ] `.beauty-erp-sidebar::before` — border decoration
+- [ ] `.beauty-erp-logo-mark` — background + border + color
+- [ ] `.beauty-erp-brand-script` / `.beauty-erp-brand-subtitle` — color + font
+- [ ] `.beauty-erp-nav-item` / `.beauty-erp-nav-item-active` — background + color
+- [ ] `.beauty-erp-profile-card` / `.beauty-erp-avatar` / `.beauty-erp-icon-button` — background + color
+- [ ] `[class*="bg-pink-"]` / `[class*="text-rose-"]` / `[class*="border-pink-"]` overrides
+- [ ] `.glass-pink` / `.luxury-card-pink` overrides
+- [ ] Dark mode: `html.dark[data-tenant-module="X"]` — tất cả các rule trên lặp lại cho dark mode
+
+#### Checklist Khi Thêm Preset Mới Cho Module Có Sẵn
+
+1. **Tìm unscoped selectors**: Chạy `Select-String` như trên, liệt kê hết
+2. **Thêm `:not()`**: Mỗi selector unscoped → thêm `:not([data-tenant-brand-preset="<new_preset>"])`
+3. **Thêm `body` rule**: Tạo rule body background với tông màu đúng của preset mới
+4. **Thêm utility overrides**: Tạo rule override `bg-pink-/rose-/border-` cho preset mới với màu phù hợp
+5. **Verify**: Chạy lại `Select-String` — không còn unscoped selector nào
+6. **Test chuyển preset**: Chọn preset mới → F5 → kiểm tra sidebar, body, nav-item-active, avatar
+7. **Test preset mặc định**: Đảm bảo preset cũ (luxury_navy) vẫn không thay đổi sau khi thêm `:not()` mới
+8. **Build**: `npm.cmd run build` phải pass trước khi commit
+
+#### Lỗi Đi Kèm Thường Gặp
+
+| Triệu chứng | Nguyên nhân | Cách kiểm tra |
+|-------------|-------------|---------------|
+| Chọn xanh lá nhưng sidebar vẫn xanh dương | Block 2 chưa có `:not()` cho preset mới | `Select-String` unscoped selectors |
+| CSS variables `--primary` vẫn là màu cũ | `html[data-tenant-module="X"] { --primary: ... }` chưa scope | DevTools → Computed → `--primary` |
+| Body background có tông màu lạ | Thiếu preset-specific body rule | DevTools → body `background-image` |
+| Preset hoạt động lần đầu, F5 reset về mặc định | `applyTenantBrandRuntime()` chưa được gọi sớm đủ hoặc `localStorage` lưu sai key | Console → `document.documentElement.dataset` |
+| Preset đúng màu nhưng active nav-item vẫn màu cũ | `.beauty-erp-nav-item-active` trong Block 2 chưa scope | Inspect nav item active → background value |
+
+
 ### Phase 5 - Demo Data Va Cleanup
 
 Demo tenant cho nganh moi bat buoc co:
@@ -553,6 +676,34 @@ Khi tu nay ve sau phat hien loi trong Beauty Spa hoac nganh moi, them vao bang n
 ```
 
 ## Lich Su Loi Moi
+
+### 2026-08-01 - Brand Preset Color Bleed (Preset Xanh Lá Hiển Thị Màu Navy)
+
+- **Module/tenant**: `real_estate` module — tất cả tenant dùng preset không phải `luxury_navy` (mặc định).
+- **Màn hình/luồng**: Trang Settings → Giao diện → chọn preset `jade_wellness` (xanh lá) hoặc `ocean_clean` → sidebar, body, nav-item-active vẫn hiển thị màu navy/xanh dương.
+- **Dấu hiệu**:
+  - Chọn preset xanh lá → menu sidebar vẫn xanh dương navy.
+  - F5 sau khi chọn preset → giữ nguyên preset nhưng màu vẫn sai.
+  - DevTools Computed → `background` của `.beauty-erp-sidebar` trỏ về `linear-gradient(...#1e3a8a...)` (navy) dù attribute `data-tenant-brand-preset="jade_wellness"` đã được set.
+- **Nguyên nhân gốc**:
+  - `globals.css` có **2 khối CSS** cho module `real_estate`:
+    - **Block 1** (~dòng 1070): preset-specific rules cho `jade_wellness`, `ocean_clean`, v.v. → được định nghĩa trước
+    - **Block 2** (~dòng 3407): rules mặc định module (navy/amber) không có `:not()` preset exclusion → xuất hiện SAU Block 1
+  - CSS waterfall: Block 2 ở cuối file luôn thắng Block 1 khi cùng specificity, kể cả khi cả hai dùng `!important`.
+  - Kết quả: user chọn `jade_wellness` nhưng Block 2 ghi đè về navy.
+- **Cách sửa**:
+  - Thêm `:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"])` vào TẤT CẢ selectors trong Block 2 không có preset scope.
+  - Thêm preset-specific `body` background rule cho từng preset với tông màu phù hợp (emerald, sky, neutral, pink).
+  - Thêm preset-specific `[class*="bg-pink-"]`/`[class*="text-rose-"]` overrides cho `jade_wellness` và `ocean_clean`.
+  - Scope dark mode Block 2 tương tự.
+  - Fix TypeScript: `ticket-resource-provider.ts` import 3 type không tồn tại (`AssignableResource`, `TypedResourceDefinition`, `WorkflowResource`) và register payload có field không thuộc `ResourceProviderManifest`.
+- **Test/guard đã thêm**:
+  - Manual: chọn từng preset → kiểm tra sidebar, body, nav-item-active, avatar.
+  - `npm.cmd run build` pass.
+- **Commit**: pending.
+- **Rủi ro còn lại**:
+  - Mỗi khi thêm **preset mới** cho bất kỳ module nào, bắt buộc thêm preset đó vào chain `:not()` của toàn bộ selectors unscoped trong Block 2 của module đó — xem checklist **Phase 4e**.
+  - Nếu thêm **module mới** với Block 2 nhưng quên scope → preset sẽ bị ghi đè tương tự. Chạy `Select-String` để phát hiện sớm.
 
 ### 2026-06-12 - Static analysis gate phai duoc xu ly co chu dich
 

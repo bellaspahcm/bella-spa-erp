@@ -32,6 +32,7 @@ import {
   type TenantModuleKey,
 } from '@/lib/business-rules/tenant-modules';
 import { cn } from '@/lib/utils';
+import { clearDashboardClientContextCache } from '@/lib/dashboard-client-context';
 
 const RUNTIME_BRAND_CACHE_KEY = 'bella.runtime.brand.v1';
 const SIDEBAR_BRAND_CACHE_KEY = 'bella.sidebar.brand.v2';
@@ -214,10 +215,10 @@ export default function AppearanceTab() {
   const loadTenantDisplayConfig = useCallback(async () => {
     setIsLoadingTenantConfig(true);
     try {
-      const tenant = await getCachedTenantSettings();
+      const tenant = await getTenantSettings();
       if (!tenant) return;
 
-      const nextModuleKey = getDefaultTenantModuleKey(tenant.enabled_modules, tenant.tenant_name);
+      const nextModuleKey = getDefaultTenantModuleKey(tenant.enabled_modules, tenant.name);
       const normalizedBrandTheme = normalizeTenantBrandThemeForModule(tenant.brand_theme, nextModuleKey);
       setTenantId(tenant.id);
       setBrandTheme(normalizedBrandTheme);
@@ -271,6 +272,7 @@ export default function AppearanceTab() {
       brand_theme: normalizeTenantBrandThemeForModule(updated, tenantModuleKey),
     }).then((result) => {
       if (result.success) {
+        clearDashboardClientContextCache();
         applyBrandThemePreview({
           tenantId,
           enabledModules,
@@ -317,6 +319,7 @@ export default function AppearanceTab() {
         return;
       }
 
+      clearDashboardClientContextCache();
       setBrandTheme(nextBrandTheme);
       setLogoUrl(nextBrandTheme.logoUrl);
       applyBrandThemePreview({

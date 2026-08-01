@@ -171,3 +171,31 @@ export interface TypedCapabilityProviderMap {
   permission?: CapabilityProviderFactory;
   rule?: CapabilityProviderFactory;
 }
+
+export interface AssigneeUser {
+  id: string;
+  name: string;
+  role?: string;
+}
+
+export interface ResourceProviderManifest {
+  resourceType: string;
+  slaMetadata?: {
+    stages: Array<{ stage: string; label: string; timeoutMinutes: number }>;
+    reminderBeforeMinutes: number;
+  };
+  workflowMetadata?: {
+    initialState: string;
+    terminalStates: string[];
+    transitions: Array<{
+      fromState: string;
+      toState: string;
+      actionCode: string;
+      label: string;
+      isTerminal?: boolean;
+    }>;
+  };
+  getEligibleAssignees?: (resource: ResourceRef) => AssigneeUser[];
+  getNextRotationAssignee?: (resource: ResourceRef, currentAssigneeId?: string) => AssigneeUser;
+  formatNotification?: (event: any) => { title: string; body: string };
+}

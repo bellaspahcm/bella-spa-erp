@@ -6,6 +6,7 @@ import { Lock, Save, ShieldAlert, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase-client";
 import { getTenantSettings, saveTenantSettings } from "@/services/tenant-actions";
+import { clearDashboardClientContextCache } from "@/lib/dashboard-client-context";
 
 const MODULES = [
   { id: "dashboard", label: "Tổng quan (Dashboard)" },
@@ -207,6 +208,7 @@ export default function PermissionsTab() {
       const res = await saveTenantSettings({ role_permissions: permissions });
       
       if (res.success) {
+        clearDashboardClientContextCache();
         toast.success("Đã lưu cấu hình phân quyền");
       } else {
         toast.error("Lỗi khi lưu: " + res.error);

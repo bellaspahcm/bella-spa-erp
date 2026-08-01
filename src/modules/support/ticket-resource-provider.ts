@@ -4,10 +4,7 @@
  */
 
 import {
-  AssignableResource,
-  TypedResourceDefinition,
   UniversalExecutionContext,
-  WorkflowResource,
 } from '@/platform/capability-platform/types';
 import { resourceRegistry } from '@/platform/capability-platform/resource-registry';
 import { resourceDBService } from '@/platform/capability-platform/resource-db-service';
@@ -34,7 +31,7 @@ export const TICKET_RESOURCE_TYPE = 'ticket';
 /**
  * 1. Define Support Ticket Resource Definition
  */
-export const ticketResourceDefinition: TypedResourceDefinition = {
+export const ticketResourceDefinition = {
   resourceType: TICKET_RESOURCE_TYPE,
   label: 'Customer Support Ticket',
   schemaVersion: '1.0.0',
@@ -110,9 +107,5 @@ export const ticketResourceDefinition: TypedResourceDefinition = {
 export function registerTicketResourceProvider(): void {
   resourceRegistry.register({
     resourceType: TICKET_RESOURCE_TYPE,
-    label: ticketResourceDefinition.label,
-    schemaVersion: ticketResourceDefinition.schemaVersion,
-    defaultVersionBinding: ticketResourceDefinition.defaultVersionBinding,
-    providers: ticketResourceDefinition.providers,
   });
 }

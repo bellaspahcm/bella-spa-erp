@@ -16,6 +16,7 @@ import { useState, useEffect } from 'react';
 import { Loader2, Save, DollarSign, Percent, Users, Clock, Coins } from 'lucide-react';
 import { toast } from 'sonner';
 import { saveTenantSettings, getTenantSettings } from '@/services/tenant-actions';
+import { clearDashboardClientContextCache } from '@/lib/dashboard-client-context';
 import { cn } from '@/lib/utils';
 import type { CommissionConfig } from '@/lib/business-rules/commission';
 import { DEFAULT_COMMISSION_CONFIG } from '@/lib/business-rules/commission';
@@ -122,8 +123,13 @@ export default function CommissionSettingsTab({ className }: CommissionSettingsT
         },
       };
 
-      await saveTenantSettings({ commission_config: commissionConfig as unknown as Json });
-      toast.success('Đã lưu cấu hình hoa hồng');
+      const res = await saveTenantSettings({ commission_config: commissionConfig as unknown as Json });
+      if (res.success) {
+        clearDashboardClientContextCache();
+        toast.success('Đã lưu cấu hình hoa hồng');
+      } else {
+        toast.error('Lỗi khi lưu cấu hình: ' + res.error);
+      }
     } catch (error) {
       console.error('Error saving commission config:', error);
       toast.error('Lỗi khi lưu cấu hình');

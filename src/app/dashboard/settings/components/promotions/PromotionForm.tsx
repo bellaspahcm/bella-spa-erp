@@ -19,7 +19,7 @@ export function PromotionForm({
   onChange,
   onSubmit,
 }: PromotionFormProps) {
-  const moduleKey = useTenantModuleKey();
+  const { tenantModuleKey: moduleKey } = useTenantModuleKey();
   
   const titlePlaceholder = moduleKey === 'real_estate' 
     ? 'VD: Mở bán đợt 1 căn hộ VIP'

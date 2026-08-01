@@ -103,6 +103,7 @@ const DEFAULT_SIDEBAR_BRAND: TenantBrandDisplay = {
   radiusStyle: 'soft',
   isBeautySpa: false,
   fontHeading: 'serif',
+  stylePreset: 'bella_rose',
 };
 const NEUTRAL_SIDEBAR_BRAND: TenantBrandDisplay = {
   ...DEFAULT_SIDEBAR_BRAND,
@@ -153,6 +154,7 @@ function toTenantBrandDisplay(parsed: CachedTenantBrandDisplay): TenantBrandDisp
     radiusStyle: parsed.radiusStyle,
     isBeautySpa: parsed.isBeautySpa,
     fontHeading: parsed.fontHeading ?? 'serif',
+    stylePreset: parsed.stylePreset ?? 'bella_rose',
   };
 }
 

@@ -140,7 +140,7 @@ export class RealEstateOrganizationTreeProvider implements OrganizationTreeProvi
 
   private getRepository() {
     // Falls back to local service mock if no repository service is injected in context
-    return this.context.services?.organizationRepository || RealEstateOrganizationService;
+    return (this.context.services?.organizationRepository as typeof RealEstateOrganizationService) || RealEstateOrganizationService;
   }
 
   async getRoot(): Promise<OrganizationUnit> {

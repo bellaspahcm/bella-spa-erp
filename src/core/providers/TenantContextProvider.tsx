@@ -86,7 +86,7 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
             setContext({
               tenantId: 'dev-tenant',
               tenantName: 'Bella Land (Dev)',
-              enabledModules: ['real_estate', 'beauty_spa', 'industrial_cleaning'],
+              enabledModules: ['real_estate', 'beauty_spa', 'cleaning'],
               subscriptionPlan: 'enterprise',
               featureFlags: {},
               settings: {},
@@ -112,7 +112,7 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
           setContext({
             tenantId: 'dev-tenant',
             tenantName: 'Bella Land (Dev)',
-            enabledModules: ['real_estate', 'beauty_spa', 'industrial_cleaning'],
+            enabledModules: ['real_estate', 'beauty_spa', 'cleaning'],
             subscriptionPlan: 'enterprise',
             featureFlags: {},
             settings: {},
