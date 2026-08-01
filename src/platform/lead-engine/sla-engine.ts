@@ -109,15 +109,15 @@ export class LeadSLAEngine {
    */
   public evaluateSLAStatus(lead: ManagedLead): SLAStatusDisplay {
     if (lead.state === 'converted') {
-      return { label: '✅ Đã chốt HĐ', badgeColor: 'emerald', remainingMinutes: 0, isBreached: false, isCompleted: true };
+      return { label: 'Đã chốt HĐ', badgeColor: 'emerald', remainingMinutes: 0, isBreached: false, isCompleted: true };
     }
     if (lead.state === 'lost' || lead.state === 'archived') {
-      return { label: '🔒 Đã đóng Lead', badgeColor: 'slate', remainingMinutes: 0, isBreached: false, isCompleted: true };
+      return { label: 'Đã đóng Lead', badgeColor: 'slate', remainingMinutes: 0, isBreached: false, isCompleted: true };
     }
 
     const timer = lead.activeSLATimer;
     if (!timer || timer.isCompleted) {
-      return { label: '⚪ Đã hoàn thành SLA', badgeColor: 'slate', remainingMinutes: 0, isBreached: false, isCompleted: true };
+      return { label: 'Đã hoàn thành SLA', badgeColor: 'slate', remainingMinutes: 0, isBreached: false, isCompleted: true };
     }
 
     const now = Date.now();
@@ -127,7 +127,7 @@ export class LeadSLAEngine {
 
     if (diffMinutes < 0) {
       return {
-        label: `⏰ Quá hạn ${stageLabel} (${Math.abs(diffMinutes)} ph)`,
+        label: `Quá hạn ${stageLabel} (${Math.abs(diffMinutes)} ph)`,
         badgeColor: 'red',
         remainingMinutes: diffMinutes,
         isBreached: true,
@@ -137,7 +137,7 @@ export class LeadSLAEngine {
 
     if (diffMinutes <= this.ruleEngine.getConfig().reminderBeforeMinutes) {
       return {
-        label: `⚠️ Sắp hết hạn ${stageLabel} (${diffMinutes} ph)`,
+        label: `Sắp hết hạn ${stageLabel} (${diffMinutes} ph)`,
         badgeColor: 'amber',
         remainingMinutes: diffMinutes,
         isBreached: false,
@@ -146,7 +146,7 @@ export class LeadSLAEngine {
     }
 
     return {
-      label: `⏳ ${stageLabel}: còn ${diffMinutes} ph`,
+      label: `${stageLabel}: còn ${diffMinutes} ph`,
       badgeColor: 'blue',
       remainingMinutes: diffMinutes,
       isBreached: false,

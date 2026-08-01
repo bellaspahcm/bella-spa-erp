@@ -1,12 +1,140 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   Megaphone, UserPlus, Phone, Mail, Clock,
   Filter, Search, ChevronRight,
   CheckCircle2, Zap, Settings, ArrowRightLeft, Eye, PhoneCall,
+  Globe, Users, Share2, MessageSquare, Calendar, Check, ChevronDown, Lock
 } from 'lucide-react';
 import { toast } from 'sonner';
+
+const FacebookIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
+    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+  </svg>
+);
+
+interface DropdownOption {
+  value: string;
+  label: string;
+  icon?: React.ReactNode;
+}
+
+interface PremiumDropdownProps {
+  options: DropdownOption[];
+  value: string;
+  onChange: (val: string) => void;
+  placeholder?: string;
+  className?: string;
+}
+
+const PremiumDropdown: React.FC<PremiumDropdownProps> = ({
+  options,
+  value,
+  onChange,
+  placeholder = 'Chọn...',
+  className = '',
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const selectedOption = options.find(o => o.value === value);
+
+  return (
+    <div className={`relative ${className}`} ref={dropdownRef}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className={`w-full flex items-center justify-between gap-2 px-3 py-2 bg-slate-50 hover:bg-slate-100/80 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition-all duration-200 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 text-left ${
+          isOpen ? 'ring-2 ring-violet-500/20 border-violet-500/50' : 'hover:border-violet-400'
+        }`}
+      >
+        <span className="truncate flex items-center gap-1.5">
+          {selectedOption?.icon}
+          {selectedOption ? selectedOption.label : placeholder}
+        </span>
+        <ChevronDown
+          className={`w-4 h-4 text-slate-500 shrink-0 transition-transform duration-200 ${
+            isOpen ? 'rotate-180 text-violet-600' : ''
+          }`}
+        />
+      </button>
+
+      {isOpen && (
+        <div className="absolute right-0 mt-1.5 w-full min-w-[200px] bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-1 duration-150">
+          <div className="max-h-60 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/50 scrollbar-thin">
+            {options.map((opt) => {
+              const isSelected = opt.value === value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => {
+                    onChange(opt.value);
+                    setIsOpen(false);
+                  }}
+                  className={`w-full flex items-center justify-between px-3 py-2.5 text-xs text-left transition-colors ${
+                    isSelected
+                      ? 'bg-violet-500/10 text-violet-600 dark:text-violet-400 font-bold'
+                      : 'hover:bg-slate-50 dark:hover:bg-slate-900/50 text-slate-700 dark:text-slate-300'
+                  }`}
+                >
+                  <span className="flex items-center gap-1.5 truncate">
+                    {opt.icon}
+                    {opt.label}
+                  </span>
+                  {isSelected && <Check className="w-3.5 h-3.5 text-violet-600 dark:text-violet-400 shrink-0" />}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const FILTER_STATE_OPTIONS: DropdownOption[] = [
+  { value: 'all', label: 'Tất cả trạng thái' },
+  { value: 'waiting_accept', label: 'Chờ nhận lead', icon: <Clock className="w-3.5 h-3.5 text-amber-500" /> },
+  { value: 'in_progress', label: 'Đang chăm sóc', icon: <Phone className="w-3.5 h-3.5 text-blue-500" /> },
+  { value: 'converted', label: 'Đã chốt HĐ', icon: <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> },
+  { value: 'lost', label: 'Thất bại / Đóng', icon: <Clock className="w-3.5 h-3.5 text-rose-500" /> },
+  { value: 'archived', label: 'Đã xoay hết vòng (Archived)', icon: <Lock className="w-3.5 h-3.5 text-slate-500" /> },
+];
+
+const SOURCE_OPTIONS: DropdownOption[] = [
+  { value: 'facebook', label: 'Facebook Ads', icon: <FacebookIcon className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" /> },
+  { value: 'zalo', label: 'Zalo OA / Personal', icon: <MessageSquare className="w-3.5 h-3.5 text-cyan-500" /> },
+  { value: 'referral', label: 'Người giới thiệu', icon: <Users className="w-3.5 h-3.5 text-teal-500" /> },
+  { value: 'website', label: 'Form Website', icon: <Globe className="w-3.5 h-3.5 text-indigo-500" /> },
+  { value: 'event', label: 'Sự kiện mở bán', icon: <Calendar className="w-3.5 h-3.5 text-rose-500" /> },
+];
+
+const PROJECT_OPTIONS: DropdownOption[] = [
+  { value: 'Elyse Island – Shophouse Marina', label: 'Elyse Island – Shophouse Marina' },
+  { value: 'Vinhomes Saigon Park', label: 'Vinhomes Saigon Park' },
+  { value: 'Bella Gold Tower', label: 'Bella Gold Tower' },
+];
 
 import {
   LeadEngineFacade,
@@ -142,7 +270,7 @@ const INITIAL_MANAGED_LEADS: ManagedLead[] = [
         eventType: 'lead_converted',
         actorId: 'sale-003',
         actorName: 'Lê Hoàng C',
-        description: '🎉 Chúc mừng! Lead đã chốt thành công Booking / Hợp đồng căn A1-301.',
+        description: 'Chúc mừng! Lead đã chốt thành công Booking / Hợp đồng căn A1-301.',
         timestamp: new Date().toISOString(),
       },
     ],
@@ -153,11 +281,29 @@ const INITIAL_MANAGED_LEADS: ManagedLead[] = [
 ];
 
 const SOURCE_LABELS: Record<string, string> = {
-  facebook: '📘 Facebook Ads',
-  zalo:     '💬 Zalo OA',
-  referral: '🤝 Người giới thiệu',
-  website:  '🌐 Website',
-  event:    '🎪 Sự kiện',
+  facebook: 'Facebook Ads',
+  zalo:     'Zalo OA',
+  referral: 'Người giới thiệu',
+  website:  'Website',
+  event:    'Sự kiện',
+};
+
+const getSourceIcon = (source: string) => {
+  const sizeClass = "w-3.5 h-3.5 shrink-0";
+  switch (source) {
+    case 'facebook':
+      return <FacebookIcon className={`${sizeClass} text-blue-600 dark:text-blue-400`} />;
+    case 'zalo':
+      return <MessageSquare className={`${sizeClass} text-cyan-500`} />;
+    case 'referral':
+      return <Users className={`${sizeClass} text-teal-500`} />;
+    case 'website':
+      return <Globe className={`${sizeClass} text-indigo-500`} />;
+    case 'event':
+      return <Calendar className={`${sizeClass} text-rose-500`} />;
+    default:
+      return <Globe className={`${sizeClass} text-slate-400`} />;
+  }
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -291,9 +437,9 @@ export default function RealEstateMarketingPage() {
         );
 
         if (updated.state === 'converted') {
-          toast.success(`🎉 Tuyệt vời! Lead ${lead.fullName} đã chốt Booking thành công!`);
+          toast.success(`Tuyệt vời! Lead ${lead.fullName} đã chốt Booking thành công!`);
         } else if (updated.rotationCount > lead.rotationCount) {
-          toast.warning(`🔄 Lead ${lead.fullName} đã tự động xoay sang Sale [${updated.currentSaleName}]!`);
+          toast.warning(`Lead ${lead.fullName} đã tự động xoay sang Sale [${updated.currentSaleName}]!`);
         } else {
           toast.info(`Đã lưu kết quả [${outcome}] cho Lead ${lead.fullName}.`);
         }
@@ -315,7 +461,7 @@ export default function RealEstateMarketingPage() {
             <span className="flex items-center justify-center w-9 h-9 rounded-xl bg-violet-100 dark:bg-violet-950/40">
               <Megaphone className="w-5 h-5 text-violet-600 dark:text-violet-400" />
             </span>
-            Marketing &amp; Lead Governance Subsystem
+            Marketing & Lead Governance Subsystem
           </h1>
           <p className="text-sm text-slate-500 mt-0.5">
             Phân phối Lead • SLA Engine • Auto Rotation • Timelines Audit Trail
@@ -345,7 +491,7 @@ export default function RealEstateMarketingPage() {
               }`}
             >
               <Settings className="w-3.5 h-3.5" />
-              Cấu Hình SLA &amp; Rules
+              Cấu Hình SLA & Rules
             </button>
           </div>
 
@@ -363,26 +509,55 @@ export default function RealEstateMarketingPage() {
       {activeTab === 'pipeline' && (
         <div className="space-y-6">
           {/* Stats Bar */}
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-            <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-              <p className="text-xs text-slate-500 font-semibold">Tổng Số Lead</p>
-              <p className="text-xl font-bold text-slate-900 dark:text-white mt-1">{stats.total}</p>
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+            <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800/80 shadow-sm flex items-center justify-between transition-all hover:shadow-md">
+              <div>
+                <p className="text-xs text-slate-500 font-semibold tracking-wide uppercase">Tổng Số Lead</p>
+                <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1.5">{stats.total}</p>
+              </div>
+              <div className="p-2.5 rounded-xl bg-violet-500/10 text-violet-600 dark:bg-violet-500/20 dark:text-violet-400">
+                <Megaphone className="w-5 h-5" />
+              </div>
             </div>
-            <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-amber-500/20 shadow-sm">
-              <p className="text-xs text-amber-600 font-semibold">⏳ Chờ Sale Nhận</p>
-              <p className="text-xl font-bold text-amber-600 mt-1">{stats.waiting}</p>
+
+            <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800/80 shadow-sm flex items-center justify-between transition-all hover:shadow-md">
+              <div>
+                <p className="text-xs text-slate-500 font-semibold tracking-wide uppercase">Chờ Sale Nhận</p>
+                <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1.5">{stats.waiting}</p>
+              </div>
+              <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400">
+                <Clock className="w-5 h-5" />
+              </div>
             </div>
-            <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-blue-500/20 shadow-sm">
-              <p className="text-xs text-blue-600 font-semibold">📞 Đang Chăm Sóc</p>
-              <p className="text-xl font-bold text-blue-600 mt-1">{stats.inProgress}</p>
+
+            <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800/80 shadow-sm flex items-center justify-between transition-all hover:shadow-md">
+              <div>
+                <p className="text-xs text-slate-500 font-semibold tracking-wide uppercase">Đang Chăm Sóc</p>
+                <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1.5">{stats.inProgress}</p>
+              </div>
+              <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400">
+                <Phone className="w-5 h-5" />
+              </div>
             </div>
-            <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-emerald-500/20 shadow-sm">
-              <p className="text-xs text-emerald-600 font-semibold">🎉 Đã Chốt HĐ (Booking)</p>
-              <p className="text-xl font-bold text-emerald-600 mt-1">{stats.converted}</p>
+
+            <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800/80 shadow-sm flex items-center justify-between transition-all hover:shadow-md">
+              <div>
+                <p className="text-xs text-slate-500 font-semibold tracking-wide uppercase">Đã Chốt HĐ (Booking)</p>
+                <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1.5">{stats.converted}</p>
+              </div>
+              <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
+                <CheckCircle2 className="w-5 h-5" />
+              </div>
             </div>
-            <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-purple-500/20 shadow-sm col-span-2 sm:col-span-1">
-              <p className="text-xs text-purple-600 font-semibold">🔄 Đã Xoay Vòng</p>
-              <p className="text-xl font-bold text-purple-600 mt-1">{stats.rotated}</p>
+
+            <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800/80 shadow-sm col-span-2 sm:col-span-1 flex items-center justify-between transition-all hover:shadow-md">
+              <div>
+                <p className="text-xs text-slate-500 font-semibold tracking-wide uppercase">Đã Xoay Vòng</p>
+                <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1.5">{stats.rotated}</p>
+              </div>
+              <div className="p-2.5 rounded-xl bg-purple-500/10 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400">
+                <ArrowRightLeft className="w-5 h-5" />
+              </div>
             </div>
           </div>
 
@@ -400,18 +575,12 @@ export default function RealEstateMarketingPage() {
             </div>
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <Filter className="w-4 h-4 text-slate-400" />
-              <select
+              <PremiumDropdown
+                options={FILTER_STATE_OPTIONS}
                 value={filterState}
-                onChange={e => setFilterState(e.target.value)}
-                className="px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/30 font-medium"
-              >
-                <option value="all">Tất cả trạng thái</option>
-                <option value="waiting_accept">⏳ Chờ nhận lead</option>
-                <option value="in_progress">📞 Đang chăm sóc</option>
-                <option value="converted">🎉 Đã chốt HĐ</option>
-                <option value="lost">❌ Thất bại / Đóng</option>
-                <option value="archived">🔒 Đã xoay hết vòng (Archived)</option>
-              </select>
+                onChange={setFilterState}
+                className="min-w-[180px]"
+              />
             </div>
           </div>
 
@@ -444,9 +613,10 @@ export default function RealEstateMarketingPage() {
                       </td>
                       <td className="p-4">
                         <p className="font-medium text-slate-800 dark:text-slate-200">{lead.interestedProject || 'Chưa chọn'}</p>
-                        <span className="inline-block mt-0.5 text-[11px] text-slate-400">
-                          {SOURCE_LABELS[lead.source] || lead.source}
-                        </span>
+                        <div className="flex items-center gap-1.5 mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                          {getSourceIcon(lead.source)}
+                          <span>{SOURCE_LABELS[lead.source] || lead.source}</span>
+                        </div>
                       </td>
                       <td className="p-4">
                         <div className="flex items-center gap-1.5 font-semibold text-violet-600 dark:text-violet-400">
@@ -457,15 +627,15 @@ export default function RealEstateMarketingPage() {
                         <LeadSLABadge lead={lead} slaEngine={leadEngine.slaEngine} />
                       </td>
                       <td className="p-4 font-semibold">
-                        <span className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded-md text-slate-700 dark:text-slate-300">
+                        <span className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded-md text-slate-700 dark:text-slate-300 whitespace-nowrap">
                           {lead.currentOutcome}
                         </span>
                       </td>
-                      <td className="p-4 text-right space-x-2">
+                      <td className="p-4 text-right space-x-2 whitespace-nowrap">
                         {lead.state === 'waiting_accept' && (
                           <button
                             onClick={() => handleAcceptLead(lead.id)}
-                            className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg transition active:scale-95 inline-flex items-center gap-1"
+                            className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg transition active:scale-95 inline-flex items-center gap-1 whitespace-nowrap"
                           >
                             <CheckCircle2 className="w-3.5 h-3.5" />
                             Nhận Lead
@@ -474,7 +644,7 @@ export default function RealEstateMarketingPage() {
                         {lead.state === 'in_progress' && (
                           <button
                             onClick={() => setActionLead(lead)}
-                            className="px-2.5 py-1.5 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-lg transition active:scale-95 inline-flex items-center gap-1"
+                            className="px-2.5 py-1.5 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-lg transition active:scale-95 inline-flex items-center gap-1 whitespace-nowrap"
                           >
                             <PhoneCall className="w-3.5 h-3.5" />
                             Chăm Sóc
@@ -482,7 +652,7 @@ export default function RealEstateMarketingPage() {
                         )}
                         <button
                           onClick={() => setTimelineLead(lead)}
-                          className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium rounded-lg transition inline-flex items-center gap-1"
+                          className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium rounded-lg transition inline-flex items-center gap-1 whitespace-nowrap"
                         >
                           <Eye className="w-3.5 h-3.5 text-slate-500" />
                           Timeline
@@ -562,32 +732,24 @@ export default function RealEstateMarketingPage() {
                 </div>
                 <div>
                   <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Nguồn Lead</label>
-                  <select
+                  <PremiumDropdown
+                    options={SOURCE_OPTIONS}
                     value={newLead.source}
-                    onChange={e => setNewLead({ ...newLead, source: e.target.value })}
-                    className="w-full mt-1 px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/30"
-                  >
-                    <option value="facebook">📘 Facebook Ads</option>
-                    <option value="zalo">💬 Zalo OA / Personal</option>
-                    <option value="referral">🤝 Người giới thiệu</option>
-                    <option value="website">🌐 Form Website</option>
-                    <option value="event">🎪 Sự kiện mở bán</option>
-                  </select>
+                    onChange={val => setNewLead({ ...newLead, source: val })}
+                    className="mt-1"
+                  />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Dự Án Quan Tâm</label>
-                  <select
+                  <PremiumDropdown
+                    options={PROJECT_OPTIONS}
                     value={newLead.interestedProject}
-                    onChange={e => setNewLead({ ...newLead, interestedProject: e.target.value })}
-                    className="w-full mt-1 px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/30"
-                  >
-                    <option value="Elyse Island – Shophouse Marina">Elyse Island – Shophouse Marina</option>
-                    <option value="Vinhomes Saigon Park">Vinhomes Saigon Park</option>
-                    <option value="Bella Gold Tower">Bella Gold Tower</option>
-                  </select>
+                    onChange={val => setNewLead({ ...newLead, interestedProject: val })}
+                    className="mt-1"
+                  />
                 </div>
                 <div>
                   <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Ngân Sách Dự Kiến</label>
