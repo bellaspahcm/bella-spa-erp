@@ -493,9 +493,10 @@ export function RevenueBreakdownChart({ data, height }: { data: RevenueBreakdown
               nameKey="source"
               cx="50%"
               cy="50%"
-              innerRadius="64%"
-              outerRadius="88%"
-              paddingAngle={4}
+              innerRadius="66%"
+              outerRadius="86%"
+              cornerRadius={8}
+              paddingAngle={3}
               label={false}
             >
               {data.map((_, i) => (
