@@ -15,11 +15,19 @@
  *
  * INVARIANT: Foundation must NEVER import from Capabilities, Modules, or AI layers.
  *
- * Current Phase 1.1 — Contracts only (no implementations yet).
- * Implementations will be registered via registerFoundation() in Phase 1.2+.
- *
  * @see src/foundation/contracts/registry.ts for bootstrap instructions
+ * @see src/foundation/testing/createTestFoundation.ts for test setup
  */
 
-// Public API
+// ── Contracts (interfaces) — import from here in all production code ──────────
 export * from './contracts';
+
+// ── InMemory implementations — for testing only ───────────────────────────────
+// Production code should use Supabase implementations (Phase 1.3)
+export { InMemoryOrgProvider } from './organization';
+export type { OrgSeedData } from './organization';
+
+export { InMemoryPeopleProvider } from './people';
+export type { PeopleSeedData, PersonSeedEntry } from './people';
+
+export { InMemoryAssignmentProvider } from './assignment';
