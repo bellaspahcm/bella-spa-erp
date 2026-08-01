@@ -185,7 +185,7 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
 
     const { data: tenantData, error: tenantError } = await supabase
       .from('tenants')
-      .select('salary_config, commission_config')
+      .select('salary_config, commission_config, enabled_modules')
       .eq('id', tenantId)
       .single();
     if (tenantError) {
@@ -226,22 +226,57 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
       }
     }
 
-    const ktvQuery = supabase
-      .from('users')
-      .select('id, full_name, role, base_salary, hire_date, resignation_date, status, position_tier')
-      .eq('role', 'ktv')
-      .eq('tenant_id', tenantId);
+    const { getDefaultTenantModuleKey } = await import('@/lib/business-rules/tenant-modules');
+    const moduleKey = getDefaultTenantModuleKey(tenantData?.enabled_modules);
 
-    // If current user is KTV, they can only see their own data
-    if (currentUser?.role?.toLowerCase() === 'ktv') {
-      ktvQuery.eq('id', currentUser.id);
-    }
+    let rawKtvs: KtvUserData[] = [];
+    if (moduleKey === 'real_estate') {
+      const { data: hrSummary, error: hrError } = await (supabase as any).rpc(
+        'get_hr_employee_summary',
+        { p_tenant_id: tenantId, p_status: 'active' }
+      );
+      if (hrError) {
+        throw new Error(`[getSalaryData] get_hr_employee_summary failed: ${hrError.message}`);
+      }
+      
+      const hrSummaryMapped: KtvUserData[] = (hrSummary || []).map((row: any) => ({
+        id: row.person_id,
+        full_name: row.display_name,
+        role: 'ktv',
+        base_salary: row.base_salary ? Number(row.base_salary) : 6000000,
+        hire_date: row.hire_date,
+        resignation_date: null,
+        status: 'active',
+        position_tier: (row.position_title?.toLowerCase().includes('lead') || row.position_title?.toLowerCase().includes('trưởng phòng')
+          ? 'lead'
+          : row.position_title?.toLowerCase().includes('senior') || row.position_title?.toLowerCase().includes('cao cấp')
+            ? 'senior'
+            : 'junior') as 'lead' | 'senior' | 'junior'
+      }));
 
-    const { data: ktvs, error: ktvsError } = await ktvQuery;
-    if (ktvsError) {
-      throw new Error(`[getSalaryData] users query failed: ${ktvsError.message}`);
+      if (currentUser?.role?.toLowerCase() === 'ktv') {
+        rawKtvs = hrSummaryMapped.filter((ktv: KtvUserData) => ktv.id === currentUser.id);
+      } else {
+        rawKtvs = hrSummaryMapped;
+      }
+    } else {
+      const ktvQuery = supabase
+        .from('users')
+        .select('id, full_name, role, base_salary, hire_date, resignation_date, status, position_tier')
+        .eq('role', 'ktv')
+        .eq('tenant_id', tenantId);
+
+      // If current user is KTV, they can only see their own data
+      if (currentUser?.role?.toLowerCase() === 'ktv') {
+        ktvQuery.eq('id', currentUser.id);
+      }
+
+      const { data: ktvs, error: ktvsError } = await ktvQuery;
+      if (ktvsError) {
+        throw new Error(`[getSalaryData] users query failed: ${ktvsError.message}`);
+      }
+      rawKtvs = (ktvs || []) as KtvUserData[];
     }
-    const rawKtvs = (ktvs || []) as KtvUserData[];
 
     const startOfMonthStr = currentMonthYear;
     const endOfMonthStr = getLocalDateString(new Date(now.getFullYear(), now.getMonth() + 1, 1));
@@ -597,22 +632,57 @@ export async function getKtvSessionMatrix(): Promise<KtvSessionMatrix> {
   
   try {
     // 1. Fetch all KTVs
-    const ktvQuery = supabase
-      .from('users')
-      .select('id, full_name, resignation_date')
-      .eq('role', 'ktv')
-      .eq('tenant_id', tenantId);
-
-    if (currentUser?.role?.toLowerCase() === 'ktv') {
-      ktvQuery.eq('id', currentUser.id);
+    const { data: tenantData, error: tenantError } = await supabase
+      .from('tenants')
+      .select('enabled_modules')
+      .eq('id', tenantId)
+      .single();
+    if (tenantError) {
+      throw new Error(`getKtvSessionMatrix tenants query failed: ${tenantError.message}`);
     }
 
-    const { data: ktvs, error: ktvsError } = await ktvQuery;
-    if (ktvsError) {
-      throw new Error(`getKtvSessionMatrix users query failed: ${ktvsError.message}`);
-    }
+    const { getDefaultTenantModuleKey } = await import('@/lib/business-rules/tenant-modules');
+    const moduleKey = getDefaultTenantModuleKey(tenantData?.enabled_modules);
 
-    const rawKtvs = (ktvs || []) as MatrixKtvUser[];
+    let rawKtvs: MatrixKtvUser[] = [];
+    if (moduleKey === 'real_estate') {
+      const { data: hrSummary, error: hrError } = await (supabase as any).rpc(
+        'get_hr_employee_summary',
+        { p_tenant_id: tenantId, p_status: 'active' }
+      );
+      if (hrError) {
+        throw new Error(`getKtvSessionMatrix get_hr_employee_summary failed: ${hrError.message}`);
+      }
+      
+      const hrSummaryMapped = (hrSummary || []).map((row: any) => ({
+        id: row.person_id,
+        full_name: row.display_name,
+        resignation_date: null
+      }));
+
+      if (currentUser?.role?.toLowerCase() === 'ktv') {
+        rawKtvs = hrSummaryMapped.filter((ktv: any) => ktv.id === currentUser.id);
+      } else {
+        rawKtvs = hrSummaryMapped;
+      }
+    } else {
+      const ktvQuery = supabase
+        .from('users')
+        .select('id, full_name, resignation_date')
+        .eq('role', 'ktv')
+        .eq('tenant_id', tenantId);
+
+      if (currentUser?.role?.toLowerCase() === 'ktv') {
+        ktvQuery.eq('id', currentUser.id);
+      }
+
+      const { data: ktvs, error: ktvsError } = await ktvQuery;
+      if (ktvsError) {
+        throw new Error(`getKtvSessionMatrix users query failed: ${ktvsError.message}`);
+      }
+
+      rawKtvs = (ktvs || []) as MatrixKtvUser[];
+    }
 
     const now = new Date();
     const currentMonthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;

@@ -15,8 +15,11 @@ import {
   fetchInvestorsAction,
   addInvestorInteractionAction,
   updateInvestorStatusAction,
+  createInvestorAction,
   type InvestorRecord,
 } from "@/modules/real_estate/actions/investorActions";
+
+import { PremiumSelect } from "@/components/ui/PremiumSelect";
 
 function fmtBudget(min: number, max: number) {
   const f = (n: number) => n >= 1e9 ? `${(n / 1e9).toFixed(1)} tỷ` : `${(n / 1e6).toFixed(0)} triệu`;
@@ -286,6 +289,56 @@ export default function RealEstateCustomersPage() {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
 
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [cccd, setCccd] = useState("");
+  const [budgetMin, setBudgetMin] = useState(2000000000);
+  const [budgetMax, setBudgetMax] = useState(5000000000);
+  const [source, setSource] = useState<InvestorRecord["source"]>("facebook");
+  const [saleOwner, setSaleOwner] = useState("Nguyễn Văn Minh");
+  const [interestedProjects, setInterestedProjects] = useState<string[]>(["Bella Residences"]);
+  const [note, setNote] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!fullName || !phone || !email || !saleOwner) {
+      toast.error("Vui lòng nhập đầy đủ các trường bắt buộc!");
+      return;
+    }
+    setSubmitting(true);
+    const res = await createInvestorAction({
+      fullName,
+      phone,
+      email,
+      cccd,
+      budgetMin,
+      budgetMax,
+      source,
+      saleOwner,
+      interestedProjects,
+      note,
+    });
+    setSubmitting(false);
+    if (res.success) {
+      toast.success("✅ Thêm khách hàng mới thành công!");
+      setIsModalOpen(false);
+      // Reset form
+      setFullName("");
+      setPhone("");
+      setEmail("");
+      setCccd("");
+      setBudgetMin(2000000000);
+      setBudgetMax(5000000000);
+      setNote("");
+      await load();
+    } else {
+      toast.error(res.error ?? "Không thể thêm khách hàng");
+    }
+  };
+
   const load = useCallback(async () => {
     setLoading(true);
     const res = await fetchInvestorsAction();
@@ -347,7 +400,10 @@ export default function RealEstateCustomersPage() {
             Hồ sơ 360° nhà đầu tư, hành trình khách hàng và lịch sử tương tác
           </p>
         </div>
-        <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm">
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm"
+        >
           <Plus className="w-4 h-4" />
           Thêm Khách Hàng
         </button>
@@ -420,6 +476,234 @@ export default function RealEstateCustomersPage() {
           ))}
         </div>
       )}
+
+      {/* ─ Create Investor Modal ─ */}
+      <AnimatePresence>
+        {isModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsModalOpen(false)}
+              className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
+            />
+
+            {/* Modal Content */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.2 }}
+              className="relative w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-2xl z-10 flex flex-col max-h-[90vh]"
+            >
+              {/* Header */}
+              <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
+                  <Users className="w-5 h-5 text-blue-500" />
+                  Thêm Khách Hàng Mới
+                </h3>
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                >
+                  <XCircle className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Form Body */}
+              <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Họ Và Tên <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Nguyễn Văn B"
+                      value={fullName}
+                      onChange={e => setFullName(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Số Điện Thoại <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="0912 345 678"
+                      value={phone}
+                      onChange={e => setPhone(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Email <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="khachhang@gmail.com"
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Số CCCD/Hộ Chiếu
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="079080012345"
+                      value={cccd}
+                      onChange={e => setCccd(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Ngân Sách Tối Thiểu (VNĐ)
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min={0}
+                      value={budgetMin}
+                      onChange={e => setBudgetMin(Number(e.target.value))}
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Ngân Sách Tối Đa (VNĐ)
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min={0}
+                      value={budgetMax}
+                      onChange={e => setBudgetMax(Number(e.target.value))}
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Nguồn Khách Hàng
+                    </label>
+                    <PremiumSelect
+                      options={[
+                        { value: "facebook", label: "Facebook Ads" },
+                        { value: "zalo", label: "Zalo OA" },
+                        { value: "referral", label: "Giới Thiệu" },
+                        { value: "website", label: "Website" },
+                        { value: "event", label: "Sự Kiện" },
+                        { value: "cold_call", label: "Telesale" },
+                      ]}
+                      value={source}
+                      onChange={(val) => setSource(val as any)}
+                      buttonClassName="h-9 py-0 px-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-normal text-slate-900 dark:text-white hover:bg-slate-100/50 dark:hover:bg-slate-900/50 shadow-none focus:border-blue-500/50 focus:ring-0 focus:ring-offset-0"
+                      dropdownClassName="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-xl rounded-xl py-1"
+                      itemClassName="px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm font-normal transition-colors"
+                      selectedItemClassName="bg-blue-600/10 text-blue-600 dark:text-blue-400 font-semibold px-4 py-2 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Dự Án Quan Tâm
+                    </label>
+                    <select
+                      multiple
+                      value={interestedProjects}
+                      onChange={e => {
+                        const values = Array.from(e.target.selectedOptions, option => option.value);
+                        setInterestedProjects(values);
+                      }}
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:border-blue-500 h-20"
+                    >
+                      <option value="Bella Residences">Bella Residences</option>
+                      <option value="Bella Premium">Bella Premium</option>
+                      <option value="Bella Sky">Bella Sky</option>
+                    </select>
+                    <p className="text-[10px] text-slate-400">Giữ Ctrl / Command để chọn nhiều dự án</p>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    Chuyên Viên Chăm Sóc (Sale) <span className="text-rose-500">*</span>
+                  </label>
+                  <PremiumSelect
+                    options={[
+                      { value: "Nguyễn Văn Minh", label: "Nguyễn Văn Minh" },
+                      { value: "Trần Thị Anh", label: "Trần Thị Anh" },
+                      { value: "Lê Quốc Binh", label: "Lê Quốc Binh" },
+                      { value: "Phạm Thị Cam", label: "Phạm Thị Cam" },
+                      { value: "Đỗ Hải Đăng", label: "Đỗ Hải Đăng" },
+                    ]}
+                    value={saleOwner}
+                    onChange={setSaleOwner}
+                    buttonClassName="h-9 py-0 px-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-normal text-slate-900 dark:text-white hover:bg-slate-100/50 dark:hover:bg-slate-900/50 shadow-none focus:border-blue-500/50 focus:ring-0 focus:ring-offset-0"
+                    dropdownClassName="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-xl rounded-xl py-1"
+                    itemClassName="px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm font-normal transition-colors"
+                    selectedItemClassName="bg-blue-600/10 text-blue-600 dark:text-blue-400 font-semibold px-4 py-2 text-sm"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    Ghi Chú Nhu Cầu
+                  </label>
+                  <textarea
+                    rows={2}
+                    placeholder="VD: Cần tìm tầng cao view sông..."
+                    value={note}
+                    onChange={e => setNote(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:border-blue-500 resize-none"
+                  />
+                </div>
+
+                {/* Footer buttons */}
+                <div className="flex gap-3 justify-end pt-4 border-t border-slate-100 dark:border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(false)}
+                    className="px-4 py-2 text-sm font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl transition-colors"
+                  >
+                    Hủy bỏ
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="px-5 py-2 text-sm font-bold bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl transition-colors flex items-center gap-1.5"
+                  >
+                    {submitting ? (
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Plus className="w-4 h-4" />
+                    )}
+                    Thêm Khách Hàng
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { PremiumSelect } from "@/components/ui/PremiumSelect";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 import {
   FileText, Search, Download, Eye, Clock,
   CheckCircle2, AlertCircle, XCircle, FileSignature,
-  Stamp, Send, Files, Filter, PenLine
+  Stamp, Send, Files, Filter, PenLine, Plus, X
 } from "lucide-react";
 
 const DOC_STATUS = {
@@ -53,11 +54,55 @@ function StatusBadge({ status }: { status: DocStatus }) {
 }
 
 export default function DocumentsPage() {
+  const [docs, setDocs] = useState(MOCK_DOCS);
   const [search, setSearch]           = useState("");
   const [typeFilter, setTypeFilter]   = useState("Tất cả");
   const [statusFilter, setStatusFilter] = useState<DocStatus | "all">("all");
 
-  const filtered = MOCK_DOCS.filter(d => {
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newDoc, setNewDoc] = useState({
+    name: "",
+    type: "Hợp đồng mua bán",
+    project: "The Grand Tower",
+    status: "draft" as DocStatus,
+    date: new Date().toISOString().split("T")[0],
+  });
+
+  const handleCreateDoc = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newDoc.name.trim()) {
+      toast.error("Vui lòng nhập tên tài liệu!");
+      return;
+    }
+
+    const docId = `D${String(docs.length + 1).padStart(3, "0")}`;
+    const docToAdd = {
+      id: docId,
+      name: newDoc.name.trim(),
+      type: newDoc.type,
+      project: newDoc.project,
+      status: newDoc.status,
+      date: newDoc.date,
+    };
+
+    setDocs([docToAdd, ...docs]);
+    toast.success(`Đã tạo tài liệu "${docToAdd.name}" thành công!`);
+    setIsModalOpen(false);
+    setNewDoc({
+      name: "",
+      type: "Hợp đồng mua bán",
+      project: "The Grand Tower",
+      status: "draft",
+      date: new Date().toISOString().split("T")[0],
+    });
+  };
+
+  const handleUpdateStatus = (id: string, newStatus: DocStatus) => {
+    setDocs(prev => prev.map(d => d.id === id ? { ...d, status: newStatus } : d));
+  };
+
+  const filtered = docs.filter(d => {
     const matchSearch = d.name.toLowerCase().includes(search.toLowerCase()) ||
       d.project.toLowerCase().includes(search.toLowerCase());
     const matchType   = typeFilter === "Tất cả" || d.type === typeFilter;
@@ -66,10 +111,10 @@ export default function DocumentsPage() {
   });
 
   const counts = {
-    total:   MOCK_DOCS.length,
-    signed:  MOCK_DOCS.filter(d => d.status === "signed").length,
-    pending: MOCK_DOCS.filter(d => d.status === "pending_review").length,
-    draft:   MOCK_DOCS.filter(d => d.status === "draft").length,
+    total:   docs.length,
+    signed:  docs.filter(d => d.status === "signed").length,
+    pending: docs.filter(d => d.status === "pending_review").length,
+    draft:   docs.filter(d => d.status === "draft").length,
   };
 
   const kpis = [
@@ -94,7 +139,10 @@ export default function DocumentsPage() {
             Quản lý hợp đồng, đặt cọc và chứng từ pháp lý
           </p>
         </div>
-        <button className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-black px-5 py-2.5 rounded-xl font-bold text-sm transition-all self-start shadow-sm">
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-black px-5 py-2.5 rounded-xl font-bold text-sm transition-all self-start shadow-sm active:scale-[0.98]"
+        >
           <FileText className="w-4 h-4" />
           Tạo Tài Liệu Mới
         </button>
@@ -188,12 +236,14 @@ export default function DocumentsPage() {
                   <td className="px-5 py-4">
                     <div className="flex items-center justify-end gap-2">
                       <button
+                        onClick={() => toast.success(`Đang xem chi tiết tài liệu: ${doc.name}`)}
                         className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
                         title="Xem"
                       >
                         <Eye className="w-4 h-4" />
                       </button>
                       <button
+                        onClick={() => toast.success(`Đang tải xuống tài liệu: ${doc.name}`)}
                         className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
                         title="Tải xuống"
                       >
@@ -201,6 +251,10 @@ export default function DocumentsPage() {
                       </button>
                       {doc.status === "approved" && (
                         <button
+                          onClick={() => {
+                            handleUpdateStatus(doc.id, "signed");
+                            toast.success(`Ký số thành công tài liệu: ${doc.name}`);
+                          }}
                           className="p-1.5 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors text-blue-400 hover:text-blue-600 dark:hover:text-blue-300"
                           title="Ký số"
                         >
@@ -209,6 +263,10 @@ export default function DocumentsPage() {
                       )}
                       {doc.status === "draft" && (
                         <button
+                          onClick={() => {
+                            handleUpdateStatus(doc.id, "pending_review");
+                            toast.success(`Đã gửi yêu cầu duyệt tài liệu: ${doc.name}`);
+                          }}
                           className="p-1.5 hover:bg-amber-50 dark:hover:bg-amber-900/30 rounded-lg transition-colors text-amber-500 hover:text-amber-700 dark:hover:text-amber-300"
                           title="Gửi duyệt"
                         >
@@ -230,6 +288,144 @@ export default function DocumentsPage() {
           </table>
         </div>
       </div>
+
+      {/* ─ Create Document Modal ─ */}
+      <AnimatePresence>
+        {isModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsModalOpen(false)}
+              className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
+            />
+
+            {/* Modal Content */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.2 }}
+              className="relative w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-2xl z-10 flex flex-col max-h-[90vh]"
+            >
+              {/* Header */}
+              <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-amber-500" />
+                  Tạo Tài Liệu Pháp Lý Mới
+                </h3>
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Form Body */}
+              <form onSubmit={handleCreateDoc} className="flex-1 overflow-y-auto p-6 space-y-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    Tên Tài Liệu <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    required
+                    value={newDoc.name}
+                    onChange={e => setNewDoc(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="VD: HĐMB - CH009 - Nguyễn Thị Hạnh"
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-amber-500/50"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Loại Tài Liệu
+                    </label>
+                    <PremiumSelect
+                      options={DOC_TYPES.slice(1).map(t => ({ value: t, label: t }))}
+                      value={newDoc.type}
+                      onChange={val => setNewDoc(prev => ({ ...prev, type: val }))}
+                      className="w-full"
+                      buttonClassName="w-full py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-800 text-sm bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:border-amber-500 focus:ring-amber-500/10 active:scale-100 font-medium"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Dự Án Liên Quan
+                    </label>
+                    <PremiumSelect
+                      options={[
+                        { value: "The Grand Tower", label: "The Grand Tower" },
+                        { value: "Riverside Heights", label: "Riverside Heights" },
+                        { value: "Sunrise Villa", label: "Sunrise Villa" },
+                      ]}
+                      value={newDoc.project}
+                      onChange={val => setNewDoc(prev => ({ ...prev, project: val }))}
+                      className="w-full"
+                      buttonClassName="w-full py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-800 text-sm bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:border-amber-500 focus:ring-amber-500/10 active:scale-100 font-medium"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Trạng Thái Ban Đầu
+                    </label>
+                    <PremiumSelect
+                      options={[
+                        { value: "draft", label: "Nháp" },
+                        { value: "pending_review", label: "Đang duyệt" },
+                        { value: "approved", label: "Đã duyệt" },
+                      ]}
+                      value={newDoc.status}
+                      onChange={val => setNewDoc(prev => ({ ...prev, status: val as DocStatus }))}
+                      className="w-full"
+                      buttonClassName="w-full py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-800 text-sm bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:border-amber-500 focus:ring-amber-500/10 active:scale-100 font-medium"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Ngày Lập
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={newDoc.date}
+                      onChange={e => setNewDoc(prev => ({ ...prev, date: e.target.value }))}
+                      className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm text-slate-900 dark:text-white focus:outline-none focus:border-amber-500/50"
+                    />
+                  </div>
+                </div>
+
+                {/* Footer Actions */}
+                <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-3 mt-6">
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(false)}
+                    className="px-4 py-2.5 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 text-sm font-bold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-black text-sm font-bold rounded-xl shadow-sm transition-all flex items-center gap-1.5"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Tạo Tài Liệu
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
+

@@ -27,10 +27,18 @@ import {
   Network,
   Layers,
   Search,
+  X,
+  Mail,
+  Phone,
+  Calendar,
+  TrendingUp,
+  MessageSquare,
 } from 'lucide-react';
 import { getAllInScopeAction } from '@/modules/real_estate/actions/leadAssignmentActions';
 import { TenantContextContext } from '@/core/hooks/useTenantContext';
 import type { AssignableReference } from '@/foundation';
+import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -236,9 +244,41 @@ function OrgNode({
 
 // ─── Member Card ──────────────────────────────────────────────────────────────
 
-function MemberCard({ member }: { member: AssignableReference }) {
+function getMemberProfile(member: AssignableReference) {
+  const slug = member.displayName
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[đĐ]/g, "d")
+    .replace(/\s+/g, ".")
+    .replace(/[^a-z.]/g, "");
+
+  const email = `${slug}@bellareal.vn`;
+  
+  const lastDigits = (member.id.charCodeAt(0) || 0) + (member.displayName.length * 7);
+  const phone = `0987.654.${String(100 + (lastDigits % 900))}`;
+  
+  const joinedDate = `15/03/202${4 + (member.displayName.length % 3)}`;
+  const leadsCount = 12 + (member.displayName.length % 20);
+  const conversionRate = 15 + (member.displayName.length % 15);
+  const status = member.displayName.length % 2 === 0 ? "Đang hoạt động" : "Họp ngoài";
+
+  return {
+    email,
+    phone,
+    joinedDate,
+    leadsCount,
+    conversionRate,
+    status,
+  };
+}
+
+function MemberCard({ member, onClick }: { member: AssignableReference; onClick?: () => void }) {
   return (
-    <div className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-primary/30 hover:shadow-sm transition-all duration-150 group">
+    <button
+      onClick={onClick}
+      className="w-full flex items-center gap-3 p-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-primary/30 hover:shadow-sm transition-all duration-150 group text-left focus:outline-none"
+    >
       <div className="flex-shrink-0 w-9 h-9 rounded-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center text-primary font-bold text-sm border border-primary/20">
         {getInitials(member.displayName)}
       </div>
@@ -253,7 +293,7 @@ function MemberCard({ member }: { member: AssignableReference }) {
       <span className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
         <ChevronRight className="w-4 h-4 text-slate-400" />
       </span>
-    </div>
+    </button>
   );
 }
 
@@ -264,6 +304,7 @@ export function OrgChartPage() {
   const tenantId = tenantCtx?.tenantId ?? 'real_estate';
 
   const [selectedUnit, setSelectedUnit] = useState<OrgUnit | null>(null);
+  const [selectedMember, setSelectedMember] = useState<AssignableReference | null>(null);
   const [members, setMembers] = useState<AssignableReference[]>([]);
   const [isMembersLoading, setIsMembersLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -456,7 +497,7 @@ export function OrgChartPage() {
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {group.map(m => (
-                          <MemberCard key={m.id} member={m} />
+                          <MemberCard key={m.id} member={m} onClick={() => setSelectedMember(m)} />
                         ))}
                       </div>
                     </div>
@@ -467,6 +508,139 @@ export function OrgChartPage() {
           )}
         </div>
       </div>
+
+      {/* ─ Employee Detail Modal ─ */}
+      <AnimatePresence>
+        {selectedMember && (() => {
+          const profile = getMemberProfile(selectedMember);
+          return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              {/* Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setSelectedMember(null)}
+                className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
+              />
+
+              {/* Modal Content */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                transition={{ duration: 0.2 }}
+                className="relative w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-2xl z-10 flex flex-col"
+              >
+                {/* Close Button */}
+                <button
+                  onClick={() => setSelectedMember(null)}
+                  className="absolute top-4 right-4 w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-200 transition-colors z-20"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+
+                {/* Hero Header */}
+                <div className="relative p-6 pt-8 pb-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col items-center text-center">
+                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center text-primary font-black text-3xl border border-primary/20 shadow-inner mb-4">
+                    {getInitials(selectedMember.displayName)}
+                  </div>
+                  <h3 className="text-xl font-black text-slate-900 dark:text-white">
+                    {selectedMember.displayName}
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">
+                    ID: {selectedMember.id}
+                  </p>
+
+                  <div className="flex items-center gap-2 mt-3">
+                    <span className="text-xs font-bold px-2.5 py-1 rounded-full border bg-primary/5 text-primary border-primary/10">
+                      {ASSIGNABLE_TYPE_LABEL[selectedMember.type] ?? selectedMember.type}
+                    </span>
+                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${
+                      profile.status === "Đang hoạt động"
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-700/30"
+                        : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-700/30"
+                    }`}>
+                      {profile.status}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Profile Details */}
+                <div className="p-6 space-y-4">
+                  {/* Contact Info */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3 text-sm">
+                      <Mail className="w-4 h-4 text-slate-400 shrink-0" />
+                      <span className="text-slate-500 dark:text-slate-400 shrink-0">Email:</span>
+                      <span className="text-slate-900 dark:text-white font-medium truncate select-all">{profile.email}</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-sm">
+                      <Phone className="w-4 h-4 text-slate-400 shrink-0" />
+                      <span className="text-slate-500 dark:text-slate-400 shrink-0">Số điện thoại:</span>
+                      <span className="text-slate-900 dark:text-white font-medium select-all">{profile.phone}</span>
+                    </div>
+                    {selectedUnit && (
+                      <div className="flex items-center gap-3 text-sm">
+                        <Building2 className="w-4 h-4 text-slate-400 shrink-0" />
+                        <span className="text-slate-500 dark:text-slate-400 shrink-0">Đơn vị:</span>
+                        <span className="text-slate-900 dark:text-white font-medium">{selectedUnit.name}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-3 text-sm">
+                      <Calendar className="w-4 h-4 text-slate-400 shrink-0" />
+                      <span className="text-slate-500 dark:text-slate-400 shrink-0">Ngày gia nhập:</span>
+                      <span className="text-slate-900 dark:text-white font-medium">{profile.joinedDate}</span>
+                    </div>
+                  </div>
+
+                  <hr className="border-slate-100 dark:border-slate-800" />
+
+                  {/* Performance Mini Stats */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-2xl text-center">
+                      <span className="text-xs text-slate-400 dark:text-slate-500 block mb-1">Lead phụ trách</span>
+                      <span className="text-lg font-black text-slate-900 dark:text-white flex items-center justify-center gap-1">
+                        <Users className="w-4 h-4 text-blue-500" />
+                        {profile.leadsCount}
+                      </span>
+                    </div>
+                    <div className="p-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-2xl text-center">
+                      <span className="text-xs text-slate-400 dark:text-slate-500 block mb-1">Tỉ lệ chốt</span>
+                      <span className="text-lg font-black text-slate-900 dark:text-white flex items-center justify-center gap-1">
+                        <TrendingUp className="w-4 h-4 text-emerald-500" />
+                        {profile.conversionRate}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer Actions */}
+                <div className="p-6 pt-0 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-3 bg-slate-50/30 dark:bg-slate-900/10">
+                  <button
+                    onClick={() => {
+                      toast.success(`Đang mở cổng trò chuyện với ${selectedMember.displayName}`);
+                    }}
+                    className="flex-1 py-2.5 px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 active:scale-95"
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    Nhắn tin
+                  </button>
+                  <button
+                    onClick={() => {
+                      toast.success(`Đang chuyển hướng sang Báo cáo Hiệu suất của ${selectedMember.displayName}`);
+                    }}
+                    className="flex-1 py-2.5 px-4 bg-amber-500 hover:bg-amber-600 text-black text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm active:scale-95"
+                  >
+                    <TrendingUp className="w-4 h-4" />
+                    Hiệu suất
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          );
+        })()}
+      </AnimatePresence>
     </div>
   );
 }

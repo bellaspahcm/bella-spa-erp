@@ -533,20 +533,49 @@ export async function publishAllSalaryRecords() {
   const supabase = await createClient();
   const tenantId = auth.tenantId;
 
-  const { data: ktvs, error: ktvError } = await supabase
-    .from('users')
-    .select('id')
-    .eq('role', 'ktv')
-    .eq('tenant_id', tenantId);
-
-  if (ktvError) {
+  const { data: tenantData, error: tenantError } = await supabase
+    .from('tenants')
+    .select('enabled_modules')
+    .eq('id', tenantId)
+    .single();
+  if (tenantError) {
     return buildBulkSalaryActionResult('Gửi đối soát tất cả', 0, 0, [{
       ktvId: 'FETCH_TARGETS',
-      error: `Không thể tải danh sách KTV: ${ktvError.message}`,
+      error: `Không thể tải cấu hình tenant: ${tenantError.message}`,
     }]);
   }
 
-  const targets = ktvs ?? [];
+  const { getDefaultTenantModuleKey } = await import('@/lib/business-rules/tenant-modules');
+  const moduleKey = getDefaultTenantModuleKey(tenantData?.enabled_modules);
+
+  let targets: Array<{ id: string }> = [];
+  if (moduleKey === 'real_estate') {
+    const { data: hrSummary, error: hrError } = await (supabase as any).rpc(
+      'get_hr_employee_summary',
+      { p_tenant_id: tenantId, p_status: 'active' }
+    );
+    if (hrError) {
+      return buildBulkSalaryActionResult('Gửi đối soát tất cả', 0, 0, [{
+        ktvId: 'FETCH_TARGETS',
+        error: `Không thể tải danh sách nhân viên: ${hrError.message}`,
+      }]);
+    }
+    targets = (hrSummary || []).map((row: any) => ({ id: row.person_id }));
+  } else {
+    const { data: ktvs, error: ktvError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('role', 'ktv')
+      .eq('tenant_id', tenantId);
+
+    if (ktvError) {
+      return buildBulkSalaryActionResult('Gửi đối soát tất cả', 0, 0, [{
+        ktvId: 'FETCH_TARGETS',
+        error: `Không thể tải danh sách KTV: ${ktvError.message}`,
+      }]);
+    }
+    targets = ktvs ?? [];
+  }
   let count = 0;
   const failures: BulkSalaryActionFailure[] = [];
   for (const ktv of targets) {

@@ -13,9 +13,12 @@ import {
   fetchContractsAction,
   signContractAction,
   recordMilestonePaymentAction,
+  createContractAction,
   type ContractRecord,
   type PaymentMilestone,
 } from "@/modules/real_estate/actions/contractActions";
+
+import { PremiumSelect } from "@/components/ui/PremiumSelect";
 
 function fmt(n: number) {
   if (n >= 1e9) return `${(n / 1e9).toFixed(2)} tỷ`;
@@ -221,6 +224,52 @@ export default function RealEstateContractsPage() {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
 
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [projectName, setProjectName] = useState("Bella Residences");
+  const [unitCode, setUnitCode] = useState("");
+  const [totalValueVnd, setTotalValueVnd] = useState(3000000000);
+  const [vatRate, setVatRate] = useState(10);
+  const [maintenanceFee, setMaintenanceFee] = useState(2);
+  const [discount, setDiscount] = useState(0);
+  const [saleName, setSaleName] = useState("Nguyễn Văn Minh");
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customerName || !customerPhone || !unitCode || !saleName) {
+      toast.error("Vui lòng điền đầy đủ các thông tin bắt buộc!");
+      return;
+    }
+    setSubmitting(true);
+    const res = await createContractAction({
+      customerName,
+      customerPhone,
+      projectName,
+      unitCode,
+      totalValueVnd,
+      vatRate,
+      maintenanceFee,
+      discount,
+      saleName,
+    });
+    setSubmitting(false);
+    if (res.success) {
+      toast.success("✅ Lập hợp đồng mới thành công (bản thảo)!");
+      setIsModalOpen(false);
+      // Reset form
+      setCustomerName("");
+      setCustomerPhone("");
+      setUnitCode("");
+      setTotalValueVnd(3000000000);
+      setDiscount(0);
+      await load();
+    } else {
+      toast.error(res.error ?? "Không thể lập hợp đồng");
+    }
+  };
+
   const load = useCallback(async () => {
     setLoading(true);
     const res = await fetchContractsAction();
@@ -285,7 +334,10 @@ export default function RealEstateContractsPage() {
             Quản lý HĐMB, lịch thanh toán tiến độ và công nợ khách hàng
           </p>
         </div>
-        <button className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-black px-4 py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm">
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-black px-4 py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm"
+        >
           <Plus className="w-4 h-4" />
           Lập Hợp Đồng Mới
         </button>
@@ -357,6 +409,239 @@ export default function RealEstateContractsPage() {
           ))}
         </div>
       )}
+
+      {/* ─ Create Contract Modal ─ */}
+      <AnimatePresence>
+        {isModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsModalOpen(false)}
+              className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
+            />
+
+            {/* Modal Content */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.2 }}
+              className="relative w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-2xl z-10 flex flex-col max-h-[90vh]"
+            >
+              {/* Header */}
+              <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-amber-500" />
+                  Lập Hợp Đồng Mới
+                </h3>
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                >
+                  <XCircle className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Form Body */}
+              <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Tên Khách Hàng <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Nguyễn Văn A"
+                      value={customerName}
+                      onChange={e => setCustomerName(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Số Điện Thoại <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="0901 234 567"
+                      value={customerPhone}
+                      onChange={e => setCustomerPhone(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Dự Án Bất Động Sản
+                    </label>
+                    <PremiumSelect
+                      options={[
+                        { value: "Bella Residences", label: "Bella Residences" },
+                        { value: "Bella Premium", label: "Bella Premium" },
+                        { value: "Bella Grand", label: "Bella Grand" },
+                      ]}
+                      value={projectName}
+                      onChange={setProjectName}
+                      buttonClassName="h-9 py-0 px-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-normal text-slate-900 dark:text-white hover:bg-slate-100/50 dark:hover:bg-slate-900/50 shadow-none focus:border-amber-500/50 focus:ring-0 focus:ring-offset-0"
+                      dropdownClassName="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-xl rounded-xl py-1"
+                      itemClassName="px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm font-normal transition-colors"
+                      selectedItemClassName="bg-amber-500/10 text-amber-600 dark:text-amber-400 font-semibold px-4 py-2 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Mã Sản Phẩm Căn Hộ <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Gold Tower A-1201"
+                      value={unitCode}
+                      onChange={e => setUnitCode(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Giá Trị Gốc (VNĐ)
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min={0}
+                      value={totalValueVnd}
+                      onChange={e => setTotalValueVnd(Number(e.target.value))}
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Chiết Khấu (VNĐ)
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min={0}
+                      value={discount}
+                      onChange={e => setDiscount(Number(e.target.value))}
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Thuế VAT (%)
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min={0}
+                      value={vatRate}
+                      onChange={e => setVatRate(Number(e.target.value))}
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Kinh Phí Bảo Trì (%)
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min={0}
+                      value={maintenanceFee}
+                      onChange={e => setMaintenanceFee(Number(e.target.value))}
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Sale Phụ Trách <span className="text-rose-500">*</span>
+                    </label>
+                    <PremiumSelect
+                      options={[
+                        { value: "Nguyễn Văn Minh", label: "Nguyễn Văn Minh" },
+                        { value: "Trần Thị Anh", label: "Trần Thị Anh" },
+                        { value: "Lê Quốc Binh", label: "Lê Quốc Binh" },
+                        { value: "Phạm Thị Cam", label: "Phạm Thị Cam" },
+                        { value: "Đỗ Hải Đăng", label: "Đỗ Hải Đăng" },
+                      ]}
+                      value={saleName}
+                      onChange={setSaleName}
+                      buttonClassName="h-9 py-0 px-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-normal text-slate-900 dark:text-white hover:bg-slate-100/50 dark:hover:bg-slate-900/50 shadow-none focus:border-amber-500/50 focus:ring-0 focus:ring-offset-0"
+                      dropdownClassName="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-xl rounded-xl py-1"
+                      itemClassName="px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm font-normal transition-colors"
+                      selectedItemClassName="bg-amber-500/10 text-amber-600 dark:text-amber-400 font-semibold px-4 py-2 text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div className="p-4 bg-slate-50 dark:bg-slate-950/40 rounded-2xl border border-slate-100 dark:border-slate-800/80 space-y-1">
+                  <div className="flex justify-between text-xs text-slate-500">
+                    <span>Giá trị gốc:</span>
+                    <span>{fmt(totalValueVnd)}</span>
+                  </div>
+                  <div className="flex justify-between text-xs text-slate-500">
+                    <span>VAT ({vatRate}%):</span>
+                    <span>+{fmt(totalValueVnd * (vatRate / 100))}</span>
+                  </div>
+                  <div className="flex justify-between text-xs text-slate-500">
+                    <span>KPBT ({maintenanceFee}%):</span>
+                    <span>+{fmt(totalValueVnd * (maintenanceFee / 100))}</span>
+                  </div>
+                  {discount > 0 && (
+                    <div className="flex justify-between text-xs text-rose-500">
+                      <span>Chiết khấu:</span>
+                      <span>-{fmt(discount)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-sm font-black text-slate-900 dark:text-white border-t border-slate-200 dark:border-slate-800 pt-2 mt-1">
+                    <span>Tổng giá trị hợp đồng:</span>
+                    <span className="text-amber-600 dark:text-amber-400">
+                      {fmt(totalValueVnd * (1 + vatRate / 100 + maintenanceFee / 100) - discount)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Footer buttons */}
+                <div className="flex gap-3 justify-end pt-4 border-t border-slate-100 dark:border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(false)}
+                    className="px-4 py-2 text-sm font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl transition-colors"
+                  >
+                    Hủy bỏ
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="px-5 py-2 text-sm font-bold bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-black rounded-xl transition-colors flex items-center gap-1.5"
+                  >
+                    {submitting ? (
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <CheckCheck className="w-4 h-4" />
+                    )}
+                    Tạo Bản Thảo
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

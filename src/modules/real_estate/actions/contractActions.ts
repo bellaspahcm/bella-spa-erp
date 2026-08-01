@@ -154,3 +154,38 @@ export async function recordMilestonePaymentAction(
     return { success: false, error: msg };
   }
 }
+
+export async function createContractAction(
+  data: Omit<ContractRecord, 'id' | 'contractNo' | 'status' | 'createdAt' | 'finalValueVnd' | 'milestones'>
+): Promise<{ success: boolean; data?: ContractRecord; error?: string }> {
+  try {
+    const finalValue = Math.round(data.totalValueVnd * (1 + data.vatRate / 100 + data.maintenanceFee / 100) - data.discount);
+    const newId = `ctr-${String(DEMO_CONTRACTS.length + 1).padStart(3, '0')}`;
+    const newNo = `HĐMB-2026-${String(DEMO_CONTRACTS.length + 1).padStart(3, '0')}`;
+    
+    // Generate milestones
+    const milestones: PaymentMilestone[] = [
+      { id: `ms-${newId}-1`, label: 'Đặt cọc', dueDateLabel: 'Ký HĐMB', percentage: 10, amountVnd: Math.round(finalValue * 0.1), status: 'pending' },
+      { id: `ms-${newId}-2`, label: 'Đợt 2', dueDateLabel: '30 ngày sau ký', percentage: 20, amountVnd: Math.round(finalValue * 0.2), status: 'pending' },
+      { id: `ms-${newId}-3`, label: 'Đợt 3', dueDateLabel: '90 ngày sau ký', percentage: 30, amountVnd: Math.round(finalValue * 0.3), status: 'pending' },
+      { id: `ms-${newId}-4`, label: 'Đợt 4', dueDateLabel: 'Bàn giao căn hộ', percentage: 30, amountVnd: Math.round(finalValue * 0.3), status: 'pending' },
+      { id: `ms-${newId}-5`, label: 'Đợt 5 — Sổ hồng', dueDateLabel: 'Nhận sổ hồng', percentage: 10, amountVnd: Math.round(finalValue * 0.1), status: 'pending' },
+    ];
+
+    const newContract: ContractRecord = {
+      id: newId,
+      contractNo: newNo,
+      ...data,
+      finalValueVnd: finalValue,
+      status: 'draft',
+      createdAt: new Date().toISOString().split('T')[0],
+      milestones,
+    };
+
+    DEMO_CONTRACTS.push(newContract);
+    return { success: true, data: newContract };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Unknown error';
+    return { success: false, error: msg };
+  }
+}

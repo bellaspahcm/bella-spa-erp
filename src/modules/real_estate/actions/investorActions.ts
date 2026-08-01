@@ -150,3 +150,23 @@ export async function updateInvestorStatusAction(
     return { success: false, error: msg };
   }
 }
+
+export async function createInvestorAction(
+  data: Omit<InvestorRecord, 'id' | 'status' | 'createdAt' | 'interactions'>
+): Promise<{ success: boolean; data?: InvestorRecord; error?: string }> {
+  try {
+    const newId = `inv-${String(DEMO_INVESTORS.length + 1).padStart(3, '0')}`;
+    const newInvestor: InvestorRecord = {
+      id: newId,
+      status: 'lead',
+      createdAt: new Date().toISOString().split('T')[0],
+      interactions: [],
+      ...data,
+    };
+    DEMO_INVESTORS.push(newInvestor);
+    return { success: true, data: newInvestor };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Unknown error';
+    return { success: false, error: msg };
+  }
+}

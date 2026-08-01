@@ -17,7 +17,7 @@ export default function RealEstateLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div data-re-layout="true" className="re-layout-root min-h-screen bg-slate-50 dark:bg-slate-950">
+    <div data-re-layout="true" className="re-layout-root min-h-screen min-w-full w-fit bg-slate-50 dark:bg-slate-950">
       {/* Main Content Area */}
       <main className="w-full px-6 py-6 animate-fade-in">
         {children}
