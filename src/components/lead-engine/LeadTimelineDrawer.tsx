@@ -32,12 +32,18 @@ export function LeadTimelineDrawer({ lead, onClose }: LeadTimelineDrawerProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex justify-end z-50 animate-fade-in">
-      <div className="bg-white dark:bg-slate-900 w-full max-w-md h-full shadow-2xl flex flex-col border-l border-slate-200 dark:border-slate-800">
+    <div
+      className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fade-in"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white dark:bg-slate-900 w-full max-w-lg max-h-[85vh] rounded-3xl shadow-2xl flex flex-col border border-slate-200 dark:border-slate-800 overflow-hidden"
+        onClick={e => e.stopPropagation()}
+      >
         {/* Header */}
-        <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+        <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
           <div>
-            <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <h2 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
               <Clock className="w-5 h-5 text-violet-600" />
               Lịch Sử Timeline Lead
             </h2>
@@ -47,14 +53,14 @@ export function LeadTimelineDrawer({ lead, onClose }: LeadTimelineDrawerProps) {
           </div>
           <button
             onClick={onClose}
-            className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition"
+            className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4 text-slate-600 dark:text-slate-400" />
           </button>
         </div>
 
         {/* Lead Info Summary */}
-        <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800 text-xs space-y-1.5">
+        <div className="p-5 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800 text-xs space-y-2">
           <div className="flex justify-between">
             <span className="text-slate-500">Sale phụ trách hiện tại:</span>
             <span className="font-semibold text-violet-600 dark:text-violet-400">{lead.currentSaleName || 'Chưa phân'}</span>
@@ -74,7 +80,7 @@ export function LeadTimelineDrawer({ lead, onClose }: LeadTimelineDrawerProps) {
         </div>
 
         {/* Timeline Events List */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-6">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {(!lead.auditTimeline || lead.auditTimeline.length === 0) ? (
             <div className="text-center py-10 text-xs text-slate-400">Chưa có lịch sử sự kiện</div>
           ) : (

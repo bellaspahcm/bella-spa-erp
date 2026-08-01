@@ -341,42 +341,49 @@ export default function RealEstateProjectsPage() {
         </div>
       )}
 
-      {/* ─ Project Detail Drawer ─ */}
+      {/* ─ Project Detail Popup Modal ─ */}
       {selectedProject && (
         <div
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
+          className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4"
           onClick={() => setSelectedProject(null)}
         >
           <motion.div
-            initial={{ x: "100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "100%" }}
-            className="absolute right-0 top-0 h-full w-full max-w-md bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl overflow-y-auto"
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.95, opacity: 0 }}
+            className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md border border-slate-200 dark:border-slate-800 overflow-hidden"
             onClick={e => e.stopPropagation()}
           >
+            <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800">
+              <h2 className="text-xl font-black text-slate-900 dark:text-white">{selectedProject.name}</h2>
+              <button
+                onClick={() => setSelectedProject(null)}
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+              >
+                <X className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+              </button>
+            </div>
             <div className="p-6 space-y-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-black text-slate-900 dark:text-white">{selectedProject.name}</h2>
-                <button onClick={() => setSelectedProject(null)} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                  <X className="w-5 h-5 text-slate-500" />
-                </button>
-              </div>
-              <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${STATUS_COLOR[selectedProject.status ?? "planning"]}`}>
-                {STATUS_LABEL[selectedProject.status ?? "planning"]}
+              <div>
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${STATUS_COLOR[selectedProject.status ?? "planning"]}`}>
+                  {STATUS_LABEL[selectedProject.status ?? "planning"]}
+                </span>
               </div>
               {selectedProject.description && (
-                <p className="text-sm text-slate-600 dark:text-slate-400">{selectedProject.description}</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed bg-slate-50 dark:bg-slate-800/20 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                  {selectedProject.description}
+                </p>
               )}
-              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 space-y-3">
+              <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-800/50 rounded-2xl p-5 space-y-3">
                 <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Thống Kê Tồn Kho</p>
                 {Object.entries(statsMap[selectedProject.id] ?? {}).map(([k, v]) => (
-                  <div key={k} className="flex justify-between">
-                    <span className="text-sm text-slate-600 dark:text-slate-400 capitalize">{k}</span>
-                    <span className="text-sm font-bold text-slate-900 dark:text-white">{v}</span>
+                  <div key={k} className="flex justify-between items-center text-sm">
+                    <span className="text-slate-600 dark:text-slate-400 capitalize">{k}</span>
+                    <span className="font-bold text-slate-900 dark:text-white bg-white dark:bg-slate-800 px-2.5 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700">{v}</span>
                   </div>
                 ))}
               </div>
-              <p className="text-xs text-slate-400 dark:text-slate-500">ID: {selectedProject.id}</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 text-center">ID: {selectedProject.id}</p>
             </div>
           </motion.div>
         </div>
