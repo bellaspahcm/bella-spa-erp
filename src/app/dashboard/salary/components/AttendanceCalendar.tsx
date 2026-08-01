@@ -7,6 +7,7 @@ import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
 
 interface AttendanceCalendarProps {
   isOpen: boolean;
@@ -28,6 +29,7 @@ export default function AttendanceCalendar({
   selectedKtv,
   onSaveSuccess,
 }: AttendanceCalendarProps) {
+  const vocab = useModuleVocabulary();
   const [selectedDayLog, setSelectedDayLog] = useState<{
     date: string;
     log: KtvAttendanceLog | null;
@@ -178,7 +180,7 @@ export default function AttendanceCalendar({
 
                 {selectedDayLog.log && (
                   <div className="bg-emerald-50/50 border border-emerald-100 rounded-2xl p-4 space-y-2">
-                    <p className="text-[10px] font-black text-emerald-800 uppercase tracking-widest">Thời gian KTV đã kích hoạt</p>
+                    <p className="text-[10px] font-black text-emerald-800 uppercase tracking-widest">Thời gian {vocab.worker.short} đã kích hoạt</p>
                     <div className="grid grid-cols-2 gap-2 text-xs font-bold text-slate-700">
                       <div>
                         <span className="text-slate-400 block text-[9px] uppercase tracking-wider">Thực tế vào:</span>

@@ -19,6 +19,7 @@ export const realEstateManifest: VerticalManifest = {
     { id: 'reports', label: 'Báo Cáo', href: '/dashboard/real-estate/reports', icon: 'FileBarChart2' },
     { id: 'bi-analytics', label: 'BI Analytics', href: '/dashboard/real-estate/bi-analytics', icon: 'BarChart3' },
     { id: 'global-search', label: 'Tìm Kiếm', href: '/dashboard/real-estate/global-search', icon: 'Search' },
+    { id: 'salary', label: 'Lương & Hoa hồng', href: '/dashboard/salary', icon: 'Banknote' },
     { id: 'organization', label: 'Sơ đồ tổ chức', href: '/dashboard/organization', icon: 'Users' },
   ],
   providers: {

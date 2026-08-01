@@ -142,7 +142,7 @@ export default function SessionMatrixTable({
                       return (
                         <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-600 px-3 py-1 rounded-lg text-[10px] font-black">
                           <CheckCircle2 className="w-3 h-3" />
-                          KTV đã xác nhận
+                          {vocab.worker.short} đã xác nhận
                         </span>
                       );
                     }
@@ -151,7 +151,7 @@ export default function SessionMatrixTable({
                         <div className="text-left">
                           <span className="inline-flex items-center gap-1 bg-rose-50 text-rose-600 px-3 py-1 rounded-lg text-[10px] font-black mb-1">
                             <AlertCircle className="w-3 h-3" />
-                            KTV phản hồi
+                            {vocab.worker.short} phản hồi
                           </span>
                           {salaryRow?.disputeReason && (
                             <p className="text-[10px] text-rose-500 max-w-[160px] truncate" title={salaryRow.disputeReason}>
@@ -165,7 +165,7 @@ export default function SessionMatrixTable({
                       return (
                         <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-600 px-3 py-1 rounded-lg text-[10px] font-black">
                           <Clock className="w-3 h-3" />
-                          Chờ KTV xác nhận
+                          Chờ {vocab.worker.short} xác nhận
                         </span>
                       );
                     }

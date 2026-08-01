@@ -62,7 +62,7 @@ export default function SalaryTable({
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
             <input 
               type="text" 
-              placeholder="Tìm tên KTV..." 
+              placeholder={`Tìm tên ${vocab.worker.singular.toLowerCase()}...`} 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full rounded-2xl border-none bg-slate-50 py-4 pl-12 pr-6 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20"
@@ -179,9 +179,9 @@ export default function SalaryTable({
                      <AlertCircle className="w-3 h-3" />}
                     {s.status === 'finalized' ? 'Đã chốt sổ' :
                      s.status === 'approved' ? 'Đã duyệt' :
-                     s.status === 'confirmed' ? 'KTV đã xác nhận' :
-                     s.status === 'disputed' ? 'KTV phản hồi' :
-                     s.status === 'published' || s.status === 'pending_approval' ? 'Chờ KTV xác nhận' :
+                     s.status === 'confirmed' ? `${vocab.worker.short} đã xác nhận` :
+                     s.status === 'disputed' ? `${vocab.worker.short} phản hồi` :
+                     s.status === 'published' || s.status === 'pending_approval' ? `Chờ ${vocab.worker.short} xác nhận` :
                      'Bản nháp'}
                   </div>
                 </td>

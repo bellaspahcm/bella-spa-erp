@@ -350,6 +350,7 @@ const realEstateMenuItems: SidebarMenuItem[] = [
   { icon: ShieldCheck,     label: 'Quản Trị BĐS',         href: '/dashboard/real-estate/admin' },
 
   { type: 'header', label: 'Tài Chính & Kế Toán' },
+  { icon: Banknote,        label: 'Lương & Hoa Hồng',      href: '/dashboard/salary' },
   { icon: FileText,        label: 'Nhật Ký Thu Chi',       href: '/dashboard/finance' },
   { icon: LineChart,       label: 'Dòng Tiền & Dự Báo',   href: '/dashboard/finance/cash-flow' },
   { icon: DollarSign,      label: 'Đối Soát Công Nợ',     href: '/dashboard/finance/reconciliation' },

@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { CalendarDays } from 'lucide-react';
 import Link from 'next/link';
 import { KtvAttendanceSummary } from '@/types/domain';
+import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
 
 interface AttendanceSummaryTableProps {
   attendanceData: KtvAttendanceSummary[];
@@ -14,6 +15,8 @@ export default function AttendanceSummaryTable({
   attendanceData,
   openKtvCalendar,
 }: AttendanceSummaryTableProps) {
+  const vocab = useModuleVocabulary();
+
   return (
     <div className="space-y-6 md:space-y-10">
       <div className="overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-sm md:rounded-[40px]">
@@ -33,7 +36,7 @@ export default function AttendanceSummaryTable({
             className="flex items-center justify-center gap-2 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 px-5 py-3 text-xs font-black uppercase tracking-widest transition-all self-start md:self-auto shadow-xs"
           >
             <CalendarDays className="w-4 h-4 text-rose-600" />
-            <span>Duyệt nghỉ phép KTV</span>
+            <span>Duyệt nghỉ phép {vocab.worker.short}</span>
           </Link>
         </div>
         
