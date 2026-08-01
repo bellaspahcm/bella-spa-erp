@@ -112,10 +112,20 @@ const DEFAULT_SIDEBAR_BRAND: TenantBrandDisplay = {
   stylePreset: 'bella_rose',
 };
 const NEUTRAL_SIDEBAR_BRAND: TenantBrandDisplay = {
-  ...DEFAULT_SIDEBAR_BRAND,
-  primaryColor: '#0b2240',
-  accentColor: '#c8a97a',
-  primaryHoverColor: '#074e44',
+  displayName: 'System ERP',
+  logoUrl: '',
+  subtitle: 'Management System',
+  moduleKey: 'industrial_cleaning',
+  primaryColor: '#18181B',
+  accentColor: '#27272A',
+  primaryHoverColor: '#3F3F46',
+  monogram: 'E',
+  buttonStyle: 'pill',
+  menuStyle: 'comfortable',
+  radiusStyle: 'soft',
+  isBeautySpa: false,
+  fontHeading: 'sans',
+  stylePreset: 'graphite_luxe',
 };
 const SIDEBAR_BRAND_CACHE_KEY = 'bella.sidebar.brand.v2';
 const RUNTIME_BRAND_CACHE_KEY = 'bella.runtime.brand.v1';

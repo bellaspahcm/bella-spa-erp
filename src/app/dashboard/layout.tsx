@@ -31,6 +31,7 @@ async function applyDashboardTenantBrandRuntime(
   root.dataset.tenantBrandButton = brand.buttonStyle;
   root.dataset.tenantBrandMenu = brand.menuStyle;
   root.dataset.tenantBrandRadius = brand.radiusStyle;
+  root.dataset.tenantBrandPreset = brand.stylePreset || (brand.primaryColor === '#074E44' ? 'jade_wellness' : brand.primaryColor === '#1E3A8A' ? 'luxury_navy' : brand.primaryColor === '#1E40AF' ? 'ocean_clean' : brand.primaryColor === '#18181B' ? 'graphite_luxe' : 'bella_rose');
 
   // Dynamically set browser title to match current tenant & module identity
   if (brand.displayName) {
