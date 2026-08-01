@@ -237,7 +237,7 @@ export default function FinancialReconciliationPage() {
   const receivables = filteredClearing.filter(c => c.creditor_tenant_id === currentTenantId);
 
   return (
-    <div className="p-4 sm:p-8 space-y-8 max-w-7xl mx-auto pb-24 w-full max-w-full overflow-x-hidden">
+    <div className="p-4 sm:p-8 space-y-8 pb-24 w-full overflow-x-hidden">
       {/* Tabs */}
       <div className="flex w-full overflow-x-auto items-center gap-1 bg-white dark:bg-slate-900 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm sm:w-fit">
         <Link 

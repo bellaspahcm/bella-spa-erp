@@ -238,7 +238,7 @@ export default function BudgetTrackingDashboardPage() {
   // ───────────────────────────────────────────────────────────────────────────
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="p-6 space-y-6 w-full">
       {/* Tabs */}
       <div className="flex w-full overflow-x-auto items-center gap-1 bg-white dark:bg-slate-900 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm sm:w-fit">
         <Link 
