@@ -117,11 +117,11 @@ export default function HqBillingTab() {
         <div className="bg-slate-900 text-white rounded-[2rem] p-6 shadow-md relative overflow-hidden flex items-center justify-between">
           <div className="absolute right-[-10%] top-[-30%] w-36 h-36 bg-primary/10 rounded-full blur-2xl pointer-events-none" />
           <div>
-            <span className="text-[9px] bg-primary/20 text-rose-300 font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full border border-primary/20">CÔNG NỢ CHỜ THANH TOÁN</span>
+            <span className="text-[9px] bg-amber-500/20 text-amber-300 font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full border border-amber-500/30">CÔNG NỢ CHỜ THANH TOÁN</span>
             <h4 className="text-3xl font-black mt-2 tracking-tight" style={{ color: '#ffffff' }}>{formatCurrency(totalDebt)}</h4>
             <p className="text-[10px] font-bold uppercase tracking-wider mt-1" style={{ color: '#cbd5e1' }}>{pendingInvoices.length} hóa đơn đang treo nợ</p>
           </div>
-          <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center" style={{ color: '#fecdd3' }}>
+          <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-amber-300">
             <DollarSign size={22} />
           </div>
         </div>
@@ -133,7 +133,7 @@ export default function HqBillingTab() {
               Hóa đơn nhượng quyền được tự động kết xuất dựa trên chính sách thỏa thuận đã ký với HQ ngay khi bạn thực hiện **Khóa sổ tài chính tháng** tại trang Quản lý Tài chính.
             </p>
           </div>
-          <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center text-primary shrink-0">
+          <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 shrink-0">
             <AlertCircle size={22} />
           </div>
         </div>
@@ -307,8 +307,8 @@ export default function HqBillingTab() {
                 </div>
 
                 {/* Alert reminder */}
-                <div className="flex gap-2.5 bg-rose-50/50 border border-rose-100/50 rounded-2xl p-3 text-left w-full">
-                  <AlertCircle size={16} className="text-primary shrink-0 mt-0.5" />
+                <div className="flex gap-2.5 bg-amber-50/50 border border-amber-200/50 rounded-2xl p-3 text-left w-full">
+                  <AlertCircle size={16} className="text-amber-600 shrink-0 mt-0.5" />
                   <p className="text-[10px] text-slate-500 leading-relaxed font-semibold">
                     * Vui lòng chuyển đúng số tiền và nội dung chính xác để hệ thống cổng thanh toán AI tự động gạch nợ tức thì.
                   </p>

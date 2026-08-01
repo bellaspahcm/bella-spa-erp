@@ -4,6 +4,7 @@ import { Calendar, Percent, Plus, RefreshCw, Tag } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { normalizePromotionDiscountPercent } from '@/lib/business-rules/promotion';
 import type { PromotionFormState } from './types';
+import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
 
 interface PromotionFormProps {
   form: PromotionFormState;
@@ -18,9 +19,17 @@ export function PromotionForm({
   onChange,
   onSubmit,
 }: PromotionFormProps) {
+  const moduleKey = useTenantModuleKey();
+  
+  const titlePlaceholder = moduleKey === 'real_estate' 
+    ? 'VD: Mở bán đợt 1 căn hộ VIP'
+    : moduleKey === 'industrial_cleaning'
+    ? 'VD: Ưu đãi bảo trì công trình'
+    : 'VD: Chương trình tri ân đặc biệt';
+
   return (
-    <div className="xl:col-span-1 glass-white border border-pink-50 p-6 rounded-[2rem] space-y-6 self-start">
-      <h3 className="text-lg font-black text-slate-800 flex items-center gap-2">
+    <div className="xl:col-span-1 bg-white/80 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 p-6 rounded-[2rem] space-y-6 self-start shadow-sm">
+      <h3 className="text-lg font-black text-slate-800 dark:text-slate-200 flex items-center gap-2">
         <Plus className="w-5 h-5 text-primary" />
         Thêm ưu đãi mới
       </h3>
@@ -35,8 +44,8 @@ export function PromotionForm({
             required
             value={form.title}
             onChange={(event) => onChange({ title: event.target.value })}
-            placeholder="VD: Mừng ngày của mẹ"
-            className="w-full px-5 py-3 bg-white/50 border border-pink-100 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold text-sm"
+            placeholder={titlePlaceholder}
+            className="w-full px-5 py-3 bg-white/50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold text-sm"
           />
         </div>
 
@@ -50,7 +59,7 @@ export function PromotionForm({
             onChange={(event) => onChange({ description: event.target.value })}
             placeholder="Mô tả quyền lợi và điều kiện áp dụng..."
             rows={3}
-            className="w-full px-5 py-3 bg-white/50 border border-pink-100 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold text-sm resize-none"
+            className="w-full px-5 py-3 bg-white/50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold text-sm resize-none"
           />
         </div>
 
@@ -66,8 +75,8 @@ export function PromotionForm({
               onChange={(event) =>
                 onChange({ discountCode: event.target.value.toUpperCase().replace(/\s+/g, '') })
               }
-              placeholder="MOTHER50"
-              className="w-full px-5 py-3 bg-white/50 border border-pink-100 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-black text-sm font-mono text-rose-500"
+              placeholder="PROMO50"
+              className="w-full px-5 py-3 bg-white/50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-black text-sm font-mono text-primary"
             />
           </div>
 
@@ -87,7 +96,7 @@ export function PromotionForm({
                   : String(normalizePromotionDiscountPercent(event.target.value) ?? 0),
               })}
               placeholder="10"
-              className="w-full px-5 py-3 bg-white/50 border border-pink-100 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold text-sm"
+              className="w-full px-5 py-3 bg-white/50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold text-sm"
             />
           </div>
         </div>
@@ -137,7 +146,7 @@ function DateField({
         type="date"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full px-4 py-3 bg-white/50 border border-pink-100 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold text-sm"
+        className="w-full px-4 py-3 bg-white/50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold text-sm"
       />
     </div>
   );

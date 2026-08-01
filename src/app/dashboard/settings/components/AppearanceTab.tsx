@@ -427,14 +427,14 @@ export default function AppearanceTab() {
         </div>
       </section>
 
-      <section className="space-y-6 border-t border-pink-100/70 pt-8">
+      <section className="space-y-6 border-t border-slate-200/80 dark:border-slate-800 pt-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-4">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rose-100 text-primary">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
               <Sparkles className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="text-lg font-black text-slate-900">Nhận diện thương hiệu riêng</h3>
+              <h3 className="text-lg font-black text-slate-900 dark:text-slate-100">Nhận diện thương hiệu riêng</h3>
               <p className="text-sm font-semibold text-muted-foreground">
                 Dùng cho mô hình white-label khi bán gói dịch vụ cho doanh nghiệp khác.
               </p>
@@ -444,7 +444,7 @@ export default function AppearanceTab() {
             type="button"
             onClick={handleSaveTenantConfig}
             disabled={isLoadingTenantConfig || isSavingTenantConfig}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-3 text-sm font-black uppercase tracking-wider text-white shadow-lg shadow-pink-200/60 transition hover:bg-primary-hover active:scale-95 disabled:opacity-50"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-3 text-sm font-black uppercase tracking-wider text-white shadow-md transition hover:bg-primary-hover active:scale-95 disabled:opacity-50"
           >
             {isSavingTenantConfig ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             Lưu cấu hình
@@ -452,7 +452,7 @@ export default function AppearanceTab() {
         </div>
 
         {isLoadingTenantConfig ? (
-          <div className="flex items-center justify-center rounded-[2rem] border border-pink-100 bg-white/60 py-16">
+          <div className="flex items-center justify-center rounded-[2rem] border border-slate-200/80 dark:border-slate-800 bg-white/60 dark:bg-slate-900/60 py-16">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : (
@@ -463,8 +463,14 @@ export default function AppearanceTab() {
                 <input
                   value={brandTheme.brandName}
                   onChange={(event) => updateBrandTheme({ brandName: event.target.value })}
-                  placeholder="VD: Bella Spa Premium"
-                  className="w-full rounded-2xl border border-slate-100 bg-slate-50 px-5 py-4 text-sm font-bold text-slate-900 outline-none transition focus:border-rose-300 focus:bg-white focus:ring-4 focus:ring-rose-50"
+                  placeholder={
+                    tenantModuleKey === 'real_estate' 
+                      ? 'VD: Bella Land Premium' 
+                      : tenantModuleKey === 'industrial_cleaning' 
+                      ? 'VD: Bella Clean Premium' 
+                      : 'VD: Bella Enterprise'
+                  }
+                  className="w-full rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 px-5 py-4 text-sm font-bold text-slate-900 dark:text-slate-100 outline-none transition focus:border-primary focus:bg-white dark:focus:bg-slate-800 focus:ring-4 focus:ring-primary/10"
                 />
               </label>
 
@@ -474,7 +480,7 @@ export default function AppearanceTab() {
                   value={logoUrl}
                   onChange={(event) => setLogoUrl(event.target.value)}
                   placeholder="https://..."
-                  className="w-full rounded-2xl border border-slate-100 bg-slate-50 px-5 py-4 text-sm font-bold text-slate-900 outline-none transition focus:border-rose-300 focus:bg-white focus:ring-4 focus:ring-rose-50"
+                  className="w-full rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 px-5 py-4 text-sm font-bold text-slate-900 dark:text-slate-100 outline-none transition focus:border-primary focus:bg-white dark:focus:bg-slate-800 focus:ring-4 focus:ring-primary/10"
                 />
               </label>
 
@@ -631,13 +637,13 @@ export default function AppearanceTab() {
 
             {/* Notification bar at bottom instead of large sidebar box */}
             {tenantModuleKey !== 'industrial_cleaning' && (
-              <div className="mt-4 rounded-2xl border border-rose-100/80 bg-rose-50/70 p-4 text-xs font-bold text-slate-700 shadow-sm flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3">
+              <div className="mt-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/60 p-4 text-xs font-bold text-slate-700 dark:text-slate-300 shadow-sm flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                     <BadgeCheck className="h-5 w-5" />
                   </div>
                   <div>
-                    <span className="font-black text-slate-900 text-sm">Module ngành đang cấp cho Doanh nghiệp: </span>
+                    <span className="font-black text-slate-900 dark:text-slate-100 text-sm">Module ngành đang cấp cho Doanh nghiệp: </span>
                     <span className="inline-flex flex-wrap items-center gap-2 ml-1 mt-1 lg:mt-0">
                       {enabledModules.real_estate && (
                         <span className="rounded-full bg-indigo-600 px-3 py-1 text-[11px] font-black text-white shadow-sm">
@@ -651,7 +657,7 @@ export default function AppearanceTab() {
                       )}
                       {enabledModules.babycare && (
                         <span className="rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-black text-emerald-800 border border-emerald-200/60">
-                          ✓ Bella Mother & Baby (Đang bật)
+                          ✓ Bella Care / Healthcare (Đang bật)
                         </span>
                       )}
                       {enabledModules.beauty_spa && (

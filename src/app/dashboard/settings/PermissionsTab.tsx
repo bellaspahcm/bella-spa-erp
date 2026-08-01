@@ -222,11 +222,11 @@ export default function PermissionsTab() {
   if (!isAuthenticated) {
     return (
       <div className="flex flex-col items-center justify-center py-20 space-y-6">
-        <div className="w-20 h-20 bg-rose-100 rounded-full flex items-center justify-center mb-4">
-          <Lock className="w-10 h-10 text-rose-500" />
+        <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+          <Lock className="w-10 h-10 text-primary" />
         </div>
         <div className="text-center max-w-md">
-          <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-2">
+          <h2 className="text-2xl font-black text-slate-900 dark:text-slate-100 uppercase tracking-tight mb-2">
             Khu vực bảo mật
           </h2>
           <p className="text-slate-500 font-medium mb-8">
@@ -239,7 +239,7 @@ export default function PermissionsTab() {
               placeholder="Nhập mật khẩu..."
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-6 py-4 bg-white/50 border border-pink-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold text-center"
+              className="w-full px-6 py-4 bg-white/50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold text-center"
             />
             <button
               type="submit"
@@ -258,7 +258,7 @@ export default function PermissionsTab() {
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="bella-toolbar mb-8 flex flex-col justify-between gap-6 md:flex-row md:items-center">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-rose-100 rounded-2xl flex items-center justify-center text-rose-500">
+          <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center">
             <ShieldAlert className="w-6 h-6" />
           </div>
           <div>
@@ -274,7 +274,7 @@ export default function PermissionsTab() {
         <button
           onClick={handleSave}
           disabled={isSaving || isLoading}
-          className="px-6 py-3 bg-primary text-white rounded-xl font-black text-sm uppercase tracking-widest hover:bg-primary-hover transition-all flex items-center gap-2 shadow-lg shadow-pink-200/50 dark:shadow-none"
+          className="px-6 py-3 bg-primary text-white rounded-xl font-black text-sm uppercase tracking-widest hover:bg-primary-hover transition-all flex items-center gap-2 shadow-md"
         >
           <Save className="w-4 h-4" />
           {isSaving ? "Đang lưu..." : "Lưu phân quyền"}

@@ -352,7 +352,7 @@ export default function SubscriptionTab() {
       </div>
 
       {/* Active Subscription Banner */}
-      <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-indigo-500/10 border border-pink-200/30 p-8 shadow-inner">
+      <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-r from-primary/10 via-slate-500/5 to-indigo-500/10 border border-primary/20 p-8 shadow-inner">
         <div className="absolute top-0 right-0 p-8 opacity-20 pointer-events-none">
           <Sparkles className="w-32 h-32 text-primary" />
         </div>
@@ -574,7 +574,7 @@ export default function SubscriptionTab() {
 
       {/* Upgrade Configuration Modal / Panel */}
       {selectedPlan && (
-        <div className="p-8 rounded-[3.0rem] bg-gradient-to-br from-white via-pink-50/5 to-white border border-pink-100 shadow-xl shadow-pink-50 dark:shadow-none space-y-8 animate-in fade-in-50 slide-in-from-bottom-5 duration-300">
+        <div className="p-8 rounded-[3.0rem] bg-white/80 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 shadow-xl space-y-8 animate-in fade-in-50 slide-in-from-bottom-5 duration-300">
           <div className="flex items-center justify-between">
             <h4 className="text-xl font-black text-slate-800 flex items-center gap-3">
               <Zap className="w-6 h-6 text-primary animate-bounce" /> Cấu hình gia hạn {selectedPlan.name}

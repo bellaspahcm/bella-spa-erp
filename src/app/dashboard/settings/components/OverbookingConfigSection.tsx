@@ -36,7 +36,7 @@ function ToggleRow({
         disabled
           ? "bg-slate-50 border-slate-100 opacity-70"
           : checked
-          ? "bg-white border-pink-100 shadow-sm"
+          ? "bg-white dark:bg-slate-800 border-slate-200/80 dark:border-slate-700 shadow-sm"
           : "bg-slate-50/60 border-slate-100"
       }`}
     >
@@ -104,7 +104,7 @@ export default function OverbookingConfigSection({
   };
 
   return (
-    <div className="mt-8 pt-8 border-t border-pink-100/50">
+    <div className="mt-8 pt-8 border-t border-slate-200/80 dark:border-slate-800">
       {/* Section header */}
       <div className="flex items-center gap-4 mb-6">
         <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">

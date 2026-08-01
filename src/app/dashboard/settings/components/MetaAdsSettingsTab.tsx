@@ -185,7 +185,7 @@ export default function MetaAdsSettingsTab() {
     <div className="space-y-8">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-100 text-primary">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
             <Megaphone className="h-6 w-6" />
           </div>
           <div>
@@ -198,7 +198,7 @@ export default function MetaAdsSettingsTab() {
         <button
           onClick={loadConnections}
           disabled={isLoading}
-          className="inline-flex items-center justify-center gap-2 rounded-2xl border border-rose-100 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:border-rose-200 hover:text-primary disabled:opacity-50"
+          className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 px-5 py-3 text-sm font-black text-slate-700 dark:text-slate-300 shadow-sm transition hover:border-primary hover:text-primary disabled:opacity-50"
         >
           <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
           Làm mới
@@ -206,10 +206,10 @@ export default function MetaAdsSettingsTab() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-        <section className="rounded-[2rem] border border-rose-100 bg-white p-6 shadow-sm">
+        <section className="rounded-[2rem] border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
           <div className="mb-6 flex items-center gap-3">
             <ShieldCheck className="h-5 w-5 text-primary" />
-            <h3 className="text-lg font-black text-slate-900">Cấu hình tài khoản quảng cáo</h3>
+            <h3 className="text-lg font-black text-slate-900 dark:text-slate-100">Cấu hình tài khoản quảng cáo</h3>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
@@ -221,7 +221,7 @@ export default function MetaAdsSettingsTab() {
                 value={adAccountId}
                 onChange={(event) => setAdAccountId(event.target.value)}
                 placeholder="act_123456789 hoặc 123456789"
-                className="w-full rounded-2xl border border-slate-100 bg-slate-50 px-5 py-4 text-sm font-bold text-slate-900 outline-none transition focus:border-rose-300 focus:bg-white focus:ring-4 focus:ring-rose-50"
+                className="w-full rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 px-5 py-4 text-sm font-bold text-slate-900 dark:text-slate-100 outline-none transition focus:border-primary focus:bg-white dark:focus:bg-slate-800 focus:ring-4 focus:ring-primary/10"
               />
             </label>
 
@@ -232,8 +232,8 @@ export default function MetaAdsSettingsTab() {
               <input
                 value={accountName}
                 onChange={(event) => setAccountName(event.target.value)}
-                placeholder="Bella Spa Ads"
-                className="w-full rounded-2xl border border-slate-100 bg-slate-50 px-5 py-4 text-sm font-bold text-slate-900 outline-none transition focus:border-rose-300 focus:bg-white focus:ring-4 focus:ring-rose-50"
+                placeholder="Bella Enterprise Ads"
+                className="w-full rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 px-5 py-4 text-sm font-bold text-slate-900 dark:text-slate-100 outline-none transition focus:border-primary focus:bg-white dark:focus:bg-slate-800 focus:ring-4 focus:ring-primary/10"
               />
             </label>
 
@@ -244,7 +244,7 @@ export default function MetaAdsSettingsTab() {
               <input
                 value={currency}
                 onChange={(event) => setCurrency(event.target.value)}
-                className="w-full rounded-2xl border border-slate-100 bg-slate-50 px-5 py-4 text-sm font-bold text-slate-900 outline-none transition focus:border-rose-300 focus:bg-white focus:ring-4 focus:ring-rose-50"
+                className="w-full rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 px-5 py-4 text-sm font-bold text-slate-900 dark:text-slate-100 outline-none transition focus:border-primary focus:bg-white dark:focus:bg-slate-800 focus:ring-4 focus:ring-primary/10"
               />
             </label>
 
@@ -255,7 +255,7 @@ export default function MetaAdsSettingsTab() {
               <input
                 value={timezoneName}
                 onChange={(event) => setTimezoneName(event.target.value)}
-                className="w-full rounded-2xl border border-slate-100 bg-slate-50 px-5 py-4 text-sm font-bold text-slate-900 outline-none transition focus:border-rose-300 focus:bg-white focus:ring-4 focus:ring-rose-50"
+                className="w-full rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 px-5 py-4 text-sm font-bold text-slate-900 dark:text-slate-100 outline-none transition focus:border-primary focus:bg-white dark:focus:bg-slate-800 focus:ring-4 focus:ring-primary/10"
               />
             </label>
 
@@ -269,7 +269,7 @@ export default function MetaAdsSettingsTab() {
                 onChange={(event) => setAccessToken(event.target.value)}
                 autoComplete="new-password"
                 placeholder="Dán token mới nếu cần cập nhật tài khoản này"
-                className="w-full rounded-2xl border border-slate-100 bg-slate-50 px-5 py-4 text-sm font-bold text-slate-900 outline-none transition focus:border-rose-300 focus:bg-white focus:ring-4 focus:ring-rose-50"
+                className="w-full rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 px-5 py-4 text-sm font-bold text-slate-900 dark:text-slate-100 outline-none transition focus:border-primary focus:bg-white dark:focus:bg-slate-800 focus:ring-4 focus:ring-primary/10"
               />
             </label>
           </div>
@@ -281,7 +281,7 @@ export default function MetaAdsSettingsTab() {
             <button
               onClick={handleSave}
               disabled={isSaving || !adAccountId.trim()}
-              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-4 text-sm font-black uppercase tracking-wider text-white shadow-xl shadow-pink-200/60 transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-4 text-sm font-black uppercase tracking-wider text-white shadow-md transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               Lưu tài khoản
@@ -289,10 +289,10 @@ export default function MetaAdsSettingsTab() {
           </div>
         </section>
 
-        <section className="rounded-[2rem] border border-rose-100 bg-white p-6 shadow-sm">
+        <section className="rounded-[2rem] border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
           <div className="mb-6 flex items-center gap-3">
             <CalendarDays className="h-5 w-5 text-primary" />
-            <h3 className="text-lg font-black text-slate-900">Đồng bộ thủ công</h3>
+            <h3 className="text-lg font-black text-slate-900 dark:text-slate-100">Đồng bộ thủ công</h3>
           </div>
 
           <div className="space-y-4">
@@ -305,7 +305,7 @@ export default function MetaAdsSettingsTab() {
                 value: connection.ad_account_id,
                 label: connection.account_name || connection.ad_account_id,
               }))}
-              buttonClassName="w-full min-w-0 max-w-full overflow-hidden flex items-center justify-between px-5 py-4 rounded-2xl border border-slate-100 bg-slate-50 text-sm font-bold text-slate-900 shadow-sm transition hover:border-rose-200"
+              buttonClassName="w-full min-w-0 max-w-full overflow-hidden flex items-center justify-between px-5 py-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 text-sm font-bold text-slate-900 dark:text-slate-100 shadow-sm transition hover:border-primary"
             />
 
             <div className="grid gap-4 sm:grid-cols-2">
@@ -317,7 +317,7 @@ export default function MetaAdsSettingsTab() {
                   type="date"
                   value={dateFrom}
                   onChange={(event) => setDateFrom(event.target.value)}
-                  className="w-full rounded-2xl border border-slate-100 bg-slate-50 px-5 py-4 text-sm font-black text-slate-900 outline-none transition focus:border-rose-300 focus:bg-white focus:ring-4 focus:ring-rose-50"
+                  className="w-full rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 px-5 py-4 text-sm font-black text-slate-900 dark:text-slate-100 outline-none transition focus:border-primary focus:bg-white dark:focus:bg-slate-800 focus:ring-4 focus:ring-primary/10"
                 />
               </label>
               <label className="space-y-2">
@@ -328,7 +328,7 @@ export default function MetaAdsSettingsTab() {
                   type="date"
                   value={dateTo}
                   onChange={(event) => setDateTo(event.target.value)}
-                  className="w-full rounded-2xl border border-slate-100 bg-slate-50 px-5 py-4 text-sm font-black text-slate-900 outline-none transition focus:border-rose-300 focus:bg-white focus:ring-4 focus:ring-rose-50"
+                  className="w-full rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 px-5 py-4 text-sm font-black text-slate-900 dark:text-slate-100 outline-none transition focus:border-primary focus:bg-white dark:focus:bg-slate-800 focus:ring-4 focus:ring-primary/10"
                 />
               </label>
             </div>
@@ -345,10 +345,10 @@ export default function MetaAdsSettingsTab() {
         </section>
       </div>
 
-      <section className="rounded-[2rem] border border-rose-100 bg-white p-6 shadow-sm">
+      <section className="rounded-[2rem] border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
         <div className="mb-5 flex items-center gap-3">
           <BarChart3 className="h-5 w-5 text-primary" />
-          <h3 className="text-lg font-black text-slate-900">Tài khoản đã cấu hình</h3>
+          <h3 className="text-lg font-black text-slate-900 dark:text-slate-100">Tài khoản đã cấu hình</h3>
         </div>
 
         {isLoading ? (
