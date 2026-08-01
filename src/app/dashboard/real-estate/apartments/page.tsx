@@ -3,9 +3,9 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
-  Grid3x3, Building, Loader2, RefreshCw, LayoutGrid,
-  List, Search, Filter, CheckCircle2, Clock, Banknote,
-  Home, AlertCircle, UserCheck, ArrowRight, RotateCcw
+  Grid3x3, Building, Loader2, RefreshCw,
+  List, Search, CheckCircle2, Clock,
+  Home, UserCheck, ArrowRight, RotateCcw
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -14,7 +14,9 @@ import {
 import {
   fetchProductsAction,
   updateProductStatusAction,
+  updateProductDetailsAction,
 } from "@/modules/real_estate/actions/productActions";
+import { UnitDetailModal } from "@/modules/real_estate/components/UnitDetailModal";
 import { Database } from "@/types/database.types";
 
 type ProjectRow = Database["public"]["Tables"]["real_estate_projects"]["Row"];
@@ -64,16 +66,19 @@ function UnitCell({
   product,
   onAction,
   isUpdating,
+  onClick,
 }: {
   product: ProductRow;
   onAction: (id: string, from: ProductStatus, to: ProductStatus) => void;
   isUpdating: boolean;
+  onClick: () => void;
 }) {
   const [hovered, setHovered] = useState(false);
   const cfg = STATUS_CFG[product.status ?? "available"] ?? STATUS_CFG.available;
 
   return (
     <div
+      onClick={onClick}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       className={`relative border rounded-xl p-2.5 transition-all duration-200 cursor-pointer min-w-0 ${cfg.bg} ${cfg.border} ${hovered ? "scale-105 shadow-lg z-10" : ""}`}
@@ -155,11 +160,13 @@ function FloorGroup({
   products,
   onAction,
   updatingId,
+  onSelectProduct,
 }: {
   floor: string;
   products: ProductRow[];
   onAction: (id: string, from: ProductStatus, to: ProductStatus) => void;
   updatingId: string | null;
+  onSelectProduct: (product: ProductRow) => void;
 }) {
   return (
     <div className="space-y-2">
@@ -177,6 +184,7 @@ function FloorGroup({
             product={p}
             onAction={onAction}
             isUpdating={updatingId === p.id}
+            onClick={() => onSelectProduct(p)}
           />
         ))}
       </div>
@@ -193,6 +201,8 @@ export default function RealEstateApartmentsPage() {
   const [viewMode, setViewMode] = useState<"matrix" | "list">("matrix");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [search, setSearch] = useState("");
+
+  const [selectedProduct, setSelectedProduct] = useState<ProductRow | null>(null);
 
   const loadInitialData = useCallback(async () => {
     setIsLoading(true);
@@ -242,6 +252,44 @@ export default function RealEstateApartmentsPage() {
     setUpdatingId(null);
   }
 
+  async function handleUpdateStatus(
+    productId: string,
+    targetStatus: ProductRow['status'],
+    ownerName?: string | null
+  ) {
+    const res = await updateProductStatusAction(productId, targetStatus, ownerName);
+    if (!res.success) {
+      throw new Error(res.error || "Không thể cập nhật trạng thái");
+    }
+    toast.success(`✅ Cập nhật trạng thái thành công`);
+    if (selectedProject) {
+      const r = await fetchProductsAction(selectedProject.id);
+      if (r.success && r.data) setProducts(Array.isArray(r.data) ? r.data : [r.data]);
+    }
+  }
+
+  async function handleUpdateDetails(
+    productId: string,
+    payload: {
+      unit_price?: number;
+      area?: number;
+      product_code?: string;
+      product_type?: string;
+      block?: string | null;
+      floor?: string | null;
+    }
+  ) {
+    const res = await updateProductDetailsAction(productId, payload);
+    if (!res.success) {
+      throw new Error(res.error || "Không thể cập nhật thông tin");
+    }
+    toast.success(`✅ Cập nhật thông tin căn thành công`);
+    if (selectedProject) {
+      const r = await fetchProductsAction(selectedProject.id);
+      if (r.success && r.data) setProducts(Array.isArray(r.data) ? r.data : [r.data]);
+    }
+  }
+
   // Filter and group
   const filtered = products.filter(p => {
     const matchStatus = filterStatus === "all" || p.status === filterStatus;
@@ -279,7 +327,7 @@ export default function RealEstateApartmentsPage() {
             Bảng Hàng Căn Hộ
           </h1>
           <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
-            Sơ đồ ma trận căn hộ theo tầng · hover để xem chi tiết và chuyển trạng thái
+            Sơ đồ ma trận căn hộ theo tầng · Click vào căn hộ để chỉnh sửa giá hoặc cập nhật trạng thái
           </p>
         </div>
 
@@ -384,6 +432,7 @@ export default function RealEstateApartmentsPage() {
               products={floorGroups[floor]}
               onAction={handleAction}
               updatingId={updatingId}
+              onSelectProduct={setSelectedProduct}
             />
           ))}
         </div>
@@ -407,7 +456,7 @@ export default function RealEstateApartmentsPage() {
               {filtered.map(p => {
                 const cfg = STATUS_CFG[p.status ?? "available"] ?? STATUS_CFG.available;
                 return (
-                  <tr key={p.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
+                  <tr key={p.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors cursor-pointer" onClick={() => setSelectedProduct(p)}>
                     <td className="px-5 py-3 font-black text-slate-900 dark:text-white">{p.product_code}</td>
                     <td className="px-5 py-3 text-slate-600 dark:text-slate-400">{p.floor ?? "—"}</td>
                     <td className="px-5 py-3 text-slate-600 dark:text-slate-400">{p.block ?? "—"}</td>
@@ -424,7 +473,7 @@ export default function RealEstateApartmentsPage() {
                     <td className="px-5 py-3 text-slate-600 dark:text-slate-400 text-sm">
                       {p.owner_name ?? <span className="text-slate-300 dark:text-slate-600">—</span>}
                     </td>
-                    <td className="px-5 py-3">
+                    <td className="px-5 py-3" onClick={e => e.stopPropagation()}>
                       <div className="flex gap-1.5">
                         {p.status === "available" && (
                           <button
@@ -440,7 +489,7 @@ export default function RealEstateApartmentsPage() {
                             <button
                               disabled={updatingId === p.id}
                               onClick={() => handleAction(p.id, "booked", "deposited")}
-                              className="px-2.5 py-1 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold rounded-lg transition-all disabled:opacity-50"
+                              className="px-2.5 py-1 bg-orange-50 hover:bg-orange-600 text-white text-xs font-bold rounded-lg transition-all disabled:opacity-50"
                             >
                               Cọc
                             </button>
@@ -478,12 +527,20 @@ export default function RealEstateApartmentsPage() {
         <span className="font-bold">Màu sắc trạng thái:</span>
         {Object.entries(STATUS_CFG).map(([k, cfg]) => (
           <span key={k} className="flex items-center gap-1.5">
-            <span className={`w-3 h-3 rounded-sm ${cfg.dot.replace("bg-", "bg-")}`} style={{ backgroundColor: "" }} />
             <span className={`w-2 h-2 rounded-full ${cfg.dot}`} />
             {cfg.label}
           </span>
         ))}
       </div>
+
+      {/* Unit Detail Modal */}
+      <UnitDetailModal
+        product={selectedProduct}
+        isOpen={!!selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+        onUpdateStatus={handleUpdateStatus}
+        onUpdateDetails={handleUpdateDetails}
+      />
     </div>
   );
 }

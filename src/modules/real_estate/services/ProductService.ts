@@ -125,5 +125,47 @@ export class ProductService {
 
     return updatedProduct;
   }
+
+  /**
+   * Update product general details (price, area, code, block, floor)
+   */
+  static async updateProductDetails(
+    supabase: SupabaseClient<Database>,
+    tenantId: string,
+    productId: string,
+    payload: {
+      unit_price?: number;
+      area?: number;
+      product_code?: string;
+      product_type?: string;
+      block?: string | null;
+      floor?: string | null;
+    }
+  ): Promise<ProductRow> {
+    if (!tenantId) {
+      throw new Error('Tenant ID is required');
+    }
+    if (!productId) {
+      throw new Error('Product ID is required');
+    }
+
+    const { data: updatedProduct, error: updateError } = await supabase
+      .from('real_estate_products')
+      .update({
+        ...payload,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', productId)
+      .eq('tenant_id', tenantId)
+      .select()
+      .single();
+
+    if (updateError || !updatedProduct) {
+      console.error('[ProductService] Error updating product details:', updateError?.message);
+      throw new Error(updateError?.message || 'Failed to update product details');
+    }
+
+    return updatedProduct;
+  }
 }
 

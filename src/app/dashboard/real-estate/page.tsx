@@ -6,7 +6,7 @@ import { Bell, RefreshCw, Zap, AlertTriangle, FileSignature } from 'lucide-react
 import { ProjectHeader } from '@/modules/real_estate/components/ProjectHeader';
 import { InventoryMatrixGrid } from '@/modules/real_estate/components/InventoryMatrixGrid';
 import { fetchProjectsAction } from '@/modules/real_estate/actions/projectActions';
-import { fetchProductsAction, updateProductStatusAction } from '@/modules/real_estate/actions/productActions';
+import { fetchProductsAction, updateProductStatusAction, updateProductDetailsAction } from '@/modules/real_estate/actions/productActions';
 import { Database } from '@/types/database.types';
 import { useUser } from '@/lib/user-context';
 import { useTenantContext } from '@/core/hooks/useTenantContext';
@@ -161,6 +161,29 @@ export default function RealEstateDashboardPage() {
     const res = await updateProductStatusAction(productId, targetStatus, ownerName);
     if (!res.success) {
       throw new Error(res.error || 'Cập nhật trạng thái thất bại');
+    }
+    // Refresh products list
+    if (selectedProject) {
+      const resProducts = await fetchProductsAction(selectedProject.id);
+      if (resProducts.success && resProducts.data) {
+        setProducts(Array.isArray(resProducts.data) ? resProducts.data : [resProducts.data]);
+      }
+    }
+  };
+  const handleUpdateDetails = async (
+    productId: string,
+    payload: {
+      unit_price?: number;
+      area?: number;
+      product_code?: string;
+      product_type?: string;
+      block?: string | null;
+      floor?: string | null;
+    }
+  ) => {
+    const res = await updateProductDetailsAction(productId, payload);
+    if (!res.success) {
+      throw new Error(res.error || 'Cập nhật thông tin thất bại');
     }
     // Refresh products list
     if (selectedProject) {
@@ -368,6 +391,7 @@ export default function RealEstateDashboardPage() {
       <InventoryMatrixGrid
         products={products}
         onUpdateStatus={handleUpdateStatus}
+        onUpdateDetails={handleUpdateDetails}
       />
     </div>
   );

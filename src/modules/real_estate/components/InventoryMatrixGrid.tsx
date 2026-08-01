@@ -14,6 +14,17 @@ interface InventoryMatrixGridProps {
     targetStatus: ProductRow['status'],
     ownerName?: string | null
   ) => Promise<void>;
+  onUpdateDetails?: (
+    productId: string,
+    payload: {
+      unit_price?: number;
+      area?: number;
+      product_code?: string;
+      product_type?: string;
+      block?: string | null;
+      floor?: string | null;
+    }
+  ) => Promise<void>;
 }
 
 interface StatusConfigItem {
@@ -87,6 +98,7 @@ const STATUS_CONFIG: Record<string, StatusConfigItem> = {
 export const InventoryMatrixGrid: React.FC<InventoryMatrixGridProps> = ({
   products,
   onUpdateStatus,
+  onUpdateDetails,
 }) => {
   const [selectedProduct, setSelectedProduct] = useState<ProductRow | null>(null);
 
@@ -216,6 +228,7 @@ export const InventoryMatrixGrid: React.FC<InventoryMatrixGridProps> = ({
         isOpen={!!selectedProduct}
         onClose={() => setSelectedProduct(null)}
         onUpdateStatus={onUpdateStatus}
+        onUpdateDetails={onUpdateDetails}
       />
     </div>
   );

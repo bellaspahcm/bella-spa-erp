@@ -103,3 +103,42 @@ export async function releaseExpiredBookingsAction(
   }
 }
 
+export async function updateProductDetailsAction(
+  productId: string,
+  payload: {
+    unit_price?: number;
+    area?: number;
+    product_code?: string;
+    product_type?: string;
+    block?: string | null;
+    floor?: string | null;
+  }
+): Promise<ProductResult> {
+  try {
+    const supabase = await createClient();
+    const user = await getCurrentUser();
+
+    if (!user || !user.tenant_id) {
+      return { success: false, error: 'Unauthorized: Missing tenant context' };
+    }
+
+    const updatedProduct = await ProductService.updateProductDetails(
+      supabase,
+      user.tenant_id,
+      productId,
+      payload
+    );
+
+    revalidatePath(`/dashboard/real-estate/projects/${updatedProduct.project_id}`);
+    revalidatePath(`/dashboard/real-estate/products/${productId}`);
+
+    return { success: true, data: updatedProduct };
+  } catch (error) {
+    console.error('[productActions] Error in updateProductDetailsAction:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'System error'
+    };
+  }
+}
+
