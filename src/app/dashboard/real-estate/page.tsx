@@ -208,7 +208,7 @@ export default function RealEstateDashboardPage() {
   const monogram = user?.full_name ? user.full_name.substring(0, 2).toUpperCase() : 'AD';
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <div className="p-6 w-full space-y-6">
       {/* Premium Dashboard Welcome Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-2xl bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800/80 shadow-sm transition-all">
         <div className="flex items-center gap-4">
