@@ -185,7 +185,13 @@ export default function AppearanceTab() {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [brandTheme, setBrandTheme] = useState<TenantBrandTheme>(initialBrandTheme);
   const [logoUrl, setLogoUrl] = useState('');
-  const [enabledModules, setEnabledModules] = useState<TenantEnabledModules>(DEFAULT_ENABLED_MODULES);
+  const [enabledModules, setEnabledModules] = useState<TenantEnabledModules>(() => ({
+    babycare: activeModuleKey === 'babycare',
+    beauty_spa: activeModuleKey === 'beauty_spa',
+    student_training: activeModuleKey === 'student_training',
+    industrial_cleaning: activeModuleKey === 'industrial_cleaning',
+    real_estate: activeModuleKey === 'real_estate',
+  }));
   const [tenantId, setTenantId] = useState('');
   const [tenantModuleKey, setTenantModuleKey] = useState<TenantModuleKey>(activeModuleKey);
   const [isLoadingTenantConfig, setIsLoadingTenantConfig] = useState(true);
@@ -209,7 +215,7 @@ export default function AppearanceTab() {
       const tenant = await getCachedTenantSettings();
       if (!tenant) return;
 
-      const nextModuleKey = getDefaultTenantModuleKey(tenant.enabled_modules);
+      const nextModuleKey = getDefaultTenantModuleKey(tenant.enabled_modules, tenant.tenant_name);
       const normalizedBrandTheme = normalizeTenantBrandThemeForModule(tenant.brand_theme, nextModuleKey);
       setTenantId(tenant.id);
       setBrandTheme(normalizedBrandTheme);
@@ -228,7 +234,7 @@ export default function AppearanceTab() {
   }, [loadTenantDisplayConfig]);
 
   useEffect(() => {
-    if (isLoadingTenantConfig) return;
+    if (isLoadingTenantConfig || !tenantId) return;
     applyBrandThemePreview({
       tenantId,
       enabledModules,

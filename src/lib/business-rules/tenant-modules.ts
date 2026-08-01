@@ -244,7 +244,7 @@ export function getDefaultTenantBrandThemeForModule(moduleKey: TenantModuleKey):
   return DEFAULT_TENANT_BRAND_THEME;
 }
 
-const LEGACY_DEFAULT_PINKS = ['#A91555', '#DB2777', '#F43F5E', '#BE123C', '#E11D48', '#881337'];
+const LEGACY_DEFAULT_PINKS = ['#A91555', '#DB2777', '#F43F5E', '#BE123C', '#E11D48', '#881337', '#FF4081', '#E91E63', '#EC4899', '#C026D3', '#D946EF', '#9F1239'];
 
 export function normalizeTenantBrandThemeForModule(
   value: unknown,

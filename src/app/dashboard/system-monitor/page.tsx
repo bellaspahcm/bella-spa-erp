@@ -39,26 +39,26 @@ const STATUS_TONE: Record<SystemMonitorStatus, {
   healthy: {
     label: 'Ổn định',
     icon: CheckCircle2,
-    bg: 'bg-emerald-50 dark:bg-emerald-500/10',
-    border: 'border-emerald-200 dark:border-emerald-500/30',
+    bg: 'bg-emerald-50/50 dark:bg-emerald-500/10',
+    border: 'border-emerald-200/50 dark:border-emerald-500/30',
     text: 'text-emerald-700 dark:text-emerald-400',
     solid: 'bg-emerald-600 text-white dark:bg-emerald-500 dark:text-[#11100F]',
   },
   warning: {
     label: 'Cần rà soát',
     icon: AlertTriangle,
-    bg: 'bg-amber-50 dark:bg-amber-500/10',
-    border: 'border-amber-200 dark:border-amber-500/30',
-    text: 'text-amber-700 dark:text-amber-400',
-    solid: 'bg-amber-600 text-white dark:bg-amber-500 dark:text-[#11100F]',
+    bg: 'bg-slate-50/80 dark:bg-slate-900/60',
+    border: 'border-slate-200 dark:border-slate-800',
+    text: 'text-amber-600 dark:text-amber-400',
+    solid: 'bg-amber-500 text-white dark:bg-amber-500 dark:text-[#11100F]',
   },
   critical: {
     label: 'Nguy cấp',
     icon: AlertTriangle,
-    bg: 'bg-red-50 dark:bg-red-500/10',
-    border: 'border-red-200 dark:border-red-500/30',
-    text: 'text-red-700 dark:text-red-400',
-    solid: 'bg-red-600 text-white dark:bg-red-500 dark:text-[#11100F]',
+    bg: 'bg-rose-50/50 dark:bg-rose-500/10',
+    border: 'border-rose-200/50 dark:border-rose-500/30',
+    text: 'text-rose-700 dark:text-rose-400',
+    solid: 'bg-rose-600 text-white dark:bg-rose-500 dark:text-[#11100F]',
   },
 };
 
@@ -135,7 +135,7 @@ export default function SystemMonitorPage() {
 
   return (
     <div className={cn("min-h-screen space-y-6", isEmbedded ? "p-0 bg-transparent" : "bg-background p-4 md:p-8")}>
-      <section className={cn('rounded-3xl md:rounded-[2rem] border p-5 md:p-8 shadow-sm', overallTone.bg, overallTone.border)}>
+      <section className="rounded-3xl md:rounded-[2rem] border p-5 md:p-8 shadow-sm bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-slate-200/60 dark:border-slate-800">
         <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
           <div className="flex items-start gap-4">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/80 dark:bg-[#11100F]/60">
@@ -228,7 +228,7 @@ export default function SystemMonitorPage() {
         )}
       </section>
 
-      <section className="rounded-3xl md:rounded-[2rem] bg-white dark:bg-[#1C1B19] border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-5 md:p-8 shadow-sm">
+      <section className="rounded-3xl md:rounded-[2rem] bg-white dark:bg-[#1C1B19] border border-slate-200/60 dark:border-slate-800 p-5 md:p-8 shadow-sm">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div>
             <h2 className="text-sm font-black uppercase tracking-wider text-slate-950 dark:text-[#EFE9E1]">
@@ -302,7 +302,7 @@ function SectionSummary({ section }: { section: SystemMonitorSection }) {
   const Icon = SECTION_ICON[section.id];
 
   return (
-    <div className="rounded-2xl bg-white dark:bg-[#1C1B19] border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-5 shadow-sm">
+    <div className="rounded-2xl bg-white dark:bg-[#1C1B19] border border-slate-200/60 dark:border-slate-800 p-5 shadow-sm">
       <div className="flex items-center justify-between gap-3">
         <div className={cn('flex h-10 w-10 items-center justify-center rounded-xl border', tone.bg, tone.border)}>
           <Icon className={cn('h-5 w-5', tone.text)} />
@@ -326,7 +326,7 @@ function MonitorSection({ section }: { section: SystemMonitorSection }) {
   const Icon = SECTION_ICON[section.id];
 
   return (
-    <div className="rounded-3xl md:rounded-[2rem] bg-white dark:bg-[#1C1B19] border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-5 md:p-6 shadow-sm">
+    <div className="rounded-3xl md:rounded-[2rem] bg-white dark:bg-[#1C1B19] border border-slate-200/60 dark:border-slate-800 p-5 md:p-6 shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3">
           <div className={cn('flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border', tone.bg, tone.border)}>
