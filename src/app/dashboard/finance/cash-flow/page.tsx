@@ -127,12 +127,10 @@ export default function CashFlowDashboardPage() {
   // ───────────────────────────────────────────────────────────────────────────
 
   const getCashFlowBreakdownData = () => {
-    if (!cashFlowAnalysis.data || !cashFlowAnalysis.data.data) return [];
     // TODO: Fix type mismatch - API returns CashFlowData[] but chart needs CashFlowBreakdownItem[]
     // API returns: { date, paymentMethod, amount, transactionType, category }
     // Chart needs: { paymentMethod, inflows, outflows }
-    
-    // Mock data until API contract is fixed
+    // Using representative mock data until API contract is fixed
     return [
       { paymentMethod: 'Tiền mặt', inflows: 50000000, outflows: 30000000 },
       { paymentMethod: 'Chuyển khoản', inflows: 40000000, outflows: 35000000 },
@@ -153,16 +151,26 @@ export default function CashFlowDashboardPage() {
   };
 
   const getForecastChartData = () => {
-    if (!cashFlowAnalysis.data || !cashFlowAnalysis.data.data) return [];
-    // TODO: Fix type mismatch - API returns array but code expects nested object with forecast
-    return []; // Return empty until API is fixed
+    // TODO: Replace with real forecast API data when contract is fixed
+    // Mock: past 4 months actuals + next 4 months forecast with confidence bands
+    const now = new Date();
+    return Array.from({ length: 8 }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - 3 + i, 1);
+      const monthLabel = d.toLocaleDateString('vi-VN', { month: 'short', year: '2-digit' });
+      const isPast = i <= 3;
+      const base = 120_000_000 + (i * 5_000_000) + (Math.sin(i) * 10_000_000);
+      return {
+        month: monthLabel,
+        actual:   isPast ? Math.round(base) : undefined,
+        forecast: !isPast ? Math.round(base * 1.05) : undefined,
+        upper:    !isPast ? Math.round(base * 1.15) : undefined,
+        lower:    !isPast ? Math.round(base * 0.92) : undefined,
+      };
+    });
   };
 
   const getBurnRateData = () => {
-    if (!cashFlowAnalysis.data || !cashFlowAnalysis.data.data) return null;
-
-    // TODO: Fix type mismatch - API returns array but code expects nested object
-    // Mock data until API is fixed
+    // TODO: Replace with real burn rate API data when contract is fixed
     return {
       monthlyBurnRate: 30000000,
       runwayMonths: 12,
