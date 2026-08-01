@@ -348,6 +348,12 @@ const realEstateMenuItems: SidebarMenuItem[] = [
   { icon: BarChart3,       label: 'BI Analytics',         href: '/dashboard/real-estate/bi-analytics' },
   { icon: Search,          label: 'Tìm Kiếm BĐS',         href: '/dashboard/real-estate/global-search' },
   { icon: ShieldCheck,     label: 'Quản Trị BĐS',         href: '/dashboard/real-estate/admin' },
+
+  { type: 'header', label: 'Tài Chính & Kế Toán' },
+  { icon: FileText,        label: 'Nhật Ký Thu Chi',       href: '/dashboard/finance' },
+  { icon: LineChart,       label: 'Dòng Tiền & Dự Báo',   href: '/dashboard/finance/cash-flow' },
+  { icon: DollarSign,      label: 'Đối Soát Công Nợ',     href: '/dashboard/finance/reconciliation' },
+  { icon: Wallet,          label: 'Sổ Cái Kế Toán',       href: '/dashboard/accounting' },
 ];
 
 const customerMenuItems: SidebarMenuItem[] = [
