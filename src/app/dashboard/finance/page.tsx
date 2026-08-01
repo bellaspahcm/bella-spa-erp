@@ -14,6 +14,7 @@ import { FinancePnLSummary, type PnLData, type ServicePerformance } from '@/comp
 import { TransactionModal } from '@/components/features/TransactionModal';
 import PremiumExportButton from '@/components/ui/PremiumExportButton';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
+import Link from 'next/link';
 import SkeletonLoader,{ SkeletonTable } from '@/components/ui/SkeletonLoader';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
 import { createClient } from '@/lib/supabase-client';
@@ -420,23 +421,48 @@ export default function FinancePage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex w-full overflow-x-auto items-center gap-1 bg-white p-1.5 rounded-2xl border border-slate-100 shadow-sm sm:w-fit mb-8">
+      <div className="flex w-full overflow-x-auto items-center gap-1 bg-white dark:bg-slate-900 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm sm:w-fit mb-8">
         <button 
           onClick={() => setActiveTab('transactions')}
-            className={`shrink-0 px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
-            activeTab === 'transactions' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'
+          className={`shrink-0 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+            activeTab === 'transactions' ? 'bg-slate-900 text-white shadow-md dark:bg-slate-800' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-350'
           }`}
         >
-          Sổ nhật ký thu chi
+          Sổ nhật ký
         </button>
         <button 
           onClick={() => setActiveTab('analysis')}
-            className={`shrink-0 px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
-            activeTab === 'analysis' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'
+          className={`shrink-0 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+            activeTab === 'analysis' ? 'bg-slate-900 text-white shadow-md dark:bg-slate-800' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-350'
           }`}
         >
-          Phân tích P&L & ROI
+          Khóa tháng & P&L
         </button>
+        <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-1" />
+        <Link 
+          href="/dashboard/finance/pnl"
+          className="shrink-0 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all text-slate-400 hover:text-slate-600 dark:hover:text-slate-350"
+        >
+          Lãi/Lỗ Chi Tiết (P&L)
+        </Link>
+        <Link 
+          href="/dashboard/finance/cash-flow"
+          className="shrink-0 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all text-slate-400 hover:text-slate-600 dark:hover:text-slate-350"
+        >
+          Dòng tiền & Dự báo
+        </Link>
+        <Link 
+          href="/dashboard/finance/budget"
+          className="shrink-0 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all text-slate-400 hover:text-slate-600 dark:hover:text-slate-350"
+        >
+          Ngân sách
+        </Link>
+        <Link 
+          href="/dashboard/finance/reconciliation"
+          className="shrink-0 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all text-slate-400 hover:text-slate-600 dark:hover:text-slate-350"
+        >
+          Đối soát công nợ
+        </Link>
       </div>
 
       {activeTab === 'analysis' ? (

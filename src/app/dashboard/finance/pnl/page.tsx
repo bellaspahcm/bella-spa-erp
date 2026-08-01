@@ -18,6 +18,7 @@
  */
 
 import { useState, useMemo } from 'react';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 import {
   BarChart3,
@@ -210,6 +211,41 @@ export default function PnLDashboardPage() {
 
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
+      {/* Tabs */}
+      <div className="flex w-full overflow-x-auto items-center gap-1 bg-white dark:bg-slate-900 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm sm:w-fit">
+        <Link 
+          href="/dashboard/finance"
+          className="shrink-0 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all text-slate-400 hover:text-slate-600 dark:hover:text-slate-350"
+        >
+          Sổ nhật ký
+        </Link>
+        <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-1" />
+        <Link 
+          href="/dashboard/finance/pnl"
+          className="shrink-0 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all bg-slate-900 text-white shadow-md dark:bg-slate-800"
+        >
+          Lãi/Lỗ Chi Tiết (P&L)
+        </Link>
+        <Link 
+          href="/dashboard/finance/cash-flow"
+          className="shrink-0 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all text-slate-400 hover:text-slate-600 dark:hover:text-slate-350"
+        >
+          Dòng tiền & Dự báo
+        </Link>
+        <Link 
+          href="/dashboard/finance/budget"
+          className="shrink-0 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all text-slate-400 hover:text-slate-600 dark:hover:text-slate-350"
+        >
+          Ngân sách
+        </Link>
+        <Link 
+          href="/dashboard/finance/reconciliation"
+          className="shrink-0 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all text-slate-400 hover:text-slate-600 dark:hover:text-slate-350"
+        >
+          Đối soát công nợ
+        </Link>
+      </div>
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

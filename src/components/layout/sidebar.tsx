@@ -313,6 +313,8 @@ const menuItems: SidebarMenuItem[] = [
   { type: 'header', label: 'Tài chính & Nhân sự' },
   { icon: Banknote,        label: 'Bảng lương & Công',  href: '/dashboard/salary' },
   { icon: Wallet,          label: 'Sổ cái kế toán',     href: '/dashboard/accounting' },
+  { icon: FileText,        label: 'Nhật ký Thu Chi',    href: '/dashboard/finance' },
+  { icon: LineChart,       label: 'Dòng tiền & Dự báo', href: '/dashboard/finance/cash-flow' },
   { icon: DollarSign,      label: 'Đối soát Công nợ',   href: '/dashboard/finance/reconciliation' },
 
   { type: 'header', label: 'Báo cáo & Phân tích' },
