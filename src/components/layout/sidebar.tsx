@@ -422,6 +422,19 @@ export function Sidebar() {
     applyTenantBrandRuntime(tenantBrand);
   }, [isTenantBrandResolved, tenantBrand]);
 
+  useEffect(() => {
+    const handleBrandChange = (e: Event) => {
+      const customEvt = e as CustomEvent<TenantBrandDisplay>;
+      if (customEvt.detail) {
+        setTenantBrand(customEvt.detail);
+        setIsTenantBrandResolved(true);
+        applyTenantBrandRuntime(customEvt.detail);
+      }
+    };
+    window.addEventListener('brand-theme-change', handleBrandChange);
+    return () => window.removeEventListener('brand-theme-change', handleBrandChange);
+  }, []);
+
   const handleNavigation = () => {
     setIsOpen(false);
   };

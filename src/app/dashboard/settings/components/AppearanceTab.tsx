@@ -157,6 +157,8 @@ function applyBrandThemePreview(input: {
   } catch {
     // Brand cache is only a first-paint optimization.
   }
+
+  window.dispatchEvent(new CustomEvent('brand-theme-change', { detail: brand }));
 }
 
 function getInitialTenantModuleKey(hookValue: TenantModuleKey | null): TenantModuleKey {
