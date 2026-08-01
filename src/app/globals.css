@@ -1207,6 +1207,31 @@ html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-icon-button {
   color: #ffffff !important;
 }
 
+/* Dynamic Shadow Color Overrides for Brand Presets & Modules */
+html[data-tenant-brand-preset="jade_wellness"] [class*="shadow-pink-"],
+html[data-tenant-brand-preset="jade_wellness"] [class*="shadow-rose-"] {
+  --tw-shadow-color: rgba(7, 78, 68, 0.32) !important;
+}
+
+html[data-tenant-brand-preset="luxury_navy"] [class*="shadow-pink-"],
+html[data-tenant-brand-preset="luxury_navy"] [class*="shadow-rose-"],
+html[data-tenant-module="real_estate"] [class*="shadow-pink-"],
+html[data-tenant-module="real_estate"] [class*="shadow-rose-"] {
+  --tw-shadow-color: rgba(11, 34, 64, 0.35) !important;
+}
+
+html[data-tenant-brand-preset="ocean_clean"] [class*="shadow-pink-"],
+html[data-tenant-brand-preset="ocean_clean"] [class*="shadow-rose-"],
+html[data-tenant-module="industrial_cleaning"] [class*="shadow-pink-"],
+html[data-tenant-module="industrial_cleaning"] [class*="shadow-rose-"] {
+  --tw-shadow-color: rgba(30, 58, 138, 0.32) !important;
+}
+
+html[data-tenant-brand-preset="graphite_luxe"] [class*="shadow-pink-"],
+html[data-tenant-brand-preset="graphite_luxe"] [class*="shadow-rose-"] {
+  --tw-shadow-color: rgba(39, 39, 42, 0.35) !important;
+}
+
 /* 5. BELLA ROSE (Soft Rose #FFF0F3 Light Pink / #831843 Deep Burgundy) */
 html[data-tenant-brand-preset="bella_rose"] .beauty-erp-sidebar,
 html[data-tenant-brand-preset="bella_rose"] aside.beauty-erp-sidebar {

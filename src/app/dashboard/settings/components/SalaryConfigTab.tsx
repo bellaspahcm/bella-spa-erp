@@ -1218,7 +1218,7 @@ export default function SalaryConfigTab({
         <button
           onClick={handleSave}
           disabled={isSaving || !tenantId}
-          className="flex items-center gap-3 bg-primary hover:bg-primary-hover text-white px-8 py-4 rounded-2xl font-black transition-all shadow-xl shadow-pink-200/50 dark:shadow-none active:scale-95 uppercase tracking-wider disabled:opacity-50 disabled:grayscale"
+          className="flex items-center gap-3 bg-primary hover:bg-primary-hover text-white px-8 py-4 rounded-2xl font-black transition-all shadow-xl shadow-primary/25 dark:shadow-none active:scale-95 uppercase tracking-wider disabled:opacity-50 disabled:grayscale"
         >
           {isSaving ? (
             <Loader2 className="w-5 h-5 animate-spin" />

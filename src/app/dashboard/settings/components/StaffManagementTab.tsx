@@ -552,7 +552,7 @@ export default function StaffManagementTab() {
                   <button
                     type="submit"
                     disabled={isAdding}
-                    className="w-full bg-primary text-white py-5 rounded-[2rem] font-black uppercase tracking-widest text-xs shadow-xl shadow-pink-100 dark:shadow-none flex items-center justify-center gap-3 hover:bg-primary-hover active:scale-95 transition-all disabled:opacity-50"
+                    className="w-full bg-primary text-white py-5 rounded-[2rem] font-black uppercase tracking-widest text-xs shadow-xl shadow-primary/25 dark:shadow-none flex items-center justify-center gap-3 hover:bg-primary-hover active:scale-95 transition-all disabled:opacity-50"
                   >
                     {isAdding ? (
                       <Sparkles className="w-5 h-5 animate-spin" />
@@ -720,7 +720,7 @@ export default function StaffManagementTab() {
                   <button
                     type="submit"
                     disabled={isUpdating}
-                    className="w-full bg-primary text-white py-5 rounded-[2rem] font-black uppercase tracking-widest text-xs shadow-xl shadow-pink-100 dark:shadow-none flex items-center justify-center gap-3 hover:bg-primary-hover active:scale-95 transition-all disabled:opacity-50"
+                    className="w-full bg-primary text-white py-5 rounded-[2rem] font-black uppercase tracking-widest text-xs shadow-xl shadow-primary/25 dark:shadow-none flex items-center justify-center gap-3 hover:bg-primary-hover active:scale-95 transition-all disabled:opacity-50"
                   >
                     {isUpdating ? (
                       <Sparkles className="w-5 h-5 animate-spin" />

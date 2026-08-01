@@ -243,7 +243,7 @@ export default function SecurityTab() {
           <button
             type="submit"
             disabled={isSaving}
-            className="w-full bg-primary hover:bg-primary-hover disabled:bg-muted text-white font-black py-4 rounded-2xl shadow-xl shadow-pink-200 dark:shadow-none transition-all active:scale-95 flex items-center justify-center gap-3 text-sm uppercase tracking-widest"
+            className="w-full bg-primary hover:bg-primary-hover disabled:bg-muted text-white font-black py-4 rounded-2xl shadow-xl shadow-primary/25 dark:shadow-none transition-all active:scale-95 flex items-center justify-center gap-3 text-sm uppercase tracking-widest"
           >
             {isSaving ? (
               <Loader2 className="animate-spin w-5 h-5" />
@@ -307,7 +307,7 @@ export default function SecurityTab() {
             </div>
             <button
               onClick={handleStartEnroll}
-              className="w-full bg-primary hover:bg-primary-hover text-white font-black py-4 rounded-2xl shadow-xl shadow-pink-200 dark:shadow-none transition-all active:scale-95 flex items-center justify-center gap-3 text-sm uppercase tracking-widest"
+              className="w-full bg-primary hover:bg-primary-hover text-white font-black py-4 rounded-2xl shadow-xl shadow-primary/25 dark:shadow-none transition-all active:scale-95 flex items-center justify-center gap-3 text-sm uppercase tracking-widest"
             >
               <Smartphone className="w-5 h-5" />
               Bật 2FA ngay
