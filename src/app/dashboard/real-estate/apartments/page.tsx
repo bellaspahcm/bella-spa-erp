@@ -17,6 +17,7 @@ import {
   updateProductDetailsAction,
 } from "@/modules/real_estate/actions/productActions";
 import { UnitDetailModal } from "@/modules/real_estate/components/UnitDetailModal";
+import { PremiumSelect } from "@/components/ui/PremiumSelect";
 import { Database } from "@/types/database.types";
 
 type ProjectRow = Database["public"]["Tables"]["real_estate_projects"]["Row"];
@@ -336,15 +337,16 @@ export default function RealEstateApartmentsPage() {
         </div>
 
         {/* Project selector */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-w-[220px]">
           <Building className="w-5 h-5 text-slate-400 shrink-0" />
-          <select
+          <PremiumSelect
+            options={projects.map(p => ({ value: p.id, label: p.name }))}
             value={selectedProject?.id ?? ""}
-            onChange={e => handleProjectChange(e.target.value)}
-            className="px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:border-amber-500"
-          >
-            {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
+            onChange={handleProjectChange}
+            placeholder="Chọn dự án..."
+            className="w-full max-w-[260px]"
+            buttonClassName="py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-800 text-sm font-bold bg-white dark:bg-slate-900 focus:border-amber-500 focus:ring-amber-500/10 focus:ring-2 focus:ring-offset-0 focus:outline-none active:scale-100"
+          />
         </div>
       </div>
 

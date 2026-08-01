@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { PremiumSelect } from "@/components/ui/PremiumSelect";
 import { motion } from "framer-motion";
 import {
   Shield, Settings, History, Webhook, RefreshCw,
@@ -221,13 +222,13 @@ export default function AdminPage() {
                       {cfg.value === "true" ? "Đang bật" : "Đang tắt"}
                     </button>
                   ) : cfg.type === "select" ? (
-                    <select
+                    <PremiumSelect
+                      options={cfg.options?.map(o => ({ value: o, label: o })) ?? []}
                       value={cfg.value}
-                      onChange={e => updateConfig(cfg.key, e.target.value)}
-                      className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-amber-500/50 cursor-pointer"
-                    >
-                      {cfg.options?.map(o => <option key={o} value={o}>{o}</option>)}
-                    </select>
+                      onChange={value => updateConfig(cfg.key, value)}
+                      placeholder="Chọn giá trị..."
+                      buttonClassName="py-2 px-3 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-bold bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-amber-500 focus:ring-amber-500/10 active:scale-100"
+                    />
                   ) : (
                     <input
                       type={cfg.type}

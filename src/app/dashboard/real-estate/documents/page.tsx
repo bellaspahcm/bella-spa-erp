@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { PremiumSelect } from "@/components/ui/PremiumSelect";
 import { motion } from "framer-motion";
 import {
   FileText, Search, Download, Eye, Clock,
@@ -123,23 +124,25 @@ export default function DocumentsPage() {
             className="w-full pl-11 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white text-sm placeholder:text-slate-400 focus:outline-none focus:border-amber-500/50"
           />
         </div>
-        <select
+        <PremiumSelect
+          options={DOC_TYPES.map(t => ({ value: t, label: t }))}
           value={typeFilter}
-          onChange={e => setTypeFilter(e.target.value)}
-          className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-amber-500/50 cursor-pointer"
-        >
-          {DOC_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-        </select>
-        <select
+          onChange={setTypeFilter}
+          placeholder="Loại tài liệu..."
+          className="w-full sm:w-[200px]"
+          buttonClassName="py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-800 text-sm font-bold bg-white dark:bg-slate-900 focus:border-amber-500 focus:ring-amber-500/10 active:scale-100"
+        />
+        <PremiumSelect
+          options={[
+            { value: "all", label: "Tất cả trạng thái" },
+            ...(Object.keys(DOC_STATUS) as DocStatus[]).map(s => ({ value: s, label: DOC_STATUS[s].label }))
+          ]}
           value={statusFilter}
-          onChange={e => setStatusFilter(e.target.value as DocStatus | "all")}
-          className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-amber-500/50 cursor-pointer"
-        >
-          <option value="all">Tất cả trạng thái</option>
-          {(Object.keys(DOC_STATUS) as DocStatus[]).map(s => (
-            <option key={s} value={s}>{DOC_STATUS[s].label}</option>
-          ))}
-        </select>
+          onChange={value => setStatusFilter(value as DocStatus | "all")}
+          placeholder="Trạng thái..."
+          className="w-full sm:w-[200px]"
+          buttonClassName="py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-800 text-sm font-bold bg-white dark:bg-slate-900 focus:border-amber-500 focus:ring-amber-500/10 active:scale-100"
+        />
       </div>
 
       {/* ─ Table ─ */}

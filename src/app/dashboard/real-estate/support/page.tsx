@@ -8,6 +8,7 @@ import {
   Clock, History, UserCheck, Heart, Zap, Award
 } from "lucide-react";
 import { toast } from "sonner";
+import { PremiumSelect } from "@/components/ui/PremiumSelect";
 
 import {
   colors,
@@ -514,44 +515,50 @@ export default function SupportPage() {
                 {/* Select Customer */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Khách Hàng Phản Ánh *</label>
-                  <select
+                  <PremiumSelect
+                    options={[
+                      { value: "inv-1", label: "Lê Văn C (HĐMB Căn CH-1204)" },
+                      { value: "inv-2", label: "Phạm Thị D (Khách đầu tư tiềm năng)" }
+                    ]}
                     value={newCustId}
-                    onChange={e => setNewCustId(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-amber-500/50 cursor-pointer"
-                  >
-                    <option value="inv-1">Lê Văn C (HĐMB Căn CH-1204)</option>
-                    <option value="inv-2">Phạm Thị D (Khách đầu tư tiềm năng)</option>
-                  </select>
+                    onChange={setNewCustId}
+                    placeholder="Chọn khách hàng..."
+                    buttonClassName="py-3 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:border-amber-500 active:scale-100"
+                  />
                 </div>
 
                 {/* Priority & Category Grid */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Mức Độ Khần *</label>
-                    <select
+                    <PremiumSelect
+                      options={[
+                        { value: "CRITICAL", label: "⚡ CRITICAL — Khẩn cấp" },
+                        { value: "HIGH", label: "▲ HIGH — Cao" },
+                        { value: "MEDIUM", label: "● MEDIUM — Bình thường" },
+                        { value: "LOW", label: "▽ LOW — Thấp" }
+                      ]}
                       value={newPriority}
-                      onChange={e => setNewPriority(e.target.value as TicketPriority)}
-                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-amber-500/50 cursor-pointer"
-                    >
-                      <option value="CRITICAL">⚡ CRITICAL — Khẩn cấp</option>
-                      <option value="HIGH">▲ HIGH — Cao</option>
-                      <option value="MEDIUM">● MEDIUM — Bình thường</option>
-                      <option value="LOW">▽ LOW — Thấp</option>
-                    </select>
+                      onChange={value => setNewPriority(value as TicketPriority)}
+                      placeholder="Chọn mức độ khẩn..."
+                      buttonClassName="py-3 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:border-amber-500 active:scale-100"
+                    />
                   </div>
 
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Phân Loại *</label>
-                    <select
+                    <PremiumSelect
+                      options={[
+                        { value: "SERVICE_QUALITY", label: "Chất lượng dịch vụ" },
+                        { value: "BILLING", label: "Thanh toán & Lãi phạt" },
+                        { value: "TECHNICAL", label: "Kỹ thuật & Thiết kế" },
+                        { value: "GENERAL", label: "Câu hỏi tổng quát" }
+                      ]}
                       value={newCategory}
-                      onChange={e => setNewCategory(e.target.value as TicketCategory)}
-                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-amber-500/50 cursor-pointer"
-                    >
-                      <option value="SERVICE_QUALITY">Chất lượng dịch vụ</option>
-                      <option value="BILLING">Thanh toán & Lãi phạt</option>
-                      <option value="TECHNICAL">Kỹ thuật & Thiết kế</option>
-                      <option value="GENERAL">Câu hỏi tổng quát</option>
-                    </select>
+                      onChange={value => setNewCategory(value as TicketCategory)}
+                      placeholder="Chọn phân loại..."
+                      buttonClassName="py-3 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:border-amber-500 active:scale-100"
+                    />
                   </div>
                 </div>
 

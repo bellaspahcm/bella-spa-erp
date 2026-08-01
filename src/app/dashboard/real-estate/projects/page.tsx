@@ -13,6 +13,7 @@ import {
   createProjectAction,
 } from "@/modules/real_estate/actions/projectActions";
 import { fetchProductsAction } from "@/modules/real_estate/actions/productActions";
+import { PremiumSelect } from "@/components/ui/PremiumSelect";
 import { Database } from "@/types/database.types";
 
 type ProjectRow = Database["public"]["Tables"]["real_estate_projects"]["Row"];
@@ -300,15 +301,13 @@ export default function RealEstateProjectsPage() {
               </div>
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Trạng Thái</label>
-                <select
+                <PremiumSelect
+                  options={Object.entries(STATUS_LABEL).map(([k, v]) => ({ value: k, label: v }))}
                   value={newProject.status}
-                  onChange={e => setNewProject({ ...newProject, status: e.target.value })}
-                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-sm focus:outline-none focus:border-amber-500"
-                >
-                  {Object.entries(STATUS_LABEL).map(([k, v]) => (
-                    <option key={k} value={k}>{v}</option>
-                  ))}
-                </select>
+                  onChange={value => setNewProject({ ...newProject, status: value })}
+                  placeholder="Chọn trạng thái..."
+                  buttonClassName="py-3 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:border-amber-500 active:scale-100"
+                />
               </div>
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Mô Tả</label>
