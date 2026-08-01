@@ -1,44 +1,44 @@
 'use client';
+
 /**
  * @component PeopleDirectoryPage
  *
  * Trang Danh Mục Nhân Sự — Real Estate
  *
- * Hiển thị toàn bộ nhân sự của tenant với bộ lọc theo:
- * - Loại nhân sự (employee, broker, agency, partner...)
- * - Chi nhánh
- * - Tìm kiếm tên
+ * Hiển thị toàn bộ nhân sự của tenant với 2 chế độ hiển thị:
+ * 1. Dạng Lưới (Card Grid) - Sang trọng, trực quan với các chỉ số thống kê dạng khối.
+ * 2. Dạng Danh Sách (Table List) - Gọn gàng, tối ưu hóa không gian cho mật độ thông tin cao.
  *
  * Data source: Foundation Layer (people_directory) via Server Actions.
- * Sử dụng getAllInScopeAction() không filter availability — hiển thị toàn bộ.
  *
  * @layer Module UI (Layer 3)
  */
 
-import { useCallback, useContext, useEffect, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useState, useMemo, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Users,
   Search,
   Filter,
   User,
-  Briefcase,
   Building2,
   RefreshCw,
-  ChevronRight,
   MoreVertical,
   Phone,
   Mail,
-  Star,
   TrendingUp,
   CheckCircle2,
   Clock,
   XCircle,
+  LayoutGrid,
+  List,
+  AlertCircle
 } from 'lucide-react';
 import { getAllInScopeAction } from '@/modules/real_estate/actions/leadAssignmentActions';
 import { TenantContextContext } from '@/core/hooks/useTenantContext';
 import type { AssignableReference, AssignableType } from '@/foundation';
 
-// ─── Augmented Person (Foundation + demo stats) ──────────────────────────────
+// ─── Augmented Person ─────────────────────────────────────────────────────────
 
 interface PersonCard extends AssignableReference {
   email?: string;
@@ -51,24 +51,24 @@ interface PersonCard extends AssignableReference {
   joinedDate?: string;
 }
 
-// ─── Filter types ─────────────────────────────────────────────────────────────
-
 type TypeFilter = AssignableType | 'all';
 type StatusFilter = 'all' | 'active' | 'on_leave' | 'inactive';
 
-// ─── Mock augmentation (pha 2 sẽ join với HR module) ─────────────────────────
-
+// Mock augmentation
 function augmentPerson(ref: AssignableReference, idx: number): PersonCard {
   const branches = ['Chi nhánh HCM', 'Chi nhánh Bình Dương', 'Chi nhánh Đà Nẵng'];
   const statuses: PersonCard['status'][] = ['active', 'active', 'active', 'on_leave', 'active'];
+  const emails = ['g.group@bellaland.vn', 'dang.dh@bellaland.vn', 'vanf.broker@gmail.com', 'binh.lq@bellaland.vn', 'minh.nv@bellaland.vn', 'cam.pt@bellaland.vn', 'anh.tt@bellaland.vn', 'broker.e@gmail.com'];
 
   return {
     ...ref,
     branch: branches[idx % branches.length],
-    leadsActive: [3, 7, 5, 2, 4, 6, 1][idx % 7],
-    leadsConverted: [12, 24, 8, 31, 5, 18, 9][idx % 7],
-    slaBreachCount: [0, 1, 0, 2, 0, 0, 1][idx % 7],
+    leadsActive: [3, 7, 5, 2, 4, 6, 1, 3][idx % 8],
+    leadsConverted: [12, 24, 8, 31, 5, 18, 9, 12][idx % 8],
+    slaBreachCount: [0, 1, 0, 2, 0, 0, 1, 0][idx % 8],
     status: statuses[idx % statuses.length],
+    email: emails[idx % emails.length] || 'agent@bellaland.vn',
+    phone: `090${idx}876543`,
     joinedDate: `202${4 + (idx % 2)}-0${(idx % 9) + 1}-01`,
   };
 }
@@ -84,101 +84,297 @@ const TYPE_LABEL: Record<string, string> = {
   contractor: 'Cộng tác viên',
 };
 
-const TYPE_COLOR: Record<string, string> = {
-  employee:   'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
-  broker:     'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300',
-  agency:     'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
-  partner:    'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
-  consultant: 'bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300',
-  contractor: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
+const TYPE_COLOR_CLASSES: Record<string, string> = {
+  employee: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20',
+  broker: 'bg-fuchsia-500/10 text-fuchsia-600 dark:text-fuchsia-400 border border-fuchsia-500/20',
+  agency: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20',
+  partner: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20',
+  consultant: 'bg-pink-500/10 text-pink-600 dark:text-pink-400 border border-pink-500/20',
+  contractor: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20',
 };
 
-const STATUS_CONFIG: Record<string, { label: string; icon: React.ReactNode; className: string }> = {
-  active:   { label: 'Đang làm', icon: <CheckCircle2 className="w-3.5 h-3.5" />, className: 'text-emerald-600 dark:text-emerald-400' },
-  on_leave: { label: 'Nghỉ phép', icon: <Clock className="w-3.5 h-3.5" />,         className: 'text-amber-600 dark:text-amber-400' },
-  inactive: { label: 'Không hoạt động', icon: <XCircle className="w-3.5 h-3.5" />, className: 'text-slate-400' },
+const STATUS_CONFIG: Record<string, { label: string; icon: React.ReactNode; colorClass: string; dotClass: string }> = {
+  active: {
+    label: 'Đang làm',
+    icon: <CheckCircle2 className="w-3.5 h-3.5" />,
+    colorClass: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/5 border border-emerald-500/10',
+    dotClass: 'bg-emerald-500',
+  },
+  on_leave: {
+    label: 'Nghỉ phép',
+    icon: <Clock className="w-3.5 h-3.5" />,
+    colorClass: 'text-amber-600 dark:text-amber-400 bg-amber-500/5 border border-amber-500/10',
+    dotClass: 'bg-amber-500',
+  },
+  inactive: {
+    label: 'Không hoạt động',
+    icon: <XCircle className="w-3.5 h-3.5" />,
+    colorClass: 'text-slate-400 bg-slate-500/5 border border-slate-500/10',
+    dotClass: 'bg-slate-400',
+  },
 };
 
 function getInitials(name: string): string {
   return name.split(' ').slice(-2).map(w => w[0]).join('').toUpperCase();
 }
 
-// Hue hash for avatar gradient
 function nameToHue(name: string): number {
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
   return Math.abs(hash) % 360;
 }
 
-// ─── PersonCard Component ─────────────────────────────────────────────────────
+// ─── PersonCardView Component (Grid Mode) ─────────────────────────────────────
 
 function PersonCardView({ person }: { person: PersonCard }) {
+  const router = useRouter();
   const hue = nameToHue(person.displayName);
   const status = person.status ?? 'active';
   const statusConfig = STATUS_CONFIG[status];
+  
+  const [menuOpen, setMenuOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const clickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', clickOutside);
+    return () => document.removeEventListener('mousedown', clickOutside);
+  }, []);
 
   return (
-    <div className="group relative flex flex-col gap-3 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-primary/30 hover:shadow-md transition-all duration-200 cursor-pointer">
-      {/* Top row: avatar + name + type */}
-      <div className="flex items-start gap-3">
-        {/* Avatar */}
+    <div className="group relative flex flex-col gap-4 p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/60 hover:border-violet-500/40 hover:shadow-xl dark:hover:shadow-violet-950/20 hover:-translate-y-1 transition-all duration-300 backdrop-blur-md">
+      {/* Top row: avatar + identity */}
+      <div className="flex items-start gap-4">
+        {/* Avatar with dynamic hue gradient */}
         <div
-          className="flex-shrink-0 w-11 h-11 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-sm"
-          style={{ background: `linear-gradient(135deg, hsl(${hue},65%,55%), hsl(${(hue+30)%360},70%,45%))` }}
+          className="flex-shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center text-white font-extrabold text-sm shadow-md"
+          style={{ background: `linear-gradient(135deg, hsl(${hue},70%,60%), hsl(${(hue+40)%360},80%,45%))` }}
         >
           {getInitials(person.displayName)}
         </div>
 
-        {/* Name + type */}
+        {/* Name + Labels */}
         <div className="flex-1 min-w-0">
-          <p className="font-bold text-sm text-slate-900 dark:text-white truncate">{person.displayName}</p>
-          <div className="flex items-center gap-2 mt-0.5">
-            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${TYPE_COLOR[person.type] ?? TYPE_COLOR.contractor}`}>
+          <p className="font-extrabold text-slate-900 dark:text-white group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors truncate">
+            {person.displayName}
+          </p>
+          <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg uppercase tracking-wider ${TYPE_COLOR_CLASSES[person.type] ?? TYPE_COLOR_CLASSES.contractor}`}>
               {TYPE_LABEL[person.type] ?? person.type}
             </span>
-            <span className={`text-xs flex items-center gap-1 ${statusConfig.className}`}>
-              {statusConfig.icon}
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg flex items-center gap-1 ${statusConfig.colorClass}`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${statusConfig.dotClass}`} />
               {statusConfig.label}
             </span>
           </div>
         </div>
 
-        {/* More button */}
-        <button className="opacity-0 group-hover:opacity-100 p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition-all">
-          <MoreVertical className="w-4 h-4" />
-        </button>
+        {/* Actions Button & Menu */}
+        <div className="relative" ref={dropdownRef}>
+          <button 
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 dark:text-slate-500 transition-all duration-200"
+            id={`card-opt-btn-${person.id}`}
+          >
+            <MoreVertical className="w-4 h-4" />
+          </button>
+
+          {menuOpen && (
+            <div className="absolute right-0 mt-1 w-44 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl z-50 overflow-hidden text-xs py-1">
+              <button
+                onClick={() => {
+                  router.push(`/dashboard/real-estate/hr?personId=${person.id}`);
+                  setMenuOpen(false);
+                }}
+                className="w-full text-left px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-slate-900 font-semibold text-slate-700 dark:text-slate-250 transition"
+              >
+                Xem Hồ Sơ HR
+              </button>
+              <button
+                onClick={() => {
+                  router.push(`/dashboard/real-estate/org-chart`);
+                  setMenuOpen(false);
+                }}
+                className="w-full text-left px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-slate-900 font-semibold text-slate-700 dark:text-slate-250 transition"
+              >
+                Xem Sơ Đồ Tổ Chức
+              </button>
+              <button
+                onClick={() => {
+                  router.push(`/dashboard/real-estate/leads`);
+                  setMenuOpen(false);
+                }}
+                className="w-full text-left px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-slate-900 font-semibold text-slate-700 dark:text-slate-250 transition"
+              >
+                Danh Sách Lead
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Branch */}
-      {person.branch && (
-        <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-          <Building2 className="w-3.5 h-3.5 flex-shrink-0" />
-          <span className="truncate">{person.branch}</span>
-        </div>
-      )}
+      {/* Info items */}
+      <div className="space-y-1.5 text-xs text-slate-500 dark:text-slate-400 px-1">
+        {person.branch && (
+          <div className="flex items-center gap-2">
+            <Building2 className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 flex-shrink-0" />
+            <span className="truncate font-medium">{person.branch}</span>
+          </div>
+        )}
+        {person.email && (
+          <div className="flex items-center gap-2">
+            <Mail className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 flex-shrink-0" />
+            <span className="truncate font-medium">{person.email}</span>
+          </div>
+        )}
+      </div>
 
-      {/* Stats row */}
-      <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-        <div className="flex flex-col items-center">
-          <span className="text-sm font-bold text-slate-900 dark:text-white">{person.leadsActive ?? 0}</span>
-          <span className="text-xs text-slate-400">Lead đang có</span>
+      {/* Structured metrics grid */}
+      <div className="grid grid-cols-3 gap-1 p-2 rounded-2xl bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/60 mt-2">
+        <div className="flex flex-col items-center py-1">
+          <span className="text-xs font-bold text-slate-400 dark:text-slate-500">Đang có</span>
+          <span className="text-sm font-black text-slate-950 dark:text-white mt-0.5">{person.leadsActive ?? 0}</span>
         </div>
-        <div className="flex flex-col items-center border-x border-slate-100 dark:border-slate-800">
-          <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{person.leadsConverted ?? 0}</span>
-          <span className="text-xs text-slate-400">Đã chốt</span>
+        <div className="flex flex-col items-center py-1 border-x border-slate-200/60 dark:border-slate-850">
+          <span className="text-xs font-bold text-slate-400 dark:text-slate-500">Đã chốt</span>
+          <span className="text-sm font-black text-emerald-600 dark:text-emerald-450 mt-0.5">{person.leadsConverted ?? 0}</span>
         </div>
-        <div className="flex flex-col items-center">
-          <span className={`text-sm font-bold ${(person.slaBreachCount ?? 0) > 0 ? 'text-rose-500' : 'text-slate-400'}`}>
+        <div className="flex flex-col items-center py-1">
+          <span className="text-xs font-bold text-slate-400 dark:text-slate-500">Lỗi SLA</span>
+          <span className={`text-sm font-black mt-0.5 ${(person.slaBreachCount ?? 0) > 0 ? 'text-rose-500' : 'text-slate-400 dark:text-slate-600'}`}>
             {person.slaBreachCount ?? 0}
           </span>
-          <span className="text-xs text-slate-400">Vi phạm SLA</span>
         </div>
       </div>
     </div>
   );
 }
 
-// ─── PeopleDirectoryPage ──────────────────────────────────────────────────────
+// ─── PersonRowView Component (List/Table Mode) ────────────────────────────────
+
+function PersonRowView({ person }: { person: PersonCard }) {
+  const router = useRouter();
+  const hue = nameToHue(person.displayName);
+  const status = person.status ?? 'active';
+  const statusConfig = STATUS_CONFIG[status];
+  
+  const [menuOpen, setMenuOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const clickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', clickOutside);
+    return () => document.removeEventListener('mousedown', clickOutside);
+  }, []);
+
+  return (
+    <tr className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition duration-150">
+      {/* Identity Column */}
+      <td className="p-4 pl-6">
+        <div className="flex items-center gap-3">
+          <div
+            className="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-white font-extrabold text-xs shadow"
+            style={{ background: `linear-gradient(135deg, hsl(${hue},70%,60%), hsl(${(hue+40)%360},80%,45%))` }}
+          >
+            {getInitials(person.displayName)}
+          </div>
+          <div>
+            <p className="font-bold text-slate-900 dark:text-white text-sm">{person.displayName}</p>
+            <span className={`inline-block text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider mt-1 ${TYPE_COLOR_CLASSES[person.type] ?? TYPE_COLOR_CLASSES.contractor}`}>
+              {TYPE_LABEL[person.type] ?? person.type}
+            </span>
+          </div>
+        </div>
+      </td>
+
+      {/* Branch & Contact */}
+      <td className="p-4">
+        <p className="font-semibold text-slate-850 dark:text-slate-200 text-xs">{person.branch || '—'}</p>
+        <p className="text-[11px] text-slate-400 mt-0.5">{person.email || '—'}</p>
+      </td>
+
+      {/* Active Leads */}
+      <td className="p-4 text-center font-bold text-slate-900 dark:text-white">
+        {person.leadsActive ?? 0}
+      </td>
+
+      {/* Converted Leads */}
+      <td className="p-4 text-center font-black text-emerald-600 dark:text-emerald-400">
+        {person.leadsConverted ?? 0}
+      </td>
+
+      {/* SLA Breach Count */}
+      <td className="p-4 text-center">
+        <span className={`font-bold ${(person.slaBreachCount ?? 0) > 0 ? 'text-rose-500 font-extrabold' : 'text-slate-400 dark:text-slate-600'}`}>
+          {person.slaBreachCount ?? 0}
+        </span>
+      </td>
+
+      {/* Status */}
+      <td className="p-4">
+        <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-lg ${statusConfig.colorClass}`}>
+          <span className={`w-1.5 h-1.5 rounded-full ${statusConfig.dotClass}`} />
+          {statusConfig.label}
+        </span>
+      </td>
+
+      {/* Actions */}
+      <td className="p-4 pr-6 text-right relative">
+        <div className="inline-block text-left" ref={dropdownRef}>
+          <button 
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition"
+            id={`row-opt-btn-${person.id}`}
+          >
+            <MoreVertical className="w-4 h-4" />
+          </button>
+
+          {menuOpen && (
+            <div className="absolute right-0 mt-1 w-44 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl z-50 overflow-hidden text-xs py-1">
+              <button
+                onClick={() => {
+                  router.push(`/dashboard/real-estate/hr?personId=${person.id}`);
+                  setMenuOpen(false);
+                }}
+                className="w-full text-left px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-slate-900 font-semibold text-slate-700 dark:text-slate-250 transition"
+              >
+                Xem Hồ Sơ HR
+              </button>
+              <button
+                onClick={() => {
+                  router.push(`/dashboard/real-estate/org-chart`);
+                  setMenuOpen(false);
+                }}
+                className="w-full text-left px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-slate-900 font-semibold text-slate-700 dark:text-slate-250 transition"
+              >
+                Xem Sơ Đồ Tổ Chức
+              </button>
+              <button
+                onClick={() => {
+                  router.push(`/dashboard/real-estate/leads`);
+                  setMenuOpen(false);
+                }}
+                className="w-full text-left px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-slate-900 font-semibold text-slate-700 dark:text-slate-250 transition"
+              >
+                Danh Sách Lead
+              </button>
+            </div>
+          )}
+        </div>
+      </td>
+    </tr>
+  );
+}
+
+// ─── Main Page Component ──────────────────────────────────────────────────────
 
 export function PeopleDirectoryPage() {
   const tenantCtx = useContext(TenantContextContext);
@@ -210,25 +406,29 @@ export function PeopleDirectoryPage() {
 
   // ── Filters ──
 
-  const filtered = allPeople.filter(p => {
-    const matchSearch = !searchQuery ||
-      p.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (p.branch ?? '').toLowerCase().includes(searchQuery.toLowerCase());
+  const filtered = useMemo(() => {
+    return allPeople.filter(p => {
+      const matchSearch = !searchQuery ||
+        p.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (p.branch ?? '').toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchType = typeFilter === 'all' || p.type === typeFilter;
-    const matchStatus = statusFilter === 'all' || p.status === statusFilter;
+      const matchType = typeFilter === 'all' || p.type === typeFilter;
+      const matchStatus = statusFilter === 'all' || p.status === statusFilter;
 
-    return matchSearch && matchType && matchStatus;
-  });
+      return matchSearch && matchType && matchStatus;
+    });
+  }, [allPeople, searchQuery, typeFilter, statusFilter]);
 
-  // ── Summary stats ──
+  // ── Stats ──
 
-  const stats = {
-    total: allPeople.length,
-    active: allPeople.filter(p => p.status === 'active').length,
-    onLeave: allPeople.filter(p => p.status === 'on_leave').length,
-    brokers: allPeople.filter(p => p.type === 'broker' || p.type === 'agency').length,
-  };
+  const stats = useMemo(() => {
+    return {
+      total: allPeople.length,
+      active: allPeople.filter(p => p.status === 'active').length,
+      onLeave: allPeople.filter(p => p.status === 'on_leave').length,
+      brokers: allPeople.filter(p => p.type === 'broker' || p.type === 'agency').length,
+    };
+  }, [allPeople]);
 
   const typeOptions: { value: TypeFilter; label: string }[] = [
     { value: 'all', label: 'Tất cả' },
@@ -239,121 +439,172 @@ export function PeopleDirectoryPage() {
   ];
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="space-y-6 max-w-[1600px] mx-auto p-2">
+      {/* ── Header ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <Users className="w-6 h-6 text-primary" />
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+            <Users className="w-6 h-6 text-violet-600" />
             Danh Mục Nhân Sự
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
             Quản lý toàn bộ nhân sự tham gia hệ thống bất động sản
           </p>
         </div>
 
-        <button
-          onClick={loadPeople}
-          disabled={isLoading}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-sm font-medium text-slate-600 dark:text-slate-300 transition-all disabled:opacity-50"
-        >
-          <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-          Làm mới
-        </button>
+        <div className="flex items-center gap-2">
+          {/* View Mode Toggle */}
+          <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-xl p-1 gap-1">
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`p-1.5 rounded-lg transition ${
+                viewMode === 'grid'
+                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+              title="Dạng lưới"
+            >
+              <LayoutGrid className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`p-1.5 rounded-lg transition ${
+                viewMode === 'list'
+                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+              title="Dạng danh sách"
+            >
+              <List className="w-4 h-4" />
+            </button>
+          </div>
+
+          <button
+            onClick={loadPeople}
+            disabled={isLoading}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-semibold text-slate-600 dark:text-slate-300 transition disabled:opacity-50 active:scale-95"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+            Làm mới
+          </button>
+        </div>
       </div>
 
-      {/* Stats row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {/* ── KPI cards ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Tổng nhân sự', value: stats.total, icon: <Users className="w-4 h-4" />, color: 'text-violet-600 bg-violet-50 dark:bg-violet-900/20 border-violet-100 dark:border-violet-800' },
-          { label: 'Đang hoạt động', value: stats.active, icon: <CheckCircle2 className="w-4 h-4" />, color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-800' },
-          { label: 'Đang nghỉ phép', value: stats.onLeave, icon: <Clock className="w-4 h-4" />, color: 'text-amber-600 bg-amber-50 dark:bg-amber-900/20 border-amber-100 dark:border-amber-800' },
-          { label: 'Môi giới / Đại lý', value: stats.brokers, icon: <TrendingUp className="w-4 h-4" />, color: 'text-blue-600 bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800' },
+          { label: 'Tổng nhân sự', value: stats.total, color: 'border-violet-100 dark:border-violet-800/80 bg-violet-500/5 text-violet-600 dark:text-violet-400' },
+          { label: 'Đang hoạt động', value: stats.active, color: 'border-emerald-100 dark:border-emerald-800/80 bg-emerald-500/5 text-emerald-600 dark:text-emerald-450' },
+          { label: 'Đang nghỉ phép', value: stats.onLeave, color: 'border-amber-100 dark:border-amber-800/80 bg-amber-500/5 text-amber-600 dark:text-amber-400' },
+          { label: 'Môi giới / Đại lý', value: stats.brokers, color: 'border-blue-100 dark:border-blue-800/80 bg-blue-500/5 text-blue-600 dark:text-blue-400' },
         ].map(s => (
-          <div key={s.label} className={`flex items-center gap-3 p-4 rounded-xl border ${s.color}`}>
-            <div className={`flex-shrink-0 p-2 rounded-lg bg-white/60 dark:bg-black/20 ${s.color.split(' ')[0]}`}>
-              {s.icon}
-            </div>
+          <div key={s.label} className={`border rounded-2xl p-4 shadow-sm flex items-center justify-between ${s.color}`}>
             <div>
-              <p className="text-xl font-extrabold leading-none">{s.value}</p>
-              <p className="text-xs mt-0.5 opacity-70">{s.label}</p>
+              <p className="text-[10px] font-bold uppercase tracking-wider opacity-70">{s.label}</p>
+              <p className="text-2xl font-black mt-1">{s.value}</p>
+            </div>
+            <div className="opacity-10 shrink-0">
+              <Users className="w-8 h-8" />
             </div>
           </div>
         ))}
       </div>
 
-      {/* Filter & Search bar */}
-      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 shadow-sm">
-        {/* Search */}
-        <div className="relative flex-1 min-w-0">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+      {/* ── Filter bar ── */}
+      <div className="flex flex-col sm:flex-row gap-3 items-center justify-between bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div className="relative w-full sm:w-80">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             placeholder="Tìm kiếm tên, chi nhánh..."
-            className="w-full pl-9 pr-4 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all"
+            className="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/30"
           />
         </div>
 
-        {/* Type filter */}
-        <div className="flex items-center gap-1 flex-wrap">
-          {typeOptions.map(opt => (
-            <button
-              key={opt.value}
-              onClick={() => setTypeFilter(opt.value)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                typeFilter === opt.value
-                  ? 'bg-primary text-white shadow-sm'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
+        <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto justify-end">
+          <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-xl p-1 gap-1">
+            {typeOptions.map(opt => (
+              <button
+                key={opt.value}
+                onClick={() => setTypeFilter(opt.value)}
+                className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${
+                  typeFilter === opt.value
+                    ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
+          <select
+            value={statusFilter}
+            onChange={e => setStatusFilter(e.target.value as StatusFilter)}
+            className="px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-violet-500/30"
+          >
+            <option value="all">Tất cả trạng thái</option>
+            <option value="active">Đang làm</option>
+            <option value="on_leave">Nghỉ phép</option>
+            <option value="inactive">Không hoạt động</option>
+          </select>
+
+          <span className="text-xs text-slate-400 font-medium ml-2 shrink-0">
+            {filtered.length} / {allPeople.length} nhân sự
+          </span>
         </div>
-
-        {/* Status filter */}
-        <select
-          value={statusFilter}
-          onChange={e => setStatusFilter(e.target.value as StatusFilter)}
-          className="px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
-        >
-          <option value="all">Tất cả trạng thái</option>
-          <option value="active">Đang làm</option>
-          <option value="on_leave">Nghỉ phép</option>
-          <option value="inactive">Không hoạt động</option>
-        </select>
-
-        {/* Result count */}
-        <span className="text-xs text-slate-400 whitespace-nowrap flex-shrink-0">
-          {filtered.length} / {allPeople.length} nhân sự
-        </span>
       </div>
 
-      {/* Grid / List */}
+      {/* ── Content rendering ── */}
       {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {[1, 2, 3, 4, 5, 6].map(i => (
-            <div key={i} className="h-44 rounded-2xl bg-slate-100 dark:bg-slate-800 animate-pulse" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-pulse">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="h-44 rounded-3xl bg-slate-100 dark:bg-slate-800/50" />
           ))}
         </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-          <User className="w-12 h-12 mb-3 opacity-30" />
+          <AlertCircle className="w-12 h-12 mb-3 opacity-30 text-violet-500" />
           <p className="text-sm font-medium">Không tìm thấy nhân sự phù hợp</p>
           <button
             onClick={() => { setSearchQuery(''); setTypeFilter('all'); setStatusFilter('all'); }}
-            className="mt-3 text-xs text-primary hover:underline"
+            className="mt-2 text-xs text-violet-600 hover:underline font-semibold"
           >
             Xóa bộ lọc
           </button>
         </div>
-      ) : (
+      ) : viewMode === 'grid' ? (
+        // Grid View
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filtered.map(person => (
             <PersonCardView key={person.id} person={person} />
           ))}
+        </div>
+      ) : (
+        // List View (Table Layout)
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden animate-fade-in">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-slate-500 font-bold uppercase tracking-wider">
+                <tr>
+                  <th className="p-4 pl-6">Nhân Sự</th>
+                  <th className="p-4">Chi Nhánh / Liên Hệ</th>
+                  <th className="p-4 text-center">Lead Đang Có</th>
+                  <th className="p-4 text-center">Đã Chốt Cọc</th>
+                  <th className="p-4 text-center">Vi Phạm SLA</th>
+                  <th className="p-4">Trạng Thái</th>
+                  <th className="p-4 pr-6 text-right">Thao Tác</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                {filtered.map(person => (
+                  <PersonRowView key={person.id} person={person} />
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

@@ -11,6 +11,7 @@
  */
 
 import React, { useCallback, useContext, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { TenantContextContext } from '@/core/hooks/useTenantContext';
 import {
   listActiveEmployeesAction,
@@ -122,6 +123,8 @@ const EMPLOYMENT_TYPE_LABEL: Record<string, string> = {
 export function HRDirectoryPage() {
   const tenantCtx = useContext(TenantContextContext);
   const tenantId = tenantCtx?.tenantId ?? 'real_estate';
+  const searchParams = useSearchParams();
+  const initialPersonId = searchParams ? searchParams.get('personId') : null;
 
   // Data
   const [employees, setEmployees] = useState<HREmployeeSummaryRow[]>([]);
@@ -131,6 +134,14 @@ export function HRDirectoryPage() {
 
   // Selected employee detail panel
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
+
+  // Set initial selected person if query param is present
+  useEffect(() => {
+    if (initialPersonId) {
+      setSelectedPersonId(initialPersonId);
+    }
+  }, [initialPersonId]);
+
   const [profileDetail, setProfileDetail] = useState<HREmployeeProfileView | null>(null);
   const [activeContract, setActiveContract] = useState<HRContract | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
