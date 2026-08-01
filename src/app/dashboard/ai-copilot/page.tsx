@@ -5,7 +5,7 @@ import { canUseAiCopilotRole } from '@/lib/business-rules/permissions';
 
 export const metadata = {
   title: 'Bella AI Copilot — Trợ lý điều phối vận hành',
-  description: 'Trợ lý ảo đa đại lý AI COO/CHRO/CFO cho Bella Spa.',
+  description: 'Trợ lý ảo đa đại lý AI COO/CHRO/CFO cho doanh nghiệp.',
 };
 
 /**

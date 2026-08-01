@@ -17,6 +17,7 @@ import { SkeletonTable } from '@/components/ui/SkeletonLoader';
 import { getAccountingErrorMessage as getErrorMessage } from '@/lib/accounting-error-message';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
 import { getCachedReconciliationReportForPage } from '@/lib/accounting-subpages-client-cache';
+import { useTenantName } from '@/hooks/useTenantName';
 
 const fmtVND = (n: number) =>
   new Intl.NumberFormat('vi-VN', {
@@ -107,6 +108,7 @@ function buildPostSyncSummary(params: {
 }
 
 export default function ReconciliationPage() {
+  const { tenantName } = useTenantName();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [rows, setRows] = useState<ReconciliationRow[]>([]);
@@ -302,7 +304,7 @@ export default function ReconciliationPage() {
                 Hệ thống kế toán đang ở chế độ Đơn giản (Legacy Finance)
               </h5>
               <p className="text-3xs font-medium text-amber-700/80 dark:text-amber-400/70 mt-1 max-w-2xl leading-relaxed">
-                Bella Spa ERP hiện vận hành song song sổ sách cũ. Để kích hoạt hạch toán kép chuyên nghiệp chuẩn Thông tư 133, vui lòng click nút bên dưới để tự động đồng bộ lịch sử thu/chi/lương vào sổ cái kế toán mới và chuyển đổi chế độ.
+                {tenantName || 'Bella Spa ERP'} hiện vận hành song song sổ sách cũ. Để kích hoạt hạch toán kép chuyên nghiệp chuẩn Thông tư 133, vui lòng click nút bên dưới để tự động đồng bộ lịch sử thu/chi/lương vào sổ cái kế toán mới và chuyển đổi chế độ.
               </p>
             </div>
           </div>
