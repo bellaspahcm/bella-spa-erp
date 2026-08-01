@@ -23,7 +23,7 @@
 export * from './contracts';
 
 // ── InMemory implementations — for testing only ───────────────────────────────
-// Production code should use Supabase implementations (Phase 1.3)
+// Production code should use Supabase implementations (see below)
 export { InMemoryOrgProvider } from './organization';
 export type { OrgSeedData } from './organization';
 
@@ -31,3 +31,44 @@ export { InMemoryPeopleProvider } from './people';
 export type { PeopleSeedData, PersonSeedEntry } from './people';
 
 export { InMemoryAssignmentProvider } from './assignment';
+
+// ── Supabase implementations — for production use ─────────────────────────────
+export { SupabaseOrgProvider } from './organization/SupabaseOrgProvider';
+export { SupabasePeopleProvider } from './people/SupabasePeopleProvider';
+
+// ── Production Bootstrap ───────────────────────────────────────────────────────
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { SupabaseOrgProvider as _SupabaseOrgProvider } from './organization/SupabaseOrgProvider';
+import { SupabasePeopleProvider as _SupabasePeopleProvider } from './people/SupabasePeopleProvider';
+import { InMemoryAssignmentProvider as _InMemoryAssignmentProvider } from './assignment';
+import type { FoundationRegistry } from './contracts';
+
+/**
+ * Create a production Foundation registry backed by Supabase.
+ *
+ * Usage (in a Server Action or Route Handler):
+ * ```ts
+ * import { createSupabaseFoundation } from '@/foundation';
+ * import { createClient } from '@/lib/supabase-server';
+ *
+ * const db = createClient();
+ * const foundation = createSupabaseFoundation(db);
+ * const candidates = await foundation.org.getAssignablesInUnit(branchId, { tenantId });
+ * ```
+ *
+ * @param db - Supabase client (server-side, with auth context)
+ */
+export function createSupabaseFoundation(db: SupabaseClient): FoundationRegistry {
+  const org = new _SupabaseOrgProvider(db);
+  const people = new _SupabasePeopleProvider(db);
+  // Assignment provider uses Org + People — InMemory is OK until Phase 1.4 Assignment
+  const assignment = new _InMemoryAssignmentProvider(org, people);
+
+  return {
+    org,
+    people,
+    assignment,
+    orgCommand: org,       // SupabaseOrgProvider implements both Query + Command
+    peopleCommand: people, // SupabasePeopleProvider implements both Query + Command
+  };
+}
