@@ -317,7 +317,30 @@ export default function RealEstateMarketingPage() {
   const tenantId = tenantCtx?.tenantId ?? 'real_estate';
 
   const [leadEngine] = useState(() => new LeadEngineFacade());
-  const [leads, setLeads] = useState<ManagedLead[]>(INITIAL_MANAGED_LEADS);
+  const [leads, setLeads] = useState<ManagedLead[]>([]);
+
+  // Load leads from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('bella_re_managed_leads');
+    if (saved) {
+      try {
+        setLeads(JSON.parse(saved));
+      } catch {
+        setLeads(INITIAL_MANAGED_LEADS);
+      }
+    } else {
+      setLeads(INITIAL_MANAGED_LEADS);
+      localStorage.setItem('bella_re_managed_leads', JSON.stringify(INITIAL_MANAGED_LEADS));
+    }
+  }, []);
+
+  const updateLeadsState = (updater: (prev: ManagedLead[]) => ManagedLead[]) => {
+    setLeads(prev => {
+      const next = updater(prev);
+      localStorage.setItem('bella_re_managed_leads', JSON.stringify(next));
+      return next;
+    });
+  };
 
   // ─── Foundation: live agent pool ─────────────────────────────────────────
   const [liveAgents, setLiveAgents] = useState<SalesAgent[]>(FALLBACK_SALES);
@@ -451,7 +474,7 @@ export default function RealEstateMarketingPage() {
       'Admin Marketing'
     );
 
-    setLeads(prev => [createdLead, ...prev]);
+    updateLeadsState(prev => [createdLead, ...prev]);
     toast.success(`Đã tạo và phân lead cho Sale [${assignedSale.name}]! (SLA: 30 ph)`);
     setShowAddModal(false);
     setNewLead({
@@ -466,7 +489,7 @@ export default function RealEstateMarketingPage() {
   }
 
   function handleAcceptLead(leadId: string) {
-    setLeads(prev =>
+    updateLeadsState(prev =>
       prev.map(lead => {
         if (lead.id !== leadId) return lead;
         const updated = leadEngine.workflowEngine.acceptLead(
@@ -481,7 +504,7 @@ export default function RealEstateMarketingPage() {
   }
 
   function handleSubmitOutcome(leadId: string, outcome: LeadOutcome, notes: string) {
-    setLeads(prev =>
+    updateLeadsState(prev =>
       prev.map(lead => {
         if (lead.id !== leadId) return lead;
         // Use Foundation-backed liveAgents (falls back to FALLBACK_SALES if not loaded yet)
