@@ -6,6 +6,7 @@ import { runCMOAgent } from './agents/cmo';
 import { runFranchiseAgent } from './agents/franchise';
 import { runCHROAgent } from './agents/chro';
 import { runCFOAgent } from './agents/cfo';
+import { runRealEstateAgent } from './agents/real_estate';
 
 /**
  * Tìm vị trí đóng của `{` đầu tiên bằng thuật toán brace-matching,
@@ -118,11 +119,19 @@ function detectRouting(lowerCommand: string): string {
     lowerCommand.includes("đóng góp") || lowerCommand.includes("contribution") ||
     lowerCommand.includes("thương hiệu") || lowerCommand.includes("brand");
 
+  const isRealEstateRelated = lowerCommand.includes("bất động sản") ||
+    lowerCommand.includes("bđs") || lowerCommand.includes("căn hộ") ||
+    lowerCommand.includes("dự án bđs") || lowerCommand.includes("bảng hàng") ||
+    lowerCommand.includes("đất nền") || lowerCommand.includes("shophouse") ||
+    lowerCommand.includes("chủ đầu tư") || lowerCommand.includes("villa") ||
+    lowerCommand.includes("real estate") || lowerCommand.includes("realestate");
+
   if (isCpoRelated) return "cpo";
   if (isCmoRelated) return "cmo";
   if (isFranchiseRelated) return "franchise";
   if (isHrRelated) return "chro";
   if (isFinanceRelated) return "cfo";
+  if (isRealEstateRelated) return "real_estate";
   return "coo";
 }
 
@@ -151,6 +160,11 @@ function getStrategicRecommendations(routedTo: string): string[] {
     "Tăng cường rà soát chênh lệch doanh thu hạch toán Ledger so với số liệu doanh thu thực tế để tính toán chính xác phí nhượng quyền.",
     "Gửi thông báo nhắc nhở đối soát và thanh toán hóa đơn nhượng quyền định kỳ đúng hạn hợp đồng.",
     "Hỗ trợ chi nhánh cải thiện cơ cấu chi phí vận hành nếu phát hiện tỷ lệ biên lợi nhuận thuần bị thu hẹp kéo dài."
+  ];
+  if (routedTo === "real_estate") return [
+    "Thẩm định hồ sơ pháp lý và tiến độ thi công của các dự án trước khi tiếp tục mở bán Block tiếp theo.",
+    "Đánh giá và tối ưu phân bổ hoa hồng môi giới bất động sản cho các sàn giao dịch liên kết.",
+    "Bật cảnh báo tự động gửi Zalo ZNS nhắc nhở các khách hàng trễ hạn đóng tiền đợt thanh toán tiến độ."
   ];
   return [
     "Định kỳ rà soát các chỉ số vận hành cốt lõi toàn diện chuỗi chi nhánh Bella Spa.",
@@ -229,6 +243,8 @@ export async function runCOOOrchestrator(
     subAgentResponse = await runCHROAgent(supabase, tenantId, activeDate, formattedDate);
   } else if (routedTo === "cfo") {
     subAgentResponse = await runCFOAgent(supabase, tenantId, activeDate, formattedDate, firstDayOfMonth, lowerCommand);
+  } else if (routedTo === "real_estate") {
+    subAgentResponse = await runRealEstateAgent(supabase, tenantId, activeDate);
   } else {
     subAgentResponse = {
       agent: "General Operation",
@@ -297,8 +313,9 @@ export async function runCOOOrchestrator(
       else if (routedTo === "cpo") assistantName = "CPO (Trưởng phòng Kho vận & Vật tư)";
       else if (routedTo === "cmo") assistantName = "CMO (Trưởng phòng Chăm sóc khách hàng & Marketing)";
       else if (routedTo === "franchise") assistantName = "Franchise (Ban vận hành Nhượng quyền)";
+      else if (routedTo === "real_estate") assistantName = "Real Estate AI Specialist (Chuyên gia Bất Động Sản)";
 
-      const actionType = routedTo === 'chro' ? 'attendance_warning' : routedTo === 'cpo' ? 'inventory_restock' : routedTo === 'cmo' ? 'customer_apology' : routedTo === 'franchise' ? 'royalty_payment_reminder' : 'reconciliation_audit';
+      const actionType = routedTo === 'chro' ? 'attendance_warning' : routedTo === 'cpo' ? 'inventory_restock' : routedTo === 'cmo' ? 'customer_apology' : routedTo === 'franchise' ? 'royalty_payment_reminder' : routedTo === 'real_estate' ? 'real_estate_release_next_block' : 'reconciliation_audit';
 
       const prompt = `Bạn là AI COO (trợ lý điều phối vận hành cấp cao) của hệ thống EIP spa.
 Nhiệm vụ của bạn là nhận câu lệnh ngôn ngữ tự nhiên của Ban điều hành, kết hợp với bộ dữ liệu thô vừa truy xuất từ hệ thống EIP chi nhánh để viết báo cáo tóm tắt phân tích sâu sắc, chính xác số liệu và đề xuất các quyết định thực tế.

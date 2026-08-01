@@ -137,6 +137,7 @@ describe('platform rule engines', () => {
       beauty_spa: false,
       industrial_cleaning: false,
       student_training: false,
+      real_estate: false,
     });
     expect(normalizeEnabledModules({
       babycare: false,
@@ -148,6 +149,7 @@ describe('platform rule engines', () => {
       beauty_spa: true,
       industrial_cleaning: false,
       student_training: true,
+      real_estate: false,
     });
     expect(normalizeEnabledModules({
       beauty_spa: true,
@@ -156,6 +158,7 @@ describe('platform rule engines', () => {
       beauty_spa: true,
       industrial_cleaning: false,
       student_training: false,
+      real_estate: false,
     });
     expect(normalizeEnabledModules({
       babycare: true,
@@ -164,6 +167,7 @@ describe('platform rule engines', () => {
       beauty_spa: false,
       industrial_cleaning: false,
       student_training: false,
+      real_estate: false,
     });
     expect(normalizeEnabledModulesForSave({
       babycare: false,
@@ -174,6 +178,7 @@ describe('platform rule engines', () => {
       beauty_spa: false,
       industrial_cleaning: false,
       student_training: true,
+      real_estate: false,
     });
     expect(normalizeEnabledModulesForSave({
       babycare: false,
@@ -183,6 +188,7 @@ describe('platform rule engines', () => {
       beauty_spa: true,
       industrial_cleaning: false,
       student_training: false,
+      real_estate: false,
     });
     expect(normalizeEnabledModulesForSave({
       babycare: false,
@@ -192,6 +198,7 @@ describe('platform rule engines', () => {
       beauty_spa: false,
       industrial_cleaning: false,
       student_training: false,
+      real_estate: false,
     });
     expect(getDefaultTenantModuleKey({
       babycare: false,

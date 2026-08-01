@@ -1,14 +1,14 @@
+'use client';
 /**
  * Real Estate Module Layout
  *
  * Dedicated layout wrapper for all /dashboard/real-estate/* routes.
- * Applies premium "luxury real estate" design tokens to the content area only.
+ * Applies premium "luxury real estate" design tokens.
  *
  * ISOLATION GUARANTEE:
- *   - This layout only mounts for /dashboard/real-estate/* routes (Next.js route nesting)
- *   - CSS scoped via [data-re-layout] attribute — no global style side effects
- *   - Spa / Babycare / Industrial tenants never render this layout
+ *   - Scoped style selectors via [data-re-layout] attribute
  */
+import React from 'react';
 import './re-layout.css';
 
 export default function RealEstateLayout({
@@ -17,8 +17,11 @@ export default function RealEstateLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div data-re-layout="true" className="re-layout-root">
-      {children}
+    <div data-re-layout="true" className="re-layout-root min-h-screen bg-slate-50 dark:bg-slate-950">
+      {/* Main Content Area */}
+      <main className="max-w-7xl mx-auto px-6 py-6 animate-fade-in">
+        {children}
+      </main>
     </div>
   );
 }

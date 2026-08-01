@@ -29,7 +29,13 @@ import {
   Building2,
   FolderKanban,
   Grid,
-  FileText
+  FileText,
+  LifeBuoy,
+  Megaphone,
+  FileArchive,
+  FileBarChart2,
+  Search,
+  ShieldCheck
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -322,21 +328,24 @@ const menuItems: SidebarMenuItem[] = [
 // ─── Real Estate Module Menu (isolated — only shown for real_estate moduleKey) ───
 const realEstateMenuItems: SidebarMenuItem[] = [
   { type: 'header', label: 'Tổng quan & AI' },
-  { icon: LayoutDashboard, label: 'Dashboard',            href: '/dashboard/real-estate' },
+  { icon: LayoutDashboard, label: 'Tổng Quan Dự Án',      href: '/dashboard/real-estate' },
   { icon: Sparkles,        label: 'AI Copilot',           href: '/dashboard/ai-copilot' },
 
   { type: 'header', label: 'Bất Động Sản' },
-  { icon: Building2,       label: 'Dự Án BĐS',           href: '/dashboard/real-estate/projects' },
+  { icon: FolderKanban,    label: 'Dự Án BĐS',           href: '/dashboard/real-estate/projects' },
   { icon: Grid,            label: 'Bảng Hàng Căn Hộ',    href: '/dashboard/real-estate/apartments' },
   { icon: FileText,        label: 'Hợp Đồng & Đặt Cọc',  href: '/dashboard/real-estate/contracts' },
   { icon: Users,           label: 'Khách Hàng Đầu Tư',   href: '/dashboard/real-estate/customers' },
-  { icon: FolderKanban,    label: 'Marketing & Lead',     href: '/dashboard/real-estate/marketing' },
+  { icon: LifeBuoy,        label: 'Chăm Sóc & Hỗ Trợ',   href: '/dashboard/real-estate/support' },
+  { icon: Megaphone,       label: 'Marketing & Lead',     href: '/dashboard/real-estate/marketing' },
+  { icon: FileArchive,     label: 'Kho Tài Liệu',         href: '/dashboard/real-estate/documents' },
   { icon: Users,           label: 'Sơ đồ tổ chức',        href: '/dashboard/organization' },
 
-  { type: 'header', label: 'Tài Chính & Hệ Thống' },
-  { icon: Wallet,          label: 'Sổ Cái Kế Toán',      href: '/dashboard/accounting' },
-  { icon: BarChart3,       label: 'Bảng Quản Trị CEO',   href: '/dashboard/executive' },
-  { icon: Settings,        label: 'Cài Đặt',              href: '/dashboard/settings' },
+  { type: 'header', label: 'Báo Cáo & Quản Trị' },
+  { icon: FileBarChart2,   label: 'Báo Cáo Vertical',     href: '/dashboard/real-estate/reports' },
+  { icon: BarChart3,       label: 'BI Analytics',         href: '/dashboard/real-estate/bi-analytics' },
+  { icon: Search,          label: 'Tìm Kiếm BĐS',         href: '/dashboard/real-estate/global-search' },
+  { icon: ShieldCheck,     label: 'Quản Trị BĐS',         href: '/dashboard/real-estate/admin' },
 ];
 
 const customerMenuItems: SidebarMenuItem[] = [
@@ -368,6 +377,12 @@ const LUCIDE_ICONS_MAP: Record<string, LucideIcon> = {
   LineChart,
   Sliders,
   BarChart3,
+  LifeBuoy,
+  Megaphone,
+  FileArchive,
+  FileBarChart2,
+  Search,
+  ShieldCheck,
 };
 
 
