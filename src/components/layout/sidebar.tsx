@@ -35,7 +35,11 @@ import {
   FileArchive,
   FileBarChart2,
   Search,
-  ShieldCheck
+  ShieldCheck,
+  Briefcase,
+  GitFork,
+  UserCheck,
+  Target
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -348,10 +352,13 @@ const realEstateMenuItems: SidebarMenuItem[] = [
   { icon: Grid,            label: 'Bảng Hàng Căn Hộ',    href: '/dashboard/real-estate/apartments' },
   { icon: FileText,        label: 'Hợp Đồng & Đặt Cọc',  href: '/dashboard/real-estate/contracts' },
   { icon: Users,           label: 'Khách Hàng Đầu Tư',   href: '/dashboard/real-estate/customers' },
+  { icon: Target,          label: 'Danh Sách Lead',       href: '/dashboard/real-estate/leads' },
+  { icon: Megaphone,       label: 'Marketing & Lead Engine', href: '/dashboard/real-estate/marketing' },
   { icon: LifeBuoy,        label: 'Chăm Sóc & Hỗ Trợ',   href: '/dashboard/real-estate/support' },
-  { icon: Megaphone,       label: 'Marketing & Lead',     href: '/dashboard/real-estate/marketing' },
   { icon: FileArchive,     label: 'Kho Tài Liệu',         href: '/dashboard/real-estate/documents' },
-  { icon: Users,           label: 'Sơ đồ tổ chức',        href: '/dashboard/organization' },
+  { icon: GitFork,         label: 'Sơ đồ tổ chức',        href: '/dashboard/real-estate/org-chart' },
+  { icon: UserCheck,       label: 'Danh sách nhân sự',    href: '/dashboard/real-estate/people' },
+  { icon: Briefcase,       label: 'HR Directory',         href: '/dashboard/real-estate/hr' },
 
   { type: 'header', label: 'Báo Cáo & Quản Trị' },
   { icon: FileBarChart2,   label: 'Báo Cáo Vertical',     href: '/dashboard/real-estate/reports' },
