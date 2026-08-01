@@ -6,7 +6,7 @@ import {
   TicketState,
   TicketEvent,
 } from '../domain/ComplaintTicketAggregate';
-import { activityStream } from '@/platform';
+import { activityStream } from '@/platform/activity-stream/index';
 import { TransitionContext } from '@/platform/state-machine/state-machine';
 
 // In-memory data store for demonstration
