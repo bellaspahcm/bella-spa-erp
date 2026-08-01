@@ -4581,3 +4581,123 @@ html[data-tenant-brand-menu="compact"] aside nav .beauty-erp-nav-header {
   padding-bottom: 0.125rem !important;
   margin-top: 0.375rem !important;
 }
+
+/* ==========================================================================
+   BUTTON STYLE — HOVER / FOCUS / ACTIVE STATES
+   Áp dụng toàn cục theo data-tenant-brand-button (mọi module)
+   ========================================================================== */
+
+/* --- Pill button hover --- */
+html[data-tenant-brand-button="pill"] button:not(.no-pill):hover,
+html[data-tenant-brand-button="pill"] .btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--primary, #1e3a8a) 22%, transparent) !important;
+  transition: all 0.18s ease !important;
+}
+html[data-tenant-brand-button="pill"] button:not(.no-pill):active,
+html[data-tenant-brand-button="pill"] .btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--primary, #1e3a8a) 18%, transparent) !important;
+}
+
+/* --- Rounded button hover --- */
+html[data-tenant-brand-button="rounded"] button:not(.no-pill):hover,
+html[data-tenant-brand-button="rounded"] .btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--primary, #1e3a8a) 18%, transparent) !important;
+  transition: all 0.15s ease !important;
+}
+html[data-tenant-brand-button="rounded"] button:not(.no-pill):active,
+html[data-tenant-brand-button="rounded"] .btn:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 6px color-mix(in srgb, var(--primary, #1e3a8a) 14%, transparent) !important;
+}
+
+/* --- Minimal button hover — subtle, no lift --- */
+html[data-tenant-brand-button="minimal"] button:not(.no-pill):hover,
+html[data-tenant-brand-button="minimal"] .btn:hover {
+  opacity: 0.88 !important;
+  box-shadow: none !important;
+  transition: opacity 0.12s ease !important;
+}
+html[data-tenant-brand-button="minimal"] button:not(.no-pill):active,
+html[data-tenant-brand-button="minimal"] .btn:active {
+  opacity: 0.75 !important;
+}
+
+/* --- Focus-visible ring cho accessibility --- */
+html[data-tenant-brand-button] button:not(.no-pill):focus-visible,
+html[data-tenant-brand-button] .btn:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--primary, #1e3a8a) 60%, transparent) !important;
+  outline-offset: 2px !important;
+}
+
+/* --- Transition mặc định cho tất cả button khi có brand-button attribute --- */
+html[data-tenant-brand-button] button:not(.no-pill),
+html[data-tenant-brand-button] .btn {
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.12s ease !important;
+}
+
+/* ==========================================================================
+   BUTTON STYLE — MODULE: real_estate
+   Tương tự beauty_spa / industrial_cleaning — đủ 3 variants
+   ========================================================================== */
+
+/* Base: áp dụng border-radius theo --brand-button-radius khi có bất kỳ buttonStyle */
+html[data-tenant-brand-button][data-tenant-module="real_estate"] :is(button, a)[class*="bg-primary"]:not([class*="bg-primary/"]),
+html[data-tenant-brand-button][data-tenant-module="real_estate"] :is(button, a)[class*="from-primary"],
+html[data-tenant-brand-button][data-tenant-module="real_estate"] :is(button, a)[class*="bg-emerald-"],
+html[data-tenant-brand-button][data-tenant-module="real_estate"] :is(button, a)[class*="bg-teal-"],
+html[data-tenant-brand-button][data-tenant-module="real_estate"] .beauty-customer-add-cta,
+html[data-tenant-brand-button][data-tenant-module="real_estate"] .dashboard-schedule-actions > *,
+html[data-tenant-brand-button][data-tenant-module="real_estate"] .active-booking-panel button {
+  border-radius: var(--brand-button-radius, 999px) !important;
+}
+
+/* Pill — glow shadow lớn nhất */
+html[data-tenant-brand-button="pill"][data-tenant-module="real_estate"] :is(button, a)[class*="bg-primary"]:not([class*="bg-primary/"]),
+html[data-tenant-brand-button="pill"][data-tenant-module="real_estate"] :is(button, a)[class*="from-primary"],
+html[data-tenant-brand-button="pill"][data-tenant-module="real_estate"] :is(button, a)[class*="bg-emerald-"],
+html[data-tenant-brand-button="pill"][data-tenant-module="real_estate"] .beauty-customer-add-cta {
+  box-shadow: 0 16px 34px color-mix(in srgb, var(--primary) 24%, transparent) !important;
+}
+html[data-tenant-brand-button="pill"][data-tenant-module="real_estate"] :is(button, a)[class*="bg-primary"]:hover,
+html[data-tenant-brand-button="pill"][data-tenant-module="real_estate"] .beauty-customer-add-cta:hover {
+  box-shadow: 0 20px 40px color-mix(in srgb, var(--primary) 32%, transparent) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* Rounded — shadow vừa */
+html[data-tenant-brand-button="rounded"][data-tenant-module="real_estate"] :is(button, a)[class*="bg-primary"]:not([class*="bg-primary/"]),
+html[data-tenant-brand-button="rounded"][data-tenant-module="real_estate"] :is(button, a)[class*="from-primary"],
+html[data-tenant-brand-button="rounded"][data-tenant-module="real_estate"] :is(button, a)[class*="bg-emerald-"],
+html[data-tenant-brand-button="rounded"][data-tenant-module="real_estate"] .beauty-customer-add-cta {
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--primary) 18%, transparent) !important;
+}
+html[data-tenant-brand-button="rounded"][data-tenant-module="real_estate"] :is(button, a)[class*="bg-primary"]:hover,
+html[data-tenant-brand-button="rounded"][data-tenant-module="real_estate"] .beauty-customer-add-cta:hover {
+  box-shadow: 0 14px 30px color-mix(in srgb, var(--primary) 26%, transparent) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Minimal — không shadow, chỉ opacity */
+html[data-tenant-brand-button="minimal"][data-tenant-module="real_estate"] :is(button, a)[class*="bg-primary"]:not([class*="bg-primary/"]),
+html[data-tenant-brand-button="minimal"][data-tenant-module="real_estate"] :is(button, a)[class*="from-primary"],
+html[data-tenant-brand-button="minimal"][data-tenant-module="real_estate"] .beauty-customer-add-cta {
+  box-shadow: none !important;
+  letter-spacing: 0.04em !important;
+}
+html[data-tenant-brand-button="minimal"][data-tenant-module="real_estate"] :is(button, a)[class*="bg-primary"]:hover,
+html[data-tenant-brand-button="minimal"][data-tenant-module="real_estate"] .beauty-customer-add-cta:hover {
+  box-shadow: none !important;
+  opacity: 0.85 !important;
+  transform: none !important;
+}
+
+/* ==========================================================================
+   CSS VARIABLE: --brand-button-radius
+   Đặt giá trị theo data-tenant-brand-button để các module dùng var() được
+   ========================================================================== */
+html[data-tenant-brand-button="pill"]    { --brand-button-radius: 9999px; }
+html[data-tenant-brand-button="rounded"] { --brand-button-radius: 0.875rem; }
+html[data-tenant-brand-button="minimal"] { --brand-button-radius: 0.5rem; }
