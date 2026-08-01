@@ -3,6 +3,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { Bell, RefreshCw, Zap, AlertTriangle, FileSignature } from 'lucide-react';
+import { toast } from 'sonner';
 import { ProjectHeader } from '@/modules/real_estate/components/ProjectHeader';
 import { InventoryMatrixGrid } from '@/modules/real_estate/components/InventoryMatrixGrid';
 import { fetchProjectsAction } from '@/modules/real_estate/actions/projectActions';
@@ -185,7 +186,12 @@ export default function RealEstateDashboardPage() {
     if (!res.success) {
       throw new Error(res.error || 'Cập nhật thông tin thất bại');
     }
-    // Refresh products list
+    toast.success('✅ Cập nhật thông tin căn thành công');
+    // Immediately update local state from returned data
+    if (res.data && !Array.isArray(res.data)) {
+      setProducts(prev => prev.map(p => p.id === productId ? res.data as typeof p : p));
+    }
+    // Then do a full re-fetch to ensure consistency
     if (selectedProject) {
       const resProducts = await fetchProductsAction(selectedProject.id);
       if (resProducts.success && resProducts.data) {

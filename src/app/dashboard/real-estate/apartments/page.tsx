@@ -203,6 +203,10 @@ export default function RealEstateApartmentsPage() {
   const [search, setSearch] = useState("");
 
   const [selectedProduct, setSelectedProduct] = useState<ProductRow | null>(null);
+  // Always resolve from updated products array so modal shows fresh data after save
+  const activeProduct = selectedProduct
+    ? products.find(p => p.id === selectedProduct.id) || selectedProduct
+    : null;
 
   const loadInitialData = useCallback(async () => {
     setIsLoading(true);
@@ -535,7 +539,7 @@ export default function RealEstateApartmentsPage() {
 
       {/* Unit Detail Modal */}
       <UnitDetailModal
-        product={selectedProduct}
+        product={activeProduct}
         isOpen={!!selectedProduct}
         onClose={() => setSelectedProduct(null)}
         onUpdateStatus={handleUpdateStatus}

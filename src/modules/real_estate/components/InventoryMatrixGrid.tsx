@@ -102,6 +102,10 @@ export const InventoryMatrixGrid: React.FC<InventoryMatrixGridProps> = ({
 }) => {
   const [selectedProduct, setSelectedProduct] = useState<ProductRow | null>(null);
 
+  const activeProduct = selectedProduct
+    ? products.find(p => p.id === selectedProduct.id) || selectedProduct
+    : null;
+
   // Group products by Floor (Tầng)
   const groupedByFloor = products.reduce((acc, p) => {
     const floorKey = p.floor || '1';
@@ -224,7 +228,7 @@ export const InventoryMatrixGrid: React.FC<InventoryMatrixGridProps> = ({
 
       {/* Unit Detail Modal */}
       <UnitDetailModal
-        product={selectedProduct}
+        product={activeProduct}
         isOpen={!!selectedProduct}
         onClose={() => setSelectedProduct(null)}
         onUpdateStatus={onUpdateStatus}

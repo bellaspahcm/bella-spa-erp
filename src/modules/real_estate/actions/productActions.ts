@@ -129,6 +129,8 @@ export async function updateProductDetailsAction(
       payload
     );
 
+    revalidatePath('/dashboard/real-estate');
+    revalidatePath('/dashboard/real-estate/apartments');
     revalidatePath(`/dashboard/real-estate/projects/${updatedProduct.project_id}`);
     revalidatePath(`/dashboard/real-estate/products/${productId}`);
 
