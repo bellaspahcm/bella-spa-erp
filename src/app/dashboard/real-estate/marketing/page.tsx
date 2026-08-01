@@ -1,6 +1,11 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { TenantContextContext } from '@/core/hooks/useTenantContext';
+import {
+  getAllInScopeAction,
+  getLeadCandidatesAction,
+} from '@/modules/real_estate/actions/leadAssignmentActions';
 import {
   Megaphone, UserPlus, Phone, Mail, Clock,
   Filter, Search, ChevronRight,
@@ -149,8 +154,8 @@ import { LeadTimelineDrawer } from '@/components/lead-engine/LeadTimelineDrawer'
 import { LeadActionModal } from '@/components/lead-engine/LeadActionModal';
 import { LeadRuleConfigTab } from '@/components/lead-engine/LeadRuleConfigTab';
 
-// ─── Available Sales Agents ───────────────────────────────────────────────────
-const AVAILABLE_SALES: SalesAgent[] = [
+// ─── Fallback static pool (used only if Foundation API is unavailable) ───────
+const FALLBACK_SALES: SalesAgent[] = [
   { id: 'sale-001', name: 'Nguyễn Văn A', role: 'Senior Sales Specialist' },
   { id: 'sale-002', name: 'Trần Thị B', role: 'Real Estate Consultant' },
   { id: 'sale-003', name: 'Lê Hoàng C', role: 'Sales Executive' },
@@ -308,8 +313,34 @@ const getSourceIcon = (source: string) => {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function RealEstateMarketingPage() {
+  const tenantCtx = useContext(TenantContextContext);
+  const tenantId = tenantCtx?.tenantId ?? 'real_estate';
+
   const [leadEngine] = useState(() => new LeadEngineFacade());
   const [leads, setLeads] = useState<ManagedLead[]>(INITIAL_MANAGED_LEADS);
+
+  // ─── Foundation: live agent pool ─────────────────────────────────────────
+  const [liveAgents, setLiveAgents] = useState<SalesAgent[]>(FALLBACK_SALES);
+
+  const loadAgents = useCallback(async () => {
+    try {
+      const result = await getAllInScopeAction({ tenantId });
+      if (result.success && result.candidates && result.candidates.length > 0) {
+        // Map Foundation AssignableReference → SalesAgent (same shape as BridgedSalesAgent)
+        const mapped: SalesAgent[] = result.candidates.map(c => ({
+          id: c.id,
+          name: c.displayName,
+          role: c.type,
+        }));
+        setLiveAgents(mapped);
+      }
+      // If empty, keep FALLBACK_SALES silently
+    } catch {
+      // Keep FALLBACK_SALES on error — not blocking
+    }
+  }, [tenantId]);
+
+  useEffect(() => { loadAgents(); }, [loadAgents]);
 
   // Tab & View Controls
   const [activeTab, setActiveTab] = useState<'pipeline' | 'rules'>('pipeline');
@@ -356,18 +387,44 @@ export default function RealEstateMarketingPage() {
   }, [leads, search, filterState]);
 
   // ─── Handlers ─────────────────────────────────────────────────────────────
-  function handleCreateLead(e: React.FormEvent) {
+  async function handleCreateLead(e: React.FormEvent) {
     e.preventDefault();
     if (!newLead.fullName.trim() || !newLead.phone.trim()) {
       toast.error('Vui lòng nhập Họ tên và Số điện thoại');
       return;
     }
 
-    const assignedSale = AVAILABLE_SALES[Math.floor(Math.random() * AVAILABLE_SALES.length)];
+    // ── Foundation-backed assignment ──────────────────────────────────────
+    // Step 1: try to get top candidate from Foundation pool
+    let assignedSale: SalesAgent;
+    try {
+      const pool = await getLeadCandidatesAction({
+        tenantId,
+        excludeOnLeave: true,
+      });
+
+      if (pool.success && pool.topCandidate) {
+        // Use Foundation's top candidate (respects SLA quota + rotation)
+        assignedSale = {
+          id: pool.topCandidate.id,
+          name: pool.topCandidate.displayName,
+          role: pool.topCandidate.type,
+        };
+      } else if (pool.success && pool.bridgedAgents && pool.bridgedAgents.length > 0) {
+        // Fallback to first bridged agent
+        assignedSale = pool.bridgedAgents[0];
+      } else {
+        // Last resort: use live agents pool (may be FALLBACK_SALES)
+        assignedSale = liveAgents[Math.floor(Math.random() * liveAgents.length)];
+      }
+    } catch {
+      // If Foundation is unreachable, use random from live agents
+      assignedSale = liveAgents[Math.floor(Math.random() * liveAgents.length)];
+    }
 
     let createdLead: ManagedLead = {
       id: `lead-${Date.now()}`,
-      tenantId: 'tenant-re-01',
+      tenantId,
       moduleKey: 'real_estate',
       fullName: newLead.fullName.trim(),
       phone: newLead.phone.trim(),
@@ -427,13 +484,14 @@ export default function RealEstateMarketingPage() {
     setLeads(prev =>
       prev.map(lead => {
         if (lead.id !== leadId) return lead;
+        // Use Foundation-backed liveAgents (falls back to FALLBACK_SALES if not loaded yet)
         const updated = leadEngine.workflowEngine.submitOutcome(
           lead,
           outcome,
           notes,
           lead.currentSaleId || 'sale-001',
           lead.currentSaleName || 'Sale Specialist',
-          AVAILABLE_SALES
+          liveAgents
         );
 
         if (updated.state === 'converted') {
