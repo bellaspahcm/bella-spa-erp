@@ -117,6 +117,8 @@ export default function DashboardPage() {
       ? 'Beauty Spa'
       : tenantModuleKey === 'industrial_cleaning'
       ? 'CleanPro'
+      : tenantModuleKey === 'real_estate'
+      ? 'Bella Land'
       : 'Bella Spa';
   
   // Don't show role-specific greeting until tenant data is fully loaded
@@ -131,6 +133,8 @@ export default function DashboardPage() {
     : tenantModuleKey === 'beauty_spa'
     ? 'Lịch dịch vụ & liệu trình hôm nay'
     : tenantModuleKey === 'industrial_cleaning'
+    ? 'Lịch làm việc hôm nay'
+    : tenantModuleKey === 'real_estate'
     ? 'Lịch làm việc hôm nay'
     : 'Lịch trình liệu trình trực tuyến';
 

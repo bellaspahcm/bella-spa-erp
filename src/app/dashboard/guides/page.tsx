@@ -17,8 +17,10 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { useTenantName } from '@/hooks/useTenantName';
 
 export default function UserManualsHub() {
+  const { tenantName } = useTenantName();
   const { tenantModuleKey } = useTenantModuleKey();
   const vocab = useModuleVocabulary();
   const [guides, setGuides] = useState<GuideListItem[]>([]);
@@ -242,9 +244,9 @@ export default function UserManualsHub() {
 
         {/* Footer Support Information */}
         <footer className={`text-center pt-12 border-t ${theme.footerBorder}`}>
-          <p className="text-xs text-slate-400 dark:text-[#CDBCAB] font-bold uppercase tracking-widest">Bella Spa Group · Hỗ trợ kỹ thuật</p>
+          <p className="text-xs text-slate-400 dark:text-[#CDBCAB] font-bold uppercase tracking-widest">{tenantName || 'Bella ERP'} Group · Hỗ trợ kỹ thuật</p>
           <div className="flex justify-center gap-6 mt-4 text-xs font-bold">
-            <a href="mailto:support@bellaspa.vn" className={`hover:underline ${theme.footerLink}`}>support@bellaspa.vn</a>
+            <a href="mailto:support@bella.vn" className={`hover:underline ${theme.footerLink}`}>support@bella.vn</a>
             <span className="text-slate-300">•</span>
             <a href="tel:02899999999" className={`hover:underline ${theme.footerLink}`}>(028) 9999 9999</a>
           </div>

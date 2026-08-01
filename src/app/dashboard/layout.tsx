@@ -130,7 +130,7 @@ export default function DashboardLayout({
           </div>
           <h2 className="text-2xl font-black text-foreground uppercase tracking-wide">Chi nhánh tạm ngưng</h2>
           <p className="text-muted-foreground font-medium">
-            Tài khoản Spa của bạn hiện đã bị tạm ngưng hoạt động bởi tổng bộ Bella Spa HQ. Vui lòng liên hệ bộ phận hỗ trợ khách hàng để biết thêm chi tiết.
+            Tài khoản của bạn hiện đã bị tạm ngưng hoạt động bởi tổng bộ HQ. Vui lòng liên hệ bộ phận hỗ trợ khách hàng để biết thêm chi tiết.
           </p>
           <button
             onClick={() => {

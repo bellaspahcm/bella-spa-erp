@@ -3,8 +3,8 @@ import { Metadata } from 'next';
 import { ProductSalesListPage } from '@/components/product-sales/ProductSalesListPage';
 
 export const metadata: Metadata = {
-  title: 'Bán hàng sản phẩm | Bella Spa ERP',
-  description: 'Quản lý bán hàng sản phẩm và hoa hồng cho KTV',
+  title: 'Bán hàng sản phẩm | Bella ERP',
+  description: 'Quản lý bán hàng sản phẩm và hoa hồng',
 };
 
 export default async function ProductSalesPage() {
