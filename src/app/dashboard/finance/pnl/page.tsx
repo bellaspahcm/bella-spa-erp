@@ -28,6 +28,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTenantContext } from '@/core/hooks/useTenantContext';
 import {
   useMonthlyPnL,
   useRevenueBreakdown,
@@ -57,6 +58,9 @@ export default function PnLDashboardPage() {
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
 
+  const tenantContext = useTenantContext();
+  const tenantId = tenantContext?.tenantId || 'dev-tenant';
+
   // Calculate month/year based on period
   const { month, year } = useMemo(() => {
     const now = new Date();
@@ -69,10 +73,12 @@ export default function PnLDashboardPage() {
     };
   }, [period]);
 
-  // Fetch data using Intelligence Layer hooks
+  const formattedMonth = `${year}-${month}`;
+
+  // Fetch data using Intelligence Layer hooks (correct arguments: tenantId, formattedMonth)
   const monthlyPnL = useMonthlyPnL(month, year);
-  const revenueBreakdown = useRevenueBreakdown(month, year);
-  const expenseBreakdown = useExpenseBreakdown(month, year);
+  const revenueBreakdown = useRevenueBreakdown(tenantId, formattedMonth);
+  const expenseBreakdown = useExpenseBreakdown(tenantId, formattedMonth);
   const profitabilityTrends = useProfitabilityTrends(month, year);
 
   // Manual refresh mutation
@@ -160,7 +166,7 @@ export default function PnLDashboardPage() {
   };
 
   const getRevenueBreakdownData = () => {
-    if (!revenueBreakdown.data || !revenueBreakdown.data.data) return [];
+    if (!revenueBreakdown.data || !Array.isArray(revenueBreakdown.data.data)) return [];
 
     // TODO: API returns RevenueBreakdownData[] array but code expects nested object with byType
     // Transform array directly (assume each element is already correct format)
@@ -172,7 +178,7 @@ export default function PnLDashboardPage() {
   };
 
   const getExpenseBreakdownData = () => {
-    if (!expenseBreakdown.data || !expenseBreakdown.data.data) return [];
+    if (!expenseBreakdown.data || !Array.isArray(expenseBreakdown.data.data)) return [];
 
     // TODO: API returns ExpenseBreakdownData[] array but code expects nested object with byCategory
     // Transform array directly (assume each element is already correct format)
@@ -422,7 +428,12 @@ export default function PnLDashboardPage() {
                 <p className="text-sm text-slate-600">Tổng doanh thu</p>
                 <p className="text-2xl font-bold text-slate-900">
                   {/* TODO: revenueBreakdown.data.data is array, calculate sum or use mock */}
-                  {formatCurrency((revenueBreakdown.data.data || []).reduce((sum, item) => sum + item.amount, 0))}
+                  {formatCurrency(
+                    (Array.isArray(revenueBreakdown.data.data) ? revenueBreakdown.data.data : []).reduce(
+                      (sum, item) => sum + (item.amount || 0),
+                      0
+                    )
+                  )}
                 </p>
               </div>
 
@@ -433,7 +444,7 @@ export default function PnLDashboardPage() {
               <div className="mt-4 pt-4 border-t border-slate-100">
                 <p className="text-sm font-medium text-slate-700 mb-2">Nguồn thu hàng đầu:</p>
                 {/* TODO: revenueBreakdown.data.data is array, not nested object with byType */}
-                {(revenueBreakdown.data.data || []).slice(0, 3).map((item, idx) => (
+                {(Array.isArray(revenueBreakdown.data.data) ? revenueBreakdown.data.data : []).slice(0, 3).map((item, idx) => (
                   <div key={idx} className="flex items-center justify-between text-sm mb-1">
                     <span className="text-slate-600">{item.source}</span>
                     <span className="font-medium text-green-600">{item.percentage}%</span>

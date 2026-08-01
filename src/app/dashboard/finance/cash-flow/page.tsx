@@ -31,6 +31,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTenantContext } from '@/core/hooks/useTenantContext';
 import {
   useCashFlowAnalysis,
   // TODO: Implement useRefreshFinanceData hook
@@ -61,6 +62,9 @@ export default function CashFlowDashboardPage() {
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
 
+  const tenantContext = useTenantContext();
+  const tenantId = tenantContext?.tenantId || 'dev-tenant';
+
   // Get current month/year from dates
   const currentMonth = useMemo(() => {
     if (endDate) {
@@ -78,10 +82,12 @@ export default function CashFlowDashboardPage() {
     return new Date().getFullYear().toString();
   }, [endDate]);
 
+  const formattedMonth = `${currentYear}-${currentMonth}`;
+
   // Fetch data using Intelligence Layer hooks
   // Note: Cash Flow Analysis includes both analysis and forecast data  
   // TODO: Fix to support period/date range - currently only supports month/year
-  const cashFlowAnalysis = useCashFlowAnalysis(currentMonth, currentYear);
+  const cashFlowAnalysis = useCashFlowAnalysis(tenantId, formattedMonth);
 
   // Manual refresh mutation
   // TODO: Implement useRefreshFinanceData hook
