@@ -12,7 +12,7 @@
  * @layer Capability (Layer 2)
  */
 
-import { createClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import type {
   HREmployeeSummaryRow,
   HREmployeeProfileView,
@@ -201,11 +201,7 @@ function mapSummary(row: RawSummaryRow): HREmployeeSummaryRow {
 // ─── Service Implementation ───────────────────────────────────────────────────
 
 export class SupabaseHRQueryService implements HRQueryService {
-  private readonly supabase;
-
-  constructor(supabaseUrl: string, supabaseAnonKey: string) {
-    this.supabase = createClient(supabaseUrl, supabaseAnonKey);
-  }
+  constructor(private readonly supabase: SupabaseClient) {}
 
   // ── listActiveEmployees ─────────────────────────────────────────────────────
 

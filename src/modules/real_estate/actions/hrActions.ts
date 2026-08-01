@@ -13,8 +13,7 @@
  * @layer Module (Layer 3) — allowed to import from Capabilities
  */
 
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+import { createClient } from '@/lib/supabase-server';
 import { SupabaseHRQueryService } from '@/capabilities/hr/SupabaseHRQueryService';
 import type {
   HREmployeeSummaryRow,
@@ -26,9 +25,8 @@ import type {
 // ─── Helper: build HR service with server cookies ────────────────────────────
 
 function buildHRService(): SupabaseHRQueryService {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-  return new SupabaseHRQueryService(url, anonKey);
+  const db = createClient();
+  return new SupabaseHRQueryService(db);
 }
 
 // ─── Action: List Active Employees ───────────────────────────────────────────
