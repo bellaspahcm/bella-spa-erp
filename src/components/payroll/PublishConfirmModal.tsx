@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { KtvSalaryRecord } from '@/types/domain';
 import { getPayrollAnomalies, type Anomaly } from './PayrollHealthCheck';
+import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
 
 interface PublishConfirmModalProps {
   isOpen: boolean;
@@ -29,8 +30,9 @@ export function PublishConfirmModal({
   onClose, 
   onConfirm, 
   salaries,
-  currentMonth 
+  currentMonth
 }: PublishConfirmModalProps) {
+  const vocab = useModuleVocabulary();
   const [isPublishing, setIsPublishing] = useState(false);
   
   if (!isOpen) return null;
@@ -91,7 +93,7 @@ export function PublishConfirmModal({
                   <Users className="w-5 h-5 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-600 font-medium">Tổng KTV</p>
+                  <p className="text-xs text-gray-600 font-medium">Tổng {vocab.worker.short}</p>
                   <p className="text-2xl font-bold text-gray-900">{totalKtvs}</p>
                 </div>
               </div>
@@ -217,7 +219,7 @@ export function PublishConfirmModal({
                     ✅ Bảng lương khỏe mạnh
                   </h3>
                   <p className="text-sm text-green-800">
-                    Không phát hiện vấn đề. Sẵn sàng gửi đối soát cho tất cả {totalKtvs} KTV.
+                    Không phát hiện vấn đề. Sẵn sàng gửi đối soát cho tất cả {totalKtvs} {vocab.worker.short}.
                   </p>
                 </div>
               </div>
@@ -231,9 +233,9 @@ export function PublishConfirmModal({
               <div className="flex-1">
                 <h3 className="font-bold text-blue-900 mb-2">Sau khi gửi đối soát:</h3>
                 <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
-                  <li>Tất cả KTV sẽ nhận được thông báo trên app</li>
-                  <li>KTV có thể xem chi tiết và xác nhận bảng lương</li>
-                  <li>Trạng thái chuyển sang "Chờ KTV xác nhận"</li>
+                  <li>Tất cả {vocab.worker.plural.toLowerCase()} sẽ nhận được thông báo trên app</li>
+                  <li>{vocab.worker.plural} có thể xem chi tiết và xác nhận bảng lương</li>
+                  <li>Trạng thái chuyển sang "Chờ {vocab.worker.short} xác nhận"</li>
                   <li>Bạn có thể theo dõi tiến độ xác nhận tại màn hình này</li>
                 </ul>
               </div>
@@ -269,7 +271,7 @@ export function PublishConfirmModal({
               ) : (
                 <>
                   <Send className="w-5 h-5" />
-                  Xác nhận gửi {totalKtvs} KTV
+                  Xác nhận gửi {totalKtvs} {vocab.worker.short}
                 </>
               )}
             </Button>

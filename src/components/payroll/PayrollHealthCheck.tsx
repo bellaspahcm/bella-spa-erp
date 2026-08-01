@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { KtvSalaryRecord } from '@/types/domain';
 import { useState } from 'react';
+import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
 
 interface PayrollHealthCheckProps {
   salaries: KtvSalaryRecord[];
@@ -37,6 +38,7 @@ interface Anomaly {
 }
 
 export function PayrollHealthCheck({ salaries, currentMonth }: PayrollHealthCheckProps) {
+  const vocab = useModuleVocabulary();
   const [isExpanded, setIsExpanded] = useState(true);
 
   // Detect all anomalies
@@ -233,7 +235,7 @@ export function PayrollHealthCheck({ salaries, currentMonth }: PayrollHealthChec
               </h3>
               {!isHealthy && (
                 <span className={`px-2 py-1 ${statusConfig.iconBg} ${statusConfig.textColor} rounded-full text-[10px] font-black uppercase tracking-wide shrink-0`}>
-                  {affectedKtvCount}/{salaries.length} KTV
+                  {affectedKtvCount}/{salaries.length} {vocab.worker.short}
                 </span>
               )}
             </div>
@@ -404,7 +406,7 @@ export function PayrollHealthCheck({ salaries, currentMonth }: PayrollHealthChec
         <div className="mt-5 pt-5 border-t-2 border-white">
           <div className="grid grid-cols-3 gap-4">
             <div className="bg-white p-3 rounded-lg">
-              <p className="text-xs text-gray-600 mb-1">Tổng KTV</p>
+              <p className="text-xs text-gray-600 mb-1">Tổng {vocab.worker.short}</p>
               <p className="text-2xl font-bold text-gray-900">{salaries.length}</p>
             </div>
             <div className="bg-white p-3 rounded-lg">

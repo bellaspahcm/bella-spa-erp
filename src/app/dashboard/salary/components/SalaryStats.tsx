@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { DollarSign, TrendingUp, CheckCircle2 } from 'lucide-react';
 import { KtvSalaryRecord, CurrentUser } from '@/types/domain';
+import { useModuleVocabulary } from '@/hooks/useModuleVocabulary';
 
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 
@@ -23,10 +24,11 @@ export default function SalaryStats({
   prevMonthYear,
   isLoading = false,
 }: SalaryStatsProps) {
+  const vocab = useModuleVocabulary();
   if (isLoading) {
     return (
       <div className="mb-6 grid grid-cols-1 gap-4 md:mb-10 md:grid-cols-3 md:gap-6">
-        <SkeletonLoader variant="card" className="w-full h-48 bg-gradient-to-r from-pink-500/10 via-rose-500/10 to-pink-500/10 border-pink-200/20" />
+        <SkeletonLoader variant="card" className="w-full h-48 bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 border-primary/20" />
         <SkeletonLoader variant="card" className="w-full h-48 bg-white/40 dark:bg-zinc-800/40" />
         <SkeletonLoader variant="card" className="w-full h-48 bg-white/40 dark:bg-zinc-800/40" />
       </div>
@@ -70,8 +72,12 @@ export default function SalaryStats({
             <CheckCircle2 className="w-6 h-6 text-emerald-600" />
           </div>
           <div>
-            <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Tổng buổi hoàn thành</p>
-            <h4 className="text-2xl font-black text-slate-900">{totalSessions} Buổi</h4>
+            <p className="text-xs font-black text-slate-400 uppercase tracking-widest">
+              {vocab.workUnit.singular === 'Buổi' ? 'Tổng buổi hoàn thành' : 'Tổng lượt tư vấn hoàn thành'}
+            </p>
+            <h4 className="text-2xl font-black text-slate-900">
+              {totalSessions} {vocab.workUnit.singular}
+            </h4>
           </div>
         </div>
         <p className="text-xs font-bold text-slate-500">Dựa trên dữ liệu thực tế hệ thống</p>
