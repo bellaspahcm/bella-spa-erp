@@ -1050,6 +1050,7 @@ html[data-tenant-module="pending"] .beauty-active-care-badge {
   color: #ffffff !important;
   opacity: 1 !important;
   animation: beauty-active-care-badge-glow 1.8s ease-in-out infinite;
+}
   box-shadow: 0 10px 22px rgba(7, 78, 68, 0.18) !important;
 }
 
@@ -1061,7 +1062,7 @@ html[data-tenant-module="pending"] .beauty-active-care-badge span {
 html[data-tenant-module="pending"] [class*="from-rose-"],
 html[data-tenant-module="pending"] [class*="via-rose-"],
 html[data-tenant-module="pending"] [class*="to-pink-"] {
-  --tw-gradient-from: #0b2240 !important;
+  --tw-gradient-from: #042a25 !important;
   --tw-gradient-via: #c8a97a !important;
   --tw-gradient-to: #074e44 !important;
 }
@@ -1071,17 +1072,17 @@ html[data-tenant-module="pending"] [class*="to-pink-"] {
    Dynamically styles the sidebar according to the selected brand preset
    ========================================================================= */
 
-/* 1. JADE WELLNESS (Emerald Green #074E44 / #C8A97A Warm Gold) */
+/* 1. JADE WELLNESS (Pure Emerald Green #074E44 / #C8A97A Warm Gold - Pure Jade, No Navy Blue) */
 html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-sidebar,
 html[data-tenant-brand-preset="jade_wellness"] aside.beauty-erp-sidebar,
 html[data-tenant-brand-preset="jade_wellness"] aside[class*="bg-"] {
-  background: linear-gradient(158deg, #052f2a 0%, #073f37 42%, #0b2240 100%) !important;
+  background: linear-gradient(158deg, #03211d 0%, #074e44 48%, #05362f 100%) !important;
   border-color: rgba(200, 169, 122, 0.34) !important;
-  box-shadow: 16px 0 44px rgba(11, 34, 64, 0.18) !important;
+  box-shadow: 16px 0 44px rgba(4, 42, 37, 0.28) !important;
   color: #f8f6f2 !important;
 }
 html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-logo-mark {
-  background: linear-gradient(145deg, #074e44 0%, #0b2240 100%) !important;
+  background: linear-gradient(145deg, #074e44 0%, #03211d 100%) !important;
   border: 1px solid rgba(200, 169, 122, 0.72) !important;
   color: #c8a97a !important;
 }
@@ -1093,14 +1094,14 @@ html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item:hover { colo
 html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item:hover svg,
 html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item:hover * { color: #ffffff !important; }
 html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-item-active {
-  background: linear-gradient(135deg, #074e44 0%, #0a6357 100%) !important;
+  background: linear-gradient(135deg, #074e44 0%, #0c6b5e 100%) !important;
   border-color: rgba(200, 169, 122, 0.52) !important;
   color: #ffffff !important;
 }
 html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-profile-card,
 html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-avatar,
 html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-icon-button {
-  background: rgba(7, 78, 68, 0.35) !important;
+  background: rgba(7, 78, 68, 0.45) !important;
   border-color: rgba(200, 169, 122, 0.36) !important;
   color: #c8a97a !important;
 }
@@ -1119,7 +1120,6 @@ html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-logo-mark {
   border: 1px solid rgba(217, 119, 6, 0.72) !important;
   color: #d97706 !important;
 }
-html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-brand-script { color: #f8fafc !important; }
 html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-brand-subtitle,
 html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-header { color: #f59e0b !important; }
 html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-item { color: rgba(248, 250, 252, 0.85) !important; }
