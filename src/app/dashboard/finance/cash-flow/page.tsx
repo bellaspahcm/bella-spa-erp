@@ -390,7 +390,7 @@ export default function CashFlowDashboardPage() {
           </div>
 
           {getBurnRateData() ? (
-            <BurnRateChart data={getBurnRateData()!} height={250} />
+            <BurnRateChart data={getBurnRateData()!} height={420} />
           ) : (
             <div className="flex items-center justify-center h-32">
               <AlertCircle className="h-6 w-6 text-slate-400" />

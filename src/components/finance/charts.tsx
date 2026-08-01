@@ -274,11 +274,11 @@ export function BurnRateChart({ data, height }: { data: BurnRateData | null; hei
       </div>
 
       {/* Interactive Burndown Projection Bars */}
-      <div className="h-32 flex items-end justify-between gap-1.5 px-2 pt-5 pb-1 border-t border-slate-100 dark:border-slate-850">
+      <div className="flex items-end justify-between gap-1 px-1 pt-4 pb-1 border-t border-slate-100 dark:border-slate-850 mt-auto">
         {projectionSteps.map((step, i) => {
           const barColor =
-            step.pct > 60 ? 'from-emerald-500 via-emerald-400 to-teal-400 shadow-emerald-500/10' :
-            step.pct > 30 ? 'from-amber-500 via-amber-400 to-yellow-400 shadow-amber-500/10' :
+            step.pct > 60 ? 'from-emerald-500 via-emerald-450 to-teal-400 shadow-emerald-500/10' :
+            step.pct > 30 ? 'from-amber-500 via-amber-450 to-yellow-400 shadow-amber-500/10' :
             'from-rose-500 via-rose-450 to-orange-400 shadow-rose-500/10';
 
           const isHovered = hoveredIdx === i;
@@ -286,7 +286,7 @@ export function BurnRateChart({ data, height }: { data: BurnRateData | null; hei
           return (
             <div
               key={i}
-              className="flex-1 flex flex-col items-center h-full justify-end group relative z-10"
+              className="flex-1 flex flex-col items-center justify-end group relative z-10"
               onMouseEnter={() => setHoveredIdx(i)}
               onMouseLeave={() => setHoveredIdx(null)}
             >
@@ -299,16 +299,16 @@ export function BurnRateChart({ data, height }: { data: BurnRateData | null; hei
                 {formatVNDFull(step.cash)}
               </div>
 
-              {/* Vertical progress column */}
-              <div className="w-full bg-slate-100/80 dark:bg-slate-800 rounded-t-lg h-full max-h-[82%] relative overflow-hidden border border-slate-200/20">
+              {/* Vertical progress column - Fixed height and thin pill shape */}
+              <div className="w-2.5 sm:w-3.5 h-16 bg-slate-100/80 dark:bg-slate-800 rounded-t-full relative overflow-hidden border border-slate-200/10">
                 <div
-                  className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t ${barColor} rounded-t-lg transition-all duration-1000 group-hover:brightness-105`}
+                  className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t ${barColor} rounded-t-full transition-all duration-1000 group-hover:brightness-105`}
                   style={{ height: `${step.pct}%` }}
                 />
               </div>
 
               {/* Month label */}
-              <span className="text-[9px] font-black text-slate-500 mt-2 truncate w-full text-center tracking-wide">{step.label}</span>
+              <span className="text-[9px] font-black text-slate-500 mt-2 truncate w-full text-center tracking-wide block">{step.label}</span>
             </div>
           );
         })}
