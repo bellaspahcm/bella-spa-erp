@@ -1,73 +1,58 @@
 /**
  * Premium Finance Chart Components
- *
- * Highly stylized and polished implementations using Recharts,
- * matching the premium aesthetic of the Real Estate module:
- * - Linear gradients and glow effects.
- * - Glassmorphism custom tooltips.
- * - Harmonious modern color palettes (Indigo, Emerald, Rose, Amber, Blue).
- * - Smooth curves and rounded bar charts.
+ * 
+ * Crafted to match the premium, custom-designed aesthetic of the Real Estate vertical.
+ * Uses a combination of custom HTML/CSS grids, SVG graphics, and highly-styled
+ * Recharts layouts to achieve high-fidelity transitions, shadows, and clean layouts.
  */
 
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
-  BarChart,
-  Bar,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   Legend,
   ResponsiveContainer,
-  AreaChart,
-  Area,
+  ReferenceLine,
   PieChart,
   Pie,
   Cell,
-  ReferenceLine,
-  type PieLabelRenderProps,
 } from 'recharts';
-import { BarChart3, PieChart as PieIcon, LineChart as LineIcon, TrendingUp } from 'lucide-react';
+import { BarChart3, PieChart as PieIcon, LineChart as LineIcon, TrendingUp, DollarSign } from 'lucide-react';
 
-// ─── Color & Styling Constants ────────────────────────────────────────────────
+// ─── Format helper ────────────────────────────────────────────────────────────
 
-const formatVND = (v: number) =>
-  new Intl.NumberFormat('vi-VN', { notation: 'compact', maximumFractionDigits: 1 }).format(v) + 'đ';
-
-const COLORS = {
-  inflow: {
-    start: '#10b981', // Emerald 500
-    end: '#34d399',   // Emerald 400
-    glow: 'rgba(16, 185, 129, 0.25)',
-  },
-  outflow: {
-    start: '#f43f5e', // Rose 500
-    end: '#fb7185',   // Rose 400
-    glow: 'rgba(244, 63, 94, 0.25)',
-  },
-  forecast: {
-    start: '#6366f1', // Indigo 500
-    end: '#818cf8',   // Indigo 400
-    glow: 'rgba(99, 102, 241, 0.25)',
-  },
-  actual: {
-    start: '#0ea5e9', // Sky 500
-    end: '#38bdf8',   // Sky 400
-    glow: 'rgba(14, 165, 233, 0.25)',
-  },
-  pie: [
-    { start: '#6366f1', end: '#818cf8' }, // Indigo
-    { start: '#10b981', end: '#34d399' }, // Emerald
-    { start: '#f59e0b', end: '#fbbf24' }, // Amber
-    { start: '#3b82f6', end: '#60a5fa' }, // Blue
-    { start: '#8b5cf6', end: '#a78bfa' }, // Violet
-    { start: '#14b8a6', end: '#2dd4bf' }, // Teal
-  ]
+const formatVND = (v: number) => {
+  if (v >= 1_000_000_000) {
+    return (v / 1_000_000_000).toFixed(1) + ' Tỷ';
+  }
+  if (v >= 1_000_000) {
+    return (v / 1_000_000).toFixed(0) + ' Tr';
+  }
+  return new Intl.NumberFormat('vi-VN').format(v) + 'đ';
 };
 
-// ─── Custom Premium Tooltip ───────────────────────────────────────────────────
+const formatVNDFull = (v: number) =>
+  new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(v);
+
+// ─── Custom Active Dot for Line/Area Charts ────────────────────────────────────
+
+const PremiumActiveDot = (props: any) => {
+  const { cx, cy, stroke } = props;
+  return (
+    <g>
+      <circle cx={cx} cy={cy} r={9} fill={stroke} opacity={0.15} className="transition-all duration-300" />
+      <circle cx={cx} cy={cy} r={5} fill={stroke} stroke="#ffffff" strokeWidth={1.5} />
+    </g>
+  );
+};
+
+// ─── Floating Glassmorphism Tooltip ───────────────────────────────────────────
 
 interface TooltipPayloadEntry {
   name: string;
@@ -87,22 +72,22 @@ function PremiumVNDTooltip({
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-xl p-4 text-xs min-w-[180px] transition-all duration-300">
-      <p className="font-extrabold text-slate-850 dark:text-slate-200 mb-2 border-b border-slate-100 dark:border-slate-800 pb-1.5 font-sans tracking-wide">
-        {label}
+    <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200/60 dark:border-slate-800/80 rounded-2xl shadow-xl p-4 text-xs min-w-[190px] transition-all duration-350 transform scale-100 hover:scale-102">
+      <p className="font-extrabold text-slate-850 dark:text-slate-200 mb-2 border-b border-slate-100/70 dark:border-slate-800/70 pb-1.5 font-sans tracking-wide">
+        📅 {label}
       </p>
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         {payload.map((p, idx) => (
           <div key={idx} className="flex justify-between items-center gap-4">
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <span
                 className="w-2.5 h-2.5 rounded-full inline-block shadow-sm"
                 style={{ backgroundColor: p.color || p.fill }}
               />
-              <span className="text-slate-600 dark:text-slate-400 font-medium">{p.name}</span>
+              <span className="text-slate-650 dark:text-slate-400 font-bold">{p.name}</span>
             </div>
             <span className="font-mono font-black text-slate-900 dark:text-slate-100">
-              {formatVND(p.value)}
+              {formatVNDFull(p.value)}
             </span>
           </div>
         ))}
@@ -111,22 +96,23 @@ function PremiumVNDTooltip({
   );
 }
 
-// Fallback when empty
+// ─── Fallback Component ────────────────────────────────────────────────────────
+
 function ChartPlaceholder({ title, icon: Icon }: { title: string; icon: React.ElementType }) {
   return (
-    <div className="flex items-center justify-center h-full bg-slate-50/50 dark:bg-slate-950/20 rounded-2xl border border-dashed border-slate-250 dark:border-slate-800 transition-all duration-300">
+    <div className="flex items-center justify-center h-full bg-slate-50/50 dark:bg-slate-950/10 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800">
       <div className="text-center">
-        <div className="p-3 bg-white dark:bg-slate-900 rounded-2xl shadow-sm inline-block border border-slate-100 dark:border-slate-800 mb-3">
-          <Icon className="h-8 w-8 text-slate-400 dark:text-slate-500" />
+        <div className="p-3 bg-white dark:bg-slate-900 rounded-2xl shadow-sm inline-block border border-slate-100 dark:border-slate-800 mb-2.5">
+          <Icon className="h-6 w-6 text-slate-450 dark:text-slate-550" />
         </div>
-        <p className="text-xs font-bold text-slate-600 dark:text-slate-400 tracking-wide uppercase">{title}</p>
-        <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">Dữ liệu chưa sẵn sàng hoặc rỗng</p>
+        <p className="text-[10px] font-black text-slate-500 dark:text-slate-455 tracking-widest uppercase">{title}</p>
+        <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">Dữ liệu đang được kết xuất...</p>
       </div>
     </div>
   );
 }
 
-// ─── 1. Cash Flow Analysis Chart ──────────────────────────────────────────────
+// ─── 1. Cash Flow Analysis Chart (Interactive HTML Bar Chart) ──────────────────
 
 export type CashFlowBreakdownItem = {
   paymentMethod: string;
@@ -141,69 +127,88 @@ export function CashFlowAnalysisChart({
   data: CashFlowBreakdownItem[];
   height: number;
 }) {
+  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+
   if (!data || data.length === 0) {
     return <div style={{ height }}><ChartPlaceholder title="Phân Tích Dòng Tiền" icon={BarChart3} /></div>;
   }
 
+  // Find max value to determine heights proportionally
+  const maxVal = Math.max(...data.flatMap(d => [d.inflows, d.outflows]), 1000000);
+
   return (
-    <div style={{ height }} className="relative">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: 12, right: 16, left: 8, bottom: 8 }}>
-          <defs>
-            <linearGradient id="inflowGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={COLORS.inflow.end} />
-              <stop offset="100%" stopColor={COLORS.inflow.start} />
-            </linearGradient>
-            <linearGradient id="outflowGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={COLORS.outflow.end} />
-              <stop offset="100%" stopColor={COLORS.outflow.start} />
-            </linearGradient>
-          </defs>
-          <CartesianGrid strokeDasharray="4 4" stroke="#f1f5f9" vertical={false} />
-          <XAxis
-            dataKey="paymentMethod"
-            axisLine={false}
-            tickLine={false}
-            tick={{ fontSize: 12, fontWeight: 700, fill: '#475569' }}
-          />
-          <YAxis
-            axisLine={false}
-            tickLine={false}
-            tickFormatter={formatVND}
-            tick={{ fontSize: 10, fontWeight: 600, fill: '#94a3b8' }}
-            width={70}
-          />
-          <Tooltip content={<PremiumVNDTooltip />} cursor={{ fill: '#f8fafc', opacity: 0.8 }} />
-          <Legend
-            verticalAlign="top"
-            align="right"
-            iconType="circle"
-            iconSize={8}
-            wrapperStyle={{ paddingBottom: 16, fontSize: 12, fontWeight: 700 }}
-          />
-          <Bar
-            dataKey="inflows"
-            name="Dòng tiền vào"
-            fill="url(#inflowGrad)"
-            radius={[6, 6, 0, 0]}
-            maxBarSize={36}
-            style={{ filter: `drop-shadow(0 4px 6px ${COLORS.inflow.glow})` }}
-          />
-          <Bar
-            dataKey="outflows"
-            name="Dòng tiền ra"
-            fill="url(#outflowGrad)"
-            radius={[6, 6, 0, 0]}
-            maxBarSize={36}
-            style={{ filter: `drop-shadow(0 4px 6px ${COLORS.outflow.glow})` }}
-          />
-        </BarChart>
-      </ResponsiveContainer>
+    <div style={{ height }} className="flex flex-col justify-between font-sans relative pt-6 select-none">
+      {/* Chart Plot Area */}
+      <div className="relative flex-1 flex items-end justify-around gap-6 sm:gap-10 px-6 pb-2 border-b border-slate-100 dark:border-slate-800/80">
+        
+        {/* Horizontal grid lines */}
+        <div className="absolute inset-0 flex flex-col justify-between pointer-events-none pb-8 pt-4">
+          <div className="border-b border-slate-100/60 dark:border-slate-800/40 w-full h-0" />
+          <div className="border-b border-slate-100/60 dark:border-slate-800/40 w-full h-0" />
+          <div className="border-b border-slate-100/60 dark:border-slate-800/40 w-full h-0" />
+          <div className="w-full h-0" />
+        </div>
+
+        {data.map((item, idx) => {
+          const inflowPct = (item.inflows / maxVal) * 100;
+          const outflowPct = (item.outflows / maxVal) * 100;
+          const isHovered = hoveredIdx === idx;
+
+          return (
+            <div
+              key={idx}
+              className="flex-1 flex flex-col items-center h-full justify-end group relative z-10"
+              onMouseEnter={() => setHoveredIdx(idx)}
+              onMouseLeave={() => setHoveredIdx(null)}
+            >
+              {/* Premium Floating Value Tooltip on Hover */}
+              <div
+                className={`absolute bottom-full mb-3 bg-slate-900/95 dark:bg-slate-950/95 text-white text-[10px] rounded-2xl p-3 shadow-xl z-20 pointer-events-none transition-all duration-300 transform ${
+                  isHovered ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-1 scale-95'
+                } flex flex-col gap-1 border border-slate-800`}
+              >
+                <span className="font-extrabold text-slate-400 tracking-wider uppercase block">{item.paymentMethod}</span>
+                <span className="text-emerald-400 font-black block">Vào: {formatVNDFull(item.inflows)}</span>
+                <span className="text-rose-400 font-black block">Ra: {formatVNDFull(item.outflows)}</span>
+              </div>
+
+              {/* Group of Bars with Custom Gradients & Glow */}
+              <div className="w-full flex items-end justify-center gap-2.5 h-full max-h-[82%]">
+                {/* Inflow Bar */}
+                <div
+                  className="w-7 sm:w-10 bg-gradient-to-t from-emerald-600 via-emerald-500 to-teal-400 rounded-t-xl transition-all duration-500 hover:brightness-105 shadow-md shadow-emerald-500/10 hover:shadow-emerald-500/30 group-hover:scale-[1.02]"
+                  style={{ height: `${inflowPct}%` }}
+                />
+                {/* Outflow Bar */}
+                <div
+                  className="w-7 sm:w-10 bg-gradient-to-t from-rose-600 via-rose-500 to-orange-400 rounded-t-xl transition-all duration-500 hover:brightness-105 shadow-md shadow-rose-500/10 hover:shadow-rose-500/30 group-hover:scale-[1.02]"
+                  style={{ height: `${outflowPct}%` }}
+                />
+              </div>
+
+              {/* X-Axis Label */}
+              <span className="text-xs font-black text-slate-700 dark:text-slate-350 mt-3 tracking-wide">{item.paymentMethod}</span>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Legend Block */}
+      <div className="flex justify-center gap-8 pt-4 text-[10px] font-black tracking-widest text-slate-500 uppercase">
+        <span className="flex items-center gap-2">
+          <span className="w-3 h-3 rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 shadow-md shadow-emerald-500/30" />
+          Dòng Tiền Vào
+        </span>
+        <span className="flex items-center gap-2">
+          <span className="w-3 h-3 rounded-full bg-gradient-to-r from-rose-500 to-orange-400 shadow-md shadow-rose-500/30" />
+          Dòng Tiền Ra
+        </span>
+      </div>
     </div>
   );
 }
 
-// ─── 2. Burn Rate Chart ───────────────────────────────────────────────────────
+// ─── 2. Burn Rate Chart (Radial + Projection Bars Combo) ──────────────────────
 
 export type BurnRateData = {
   monthlyBurnRate: number;
@@ -213,104 +218,106 @@ export type BurnRateData = {
 };
 
 export function BurnRateChart({ data, height }: { data: BurnRateData | null; height: number }) {
+  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+
   if (!data) {
     return <div style={{ height }}><ChartPlaceholder title="Tốc Độ Đốt Tiền & Runway" icon={TrendingUp} /></div>;
   }
 
   const { monthlyBurnRate, runwayMonths, currentCash, averageDailyCashFlow } = data;
 
-  // Generate Runway Projection values
-  const chartData = Array.from({ length: 7 }, (_, i) => ({
-    month: i === 0 ? 'Hiện tại' : `T+${i}`,
-    cash: Math.max(0, currentCash - monthlyBurnRate * i),
-  }));
+  // Generate Runway Projection values (7 months: Current + 6 forward)
+  const projectionSteps = Array.from({ length: 7 }, (_, i) => {
+    const cashLeft = Math.max(0, currentCash - monthlyBurnRate * i);
+    const pct = currentCash > 0 ? (cashLeft / currentCash) * 100 : 0;
+    return {
+      label: i === 0 ? 'Hiện tại' : `T+${i}`,
+      cash: cashLeft,
+      pct,
+    };
+  });
 
   const runwayStatus =
-    runwayMonths >= 12 ? { color: COLORS.inflow.start, label: 'An toàn tài chính', badge: 'bg-emerald-50 text-emerald-700 border-emerald-200' } :
-    runwayMonths >= 6  ? { color: '#f59e0b', label: 'Cần lập kế hoạch', badge: 'bg-amber-50 text-amber-700 border-amber-200' } :
-    { color: COLORS.outflow.start, label: 'Nguy cơ cạn tiền', badge: 'bg-rose-50 text-rose-700 border-rose-200' };
+    runwayMonths >= 12 ? { color: 'text-emerald-500 border-emerald-200/70 bg-emerald-50/50 dark:bg-emerald-950/20 dark:border-emerald-900/60', iconColor: 'bg-emerald-500', label: 'AN TOÀN TÀI CHÍNH', desc: 'Dự phòng tiền mặt dồi dào (>12 tháng)' } :
+    runwayMonths >= 6  ? { color: 'text-amber-500 border-amber-200/70 bg-amber-50/50 dark:bg-amber-950/20 dark:border-amber-900/60', iconColor: 'bg-amber-500', label: 'CẦN THEO DÕI', desc: 'Nên lập thêm phương án dự phòng' } :
+    { color: 'text-rose-500 border-rose-200/70 bg-rose-50/50 dark:bg-rose-950/20 dark:border-rose-900/60', iconColor: 'bg-rose-500', label: 'CẢNH BÁO NGUY HIỂM', desc: 'Dòng tiền cạn kiệt, cần tối ưu chi phí ngay!' };
 
   return (
-    <div style={{ height }} className="flex flex-col justify-between">
+    <div style={{ height }} className="flex flex-col justify-between font-sans select-none pt-2">
       {/* 4 Premium KPIs Matrix */}
-      <div className="grid grid-cols-2 gap-3 mb-4">
-        <div className="bg-slate-50/70 border border-slate-100 dark:bg-slate-900/50 dark:border-slate-800 rounded-2xl p-3 flex flex-col justify-between transition-all duration-300 hover:shadow-sm">
-          <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">Burn Rate / Tháng</span>
-          <span className="text-base font-black text-rose-600 font-mono mt-1 block">
-            {formatVND(monthlyBurnRate)}
-          </span>
+      <div className="grid grid-cols-2 gap-2.5">
+        <div className="bg-slate-50/70 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/80 rounded-2xl p-3 flex flex-col justify-between transition-all duration-300 hover:shadow-md hover:shadow-slate-100/20">
+          <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block">Burn Rate / Tháng</span>
+          <span className="text-base font-black text-rose-500 font-mono mt-1 block">{formatVND(monthlyBurnRate)}</span>
         </div>
-        <div className="bg-slate-50/70 border border-slate-100 dark:bg-slate-900/50 dark:border-slate-800 rounded-2xl p-3 flex flex-col justify-between transition-all duration-300 hover:shadow-sm">
-          <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">Runway Dự Báo</span>
-          <span className="text-base font-black font-mono mt-1 block" style={{ color: runwayStatus.color }}>
-            {runwayMonths} Tháng
-          </span>
+        <div className="bg-slate-50/70 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/80 rounded-2xl p-3 flex flex-col justify-between transition-all duration-300 hover:shadow-md hover:shadow-slate-100/20">
+          <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block">Runway Dự Báo</span>
+          <span className="text-base font-black text-indigo-600 dark:text-indigo-400 font-mono mt-1 block">{runwayMonths} Tháng</span>
         </div>
-        <div className="bg-slate-50/70 border border-slate-100 dark:bg-slate-900/50 dark:border-slate-800 rounded-2xl p-3 flex flex-col justify-between transition-all duration-300 hover:shadow-sm">
-          <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">Tiền Mặt Khả Dụng</span>
-          <span className="text-base font-black text-slate-800 dark:text-slate-100 font-mono mt-1 block">
-            {formatVND(currentCash)}
-          </span>
+        <div className="bg-slate-50/70 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/80 rounded-2xl p-3 flex flex-col justify-between transition-all duration-300 hover:shadow-md hover:shadow-slate-100/20">
+          <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block">Tiền Mặt Khả Dụng</span>
+          <span className="text-base font-black text-slate-800 dark:text-slate-100 font-mono mt-1 block">{formatVND(currentCash)}</span>
         </div>
-        <div className="bg-slate-50/70 border border-slate-100 dark:bg-slate-900/50 dark:border-slate-800 rounded-2xl p-3 flex flex-col justify-between transition-all duration-300 hover:shadow-sm">
-          <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">Dòng Tiền / Ngày</span>
-          <span className="text-base font-black text-blue-600 font-mono mt-1 block">
-            {formatVND(averageDailyCashFlow)}
-          </span>
+        <div className="bg-slate-50/70 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/80 rounded-2xl p-3 flex flex-col justify-between transition-all duration-300 hover:shadow-md hover:shadow-slate-100/20">
+          <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block">Dòng Tiền / Ngày</span>
+          <span className="text-base font-black text-emerald-500 font-mono mt-1 block">{formatVND(averageDailyCashFlow)}</span>
         </div>
       </div>
 
-      {/* Dynamic Health Status Indicator */}
-      <div className="mb-4">
-        <div className={`flex items-center justify-between px-4 py-2.5 rounded-2xl border text-xs font-black uppercase tracking-wider ${runwayStatus.badge} shadow-sm`}>
-          <span>Trạng Thái Sức Khỏe Dòng Tiền</span>
-          <span>{runwayStatus.label}</span>
+      {/* Runway Alert Badge */}
+      <div className={`border rounded-2xl p-3 flex items-center gap-3 ${runwayStatus.color} shadow-sm`}>
+        <span className={`w-2.5 h-2.5 rounded-full ${runwayStatus.iconColor} animate-pulse shrink-0`} />
+        <div>
+          <p className="text-[10px] font-black tracking-wider leading-none">{runwayStatus.label}</p>
+          <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium mt-1 leading-tight">{runwayStatus.desc}</p>
         </div>
       </div>
 
-      {/* Projection Trend Chart */}
-      <div className="flex-1 min-h-[100px] relative">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={chartData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
-            <defs>
-              <linearGradient id="runwayCashGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.3} />
-                <stop offset="100%" stopColor="#3b82f6" stopOpacity={0.0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-            <XAxis
-              dataKey="month"
-              axisLine={false}
-              tickLine={false}
-              tick={{ fontSize: 10, fontWeight: 700, fill: '#64748b' }}
-            />
-            <YAxis
-              axisLine={false}
-              tickLine={false}
-              tickFormatter={formatVND}
-              tick={{ fontSize: 9, fontWeight: 650, fill: '#94a3b8' }}
-              width={54}
-            />
-            <Tooltip content={<PremiumVNDTooltip />} />
-            <Area
-              type="monotone"
-              dataKey="cash"
-              name="Quỹ tiền mặt"
-              stroke="#3b82f6"
-              strokeWidth={3}
-              fill="url(#runwayCashGrad)"
-              dot={{ r: 4, stroke: '#3b82f6', strokeWidth: 2, fill: '#ffffff' }}
-              activeDot={{ r: 6, stroke: '#3b82f6', strokeWidth: 3, fill: '#ffffff' }}
-            />
-          </AreaChart>
-        </ResponsiveContainer>
+      {/* Interactive Burndown Projection Bars */}
+      <div className="h-32 flex items-end justify-between gap-1.5 px-2 pt-5 pb-1 border-t border-slate-100 dark:border-slate-850">
+        {projectionSteps.map((step, i) => {
+          const barColor =
+            step.pct > 60 ? 'from-emerald-500 via-emerald-400 to-teal-400 shadow-emerald-500/10' :
+            step.pct > 30 ? 'from-amber-500 via-amber-400 to-yellow-400 shadow-amber-500/10' :
+            'from-rose-500 via-rose-450 to-orange-400 shadow-rose-500/10';
+
+          const isHovered = hoveredIdx === i;
+
+          return (
+            <div
+              key={i}
+              className="flex-1 flex flex-col items-center h-full justify-end group relative z-10"
+              onMouseEnter={() => setHoveredIdx(i)}
+              onMouseLeave={() => setHoveredIdx(null)}
+            >
+              {/* Month Cash Tooltip */}
+              <div
+                className={`absolute bottom-full mb-2 bg-slate-900 text-white text-[9px] font-black rounded-xl px-2 py-1 shadow-lg pointer-events-none transition-all duration-200 transform ${
+                  isHovered ? 'opacity-100 scale-100 -translate-y-0' : 'opacity-0 scale-95 translate-y-1'
+                } whitespace-nowrap z-20`}
+              >
+                {formatVNDFull(step.cash)}
+              </div>
+
+              {/* Vertical progress column */}
+              <div className="w-full bg-slate-100/80 dark:bg-slate-800 rounded-t-lg h-full max-h-[82%] relative overflow-hidden border border-slate-200/20">
+                <div
+                  className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t ${barColor} rounded-t-lg transition-all duration-1000 group-hover:brightness-105`}
+                  style={{ height: `${step.pct}%` }}
+                />
+              </div>
+
+              {/* Month label */}
+              <span className="text-[9px] font-black text-slate-500 mt-2 truncate w-full text-center tracking-wide">{step.label}</span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
 }
 
-// ─── 3. Cash Flow Forecast Chart ──────────────────────────────────────────────
+// ─── 3. Cash Flow Forecast Chart (Premium Styled Recharts Area) ────────────────
 
 export type ForecastItem = {
   month: string;
@@ -325,44 +332,48 @@ export function CashFlowForecastChart({ data, height }: { data: ForecastItem[]; 
     return <div style={{ height }}><ChartPlaceholder title="Dự Báo Dòng Tiền" icon={LineIcon} /></div>;
   }
 
-  // Find transitional month index where forecast starts
   const splitItem = data.find(d => d.actual !== undefined && d.forecast !== undefined);
 
   return (
-    <div style={{ height }} className="relative">
+    <div style={{ height }} className="relative pt-6">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ top: 12, right: 16, left: 8, bottom: 8 }}>
           <defs>
             <linearGradient id="actualGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={COLORS.actual.end} stopOpacity={0.25} />
-              <stop offset="100%" stopColor={COLORS.actual.start} stopOpacity={0.0} />
+              <stop offset="0%" stopColor="#0ea5e9" stopOpacity={0.2} />
+              <stop offset="100%" stopColor="#0ea5e9" stopOpacity={0.0} />
             </linearGradient>
             <linearGradient id="forecastGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={COLORS.forecast.end} stopOpacity={0.25} />
-              <stop offset="100%" stopColor={COLORS.forecast.start} stopOpacity={0.0} />
+              <stop offset="0%" stopColor="#6366f1" stopOpacity={0.2} />
+              <stop offset="100%" stopColor="#6366f1" stopOpacity={0.0} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="4 4" stroke="#f1f5f9" vertical={false} />
+          <CartesianGrid strokeDasharray="6 6" stroke="#e2e8f0" vertical={false} opacity={0.6} />
           <XAxis
             dataKey="month"
             axisLine={false}
             tickLine={false}
-            tick={{ fontSize: 11, fontWeight: 700, fill: '#475569' }}
+            tick={{ fontSize: 11, fontWeight: 800, fill: '#475569' }}
+            dy={8}
           />
           <YAxis
             axisLine={false}
             tickLine={false}
             tickFormatter={formatVND}
-            tick={{ fontSize: 10, fontWeight: 600, fill: '#94a3b8' }}
-            width={70}
+            tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }}
+            width={65}
+            dx={-8}
           />
-          <Tooltip content={<PremiumVNDTooltip />} />
+          <Tooltip
+            content={<PremiumVNDTooltip />}
+            cursor={{ stroke: '#94a3b8', strokeWidth: 1.5, strokeDasharray: '4 4' }}
+          />
           <Legend
             verticalAlign="top"
             align="right"
             iconType="circle"
             iconSize={8}
-            wrapperStyle={{ paddingBottom: 16, fontSize: 12, fontWeight: 700 }}
+            wrapperStyle={{ paddingBottom: 16, fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}
           />
           {/* Confidence interval area */}
           <Area
@@ -370,7 +381,7 @@ export function CashFlowForecastChart({ data, height }: { data: ForecastItem[]; 
             dataKey="upper"
             name="Dải biên trên"
             stroke="transparent"
-            fill={COLORS.forecast.start}
+            fill="#6366f1"
             fillOpacity={0.05}
             legendType="none"
           />
@@ -388,23 +399,23 @@ export function CashFlowForecastChart({ data, height }: { data: ForecastItem[]; 
             type="monotone"
             dataKey="actual"
             name="Thực tế thu"
-            stroke={COLORS.actual.start}
-            strokeWidth={3}
+            stroke="#0ea5e9"
+            strokeWidth={3.5}
             fill="url(#actualGrad)"
-            dot={{ r: 4, stroke: COLORS.actual.start, strokeWidth: 2, fill: '#ffffff' }}
-            activeDot={{ r: 6, stroke: COLORS.actual.start, strokeWidth: 3, fill: '#ffffff' }}
+            dot={false}
+            activeDot={<PremiumActiveDot />}
           />
           {/* Forecast curves */}
           <Area
             type="monotone"
             dataKey="forecast"
-            name="Dự phóng dòng tiền"
-            stroke={COLORS.forecast.start}
-            strokeWidth={3}
+            name="Dự báo"
+            stroke="#6366f1"
+            strokeWidth={3.5}
             strokeDasharray="6 4"
             fill="url(#forecastGrad)"
-            dot={{ r: 4, stroke: COLORS.forecast.start, strokeWidth: 2, fill: '#ffffff' }}
-            activeDot={{ r: 6, stroke: COLORS.forecast.start, strokeWidth: 3, fill: '#ffffff' }}
+            dot={false}
+            activeDot={<PremiumActiveDot />}
           />
           {splitItem && (
             <ReferenceLine
@@ -413,11 +424,12 @@ export function CashFlowForecastChart({ data, height }: { data: ForecastItem[]; 
               strokeDasharray="4 4"
               strokeWidth={1.5}
               label={{
-                value: 'Điểm Dự Báo',
+                value: 'ĐIỂM DỰ BÁO',
                 position: 'top',
                 fill: '#475569',
                 fontSize: 10,
-                fontWeight: 800,
+                fontWeight: 900,
+                letterSpacing: '0.1em'
               }}
             />
           )}
@@ -427,7 +439,7 @@ export function CashFlowForecastChart({ data, height }: { data: ForecastItem[]; 
   );
 }
 
-// ─── 4. Revenue Breakdown Chart ───────────────────────────────────────────────
+// ─── 4. Revenue Breakdown Chart (Thin Ring Pie + Grid Details) ─────────────────
 
 export type RevenueBreakdownItem = {
   source: string;
@@ -435,39 +447,42 @@ export type RevenueBreakdownItem = {
   percentage: number;
 };
 
-function PremiumPieLabel(props: PieLabelRenderProps) {
-  const { cx, cy, midAngle, innerRadius, outerRadius, percent } = props;
-  if (typeof cx !== 'number' || typeof cy !== 'number' || typeof midAngle !== 'number' ||
-      typeof innerRadius !== 'number' || typeof outerRadius !== 'number' || typeof percent !== 'number') return null;
-  const RADIAN = Math.PI / 180;
-  const radius = innerRadius + (outerRadius - innerRadius) * 0.55;
-  const x = cx + radius * Math.cos(-midAngle * RADIAN);
-  const y = cy + radius * Math.sin(-midAngle * RADIAN);
-  if (percent < 0.05) return null;
-  return (
-    <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize={11} fontWeight={900}>
-      {`${(percent * 100).toFixed(0)}%`}
-    </text>
-  );
-}
+const PIE_GRADIENTS = [
+  { start: '#6366f1', end: '#818cf8', glow: 'rgba(99, 102, 241, 0.15)' }, // Indigo
+  { start: '#10b981', end: '#34d399', glow: 'rgba(16, 185, 129, 0.15)' }, // Emerald
+  { start: '#f59e0b', end: '#fbbf24', glow: 'rgba(245, 158, 11, 0.15)' }, // Amber
+  { start: '#3b82f6', end: '#60a5fa', glow: 'rgba(59, 130, 246, 0.15)' }, // Blue
+];
 
 export function RevenueBreakdownChart({ data, height }: { data: RevenueBreakdownItem[]; height: number }) {
   if (!data || data.length === 0) {
     return <div style={{ height }}><ChartPlaceholder title="Phân Bổ Theo Phương Thức" icon={PieIcon} /></div>;
   }
 
+  // Calculate total revenue dynamically
+  const totalRev = data.reduce((sum, item) => sum + item.revenue, 0);
+
   return (
-    <div style={{ height }} className="flex flex-col justify-between">
-      <div className="flex-1 min-h-[140px] relative">
+    <div style={{ height }} className="flex flex-col justify-between font-sans select-none relative pt-2">
+      {/* Circular Donut Diagram */}
+      <div className="flex-1 min-h-[140px] relative flex items-center justify-center">
+        {/* Total Overlay inside Donut */}
+        <div className="absolute flex flex-col items-center justify-center text-center pointer-events-none z-10">
+          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Tổng Thực Thu</span>
+          <span className="text-xl font-black text-slate-900 dark:text-slate-100 font-mono mt-1 leading-none">
+            {formatVND(totalRev)}
+          </span>
+        </div>
+
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <defs>
               {data.map((_, i) => {
-                const gradColors = COLORS.pie[i % COLORS.pie.length];
+                const colors = PIE_GRADIENTS[i % PIE_GRADIENTS.length];
                 return (
-                  <linearGradient id={`pieGrad-${i}`} key={i} x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0%" stopColor={gradColors.end} />
-                    <stop offset="100%" stopColor={gradColors.start} />
+                  <linearGradient id={`pieGradCustom-${i}`} key={i} x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor={colors.end} />
+                    <stop offset="100%" stopColor={colors.start} />
                   </linearGradient>
                 );
               })}
@@ -478,14 +493,20 @@ export function RevenueBreakdownChart({ data, height }: { data: RevenueBreakdown
               nameKey="source"
               cx="50%"
               cy="50%"
-              innerRadius="50%"
-              outerRadius="82%"
-              paddingAngle={3}
-              labelLine={false}
-              label={(props) => <PremiumPieLabel {...props} />}
+              innerRadius="64%"
+              outerRadius="88%"
+              paddingAngle={4}
+              label={false}
             >
               {data.map((_, i) => (
-                <Cell key={i} fill={`url(#pieGrad-${i})`} style={{ filter: 'drop-shadow(0 4px 6px rgba(15, 23, 42, 0.08))' }} />
+                <Cell
+                  key={i}
+                  fill={`url(#pieGradCustom-${i})`}
+                  style={{
+                    filter: `drop-shadow(0 6px 10px ${PIE_GRADIENTS[i % PIE_GRADIENTS.length].glow})`,
+                    cursor: 'pointer',
+                  }}
+                />
               ))}
             </Pie>
             <Tooltip content={<PremiumVNDTooltip />} />
@@ -493,17 +514,25 @@ export function RevenueBreakdownChart({ data, height }: { data: RevenueBreakdown
         </ResponsiveContainer>
       </div>
 
-      {/* Custom grid list legend */}
-      <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 pt-3 pb-1.5 px-2 border-t border-slate-100 dark:border-slate-800">
+      {/* Grid Legend List with Details */}
+      <div className="grid grid-cols-2 gap-2.5 pt-4 pb-2 border-t border-slate-100 dark:border-slate-800">
         {data.map((item, i) => {
-          const colorSet = COLORS.pie[i % COLORS.pie.length];
+          const colorSet = PIE_GRADIENTS[i % PIE_GRADIENTS.length];
           return (
-            <div key={i} className="flex justify-between items-center text-xs p-2 bg-slate-50/50 dark:bg-slate-900/40 rounded-xl border border-slate-100/60 dark:border-slate-800 transition-all duration-300 hover:bg-slate-50">
+            <div
+              key={i}
+              className="flex justify-between items-center text-xs p-2.5 bg-slate-50/50 dark:bg-slate-900/40 rounded-2xl border border-slate-100/60 dark:border-slate-800/80 transition-all duration-300 hover:bg-slate-100/50"
+            >
               <div className="flex items-center gap-2 truncate">
-                <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: colorSet.start }} />
-                <span className="text-slate-700 dark:text-slate-350 font-bold truncate">{item.source}</span>
+                <span
+                  className="w-2.5 h-2.5 rounded-full flex-shrink-0 shadow-sm"
+                  style={{ background: `linear-gradient(135deg, ${colorSet.end}, ${colorSet.start})` }}
+                />
+                <span className="text-slate-700 dark:text-slate-300 font-extrabold truncate tracking-wide">
+                  {item.source}
+                </span>
               </div>
-              <span className="font-mono font-black text-slate-800 dark:text-slate-200 text-[11px] flex-shrink-0 ml-2">
+              <span className="font-mono font-black text-slate-800 dark:text-slate-100 text-[11px] flex-shrink-0 ml-2">
                 {item.percentage}%
               </span>
             </div>
@@ -514,7 +543,7 @@ export function RevenueBreakdownChart({ data, height }: { data: RevenueBreakdown
   );
 }
 
-// ─── 5. P&L Charts ────────────────────────────────────────────────────────────
+// ─── 5. Profitability Trend Chart (Interactive HTML Multi-Bar Chart) ──────────
 
 export function PnLStatementChart({ data: _data, height }: { data: unknown; height: number }) {
   return <div style={{ height }}><ChartPlaceholder title="P&L Statement Chart" icon={BarChart3} /></div>;
@@ -531,76 +560,101 @@ export function ProfitabilityTrendChart({
   data: Array<{ date: string; revenue: number; expenses: number; profit: number }>;
   height: number;
 }) {
+  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+
   if (!data || data.length === 0) {
     return <div style={{ height }}><ChartPlaceholder title="Xu Hướng Lợi Nhuận" icon={LineIcon} /></div>;
   }
 
+  // Find maximum value to determine column scaling
+  const maxVal = Math.max(...data.flatMap(d => [d.revenue, d.expenses, Math.abs(d.profit)]), 1000000);
+
   return (
-    <div style={{ height }} className="relative">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: 12, right: 16, left: 8, bottom: 8 }}>
-          <defs>
-            <linearGradient id="pnlRev" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={COLORS.inflow.end} />
-              <stop offset="100%" stopColor={COLORS.inflow.start} />
-            </linearGradient>
-            <linearGradient id="pnlExp" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={COLORS.outflow.end} />
-              <stop offset="100%" stopColor={COLORS.outflow.start} />
-            </linearGradient>
-            <linearGradient id="pnlProf" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={COLORS.actual.end} />
-              <stop offset="100%" stopColor={COLORS.actual.start} />
-            </linearGradient>
-          </defs>
-          <CartesianGrid strokeDasharray="4 4" stroke="#f1f5f9" vertical={false} />
-          <XAxis
-            dataKey="date"
-            axisLine={false}
-            tickLine={false}
-            tick={{ fontSize: 11, fontWeight: 700, fill: '#475569' }}
-          />
-          <YAxis
-            axisLine={false}
-            tickLine={false}
-            tickFormatter={formatVND}
-            tick={{ fontSize: 10, fontWeight: 600, fill: '#94a3b8' }}
-            width={70}
-          />
-          <Tooltip content={<PremiumVNDTooltip />} cursor={{ fill: '#f8fafc', opacity: 0.8 }} />
-          <Legend
-            verticalAlign="top"
-            align="right"
-            iconType="circle"
-            iconSize={8}
-            wrapperStyle={{ paddingBottom: 16, fontSize: 12, fontWeight: 700 }}
-          />
-          <Bar
-            dataKey="revenue"
-            name="Doanh thu"
-            fill="url(#pnlRev)"
-            radius={[4, 4, 0, 0]}
-            maxBarSize={20}
-            style={{ filter: `drop-shadow(0 4px 6px ${COLORS.inflow.glow})` }}
-          />
-          <Bar
-            dataKey="expenses"
-            name="Chi phí"
-            fill="url(#pnlExp)"
-            radius={[4, 4, 0, 0]}
-            maxBarSize={20}
-            style={{ filter: `drop-shadow(0 4px 6px ${COLORS.outflow.glow})` }}
-          />
-          <Bar
-            dataKey="profit"
-            name="Lợi nhuận"
-            fill="url(#pnlProf)"
-            radius={[4, 4, 0, 0]}
-            maxBarSize={20}
-            style={{ filter: `drop-shadow(0 4px 6px ${COLORS.actual.glow})` }}
-          />
-        </BarChart>
-      </ResponsiveContainer>
+    <div style={{ height }} className="flex flex-col justify-between font-sans relative pt-6 select-none">
+      {/* Chart Plot Area */}
+      <div className="relative flex-1 flex items-end justify-around gap-4 px-4 pb-2 border-b border-slate-100 dark:border-slate-800/80">
+        
+        {/* Horizontal grid lines */}
+        <div className="absolute inset-0 flex flex-col justify-between pointer-events-none pb-8 pt-4">
+          <div className="border-b border-slate-100/60 dark:border-slate-800/40 w-full h-0" />
+          <div className="border-b border-slate-100/60 dark:border-slate-800/40 w-full h-0" />
+          <div className="border-b border-slate-100/60 dark:border-slate-800/40 w-full h-0" />
+          <div className="w-full h-0" />
+        </div>
+
+        {data.map((item, idx) => {
+          const revPct = (item.revenue / maxVal) * 100;
+          const expPct = (item.expenses / maxVal) * 100;
+          const profPct = (Math.abs(item.profit) / maxVal) * 100;
+          const isProfit = item.profit >= 0;
+          const isHovered = hoveredIdx === idx;
+
+          return (
+            <div
+              key={idx}
+              className="flex-1 flex flex-col items-center h-full justify-end group relative z-10"
+              onMouseEnter={() => setHoveredIdx(idx)}
+              onMouseLeave={() => setHoveredIdx(null)}
+            >
+              {/* Premium Hover Floating Tooltip */}
+              <div
+                className={`absolute bottom-full mb-3 bg-slate-900/95 dark:bg-slate-950/95 text-white text-[10px] rounded-2xl p-3.5 shadow-2xl z-20 pointer-events-none transition-all duration-300 transform ${
+                  isHovered ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-1 scale-95'
+                } flex flex-col gap-1 border border-slate-800 min-w-[150px]`}
+              >
+                <span className="font-extrabold text-slate-400 tracking-wider uppercase block">{item.date}</span>
+                <span className="text-emerald-400 font-black block">Doanh thu: {formatVNDFull(item.revenue)}</span>
+                <span className="text-rose-400 font-black block">Chi phí: {formatVNDFull(item.expenses)}</span>
+                <span className={`${isProfit ? 'text-blue-400' : 'text-orange-400'} font-black block`}>
+                  Lợi nhuận: {formatVNDFull(item.profit)}
+                </span>
+              </div>
+
+              {/* 3 Grouped Bars: Revenue, Expense, Profit */}
+              <div className="w-full flex items-end justify-center gap-1 h-full max-h-[82%]">
+                {/* Revenue Bar */}
+                <div
+                  className="flex-1 bg-gradient-to-t from-emerald-600 via-emerald-500 to-teal-400 rounded-t-md transition-all duration-500 hover:brightness-105 shadow-md shadow-emerald-500/10"
+                  style={{ height: `${revPct}%` }}
+                />
+                {/* Expense Bar */}
+                <div
+                  className="flex-1 bg-gradient-to-t from-rose-600 via-rose-500 to-orange-400 rounded-t-md transition-all duration-500 hover:brightness-105 shadow-md shadow-rose-500/10"
+                  style={{ height: `${expPct}%` }}
+                />
+                {/* Profit Bar */}
+                <div
+                  className={`flex-1 bg-gradient-to-t rounded-t-md transition-all duration-500 hover:brightness-105 shadow-md ${
+                    isProfit
+                      ? 'from-blue-600 via-blue-500 to-sky-400 shadow-blue-500/10'
+                      : 'from-orange-600 via-orange-500 to-yellow-400 shadow-orange-500/10'
+                  }`}
+                  style={{ height: `${profPct}%` }}
+                />
+              </div>
+
+              {/* X-Axis Label */}
+              <span className="text-xs font-black text-slate-700 dark:text-slate-350 mt-3 tracking-wide">{item.date}</span>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Legend Block */}
+      <div className="flex justify-center flex-wrap gap-x-6 gap-y-2 pt-4 text-[10px] font-black tracking-widest text-slate-500 uppercase">
+        <span className="flex items-center gap-2">
+          <span className="w-2.5 h-2.5 rounded-sm bg-gradient-to-r from-emerald-500 to-teal-400" />
+          Doanh thu
+        </span>
+        <span className="flex items-center gap-2">
+          <span className="w-2.5 h-2.5 rounded-sm bg-gradient-to-r from-rose-500 to-orange-400" />
+          Chi phí
+        </span>
+        <span className="flex items-center gap-2">
+          <span className="w-2.5 h-2.5 rounded-sm bg-gradient-to-r from-blue-500 to-sky-400" />
+          Lợi nhuận
+        </span>
+      </div>
     </div>
   );
 }
