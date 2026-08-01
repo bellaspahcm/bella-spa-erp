@@ -4517,31 +4517,81 @@ html.dark[data-tenant-module="beauty_spa"] .bella-data-table td .text-slate-400 
    Tenant Brand Styling Engine (Appearance Engine)
    ============================================ */
 
-/* --- 1. BO GÓC (Radius Style) --- */
+/* --- 1. BO GÓC (Radius Style) — CHỈ áp dụng cho Button, Input, Badge --- */
+
+/* BO MỀM (soft) — pill buttons */
 html[data-tenant-brand-radius="soft"] {
   --radius: 1.25rem;
+  --radius-btn: 9999px;
+  --radius-input: 0.875rem;
+  --radius-badge: 9999px;
 }
-html[data-tenant-brand-radius="soft"] .card,
-html[data-tenant-brand-radius="soft"] .rounded-2xl {
-  border-radius: 1.5rem !important;
+html[data-tenant-brand-radius="soft"] button:not(.no-pill),
+html[data-tenant-brand-radius="soft"] .btn {
+  border-radius: 9999px !important;
+}
+html[data-tenant-brand-radius="soft"] input,
+html[data-tenant-brand-radius="soft"] select,
+html[data-tenant-brand-radius="soft"] textarea {
+  border-radius: 0.875rem !important;
+}
+html[data-tenant-brand-radius="soft"] [class*="badge"],
+html[data-tenant-brand-radius="soft"] [class*="chip"] {
+  border-radius: 9999px !important;
+}
+html[data-tenant-brand-radius="soft"] .beauty-erp-nav-item,
+html[data-tenant-brand-radius="soft"] .beauty-erp-nav-item-active {
+  border-radius: 9999px !important;
 }
 
+/* CÂN BẰNG (balanced) — default */
 html[data-tenant-brand-radius="balanced"] {
   --radius: 0.875rem;
+  --radius-btn: 0.875rem;
+  --radius-input: 0.625rem;
+  --radius-badge: 1rem;
 }
-html[data-tenant-brand-radius="balanced"] .card,
-html[data-tenant-brand-radius="balanced"] .rounded-2xl {
+html[data-tenant-brand-radius="balanced"] button:not(.no-pill),
+html[data-tenant-brand-radius="balanced"] .btn {
+  border-radius: 0.875rem !important;
+}
+html[data-tenant-brand-radius="balanced"] input,
+html[data-tenant-brand-radius="balanced"] select,
+html[data-tenant-brand-radius="balanced"] textarea {
+  border-radius: 0.625rem !important;
+}
+html[data-tenant-brand-radius="balanced"] [class*="badge"],
+html[data-tenant-brand-radius="balanced"] [class*="chip"] {
   border-radius: 1rem !important;
 }
-
-html[data-tenant-brand-radius="compact"] {
-  --radius: 0.5rem;
+html[data-tenant-brand-radius="balanced"] .beauty-erp-nav-item,
+html[data-tenant-brand-radius="balanced"] .beauty-erp-nav-item-active {
+  border-radius: 0.875rem !important;
 }
-html[data-tenant-brand-radius="compact"] .card,
-html[data-tenant-brand-radius="compact"] .rounded-2xl,
-html[data-tenant-brand-radius="compact"] .rounded-3xl,
-html[data-tenant-brand-radius="compact"] .rounded-xl {
-  border-radius: 0.625rem !important;
+
+/* GỌN (compact) — sharp corners */
+html[data-tenant-brand-radius="compact"] {
+  --radius: 0.375rem;
+  --radius-btn: 0.375rem;
+  --radius-input: 0.25rem;
+  --radius-badge: 0.25rem;
+}
+html[data-tenant-brand-radius="compact"] button:not(.no-pill),
+html[data-tenant-brand-radius="compact"] .btn {
+  border-radius: 0.375rem !important;
+}
+html[data-tenant-brand-radius="compact"] input,
+html[data-tenant-brand-radius="compact"] select,
+html[data-tenant-brand-radius="compact"] textarea {
+  border-radius: 0.25rem !important;
+}
+html[data-tenant-brand-radius="compact"] [class*="badge"],
+html[data-tenant-brand-radius="compact"] [class*="chip"] {
+  border-radius: 0.25rem !important;
+}
+html[data-tenant-brand-radius="compact"] .beauty-erp-nav-item,
+html[data-tenant-brand-radius="compact"] .beauty-erp-nav-item-active {
+  border-radius: 0.375rem !important;
 }
 
 /* --- 2. KIỂU NÚT (Button Style) --- */
