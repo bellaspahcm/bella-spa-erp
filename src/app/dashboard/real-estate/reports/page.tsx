@@ -5,7 +5,8 @@ import { motion } from "framer-motion";
 import {
   FileBarChart2, Download, Calendar, Filter, RefreshCw,
   TrendingUp, Building2, FileText, Users, CheckCircle2,
-  Clock, AlertTriangle, ChevronDown
+  Clock, AlertTriangle, ChevronDown,
+  DollarSign, FileSignature, Wallet, Bookmark, Target, BarChart3, Trophy
 } from "lucide-react";
 import { fetchBIReportAction } from "@/modules/real_estate/actions/biReportActions";
 import type { BIReportSnapshot } from "@/modules/real_estate/services/BIReportService";
@@ -146,16 +147,18 @@ export default function ReportsPage() {
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {[
-                    { label: "Tổng Doanh Thu (Ký HĐMB)", value: formatVnd(kpis.totalRevenue), icon: "💰" },
-                    { label: "Số Hợp Đồng HĐMB", value: String(kpis.totalContracts), icon: "📋" },
-                    { label: "Số Đặt Cọc", value: String(kpis.totalDeposits), icon: "🤝" },
-                    { label: "Số Đặt Giữ Chỗ", value: String(kpis.totalBookings), icon: "📌" },
-                    { label: "Tỷ Lệ Chốt Lead → HĐ", value: `${kpis.netConversionRate}%`, icon: "🎯" },
-                    { label: "Giá Trị HĐ Bình Quân", value: formatVnd(kpis.avgDealSizeVnd), icon: "📊" },
-                  ].map(item => (
+                  {([
+                    { label: "Tổng Doanh Thu (Ký HĐMB)", value: formatVnd(kpis.totalRevenue), Icon: DollarSign, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-100 dark:bg-emerald-900/30" },
+                    { label: "Số Hợp Đồng HĐMB", value: String(kpis.totalContracts), Icon: FileSignature, color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-100 dark:bg-blue-900/30" },
+                    { label: "Số Đặt Cọc", value: String(kpis.totalDeposits), Icon: Wallet, color: "text-violet-600 dark:text-violet-400", bg: "bg-violet-100 dark:bg-violet-900/30" },
+                    { label: "Số Đặt Giữ Chỗ", value: String(kpis.totalBookings), Icon: Bookmark, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-100 dark:bg-amber-900/30" },
+                    { label: "Tỷ Lệ Chốt Lead → HĐ", value: `${kpis.netConversionRate}%`, Icon: Target, color: "text-rose-600 dark:text-rose-400", bg: "bg-rose-100 dark:bg-rose-900/30" },
+                    { label: "Giá Trị HĐ Bình Quân", value: formatVnd(kpis.avgDealSizeVnd), Icon: BarChart3, color: "text-cyan-600 dark:text-cyan-400", bg: "bg-cyan-100 dark:bg-cyan-900/30" },
+                  ] as const).map(item => (
                     <div key={item.label} className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4">
-                      <p className="text-2xl mb-2">{item.icon}</p>
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center mb-3 ${item.bg}`}>
+                        <item.Icon className={`w-5 h-5 ${item.color}`} />
+                      </div>
                       <p className="text-slate-900 dark:text-white font-black text-xl">{item.value}</p>
                       <p className="text-slate-500 dark:text-slate-400 text-xs mt-1">{item.label}</p>
                     </div>
@@ -164,9 +167,11 @@ export default function ReportsPage() {
 
                 {kpis.topProjectName && (
                   <div className="mt-6 p-4 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-2xl flex items-center gap-4">
-                    <CheckCircle2 className="w-6 h-6 text-amber-600 dark:text-amber-400 shrink-0" />
+                    <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center shrink-0">
+                      <Trophy className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                    </div>
                     <div>
-                      <p className="text-slate-900 dark:text-white font-bold">🏆 Dự Án Dẫn Đầu: {kpis.topProjectName}</p>
+                      <p className="text-slate-900 dark:text-white font-bold">Dự Án Dẫn Đầu: {kpis.topProjectName}</p>
                       <p className="text-slate-500 dark:text-slate-400 text-sm">Giá trị giao dịch: {formatVnd(kpis.topProjectRevenue)}</p>
                     </div>
                   </div>

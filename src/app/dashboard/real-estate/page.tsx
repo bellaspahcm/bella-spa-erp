@@ -2,7 +2,7 @@
 /* Quản lý Bảng Hàng Căn Hộ & Dự Án Bất Động Sản */
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { Bell, RefreshCw } from 'lucide-react';
+import { Bell, RefreshCw, Zap, AlertTriangle, FileSignature } from 'lucide-react';
 import { ProjectHeader } from '@/modules/real_estate/components/ProjectHeader';
 import { InventoryMatrixGrid } from '@/modules/real_estate/components/InventoryMatrixGrid';
 import { fetchProjectsAction } from '@/modules/real_estate/actions/projectActions';
@@ -300,9 +300,9 @@ export default function RealEstateDashboardPage() {
                       // Trạng thái Fallback Mock notifications cực đẹp khi database trống
                       <>
                         <div className="p-3 rounded-xl border bg-primary/5 dark:bg-primary/10 border-primary/10 text-left">
-                          <h4 className="font-bold text-sm text-slate-900 dark:text-white flex items-center justify-between">
-                            🎯 Lead mới đăng ký dự án
-                            <span className="h-1.5 w-1.5 bg-primary rounded-full" />
+                          <h4 className="font-bold text-sm text-slate-900 dark:text-white flex items-center justify-between gap-2">
+                            <span className="flex items-center gap-1.5"><Zap className="w-3.5 h-3.5 text-blue-500" />Lead mới đăng ký dự án</span>
+                            <span className="h-1.5 w-1.5 bg-primary rounded-full shrink-0" />
                           </h4>
                           <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-normal">
                             Khách hàng <b>Nguyễn Văn A</b> vừa đăng ký quan tâm căn hộ Shophouse Elyse Island.
@@ -311,8 +311,8 @@ export default function RealEstateDashboardPage() {
                         </div>
 
                         <div className="p-3 rounded-xl border bg-slate-50/50 dark:bg-slate-900/30 border-slate-100 dark:border-slate-800/50 text-left">
-                          <h4 className="font-bold text-sm text-slate-900 dark:text-white">
-                            ⚠️ Cảnh báo SLA trễ hạn
+                          <h4 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
+                            <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />Cảnh báo SLA trễ hạn
                           </h4>
                           <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-normal">
                             Lead <b>Trần Thị B</b> chưa được kỹ thuật viên liên hệ tư vấn sau 15 phút.
@@ -321,8 +321,8 @@ export default function RealEstateDashboardPage() {
                         </div>
 
                         <div className="p-3 rounded-xl border bg-slate-50/50 dark:bg-slate-900/30 border-slate-100 dark:border-slate-800/50 text-left">
-                          <h4 className="font-bold text-sm text-slate-900 dark:text-white">
-                            🤝 Hợp đồng đặt cọc mới
+                          <h4 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
+                            <FileSignature className="w-3.5 h-3.5 text-emerald-500" />Hợp đồng đặt cọc mới
                           </h4>
                           <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-normal">
                             Căn hộ <b>A-102 (Elyse Island)</b> đã hoàn tất thủ tục đặt cọc thành công.

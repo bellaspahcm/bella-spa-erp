@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Users, Phone, Mail, MessageSquare, CalendarCheck, Building2,
   RefreshCw, Search, Plus, ChevronRight, ChevronDown,
-  Star, Award, MapPin, TrendingUp, Clock, CheckCircle2,
-  XCircle, ArrowRight, Target, Banknote
+  MapPin, TrendingUp, Clock, CheckCircle2,
+  XCircle, ArrowRight, Target, Banknote,
+  Globe, MessageCircle, Share2, Tag, PhoneCall,
+  FileText
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -39,13 +41,13 @@ const STATUS_CFG: Record<InvestorRecord["status"], { label: string; color: strin
   closed_lost: { label: "Không Tiếp Tục", color: "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300", dot: "bg-rose-500" },
 };
 
-const SOURCE_CFG: Record<InvestorRecord["source"], { label: string; emoji: string }> = {
-  facebook: { label: "Facebook Ads", emoji: "📘" },
-  zalo: { label: "Zalo OA", emoji: "💬" },
-  referral: { label: "Giới Thiệu", emoji: "🤝" },
-  website: { label: "Website", emoji: "🌐" },
-  event: { label: "Sự Kiện", emoji: "🎪" },
-  cold_call: { label: "Telesale", emoji: "📞" },
+const SOURCE_CFG: Record<InvestorRecord["source"], { label: string; icon: React.ElementType; iconColor: string }> = {
+  facebook:  { label: "Facebook Ads", icon: Globe,          iconColor: "text-blue-500 dark:text-blue-400" },
+  zalo:      { label: "Zalo OA",      icon: MessageCircle,  iconColor: "text-sky-500 dark:text-sky-400" },
+  referral:  { label: "Giới Thiệu",   icon: Share2,         iconColor: "text-emerald-500 dark:text-emerald-400" },
+  website:   { label: "Website",      icon: Globe,          iconColor: "text-violet-500 dark:text-violet-400" },
+  event:     { label: "Sự Kiện",      icon: Tag,            iconColor: "text-orange-500 dark:text-orange-400" },
+  cold_call: { label: "Telesale",     icon: PhoneCall,      iconColor: "text-rose-500 dark:text-rose-400" },
 };
 
 const INTERACTION_ICONS: Record<InvestorRecord["interactions"][0]["type"], { icon: typeof Phone; label: string; color: string }> = {
@@ -81,6 +83,7 @@ function InvestorCard({
   const [noteText, setNoteText] = useState("");
 
   const src = SOURCE_CFG[investor.source];
+  const SrcIcon = src.icon;
   const sorted = [...investor.interactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   function handleSubmitNote() {
@@ -116,12 +119,13 @@ function InvestorCard({
               <span className="flex items-center gap-1"><Banknote className="w-3.5 h-3.5" />{fmtBudget(investor.budgetMin, investor.budgetMax)}</span>
             </div>
             <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-              <span className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-lg font-medium">
-                {src.emoji} {src.label}
+              <span className="inline-flex items-center gap-1.5 text-xs bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-lg font-medium">
+                <SrcIcon className={`w-3 h-3 ${src.iconColor}`} />
+                {src.label}
               </span>
               {investor.interestedProjects.map(p => (
-                <span key={p} className="text-xs bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-lg font-medium">
-                  🏢 {p}
+                <span key={p} className="inline-flex items-center gap-1 text-xs bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-lg font-medium">
+                  <Building2 className="w-3 h-3" />{p}
                 </span>
               ))}
               <span className="text-xs text-slate-400 dark:text-slate-500 flex items-center gap-1">
@@ -146,8 +150,9 @@ function InvestorCard({
 
         {/* Note preview */}
         {investor.note && (
-          <div className="mt-3 p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200/50 dark:border-amber-700/30 rounded-xl">
-            <p className="text-xs text-amber-800 dark:text-amber-300 italic">📌 {investor.note}</p>
+          <div className="mt-3 p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200/50 dark:border-amber-700/30 rounded-xl flex items-start gap-2">
+            <MapPin className="w-3 h-3 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <p className="text-xs text-amber-800 dark:text-amber-300 italic">{investor.note}</p>
           </div>
         )}
 

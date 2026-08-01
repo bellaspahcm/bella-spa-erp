@@ -533,10 +533,10 @@ export default function SupportPage() {
                       onChange={e => setNewPriority(e.target.value as TicketPriority)}
                       className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-amber-500/50 cursor-pointer"
                     >
-                      <option value="CRITICAL">💥 CRITICAL (Khẩn cấp)</option>
-                      <option value="HIGH">🔥 HIGH (Cao)</option>
-                      <option value="MEDIUM">⭐ MEDIUM (Thường)</option>
-                      <option value="LOW">💤 LOW (Thấp)</option>
+                      <option value="CRITICAL">⚡ CRITICAL — Khẩn cấp</option>
+                      <option value="HIGH">▲ HIGH — Cao</option>
+                      <option value="MEDIUM">● MEDIUM — Bình thường</option>
+                      <option value="LOW">▽ LOW — Thấp</option>
                     </select>
                   </div>
 

@@ -172,7 +172,7 @@ export const InventoryMatrixGrid: React.FC<InventoryMatrixGridProps> = ({
                       <button
                         key={p.id}
                         onClick={() => setSelectedProduct(p)}
-                        className={`group p-4 rounded-xl border ${cfg.border} ${cfg.bg} ${cfg.glow} text-left transition-all duration-300 hover:scale-[1.03] hover:shadow-lg cursor-pointer relative overflow-hidden flex flex-col justify-between min-h-[110px]`}
+                        className={`group p-4 rounded-xl border ${cfg.border} ${cfg.bg} ${cfg.glow} text-left transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg cursor-pointer relative flex flex-col justify-between min-h-[110px]`}
                       >
                         {/* Upper row: Product code & mini badge */}
                         <div className="flex items-center justify-between w-full">

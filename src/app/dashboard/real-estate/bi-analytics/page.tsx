@@ -127,7 +127,7 @@ export default function BIAnalyticsPage() {
               onChange={e => setPeriod(e.target.value)}
               className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2 text-slate-900 dark:text-white text-sm appearance-none pr-8 focus:outline-none focus:border-amber-500/50 cursor-pointer"
             />
-            <ChevronDown className="w-4 h-4 text-slate-500 dark:text-white/40 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <ChevronDown className="w-4 h-4 text-slate-500 dark:text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
           <button
             onClick={load}
@@ -201,13 +201,13 @@ export default function BIAnalyticsPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-slate-900 dark:text-white font-bold text-sm truncate">{snap.projectName}</p>
-                    <p className="text-slate-500 dark:text-white/40 text-xs">
+                    <p className="text-slate-500 dark:text-slate-400 text-xs">
                       {snap.total - snap.available}/{snap.total} căn &middot; Tỷ lệ kín: <span className="text-amber-600 dark:text-amber-400 font-bold">{snap.occupancyRatePct}%</span>
                     </p>
                   </div>
                   <div className="text-right shrink-0">
                     <p className="text-emerald-600 dark:text-emerald-400 font-black text-sm">{formatVnd(snap.soldValueVnd)}</p>
-                    <p className="text-slate-400 dark:text-white/30 text-xs">đã giao dịch</p>
+                    <p className="text-slate-400 dark:text-slate-500 text-xs">đã giao dịch</p>
                   </div>
                 </motion.div>
               ))}
@@ -222,7 +222,7 @@ export default function BIAnalyticsPage() {
             </h2>
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-slate-500 dark:text-white/30 text-xs uppercase tracking-wider border-b border-slate-200 dark:border-white/10">
+                <tr className="text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">
                   <th className="text-left pb-3 font-semibold">Dự Án</th>
                   <th className="text-right pb-3 font-semibold">Tổng</th>
                   <th className="text-right pb-3 font-semibold">Trống</th>
@@ -238,8 +238,8 @@ export default function BIAnalyticsPage() {
                 {snapshots.map(snap => (
                   <tr key={snap.projectId} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
                     <td className="py-3 text-slate-900 dark:text-white font-bold">{snap.projectName}</td>
-                    <td className="py-3 text-right text-slate-700 dark:text-white/60">{snap.total}</td>
-                    <td className="py-3 text-right text-slate-700 dark:text-white/60">{snap.available}</td>
+                    <td className="py-3 text-right text-slate-700 dark:text-slate-300">{snap.total}</td>
+                    <td className="py-3 text-right text-slate-700 dark:text-slate-300">{snap.available}</td>
                     <td className="py-3 text-right text-amber-600 dark:text-amber-400 font-semibold">{snap.booked}</td>
                     <td className="py-3 text-right text-orange-600 dark:text-orange-400 font-semibold">{snap.deposited}</td>
                     <td className="py-3 text-right text-emerald-600 dark:text-emerald-400 font-semibold">{snap.signed}</td>
@@ -254,7 +254,7 @@ export default function BIAnalyticsPage() {
                 ))}
                 {snapshots.length === 0 && (
                   <tr>
-                    <td colSpan={9} className="py-8 text-center text-slate-400 dark:text-white/20 text-sm italic">
+                    <td colSpan={9} className="py-8 text-center text-slate-400 dark:text-slate-500 text-sm italic">
                       Chưa có dữ liệu dự án
                     </td>
                   </tr>
@@ -270,10 +270,10 @@ export default function BIAnalyticsPage() {
                 <Users className="w-8 h-8" />
               </div>
               <div>
-                <p className="text-slate-500 dark:text-white/40 text-sm uppercase tracking-widest font-semibold">Giá Trị Hợp Đồng Trung Bình</p>
+                <p className="text-slate-500 dark:text-slate-400 text-sm uppercase tracking-widest font-semibold">Giá Trị Hợp Đồng Trung Bình</p>
                 <p className="text-4xl font-black text-slate-900 dark:text-white mt-1">{formatVnd(kpis.avgDealSizeVnd)}</p>
                 {kpis.topProjectName && (
-                  <p className="text-slate-500 dark:text-white/40 text-sm mt-1">
+                  <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
                     Dự án dẫn đầu: <span className="text-amber-600 dark:text-amber-400 font-bold">{kpis.topProjectName}</span> — {formatVnd(kpis.topProjectRevenue)}
                   </p>
                 )}

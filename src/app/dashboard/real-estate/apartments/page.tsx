@@ -376,7 +376,7 @@ export default function RealEstateApartmentsPage() {
         </div>
       ) : viewMode === "matrix" ? (
         /* ─ Floor Matrix ─ */
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-5 overflow-x-auto">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-5 overflow-visible">
           {floors.map(floor => (
             <FloorGroup
               key={floor}
