@@ -806,6 +806,22 @@ export interface PartnerLead {
   daysRemaining?: number;
 }
 
+export interface LeadAnalytics {
+  total: number;
+  protected: number;
+  hot: number; // interested status
+  converted: number; // contracted status
+  conversionRate: number; // percentage
+  byStatus: {
+    registered: number;
+    interested: number;
+    booking: number;
+    deposited: number;
+    contracted: number;
+    lost: number;
+  };
+}
+
 /**
  * Fetch all leads for current partner
  */
@@ -822,6 +838,47 @@ export async function fetchPartnerLeads(): Promise<PartnerLead[]> {
 
   const result = await response.json();
   return result.data || [];
+}
+
+/**
+ * Calculate lead analytics from lead data
+ */
+export async function fetchLeadAnalytics(): Promise<LeadAnalytics> {
+  const leads = await fetchPartnerLeads();
+  
+  const now = new Date();
+  const byStatus = {
+    registered: 0,
+    interested: 0,
+    booking: 0,
+    deposited: 0,
+    contracted: 0,
+    lost: 0,
+  };
+
+  let protected_count = 0;
+  
+  leads.forEach(lead => {
+    byStatus[lead.status]++;
+    
+    if (new Date(lead.protected_until) > now) {
+      protected_count++;
+    }
+  });
+
+  const total = leads.length;
+  const hot = byStatus.interested;
+  const converted = byStatus.contracted;
+  const conversionRate = total > 0 ? (converted / total) * 100 : 0;
+
+  return {
+    total,
+    protected: protected_count,
+    hot,
+    converted,
+    conversionRate,
+    byStatus,
+  };
 }
 
 /**

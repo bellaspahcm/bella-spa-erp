@@ -9,7 +9,7 @@
   ┬╖ optimizePackageImports
 
   Creating an optimized production build ...
-Turbopack build encountered 5 warnings:
+Turbopack build encountered 6 warnings:
 ./next.config.ts
 Encountered unexpected file in NFT list
 A file was traced that indicates that the whole project was traced unintentionally. Somewhere in the import trace below, there are:
@@ -87,8 +87,8 @@ To resolve this, you can
 - add ignore comments: path.join(/*turbopackIgnore: true*/ process.cwd(), bar)
 
 Output asset trace:
-  [output]/.next/server/app/dashboard/accounting/reconciliation/page.js
-  [output]/.next/server/chunks/ssr/[root-of-the-server]__1nw4qwx._.js
+  [output]/.next/server/app/dashboard/accounting/salary-reconciliation/page.js
+  [output]/.next/server/chunks/ssr/[root-of-the-server]__0ba2qqi._.js
 
 Import trace:
   Server Component:
@@ -110,8 +110,8 @@ To resolve this, you can
 - add ignore comments: path.join(/*turbopackIgnore: true*/ process.cwd(), bar)
 
 Output asset trace:
-  [output]/.next/server/app/dashboard/accounting/salary-reconciliation/page.js
-  [output]/.next/server/chunks/ssr/[root-of-the-server]__0ba2qqi._.js
+  [output]/.next/server/app/dashboard/analytics/page.js
+  [output]/.next/server/chunks/ssr/[root-of-the-server]__0jutpss._.js
 
 Import trace:
   Server Component:
@@ -121,20 +121,47 @@ Import trace:
     ./src/core/services/accounting/business-health.ts
 
 
-Γ£ô Compiled successfully in 31.9s
+./next.config.ts
+Encountered unexpected file in NFT list
+A file was traced that indicates that the whole project was traced unintentionally. Somewhere in the import trace below, there are:
+- filesystem operations (like path.join, path.resolve or fs.readFile), or
+- very dynamic requires (like require('./' + foo)).
+To resolve this, you can
+- remove them if possible, or
+- only use them in development, or
+- make sure they are statically scoped to some subfolder: path.join(process.cwd(), 'data', bar), or
+- add ignore comments: path.join(/*turbopackIgnore: true*/ process.cwd(), bar)
+
+Output asset trace:
+  [output]/.next/server/app/dashboard/finance/page.js
+  [output]/.next/server/chunks/ssr/[root-of-the-server]__1trgf9j._.js
+
+Import trace:
+  Server Component:
+    ./next.config.ts
+    ./scripts/load-local-env.cjs
+    ./scripts/check-business-invariants.cjs
+    ./src/core/services/accounting/business-health.ts
+
+
+Γ£ô Compiled successfully in 28.1s
   Running next.config.js provided runAfterProductionCompile ...
-Γ£ô Completed runAfterProductionCompile in 1432ms
+Γ£ô Completed runAfterProductionCompile in 1647ms
   Running TypeScript ...
 Failed to type check.
 
-./src/modules/real_estate/services/BIReportService.ts:98:37
-Type error: This comparison appears to be unintentional because the types '"cancelled" | "paid" | "booked" | "available" | "deposited" | "contracted" | "handed_over"' and '"contract_signed"' have no overlap.
+./src/modules/real_estate/services/ProductService.ts:154:15
+Type error: Argument of type '{ updated_at: string; unit_price?: number; area?: number; product_code?: string; product_type?: string; block?: string | null; floor?: string | null; }' is not assignable to parameter of type 'RejectExcessProperties<{ area?: number | undefined; block?: string | null | undefined; created_at?: string | undefined; created_by?: string | null | undefined; floor?: string | null | undefined; id?: string | undefined; ... 9 more ...; updated_by?: string | ... 1 more ... | undefined; }, { ...; }>'.
+  Type '{ updated_at: string; unit_price?: number; area?: number; product_code?: string; product_type?: string; block?: string | null; floor?: string | null; }' is not assignable to type '{ area?: number | undefined; block?: string | null | undefined; created_at?: string | undefined; created_by?: string | null | undefined; floor?: string | null | undefined; id?: string | undefined; ... 9 more ...; updated_by?: string | ... 1 more ... | undefined; }'.
+    Types of property 'product_type' are incompatible.
+      Type 'string | undefined' is not assignable to type '"apartment" | "townhouse" | "shophouse" | "villa" | "land_plot" | "office" | undefined'.
+        Type 'string' is not assignable to type '"apartment" | "townhouse" | "shophouse" | "villa" | "land_plot" | "office" | undefined'.
 
-   96 |       const booked = pp.filter(p => p.status === 'booked').length;
-   97 |       const deposited = pp.filter(p => p.status === 'deposited').length;
->  98 |       const signed = pp.filter(p => p.status === 'contract_signed').length;
-      |                                     ^
-   99 |       const handover = pp.filter(p => p.status === 'handover').length;
-  100 |       const totalValueVnd = pp.reduce((s, p) => s + Number(p.unit_price || 0), 0);
-  101 |       const soldValueVnd = pp
+  152 |     const { data: updatedProduct, error: updateError } = await supabase
+  153 |       .from('real_estate_products')
+> 154 |       .update({
+      |               ^
+  155 |         ...payload,
+  156 |         updated_at: new Date().toISOString(),
+  157 |       })
 Next.js build worker exited with code: 1 and signal: null

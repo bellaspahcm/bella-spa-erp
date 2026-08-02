@@ -48,7 +48,31 @@ export default function PartnerBookingsPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [uploadingDoc, setUploadingDoc] = useState(false);
 
+  // Pre-fill form from lead conversion (query params)
+  const [prefillData, setPrefillData] = useState<{
+    lead_id?: string;
+    name?: string;
+    phone?: string;
+    email?: string;
+    budget?: string;
+  }>({});
+
   useEffect(() => {
+    // Check for lead conversion params in URL
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const leadId = params.get('lead_id');
+      const name = params.get('name');
+      const phone = params.get('phone');
+      const email = params.get('email');
+      const budget = params.get('budget');
+      
+      if (leadId) {
+        setPrefillData({ lead_id: leadId, name: name || '', phone: phone || '', email: email || '', budget: budget || '' });
+        setShowCreateModal(true); // Auto-open modal
+      }
+    }
+
     const loadUser = async () => {
       const user = await getCurrentUser();
       if (!user) {
@@ -226,8 +250,19 @@ export default function PartnerBookingsPage() {
       {/* Create Booking Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Tạo Booking Mới</h2>
+          <div className="bg-white rounded-lg max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">
+              {prefillData.lead_id ? (
+                <>
+                  Tạo Booking từ Lead
+                  <span className="block text-sm text-emerald-600 font-normal mt-1">
+                    Khách hàng: {prefillData.name}
+                  </span>
+                </>
+              ) : (
+                'Tạo Booking Mới'
+              )}
+            </h2>
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -270,9 +305,13 @@ export default function PartnerBookingsPage() {
                     type="text"
                     name="customer_name"
                     required
+                    defaultValue={prefillData.name || ''}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Họ và tên"
                   />
+                  {prefillData.lead_id && (
+                    <p className="text-xs text-emerald-600 mt-1 font-medium">✓ Từ khách hàng đã đăng ký</p>
+                  )}
                 </div>
 
                 <div>
@@ -283,10 +322,41 @@ export default function PartnerBookingsPage() {
                     type="tel"
                     name="customer_phone"
                     required
+                    defaultValue={prefillData.phone || ''}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="0912345678"
                   />
                 </div>
+
+                {prefillData.email && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Email (từ lead)
+                    </label>
+                    <input
+                      type="email"
+                      name="customer_email"
+                      defaultValue={prefillData.email}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-slate-50 text-slate-600"
+                      placeholder="email@example.com"
+                      readOnly
+                    />
+                  </div>
+                )}
+
+                {prefillData.budget && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Ngân sách tham khảo (từ lead)
+                    </label>
+                    <input
+                      type="text"
+                      defaultValue={prefillData.budget}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-slate-50 text-slate-600"
+                      readOnly
+                    />
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
