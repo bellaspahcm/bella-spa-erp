@@ -87,6 +87,16 @@ export default function GuideReader({ params }: PageProps) {
           iframeBorder: 'border border-pink-100 dark:border-[#3E3A35]',
           iframeShadow: 'shadow-[0_12px_40px_rgba(219,39,119,0.04)]',
         };
+      case 'real_estate':
+        return {
+          wrapperBg: 'bg-slate-50 dark:bg-[#0d0d14]',
+          loaderColor: 'text-violet-700 dark:text-violet-400',
+          navBg: 'bg-white/80 dark:bg-slate-900/85 border border-slate-200/70 dark:border-slate-800/80',
+          backBtnBg: 'bg-violet-50 hover:bg-violet-100 dark:bg-violet-950/40 dark:hover:bg-violet-900/60 text-violet-700 dark:text-violet-400',
+          headerTag: 'text-violet-700 dark:text-violet-400',
+          iframeBorder: 'border-slate-200/60 dark:border-slate-800',
+          iframeShadow: 'shadow-sm',
+        };
       default: // industrial_cleaning or others
         return {
           wrapperBg: 'bg-slate-50 dark:bg-[#11100F]',

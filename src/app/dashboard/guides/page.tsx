@@ -154,7 +154,7 @@ export default function UserManualsHub() {
   const theme = getThemeStyles();
 
   return (
-    <div className={`min-h-screen py-10 px-6 lg:px-12 relative overflow-hidden transition-colors duration-300 ${theme.wrapperBg}`}>
+    <div className={`min-h-full py-10 px-6 lg:px-12 relative overflow-x-hidden transition-colors duration-300 ${theme.wrapperBg}`}>
       {/* Decorative Blur Background elements */}
       <div className={`absolute top-[-100px] right-[-100px] w-[400px] h-[400px] rounded-full blur-[100px] pointer-events-none ${theme.glowTop}`} />
       <div className={`absolute bottom-[-100px] left-[-100px] w-[500px] h-[500px] rounded-full blur-[120px] pointer-events-none ${theme.glowBottom}`} />

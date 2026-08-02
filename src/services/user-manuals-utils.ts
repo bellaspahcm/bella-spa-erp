@@ -201,11 +201,12 @@ export function getModuleGuides(moduleKey: TenantModuleKey | null | undefined): 
   return BABYCARE_GUIDES;
 }
 
-/**
- * Legacy export for backward compatibility
- * @deprecated Use getModuleGuides() instead
- */
-export const ALL_GUIDES: GuideListItem[] = BABYCARE_GUIDES;
+export const ALL_GUIDES: GuideListItem[] = [
+  ...BABYCARE_GUIDES,
+  ...BEAUTY_SPA_GUIDES,
+  ...CLEANING_GUIDES,
+  ...REAL_ESTATE_GUIDES,
+];
 
 /**
  * Kiểm tra quyền truy cập của role đối với tài liệu tương ứng
