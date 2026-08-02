@@ -549,7 +549,7 @@ export async function fetchPartnerCommissions(userId: string) {
       commission_amount,
       status,
       earned_date,
-      paid_date,
+      paid_at,
       notes,
       real_estate_products (
         product_code,
@@ -575,7 +575,7 @@ export async function fetchPartnerCommissions(userId: string) {
     net_amount: Number(c.commission_amount) * 0.9 || 0,
     status: c.status as 'pending' | 'approved' | 'paid',
     approved_date: c.status === 'approved' || c.status === 'paid' ? c.earned_date : null,
-    paid_date: c.paid_date,
+    paid_date: c.paid_at,
     created_at: c.earned_date,
   }));
 }
