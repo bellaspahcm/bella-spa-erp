@@ -124,7 +124,7 @@ export default function PartnerLayout({
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-20">
-      <div className="max-w-lg mx-auto bg-white dark:bg-slate-900 min-h-screen shadow-lg relative border-x border-slate-100 dark:border-slate-800">
+      <div className="w-full bg-white dark:bg-slate-900 min-h-screen relative">
         {children}
         <PartnerBottomNav />
       </div>
