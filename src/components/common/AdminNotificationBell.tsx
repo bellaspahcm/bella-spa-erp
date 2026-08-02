@@ -14,6 +14,7 @@ import {
   markAllNotificationsAsRead 
 } from '@/core/services/notification/notification-actions';
 import { createClient } from '@/lib/supabase-client';
+import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
 
 type AdminNotificationBellProps = {
   position?: 'top' | 'bottom';
@@ -385,6 +386,32 @@ function AllNotificationsModal({
   handleNotificationClick,
 }: AllNotificationsModalProps) {
   const [visible, setVisible] = React.useState(false);
+  const { tenantModuleKey } = useTenantModuleKey();
+
+  const tabs = React.useMemo(() => {
+    if (tenantModuleKey === 'real_estate') {
+      return [
+        { id: 'all', label: 'Tất cả' },
+        { id: 'success', label: 'Phân phối Lead' },
+        { id: 'warning', label: 'Quá hạn SLA' },
+        { id: 'info', label: 'Tin tức / Khác' },
+      ];
+    }
+    if (tenantModuleKey === 'industrial_cleaning') {
+      return [
+        { id: 'all', label: 'Tất cả' },
+        { id: 'success', label: 'Hoàn thành ca' },
+        { id: 'warning', label: 'Ca trễ giờ' },
+        { id: 'info', label: 'Yêu cầu / Khác' },
+      ];
+    }
+    return [
+      { id: 'all', label: 'Tất cả' },
+      { id: 'success', label: 'Hoàn thành ca' },
+      { id: 'warning', label: 'Buổi quá hạn' },
+      { id: 'info', label: 'Gói sắp hết / Khác' },
+    ];
+  }, [tenantModuleKey]);
 
   React.useEffect(() => {
     if (isOpen) {
@@ -467,12 +494,7 @@ function AllNotificationsModal({
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {[
-              { id: 'all', label: 'Tất cả' },
-              { id: 'success', label: 'Hoàn thành ca' },
-              { id: 'warning', label: 'Buổi quá hạn' },
-              { id: 'info', label: 'Gói sắp hết / Khác' },
-            ].map(tab => (
+            {tabs.map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setNotifTab(tab.id)}
