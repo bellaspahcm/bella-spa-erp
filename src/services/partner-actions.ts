@@ -703,20 +703,20 @@ export async function fetchPartnerProfile(userId: string) {
 
   if (error) throw error;
 
-  const metadata = (user.metadata) || {};
+  const metadata = (user.metadata || {}) as Record<string, unknown>;
 
   return {
     id: user.id,
-    full_name: metadata.full_name || 'Partner',
+    full_name: (metadata.full_name as string) || 'Partner',
     email: user.email || '',
-    phone: metadata.phone || '',
-    partner_code: metadata.partner_code || 'P-001',
-    partner_type: metadata.partner_type || 'CTV',
-    company_name: metadata.company_name,
-    tax_code: metadata.tax_code,
-    address: metadata.address,
-    bank_account: metadata.bank_account,
-    created_at: metadata.created_at || new Date().toISOString(),
+    phone: (metadata.phone as string) || '',
+    partner_code: (metadata.partner_code as string) || 'P-001',
+    partner_type: ((metadata.partner_type as string) || 'CTV') as 'F1' | 'F2' | 'CTV',
+    company_name: metadata.company_name as string | undefined,
+    tax_code: metadata.tax_code as string | undefined,
+    address: metadata.address as string | undefined,
+    bank_account: metadata.bank_account as { bank_name: string; account_number: string; account_holder: string; branch?: string } | undefined,
+    created_at: (metadata.created_at as string) || new Date().toISOString(),
   };
 }
 

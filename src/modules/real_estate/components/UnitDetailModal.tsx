@@ -20,7 +20,7 @@ interface UnitDetailModalProps {
       unit_price?: number;
       area?: number;
       product_code?: string;
-      product_type?: string;
+      product_type?: 'apartment' | 'townhouse' | 'shophouse' | 'villa' | 'land_plot' | 'office';
       block?: string | null;
       floor?: string | null;
     }
@@ -118,7 +118,7 @@ export const UnitDetailModal: React.FC<UnitDetailModalProps> = ({
       if (onUpdateDetails) {
         await onUpdateDetails(product.id, {
           product_code: editCode.trim(),
-          product_type: editType.trim(),
+          product_type: editType.trim() as 'apartment' | 'townhouse' | 'shophouse' | 'villa' | 'land_plot' | 'office',
           block: editBlock.trim() || null,
           floor: editFloor.trim() || null,
           area: editArea,

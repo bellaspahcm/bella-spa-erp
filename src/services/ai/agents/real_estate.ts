@@ -40,12 +40,12 @@ export async function runRealEstateAgent(
   const availableCount = items.filter(p => p.status === 'available').length;
   const bookedCount = items.filter(p => p.status === 'booked').length;
   const depositedCount = items.filter(p => p.status === 'deposited').length;
-  const signedCount = items.filter(p => p.status === 'contract_signed').length;
-  const handoverCount = items.filter(p => p.status === 'handover').length;
+  const signedCount = items.filter(p => p.status === 'contracted').length;
+  const handoverCount = items.filter(p => p.status === 'handed_over').length;
 
   const totalValue = items.reduce((sum, item) => sum + Number(item.unit_price || 0), 0);
   const soldValue = items
-    .filter(p => ['deposited', 'contract_signed', 'handover'].includes(p.status))
+    .filter(p => ['deposited', 'contracted', 'handed_over'].includes(p.status))
     .reduce((sum, item) => sum + Number(item.unit_price || 0), 0);
 
   // Identify anomalies

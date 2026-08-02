@@ -109,7 +109,7 @@ export async function updateProductDetailsAction(
     unit_price?: number;
     area?: number;
     product_code?: string;
-    product_type?: string;
+    product_type?: 'apartment' | 'townhouse' | 'shophouse' | 'villa' | 'land_plot' | 'office';
     block?: string | null;
     floor?: string | null;
   }
