@@ -180,8 +180,18 @@ export async function submitApplication(
       };
     }
     
-    // TODO: Send verification email
-    // await sendVerificationEmail(application.email, verificationToken);
+    // Send verification email
+    try {
+      const { sendPartnerVerificationEmail } = await import('@/lib/email/email-service');
+      await sendPartnerVerificationEmail(
+        application.email,
+        application.full_name,
+        verificationToken
+      );
+    } catch (emailError) {
+      console.error('[submitApplication] Email error:', emailError);
+      // Don't fail the whole submission if email fails
+    }
     
     return {
       success: true,

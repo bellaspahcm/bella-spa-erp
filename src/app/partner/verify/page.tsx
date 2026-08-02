@@ -1,285 +1,177 @@
-/**
- * Partner Email Verification Page
- * 
- * Handles:
- * - Email verification via token (from email link)
- * - Resend verification email
- * - Show verification status
- */
-
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { verifyEmail, resendVerificationEmail, getApplicationById } from '@/services/partner-registration-actions';
-import type { PartnerApplication } from '@/types/partner-registration.types';
+import { useEffect, useState } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 
-function VerifyContent() {
-  const router = useRouter();
+type VerificationStatus = 'verifying' | 'success' | 'error' | 'expired';
+
+export default function PartnerVerifyPage() {
   const searchParams = useSearchParams();
-  
+  const router = useRouter();
   const token = searchParams.get('token');
-  const applicationId = searchParams.get('application_id');
   
-  const [status, setStatus] = useState<'verifying' | 'success' | 'error' | 'pending'>('verifying');
+  const [status, setStatus] = useState<VerificationStatus>('verifying');
   const [message, setMessage] = useState('');
-  const [application, setApplication] = useState<PartnerApplication | null>(null);
-  const [isResending, setIsResending] = useState(false);
-  
-  // Verify email on mount if token is present
+  const [applicationId, setApplicationId] = useState<string | null>(null);
+
   useEffect(() => {
-    if (token) {
-      handleVerifyEmail(token);
-    } else if (applicationId) {
-      // Load application and show pending status
-      loadApplication(applicationId);
-    } else {
+    if (!token) {
       setStatus('error');
-      setMessage('Thiếu thông tin xác minh. Vui lòng kiểm tra lại email của bạn.');
-    }
-  }, [token, applicationId]);
-  
-  const handleVerifyEmail = async (verificationToken: string) => {
-    setStatus('verifying');
-    
-    try {
-      const response = await verifyEmail(verificationToken);
-      
-      if (response.success) {
-        setStatus('success');
-        setMessage('Xác minh email thành công! Đơn đăng ký của bạn đang được xem xét.');
-        
-        // Load application details
-        if (response.application_id) {
-          await loadApplication(response.application_id);
-        }
-      } else {
-        setStatus('error');
-        setMessage(response.error || 'Xác minh thất bại. Vui lòng thử lại.');
-      }
-    } catch (error) {
-      setStatus('error');
-      setMessage('Có lỗi xảy ra. Vui lòng thử lại sau.');
-    }
-  };
-  
-  const loadApplication = async (appId: string) => {
-    try {
-      const response = await getApplicationById(appId);
-      
-      if (response.success && response.application) {
-        setApplication(response.application);
-        
-        // If email not verified yet, show pending status
-        if (!response.application.email_verified_at) {
-          setStatus('pending');
-          setMessage('Đơn đăng ký của bạn đã được gửi. Vui lòng kiểm tra email để xác minh.');
-        }
-      }
-    } catch (error) {
-      console.error('Failed to load application:', error);
-    }
-  };
-  
-  const handleResendEmail = async () => {
-    if (!applicationId) {
-      setMessage('Không tìm thấy ID đơn đăng ký.');
+      setMessage('Token xác nhận không hợp lệ');
       return;
     }
-    
-    setIsResending(true);
-    
+
+    verifyEmail();
+  }, [token]);
+
+  const verifyEmail = async () => {
     try {
-      const response = await resendVerificationEmail(applicationId);
-      
-      if (response.success) {
-        setMessage('Email xác minh đã được gửi lại. Vui lòng kiểm tra hộp thư của bạn.');
+      const response = await fetch(`/api/partner/verify?token=${token}`);
+      const data = await response.json();
+
+      if (data.success) {
+        setStatus('success');
+        setMessage('Email đã được xác nhận thành công!');
+        setApplicationId(data.application_id);
       } else {
-        setMessage(response.error || 'Không thể gửi lại email. Vui lòng thử lại sau.');
+        if (data.error?.includes('expired')) {
+          setStatus('expired');
+          setMessage('Link xác nhận đã hết hạn');
+        } else {
+          setStatus('error');
+          setMessage(data.error || 'Xác nhận thất bại');
+        }
       }
     } catch (error) {
+      console.error('[verifyEmail] Error:', error);
+      setStatus('error');
       setMessage('Có lỗi xảy ra. Vui lòng thử lại sau.');
-    } finally {
-      setIsResending(false);
     }
   };
-  
+
+  const handleResend = async () => {
+    // TODO: Implement resend verification email
+    alert('Chức năng gửi lại email đang được phát triển');
+  };
+
+  const handleViewStatus = () => {
+    if (applicationId) {
+      router.push(`/partner/application-status?id=${applicationId}`);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md mx-auto">
-        {/* Status Card */}
-        <div className="bg-white rounded-lg shadow-sm p-8">
-          {/* Icon */}
-          <div className="flex justify-center mb-6">
-            {status === 'verifying' && (
-              <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-rose-600" />
-            )}
-            
-            {status === 'success' && (
-              <div className="rounded-full bg-green-100 p-3">
-                <svg
-                  className="h-12 w-12 text-green-600"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-            )}
-            
-            {status === 'error' && (
-              <div className="rounded-full bg-red-100 p-3">
-                <svg
-                  className="h-12 w-12 text-red-600"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-            )}
-            
-            {status === 'pending' && (
-              <div className="rounded-full bg-yellow-100 p-3">
-                <svg
-                  className="h-12 w-12 text-yellow-600"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-            )}
+    <div className="min-h-screen bg-gradient-to-br from-rose-50 to-pink-50 flex items-center justify-center p-4">
+      <div className="max-w-md w-full">
+        <div className="bg-white rounded-2xl shadow-xl p-8">
+          {/* Logo */}
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-rose-500 to-pink-500 rounded-full mb-4">
+              <span className="text-2xl">🔐</span>
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900">Xác nhận Email</h1>
           </div>
-          
-          {/* Title */}
-          <h1 className="text-2xl font-bold text-gray-900 text-center mb-4">
-            {status === 'verifying' && 'Đang xác minh email...'}
-            {status === 'success' && 'Xác minh thành công!'}
-            {status === 'error' && 'Xác minh thất bại'}
-            {status === 'pending' && 'Chờ xác minh email'}
-          </h1>
-          
-          {/* Message */}
-          <p className="text-gray-600 text-center mb-6">{message}</p>
-          
-          {/* Application Details */}
-          {application && status === 'success' && (
-            <div className="bg-gray-50 rounded-lg p-4 mb-6">
-              <h3 className="text-sm font-medium text-gray-700 mb-3">Thông tin đơn đăng ký</h3>
-              <dl className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <dt className="text-gray-500">Mã đơn:</dt>
-                  <dd className="text-gray-900 font-mono">{application.id.slice(0, 8)}</dd>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <dt className="text-gray-500">Email:</dt>
-                  <dd className="text-gray-900">{application.email}</dd>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <dt className="text-gray-500">Ngày gửi:</dt>
-                  <dd className="text-gray-900">
-                    {application.submitted_at
-                      ? new Date(application.submitted_at).toLocaleString('vi-VN')
-                      : 'N/A'}
-                  </dd>
-                </div>
-              </dl>
+
+          {/* Status Icons & Messages */}
+          {status === 'verifying' && (
+            <div className="text-center py-8">
+              <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-rose-600 mb-4" />
+              <p className="text-gray-600">Đang xác nhận email của bạn...</p>
             </div>
           )}
-          
-          {/* Actions */}
-          <div className="space-y-3">
-            {status === 'success' && (
+
+          {status === 'success' && (
+            <>
+              <div className="text-center py-8">
+                <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-4">
+                  <svg className="w-10 h-10 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                  Xác nhận thành công!
+                </h2>
+                <p className="text-gray-600 mb-6">
+                  {message}
+                </p>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                  <p className="text-sm text-blue-800">
+                    📝 Hồ sơ của bạn đang được xem xét bởi đội ngũ quản trị. 
+                    Chúng tôi sẽ thông báo kết quả trong vòng 24-48 giờ.
+                  </p>
+                </div>
+              </div>
+              
               <button
-                onClick={() => router.push(`/partner/application-status?id=${application?.id}`)}
-                className="
-                  w-full px-6 py-3 bg-rose-600 text-white font-medium rounded-lg
-                  hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-500
-                  transition-colors
-                "
+                onClick={handleViewStatus}
+                className="w-full py-3 bg-gradient-to-r from-rose-600 to-pink-600 text-white rounded-lg font-medium hover:from-rose-700 hover:to-pink-700 transition-all"
               >
-                Xem trạng thái đơn
+                Xem trạng thái hồ sơ
               </button>
-            )}
-            
-            {status === 'pending' && (
+            </>
+          )}
+
+          {status === 'expired' && (
+            <>
+              <div className="text-center py-8">
+                <div className="inline-flex items-center justify-center w-20 h-20 bg-yellow-100 rounded-full mb-4">
+                  <svg className="w-10 h-10 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                  Link đã hết hạn
+                </h2>
+                <p className="text-gray-600 mb-6">
+                  Link xác nhận đã hết hạn (24 giờ). Vui lòng yêu cầu gửi lại email xác nhận.
+                </p>
+              </div>
+              
               <button
-                onClick={handleResendEmail}
-                disabled={isResending}
-                className="
-                  w-full px-6 py-3 bg-rose-600 text-white font-medium rounded-lg
-                  hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-500
-                  disabled:opacity-50 disabled:cursor-not-allowed
-                  transition-colors
-                "
+                onClick={handleResend}
+                className="w-full py-3 bg-gradient-to-r from-rose-600 to-pink-600 text-white rounded-lg font-medium hover:from-rose-700 hover:to-pink-700 transition-all"
               >
-                {isResending ? 'Đang gửi...' : 'Gửi lại email xác minh'}
+                Gửi lại email xác nhận
               </button>
-            )}
-            
-            {status === 'error' && applicationId && (
+            </>
+          )}
+
+          {status === 'error' && (
+            <>
+              <div className="text-center py-8">
+                <div className="inline-flex items-center justify-center w-20 h-20 bg-red-100 rounded-full mb-4">
+                  <svg className="w-10 h-10 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </div>
+                <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                  Xác nhận thất bại
+                </h2>
+                <p className="text-gray-600 mb-6">
+                  {message}
+                </p>
+              </div>
+              
               <button
-                onClick={handleResendEmail}
-                disabled={isResending}
-                className="
-                  w-full px-6 py-3 bg-rose-600 text-white font-medium rounded-lg
-                  hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-500
-                  disabled:opacity-50 disabled:cursor-not-allowed
-                  transition-colors
-                "
+                onClick={() => router.push('/partner/register')}
+                className="w-full py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-all"
               >
-                {isResending ? 'Đang gửi...' : 'Gửi lại email xác minh'}
+                Quay lại trang đăng ký
               </button>
-            )}
-            
-            <button
-              onClick={() => router.push('/')}
-              className="
-                w-full px-6 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg
-                hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500
-                transition-colors
-              "
-            >
-              Về trang chủ
-            </button>
+            </>
+          )}
+
+          {/* Footer */}
+          <div className="mt-8 pt-6 border-t text-center">
+            <p className="text-sm text-gray-500">
+              Cần hỗ trợ?{' '}
+              <a href="mailto:support@bella-erp.com" className="text-rose-600 hover:text-rose-700">
+                Liên hệ chúng tôi
+              </a>
+            </p>
           </div>
-        </div>
-        
-        {/* Help Text */}
-        <div className="mt-6 text-center">
-          <p className="text-sm text-gray-600">
-            Gặp vấn đề?{' '}
-            <a href="mailto:support@bella.ai" className="text-rose-600 hover:text-rose-700 font-medium">
-              Liên hệ hỗ trợ
-            </a>
-          </p>
         </div>
       </div>
     </div>
-  );
-}
-
-export default function PartnerVerifyPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-rose-600" />
-      </div>
-    }>
-      <VerifyContent />
-    </Suspense>
   );
 }
