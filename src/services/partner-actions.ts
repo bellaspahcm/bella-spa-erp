@@ -787,3 +787,124 @@ export async function changePassword(currentPassword: string, newPassword: strin
 
   if (error) throw error;
 }
+
+/**
+ * LEAD MANAGEMENT MODULE - API Integration
+ */
+
+export interface PartnerLead {
+  id: string;
+  name: string;
+  phone: string;
+  email: string | null;
+  budget: string | null;
+  status: 'registered' | 'interested' | 'booking' | 'deposited' | 'contracted' | 'lost';
+  notes: string | null;
+  created_at: string;
+  protected_until: string;
+  isProtected?: boolean;
+  daysRemaining?: number;
+}
+
+/**
+ * Fetch all leads for current partner
+ */
+export async function fetchPartnerLeads(): Promise<PartnerLead[]> {
+  const response = await fetch('/api/partner/leads', {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to fetch leads');
+  }
+
+  const result = await response.json();
+  return result.data || [];
+}
+
+/**
+ * Create a new lead with duplicate phone check
+ */
+export async function createPartnerLead(params: {
+  name: string;
+  phone: string;
+  email?: string;
+  budget?: string;
+  notes?: string;
+}): Promise<{ success: boolean; data?: PartnerLead; error?: string }> {
+  const response = await fetch('/api/partner/leads', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    return { 
+      success: false, 
+      error: result.error || 'Failed to create lead' 
+    };
+  }
+
+  return { 
+    success: true, 
+    data: result.data 
+  };
+}
+
+/**
+ * Update lead status or other fields
+ */
+export async function updatePartnerLeadStatus(
+  leadId: string,
+  updates: {
+    status?: 'registered' | 'interested' | 'booking' | 'deposited' | 'contracted' | 'lost';
+    notes?: string;
+    budget?: string;
+    email?: string;
+  }
+): Promise<{ success: boolean; data?: PartnerLead; error?: string }> {
+  const response = await fetch(`/api/partner/leads/${leadId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(updates),
+  });
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    return { 
+      success: false, 
+      error: result.error || 'Failed to update lead' 
+    };
+  }
+
+  return { 
+    success: true, 
+    data: result.data 
+  };
+}
+
+/**
+ * Delete a lead (soft delete to 'lost' status)
+ */
+export async function deletePartnerLead(leadId: string): Promise<{ success: boolean; error?: string }> {
+  const response = await fetch(`/api/partner/leads/${leadId}`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+  });
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    return { 
+      success: false, 
+      error: result.error || 'Failed to delete lead' 
+    };
+  }
+
+  return { success: true };
+}

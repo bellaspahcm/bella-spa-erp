@@ -3,26 +3,18 @@
 import { useState, useEffect } from 'react';
 import { 
   Users, UserPlus, Search, ShieldAlert, ArrowLeft, 
-  Phone, Mail, MessageSquare, Plus, Clock, HelpCircle, Check
+  Phone, Mail, MessageSquare, Plus, Clock, HelpCircle, Check, Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
-
-interface PartnerLead {
-  id: string;
-  name: string;
-  phone: string;
-  email: string;
-  budget: string;
-  status: 'registered' | 'interested' | 'booking' | 'deposited' | 'contracted' | 'lost';
-  notes: string;
-  createdAt: string;
-}
+import { fetchPartnerLeads, createPartnerLead, type PartnerLead } from '@/services/partner-actions';
 
 export default function PartnerLeads() {
   const [leads, setLeads] = useState<PartnerLead[]>([]);
   const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // New Lead Form fields
   const [name, setName] = useState('');
@@ -31,50 +23,25 @@ export default function PartnerLeads() {
   const [budget, setBudget] = useState('1.5 - 3.0 tỷ');
   const [notes, setNotes] = useState('');
 
-  // Load from localStorage key to match EIP Real Estate CRM
+  // Load leads from API
   useEffect(() => {
-    const raw = localStorage.getItem('bella_re_managed_leads');
-    if (raw) {
-      try {
-        setLeads(JSON.parse(raw));
-      } catch (err) {
-        console.error('[PartnerLeads] Failed to parse leads:', err);
-      }
-    } else {
-      // Seed initial mock leads if empty
-      const defaultLeads: PartnerLead[] = [
-        {
-          id: 'lead-pt-1',
-          name: 'Phạm Minh Trí',
-          phone: '0912345678',
-          email: 'tri.pham@gmail.com',
-          budget: '3.0 - 5.0 tỷ',
-          status: 'interested',
-          notes: 'Quan tâm phân khu Sapphire căn 2 phòng ngủ, muốn xem nhà mẫu.',
-          createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-        },
-        {
-          id: 'lead-pt-2',
-          name: 'Trần Thị Mai',
-          phone: '0909876543',
-          email: 'mai.tran@yahoo.com',
-          budget: '1.5 - 3.0 tỷ',
-          status: 'registered',
-          notes: 'Đăng ký nhận thông tin chính sách chiết khấu của chủ đầu tư.',
-          createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-        }
-      ];
-      localStorage.setItem('bella_re_managed_leads', JSON.stringify(defaultLeads));
-      setLeads(defaultLeads);
-    }
+    loadLeads();
   }, []);
 
-  const saveLeadsToStore = (updatedLeads: PartnerLead[]) => {
-    localStorage.setItem('bella_re_managed_leads', JSON.stringify(updatedLeads));
-    setLeads(updatedLeads);
+  const loadLeads = async () => {
+    try {
+      setIsLoading(true);
+      const data = await fetchPartnerLeads();
+      setLeads(data);
+    } catch (error) {
+      console.error('[PartnerLeads] Failed to load leads:', error);
+      toast.error('Không thể tải danh sách khách hàng');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleCreateLead = (e: React.FormEvent) => {
+  const handleCreateLead = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!name.trim() || !phone.trim()) {
@@ -82,34 +49,39 @@ export default function PartnerLeads() {
       return;
     }
 
-    // Check duplicate lead phone number to protect broker commission entitlement
-    const isDuplicate = leads.some(l => l.phone.trim() === phone.trim());
-    if (isDuplicate) {
-      toast.error('Số điện thoại này đã được đăng ký bởi đối tác khác hoặc hệ thống.');
-      return;
+    setIsSubmitting(true);
+
+    try {
+      const result = await createPartnerLead({
+        name: name.trim(),
+        phone: phone.trim(),
+        email: email.trim() || undefined,
+        budget: budget || undefined,
+        notes: notes.trim() || undefined,
+      });
+
+      if (result.success) {
+        toast.success('Đăng ký khách hàng thành công! Quyền bảo vệ khách hàng có hiệu lực trong 30 ngày.');
+        
+        // Reset form
+        setName('');
+        setPhone('');
+        setEmail('');
+        setBudget('1.5 - 3.0 tỷ');
+        setNotes('');
+        setIsModalOpen(false);
+        
+        // Reload leads
+        await loadLeads();
+      } else {
+        toast.error(result.error || 'Không thể đăng ký khách hàng');
+      }
+    } catch (error) {
+      console.error('[PartnerLeads] Failed to create lead:', error);
+      toast.error('Có lỗi xảy ra khi đăng ký khách hàng');
+    } finally {
+      setIsSubmitting(false);
     }
-
-    const newLead: PartnerLead = {
-      id: `lead-${Date.now()}`,
-      name,
-      phone,
-      email,
-      budget,
-      status: 'registered',
-      notes,
-      createdAt: new Date().toISOString(),
-    };
-
-    const nextLeads = [newLead, ...leads];
-    saveLeadsToStore(nextLeads);
-    toast.success('Đăng ký khách hàng thành công! Quyền bảo vệ khách hàng có hiệu lực trong 30 ngày.');
-    
-    // Reset form
-    setName('');
-    setPhone('');
-    setEmail('');
-    setNotes('');
-    setIsModalOpen(false);
   };
 
   const getStatusBadge = (status: string) => {
@@ -146,7 +118,8 @@ export default function PartnerLeads() {
         </div>
         <button 
           onClick={() => setIsModalOpen(true)}
-          className="p-2 bg-primary text-white rounded-xl shadow-sm hover:scale-105 transition-transform"
+          disabled={isLoading}
+          className="p-2 bg-primary text-white rounded-xl shadow-sm hover:scale-105 transition-transform disabled:opacity-50"
         >
           <Plus className="w-4 h-4" />
         </button>
@@ -161,23 +134,33 @@ export default function PartnerLeads() {
             placeholder="Tìm kiếm khách hàng bằng tên hoặc SĐT..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-semibold bg-slate-50 dark:bg-slate-950 focus:outline-none focus:border-primary"
+            disabled={isLoading}
+            className="w-full pl-9 pr-4 py-2 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-semibold bg-slate-50 dark:bg-slate-950 focus:outline-none focus:border-primary disabled:opacity-50"
           />
         </div>
       </div>
 
       {/* LEADS LIST */}
       <div className="p-5 space-y-4">
-        {filteredLeads.length === 0 ? (
+        {isLoading ? (
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-12 text-center border border-slate-100 dark:border-slate-850">
+            <Loader2 className="w-10 h-10 text-primary mx-auto animate-spin" />
+            <p className="mt-2 text-xs text-slate-400 font-bold uppercase tracking-wider">Đang tải...</p>
+          </div>
+        ) : filteredLeads.length === 0 ? (
           <div className="bg-white dark:bg-slate-900 rounded-3xl p-12 text-center border border-slate-100 dark:border-slate-850">
             <Users className="w-10 h-10 text-slate-300 mx-auto" />
-            <p className="mt-2 text-xs text-slate-400 font-bold uppercase tracking-wider">Chưa có khách hàng đăng ký</p>
-            <button 
-              onClick={() => setIsModalOpen(true)}
-              className="mt-4 px-4 py-2 bg-primary text-white text-xs font-black uppercase tracking-wider rounded-xl hover:opacity-90 shadow-sm"
-            >
-              Đăng ký ngay
-            </button>
+            <p className="mt-2 text-xs text-slate-400 font-bold uppercase tracking-wider">
+              {search ? 'Không tìm thấy khách hàng' : 'Chưa có khách hàng đăng ký'}
+            </p>
+            {!search && (
+              <button 
+                onClick={() => setIsModalOpen(true)}
+                className="mt-4 px-4 py-2 bg-primary text-white text-xs font-black uppercase tracking-wider rounded-xl hover:opacity-90 shadow-sm"
+              >
+                Đăng ký ngay
+              </button>
+            )}
           </div>
         ) : (
           <div className="space-y-3.5">
@@ -191,8 +174,13 @@ export default function PartnerLeads() {
                     <h4 className="text-xs font-black text-slate-800 dark:text-slate-200">{lead.name}</h4>
                     <span className="text-[9px] font-bold text-slate-350 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1.5 pt-0.5">
                       <Clock className="w-3.5 h-3.5" />
-                      Ngày ĐK: {new Date(lead.createdAt).toLocaleDateString('vi-VN')}
+                      Ngày ĐK: {new Date(lead.created_at).toLocaleDateString('vi-VN')}
                     </span>
+                    {lead.isProtected && (
+                      <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 pt-0.5">
+                        🛡️ Bảo vệ: còn {lead.daysRemaining} ngày
+                      </span>
+                    )}
                   </div>
                   {getStatusBadge(lead.status)}
                 </div>
@@ -208,10 +196,12 @@ export default function PartnerLeads() {
                       <span>{lead.email}</span>
                     </p>
                   )}
-                  <p className="flex items-center gap-2">
-                    <span className="w-3.5 h-3.5 bg-primary/10 rounded-full flex items-center justify-center text-[8px] font-bold text-primary">$</span>
-                    <span>Ngân sách: {lead.budget}</span>
-                  </p>
+                  {lead.budget && (
+                    <p className="flex items-center gap-2">
+                      <span className="w-3.5 h-3.5 bg-primary/10 rounded-full flex items-center justify-center text-[8px] font-bold text-primary">$</span>
+                      <span>Ngân sách: {lead.budget}</span>
+                    </p>
+                  )}
                 </div>
 
                 {lead.notes && (
@@ -253,7 +243,8 @@ export default function PartnerLeads() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Nguyễn Văn A"
-                  className="w-full p-2.5 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:border-primary"
+                  disabled={isSubmitting}
+                  className="w-full p-2.5 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:border-primary disabled:opacity-50"
                 />
               </div>
 
@@ -265,7 +256,8 @@ export default function PartnerLeads() {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="0901234567"
-                  className="w-full p-2.5 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:border-primary"
+                  disabled={isSubmitting}
+                  className="w-full p-2.5 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:border-primary disabled:opacity-50"
                 />
               </div>
 
@@ -276,7 +268,8 @@ export default function PartnerLeads() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="khachhang@gmail.com"
-                  className="w-full p-2.5 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:border-primary"
+                  disabled={isSubmitting}
+                  className="w-full p-2.5 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:border-primary disabled:opacity-50"
                 />
               </div>
 
@@ -285,7 +278,8 @@ export default function PartnerLeads() {
                 <select
                   value={budget}
                   onChange={(e) => setBudget(e.target.value)}
-                  className="w-full p-2.5 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold bg-white dark:bg-slate-900 focus:outline-none"
+                  disabled={isSubmitting}
+                  className="w-full p-2.5 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold bg-white dark:bg-slate-900 focus:outline-none disabled:opacity-50"
                 >
                   <option value="1.5 - 3.0 tỷ">1.5 - 3.0 tỷ</option>
                   <option value="3.0 - 5.0 tỷ">3.0 - 5.0 tỷ</option>
@@ -301,7 +295,8 @@ export default function PartnerLeads() {
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Ví dụ: Căn hộ hướng Đông Nam, tầng trung..."
                   rows={2}
-                  className="w-full p-2.5 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:border-primary"
+                  disabled={isSubmitting}
+                  className="w-full p-2.5 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:border-primary disabled:opacity-50"
                 />
               </div>
 
@@ -309,16 +304,27 @@ export default function PartnerLeads() {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="flex-1 py-2.5 bg-slate-100 text-slate-600 text-xs font-bold rounded-xl hover:bg-slate-150"
+                  disabled={isSubmitting}
+                  className="flex-1 py-2.5 bg-slate-100 text-slate-600 text-xs font-bold rounded-xl hover:bg-slate-150 disabled:opacity-50"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 bg-primary text-white text-xs font-black uppercase tracking-wider rounded-xl hover:opacity-90 flex items-center justify-center gap-1 shadow-sm"
+                  disabled={isSubmitting}
+                  className="flex-1 py-2.5 bg-primary text-white text-xs font-black uppercase tracking-wider rounded-xl hover:opacity-90 flex items-center justify-center gap-1 shadow-sm disabled:opacity-50"
                 >
-                  <Check className="w-4 h-4" />
-                  Đăng Ký
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Đang xử lý...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4" />
+                      Đăng Ký
+                    </>
+                  )}
                 </button>
               </div>
             </form>
