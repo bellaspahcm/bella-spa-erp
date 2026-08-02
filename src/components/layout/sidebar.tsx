@@ -371,6 +371,10 @@ const realEstateMenuItems: SidebarMenuItem[] = [
   { icon: LineChart,       label: 'Dòng Tiền & Dự Báo',   href: '/dashboard/finance/cash-flow' },
   { icon: DollarSign,      label: 'Đối Soát Công Nợ',     href: '/dashboard/finance/reconciliation' },
   { icon: Wallet,          label: 'Sổ Cái Kế Toán',       href: '/dashboard/accounting' },
+
+  { type: 'header', label: 'Hệ Thống' },
+  { icon: HelpCircle,      label: 'Hướng Dẫn Sử Dụng',    href: '/dashboard/guides' },
+  { icon: Settings,        label: 'Cài Đặt Hệ Thống',     href: '/dashboard/settings' },
 ];
 
 const customerMenuItems: SidebarMenuItem[] = [
