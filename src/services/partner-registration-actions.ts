@@ -159,7 +159,7 @@ export async function submitApplication(
         submitted_at: new Date().toISOString(),
         email_verification_token: verificationToken,
         email_verification_token_expires_at: tokenExpiresAt.toISOString(),
-      })
+      } as any)
       .eq('id', applicationId)
       .eq('status', 'draft')
       .select()
@@ -288,7 +288,7 @@ export async function resendVerificationEmail(
       .update({
         email_verification_token: verificationToken,
         email_verification_token_expires_at: tokenExpiresAt.toISOString(),
-      })
+      } as any)
       .eq('id', applicationId)
       .select()
       .single();
@@ -380,7 +380,7 @@ export async function uploadDocument(
     
     const { error: updateError } = await supabase
       .from('partner_applications')
-      .update({ documents: updatedDocuments })
+      .update({ documents: updatedDocuments } as any)
       .eq('id', applicationId);
     
     if (updateError) {
@@ -398,7 +398,7 @@ export async function uploadDocument(
       action_description: `Document uploaded: ${documentType}`,
       performed_by_role: 'system',
       metadata: { document_type: documentType, file_name: file.name },
-    });
+    } as any);
     
     return {
       success: true,
