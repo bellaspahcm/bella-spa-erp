@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       _prisma_migrations: {
@@ -972,6 +997,64 @@ export type Database = {
           },
         ]
       }
+      beds: {
+        Row: {
+          bed_name: string | null
+          bed_number: string
+          created_at: string | null
+          id: string
+          notes: string | null
+          room_id: string | null
+          status: string | null
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          bed_name?: string | null
+          bed_number: string
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          room_id?: string | null
+          status?: string | null
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          bed_name?: string | null
+          bed_number?: string
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          room_id?: string | null
+          status?: string | null
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "beds_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "beds_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "beds_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       booking_events: {
         Row: {
           booking_id: string
@@ -1213,154 +1296,11 @@ export type Database = {
           },
         ]
       }
-      beds: {
-        Row: {
-          id: string
-          tenant_id: string
-          bed_number: string
-          bed_name: string | null
-          room_id: string | null
-          status: string | null
-          notes: string | null
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          tenant_id: string
-          bed_number: string
-          bed_name?: string | null
-          room_id?: string | null
-          status?: string | null
-          notes?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          tenant_id?: string
-          bed_number?: string
-          bed_name?: string | null
-          room_id?: string | null
-          status?: string | null
-          notes?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "beds_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "beds_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: false
-            referencedRelation: "rooms"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      rooms: {
-        Row: {
-          id: string
-          tenant_id: string
-          room_number: string
-          room_name: string | null
-          capacity: number | null
-          room_type: string | null
-          status: string | null
-          notes: string | null
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          tenant_id: string
-          room_number: string
-          room_name?: string | null
-          capacity?: number | null
-          room_type?: string | null
-          status?: string | null
-          notes?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          tenant_id?: string
-          room_number?: string
-          room_name?: string | null
-          capacity?: number | null
-          room_type?: string | null
-          status?: string | null
-          notes?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "rooms_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      equipment: {
-        Row: {
-          id: string
-          tenant_id: string
-          equipment_code: string
-          equipment_name: string
-          equipment_type: string | null
-          quantity: number | null
-          status: string | null
-          notes: string | null
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          tenant_id: string
-          equipment_code: string
-          equipment_name: string
-          equipment_type?: string | null
-          quantity?: number | null
-          status?: string | null
-          notes?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          tenant_id?: string
-          equipment_code?: string
-          equipment_name?: string
-          equipment_type?: string | null
-          quantity?: number | null
-          status?: string | null
-          notes?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "equipment_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
       bookings: {
         Row: {
+          assigned_bed_id: string | null
           assigned_ktv_id: string | null
+          assigned_room_id: string | null
           booking_number: string
           completed_sessions: number | null
           contract_signed: boolean | null
@@ -1380,18 +1320,18 @@ export type Database = {
           package_id: string | null
           package_name: string | null
           preferred_time: string | null
+          required_equipment_ids: Json | null
           share_token: string | null
           start_date: string | null
           status: string | null
           tenant_id: string
           total_sessions: number | null
           updated_at: string | null
-          assigned_bed_id: string | null
-          assigned_room_id: string | null
-          required_equipment_ids: Json
         }
         Insert: {
+          assigned_bed_id?: string | null
           assigned_ktv_id?: string | null
+          assigned_room_id?: string | null
           booking_number: string
           completed_sessions?: number | null
           contract_signed?: boolean | null
@@ -1411,18 +1351,18 @@ export type Database = {
           package_id?: string | null
           package_name?: string | null
           preferred_time?: string | null
+          required_equipment_ids?: Json | null
           share_token?: string | null
           start_date?: string | null
           status?: string | null
           tenant_id: string
           total_sessions?: number | null
           updated_at?: string | null
-          assigned_bed_id?: string | null
-          assigned_room_id?: string | null
-          required_equipment_ids?: Json
         }
         Update: {
+          assigned_bed_id?: string | null
           assigned_ktv_id?: string | null
+          assigned_room_id?: string | null
           booking_number?: string
           completed_sessions?: number | null
           contract_signed?: boolean | null
@@ -1442,17 +1382,22 @@ export type Database = {
           package_id?: string | null
           package_name?: string | null
           preferred_time?: string | null
+          required_equipment_ids?: Json | null
           share_token?: string | null
           start_date?: string | null
           status?: string | null
           tenant_id?: string
           total_sessions?: number | null
           updated_at?: string | null
-          assigned_bed_id?: string | null
-          assigned_room_id?: string | null
-          required_equipment_ids?: Json
         }
         Relationships: [
+          {
+            foreignKeyName: "bookings_assigned_bed_id_fkey"
+            columns: ["assigned_bed_id"]
+            isOneToOne: false
+            referencedRelation: "beds"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "bookings_assigned_ktv_id_fkey"
             columns: ["assigned_ktv_id"]
@@ -1465,6 +1410,13 @@ export type Database = {
             columns: ["assigned_ktv_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_assigned_room_id_fkey"
+            columns: ["assigned_room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
             referencedColumns: ["id"]
           },
           {
@@ -1930,6 +1882,60 @@ export type Database = {
           },
         ]
       }
+      equipment: {
+        Row: {
+          created_at: string | null
+          equipment_code: string
+          equipment_name: string
+          equipment_type: string | null
+          id: string
+          notes: string | null
+          quantity: number | null
+          status: string | null
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          equipment_code: string
+          equipment_name: string
+          equipment_type?: string | null
+          id?: string
+          notes?: string | null
+          quantity?: number | null
+          status?: string | null
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          equipment_code?: string
+          equipment_name?: string
+          equipment_type?: string | null
+          id?: string
+          notes?: string | null
+          quantity?: number | null
+          status?: string | null
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "equipment_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       expenses: {
         Row: {
           accounting_metadata: Json
@@ -2144,6 +2150,87 @@ export type Database = {
           },
         ]
       }
+      forecast_results: {
+        Row: {
+          accuracy_error: number | null
+          accuracy_pct: number | null
+          actual_value: number | null
+          confidence_level: number | null
+          confidence_lower: number | null
+          confidence_upper: number | null
+          created_at: string
+          created_by: string | null
+          features: Json | null
+          forecast_date: string
+          forecast_horizon: number
+          forecast_type: string
+          id: string
+          metadata: Json | null
+          model_name: string
+          model_version: string
+          predicted_value: number | null
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          accuracy_error?: number | null
+          accuracy_pct?: number | null
+          actual_value?: number | null
+          confidence_level?: number | null
+          confidence_lower?: number | null
+          confidence_upper?: number | null
+          created_at?: string
+          created_by?: string | null
+          features?: Json | null
+          forecast_date: string
+          forecast_horizon: number
+          forecast_type: string
+          id?: string
+          metadata?: Json | null
+          model_name: string
+          model_version: string
+          predicted_value?: number | null
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          accuracy_error?: number | null
+          accuracy_pct?: number | null
+          actual_value?: number | null
+          confidence_level?: number | null
+          confidence_lower?: number | null
+          confidence_upper?: number | null
+          created_at?: string
+          created_by?: string | null
+          features?: Json | null
+          forecast_date?: string
+          forecast_horizon?: number
+          forecast_type?: string
+          id?: string
+          metadata?: Json | null
+          model_name?: string
+          model_version?: string
+          predicted_value?: number | null
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forecast_results_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "forecast_results_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       franchise_royalty_invoices: {
         Row: {
           calculated_amount: number
@@ -2248,6 +2335,282 @@ export type Database = {
           timestamp?: string
         }
         Relationships: []
+      }
+      hr_contracts: {
+        Row: {
+          agreed_allowances: Json | null
+          agreed_base_salary: number | null
+          contract_number: string | null
+          contract_title: string | null
+          contract_type: string
+          created_at: string
+          document_url: string | null
+          end_date: string | null
+          id: string
+          metadata: Json
+          notes: string | null
+          profile_id: string
+          signed_at: string | null
+          signed_by_company: boolean
+          signed_by_employee: boolean
+          start_date: string
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          agreed_allowances?: Json | null
+          agreed_base_salary?: number | null
+          contract_number?: string | null
+          contract_title?: string | null
+          contract_type: string
+          created_at?: string
+          document_url?: string | null
+          end_date?: string | null
+          id?: string
+          metadata?: Json
+          notes?: string | null
+          profile_id: string
+          signed_at?: string | null
+          signed_by_company?: boolean
+          signed_by_employee?: boolean
+          start_date: string
+          status?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          agreed_allowances?: Json | null
+          agreed_base_salary?: number | null
+          contract_number?: string | null
+          contract_title?: string | null
+          contract_type?: string
+          created_at?: string
+          document_url?: string | null
+          end_date?: string | null
+          id?: string
+          metadata?: Json
+          notes?: string | null
+          profile_id?: string
+          signed_at?: string | null
+          signed_by_company?: boolean
+          signed_by_employee?: boolean
+          start_date?: string
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hr_contracts_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "hr_employee_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hr_contracts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "hr_contracts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hr_departments: {
+        Row: {
+          code: string | null
+          created_at: string
+          description: string | null
+          head_person_id: string | null
+          id: string
+          is_active: boolean
+          metadata: Json
+          name: string
+          org_unit_id: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          code?: string | null
+          created_at?: string
+          description?: string | null
+          head_person_id?: string | null
+          id?: string
+          is_active?: boolean
+          metadata?: Json
+          name: string
+          org_unit_id?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string | null
+          created_at?: string
+          description?: string | null
+          head_person_id?: string | null
+          id?: string
+          is_active?: boolean
+          metadata?: Json
+          name?: string
+          org_unit_id?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hr_departments_head_person_id_fkey"
+            columns: ["head_person_id"]
+            isOneToOne: false
+            referencedRelation: "people_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hr_departments_org_unit_id_fkey"
+            columns: ["org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hr_departments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "hr_departments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hr_employee_profiles: {
+        Row: {
+          bank_account: string | null
+          bank_name: string | null
+          base_salary: number | null
+          bhxh_number: string | null
+          confirmation_date: string | null
+          created_at: string
+          currency: string
+          department_id: string | null
+          employment_status: string
+          employment_type: string
+          grade: string | null
+          hire_date: string | null
+          id: string
+          manager_person_id: string | null
+          metadata: Json
+          person_id: string
+          position_title: string | null
+          probation_end: string | null
+          salary_band: string | null
+          tax_code: string | null
+          tenant_id: string
+          termination_date: string | null
+          updated_at: string
+          work_schedule: string | null
+        }
+        Insert: {
+          bank_account?: string | null
+          bank_name?: string | null
+          base_salary?: number | null
+          bhxh_number?: string | null
+          confirmation_date?: string | null
+          created_at?: string
+          currency?: string
+          department_id?: string | null
+          employment_status?: string
+          employment_type?: string
+          grade?: string | null
+          hire_date?: string | null
+          id?: string
+          manager_person_id?: string | null
+          metadata?: Json
+          person_id: string
+          position_title?: string | null
+          probation_end?: string | null
+          salary_band?: string | null
+          tax_code?: string | null
+          tenant_id: string
+          termination_date?: string | null
+          updated_at?: string
+          work_schedule?: string | null
+        }
+        Update: {
+          bank_account?: string | null
+          bank_name?: string | null
+          base_salary?: number | null
+          bhxh_number?: string | null
+          confirmation_date?: string | null
+          created_at?: string
+          currency?: string
+          department_id?: string | null
+          employment_status?: string
+          employment_type?: string
+          grade?: string | null
+          hire_date?: string | null
+          id?: string
+          manager_person_id?: string | null
+          metadata?: Json
+          person_id?: string
+          position_title?: string | null
+          probation_end?: string | null
+          salary_band?: string | null
+          tax_code?: string | null
+          tenant_id?: string
+          termination_date?: string | null
+          updated_at?: string
+          work_schedule?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hr_employee_profiles_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "hr_departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hr_employee_profiles_manager_person_id_fkey"
+            columns: ["manager_person_id"]
+            isOneToOne: false
+            referencedRelation: "people_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hr_employee_profiles_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hr_employee_profiles_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "hr_employee_profiles_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       inter_branch_clearing_records: {
         Row: {
@@ -2466,7 +2829,7 @@ export type Database = {
             columns: ["item_id"]
             isOneToOne: false
             referencedRelation: "mv_inventory_status"
-            referencedColumns: ["item_id"]
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "inventory_logs_session_log_id_fkey"
@@ -3497,6 +3860,127 @@ export type Database = {
         }
         Relationships: []
       }
+      org_relationships: {
+        Row: {
+          created_at: string
+          from_id: string
+          from_type: string
+          id: string
+          metadata: Json
+          rel_type: string
+          role: string | null
+          since: string | null
+          tenant_id: string
+          to_id: string
+          to_type: string
+          until: string | null
+        }
+        Insert: {
+          created_at?: string
+          from_id: string
+          from_type: string
+          id?: string
+          metadata?: Json
+          rel_type: string
+          role?: string | null
+          since?: string | null
+          tenant_id: string
+          to_id: string
+          to_type: string
+          until?: string | null
+        }
+        Update: {
+          created_at?: string
+          from_id?: string
+          from_type?: string
+          id?: string
+          metadata?: Json
+          rel_type?: string
+          role?: string | null
+          since?: string | null
+          tenant_id?: string
+          to_id?: string
+          to_type?: string
+          until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_relationships_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "org_relationships_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_units: {
+        Row: {
+          code: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          metadata: Json
+          name: string
+          parent_id: string | null
+          tenant_id: string
+          unit_type: string
+          updated_at: string
+        }
+        Insert: {
+          code?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          metadata?: Json
+          name: string
+          parent_id?: string | null
+          tenant_id: string
+          unit_type: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          metadata?: Json
+          name?: string
+          parent_id?: string | null
+          tenant_id?: string
+          unit_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_units_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_units_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "org_units_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       package_materials: {
         Row: {
           created_at: string | null
@@ -3535,7 +4019,7 @@ export type Database = {
             columns: ["item_id"]
             isOneToOne: false
             referencedRelation: "mv_inventory_status"
-            referencedColumns: ["item_id"]
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "package_materials_package_id_fkey"
@@ -3583,6 +4067,7 @@ export type Database = {
           price: number | null
           price_cap: number | null
           price_floor: number | null
+          product_usage: Json | null
           required_workers: number | null
           requires_resource: boolean
           service_category: string | null
@@ -3616,6 +4101,7 @@ export type Database = {
           price?: number | null
           price_cap?: number | null
           price_floor?: number | null
+          product_usage?: Json | null
           required_workers?: number | null
           requires_resource?: boolean
           service_category?: string | null
@@ -3649,6 +4135,7 @@ export type Database = {
           price?: number | null
           price_cap?: number | null
           price_floor?: number | null
+          product_usage?: Json | null
           required_workers?: number | null
           requires_resource?: boolean
           service_category?: string | null
@@ -3666,6 +4153,115 @@ export type Database = {
             columns: ["template_id"]
             isOneToOne: false
             referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      people_directory: {
+        Row: {
+          created_at: string
+          display_name: string
+          id: string
+          is_active: boolean
+          metadata: Json
+          person_type: string
+          tenant_id: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          display_name: string
+          id?: string
+          is_active?: boolean
+          metadata?: Json
+          person_type: string
+          tenant_id: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          display_name?: string
+          id?: string
+          is_active?: boolean
+          metadata?: Json
+          person_type?: string
+          tenant_id?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "people_directory_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "people_directory_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      people_profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string | null
+          id: string
+          metadata: Json
+          org_unit_ids: string[] | null
+          phone: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          id: string
+          metadata?: Json
+          org_unit_ids?: string[] | null
+          phone?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          metadata?: Json
+          org_unit_ids?: string[] | null
+          phone?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "people_profiles_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "people_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "people_profiles_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "people_profiles_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -3908,6 +4504,495 @@ export type Database = {
           },
         ]
       }
+      re_commission_ledger: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          base_amount: number
+          commission_amount: number
+          commission_rate: number | null
+          commission_type: string
+          created_at: string
+          earned_date: string
+          expected_payout_date: string | null
+          id: string
+          metadata: Json
+          notes: string | null
+          paid_at: string | null
+          payment_reference: string | null
+          person_id: string | null
+          product_id: string | null
+          status: string
+          tenant_id: string
+          transaction_id: string | null
+          transaction_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          base_amount?: number
+          commission_amount: number
+          commission_rate?: number | null
+          commission_type: string
+          created_at?: string
+          earned_date: string
+          expected_payout_date?: string | null
+          id?: string
+          metadata?: Json
+          notes?: string | null
+          paid_at?: string | null
+          payment_reference?: string | null
+          person_id?: string | null
+          product_id?: string | null
+          status?: string
+          tenant_id: string
+          transaction_id?: string | null
+          transaction_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          base_amount?: number
+          commission_amount?: number
+          commission_rate?: number | null
+          commission_type?: string
+          created_at?: string
+          earned_date?: string
+          expected_payout_date?: string | null
+          id?: string
+          metadata?: Json
+          notes?: string | null
+          paid_at?: string | null
+          payment_reference?: string | null
+          person_id?: string | null
+          product_id?: string | null
+          status?: string
+          tenant_id?: string
+          transaction_id?: string | null
+          transaction_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "re_commission_ledger_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "re_commission_ledger_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "real_estate_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "re_commission_ledger_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "re_commission_ledger_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      re_documents: {
+        Row: {
+          allowed_roles: string[] | null
+          created_at: string
+          description: string | null
+          document_type: string
+          download_count: number
+          file_name: string
+          file_size_bytes: number | null
+          file_url: string
+          id: string
+          is_latest: boolean
+          is_public: boolean
+          metadata: Json
+          mime_type: string | null
+          project_id: string | null
+          supersedes_id: string | null
+          tenant_id: string
+          title: string
+          updated_at: string
+          uploaded_by: string | null
+          version: string
+        }
+        Insert: {
+          allowed_roles?: string[] | null
+          created_at?: string
+          description?: string | null
+          document_type: string
+          download_count?: number
+          file_name: string
+          file_size_bytes?: number | null
+          file_url: string
+          id?: string
+          is_latest?: boolean
+          is_public?: boolean
+          metadata?: Json
+          mime_type?: string | null
+          project_id?: string | null
+          supersedes_id?: string | null
+          tenant_id: string
+          title: string
+          updated_at?: string
+          uploaded_by?: string | null
+          version?: string
+        }
+        Update: {
+          allowed_roles?: string[] | null
+          created_at?: string
+          description?: string | null
+          document_type?: string
+          download_count?: number
+          file_name?: string
+          file_size_bytes?: number | null
+          file_url?: string
+          id?: string
+          is_latest?: boolean
+          is_public?: boolean
+          metadata?: Json
+          mime_type?: string | null
+          project_id?: string | null
+          supersedes_id?: string | null
+          tenant_id?: string
+          title?: string
+          updated_at?: string
+          uploaded_by?: string | null
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "re_documents_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "real_estate_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "re_documents_supersedes_id_fkey"
+            columns: ["supersedes_id"]
+            isOneToOne: false
+            referencedRelation: "re_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "re_documents_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "re_documents_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      re_project_checkins: {
+        Row: {
+          checkin_lat: number | null
+          checkin_lng: number | null
+          checkin_time: string
+          checkout_lat: number | null
+          checkout_lng: number | null
+          checkout_time: string | null
+          created_at: string
+          id: string
+          metadata: Json
+          notes: string | null
+          person_id: string | null
+          photo_urls: string[] | null
+          project_id: string
+          qr_code_scanned: string | null
+          tenant_id: string
+          user_id: string
+          verification_method: string | null
+          visit_purpose: string | null
+        }
+        Insert: {
+          checkin_lat?: number | null
+          checkin_lng?: number | null
+          checkin_time?: string
+          checkout_lat?: number | null
+          checkout_lng?: number | null
+          checkout_time?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json
+          notes?: string | null
+          person_id?: string | null
+          photo_urls?: string[] | null
+          project_id: string
+          qr_code_scanned?: string | null
+          tenant_id: string
+          user_id: string
+          verification_method?: string | null
+          visit_purpose?: string | null
+        }
+        Update: {
+          checkin_lat?: number | null
+          checkin_lng?: number | null
+          checkin_time?: string
+          checkout_lat?: number | null
+          checkout_lng?: number | null
+          checkout_time?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json
+          notes?: string | null
+          person_id?: string | null
+          photo_urls?: string[] | null
+          project_id?: string
+          qr_code_scanned?: string | null
+          tenant_id?: string
+          user_id?: string
+          verification_method?: string | null
+          visit_purpose?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "re_project_checkins_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "re_project_checkins_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "real_estate_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "re_project_checkins_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "re_project_checkins_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      re_sales_kpi_targets: {
+        Row: {
+          achievement_rate: number
+          actual_bookings: number
+          actual_contracts: number
+          actual_deposits: number
+          actual_leads: number
+          actual_revenue: number
+          actual_site_visits: number
+          created_at: string
+          id: string
+          metadata: Json
+          month_year: string
+          person_id: string | null
+          target_bookings: number
+          target_contracts: number
+          target_deposits: number
+          target_leads: number
+          target_revenue: number
+          target_site_visits: number
+          tenant_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          achievement_rate?: number
+          actual_bookings?: number
+          actual_contracts?: number
+          actual_deposits?: number
+          actual_leads?: number
+          actual_revenue?: number
+          actual_site_visits?: number
+          created_at?: string
+          id?: string
+          metadata?: Json
+          month_year: string
+          person_id?: string | null
+          target_bookings?: number
+          target_contracts?: number
+          target_deposits?: number
+          target_leads?: number
+          target_revenue?: number
+          target_site_visits?: number
+          tenant_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          achievement_rate?: number
+          actual_bookings?: number
+          actual_contracts?: number
+          actual_deposits?: number
+          actual_leads?: number
+          actual_revenue?: number
+          actual_site_visits?: number
+          created_at?: string
+          id?: string
+          metadata?: Json
+          month_year?: string
+          person_id?: string | null
+          target_bookings?: number
+          target_contracts?: number
+          target_deposits?: number
+          target_leads?: number
+          target_revenue?: number
+          target_site_visits?: number
+          tenant_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "re_sales_kpi_targets_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "re_sales_kpi_targets_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "re_sales_kpi_targets_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      re_tasks: {
+        Row: {
+          assigned_to_person_id: string | null
+          assigned_to_user_id: string
+          completed_at: string | null
+          created_at: string
+          created_by_user_id: string | null
+          description: string | null
+          due_date: string | null
+          due_time: string | null
+          id: string
+          metadata: Json
+          priority: string
+          related_customer_id: string | null
+          related_lead_id: string | null
+          related_product_id: string | null
+          reminder_enabled: boolean
+          reminder_time: string | null
+          status: string
+          task_type: string
+          tenant_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to_person_id?: string | null
+          assigned_to_user_id: string
+          completed_at?: string | null
+          created_at?: string
+          created_by_user_id?: string | null
+          description?: string | null
+          due_date?: string | null
+          due_time?: string | null
+          id?: string
+          metadata?: Json
+          priority?: string
+          related_customer_id?: string | null
+          related_lead_id?: string | null
+          related_product_id?: string | null
+          reminder_enabled?: boolean
+          reminder_time?: string | null
+          status?: string
+          task_type: string
+          tenant_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to_person_id?: string | null
+          assigned_to_user_id?: string
+          completed_at?: string | null
+          created_at?: string
+          created_by_user_id?: string | null
+          description?: string | null
+          due_date?: string | null
+          due_time?: string | null
+          id?: string
+          metadata?: Json
+          priority?: string
+          related_customer_id?: string | null
+          related_lead_id?: string | null
+          related_product_id?: string | null
+          reminder_enabled?: boolean
+          reminder_time?: string | null
+          status?: string
+          task_type?: string
+          tenant_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "re_tasks_assigned_to_person_id_fkey"
+            columns: ["assigned_to_person_id"]
+            isOneToOne: false
+            referencedRelation: "people_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "re_tasks_related_product_id_fkey"
+            columns: ["related_product_id"]
+            isOneToOne: false
+            referencedRelation: "real_estate_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "re_tasks_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "re_tasks_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       real_estate_products: {
         Row: {
           area: number
@@ -4019,6 +5104,88 @@ export type Database = {
           },
           {
             foreignKeyName: "real_estate_projects_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recommendation_cache: {
+        Row: {
+          algorithm_name: string
+          algorithm_version: string
+          cache_key: string
+          confidence_score: number | null
+          context: Json | null
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          diversity_score: number | null
+          expires_at: string
+          hit_count: number | null
+          id: string
+          last_accessed_at: string | null
+          recommendation_type: string
+          recommendations: Json
+          relevance_score: number | null
+          tenant_id: string
+        }
+        Insert: {
+          algorithm_name: string
+          algorithm_version: string
+          cache_key: string
+          confidence_score?: number | null
+          context?: Json | null
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          diversity_score?: number | null
+          expires_at: string
+          hit_count?: number | null
+          id?: string
+          last_accessed_at?: string | null
+          recommendation_type: string
+          recommendations: Json
+          relevance_score?: number | null
+          tenant_id: string
+        }
+        Update: {
+          algorithm_name?: string
+          algorithm_version?: string
+          cache_key?: string
+          confidence_score?: number | null
+          context?: Json | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          diversity_score?: number | null
+          expires_at?: string
+          hit_count?: number | null
+          id?: string
+          last_accessed_at?: string | null
+          recommendation_type?: string
+          recommendations?: Json
+          relevance_score?: number | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recommendation_cache_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recommendation_cache_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "recommendation_cache_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -4600,6 +5767,60 @@ export type Database = {
           },
           {
             foreignKeyName: "revenue_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rooms: {
+        Row: {
+          capacity: number | null
+          created_at: string | null
+          id: string
+          notes: string | null
+          room_name: string | null
+          room_number: string
+          room_type: string | null
+          status: string | null
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          capacity?: number | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          room_name?: string | null
+          room_number: string
+          room_type?: string | null
+          status?: string | null
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          capacity?: number | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          room_name?: string | null
+          room_number?: string
+          room_type?: string | null
+          status?: string | null
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rooms_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "rooms_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -6600,7 +7821,6 @@ export type Database = {
           zalo_template_birthday_id: string | null
           zalo_template_reminder_id: string | null
           zalo_token_expires_at: string | null
-          capacity_config: Json | null
         }
         Insert: {
           accounting_mode?: string | null
@@ -6644,7 +7864,6 @@ export type Database = {
           zalo_template_birthday_id?: string | null
           zalo_template_reminder_id?: string | null
           zalo_token_expires_at?: string | null
-          capacity_config?: Json | null
         }
         Update: {
           accounting_mode?: string | null
@@ -6688,7 +7907,6 @@ export type Database = {
           zalo_template_birthday_id?: string | null
           zalo_template_reminder_id?: string | null
           zalo_token_expires_at?: string | null
-          capacity_config?: Json | null
         }
         Relationships: [
           {
@@ -6706,36 +7924,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      test_migration_check: {
-        Row: {
-          id: string
-          platform: string
-        }
-        Insert: {
-          id?: string
-          platform: string
-        }
-        Update: {
-          id?: string
-          platform?: string
-        }
-        Relationships: []
-      }
-      test_migration_debug: {
-        Row: {
-          id: string
-          name: string | null
-        }
-        Insert: {
-          id?: string
-          name?: string | null
-        }
-        Update: {
-          id?: string
-          name?: string | null
-        }
-        Relationships: []
       }
       training_classes: {
         Row: {
@@ -7611,6 +8799,74 @@ export type Database = {
         }
         Relationships: []
       }
+      mv_attendance_summary: {
+        Row: {
+          attendance_performance_score: number | null
+          attendance_rate_pct: number | null
+          attendance_status: string | null
+          avg_late_minutes: number | null
+          computed_at: string | null
+          days_absent: number | null
+          days_half_day: number | null
+          days_late: number | null
+          days_present: number | null
+          ktv_id: string | null
+          ktv_name: string | null
+          ktv_role: string | null
+          month: string | null
+          on_time_rate_pct: number | null
+          performance_rank: number | null
+          tenant_id: string | null
+          total_days: number | null
+          working_days: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_ktv_id_fkey"
+            columns: ["ktv_id"]
+            isOneToOne: false
+            referencedRelation: "mv_ktv_performance_summary"
+            referencedColumns: ["ktv_id"]
+          },
+          {
+            foreignKeyName: "attendance_ktv_id_fkey"
+            columns: ["ktv_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "attendance_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mv_budget_variance: {
+        Row: {
+          actual_amount: number | null
+          budget_status: string | null
+          budgeted_amount: number | null
+          category: string | null
+          computed_at: string | null
+          month: string | null
+          tenant_id: string | null
+          transaction_count: number | null
+          utilization_pct: number | null
+          variance_amount: number | null
+          variance_pct: number | null
+        }
+        Relationships: []
+      }
       mv_campaign_performance: {
         Row: {
           avg_cpa: number | null
@@ -7653,6 +8909,39 @@ export type Database = {
           },
         ]
       }
+      mv_cash_flow: {
+        Row: {
+          bank_transfer_inflow: number | null
+          bank_transfer_outflow: number | null
+          burn_rate: number | null
+          card_inflow: number | null
+          card_outflow: number | null
+          cash_flow_ratio: number | null
+          cash_inflow: number | null
+          cash_outflow: number | null
+          computed_at: string | null
+          cumulative_cash_flow: number | null
+          inflow_transaction_count: number | null
+          maintenance_outflow: number | null
+          marketing_outflow: number | null
+          momo_inflow: number | null
+          momo_outflow: number | null
+          month: string | null
+          net_cash_flow: number | null
+          other_outflow: number | null
+          outflow_transaction_count: number | null
+          rent_outflow: number | null
+          salary_outflow: number | null
+          supplies_outflow: number | null
+          tenant_id: string | null
+          total_inflow: number | null
+          total_outflow: number | null
+          utilities_outflow: number | null
+          zalo_pay_inflow: number | null
+          zalo_pay_outflow: number | null
+        }
+        Relationships: []
+      }
       mv_channel_performance: {
         Row: {
           avg_cpa: number | null
@@ -7689,24 +8978,69 @@ export type Database = {
           },
         ]
       }
+      mv_employee_performance: {
+        Row: {
+          absent_days: number | null
+          avg_star_rating: number | null
+          below_four_count: number | null
+          computed_at: string | null
+          customer_satisfaction_score: number | null
+          five_star_count: number | null
+          four_star_count: number | null
+          is_active: boolean | null
+          kpi_amount: number | null
+          kpi_score: number | null
+          ktv_id: string | null
+          ktv_name: string | null
+          ktv_phone: string | null
+          ktv_role: string | null
+          month: string | null
+          on_time_days: number | null
+          overall_performance_score: number | null
+          performance_rank: number | null
+          performance_tier: string | null
+          ratings_count: number | null
+          revenue_per_session: number | null
+          revenue_transaction_count: number | null
+          sessions_per_working_day: number | null
+          tenant_id: string | null
+          total_bookings_served: number | null
+          total_revenue_contributed: number | null
+          total_sessions_completed: number | null
+          working_days: number | null
+        }
+        Relationships: []
+      }
       mv_inventory_status: {
         Row: {
+          avg_daily_usage: number | null
           category: string | null
           computed_at: string | null
-          created_at: string | null
           current_stock: number | null
-          item_id: string | null
-          item_name: string | null
-          min_stock_level: number | null
-          notes: string | null
-          price_per_unit: number | null
+          days_until_stockout: number | null
+          inventory_updated_at: string | null
+          last_restock_date: string | null
+          last_restock_quantity: number | null
+          last_usage_date: string | null
+          max_stock_level: number | null
+          product_id: string | null
+          product_name: string | null
+          reorder_point: number | null
+          reorder_quantity: number | null
           reorder_recommendation: string | null
           sku: string | null
           stock_status: string | null
           stock_value: number | null
+          suggested_reorder_date: string | null
+          supplier_contact: string | null
+          supplier_email: string | null
+          supplier_id: string | null
+          supplier_lead_time_days: number | null
+          supplier_name: string | null
+          supplier_phone: string | null
           tenant_id: string | null
-          unit: string | null
-          updated_at: string | null
+          unit_of_measure: string | null
+          usage_last_30_days: number | null
         }
         Relationships: [
           {
@@ -7772,6 +9106,108 @@ export type Database = {
           },
         ]
       }
+      mv_monthly_pnl: {
+        Row: {
+          booking_revenue: number | null
+          computed_at: string | null
+          gross_revenue: number | null
+          ktv_count: number | null
+          maintenance_expense: number | null
+          marketing_expense: number | null
+          month: string | null
+          net_profit: number | null
+          operating_expense_transaction_count: number | null
+          other_operating_expense: number | null
+          other_revenue: number | null
+          package_revenue: number | null
+          product_revenue: number | null
+          profit_margin_pct: number | null
+          rent_expense: number | null
+          revenue_transaction_count: number | null
+          supplies_expense: number | null
+          tenant_id: string | null
+          total_bookings: number | null
+          total_expenses: number | null
+          total_ktv_salaries: number | null
+          total_operating_expenses: number | null
+          total_revenue: number | null
+          total_sessions_completed: number | null
+          utilities_expense: number | null
+        }
+        Relationships: []
+      }
+      mv_payroll_summary: {
+        Row: {
+          avg_base_salary: number | null
+          avg_salary_per_session: number | null
+          avg_sessions_per_ktv: number | null
+          avg_total_salary: number | null
+          base_salary: number | null
+          bonus_to_base_pct: number | null
+          computed_at: string | null
+          confirmed_at: string | null
+          kpi_bonus: number | null
+          ktv_id: string | null
+          ktv_name: string | null
+          ktv_role: string | null
+          ktvs_draft: number | null
+          ktvs_paid: number | null
+          month: string | null
+          net_salary: number | null
+          other_adjustments: number | null
+          payroll_share_pct: number | null
+          payroll_status: string | null
+          published_at: string | null
+          rating_bonus: number | null
+          salary_rank: number | null
+          service_percentage_bonus: number | null
+          session_bonus: number | null
+          tenant_id: string | null
+          total_base_salary: number | null
+          total_kpi_bonus: number | null
+          total_ktvs: number | null
+          total_other_adjustments: number | null
+          total_payroll_cost: number | null
+          total_rating_bonus: number | null
+          total_salary: number | null
+          total_service_percentage_bonus: number | null
+          total_session_bonus: number | null
+          total_sessions: number | null
+          total_sessions_all_ktvs: number | null
+          total_violations_deduction: number | null
+          violations_deduction: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salary_records_ktv_id_fkey"
+            columns: ["ktv_id"]
+            isOneToOne: false
+            referencedRelation: "mv_ktv_performance_summary"
+            referencedColumns: ["ktv_id"]
+          },
+          {
+            foreignKeyName: "salary_records_ktv_id_fkey"
+            columns: ["ktv_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salary_records_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "salary_records_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mv_session_analytics: {
         Row: {
           afternoon_sessions: number | null
@@ -7824,6 +9260,22 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      mv_workforce_analytics: {
+        Row: {
+          avg_tenure_months: number | null
+          computed_at: string | null
+          current_headcount: number | null
+          month: string | null
+          new_hires: number | null
+          role: string | null
+          role_distribution_pct: number | null
+          tenant_id: string | null
+          terminations: number | null
+          total_ever_hired: number | null
+          turnover_rate_pct: number | null
+        }
+        Relationships: []
       }
       outbox_health: {
         Row: {
@@ -8002,6 +9454,7 @@ export type Database = {
           tenant_id: string
         }[]
       }
+      cleanup_expired_recommendation_cache: { Args: never; Returns: number }
       close_accounting_period: {
         Args: { p_period_id: string }
         Returns: undefined
@@ -8136,6 +9589,10 @@ export type Database = {
         }
         Returns: Json
       }
+      get_cached_recommendations: {
+        Args: { p_cache_key: string; p_tenant_id: string }
+        Returns: Json
+      }
       get_cash_flow_statement: {
         Args: { p_from_date: string; p_tenant_id: string; p_to_date: string }
         Returns: {
@@ -8214,6 +9671,12 @@ export type Database = {
         }[]
       }
       get_dashboard_summary: { Args: { p_tenant_id: string }; Returns: Json }
+      get_distinct_audit_tables: {
+        Args: never
+        Returns: {
+          table_name: string
+        }[]
+      }
       get_effective_subscription_entitlements: {
         Args: { p_tenant_id: string }
         Returns: {
@@ -8236,6 +9699,20 @@ export type Database = {
         Returns: string
       }
       get_financial_anomalies: { Args: { p_tenant_id: string }; Returns: Json }
+      get_hr_employee_summary: {
+        Args: { p_status?: string; p_tenant_id: string }
+        Returns: {
+          base_salary: number
+          department_name: string
+          display_name: string
+          employment_status: string
+          employment_type: string
+          hire_date: string
+          person_id: string
+          person_type: string
+          position_title: string
+        }[]
+      }
       get_income_statement: {
         Args: { p_from_date: string; p_tenant_id: string; p_to_date: string }
         Returns: {
@@ -8520,6 +9997,23 @@ export type Database = {
       lock_monthly_records: {
         Args: { p_month: string; p_tenant_id: string }
         Returns: undefined
+      }
+      log_api_request: {
+        Args: {
+          p_endpoint: string
+          p_error_code?: string
+          p_error_message?: string
+          p_ip_address?: string
+          p_is_error?: boolean
+          p_method: string
+          p_partner_id: string
+          p_request_id?: string
+          p_response_time_ms: number
+          p_status_code: number
+          p_tenant_id: string
+          p_user_agent?: string
+        }
+        Returns: string
       }
       mark_outbox_completed: {
         Args: { p_journal_entry_id: string; p_outbox_id: string }
@@ -8810,6 +10304,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       AttendanceStatus: ["present", "late", "absent", "half_day"],

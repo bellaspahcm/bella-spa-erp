@@ -7,7 +7,7 @@ export const realEstateManifest: VerticalManifest = {
   version: '1.0.0',
   themeKey: 'real_estate',
   defaultRoute: '/dashboard/real-estate',
-  enabledCapabilities: ['inbox', 'assignment', 'workflow', 'layout', 'audit', 'organization_center'],
+  enabledCapabilities: ['inbox', 'assignment', 'workflow', 'layout', 'audit', 'organization_center', 'workforce_portal'],
   menus: [
     { id: 'dashboard', label: 'Tổng Quan Dự Án', href: '/dashboard/real-estate', icon: 'Building2' },
     { id: 'projects', label: 'Dự Án BĐS', href: '/dashboard/real-estate/projects', icon: 'FolderKanban' },

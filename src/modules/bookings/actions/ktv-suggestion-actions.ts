@@ -313,11 +313,11 @@ async function filterAvailableKtvs(
     // 1. Fetch capacity config
     const { data: tenant } = await supabase
       .from('tenants')
-      .select('capacity_config')
+      .select('metadata')
       .eq('id', tenantId)
       .single();
 
-    const capacityConfig = (tenant?.capacity_config as { break_buffer_minutes?: number; max_sessions_per_day?: number } | null) || {};
+    const capacityConfig = ((tenant?.metadata as any)?.capacity_config as { break_buffer_minutes?: number; max_sessions_per_day?: number } | null) || {};
     const breakBufferMinutes = capacityConfig.break_buffer_minutes || 15;
     const maxSessionsPerDay = capacityConfig.max_sessions_per_day || 8;
 

@@ -270,11 +270,11 @@ export class SpaModuleAdapter implements ModuleAdapter {
       // Fetch tenant capacity configuration
       const { data: tenantData } = await supabase
         .from('tenants')
-        .select('capacity_config')
+        .select('metadata')
         .eq('id', context.tenantId)
         .single();
       
-      const capacityConfig = tenantData?.capacity_config as Record<string, unknown> | null;
+      const capacityConfig = (tenantData?.metadata as any)?.capacity_config as Record<string, unknown> | null;
       
       // Get booking date from scheduledStartTime (YYYY-MM-DD format)
       const scheduledDate = order.scheduledStartTime; // Already in YYYY-MM-DD

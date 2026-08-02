@@ -88,11 +88,11 @@ export async function GET(request: NextRequest) {
     // Fetch tenant capacity config
     const { data: tenantData } = await supabase
       .from('tenants')
-      .select('capacity_config')
+      .select('metadata')
       .eq('id', tenantId)
       .single();
 
-    const capacityConfig = tenantData?.capacity_config as Record<string, unknown> | null;
+    const capacityConfig = (tenantData?.metadata as any)?.capacity_config as Record<string, unknown> | null;
     const minBreakMinutes = (capacityConfig?.minBreakMinutes as number) || 15;
     const enforceBreakTimes = (capacityConfig?.enforceBreakTimes as boolean) !== false; // Default true
 
