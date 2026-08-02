@@ -211,19 +211,24 @@ export function HRDirectoryPage() {
   // ─────────────────────────────────────────────────────────────────────────────
 
   return (
-    <div style={styles.root}>
+    <div className="space-y-8">
       {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <div style={styles.header}>
-        <div>
-          <h1 style={styles.title}>HR Directory</h1>
-          <p style={styles.subtitle}>
-            {loading ? 'Đang tải...' : `${employees.length} nhân viên đang làm việc`}
-          </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center shrink-0">
+            <span className="text-amber-600 dark:text-amber-400"><Icons.Briefcase /></span>
+          </div>
+          <div>
+            <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">HR Directory</h1>
+            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
+              {loading ? 'Đang tải...' : `${employees.length} nhân viên đang làm việc`}
+            </p>
+          </div>
         </div>
-        <div style={styles.searchWrap}>
-          <span style={styles.searchIcon}><Icons.Search /></span>
+        <div className="relative flex items-center">
+          <span className="absolute left-3.5 text-slate-400 dark:text-slate-500 flex"><Icons.Search /></span>
           <input
-            style={styles.searchInput}
+            className="w-full sm:w-72 pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white text-sm focus:outline-none focus:border-amber-500 transition-colors shadow-sm"
             placeholder="Tìm nhân viên, vị trí, phòng ban..."
             value={search}
             onChange={e => setSearch(e.target.value)}
@@ -234,75 +239,84 @@ export function HRDirectoryPage() {
 
       {/* ── Error ──────────────────────────────────────────────────────────── */}
       {error && (
-        <div style={styles.errorBanner}>
+        <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 rounded-xl px-4 py-2.5 text-sm text-red-600 dark:text-red-400 mb-5">
           ⚠️ {error} — Đang hiển thị dữ liệu trống.
         </div>
       )}
 
       {/* ── Main layout ────────────────────────────────────────────────────── */}
-      <div style={styles.layout}>
+      <div className="flex flex-col lg:flex-row gap-6 items-start">
 
         {/* Employee list */}
-        <div style={styles.listPanel}>
+        <div className="flex-1 w-full min-w-0">
           {loading ? (
-            <div style={styles.emptyState}>
-              <div style={styles.spinner} />
-              <p style={{ color: 'rgba(255,255,255,0.4)', marginTop: 16 }}>Đang tải danh sách nhân viên...</p>
+            <div className="flex flex-col items-center justify-center py-16 text-slate-400 dark:text-slate-500 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
+              <div className="w-8 h-8 border-2 border-slate-200 dark:border-slate-850 border-t-amber-500 rounded-full animate-spin" />
+              <p className="text-sm font-semibold text-slate-500 dark:text-slate-400 mt-4">Đang tải danh sách nhân viên...</p>
             </div>
           ) : filtered.length === 0 ? (
-            <div style={styles.emptyState}>
-              <Icons.User />
-              <p style={{ color: 'rgba(255,255,255,0.4)', marginTop: 12 }}>
+            <div className="flex flex-col items-center justify-center py-16 text-slate-400 dark:text-slate-500 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
+              <span className="text-slate-300 dark:text-slate-650 scale-150 mb-3"><Icons.User /></span>
+              <p className="text-sm font-semibold">
                 {search ? 'Không tìm thấy kết quả' : 'Chưa có nhân viên nào'}
               </p>
             </div>
           ) : (
             Object.entries(grouped).map(([dept, emps]) => (
-              <div key={dept} style={styles.deptGroup}>
-                <div style={styles.deptHeader}>
+              <div key={dept} className="mb-6">
+                <div className="flex items-center gap-2 px-1 py-2 text-slate-450 dark:text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">
                   <Icons.Building />
-                  <span style={styles.deptName}>{dept}</span>
-                  <span style={styles.deptCount}>{emps.length}</span>
+                  <span className="flex-1">{dept}</span>
+                  <span className="bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-350 px-2.5 py-0.5 rounded-full text-[10px] font-bold">
+                    {emps.length}
+                  </span>
                 </div>
                 {emps.map(emp => (
                   <button
                     key={emp.personId}
                     id={`hr-emp-${emp.personId}`}
-                    style={{
-                      ...styles.empCard,
-                      ...(selectedPersonId === emp.personId ? styles.empCardSelected : {}),
-                    }}
+                    className={`flex items-center gap-3.5 w-full bg-white dark:bg-slate-900 border rounded-2xl p-4 mb-2.5 hover:shadow-md transition-all text-left cursor-pointer group ${
+                      selectedPersonId === emp.personId
+                        ? 'border-amber-500 ring-1 ring-amber-500/50 bg-amber-50/10 dark:bg-amber-950/10'
+                        : 'border-slate-200 dark:border-slate-850 hover:border-slate-350 dark:hover:border-slate-700'
+                    }`}
                     onClick={() => setSelectedPersonId(
                       selectedPersonId === emp.personId ? null : emp.personId
                     )}
                   >
                     {/* Avatar */}
-                    <div style={{
-                      ...styles.avatar,
-                      background: `hsl(${Math.abs(emp.personId.charCodeAt(0) * 37) % 360}, 60%, 40%)`,
-                    }}>
+                    <div
+                      className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white shrink-0 text-base shadow-sm"
+                      style={{
+                        background: `hsl(${Math.abs(emp.personId.charCodeAt(0) * 37) % 360}, 60%, 40%)`,
+                      }}
+                    >
                       {emp.displayName.charAt(0).toUpperCase()}
                     </div>
 
                     {/* Info */}
-                    <div style={styles.empInfo}>
-                      <div style={styles.empName}>{emp.displayName}</div>
-                      <div style={styles.empMeta}>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors truncate">
+                        {emp.displayName}
+                      </div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
                         <span>{emp.positionTitle ?? EMPLOYMENT_TYPE_LABEL[emp.employmentType]}</span>
                       </div>
                     </div>
 
                     {/* Status */}
-                    <div style={{
-                      ...styles.statusBadge,
-                      background: STATUS_COLOR[emp.employmentStatus] + '22',
-                      color: STATUS_COLOR[emp.employmentStatus],
-                      border: `1px solid ${STATUS_COLOR[emp.employmentStatus]}44`,
-                    }}>
+                    <div
+                      className="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 border uppercase tracking-wider"
+                      style={{
+                        background: STATUS_COLOR[emp.employmentStatus] + '15',
+                        color: STATUS_COLOR[emp.employmentStatus],
+                        borderColor: STATUS_COLOR[emp.employmentStatus] + '35',
+                      }}
+                    >
                       {STATUS_LABEL[emp.employmentStatus]}
                     </div>
 
-                    <div style={{ color: 'rgba(255,255,255,0.3)', marginLeft: 4 }}>
+                    <div className="text-slate-400 dark:text-slate-600 group-hover:translate-x-0.5 transition-transform ml-1">
                       <Icons.ChevronRight />
                     </div>
                   </button>
@@ -314,9 +328,11 @@ export function HRDirectoryPage() {
 
         {/* Detail panel */}
         {selectedPersonId && (
-          <div style={styles.detailPanel}>
+          <div className="w-full lg:w-[420px] shrink-0">
             {detailLoading ? (
-              <div style={styles.emptyState}><div style={styles.spinner} /></div>
+              <div className="flex items-center justify-center py-16 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
+                <div className="w-8 h-8 border-2 border-slate-200 dark:border-slate-850 border-t-amber-500 rounded-full animate-spin" />
+              </div>
             ) : profileDetail ? (
               <EmployeeDetailPanel
                 profile={profileDetail}
@@ -324,8 +340,8 @@ export function HRDirectoryPage() {
                 onClose={() => setSelectedPersonId(null)}
               />
             ) : (
-              <div style={styles.emptyState}>
-                <p style={{ color: 'rgba(255,255,255,0.4)' }}>Chưa có hồ sơ HR</p>
+              <div className="flex flex-col items-center justify-center py-16 text-slate-450 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-850 rounded-2xl shadow-sm">
+                <p className="text-sm font-semibold text-slate-400 dark:text-slate-500">Chưa có hồ sơ HR</p>
               </div>
             )}
           </div>
@@ -353,10 +369,10 @@ function EmployeeDetailPanel({ profile, activeContract, onClose }: DetailPanelPr
     : '—';
 
   return (
-    <div style={styles.detail}>
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-850 rounded-3xl p-6 relative shadow-sm">
       {/* Close */}
       <button
-        style={styles.closeBtn}
+        className="absolute top-4 right-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200/60 dark:border-slate-800 rounded-full w-8 h-8 flex items-center justify-center text-slate-500 dark:text-slate-400 transition-colors cursor-pointer"
         onClick={onClose}
         id="hr-detail-close"
         aria-label="Đóng chi tiết"
@@ -365,43 +381,45 @@ function EmployeeDetailPanel({ profile, activeContract, onClose }: DetailPanelPr
       </button>
 
       {/* Profile header */}
-      <div style={styles.detailHeader}>
-        <div style={{
-          ...styles.avatarLg,
-          background: `hsl(${Math.abs(profile.personId.charCodeAt(0) * 37) % 360}, 60%, 40%)`,
-        }}>
+      <div className="flex items-start gap-4 mb-6">
+        <div
+          className="w-14 h-14 rounded-full flex items-center justify-center font-bold text-white shrink-0 text-xl shadow-sm"
+          style={{
+            background: `hsl(${Math.abs(profile.personId.charCodeAt(0) * 37) % 360}, 60%, 40%)`,
+          }}
+        >
           {profile.displayName.charAt(0).toUpperCase()}
         </div>
         <div>
-          <h2 style={styles.detailName}>{profile.displayName}</h2>
-          <p style={styles.detailPosition}>{profile.positionTitle ?? EMPLOYMENT_TYPE_LABEL[profile.employmentType]}</p>
+          <h2 className="text-lg font-black text-slate-950 dark:text-white leading-tight mb-1">{profile.displayName}</h2>
+          <p className="text-xs font-bold text-slate-500 dark:text-slate-400">{profile.positionTitle ?? EMPLOYMENT_TYPE_LABEL[profile.employmentType]}</p>
           {profile.departmentName && (
-            <p style={styles.detailDept}>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 flex items-center gap-1.5 font-semibold">
               <Icons.Building /> {profile.departmentName}
             </p>
           )}
         </div>
-        <div style={{
-          ...styles.statusBadge,
-          marginLeft: 'auto',
-          alignSelf: 'flex-start',
-          background: STATUS_COLOR[profile.employmentStatus] + '22',
-          color: STATUS_COLOR[profile.employmentStatus],
-          border: `1px solid ${STATUS_COLOR[profile.employmentStatus]}44`,
-        }}>
+        <div
+          className="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 border uppercase tracking-wider ml-auto align-self-start"
+          style={{
+            background: STATUS_COLOR[profile.employmentStatus] + '15',
+            color: STATUS_COLOR[profile.employmentStatus],
+            borderColor: STATUS_COLOR[profile.employmentStatus] + '35',
+          }}
+        >
           {STATUS_LABEL[profile.employmentStatus]}
         </div>
       </div>
 
       {/* Info sections */}
-      <div style={styles.sections}>
+      <div className="flex flex-col gap-6">
 
         {/* Employment */}
-        <div style={styles.section}>
-          <div style={styles.sectionTitle}>
+        <div className="border-t border-slate-100 dark:border-slate-800/80 pt-5">
+          <div className="flex items-center gap-2 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3.5">
             <Icons.Briefcase /> Thông tin công việc
           </div>
-          <div style={styles.grid2}>
+          <div className="grid grid-cols-2 gap-x-5 gap-y-3">
             <InfoField label="Loại hợp đồng" value={EMPLOYMENT_TYPE_LABEL[profile.employmentType]} />
             <InfoField label="Bậc / Grade" value={profile.grade ?? '—'} />
             <InfoField label="Salary Band" value={profile.salaryBand ?? '—'} />
@@ -413,11 +431,11 @@ function EmployeeDetailPanel({ profile, activeContract, onClose }: DetailPanelPr
 
         {/* Contact */}
         {(profile.email || profile.phone) && (
-          <div style={styles.section}>
-            <div style={styles.sectionTitle}>
+          <div className="border-t border-slate-100 dark:border-slate-800/80 pt-5">
+            <div className="flex items-center gap-2 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3.5">
               <Icons.User /> Liên hệ
             </div>
-            <div style={styles.grid2}>
+            <div className="grid grid-cols-2 gap-x-5 gap-y-3">
               {profile.email && <InfoField label="Email" value={profile.email} />}
               {profile.phone && <InfoField label="Điện thoại" value={profile.phone} />}
             </div>
@@ -426,11 +444,11 @@ function EmployeeDetailPanel({ profile, activeContract, onClose }: DetailPanelPr
 
         {/* HR sensitive */}
         {(profile.bhxhNumber || profile.taxCode || profile.bankAccount) && (
-          <div style={styles.section}>
-            <div style={styles.sectionTitle}>
+          <div className="border-t border-slate-100 dark:border-slate-800/80 pt-5">
+            <div className="flex items-center gap-2 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3.5">
               <Icons.FileText /> Thông tin BHXH / Thuế
             </div>
-            <div style={styles.grid2}>
+            <div className="grid grid-cols-2 gap-x-5 gap-y-3">
               {profile.bhxhNumber && <InfoField label="Số BHXH" value={profile.bhxhNumber} />}
               {profile.taxCode && <InfoField label="MST cá nhân" value={profile.taxCode} />}
               {profile.bankAccount && (
@@ -445,28 +463,30 @@ function EmployeeDetailPanel({ profile, activeContract, onClose }: DetailPanelPr
 
         {/* Active contract */}
         {activeContract ? (
-          <div style={styles.section}>
-            <div style={styles.sectionTitle}>
+          <div className="border-t border-slate-100 dark:border-slate-800/80 pt-5">
+            <div className="flex items-center gap-2 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3.5">
               <Icons.FileText /> Hợp đồng hiệu lực
             </div>
-            <div style={styles.contractCard}>
-              <div style={styles.contractHeader}>
-                <span style={styles.contractType}>
+            <div className="bg-slate-50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800/80 rounded-2xl p-4">
+              <div className="flex items-center justify-between mb-2.5">
+                <span className="text-xs font-bold text-amber-600 dark:text-amber-400">
                   {CONTRACT_TYPE_LABEL[activeContract.contractType]}
                 </span>
-                <span style={{
-                  ...styles.statusBadge,
-                  background: CONTRACT_STATUS_COLOR[activeContract.status] + '22',
-                  color: CONTRACT_STATUS_COLOR[activeContract.status],
-                  border: `1px solid ${CONTRACT_STATUS_COLOR[activeContract.status]}44`,
-                }}>
+                <span
+                  className="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 border uppercase tracking-wider"
+                  style={{
+                    background: CONTRACT_STATUS_COLOR[activeContract.status] + '15',
+                    color: CONTRACT_STATUS_COLOR[activeContract.status],
+                    borderColor: CONTRACT_STATUS_COLOR[activeContract.status] + '35',
+                  }}
+                >
                   {activeContract.status}
                 </span>
               </div>
               {activeContract.contractNumber && (
-                <p style={styles.contractNum}>#{activeContract.contractNumber}</p>
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 mb-3">#{activeContract.contractNumber}</p>
               )}
-              <div style={styles.grid2}>
+              <div className="grid grid-cols-2 gap-x-5 gap-y-3">
                 <InfoField label="Bắt đầu" value={fmtDate(activeContract.startDate)} icon={<Icons.Calendar />} />
                 <InfoField
                   label="Kết thúc"
@@ -478,16 +498,16 @@ function EmployeeDetailPanel({ profile, activeContract, onClose }: DetailPanelPr
                 )}
               </div>
               {/* Signatures */}
-              <div style={styles.sigRow}>
+              <div className="flex gap-2 mt-4">
                 <SigBadge label="NV ký" done={activeContract.signedByEmployee} />
                 <SigBadge label="Cty ký" done={activeContract.signedByCompany} />
               </div>
             </div>
           </div>
         ) : (
-          <div style={styles.section}>
-            <div style={styles.sectionTitle}><Icons.FileText /> Hợp đồng</div>
-            <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 13 }}>
+          <div className="border-t border-slate-100 dark:border-slate-800/80 pt-5">
+            <div className="flex items-center gap-2 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3.5"><Icons.FileText /> Hợp đồng</div>
+            <p className="text-xs font-medium text-slate-405 dark:text-slate-500">
               Chưa có hợp đồng đang hiệu lực
             </p>
           </div>
@@ -506,10 +526,10 @@ function InfoField({ label, value, highlight, icon }: {
   icon?: React.ReactNode;
 }) {
   return (
-    <div style={styles.infoField}>
-      <span style={styles.infoLabel}>{label}</span>
-      <span style={{ ...styles.infoValue, ...(highlight ? styles.infoValueHL : {}) }}>
-        {icon && <span style={{ marginRight: 4, opacity: 0.6 }}>{icon}</span>}
+    <div className="flex flex-col gap-0.5">
+      <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{label}</span>
+      <span className={`text-xs font-bold flex items-center ${highlight ? 'text-emerald-600 dark:text-emerald-400 text-sm' : 'text-slate-700 dark:text-slate-300'}`}>
+        {icon && <span className="mr-1.5 opacity-60 flex">{icon}</span>}
         {value}
       </span>
     </div>
@@ -518,16 +538,13 @@ function InfoField({ label, value, highlight, icon }: {
 
 function SigBadge({ label, done }: { label: string; done: boolean }) {
   return (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: 6,
-      padding: '4px 10px',
-      borderRadius: 20,
-      background: done ? '#10b98122' : 'rgba(255,255,255,0.05)',
-      border: `1px solid ${done ? '#10b98144' : 'rgba(255,255,255,0.1)'}`,
-      fontSize: 12,
-      color: done ? '#10b981' : 'rgba(255,255,255,0.4)',
-    }}>
-      {done ? '✓' : '○'} {label}
+    <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-[10px] font-bold uppercase tracking-wider ${
+      done
+        ? 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/40 text-emerald-600 dark:text-emerald-400'
+        : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-500'
+    }`}>
+      <span>{done ? '✓' : '○'}</span>
+      <span>{label}</span>
     </div>
   );
 }
