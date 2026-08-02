@@ -335,6 +335,9 @@ const menuItems: SidebarMenuItem[] = [
   { icon: BarChart3,       label: 'Bảng quản trị CEO',  href: '/dashboard/executive' },
   { icon: LineChart,       label: 'Trung tâm Phân tích', href: '/dashboard/analytics' },
 
+  { type: 'header', label: 'Đối tác & Phân phối' },
+  { icon: Briefcase,       label: 'Partner Portal',      href: '/partner/dashboard' },
+
   { type: 'header', label: 'Hệ thống' },
   { icon: HelpCircle,      label: 'Hướng dẫn sử dụng',   href: '/dashboard/guides' },
   { icon: Sliders,         label: 'Cấu hình Dịch vụ',    href: '/dashboard/services' },
@@ -364,6 +367,9 @@ const realEstateMenuItems: SidebarMenuItem[] = [
   { icon: BarChart3,       label: 'BI Analytics',         href: '/dashboard/real-estate/bi-analytics' },
   { icon: Search,          label: 'Tìm Kiếm BĐS',         href: '/dashboard/real-estate/global-search' },
   { icon: ShieldCheck,     label: 'Quản Trị BĐS',         href: '/dashboard/real-estate/admin' },
+
+  { type: 'header', label: 'Đối Tác & Phân Phối' },
+  { icon: Briefcase,       label: 'Partner Portal (BPP)',  href: '/partner/dashboard' },
 
   { type: 'header', label: 'Tài Chính & Kế Toán' },
   { icon: Banknote,        label: 'Lương & Hoa Hồng',      href: '/dashboard/salary' },
