@@ -149,7 +149,7 @@ export default function PartnerDashboard() {
               Chào mừng bạn đến với Cổng thông tin đối tác Bella Land.
             </p>
             <p>
-              ✨ **Hôm nay có gì mới?** Sàn liên kết vừa cập nhật chính sách bán hàng mới cho phân khu Sapphire và Villa Riverside. Hiện tại bạn có **{data?.pendingBookingsCount || 0} giữ chỗ đang chờ duyệt** và tổng doanh số đối tác tích lũy của bạn đạt **{formatCurrency(data?.totalSalesValue || 0)}**.
+              ✨ Hôm nay có gì mới? Sàn liên kết vừa cập nhật chính sách bán hàng mới cho phân khu Sapphire và Villa Riverside. Hiện tại bạn có {data?.pendingBookingsCount || 0} giữ chỗ đang chờ duyệt và tổng doanh số đối tác tích lũy của bạn đạt {formatCurrency(data?.totalSalesValue || 0)}.
             </p>
             <p className="text-[10px] font-bold text-primary uppercase tracking-wider flex items-center gap-1 mt-1">
               Khám phá tài liệu dự án để tư vấn khách ngay &rarr;
