@@ -6,6 +6,7 @@ import {
   Phone, Mail, MessageSquare, Plus, Clock, HelpCircle, Check, Loader2, ChevronDown,
   Edit3, X, Save, Shield, Calendar, DollarSign, Download
 } from 'lucide-react';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { fetchPartnerLeads, createPartnerLead, updatePartnerLeadStatus, type PartnerLead } from '@/services/partner-actions';
@@ -33,6 +34,14 @@ export default function PartnerLeads() {
   const [editEmail, setEditEmail] = useState('');
   const [editBudget, setEditBudget] = useState('');
   const [editNotes, setEditNotes] = useState('');
+
+  // Budget options for PremiumSelect
+  const budgetOptions = [
+    { value: '1.5 - 3.0 tỷ', label: '1.5 - 3.0 tỷ' },
+    { value: '3.0 - 5.0 tỷ', label: '3.0 - 5.0 tỷ' },
+    { value: '5.0 - 10.0 tỷ', label: '5.0 - 10.0 tỷ' },
+    { value: 'Trên 10 tỷ', label: 'Trên 10 tỷ' },
+  ];
 
   // Load leads from API
   useEffect(() => {
@@ -623,20 +632,15 @@ export default function PartnerLeads() {
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Ngân sách</label>
-                    <select
-                      value={editBudget}
-                      onChange={(e) => setEditBudget(e.target.value)}
-                      disabled={isSubmitting}
-                      className="w-full p-2.5 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold bg-white dark:bg-slate-900 focus:outline-none disabled:opacity-50"
-                    >
-                      <option value="1.5 - 3.0 tỷ">1.5 - 3.0 tỷ</option>
-                      <option value="3.0 - 5.0 tỷ">3.0 - 5.0 tỷ</option>
-                      <option value="5.0 - 10.0 tỷ">5.0 - 10.0 tỷ</option>
-                      <option value="Trên 10 tỷ">Trên 10 tỷ</option>
-                    </select>
-                  </div>
+                  <PremiumSelect
+                    label="Ngân sách"
+                    options={budgetOptions}
+                    value={editBudget}
+                    onChange={setEditBudget}
+                    disabled={isSubmitting}
+                    buttonClassName="!py-2.5 !px-3 !text-xs"
+                    dropdownClassName="!text-xs"
+                  />
 
                   <div>
                     <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Ghi chú</label>
@@ -740,20 +744,15 @@ export default function PartnerLeads() {
                 />
               </div>
 
-              <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Ngân sách quan tâm</label>
-                <select
-                  value={budget}
-                  onChange={(e) => setBudget(e.target.value)}
-                  disabled={isSubmitting}
-                  className="w-full p-2.5 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold bg-white dark:bg-slate-900 focus:outline-none disabled:opacity-50"
-                >
-                  <option value="1.5 - 3.0 tỷ">1.5 - 3.0 tỷ</option>
-                  <option value="3.0 - 5.0 tỷ">3.0 - 5.0 tỷ</option>
-                  <option value="5.0 - 10.0 tỷ">5.0 - 10.0 tỷ</option>
-                  <option value="Trên 10 tỷ">Trên 10 tỷ</option>
-                </select>
-              </div>
+              <PremiumSelect
+                label="Ngân sách quan tâm"
+                options={budgetOptions}
+                value={budget}
+                onChange={setBudget}
+                disabled={isSubmitting}
+                buttonClassName="!py-2.5 !px-3 !text-xs"
+                dropdownClassName="!text-xs"
+              />
 
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Nhu cầu chi tiết</label>

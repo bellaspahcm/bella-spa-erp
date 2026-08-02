@@ -6,6 +6,7 @@ import {
   ChevronRight, ArrowLeft, Download, FileText, CheckCircle2
 } from 'lucide-react';
 import { getPartnerInventory, PartnerInventoryItem } from '@/services/partner-actions';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { toast } from 'sonner';
 import Link from 'next/link';
 
@@ -110,34 +111,33 @@ export default function PartnerInventory() {
         {/* Filters */}
         <div className="grid grid-cols-2 gap-3">
           {/* Status filter */}
-          <div>
-            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Trạng thái</label>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full p-2 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold bg-slate-50 dark:bg-slate-950 focus:outline-none"
-            >
-              <option value="all">Tất cả</option>
-              <option value="available">Trống</option>
-              <option value="booked">Giữ chỗ</option>
-              <option value="deposited">Đặt cọc</option>
-              <option value="contracted">Đã ký HĐ</option>
-            </select>
-          </div>
+          <PremiumSelect
+            label="Trạng thái"
+            options={[
+              { value: 'all', label: 'Tất cả' },
+              { value: 'available', label: 'Trống' },
+              { value: 'booked', label: 'Giữ chỗ' },
+              { value: 'deposited', label: 'Đặt cọc' },
+              { value: 'contracted', label: 'Đã ký HĐ' },
+            ]}
+            value={statusFilter}
+            onChange={setStatusFilter}
+            buttonClassName="!py-2 !px-3 !text-xs"
+            dropdownClassName="!text-xs"
+          />
 
           {/* Block filter */}
-          <div>
-            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Block / Tháp</label>
-            <select
-              value={blockFilter}
-              onChange={(e) => setBlockFilter(e.target.value)}
-              className="w-full p-2 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold bg-slate-50 dark:bg-slate-950 focus:outline-none"
-            >
-              {getUniqueBlocks().map(b => (
-                <option key={b} value={b}>{b === 'all' ? 'Tất cả' : `Block ${b}`}</option>
-              ))}
-            </select>
-          </div>
+          <PremiumSelect
+            label="Block / Tháp"
+            options={getUniqueBlocks().map(b => ({
+              value: b,
+              label: b === 'all' ? 'Tất cả' : `Block ${b}`
+            }))}
+            value={blockFilter}
+            onChange={setBlockFilter}
+            buttonClassName="!py-2 !px-3 !text-xs"
+            dropdownClassName="!text-xs"
+          />
         </div>
       </div>
 
