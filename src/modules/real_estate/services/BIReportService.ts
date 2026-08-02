@@ -95,11 +95,11 @@ export class BIReportService {
       const available = pp.filter(p => p.status === 'available').length;
       const booked = pp.filter(p => p.status === 'booked').length;
       const deposited = pp.filter(p => p.status === 'deposited').length;
-      const signed = pp.filter(p => p.status === 'contract_signed').length;
-      const handover = pp.filter(p => p.status === 'handover').length;
+      const signed = pp.filter(p => p.status === 'contracted').length;
+      const handover = pp.filter(p => p.status === 'handed_over').length;
       const totalValueVnd = pp.reduce((s, p) => s + Number(p.unit_price || 0), 0);
       const soldValueVnd = pp
-        .filter(p => ['deposited', 'contract_signed', 'handover'].includes(p.status))
+        .filter(p => ['deposited', 'contracted', 'handed_over'].includes(p.status))
         .reduce((s, p) => s + Number(p.unit_price || 0), 0);
       const total = pp.length;
       return {

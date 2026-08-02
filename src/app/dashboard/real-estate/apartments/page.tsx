@@ -47,7 +47,7 @@ const STATUS_CFG: Record<string, { label: string; short: string; bg: string; tex
     border: "border-orange-200 dark:border-orange-700/40",
     dot: "bg-orange-500",
   },
-  sold: {
+  paid: {
     label: "Đã Bán", short: "BÁN",
     bg: "bg-blue-50 dark:bg-blue-950/30",
     text: "text-blue-700 dark:text-blue-400",
@@ -137,7 +137,7 @@ function UnitCell({
             )}
             {product.status === "deposited" && (
               <button
-                onClick={e => { e.stopPropagation(); onAction(product.id, "deposited", "sold"); }}
+                onClick={e => { e.stopPropagation(); onAction(product.id, "deposited", "paid"); }}
                 className="w-full py-1 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black rounded-lg transition-colors"
               >
                 Ký HĐMB → Bán
@@ -317,7 +317,7 @@ export default function RealEstateApartmentsPage() {
     available: products.filter(p => p.status === "available").length,
     booked: products.filter(p => p.status === "booked").length,
     deposited: products.filter(p => p.status === "deposited").length,
-    sold: products.filter(p => p.status === "sold").length,
+    sold: products.filter(p => p.status === "paid").length,
   };
 
   return (
@@ -511,7 +511,7 @@ export default function RealEstateApartmentsPage() {
                         {p.status === "deposited" && (
                           <button
                             disabled={updatingId === p.id}
-                            onClick={() => handleAction(p.id, "deposited", "sold")}
+                            onClick={() => handleAction(p.id, "deposited", "paid")}
                             className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-all disabled:opacity-50"
                           >
                             Ký HĐ

@@ -3,11 +3,7 @@
 import { createClient } from '@/lib/supabase-server';
 import { getCurrentUser } from './user-actions';
 
-// TODO: After migration is applied and types are regenerated, remove these temp types
-type RealEstateProduct = any;
-type RealEstateReservation = any;
-type CommissionLedger = any;
-type RealEstateDocument = any;
+// Types are now generated from database schema in database.types.ts
 
 export interface PartnerDashboardData {
   totalSalesCount: number;
@@ -42,7 +38,7 @@ export async function getPartnerDashboardData(): Promise<PartnerDashboardData> {
 
   // 1. Fetch commission stats from re_commission_ledger
   const { data: ledgerData, error: ledgerError } = await supabase
-    .from('re_commission_ledger' as any) // TODO: Regenerate types after migration
+    .from('re_commission_ledger')
     .select('base_amount, commission_amount, status')
     .eq('user_id', user.id);
 
@@ -78,7 +74,7 @@ export async function getPartnerDashboardData(): Promise<PartnerDashboardData> {
 
   // 2. Fetch booking counts from re_reservations
   const { data: resData, error: resError } = await supabase
-    .from('re_reservations' as any) // TODO: Regenerate types after migration
+    .from('re_reservations')
     .select('status')
     .eq('user_id', user.id);
 
@@ -165,7 +161,7 @@ export async function getPartnerInventory(): Promise<PartnerInventoryItem[]> {
   const supabase = await createClient();
   
   const { data, error } = await supabase
-    .from('real_estate_products' as any) // TODO: Regenerate types after migration
+    .from('real_estate_products')
     .select(`
       id,
       project_id,
@@ -228,7 +224,7 @@ export async function getPartnerCommissions(): Promise<PartnerCommissionItem[]> 
   const supabase = await createClient();
 
   const { data, error } = await supabase
-    .from('re_commission_ledger' as any) // TODO: Regenerate types after migration
+    .from('re_commission_ledger')
     .select(`
       id,
       transaction_type,
@@ -286,7 +282,7 @@ export async function getPartnerDocuments(): Promise<PartnerDocumentItem[]> {
   const supabase = await createClient();
 
   const { data, error } = await supabase
-    .from('re_documents' as any) // TODO: Regenerate types after migration
+    .from('re_documents')
     .select('id, title, description, document_type, file_url, file_name, file_size_bytes, version')
     .eq('tenant_id', user.tenant_id)
     .eq('is_latest', true);
@@ -331,7 +327,7 @@ export async function getPartnerBookings(): Promise<PartnerBookingItem[]> {
   const supabase = await createClient();
 
   const { data, error } = await supabase
-    .from('re_reservations' as any) // TODO: Regenerate types after migration
+    .from('re_reservations')
     .select(`
       id,
       status,
@@ -405,7 +401,7 @@ export async function createPartnerBooking(params: {
 
   // Update metadata with customer details and payment proof image url
   const { error: updateError } = await supabase
-    .from('re_reservations' as any) // TODO: Regenerate types after migration
+    .from('re_reservations')
     .update({
       metadata: {
         customerName: params.customerName,
@@ -430,7 +426,7 @@ export async function fetchPartnerBookings(userId: string) {
   const supabase = await createClient();
   
   const { data, error } = await supabase
-    .from('re_reservations' as any) // TODO: Regenerate types after migration
+    .from('re_reservations')
     .select(`
       id,
       status,
@@ -477,7 +473,7 @@ export async function createBookingRequest(params: {
 
   // Find product by code
   const { data: product } = await supabase
-    .from('real_estate_products' as any) // TODO: Regenerate types after migration
+    .from('real_estate_products')
     .select('id')
     .eq('tenant_id', user.tenant_id)
     .eq('product_code', params.unit_code)
@@ -486,9 +482,9 @@ export async function createBookingRequest(params: {
   if (!product) throw new Error('Căn hộ không tồn tại');
 
   // Create reservation
-  const { error } = await supabase.from('re_reservations' as any).insert({
+  const { error } = await supabase.from('re_reservations').insert({
     tenant_id: user.tenant_id,
-    product_id: (product as any).id,
+    product_id: (product).id,
     user_id: params.user_id,
     status: 'active',
     expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
@@ -512,14 +508,14 @@ export async function uploadBookingDocument(
   const supabase = await createClient();
   
   const { data: reservation } = await supabase
-    .from('re_reservations' as any) // TODO: Regenerate types after migration
+    .from('re_reservations')
     .select('metadata')
     .eq('id', bookingId)
     .single();
 
   if (!reservation) throw new Error('Booking not found');
 
-  const metadata = (reservation as any).metadata as any || {};
+  const metadata = (reservation).metadata as any || {};
   const documents = metadata.documents || [];
   
   documents.push({
@@ -529,7 +525,7 @@ export async function uploadBookingDocument(
   });
 
   const { error } = await supabase
-    .from('re_reservations' as any) // TODO: Regenerate types after migration
+    .from('re_reservations')
     .update({ metadata: { ...metadata, documents } })
     .eq('id', bookingId);
 
@@ -544,7 +540,7 @@ export async function fetchPartnerCommissions(userId: string) {
   const supabase = await createClient();
 
   const { data, error } = await supabase
-    .from('re_commission_ledger' as any) // TODO: Regenerate types after migration
+    .from('re_commission_ledger')
     .select(`
       id,
       transaction_type,
@@ -595,7 +591,7 @@ export async function fetchPartnerDocuments() {
   const supabase = await createClient();
 
   const { data, error } = await supabase
-    .from('re_documents' as any) // TODO: Regenerate types after migration
+    .from('re_documents')
     .select(`
       id,
       title,
@@ -707,7 +703,7 @@ export async function fetchPartnerProfile(userId: string) {
 
   if (error) throw error;
 
-  const metadata = (user.metadata as any) || {};
+  const metadata = (user.metadata) || {};
 
   return {
     id: user.id,

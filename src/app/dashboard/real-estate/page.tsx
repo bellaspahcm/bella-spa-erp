@@ -200,12 +200,12 @@ export default function RealEstateDashboardPage() {
     }
   };
 
-  const availableCount = products.filter((p) => p.status === 'AVAILABLE').length;
-  const reservedCount = products.filter((p) => p.status === 'RESERVED').length;
-  const depositedCount = products.filter((p) => p.status === 'DEPOSITED').length;
-  const signedCount = products.filter((p) => p.status === 'CONTRACT_SIGNED').length;
-  const paidCount = products.filter((p) => p.status === 'PAID').length;
-  const deliveredCount = products.filter((p) => p.status === 'HANDOVER').length;
+  const availableCount = products.filter((p) => p.status === 'available').length;
+  const reservedCount = products.filter((p) => p.status === 'booked').length;
+  const depositedCount = products.filter((p) => p.status === 'deposited').length;
+  const signedCount = products.filter((p) => p.status === 'contracted').length;
+  const paidCount = products.filter((p) => p.status === 'paid').length;
+  const deliveredCount = products.filter((p) => p.status === 'handed_over').length;
 
   if (isLoading) {
     return (

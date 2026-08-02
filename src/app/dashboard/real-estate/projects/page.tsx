@@ -164,7 +164,7 @@ export default function RealEstateProjectsPage() {
             available: products.filter(x => x.status === "available").length,
             booked: products.filter(x => x.status === "booked").length,
             deposited: products.filter(x => x.status === "deposited").length,
-            sold: products.filter(x => x.status === "sold").length,
+            sold: products.filter(x => x.status === "paid").length,
           };
           return [p.id, stats] as [string, ProjectStats];
         })

@@ -2,14 +2,14 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Building2, MapPin, ChevronDown, Check, Sparkles, Layers } from 'lucide-react';
-import { Database } from '@/types/supabase';
+import { Database } from '@/types/database.types';
 
 type ProjectRow = Database['public']['Tables']['real_estate_projects']['Row'];
 
 interface PremiumProjectSelectorProps {
   projects: ProjectRow[];
   selectedProject: ProjectRow | null;
-  onSelectProject: (project: ProjectRow) => void;
+  onSelectProject: (project: ProjectRow) => void | Promise<void>;
 }
 
 export const PremiumProjectSelector: React.FC<PremiumProjectSelectorProps> = ({

@@ -12,31 +12,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       _prisma_migrations: {
@@ -4706,6 +4681,117 @@ export type Database = {
           },
         ]
       }
+      re_partner_leads: {
+        Row: {
+          budget: string | null
+          created_at: string | null
+          created_by: string | null
+          email: string | null
+          id: string
+          metadata: Json | null
+          name: string
+          notes: string | null
+          phone: string
+          protected_until: string
+          status: string
+          tenant_id: string
+          updated_at: string | null
+          updated_by: string | null
+          user_id: string
+        }
+        Insert: {
+          budget?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          metadata?: Json | null
+          name: string
+          notes?: string | null
+          phone: string
+          protected_until: string
+          status?: string
+          tenant_id: string
+          updated_at?: string | null
+          updated_by?: string | null
+          user_id: string
+        }
+        Update: {
+          budget?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          metadata?: Json | null
+          name?: string
+          notes?: string | null
+          phone?: string
+          protected_until?: string
+          status?: string
+          tenant_id?: string
+          updated_at?: string | null
+          updated_by?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "re_partner_leads_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "mv_ktv_performance_summary"
+            referencedColumns: ["ktv_id"]
+          },
+          {
+            foreignKeyName: "re_partner_leads_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "re_partner_leads_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "re_partner_leads_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "re_partner_leads_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "mv_ktv_performance_summary"
+            referencedColumns: ["ktv_id"]
+          },
+          {
+            foreignKeyName: "re_partner_leads_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "re_partner_leads_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "mv_ktv_performance_summary"
+            referencedColumns: ["ktv_id"]
+          },
+          {
+            foreignKeyName: "re_partner_leads_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       re_project_checkins: {
         Row: {
           checkin_lat: number | null
@@ -4794,6 +4880,122 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      re_reservations: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          customer_id: string | null
+          expires_at: string
+          id: string
+          metadata: Json | null
+          product_id: string
+          status: Database["public"]["Enums"]["re_reservation_status"]
+          tenant_id: string
+          updated_at: string | null
+          updated_by: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          customer_id?: string | null
+          expires_at: string
+          id?: string
+          metadata?: Json | null
+          product_id: string
+          status?: Database["public"]["Enums"]["re_reservation_status"]
+          tenant_id: string
+          updated_at?: string | null
+          updated_by?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          customer_id?: string | null
+          expires_at?: string
+          id?: string
+          metadata?: Json | null
+          product_id?: string
+          status?: Database["public"]["Enums"]["re_reservation_status"]
+          tenant_id?: string
+          updated_at?: string | null
+          updated_by?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "re_reservations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "mv_ktv_performance_summary"
+            referencedColumns: ["ktv_id"]
+          },
+          {
+            foreignKeyName: "re_reservations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "re_reservations_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "re_reservations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "real_estate_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "re_reservations_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "re_reservations_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "re_reservations_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "mv_ktv_performance_summary"
+            referencedColumns: ["ktv_id"]
+          },
+          {
+            foreignKeyName: "re_reservations_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "re_reservations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "mv_ktv_performance_summary"
+            referencedColumns: ["ktv_id"]
+          },
+          {
+            foreignKeyName: "re_reservations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -4998,48 +5200,71 @@ export type Database = {
           area: number
           block: string | null
           created_at: string
+          created_by: string | null
           floor: string | null
           id: string
+          metadata: Json | null
           owner_name: string | null
           product_code: string
-          product_type: string
+          product_type: Database["public"]["Enums"]["re_product_type"]
           project_id: string
-          status: string
+          status: Database["public"]["Enums"]["re_product_status"]
           tenant_id: string
           unit_price: number
           updated_at: string
+          updated_by: string | null
         }
         Insert: {
           area?: number
           block?: string | null
           created_at?: string
+          created_by?: string | null
           floor?: string | null
           id?: string
+          metadata?: Json | null
           owner_name?: string | null
           product_code: string
-          product_type?: string
+          product_type: Database["public"]["Enums"]["re_product_type"]
           project_id: string
-          status?: string
+          status: Database["public"]["Enums"]["re_product_status"]
           tenant_id: string
           unit_price?: number
           updated_at?: string
+          updated_by?: string | null
         }
         Update: {
           area?: number
           block?: string | null
           created_at?: string
+          created_by?: string | null
           floor?: string | null
           id?: string
+          metadata?: Json | null
           owner_name?: string | null
           product_code?: string
-          product_type?: string
+          product_type?: Database["public"]["Enums"]["re_product_type"]
           project_id?: string
-          status?: string
+          status?: Database["public"]["Enums"]["re_product_status"]
           tenant_id?: string
           unit_price?: number
           updated_at?: string
+          updated_by?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "real_estate_products_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "mv_ktv_performance_summary"
+            referencedColumns: ["ktv_id"]
+          },
+          {
+            foreignKeyName: "real_estate_products_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "real_estate_products_project_id_fkey"
             columns: ["project_id"]
@@ -5061,40 +5286,86 @@ export type Database = {
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "real_estate_products_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "mv_ktv_performance_summary"
+            referencedColumns: ["ktv_id"]
+          },
+          {
+            foreignKeyName: "real_estate_products_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
         ]
       }
       real_estate_projects: {
         Row: {
+          code: string | null
           created_at: string
+          created_by: string | null
           description: string | null
+          developer: string | null
           id: string
           location: string | null
+          metadata: Json | null
           name: string
           status: string
           tenant_id: string
+          total_units: number | null
           updated_at: string
+          updated_by: string | null
         }
         Insert: {
+          code?: string | null
           created_at?: string
+          created_by?: string | null
           description?: string | null
+          developer?: string | null
           id?: string
           location?: string | null
+          metadata?: Json | null
           name: string
           status?: string
           tenant_id: string
+          total_units?: number | null
           updated_at?: string
+          updated_by?: string | null
         }
         Update: {
+          code?: string | null
           created_at?: string
+          created_by?: string | null
           description?: string | null
+          developer?: string | null
           id?: string
           location?: string | null
+          metadata?: Json | null
           name?: string
           status?: string
           tenant_id?: string
+          total_units?: number | null
           updated_at?: string
+          updated_by?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "real_estate_projects_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "mv_ktv_performance_summary"
+            referencedColumns: ["ktv_id"]
+          },
+          {
+            foreignKeyName: "real_estate_projects_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "real_estate_projects_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -5107,6 +5378,20 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "real_estate_projects_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "mv_ktv_performance_summary"
+            referencedColumns: ["ktv_id"]
+          },
+          {
+            foreignKeyName: "real_estate_projects_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -10097,6 +10382,16 @@ export type Database = {
         Args: { p_period_id: string }
         Returns: undefined
       }
+      reserve_product: {
+        Args: {
+          p_customer_id?: string
+          p_duration_minutes?: number
+          p_product_id: string
+          p_tenant_id: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       resolve_accounting_review_item: {
         Args: { p_review_item_id: string; p_status: string }
         Returns: {
@@ -10170,6 +10465,38 @@ export type Database = {
       ExpenseStatus: "submitted" | "approved" | "rejected"
       MessageType: "text" | "system" | "file"
       PaymentMethod: "cash" | "bank_transfer" | "zalo_pay" | "momo"
+      re_commission_status: "pending" | "approved" | "paid" | "cancelled"
+      re_document_type:
+        | "brochure"
+        | "price_list"
+        | "legal_docs"
+        | "bank_policy"
+        | "faq"
+        | "training"
+        | "contract_template"
+        | "other"
+      re_product_status:
+        | "available"
+        | "booked"
+        | "deposited"
+        | "contracted"
+        | "paid"
+        | "handed_over"
+        | "cancelled"
+      re_product_type:
+        | "apartment"
+        | "townhouse"
+        | "shophouse"
+        | "villa"
+        | "land_plot"
+        | "office"
+      re_reservation_status: "active" | "released" | "expired" | "converted"
+      re_transaction_type:
+        | "booking"
+        | "deposit"
+        | "contract"
+        | "payment_milestone"
+        | "adjustment"
       RevenueType: "deposit" | "session_completed" | "additional_service"
       Role: "admin" | "ktv_lead" | "ktv" | "admin_staff" | "accountant"
       SalaryStatus: "draft" | "pending_approval" | "approved" | "paid"
@@ -10304,9 +10631,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       AttendanceStatus: ["present", "late", "absent", "half_day"],
@@ -10322,6 +10646,42 @@ export const Constants = {
       ExpenseStatus: ["submitted", "approved", "rejected"],
       MessageType: ["text", "system", "file"],
       PaymentMethod: ["cash", "bank_transfer", "zalo_pay", "momo"],
+      re_commission_status: ["pending", "approved", "paid", "cancelled"],
+      re_document_type: [
+        "brochure",
+        "price_list",
+        "legal_docs",
+        "bank_policy",
+        "faq",
+        "training",
+        "contract_template",
+        "other",
+      ],
+      re_product_status: [
+        "available",
+        "booked",
+        "deposited",
+        "contracted",
+        "paid",
+        "handed_over",
+        "cancelled",
+      ],
+      re_product_type: [
+        "apartment",
+        "townhouse",
+        "shophouse",
+        "villa",
+        "land_plot",
+        "office",
+      ],
+      re_reservation_status: ["active", "released", "expired", "converted"],
+      re_transaction_type: [
+        "booking",
+        "deposit",
+        "contract",
+        "payment_milestone",
+        "adjustment",
+      ],
       RevenueType: ["deposit", "session_completed", "additional_service"],
       Role: ["admin", "ktv_lead", "ktv", "admin_staff", "accountant"],
       SalaryStatus: ["draft", "pending_approval", "approved", "paid"],
