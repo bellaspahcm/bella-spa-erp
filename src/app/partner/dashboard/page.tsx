@@ -18,9 +18,46 @@ export default function PartnerDashboard() {
 
   const loadData = useCallback(async () => {
     try {
+      setIsLoading(true);
       const [dbData, analytics, currentUser] = await Promise.all([
-        getPartnerDashboardData(),
-        fetchLeadAnalytics(),
+        getPartnerDashboardData().catch(err => {
+          console.error('[PartnerDashboard] Dashboard data failed:', err);
+          // Return fallback data
+          return {
+            totalSalesCount: 0,
+            totalSalesValue: 0,
+            pendingBookingsCount: 0,
+            approvedBookingsCount: 0,
+            commission: { total: 0, pending: 0, paid: 0, latestPaid: 0 },
+            announcements: [
+              {
+                id: 'ann-1',
+                title: 'Chào mừng đến với Partner Portal',
+                content: 'Cổng thông tin đối tác Bella Land giúp bạn quản lý khách hàng, theo dõi bảng hàng và hoa hồng một cách dễ dàng.',
+                date: new Date().toISOString().split('T')[0],
+                tag: 'Hệ thống',
+              }
+            ]
+          };
+        }),
+        fetchLeadAnalytics().catch(err => {
+          console.error('[PartnerDashboard] Lead analytics failed:', err);
+          return {
+            total: 0,
+            protected: 0,
+            hot: 0,
+            converted: 0,
+            conversionRate: 0,
+            byStatus: {
+              registered: 0,
+              interested: 0,
+              booking: 0,
+              deposited: 0,
+              contracted: 0,
+              lost: 0,
+            }
+          };
+        }),
         getCachedCurrentUser()
       ]);
       setData(dbData);
@@ -28,7 +65,31 @@ export default function PartnerDashboard() {
       setUser(currentUser);
     } catch (err) {
       console.error('[PartnerDashboard] Load failed:', err);
-      toast.error('Lỗi khi tải dữ liệu trang chủ');
+      // toast.error('Lỗi khi tải dữ liệu trang chủ');
+      // Set empty data instead of showing error
+      setData({
+        totalSalesCount: 0,
+        totalSalesValue: 0,
+        pendingBookingsCount: 0,
+        approvedBookingsCount: 0,
+        commission: { total: 0, pending: 0, paid: 0, latestPaid: 0 },
+        announcements: []
+      });
+      setLeadStats({
+        total: 0,
+        protected: 0,
+        hot: 0,
+        converted: 0,
+        conversionRate: 0,
+        byStatus: {
+          registered: 0,
+          interested: 0,
+          booking: 0,
+          deposited: 0,
+          contracted: 0,
+          lost: 0,
+        }
+      });
     } finally {
       setIsLoading(false);
     }
