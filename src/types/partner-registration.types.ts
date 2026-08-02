@@ -175,48 +175,79 @@ export interface PartnerApplicationLog {
 // INSERT TYPES (for creating new records)
 // ============================================================================
 
-export type PartnerApplicationInsert = Omit<
-  PartnerApplication,
-  | 'id'
-  | 'created_at'
-  | 'updated_at'
-  | 'email_verified_at'
-  | 'submitted_at'
-  | 'approved_at'
-  | 'rejected_at'
-  | 'activated_at'
-> & {
-  // Optional fields that have defaults
+// Simplified insert type - only required + common optional fields
+export interface PartnerApplicationInsert {
+  // Required
+  full_name: string;
+  email: string;
+  phone: string;
+  applicant_type: PartnerApplicantType;
+  
+  // Optional - Organization info
+  company_name?: string;
+  tax_code?: string;
+  business_license?: string;
+  
+  // Optional - Address
+  address?: string;
+  city?: string;
+  district?: string;
+  ward?: string;
+  
+  // Optional - System fields
   registration_type?: string;
   status?: PartnerApplicationStatus;
-  documents?: PartnerApplicationDocument[];
-  metadata?: Record<string, any>;
-};
+  documents?: any; // JSONB
+  metadata?: any; // JSONB
+  ip_address?: string;
+  user_agent?: string;
+}
 
-export type PartnerApplicationLogInsert = Omit<
-  PartnerApplicationLog,
-  'id' | 'created_at'
-> & {
-  // Optional fields
-  action_description?: string | null;
-  performed_by?: string | null;
-  performed_by_name?: string | null;
-  performed_by_role?: string | null;
-  old_status?: PartnerApplicationStatus | null;
-  new_status?: PartnerApplicationStatus | null;
-  changes?: Record<string, { old: any; new: any }> | null;
-  metadata?: Record<string, any>;
-  ip_address?: string | null;
-  user_agent?: string | null;
-};
-
-// ============================================================================
-// UPDATE TYPES (for updating records)
-// ============================================================================
-
-export type PartnerApplicationUpdate = Partial<
-  Omit<PartnerApplication, 'id' | 'created_at' | 'updated_at'>
->;
+// Update type - all fields optional except what shouldn't be changed
+export interface PartnerApplicationUpdate {
+  // Applicant info
+  full_name?: string;
+  email?: string;
+  phone?: string;
+  applicant_type?: PartnerApplicantType;
+  
+  // Organization
+  company_name?: string;
+  tax_code?: string;
+  business_license?: string;
+  
+  // Address
+  address?: string;
+  city?: string;
+  district?: string;
+  ward?: string;
+  
+  // Documents
+  documents?: any; // JSONB
+  
+  // Email verification
+  email_verified_at?: string;
+  email_verification_token?: string;
+  email_verification_token_expires_at?: string;
+  
+  // Status
+  status?: PartnerApplicationStatus;
+  
+  // Admin fields
+  approved_at?: string;
+  approved_by?: string;
+  approval_notes?: string;
+  rejected_at?: string;
+  rejected_by?: string;
+  rejection_reason?: string;
+  rejection_category?: string;
+  info_request_message?: string;
+  info_request_fields?: any; // JSONB
+  
+  // Metadata
+  metadata?: any; // JSONB
+  updated_by?: string;
+}
 
 // ============================================================================
 // FORM TYPES (for UI)

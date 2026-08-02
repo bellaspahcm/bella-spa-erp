@@ -11,7 +11,7 @@
 
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase-server';
 import type {
   PartnerApplication,
   PartnerApplicationInsert,
@@ -36,12 +36,22 @@ export async function createDraftApplication(
     const { data: application, error } = await supabase
       .from('partner_applications')
       .insert({
-        ...data,
+        full_name: data.full_name,
+        email: data.email,
+        phone: data.phone,
+        applicant_type: data.applicant_type,
+        company_name: data.company_name || null,
+        tax_code: data.tax_code || null,
+        business_license: data.business_license || null,
+        address: data.address || null,
+        city: data.city || null,
+        district: data.district || null,
+        ward: data.ward || null,
         status: 'draft',
         registration_type: 'partner',
-        documents: data.documents || [],
-        metadata: data.metadata || {},
-      })
+        documents: '[]',
+        metadata: '{}',
+      } as any)
       .select()
       .single();
     
@@ -80,7 +90,7 @@ export async function updateDraftApplication(
     // Update application
     const { data: application, error } = await supabase
       .from('partner_applications')
-      .update(data)
+      .update(data as any)
       .eq('id', applicationId)
       .eq('status', 'draft') // Only allow updating drafts
       .select()
