@@ -19,22 +19,25 @@ import { useRouter } from 'next/navigation';
 import {
   Users,
   Search,
-  Filter,
   User,
   Building2,
   RefreshCw,
   MoreVertical,
-  Phone,
   Mail,
-  TrendingUp,
   CheckCircle2,
   Clock,
   XCircle,
   LayoutGrid,
   List,
-  AlertCircle
+  AlertCircle,
+  UserPlus,
+  Pencil,
+  UserX,
+  Loader2,
 } from 'lucide-react';
 import { getAllInScopeAction } from '@/modules/real_estate/actions/leadAssignmentActions';
+import { deactivatePersonAction } from '@/modules/real_estate/actions/peopleActions';
+import { PersonFormModal, type PersonFormData } from '@/modules/real_estate/components/PersonFormModal';
 import { TenantContextContext } from '@/core/hooks/useTenantContext';
 import type { AssignableReference, AssignableType } from '@/foundation';
 
@@ -126,7 +129,15 @@ function nameToHue(name: string): number {
 
 // ─── PersonCardView Component (Grid Mode) ─────────────────────────────────────
 
-function PersonCardView({ person }: { person: PersonCard }) {
+function PersonCardView({
+  person,
+  onEdit,
+  onDeactivate,
+}: {
+  person: PersonCard;
+  onEdit: (p: PersonCard) => void;
+  onDeactivate: (p: PersonCard) => void;
+}) {
   const router = useRouter();
   const hue = nameToHue(person.displayName);
   const status = person.status ?? 'active';
@@ -184,33 +195,39 @@ function PersonCardView({ person }: { person: PersonCard }) {
           </button>
 
           {menuOpen && (
-            <div className="absolute right-0 mt-1 w-44 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl z-50 overflow-hidden text-xs py-1">
+            <div className="absolute right-0 mt-1 w-48 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl z-50 overflow-hidden text-xs py-1">
               <button
                 onClick={() => {
                   router.push(`/dashboard/real-estate/hr?personId=${person.id}`);
                   setMenuOpen(false);
                 }}
-                className="w-full text-left px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-slate-900 font-semibold text-slate-700 dark:text-slate-250 transition"
+                className="w-full text-left px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-slate-900 font-semibold text-slate-700 dark:text-slate-300 transition flex items-center gap-2"
               >
+                <User className="w-3.5 h-3.5 text-slate-400" />
                 Xem Hồ Sơ HR
               </button>
               <button
                 onClick={() => {
-                  router.push(`/dashboard/real-estate/org-chart`);
+                  onEdit(person);
                   setMenuOpen(false);
                 }}
-                className="w-full text-left px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-slate-900 font-semibold text-slate-700 dark:text-slate-250 transition"
+                className="w-full text-left px-3.5 py-2 hover:bg-violet-50 dark:hover:bg-violet-500/10 font-semibold text-violet-700 dark:text-violet-400 transition flex items-center gap-2"
+                id={`card-edit-btn-${person.id}`}
               >
-                Xem Sơ Đồ Tổ Chức
+                <Pencil className="w-3.5 h-3.5" />
+                Chỉnh sửa thông tin
               </button>
+              <div className="border-t border-slate-100 dark:border-slate-800 my-1" />
               <button
                 onClick={() => {
-                  router.push(`/dashboard/real-estate/leads`);
+                  onDeactivate(person);
                   setMenuOpen(false);
                 }}
-                className="w-full text-left px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-slate-900 font-semibold text-slate-700 dark:text-slate-250 transition"
+                className="w-full text-left px-3.5 py-2 hover:bg-rose-50 dark:hover:bg-rose-500/10 font-semibold text-rose-600 dark:text-rose-400 transition flex items-center gap-2"
+                id={`card-deactivate-btn-${person.id}`}
               >
-                Danh Sách Lead
+                <UserX className="w-3.5 h-3.5" />
+                Vô hiệu hóa
               </button>
             </div>
           )}
@@ -256,7 +273,15 @@ function PersonCardView({ person }: { person: PersonCard }) {
 
 // ─── PersonRowView Component (List/Table Mode) ────────────────────────────────
 
-function PersonRowView({ person }: { person: PersonCard }) {
+function PersonRowView({
+  person,
+  onEdit,
+  onDeactivate,
+}: {
+  person: PersonCard;
+  onEdit: (p: PersonCard) => void;
+  onDeactivate: (p: PersonCard) => void;
+}) {
   const router = useRouter();
   const hue = nameToHue(person.displayName);
   const status = person.status ?? 'active';
@@ -338,33 +363,33 @@ function PersonRowView({ person }: { person: PersonCard }) {
           </button>
 
           {menuOpen && (
-            <div className="absolute right-0 mt-1 w-44 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl z-50 overflow-hidden text-xs py-1">
+            <div className="absolute right-0 mt-1 w-48 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl z-50 overflow-hidden text-xs py-1">
               <button
                 onClick={() => {
                   router.push(`/dashboard/real-estate/hr?personId=${person.id}`);
                   setMenuOpen(false);
                 }}
-                className="w-full text-left px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-slate-900 font-semibold text-slate-700 dark:text-slate-250 transition"
+                className="w-full text-left px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-slate-900 font-semibold text-slate-700 dark:text-slate-300 transition flex items-center gap-2"
               >
+                <User className="w-3.5 h-3.5 text-slate-400" />
                 Xem Hồ Sơ HR
               </button>
               <button
-                onClick={() => {
-                  router.push(`/dashboard/real-estate/org-chart`);
-                  setMenuOpen(false);
-                }}
-                className="w-full text-left px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-slate-900 font-semibold text-slate-700 dark:text-slate-250 transition"
+                onClick={() => { onEdit(person); setMenuOpen(false); }}
+                className="w-full text-left px-3.5 py-2 hover:bg-violet-50 dark:hover:bg-violet-500/10 font-semibold text-violet-700 dark:text-violet-400 transition flex items-center gap-2"
+                id={`row-edit-btn-${person.id}`}
               >
-                Xem Sơ Đồ Tổ Chức
+                <Pencil className="w-3.5 h-3.5" />
+                Chỉnh sửa thông tin
               </button>
+              <div className="border-t border-slate-100 dark:border-slate-800 my-1" />
               <button
-                onClick={() => {
-                  router.push(`/dashboard/real-estate/leads`);
-                  setMenuOpen(false);
-                }}
-                className="w-full text-left px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-slate-900 font-semibold text-slate-700 dark:text-slate-250 transition"
+                onClick={() => { onDeactivate(person); setMenuOpen(false); }}
+                className="w-full text-left px-3.5 py-2 hover:bg-rose-50 dark:hover:bg-rose-500/10 font-semibold text-rose-600 dark:text-rose-400 transition flex items-center gap-2"
+                id={`row-deactivate-btn-${person.id}`}
               >
-                Danh Sách Lead
+                <UserX className="w-3.5 h-3.5" />
+                Vô hiệu hóa
               </button>
             </div>
           )}
@@ -387,6 +412,15 @@ export function PeopleDirectoryPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
+  // ── Modal state ──
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editTarget, setEditTarget] = useState<PersonFormData | undefined>(undefined);
+
+  // ── Deactivate confirm dialog state ──
+  const [deactivateTarget, setDeactivateTarget] = useState<PersonCard | null>(null);
+  const [isDeactivating, setIsDeactivating] = useState(false);
+  const [deactivateError, setDeactivateError] = useState<string | null>(null);
+
   const loadPeople = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -403,6 +437,53 @@ export function PeopleDirectoryPage() {
   }, [tenantId]);
 
   useEffect(() => { loadPeople(); }, [loadPeople]);
+
+  // ── Handlers ──
+
+  function handleOpenCreate() {
+    setEditTarget(undefined);
+    setModalOpen(true);
+  }
+
+  function handleOpenEdit(person: PersonCard) {
+    setEditTarget({
+      personId: person.id,
+      displayName: person.displayName,
+      type: person.type,
+      email: person.email ?? '',
+      phone: person.phone ?? '',
+      branch: person.branch ?? '',
+    });
+    setModalOpen(true);
+  }
+
+  function handleModalSuccess(personId: string, displayName: string) {
+    // Optimistic update + reload
+    loadPeople();
+  }
+
+  function handleOpenDeactivate(person: PersonCard) {
+    setDeactivateTarget(person);
+    setDeactivateError(null);
+  }
+
+  async function handleConfirmDeactivate() {
+    if (!deactivateTarget) return;
+    setIsDeactivating(true);
+    setDeactivateError(null);
+    const result = await deactivatePersonAction({
+      personId: deactivateTarget.id,
+      tenantId,
+    });
+    setIsDeactivating(false);
+    if (!result.success) {
+      setDeactivateError(result.error);
+      return;
+    }
+    setDeactivateTarget(null);
+    // Remove from list optimistically
+    setAllPeople(prev => prev.filter(p => p.id !== deactivateTarget.id));
+  }
 
   // ── Filters ──
 
@@ -439,6 +520,57 @@ export function PeopleDirectoryPage() {
   ];
 
   return (
+    <>
+    {/* ── Person Form Modal ── */}
+    <PersonFormModal
+      tenantId={tenantId}
+      open={modalOpen}
+      initialData={editTarget}
+      onClose={() => setModalOpen(false)}
+      onSuccess={handleModalSuccess}
+    />
+
+    {/* ── Deactivate Confirmation Dialog ── */}
+    {deactivateTarget && (
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !isDeactivating && setDeactivateTarget(null)} />
+        <div className="relative w-full max-w-sm bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200/80 dark:border-slate-700/60 p-6 flex flex-col gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-rose-500/10 flex items-center justify-center mx-auto">
+            <UserX className="w-6 h-6 text-rose-500" />
+          </div>
+          <div className="text-center">
+            <h3 className="font-extrabold text-slate-900 dark:text-white text-base">Vô hiệu hóa nhân sự?</h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1.5">
+              Hành động này sẽ đưa <span className="font-bold text-slate-800 dark:text-slate-200">{deactivateTarget.displayName}</span> vào trạng thái không hoạt động. Họ sẽ không còn nhận được lead mới.
+            </p>
+          </div>
+          {deactivateError && (
+            <p className="text-xs text-rose-500 text-center flex items-center justify-center gap-1.5">
+              <AlertCircle className="w-3.5 h-3.5" />{deactivateError}
+            </p>
+          )}
+          <div className="flex gap-3 mt-1">
+            <button
+              onClick={() => setDeactivateTarget(null)}
+              disabled={isDeactivating}
+              className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition disabled:opacity-40"
+              id="deactivate-cancel-btn"
+            >
+              Hủy
+            </button>
+            <button
+              onClick={handleConfirmDeactivate}
+              disabled={isDeactivating}
+              className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-sm font-bold transition shadow-md disabled:opacity-60 flex items-center justify-center gap-2"
+              id="deactivate-confirm-btn"
+            >
+              {isDeactivating ? <><Loader2 className="w-4 h-4 animate-spin" />Đang xử lý...</> : 'Xác nhận'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+
     <div className="space-y-6 max-w-[1600px] mx-auto p-2">
       {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -486,6 +618,16 @@ export function PeopleDirectoryPage() {
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
             Làm mới
+          </button>
+
+          {/* Thêm nhân sự */}
+          <button
+            onClick={handleOpenCreate}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-xs font-bold hover:from-violet-500 hover:to-indigo-500 shadow-md hover:shadow-violet-500/25 transition-all active:scale-95"
+            id="add-person-btn"
+          >
+            <UserPlus className="w-4 h-4" />
+            Thêm nhân sự
           </button>
         </div>
       </div>
@@ -579,7 +721,12 @@ export function PeopleDirectoryPage() {
         // Grid View
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filtered.map(person => (
-            <PersonCardView key={person.id} person={person} />
+            <PersonCardView
+              key={person.id}
+              person={person}
+              onEdit={handleOpenEdit}
+              onDeactivate={handleOpenDeactivate}
+            />
           ))}
         </div>
       ) : (
@@ -600,7 +747,12 @@ export function PeopleDirectoryPage() {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {filtered.map(person => (
-                  <PersonRowView key={person.id} person={person} />
+                  <PersonRowView
+                    key={person.id}
+                    person={person}
+                    onEdit={handleOpenEdit}
+                    onDeactivate={handleOpenDeactivate}
+                  />
                 ))}
               </tbody>
             </table>
@@ -608,5 +760,6 @@ export function PeopleDirectoryPage() {
         </div>
       )}
     </div>
+    </>
   );
 }
