@@ -4184,6 +4184,236 @@ export type Database = {
           },
         ]
       }
+      partner_application_logs: {
+        Row: {
+          action: Database["public"]["Enums"]["partner_application_log_action"]
+          action_description: string | null
+          application_id: string
+          changes: Json | null
+          created_at: string
+          id: string
+          ip_address: unknown
+          metadata: Json | null
+          new_status:
+            | Database["public"]["Enums"]["partner_application_status"]
+            | null
+          old_status:
+            | Database["public"]["Enums"]["partner_application_status"]
+            | null
+          performed_by: string | null
+          performed_by_name: string | null
+          performed_by_role: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          action: Database["public"]["Enums"]["partner_application_log_action"]
+          action_description?: string | null
+          application_id: string
+          changes?: Json | null
+          created_at?: string
+          id?: string
+          ip_address?: unknown
+          metadata?: Json | null
+          new_status?:
+            | Database["public"]["Enums"]["partner_application_status"]
+            | null
+          old_status?:
+            | Database["public"]["Enums"]["partner_application_status"]
+            | null
+          performed_by?: string | null
+          performed_by_name?: string | null
+          performed_by_role?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          action?: Database["public"]["Enums"]["partner_application_log_action"]
+          action_description?: string | null
+          application_id?: string
+          changes?: Json | null
+          created_at?: string
+          id?: string
+          ip_address?: unknown
+          metadata?: Json | null
+          new_status?:
+            | Database["public"]["Enums"]["partner_application_status"]
+            | null
+          old_status?:
+            | Database["public"]["Enums"]["partner_application_status"]
+            | null
+          performed_by?: string | null
+          performed_by_name?: string | null
+          performed_by_role?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_application_logs_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "partner_applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_applications: {
+        Row: {
+          activated_at: string | null
+          activation_token: string | null
+          activation_token_expires_at: string | null
+          address: string | null
+          ai_fraud_score: number | null
+          ai_recommendation: string | null
+          ai_review_id: string | null
+          ai_risk_score: number | null
+          applicant_type: Database["public"]["Enums"]["partner_applicant_type"]
+          approval_notes: string | null
+          approved_at: string | null
+          approved_by: string | null
+          business_license: string | null
+          city: string | null
+          company_name: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          district: string | null
+          documents: Json | null
+          email: string
+          email_verification_token: string | null
+          email_verification_token_expires_at: string | null
+          email_verified_at: string | null
+          full_name: string
+          id: string
+          identity_id: string | null
+          info_request_fields: Json | null
+          info_request_message: string | null
+          info_requested_at: string | null
+          info_requested_by: string | null
+          ip_address: unknown
+          metadata: Json | null
+          organization_id: string | null
+          phone: string
+          phone_verification_token: string | null
+          phone_verified_at: string | null
+          registration_type: string
+          rejected_at: string | null
+          rejected_by: string | null
+          rejection_category: string | null
+          rejection_reason: string | null
+          status: Database["public"]["Enums"]["partner_application_status"]
+          submitted_at: string | null
+          tax_code: string | null
+          tenant_id: string | null
+          updated_at: string
+          updated_by: string | null
+          user_agent: string | null
+          ward: string | null
+        }
+        Insert: {
+          activated_at?: string | null
+          activation_token?: string | null
+          activation_token_expires_at?: string | null
+          address?: string | null
+          ai_fraud_score?: number | null
+          ai_recommendation?: string | null
+          ai_review_id?: string | null
+          ai_risk_score?: number | null
+          applicant_type: Database["public"]["Enums"]["partner_applicant_type"]
+          approval_notes?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          business_license?: string | null
+          city?: string | null
+          company_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          district?: string | null
+          documents?: Json | null
+          email: string
+          email_verification_token?: string | null
+          email_verification_token_expires_at?: string | null
+          email_verified_at?: string | null
+          full_name: string
+          id?: string
+          identity_id?: string | null
+          info_request_fields?: Json | null
+          info_request_message?: string | null
+          info_requested_at?: string | null
+          info_requested_by?: string | null
+          ip_address?: unknown
+          metadata?: Json | null
+          organization_id?: string | null
+          phone: string
+          phone_verification_token?: string | null
+          phone_verified_at?: string | null
+          registration_type?: string
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_category?: string | null
+          rejection_reason?: string | null
+          status?: Database["public"]["Enums"]["partner_application_status"]
+          submitted_at?: string | null
+          tax_code?: string | null
+          tenant_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          user_agent?: string | null
+          ward?: string | null
+        }
+        Update: {
+          activated_at?: string | null
+          activation_token?: string | null
+          activation_token_expires_at?: string | null
+          address?: string | null
+          ai_fraud_score?: number | null
+          ai_recommendation?: string | null
+          ai_review_id?: string | null
+          ai_risk_score?: number | null
+          applicant_type?: Database["public"]["Enums"]["partner_applicant_type"]
+          approval_notes?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          business_license?: string | null
+          city?: string | null
+          company_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          district?: string | null
+          documents?: Json | null
+          email?: string
+          email_verification_token?: string | null
+          email_verification_token_expires_at?: string | null
+          email_verified_at?: string | null
+          full_name?: string
+          id?: string
+          identity_id?: string | null
+          info_request_fields?: Json | null
+          info_request_message?: string | null
+          info_requested_at?: string | null
+          info_requested_by?: string | null
+          ip_address?: unknown
+          metadata?: Json | null
+          organization_id?: string | null
+          phone?: string
+          phone_verification_token?: string | null
+          phone_verified_at?: string | null
+          registration_type?: string
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_category?: string | null
+          rejection_reason?: string | null
+          status?: Database["public"]["Enums"]["partner_application_status"]
+          submitted_at?: string | null
+          tax_code?: string | null
+          tenant_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          user_agent?: string | null
+          ward?: string | null
+        }
+        Relationships: []
+      }
       people_directory: {
         Row: {
           created_at: string
@@ -9834,6 +10064,7 @@ export type Database = {
       }
       exec_sql: { Args: { sql_query: string }; Returns: undefined }
       expire_old_waitlist_entries: { Args: never; Returns: undefined }
+      generate_activation_token: { Args: never; Returns: string }
       generate_api_key: { Args: { is_test?: boolean }; Returns: string }
       generate_closing_entries: {
         Args: { p_period_id: string }
@@ -9843,6 +10074,7 @@ export type Database = {
           total_amount: number
         }[]
       }
+      generate_email_verification_token: { Args: never; Returns: string }
       get_account_ledger: {
         Args: {
           p_account_id: string
@@ -10119,6 +10351,10 @@ export type Database = {
         }[]
       }
       get_my_tenant_id: { Args: never; Returns: string }
+      get_partner_application_stats: {
+        Args: { p_tenant_id?: string }
+        Returns: Json
+      }
       get_pending_rule_approvals: {
         Args: { p_tenant_id: string }
         Returns: {
@@ -10503,6 +10739,10 @@ export type Database = {
           tenant_id: string
         }[]
       }
+      verify_partner_application_email: {
+        Args: { p_token: string }
+        Returns: Json
+      }
     }
     Enums: {
       AttendanceStatus: "present" | "late" | "absent" | "half_day"
@@ -10516,6 +10756,28 @@ export type Database = {
       CustomerStatus: "prospect" | "active" | "completed" | "inactive"
       ExpenseStatus: "submitted" | "approved" | "rejected"
       MessageType: "text" | "system" | "file"
+      partner_applicant_type: "individual_broker" | "agency" | "company"
+      partner_application_log_action:
+        | "created"
+        | "submitted"
+        | "email_verified"
+        | "document_uploaded"
+        | "info_requested"
+        | "resubmitted"
+        | "approved"
+        | "rejected"
+        | "provisioned"
+        | "activated"
+        | "status_changed"
+        | "comment_added"
+      partner_application_status:
+        | "draft"
+        | "pending_verification"
+        | "need_more_info"
+        | "approved"
+        | "rejected"
+        | "provisioned"
+        | "activated"
       PaymentMethod: "cash" | "bank_transfer" | "zalo_pay" | "momo"
       re_commission_status: "pending" | "approved" | "paid" | "cancelled"
       re_document_type:
@@ -10697,6 +10959,30 @@ export const Constants = {
       CustomerStatus: ["prospect", "active", "completed", "inactive"],
       ExpenseStatus: ["submitted", "approved", "rejected"],
       MessageType: ["text", "system", "file"],
+      partner_applicant_type: ["individual_broker", "agency", "company"],
+      partner_application_log_action: [
+        "created",
+        "submitted",
+        "email_verified",
+        "document_uploaded",
+        "info_requested",
+        "resubmitted",
+        "approved",
+        "rejected",
+        "provisioned",
+        "activated",
+        "status_changed",
+        "comment_added",
+      ],
+      partner_application_status: [
+        "draft",
+        "pending_verification",
+        "need_more_info",
+        "approved",
+        "rejected",
+        "provisioned",
+        "activated",
+      ],
       PaymentMethod: ["cash", "bank_transfer", "zalo_pay", "momo"],
       re_commission_status: ["pending", "approved", "paid", "cancelled"],
       re_document_type: [

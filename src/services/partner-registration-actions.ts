@@ -65,7 +65,7 @@ export async function createDraftApplication(
     
     return {
       success: true,
-      application: application as PartnerApplication,
+      application: application as any, // Types mismatch: Json vs PartnerApplicationDocument[]
     };
   } catch (error) {
     console.error('[createDraftApplication] Exception:', error);
@@ -113,7 +113,7 @@ export async function updateDraftApplication(
     
     return {
       success: true,
-      application: application as PartnerApplication,
+      application: application as any, // Types mismatch: Json vs PartnerApplicationDocument[]
     };
   } catch (error) {
     console.error('[updateDraftApplication] Exception:', error);
@@ -185,7 +185,7 @@ export async function submitApplication(
     
     return {
       success: true,
-      application: application as PartnerApplication,
+      application: application as any, // Types mismatch: Json vs PartnerApplicationDocument[]
     };
   } catch (error) {
     console.error('[submitApplication] Exception:', error);
@@ -306,7 +306,7 @@ export async function resendVerificationEmail(
     
     return {
       success: true,
-      application: application as PartnerApplication,
+      application: application as any, // Types mismatch: Json vs PartnerApplicationDocument[]
     };
   } catch (error) {
     console.error('[resendVerificationEmail] Exception:', error);
@@ -376,7 +376,8 @@ export async function uploadDocument(
       };
     }
     
-    const updatedDocuments = [...(existingApp.documents || []), document];
+    const existingDocs = (existingApp.documents as any[]) || [];
+    const updatedDocuments = [...existingDocs, document];
     
     const { error: updateError } = await supabase
       .from('partner_applications')
@@ -446,7 +447,7 @@ export async function getApplicationById(
     
     return {
       success: true,
-      application: application as PartnerApplication,
+      application: application as any, // Types mismatch: Json vs PartnerApplicationDocument[]
     };
   } catch (error) {
     console.error('[getApplicationById] Exception:', error);
@@ -491,7 +492,7 @@ export async function getApplicationByEmail(
     
     return {
       success: true,
-      application: applications[0] as PartnerApplication,
+      application: applications[0] as any,
     };
   } catch (error) {
     console.error('[getApplicationByEmail] Exception:', error);
