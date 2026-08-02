@@ -33,6 +33,13 @@ export default function PartnerApplicationDetailPage() {
   const [isRejecting, setIsRejecting] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
+  const [rejectCategory, setRejectCategory] = useState<string>('other');
+  
+  const [showRequestInfoModal, setShowRequestInfoModal] = useState(false);
+  const [infoRequestMessage, setInfoRequestMessage] = useState('');
+  const [isRequestingInfo, setIsRequestingInfo] = useState(false);
+  
+  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   
   useEffect(() => {
     loadApplication();
@@ -61,10 +68,42 @@ export default function PartnerApplicationDetailPage() {
   const handleApprove = async () => {
     if (!application) return;
     
+    const confirmed = window.confirm(
+      `Are you sure you want to approve this application?\n\nApplicant: ${application.full_name}\nEmail: ${application.email}`
+    );
+    
+    if (!confirmed) return;
+    
     setIsApproving(true);
+    setActionSuccess(null);
+    
     try {
-      // TODO: Implement approve action
-      alert('Approve action - To be implemented in Day 3');
+      const response = await fetch(`/api/admin/partner-applications/${application.id}/approve`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          notes: 'Approved by admin',
+        }),
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to approve application');
+      }
+      
+      if (data.success) {
+        setActionSuccess('Application approved successfully!');
+        // Reload application to show updated status
+        await loadApplication();
+      } else {
+        throw new Error(data.error || 'Approval failed');
+      }
+    } catch (err) {
+      console.error('[handleApprove] Error:', err);
+      alert(err instanceof Error ? err.message : 'Failed to approve application');
     } finally {
       setIsApproving(false);
     }
@@ -74,12 +113,82 @@ export default function PartnerApplicationDetailPage() {
     if (!application || !rejectReason.trim()) return;
     
     setIsRejecting(true);
+    setActionSuccess(null);
+    
     try {
-      // TODO: Implement reject action
-      alert(`Reject action - Reason: ${rejectReason}`);
-      setShowRejectModal(false);
+      const response = await fetch(`/api/admin/partner-applications/${application.id}/reject`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          reason: rejectReason.trim(),
+          category: rejectCategory,
+        }),
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to reject application');
+      }
+      
+      if (data.success) {
+        setActionSuccess('Application rejected successfully.');
+        setShowRejectModal(false);
+        setRejectReason('');
+        setRejectCategory('other');
+        // Reload application to show updated status
+        await loadApplication();
+      } else {
+        throw new Error(data.error || 'Rejection failed');
+      }
+    } catch (err) {
+      console.error('[handleReject] Error:', err);
+      alert(err instanceof Error ? err.message : 'Failed to reject application');
     } finally {
       setIsRejecting(false);
+    }
+  };
+  
+  const handleRequestInfo = async () => {
+    if (!application || !infoRequestMessage.trim()) return;
+    
+    setIsRequestingInfo(true);
+    setActionSuccess(null);
+    
+    try {
+      const response = await fetch(`/api/admin/partner-applications/${application.id}/request-info`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: infoRequestMessage.trim(),
+          fields: [], // Could be extended to specify which fields need updating
+        }),
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to request additional info');
+      }
+      
+      if (data.success) {
+        setActionSuccess('Info request sent successfully. Applicant will be notified.');
+        setShowRequestInfoModal(false);
+        setInfoRequestMessage('');
+        // Reload application to show updated status
+        await loadApplication();
+      } else {
+        throw new Error(data.error || 'Info request failed');
+      }
+    } catch (err) {
+      console.error('[handleRequestInfo] Error:', err);
+      alert(err instanceof Error ? err.message : 'Failed to request info');
+    } finally {
+      setIsRequestingInfo(false);
     }
   };
   
@@ -304,6 +413,22 @@ export default function PartnerApplicationDetailPage() {
           
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* Success Message */}
+            {actionSuccess && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="flex">
+                  <svg className="h-5 w-5 text-green-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <p className="text-sm text-green-800">{actionSuccess}</p>
+                </div>
+              </div>
+            )}
+            
             {/* Actions */}
             {application.status === 'pending_verification' && (
               <div className="bg-white rounded-lg shadow-sm p-6">
@@ -332,6 +457,7 @@ export default function PartnerApplicationDetailPage() {
                   </button>
                   
                   <button
+                    onClick={() => setShowRequestInfoModal(true)}
                     className="
                       w-full px-4 py-2 border border-yellow-600 text-yellow-700 rounded-lg
                       hover:bg-yellow-50 font-medium
@@ -448,23 +574,54 @@ export default function PartnerApplicationDetailPage() {
             <p className="text-sm text-gray-600 mb-4">
               Please provide a reason for rejecting this application.
             </p>
-            <textarea
-              value={rejectReason}
-              onChange={(e) => setRejectReason(e.target.value)}
-              rows={4}
-              className="
-                w-full px-3 py-2 border border-gray-300 rounded-lg
-                focus:outline-none focus:ring-2 focus:ring-rose-500
-              "
-              placeholder="Enter rejection reason..."
-            />
-            <div className="mt-6 flex gap-3 justify-end">
+            
+            {/* Category Dropdown */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Rejection Category
+              </label>
+              <select
+                value={rejectCategory}
+                onChange={(e) => setRejectCategory(e.target.value)}
+                className="
+                  w-full px-3 py-2 border border-gray-300 rounded-lg
+                  focus:outline-none focus:ring-2 focus:ring-rose-500
+                "
+              >
+                <option value="invalid_docs">Invalid Documents</option>
+                <option value="duplicate">Duplicate Application</option>
+                <option value="policy_violation">Policy Violation</option>
+                <option value="fraud">Suspected Fraud</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            
+            {/* Reason Text Area */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Rejection Reason *
+              </label>
+              <textarea
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                rows={4}
+                className="
+                  w-full px-3 py-2 border border-gray-300 rounded-lg
+                  focus:outline-none focus:ring-2 focus:ring-rose-500
+                "
+                placeholder="Enter detailed rejection reason..."
+              />
+            </div>
+            
+            <div className="flex gap-3 justify-end">
               <button
                 onClick={() => {
                   setShowRejectModal(false);
                   setRejectReason('');
+                  setRejectCategory('other');
                 }}
-                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                disabled={isRejecting}
+                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -477,6 +634,58 @@ export default function PartnerApplicationDetailPage() {
                 "
               >
                 {isRejecting ? 'Rejecting...' : 'Reject Application'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Request Info Modal */}
+      {showRequestInfoModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Request Additional Information</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Specify what information or documents you need from the applicant.
+            </p>
+            
+            {/* Message Text Area */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Message to Applicant *
+              </label>
+              <textarea
+                value={infoRequestMessage}
+                onChange={(e) => setInfoRequestMessage(e.target.value)}
+                rows={5}
+                className="
+                  w-full px-3 py-2 border border-gray-300 rounded-lg
+                  focus:outline-none focus:ring-2 focus:ring-rose-500
+                "
+                placeholder="Example: We need a clearer photo of your business license. The current image is too blurry to verify the details."
+              />
+            </div>
+            
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setShowRequestInfoModal(false);
+                  setInfoRequestMessage('');
+                }}
+                disabled={isRequestingInfo}
+                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRequestInfo}
+                disabled={!infoRequestMessage.trim() || isRequestingInfo}
+                className="
+                  px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700
+                  disabled:opacity-50 disabled:cursor-not-allowed
+                "
+              >
+                {isRequestingInfo ? 'Sending...' : 'Send Request'}
               </button>
             </div>
           </div>
