@@ -104,6 +104,28 @@ export default function UserManualsHub() {
           footerBorder: 'border-pink-100/50 dark:border-[#3E3A35]/30',
           footerLink: 'text-primary dark:text-[#A67D44]',
         };
+      case 'real_estate':
+        return {
+          wrapperBg: 'bg-slate-50 dark:bg-[#0d0d14]',
+          glowTop: 'bg-violet-500/10 dark:bg-violet-900/10',
+          glowBottom: 'bg-indigo-500/5 dark:bg-indigo-900/5',
+          tagBg: 'bg-violet-50/80 border-violet-100 dark:bg-violet-950/20 dark:border-violet-800/30',
+          tagText: 'text-violet-700 dark:text-violet-400',
+          titleFont: 'font-sans font-black text-slate-900 dark:text-white',
+          searchGlow: 'bg-violet-500/5 dark:bg-violet-900/5',
+          searchBorder: 'border-slate-200/70 focus-within:border-violet-500/50 dark:border-slate-700 dark:focus-within:border-violet-700',
+          cardBgGlow: 'bg-violet-100/20 dark:bg-violet-950/10',
+          cardBorder: 'border-slate-200/60 dark:border-slate-800',
+          cardHoverBorder: 'hover:border-violet-500/40 dark:hover:border-violet-700',
+          cardIconBg: 'bg-violet-50 dark:bg-violet-950/40 border border-violet-100/50 dark:border-violet-900/30 text-violet-700',
+          cardSubtitle: 'text-violet-700 dark:text-violet-400',
+          cardTitle: 'text-slate-800 group-hover:text-violet-700 dark:text-white dark:group-hover:text-violet-400',
+          cardDivider: 'border-slate-100 dark:border-slate-800',
+          readLink: 'text-violet-700 dark:text-violet-400',
+          emptyStateBorder: 'border-slate-200 dark:border-slate-800',
+          footerBorder: 'border-slate-200/50 dark:border-slate-800/30',
+          footerLink: 'text-violet-700 hover:text-violet-600 dark:text-violet-400 dark:hover:text-violet-300',
+        };
       default: // industrial_cleaning or others
         return {
           wrapperBg: 'bg-slate-50 dark:bg-[#11100F]',

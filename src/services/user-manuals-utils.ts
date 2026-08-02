@@ -127,9 +127,68 @@ const CLEANING_GUIDES: GuideListItem[] = [
 ];
 
 /**
+ * Real Estate Module Guides
+ */
+const REAL_ESTATE_GUIDES: GuideListItem[] = [
+  {
+    slug: 're-sop',
+    title: 'Quy trình vận hành BĐS',
+    subtitle: 'SOP · Chuẩn vận hành',
+    icon: '🏢',
+    description: 'Quy trình tiếp nhận lead, phân công Sale, theo dõi SLA và chốt hợp đồng đặt cọc.',
+  },
+  {
+    slug: 're-sale',
+    title: 'Sổ tay Sale Agent',
+    subtitle: 'Sale · Quy trình bán hàng',
+    icon: '🤝',
+    description: 'Hướng dẫn tiếp nhận lead, theo dõi tiến trình tư vấn, đặt lịch xem căn hộ và chốt cọc.',
+  },
+  {
+    slug: 're-broker',
+    title: 'Sổ tay Môi giới',
+    subtitle: 'Broker · Hợp tác phân phối',
+    icon: '🏘️',
+    description: 'Đăng ký môi giới, nhận lead từ hệ thống, tra cứu bảng hàng và theo dõi hoa hồng.',
+  },
+  {
+    slug: 're-contracts',
+    title: 'Quy trình Hợp đồng & Đặt cọc',
+    subtitle: 'Legal · Pháp lý giao dịch',
+    icon: '📝',
+    description: 'Lập hợp đồng đặt cọc, kiểm tra pháp lý căn hộ, quản lý tiến độ thanh toán và bàn giao.',
+  },
+  {
+    slug: 're-hr',
+    title: 'Sổ tay Nhân sự BĐS',
+    subtitle: 'HR · Quản lý nhân sự',
+    icon: '👥',
+    description: 'Tuyển dụng Sale Agent và Môi giới, phân quyền chi nhánh, chấm công và tính hoa hồng.',
+  },
+  {
+    slug: 're-finance',
+    title: 'Sổ tay Kế toán BĐS',
+    subtitle: 'Accountant · Tài chính dự án',
+    icon: '💰',
+    description: 'Quản lý dòng tiền đặt cọc, đối soát công nợ khách đầu tư, báo cáo doanh thu theo dự án.',
+  },
+  {
+    slug: 're-admin',
+    title: 'Sổ tay Quản trị BĐS',
+    subtitle: 'Admin · Cấu hình hệ thống',
+    icon: '⚙️',
+    description: 'Cấu hình dự án, thiết lập ma trận phân quyền, quản lý SLA tự động và tích hợp dữ liệu.',
+  },
+];
+
+/**
  * Get guides for a specific module
  */
 export function getModuleGuides(moduleKey: TenantModuleKey | null | undefined): GuideListItem[] {
+  if (moduleKey === 'real_estate') {
+    return REAL_ESTATE_GUIDES;
+  }
+
   if (moduleKey === 'industrial_cleaning') {
     return CLEANING_GUIDES;
   }
