@@ -3257,6 +3257,58 @@ export type Database = {
           },
         ]
       }
+      lead_activity_log: {
+        Row: {
+          action: string | null
+          changed_by: string | null
+          created_at: string | null
+          id: string
+          lead_id: string | null
+          new_value: Json | null
+          old_value: Json | null
+        }
+        Insert: {
+          action?: string | null
+          changed_by?: string | null
+          created_at?: string | null
+          id: string
+          lead_id?: string | null
+          new_value?: Json | null
+          old_value?: Json | null
+        }
+        Update: {
+          action?: string | null
+          changed_by?: string | null
+          created_at?: string | null
+          id?: string
+          lead_id?: string | null
+          new_value?: Json | null
+          old_value?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_activity_log_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "mv_ktv_performance_summary"
+            referencedColumns: ["ktv_id"]
+          },
+          {
+            foreignKeyName: "lead_activity_log_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_activity_log_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "re_partner_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leave_requests: {
         Row: {
           approval_reason: string | null
