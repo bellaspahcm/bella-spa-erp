@@ -12,7 +12,6 @@
 import { KtvPerformanceTable } from '@/components/features/dashboard/KtvPerformanceTable';
 import { RevenueChart } from '@/components/features/dashboard/RevenueChart';
 import { StatsGrid } from '@/components/features/dashboard/StatsGrid';
-import { PartnerPortalWidget } from '@/components/features/dashboard/PartnerPortalWidget';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
@@ -829,11 +828,6 @@ export default function DashboardPage() {
             ))}
           </div>
         </motion.div>
-
-        {/* Partner Portal Widget - Admin Only */}
-        {userRole === 'admin' && (
-          <PartnerPortalWidget delay={0.75} />
-        )}
       </div>
 
       {/* Inventory Quick Status */}
