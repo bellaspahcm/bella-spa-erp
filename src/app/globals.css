@@ -394,16 +394,16 @@ html[data-tenant-module="pending"] .ktv-profile-btn-primary:hover {
 }
 
 .luxury-card-pink {
-  background: linear-gradient(135deg, #074E44 0%, #05362F 50%, #03211D 100%);
+  background: linear-gradient(135deg, #9D174D 0%, #831843 50%, #701a3d 100%);
   color: white;
-  box-shadow: 0 10px 20px -5px rgba(7, 78, 68, 0.2);
+  box-shadow: 0 10px 20px -5px rgba(131, 24, 67, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.1);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .luxury-card-pink:hover {
   transform: translateY(-6px);
-  box-shadow: 0 25px 50px -12px rgba(7, 78, 68, 0.4);
+  box-shadow: 0 25px 50px -12px rgba(131, 24, 67, 0.4);
 }
 
 .luxury-card-white {
@@ -415,8 +415,8 @@ html[data-tenant-module="pending"] .ktv-profile-btn-primary:hover {
 
 .luxury-card-white:hover {
   transform: translateY(-6px);
-  box-shadow: 0 20px 30px -10px rgba(7, 78, 68, 0.08);
-  border-color: rgba(7, 78, 68, 0.1);
+  box-shadow: 0 20px 30px -10px rgba(157, 23, 77, 0.08);
+  border-color: rgba(157, 23, 77, 0.1);
 }
 
 .text-gradient-pink {
