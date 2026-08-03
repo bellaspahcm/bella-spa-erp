@@ -19,7 +19,7 @@ export default function RealEstateLayout({
   return (
     <div data-re-layout="true" className="re-layout-root flex-1 w-full min-h-full bg-slate-50 dark:bg-slate-950">
       {/* Main Content Area */}
-      <main className="w-full px-6 py-6 animate-fade-in">
+      <main className="w-full">
         {children}
       </main>
     </div>
