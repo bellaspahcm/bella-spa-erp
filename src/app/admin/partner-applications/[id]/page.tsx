@@ -41,10 +41,6 @@ export default function PartnerApplicationDetailPage() {
   
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   
-  useEffect(() => {
-    loadApplication();
-  }, [applicationId]);
-  
   const loadApplication = async () => {
     setIsLoading(true);
     setError(null);
@@ -64,6 +60,10 @@ export default function PartnerApplicationDetailPage() {
       setIsLoading(false);
     }
   };
+  
+  useEffect(() => {
+    void loadApplication();
+  }, [applicationId]);
   
   const handleApprove = async () => {
     if (!application) return;

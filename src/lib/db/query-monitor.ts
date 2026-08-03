@@ -157,7 +157,7 @@ export async function monitoredRPC<T>(
  *     .from('real_estate_products')
  *     .select('*');
  */
-export function withQueryMonitoring<T extends any>(client: T): T {
+export function withQueryMonitoring<T extends Record<string, any>>(client: T): T {
   // This is a simplified version
   // Full implementation would wrap all Supabase query methods
   return new Proxy(client, {
@@ -184,5 +184,5 @@ export function withQueryMonitoring<T extends any>(client: T): T {
       
       return value;
     },
-  });
+  }) as T;
 }
