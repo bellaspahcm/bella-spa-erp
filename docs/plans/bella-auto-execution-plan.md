@@ -86,10 +86,10 @@
 ---
 
 ### Phase 7 — Định Giá & Thu Mua Xe Cũ (Trade-In Center) (Tuần 21-23)
-*   [ ] **7.1.** Xây dựng form đánh giá xe cũ đầu vào (`auto_trade_in_appraisals`) đi kèm checklist tình trạng kỹ thuật chi tiết (động cơ, ngoại thất, nội thất).
-*   [ ] **7.2.** Phát triển module chụp ảnh xe cũ đa góc độ, lưu trữ trực tiếp vào hồ sơ thẩm định.
-*   [ ] **7.3.** Xây dựng Valuation Engine tích hợp phân tích giá thị trường để đưa ra đề xuất khoảng giá thu mua hợp lý.
-*   [ ] **7.4.** Tích hợp luồng duyệt giá thu mua xe cũ từ giám đốc chi nhánh và kết nối trực tiếp cơ hội thu mua này thành một phần thanh toán cho xe mới của khách hàng.
+*   [x] **7.1.** Xây dựng form đánh giá xe cũ đầu vào (`auto_trade_in_appraisals`) đi kèm checklist tình trạng kỹ thuật chi tiết (động cơ, ngoại thất, nội thất). *(TradeInAppraisalService — Full appraisal lifecycle)*
+*   [x] **7.2.** Phát triển module chụp ảnh xe cũ đa góc độ, lưu trữ trực tiếp vào hồ sơ thẩm định. *(TradeInPhotoService — 18 photo categories with damage markers)*
+*   [x] **7.3.** Xây dựng Valuation Engine tích hợp phân tích giá thị trường để đưa ra đề xuất khoảng giá thu mua hợp lý. *(MarketValuationService + AI-powered valuation engine)*
+*   [x] **7.4.** Tích hợp luồng duyệt giá thu mua xe cũ từ giám đốc chi nhánh và kết nối trực tiếp cơ hội thu mua này thành một phần thanh toán cho xe mới của khách hàng. *(Approval workflow + linkToSale integration)*
 
 ---
 

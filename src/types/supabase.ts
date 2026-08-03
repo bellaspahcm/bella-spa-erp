@@ -1821,6 +1821,93 @@ export type Database = {
           },
         ]
       }
+      auto_market_valuations: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          data_source: string | null
+          depreciation_rate: number | null
+          effective_date: string
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          make: string
+          mileage_bracket_end: number | null
+          mileage_bracket_start: number | null
+          model: string
+          notes: string | null
+          popularity_score: number | null
+          price_excellent: number | null
+          price_fair: number | null
+          price_good: number | null
+          price_poor: number | null
+          region: string | null
+          regional_adjustment_percentage: number | null
+          source_url: string | null
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
+          variant: string | null
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          data_source?: string | null
+          depreciation_rate?: number | null
+          effective_date?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          make: string
+          mileage_bracket_end?: number | null
+          mileage_bracket_start?: number | null
+          model: string
+          notes?: string | null
+          popularity_score?: number | null
+          price_excellent?: number | null
+          price_fair?: number | null
+          price_good?: number | null
+          price_poor?: number | null
+          region?: string | null
+          regional_adjustment_percentage?: number | null
+          source_url?: string | null
+          tenant_id: string
+          updated_at?: string
+          updated_by?: string | null
+          variant?: string | null
+          year: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          data_source?: string | null
+          depreciation_rate?: number | null
+          effective_date?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          make?: string
+          mileage_bracket_end?: number | null
+          mileage_bracket_start?: number | null
+          model?: string
+          notes?: string | null
+          popularity_score?: number | null
+          price_excellent?: number | null
+          price_fair?: number | null
+          price_good?: number | null
+          price_poor?: number | null
+          region?: string | null
+          regional_adjustment_percentage?: number | null
+          source_url?: string | null
+          tenant_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          variant?: string | null
+          year?: number
+        }
+        Relationships: []
+      }
       auto_models: {
         Row: {
           brand_id: string
@@ -3128,6 +3215,242 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      auto_trade_in_appraisals: {
+        Row: {
+          appraisal_date: string
+          appraisal_number: string
+          appraised_by: string | null
+          appraiser_name: string | null
+          approved_at: string | null
+          approved_by: string | null
+          approver_name: string | null
+          color: string | null
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          customer_expectations: string | null
+          customer_id: string | null
+          customer_response_at: string | null
+          documents_condition: Json | null
+          engine_condition: Json | null
+          estimated_market_value: number | null
+          expires_at: string | null
+          exterior_condition: Json | null
+          final_trade_in_value: number | null
+          first_registration_date: string | null
+          id: string
+          interior_condition: Json | null
+          internal_notes: string | null
+          license_plate: string | null
+          linked_sale_id: string | null
+          make: string
+          market_average: number | null
+          market_high: number | null
+          market_low: number | null
+          mileage: number
+          model: string
+          number_of_owners: number | null
+          offer_sent_at: string | null
+          offered_trade_in_value: number | null
+          overall_condition: string | null
+          overall_notes: string | null
+          registration_date: string | null
+          rejection_reason: string | null
+          status: string
+          submitted_at: string | null
+          tenant_id: string
+          tires_brakes_condition: Json | null
+          transmission_condition: Json | null
+          updated_at: string
+          updated_by: string | null
+          used_as_down_payment: boolean | null
+          variant: string | null
+          vehicle_id: string | null
+          vin: string | null
+          year: number
+        }
+        Insert: {
+          appraisal_date?: string
+          appraisal_number: string
+          appraised_by?: string | null
+          appraiser_name?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          approver_name?: string | null
+          color?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_expectations?: string | null
+          customer_id?: string | null
+          customer_response_at?: string | null
+          documents_condition?: Json | null
+          engine_condition?: Json | null
+          estimated_market_value?: number | null
+          expires_at?: string | null
+          exterior_condition?: Json | null
+          final_trade_in_value?: number | null
+          first_registration_date?: string | null
+          id?: string
+          interior_condition?: Json | null
+          internal_notes?: string | null
+          license_plate?: string | null
+          linked_sale_id?: string | null
+          make: string
+          market_average?: number | null
+          market_high?: number | null
+          market_low?: number | null
+          mileage: number
+          model: string
+          number_of_owners?: number | null
+          offer_sent_at?: string | null
+          offered_trade_in_value?: number | null
+          overall_condition?: string | null
+          overall_notes?: string | null
+          registration_date?: string | null
+          rejection_reason?: string | null
+          status?: string
+          submitted_at?: string | null
+          tenant_id: string
+          tires_brakes_condition?: Json | null
+          transmission_condition?: Json | null
+          updated_at?: string
+          updated_by?: string | null
+          used_as_down_payment?: boolean | null
+          variant?: string | null
+          vehicle_id?: string | null
+          vin?: string | null
+          year: number
+        }
+        Update: {
+          appraisal_date?: string
+          appraisal_number?: string
+          appraised_by?: string | null
+          appraiser_name?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          approver_name?: string | null
+          color?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_expectations?: string | null
+          customer_id?: string | null
+          customer_response_at?: string | null
+          documents_condition?: Json | null
+          engine_condition?: Json | null
+          estimated_market_value?: number | null
+          expires_at?: string | null
+          exterior_condition?: Json | null
+          final_trade_in_value?: number | null
+          first_registration_date?: string | null
+          id?: string
+          interior_condition?: Json | null
+          internal_notes?: string | null
+          license_plate?: string | null
+          linked_sale_id?: string | null
+          make?: string
+          market_average?: number | null
+          market_high?: number | null
+          market_low?: number | null
+          mileage?: number
+          model?: string
+          number_of_owners?: number | null
+          offer_sent_at?: string | null
+          offered_trade_in_value?: number | null
+          overall_condition?: string | null
+          overall_notes?: string | null
+          registration_date?: string | null
+          rejection_reason?: string | null
+          status?: string
+          submitted_at?: string | null
+          tenant_id?: string
+          tires_brakes_condition?: Json | null
+          transmission_condition?: Json | null
+          updated_at?: string
+          updated_by?: string | null
+          used_as_down_payment?: boolean | null
+          variant?: string | null
+          vehicle_id?: string | null
+          vin?: string | null
+          year?: number
+        }
+        Relationships: []
+      }
+      auto_trade_in_photos: {
+        Row: {
+          appraisal_id: string
+          created_at: string
+          damage_markers: Json | null
+          description: string | null
+          display_order: number | null
+          file_name: string | null
+          file_size_bytes: number | null
+          height_px: number | null
+          id: string
+          is_primary: boolean | null
+          mime_type: string | null
+          notes: string | null
+          photo_category: string
+          photo_thumbnail_url: string | null
+          photo_url: string
+          tenant_id: string
+          uploaded_at: string
+          uploaded_by: string | null
+          width_px: number | null
+        }
+        Insert: {
+          appraisal_id: string
+          created_at?: string
+          damage_markers?: Json | null
+          description?: string | null
+          display_order?: number | null
+          file_name?: string | null
+          file_size_bytes?: number | null
+          height_px?: number | null
+          id?: string
+          is_primary?: boolean | null
+          mime_type?: string | null
+          notes?: string | null
+          photo_category: string
+          photo_thumbnail_url?: string | null
+          photo_url: string
+          tenant_id: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+          width_px?: number | null
+        }
+        Update: {
+          appraisal_id?: string
+          created_at?: string
+          damage_markers?: Json | null
+          description?: string | null
+          display_order?: number | null
+          file_name?: string | null
+          file_size_bytes?: number | null
+          height_px?: number | null
+          id?: string
+          is_primary?: boolean | null
+          mime_type?: string | null
+          notes?: string | null
+          photo_category?: string
+          photo_thumbnail_url?: string | null
+          photo_url?: string
+          tenant_id?: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+          width_px?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auto_trade_in_photos_appraisal_id_fkey"
+            columns: ["appraisal_id"]
+            isOneToOne: false
+            referencedRelation: "auto_trade_in_appraisals"
             referencedColumns: ["id"]
           },
         ]
@@ -13214,6 +13537,10 @@ export type Database = {
         }[]
       }
       generate_repair_order_number: {
+        Args: { p_tenant_id: string }
+        Returns: string
+      }
+      generate_trade_in_appraisal_number: {
         Args: { p_tenant_id: string }
         Returns: string
       }
