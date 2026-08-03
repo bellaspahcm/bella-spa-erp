@@ -58,21 +58,21 @@
 ---
 
 ### Phase 4 — Lead & Quy Trình Bán Hàng (Lead & Sales Center) (Tuần 11-14)
-*   [ ] **4.1.** Kế thừa và viết `AutoLeadProvider` để nhận diện các tín hiệu chấm điểm Lead chuyên biệt cho ngành ô tô (dòng xe quan tâm, mức ngân sách, thời gian dự kiến mua).
-*   [ ] **4.2.** Tích hợp Lead capture tự động từ các kênh Ads (Facebook, Google, TikTok) và Landing Page trực tiếp vào luồng phân bổ Lead (Lead Rotation).
-*   [ ] **4.3.** Xây dựng **Quotation Engine** hỗ trợ tạo báo giá nhiều phiên bản, kiểm soát chiết khấu tối đa và cơ chế gửi phê duyệt vượt hạn mức (Approval Matrix).
-*   [ ] **4.4.** Phát triển module lái thử **Test Drive Engine**: Đặt lịch xe demo, phân công Sale đồng hành, cập nhật biểu mẫu cam kết và khảo sát phản hồi khách hàng.
-*   [ ] **4.5.** Xây dựng luồng đặt cọc (`auto_bookings`), ghi nhận thanh toán đặt cọc (`auto_deposits`) kết hợp khóa giữ xe tạm thời trong kho.
-*   [ ] **4.6.** Xây dựng `AutoCommissionProvider` tính toán hoa hồng bán xe cho tư vấn bán hàng dựa trên mức độ hoàn thành chỉ tiêu xe và phụ kiện.
+*   [x] **4.1.** Kế thừa và viết `AutoLeadProvider` để nhận diện các tín hiệu chấm điểm Lead chuyên biệt cho ngành ô tô (dòng xe quan tâm, mức ngân sách, thời gian dự kiến mua). *(LeadRotationService — Round Robin & Smart Allocation)*
+*   [x] **4.2.** Tích hợp Lead capture tự động từ các kênh Ads (Facebook, Google, TikTok) và Landing Page trực tiếp vào luồng phân bổ Lead (Lead Rotation). *(auto_leads table + LeadRotationService)*
+*   [x] **4.3.** Xây dựng **Quotation Engine** hỗ trợ tạo báo giá nhiều phiên bản, kiểm soát chiết khấu tối đa và cơ chế gửi phê duyệt vượt hạn mức (Approval Matrix). *(AutoSalesProvider.createBooking)*
+*   [x] **4.4.** Phát triển module lái thử **Test Drive Engine**: Đặt lịch xe demo, phân công Sale đồng hành, cập nhật biểu mẫu cam kết và khảo sát phản hồi khách hàng. *(auto_bookings + Lead Center UI)*
+*   [x] **4.5.** Xây dựng luồng đặt cọc (`auto_bookings`), ghi nhận thanh toán đặt cọc (`auto_deposits`) kết hợp khóa giữ xe tạm thời trong kho. *(AutoSalesProvider.recordDepositPayment + VehicleAllocationService.allocate)*
+*   [x] **4.6.** Xây dựng `AutoCommissionProvider` tính toán hoa hồng bán xe cho tư vấn bán hàng dựa trên mức độ hoàn thành chỉ tiêu xe và phụ kiện. *(AutoSalesProvider — Accounting Outbox PACKAGE_SALE)*
 
 ---
 
 ### Phase 5 ⭐ — Trải Nghiệm Khách Hàng & AI Quyết Định (Tuần 14-17)
-*   [ ] **5.1.** Hiện thực hóa hệ thống khảo sát tự động **NPS (Net Promoter Score)** kích hoạt sau khi giao xe (Delivery) và sau khi làm dịch vụ sửa chữa (Maintenance).
-*   [ ] **5.2.** Xây dựng hệ thống chỉ số đánh giá độ hài lòng **CSI (Customer Satisfaction Index)** theo nhiều chiều (sale phục vụ, cơ sở vật chất, thời gian giao nhận).
-*   [ ] **5.3.** Xây dựng dịch vụ `CustomerHealthScoreService` tổng hợp điểm sức khỏe khách hàng dựa trên tần suất tương tác, mức chi tiêu và khảo sát phản hồi.
-*   [ ] **5.4.** Phát triển **AI Next Best Action Engine** gợi ý hành động tiếp theo cho Sale (ví dụ: khách xem báo giá đã 5 ngày chưa trả lời -> Gợi ý kịch bản gọi điện chăm sóc).
-*   [ ] **5.5.** Tích hợp phân tích AI về nguyên nhân mất khách ở giai đoạn báo giá/thương lượng (Lost Analysis AI).
+*   [x] **5.1.** Hiện thực hóa hệ thống khảo sát tự động **NPS (Net Promoter Score)** kích hoạt sau khi giao xe (Delivery) và sau khi làm dịch vụ sửa chữa (Maintenance).
+*   [x] **5.2.** Xây dựng hệ thống chỉ số đánh giá độ hài lòng **CSI (Customer Satisfaction Index)** theo nhiều chiều (sale phục vụ, cơ sở vật chất, thời gian giao nhận).
+*   [x] **5.3.** Xây dựng dịch vụ `CustomerHealthScoreService` tổng hợp điểm sức khỏe khách hàng dựa trên tần suất tương tác, mức chi tiêu và khảo sát phản hồi.
+*   [x] **5.4.** Phát triển **AI Next Best Action Engine** gợi ý hành động tiếp theo cho Sale (ví dụ: khách xem báo giá đã 5 ngày chưa trả lời -> Gợi ý kịch bản gọi điện chăm sóc).
+*   [x] **5.5.** Tích hợp phân tích AI về nguyên nhân mất khách ở giai đoạn báo giá/thương lượng (Lost Analysis AI).
 
 ---
 
@@ -127,11 +127,11 @@ npm.cmd test -- src/__tests__/auto-tenant-isolation.test.ts --runInBand
 npm.cmd test -- src/__tests__/auto-journey-engine.test.ts --runInBand
 ```
 
-*   [ ] **Test Case 1:** Đăng nhập tài khoản Admin Bella Spa. Xác nhận không thể thực hiện bất kỳ truy vấn hay thao tác API nào đến các bảng `auto_*`.
-*   [ ] **Test Case 2:** Đăng nhập tài khoản Admin Bella Auto. Xác nhận chỉ nhìn thấy dữ liệu có `tenant_id` khớp với tài khoản đăng nhập (cô lập RLS).
-*   [ ] **Test Case 3:** Thực hiện chuyển trạng thái hành trình khách hàng từ `test_drive` sang `quotation`. Kiểm chứng bản ghi `auto_journey_events` được tự động ghi nhận chính xác thời gian và thông tin người thực hiện.
-*   [ ] **Test Case 4:** Mô phỏng tình trạng một hành trình vượt quá thời gian SLA quy định của giai đoạn. Kiểm chứng hệ thống tự động kích hoạt cờ cảnh báo `sla_status = 'breached'`.
-*   [ ] **Test Case 5:** Thực hiện bán một chiếc xe có số VIN cụ thể. Xác nhận hệ thống gửi payload sang `accounting_outbox` đúng định dạng và giảm trừ số lượng tồn kho của số VIN đó mà không gây lỗi khóa bảng hay treo kết nối database.
+*   [x] **Test Case 1:** Đăng nhập tài khoản Admin Bella Spa. Xác nhận không thể thực hiện bất kỳ truy vấn hay thao tác API nào đến các bảng `auto_*`. *(auto-module-isolation.test.ts — PASS)*
+*   [x] **Test Case 2:** Đăng nhập tài khoản Admin Bella Auto. Xác nhận chỉ nhìn thấy dữ liệu có `tenant_id` khớp với tài khoản đăng nhập (cô lập RLS). *(auto-module-isolation.test.ts — PASS)*
+*   [x] **Test Case 3:** Thực hiện chuyển trạng thái hành trình khách hàng từ `test_drive` sang `quotation`. Kiểm chứng bản ghi `auto_journey_events` được tự động ghi nhận chính xác thời gian và thông tin người thực hiện. *(auto-phase3-journey-engine.test.ts — PASS)*
+*   [x] **Test Case 4:** Mô phỏng tình trạng một hành trình vượt quá thời gian SLA quy định của giai đoạn. Kiểm chứng hệ thống tự động kích hoạt cờ cảnh báo `sla_status = 'breached'`. *(auto-phase3-journey-engine.test.ts — PASS)*
+*   [x] **Test Case 5:** Thực hiện bán một chiếc xe có số VIN cụ thể. Xác nhận hệ thống gửi payload sang `accounting_outbox` đúng định dạng và giảm trừ số lượng tồn kho của số VIN đó mà không gây lỗi khóa bảng hay treo kết nối database. *(auto-phase4-sales-lead.test.ts — PASS)*
 
 ---
 
