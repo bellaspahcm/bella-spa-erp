@@ -93,9 +93,8 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Set max body size for file uploads (10MB)
-export const config = {
-  api: {
-    bodyParser: false, // Disable default body parser for file uploads
-  },
-};
+// Next.js App Router config
+// File uploads are handled by FormData API automatically
+// Max body size configured in next.config.js
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
