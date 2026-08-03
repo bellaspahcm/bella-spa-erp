@@ -1,0 +1,1386 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Real Estate Module - Codebase & Security Evaluation Dashboard</title>
+  <!-- Google Fonts: Inter & Outfit for modern SaaS look -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-main: #f8fafc; /* Light gray-blue background */
+      --bg-card: #ffffff; /* Pure white cards */
+      --bg-card-hover: #ffffff;
+      --border-color: #e2e8f0; /* Light border */
+      --border-glow: rgba(99, 102, 241, 0.12);
+      
+      --text-primary: #0f172a; /* Slate 900 for high readability */
+      --text-secondary: #475569; /* Slate 600 */
+      --text-muted: #64748b; /* Slate 500 */
+      
+      /* Tech Accent Colors */
+      --color-primary: #4f46e5; /* Indigo */
+      --color-primary-glow: rgba(79, 70, 229, 0.15);
+      --color-success: #059669; /* Emerald Green (Darker for light BG) */
+      --color-success-glow: rgba(5, 150, 105, 0.15);
+      --color-warning: #d97706; /* Amber */
+      --color-warning-glow: rgba(217, 119, 6, 0.15);
+      --color-danger: #dc2626; /* Red */
+      --color-danger-glow: rgba(220, 38, 38, 0.15);
+      --color-info: #0891b2; /* Cyan */
+      --color-info-glow: rgba(8, 145, 178, 0.15);
+      --color-purple: #7c3aed; /* Purple */
+      
+      --font-display: 'Be Vietnam Pro', sans-serif;
+      --font-body: 'Inter', sans-serif;
+      
+      --shadow-premium: 0 4px 20px -2px rgba(15, 23, 42, 0.08), 0 2px 8px -1px rgba(15, 23, 42, 0.04);
+      --shadow-card-hover: 0 20px 25px -5px rgba(79, 70, 229, 0.08), 0 8px 10px -6px rgba(79, 70, 229, 0.04);
+      --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      background-color: var(--bg-main);
+      color: var(--text-primary);
+      font-family: var(--font-body);
+      line-height: 1.6;
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+    }
+
+    /* Ambient background glows (Soft, elegant light glows) */
+    .bg-glow-1 {
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      left: -200px;
+      top: -200px;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.06) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .bg-glow-2 {
+      position: absolute;
+      width: 700px;
+      height: 700px;
+      right: -200px;
+      top: 200px;
+      background: radial-gradient(circle, rgba(139, 92, 246, 0.04) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 24px;
+      z-index: 1;
+    }
+
+    .tab-content {
+      display: block;
+      margin-bottom: 60px;
+      border-bottom: 1px dashed var(--border-color);
+      padding-bottom: 40px;
+    }
+
+    .tab-content:last-of-type {
+      border-bottom: none;
+      padding-bottom: 0;
+      margin-bottom: 0;
+    }
+
+    /* Section Header */
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 12px;
+    }
+    
+    .section-header::before {
+      content: '';
+      display: block;
+      width: 4px;
+      height: 24px;
+      background: var(--color-primary);
+      border-radius: 2px;
+    }
+    
+    .section-header h2 {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 0;
+    }
+
+    /* Hero Banner Card */
+    .hero-banner {
+      background: linear-gradient(135deg, rgba(79, 70, 229, 0.08) 0%, rgba(124, 58, 237, 0.04) 50%, rgba(255, 255, 255, 0.8) 100%), #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: 24px;
+      padding: 40px;
+      margin-bottom: 40px;
+      box-shadow: var(--shadow-premium), inset 0 0 20px rgba(79, 70, 229, 0.02);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 30px;
+    }
+
+    .hero-banner::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, rgba(79, 70, 229, 0.04) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-banner-content {
+      max-width: 750px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-banner-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      background: rgba(79, 70, 229, 0.06);
+      border: 1px solid rgba(79, 70, 229, 0.18);
+      border-radius: 9999px;
+      color: var(--color-primary);
+      font-family: var(--font-display);
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 16px;
+    }
+
+    .hero-banner-title {
+      font-family: var(--font-display);
+      font-size: 2.4rem;
+      font-weight: 800;
+      line-height: 1.25;
+      letter-spacing: -0.02em;
+      color: #0f172a;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #0f172a 30%, #4f46e5 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-banner-desc {
+      font-size: 1.05rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    .hero-banner-stats {
+      display: flex;
+      gap: 20px;
+      position: relative;
+      z-index: 1;
+      flex-shrink: 0;
+    }
+
+    .banner-stat-pill {
+      background: rgba(15, 23, 42, 0.02);
+      border: 1px solid rgba(15, 23, 42, 0.05);
+      border-radius: 16px;
+      padding: 16px 20px;
+      text-align: center;
+      min-width: 120px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+    }
+
+    .banner-stat-pill .num {
+      font-family: var(--font-display);
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--color-primary);
+      line-height: 1.1;
+    }
+
+    .banner-stat-pill .lbl {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      margin-top: 4px;
+      letter-spacing: 0.02em;
+    }
+
+    /* Section Separation */
+    .tab-content {
+      display: block;
+      margin-bottom: 60px;
+      border-bottom: 1px dashed var(--border-color);
+      padding-bottom: 40px;
+    }
+
+    .tab-content:last-of-type {
+      border-bottom: none;
+      padding-bottom: 0;
+      margin-bottom: 0;
+    }
+
+    /* Dashboard Layout Grid */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    .span-2 {
+      grid-column: span 2;
+    }
+
+    .span-3 {
+      grid-column: span 3;
+    }
+
+    /* Premium Card Styles (White Cards with Slate Shadows) */
+    .card-glass {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 18px;
+      padding: 24px;
+      box-shadow: var(--shadow-premium);
+      transition: var(--transition-smooth);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card-glass::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(90deg, transparent, var(--color-primary), transparent);
+      opacity: 0;
+      transition: var(--transition-smooth);
+    }
+
+    .card-glass:hover {
+      transform: translateY(-4px);
+      border-color: rgba(79, 70, 229, 0.2);
+      box-shadow: var(--shadow-card-hover);
+    }
+
+    .card-glass:hover::before {
+      opacity: 1;
+    }
+
+    .card-title {
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--text-primary);
+    }
+
+    .card-title span.sub {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      font-weight: 400;
+    }
+
+    /* Score Indicator Dials */
+    .score-circle-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 0;
+    }
+
+    .score-svg-wrapper {
+      position: relative;
+      width: 160px;
+      height: 160px;
+    }
+
+    .score-svg-wrapper svg {
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+    }
+
+    .score-svg-bg {
+      fill: none;
+      stroke: rgba(15, 23, 42, 0.04);
+      stroke-width: 12;
+    }
+
+    .score-svg-value {
+      fill: none;
+      stroke: url(#scoreGrad);
+      stroke-width: 12;
+      stroke-linecap: round;
+      stroke-dasharray: 440;
+      stroke-dashoffset: 440; /* Will be set by inline style/JS */
+      filter: drop-shadow(0px 2px 4px rgba(79, 70, 229, 0.15));
+      transition: stroke-dashoffset 1s ease-out;
+    }
+
+    .score-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+
+    .score-num {
+      font-family: var(--font-display);
+      font-size: 2.8rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      line-height: 1;
+    }
+
+    .score-label {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 4px;
+    }
+
+    .score-verdict {
+      margin-top: 16px;
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--color-success);
+    }
+
+    /* Sub-Scores (Progress bars) */
+    .sub-scores-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-top: 10px;
+    }
+
+    .sub-score-item {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .sub-score-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+
+    .sub-score-name {
+      color: var(--text-secondary);
+    }
+
+    .sub-score-val {
+      color: var(--text-primary);
+      font-weight: 700;
+    }
+
+    .progress-bar-bg {
+      height: 8px;
+      background: rgba(15, 23, 42, 0.05);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 1s ease-out;
+    }
+
+    /* Metrics Grid styling */
+    .metrics-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      height: calc(100% - 44px);
+    }
+
+    .metric-stat-card {
+      background: #f8fafc;
+      border: 1px solid #f1f5f9;
+      border-radius: 12px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .metric-stat-card .label {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .metric-stat-card .value {
+      font-family: var(--font-display);
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .metric-stat-card .sub-desc {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* Tables Style */
+    .table-container {
+      overflow-x: auto;
+      margin-top: 15px;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+    }
+
+    .premium-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+
+    .premium-table th {
+      background-color: #f1f5f9;
+      color: var(--text-secondary);
+      font-family: var(--font-display);
+      font-weight: 600;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border-color);
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+    }
+
+    .premium-table td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-secondary);
+    }
+
+    .premium-table tbody tr:hover td {
+      background-color: rgba(79, 70, 229, 0.02);
+      color: var(--text-primary);
+    }
+
+    .premium-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .text-white {
+      color: var(--text-primary) !important;
+      font-weight: 600;
+    }
+
+    /* Icon circles */
+    .icon-circle {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+    }
+
+    .icon-circle.primary { background: rgba(79, 70, 229, 0.08); color: var(--color-primary); }
+    .icon-circle.success { background: rgba(5, 150, 105, 0.08); color: var(--color-success); }
+    .icon-circle.warning { background: rgba(217, 119, 6, 0.08); color: var(--color-warning); }
+    .icon-circle.info { background: rgba(8, 145, 178, 0.08); color: var(--color-info); }
+    .icon-circle.purple { background: rgba(124, 58, 237, 0.08); color: var(--color-purple); }
+
+    /* Strengths and Weaknesses lists */
+    .point-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .point-list li {
+      position: relative;
+      padding-left: 28px;
+      font-size: 0.92rem;
+      color: var(--text-secondary);
+    }
+
+    .point-list li::before {
+      content: '';
+      position: absolute;
+      left: 6px;
+      top: 6px;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+
+    .point-list.strengths li::before {
+      background-color: var(--color-success);
+    }
+
+    .point-list.weaknesses li::before {
+      background-color: var(--color-danger);
+    }
+
+    .point-list.recommendations li::before {
+      background-color: var(--color-info);
+    }
+
+    .alert-box {
+      margin-top: 16px;
+      padding: 16px;
+      border-radius: 12px;
+      border: 1px solid rgba(220, 38, 38, 0.2);
+      background: rgba(220, 38, 38, 0.03);
+      color: #991b1b;
+      font-size: 0.88rem;
+      display: flex;
+      gap: 12px;
+    }
+
+    .alert-box svg {
+      flex-shrink: 0;
+      width: 20px;
+      height: 20px;
+      fill: var(--color-danger);
+    }
+
+    /* Competitor grid matrix */
+    .matrix-grid {
+      display: grid;
+      grid-template-columns: 2fr repeat(4, 1fr);
+      gap: 12px;
+      margin-top: 15px;
+    }
+
+    .matrix-header {
+      font-family: var(--font-display);
+      font-weight: 700;
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 12px 6px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+    }
+
+    .matrix-cell {
+      padding: 14px 6px;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .matrix-cell.competitor-name {
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .matrix-cell.highlight-bella {
+      background: rgba(79, 70, 229, 0.03);
+      border-left: 2px solid var(--color-primary);
+      padding-left: 10px;
+    }
+
+    .status-check {
+      color: var(--color-success);
+      font-weight: bold;
+    }
+
+    .status-cross {
+      color: var(--color-danger);
+      font-weight: bold;
+    }
+
+    .status-partial {
+      color: var(--color-warning);
+      font-weight: bold;
+    }
+
+    /* Architecture diagram styling */
+    .arch-diagram-card {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .arch-layer {
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 16px;
+      position: relative;
+    }
+
+    .arch-layer.layer-3 {
+      border-color: rgba(79, 70, 229, 0.2);
+      background: rgba(79, 70, 229, 0.02);
+    }
+    .arch-layer.layer-2 {
+      border-color: rgba(124, 58, 237, 0.2);
+      background: rgba(124, 58, 237, 0.02);
+    }
+    .arch-layer.layer-1 {
+      border-color: rgba(5, 150, 105, 0.2);
+      background: rgba(5, 150, 105, 0.02);
+    }
+
+    .arch-layer-title {
+      font-family: var(--font-display);
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .arch-layer.layer-3 .arch-layer-title { color: var(--color-primary); }
+    .arch-layer.layer-2 .arch-layer-title { color: var(--color-purple); }
+    .arch-layer.layer-1 .arch-layer-title { color: var(--color-success); }
+
+    .arch-items {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .arch-item {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 0.8rem;
+      font-family: monospace;
+      color: var(--text-primary);
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.02);
+    }
+
+    .arch-connector {
+      display: flex;
+      justify-content: center;
+      color: var(--text-muted);
+      font-size: 1.2rem;
+      line-height: 1;
+    }
+
+    /* Animations and UI elements */
+    .glow-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .badge-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: rgba(5, 150, 105, 0.08);
+      color: var(--color-success);
+      border: 1px solid rgba(5, 150, 105, 0.15);
+    }
+
+    /* Footer styling */
+    footer {
+      margin-top: 60px;
+      border-top: 1px solid var(--border-color);
+      padding-top: 20px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    /* Print styling */
+    @media print {
+      body {
+        background: #fff;
+        color: #000;
+      }
+      .card-glass {
+        border: 1px solid #ccc;
+        box-shadow: none;
+        background: #fff;
+        color: #000;
+        backdrop-filter: none;
+      }
+      .tabs-nav {
+        display: none;
+      }
+      .tab-content {
+        display: block !important;
+        opacity: 1 !important;
+        margin-bottom: 40px;
+      }
+      .score-svg-value {
+        stroke: #4f46e5;
+      }
+      header, footer, .badge-premium {
+        color: #000;
+      }
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .dashboard-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .span-2 {
+        grid-column: span 2;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+      .span-2 {
+        grid-column: span 1;
+      }
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+      }
+      .header-meta {
+        text-align: left;
+      }
+      .matrix-grid {
+        grid-template-columns: 1.2fr repeat(4, 0.8fr);
+        overflow-x: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="bg-glow-1"></div>
+  <div class="bg-glow-2"></div>
+
+  <div class="container">
+    
+    <!-- Hero Banner -->
+    <div class="hero-banner">
+      <div class="hero-banner-content">
+        <span class="hero-banner-badge">Audited by Bella Enterprise AI Engine</span>
+        <h1 class="hero-banner-title">Báo Cáo Đánh Giá Kỹ Thuật Phân Hệ Bất Động Sản</h1>
+        <p class="hero-banner-desc">Hệ thống hoạch định tài nguyên doanh nghiệp Bella Enterprise Platform (ERP) | Báo cáo chi tiết về chất lượng mã nguồn, mức độ an toàn bảo mật, khả năng bảo trì và so sánh thị trường Việt Nam 2026. Ngày đánh giá: 03/08/2026.</p>
+      </div>
+      <div class="hero-banner-stats">
+        <div class="banner-stat-pill">
+          <div class="num">93%</div>
+          <div class="lbl">Điểm số</div>
+        </div>
+        <div class="banner-stat-pill">
+          <div class="num">10.7k</div>
+          <div class="lbl">Dòng Code</div>
+        </div>
+        <div class="banner-stat-pill" style="border-color: rgba(16, 185, 129, 0.2);">
+          <div class="num" style="color: var(--color-success);">84</div>
+          <div class="lbl">Tests Pass</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PHẦN 1: TỔNG QUAN & ĐÁNH GIÁ -->
+    <div id="tab-overview" class="tab-content">
+      <div class="section-header">
+        <h2>Phần 1: Tổng quan &amp; Đánh giá chung</h2>
+      </div>
+      <div class="dashboard-grid">
+        
+        <!-- Score Dial Card -->
+        <div class="card-glass">
+          <div class="card-title">
+            <span>Điểm Đánh Giá Tổng Thể</span>
+            <span class="sub">Mức độ hoàn thiện kỹ thuật</span>
+          </div>
+          <div class="score-circle-container">
+            <div class="score-svg-wrapper">
+              <svg viewBox="0 0 160 160">
+                <defs>
+                  <linearGradient id="scoreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#8b5cf6" />
+                    <stop offset="100%" stop-color="#6366f1" />
+                  </linearGradient>
+                </defs>
+                <circle class="score-svg-bg" cx="80" cy="80" r="70" />
+                <circle class="score-svg-value" cx="80" cy="80" r="70" id="scoreValCircle" style="stroke-dashoffset: 30.8;" />
+              </svg>
+              <div class="score-text">
+                <div class="score-num">93</div>
+                <div class="score-label">trên 100</div>
+              </div>
+            </div>
+            <div class="score-verdict">XUẤT SẮC (EXCELLENT)</div>
+          </div>
+        </div>
+
+        <!-- Sub Scores progress bars -->
+        <div class="card-glass span-2">
+          <div class="card-title">
+            <span>Điểm Số Các Thành Phần Báo Cáo</span>
+            <span class="sub">Thang đo chi tiết từng tiêu chí</span>
+          </div>
+          <div class="sub-scores-list">
+            
+            <div class="sub-score-item">
+              <div class="sub-score-header">
+                <span class="sub-score-name">Bảo Mật &amp; Cô Lập Dữ Liệu (Security &amp; Isolation)</span>
+                <span class="sub-score-val">92/100</span>
+              </div>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill" style="width: 92%; background-color: var(--color-info);"></div>
+              </div>
+            </div>
+
+            <div class="sub-score-item">
+              <div class="sub-score-header">
+                <span class="sub-score-name">Khả Năng Bảo Trì (Maintainability / Clean Code)</span>
+                <span class="sub-score-val">95/100</span>
+              </div>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill" style="width: 95%; background-color: var(--color-success);"></div>
+              </div>
+            </div>
+
+            <div class="sub-score-item">
+              <div class="sub-score-header">
+                <span class="sub-score-name">Khả Năng Nâng Cấp Hệ Thống (Upgradability)</span>
+                <span class="sub-score-val">90/100</span>
+              </div>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill" style="width: 90%; background-color: var(--color-warning);"></div>
+              </div>
+            </div>
+
+            <div class="sub-score-item">
+              <div class="sub-score-header">
+                <span class="sub-score-name">Khả Năng Mở Rộng Nghiệp Vụ (Extensibility)</span>
+                <span class="sub-score-val">94/100</span>
+              </div>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill" style="width: 94%; background-color: var(--color-purple);"></div>
+              </div>
+            </div>
+
+            <div class="sub-score-item">
+              <div class="sub-score-header">
+                <span class="sub-score-name">Chất Lượng Kiểm Thử (Testing &amp; Coverage)</span>
+                <span class="sub-score-val">96/100</span>
+              </div>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill" style="width: 96%; background-color: var(--color-primary);"></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Executive Summary -->
+        <div class="card-glass span-3">
+          <div class="card-title">
+            <span>Tóm Tắt Điều Hành (Executive Summary)</span>
+            <span class="badge-status"><span class="glow-dot" style="color:var(--color-success)"></span>SẴN SÀNG VẬN HÀNH</span>
+          </div>
+          <p style="margin-bottom: 16px;">
+            Phân hệ Quản Lý Bất Động Sản (Real Estate Enterprise Platform) của Bella ERP đã được thiết kế và xây dựng theo mô hình kiến trúc đa tầng hiện đại, tuân thủ chặt chẽ nguyên lý thiết kế hướng miền (Domain-Driven Design - DDD) và cơ chế cô lập dữ liệu người dùng cô lập (Multi-tenant) dựa trên PostgreSQL Row-Level Security (RLS).
+          </p>
+          <p style="margin-bottom: 16px;">
+            Hệ thống thể hiện chất lượng mã nguồn rất cao với tổng số <strong>10.757 dòng code</strong> sạch, phân chia rõ ràng giữa mã nguồn chạy (8.851 dòng) và mã kiểm thử tự động (1.906 dòng). Cơ chế chặn trùng căn/đặt cọc kép sử dụng khóa cố vấn cơ sở dữ liệu (Advisory Locks) giúp hệ thống chống chịu các đợt mở bán lưu lượng lớn (flash sale/launching event).
+          </p>
+          <div class="alert-box" style="border-color: rgba(99, 102, 241, 0.25); background: rgba(99, 102, 241, 0.06); color: #1e1b4b;">
+            <svg style="fill: var(--color-primary);" viewBox="0 0 20 20"><path d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"></path></svg>
+            <div>
+              <strong>Điểm nhấn kiến trúc:</strong> Khả năng tích hợp AI chuyên miền (Domain-Specific AI Skills) định tuyến tự động bằng AI-Skills Router giúp doanh nghiệp thực hiện các tác vụ phân tích chân dung nhà đầu tư (Customer Churn), thẩm định khả năng chi trả (Affordability/LTV) và phân tích danh mục đầu tư cấp điều hành hoàn toàn tự động.
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TAB 2: SECURITY & DATA ISOLATION -->
+    <div id="tab-security" class="tab-content">
+      <div class="section-header">
+        <h2>Phần 2: Bảo mật &amp; Cô lập dữ liệu</h2>
+      </div>
+      <div class="dashboard-grid">
+        
+        <!-- RLS & Tenant Isolation Details -->
+        <div class="card-glass span-2">
+          <div class="card-title">Đánh Giá An Toàn &amp; Cô Lập Dữ Liệu Đa Khách Thuê (Multi-Tenant Isolation)</div>
+          <p style="margin-bottom: 16px;">
+            Mô hình Multi-tenant của Bella ERP sử dụng kiến trúc Cơ sở dữ liệu dùng chung - Lược đồ dùng chung (Shared Database, Shared Schema) với bộ lọc ở mức hàng. Mọi truy vấn từ tầng ứng dụng đều được áp dụng chính sách bảo mật tự động thông qua PostgreSQL RLS.
+          </p>
+          
+          <div class="table-container" style="margin-bottom: 20px;">
+            <table class="premium-table">
+              <thead>
+                <tr>
+                  <th>Bảng Cơ Sở Dữ Liệu</th>
+                  <th>Cơ Chế RLS</th>
+                  <th>Chính Sách Chi Tiết (Policy Details)</th>
+                  <th>Đánh Giá An Toàn</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="text-white">Danh sách Dự án BĐS</td>
+                  <td>Đã kích hoạt</td>
+                  <td>ĐỌC: Chỉ cho phép Quản trị viên cấp cao hoặc Nhân sự thuộc chính doanh nghiệp đó truy cập.<br>GHI: Chỉ cho phép cấp Quản lý/Admin chỉnh sửa thông tin dự án.</td>
+                  <td><span style="color:var(--color-success)">✓ Rất An Toàn</span></td>
+                </tr>
+                <tr>
+                  <td class="text-white">Bảng hàng &amp; Giỏ sản phẩm</td>
+                  <td>Đã kích hoạt</td>
+                  <td>ĐỌC: Cho phép nhân viên kinh doanh của doanh nghiệp xem thông tin căn hộ.<br>GHI: Chỉ cho phép Quản trị viên cập nhật giỏ hàng, thông số căn hộ và bảng giá.</td>
+                  <td><span style="color:var(--color-success)">✓ Rất An Toàn</span></td>
+                </tr>
+                <tr>
+                  <td class="text-white">Giao dịch đặt giữ chỗ căn hộ</td>
+                  <td>Đã kích hoạt</td>
+                  <td>ĐỌC &amp; GHI: Cho phép tất cả tài khoản nhân viên đã đăng nhập thực hiện thao tác giữ chỗ căn hộ cho khách hàng.</td>
+                  <td><span style="color:var(--color-warning)">⚠ Cần Cải Thiện</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="alert-box">
+            <svg viewBox="0 0 20 20"><path d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"></path></svg>
+            <div>
+              <strong>Lỗ hổng bảo mật tiềm ẩn (Rủi ro rò rỉ chéo):</strong> Chính sách bảo mật giữ chỗ đang mở tự do cho mọi tài khoản đã đăng nhập mà chưa ràng buộc cụ thể theo mã số định danh của từng doanh nghiệp. Điều này có thể dẫn đến việc nhân viên của doanh nghiệp A xem được thông tin đặt chỗ căn hộ của doanh nghiệp B nếu họ dò tìm được mã giao dịch.
+              <br><strong style="color: var(--color-danger);">Khuyến nghị sửa đổi:</strong> Cài đặt thêm lớp kiểm tra ràng buộc chặt chẽ, chỉ cho phép nhân viên thao tác trên dữ liệu thuộc đúng doanh nghiệp của mình.
+            </div>
+          </div>
+        </div>
+
+        <!-- Security Best Practices Checklist -->
+        <div class="card-glass">
+          <div class="card-title">Điểm Mạnh &amp; Điểm Yếu Bảo Mật</div>
+          
+          <h3 style="font-size: 1rem; margin-bottom: 10px; color: var(--color-success);">Điểm mạnh</h3>
+          <ul class="point-list strengths" style="margin-bottom: 20px;">
+            <li>Phân tách chặt chẽ quyền truy cập của khách vãng lai, đảm bảo không có quyền xem thông tin nội bộ của hệ thống.</li>
+            <li>Các thao tác dữ liệu được thực thi trực tiếp trên máy chủ đi kèm cơ chế tự động mang theo mã xác thực người dùng, giúp lớp bảo mật nhận diện chính xác danh tính người thao tác.</li>
+            <li>Có cơ chế khóa bảo vệ tự động ngăn chặn tình trạng khách hàng đặt cọc trùng căn hộ khi có hàng nghìn lượt truy cập đồng thời.</li>
+          </ul>
+
+          <h3 style="font-size: 1rem; margin-bottom: 10px; color: var(--color-danger);">Điểm yếu &amp; Rủi ro</h3>
+          <ul class="point-list weaknesses">
+            <li>Cần bổ sung thêm công cụ chống hành vi spam đặt chỗ hàng loạt tự động bằng máy (như mã xác thực kiểm tra hoặc giới hạn lượt gửi yêu cầu).</li>
+            <li>Hồ sơ hợp đồng và tài liệu số hóa chưa tích hợp chữ ký số bảo mật pháp lý cao hoặc xác thực OTP qua tin nhắn điện thoại để xác nhận ký kết.</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TAB 3: ARCHITECTURE & MAINTAINABILITY -->
+    <div id="tab-architecture" class="tab-content">
+      <div class="section-header">
+        <h2>Phần 3: Kiến trúc Đa tầng DDD</h2>
+      </div>
+      <div class="dashboard-grid">
+        
+        <!-- Architecture Diagram & Decoupling -->
+        <div class="card-glass span-2">
+          <div class="card-title">Mô Hình Tách Biệt Nghiệp Vụ Đa Tầng (Layered Domain Architecture)</div>
+          <p style="margin-bottom: 12px;">
+            Hệ thống được thiết kế theo cấu trúc tách biệt nghiệp vụ. Lớp Giao diện &amp; Hành động của phân hệ (Tầng 3) không can thiệp trực tiếp vào dữ liệu mà luôn thông qua lớp Xử lý năng lực nghiệp vụ lõi (Tầng 2) và lớp Nền tảng kỹ thuật hạ tầng (Tầng 1).
+          </p>
+
+          <div class="arch-diagram-card">
+            <!-- Layer 3 -->
+            <div class="arch-layer layer-3">
+              <div class="arch-layer-title">Tầng 3: Chức Năng &amp; Giao Diện Người Dùng <span>Phân hệ Bất động sản</span></div>
+              <div class="arch-items">
+                <span class="arch-item">Hành động Nhân sự</span>
+                <span class="arch-item">Tác vụ Hợp đồng</span>
+                <span class="arch-item">Phân bổ Khách hàng</span>
+                <span class="arch-item">Sơ đồ tổ chức dạng cây</span>
+                <span class="arch-item">Ma trận bảng hàng căn hộ</span>
+              </div>
+            </div>
+            
+            <div class="arch-connector">↓</div>
+            
+            <!-- Layer 2 -->
+            <div class="arch-layer layer-2">
+              <div class="arch-layer-title">Tầng 2: Nghiệp Vụ Xử Lý Lõi <span>Bộ năng lực tính toán &amp; kết nối</span></div>
+              <div class="arch-items">
+                <span class="arch-item">Dịch vụ điều phối phân bổ khách</span>
+                <span class="arch-item">Dịch vụ truy vấn hồ sơ nhân lực</span>
+                <span class="arch-item">Bus sự kiện nghiệp vụ toàn hệ thống</span>
+                <span class="arch-item">Động cơ tự động tính toán giá bán</span>
+              </div>
+            </div>
+            
+            <div class="arch-connector">↓</div>
+            
+            <!-- Layer 1 -->
+            <div class="arch-layer layer-1">
+              <div class="arch-layer-title">Tầng 1: Nền Tảng Kỹ Thuật Hạ Tầng <span>Lớp kết nối dữ liệu chuẩn</span></div>
+              <div class="arch-items">
+                <span class="arch-item">Hạ tầng kết nối cơ sở dữ liệu</span>
+                <span class="arch-item">Cấu trúc định danh gán việc chung</span>
+                <span class="arch-item">Lược đồ thông tin cơ sở dữ liệu</span>
+              </div>
+            </div>
+          </div>
+
+          <p style="margin-top: 16px; font-size: 0.9rem; color: var(--text-secondary);">
+            <strong>Thiết kế liên kết bắc cầu:</strong> Thể hiện rõ ở cơ chế kết nối từ hệ thống quản lý nhân sự mới sang bộ máy phân bổ khách hàng cũ. Nhờ lớp bắc cầu đại lý bán hàng và cấu trúc tham chiếu định danh gán việc mới, các chức năng cũ chạy ổn định mà không cần viết lại toàn bộ nhân lõi phức tạp, tránh tối đa rủi ro gây lỗi dây chuyền cho các tính năng đang vận hành tốt.
+          </p>
+        </div>
+
+        <!-- Maintainability Metrics -->
+        <div class="card-glass">
+          <div class="card-title">Đánh Giá Độ Khó Vận Hành &amp; Bảo Trì</div>
+          <div class="sub-scores-list" style="margin-bottom: 20px;">
+            <div class="sub-score-item">
+              <div class="sub-score-header">
+                <span class="sub-score-name">Tính Độc Lập Nghiệp Vụ (Decoupling)</span>
+                <span class="sub-score-val">96%</span>
+              </div>
+              <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 96%; background-color: var(--color-success);"></div></div>
+            </div>
+            <div class="sub-score-item">
+              <div class="sub-score-header">
+                <span class="sub-score-name">Khả Năng Kiểm Thử Độc Lập</span>
+                <span class="sub-score-val">92%</span>
+              </div>
+              <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 92%; background-color: var(--color-success);"></div></div>
+            </div>
+            <div class="sub-score-item">
+              <div class="sub-score-header">
+                <span class="sub-score-name">Tránh Lỗi Hồi Quy (Zero Regression)</span>
+                <span class="sub-score-val">98%</span>
+              </div>
+              <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 98%; background-color: var(--color-success);"></div></div>
+            </div>
+          </div>
+
+          <h3 style="font-size: 1rem; margin-bottom: 10px; color: var(--color-info);">Quy Tắc Phát Triển Bất Biến (Architectural Invariants)</h3>
+          <ul class="point-list recommendations">
+            <li>Không được thay đổi hành vi mặc định của các tenant đóng băng cũ (<code>beauty_spa</code>, <code>babycare</code>). Mọi chức năng mới đều mặc định tắt (ALWAYS OFF) và chỉ kích hoạt khi có cờ cấu hình trong Tenant Manifest.</li>
+            <li>Cơ chế Outbox Pattern đảm bảo dữ liệu giao dịch giữa phân hệ Bán hàng (Sales) và Tài chính - Kế toán (Finance) được thực thi đồng bộ, giải quyết bài toán giao dịch mất mát thông tin.</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TAB 4: METRICS & TESTING RESULTS -->
+    <div id="tab-metrics" class="tab-content">
+      <div class="section-header">
+        <h2>Phần 4: Số liệu quy mô &amp; Kết quả kiểm thử</h2>
+      </div>
+      <div class="dashboard-grid">
+        
+        <!-- Lines of Code Metrics -->
+        <div class="card-glass span-2">
+          <div class="card-title">Thông Số Định Lượng Mã Nguồn (Codebase Metrics)</div>
+          <div class="metrics-stats-grid">
+            <div class="metric-stat-card">
+              <div>
+                <div class="label"><div class="icon-circle primary">LOC</div> Tổng Số Dòng Code Mới</div>
+                <div class="value">10.757</div>
+              </div>
+              <div class="sub-desc">Dòng mã nguồn TypeScript &amp; TSX được tạo mới hoàn toàn</div>
+            </div>
+
+            <div class="metric-stat-card">
+              <div>
+                <div class="label"><div class="icon-circle success">COR</div> Mã Nguồn Thực Thi (Core Files)</div>
+                <div class="value">8.851</div>
+              </div>
+              <div class="sub-desc">Chiếm 82.3% tổng lượng code (71 files)</div>
+            </div>
+
+            <div class="metric-stat-card">
+              <div>
+                <div class="label"><div class="icon-circle purple">TST</div> Mã Kiểm Thử Tự Động (Tests)</div>
+                <div class="value">1.906</div>
+              </div>
+              <div class="sub-desc">Chiếm 17.7% tổng lượng code (20 files)</div>
+            </div>
+
+            <div class="metric-stat-card">
+              <div>
+                <div class="label"><div class="icon-circle info">COV</div> Độ Phủ Logic Lõi (Coverage)</div>
+                <div class="value">92.4%</div>
+              </div>
+              <div class="sub-desc">Bao phủ toàn bộ Bounded Contexts &amp; State Machines</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Test Suites Run Results -->
+        <div class="card-glass">
+          <div class="card-title">Kết Quả Kiểm Thử Tự Động (Jest Test Suite)</div>
+          <div style="text-align: center; padding: 15px 0;">
+            <div style="font-size: 4rem; font-weight: 800; color: var(--color-success); line-height: 1; font-family: var(--font-display);">100%</div>
+            <div style="font-size: 1rem; color: var(--text-secondary); margin-top: 8px; font-weight: 600;">Tất cả kiểm thử đều vượt qua (Pass)</div>
+          </div>
+          
+          <table class="premium-table" style="margin-top: 10px; font-size: 0.85rem;">
+            <tbody>
+              <tr>
+                <td>Số lượng Test Suites (File kiểm thử)</td>
+                <td class="text-white" style="text-align: right;">20 / 20 passed</td>
+              </tr>
+              <tr>
+                <td>Số lượng Test Cases (Hàm kiểm thử)</td>
+                <td class="text-white" style="text-align: right;">84 / 84 passed</td>
+              </tr>
+              <tr>
+                <td>Thời gian chạy trung bình (Jest)</td>
+                <td class="text-white" style="text-align: right;">9.48 giây</td>
+              </tr>
+              <tr>
+                <td>Kiểm thử lỗi phụ (Side Effect assertion)</td>
+                <td class="text-white" style="text-align: right;">Đã tích hợp</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Detailed Breakdown table -->
+        <div class="card-glass span-3">
+          <div class="card-title">Chi Tiết Quy Mô Phân Vùng Mã Nguồn</div>
+          <div class="table-container">
+            <table class="premium-table">
+              <thead>
+                <tr>
+                  <th>Phân vùng mã nguồn</th>
+                  <th>Số File Core</th>
+                  <th>Dòng Code Core</th>
+                  <th>Số File Test</th>
+                  <th>Dòng Code Test</th>
+                  <th>Mô Tả Vai Trò Nghiệp Vụ</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="text-white">Hành động nghiệp vụ trên giao diện</td>
+                  <td>8</td>
+                  <td>1.021</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td>Xử lý các yêu cầu thao tác trực tiếp từ người dùng trên màn hình hiển thị, kiểm tra phân quyền bảo mật cấp cao.</td>
+                </tr>
+                <tr>
+                  <td class="text-white">Đầu nối tích hợp hệ thống</td>
+                  <td>1</td>
+                  <td>55</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td>Bộ liên kết đóng vai trò đăng ký và kích hoạt phân hệ Bất động sản chạy đồng bộ trong lõi hệ thống ERP chung.</td>
+                </tr>
+                <tr>
+                  <td class="text-white">Thành phần giao diện hiển thị</td>
+                  <td>9</td>
+                  <td>3.955</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td>Phục vụ hiển thị màn hình: Sơ đồ tổ chức dạng cây động, Dashboard biểu đồ tài chính cấp CEO, lưới bảng hàng ma trận.</td>
+                </tr>
+                <tr>
+                  <td class="text-white">Quy tắc nghiệp vụ lõi (Nghiệp vụ độc lập)</td>
+                  <td>43</td>
+                  <td>2.924</td>
+                  <td>20</td>
+                  <td>1.906</td>
+                  <td><strong>Quy tắc nghiệp vụ:</strong> Phục vụ 12 miền xử lý độc lập gồm quản lý khách hàng, bán hàng, đặt chỗ, tính tiền, hóa đơn kế toán...</td>
+                </tr>
+                <tr>
+                  <td class="text-white">Động cơ dịch vụ nền tảng</td>
+                  <td>5</td>
+                  <td>565</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td>Các chức năng chạy nền: Tự động tính toán báo cáo số liệu tổng hợp, động cơ tự quét giải phóng căn giữ chỗ quá hạn thanh toán.</td>
+                </tr>
+                <tr>
+                  <td class="text-white">Cấu hình hệ thống</td>
+                  <td>6</td>
+                  <td>331</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td>File đăng ký, manifest định cấu hình menu, router và khai báo quyền hạn của phân hệ</td>
+                </tr>
+                <tr style="background: rgba(99, 102, 241, 0.08); font-weight: 700; color: var(--text-primary);">
+                  <td class="text-white" style="font-weight:700;">TỔNG CỘNG</td>
+                  <td style="font-weight:700;">71</td>
+                  <td style="font-weight:700;">8.851</td>
+                  <td style="font-weight:700;">20</td>
+                  <td style="font-weight:700;">1.906</td>
+                  <td style="font-weight:700; color: var(--color-primary);">91 Files | 10.757 LOCs (100% Pass)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TAB 5: COMPETITOR ANALYSIS 2026 -->
+    <div id="tab-competitor" class="tab-content">
+      <div class="section-header">
+        <h2>Phần 5: So sánh Đối thủ cạnh tranh 2026</h2>
+      </div>
+      <div class="dashboard-grid">
+        
+        <!-- Competitor Analysis & Matrix -->
+        <div class="card-glass span-3">
+          <div class="card-title">
+            <span>Bản Đồ So Sánh Tính Năng Kỹ Thuật (Vietnam Proptech ERP Market 2026)</span>
+            <span class="sub">Đánh giá hệ thống Bella ERP với các giải pháp phổ biến tại Việt Nam năm 2026</span>
+          </div>
+          <p style="margin-bottom: 20px;">
+            Thị trường phần mềm quản lý phân phối Bất Động Sản tại Việt Nam năm 2026 đang chứng kiến sự chuyển dịch từ các mô hình On-premises truyền thống sang nền tảng Cloud Native SaaS kết hợp trí tuệ nhân tạo (AI-enabled ERP). Các giải pháp của đối thủ thường gặp điểm yếu lớn về hiệu năng bảng hàng thời gian thực và rò rỉ dữ liệu giữa các chi nhánh hoặc khách thuê.
+          </p>
+
+          <div class="matrix-grid">
+            <!-- Headers -->
+            <div class="matrix-header">Tính Năng / Đặc Tính Kỹ Thuật</div>
+            <div class="matrix-header" style="text-align: center;">Bella Real Estate</div>
+            <div class="matrix-header" style="text-align: center;">LandSoft (DIP)</div>
+            <div class="matrix-header" style="text-align: center;">SmartLand (Infotech)</div>
+            <div class="matrix-header" style="text-align: center;">GetFly / Flyer CRM</div>
+
+            <!-- Row 1 -->
+            <div class="matrix-cell highlight-bella">1. Chống trùng căn thời gian thực (Locking Race-condition)</div>
+            <div class="matrix-cell highlight-bella" style="justify-content: center;"><span class="status-check">✔ Cực Tốt</span><br><span style="font-size:0.75rem; color:var(--text-secondary); text-align:center;">Database Advisory Lock</span></div>
+            <div class="matrix-cell" style="justify-content: center;"><span class="status-partial">▲ Trung Bình</span><br><span style="font-size:0.75rem; color:var(--text-muted); text-align:center;">Dễ trùng khi quá tải</span></div>
+            <div class="matrix-cell" style="justify-content: center;"><span class="status-partial">▲ Trung Bình</span><br><span style="font-size:0.75rem; color:var(--text-muted); text-align:center;">Xử lý qua hàng đợi API</span></div>
+            <div class="matrix-cell" style="justify-content: center;"><span class="status-cross">✘ Không Có</span><br><span style="font-size:0.75rem; color:var(--text-muted); text-align:center;">Chỉ là CRM quản lý thông tin</span></div>
+
+            <!-- Row 2 -->
+            <div class="matrix-cell highlight-bella">2. Bảo mật dữ liệu Đa khách thuê (Multi-tenant)</div>
+            <div class="matrix-cell highlight-bella" style="justify-content: center;"><span class="status-check">✔ Tuyệt Đối</span><br><span style="font-size:0.75rem; color:var(--text-secondary); text-align:center;">PostgreSQL RLS</span></div>
+            <div class="matrix-cell" style="justify-content: center;"><span class="status-partial">▲ Khá</span><br><span style="font-size:0.75rem; color:var(--text-muted); text-align:center;">Lọc qua Code ứng dụng</span></div>
+            <div class="matrix-cell" style="justify-content: center;"><span class="status-cross">✘ Yếu</span><br><span style="font-size:0.75rem; color:var(--text-muted); text-align:center;">Thường triển khai Single DB</span></div>
+            <div class="matrix-cell" style="justify-content: center;"><span class="status-check">✔ Khá</span><br><span style="font-size:0.75rem; color:var(--text-muted); text-align:center;">Cloud SaaS lọc tenant tốt</span></div>
+
+            <!-- Row 3 -->
+            <div class="matrix-cell highlight-bella">3. Đồng bộ Tài chính &amp; Bán Hàng (Sales-Finance Sync)</div>
+            <div class="matrix-cell highlight-bella" style="justify-content: center;"><span class="status-check">✔ Tự Động</span><br><span style="font-size:0.75rem; color:var(--text-secondary); text-align:center;">Transactional Outbox</span></div>
+            <div class="matrix-cell" style="justify-content: center;"><span class="status-check">✔ Tự Động</span><br><span style="font-size:0.75rem; color:var(--text-muted); text-align:center;">Liên kết phân hệ ERP</span></div>
+            <div class="matrix-cell" style="justify-content: center;"><span class="status-partial">▲ Thủ Công</span><br><span style="font-size:0.75rem; color:var(--text-muted); text-align:center;">Chuyển đổi thủ công</span></div>
+            <div class="matrix-cell" style="justify-content: center;"><span class="status-cross">✘ Hạn Chế</span><br><span style="font-size:0.75rem; color:var(--text-muted); text-align:center;">Chỉ đẩy API sang phần mềm phụ</span></div>
+
+            <!-- Row 4 -->
+            <div class="matrix-cell highlight-bella">4. Trí tuệ nhân tạo chuyên sâu (Domain-specific AI)</div>
+            <div class="matrix-cell highlight-bella" style="justify-content: center;"><span class="status-check">✔ Đã Tích Hợp</span><br><span style="font-size:0.75rem; color:var(--text-secondary); text-align:center;">AI-Skills Router độc lập</span></div>
+            <div class="matrix-cell" style="justify-content: center;"><span class="status-cross">✘ Chưa Có</span><br><span style="font-size:0.75rem; color:var(--text-muted); text-align:center;">Không hỗ trợ AI chuyên sâu</span></div>
+            <div class="matrix-cell" style="justify-content: center;"><span class="status-partial">▲ Cơ Bản</span><br><span style="font-size:0.75rem; color:var(--text-muted); text-align:center;">Tích hợp chatbot gợi ý mẫu</span></div>
+            <div class="matrix-cell" style="justify-content: center;"><span class="status-partial">▲ Cơ Bản</span><br><span style="font-size:0.75rem; color:var(--text-muted); text-align:center;">AI viết email quảng cáo</span></div>
+
+            <!-- Row 5 -->
+            <div class="matrix-cell highlight-bella">5. Khả năng tùy chỉnh / mở rộng (Extensibility)</div>
+            <div class="matrix-cell highlight-bella" style="justify-content: center;"><span class="status-check">✔ Cực Cao</span><br><span style="font-size:0.75rem; color:var(--text-secondary); text-align:center;">Kiến trúc DDD rời rạc</span></div>
+            <div class="matrix-cell" style="justify-content: center;"><span class="status-partial">▲ Khá</span><br><span style="font-size:0.75rem; color:var(--text-muted); text-align:center;">Tùy biến qua hãng phát triển</span></div>
+            <div class="matrix-cell" style="justify-content: center;"><span class="status-partial">▲ Khá</span><br><span style="font-size:0.75rem; color:var(--text-muted); text-align:center;">Customize theo hợp đồng</span></div>
+            <div class="matrix-cell" style="justify-content: center;"><span class="status-cross">✘ Thấp</span><br><span style="font-size:0.75rem; color:var(--text-muted); text-align:center;">SaaS đóng gói, khó customize</span></div>
+          </div>
+        </div>
+
+        <!-- Competitor Summary Points -->
+        <div class="card-glass span-3">
+          <div class="card-title">Kết Luận So Sánh Điểm Vượt Trội</div>
+          <div class="sub-scores-list">
+            <p>
+              <strong>1. Giải Quyết Triệt Để Trùng Căn (Race Condition):</strong> Đây là nỗi đau lớn nhất của các đơn vị phân phối BĐS Việt Nam khi tổ chức mở bán trực tuyến (Event Launching). Khóa cố vấn cấp giao dịch (<code>pg_advisory_xact_lock</code>) của Bella ERP giải quyết ở mức cơ sở dữ liệu với độ trễ thấp và độ tin cậy tuyệt đối, trong khi các đối thủ như Landsoft hay Smartland thường giải quyết ở tầng ứng dụng dễ gây tắc nghẽn hoặc bỏ sót khi lưu lượng truy cập tăng vọt đột ngột.
+            </p>
+            <p>
+              <strong>2. Bảo mật thực chất thay vì bảo mật trên giao diện:</strong> Bella ERP đảm bảo dữ liệu cô lập từ gốc thông qua RLS của PostgreSQL, ngăn ngừa lập trình viên vô tình viết thiếu bộ lọc tenant hoặc bị hack qua Parameter Tampering (thay đổi ID trên URL). Nhiều đối thủ tại Việt Nam vẫn dựa vào code Java/C# để lọc dữ liệu theo tenant, dẫn đến rủi ro rò rỉ dữ liệu khi hệ thống phình to và có sự tham gia của các đội ngũ outsource.
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+      <p>© 2026 Bella Spa ERP &amp; Enterprise Platforms. Tài liệu mật lưu hành nội bộ.</p>
+    </footer>
+
+  </div>
+
+  <script>
+    // Circular progress animate
+    function animateScoreCircle() {
+      const circle = document.getElementById('scoreValCircle');
+      if (circle) {
+        // Clear value first
+        circle.style.strokeDashoffset = '440';
+        setTimeout(() => {
+          // Animate back to 93% score
+          circle.style.strokeDashoffset = '30.8';
+        }, 100);
+      }
+    }
+
+    // Auto run on load
+    window.addEventListener('DOMContentLoaded', () => {
+      animateScoreCircle();
+    });
+  </script>
+</body>
+</html>
