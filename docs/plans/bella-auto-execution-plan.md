@@ -94,10 +94,10 @@
 ---
 
 ### Phase 8 — Nghiệp Vụ Tài Chính Ô Tô (Finance Center) (Tuần 23-25)
-*   [ ] **8.1.** Xây dựng module theo dõi hồ sơ vay trả góp ngân hàng (`auto_loan_applications`) theo các trạng thái (đang nộp hồ sơ, đã duyệt thông báo cho vay, đã giải ngân).
-*   [ ] **8.2.** Xây dựng module theo dõi hợp đồng bảo hiểm xe (`auto_insurance_policies`), tự động cảnh báo tái tục bảo hiểm trước 30 ngày.
-*   [ ] **8.3.** Tích hợp luồng ghi nhận doanh thu tự động thông qua **Accounting Outbox** khi trạng thái xe chuyển sang "Delivered" (Đã bàn giao xe).
-*   [ ] **8.4.** Xây dựng báo cáo phân tích tài chính đặc thù: Biên lợi nhuận gộp trên từng đầu xe bán ra, doanh thu dịch vụ xưởng và hoa hồng liên kết (ngân hàng, bảo hiểm).
+*   [x] **8.1.** Xây dựng module theo dõi hồ sơ vay trả góp ngân hàng (`auto_loan_applications`) theo các trạng thái (đang nộp hồ sơ, đã duyệt thông báo cho vay, đã giải ngân). *(LoanApplicationService — Full lifecycle + commission tracking)*
+*   [x] **8.2.** Xây dựng module theo dõi hợp đồng bảo hiểm xe (`auto_insurance_policies`), tự động cảnh báo tái tục bảo hiểm trước 30 ngày. *(InsuranceService — Policy management + auto-renewal)*
+*   [x] **8.3.** Tích hợp luồng ghi nhận doanh thu tự động thông qua **Accounting Outbox** khi trạng thái xe chuyển sang "Delivered" (Đã bàn giao xe). *(FinancialReportingService — Revenue recognition ready)*
+*   [x] **8.4.** Xây dựng báo cáo phân tích tài chính đặc thù: Biên lợi nhuận gộp trên từng đầu xe bán ra, doanh thu dịch vụ xưởng và hoa hồng liên kết (ngân hàng, bảo hiểm). *(FinancialReportingService — Comprehensive analytics)*
 
 ---
 

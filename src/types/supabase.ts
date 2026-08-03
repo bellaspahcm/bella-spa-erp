@@ -1474,6 +1474,129 @@ export type Database = {
           },
         ]
       }
+      auto_insurance_policies: {
+        Row: {
+          auto_renewal: boolean | null
+          beneficiary_name: string | null
+          beneficiary_relationship: string | null
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          certificate_url: string | null
+          commission_paid: boolean | null
+          commission_paid_date: string | null
+          coverage_amount: number | null
+          coverage_items: Json | null
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          deductible_amount: number | null
+          effective_date: string
+          expiry_date: string
+          id: string
+          insurance_agent_name: string | null
+          insurance_agent_phone: string | null
+          insurance_branch: string | null
+          insurance_company: string
+          is_active: boolean | null
+          notes: string | null
+          policy_document_url: string | null
+          policy_number: string
+          policy_type: string
+          premium_amount: number
+          premium_payment_frequency: string | null
+          referral_commission_amount: number | null
+          referral_commission_percentage: number | null
+          renewal_reminder_date: string | null
+          renewal_reminder_sent: boolean | null
+          sale_id: string | null
+          status: string
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
+          vehicle_id: string
+        }
+        Insert: {
+          auto_renewal?: boolean | null
+          beneficiary_name?: string | null
+          beneficiary_relationship?: string | null
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          certificate_url?: string | null
+          commission_paid?: boolean | null
+          commission_paid_date?: string | null
+          coverage_amount?: number | null
+          coverage_items?: Json | null
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          deductible_amount?: number | null
+          effective_date: string
+          expiry_date: string
+          id?: string
+          insurance_agent_name?: string | null
+          insurance_agent_phone?: string | null
+          insurance_branch?: string | null
+          insurance_company: string
+          is_active?: boolean | null
+          notes?: string | null
+          policy_document_url?: string | null
+          policy_number: string
+          policy_type: string
+          premium_amount: number
+          premium_payment_frequency?: string | null
+          referral_commission_amount?: number | null
+          referral_commission_percentage?: number | null
+          renewal_reminder_date?: string | null
+          renewal_reminder_sent?: boolean | null
+          sale_id?: string | null
+          status?: string
+          tenant_id: string
+          updated_at?: string
+          updated_by?: string | null
+          vehicle_id: string
+        }
+        Update: {
+          auto_renewal?: boolean | null
+          beneficiary_name?: string | null
+          beneficiary_relationship?: string | null
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          certificate_url?: string | null
+          commission_paid?: boolean | null
+          commission_paid_date?: string | null
+          coverage_amount?: number | null
+          coverage_items?: Json | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          deductible_amount?: number | null
+          effective_date?: string
+          expiry_date?: string
+          id?: string
+          insurance_agent_name?: string | null
+          insurance_agent_phone?: string | null
+          insurance_branch?: string | null
+          insurance_company?: string
+          is_active?: boolean | null
+          notes?: string | null
+          policy_document_url?: string | null
+          policy_number?: string
+          policy_type?: string
+          premium_amount?: number
+          premium_payment_frequency?: string | null
+          referral_commission_amount?: number | null
+          referral_commission_percentage?: number | null
+          renewal_reminder_date?: string | null
+          renewal_reminder_sent?: boolean | null
+          sale_id?: string | null
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          vehicle_id?: string
+        }
+        Relationships: []
+      }
       auto_journey_events: {
         Row: {
           changed_by_user_id: string | null
@@ -1713,6 +1836,141 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      auto_loan_applications: {
+        Row: {
+          application_date: string
+          application_number: string
+          approved_amount: number | null
+          approved_at: string | null
+          approved_by: string | null
+          approved_interest_rate: number | null
+          approved_term_months: number | null
+          bank_branch: string | null
+          bank_contact_person: string | null
+          bank_contact_phone: string | null
+          bank_name: string
+          bank_notes: string | null
+          commission_paid: boolean | null
+          commission_paid_date: string | null
+          created_at: string
+          created_by: string | null
+          customer_credit_score: number | null
+          customer_employment_type: string | null
+          customer_id: string
+          customer_income_monthly: number | null
+          disbursed_at: string | null
+          documents_checklist: Json | null
+          down_payment: number
+          id: string
+          interest_rate: number
+          internal_notes: string | null
+          loan_amount: number
+          loan_term_months: number
+          monthly_payment: number | null
+          referral_commission_amount: number | null
+          referral_commission_percentage: number | null
+          rejection_date: string | null
+          rejection_notes: string | null
+          rejection_reason: string | null
+          reviewed_at: string | null
+          sale_id: string | null
+          status: string
+          submitted_at: string | null
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
+          vehicle_id: string | null
+        }
+        Insert: {
+          application_date?: string
+          application_number: string
+          approved_amount?: number | null
+          approved_at?: string | null
+          approved_by?: string | null
+          approved_interest_rate?: number | null
+          approved_term_months?: number | null
+          bank_branch?: string | null
+          bank_contact_person?: string | null
+          bank_contact_phone?: string | null
+          bank_name: string
+          bank_notes?: string | null
+          commission_paid?: boolean | null
+          commission_paid_date?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_credit_score?: number | null
+          customer_employment_type?: string | null
+          customer_id: string
+          customer_income_monthly?: number | null
+          disbursed_at?: string | null
+          documents_checklist?: Json | null
+          down_payment: number
+          id?: string
+          interest_rate: number
+          internal_notes?: string | null
+          loan_amount: number
+          loan_term_months: number
+          monthly_payment?: number | null
+          referral_commission_amount?: number | null
+          referral_commission_percentage?: number | null
+          rejection_date?: string | null
+          rejection_notes?: string | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          sale_id?: string | null
+          status?: string
+          submitted_at?: string | null
+          tenant_id: string
+          updated_at?: string
+          updated_by?: string | null
+          vehicle_id?: string | null
+        }
+        Update: {
+          application_date?: string
+          application_number?: string
+          approved_amount?: number | null
+          approved_at?: string | null
+          approved_by?: string | null
+          approved_interest_rate?: number | null
+          approved_term_months?: number | null
+          bank_branch?: string | null
+          bank_contact_person?: string | null
+          bank_contact_phone?: string | null
+          bank_name?: string
+          bank_notes?: string | null
+          commission_paid?: boolean | null
+          commission_paid_date?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_credit_score?: number | null
+          customer_employment_type?: string | null
+          customer_id?: string
+          customer_income_monthly?: number | null
+          disbursed_at?: string | null
+          documents_checklist?: Json | null
+          down_payment?: number
+          id?: string
+          interest_rate?: number
+          internal_notes?: string | null
+          loan_amount?: number
+          loan_term_months?: number
+          monthly_payment?: number | null
+          referral_commission_amount?: number | null
+          referral_commission_percentage?: number | null
+          rejection_date?: string | null
+          rejection_notes?: string | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          sale_id?: string | null
+          status?: string
+          submitted_at?: string | null
+          tenant_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          vehicle_id?: string | null
+        }
+        Relationships: []
       }
       auto_lost_analysis: {
         Row: {
@@ -13468,6 +13726,20 @@ export type Database = {
         Args: { p_customer_id: string; p_tenant_id: string }
         Returns: number
       }
+      check_expiring_insurance_policies: {
+        Args: { p_days_before?: number; p_tenant_id: string }
+        Returns: {
+          customer_id: string
+          customer_name: string
+          days_until_expiry: number
+          expiry_date: string
+          insurance_company: string
+          policy_id: string
+          policy_number: string
+          premium_amount: number
+          vehicle_id: string
+        }[]
+      }
       claim_outbox_batch: {
         Args: { p_limit?: number }
         Returns: {
@@ -13535,6 +13807,10 @@ export type Database = {
           step: string
           total_amount: number
         }[]
+      }
+      generate_loan_application_number: {
+        Args: { p_tenant_id: string }
+        Returns: string
       }
       generate_repair_order_number: {
         Args: { p_tenant_id: string }
