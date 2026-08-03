@@ -70,7 +70,7 @@ CREATE INDEX IF NOT EXISTS idx_re_leads_tenant_state_created
 -- Partial index for "hot" leads (qualified + visit scheduled + negotiating)
 CREATE INDEX IF NOT EXISTS idx_re_leads_hot 
   ON re_leads(tenant_id, assigned_to, state_changed_at DESC)
-  WHERE state IN ('QUALIFIED', 'VISIT_SCHEDULED', 'NEGOTIATING') AND deleted_at IS NULL;
+  WHERE deleted_at IS NULL AND assigned_to IS NOT NULL;
 
 -- ============================================================================
 -- RESERVATION & BOOKING FSM INDEXES
@@ -84,7 +84,7 @@ CREATE INDEX IF NOT EXISTS idx_re_reservations_tenant_status
 -- Reservations - Tenant + Product (for product availability checks)
 CREATE INDEX IF NOT EXISTS idx_re_reservations_tenant_product_status 
   ON re_reservations(tenant_id, product_id, status)
-  WHERE deleted_at IS NULL AND status NOT IN ('cancelled', 'converted_to_contract');
+  WHERE deleted_at IS NULL;
 
 -- Reservations - Tenant + Customer (for customer history)
 CREATE INDEX IF NOT EXISTS idx_re_reservations_tenant_customer 
@@ -109,7 +109,7 @@ CREATE INDEX IF NOT EXISTS idx_re_bookings_tenant_customer
 -- Partial index for active bookings (pending approval + confirmed)
 CREATE INDEX IF NOT EXISTS idx_re_bookings_active 
   ON re_bookings(tenant_id, product_id, state_changed_at DESC)
-  WHERE state IN ('PENDING_APPROVAL', 'CONFIRMED') AND deleted_at IS NULL;
+  WHERE deleted_at IS NULL;
 
 -- ============================================================================
 -- CONTRACT MANAGEMENT INDEXES
@@ -133,17 +133,17 @@ CREATE INDEX IF NOT EXISTS idx_re_contracts_tenant_customer
 -- Contracts - Tenant + Signed Date (for revenue recognition, aging analysis)
 CREATE INDEX IF NOT EXISTS idx_re_contracts_tenant_signed_date 
   ON re_contracts(tenant_id, signed_date DESC, state)
-  WHERE deleted_at IS NULL AND state IN ('ACTIVE', 'PENDING_APPROVAL');
+  WHERE deleted_at IS NULL;
 
 -- Partial index for active contracts (for accounting/revenue)
 CREATE INDEX IF NOT EXISTS idx_re_contracts_active 
   ON re_contracts(tenant_id, signed_date DESC)
-  WHERE state = 'ACTIVE' AND deleted_at IS NULL;
+  WHERE deleted_at IS NULL;
 
 -- Contracts - Installment JSONB search (for due installments lookup)
 CREATE INDEX IF NOT EXISTS idx_re_contracts_installments_gin 
   ON re_contracts USING GIN (installments)
-  WHERE deleted_at IS NULL AND state = 'ACTIVE';
+  WHERE deleted_at IS NULL;
 
 -- ============================================================================
 -- FINANCIAL TRANSACTION INDEXES
@@ -162,7 +162,7 @@ CREATE INDEX IF NOT EXISTS idx_re_transactions_tenant_status
 -- Transactions - Tenant + Type + Date (for revenue/expense breakdown)
 CREATE INDEX IF NOT EXISTS idx_re_transactions_tenant_type_date 
   ON re_transactions(tenant_id, transaction_type, transaction_date DESC)
-  WHERE deleted_at IS NULL AND status = 'completed';
+  WHERE deleted_at IS NULL;
 
 -- Transactions - Tenant + Contract (for contract payment history)
 CREATE INDEX IF NOT EXISTS idx_re_transactions_tenant_contract 
@@ -177,7 +177,7 @@ CREATE INDEX IF NOT EXISTS idx_re_transactions_tenant_customer
 -- Partial index for completed transactions (for financial reports)
 CREATE INDEX IF NOT EXISTS idx_re_transactions_completed 
   ON re_transactions(tenant_id, transaction_date DESC, amount)
-  WHERE status = 'completed' AND deleted_at IS NULL;
+  WHERE deleted_at IS NULL;
 
 -- Installment tracking (contract + installment number)
 CREATE INDEX IF NOT EXISTS idx_re_transactions_contract_installment 
@@ -206,12 +206,12 @@ CREATE INDEX IF NOT EXISTS idx_re_commissions_tenant_contract
 -- Partial index for pending commissions (for approval queue)
 CREATE INDEX IF NOT EXISTS idx_re_commissions_pending 
   ON re_commissions(tenant_id, agent_id, earned_at DESC)
-  WHERE status = 'pending' AND deleted_at IS NULL;
+  WHERE deleted_at IS NULL;
 
 -- Partial index for paid commissions (for payroll reconciliation)
 CREATE INDEX IF NOT EXISTS idx_re_commissions_paid 
   ON re_commissions(tenant_id, agent_id, paid_at DESC)
-  WHERE status = 'paid' AND deleted_at IS NULL;
+  WHERE deleted_at IS NULL;
 
 -- ============================================================================
 -- ANALYTICS & REPORTING COMPOSITE INDEXES
@@ -233,19 +233,19 @@ CREATE INDEX IF NOT EXISTS idx_re_sales_pipeline_report
 CREATE INDEX IF NOT EXISTS idx_re_revenue_report 
   ON re_transactions(tenant_id, transaction_date DESC, status, transaction_type)
   INCLUDE (amount, contract_id, customer_id)
-  WHERE deleted_at IS NULL AND status = 'completed';
+  WHERE deleted_at IS NULL;
 
 -- Agent performance report (tenant + agent + date range)
 CREATE INDEX IF NOT EXISTS idx_re_agent_performance_report 
   ON re_commissions(tenant_id, agent_id, earned_at DESC, status)
   INCLUDE (commission_amount, contract_id)
-  WHERE deleted_at IS NULL AND status IN ('approved', 'paid');
+  WHERE deleted_at IS NULL;
 
 -- Customer lifetime value report (tenant + customer)
 CREATE INDEX IF NOT EXISTS idx_re_customer_ltv_report 
   ON re_contracts(tenant_id, customer_id, state, signed_date DESC)
   INCLUDE (contract_price, product_id)
-  WHERE deleted_at IS NULL AND state = 'ACTIVE';
+  WHERE deleted_at IS NULL;
 
 -- ============================================================================
 -- VERIFICATION & STATISTICS
