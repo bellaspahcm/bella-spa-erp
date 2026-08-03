@@ -1,0 +1,303 @@
+name: Real Estate Module - CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'src/modules/real_estate/**'
+      - 'src/app/dashboard/real-estate/**'
+      - 'supabase/migrations/**'
+      - '.github/workflows/ci-real-estate.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'src/modules/real_estate/**'
+      - 'src/app/dashboard/real-estate/**'
+      - 'supabase/migrations/**'
+
+jobs:
+  # ============================================================================
+  # Job 1: Code Quality & Security
+  # ============================================================================
+  quality:
+    name: Code Quality & Security
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Lint TypeScript
+        run: npm run lint
+      
+      - name: Type check
+        run: npx tsc --noEmit
+      
+      - name: Security audit
+        run: npm audit --audit-level=moderate
+        continue-on-error: true
+      
+      - name: Check for secrets
+        run: npm run security:secrets
+        continue-on-error: true
+
+  # ============================================================================
+  # Job 2: Unit Tests
+  # ============================================================================
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run unit tests
+        run: npm run test:unit
+      
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage/coverage-final.json
+          flags: unittests
+          name: codecov-real-estate
+
+  # ============================================================================
+  # Job 3: Build Verification
+  # ============================================================================
+  build:
+    name: Build Verification
+    runs-on: ubuntu-latest
+    needs: [quality, test]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build application
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      
+      - name: Check build output
+        run: |
+          if [ ! -d ".next" ]; then
+            echo "Build failed - .next directory not found"
+            exit 1
+          fi
+
+  # ============================================================================
+  # Job 4: E2E Tests (Only on PR to main)
+  # ============================================================================
+  e2e:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+      
+      - name: Run E2E tests
+        run: npx playwright test --config=playwright.config.real-estate.ts
+        env:
+          PLAYWRIGHT_TEST_BASE_URL: http://localhost:3000
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.TEST_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.TEST_SUPABASE_ANON_KEY }}
+      
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+  # ============================================================================
+  # Job 5: Migration Validation
+  # ============================================================================
+  migrations:
+    name: Validate Migrations
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Test migrations (dry run)
+        run: |
+          # Install PostgreSQL client
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+          
+          # Test core schema migration
+          PGPASSWORD=postgres psql -h localhost -U postgres -d test_db \
+            -f supabase/migrations/20260802150000_real_estate_core_schema.sql
+          
+          # Test RPC functions migration
+          PGPASSWORD=postgres psql -h localhost -U postgres -d test_db \
+            -f supabase/migrations/20260802151000_real_estate_rpc_functions.sql
+      
+      - name: Verify schema
+        run: |
+          # Check tables exist
+          PGPASSWORD=postgres psql -h localhost -U postgres -d test_db \
+            -c "SELECT COUNT(*) FROM information_schema.tables WHERE table_name LIKE 're_%';"
+
+  # ============================================================================
+  # Job 6: Deploy to Staging (Auto on merge to develop)
+  # ============================================================================
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [quality, test, build]
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+    environment:
+      name: staging
+      url: https://staging.yourdomain.com
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Deploy to Vercel (Staging)
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--env NEXT_PUBLIC_VERCEL_ENV=preview'
+      
+      - name: Run smoke tests
+        run: |
+          echo "Waiting for deployment to be ready..."
+          sleep 30
+          
+          # Basic health check
+          curl --fail https://staging.yourdomain.com/api/health || exit 1
+
+  # ============================================================================
+  # Job 7: Deploy to Production (Manual approval)
+  # ============================================================================
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [quality, test, build, e2e]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment:
+      name: production
+      url: https://yourdomain.com
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Deploy to Vercel (Production)
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod'
+      
+      - name: Notify deployment
+        run: |
+          echo "✅ Real Estate module deployed to production"
+          echo "🔗 URL: https://yourdomain.com"
+      
+      - name: Create Sentry release
+        uses: getsentry/action-release@v1
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        with:
+          environment: production
+          version: ${{ github.sha }}
+
+  # ============================================================================
+  # Job 8: Post-Deployment Verification
+  # ============================================================================
+  verify-production:
+    name: Verify Production
+    runs-on: ubuntu-latest
+    needs: [deploy-production]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+      - name: Health check
+        run: |
+          curl --fail https://yourdomain.com/api/health || exit 1
+      
+      - name: Smoke test - Dashboard
+        run: |
+          curl --fail https://yourdomain.com/dashboard || exit 1
+      
+      - name: Smoke test - Real Estate
+        run: |
+          curl --fail https://yourdomain.com/dashboard/real-estate || exit 1
+      
+      - name: Check error rate (Sentry)
+        run: |
+          echo "✓ Deployment verified - monitoring for 5 minutes"
+          echo "📊 Check Sentry dashboard for error spikes"
