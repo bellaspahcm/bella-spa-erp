@@ -30,20 +30,20 @@
 ---
 
 ### Phase 1 — Quản Lý Phương Tiện & Số Khung (VIN Management) (Tuần 3-5)
-*   [ ] **1.1.** Tạo bảng cơ sở dữ liệu `auto_vehicles` lưu trữ thông tin số VIN, số khung, số máy, màu sắc và trạng thái của xe.
-*   [ ] **1.2.** Xây dựng `VehicleStatusMachineService` quản lý máy trạng thái vòng đời xe (`in_transit` → `warehouse` → `showroom` → `allocated` → `delivered`).
-*   [ ] **1.3.** Xây dựng `AutoInventoryProvider` kế thừa từ `InventoryProvider` để xử lý các nghiệp vụ xuất/nhập/điều chuyển kho xe.
-*   [ ] **1.4.** Phát triển giao diện quản lý danh mục xe (Thương hiệu, Dòng xe, Phiên bản) và kho xe thời gian thực.
-*   [ ] **1.5.** Phát triển chức năng phân bổ xe (`VehicleAllocationService`) để khớp số VIN cụ thể với một hợp đồng đặt cọc.
-*   [ ] **1.6.** Hiện thực hóa tính năng nhập danh sách xe hàng loạt từ file Excel/CSV.
+*   [x] **1.1.** Tạo bảng cơ sở dữ liệu `auto_vehicles` lưu trữ thông tin số VIN, số khung, số máy, màu sắc và trạng thái của xe.
+*   [x] **1.2.** Xây dựng `VehicleStatusMachineService` quản lý máy trạng thái vòng đời xe (`in_transit` → `warehouse` → `showroom` → `allocated` → `delivered`).
+*   [x] **1.3.** Xây dựng `AutoInventoryProvider` kế thừa từ `InventoryProvider` để xử lý các nghiệp vụ xuất/nhập/điều chuyển kho xe.
+*   [x] **1.4.** Phát triển giao diện quản lý danh mục xe (Thương hiệu, Dòng xe, Phiên bản) và kho xe thời gian thực.
+*   [x] **1.5.** Phát triển chức năng phân bổ xe (`VehicleAllocationService`) để khớp số VIN cụ thể với một hợp đồng đặt cọc.
+*   [x] **1.6.** Hiện thực hóa tính năng nhập danh sách xe hàng loạt từ file Excel/CSV.
 
 ---
 
 ### Phase 2 — Hồ Sơ Khách Hàng Ô Tô (Customer 360 Extension) (Tuần 5-6)
-*   [ ] **2.1.** Tạo bảng phụ trợ `auto_vehicle_owners` liên kết 1-1 hoặc 1-N với bảng `customers` cốt lõi mà không thay đổi cấu trúc bảng cũ.
-*   [ ] **2.2.** Xây dựng `AutoCustomerProvider` để đọc và tổng hợp thông tin mở rộng của chủ xe (sở thích thương hiệu, ngân sách, lịch sử đổi xe).
-*   [ ] **2.3.** Thiết kế giao diện chi tiết khách hàng tích hợp thêm Tab "Automotive" hiển thị các xe đang sở hữu và lịch sử giao dịch ô tô.
-*   [ ] **2.4.** Xây dựng logic gộp/chuẩn hóa dữ liệu khách hàng ô tô trùng lặp nhưng vẫn bảo toàn lịch sử số VIN sở hữu.
+*   [x] **2.1.** Tạo bảng phụ trợ `auto_vehicle_owners` liên kết 1-1 hoặc 1-N với bảng `customers` cốt lõi mà không thay đổi cấu trúc bảng cũ.
+*   [x] **2.2.** Xây dựng `AutoCustomerProvider` để đọc và tổng hợp thông tin mở rộng của chủ xe (sở thích thương hiệu, ngân sách, lịch sử đổi xe).
+*   [x] **2.3.** Thiết kế giao diện chi tiết khách hàng tích hợp thêm Tab "Automotive" hiển thị các xe đang sở hữu và lịch sử giao dịch ô tô.
+*   [x] **2.4.** Xây dựng logic gộp/chuẩn hóa dữ liệu khách hàng ô tô trùng lặp nhưng vẫn bảo toàn lịch sử số VIN sở hữu.
 
 ---
 
