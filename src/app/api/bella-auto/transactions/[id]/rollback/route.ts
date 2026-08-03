@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrimaryClient } from '@/lib/database/read-replica';
-import { BusinessRollbackEngine } from '@/lib/bella-auto/engines/BusinessRollbackEngine';
+import { BusinessRollbackEngine } from '../../../../../../lib/bella-auto/engines/BusinessRollbackEngine';
 
 export const runtime = 'nodejs';
 
