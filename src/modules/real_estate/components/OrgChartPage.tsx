@@ -14,6 +14,7 @@
  */
 
 import { useCallback, useContext, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Building2,
   Users,
@@ -300,6 +301,7 @@ function MemberCard({ member, onClick }: { member: AssignableReference; onClick?
 // ─── OrgChartPage ─────────────────────────────────────────────────────────────
 
 export function OrgChartPage() {
+  const router = useRouter();
   const tenantCtx = useContext(TenantContextContext);
   const tenantId = tenantCtx?.tenantId ?? 'real_estate';
 
@@ -615,10 +617,12 @@ export function OrgChartPage() {
                   </div>
                 </div>
 
-                {/* Footer Actions */}
+                 {/* Footer Actions */}
                 <div className="p-6 pt-0 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-3 bg-slate-50/30 dark:bg-slate-900/10">
                   <button
                     onClick={() => {
+                      setSelectedMember(null);
+                      router.push('/dashboard/chat');
                       toast.success(`Đang mở cổng trò chuyện với ${selectedMember.displayName}`);
                     }}
                     className="flex-1 py-2.5 px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 active:scale-95"
@@ -628,6 +632,8 @@ export function OrgChartPage() {
                   </button>
                   <button
                     onClick={() => {
+                      setSelectedMember(null);
+                      router.push('/dashboard/real-estate/bi-analytics');
                       toast.success(`Đang chuyển hướng sang Báo cáo Hiệu suất của ${selectedMember.displayName}`);
                     }}
                     className="flex-1 py-2.5 px-4 bg-amber-500 hover:bg-amber-600 text-black text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm active:scale-95"
