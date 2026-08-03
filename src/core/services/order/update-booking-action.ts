@@ -298,11 +298,11 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
       }
     }
 
-    // Sync session statuses and assigned_dates when start_date or completed_sessions is modified
-    if (
-      finalPayload.start_date !== undefined ||
-      finalPayload.completed_sessions !== undefined
-    ) {
+    // Sync session statuses and assigned_dates when start_date or completed_sessions has actually changed
+    const hasStartDateChanged = finalPayload.start_date !== undefined && finalPayload.start_date !== oldBooking?.start_date;
+    const hasCompletedSessionsChanged = finalPayload.completed_sessions !== undefined && Number(finalPayload.completed_sessions) !== (oldBooking?.completed_sessions || 0);
+
+    if (hasStartDateChanged || hasCompletedSessionsChanged) {
       const { data: allSessions, error: fetchSessionsError } = await supabase
         .from('session_logs')
         .select('id, session_number, status, assigned_date, completed_date')
@@ -327,24 +327,54 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
           const [year, month, day] = startDateStr.split('-').map(Number);
           
           const updates = allSessions.map((session) => {
-            const date = new Date(year, month - 1, day);
             const sessionNum = session.session_number || 1;
-            date.setDate(date.getDate() + (sessionNum - 1));
-            
-            const assignedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-            
-            // Determine new status and completed_date
-            const isCompleted = sessionNum <= completedCount;
-            const newStatus = isCompleted ? 'completed' : 'scheduled';
-            const newCompletedDate = isCompleted ? assignedDate : null;
+            const isAlreadyCompleted = session.status === 'completed';
+
+            // Recalculate assigned date only if start date has changed and the session is not completed
+            let assignedDate = session.assigned_date;
+            if (hasStartDateChanged && !isAlreadyCompleted) {
+              const date = new Date(year, month - 1, day);
+              date.setDate(date.getDate() + (sessionNum - 1));
+              assignedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+            }
+
+            // Determine status and completed_date changes
+            let newStatus = session.status;
+            let newCompletedDate = session.completed_date;
+
+            if (hasCompletedSessionsChanged) {
+              const isCompleted = sessionNum <= completedCount;
+              if (isCompleted && !isAlreadyCompleted) {
+                // Changing from scheduled to completed
+                newStatus = 'completed';
+                newCompletedDate = assignedDate || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`;
+              } else if (!isCompleted && isAlreadyCompleted) {
+                // Changing from completed to scheduled
+                newStatus = 'scheduled';
+                newCompletedDate = null;
+              }
+            }
+
+            // Build update payload dynamically
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const logUpdatePayload: any = {};
+            if (assignedDate !== session.assigned_date) {
+              logUpdatePayload.assigned_date = assignedDate;
+            }
+            if (newStatus !== session.status) {
+              logUpdatePayload.status = newStatus;
+            }
+            if (newCompletedDate !== session.completed_date) {
+              logUpdatePayload.completed_date = newCompletedDate;
+            }
+
+            if (Object.keys(logUpdatePayload).length === 0) {
+              return Promise.resolve({ error: null });
+            }
 
             return supabase
               .from('session_logs')
-              .update({ 
-                assigned_date: assignedDate,
-                status: newStatus,
-                completed_date: newCompletedDate
-              })
+              .update(logUpdatePayload)
               .eq('id', session.id);
           });
           
@@ -358,17 +388,41 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
         } else {
           // If no start_date, only update statuses
           const updates = allSessions.map((session) => {
+            if (!hasCompletedSessionsChanged) {
+              return Promise.resolve({ error: null });
+            }
+
             const sessionNum = session.session_number || 1;
+            const isAlreadyCompleted = session.status === 'completed';
             const isCompleted = sessionNum <= completedCount;
-            const newStatus = isCompleted ? 'completed' : 'scheduled';
-            const newCompletedDate = isCompleted ? (session.completed_date || session.assigned_date) : null;
+
+            let newStatus = session.status;
+            let newCompletedDate = session.completed_date;
+
+            if (isCompleted && !isAlreadyCompleted) {
+              newStatus = 'completed';
+              newCompletedDate = session.assigned_date || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`;
+            } else if (!isCompleted && isAlreadyCompleted) {
+              newStatus = 'scheduled';
+              newCompletedDate = null;
+            }
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const logUpdatePayload: any = {};
+            if (newStatus !== session.status) {
+              logUpdatePayload.status = newStatus;
+            }
+            if (newCompletedDate !== session.completed_date) {
+              logUpdatePayload.completed_date = newCompletedDate;
+            }
+
+            if (Object.keys(logUpdatePayload).length === 0) {
+              return Promise.resolve({ error: null });
+            }
 
             return supabase
               .from('session_logs')
-              .update({ 
-                status: newStatus,
-                completed_date: newCompletedDate
-              })
+              .update(logUpdatePayload)
               .eq('id', session.id);
           });
           

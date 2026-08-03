@@ -49,11 +49,12 @@ class MockQueryBuilder {
 
   single() {
     if (this.table === 'bookings') {
-      const booking = mockStore.bookings[0] || null;
+      // Return a shallow copy so MockQueryBuilder.update() mutations don't corrupt oldBooking reference
+      const booking = mockStore.bookings[0] ? { ...mockStore.bookings[0] } : null;
       return Promise.resolve({ data: booking, error: null });
     }
     if (this.table === 'tenants') {
-      const tenant = mockStore.tenants[0] || null;
+      const tenant = mockStore.tenants[0] ? { ...mockStore.tenants[0] } : null;
       return Promise.resolve({ data: tenant, error: null });
     }
     return Promise.resolve({ data: null, error: null });
