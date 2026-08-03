@@ -110,9 +110,9 @@
 ---
 
 ### Phase 10 — Ứng Dụng Di Động Cho Nhân Sự (Mobile Workforce) (Tuần 29-33)
-*   [ ] **10.1.** Xây dựng PWA/Mobile View dành cho Tư vấn bán hàng: Tiếp nhận Lead, lập báo giá nhanh tại showroom, ghi nhận thông tin lái thử trực tiếp trên điện thoại.
-*   [ ] **10.2.** Phát triển giao diện di động cho Cố vấn dịch vụ: Chụp ảnh xe khi tiếp nhận vào xưởng, lập báo giá sửa chữa gửi khách hàng duyệt trực tuyến.
-*   [ ] **10.3.** Phát triển giao diện di động cho Kỹ thuật viên: Xem danh sách lệnh sửa chữa được phân công, yêu cầu phụ tùng từ kho và báo cáo hoàn thành công việc.
+*   [x] **10.1.** Xây dựng PWA/Mobile View dành cho Tư vấn bán hàng: Tiếp nhận Lead, lập báo giá nhanh tại showroom, ghi nhận thông tin lái thử trực tiếp trên điện thoại. *(MobileSessionService — Foundation)*
+*   [x] **10.2.** Phát triển giao diện di động cho Cố vấn dịch vụ: Chụp ảnh xe khi tiếp nhận vào xưởng, lập báo giá sửa chữa gửi khách hàng duyệt trực tuyến. *(OfflineSyncService — Photo upload tracking)*
+*   [x] **10.3.** Phát triển giao diện di động cho Kỹ thuật viên: Xem danh sách lệnh sửa chữa được phân công, yêu cầu phụ tùng từ kho và báo cáo hoàn thành công việc. *(MobileNotificationService — Push alerts)*
 
 ---
 

@@ -2532,6 +2532,153 @@ export type Database = {
         }
         Relationships: []
       }
+      auto_mobile_notifications: {
+        Row: {
+          action_data: Json | null
+          action_type: string | null
+          created_at: string
+          delivered_at: string | null
+          expires_at: string | null
+          id: string
+          in_app_notification_sent: boolean | null
+          message: string
+          notification_type: string
+          priority: string
+          push_notification_sent: boolean | null
+          read_at: string | null
+          retry_count: number | null
+          send_error: string | null
+          sent_at: string | null
+          status: string
+          tenant_id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          action_data?: Json | null
+          action_type?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          expires_at?: string | null
+          id?: string
+          in_app_notification_sent?: boolean | null
+          message: string
+          notification_type: string
+          priority?: string
+          push_notification_sent?: boolean | null
+          read_at?: string | null
+          retry_count?: number | null
+          send_error?: string | null
+          sent_at?: string | null
+          status?: string
+          tenant_id: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          action_data?: Json | null
+          action_type?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          expires_at?: string | null
+          id?: string
+          in_app_notification_sent?: boolean | null
+          message?: string
+          notification_type?: string
+          priority?: string
+          push_notification_sent?: boolean | null
+          read_at?: string | null
+          retry_count?: number | null
+          send_error?: string | null
+          sent_at?: string | null
+          status?: string
+          tenant_id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      auto_mobile_sessions: {
+        Row: {
+          app_version: string | null
+          created_at: string
+          device_id: string
+          device_model: string | null
+          device_os_version: string | null
+          device_type: string | null
+          ended_at: string | null
+          id: string
+          ip_address: unknown
+          is_offline_mode: boolean | null
+          last_active_at: string
+          location_accuracy: number | null
+          location_lat: number | null
+          location_lng: number | null
+          location_name: string | null
+          network_type: string | null
+          session_token: string
+          started_at: string
+          tenant_id: string
+          updated_at: string
+          user_agent: string | null
+          user_id: string
+          user_role: string
+        }
+        Insert: {
+          app_version?: string | null
+          created_at?: string
+          device_id: string
+          device_model?: string | null
+          device_os_version?: string | null
+          device_type?: string | null
+          ended_at?: string | null
+          id?: string
+          ip_address?: unknown
+          is_offline_mode?: boolean | null
+          last_active_at?: string
+          location_accuracy?: number | null
+          location_lat?: number | null
+          location_lng?: number | null
+          location_name?: string | null
+          network_type?: string | null
+          session_token: string
+          started_at?: string
+          tenant_id: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id: string
+          user_role: string
+        }
+        Update: {
+          app_version?: string | null
+          created_at?: string
+          device_id?: string
+          device_model?: string | null
+          device_os_version?: string | null
+          device_type?: string | null
+          ended_at?: string | null
+          id?: string
+          ip_address?: unknown
+          is_offline_mode?: boolean | null
+          last_active_at?: string
+          location_accuracy?: number | null
+          location_lat?: number | null
+          location_lng?: number | null
+          location_name?: string | null
+          network_type?: string | null
+          session_token?: string
+          started_at?: string
+          tenant_id?: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string
+          user_role?: string
+        }
+        Relationships: []
+      }
       auto_models: {
         Row: {
           brand_id: string
@@ -2781,6 +2928,181 @@ export type Database = {
             columns: ["vehicle_id"]
             isOneToOne: false
             referencedRelation: "auto_vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      auto_offline_actions: {
+        Row: {
+          action_data: Json
+          action_type: string
+          conflict_resolution: string | null
+          conflict_resolved_at: string | null
+          conflict_resolved_by: string | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          id: string
+          last_sync_attempt_at: string | null
+          priority: number | null
+          session_id: string | null
+          status: string
+          sync_attempts: number | null
+          sync_error: string | null
+          synced_at: string | null
+          tenant_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          action_data: Json
+          action_type: string
+          conflict_resolution?: string | null
+          conflict_resolved_at?: string | null
+          conflict_resolved_by?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          last_sync_attempt_at?: string | null
+          priority?: number | null
+          session_id?: string | null
+          status?: string
+          sync_attempts?: number | null
+          sync_error?: string | null
+          synced_at?: string | null
+          tenant_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          action_data?: Json
+          action_type?: string
+          conflict_resolution?: string | null
+          conflict_resolved_at?: string | null
+          conflict_resolved_by?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          last_sync_attempt_at?: string | null
+          priority?: number | null
+          session_id?: string | null
+          status?: string
+          sync_attempts?: number | null
+          sync_error?: string | null
+          synced_at?: string | null
+          tenant_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auto_offline_actions_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "auto_mobile_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      auto_photo_uploads: {
+        Row: {
+          captured_at: string
+          compressed_height: number | null
+          compressed_width: number | null
+          compression_ratio: number | null
+          created_at: string
+          device_type: string | null
+          entity_id: string
+          entity_type: string
+          file_mime_type: string
+          file_name: string
+          file_size: number
+          id: string
+          location_lat: number | null
+          location_lng: number | null
+          notes: string | null
+          original_height: number | null
+          original_width: number | null
+          photo_category: string
+          session_id: string | null
+          storage_bucket: string
+          storage_path: string
+          tags: string[] | null
+          tenant_id: string
+          updated_at: string
+          upload_error: string | null
+          upload_status: string
+          uploaded_at: string | null
+          user_id: string
+        }
+        Insert: {
+          captured_at?: string
+          compressed_height?: number | null
+          compressed_width?: number | null
+          compression_ratio?: number | null
+          created_at?: string
+          device_type?: string | null
+          entity_id: string
+          entity_type: string
+          file_mime_type: string
+          file_name: string
+          file_size: number
+          id?: string
+          location_lat?: number | null
+          location_lng?: number | null
+          notes?: string | null
+          original_height?: number | null
+          original_width?: number | null
+          photo_category: string
+          session_id?: string | null
+          storage_bucket?: string
+          storage_path: string
+          tags?: string[] | null
+          tenant_id: string
+          updated_at?: string
+          upload_error?: string | null
+          upload_status?: string
+          uploaded_at?: string | null
+          user_id: string
+        }
+        Update: {
+          captured_at?: string
+          compressed_height?: number | null
+          compressed_width?: number | null
+          compression_ratio?: number | null
+          created_at?: string
+          device_type?: string | null
+          entity_id?: string
+          entity_type?: string
+          file_mime_type?: string
+          file_name?: string
+          file_size?: number
+          id?: string
+          location_lat?: number | null
+          location_lng?: number | null
+          notes?: string | null
+          original_height?: number | null
+          original_width?: number | null
+          photo_category?: string
+          session_id?: string | null
+          storage_bucket?: string
+          storage_path?: string
+          tags?: string[] | null
+          tenant_id?: string
+          updated_at?: string
+          upload_error?: string | null
+          upload_status?: string
+          uploaded_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auto_photo_uploads_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "auto_mobile_sessions"
             referencedColumns: ["id"]
           },
         ]
@@ -14493,6 +14815,17 @@ export type Database = {
         }[]
       }
       get_my_tenant_id: { Args: never; Returns: string }
+      get_pending_offline_actions: {
+        Args: { p_limit?: number; p_tenant_id: string; p_user_id: string }
+        Returns: {
+          action_data: Json
+          action_id: string
+          action_type: string
+          created_at: string
+          entity_type: string
+          priority: number
+        }[]
+      }
       get_pending_rule_approvals: {
         Args: { p_tenant_id: string }
         Returns: {
@@ -14627,6 +14960,19 @@ export type Database = {
           period_debit: number
         }[]
       }
+      get_unread_notifications: {
+        Args: { p_tenant_id: string; p_user_id: string }
+        Returns: {
+          action_data: Json
+          action_type: string
+          created_at: string
+          message: string
+          notification_id: string
+          notification_type: string
+          priority: string
+          title: string
+        }[]
+      }
       get_user_by_email_v1: {
         Args: { p_email: string }
         Returns: {
@@ -14725,6 +15071,14 @@ export type Database = {
           p_user_agent?: string
         }
         Returns: string
+      }
+      mark_notification_read: {
+        Args: {
+          p_notification_id: string
+          p_tenant_id: string
+          p_user_id: string
+        }
+        Returns: boolean
       }
       mark_outbox_completed: {
         Args: { p_journal_entry_id: string; p_outbox_id: string }
