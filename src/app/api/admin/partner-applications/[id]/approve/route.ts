@@ -43,19 +43,19 @@ export async function POST(
       );
     }
 
-    // 2. Verify admin role (TODO: Re-enable when user_roles table exists)
-    // const { data: userRoles, error: roleError } = await supabase
-    //   .from('user_roles')
-    //   .select('role_name')
-    //   .eq('user_id', user.id)
-    //   .in('role_name', ['admin', 'super_admin']);
+    // 2. Verify admin role
+    const { data: userRoles, error: roleError } = await supabase
+      .from('user_roles')
+      .select('role_name')
+      .eq('user_id', user.id)
+      .in('role_name', ['admin', 'super_admin']);
 
-    // if (roleError || !userRoles || userRoles.length === 0) {
-    //   return NextResponse.json(
-    //     { success: false, error: 'Forbidden: Admin role required' },
-    //     { status: 403 }
-    //   );
-    // }
+    if (roleError || !userRoles || userRoles.length === 0) {
+      return NextResponse.json(
+        { success: false, error: 'Forbidden: Admin role required' },
+        { status: 403 }
+      );
+    }
 
     // 3. Get application
     const { data: application, error: fetchError } = await supabase
@@ -135,15 +135,62 @@ export async function POST(
       // Don't fail the request if logging fails
     }
 
-    // 7. TODO: Trigger provisioning (Future: create tenant + user)
-    // For now, just return success
-    // In production, this would call provisionPartnerAccount() function
+    // 7. Trigger provisioning
+    let provisioningResult = null;
+    
+    try {
+      const { provisionPartnerAccount } = await import('@/lib/provisioning/partner-provisioning-engine');
+      
+      provisioningResult = await provisionPartnerAccount({
+        application_id: params.id,
+        full_name: application.full_name,
+        email: application.email,
+        phone: application.phone,
+        company_name: application.company_name || undefined,
+        tax_code: application.tax_code || undefined,
+      });
+      
+      if (!provisioningResult.success) {
+        console.error('[approve] Provisioning failed:', provisioningResult.error);
+        // Don't fail the approval, provisioning can be retried manually
+      }
+    } catch (provError) {
+      console.error('[approve] Provisioning exception:', provError);
+      // Don't fail the approval
+    }
+
+    // 8. Send approval email with activation link
+    try {
+      const { sendPartnerApprovalEmail } = await import('@/lib/email/email-service');
+      
+      const emailResult = await sendPartnerApprovalEmail(
+        application.email,
+        application.full_name,
+        application.company_name || 'Your Business',
+        provisioningResult?.activation_token || 'no-token',
+        provisioningResult?.tenant_subdomain
+      );
+      
+      if (!emailResult.success) {
+        console.error('[approve] Failed to send approval email:', emailResult.error);
+        // Don't fail the approval if email fails
+      } else {
+        console.log('[approve] Approval email sent successfully to:', application.email);
+      }
+    } catch (emailError) {
+      console.error('[approve] Email sending exception:', emailError);
+      // Don't fail the approval
+    }
     
     return NextResponse.json({
       success: true,
       application: updatedApp,
-      provisioned: false,
-      message: 'Application approved successfully. Provisioning will be implemented in next phase.',
+      provisioned: provisioningResult?.success || false,
+      tenant_id: provisioningResult?.tenant_id,
+      user_id: provisioningResult?.user_id,
+      message: provisioningResult?.success 
+        ? 'Application approved and account provisioned successfully.'
+        : 'Application approved. Provisioning will be completed shortly.',
     });
 
   } catch (error) {

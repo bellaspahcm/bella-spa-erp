@@ -1436,6 +1436,7 @@ describe('bulk salary action partial failure reporting', () => {
 
   it('returns a complete success summary when all publish targets succeed', async () => {
     setupDb([
+      { table: 'tenants', op: 'select', data: { id: 'tenant-1', name: 'Test Tenant' } },
       { table: 'users', op: 'select', data: [{ id: 'ktv-1' }, { id: 'ktv-2' }] },
       { table: 'salary_records', op: 'select', data: salarySnapshot },
       { table: 'salary_records', op: 'select', data: { ...salarySnapshot, id: 'salary-2', ktv_id: 'ktv-2' } },
@@ -1455,6 +1456,7 @@ describe('bulk salary action partial failure reporting', () => {
 
   it('returns partial failure details when one publish target fails', async () => {
     setupDb([
+      { table: 'tenants', op: 'select', data: { id: 'tenant-1', name: 'Test Tenant' } },
       { table: 'users', op: 'select', data: [{ id: 'ktv-1' }, { id: 'ktv-2' }] },
       { table: 'salary_records', op: 'select', data: salarySnapshot },
       { table: 'salary_records', op: 'select', data: { ...salarySnapshot, id: 'salary-2', ktv_id: 'ktv-2' } },
@@ -1475,6 +1477,7 @@ describe('bulk salary action partial failure reporting', () => {
 
   it('returns explicit failure when publish target fetch fails', async () => {
     setupDb([
+      { table: 'tenants', op: 'select', data: { id: 'tenant-1', name: 'Test Tenant' } },
       { table: 'users', op: 'select', error: { message: 'users fetch failed' } },
     ]);
 

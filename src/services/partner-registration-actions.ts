@@ -11,6 +11,7 @@
 
 'use server';
 
+import crypto from 'crypto';
 import { createClient } from '@/lib/supabase-server';
 import type {
   PartnerApplication,
@@ -134,20 +135,8 @@ export async function submitApplication(
   try {
     const supabase = await createClient();
     
-    // Generate email verification token
-    const { data: tokenData, error: tokenError } = await supabase.rpc(
-      'generate_email_verification_token'
-    );
-    
-    if (tokenError || !tokenData) {
-      console.error('[submitApplication] Token generation error:', tokenError);
-      return {
-        success: false,
-        error: 'Failed to generate verification token',
-      };
-    }
-    
-    const verificationToken = tokenData as string;
+    // Generate email verification token (24h expiration)
+    const verificationToken = crypto.randomBytes(32).toString('base64url');
     const tokenExpiresAt = new Date();
     tokenExpiresAt.setHours(tokenExpiresAt.getHours() + 24); // 24 hours expiry
     
@@ -157,8 +146,8 @@ export async function submitApplication(
       .update({
         status: 'pending_verification',
         submitted_at: new Date().toISOString(),
-        email_verification_token: verificationToken,
-        email_verification_token_expires_at: tokenExpiresAt.toISOString(),
+        verification_token: verificationToken,
+        verification_token_expires_at: tokenExpiresAt.toISOString(),
       } as any)
       .eq('id', applicationId)
       .eq('status', 'draft')
@@ -215,31 +204,77 @@ export async function verifyEmail(token: string): Promise<EmailVerificationRespo
     const supabase = await createClient();
     
     // Call RPC function to verify email
-    const { data, error } = await supabase.rpc('verify_partner_application_email', {
-      p_token: token,
-    });
+    // Direct database call instead of RPC
+    const { data: application, error: fetchError } = await supabase
+      .from('partner_applications')
+      .select('*')
+      .eq('verification_token', token)
+      .is('deleted_at', null)
+      .single();
     
-    if (error) {
-      console.error('[verifyEmail] Error:', error);
+    if (fetchError || !application) {
       return {
         success: false,
-        error: error.message,
+        error: 'Invalid or expired verification token',
       };
     }
     
-    const result = data as { success: boolean; application_id?: string; status?: string; error?: string };
-    
-    if (!result.success) {
+    // Check if already verified
+    if (application.email_verified_at) {
       return {
         success: false,
-        error: result.error || 'Verification failed',
+        error: 'Email already verified',
       };
     }
+    
+    // Check token expiration
+    if (!application.verification_token_expires_at) {
+      return {
+        success: false,
+        error: 'Verification token missing expiration',
+      };
+    }
+    
+    const expiresAt = new Date(application.verification_token_expires_at);
+    if (expiresAt < new Date()) {
+      return {
+        success: false,
+        error: 'Verification token expired',
+      };
+    }
+    
+    // Mark as verified
+    const { error: updateError } = await supabase
+      .from('partner_applications')
+      .update({
+        email_verified_at: new Date().toISOString(),
+        status: 'pending_review',
+        updated_at: new Date().toISOString(),
+      } as any)
+      .eq('id', application.id);
+    
+    if (updateError) {
+      console.error('[verifyEmail] Update error:', updateError);
+      return {
+        success: false,
+        error: updateError.message,
+      };
+    }
+    
+    // Log action
+    await supabase
+      .from('partner_application_logs')
+      .insert({
+        application_id: application.id,
+        action: 'email_verified',
+        action_description: 'Email verified successfully',
+        performed_by_role: 'system',
+      } as any);
     
     return {
       success: true,
-      application_id: result.application_id,
-      status: result.status as any,
+      application_id: application.id,
+      status: 'pending_review' as any,
     };
   } catch (error) {
     console.error('[verifyEmail] Exception:', error);
@@ -275,20 +310,8 @@ export async function resendVerificationEmail(
       };
     }
     
-    // Generate new verification token
-    const { data: tokenData, error: tokenError } = await supabase.rpc(
-      'generate_email_verification_token'
-    );
-    
-    if (tokenError || !tokenData) {
-      console.error('[resendVerificationEmail] Token generation error:', tokenError);
-      return {
-        success: false,
-        error: 'Failed to generate verification token',
-      };
-    }
-    
-    const verificationToken = tokenData as string;
+    // Generate new verification token (24h expiration)
+    const verificationToken = crypto.randomBytes(32).toString('base64url');
     const tokenExpiresAt = new Date();
     tokenExpiresAt.setHours(tokenExpiresAt.getHours() + 24);
     
@@ -296,8 +319,8 @@ export async function resendVerificationEmail(
     const { data: application, error } = await supabase
       .from('partner_applications')
       .update({
-        email_verification_token: verificationToken,
-        email_verification_token_expires_at: tokenExpiresAt.toISOString(),
+        verification_token: verificationToken,
+        verification_token_expires_at: tokenExpiresAt.toISOString(),
       } as any)
       .eq('id', applicationId)
       .select()

@@ -1,0 +1,50 @@
+# Partner Registration System - Files to Commit
+
+## Database
+supabase/migrations/20260802112935_partner_registration_system.sql
+supabase/migrations/20260802130000_create_user_roles.sql
+
+## Backend APIs
+src/app/api/admin/partner-applications/[id]/approve/route.ts
+src/app/api/admin/partner-applications/[id]/reject/route.ts
+src/app/api/admin/partner-applications/[id]/request-info/route.ts
+src/app/api/partner/verify/route.ts
+src/app/api/partner/activate/validate/route.ts
+src/app/api/partner/activate/route.ts
+
+## Services
+src/services/partner-registration-actions.ts
+src/lib/provisioning/partner-provisioning-engine.ts
+src/lib/email/email-service.ts
+src/lib/email/templates/partner-verification.ts
+
+## Frontend Pages
+src/app/admin/partner-applications/page.tsx
+src/app/admin/partner-applications/[id]/page.tsx
+src/app/partner/register/page.tsx
+src/app/partner/verify/page.tsx
+src/app/partner/activate/page.tsx
+
+## Types (if modified)
+src/types/database.types.ts
+
+## Scripts
+scripts/seed-partner-test-data.sql
+scripts/add-admin-user.sql
+scripts/test-partner-e2e.md
+scripts/re-enable-role-checks.sh
+
+## Documentation
+DEPLOY_PARTNER_SYSTEM.md
+DEPLOY_CHECKLIST.md
+PARTNER_SYSTEM_READY.md
+PARTNER_REGISTRATION_COMPLETE.md
+COMMIT_MESSAGE.txt
+DAY_13_14_COMPLETE.md
+docs/portal/PARTNER_REGISTRATION_STATUS.md
+docs/portal/PARTNER_REGISTRATION_SYSTEM_SPEC.md
+docs/portal/PARTNER_REGISTRATION_IMPLEMENTATION_PLAN.md
+docs/portal/SMTP_CONFIGURATION_GUIDE.md
+
+## Command
+git add $(cat GIT_FILES_TO_ADD.txt | grep -v "^#" | grep -v "^$")

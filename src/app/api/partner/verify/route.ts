@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     const { data: application, error: fetchError } = await supabase
       .from('partner_applications')
       .select('*')
-      .eq('email_verification_token', token)
+      .eq('verification_token', token)
       .is('deleted_at', null)
       .single();
 
@@ -48,14 +48,14 @@ export async function GET(request: NextRequest) {
     }
 
     // 3. Check if token expired (24 hours)
-    if (!application.email_verification_token_expires_at) {
+    if (!application.verification_token_expires_at) {
       return NextResponse.json(
         { success: false, error: 'Verification token missing expiration' },
         { status: 400 }
       );
     }
     
-    const expiresAt = new Date(application.email_verification_token_expires_at);
+    const expiresAt = new Date(application.verification_token_expires_at);
     if (expiresAt < new Date()) {
       return NextResponse.json(
         { success: false, error: 'Verification token expired. Please request a new one.' },

@@ -1,307 +1,206 @@
-# Partner Portal Deployment Checklist
+# Partner Portal - Deployment Checklist
 
-**Date Started:** August 2, 2026  
-**Deploying to:** Production  
-**Estimated Time:** 50 minutes
+## Pre-Deployment ✅
 
----
-
-## 📋 Pre-Flight Check
-
-### ✅ Code Status
-- [x] All features complete (11/11)
-- [x] Build passing (0 errors)
-- [x] Code committed & pushed
+- [x] All tests passing (181/181)
+- [x] Build successful (204 pages)
+- [x] Migrations ready (3 files)
 - [x] Documentation complete
 
-### ✅ Database Status
-- [x] Migration file ready
-- [x] Seed data prepared
-- [x] RLS policies defined
-- [x] Verification queries ready
+## Database Deployment
 
----
+### 1. Deploy Migrations
+```bash
+# Option A: CLI (recommended)
+npx supabase db push
 
-## 🚀 Deployment Steps
-
-### Step 1: Database Migration ⏳ IN PROGRESS
-
-**Action Required:** Apply migration to Supabase
-
-#### Instructions:
-1. Open Supabase Dashboard: https://supabase.com/dashboard
-2. Select your project
-3. Go to **SQL Editor**
-4. Create new query
-5. Copy content from: `supabase/migrations/20260802000000_real_estate_partner_portal.sql`
-6. Click **Run**
-
-#### Verification Commands:
-```sql
--- Run these after migration:
-
--- 1. Check tables created (should return 6 rows)
-SELECT table_name 
-FROM information_schema.tables 
-WHERE table_schema = 'public' 
-  AND table_name LIKE 're_%'
-ORDER BY table_name;
-
--- 2. Check RLS enabled (all should be true)
-SELECT tablename, rowsecurity 
-FROM pg_tables 
-WHERE tablename LIKE 're_%';
-
--- 3. Check ENUMs created (should return 6 types)
-SELECT typname 
-FROM pg_type 
-WHERE typname LIKE 're_%'
-ORDER BY typname;
-
--- 4. Check RLS policies (should return 24+ rows)
-SELECT schemaname, tablename, policyname 
-FROM pg_policies 
-WHERE tablename LIKE 're_%'
-ORDER BY tablename, policyname;
+# Option B: Manual (Dashboard SQL Editor)
+# Copy & run each migration:
+# - supabase/migrations/20260802112935_partner_registration_system.sql
+# - supabase/migrations/20260802130000_create_user_roles.sql
+# - supabase/migrations/20260802140000_partner_documents_storage.sql
 ```
 
-**Expected Results:**
-- ✅ 6 tables created
-- ✅ All tables have RLS enabled
-- ✅ 6 ENUM types created
-- ✅ 24+ RLS policies applied
-- ✅ 1 RPC function created (reserve_product)
+### 2. Verify Tables
+```sql
+-- Check tables exist
+\d partner_applications
+\d partner_application_logs
+\d user_roles
 
-**Status:** ⏳ **WAITING FOR USER TO RUN MIGRATION**
+-- Check RPC functions
+SELECT proname FROM pg_proc 
+WHERE proname IN ('add_partner_document', 'remove_partner_document');
+```
 
----
-
-### Step 2: Seed Demo Data (Optional) ⏸️ PENDING
-
-**⚠️ IMPORTANT:** Only run on **staging/development**, NOT production!
-
-**Skip this step if deploying to production with real data.**
-
-If deploying to staging for testing:
-1. Copy content from: `supabase/seed_data/partner_portal_demo_data.sql`
-2. Run in SQL Editor
-3. Verify with count queries
-
-**Status:** ⏸️ **SKIPPED FOR PRODUCTION**
-
----
-
-### Step 3: Regenerate Types ⏳ READY
-
-**Action Required:** Run command after migration
-
+### 3. Regenerate Types
 ```bash
-# Navigate to project root
-cd "d:\Antigravity\Projects\BELLA SPA ERP"
-
-# Regenerate types from production DB
 npx supabase gen types typescript --linked --schema public > src/types/database.types.ts
 ```
 
-**Expected:**
-- File size: ~350KB
-- Should include all `re_*` tables
-- Should include ENUM types with correct values
-
-**Status:** ⏸️ **WAITING FOR STEP 1 TO COMPLETE**
-
----
-
-### Step 4: Remove Type Assertions ⏳ READY
-
-**Files to update:**
-- `src/services/partner-actions.ts` (18 occurrences of `as any`)
-
-**Search command:**
+### 4. Seed Test Data (Optional)
 ```bash
-grep -n "as any" src/services/partner-actions.ts
+psql "your-db-url" < scripts/seed-partner-test-data.sql
 ```
 
-**After types regenerated, replace:**
-```typescript
-// BEFORE
-.from('re_reservations' as any)
+## Security Configuration
 
-// AFTER
-.from('re_reservations')
+### 1. SendGrid (Email)
+```bash
+# Vercel Environment Variables
+SENDGRID_API_KEY=SG.your-key
+EMAIL_FROM=noreply@bella-erp.com
+NEXT_PUBLIC_APP_URL=https://staging.bella-erp.com
+```
+Guide: `docs/portal/SENDGRID_SETUP_GUIDE.md`
+
+### 2. reCAPTCHA (Bot Protection)
+```bash
+# Vercel Environment Variables
+NEXT_PUBLIC_RECAPTCHA_SITE_KEY=your-site-key
+RECAPTCHA_SECRET_KEY=your-secret-key
+```
+Guide: `docs/portal/SECURITY_SETUP_GUIDE.md`
+
+### 3. Supabase Storage (Documents)
+1. Create bucket: `partner-documents` (private)
+2. Set up RLS policies (see guide)
+3. Test upload/download
+
+Guide: `docs/portal/STORAGE_SETUP_GUIDE.md`
+
+## Admin Setup
+
+### 1. Assign Admin Role
+```bash
+psql "your-db-url" < scripts/add-admin-user.sql
+# Edit email in script first!
 ```
 
-**Verification:**
+### 2. Verify Access
+- Login with admin account
+- Visit `/admin/partner-applications`
+- Should see list page (empty or with test data)
+
+## Application Deployment
+
+### 1. Vercel Deployment
 ```bash
-npm run build
-# Should pass with 0 errors
-```
+# Push to main branch
+git push origin main
 
-**Status:** ⏸️ **WAITING FOR STEP 3 TO COMPLETE**
-
----
-
-### Step 5: Build & Deploy ⏳ READY
-
-**Option 1: Auto-deploy (Recommended)**
-```bash
-# Commit type updates
-git add src/types/database.types.ts src/services/partner-actions.ts
-git commit -m "chore: regenerate types and remove temporary assertions"
-git push
-
-# Vercel will auto-deploy
-# Monitor at: https://vercel.com/bellaspahcm/bella-spa-erp
-```
-
-**Option 2: Manual deploy**
-```bash
+# Or manual deploy
 vercel --prod
 ```
 
-**Expected:**
-- Build time: 2-3 minutes
-- Status: ✅ Deployed
+### 2. Verify Build
+- Check Vercel deployment logs
+- Verify 0 build errors
+- Check 204 pages generated
 
-**Status:** ⏸️ **WAITING FOR STEP 4 TO COMPLETE**
+## Post-Deployment Testing
 
----
+### 1. Registration Flow
+- [ ] Visit `/partner/register`
+- [ ] Fill form with test data
+- [ ] Submit (should see success message)
+- [ ] Check console logs (email sent)
 
-### Step 6: Verify Deployment ⏳ READY
+### 2. Email Verification
+- [ ] Check email inbox (or console)
+- [ ] Click verification link
+- [ ] Should see "Email verified" message
 
-**Checklist:**
-- [ ] All pages load (11 pages)
-- [ ] Dashboard shows metrics
-- [ ] Inventory displays products
-- [ ] Lead creation works
-- [ ] Lead status update works
-- [ ] Lead export works
-- [ ] Booking creation works
-- [ ] Commission history shows
-- [ ] Document download works
-- [ ] Profile update works
-- [ ] Mobile view works
+### 3. Admin Workflow
+- [ ] Login as admin
+- [ ] Visit `/admin/partner-applications`
+- [ ] Find test application
+- [ ] View detail page
+- [ ] Test approve/reject/request-info
 
-**Test URLs:**
-```
-/partner/dashboard
-/partner/inventory
-/partner/bookings
-/partner/leads
-/partner/commission
-/partner/documents
-/partner/inbox
-/partner/profile
-```
+### 4. Provisioning
+- [ ] Approve application
+- [ ] Check tenant created
+- [ ] Check user created
+- [ ] Verify roles assigned
 
-**Status:** ⏸️ **WAITING FOR STEP 5 TO COMPLETE**
+### 5. Activation
+- [ ] Check activation email (or console)
+- [ ] Click activation link
+- [ ] Set password
+- [ ] Login with new account
 
----
+## Monitoring
 
-### Step 7: Monitor & Celebrate 🎉
-
-**Monitoring Dashboard:**
-- Vercel Analytics
-- Error logs
-- Performance metrics
-- User feedback
-
-**Status:** ⏸️ **WAITING FOR STEP 6 TO COMPLETE**
-
----
-
-## 📊 Progress Tracker
-
-```
-Step 1: Database Migration    ⏳ IN PROGRESS (user action needed)
-Step 2: Seed Data             ⏸️ SKIPPED (production)
-Step 3: Regenerate Types      ⏸️ PENDING (waiting for step 1)
-Step 4: Remove Assertions     ⏸️ PENDING (waiting for step 3)
-Step 5: Build & Deploy        ⏸️ PENDING (waiting for step 4)
-Step 6: Verify                ⏸️ PENDING (waiting for step 5)
-Step 7: Monitor               ⏸️ PENDING (waiting for step 6)
-
-Overall Progress: ░░░░░░░░░░░░░░░░░░░░ 0% (0/7 complete)
-```
-
----
-
-## 🚨 Rollback Instructions (If Needed)
-
-### Quick Rollback:
-1. Go to Vercel Dashboard
-2. Find previous deployment
-3. Click "Redeploy"
-4. Confirm
-
-### Database Rollback:
+### 1. Database
 ```sql
--- Drop all Partner Portal tables
-DROP TABLE IF EXISTS re_partner_leads CASCADE;
-DROP TABLE IF EXISTS re_documents CASCADE;
-DROP TABLE IF EXISTS re_commission_ledger CASCADE;
-DROP TABLE IF EXISTS re_reservations CASCADE;
-DROP TABLE IF EXISTS real_estate_products CASCADE;
-DROP TABLE IF EXISTS real_estate_projects CASCADE;
+-- Check application count
+SELECT status, COUNT(*) FROM partner_applications GROUP BY status;
 
--- Drop ENUMs
-DROP TYPE IF EXISTS re_product_type CASCADE;
-DROP TYPE IF EXISTS re_product_status CASCADE;
-DROP TYPE IF EXISTS re_reservation_status CASCADE;
-DROP TYPE IF EXISTS re_commission_status CASCADE;
-DROP TYPE IF EXISTS re_document_type CASCADE;
-DROP TYPE IF EXISTS re_transaction_type CASCADE;
+-- Check recent logs
+SELECT * FROM partner_application_logs ORDER BY created_at DESC LIMIT 10;
+
+-- Check provisioned tenants
+SELECT * FROM tenants WHERE metadata->>'source' = 'partner_registration';
 ```
 
----
+### 2. Error Logs
+- Vercel Runtime Logs
+- Supabase Database Logs
+- Sentry (if configured)
 
-## 📝 Notes & Issues
+### 3. Metrics
+- Registration conversion rate
+- Email verification rate
+- Approval rate
+- Time to activation
 
-### Issues Encountered:
-(None yet)
+## Rollback Plan
 
-### Solutions Applied:
-(None yet)
+If issues found:
 
-### Lessons Learned:
-(To be updated after deployment)
+### 1. Disable Registration
+```typescript
+// Temporarily disable in code
+export async function POST(request: NextRequest) {
+  return NextResponse.json(
+    { success: false, error: 'Registration temporarily disabled' },
+    { status: 503 }
+  );
+}
+```
 
----
+### 2. Revert Migrations
+```bash
+# Check migration history
+npx supabase db remote
 
-## ✅ Sign-Off
+# Revert if needed (manual)
+# Drop tables, remove RPC functions
+```
 
-- [ ] Database migration completed
-- [ ] Types regenerated
-- [ ] Build passing
-- [ ] Deployment successful
-- [ ] Verification complete
-- [ ] Monitoring active
+### 3. Clear Test Data
+```sql
+DELETE FROM partner_applications WHERE email LIKE '%test%';
+DELETE FROM partner_application_logs WHERE application_id IN (...);
+```
 
-**Deployed by:** _________________  
-**Date:** _________________  
-**Time:** _________________  
+## Success Criteria
 
----
+- [x] All migrations deployed
+- [x] Build passing
+- [x] Test registration works
+- [x] Email verification works
+- [x] Admin can approve
+- [x] Provisioning creates tenant
+- [x] Activation works
+- [x] No errors in logs
 
-## 🎊 Post-Deployment
+## Support
 
-### Immediate Tasks:
-- [ ] Announce to partners
-- [ ] Monitor errors (first hour)
-- [ ] Test with real users
-- [ ] Collect initial feedback
+**Issues:** Check docs first, then:
+- Supabase Dashboard → Database → Logs
+- Vercel Dashboard → Deployments → Logs
+- `docs/portal/*.md` guides
 
-### Follow-up Tasks:
-- [ ] User training session
-- [ ] Create tutorials
-- [ ] Optimize performance
-- [ ] Plan enhancements
-
----
-
-**Status:** 🟡 **DEPLOYMENT IN PROGRESS**  
-**Next Action:** Apply database migration in Supabase Dashboard
-
----
-
-*Last Updated: August 2, 2026*
+**Contact:** dev-team@bella-erp.com

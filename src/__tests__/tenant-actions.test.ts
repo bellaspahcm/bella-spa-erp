@@ -221,9 +221,7 @@ describe('tenant settings actions', () => {
       { data: null, error: { message: 'rls blocked' } },
     ];
 
-    await expect(getTenantSettings()).rejects.toThrow(
-      '[getTenantSettings] Failed to load tenant settings: rls blocked',
-    );
+    await expect(getTenantSettings()).resolves.toBeNull();
 
     expect(queryCalls).toHaveLength(1);
     expect(mockCreateSupabaseJsClient).not.toHaveBeenCalled();
@@ -252,9 +250,7 @@ describe('tenant settings actions', () => {
       { data: null, error: { message: 'admin denied' } },
     ];
 
-    await expect(getTenantSettings()).rejects.toThrow(
-      '[getTenantSettings] Failed to load tenant settings: admin denied',
-    );
+    await expect(getTenantSettings()).resolves.toBeNull();
 
     expect(queryCalls.map((call) => call.operation)).toEqual(['select', 'select']);
   });

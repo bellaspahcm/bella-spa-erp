@@ -45,19 +45,19 @@ export async function POST(
       );
     }
 
-    // 2. Verify admin role (TODO: Re-enable when user_roles table exists)
-    // const { data: userRoles, error: roleError } = await supabase
-    //   .from('user_roles')
-    //   .select('role_name')
-    //   .eq('user_id', user.id)
-    //   .in('role_name', ['admin', 'super_admin']);
+    // 2. Verify admin role
+    const { data: userRoles, error: roleError } = await supabase
+      .from('user_roles')
+      .select('role_name')
+      .eq('user_id', user.id)
+      .in('role_name', ['admin', 'super_admin']);
 
-    // if (roleError || !userRoles || userRoles.length === 0) {
-    //   return NextResponse.json(
-    //     { success: false, error: 'Forbidden: Admin role required' },
-    //     { status: 403 }
-    //   );
-    // }
+    if (roleError || !userRoles || userRoles.length === 0) {
+      return NextResponse.json(
+        { success: false, error: 'Forbidden: Admin role required' },
+        { status: 403 }
+      );
+    }
 
     // 3. Get application
     const { data: application, error: fetchError } = await supabase
@@ -133,9 +133,29 @@ export async function POST(
       // Don't fail the request if logging fails
     }
 
-    // 7. TODO: Send notification email to applicant
-    // For now, just return success
-    // In production, this would call sendInfoRequestEmail() function
+    // 7. Send notification email to applicant
+    try {
+      const { sendPartnerRequestInfoEmail } = await import('@/lib/email/email-service');
+      
+      const emailResult = await sendPartnerRequestInfoEmail(
+        application.email,
+        application.full_name,
+        application.company_name || 'Your Business',
+        message.trim(),
+        'Admin Team', // adminName
+        user.email || undefined
+      );
+      
+      if (!emailResult.success) {
+        console.error('[request-info] Failed to send email:', emailResult.error);
+        // Don't fail the request if email fails
+      } else {
+        console.log('[request-info] Email sent successfully to:', application.email);
+      }
+    } catch (emailError) {
+      console.error('[request-info] Email sending exception:', emailError);
+      // Don't fail the request
+    }
     
     return NextResponse.json({
       success: true,

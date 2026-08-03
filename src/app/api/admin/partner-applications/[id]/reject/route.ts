@@ -45,19 +45,19 @@ export async function POST(
       );
     }
 
-    // 2. Verify admin role (TODO: Re-enable when user_roles table exists)
-    // const { data: userRoles, error: roleError } = await supabase
-    //   .from('user_roles')
-    //   .select('role_name')
-    //   .eq('user_id', user.id)
-    //   .in('role_name', ['admin', 'super_admin']);
+    // 2. Verify admin role
+    const { data: userRoles, error: roleError } = await supabase
+      .from('user_roles')
+      .select('role_name')
+      .eq('user_id', user.id)
+      .in('role_name', ['admin', 'super_admin']);
 
-    // if (roleError || !userRoles || userRoles.length === 0) {
-    //   return NextResponse.json(
-    //     { success: false, error: 'Forbidden: Admin role required' },
-    //     { status: 403 }
-    //   );
-    // }
+    if (roleError || !userRoles || userRoles.length === 0) {
+      return NextResponse.json(
+        { success: false, error: 'Forbidden: Admin role required' },
+        { status: 403 }
+      );
+    }
 
     // 3. Get application
     const { data: application, error: fetchError } = await supabase
@@ -131,9 +131,28 @@ export async function POST(
       // Don't fail the request if logging fails
     }
 
-    // 7. TODO: Send rejection email to applicant
-    // For now, just return success
-    // In production, this would call sendRejectionEmail() function
+    // 7. Send rejection email to applicant
+    try {
+      const { sendPartnerRejectionEmail } = await import('@/lib/email/email-service');
+      
+      const emailResult = await sendPartnerRejectionEmail(
+        application.email,
+        application.full_name,
+        application.company_name || 'Your Business',
+        reason.trim(),
+        true // canReapply
+      );
+      
+      if (!emailResult.success) {
+        console.error('[reject] Failed to send rejection email:', emailResult.error);
+        // Don't fail the rejection if email fails
+      } else {
+        console.log('[reject] Rejection email sent successfully to:', application.email);
+      }
+    } catch (emailError) {
+      console.error('[reject] Email sending exception:', emailError);
+      // Don't fail the rejection
+    }
     
     return NextResponse.json({
       success: true,

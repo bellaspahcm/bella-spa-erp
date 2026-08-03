@@ -1,16 +1,27 @@
 #!/bin/bash
-# Re-enable role checks in Admin API routes after user_roles table exists
+# Re-enable role checks in admin APIs after user_roles migration deployed
 
-echo "🔧 Re-enabling role checks..."
+echo "🔧 Re-enabling role checks in admin APIs..."
 
-# Uncomment role checks in approve route
-sed -i 's|// \(.*user_roles.*\)|    \1|g' src/app/api/admin/partner-applications/[id]/approve/route.ts
+FILES=(
+  "src/app/api/admin/partner-applications/[id]/approve/route.ts"
+  "src/app/api/admin/partner-applications/[id]/reject/route.ts"
+  "src/app/api/admin/partner-applications/[id]/request-info/route.ts"
+)
 
-# Uncomment role checks in reject route
-sed -i 's|// \(.*user_roles.*\)|    \1|g' src/app/api/admin/partner-applications/[id]/reject/route.ts
+for file in "${FILES[@]}"; do
+  echo "📝 Processing: $file"
+  
+  # Uncomment the role check section
+  sed -i 's/\/\/ 2\. Verify admin role/2. Verify admin role/g' "$file"
+  sed -i 's/\/\/ const { data: roleCheck/const { data: roleCheck/g' "$file"
+  sed -i 's/\/\/ if (!roleCheck/if (!roleCheck/g' "$file"
+  
+  echo "✅ Done: $file"
+done
 
-# Uncomment role checks in request-info route
-sed -i 's|// \(.*user_roles.*\)|    \1|g' src/app/api/admin/partner-applications/[id]/request-info/route.ts
-
-echo "✅ Role checks re-enabled"
-echo "   Run: npm run build"
+echo ""
+echo "📝 Also uncomment role assignment in:"
+echo "   src/lib/provisioning/partner-provisioning-engine.ts (line ~113)"
+echo ""
+echo "✅ All role checks re-enabled!"

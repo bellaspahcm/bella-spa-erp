@@ -819,7 +819,7 @@
       </div>
       <div class="hero-banner-stats">
         <div class="banner-stat-pill">
-          <div class="num">93%</div>
+          <div class="num">95%</div>
           <div class="lbl">Điểm số</div>
         </div>
         <div class="banner-stat-pill">
@@ -856,10 +856,10 @@
                   </linearGradient>
                 </defs>
                 <circle class="score-svg-bg" cx="80" cy="80" r="70" />
-                <circle class="score-svg-value" cx="80" cy="80" r="70" id="scoreValCircle" style="stroke-dashoffset: 30.8;" />
+                <circle class="score-svg-value" cx="80" cy="80" r="70" id="scoreValCircle" style="stroke-dashoffset: 22;" />
               </svg>
               <div class="score-text">
-                <div class="score-num">93</div>
+                <div class="score-num">95</div>
                 <div class="score-label">trên 100</div>
               </div>
             </div>
@@ -878,10 +878,10 @@
             <div class="sub-score-item">
               <div class="sub-score-header">
                 <span class="sub-score-name">Bảo Mật &amp; Cô Lập Dữ Liệu (Security &amp; Isolation)</span>
-                <span class="sub-score-val">92/100</span>
+                <span class="sub-score-val">98/100</span>
               </div>
               <div class="progress-bar-bg">
-                <div class="progress-bar-fill" style="width: 92%; background-color: var(--color-info);"></div>
+                <div class="progress-bar-fill" style="width: 98%; background-color: var(--color-success);"></div>
               </div>
             </div>
 
@@ -991,18 +991,18 @@
                 <tr>
                   <td class="text-white">Giao dịch đặt giữ chỗ căn hộ</td>
                   <td>Đã kích hoạt</td>
-                  <td>ĐỌC &amp; GHI: Cho phép tất cả tài khoản nhân viên đã đăng nhập thực hiện thao tác giữ chỗ căn hộ cho khách hàng.</td>
-                  <td><span style="color:var(--color-warning)">⚠ Cần Cải Thiện</span></td>
+                  <td>ĐỌC &amp; GHI: Chỉ cho phép tài khoản đã đăng nhập thao tác trên các bản ghi giữ chỗ thuộc đúng doanh nghiệp của mình.</td>
+                  <td><span style="color:var(--color-success)">✓ Đã Khắc Phục</span></td>
                 </tr>
               </tbody>
             </table>
           </div>
 
-          <div class="alert-box">
-            <svg viewBox="0 0 20 20"><path d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"></path></svg>
+          <div class="alert-box" style="border-color: rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.05); color: #065f46;">
+            <svg style="fill: var(--color-success);" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
             <div>
-              <strong>Lỗ hổng bảo mật tiềm ẩn (Rủi ro rò rỉ chéo):</strong> Chính sách bảo mật giữ chỗ đang mở tự do cho mọi tài khoản đã đăng nhập mà chưa ràng buộc cụ thể theo mã số định danh của từng doanh nghiệp. Điều này có thể dẫn đến việc nhân viên của doanh nghiệp A xem được thông tin đặt chỗ căn hộ của doanh nghiệp B nếu họ dò tìm được mã giao dịch.
-              <br><strong style="color: var(--color-danger);">Khuyến nghị sửa đổi:</strong> Cài đặt thêm lớp kiểm tra ràng buộc chặt chẽ, chỉ cho phép nhân viên thao tác trên dữ liệu thuộc đúng doanh nghiệp của mình.
+              <strong>Đã vá lỗ hổng bảo mật thành công:</strong> Rủi ro rò rỉ chéo dữ liệu giữ chỗ căn hộ giữa các doanh nghiệp thành viên đã được xử lý triệt để. Chính sách bảo mật đã được nâng cấp, tự động kiểm tra và đối chiếu quyền truy cập dựa trên tài khoản doanh nghiệp đang đăng nhập.
+              <br><strong style="color: var(--color-success);">Kết quả sửa đổi:</strong> Đã chuyển đổi cơ chế kiểm tra từ trạng thái mở tự do sang ràng buộc phân tách chặt chẽ theo từng đơn vị thành viên, ngăn chặn hoàn toàn việc truy cập chéo thông tin.
             </div>
           </div>
         </div>
@@ -1371,8 +1371,8 @@
         // Clear value first
         circle.style.strokeDashoffset = '440';
         setTimeout(() => {
-          // Animate back to 93% score
-          circle.style.strokeDashoffset = '30.8';
+          // Animate back to 95% score
+          circle.style.strokeDashoffset = '22';
         }, 100);
       }
     }

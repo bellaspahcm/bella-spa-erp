@@ -27,13 +27,9 @@ CREATE INDEX IF NOT EXISTS idx_re_reservations_expiry
 ALTER TABLE public.re_reservations ENABLE ROW LEVEL SECURITY;
 
 -- Permissive RLS Policies for Tenant Access (Authenticated Users & Service Role)
-DO $$ 
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Allow authenticated users full access to re_reservations') THEN
-    CREATE POLICY "Allow authenticated users full access to re_reservations" 
-      ON public.re_reservations FOR ALL TO authenticated USING (true);
-  END IF;
-END $$;
+DROP POLICY IF EXISTS "Allow authenticated users full access to re_reservations" ON public.re_reservations;
+CREATE POLICY "Allow authenticated users full access to re_reservations" 
+  ON public.re_reservations FOR ALL TO authenticated USING (tenant_id = public.get_auth_tenant_id());
 
 -- Grants
 REVOKE ALL ON TABLE public.re_reservations FROM anon;

@@ -78,17 +78,25 @@ export default function PartnerApplicationsPage() {
     setError(null);
     
     try {
-      // TODO: Replace with actual API call
-      // const response = await fetch('/api/admin/partner-applications');
-      // const data = await response.json();
-      // setApplications(data.applications);
+      const response = await fetch('/api/admin/partner-applications');
       
-      // For now, use empty array
-      setApplications([]);
-      setFilteredApplications([]);
+      if (!response.ok) {
+        throw new Error('Failed to fetch applications');
+      }
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setApplications(data.applications);
+        setFilteredApplications(data.applications);
+      } else {
+        throw new Error(data.error || 'Failed to load applications');
+      }
     } catch (err) {
       setError('Failed to load applications');
       console.error('[loadApplications] Error:', err);
+      setApplications([]);
+      setFilteredApplications([]);
     } finally {
       setIsLoading(false);
     }
