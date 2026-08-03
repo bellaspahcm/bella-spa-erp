@@ -20,7 +20,8 @@ import {
   Calendar,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { createClient } from '@/lib/supabase/client';
+// TODO: Fix supabase client import for Phase 1 vehicles page
+// import { createClient } from '@/lib/supabase/browser-client';
 import { AutoInventoryProvider, type VehicleInventoryItem } from '@/modules/bella-auto/services/AutoInventoryProvider';
 import { VehicleStatusMachineService, type VehicleStatus } from '@/modules/bella-auto/services/VehicleStatusMachineService';
 

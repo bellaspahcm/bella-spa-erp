@@ -77,11 +77,11 @@
 ---
 
 ### Phase 6 — Trung Tâm Dịch Vụ & Xưởng (Workshop & Service) (Tuần 17-21)
-*   [ ] **6.1.** Xây dựng bảng và dịch vụ đặt lịch hẹn bảo dưỡng/sửa chữa (`auto_service_appointments`) liên kết với thông tin biển số và số VIN của khách hàng.
-*   [ ] **6.2.** Phát triển luồng tiếp nhận xe, lập lệnh sửa chữa (Repair Order / Job Card) và phân công kỹ thuật viên khoang sửa chữa.
-*   [ ] **6.3.** Tạo cơ sở dữ liệu lịch sử sửa chữa không thể sửa xóa (`auto_service_history`) liên kết chặt chẽ với từng số VIN.
-*   [ ] **6.4.** Phát triển module quản lý yêu cầu bảo hành (`auto_warranty_claims`) kiểm tra thời hạn bảo hành của VIN và phê duyệt phụ tùng thay thế.
-*   [ ] **6.5.** Tích hợp khấu trừ phụ tùng tự động trong kho vật tư khi hoàn thành lệnh sửa chữa.
+*   [x] **6.1.** Xây dựng bảng và dịch vụ đặt lịch hẹn bảo dưỡng/sửa chữa (`auto_service_appointments`) liên kết với thông tin biển số và số VIN của khách hàng. *(ServiceAppointmentService — Full lifecycle management)*
+*   [x] **6.2.** Phát triển luồng tiếp nhận xe, lập lệnh sửa chữa (Repair Order / Job Card) và phân công kỹ thuật viên khoang sửa chữa. *(RepairOrderService — Job card, line items, technician assignment)*
+*   [x] **6.3.** Tạo cơ sở dữ liệu lịch sử sửa chữa không thể sửa xóa (`auto_service_history`) liên kết chặt chẽ với từng số VIN. *(ServiceHistoryService — Immutable VIN-linked history with RLS)*
+*   [x] **6.4.** Phát triển module quản lý yêu cầu bảo hành (`auto_warranty_claims`) kiểm tra thời hạn bảo hành của VIN và phê duyệt phụ tùng thay thế. *(WarrantyService — Claims workflow with validation & approval)*
+*   [x] **6.5.** Tích hợp khấu trừ phụ tùng tự động trong kho vật tư khi hoàn thành lệnh sửa chữa. *(PartsInventoryIntegration — Auto-deduct parts on completion)*
 
 ---
 
