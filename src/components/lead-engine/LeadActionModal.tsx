@@ -2,7 +2,22 @@
 
 import React, { useState } from 'react';
 import { ManagedLead, LeadOutcome } from '@/platform/lead-engine';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { CheckCircle2, PhoneCall, X } from 'lucide-react';
+
+const OUTCOME_OPTIONS = [
+  { value: 'CONTACTED', label: '📞 Đã nghe máy & Trao đổi' },
+  { value: 'NO_ANSWER', label: '📵 Không nghe máy / Thuê bao (Tự động đếm lần)' },
+  { value: 'CALL_BACK', label: '⏰ Khách hẹn gọi lại sau' },
+  { value: 'INTERESTED', label: '🌟 Khách quan tâm cao / Xin thêm tài liệu' },
+  { value: 'VISIT', label: '🏠 Khách hẹn đến xem nhà mẫu / Spa' },
+  { value: 'NEGOTIATING', label: '🤝 Đang thương lượng giá / Điều khoản' },
+  { value: 'BOOKING', label: '🎉 BOOKING THÀNH CÔNG / ĐẶT CỌC' },
+  { value: 'LOST', label: '❌ Khách từ chối / Đã mua chỗ khác' },
+  { value: 'NOT_INTERESTED', label: '🚫 Khách không có nhu cầu' },
+  { value: 'WRONG_NUMBER', label: '⚠️ Sai số điện thoại' },
+  { value: 'INVALID', label: '🗑️ Lead rác / Không hợp lệ' },
+];
 
 interface LeadActionModalProps {
   lead: ManagedLead | null;
@@ -72,23 +87,12 @@ export function LeadActionModal({
               <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">
                 Kết Quả Chăm Sóc (Lead Outcome) *
               </label>
-              <select
+              <PremiumSelect
+                options={OUTCOME_OPTIONS}
                 value={outcome}
-                onChange={e => setOutcome(e.target.value as LeadOutcome)}
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/30 font-medium"
-              >
-                <option value="CONTACTED">📞 Đã nghe máy & Trao đổi</option>
-                <option value="NO_ANSWER">📵 Không nghe máy / Thuê bao (Tự động đếm lần)</option>
-                <option value="CALL_BACK">⏰ Khách hẹn gọi lại sau</option>
-                <option value="INTERESTED">🌟 Khách quan tâm cao / Xin thêm tài liệu</option>
-                <option value="VISIT">🏠 Khách hẹn đến xem nhà mẫu / Spa</option>
-                <option value="NEGOTIATING">🤝 Đang thương lượng giá / Điều khoản</option>
-                <option value="BOOKING">🎉 BOOKING THÀNH CÔNG / ĐẶT CỌC</option>
-                <option value="LOST">❌ Khách từ chối / Đã mua chỗ khác</option>
-                <option value="NOT_INTERESTED">🚫 Khách không có nhu cầu</option>
-                <option value="WRONG_NUMBER">⚠️ Sai số điện thoại</option>
-                <option value="INVALID">🗑️ Lead rác / Không hợp lệ</option>
-              </select>
+                onChange={val => setOutcome(val as LeadOutcome)}
+                buttonClassName="py-2 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700/50 text-slate-800 dark:text-slate-200 shadow-none text-left w-full"
+              />
             </div>
 
             <div>
