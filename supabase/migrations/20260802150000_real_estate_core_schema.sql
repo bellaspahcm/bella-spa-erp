@@ -518,9 +518,7 @@ CREATE POLICY "Authenticated users can view commissions from their tenant"
   TO authenticated
   USING (tenant_id IN (SELECT tenant_id FROM tenants WHERE id = (auth.jwt() -> 'tenant_id')::text::uuid));
 
-RAISE NOTICE '  ✓ Created RLS policies for all Real Estate tables';
-
-
+-- Verification and Summary
 DO $$
 DECLARE
   v_table_count INT;

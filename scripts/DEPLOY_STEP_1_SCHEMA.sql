@@ -74,8 +74,15 @@ END $$;
 
 -- Add area_m2 to real_estate_products if missing
 DO $$ BEGIN
-  ALTER TABLE real_estate_products ADD COLUMN area_m2 NUMERIC(10, 2) NOT NULL DEFAULT 0 CHECK (area_m2 > 0);
+  ALTER TABLE real_estate_products ADD COLUMN area_m2 NUMERIC(10, 2) DEFAULT 0;
   RAISE NOTICE '  ✓ Added area_m2 to real_estate_products';
+  
+  -- Update existing rows with 0 to area value
+  UPDATE real_estate_products SET area_m2 = area WHERE area_m2 = 0 OR area_m2 IS NULL;
+  
+  -- Now add constraint
+  ALTER TABLE real_estate_products ADD CONSTRAINT real_estate_products_area_m2_positive CHECK (area_m2 > 0);
+  RAISE NOTICE '  ✓ Added constraint for area_m2';
 EXCEPTION WHEN duplicate_column THEN
   RAISE NOTICE '  ⚠️  Column area_m2 already exists in real_estate_products';
 END $$;
