@@ -6,6 +6,8 @@ import { Search, Building2, Users, FileText, FolderKanban, Loader2, ChevronRight
 import { createClient } from "@/lib/supabase-client";
 import { useRouter } from "next/navigation";
 
+import { fetchInvestorsAction } from "@/modules/real_estate/actions/investorActions";
+
 type ResultType = "project" | "product" | "customer" | "lead";
 
 interface SearchResult {
@@ -42,40 +44,174 @@ export default function GlobalSearchPage() {
     try {
       const supabase = createClient();
       const like = `%${q}%`;
+      const lowerQ = q.toLowerCase();
 
-      const [projRes, prodRes] = await Promise.allSettled([
-        supabase
-          .from("real_estate_projects")
-          .select("id, name, status")
-          .ilike("name", like)
-          .limit(5),
-        supabase
-          .from("real_estate_products")
-          .select("id, product_code, product_type, status, project_id")
-          .or(`product_code.ilike.${like},product_type.ilike.${like}`)
-          .limit(5),
+      // 1. Build project query
+      let projQuery = supabase
+        .from("real_estate_projects")
+        .select("id, name, status, code");
+      if (lowerQ.includes("bán") || lowerQ.includes("mở bán")) {
+        projQuery = projQuery.or(`status.eq.selling,name.ilike.${like}`);
+      } else if (lowerQ.includes("hoàn thành")) {
+        projQuery = projQuery.or(`status.eq.completed,name.ilike.${like}`);
+      } else if (lowerQ.includes("quy hoạch")) {
+        projQuery = projQuery.or(`status.eq.planning,name.ilike.${like}`);
+      } else {
+        projQuery = projQuery.or(`name.ilike.${like},code.ilike.${like}`);
+      }
+
+      // 2. Build product query
+      let prodQuery = supabase
+        .from("real_estate_products")
+        .select("id, product_code, product_type, status, project_id, block, floor");
+      if (lowerQ.includes("cọc") || lowerQ.includes("giữ chỗ")) {
+        prodQuery = prodQuery.or(`status.eq.reserved,product_code.ilike.${like}`);
+      } else if (lowerQ.includes("bán") || lowerQ.includes("hđmb")) {
+        prodQuery = prodQuery.or(`status.eq.sold,product_code.ilike.${like}`);
+      } else if (lowerQ.includes("trống")) {
+        prodQuery = prodQuery.or(`status.eq.available,product_code.ilike.${like}`);
+      } else {
+        prodQuery = prodQuery.or(`product_code.ilike.${like},product_type.ilike.${like}`);
+      }
+
+      const [projRes, prodRes, custRes] = await Promise.allSettled([
+        projQuery.limit(5),
+        prodQuery.limit(5),
+        fetchInvestorsAction()
       ]);
 
       const all: SearchResult[] = [];
 
+      // Add Projects
       if (projRes.status === "fulfilled" && projRes.value.data) {
-        projRes.value.data.forEach(p => all.push({
-          id: p.id,
-          type: "project",
-          title: p.name,
-          subtitle: `Trạng thái: ${p.status}`,
-          href: `/dashboard/real-estate/projects`,
-        }));
+        projRes.value.data.forEach(p => {
+          const statusMap: Record<string, string> = {
+            planning: "Đang Quy Hoạch",
+            selling: "Đang Mở Bán",
+            completed: "Đã Hoàn Thành",
+            sold_out: "Đã Bán Hết"
+          };
+          all.push({
+            id: p.id,
+            type: "project",
+            title: p.name,
+            subtitle: `Mã: ${p.code || "—"} • Trạng thái: ${statusMap[p.status] || p.status}`,
+            href: `/dashboard/real-estate/projects`,
+          });
+        });
       }
 
+      // Add Products
       if (prodRes.status === "fulfilled" && prodRes.value.data) {
-        prodRes.value.data.forEach(p => all.push({
-          id: p.id,
-          type: "product",
-          title: `${p.product_code} — ${p.product_type || "Căn hộ"}`,
-          subtitle: `Trạng thái: ${p.status}`,
-          href: `/dashboard/real-estate/apartments`,
-        }));
+        prodRes.value.data.forEach(p => {
+          const statusMap: Record<string, string> = {
+            available: "Còn trống",
+            reserved: "Đã Đặt Cọc",
+            sold: "Đã Bán",
+            unavailable: "Không mở bán"
+          };
+          const typeMap: Record<string, string> = {
+            apartment: "Căn hộ",
+            townhouse: "Nhà phố",
+            shophouse: "Shophouse",
+            villa: "Biệt thự"
+          };
+          all.push({
+            id: p.id,
+            type: "product",
+            title: `${p.product_code} — ${typeMap[p.product_type] || p.product_type}`,
+            subtitle: `Block: ${p.block || "—"} • Tầng: ${p.floor || "—"} • Trạng thái: ${statusMap[p.status] || p.status}`,
+            href: `/dashboard/real-estate/apartments`,
+          });
+        });
+      }
+
+      // Add Customers (Investors)
+      if (custRes.status === "fulfilled" && custRes.value.success && custRes.value.data) {
+        const filteredCust = custRes.value.data.filter(inv => {
+          const matchesText =
+            inv.fullName.toLowerCase().includes(lowerQ) ||
+            inv.phone.includes(lowerQ) ||
+            inv.email.toLowerCase().includes(lowerQ) ||
+            (inv.cccd && inv.cccd.includes(lowerQ)) ||
+            inv.saleOwner.toLowerCase().includes(lowerQ) ||
+            inv.interestedProjects.some(p => p.toLowerCase().includes(lowerQ));
+          
+          let matchesStatus = false;
+          if (lowerQ.includes("cọc") || lowerQ.includes("won") || lowerQ.includes("chốt") || lowerQ.includes("thành công")) {
+            matchesStatus = inv.status === "closed_won";
+          } else if (lowerQ.includes("đàm phán") || lowerQ.includes("thương lượng")) {
+            matchesStatus = inv.status === "negotiating";
+          } else if (lowerQ.includes("mới") || lowerQ.includes("lead")) {
+            matchesStatus = inv.status === "lead";
+          }
+          
+          return matchesText || matchesStatus;
+        });
+
+        filteredCust.slice(0, 5).forEach(inv => {
+          const statusMap: Record<string, string> = {
+            lead: "Lead Mới",
+            contacted: "Đã Liên Hệ",
+            negotiating: "Đang Đàm Phán",
+            closed_won: "Chốt Thành Công",
+            closed_lost: "Không Tiếp Tục"
+          };
+          all.push({
+            id: inv.id,
+            type: "customer",
+            title: inv.fullName,
+            subtitle: `SĐT: ${inv.phone} • Trạng thái: ${statusMap[inv.status] || inv.status} • Sale: ${inv.saleOwner}`,
+            href: `/dashboard/real-estate/customers`,
+          });
+        });
+      }
+
+      // Add Leads (from localStorage)
+      try {
+        const savedLeadsStr = localStorage.getItem('bella_re_managed_leads');
+        if (savedLeadsStr) {
+          const leadsList = JSON.parse(savedLeadsStr) as any[];
+          const filteredLeads = leadsList.filter(l => {
+            const matchesText =
+              (l.fullName && l.fullName.toLowerCase().includes(lowerQ)) ||
+              (l.phone && l.phone.includes(lowerQ)) ||
+              (l.email && l.email.toLowerCase().includes(lowerQ)) ||
+              (l.interestedProject && l.interestedProject.toLowerCase().includes(lowerQ)) ||
+              (l.notes && l.notes.toLowerCase().includes(lowerQ)) ||
+              (l.currentSaleName && l.currentSaleName.toLowerCase().includes(lowerQ));
+
+            let matchesState = false;
+            if (lowerQ.includes("cọc") || lowerQ.includes("chốt") || lowerQ.includes("converted") || lowerQ.includes("thành công")) {
+              matchesState = l.state === "converted";
+            } else if (lowerQ.includes("đang chăm sóc") || lowerQ.includes("chăm sóc") || lowerQ.includes("in_progress")) {
+              matchesState = l.state === "in_progress";
+            } else if (lowerQ.includes("chờ") || lowerQ.includes("nhận") || lowerQ.includes("waiting")) {
+              matchesState = l.state === "waiting_accept";
+            }
+            
+            return matchesText || matchesState;
+          });
+
+          filteredLeads.slice(0, 5).forEach(l => {
+            const stateMap: Record<string, string> = {
+              unassigned: "Chưa phân phối",
+              waiting_accept: "Chờ nhận lead",
+              in_progress: "Đang chăm sóc",
+              converted: "Đã chốt cọc",
+              lost: "Đã mất/Từ chối"
+            };
+            all.push({
+              id: l.id,
+              type: "lead",
+              title: l.fullName,
+              subtitle: `SĐT: ${l.phone} • Trạng thái: ${stateMap[l.state] || l.state} • Sale: ${l.currentSaleName || "Chưa phân phối"}`,
+              href: `/dashboard/real-estate/leads`,
+            });
+          });
+        }
+      } catch (err) {
+        console.error("Error searching leads: ", err);
       }
 
       setResults(all);
