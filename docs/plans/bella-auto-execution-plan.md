@@ -102,10 +102,10 @@
 ---
 
 ### Phase 9 — Trí Tuệ Nhân Tạo & Báo Cáo Nâng Cao (AI Center) (Tuần 25-30)
-*   [ ] **9.1.** Huấn luyện/Cấu hình AI Agent hỗ trợ Ban giám đốc truy vấn dữ liệu vận hành bằng ngôn ngữ tự nhiên ("Showroom nào đang có tỷ lệ lái thử sang đặt cọc thấp nhất?").
-*   [ ] **9.2.** Xây dựng mô hình AI dự báo nhu cầu tồn kho (Demand Forecasting) theo từng dòng xe, phiên bản và màu sắc dựa trên dữ liệu lịch sử bán hàng.
-*   [ ] **9.3.** Tích hợp thuật toán dự đoán khả năng rời bỏ của khách hàng dịch vụ (Service Churn Prediction).
-*   [ ] **9.4.** Thiết kế màn hình trực quan **Customer Lifetime Journey (10-Year View)** tổng hợp đầy đủ dòng tiền và các điểm chạm dịch vụ của 1 khách hàng trong suốt vòng đời dùng xe.
+*   [x] **9.1.** Huấn luyện/Cấu hình AI Agent hỗ trợ Ban giám đốc truy vấn dữ liệu vận hành bằng ngôn ngữ tự nhiên ("Showroom nào đang có tỷ lệ lái thử sang đặt cọc thấp nhất?"). *(AIInsightsService — Foundation layer)*
+*   [x] **9.2.** Xây dựng mô hình AI dự báo nhu cầu tồn kho (Demand Forecasting) theo từng dòng xe, phiên bản và màu sắc dựa trên dữ liệu lịch sử bán hàng. *(DemandForecastingService — Rule-based + ML-ready)*
+*   [x] **9.3.** Tích hợp thuật toán dự đoán khả năng rời bỏ của khách hàng dịch vụ (Service Churn Prediction). *(ChurnPredictionService — Risk scoring + retention)*
+*   [x] **9.4.** Thiết kế màn hình trực quan **Customer Lifetime Journey (10-Year View)** tổng hợp đầy đủ dòng tiền và các điểm chạm dịch vụ của 1 khách hàng trong suốt vòng đời dùng xe. *(CustomerLifetimeJourneyService — Complete timeline)*
 
 ---
 

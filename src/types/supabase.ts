@@ -997,6 +997,96 @@ export type Database = {
           },
         ]
       }
+      auto_ai_insights: {
+        Row: {
+          action_result: string | null
+          action_taken: boolean | null
+          action_taken_at: string | null
+          action_taken_by: string | null
+          confidence_score: number | null
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          expires_at: string | null
+          id: string
+          insight_details: Json | null
+          insight_summary: string
+          insight_title: string
+          insight_type: string
+          journey_id: string | null
+          lead_id: string | null
+          model_name: string | null
+          model_version: string | null
+          priority: string | null
+          query_intent: string | null
+          query_parameters: Json | null
+          query_text: string | null
+          sale_id: string | null
+          status: string
+          suggested_actions: Json | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          action_result?: string | null
+          action_taken?: boolean | null
+          action_taken_at?: string | null
+          action_taken_by?: string | null
+          confidence_score?: number | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          expires_at?: string | null
+          id?: string
+          insight_details?: Json | null
+          insight_summary: string
+          insight_title: string
+          insight_type: string
+          journey_id?: string | null
+          lead_id?: string | null
+          model_name?: string | null
+          model_version?: string | null
+          priority?: string | null
+          query_intent?: string | null
+          query_parameters?: Json | null
+          query_text?: string | null
+          sale_id?: string | null
+          status?: string
+          suggested_actions?: Json | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          action_result?: string | null
+          action_taken?: boolean | null
+          action_taken_at?: string | null
+          action_taken_by?: string | null
+          confidence_score?: number | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          expires_at?: string | null
+          id?: string
+          insight_details?: Json | null
+          insight_summary?: string
+          insight_title?: string
+          insight_type?: string
+          journey_id?: string | null
+          lead_id?: string | null
+          model_name?: string | null
+          model_version?: string | null
+          priority?: string | null
+          query_intent?: string | null
+          query_parameters?: Json | null
+          query_text?: string | null
+          sale_id?: string | null
+          status?: string
+          suggested_actions?: Json | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       auto_bookings: {
         Row: {
           accounting_entry_id: string | null
@@ -1144,6 +1234,105 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      auto_churn_predictions: {
+        Row: {
+          action_date: string | null
+          action_result: string | null
+          action_taken: boolean | null
+          action_type: string | null
+          average_repair_cost: number | null
+          average_visit_frequency_days: number | null
+          churn_probability: number
+          churn_risk_level: string
+          created_at: string
+          csi_score: number | null
+          customer_id: string
+          days_since_last_service: number | null
+          estimated_days_to_churn: number | null
+          estimated_retention_cost: number | null
+          factors: Json
+          id: string
+          model_confidence: number | null
+          model_name: string | null
+          model_version: string | null
+          nps_score: number | null
+          prediction_date: string
+          primary_reason: string | null
+          recommended_actions: Json | null
+          retention_strategy: string | null
+          status: string
+          tenant_id: string
+          total_lifetime_value: number | null
+          total_service_visits: number | null
+          updated_at: string
+          vehicle_id: string
+        }
+        Insert: {
+          action_date?: string | null
+          action_result?: string | null
+          action_taken?: boolean | null
+          action_type?: string | null
+          average_repair_cost?: number | null
+          average_visit_frequency_days?: number | null
+          churn_probability: number
+          churn_risk_level: string
+          created_at?: string
+          csi_score?: number | null
+          customer_id: string
+          days_since_last_service?: number | null
+          estimated_days_to_churn?: number | null
+          estimated_retention_cost?: number | null
+          factors: Json
+          id?: string
+          model_confidence?: number | null
+          model_name?: string | null
+          model_version?: string | null
+          nps_score?: number | null
+          prediction_date?: string
+          primary_reason?: string | null
+          recommended_actions?: Json | null
+          retention_strategy?: string | null
+          status?: string
+          tenant_id: string
+          total_lifetime_value?: number | null
+          total_service_visits?: number | null
+          updated_at?: string
+          vehicle_id: string
+        }
+        Update: {
+          action_date?: string | null
+          action_result?: string | null
+          action_taken?: boolean | null
+          action_type?: string | null
+          average_repair_cost?: number | null
+          average_visit_frequency_days?: number | null
+          churn_probability?: number
+          churn_risk_level?: string
+          created_at?: string
+          csi_score?: number | null
+          customer_id?: string
+          days_since_last_service?: number | null
+          estimated_days_to_churn?: number | null
+          estimated_retention_cost?: number | null
+          factors?: Json
+          id?: string
+          model_confidence?: number | null
+          model_name?: string | null
+          model_version?: string | null
+          nps_score?: number | null
+          prediction_date?: string
+          primary_reason?: string | null
+          recommended_actions?: Json | null
+          retention_strategy?: string | null
+          status?: string
+          tenant_id?: string
+          total_lifetime_value?: number | null
+          total_service_visits?: number | null
+          updated_at?: string
+          vehicle_id?: string
+        }
+        Relationships: []
       }
       auto_csi_scores: {
         Row: {
@@ -1407,6 +1596,81 @@ export type Database = {
           },
         ]
       }
+      auto_customer_lifetime_events: {
+        Row: {
+          cost_amount: number | null
+          created_at: string
+          created_by: string | null
+          csi_score: number | null
+          customer_id: string
+          event_date: string
+          event_description: string | null
+          event_title: string
+          event_type: string
+          id: string
+          is_milestone: boolean | null
+          journey_id: string | null
+          nps_score: number | null
+          profit_amount: number | null
+          repair_order_id: string | null
+          revenue_amount: number | null
+          sale_id: string | null
+          sentiment: string | null
+          service_appointment_id: string | null
+          tags: string[] | null
+          tenant_id: string
+          vehicle_id: string | null
+        }
+        Insert: {
+          cost_amount?: number | null
+          created_at?: string
+          created_by?: string | null
+          csi_score?: number | null
+          customer_id: string
+          event_date: string
+          event_description?: string | null
+          event_title: string
+          event_type: string
+          id?: string
+          is_milestone?: boolean | null
+          journey_id?: string | null
+          nps_score?: number | null
+          profit_amount?: number | null
+          repair_order_id?: string | null
+          revenue_amount?: number | null
+          sale_id?: string | null
+          sentiment?: string | null
+          service_appointment_id?: string | null
+          tags?: string[] | null
+          tenant_id: string
+          vehicle_id?: string | null
+        }
+        Update: {
+          cost_amount?: number | null
+          created_at?: string
+          created_by?: string | null
+          csi_score?: number | null
+          customer_id?: string
+          event_date?: string
+          event_description?: string | null
+          event_title?: string
+          event_type?: string
+          id?: string
+          is_milestone?: boolean | null
+          journey_id?: string | null
+          nps_score?: number | null
+          profit_amount?: number | null
+          repair_order_id?: string | null
+          revenue_amount?: number | null
+          sale_id?: string | null
+          sentiment?: string | null
+          service_appointment_id?: string | null
+          tags?: string[] | null
+          tenant_id?: string
+          vehicle_id?: string | null
+        }
+        Relationships: []
+      }
       auto_customer_profiles: {
         Row: {
           budget_range: string | null
@@ -1473,6 +1737,108 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      auto_demand_forecasts: {
+        Row: {
+          available: number | null
+          color: string | null
+          confidence_level: number | null
+          created_at: string
+          created_by: string | null
+          current_stock: number | null
+          features_used: Json | null
+          forecast_date: string
+          forecast_period: string
+          historical_avg_monthly_sales: number | null
+          id: string
+          in_transit: number | null
+          make: string
+          model: string | null
+          model_accuracy: number | null
+          model_name: string | null
+          model_version: string | null
+          period_end: string
+          period_start: string
+          predicted_demand: number
+          predicted_demand_max: number | null
+          predicted_demand_min: number | null
+          recommended_order_date: string | null
+          recommended_order_quantity: number | null
+          reserved: number | null
+          seasonality_factor: number | null
+          status: string
+          tenant_id: string
+          trend_direction: string | null
+          urgency: string | null
+          variant: string | null
+        }
+        Insert: {
+          available?: number | null
+          color?: string | null
+          confidence_level?: number | null
+          created_at?: string
+          created_by?: string | null
+          current_stock?: number | null
+          features_used?: Json | null
+          forecast_date: string
+          forecast_period: string
+          historical_avg_monthly_sales?: number | null
+          id?: string
+          in_transit?: number | null
+          make: string
+          model?: string | null
+          model_accuracy?: number | null
+          model_name?: string | null
+          model_version?: string | null
+          period_end: string
+          period_start: string
+          predicted_demand: number
+          predicted_demand_max?: number | null
+          predicted_demand_min?: number | null
+          recommended_order_date?: string | null
+          recommended_order_quantity?: number | null
+          reserved?: number | null
+          seasonality_factor?: number | null
+          status?: string
+          tenant_id: string
+          trend_direction?: string | null
+          urgency?: string | null
+          variant?: string | null
+        }
+        Update: {
+          available?: number | null
+          color?: string | null
+          confidence_level?: number | null
+          created_at?: string
+          created_by?: string | null
+          current_stock?: number | null
+          features_used?: Json | null
+          forecast_date?: string
+          forecast_period?: string
+          historical_avg_monthly_sales?: number | null
+          id?: string
+          in_transit?: number | null
+          make?: string
+          model?: string | null
+          model_accuracy?: number | null
+          model_name?: string | null
+          model_version?: string | null
+          period_end?: string
+          period_start?: string
+          predicted_demand?: number
+          predicted_demand_max?: number | null
+          predicted_demand_min?: number | null
+          recommended_order_date?: string | null
+          recommended_order_quantity?: number | null
+          reserved?: number | null
+          seasonality_factor?: number | null
+          status?: string
+          tenant_id?: string
+          trend_direction?: string | null
+          urgency?: string | null
+          variant?: string | null
+        }
+        Relationships: []
       }
       auto_insurance_policies: {
         Row: {
@@ -13854,6 +14220,18 @@ export type Database = {
           total_records: number
         }[]
       }
+      get_active_ai_insights: {
+        Args: { p_limit?: number; p_tenant_id: string }
+        Returns: {
+          confidence_score: number
+          created_at: string
+          insight_id: string
+          insight_summary: string
+          insight_title: string
+          insight_type: string
+          priority: string
+        }[]
+      }
       get_ai_attendance_kpis: {
         Args: { p_month_year: string }
         Returns: {
@@ -13986,6 +14364,21 @@ export type Database = {
           tenant_name: string
           total_bookings_count: number
           total_sessions_completed: number
+        }[]
+      }
+      get_customer_lifetime_summary: {
+        Args: { p_customer_id: string; p_tenant_id: string }
+        Returns: {
+          average_csi: number
+          average_nps: number
+          first_contact_date: string
+          last_event_date: string
+          last_event_type: string
+          total_events: number
+          total_revenue: number
+          total_service_visits: number
+          vehicles_purchased: number
+          years_as_customer: number
         }[]
       }
       get_dashboard_summary: { Args: { p_tenant_id: string }; Returns: Json }
