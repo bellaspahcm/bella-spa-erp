@@ -37,6 +37,13 @@ import { LeadTimelineDrawer } from '@/components/lead-engine/LeadTimelineDrawer'
 import { LeadActionModal } from '@/components/lead-engine/LeadActionModal';
 import { LeadRuleConfigTab } from '@/components/lead-engine/LeadRuleConfigTab';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+} from '@/components/ui/dropdown-menu';
 
 // ─── Constants & Fallbacks ───────────────────────────────────────────────────
 
@@ -558,7 +565,7 @@ export default function LeadsManagementPage() {
           </div>
 
           {/* Bảng Lead */}
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-visible">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs min-w-[700px]">
                 <thead className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-slate-500 font-bold uppercase tracking-wider">
@@ -599,46 +606,40 @@ export default function LeadsManagementPage() {
                         {/* Sale manual assignment selector */}
                         <td className="p-4 relative">
                           <div className="inline-block text-left">
-                            <button
-                              onClick={() => setActiveDropdownLeadId(
-                                activeDropdownLeadId === lead.id ? null : lead.id
-                              )}
-                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all ${
-                                lead.currentSaleName
-                                  ? 'bg-violet-500/10 border-violet-500/30 text-violet-600 dark:text-violet-400 hover:bg-violet-500/20'
-                                  : 'bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-500 hover:bg-amber-500/20'
-                              }`}
-                              id={`sale-selector-${lead.id}`}
-                            >
-                              {lead.currentSaleName || 'Chưa phân phối'}
-                              <ChevronDown className="w-3.5 h-3.5" />
-                            </button>
-
-                            {/* Dropdown Menu */}
-                            {activeDropdownLeadId === lead.id && (
-                              <div className="absolute left-4 mt-2 w-56 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-1 duration-150">
-                                <div className="p-2 border-b border-slate-100 dark:border-slate-800 text-[10px] uppercase font-bold tracking-wider text-slate-400">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all outline-none ${
+                                  lead.currentSaleName
+                                    ? 'bg-violet-500/10 border-violet-500/30 text-violet-600 dark:text-violet-400 hover:bg-violet-500/20'
+                                    : 'bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-500 hover:bg-amber-500/20'
+                                }`}
+                              >
+                                {lead.currentSaleName || 'Chưa phân phối'}
+                                <ChevronDown className="w-3.5 h-3.5" />
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent className="w-56 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl overflow-hidden z-50 p-0">
+                                <DropdownMenuLabel className="px-3 py-2 border-b border-slate-100 dark:border-slate-800 text-[10px] uppercase font-bold tracking-wider text-slate-400 bg-slate-50/50 dark:bg-slate-900/50 rounded-t-xl">
                                   Phân Sale phụ trách
-                                </div>
+                                </DropdownMenuLabel>
                                 <div className="max-h-48 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/50">
                                   {liveAgents.map(agent => (
-                                    <button
+                                    <DropdownMenuItem
                                       key={agent.id}
                                       onClick={() => handleManualAssign(lead.id, agent)}
-                                      className="w-full flex items-center justify-between px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-900/50 text-left text-xs transition"
+                                      className="w-full flex items-center justify-between px-3 py-2.5 focus:bg-primary/10 focus:text-primary hover:bg-primary/10 hover:text-primary text-left text-xs transition cursor-pointer outline-none"
                                     >
                                       <div>
                                         <p className="font-semibold text-slate-800 dark:text-slate-200">{agent.name}</p>
                                         <p className="text-[10px] text-slate-400">{agent.role}</p>
                                       </div>
                                       {lead.currentSaleId === agent.id && (
-                                        <Check className="w-3.5 h-3.5 text-violet-600 dark:text-violet-400" />
+                                        <Check className="w-3.5 h-3.5 text-violet-600 dark:text-violet-400 shrink-0" />
                                       )}
-                                    </button>
+                                    </DropdownMenuItem>
                                   ))}
                                 </div>
-                              </div>
-                            )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
                         </td>
 
