@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getPrimaryClient } from '../../../../../../lib/database/read-replica';
+import { getPrimaryClient } from '@/lib/database/read-replica';
 
 export const runtime = 'nodejs';
 
