@@ -162,6 +162,7 @@ export default function LandingPage() {
               <a href="#workspace-preview" className="text-[10px] font-bold text-slate-600 hover:text-blue-600 transition-colors uppercase tracking-wider">Hệ thống</a>
               <a href="#solutions-grid" className="text-[10px] font-bold text-slate-600 hover:text-blue-600 transition-colors uppercase tracking-wider">Trụ cột</a>
               <a href="#security-rls" className="text-[10px] font-bold text-slate-600 hover:text-blue-600 transition-colors uppercase tracking-wider">Bảo mật</a>
+              <a href="#ecosystem-verticals" className="text-[10px] font-bold text-slate-600 hover:text-blue-600 transition-colors uppercase tracking-wider">Hệ sinh thái</a>
             </nav>
 
             {/* Header Action buttons */}
@@ -203,6 +204,7 @@ export default function LandingPage() {
                   <a href="#workspace-preview" onClick={() => setMobileMenuOpen(false)} className="text-xs font-bold text-slate-700 hover:text-blue-600 py-1 transition-colors uppercase tracking-wider">Hệ thống</a>
                   <a href="#solutions-grid" onClick={() => setMobileMenuOpen(false)} className="text-xs font-bold text-slate-700 hover:text-blue-600 py-1 transition-colors uppercase tracking-wider">Trụ cột</a>
                   <a href="#security-rls" onClick={() => setMobileMenuOpen(false)} className="text-xs font-bold text-slate-700 hover:text-blue-600 py-1 transition-colors uppercase tracking-wider">Bảo mật</a>
+                  <a href="#ecosystem-verticals" onClick={() => setMobileMenuOpen(false)} className="text-xs font-bold text-slate-700 hover:text-blue-600 py-1 transition-colors uppercase tracking-wider">Hệ sinh thái</a>
                 </div>
                 <div className="flex flex-col gap-3">
                   <Link
@@ -780,6 +782,105 @@ export default function LandingPage() {
                     <div>
                       <h6 className="text-sm font-black text-white">{title}</h6>
                       <p className="text-[10px] text-slate-400 font-semibold mt-1 leading-normal">{desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── ECOSYSTEM EXPANSION (Bella AI Platform Vertical Modules) ── */}
+        <section id="ecosystem-verticals" className="py-32 relative border-t border-white/5 overflow-hidden" style={{background: 'linear-gradient(180deg, #0a0f1e 0%, #0c1a3a 50%, #0a0f1e 100%)'}}>
+          {/* Subtle background glow */}
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[500px] rounded-full opacity-10" style={{background: 'radial-gradient(ellipse, #3b82f6 0%, transparent 70%)'}} />
+          </div>
+
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+            <div className="text-center max-w-3xl mx-auto space-y-5 mb-16">
+              <span className="inline-flex items-center gap-2 text-xs font-black tracking-widest uppercase px-4 py-1.5 rounded-full border border-blue-500/40 bg-blue-500/10 text-blue-300">
+                <Sparkles className="w-3.5 h-3.5" />
+                Bella AI Platform
+              </span>
+              <h2 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
+                <span className="text-white">Hệ Sinh Thái Phân Hệ Ngành</span><br/>
+                <span className="text-transparent bg-clip-text" style={{backgroundImage: 'linear-gradient(90deg, #60a5fa, #a78bfa)'}}>Mở Rộng Hệ Thống</span>
+              </h2>
+              <p className="text-slate-300 text-sm font-semibold leading-relaxed">
+                Khám phá các phân hệ ngành mới sẵn sàng vận hành và lộ trình mở rộng toàn diện năm 2027 trên nền tảng Bella EIP.
+              </p>
+            </div>
+
+            {/* Split Layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+              {/* Left Side: Highlighted Real Estate Module */}
+              <div className="lg:col-span-4 group relative p-8 rounded-[2rem] border border-blue-500/30 flex flex-col justify-between text-left transition-all duration-300 hover:border-blue-400 hover:-translate-y-1.5 hover:shadow-[0_12px_40px_rgba(59,130,246,0.15)]" style={{background: 'linear-gradient(135deg, rgba(59,130,246,0.08) 0%, rgba(255,255,255,0.02) 100%)', backdropFilter: 'blur(12px)'}}>
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center">
+                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                      <Database className="w-6 h-6" />
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full border border-emerald-500/30 text-emerald-400 bg-emerald-500/10 flex items-center gap-1.5 animate-pulse">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      Đã Sẵn Sàng
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    <span className="text-[10px] text-blue-400 font-bold uppercase tracking-widest font-mono">PHÂN HỆ SỐ 01</span>
+                    <h3 className="text-2xl font-black text-white tracking-tight">Real Estate</h3>
+                    <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Đã hoàn thành phân hệ quản trị ✅</p>
+                  </div>
+                  <p className="text-slate-300 text-xs font-semibold leading-relaxed">
+                    Phân hệ quản trị Bất động sản đã hoàn thành toàn diện. Tích hợp quản lý dự án BĐS, bảng hàng căn hộ, hợp đồng & đặt cọc, chăm sóc khách hàng đầu tư và tự động hóa quy trình phân bổ Lead/SLA.
+                  </p>
+                  <div className="relative w-full h-36 rounded-2xl overflow-hidden border border-white/10 group-hover:border-blue-500/30 transition-all duration-500">
+                    <Image
+                      src="/real_estate_preview.png"
+                      alt="Bella EIP Real Estate Dashboard Render"
+                      fill
+                      sizes="(max-width: 1024px) 100vw, 33vw"
+                      className="object-cover group-hover:scale-105 transition-transform duration-700"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#0a0f1e]/80 via-transparent to-transparent" />
+                  </div>
+                </div>
+                <div className="mt-8 pt-5 border-t border-white/5 flex justify-between items-center">
+                  <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider font-mono">Ready to deploy</span>
+                  <Link href="/login" className="flex items-center gap-1 text-[10px] font-black text-blue-400 hover:text-blue-300 uppercase tracking-widest transition-colors group/link">
+                    Truy cập quản trị
+                    <ArrowUpRight className="w-3.5 h-3.5 group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5 transition-transform" />
+                  </Link>
+                </div>
+              </div>
+
+              {/* Right Side: 9 Coming Soon Modules in 3x3 Grid */}
+              <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {[
+                  { num: '2️⃣', title: 'Automotive', desc: 'Showroom & Đại lý ô tô', emoji: '🚗' },
+                  { num: '3️⃣', title: 'Furniture & Smart Home', desc: 'Nội thất & Smart Home', emoji: '🛋️' },
+                  { num: '4️⃣', title: 'Industrial Equipment', desc: 'Thiết bị công nghiệp', emoji: '🏗️' },
+                  { num: '5️⃣', title: 'Construction Machinery', desc: 'Máy móc công trình', emoji: '🚜' },
+                  { num: '6️⃣', title: 'F&B', desc: 'Chuỗi nhà hàng, Cafe, Trà sữa', emoji: '🍽️' },
+                  { num: '7️⃣', title: 'Retail Chain', desc: 'Chuỗi bán lẻ', emoji: '🛍️' },
+                  { num: '8️⃣', title: 'Distribution / Wholesale', desc: 'Phân phối & Bán sỉ', emoji: '🏪' },
+                  { num: '9️⃣', title: 'Hospitality', desc: 'Khách sạn & Resort', emoji: '🏨' },
+                  { num: '🔟', title: 'Logistics', desc: 'Vận tải & Kho bãi', emoji: '🚚' },
+                ].map(({num, title, desc, emoji}) => (
+                  <div key={title} className="group relative p-5 rounded-2xl border border-white/5 flex flex-col justify-between min-h-[140px] text-left hover:border-white/10 hover:-translate-y-0.5 transition-all duration-300" style={{background: 'rgba(255,255,255,0.02)', backdropFilter: 'blur(12px)'}}>
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xl">{emoji}</span>
+                        <span className="text-[7px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border border-violet-500/20 text-violet-400 bg-violet-500/5">
+                          Soon 2027
+                        </span>
+                      </div>
+                      <h4 className="text-[11px] font-black text-white leading-tight">{num} {title}</h4>
+                      <p className="text-slate-400 text-[9px] font-semibold leading-normal group-hover:text-slate-300 transition-colors">{desc}</p>
+                    </div>
+                    <div className="mt-2 pt-2 border-t border-white/5 flex items-center justify-between">
+                      <span className="text-[8px] text-slate-500 font-bold uppercase tracking-wider font-mono">Coming Soon</span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-violet-500/20 group-hover:bg-violet-400 transition-colors" />
                     </div>
                   </div>
                 ))}
