@@ -47,12 +47,26 @@ const STATUS_CFG: Record<string, { label: string; short: string; bg: string; tex
     border: "border-orange-200 dark:border-orange-700/40",
     dot: "bg-orange-500",
   },
+  contracted: {
+    label: "Ký HĐMB", short: "HĐMB",
+    bg: "bg-purple-50 dark:bg-purple-950/30",
+    text: "text-purple-700 dark:text-purple-400",
+    border: "border-purple-200 dark:border-purple-700/40",
+    dot: "bg-purple-500",
+  },
   paid: {
     label: "Đã Bán", short: "BÁN",
     bg: "bg-blue-50 dark:bg-blue-950/30",
     text: "text-blue-700 dark:text-blue-400",
     border: "border-blue-200 dark:border-blue-700/40",
     dot: "bg-blue-500",
+  },
+  handed_over: {
+    label: "Bàn Giao", short: "GIAO",
+    bg: "bg-yellow-50 dark:bg-yellow-950/30",
+    text: "text-yellow-700 dark:text-yellow-400",
+    border: "border-yellow-200 dark:border-yellow-700/40",
+    dot: "bg-yellow-500",
   },
   cancelled: {
     label: "Đã Hủy", short: "HỦY",
@@ -137,10 +151,26 @@ function UnitCell({
             )}
             {product.status === "deposited" && (
               <button
-                onClick={e => { e.stopPropagation(); onAction(product.id, "deposited", "paid"); }}
+                onClick={e => { e.stopPropagation(); onAction(product.id, "deposited", "contracted"); }}
+                className="w-full py-1 bg-purple-600 hover:bg-purple-700 text-white text-[10px] font-black rounded-lg transition-colors"
+              >
+                Ký HĐMB
+              </button>
+            )}
+            {product.status === "contracted" && (
+              <button
+                onClick={e => { e.stopPropagation(); onAction(product.id, "contracted", "paid"); }}
                 className="w-full py-1 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black rounded-lg transition-colors"
               >
-                Ký HĐMB → Bán
+                Xác Nhận Thanh Toán
+              </button>
+            )}
+            {product.status === "paid" && (
+              <button
+                onClick={e => { e.stopPropagation(); onAction(product.id, "paid", "handed_over"); }}
+                className="w-full py-1 bg-yellow-500 hover:bg-yellow-600 text-black text-[10px] font-black rounded-lg transition-colors"
+              >
+                Bàn Giao Căn Hộ
               </button>
             )}
           </div>
@@ -495,7 +525,7 @@ export default function RealEstateApartmentsPage() {
                             <button
                               disabled={updatingId === p.id}
                               onClick={() => handleAction(p.id, "booked", "deposited")}
-                              className="px-2.5 py-1 bg-orange-50 hover:bg-orange-600 text-white text-xs font-bold rounded-lg transition-all disabled:opacity-50"
+                              className="px-2.5 py-1 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold rounded-lg transition-all disabled:opacity-50"
                             >
                               Cọc
                             </button>
@@ -511,10 +541,28 @@ export default function RealEstateApartmentsPage() {
                         {p.status === "deposited" && (
                           <button
                             disabled={updatingId === p.id}
-                            onClick={() => handleAction(p.id, "deposited", "paid")}
-                            className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-all disabled:opacity-50"
+                            onClick={() => handleAction(p.id, "deposited", "contracted")}
+                            className="px-2.5 py-1 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-lg transition-all disabled:opacity-50"
                           >
                             Ký HĐ
+                          </button>
+                        )}
+                        {p.status === "contracted" && (
+                          <button
+                            disabled={updatingId === p.id}
+                            onClick={() => handleAction(p.id, "contracted", "paid")}
+                            className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-all disabled:opacity-50"
+                          >
+                            Thanh Toán
+                          </button>
+                        )}
+                        {p.status === "paid" && (
+                          <button
+                            disabled={updatingId === p.id}
+                            onClick={() => handleAction(p.id, "paid", "handed_over")}
+                            className="px-2.5 py-1 bg-yellow-500 hover:bg-yellow-600 text-black text-xs font-bold rounded-lg transition-all disabled:opacity-50"
+                          >
+                            Bàn Giao
                           </button>
                         )}
                         {updatingId === p.id && <Loader2 className="w-4 h-4 animate-spin text-amber-500" />}
