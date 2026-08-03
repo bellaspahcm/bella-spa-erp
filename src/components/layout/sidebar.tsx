@@ -39,7 +39,12 @@ import {
   Briefcase,
   GitFork,
   UserCheck,
-  Target
+  Target,
+  Car,
+  GitCommit,
+  Smile,
+  CircleDollarSign,
+  Wrench
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -413,6 +418,11 @@ const LUCIDE_ICONS_MAP: Record<string, LucideIcon> = {
   FileBarChart2,
   Search,
   ShieldCheck,
+  Car,
+  GitCommit,
+  Smile,
+  CircleDollarSign,
+  Wrench
 };
 
 

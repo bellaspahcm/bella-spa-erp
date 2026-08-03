@@ -1,0 +1,35 @@
+/**
+ * Bella Auto Module — Scoped Premium Layout Stylesheet
+ * Scoped via [data-auto-layout] attribute — zero global side effects.
+ */
+
+[data-auto-layout] {
+  --auto-navy:         #0A1628; /* Deep Navy */
+  --auto-gold:         #C0A060; /* Accent Gold */
+  --auto-silver:       #8B9AAB; /* Racing Silver */
+  --auto-surface:      #ffffff;
+  --auto-border:       #e2e8f0;
+  --auto-shadow-card:  0 10px 15px -3px rgba(10, 22, 40, 0.05), 0 4px 6px -2px rgba(10, 22, 40, 0.02);
+  --auto-radius:       24px;
+}
+
+.auto-layout-root {
+  background: 
+    radial-gradient(circle at 10% 20%, rgba(241, 245, 249, 0.8) 0%, rgba(226, 232, 240, 0.3) 90%),
+    linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+html.dark .auto-layout-root {
+  background: 
+    radial-gradient(circle at 10% 20%, rgba(15, 23, 42, 0.9) 0%, rgba(9, 15, 32, 0.98) 90%),
+    linear-gradient(135deg, #020617 0%, #090d16 100%);
+}
+
+@keyframes auto-page-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+[data-auto-layout] > * {
+  animation: auto-page-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}

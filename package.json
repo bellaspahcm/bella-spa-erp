@@ -22,6 +22,8 @@
     "db:migration:check": "node scripts/check-supabase-migrations.cjs",
     "db:migration:zero-downtime": "node scripts/check-zero-downtime-migrations.cjs",
     "demo:beauty": "node scripts/beauty-demo-tenant.cjs",
+    "demo:auto": "node scripts/auto-demo-tenant.cjs",
+
     "cron:accounting:smoke": "node scripts/check-accounting-worker-cron-smoke.cjs",
     "cron:business-rules:smoke": "node scripts/check-business-rule-production-guard.cjs",
     "security:audit": "node scripts/audit-production.mjs",

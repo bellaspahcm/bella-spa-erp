@@ -1,4 +1,5 @@
 import { realEstateManifest } from '../../modules/real_estate/manifest';
+import { bellaAutoManifest } from '../../modules/bella-auto/manifest';
 
 export interface ProviderContext {
   readonly tenantId: string;
@@ -90,6 +91,7 @@ class VerticalRegistry {
 
   constructor() {
     this.register(realEstateManifest);
+    this.register(bellaAutoManifest);
   }
 
   register(manifest: VerticalManifest): void {
