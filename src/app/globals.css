@@ -2964,6 +2964,22 @@ html[data-tenant-brand-menu="compact"][data-tenant-module="beauty_spa"] .beauty-
   padding: 0.7rem 1rem !important;
 }
 
+/* --- Real Estate Module Dynamic Radius Controls --- */
+html[data-tenant-module="real_estate"] {
+  --re-radius: var(--brand-card-radius, 20px) !important;
+  --re-radius-sm: var(--brand-control-radius, 12px) !important;
+}
+
+html[data-tenant-module="real_estate"] .rounded-2xl,
+html[data-tenant-module="real_estate"] .rounded-3xl {
+  border-radius: var(--brand-card-radius, 1.25rem) !important;
+}
+
+html[data-tenant-module="real_estate"] .rounded-xl,
+html[data-tenant-module="real_estate"] .rounded-lg {
+  border-radius: var(--brand-control-radius, 0.875rem) !important;
+}
+
 html[data-tenant-brand-menu="compact"][data-tenant-module="beauty_spa"] .beauty-erp-nav-header {
   margin-top: 0.55rem !important;
   padding-bottom: 0.1rem !important;
