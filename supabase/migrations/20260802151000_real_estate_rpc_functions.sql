@@ -6,9 +6,6 @@
 -- Description: Stored procedures and functions for Real Estate operations
 -- ============================================================================
 
-\echo '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'
-\echo 'REAL ESTATE MODULE - RPC FUNCTIONS'
-\echo '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'
 
 -- ============================================================================
 -- PRODUCT CATALOG RPCs
@@ -568,10 +565,6 @@ $$;
 GRANT EXECUTE ON FUNCTION get_sales_dashboard_stats TO authenticated;
 COMMENT ON FUNCTION get_sales_dashboard_stats IS 'Get aggregated sales dashboard statistics';
 
-\echo ''
-\echo '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'
-\echo 'VERIFICATION'
-\echo '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'
 
 DO $$
 DECLARE

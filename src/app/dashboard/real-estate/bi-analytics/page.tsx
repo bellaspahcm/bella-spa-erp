@@ -4,11 +4,33 @@ import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   TrendingUp, TrendingDown, BarChart3, Target, DollarSign,
-  Users, Building2, FileText, Percent, ChevronDown, RefreshCw,
+  Users, Building2, FileText, Percent, RefreshCw,
   Award, AlertTriangle
 } from "lucide-react";
 import { fetchBIReportAction } from "@/modules/real_estate/actions/biReportActions";
 import type { BIReportSnapshot } from "@/modules/real_estate/services/BIReportService";
+import { PremiumSelect } from "@/components/ui/PremiumSelect";
+
+// ─── Month options helper ─────────────────────────────────────────────────────
+
+const MONTH_VI = [
+  'Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
+  'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12',
+];
+
+function generateMonthOptions(): { value: string; label: string }[] {
+  const options: { value: string; label: string }[] = [];
+  const now = new Date();
+  for (let i = 0; i < 18; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const label = `${MONTH_VI[d.getMonth()]} ${d.getFullYear()}`;
+    options.push({ value, label });
+  }
+  return options;
+}
+
+const MONTH_OPTIONS = generateMonthOptions();
 
 function formatVnd(amount: number): string {
   if (amount >= 1e9) return `${(amount / 1e9).toFixed(1)} tỷ`;
@@ -120,15 +142,12 @@ export default function BIAnalyticsPage() {
           <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Báo cáo thông minh theo thời gian thực</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="relative">
-            <input
-              type="month"
-              value={period}
-              onChange={e => setPeriod(e.target.value)}
-              className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2 text-slate-900 dark:text-white text-sm appearance-none pr-8 focus:outline-none focus:border-amber-500/50 cursor-pointer"
-            />
-            <ChevronDown className="w-4 h-4 text-slate-500 dark:text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
-          </div>
+          <PremiumSelect
+            options={MONTH_OPTIONS}
+            value={period}
+            onChange={setPeriod}
+            buttonClassName="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2 text-slate-900 dark:text-white text-sm font-semibold min-w-[170px]"
+          />
           <button
             onClick={load}
             disabled={loading}

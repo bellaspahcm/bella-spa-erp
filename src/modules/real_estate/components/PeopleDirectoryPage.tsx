@@ -39,6 +39,7 @@ import { getAllInScopeAction } from '@/modules/real_estate/actions/leadAssignmen
 import { deactivatePersonAction } from '@/modules/real_estate/actions/peopleActions';
 import { PersonFormModal, type PersonFormData } from '@/modules/real_estate/components/PersonFormModal';
 import { TenantContextContext } from '@/core/hooks/useTenantContext';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import type { AssignableReference, AssignableType } from '@/foundation';
 
 // ─── Augmented Person ─────────────────────────────────────────────────────────
@@ -682,16 +683,17 @@ export function PeopleDirectoryPage() {
             ))}
           </div>
 
-          <select
+          <PremiumSelect
+            options={[
+              { value: 'all', label: 'Tất cả trạng thái' },
+              { value: 'active', label: 'Đang làm' },
+              { value: 'on_leave', label: 'Nghỉ phép' },
+              { value: 'inactive', label: 'Không hoạt động' },
+            ]}
             value={statusFilter}
-            onChange={e => setStatusFilter(e.target.value as StatusFilter)}
-            className="px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-violet-500/30"
-          >
-            <option value="all">Tất cả trạng thái</option>
-            <option value="active">Đang làm</option>
-            <option value="on_leave">Nghỉ phép</option>
-            <option value="inactive">Không hoạt động</option>
-          </select>
+            onChange={val => setStatusFilter(val as StatusFilter)}
+            buttonClassName="py-2 px-3 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700"
+          />
 
           <span className="text-xs text-slate-400 font-medium ml-2 shrink-0">
             {filtered.length} / {allPeople.length} nhân sự

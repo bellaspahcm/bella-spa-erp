@@ -7,9 +7,6 @@
 --              Extracted from domain models in src/modules/real_estate/contexts
 -- ============================================================================
 
-\echo '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'
-\echo 'REAL ESTATE MODULE - CORE SCHEMA'
-\echo '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'
 
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -67,10 +64,6 @@ EXCEPTION WHEN duplicate_object THEN
   RAISE NOTICE '  ⚠️  Enum already exists: reservation_status';
 END $$;
 
-\echo ''
-\echo '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'
-\echo 'SECTION 2: CORE TABLES'
-\echo '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'
 
 -- ============================================================================
 -- Projects Table (Product Catalog Context)
@@ -456,10 +449,6 @@ CREATE INDEX IF NOT EXISTS idx_re_commissions_deleted ON re_commissions(deleted_
 COMMENT ON TABLE re_commissions IS 'Sales agent commissions - CommissionCalculator';
 COMMENT ON COLUMN re_commissions.agent_id IS 'Sales agent user ID who earned commission';
 
-\echo ''
-\echo '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'
-\echo 'SECTION 3: ROW LEVEL SECURITY (RLS)'
-\echo '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'
 
 -- Enable RLS on all tables
 ALTER TABLE real_estate_projects ENABLE ROW LEVEL SECURITY;
@@ -531,10 +520,6 @@ CREATE POLICY "Authenticated users can view commissions from their tenant"
 
 RAISE NOTICE '  ✓ Created RLS policies for all Real Estate tables';
 
-\echo ''
-\echo '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'
-\echo 'VERIFICATION'
-\echo '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'
 
 DO $$
 DECLARE

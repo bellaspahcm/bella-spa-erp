@@ -20,8 +20,6 @@ import {
   User,
   Mail,
   Phone,
-  Building2,
-  Briefcase,
   Loader2,
   CheckCircle2,
   AlertCircle,
@@ -34,6 +32,7 @@ import {
   updatePersonAction,
   type CreatePersonInput,
 } from '@/modules/real_estate/actions/peopleActions';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -344,20 +343,12 @@ export function PersonFormModal({
 
           {/* Chi nhánh */}
           <Field label="Chi nhánh">
-            <div className="relative">
-              <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
-              <select
-                id="person-form-branch"
-                value={formData.branch}
-                onChange={(e) => set('branch', e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-700 focus:border-violet-500 dark:focus:border-violet-500 bg-white dark:bg-slate-800/50 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-violet-500/20 transition-all appearance-none"
-              >
-                {BRANCHES.map(b => (
-                  <option key={b} value={b}>{b}</option>
-                ))}
-              </select>
-              <Briefcase className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
-            </div>
+            <PremiumSelect
+              options={BRANCHES.map(b => ({ value: b, label: b }))}
+              value={formData.branch}
+              onChange={val => set('branch', val)}
+              buttonClassName="w-full py-2.5 px-3.5 text-sm rounded-xl border border-slate-200 dark:border-slate-700 focus:border-violet-500 dark:focus:border-violet-500 bg-white dark:bg-slate-800/50 text-slate-900 dark:text-white"
+            />
           </Field>
 
           {/* Submit error */}
