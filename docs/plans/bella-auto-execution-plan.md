@@ -48,12 +48,12 @@
 ---
 
 ### Phase 3 ⭐ — Journey Engine & Trải Nghiệm Khách Hàng (Tuần 7-12)
-*   [ ] **3.1.** Tạo các bảng dữ liệu lưu trữ hành trình: `auto_journey_stages` (22 giai đoạn hành trình), `auto_customer_journeys`, và `auto_journey_events`.
-*   [ ] **3.2.** Phát triển `CustomerJourneyService` điều phối việc khởi tạo hành trình khi có Lead mới và cập nhật trạng thái tự động.
-*   [ ] **3.3.** Xây dựng `JourneySLAMonitorService` tự động quét và đưa ra cảnh báo (at risk / breached) khi một hành trình bị nghẽn quá thời hạn SLA của stage đó.
-*   [ ] **3.4.** Phát triển giao diện **Journey Timeline (CEO View)** trực quan hiển thị dòng lịch sử tương tác của khách hàng từ lúc biết đến qua quảng cáo cho đến bảo dưỡng và Trade-in sau nhiều năm.
-*   [ ] **3.5.** Tích hợp cơ chế thu thập Touchpoint tự động (`auto_touchpoints`) ghi nhận lịch sử cuộc gọi, email, tin nhắn Zalo, hay ghé thăm showroom.
-*   [ ] **3.6.** Thiết kế giao diện báo cáo **Journey Funnel Analytics** (phân tích tỷ lệ chuyển đổi và tỷ lệ rơi rụng qua từng bước) và **Journey Heatmap** (phân tích thời gian trung bình bị nghẽn tại từng giai đoạn).
+*   [x] **3.1.** Tạo các bảng dữ liệu lưu trữ hành trình: `auto_journey_stages` (22 giai đoạn hành trình), `auto_customer_journeys`, và `auto_journey_events`.
+*   [x] **3.2.** Phát triển `CustomerJourneyService` điều phối việc khởi tạo hành trình khi có Lead mới và cập nhật trạng thái tự động.
+*   [x] **3.3.** Xây dựng `JourneySLAMonitorService` tự động quét và đưa ra cảnh báo (at risk / breached) khi một hành trình bị nghẽn quá thời hạn SLA của stage đó.
+*   [x] **3.4.** Phát triển giao diện **Journey Timeline (CEO View)** trực quan hiển thị dòng lịch sử tương tác của khách hàng từ lúc biết đến qua quảng cáo cho đến bảo dưỡng và Trade-in sau nhiều năm.
+*   [x] **3.5.** Tích hợp cơ chế thu thập Touchpoint tự động (`auto_touchpoints`) ghi nhận lịch sử cuộc gọi, email, tin nhắn Zalo, hay ghé thăm showroom.
+*   [x] **3.6.** Thiết kế giao diện báo cáo **Journey Funnel Analytics** (phân tích tỷ lệ chuyển đổi và tỷ lệ rơi rụng qua từng bước) và **Journey Heatmap** (phân tích thời gian trung bình bị nghẽn tại từng giai đoạn).
 
 ---
 
