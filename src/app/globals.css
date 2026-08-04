@@ -1154,8 +1154,8 @@ html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-logo-mark {
 }
 html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-brand-script { color: #f0fdfa !important; }
 html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-brand-subtitle,
-html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-header { color: #5eead4 !important; }
-html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item { color: rgba(240, 253, 250, 0.85) !important; }
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-header { color: #99f6e4 !important; }
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item { color: #ccfbf1 !important; }
 html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item:hover { color: #ffffff !important; background: rgba(20, 184, 166, 0.22) !important; }
 html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item:hover svg,
 html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item:hover * { color: #ffffff !important; }
