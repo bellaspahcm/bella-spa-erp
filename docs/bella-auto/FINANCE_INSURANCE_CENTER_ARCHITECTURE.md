@@ -1301,3 +1301,72 @@ Funnel stages:
 - ✅ Delete/archive records (with confirmation)
 
 ---
+
+## 🗄️ Database Schema (Existing - Backend Ready)
+
+### Finance Center Tables
+
+#### `auto_loan_applications`
+```sql
+TABLE auto_loan_applications (
+  id UUID PRIMARY KEY,
+  tenant_id UUID REFERENCES tenants(id),
+  booking_id UUID REFERENCES auto_bookings(id),
+  customer_id UUID REFERENCES auto_customers(id),
+  vehicle_id UUID REFERENCES auto_vehicles(id),
+  bank_id UUID REFERENCES auto_banks(id),
+  loan_amount NUMERIC(15,2),
+  interest_rate NUMERIC(5,2),
+  loan_term_months INT,
+  monthly_payment NUMERIC(15,2),
+  status TEXT, -- pending, bank_reviewing, approved, rejected, disbursed, cancelled
+  submitted_date TIMESTAMPTZ,
+  approved_date TIMESTAMPTZ,
+  disbursed_date TIMESTAMPTZ,
+  assigned_sales_id UUID REFERENCES profiles(id),
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+#### `auto_banks`
+```sql
+TABLE auto_banks (
+  id UUID PRIMARY KEY,
+  tenant_id UUID REFERENCES tenants(id),
+  name TEXT,
+  code TEXT, -- VPB, TCB, VCB, etc.
+  logo_url TEXT,
+  contact_name TEXT,
+  contact_phone TEXT,
+  contact_email TEXT,
+  min_interest_rate NUMERIC(5,2),
+  max_interest_rate NUMERIC(5,2),
+  available_terms INT[], -- [12, 24, 36, 48, 60]
+  max_ltv_ratio NUMERIC(5,2), -- 80.00 = 80%
+  min_income NUMERIC(15,2),
+  min_credit_score INT,
+  commission_type TEXT, -- fixed or percentage
+  commission_value NUMERIC(15,2),
+  status TEXT, -- active, inactive
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+#### `auto_loan_documents`
+```sql
+TABLE auto_loan_documents (
+  id UUID PRIMARY KEY,
+  loan_id UUID REFERENCES auto_loan_applications(id),
+  document_type TEXT, -- cccd, household, bank_statement, employment, income_proof
+  file_url TEXT,
+  file_name TEXT,
+  file_size_bytes BIGINT,
+  uploaded_by UUID REFERENCES profiles(id),
+  status TEXT, -- pending, uploaded, verified, rejected
+  notes TEXT,
+  uploaded_at TIMESTAMPTZ DEFAULT NOW()
+);
+```

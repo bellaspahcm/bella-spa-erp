@@ -8,10 +8,12 @@ import { Wrench, Calendar, Users } from 'lucide-react';
 import { createClient } from '@/lib/supabase-client';
 import { toast } from 'sonner';
 import { mapAppointmentForCalendar, mapRepairOrderForBoard } from '@/modules/bella-auto/lib/workshop-mappers';
+import { useTenantContext } from '@/core/hooks/useTenantContext';
 
 type TabType = 'appointments' | 'orders' | 'technicians';
 
 export default function WorkshopPage() {
+  const { tenantId } = useTenantContext();
   const [activeTab, setActiveTab] = useState<TabType>('appointments');
   const [appointments, setAppointments] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
@@ -77,7 +79,8 @@ export default function WorkshopPage() {
         // Check if tables exist with a simple count query first
         const { count: aptCount, error: aptTestError } = await supabase
           .from('auto_service_appointments')
-          .select('*', { count: 'exact', head: true });
+          .select('*', { count: 'exact', head: true })
+          .eq('tenant_id', tenantId); // ✅ Add tenant filter
         
         if (aptTestError) {
           console.error('[Workshop] Table check failed:', {
@@ -100,6 +103,7 @@ export default function WorkshopPage() {
         const appointmentsRes = await supabase
           .from('auto_service_appointments')
           .select('*')
+          .eq('tenant_id', tenantId) // ✅ Add tenant filter
           .order('scheduled_date', { ascending: true });
         
         console.log('[Workshop] Appointments query result:', {
@@ -114,6 +118,7 @@ export default function WorkshopPage() {
         const ordersRes = await supabase
           .from('auto_repair_orders')
           .select('*')
+          .eq('tenant_id', tenantId) // ✅ Add tenant filter
           .order('opened_at', { ascending: false });
         
         console.log('[Workshop] Orders query result:', {
@@ -161,7 +166,7 @@ export default function WorkshopPage() {
     };
 
     fetchData();
-  }, []);
+  }, [tenantId]); // ✅ Add tenantId dependency
 
   return (
     <div className="flex-1 overflow-auto bg-slate-50/30 dark:bg-slate-950 p-6 md:p-10 space-y-8" data-auto-layout>
