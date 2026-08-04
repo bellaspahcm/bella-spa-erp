@@ -66,8 +66,34 @@ export default function WorkshopPage() {
         
         if (!supabase) {
           console.error('Supabase client not initialized');
+          toast.error('Không thể kết nối Supabase');
           setIsLoading(false);
           return;
+        }
+        
+        // Debug: Log current tenant context
+        console.log('[Workshop] Fetching data...');
+        
+        // Check if tables exist with a simple count query first
+        const { count: aptCount, error: aptTestError } = await supabase
+          .from('auto_service_appointments')
+          .select('*', { count: 'exact', head: true });
+        
+        if (aptTestError) {
+          console.error('[Workshop] Table check failed:', {
+            code: aptTestError.code,
+            message: aptTestError.message,
+            details: aptTestError.details,
+            hint: aptTestError.hint
+          });
+          
+          if (aptTestError.code === 'PGRST116' || aptTestError.message?.includes('does not exist')) {
+            toast.error('Bảng auto_service_appointments chưa được tạo. Chạy migration: 20260803260000');
+            setIsLoading(false);
+            return;
+          }
+        } else {
+          console.log(`[Workshop] Found ${aptCount} appointments in database`);
         }
         
         // Query with proper null handling
@@ -76,10 +102,28 @@ export default function WorkshopPage() {
           .select('*')
           .order('scheduled_date', { ascending: true });
         
+        console.log('[Workshop] Appointments query result:', {
+          success: !appointmentsRes.error,
+          count: appointmentsRes.data?.length || 0,
+          error: appointmentsRes.error ? {
+            code: appointmentsRes.error.code,
+            message: appointmentsRes.error.message
+          } : null
+        });
+        
         const ordersRes = await supabase
           .from('auto_repair_orders')
           .select('*')
           .order('opened_at', { ascending: false });
+        
+        console.log('[Workshop] Orders query result:', {
+          success: !ordersRes.error,
+          count: ordersRes.data?.length || 0,
+          error: ordersRes.error ? {
+            code: ordersRes.error.code,
+            message: ordersRes.error.message
+          } : null
+        });
 
         if (appointmentsRes.error) {
           console.error('Appointments fetch error:', appointmentsRes.error.message || appointmentsRes.error);
