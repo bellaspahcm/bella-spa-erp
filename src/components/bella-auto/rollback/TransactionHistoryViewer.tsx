@@ -7,7 +7,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { format } from 'date-fns';
 import { 
   RotateCcw, 
@@ -61,11 +61,7 @@ export function TransactionHistoryViewer({
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterType, setFilterType] = useState<string>('all');
 
-  useEffect(() => {
-    loadTransactions();
-  }, [entityType, entityId, filterStatus, filterType]);
-
-  const loadTransactions = async () => {
+  const loadTransactions = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams({
@@ -85,7 +81,11 @@ export function TransactionHistoryViewer({
     } finally {
       setLoading(false);
     }
-  };
+  }, [entityType, entityId, filterStatus, filterType]); // ✅ Fixed: Wrapped with useCallback
+
+  useEffect(() => {
+    loadTransactions();
+  }, [loadTransactions]); // ✅ Fixed: Simplified dependencies
 
   const getStatusIcon = (status: string) => {
     switch (status) {

@@ -7,7 +7,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { AlertTriangle, RotateCcw, X } from 'lucide-react';
 import {
   Dialog,
@@ -53,14 +53,7 @@ export function RollbackConfirmationDialog({
   const [loadingSteps, setLoadingSteps] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
 
-  useEffect(() => {
-    if (open && transactionId) {
-      loadSteps();
-      setReason('');
-    }
-  }, [open, transactionId]);
-
-  const loadSteps = async () => {
+  const loadSteps = useCallback(async () => {
     if (!transactionId) return;
 
     setLoadingSteps(true);
@@ -73,7 +66,14 @@ export function RollbackConfirmationDialog({
     } finally {
       setLoadingSteps(false);
     }
-  };
+  }, [transactionId]); // ✅ Fixed: Wrapped with useCallback
+
+  useEffect(() => {
+    if (open && transactionId) {
+      loadSteps();
+      setReason('');
+    }
+  }, [open, transactionId, loadSteps]); // ✅ Fixed: Added loadSteps to dependencies
 
   const handleRollback = async () => {
     if (!transactionId || !reason.trim()) return;

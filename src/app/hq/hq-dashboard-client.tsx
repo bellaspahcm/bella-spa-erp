@@ -601,7 +601,7 @@ export default function HqDashboardClient({
     } else if (activeTab === 'services') {
       loadServicesData();
     }
-  }, [activeTab, currentPage, loadAuditData]);
+  }, [activeTab, currentPage, loadAuditData, loadClearingData, loadRoyaltyData, loadTransferData]); // ✅ Fixed: Added missing dependencies
 
   const handleTenantSubscriptionChanged = async () => {
     const [freshStats, freshTenants] = await Promise.all([
