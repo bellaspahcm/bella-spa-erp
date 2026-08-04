@@ -1370,3 +1370,154 @@ TABLE auto_loan_documents (
   uploaded_at TIMESTAMPTZ DEFAULT NOW()
 );
 ```
+
+### Insurance Center Tables
+
+#### `auto_insurance_policies`
+```sql
+TABLE auto_insurance_policies (
+  id UUID PRIMARY KEY,
+  tenant_id UUID REFERENCES tenants(id),
+  policy_number TEXT UNIQUE,
+  customer_id UUID REFERENCES auto_customers(id),
+  vehicle_id UUID REFERENCES auto_vehicles(id),
+  provider_id UUID REFERENCES auto_insurance_providers(id),
+  type TEXT, -- tnds, physical, combo
+  effective_date DATE,
+  expiry_date DATE,
+  premium_amount NUMERIC(15,2),
+  commission_amount NUMERIC(15,2),
+  coverage_details JSONB, -- { liability: {...}, physical: {...} }
+  contract_file_url TEXT,
+  assigned_sales_id UUID REFERENCES profiles(id),
+  status TEXT, -- active, expired, cancelled, pending_renewal
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+#### `auto_insurance_providers`
+```sql
+TABLE auto_insurance_providers (
+  id UUID PRIMARY KEY,
+  tenant_id UUID REFERENCES tenants(id),
+  name TEXT, -- PVI, BIC, PTI, etc.
+  code TEXT,
+  logo_url TEXT,
+  contact_name TEXT,
+  contact_phone TEXT,
+  contact_email TEXT,
+  commission_rate NUMERIC(5,2), -- 10.00 = 10%
+  status TEXT, -- active, inactive
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+#### `auto_insurance_claims`
+```sql
+TABLE auto_insurance_claims (
+  id UUID PRIMARY KEY,
+  tenant_id UUID REFERENCES tenants(id),
+  claim_number TEXT UNIQUE,
+  policy_id UUID REFERENCES auto_insurance_policies(id),
+  claim_type TEXT, -- collision, fire, theft, natural_disaster, etc.
+  incident_date TIMESTAMPTZ,
+  incident_location TEXT,
+  incident_description TEXT,
+  police_report_number TEXT,
+  estimated_damage_amount NUMERIC(15,2),
+  claim_amount NUMERIC(15,2),
+  deductible_amount NUMERIC(15,2),
+  status TEXT, -- reported, photos_uploaded, submitted_to_provider, provider_reviewing, approved, paid, rejected
+  reported_date TIMESTAMPTZ,
+  submitted_to_provider_date TIMESTAMPTZ,
+  approved_date TIMESTAMPTZ,
+  paid_date TIMESTAMPTZ,
+  photos JSONB, -- [{ url, category, uploaded_at }]
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+#### `auto_insurance_renewals`
+```sql
+TABLE auto_insurance_renewals (
+  id UUID PRIMARY KEY,
+  tenant_id UUID REFERENCES tenants(id),
+  policy_id UUID REFERENCES auto_insurance_policies(id),
+  renewal_date DATE,
+  new_policy_id UUID REFERENCES auto_insurance_policies(id),
+  status TEXT, -- pending, quoted, accepted, renewed, lost
+  reminder_sent_count INT DEFAULT 0,
+  last_reminder_date TIMESTAMPTZ,
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+---
+
+## 🔌 API Endpoints (Existing - Backend Ready)
+
+### Finance Center APIs
+
+#### Loan Applications
+- `GET /api/bella-auto/finance/loans` - List loan applications (with filters)
+- `GET /api/bella-auto/finance/loans/[id]` - Get loan detail
+- `POST /api/bella-auto/finance/loans` - Create new loan application
+- `PUT /api/bella-auto/finance/loans/[id]` - Update loan application
+- `POST /api/bella-auto/finance/loans/[id]/approve` - Approve loan
+- `POST /api/bella-auto/finance/loans/[id]/reject` - Reject loan
+- `POST /api/bella-auto/finance/loans/[id]/disburse` - Mark as disbursed
+- `DELETE /api/bella-auto/finance/loans/[id]` - Cancel loan (soft delete)
+
+#### Loan Documents
+- `POST /api/bella-auto/finance/loans/[id]/documents` - Upload document
+- `GET /api/bella-auto/finance/loans/[id]/documents` - List documents
+- `DELETE /api/bella-auto/finance/loans/[id]/documents/[docId]` - Delete document
+
+#### Banks
+- `GET /api/bella-auto/finance/banks` - List partner banks
+- `POST /api/bella-auto/finance/banks` - Create bank
+- `PUT /api/bella-auto/finance/banks/[id]` - Update bank
+- `DELETE /api/bella-auto/finance/banks/[id]` - Deactivate bank
+
+#### Analytics
+- `GET /api/bella-auto/finance/dashboard` - Finance dashboard stats
+- `GET /api/bella-auto/finance/analytics` - Finance analytics reports
+
+---
+
+### Insurance Center APIs
+
+#### Insurance Policies
+- `GET /api/bella-auto/insurance/policies` - List policies (with filters)
+- `GET /api/bella-auto/insurance/policies/[id]` - Get policy detail
+- `POST /api/bella-auto/insurance/policies` - Create new policy
+- `PUT /api/bella-auto/insurance/policies/[id]` - Update policy
+- `POST /api/bella-auto/insurance/policies/[id]/renew` - Renew policy
+- `POST /api/bella-auto/insurance/policies/[id]/cancel` - Cancel policy
+
+#### Renewals
+- `GET /api/bella-auto/insurance/renewals/alerts` - Get renewal alerts
+- `POST /api/bella-auto/insurance/renewals/[id]/remind` - Send renewal reminder
+- `POST /api/bella-auto/insurance/renewals/bulk-remind` - Send bulk reminders
+
+#### Claims
+- `GET /api/bella-auto/insurance/claims` - List claims
+- `GET /api/bella-auto/insurance/claims/[id]` - Get claim detail
+- `POST /api/bella-auto/insurance/claims` - Create new claim
+- `PUT /api/bella-auto/insurance/claims/[id]` - Update claim
+- `POST /api/bella-auto/insurance/claims/[id]/photos` - Upload claim photos
+- `POST /api/bella-auto/insurance/claims/[id]/submit` - Submit to provider
+
+#### Providers
+- `GET /api/bella-auto/insurance/providers` - List providers
+- `POST /api/bella-auto/insurance/providers` - Create provider
+- `PUT /api/bella-auto/insurance/providers/[id]` - Update provider
+
+#### Analytics
+- `GET /api/bella-auto/insurance/dashboard` - Insurance dashboard stats
+- `GET /api/bella-auto/insurance/analytics` - Insurance analytics reports
+
+---
