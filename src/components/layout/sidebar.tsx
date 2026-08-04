@@ -834,10 +834,12 @@ export function Sidebar() {
                   whileHover={{ x: 4 }}
                   className={cn(
                     "flex items-center gap-4 px-5 py-3.5 rounded-[1.5rem] transition-all duration-300 relative group cursor-pointer border",
-                    (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell) && "beauty-erp-nav-item",
-                    (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell) && isActive && "beauty-erp-nav-item-active",
+                    (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell || isBellaAutoShell) && "beauty-erp-nav-item",
+                    (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell || isBellaAutoShell) && isActive && "beauty-erp-nav-item-active",
                     isActive
                       ? "bg-white text-primary border-primary/20 shadow-[0_8px_20px_rgba(219,39,119,0.12)] ring-1 ring-primary/20 dark:bg-[#5D1C34]/30 dark:text-[#EFE9E1] dark:border-[#A67D44]/40 dark:ring-[#A67D44]/20 dark:shadow-none"
+                      : isBellaAutoShell
+                      ? "text-[#e0f2fe] bg-transparent border-transparent hover:bg-white/10 hover:text-white hover:shadow-[0_4px_12px_rgba(20,184,166,0.15)] hover:border-cyan-400/30"
                       : "text-[#8A6D7C] bg-transparent border-transparent hover:bg-white/70 hover:text-primary hover:shadow-[0_4px_12px_rgba(219,39,119,0.03)] hover:border-[#FFE4E6]/50 dark:text-[#CDBCAB] dark:hover:bg-[#1C1B19]/50 dark:hover:text-[#EFE9E1] dark:hover:border-[#3E3A35]/50"
                   )}
                 >
@@ -849,14 +851,14 @@ export function Sidebar() {
                   )}
                   <item.icon className={cn(
                     "w-[18px] h-[18px] transition-all duration-300 shrink-0",
-                    (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell)
-                      ? (isActive ? "text-white scale-105" : "text-inherit opacity-85 group-hover:text-white group-hover:opacity-100")
+                    (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell || isBellaAutoShell)
+                      ? (isActive ? "text-white scale-105" : isBellaAutoShell ? "text-[#e0f2fe] opacity-90 group-hover:text-white group-hover:opacity-100" : "text-inherit opacity-85 group-hover:text-white group-hover:opacity-100")
                       : (isActive ? "text-primary dark:text-[#A67D44] scale-105" : "text-[#A07888] dark:text-[#CDBCAB]/80 group-hover:text-primary dark:group-hover:text-[#A67D44]")
                   )} />
                   <span className={cn(
                     "text-[14px] tracking-tight transition-all duration-300 truncate",
-                    (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell)
-                      ? (isActive ? "font-extrabold text-white" : "font-semibold text-inherit group-hover:text-white")
+                    (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell || isBellaAutoShell)
+                      ? (isActive ? "font-extrabold text-white" : isBellaAutoShell ? "font-semibold text-[#e0f2fe] group-hover:text-white" : "font-semibold text-inherit group-hover:text-white")
                       : (isActive ? "font-extrabold text-primary dark:text-[#EFE9E1]" : "font-semibold")
                   )}>{item.label}</span>
 
