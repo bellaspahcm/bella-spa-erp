@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
             results.errors.push({ id, error: 'Reject failed' });
           }
         }
-      } catch (error) {
+      } catch (_error: unknown) {
         results.failed++;
         results.errors.push({ id, error: 'Exception' });
       }
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
       message: `Processed ${results.success} successfully, ${results.failed} failed`,
     });
 
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('[batch] Exception:', error);
     return NextResponse.json(
       { success: false, error: 'Internal error' },

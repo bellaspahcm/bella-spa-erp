@@ -94,14 +94,14 @@ export async function POST(
     const { data: updatedApp, error: updateError } = await supabase
       .from('partner_applications')
       .update({
-        status: 'need_more_info',
+        status: 'need_more_info' as const,
         info_request_message: message.trim(),
         info_request_fields: fields || null,
         info_requested_at: new Date().toISOString(),
         info_requested_by: user.id,
         updated_at: new Date().toISOString(),
         updated_by: user.id,
-      } as any)
+      })
       .eq('id', params.id)
       .select()
       .single();
@@ -119,14 +119,14 @@ export async function POST(
       .from('partner_application_logs')
       .insert({
         application_id: params.id,
-        action: 'info_requested',
+        action: 'info_requested' as const,
         action_description: `Additional info requested: ${message}`,
         performed_by: user.id,
         performed_by_role: 'admin',
         old_status: application.status,
-        new_status: 'need_more_info',
+        new_status: 'need_more_info' as const,
         metadata: { message, fields },
-      } as any);
+      });
 
     if (logError) {
       console.error('Failed to log info request:', logError);
@@ -152,7 +152,7 @@ export async function POST(
       } else {
         console.log('[request-info] Email sent successfully to:', application.email);
       }
-    } catch (emailError) {
+    } catch (emailError: unknown) {
       console.error('[request-info] Email sending exception:', emailError);
       // Don't fail the request
     }
@@ -163,7 +163,7 @@ export async function POST(
       message: 'Info request sent successfully. Applicant will be notified via email.',
     });
 
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Request info error:', error);
     return NextResponse.json(
       { 

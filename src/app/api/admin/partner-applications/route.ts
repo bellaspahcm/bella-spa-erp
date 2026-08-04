@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
     // Filter by status
     const status = searchParams.get('status');
     if (status && status !== 'all') {
-      query = query.eq('status', status as any);
+      query = query.eq('status', status);
     }
 
     // Search by name/email/company
@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
       offset,
     });
 
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('[GET /api/admin/partner-applications] Exception:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },

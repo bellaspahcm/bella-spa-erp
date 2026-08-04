@@ -92,14 +92,14 @@ export async function POST(
     const { data: updatedApp, error: updateError } = await supabase
       .from('partner_applications')
       .update({
-        status: 'rejected',
+        status: 'rejected' as const,
         rejected_at: new Date().toISOString(),
         rejected_by: user.id,
         rejection_reason: reason.trim(),
         rejection_category: category || 'other',
         updated_at: new Date().toISOString(),
         updated_by: user.id,
-      } as any)
+      })
       .eq('id', params.id)
       .select()
       .single();
@@ -117,14 +117,14 @@ export async function POST(
       .from('partner_application_logs')
       .insert({
         application_id: params.id,
-        action: 'rejected',
+        action: 'rejected' as const,
         action_description: `Application rejected: ${reason}`,
         performed_by: user.id,
         performed_by_role: 'admin',
         old_status: application.status,
-        new_status: 'rejected',
+        new_status: 'rejected' as const,
         metadata: { reason, category },
-      } as any);
+      });
 
     if (logError) {
       console.error('Failed to log rejection:', logError);
@@ -149,7 +149,7 @@ export async function POST(
       } else {
         console.log('[reject] Rejection email sent successfully to:', application.email);
       }
-    } catch (emailError) {
+    } catch (emailError: unknown) {
       console.error('[reject] Email sending exception:', emailError);
       // Don't fail the rejection
     }
@@ -160,7 +160,7 @@ export async function POST(
       message: 'Application rejected successfully. Rejection notification email will be sent.',
     });
 
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Reject application error:', error);
     return NextResponse.json(
       { 

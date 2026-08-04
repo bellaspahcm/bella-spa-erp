@@ -97,13 +97,13 @@ export async function POST(
     const { data: updatedApp, error: updateError } = await supabase
       .from('partner_applications')
       .update({
-        status: 'approved',
+        status: 'approved' as const,
         approved_at: new Date().toISOString(),
         approved_by: user.id,
         approval_notes: notes || null,
         updated_at: new Date().toISOString(),
         updated_by: user.id,
-      } as any)
+      })
       .eq('id', params.id)
       .select()
       .single();
@@ -121,14 +121,14 @@ export async function POST(
       .from('partner_application_logs')
       .insert({
         application_id: params.id,
-        action: 'approved',
+        action: 'approved' as const,
         action_description: notes || 'Application approved by admin',
         performed_by: user.id,
         performed_by_role: 'admin',
         old_status: application.status,
-        new_status: 'approved',
+        new_status: 'approved' as const,
         metadata: { notes, provisioning_config },
-      } as any);
+      });
 
     if (logError) {
       console.error('Failed to log approval:', logError);
@@ -154,7 +154,7 @@ export async function POST(
         console.error('[approve] Provisioning failed:', provisioningResult.error);
         // Don't fail the approval, provisioning can be retried manually
       }
-    } catch (provError) {
+    } catch (provError: unknown) {
       console.error('[approve] Provisioning exception:', provError);
       // Don't fail the approval
     }
@@ -177,7 +177,7 @@ export async function POST(
       } else {
         console.log('[approve] Approval email sent successfully to:', application.email);
       }
-    } catch (emailError) {
+    } catch (emailError: unknown) {
       console.error('[approve] Email sending exception:', emailError);
       // Don't fail the approval
     }
@@ -193,7 +193,7 @@ export async function POST(
         : 'Application approved. Provisioning will be completed shortly.',
     });
 
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Approve application error:', error);
     return NextResponse.json(
       { 
