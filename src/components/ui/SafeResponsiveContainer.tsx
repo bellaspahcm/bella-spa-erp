@@ -1,59 +1,88 @@
 /**
  * SafeResponsiveContainer - Wrapper around Recharts ResponsiveContainer
- * 
+ *
  * Purpose: Prevents "width(-1) and height(-1)" warnings by ensuring parent
  * containers have computed dimensions before rendering charts.
- * 
+ *
  * How it works:
- * 1. Delays rendering by 50ms to allow parent layout to compute
- * 2. Returns placeholder div until mounted
- * 3. Then renders actual ResponsiveContainer with stable dimensions
- * 
+ * 1. Uses ResizeObserver to detect when container has real dimensions
+ * 2. Only renders ResponsiveContainer after container width > 0
+ * 3. Falls back to minWidth/minHeight guarantees
+ *
  * Usage:
  *   Replace: import { ResponsiveContainer } from 'recharts';
  *   With:    import { SafeResponsiveContainer as ResponsiveContainer } from '@/components/ui/SafeResponsiveContainer';
- * 
+ *
  * @author Bella ERP Team
- * @date 2026-08-04
+ * @date 2026-08-05
  */
 
-import { useState, useEffect } from 'react';
+'use client';
+
+import { useState, useEffect, useRef } from 'react';
 import { ResponsiveContainer as RechartsResponsiveContainer } from 'recharts';
 
-export function SafeResponsiveContainer({ 
-  children, 
-  ...props 
+export function SafeResponsiveContainer({
+  children,
+  width = '100%',
+  height = '100%',
+  minWidth = 0,
+  minHeight,
+  ...props
 }: React.ComponentProps<typeof RechartsResponsiveContainer>) {
-  const [mounted, setMounted] = useState(false);
-  
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [dimensions, setDimensions] = useState<{ width: number; height: number } | null>(null);
+
   useEffect(() => {
-    // Delay rendering to ensure parent containers have computed dimensions
-    // This prevents Recharts from rendering with -1 width/height
-    const timer = setTimeout(() => {
-      setMounted(true);
-    }, 50);
+    const el = wrapperRef.current;
+    if (!el) return;
+
+    const observer = new ResizeObserver((entries) => {
+      if (!Array.isArray(entries) || !entries.length) return;
+      
+      const entry = entries[0];
+      const w = entry.contentRect.width;
+      const h = entry.contentRect.height;
+      
+      // Only set dimensions if they are valid positive values
+      if (w > 0 && h > 0) {
+        setDimensions({ width: w, height: h });
+      }
+    });
+
+    observer.observe(el);
     
-    return () => clearTimeout(timer);
+    // Initial check
+    if (el.offsetWidth > 0 && el.offsetHeight > 0) {
+      setDimensions({ width: el.offsetWidth, height: el.offsetHeight });
+    }
+
+    return () => observer.disconnect();
   }, []);
-  
-  // Show placeholder until mounted to prevent -1 dimension warnings
-  if (!mounted) {
-    return (
-      <div 
-        style={{ 
-          width: props.width || '100%', 
-          height: props.height || '100%',
-          minWidth: 100,
-          minHeight: 100,
-        }} 
-      />
-    );
-  }
-  
+
   return (
-    <RechartsResponsiveContainer {...props}>
-      {children}
-    </RechartsResponsiveContainer>
+    <div
+      ref={wrapperRef}
+      style={{
+        width: typeof width === 'number' ? width : '100%',
+        height: typeof height === 'number' ? height : '100%',
+        minWidth: typeof minWidth === 'number' ? Math.max(minWidth, 0) : 0,
+        minHeight: typeof minHeight === 'number' ? Math.max(minHeight, 0) : undefined,
+        position: 'relative',
+      }}
+    >
+      {dimensions && (
+        <RechartsResponsiveContainer
+          width={dimensions.width}
+          height={dimensions.height}
+          minWidth={typeof minWidth === 'number' ? Math.max(minWidth, 0) : 0}
+          minHeight={typeof minHeight === 'number' ? Math.max(minHeight, 0) : undefined}
+          {...props}
+        >
+          {children}
+        </RechartsResponsiveContainer>
+      )}
+    </div>
   );
 }
 

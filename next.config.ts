@@ -14,7 +14,7 @@ const securityHeaders = [
     key: 'Content-Security-Policy',
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval'", // unsafe-eval required by Next.js dev + Sentry
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://vercel.live", // unsafe-eval and blob required by Next.js dev, Sentry, and Vercel Live Workers
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https:",
       "font-src 'self'",

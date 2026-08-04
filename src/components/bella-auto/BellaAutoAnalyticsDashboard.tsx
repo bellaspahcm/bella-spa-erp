@@ -449,44 +449,36 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
           icon={<TrendingUp className="w-4 h-4" />}
           extra={<CardHeaderActions />}
         >
-          <div className="mt-4" style={{ width: '100%', height: 300 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={analytics.topModels} layout="vertical" margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-                <defs>
-                  <linearGradient id="barModelGradient" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor="#06b6d4" />
-                    <stop offset="100%" stopColor="#3b82f6" />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="4 4" stroke="rgba(148, 163, 184, 0.08)" horizontal={false} />
-                <XAxis 
-                  type="number" 
-                  stroke="#cbd5e1"
-                  tick={{ fill: '#64748b', fontSize: 11, fontWeight: 600 }}
-                  axisLine={false} 
-                  tickLine={false} 
-                />
-                <YAxis 
-                  dataKey="model" 
-                  type="category" 
-                  stroke="#cbd5e1"
-                  tick={{ fill: '#475569', fontSize: 11, fontWeight: 700 }}
-                  axisLine={false} 
-                  tickLine={false} 
-                  dx={-4}
-                  width={110} 
-                />
-                <Tooltip 
-                  content={<CustomTooltip />}
-                  formatter={(value: number, name: string) => {
+          {analytics.topModels.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-64 gap-3 text-slate-400 dark:text-slate-500">
+              <div className="w-14 h-14 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 flex items-center justify-center">
+                <TrendingUp className="w-6 h-6 opacity-40" />
+              </div>
+              <p className="text-sm font-semibold">Chưa có dữ liệu bán hàng</p>
+              <p className="text-xs text-center max-w-xs">Dữ liệu sẽ hiển thị sau khi có giao dịch xe hoàn tất</p>
+            </div>
+          ) : (
+            <div className="mt-4" style={{ width: '100%', height: 300 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={analytics.topModels} layout="vertical" margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                  <defs>
+                    <linearGradient id="barModelGradient" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#06b6d4" />
+                      <stop offset="100%" stopColor="#3b82f6" />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="4 4" stroke="rgba(148, 163, 184, 0.08)" horizontal={false} />
+                  <XAxis type="number" stroke="#cbd5e1" tick={{ fill: '#64748b', fontSize: 11, fontWeight: 600 }} axisLine={false} tickLine={false} />
+                  <YAxis dataKey="model" type="category" stroke="#cbd5e1" tick={{ fill: '#475569', fontSize: 11, fontWeight: 700 }} axisLine={false} tickLine={false} dx={-4} width={110} />
+                  <Tooltip content={<CustomTooltip />} formatter={(value: number, name: string) => {
                     if (name === 'revenue') return [formatCurrency(value) + ' VNĐ', 'Doanh thu'];
                     return [value, 'Số lượng'];
-                  }}
-                />
-                <Bar dataKey="sold" fill="url(#barModelGradient)" name="Đã bán" radius={[0, 6, 6, 0]} barSize={12} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+                  }} />
+                  <Bar dataKey="sold" fill="url(#barModelGradient)" name="Đã bán" radius={[0, 6, 6, 0]} barSize={12} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </ChartCard>
 
         {/* Revenue Trend (LineChart styled as Area) */}
@@ -496,6 +488,15 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
           icon={<DollarSign className="w-4 h-4" />}
           extra={<CardHeaderActions />}
         >
+          {analytics.revenueByMonth.every(m => m.revenue === 0) ? (
+            <div className="flex flex-col items-center justify-center h-64 gap-3 text-slate-400 dark:text-slate-500">
+              <div className="w-14 h-14 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 flex items-center justify-center">
+                <DollarSign className="w-6 h-6 opacity-40" />
+              </div>
+              <p className="text-sm font-semibold">Chưa có dữ liệu doanh thu</p>
+              <p className="text-xs text-center max-w-xs">Dữ liệu sẽ hiển thị sau khi có booking xe hoàn tất</p>
+            </div>
+          ) : (
           <div className="mt-4" style={{ width: '100%', height: 300 }}>
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={analytics.revenueByMonth} margin={{ top: 10, right: 10, left: 58, bottom: 0 }}>
@@ -537,6 +538,7 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
               </AreaChart>
             </ResponsiveContainer>
           </div>
+          )}
         </ChartCard>
 
         {/* Weekly Deliveries */}

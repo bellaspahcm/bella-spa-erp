@@ -56,11 +56,12 @@ export async function proxy(request: NextRequest) {
   // CSP - Content Security Policy
   const csp = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://vercel.live",
+    "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob: https://vercel.live",
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: https: blob:",
     "font-src 'self' data:",
-    "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
+    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://vercel.live wss://vercel.live",
+    "worker-src 'self' blob:",
     "frame-ancestors 'self'",
   ].join('; ');
   response.headers.set('Content-Security-Policy', csp);
