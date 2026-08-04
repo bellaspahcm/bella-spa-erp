@@ -96,11 +96,13 @@ const CustomTooltip = ({ active, payload, label, valueFormatter }: CustomTooltip
   return null;
 };
 
+// Create client outside component to avoid recreating on every render
+const supabase = createClient();
+
 export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnalyticsDashboardProps) {
   const [loading, setLoading] = useState(true);
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [mounted, setMounted] = useState(false);
-  const supabase = createClient();
 
   // Wait for component to mount before rendering charts
   useEffect(() => {
@@ -111,28 +113,19 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
     return () => clearTimeout(timer);
   }, []);
 
-  const loadAnalytics = async () => {
-    setLoading(true);
-    try {
-      console.log('[BellaAuto] Starting analytics load for tenant:', tenantId);
-      
-      // Add timeout wrapper
-      const withTimeout = <T,>(promise: Promise<T>, timeoutMs: number): Promise<T> => {
-        return Promise.race([
-          promise,
-          new Promise<T>((_, reject) => 
-            setTimeout(() => reject(new Error(`Timeout after ${timeoutMs}ms`)), timeoutMs)
-          )
+  useEffect(() => {
+    const loadAnalytics = async () => {
+      setLoading(true);
+      try {
+        console.log('[BellaAuto] Starting analytics load for tenant:', tenantId);
+        
+        // ✅ Call real RPCs — SECURITY DEFINER bypass RLS, DB timeout = 30s
+        const [trendResult, topModelsResult, revenueResult, deliveriesResult] = await Promise.all([
+          supabase.rpc('get_auto_inventory_trend', { p_tenant_id: tenantId }),
+          supabase.rpc('get_auto_top_models', { p_tenant_id: tenantId, p_limit: 5 }),
+          supabase.rpc('get_auto_revenue_by_month', { p_tenant_id: tenantId }),
+          supabase.rpc('get_auto_weekly_deliveries', { p_tenant_id: tenantId }),
         ]);
-      };
-
-      // ✅ Call real RPCs with timeout (15 seconds)
-      const [trendResult, topModelsResult, revenueResult, deliveriesResult] = await Promise.all([
-        withTimeout(supabase.rpc('get_auto_inventory_trend', { p_tenant_id: tenantId }), 15000),
-        withTimeout(supabase.rpc('get_auto_top_models', { p_tenant_id: tenantId, p_limit: 5 }), 15000),
-        withTimeout(supabase.rpc('get_auto_revenue_by_month', { p_tenant_id: tenantId }), 15000),
-        withTimeout(supabase.rpc('get_auto_weekly_deliveries', { p_tenant_id: tenantId }), 15000),
-      ]);
       
       console.log('[BellaAuto] RPCs completed');
 
@@ -174,43 +167,47 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
         });
       }
 
-      // Fetch vehicles for status distribution & inventory value
-      const { data: vehicles, error: vehiclesError } = await supabase
-        .from('auto_vehicles')
-        .select('status, list_price')
-        .eq('tenant_id', tenantId);
+      // Dùng RPC get_auto_inventory_stats thay vì fetch toàn bộ rows
+      // RPC trả về GROUP BY status với COUNT + SUM(list_price) → 1 query, indexed
+      const { data: statsRows, error: statsError } = await supabase
+        .rpc('get_auto_inventory_stats', { p_tenant_id: tenantId });
 
-      if (vehiclesError) throw vehiclesError;
+      if (statsError) throw statsError;
 
-      if (vehiclesError) throw vehiclesError;
-      const vehicleList = vehicles || [];
+      const statsList = statsRows || [];
 
-      // Calculate status distribution (use copy to avoid mutation)
-      const statusCounts: Record<string, number> = {};
-      vehicleList.forEach(v => {
-        statusCounts[v.status] = (statusCounts[v.status] || 0) + 1;
-      });
-
+      // Build status distribution từ aggregated data
       const statusDistribution = [
-        { name: 'Showroom', value: statusCounts.showroom || 0, color: '#06b6d4' },
-        { name: 'Kho', value: statusCounts.warehouse || 0, color: '#64748b' },
-        { name: 'Đã phân bổ', value: statusCounts.allocated || 0, color: '#f59e0b' },
-        { name: 'Đang vận chuyển', value: statusCounts.in_transit || 0, color: '#6366f1' },
-        { name: 'Đã bàn giao', value: statusCounts.delivered || 0, color: '#10b981' },
-      ].filter(item => item.value > 0);
+        { name: 'Showroom',         value: 0, color: '#06b6d4' },
+        { name: 'Kho',              value: 0, color: '#64748b' },
+        { name: 'Đã phân bổ',      value: 0, color: '#f59e0b' },
+        { name: 'Đang vận chuyển', value: 0, color: '#6366f1' },
+        { name: 'Đã bàn giao',     value: 0, color: '#10b981' },
+      ];
 
-      // Calculate inventory value
+      let totalInventoryValue = 0;
+      const byStatus: Array<{ status: string; value: number }> = [];
+
+      for (const row of statsList) {
+        const cnt   = Number(row.cnt ?? 0);
+        const val   = Number(row.total_value ?? 0);
+        totalInventoryValue += val;
+
+        const label =
+          row.status === 'showroom'   ? 'Showroom' :
+          row.status === 'warehouse'  ? 'Kho' :
+          row.status === 'allocated'  ? 'Đã phân bổ' :
+          row.status === 'in_transit' ? 'Đang vận chuyển' : 'Đã bàn giao';
+
+        byStatus.push({ status: label, value: val });
+
+        const dist = statusDistribution.find(d => d.name === label);
+        if (dist) dist.value = cnt;
+      }
+
       const inventoryValue = {
-        total: vehicleList.reduce((sum, v) => sum + (v.list_price || 0), 0),
-        byStatus: Object.entries(statusCounts).map(([status]) => ({
-          status: status === 'showroom' ? 'Showroom' :
-                  status === 'warehouse' ? 'Kho' :
-                  status === 'allocated' ? 'Đã phân bổ' :
-                  status === 'in_transit' ? 'Đang vận chuyển' : 'Đã bàn giao',
-          value: vehicleList
-            .filter(v => v.status === status)
-            .reduce((sum, v) => sum + (v.list_price || 0), 0),
-        })),
+        total: totalInventoryValue,
+        byStatus,
       };
 
       // Calculate average days in stock (simplified - mock for now)
@@ -219,7 +216,7 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
       // ✅ Use RPC data with proper null handling
       setAnalytics({
         monthlyTrend: trendResult.data || [],
-        statusDistribution,
+        statusDistribution: statusDistribution.filter(item => item.value > 0),
         topModels: topModelsResult.data || [],
         inventoryValue,
         averageDaysInStock,
@@ -251,11 +248,9 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
       console.log('[BellaAuto] Loading complete, setting loading=false');
       setLoading(false);
     }
-  };
+    };
 
-  useEffect(() => {
     loadAnalytics();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tenantId]);
 
   const formatCurrency = (value: number) => {

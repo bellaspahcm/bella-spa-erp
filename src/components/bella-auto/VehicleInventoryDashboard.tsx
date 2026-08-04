@@ -15,6 +15,10 @@ interface Vehicle {
   list_price: number;
 }
 
+// Create client outside component to avoid recreating on every render
+const supabase = createClient();
+const ITEMS_PER_PAGE = 15;
+
 export default function VehicleInventoryDashboard({ tenantId }: { tenantId: string }) {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,9 +27,7 @@ export default function VehicleInventoryDashboard({ tenantId }: { tenantId: stri
   const [stats, setStats] = useState({ total: 0, showroom: 0, warehouse: 0, allocated: 0, delivered: 0 });
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-  const itemsPerPage = 15; // Show only 15 items for dashboard
-  
-  const supabase = createClient();
+  const itemsPerPage = ITEMS_PER_PAGE;
 
   const loadVehicles = useCallback(async () => {
     setLoading(true);
@@ -47,10 +49,10 @@ export default function VehicleInventoryDashboard({ tenantId }: { tenantId: stri
 
       let query = supabase
         .from('auto_vehicles')
-        .select('*', { count: 'exact' })
+        .select('*', { count: 'planned' }) // 'planned' avoids full COUNT(*) scan
         .eq('tenant_id', tenantId)
         .order('created_at', { ascending: false })
-        .range((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage - 1);
+        .range((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE - 1);
 
       if (statusFilter !== 'all') {
         query = query.eq('status', statusFilter);
@@ -67,22 +69,23 @@ export default function VehicleInventoryDashboard({ tenantId }: { tenantId: stri
       setVehicles(data || []);
       setTotalCount(count || 0);
       
-      // Load stats
-      const { data: statsData } = await supabase
-        .from('auto_vehicles')
-        .select('status')
-        .eq('tenant_id', tenantId);
+      // Load stats — dùng HEAD-only COUNT query (zero rows transferred, chỉ lấy count header)
+      // Sử dụng index idx_auto_vehicles_status (tenant_id, status)
+      const [totalRes, showroomRes, warehouseRes, allocatedRes, deliveredRes] = await Promise.all([
+        supabase.from('auto_vehicles').select('*', { count: 'exact', head: true }).eq('tenant_id', tenantId),
+        supabase.from('auto_vehicles').select('*', { count: 'exact', head: true }).eq('tenant_id', tenantId).eq('status', 'showroom'),
+        supabase.from('auto_vehicles').select('*', { count: 'exact', head: true }).eq('tenant_id', tenantId).eq('status', 'warehouse'),
+        supabase.from('auto_vehicles').select('*', { count: 'exact', head: true }).eq('tenant_id', tenantId).eq('status', 'allocated'),
+        supabase.from('auto_vehicles').select('*', { count: 'exact', head: true }).eq('tenant_id', tenantId).eq('status', 'delivered'),
+      ]);
 
-      if (statsData) {
-        const statsCounts = {
-          total: statsData.length,
-          showroom: statsData.filter(v => v.status === 'showroom').length,
-          warehouse: statsData.filter(v => v.status === 'warehouse').length,
-          allocated: statsData.filter(v => v.status === 'allocated').length,
-          delivered: statsData.filter(v => v.status === 'delivered').length,
-        };
-        setStats(statsCounts);
-      }
+      setStats({
+        total: totalRes.count ?? 0,
+        showroom: showroomRes.count ?? 0,
+        warehouse: warehouseRes.count ?? 0,
+        allocated: allocatedRes.count ?? 0,
+        delivered: deliveredRes.count ?? 0,
+      });
     } catch (error) {
       console.error('Error loading vehicles:', error);
       console.error('Error details:', {
@@ -93,7 +96,7 @@ export default function VehicleInventoryDashboard({ tenantId }: { tenantId: stri
     } finally {
       setLoading(false);
     }
-  }, [supabase, tenantId, statusFilter, searchTerm, currentPage, itemsPerPage]);
+  }, [tenantId, statusFilter, searchTerm, currentPage]);
 
   useEffect(() => {
     setCurrentPage(1); // Reset to page 1 when filters change

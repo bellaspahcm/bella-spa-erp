@@ -47,6 +47,13 @@ BEGIN
       AND status = 'delivered'
       AND updated_at >= NOW() - INTERVAL '6 months'
     GROUP BY date_trunc('month', updated_at)::DATE
+  ),
+  -- Tồn kho: pre-aggregate ONE TIME (tránh correlated subquery chạy 6 lần)
+  ton_kho AS (
+    SELECT COUNT(*)::INTEGER AS ton_count
+    FROM auto_vehicles
+    WHERE tenant_id = p_tenant_id
+      AND status IN ('warehouse', 'showroom', 'allocated', 'in_transit')
   )
   SELECT 
     CASE EXTRACT(MONTH FROM m.month_date)::INTEGER
@@ -65,13 +72,7 @@ BEGIN
     END AS month,
     COALESCE(n.nhap_count, 0)::INTEGER AS nhap,
     COALESCE(x.xuat_count, 0)::INTEGER AS xuat,
-    (
-      SELECT COUNT(*)::INTEGER
-      FROM auto_vehicles
-      WHERE tenant_id = p_tenant_id
-        AND status IN ('warehouse', 'showroom', 'allocated', 'in_transit')
-        AND created_at <= m.month_date + INTERVAL '1 month' - INTERVAL '1 day'
-    ) AS ton
+    (SELECT ton_count FROM ton_kho)::INTEGER AS ton
   FROM months m
   LEFT JOIN nhap_kho n ON m.month_date = n.month_date
   LEFT JOIN xuat_kho x ON m.month_date = x.month_date
