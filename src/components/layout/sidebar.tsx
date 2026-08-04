@@ -247,7 +247,7 @@ function applyTenantBrandRuntime(brand: TenantBrandDisplay) {
   root.dataset.tenantBrandButton = brand.buttonStyle;
   root.dataset.tenantBrandMenu = brand.menuStyle;
   root.dataset.tenantBrandRadius = brand.radiusStyle;
-  root.dataset.tenantBrandPreset = brand.stylePreset || (brand.primaryColor === '#074E44' ? 'jade_wellness' : brand.primaryColor === '#1E3A8A' ? 'luxury_navy' : brand.primaryColor === '#1E40AF' ? 'ocean_clean' : brand.primaryColor === '#18181B' ? 'graphite_luxe' : 'bella_rose');
+  root.dataset.tenantBrandPreset = brand.stylePreset || (brand.primaryColor === '#074E44' ? 'jade_wellness' : brand.primaryColor === '#1E3A8A' ? 'luxury_navy' : brand.primaryColor === '#0891b2' ? 'ocean_clean' : brand.primaryColor === '#1E40AF' ? 'ocean_clean' : brand.primaryColor === '#18181B' ? 'graphite_luxe' : 'bella_rose');
 
   for (const token of ['--background', '--foreground', '--border', '--input']) {
     root.style.removeProperty(token);
