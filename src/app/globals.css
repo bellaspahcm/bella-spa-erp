@@ -1138,37 +1138,37 @@ html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-icon-button {
   color: #ffffff !important;
 }
 
-/* 3. OCEAN CLEAN (Ocean Blue #1E40AF / #3B82F6 Bright Blue) */
+/* 3. OCEAN CLEAN (Cyan #0891b2 / Teal #14b8a6 - Automotive Theme) */
 html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-sidebar,
 html[data-tenant-brand-preset="ocean_clean"] aside.beauty-erp-sidebar,
 html[data-tenant-brand-preset="ocean_clean"] aside[class*="bg-"] {
-  background: linear-gradient(158deg, #001c44 0%, #1e40af 42%, #0c3776 100%) !important;
-  border-color: rgba(59, 130, 246, 0.34) !important;
-  box-shadow: 16px 0 44px rgba(0, 28, 68, 0.18) !important;
-  color: #f8f9fa !important;
+  background: linear-gradient(158deg, #083344 0%, #0891b2 42%, #0e7490 100%) !important;
+  border-color: rgba(20, 184, 166, 0.34) !important;
+  box-shadow: 16px 0 44px rgba(8, 51, 68, 0.22) !important;
+  color: #f0fdfa !important;
 }
 html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-logo-mark {
-  background: linear-gradient(145deg, #1e40af 0%, #001c44 100%) !important;
-  border: 1px solid rgba(59, 130, 246, 0.72) !important;
-  color: #60a5fa !important;
+  background: linear-gradient(145deg, #0891b2 0%, #083344 100%) !important;
+  border: 1px solid rgba(20, 184, 166, 0.72) !important;
+  color: #5eead4 !important;
 }
-html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-brand-script { color: #f8f9fa !important; }
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-brand-script { color: #f0fdfa !important; }
 html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-brand-subtitle,
-html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-header { color: #93c5fd !important; }
-html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item { color: rgba(248, 249, 250, 0.85) !important; }
-html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item:hover { color: #ffffff !important; background: rgba(59, 130, 246, 0.22) !important; }
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-header { color: #5eead4 !important; }
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item { color: rgba(240, 253, 250, 0.85) !important; }
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item:hover { color: #ffffff !important; background: rgba(20, 184, 166, 0.22) !important; }
 html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item:hover svg,
 html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item:hover * { color: #ffffff !important; }
 html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item-active {
-  background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%) !important;
-  border-color: rgba(96, 165, 250, 0.52) !important;
+  background: linear-gradient(135deg, #0891b2 0%, #14b8a6 100%) !important;
+  border-color: rgba(94, 234, 212, 0.52) !important;
   color: #ffffff !important;
 }
 html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-profile-card,
 html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-avatar,
 html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-icon-button {
-  background: rgba(30, 64, 175, 0.28) !important;
-  border-color: rgba(96, 165, 250, 0.36) !important;
+  background: rgba(8, 145, 178, 0.28) !important;
+  border-color: rgba(94, 234, 212, 0.36) !important;
   color: #ffffff !important;
 }
 

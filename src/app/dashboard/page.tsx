@@ -340,6 +340,11 @@ export default function DashboardPage() {
     );
   }
 
+  if (tenantModuleKey === 'bella_auto') {
+    router.replace('/dashboard/bella-auto');
+    return null;
+  }
+
   if (tenantModuleKey === 'real_estate') {
     return <RealEstateDashboardPage />;
   }
