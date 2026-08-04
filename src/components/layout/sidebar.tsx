@@ -387,26 +387,26 @@ const realEstateMenuItems: SidebarMenuItem[] = [
 // ─── Bella Auto Module Menu (isolated — only shown for bella_auto moduleKey) ───
 const bellaAutoMenuItems: SidebarMenuItem[] = [
   { type: 'header', label: 'Tổng quan & AI' },
-  { icon: LayoutDashboard, label: 'Trung tâm Ô tô',       href: '/dashboard/bella-auto' },
-  { icon: Sparkles,        label: 'AI Copilot',           href: '/dashboard/ai-copilot' },
+  { icon: LayoutDashboard, label: 'Trung tâm',             href: '/dashboard/bella-auto' },
+  { icon: Sparkles,        label: 'AI Copilot',            href: '/dashboard/ai-copilot' },
 
-  { type: 'header', label: 'Dịch vụ Ô tô' },
-  { icon: Car,             label: 'Kho Xe',               href: '/dashboard/bella-auto/vehicles' },
-  { icon: Wrench,          label: 'Xưởng Dịch Vụ',        href: '/dashboard/bella-auto/workshop' },
-  { icon: Calendar,        label: 'Lịch Hẹn Ô Tô',        href: '/dashboard/bella-auto/bookings' },
-  { icon: Users,           label: 'Khách Hàng Ô Tô',      href: '/dashboard/bella-auto/customers' },
-  { icon: Target,          label: 'Quản Lý Lead Ô Tô',    href: '/dashboard/bella-auto/leads' },
+  { type: 'header', label: 'Dịch vụ' },
+  { icon: Car,             label: 'Kho Xe',                href: '/dashboard/bella-auto/vehicles' },
+  { icon: Wrench,          label: 'Xưởng Dịch Vụ',         href: '/dashboard/bella-auto/workshop' },
+  { icon: Calendar,        label: 'Lịch Hẹn',              href: '/dashboard/bella-auto/bookings' },
+  { icon: Users,           label: 'Khách Hàng',            href: '/dashboard/bella-auto/customers' },
+  { icon: Target,          label: 'Quản Lý Lead',          href: '/dashboard/bella-auto/leads' },
 
   { type: 'header', label: 'Trải nghiệm Khách hàng' },
-  { icon: Smile,           label: 'Hành Trình Khách',     href: '/dashboard/bella-auto/journeys' },
-  { icon: GitCommit,       label: 'Trải Nghiệm Dịch Vụ',  href: '/dashboard/bella-auto/experience' },
+  { icon: Smile,           label: 'Hành Trình Khách',      href: '/dashboard/bella-auto/journeys' },
+  { icon: GitCommit,       label: 'Trải Nghiệm Dịch Vụ',   href: '/dashboard/bella-auto/experience' },
 
   { type: 'header', label: 'Tài chính & Hệ thống' },
-  { icon: Banknote,        label: 'Lương & Hoa Hồng',     href: '/dashboard/salary' },
-  { icon: CircleDollarSign, label: 'Dòng Tiền & Thu Chi', href: '/dashboard/finance' },
-  { icon: Wallet,          label: 'Sổ Cái Kế Toán',       href: '/dashboard/accounting' },
-  { icon: HelpCircle,      label: 'Hướng Dẫn Sử Dụng',   href: '/dashboard/guides' },
-  { icon: Settings,        label: 'Cài Đặt Hệ Thống',     href: '/dashboard/settings' },
+  { icon: Banknote,        label: 'Lương & Hoa Hồng',      href: '/dashboard/salary' },
+  { icon: CircleDollarSign, label: 'Dòng Tiền & Thu Chi',  href: '/dashboard/finance' },
+  { icon: Wallet,          label: 'Sổ Cái Kế Toán',        href: '/dashboard/accounting' },
+  { icon: HelpCircle,      label: 'Hướng Dẫn Sử Dụng',    href: '/dashboard/guides' },
+  { icon: Settings,        label: 'Cài Đặt Hệ Thống',      href: '/dashboard/settings' },
 ];
 
 const customerMenuItems: SidebarMenuItem[] = [

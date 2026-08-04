@@ -10,13 +10,10 @@ import {
   PieChart,
   Pie,
   Cell,
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
 } from 'recharts';
 import { TrendingUp, TrendingDown, DollarSign, Clock, Package, Activity } from 'lucide-react';
@@ -37,6 +34,62 @@ interface AnalyticsData {
 interface BellaAutoAnalyticsDashboardProps {
   tenantId: string;
 }
+
+// Interactive Header Actions for Premium look
+const CardHeaderActions = () => {
+  return (
+    <div className="flex items-center gap-1.5 animate-fade-in">
+      <select className="text-[11px] font-semibold bg-slate-50 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 rounded-lg px-2.5 py-1 text-slate-600 dark:text-slate-300 focus:outline-none cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 shadow-sm">
+        <option>6 tháng qua</option>
+        <option>30 ngày qua</option>
+        <option>Năm nay</option>
+      </select>
+      <button 
+        title="Tải báo cáo"
+        className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 bg-slate-50 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 rounded-lg transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm"
+      >
+        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+        </svg>
+      </button>
+    </div>
+  );
+};
+
+// Custom Glassmorphic Tooltip
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: any[];
+  label?: string;
+  valueFormatter?: (value: any) => string;
+}
+
+const CustomTooltip = ({ active, payload, label, valueFormatter }: CustomTooltipProps) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="p-3 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/80 rounded-xl shadow-lg dark:shadow-2xl transition-all duration-200">
+        <p className="text-[10px] font-bold tracking-wider text-slate-400 dark:text-slate-500 uppercase mb-2">{label}</p>
+        <div className="space-y-1.5">
+          {payload.map((item, index) => (
+            <div key={index} className="flex items-center gap-3">
+              <span 
+                className="w-2 h-2 rounded-full ring-2 ring-white dark:ring-slate-950 shadow-sm" 
+                style={{ backgroundColor: item.color || item.fill }} 
+              />
+              <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                {item.name}:
+              </span>
+              <span className="text-xs font-bold text-slate-900 dark:text-white ml-auto">
+                {valueFormatter ? valueFormatter(item.value) : item.value}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
 
 export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnalyticsDashboardProps) {
   const [loading, setLoading] = useState(true);
@@ -79,7 +132,10 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
       const inventoryValue = {
         total: vehicles.reduce((sum, v) => sum + (v.list_price || 0), 0),
         byStatus: Object.entries(statusCounts).map(([status, count]) => ({
-          status,
+          status: status === 'showroom' ? 'Showroom' :
+                  status === 'warehouse' ? 'Kho' :
+                  status === 'allocated' ? 'Đã phân bổ' :
+                  status === 'in_transit' ? 'Đang vận chuyển' : 'Đã bàn giao',
           value: vehicles
             .filter(v => v.status === status)
             .reduce((sum, v) => sum + (v.list_price || 0), 0),
@@ -150,10 +206,10 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
 
   const formatCurrency = (value: number) => {
     if (value >= 1000000000) {
-      return `${(value / 1000000000).toFixed(1)}B`;
+      return `${(value / 1000000000).toFixed(1)} Tỷ`;
     }
     if (value >= 1000000) {
-      return `${(value / 1000000).toFixed(0)}M`;
+      return `${(value / 1000000).toFixed(0)} Tr`;
     }
     return value.toLocaleString('vi-VN');
   };
@@ -161,10 +217,14 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
   if (loading) {
     return (
       <div className="space-y-6 animate-pulse">
-        <div className="h-32 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-32 bg-slate-100 dark:bg-slate-900 rounded-2xl border border-slate-200/50 dark:border-slate-800/50" />
+          ))}
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="h-80 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
-          <div className="h-80 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
+          <div className="h-96 bg-slate-100 dark:bg-slate-900 rounded-2xl border border-slate-200/50 dark:border-slate-800/50" />
+          <div className="h-96 bg-slate-100 dark:bg-slate-900 rounded-2xl border border-slate-200/50 dark:border-slate-800/50" />
         </div>
       </div>
     );
@@ -172,8 +232,8 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
 
   if (!analytics) {
     return (
-      <div className="text-center py-12">
-        <p className="text-slate-500 dark:text-slate-400">Không thể tải dữ liệu phân tích</p>
+      <div className="text-center py-12 bg-white dark:bg-slate-950 border border-slate-200/50 dark:border-slate-800/50 rounded-2xl shadow-sm">
+        <p className="text-slate-500 dark:text-slate-400 font-medium">Không thể tải dữ liệu phân tích</p>
       </div>
     );
   }
@@ -181,12 +241,12 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
   return (
     <div className="space-y-6">
       {/* Key Metrics Row */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
           title="Giá trị tồn kho"
           value={formatCurrency(analytics.inventoryValue.total)}
           suffix="VNĐ"
-          icon={<DollarSign className="w-5 h-5" />}
+          icon={<DollarSign className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />}
           trend={{ value: 12.5, isPositive: true }}
           color="cyan"
         />
@@ -194,7 +254,7 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
           title="Thời gian tồn TB"
           value={analytics.averageDaysInStock.toString()}
           suffix="ngày"
-          icon={<Clock className="w-5 h-5" />}
+          icon={<Clock className="w-4 h-4 text-amber-600 dark:text-amber-400" />}
           trend={{ value: 8.2, isPositive: false }}
           color="amber"
         />
@@ -202,7 +262,7 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
           title="Xe trong kho"
           value={analytics.statusDistribution.reduce((sum, item) => sum + item.value, 0).toString()}
           suffix="xe"
-          icon={<Package className="w-5 h-5" />}
+          icon={<Package className="w-4 h-4 text-slate-600 dark:text-slate-400" />}
           trend={{ value: 5.8, isPositive: true }}
           color="slate"
         />
@@ -210,7 +270,7 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
           title="Bàn giao tuần này"
           value={analytics.weeklyDeliveries[analytics.weeklyDeliveries.length - 1].deliveries.toString()}
           suffix="xe"
-          icon={<Activity className="w-5 h-5" />}
+          icon={<Activity className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />}
           trend={{ value: 15.3, isPositive: true }}
           color="emerald"
         />
@@ -218,172 +278,306 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
 
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
         {/* Monthly Inventory Trend */}
-        <ChartCard title="Xu hướng nhập/xuất kho (6 tháng)" icon={<TrendingUp className="w-5 h-5" />}>
-          <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={analytics.monthlyTrend}>
-              <defs>
-                <linearGradient id="colorNhap" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="colorXuat" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="colorTon" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.3} />
-              <XAxis dataKey="month" stroke="#64748b" style={{ fontSize: '12px' }} />
-              <YAxis stroke="#64748b" style={{ fontSize: '12px' }} />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: '#fff',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '12px',
-                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                }}
-              />
-              <Legend />
-              <Area type="monotone" dataKey="nhap" stroke="#06b6d4" fill="url(#colorNhap)" name="Nhập kho" />
-              <Area type="monotone" dataKey="xuat" stroke="#10b981" fill="url(#colorXuat)" name="Xuất kho" />
-              <Area type="monotone" dataKey="ton" stroke="#f59e0b" fill="url(#colorTon)" name="Tồn kho" />
-            </AreaChart>
-          </ResponsiveContainer>
+        <ChartCard 
+          title="Xu hướng nhập/xuất kho" 
+          subtitle="Biểu đồ phân tích lượng xe luân chuyển trong 6 tháng qua"
+          icon={<TrendingUp className="w-4 h-4" />}
+          extra={<CardHeaderActions />}
+        >
+          <div className="h-[300px] mt-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={analytics.monthlyTrend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorNhap" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.25} />
+                    <stop offset="95%" stopColor="#06b6d4" stopOpacity={0.01} />
+                  </linearGradient>
+                  <linearGradient id="colorXuat" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.25} />
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0.01} />
+                  </linearGradient>
+                  <linearGradient id="colorTon" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.01} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="4 4" stroke="rgba(148, 163, 184, 0.08)" vertical={false} />
+                <XAxis 
+                  dataKey="month" 
+                  stroke="rgba(148, 163, 184, 0.5)" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  dy={8}
+                  style={{ fontSize: '11px', fontWeight: 500 }} 
+                />
+                <YAxis 
+                  stroke="rgba(148, 163, 184, 0.5)" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  dx={-8}
+                  style={{ fontSize: '11px', fontWeight: 500 }} 
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Area type="monotone" dataKey="nhap" stroke="#06b6d4" strokeWidth={2.5} fill="url(#colorNhap)" name="Nhập kho" />
+                <Area type="monotone" dataKey="xuat" stroke="#10b981" strokeWidth={2.5} fill="url(#colorXuat)" name="Xuất kho" />
+                <Area type="monotone" dataKey="ton" stroke="#f59e0b" strokeWidth={3} fill="url(#colorTon)" name="Tồn kho" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+          {/* Custom Horizontal Legend for Clean Look */}
+          <div className="flex items-center justify-center gap-6 mt-4 pt-4 border-t border-slate-100/50 dark:border-slate-800/40">
+            {[
+              { label: 'Nhập kho', color: '#06b6d4' },
+              { label: 'Xuất kho', color: '#10b981' },
+              { label: 'Tồn kho', color: '#f59e0b' }
+            ].map((item, idx) => (
+              <div key={idx} className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">{item.label}</span>
+              </div>
+            ))}
+          </div>
         </ChartCard>
 
-        {/* Status Distribution */}
-        <ChartCard title="Phân bố trạng thái xe" icon={<Package className="w-5 h-5" />}>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={analytics.statusDistribution}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                outerRadius={100}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {analytics.statusDistribution.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: '#fff',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '12px',
-                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
+        {/* Status Distribution (Doughnut Chart with Center Label) */}
+        <ChartCard 
+          title="Phân bố trạng thái xe" 
+          subtitle="Tỷ lệ cơ cấu trạng thái của xe trong hệ thống"
+          icon={<Package className="w-4 h-4" />}
+          extra={<CardHeaderActions />}
+        >
+          <div className="flex flex-col justify-between min-h-[300px]">
+            <div className="h-[210px] mt-4 relative">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={analytics.statusDistribution}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={70}
+                    outerRadius={92}
+                    paddingAngle={4}
+                    cornerRadius={5}
+                    dataKey="value"
+                  >
+                    {analytics.statusDistribution.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<CustomTooltip />} />
+                  {/* Center Text inside PieChart */}
+                  <text x="50%" y="45%" textAnchor="middle" dominantBaseline="middle" className="fill-slate-400 dark:fill-slate-500 font-bold text-[10px] tracking-widest uppercase">
+                    Tổng xe
+                  </text>
+                  <text x="50%" y="57%" textAnchor="middle" dominantBaseline="middle" className="fill-slate-800 dark:fill-slate-100 font-extrabold text-2xl tracking-tight">
+                    {analytics.statusDistribution.reduce((sum, item) => sum + item.value, 0)}
+                  </text>
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            {/* Custom Grid Legend with values & percentages */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-4 border-t border-slate-100/50 dark:border-slate-800/40">
+              {analytics.statusDistribution.map((item, index) => {
+                const total = analytics.statusDistribution.reduce((sum, i) => sum + i.value, 0);
+                const percentage = ((item.value / total) * 100).toFixed(0);
+                return (
+                  <div key={index} className="flex items-center gap-2 p-2 rounded-xl bg-slate-50/50 dark:bg-slate-900/20 border border-slate-100/50 dark:border-slate-800/30">
+                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 truncate leading-none mb-0.5 uppercase tracking-wider">{item.name}</p>
+                      <p className="text-xs font-extrabold text-slate-700 dark:text-slate-300 leading-none">
+                        {item.value} <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">({percentage}%)</span>
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </ChartCard>
 
         {/* Top Models by Sales */}
-        <ChartCard title="Top 5 mẫu xe bán chạy" icon={<TrendingUp className="w-5 h-5" />}>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={analytics.topModels} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.3} />
-              <XAxis type="number" stroke="#64748b" style={{ fontSize: '12px' }} />
-              <YAxis dataKey="model" type="category" stroke="#64748b" style={{ fontSize: '11px' }} width={100} />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: '#fff',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '12px',
-                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                }}
-                formatter={(value: number, name: string) => {
-                  if (name === 'revenue') return [formatCurrency(value) + ' VNĐ', 'Doanh thu'];
-                  return [value, 'Số lượng'];
-                }}
-              />
-              <Legend />
-              <Bar dataKey="sold" fill="#06b6d4" name="Đã bán" radius={[0, 8, 8, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+        <ChartCard 
+          title="Top 5 mẫu xe bán chạy" 
+          subtitle="Các dòng xe đạt doanh số xuất kho cao nhất"
+          icon={<TrendingUp className="w-4 h-4" />}
+          extra={<CardHeaderActions />}
+        >
+          <div className="h-[300px] mt-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={analytics.topModels} layout="vertical" margin={{ top: 5, right: 15, left: 10, bottom: 5 }}>
+                <defs>
+                  <linearGradient id="barModelGradient" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#06b6d4" />
+                    <stop offset="100%" stopColor="#3b82f6" />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="4 4" stroke="rgba(148, 163, 184, 0.08)" horizontal={false} />
+                <XAxis 
+                  type="number" 
+                  stroke="rgba(148, 163, 184, 0.5)" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  style={{ fontSize: '11px', fontWeight: 500 }} 
+                />
+                <YAxis 
+                  dataKey="model" 
+                  type="category" 
+                  stroke="rgba(148, 163, 184, 0.5)" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  dx={-6}
+                  style={{ fontSize: '11px', fontWeight: 600 }} 
+                  width={90} 
+                />
+                <Tooltip 
+                  content={<CustomTooltip />}
+                  formatter={(value: number, name: string) => {
+                    if (name === 'revenue') return [formatCurrency(value) + ' VNĐ', 'Doanh thu'];
+                    return [value, 'Số lượng'];
+                  }}
+                />
+                <Bar dataKey="sold" fill="url(#barModelGradient)" name="Đã bán" radius={[0, 6, 6, 0]} barSize={12} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </ChartCard>
 
-        {/* Revenue Trend */}
-        <ChartCard title="Doanh thu theo tháng" icon={<DollarSign className="w-5 h-5" />}>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={analytics.revenueByMonth}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.3} />
-              <XAxis dataKey="month" stroke="#64748b" style={{ fontSize: '12px' }} />
-              <YAxis stroke="#64748b" style={{ fontSize: '12px' }} tickFormatter={formatCurrency} />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: '#fff',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '12px',
-                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                }}
-                formatter={(value: number) => [formatCurrency(value) + ' VNĐ', 'Doanh thu']}
-              />
-              <Line
-                type="monotone"
-                dataKey="revenue"
-                stroke="#10b981"
-                strokeWidth={3}
-                dot={{ fill: '#10b981', r: 5 }}
-                activeDot={{ r: 7 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+        {/* Revenue Trend (LineChart styled as Area) */}
+        <ChartCard 
+          title="Doanh thu theo tháng" 
+          subtitle="Diễn biến tổng doanh thu bán xe theo từng tháng"
+          icon={<DollarSign className="w-4 h-4" />}
+          extra={<CardHeaderActions />}
+        >
+          <div className="h-[300px] mt-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={analytics.revenueByMonth} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0.01} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="4 4" stroke="rgba(148, 163, 184, 0.08)" vertical={false} />
+                <XAxis 
+                  dataKey="month" 
+                  stroke="rgba(148, 163, 184, 0.5)" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  dy={8}
+                  style={{ fontSize: '11px', fontWeight: 500 }} 
+                />
+                <YAxis 
+                  stroke="rgba(148, 163, 184, 0.5)" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tickFormatter={formatCurrency} 
+                  dx={-8}
+                  style={{ fontSize: '11px', fontWeight: 500 }} 
+                />
+                <Tooltip content={<CustomTooltip valueFormatter={formatCurrency} />} />
+                <Area 
+                  type="monotone" 
+                  dataKey="revenue" 
+                  stroke="#10b981" 
+                  strokeWidth={3.5}
+                  fill="url(#revenueGradient)"
+                  name="Doanh thu"
+                  dot={{ fill: '#10b981', r: 4, strokeWidth: 1.5, stroke: '#fff' }}
+                  activeDot={{ r: 6, strokeWidth: 2, stroke: '#fff' }}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
         </ChartCard>
 
         {/* Weekly Deliveries */}
-        <ChartCard title="Bàn giao xe theo tuần (8 tuần)" icon={<Activity className="w-5 h-5" />}>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={analytics.weeklyDeliveries}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.3} />
-              <XAxis dataKey="week" stroke="#64748b" style={{ fontSize: '12px' }} />
-              <YAxis stroke="#64748b" style={{ fontSize: '12px' }} />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: '#fff',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '12px',
-                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                }}
-              />
-              <Bar dataKey="deliveries" fill="#6366f1" name="Xe bàn giao" radius={[8, 8, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+        <ChartCard 
+          title="Bàn giao xe theo tuần" 
+          subtitle="Số lượng bàn giao hoàn tất cho khách hàng"
+          icon={<Activity className="w-4 h-4" />}
+          extra={<CardHeaderActions />}
+        >
+          <div className="h-[300px] mt-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={analytics.weeklyDeliveries} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="deliveryGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#6366f1" />
+                    <stop offset="100%" stopColor="#4f46e5" />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="4 4" stroke="rgba(148, 163, 184, 0.08)" vertical={false} />
+                <XAxis 
+                  dataKey="week" 
+                  stroke="rgba(148, 163, 184, 0.5)" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  dy={8}
+                  style={{ fontSize: '11px', fontWeight: 500 }} 
+                />
+                <YAxis 
+                  stroke="rgba(148, 163, 184, 0.5)" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  dx={-8}
+                  style={{ fontSize: '11px', fontWeight: 500 }} 
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar dataKey="deliveries" fill="url(#deliveryGradient)" name="Xe bàn giao" radius={[5, 5, 0, 0]} barSize={16} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </ChartCard>
 
         {/* Inventory Value by Status */}
-        <ChartCard title="Giá trị tồn kho theo trạng thái" icon={<DollarSign className="w-5 h-5" />}>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={analytics.inventoryValue.byStatus}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.3} />
-              <XAxis dataKey="status" stroke="#64748b" style={{ fontSize: '12px' }} />
-              <YAxis stroke="#64748b" style={{ fontSize: '12px' }} tickFormatter={formatCurrency} />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: '#fff',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '12px',
-                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                }}
-                formatter={(value: number) => [formatCurrency(value) + ' VNĐ', 'Giá trị']}
-              />
-              <Bar dataKey="value" fill="#f59e0b" name="Giá trị" radius={[8, 8, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+        <ChartCard 
+          title="Giá trị tồn kho theo trạng thái" 
+          subtitle="Phân bổ tổng giá trị xe (VNĐ) theo từng hiện trạng"
+          icon={<DollarSign className="w-4 h-4" />}
+          extra={<CardHeaderActions />}
+        >
+          <div className="h-[300px] mt-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={analytics.inventoryValue.byStatus} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="valueStatusGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#f59e0b" />
+                    <stop offset="100%" stopColor="#d97706" />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="4 4" stroke="rgba(148, 163, 184, 0.08)" vertical={false} />
+                <XAxis 
+                  dataKey="status" 
+                  stroke="rgba(148, 163, 184, 0.5)" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  dy={8}
+                  style={{ fontSize: '11px', fontWeight: 500 }} 
+                />
+                <YAxis 
+                  stroke="rgba(148, 163, 184, 0.5)" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tickFormatter={formatCurrency}
+                  dx={-8}
+                  style={{ fontSize: '11px', fontWeight: 500 }} 
+                />
+                <Tooltip content={<CustomTooltip valueFormatter={formatCurrency} />} />
+                <Bar dataKey="value" fill="url(#valueStatusGradient)" name="Giá trị" radius={[5, 5, 0, 0]} barSize={18} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </ChartCard>
       </div>
     </div>
   );
 }
 
-// Metric Card Component
+// Premium Metric Card Component
 interface MetricCardProps {
   title: string;
   value: string;
@@ -395,54 +589,74 @@ interface MetricCardProps {
 
 function MetricCard({ title, value, suffix, icon, trend, color }: MetricCardProps) {
   const colorClasses = {
-    cyan: 'bg-cyan-50 dark:bg-cyan-950/20 border-cyan-100 dark:border-cyan-900/30 text-cyan-600 dark:text-cyan-400',
-    amber: 'bg-amber-50 dark:bg-amber-950/20 border-amber-100 dark:border-amber-900/30 text-amber-600 dark:text-amber-400',
-    slate: 'bg-slate-50 dark:bg-slate-900/30 border-slate-100 dark:border-slate-800/50 text-slate-600 dark:text-slate-300',
-    emerald: 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-100 dark:border-emerald-900/30 text-emerald-600 dark:text-emerald-400',
+    cyan: 'bg-gradient-to-br from-cyan-50/40 to-cyan-100/10 dark:from-cyan-950/20 dark:to-cyan-900/10 border-cyan-100/80 dark:border-cyan-900/30 text-cyan-600 dark:text-cyan-400 hover:shadow-cyan-100/20 dark:hover:shadow-none',
+    amber: 'bg-gradient-to-br from-amber-50/40 to-amber-100/10 dark:from-amber-950/20 dark:to-amber-900/10 border-amber-100/80 dark:border-amber-900/30 text-amber-600 dark:text-amber-400 hover:shadow-amber-100/20 dark:hover:shadow-none',
+    slate: 'bg-gradient-to-br from-slate-50/40 to-slate-100/10 dark:from-slate-900/30 dark:to-slate-850/15 border-slate-100/80 dark:border-slate-800/50 text-slate-600 dark:text-slate-300 hover:shadow-slate-100/20 dark:hover:shadow-none',
+    emerald: 'bg-gradient-to-br from-emerald-50/40 to-emerald-100/10 dark:from-emerald-950/20 dark:to-emerald-900/10 border-emerald-100/80 dark:border-emerald-900/30 text-emerald-600 dark:text-emerald-400 hover:shadow-emerald-100/20 dark:hover:shadow-none',
   };
 
   return (
-    <div className={`p-5 rounded-2xl border shadow-sm transition-all hover:shadow-md ${colorClasses[color]}`}>
-      <div className="flex items-center justify-between mb-2">
-        <p className="text-sm font-semibold opacity-80">{title}</p>
-        <div className="opacity-60">{icon}</div>
+    <div className={`p-6 rounded-2xl border shadow-[0_2px_8px_rgba(0,0,0,0.01)] transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 ${colorClasses[color]}`}>
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-[11px] font-bold uppercase tracking-wider opacity-70">{title}</p>
+        <div className="p-2 rounded-xl bg-white/80 dark:bg-slate-950/60 shadow-sm border border-slate-100/30 dark:border-slate-800/20">
+          {icon}
+        </div>
       </div>
-      <div className="flex items-baseline gap-2">
-        <p className="text-3xl font-bold">{value}</p>
-        <span className="text-sm opacity-70">{suffix}</span>
+      <div className="flex items-baseline gap-1.5">
+        <p className="text-3xl font-extrabold tracking-tight">{value}</p>
+        <span className="text-xs font-semibold opacity-60">{suffix}</span>
       </div>
       {trend && (
-        <div className="flex items-center gap-1 mt-2">
-          {trend.isPositive ? (
-            <TrendingUp className="w-4 h-4 text-emerald-500" />
-          ) : (
-            <TrendingDown className="w-4 h-4 text-rose-500" />
-          )}
-          <span className={`text-xs font-semibold ${trend.isPositive ? 'text-emerald-600' : 'text-rose-600'}`}>
+        <div className="flex items-center gap-1.5 mt-3.5 pt-3 border-t border-slate-100/40 dark:border-slate-850/40">
+          <div className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-lg text-[10px] font-extrabold ${
+            trend.isPositive 
+              ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400' 
+              : 'bg-rose-50 text-rose-600 dark:bg-rose-950/30 dark:text-rose-400'
+          }`}>
+            {trend.isPositive ? (
+              <TrendingUp className="w-3 h-3 shrink-0" />
+            ) : (
+              <TrendingDown className="w-3 h-3 shrink-0" />
+            )}
             {trend.value}%
-          </span>
-          <span className="text-xs opacity-60">vs tháng trước</span>
+          </div>
+          <span className="text-[10px] opacity-50 font-medium">so với tháng trước</span>
         </div>
       )}
     </div>
   );
 }
 
-// Chart Card Component
+// Premium Chart Card Component
 interface ChartCardProps {
   title: string;
+  subtitle?: string;
   icon: React.ReactNode;
   children: React.ReactNode;
+  extra?: React.ReactNode;
 }
 
-function ChartCard({ title, icon, children }: ChartCardProps) {
+function ChartCard({ title, subtitle, icon, children, extra }: ChartCardProps) {
   return (
-    <div className="p-6 rounded-2xl bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800/80 shadow-sm">
-      <div className="flex items-center gap-2 mb-4">
-        <div className="text-cyan-600 dark:text-cyan-400">{icon}</div>
-        <h3 className="text-base font-bold text-slate-900 dark:text-white">{title}</h3>
+    <div className="p-6 rounded-2xl bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-850/80 shadow-[0_2px_8px_rgba(0,0,0,0.015)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.035)] dark:hover:shadow-[0_8px_32px_rgba(0,0,0,0.25)] transition-all duration-300">
+      <div className="flex items-center justify-between gap-4 mb-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800/50 text-cyan-600 dark:text-cyan-400 shadow-sm shrink-0">
+            {icon}
+          </div>
+          <div className="min-w-0">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white truncate tracking-wide">{title}</h3>
+            {subtitle && (
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 truncate">{subtitle}</p>
+            )}
+          </div>
+        </div>
+        {extra && <div className="shrink-0">{extra}</div>}
       </div>
-      {children}
+      <div className="w-full">
+        {children}
+      </div>
     </div>
   );
 }

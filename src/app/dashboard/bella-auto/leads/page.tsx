@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useTransition } from 'react';
+import React, { useState, useTransition, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users,
@@ -21,20 +21,13 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { createClient } from '@/lib/supabase-client';
 
-// Mock Sales Agents
+// Mock Sales Agents (will be replaced by real data from auto_sales_agents table)
 const MOCK_AGENTS = [
   { id: 'u1', name: 'Trần Minh Quân', avatar: 'Q', conversionRate: '18%', totalLeads: 24 },
   { id: 'u2', name: 'Lê Thùy Chi',    avatar: 'C', conversionRate: '22%', totalLeads: 18 },
   { id: 'u3', name: 'Nguyễn Tiến Dũng', avatar: 'D', conversionRate: '15%', totalLeads: 30 },
-];
-
-// Mock Leads
-const INITIAL_LEADS = [
-  { id: 'ld1', name: 'Phạm Minh H', phone: '0901112222', source: 'Facebook Ads', variantName: 'BMW M4 Competition', color: 'São Paulo Yellow', budget: '5.6B', status: 'new', agentName: 'Chưa phân bổ', createdAt: '2026-08-03' },
-  { id: 'ld2', name: 'Nguyễn Hoàng L', phone: '0912223333', source: 'Google Search', variantName: 'BMW X5 xDrive40i', color: 'Carbon Black', budget: '4.1B', status: 'contacted', agentName: 'Lê Thùy Chi', createdAt: '2026-08-02' },
-  { id: 'ld3', name: 'Trịnh Quốc T', phone: '0983334444', source: 'Showroom Visit', variantName: 'BMW 330i Luxury Line', color: 'Portimao Blue', budget: '2.5B', status: 'test_drive', agentName: 'Trần Minh Quân', createdAt: '2026-08-01' },
-  { id: 'ld4', name: 'Đỗ Hải Y',     phone: '0974445555', source: 'Website Bella', variantName: 'BMW 520i M Sport', color: 'Phytonic Blue', budget: '2.7B', status: 'negotiating', agentName: 'Nguyễn Tiến Dũng', createdAt: '2026-07-30' },
 ];
 
 const SOURCE_BADGES: Record<string, string> = {
@@ -54,11 +47,49 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
 };
 
 export default function LeadCenterPage() {
-  const [leads, setLeads] = useState(INITIAL_LEADS);
+  const [leads, setLeads] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  // Fetch leads from Supabase
+  useEffect(() => {
+    const fetchLeads = async () => {
+      try {
+        setIsLoading(true);
+        const supabase = createClient();
+        
+        if (!supabase) {
+          console.error('Supabase client not initialized');
+          setIsLoading(false);
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from('auto_leads')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.error('Failed to fetch leads:', error);
+          toast.error('Không thể tải danh sách lead');
+          setLeads([]);
+        } else {
+          setLeads(data || []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch leads:', error);
+        toast.error('Không thể tải danh sách lead');
+        setLeads([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchLeads();
+  }, []);
 
   // Phân bổ Round Robin
   const handleRoundRobin = (leadId: string) => {
@@ -233,12 +264,12 @@ export default function LeadCenterPage() {
             </div>
           </div>
 
-          <div className="bg-slate-900 text-white rounded-3xl p-6 space-y-3 relative overflow-hidden">
-            <div className="absolute right-0 bottom-0 opacity-10 pointer-events-none">
+          <div className="bg-slate-900 rounded-3xl p-6 space-y-3 relative overflow-hidden" style={{ color: '#ffffff' }}>
+            <div className="absolute right-0 bottom-0 opacity-10 pointer-events-none text-white">
               <Zap className="w-48 h-48" />
             </div>
-            <h3 className="font-black text-sm tracking-wide">Thuật toán Smart Allocation</h3>
-            <p className="text-xs text-slate-300 leading-relaxed font-semibold">
+            <h3 className="font-black text-sm tracking-wide" style={{ color: '#ffffff' }}>Thuật toán Smart Allocation</h3>
+            <p className="text-xs leading-relaxed font-semibold" style={{ color: '#e2e8f0' }}>
               Hệ thống tự động chấm điểm hiệu suất chốt đơn hàng tháng của từng KTV tư vấn bán hàng. Lead mới sẽ được ưu tiên chuyển cho agent có tỷ lệ chốt Deal thành công cao nhất đối với dòng xe đó.
             </p>
           </div>

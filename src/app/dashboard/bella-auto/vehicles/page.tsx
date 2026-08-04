@@ -20,29 +20,19 @@ import {
   Calendar,
 } from 'lucide-react';
 import { toast } from 'sonner';
-// TODO: Fix supabase client import for Phase 1 vehicles page
-// import { createClient } from '@/lib/supabase/browser-client';
+import { createClient } from '@/lib/supabase-client';
 import { AutoInventoryProvider, type VehicleInventoryItem } from '@/modules/bella-auto/services/AutoInventoryProvider';
 import { VehicleStatusMachineService, type VehicleStatus } from '@/modules/bella-auto/services/VehicleStatusMachineService';
+import { useEffect } from 'react';
 
-const STATUS_CONFIG: Record<VehicleStatus, { label: string; color: string; bg: string; border: string }> = {
-  in_transit: { label: 'Đang Vận Chuyển', color: 'text-amber-600',  bg: 'bg-amber-50  dark:bg-amber-950/20',  border: 'border-amber-200/50' },
-  warehouse:  { label: 'Tổng Kho',        color: 'text-blue-600',   bg: 'bg-blue-50   dark:bg-blue-950/20',   border: 'border-blue-200/50'  },
-  showroom:   { label: 'Trưng Bày',       color: 'text-emerald-600',bg: 'bg-emerald-50 dark:bg-emerald-950/20',border: 'border-emerald-200/50'},
-  allocated:  { label: 'Đã Phân Bổ',     color: 'text-indigo-600', bg: 'bg-indigo-50 dark:bg-indigo-950/20', border: 'border-indigo-200/50' },
-  delivered:  { label: 'Đã Bàn Giao',    color: 'text-slate-500',  bg: 'bg-slate-100 dark:bg-slate-800',     border: 'border-slate-200'    },
-  returned:   { label: 'Thu Hồi',         color: 'text-rose-600',   bg: 'bg-rose-50   dark:bg-rose-950/20',   border: 'border-rose-200/50'  },
-  scrapped:   { label: 'Thanh Lý',        color: 'text-slate-400',  bg: 'bg-slate-50  dark:bg-slate-900',     border: 'border-slate-100'    },
+// Status configuration
+const STATUS_CONFIG: Record<VehicleStatus, { label: string; bg: string; color: string; border: string }> = {
+  in_transit: { label: 'Đang Vận Chuyển', bg: 'bg-amber-50', color: 'text-amber-700', border: 'border-amber-200' },
+  arrived: { label: 'Đã Về Kho', bg: 'bg-blue-50', color: 'text-blue-700', border: 'border-blue-200' },
+  allocated: { label: 'Đã Phân Bổ', bg: 'bg-purple-50', color: 'text-purple-700', border: 'border-purple-200' },
+  delivered: { label: 'Đã Giao Xe', bg: 'bg-green-50', color: 'text-green-700', border: 'border-green-200' },
+  sold: { label: 'Đã Bán', bg: 'bg-emerald-50', color: 'text-emerald-700', border: 'border-emerald-200' },
 };
-
-// ── Mock data (replaced by real Supabase data in production) ──────────────────
-const MOCK_VEHICLES: VehicleInventoryItem[] = [
-  { id: '1', vin: 'WBAHF3C01L7D34567', chassisNumber: 'KHG7834', engineNumber: 'B48A20T0-1234', colorExterior: 'Alpine White', colorInterior: 'Black Vernasca', modelYear: 2026, listPrice: 2439000000, costPrice: 2100000000, status: 'showroom',   locationNote: 'Showroom Lê Văn Lương', variantId: 'v1', variantName: '330i Luxury Line',    modelName: '3 Series', brandName: 'BMW', expectedArrivalDate: null, actualArrivalDate: '2026-07-15', createdAt: '2026-07-15T08:00:00Z', updatedAt: '2026-07-20T10:00:00Z' },
-  { id: '2', vin: 'WBACR6C09L7E98765', chassisNumber: 'KHG8901', engineNumber: 'B58A30O0-5678', colorExterior: 'Carbon Black', colorInterior: 'Cognac Merino',  modelYear: 2026, listPrice: 4019000000, costPrice: 3500000000, status: 'allocated',  locationNote: 'Showroom Nguyễn Văn Trỗi', variantId: 'v2', variantName: 'xDrive40i MSport',   modelName: 'X5',       brandName: 'BMW', expectedArrivalDate: null, actualArrivalDate: '2026-07-20', createdAt: '2026-07-20T08:00:00Z', updatedAt: '2026-07-28T09:00:00Z' },
-  { id: '3', vin: 'WBA53AZ04M8F12345', chassisNumber: 'KHG6543', engineNumber: 'S58B30A-9012',  colorExterior: 'São Paulo Yellow', colorInterior: 'Black Full Merino', modelYear: 2026, listPrice: 5599000000, costPrice: 4800000000, status: 'warehouse', locationNote: 'Tổng kho Bình Dương', variantId: 'v3', variantName: 'Competition Coupe', modelName: 'M4',       brandName: 'BMW', expectedArrivalDate: '2026-08-10', actualArrivalDate: null, createdAt: '2026-07-28T08:00:00Z', updatedAt: '2026-07-28T08:00:00Z' },
-  { id: '4', vin: 'WBA53AZ04M8F54321', chassisNumber: null, engineNumber: null,               colorExterior: 'Phytonic Blue',  colorInterior: 'Oyster Vernasca', modelYear: 2026, listPrice: 2639000000, costPrice: 2300000000, status: 'in_transit', locationNote: 'Cảng Cát Lái — Đang làm thủ tục', variantId: 'v4', variantName: '520i M Sport',       modelName: '5 Series', brandName: 'BMW', expectedArrivalDate: '2026-08-15', actualArrivalDate: null, createdAt: '2026-08-01T08:00:00Z', updatedAt: '2026-08-01T08:00:00Z' },
-  { id: '5', vin: 'WBAHF3C01L7D99999', chassisNumber: 'KHG1100', engineNumber: 'B46D20B-1111', colorExterior: 'Black Sapphire', colorInterior: 'Black Sensatec', modelYear: 2025, listPrice: 1899000000, costPrice: 1600000000, status: 'delivered',  locationNote: null, variantId: 'v5', variantName: '320i Sport Line',    modelName: '3 Series', brandName: 'BMW', expectedArrivalDate: null, actualArrivalDate: '2026-06-10', createdAt: '2026-06-10T08:00:00Z', updatedAt: '2026-07-02T14:00:00Z' },
-];
 
 // ── Add Vehicle Modal ─────────────────────────────────────────────────────────
 function AddVehicleModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
@@ -58,13 +48,18 @@ function AddVehicleModal({ onClose, onSuccess }: { onClose: () => void; onSucces
     if (form.vin.length !== 17) { toast.error('Số VIN phải đúng 17 ký tự'); return; }
     if (!form.colorExterior) { toast.error('Vui lòng nhập màu ngoại thất'); return; }
 
-    startTransition(async () => {
-      // Demo: simulate API call
-      await new Promise(r => setTimeout(r, 900));
-      toast.success(`Đã thêm xe VIN ${form.vin} vào kho thành công!`);
-      onSuccess();
-      onClose();
-    });
+      startTransition(async () => {
+        try {
+          const supabase = createClient();
+          await new Promise(r => setTimeout(r, 900)); // Demo delay
+          toast.success(`Đã thêm xe VIN ${form.vin} vào kho thành công!`);
+          onSuccess();
+          onClose();
+        } catch (error) {
+          console.error('Failed to add vehicle:', error);
+          toast.error('Không thể thêm xe');
+        }
+      });
   };
 
   return (
@@ -142,14 +137,24 @@ function AddVehicleModal({ onClose, onSuccess }: { onClose: () => void; onSucces
 }
 
 // ── Status Transition Popover ─────────────────────────────────────────────────
-function StatusChip({ vehicle, onTransitioned }: { vehicle: VehicleInventoryItem; onTransitioned: () => void }) {
-  const [open, setOpen] = useState(false);
+function StatusChip({ 
+  vehicle, 
+  onTransitioned, 
+  isOpen, 
+  onToggle 
+}: { 
+  vehicle: VehicleInventoryItem; 
+  onTransitioned: () => void;
+  isOpen: boolean;
+  onToggle: (vehicleId: string) => void;
+}) {
   const [isPending, startTransition] = useTransition();
+  const buttonRef = React.useRef<HTMLButtonElement>(null);
   const cfg = STATUS_CONFIG[vehicle.status];
   const allowed = VehicleStatusMachineService.allowedTransitions(vehicle.status);
 
   const handleTransition = (toStatus: VehicleStatus) => {
-    setOpen(false);
+    onToggle('');
     startTransition(async () => {
       await new Promise(r => setTimeout(r, 600));
       toast.success(`Đã chuyển xe ${vehicle.vin.slice(-6)} → ${STATUS_CONFIG[toStatus].label}`);
@@ -157,10 +162,32 @@ function StatusChip({ vehicle, onTransitioned }: { vehicle: VehicleInventoryItem
     });
   };
 
+  // Tính vị trí dropdown ngay tại thời điểm click (getBoundingClientRect đã là viewport coords)
+  const handleToggle = () => {
+    if (!allowed.length) return;
+    onToggle(vehicle.id);
+  };
+
+  // Close dropdown when clicking outside
+  React.useEffect(() => {
+    if (!isOpen) return;
+    
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest(`[data-dropdown-id="${vehicle.id}"]`)) {
+        onToggle('');
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen, vehicle.id, onToggle]);
+
   return (
-    <div className="relative">
+    <div className="relative" data-dropdown-id={vehicle.id}>
       <button
-        onClick={() => allowed.length > 0 && setOpen(v => !v)}
+        ref={buttonRef}
+        onClick={handleToggle}
         disabled={isPending || allowed.length === 0}
         className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${cfg.bg} ${cfg.color} ${cfg.border} ${allowed.length > 0 ? 'hover:brightness-95 cursor-pointer' : 'cursor-default'}`}
       >
@@ -173,12 +200,13 @@ function StatusChip({ vehicle, onTransitioned }: { vehicle: VehicleInventoryItem
       </button>
 
       <AnimatePresence>
-        {open && (
+        {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 6, scale: 0.96 }}
+            initial={{ opacity: 0, y: -4, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 6, scale: 0.96 }}
-            className="absolute z-20 top-full mt-1.5 left-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl p-2 min-w-44"
+            exit={{ opacity: 0, y: -4, scale: 0.96 }}
+            transition={{ duration: 0.12 }}
+            className="absolute z-50 top-full mt-1 left-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl p-2 min-w-44"
           >
             <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 px-2 pb-1.5">Chuyển sang</p>
             {allowed.map(s => (
@@ -200,11 +228,55 @@ function StatusChip({ vehicle, onTransitioned }: { vehicle: VehicleInventoryItem
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function VehicleInventoryPage() {
+  const [vehicles, setVehicles] = useState<VehicleInventoryItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<VehicleStatus | 'all'>('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleInventoryItem | null>(null);
-  const [tick, setTick] = useState(0); // force re-render mock
+  const [openDropdownId, setOpenDropdownId] = useState<string>('');
+
+  // Fetch vehicles from Supabase
+  useEffect(() => {
+    const fetchVehicles = async () => {
+      try {
+        setIsLoading(true);
+        const supabase = createClient();
+        
+        if (!supabase) {
+          console.error('Supabase client not initialized');
+          setIsLoading(false);
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from('auto_vehicles')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.error('Failed to fetch vehicles:', error);
+          toast.error('Không thể tải danh sách xe');
+          setVehicles([]);
+        } else {
+          setVehicles(data || []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch vehicles:', error);
+        toast.error('Không thể tải danh sách xe');
+        setVehicles([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchVehicles();
+  }, []);
+
+  // Handle dropdown toggle - close others when opening one
+  const handleDropdownToggle = useCallback((vehicleId: string) => {
+    setOpenDropdownId(prev => prev === vehicleId ? '' : vehicleId);
+  }, []);
 
   // Import CSV handler
   const handleImportCSV = useCallback(() => {
@@ -232,17 +304,31 @@ export default function VehicleInventoryPage() {
     toast.success('Đã xuất danh sách kho xe!');
   };
 
-  const filtered = MOCK_VEHICLES.filter(v => {
+  const filtered = vehicles.filter(v => {
     const matchSearch = !search || v.vin.includes(search.toUpperCase()) || (v.modelName ?? '').toLowerCase().includes(search.toLowerCase()) || (v.variantName ?? '').toLowerCase().includes(search.toLowerCase());
     const matchStatus = statusFilter === 'all' || v.status === statusFilter;
     return matchSearch && matchStatus;
   });
 
   // Summary counts
-  const counts = MOCK_VEHICLES.reduce((acc, v) => {
+  const counts = vehicles.reduce((acc, v) => {
     acc[v.status] = (acc[v.status] ?? 0) + 1;
     return acc;
   }, {} as Record<string, number>);
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="flex-1 overflow-auto bg-slate-50/50 dark:bg-slate-950 p-6 md:p-10">
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center space-y-3">
+            <div className="w-12 h-12 border-4 border-cyan-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+            <p className="text-sm font-semibold text-slate-600 dark:text-slate-400">Đang tải danh sách xe...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 overflow-auto bg-slate-50/50 dark:bg-slate-950 p-6 md:p-10 space-y-8">
@@ -273,7 +359,7 @@ export default function VehicleInventoryPage() {
           onClick={() => setStatusFilter('all')}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-bold transition-all ${statusFilter === 'all' ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-400'}`}
         >
-          Tất cả <span className="bg-current/10 rounded-md px-1.5 py-0.5">{MOCK_VEHICLES.length}</span>
+          Tất cả <span className="bg-current/10 rounded-md px-1.5 py-0.5">{vehicles.length}</span>
         </button>
         {(Object.keys(STATUS_CONFIG) as VehicleStatus[]).map(s => (
           <button
@@ -305,8 +391,8 @@ export default function VehicleInventoryPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
+      <div className={`bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-3xl shadow-sm ${openDropdownId ? 'overflow-visible' : 'overflow-hidden'}`}>
+        <div className={openDropdownId ? "overflow-x-auto overflow-y-visible" : "overflow-x-auto"}>
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-slate-200/60 dark:border-slate-800 text-[10px] font-black uppercase text-slate-400 tracking-wider">
@@ -343,8 +429,21 @@ export default function VehicleInventoryPage() {
                     </div>
                     {vehicle.colorInterior && <div className="text-[10px] text-slate-400 mt-0.5 font-semibold">Nội thất: {vehicle.colorInterior}</div>}
                   </td>
-                  <td className="py-4 px-5">
-                    <StatusChip vehicle={vehicle} onTransitioned={() => setTick(t => t + 1)} />
+                  <td className="py-4 px-5 overflow-visible">
+                    <StatusChip 
+                      vehicle={vehicle} 
+                      onTransitioned={() => {
+                        // Refetch vehicles after status transition
+                        const fetchVehicles = async () => {
+                          const supabase = createClient();
+                          const { data } = await supabase.from('auto_vehicles').select('*').order('created_at', { ascending: false });
+                          if (data) setVehicles(data);
+                        };
+                        fetchVehicles();
+                      }}
+                      isOpen={openDropdownId === vehicle.id}
+                      onToggle={handleDropdownToggle}
+                    />
                   </td>
                   <td className="py-4 px-5">
                     {vehicle.locationNote ? (
@@ -426,7 +525,15 @@ export default function VehicleInventoryPage() {
         {showAddModal && (
           <AddVehicleModal
             onClose={() => setShowAddModal(false)}
-            onSuccess={() => setTick(t => t + 1)}
+            onSuccess={() => {
+              // Refetch vehicles after adding
+              const fetchVehicles = async () => {
+                const supabase = createClient();
+                const { data } = await supabase.from('auto_vehicles').select('*').order('created_at', { ascending: false });
+                if (data) setVehicles(data);
+              };
+              fetchVehicles();
+            }}
           />
         )}
       </AnimatePresence>

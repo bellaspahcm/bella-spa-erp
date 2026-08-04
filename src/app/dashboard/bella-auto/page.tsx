@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import VehicleInventoryDashboard from '@/components/bella-auto/VehicleInventoryDashboard';
 import { BellaAutoHeader } from '@/components/bella-auto/BellaAutoHeader';
 import { AutoAnalyticsCharts } from '@/components/bella-auto/AutoAnalyticsCharts';
+import BellaAutoAnalyticsDashboard from '@/components/bella-auto/BellaAutoAnalyticsDashboard';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,7 +54,7 @@ export default async function BellaAutoPage() {
   const monogram = profile?.full_name ? profile.full_name.substring(0, 2).toUpperCase() : 'BA';
 
   return (
-    <div className="p-6 w-full space-y-6">
+    <div className="flex-1 overflow-auto bg-slate-50/50 dark:bg-slate-950 p-6 md:p-10 space-y-8">
       {/* Premium Dashboard Welcome Header - Real Estate Style */}
       <BellaAutoHeader 
         monogram={monogram}
@@ -61,7 +62,7 @@ export default async function BellaAutoPage() {
         tenantName={tenant?.name || 'Bella Auto'}
       />
 
-      {/* Analytics Charts */}
+      {/* Basic Analytics - HTML/CSS Charts */}
       <Suspense fallback={
         <div className="space-y-6 animate-pulse">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -83,6 +84,21 @@ export default async function BellaAutoPage() {
           allocatedCount={vehicleStats.allocated}
           deliveredCount={vehicleStats.delivered}
         />
+      </Suspense>
+
+      {/* Advanced Analytics - Recharts Interactive Charts */}
+      <Suspense fallback={
+        <div className="space-y-6 animate-pulse">
+          <div className="h-32 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="h-80 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
+            <div className="h-80 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
+            <div className="h-80 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
+            <div className="h-80 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
+          </div>
+        </div>
+      }>
+        <BellaAutoAnalyticsDashboard tenantId={profile.tenant_id} />
       </Suspense>
 
       {/* Vehicle Inventory Dashboard */}

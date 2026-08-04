@@ -16,7 +16,7 @@ function LoadingFallback() {
 
 export default function ExperienceCenterPage() {
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <div className="flex-1 overflow-auto bg-slate-50/50 dark:bg-slate-950 p-6 md:p-10 space-y-8" data-auto-layout>
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Experience Center</h1>
