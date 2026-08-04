@@ -29,18 +29,18 @@ if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
 
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
-// Configuration - Conservative start
+// Configuration - Scale test to 50K
 const CONFIG = {
   TENANT_NAME: 'bella_auto_stress',
   BATCH_SIZE: 500, // API-safe batch size
-  BRANDS: 10,
-  MODELS_PER_BRAND: 5,
-  VARIANTS_PER_MODEL: 2,
-  TOTAL_VINS: 5000, // Start with 5K
-  TOTAL_CUSTOMERS: 500,
+  BRANDS: 20,
+  MODELS_PER_BRAND: 10,
+  VARIANTS_PER_MODEL: 3,
+  TOTAL_VINS: 50000, // Scale to 50K
+  TOTAL_CUSTOMERS: 5000, // 10x increase
   EVENTS_PER_JOURNEY: 10,
   TOUCHPOINTS_PER_CUSTOMER: 5,
-  TOTAL_RULES: 100,
+  TOTAL_RULES: 1000, // 10x increase
 };
 
 type ProgressCallback = (current: number, total: number, label?: string) => void;
@@ -77,6 +77,32 @@ async function ensureTenant(): Promise<string> {
 
 async function seedCatalog(tenantId: string) {
   console.log('🏷️  Step 2: Seeding catalog (brands, models, variants)...');
+
+  // Check existing brands
+  const { data: existingBrands } = await supabase
+    .from('auto_brands')
+    .select('id, name')
+    .eq('tenant_id', tenantId);
+
+  if (existingBrands && existingBrands.length >= CONFIG.BRANDS) {
+    console.log(`  ✓ Using existing ${existingBrands.length} brands`);
+    
+    // Get existing models and variants
+    const { data: existingModels } = await supabase
+      .from('auto_models')
+      .select('id')
+      .eq('tenant_id', tenantId);
+    
+    const { data: existingVariants } = await supabase
+      .from('auto_variants')
+      .select('id')
+      .eq('tenant_id', tenantId);
+
+    console.log(`  ✓ Using existing ${existingModels?.length || 0} models`);
+    console.log(`  ✓ Using existing ${existingVariants?.length || 0} variants`);
+
+    return existingVariants?.map(v => v.id) || [];
+  }
 
   // Brands
   const brands = Array.from({ length: CONFIG.BRANDS }, (_, i) => ({

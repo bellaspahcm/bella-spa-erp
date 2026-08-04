@@ -23,7 +23,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-const TENANT_ID = '6fbf594f-0da9-44be-9269-d24e42bcf50a'; // From seeding output
+const TENANT_ID = '20fed1f5-6bcb-465e-9e90-5442d3b3e9e6'; // 50K VINs tenant
 
 interface TestResult {
   dimension: string;
