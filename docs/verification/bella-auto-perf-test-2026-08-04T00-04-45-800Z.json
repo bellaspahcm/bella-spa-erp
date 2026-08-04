@@ -1,0 +1,78 @@
+{
+  "timestamp": "2026-08-04T00:04:45.801Z",
+  "tenant_id": "6fbf594f-0da9-44be-9269-d24e42bcf50a",
+  "summary": {
+    "total": 9,
+    "pass": 4,
+    "fail": 5
+  },
+  "metrics": {
+    "avg_duration_ms": "218",
+    "p95_duration_ms": 979
+  },
+  "results": [
+    {
+      "dimension": "Load Test",
+      "test": "Vehicle SELECT *",
+      "duration_ms": 979,
+      "status": "PASS",
+      "details": "Retrieved 100 vehicles, total count: 5000"
+    },
+    {
+      "dimension": "Temporal",
+      "test": "AS OF 5 Years Ago",
+      "duration_ms": 204,
+      "status": "FAIL",
+      "details": "[object Object]"
+    },
+    {
+      "dimension": "Load Test",
+      "test": "Vehicle Filtered Query",
+      "duration_ms": 175,
+      "status": "PASS",
+      "details": "Filtered query returned 100 showroom vehicles"
+    },
+    {
+      "dimension": "Load Test",
+      "test": "Vehicle Aggregation",
+      "duration_ms": 144,
+      "status": "FAIL",
+      "details": "[object Object]"
+    },
+    {
+      "dimension": "Load Test",
+      "test": "Vehicle JOIN Query",
+      "duration_ms": 128,
+      "status": "PASS",
+      "details": "JOIN query returned 50 vehicles with full catalog"
+    },
+    {
+      "dimension": "Rule Engine",
+      "test": "10 Rules Evaluation",
+      "duration_ms": 100,
+      "status": "FAIL",
+      "details": "[object Object]"
+    },
+    {
+      "dimension": "Temporal",
+      "test": "History Table",
+      "duration_ms": 92,
+      "status": "PASS",
+      "details": "Temporal history table exists and queryable"
+    },
+    {
+      "dimension": "Marketplace",
+      "test": "Capability Catalog",
+      "duration_ms": 78,
+      "status": "FAIL",
+      "details": "[object Object]"
+    },
+    {
+      "dimension": "Rollback",
+      "test": "Cascade Rollback",
+      "duration_ms": 62,
+      "status": "FAIL",
+      "details": "[object Object]"
+    }
+  ]
+}
