@@ -1,3 +1,5 @@
+'use client';
+
 import { Suspense } from 'react';
 import { ServiceCalendar } from '@/modules/bella-auto/components/workshop/ServiceCalendar';
 import { RepairOrderBoard } from '@/modules/bella-auto/components/workshop/RepairOrderBoard';
@@ -5,70 +7,7 @@ import { TechnicianDashboard } from '@/modules/bella-auto/components/workshop/Te
 import { Wrench, Calendar, Users } from 'lucide-react';
 
 export default function WorkshopPage() {
-  return (
-    <div className="p-6 max-w-[1600px] mx-auto space-y-6">
-      {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Wrench className="h-6 w-6 text-blue-600" />
-            Trung Tâm Dịch Vụ & Xưởng
-          </h1>
-          <p className="text-gray-600 mt-1">
-            Quản lý lịch hẹn, sửa chữa và kỹ thuật viên
-          </p>
-        </div>
-      </div>
-
-      {/* Tab Navigation */}
-      <div className="border-b">
-        <nav className="flex gap-6">
-          <button className="pb-3 px-1 border-b-2 border-blue-600 font-medium text-blue-600">
-            <Calendar className="h-4 w-4 inline-block mr-2" />
-            Lịch Hẹn
-          </button>
-          <button className="pb-3 px-1 border-b-2 border-transparent font-medium text-gray-600 hover:text-gray-900">
-            <Wrench className="h-4 w-4 inline-block mr-2" />
-            Bảng Sửa Chữa
-          </button>
-          <button className="pb-3 px-1 border-b-2 border-transparent font-medium text-gray-600 hover:text-gray-900">
-            <Users className="h-4 w-4 inline-block mr-2" />
-            Kỹ Thuật Viên
-          </button>
-        </nav>
-      </div>
-
-      {/* Content - Service Calendar */}
-      <Suspense fallback={<LoadingState />}>
-        <ServiceCalendarSection />
-      </Suspense>
-
-      {/* Repair Order Board */}
-      <Suspense fallback={<LoadingState />}>
-        <RepairOrderBoardSection />
-      </Suspense>
-
-      {/* Technician Dashboard */}
-      <Suspense fallback={<LoadingState />}>
-        <TechnicianDashboardSection />
-      </Suspense>
-    </div>
-  );
-}
-
-function LoadingState() {
-  return (
-    <div className="bg-white rounded-lg shadow p-8">
-      <div className="animate-pulse space-y-4">
-        <div className="h-4 bg-gray-200 rounded w-1/4" />
-        <div className="h-32 bg-gray-200 rounded" />
-      </div>
-    </div>
-  );
-}
-
-async function ServiceCalendarSection() {
-  // TODO: Fetch appointments from API
+  // Mock data
   const mockAppointments = [
     {
       id: '1',
@@ -98,18 +37,6 @@ async function ServiceCalendarSection() {
     },
   ];
 
-  return (
-    <ServiceCalendar
-      appointments={mockAppointments}
-      onAppointmentClick={(apt) => {
-        console.log('Appointment clicked:', apt);
-      }}
-    />
-  );
-}
-
-async function RepairOrderBoardSection() {
-  // TODO: Fetch repair orders from API
   const mockOrders = [
     {
       id: '1',
@@ -141,18 +68,6 @@ async function RepairOrderBoardSection() {
     },
   ];
 
-  return (
-    <RepairOrderBoard
-      orders={mockOrders}
-      onOrderClick={(order) => {
-        console.log('Order clicked:', order);
-      }}
-    />
-  );
-}
-
-async function TechnicianDashboardSection() {
-  // TODO: Fetch technician workload from API
   const mockTechnicians = [
     {
       technicianId: '1',
@@ -210,11 +125,61 @@ async function TechnicianDashboardSection() {
   ];
 
   return (
-    <TechnicianDashboard
-      technicians={mockTechnicians}
-      onTechnicianClick={(id) => {
-        console.log('Technician clicked:', id);
-      }}
-    />
+    <div className="p-6 max-w-[1600px] mx-auto space-y-6">
+      {/* Page Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <Wrench className="h-6 w-6 text-blue-600" />
+            Trung Tâm Dịch Vụ & Xưởng
+          </h1>
+          <p className="text-gray-600 mt-1">
+            Quản lý lịch hẹn, sửa chữa và kỹ thuật viên
+          </p>
+        </div>
+      </div>
+
+      {/* Tab Navigation */}
+      <div className="border-b">
+        <nav className="flex gap-6">
+          <button className="pb-3 px-1 border-b-2 border-blue-600 font-medium text-blue-600">
+            <Calendar className="h-4 w-4 inline-block mr-2" />
+            Lịch Hẹn
+          </button>
+          <button className="pb-3 px-1 border-b-2 border-transparent font-medium text-gray-600 hover:text-gray-900">
+            <Wrench className="h-4 w-4 inline-block mr-2" />
+            Bảng Sửa Chữa
+          </button>
+          <button className="pb-3 px-1 border-b-2 border-transparent font-medium text-gray-600 hover:text-gray-900">
+            <Users className="h-4 w-4 inline-block mr-2" />
+            Kỹ Thuật Viên
+          </button>
+        </nav>
+      </div>
+
+      {/* Content - Service Calendar */}
+      <ServiceCalendar
+        appointments={mockAppointments}
+        onAppointmentClick={(apt) => {
+          console.log('Appointment clicked:', apt);
+        }}
+      />
+
+      {/* Repair Order Board */}
+      <RepairOrderBoard
+        orders={mockOrders}
+        onOrderClick={(order) => {
+          console.log('Order clicked:', order);
+        }}
+      />
+
+      {/* Technician Dashboard */}
+      <TechnicianDashboard
+        technicians={mockTechnicians}
+        onTechnicianClick={(id) => {
+          console.log('Technician clicked:', id);
+        }}
+      />
+    </div>
   );
 }
