@@ -304,8 +304,8 @@ export default function HqDashboardClient({
       setLoadingAudit(false);
     }
   }, [
-    auditTables.length,
-    auditUsers.length,
+    auditTables, // ✅ Fixed: Use entire array instead of .length
+    auditUsers,  // ✅ Fixed: Use entire array instead of .length
     endDate,
     selectedAction,
     selectedTable,

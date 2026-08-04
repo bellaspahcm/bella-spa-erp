@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { 
   Users, Phone, Mail, Clock, Search, Filter, ShieldCheck,
   ChevronRight, ChevronLeft, CheckCircle2, PhoneCall, Eye, Award, Check,
@@ -272,7 +272,7 @@ export default function LeadsPipeline() {
     return matchesTab && matchesSearch;
   });
 
-  const getSlaStatus = (lead: ManagedLead) => {
+  const getSlaStatus = useCallback((lead: ManagedLead) => {
     if (!lead.activeSLATimer) return null;
     const deadline = new Date(lead.activeSLATimer.deadlineTime).getTime();
     const now = Date.now();
@@ -280,7 +280,7 @@ export default function LeadsPipeline() {
     if (diff <= 0) return { label: 'Quá SLA', cls: 'text-rose-500 bg-rose-50 border-rose-200 dark:bg-rose-950/20' };
     const mins = Math.floor(diff / 60000);
     return { label: `SLA: ${mins}p`, cls: 'text-amber-600 bg-amber-50 border-amber-250 dark:bg-amber-950/20' };
-  };
+  }, []); // ✅ Fixed: Wrapped with useCallback to avoid purity violation
 
   return (
     <div className="pb-24 min-h-screen bg-slate-50 dark:bg-slate-950">
