@@ -175,15 +175,17 @@ export function CEODashboard({
     }
   };
 
-  const toggleExpand = (unitId: string) => {
-    const newExpanded = new Set(expandedUnits);
-    if (newExpanded.has(unitId)) {
-      newExpanded.delete(unitId);
-    } else {
-      newExpanded.add(unitId);
-    }
-    setExpandedUnits(newExpanded);
-  };
+  const toggleExpand = useCallback((unitId: string) => {
+    setExpandedUnits(prev => {
+      const newExpanded = new Set(prev);
+      if (newExpanded.has(unitId)) {
+        newExpanded.delete(unitId);
+      } else {
+        newExpanded.add(unitId);
+      }
+      return newExpanded;
+    });
+  }, []);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('vi-VN', {

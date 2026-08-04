@@ -112,28 +112,32 @@ export function ActionConfigurator({
     setExpandedActions(new Set([...expandedActions, newAction.id]));
   };
 
-  const removeAction = (id: string) => {
+  const removeAction = useCallback((id: string) => {
     onChange(actions.filter((a) => a.id !== id));
-    const newExpanded = new Set(expandedActions);
-    newExpanded.delete(id);
-    setExpandedActions(newExpanded);
-  };
+    setExpandedActions(prev => {
+      const newExpanded = new Set(prev);
+      newExpanded.delete(id);
+      return newExpanded;
+    });
+  }, [actions, onChange]);
 
-  const updateAction = (id: string, updates: Partial<RuleAction>) => {
+  const updateAction = useCallback((id: string, updates: Partial<RuleAction>) => {
     onChange(
       actions.map((a) => (a.id === id ? { ...a, ...updates } : a))
     );
-  };
+  }, [actions, onChange]);
 
-  const toggleExpand = (id: string) => {
-    const newExpanded = new Set(expandedActions);
-    if (newExpanded.has(id)) {
-      newExpanded.delete(id);
-    } else {
-      newExpanded.add(id);
-    }
-    setExpandedActions(newExpanded);
-  };
+  const toggleExpand = useCallback((id: string) => {
+    setExpandedActions(prev => {
+      const newExpanded = new Set(prev);
+      if (newExpanded.has(id)) {
+        newExpanded.delete(id);
+      } else {
+        newExpanded.add(id);
+      }
+      return newExpanded;
+    });
+  }, []);
 
   const getActionTypeInfo = (type: string) => {
     return ACTION_TYPES.find((at) => at.key === type) || ACTION_TYPES[0];
