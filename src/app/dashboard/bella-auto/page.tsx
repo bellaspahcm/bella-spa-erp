@@ -35,8 +35,12 @@ export default async function BellaAutoPage() {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Bella Auto</h1>
-          <p className="text-gray-600">Quản lý kho xe & hành trình khách hàng</p>
+          <h1 className="text-3xl font-bold flex items-center gap-3">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 to-teal-600">
+              Bella Auto
+            </span>
+          </h1>
+          <p className="text-slate-600 mt-1">Hệ thống quản lý kho xe & hành trình khách hàng</p>
         </div>
       </div>
 
@@ -69,9 +73,10 @@ export default async function BellaAutoPage() {
         </TabsContent>
 
         <TabsContent value="analytics" className="mt-6">
-          <div className="text-center py-12 text-gray-500">
-            <BarChart3 className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-            <p>Phân tích sẽ có sớm</p>
+          <div className="text-center py-12 text-slate-500">
+            <BarChart3 className="w-16 h-16 mx-auto mb-4 text-cyan-300" />
+            <p className="font-medium">Phân tích sẽ có sớm</p>
+            <p className="text-sm mt-1 text-slate-400">Dữ liệu phân tích xe và hành trình khách hàng</p>
           </div>
         </TabsContent>
       </Tabs>

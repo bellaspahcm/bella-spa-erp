@@ -68,8 +68,8 @@ export default function TemporalQueryBuilder({ tenantId }: { tenantId: string })
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <History className="w-5 h-5" />
+          <CardTitle className="flex items-center gap-2 text-slate-900">
+            <History className="w-5 h-5 text-cyan-600" />
             Time Travel Query - Truy vấn lịch sử
           </CardTitle>
         </CardHeader>
@@ -78,7 +78,7 @@ export default function TemporalQueryBuilder({ tenantId }: { tenantId: string })
             <Label>Chọn thời điểm</Label>
             <div className="flex gap-2">
               <div className="relative flex-1">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cyan-400" />
                 <Input
                   type="date"
                   value={asOfDate}
@@ -95,7 +95,7 @@ export default function TemporalQueryBuilder({ tenantId }: { tenantId: string })
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <span className="text-sm text-gray-600">Nhanh:</span>
+            <span className="text-sm text-slate-600 font-medium">Nhanh:</span>
             {presetDates.map((preset) => (
               <Button
                 key={preset.days}
@@ -144,7 +144,7 @@ export default function TemporalQueryBuilder({ tenantId }: { tenantId: string })
                       <td className="py-3 px-4">
                         <Badge>{vehicle.status}</Badge>
                       </td>
-                      <td className="py-3 px-4 text-gray-600">{vehicle.location_note || '-'}</td>
+                      <td className="py-3 px-4 text-slate-600">{vehicle.location_note || '-'}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -156,8 +156,8 @@ export default function TemporalQueryBuilder({ tenantId }: { tenantId: string })
 
       {!loading && results.length === 0 && asOfDate && (
         <Card>
-          <CardContent className="py-8 text-center text-gray-500">
-            <History className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+          <CardContent className="py-8 text-center text-slate-500">
+            <History className="w-12 h-12 mx-auto mb-4 text-cyan-300" />
             <p>Chưa có dữ liệu tại thời điểm này</p>
             <p className="text-sm mt-1">Lịch sử sẽ được ghi nhận khi có thay đổi</p>
           </CardContent>

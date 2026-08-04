@@ -1,30 +1,265 @@
 /**
- * Bella Auto Module — Scoped Premium Layout Stylesheet
+ * Bella Auto Module — Ocean Clean Theme Stylesheet
  * Scoped via [data-auto-layout] attribute — zero global side effects.
+ * 
+ * THEME: Ocean Clean (Cyan/Teal professional automotive theme)
+ * PRIMARY: Cyan #06b6d4 → Teal #14b8a6
+ * ACCENT: Deep Ocean #0891b2
+ * SURFACE: Clean White with subtle cyan tint
  */
 
 [data-auto-layout] {
-  --auto-navy:         #0A1628; /* Deep Navy */
-  --auto-gold:         #C0A060; /* Accent Gold */
-  --auto-silver:       #8B9AAB; /* Racing Silver */
-  --auto-surface:      #ffffff;
-  --auto-border:       #e2e8f0;
-  --auto-shadow-card:  0 10px 15px -3px rgba(10, 22, 40, 0.05), 0 4px 6px -2px rgba(10, 22, 40, 0.02);
-  --auto-radius:       24px;
+  /* Ocean Clean Color Palette */
+  --auto-ocean:        #0891b2; /* Deep ocean cyan - primary */
+  --auto-ocean-dark:   #0e7490; /* Darker ocean for hover states */
+  --auto-ocean-light:  #06b6d4; /* Bright cyan for accents */
+  --auto-teal:         #14b8a6; /* Teal for secondary actions */
+  --auto-teal-dark:    #0d9488; /* Darker teal */
+  --auto-cyan-pale:    #cffafe; /* Pale cyan for backgrounds */
+  --auto-cyan-soft:    #ecfeff; /* Soft cyan for subtle highlights */
+  
+  /* Neutral Colors */
+  --auto-navy:         #0f172a; /* Dark navy for text */
+  --auto-slate:        #475569; /* Slate for secondary text */
+  --auto-surface:      #ffffff; /* Clean white surface */
+  --auto-border:       #e0f2fe; /* Cyan-tinted border */
+  --auto-border-soft:  #f0f9ff; /* Softer cyan border */
+  
+  /* Effects */
+  --auto-shadow-ocean: 0 10px 15px -3px rgba(8, 145, 178, 0.1), 0 4px 6px -2px rgba(8, 145, 178, 0.05);
+  --auto-shadow-card:  0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  --auto-radius:       20px;
+  --auto-radius-sm:    12px;
 }
 
+/* ─── Root Background (Ocean Clean gradient) ─────────────────────────────────── */
 .auto-layout-root {
   background: 
-    radial-gradient(circle at 10% 20%, rgba(241, 245, 249, 0.8) 0%, rgba(226, 232, 240, 0.3) 90%),
-    linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    radial-gradient(circle at 10% 20%, rgba(207, 250, 254, 0.15) 0%, rgba(236, 254, 255, 0.05) 90%),
+    linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #f8fafc 100%);
 }
 
 html.dark .auto-layout-root {
   background: 
-    radial-gradient(circle at 10% 20%, rgba(15, 23, 42, 0.9) 0%, rgba(9, 15, 32, 0.98) 90%),
-    linear-gradient(135deg, #020617 0%, #090d16 100%);
+    radial-gradient(circle at 10% 20%, rgba(8, 145, 178, 0.08) 0%, rgba(6, 95, 70, 0.04) 90%),
+    linear-gradient(135deg, #0c1419 0%, #020617 50%, #0a1420 100%);
 }
 
+/* ─── Page Headers ───────────────────────────────────────────────────────────── */
+[data-auto-layout] h1 {
+  color: var(--auto-navy);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+}
+
+[data-auto-layout] h1 svg {
+  color: var(--auto-ocean);
+}
+
+/* ─── Stat / KPI Cards with ocean accent ─────────────────────────────────────── */
+[data-auto-layout] .auto-stat-card {
+  background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%);
+  border: 1px solid var(--auto-border-soft);
+  border-radius: var(--auto-radius);
+  box-shadow: var(--auto-shadow-card);
+  position: relative;
+  overflow: hidden;
+}
+
+[data-auto-layout] .auto-stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--auto-ocean-light), var(--auto-teal));
+}
+
+/* ─── Generic Cards ──────────────────────────────────────────────────────────── */
+[data-auto-layout] .auto-card {
+  background: var(--auto-surface);
+  border: 1px solid var(--auto-border);
+  border-radius: var(--auto-radius);
+  box-shadow: var(--auto-shadow-card);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+[data-auto-layout] .auto-card:hover {
+  box-shadow: var(--auto-shadow-ocean);
+  transform: translateY(-2px);
+}
+
+/* ─── Ocean Badge ────────────────────────────────────────────────────────────── */
+[data-auto-layout] .auto-badge-ocean {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  background: linear-gradient(90deg, rgba(6, 182, 212, 0.12), rgba(20, 184, 166, 0.10));
+  border: 1px solid rgba(6, 182, 212, 0.25);
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: #0e7490;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* ─── Buttons ────────────────────────────────────────────────────────────────── */
+[data-auto-layout] .auto-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  background: linear-gradient(135deg, var(--auto-ocean) 0%, var(--auto-ocean-dark) 100%);
+  color: #ffffff;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  border-radius: var(--auto-radius-sm);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 12px rgba(8, 145, 178, 0.20);
+  letter-spacing: 0.02em;
+}
+
+[data-auto-layout] .auto-btn-primary:hover {
+  background: linear-gradient(135deg, var(--auto-ocean-dark) 0%, var(--auto-ocean-light) 100%);
+  box-shadow: 0 4px 20px rgba(8, 145, 178, 0.30);
+  transform: translateY(-1px);
+}
+
+[data-auto-layout] .auto-btn-teal {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  background: linear-gradient(135deg, var(--auto-teal) 0%, var(--auto-teal-dark) 100%);
+  color: #ffffff;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  border-radius: var(--auto-radius-sm);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 12px rgba(20, 184, 166, 0.30);
+}
+
+[data-auto-layout] .auto-btn-teal:hover {
+  filter: brightness(1.08);
+  box-shadow: 0 4px 20px rgba(20, 184, 166, 0.40);
+  transform: translateY(-1px);
+}
+
+[data-auto-layout] .auto-btn-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: transparent;
+  color: var(--auto-ocean);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  border-radius: var(--auto-radius-sm);
+  border: 1.5px solid var(--auto-border);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+[data-auto-layout] .auto-btn-outline:hover {
+  background: var(--auto-cyan-pale);
+  border-color: var(--auto-ocean);
+}
+
+/* ─── Table with ocean header ─────────────────────────────────────────────────── */
+[data-auto-layout] .auto-table-wrapper {
+  background: var(--auto-surface);
+  border: 1px solid var(--auto-border-soft);
+  border-radius: var(--auto-radius);
+  box-shadow: var(--auto-shadow-card);
+  overflow: hidden;
+}
+
+[data-auto-layout] .auto-table-wrapper table thead tr {
+  background: linear-gradient(90deg, var(--auto-ocean) 0%, var(--auto-teal) 100%);
+}
+
+[data-auto-layout] .auto-table-wrapper table thead th {
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 14px 16px;
+}
+
+[data-auto-layout] .auto-table-wrapper table tbody tr {
+  border-bottom: 1px solid var(--auto-border-soft);
+  transition: background 0.15s ease;
+}
+
+[data-auto-layout] .auto-table-wrapper table tbody tr:hover {
+  background: var(--auto-cyan-soft);
+}
+
+/* ─── Section Title with trailing rule ───────────────────────────────────────── */
+[data-auto-layout] .auto-section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--auto-ocean);
+  margin-bottom: 16px;
+}
+
+[data-auto-layout] .auto-section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--auto-border), transparent);
+}
+
+/* ─── Focus ring — ocean override ────────────────────────────────────────────── */
+[data-auto-layout] input:focus,
+[data-auto-layout] select:focus,
+[data-auto-layout] textarea:focus {
+  outline: none;
+  border-color: var(--auto-ocean-light) !important;
+  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.12) !important;
+}
+
+/* ─── Vehicle Status Pills (Ocean Clean theme) ───────────────────────────────── */
+[data-auto-layout] .auto-status-showroom {
+  background: #cffafe; color: #0891b2; border: 1px solid #a5f3fc; border-radius: 999px;
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; font-size: 0.6875rem; font-weight: 700;
+}
+[data-auto-layout] .auto-status-warehouse {
+  background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; border-radius: 999px;
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; font-size: 0.6875rem; font-weight: 700;
+}
+[data-auto-layout] .auto-status-allocated {
+  background: #fef3c7; color: #b45309; border: 1px solid #fde68a; border-radius: 999px;
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; font-size: 0.6875rem; font-weight: 700;
+}
+[data-auto-layout] .auto-status-delivered {
+  background: #d1fae5; color: #047857; border: 1px solid #a7f3d0; border-radius: 999px;
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; font-size: 0.6875rem; font-weight: 700;
+}
+[data-auto-layout] .auto-status-in-transit {
+  background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe; border-radius: 999px;
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; font-size: 0.6875rem; font-weight: 700;
+}
+
+/* ─── Page entry animation ────────────────────────────────────────────────────── */
 @keyframes auto-page-in {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }

@@ -82,12 +82,12 @@ export default function VehicleInventoryDashboard({ tenantId }: { tenantId: stri
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'showroom': return 'bg-blue-100 text-blue-800';
-      case 'warehouse': return 'bg-gray-100 text-gray-800';
-      case 'allocated': return 'bg-yellow-100 text-yellow-800';
-      case 'delivered': return 'bg-green-100 text-green-800';
-      case 'in_transit': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'showroom': return 'bg-cyan-100 text-cyan-800 border-cyan-200';
+      case 'warehouse': return 'bg-slate-100 text-slate-700 border-slate-200';
+      case 'allocated': return 'bg-amber-100 text-amber-800 border-amber-200';
+      case 'delivered': return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+      case 'in_transit': return 'bg-indigo-100 text-indigo-800 border-indigo-200';
+      default: return 'bg-slate-100 text-slate-700 border-slate-200';
     }
   };
 
@@ -97,46 +97,46 @@ export default function VehicleInventoryDashboard({ tenantId }: { tenantId: stri
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Tổng xe</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-600">Tổng xe</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.total.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-slate-900">{stats.total.toLocaleString()}</div>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Showroom</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-600">Showroom</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{stats.showroom.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-cyan-600">{stats.showroom.toLocaleString()}</div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Kho</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-600">Kho</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-600">{stats.warehouse.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-slate-600">{stats.warehouse.toLocaleString()}</div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Đã phân bổ</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-600">Đã phân bổ</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{stats.allocated.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-amber-600">{stats.allocated.toLocaleString()}</div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Đã bàn giao</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-600">Đã bàn giao</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats.delivered.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-emerald-600">{stats.delivered.toLocaleString()}</div>
           </CardContent>
         </Card>
       </div>
@@ -162,7 +162,7 @@ export default function VehicleInventoryDashboard({ tenantId }: { tenantId: stri
           <div className="flex gap-4 mb-4">
             <div className="flex-1">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cyan-400" />
                 <Input
                   placeholder="Tìm VIN, vị trí..."
                   value={searchTerm}
@@ -190,12 +190,12 @@ export default function VehicleInventoryDashboard({ tenantId }: { tenantId: stri
           {/* Vehicle Table */}
           {loading ? (
             <div className="text-center py-8">
-              <RefreshCw className="w-8 h-8 animate-spin mx-auto text-gray-400" />
-              <p className="text-gray-500 mt-2">Đang tải...</p>
+              <RefreshCw className="w-8 h-8 animate-spin mx-auto text-cyan-400" />
+              <p className="text-slate-500 mt-2">Đang tải...</p>
             </div>
           ) : vehicles.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-gray-500">Không tìm thấy xe</p>
+              <p className="text-slate-500">Không tìm thấy xe</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -226,7 +226,7 @@ export default function VehicleInventoryDashboard({ tenantId }: { tenantId: stri
                           {vehicle.status === 'delivered' && 'Đã bàn giao'}
                         </Badge>
                       </td>
-                      <td className="py-3 px-4 text-gray-600">{vehicle.location_note || '-'}</td>
+                      <td className="py-3 px-4 text-slate-600">{vehicle.location_note || '-'}</td>
                       <td className="py-3 px-4 text-right font-medium">
                         {vehicle.list_price?.toLocaleString('vi-VN')} đ
                       </td>
