@@ -243,6 +243,7 @@ export default function AppearanceTab() {
       enabledModules,
       brandTheme,
       logoUrl,
+      persist: true, // ✅ Persist to storage so hard refresh keeps theme
     });
   }, [brandTheme, enabledModules, isLoadingTenantConfig, logoUrl, tenantId]);
 
