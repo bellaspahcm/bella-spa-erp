@@ -76,7 +76,6 @@ export default function WorkshopPage() {
 
         if (appointmentsRes.error) {
           console.error('Appointments fetch error:', appointmentsRes.error);
-          // Don't throw - just log and continue with empty data
           setAppointments([]);
         } else {
           setAppointments(appointmentsRes.data || []);
@@ -102,104 +101,110 @@ export default function WorkshopPage() {
   }, []);
 
   return (
-    <div className="flex-1 overflow-auto bg-slate-50/50 dark:bg-slate-950 p-6 md:p-10 space-y-8" data-auto-layout>
+    <div className="flex-1 overflow-auto bg-slate-50/30 dark:bg-slate-950 p-6 md:p-10 space-y-8" data-auto-layout>
       {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Wrench className="h-6 w-6 text-blue-600" />
-            Trung Tâm Dịch Vụ & Xưởng
-          </h1>
-          <p className="text-gray-600 mt-1">
-            Quản lý lịch hẹn, sửa chữa và kỹ thuật viên
-          </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-900 pb-5">
+        <div className="flex items-center gap-3.5">
+          <div className="p-3 rounded-2xl bg-gradient-to-br from-blue-500/10 to-indigo-500/15 dark:from-blue-500/20 dark:to-indigo-500/5 border border-blue-100/50 dark:border-blue-900/30 text-blue-600 dark:text-blue-400 shadow-sm shrink-0">
+            <Wrench className="h-6 w-6" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-wide">
+              Trung Tâm Dịch Vụ & Xưởng
+            </h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Hệ thống quản lý đặt lịch hẹn, phân bổ phiếu sửa chữa và tối ưu hóa năng suất kỹ thuật viên
+            </p>
+          </div>
         </div>
       </div>
 
-      {/* Tab Navigation */}
-      <div className="border-b border-gray-200 dark:border-gray-700">
-        <nav className="flex gap-6">
+      {/* Tab Navigation (Premium Segmented Control Style) */}
+      <div className="flex justify-start">
+        <nav className="flex p-1.5 bg-slate-100/80 dark:bg-slate-900/60 border border-slate-200/50 dark:border-slate-800/40 rounded-2xl gap-1.5 shadow-sm">
           <button 
             onClick={() => setActiveTab('appointments')}
-            className={`pb-3 px-1 border-b-2 font-medium transition-colors ${
+            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-xl transition-all duration-300 ${
               activeTab === 'appointments' 
-                ? 'border-cyan-600 text-cyan-600' 
-                : 'border-transparent text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'
+                ? 'bg-white dark:bg-slate-950 text-cyan-600 dark:text-cyan-400 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-slate-200/20 dark:border-slate-800/30' 
+                : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50/50 dark:hover:bg-slate-800/30'
             }`}
           >
-            <Calendar className="h-4 w-4 inline-block mr-2" />
+            <Calendar className="h-4 w-4 shrink-0" />
             Lịch Hẹn
           </button>
           <button 
             onClick={() => setActiveTab('orders')}
-            className={`pb-3 px-1 border-b-2 font-medium transition-colors ${
+            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-xl transition-all duration-300 ${
               activeTab === 'orders' 
-                ? 'border-cyan-600 text-cyan-600' 
-                : 'border-transparent text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'
+                ? 'bg-white dark:bg-slate-950 text-cyan-600 dark:text-cyan-400 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-slate-200/20 dark:border-slate-800/30' 
+                : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50/50 dark:hover:bg-slate-800/30'
             }`}
           >
-            <Wrench className="h-4 w-4 inline-block mr-2" />
+            <Wrench className="h-4 w-4 shrink-0" />
             Bảng Sửa Chữa
           </button>
           <button 
             onClick={() => setActiveTab('technicians')}
-            className={`pb-3 px-1 border-b-2 font-medium transition-colors ${
+            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-xl transition-all duration-300 ${
               activeTab === 'technicians' 
-                ? 'border-cyan-600 text-cyan-600' 
-                : 'border-transparent text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'
+                ? 'bg-white dark:bg-slate-950 text-cyan-600 dark:text-cyan-400 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-slate-200/20 dark:border-slate-800/30' 
+                : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50/50 dark:hover:bg-slate-800/30'
             }`}
           >
-            <Users className="h-4 w-4 inline-block mr-2" />
+            <Users className="h-4 w-4 shrink-0" />
             Kỹ Thuật Viên
           </button>
         </nav>
       </div>
 
       {/* Tab Content */}
-      {activeTab === 'appointments' && (
-        isLoading ? (
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center space-y-3">
-              <div className="w-12 h-12 border-4 border-cyan-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-              <p className="text-sm font-semibold text-slate-600 dark:text-slate-400">Đang tải lịch hẹn...</p>
+      <div className="transition-all duration-300">
+        {activeTab === 'appointments' && (
+          isLoading ? (
+            <div className="flex items-center justify-center h-72 bg-white dark:bg-slate-950 border border-slate-200/60 dark:border-slate-800/60 rounded-3xl">
+              <div className="text-center space-y-4">
+                <div className="w-10 h-10 border-4 border-cyan-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Đang tải lịch hẹn...</p>
+              </div>
             </div>
-          </div>
-        ) : (
-          <ServiceCalendar
-            appointments={appointments}
-            onAppointmentClick={(apt) => {
-              console.log('Appointment clicked:', apt);
+          ) : (
+            <ServiceCalendar
+              appointments={appointments}
+              onAppointmentClick={(apt) => {
+                console.log('Appointment clicked:', apt);
+              }}
+            />
+          )
+        )}
+
+        {activeTab === 'orders' && (
+          isLoading ? (
+            <div className="flex items-center justify-center h-72 bg-white dark:bg-slate-950 border border-slate-200/60 dark:border-slate-800/60 rounded-3xl">
+              <div className="text-center space-y-4">
+                <div className="w-10 h-10 border-4 border-cyan-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Đang tải đơn sửa chữa...</p>
+              </div>
+            </div>
+          ) : (
+            <RepairOrderBoard
+              orders={orders}
+              onOrderClick={(order) => {
+                console.log('Order clicked:', order);
+              }}
+            />
+          )
+        )}
+
+        {activeTab === 'technicians' && (
+          <TechnicianDashboard
+            technicians={mockTechnicians}
+            onTechnicianClick={(id) => {
+              console.log('Technician clicked:', id);
             }}
           />
-        )
-      )}
-
-      {activeTab === 'orders' && (
-        isLoading ? (
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center space-y-3">
-              <div className="w-12 h-12 border-4 border-cyan-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-              <p className="text-sm font-semibold text-slate-600 dark:text-slate-400">Đang tải đơn sửa chữa...</p>
-            </div>
-          </div>
-        ) : (
-          <RepairOrderBoard
-            orders={orders}
-            onOrderClick={(order) => {
-              console.log('Order clicked:', order);
-            }}
-          />
-        )
-      )}
-
-      {activeTab === 'technicians' && (
-        <TechnicianDashboard
-          technicians={mockTechnicians}
-          onTechnicianClick={(id) => {
-            console.log('Technician clicked:', id);
-          }}
-        />
-      )}
+        )}
+      </div>
     </div>
   );
 }

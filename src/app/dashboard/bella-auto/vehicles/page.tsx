@@ -27,11 +27,11 @@ import { useEffect } from 'react';
 
 // Status configuration
 const STATUS_CONFIG: Record<VehicleStatus, { label: string; bg: string; color: string; border: string }> = {
-  in_transit: { label: 'Đang Vận Chuyển', bg: 'bg-amber-50', color: 'text-amber-700', border: 'border-amber-200' },
-  arrived: { label: 'Đã Về Kho', bg: 'bg-blue-50', color: 'text-blue-700', border: 'border-blue-200' },
-  allocated: { label: 'Đã Phân Bổ', bg: 'bg-purple-50', color: 'text-purple-700', border: 'border-purple-200' },
-  delivered: { label: 'Đã Giao Xe', bg: 'bg-green-50', color: 'text-green-700', border: 'border-green-200' },
-  sold: { label: 'Đã Bán', bg: 'bg-emerald-50', color: 'text-emerald-700', border: 'border-emerald-200' },
+  in_transit: { label: 'Đang Vận Chuyển', bg: 'bg-amber-50 dark:bg-amber-950/30', color: 'text-amber-700 dark:text-amber-400', border: 'border-amber-200/60 dark:border-amber-900/30' },
+  arrived:    { label: 'Đã Về Kho',       bg: 'bg-blue-50 dark:bg-blue-950/30',   color: 'text-blue-700 dark:text-blue-400',   border: 'border-blue-200/60 dark:border-blue-900/30' },
+  allocated:  { label: 'Đã Phân Bổ',      bg: 'bg-violet-50 dark:bg-violet-950/30', color: 'text-violet-700 dark:text-violet-400', border: 'border-violet-200/60 dark:border-violet-900/30' },
+  delivered:  { label: 'Đã Giao Xe',      bg: 'bg-teal-50 dark:bg-teal-950/30',  color: 'text-teal-700 dark:text-teal-400',   border: 'border-teal-200/60 dark:border-teal-900/30' },
+  sold:       { label: 'Đã Bán',           bg: 'bg-emerald-50 dark:bg-emerald-950/30', color: 'text-emerald-700 dark:text-emerald-400', border: 'border-emerald-200/60 dark:border-emerald-900/30' },
 };
 
 // ── Add Vehicle Modal ─────────────────────────────────────────────────────────
@@ -124,8 +124,8 @@ function AddVehicleModal({ onClose, onSuccess }: { onClose: () => void; onSucces
           </div>
 
           <div className="flex items-center gap-3 pt-2">
-            <button type="button" onClick={onClose} className="flex-1 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold text-sm hover:bg-slate-50 transition-colors">Hủy</button>
-            <button type="submit" disabled={isPending} className="flex-1 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white font-bold text-sm transition-colors flex items-center justify-center gap-2">
+            <button type="button" onClick={onClose} className="flex-1 py-3 rounded-xl border border-slate-200/60 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Hủy</button>
+            <button type="submit" disabled={isPending} className="flex-1 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-60 text-white font-bold text-sm transition-all shadow-md hover:shadow-indigo-500/20 flex items-center justify-center gap-2">
               {isPending ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <PlusCircle className="w-4 h-4" />}
               {isPending ? 'Đang thêm...' : 'Thêm vào kho'}
             </button>
@@ -319,11 +319,11 @@ export default function VehicleInventoryPage() {
   // Loading state
   if (isLoading) {
     return (
-      <div className="flex-1 overflow-auto bg-slate-50/50 dark:bg-slate-950 p-6 md:p-10">
+      <div className="flex-1 overflow-auto bg-slate-50/30 dark:bg-slate-950 p-6 md:p-10">
         <div className="flex items-center justify-center h-96">
-          <div className="text-center space-y-3">
-            <div className="w-12 h-12 border-4 border-cyan-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-            <p className="text-sm font-semibold text-slate-600 dark:text-slate-400">Đang tải danh sách xe...</p>
+          <div className="text-center space-y-4">
+            <div className="w-10 h-10 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto" />
+            <p className="text-xs font-bold text-slate-500 dark:text-slate-400">Đang tải danh sách xe...</p>
           </div>
         </div>
       </div>
@@ -331,44 +331,57 @@ export default function VehicleInventoryPage() {
   }
 
   return (
-    <div className="flex-1 overflow-auto bg-slate-50/50 dark:bg-slate-950 p-6 md:p-10 space-y-8">
+    <div className="flex-1 overflow-auto bg-slate-50/30 dark:bg-slate-950 p-6 md:p-10 space-y-8" data-auto-layout>
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 border-b border-slate-200/60 dark:border-slate-800 pb-6">
-        <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
-            <Car className="w-8 h-8 text-indigo-600" />
-            Kho Xe & Số Khung VIN
-          </h1>
-          <p className="text-sm text-muted-foreground font-semibold mt-1">
-            Vehicle Lifecycle Center — Quản lý trạng thái vòng đời từng số khung xe
-          </p>
+      <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 border-b border-slate-100 dark:border-slate-900 pb-6">
+        <div className="flex items-center gap-4">
+          <div className="p-3 rounded-2xl bg-gradient-to-br from-cyan-500/10 to-indigo-500/15 dark:from-cyan-500/20 dark:to-indigo-500/5 border border-cyan-100/50 dark:border-cyan-900/30 text-cyan-600 dark:text-cyan-400 shadow-sm shrink-0">
+            <Car className="h-6 w-6" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-wide">Kho Xe & Số Khung VIN</h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Vehicle Lifecycle Center — Quản lý trạng thái vòng đời từng số khung xe</p>
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <button onClick={handleImportCSV} className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-xl font-bold hover:bg-slate-50 transition-all text-xs">
+          <button onClick={handleImportCSV} className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 text-slate-700 dark:text-slate-300 rounded-xl font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all text-xs shadow-sm">
             <Upload className="w-4 h-4" /> Nhập CSV/Excel
           </button>
-          <button onClick={() => setShowAddModal(true)} className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-all text-xs shadow-sm">
+          <button onClick={() => setShowAddModal(true)} className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl font-bold transition-all text-xs shadow-md hover:shadow-indigo-500/20 hover:-translate-y-0.5 active:translate-y-0">
             <PlusCircle className="w-4 h-4" /> Nhập Xe Mới
           </button>
         </div>
       </div>
 
-      {/* Status Summary Pills */}
-      <div className="flex flex-wrap gap-3">
+      {/* Status Filter Pills */}
+      <div className="flex flex-wrap gap-2.5">
         <button
           onClick={() => setStatusFilter('all')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-bold transition-all ${statusFilter === 'all' ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-400'}`}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-bold transition-all duration-200 ${
+            statusFilter === 'all'
+              ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 shadow-sm'
+              : 'bg-white dark:bg-slate-950 border-slate-200/60 dark:border-slate-800/80 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900'
+          }`}
         >
-          Tất cả <span className="bg-current/10 rounded-md px-1.5 py-0.5">{vehicles.length}</span>
+          Tất cả
+          <span className="bg-current/10 rounded-md px-1.5 py-0.5 font-extrabold tabular-nums">{vehicles.length}</span>
         </button>
         {(Object.keys(STATUS_CONFIG) as VehicleStatus[]).map(s => (
           <button
             key={s}
             onClick={() => setStatusFilter(s)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-bold transition-all ${statusFilter === s ? `${STATUS_CONFIG[s].bg} ${STATUS_CONFIG[s].color} ${STATUS_CONFIG[s].border}` : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 hover:border-slate-400'}`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-bold transition-all duration-200 ${
+              statusFilter === s
+                ? `${STATUS_CONFIG[s].bg} ${STATUS_CONFIG[s].color} ${STATUS_CONFIG[s].border} shadow-sm`
+                : 'bg-white dark:bg-slate-950 border-slate-200/60 dark:border-slate-800/80 text-slate-500 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-900'
+            }`}
           >
             {STATUS_CONFIG[s].label}
-            {(counts[s] ?? 0) > 0 && <span className={`rounded-md px-1.5 py-0.5 ${statusFilter === s ? 'bg-current/10' : 'bg-slate-100 dark:bg-slate-800'}`}>{counts[s] ?? 0}</span>}
+            {(counts[s] ?? 0) > 0 && (
+              <span className={`rounded-md px-1.5 py-0.5 font-extrabold tabular-nums ${
+                statusFilter === s ? 'bg-current/10' : 'bg-slate-100 dark:bg-slate-900'
+              }`}>{counts[s] ?? 0}</span>
+            )}
           </button>
         ))}
       </div>
@@ -376,26 +389,26 @@ export default function VehicleInventoryPage() {
       {/* Search */}
       <div className="flex flex-col md:flex-row md:items-center gap-3">
         <div className="relative flex-1 max-w-sm group">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors w-4 h-4" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-cyan-500 transition-colors w-4 h-4" />
           <input
             type="text"
             placeholder="Tìm VIN, dòng xe, phiên bản..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all text-sm font-semibold"
+            className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200/60 dark:border-slate-800/80 rounded-xl focus:ring-2 focus:ring-cyan-500/10 focus:border-cyan-500 outline-none transition-all text-xs font-semibold placeholder:text-slate-300 dark:placeholder:text-slate-600 shadow-sm"
           />
         </div>
-        <button onClick={handleExportCSV} className="flex items-center gap-2 px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-xl font-bold hover:bg-slate-50 transition-all text-xs">
+        <button onClick={handleExportCSV} className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200/60 dark:border-slate-800/80 text-slate-600 dark:text-slate-300 rounded-xl font-bold hover:bg-slate-50 dark:hover:bg-slate-900 transition-all text-xs shadow-sm">
           <Download className="w-4 h-4" /> Xuất Excel
         </button>
       </div>
 
       {/* Table */}
-      <div className={`bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-3xl shadow-sm ${openDropdownId ? 'overflow-visible' : 'overflow-hidden'}`}>
+      <div className={`bg-white dark:bg-slate-950 border border-slate-150 dark:border-slate-900 rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.015)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.2)] ${openDropdownId ? 'overflow-visible' : 'overflow-hidden'}`}>
         <div className={openDropdownId ? "overflow-x-auto overflow-y-visible" : "overflow-x-auto"}>
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-slate-200/60 dark:border-slate-800 text-[10px] font-black uppercase text-slate-400 tracking-wider">
+              <tr className="border-b border-slate-100 dark:border-slate-900 text-[10px] font-extrabold uppercase text-slate-400 tracking-widest">
                 <th className="py-4 px-5">Xe & Phiên Bản</th>
                 <th className="py-4 px-5">Số VIN / Số Khung</th>
                 <th className="py-4 px-5">Màu Sắc</th>
@@ -405,14 +418,14 @@ export default function VehicleInventoryPage() {
                 <th className="py-4 px-5">Chi Tiết</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+            <tbody className="divide-y divide-slate-50 dark:divide-slate-900/80">
               {filtered.length > 0 ? filtered.map((vehicle, idx) => (
                 <motion.tr
                   key={vehicle.id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: idx * 0.04 }}
-                  className="hover:bg-slate-50/50 dark:hover:bg-slate-950/20 transition-all text-sm"
+                  className="hover:bg-slate-50/60 dark:hover:bg-slate-900/30 transition-all text-xs group"
                 >
                   <td className="py-4 px-5">
                     <div className="font-bold text-slate-900 dark:text-white">{vehicle.brandName} {vehicle.modelName}</div>
@@ -497,23 +510,18 @@ export default function VehicleInventoryPage() {
               exit={{ opacity: 0, height: 0 }}
               className="border-t border-slate-100 dark:border-slate-800 overflow-hidden"
             >
-              <div className="p-6 bg-slate-50/50 dark:bg-slate-950/20 grid grid-cols-2 md:grid-cols-4 gap-6">
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Số Máy</p>
-                  <p className="font-mono font-bold text-xs text-slate-700 dark:text-slate-200">{selectedVehicle.engineNumber ?? '—'}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Giá Vốn</p>
-                  <p className="font-bold text-xs text-slate-700 dark:text-slate-200">{(selectedVehicle.costPrice / 1_000_000).toLocaleString('vi-VN')} tr.đ</p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Ngày Về Kho</p>
-                  <p className="font-bold text-xs text-slate-700 dark:text-slate-200">{selectedVehicle.actualArrivalDate ?? '—'}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Lần Cập Nhật</p>
-                  <p className="font-bold text-xs text-slate-700 dark:text-slate-200">{new Date(selectedVehicle.updatedAt).toLocaleDateString('vi-VN')}</p>
-                </div>
+              <div className="p-6 bg-slate-50/40 dark:bg-slate-900/20 grid grid-cols-2 md:grid-cols-4 gap-5">
+                {[
+                  { label: 'Số Máy', value: selectedVehicle.engineNumber ?? '—', mono: true },
+                  { label: 'Giá Vốn', value: `${(selectedVehicle.costPrice / 1_000_000).toLocaleString('vi-VN')} tr.đ`, mono: false },
+                  { label: 'Ngày Về Kho', value: selectedVehicle.actualArrivalDate ?? '—', mono: false },
+                  { label: 'Lần Cập Nhật', value: new Date(selectedVehicle.updatedAt).toLocaleDateString('vi-VN'), mono: false },
+                ].map((item, i) => (
+                  <div key={i} className="bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-900 rounded-xl p-3.5">
+                    <p className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400 mb-1.5">{item.label}</p>
+                    <p className={`font-bold text-xs text-slate-700 dark:text-slate-200 ${item.mono ? 'font-mono tracking-wider' : ''}`}>{item.value}</p>
+                  </div>
+                ))}
               </div>
             </motion.div>
           )}

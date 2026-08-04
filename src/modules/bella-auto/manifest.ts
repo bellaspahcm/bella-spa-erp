@@ -18,6 +18,7 @@ export const bellaAutoManifest: VerticalManifest = {
     { id: 'dashboard', label: 'Dashboard điều hành', href: '/dashboard/bella-auto', icon: 'LayoutDashboard' },
     { id: 'vehicles', label: 'Quản lý kho xe', href: '/dashboard/bella-auto/vehicles', icon: 'Car' },
     { id: 'journey', label: 'Hành trình khách hàng', href: '/dashboard/bella-auto/journey', icon: 'GitCommit' },
+    { id: 'bookings', label: 'Booking & Đặt Cọc', href: '/dashboard/bella-auto/bookings', icon: 'FileText' },
     { id: 'experience', label: 'Experience Center', href: '/dashboard/bella-auto/experience', icon: 'Smile' },
     { id: 'leads', label: 'Quản lý Leads', href: '/dashboard/bella-auto/leads', icon: 'Target' },
     { id: 'sales', label: 'Quy trình bán hàng', href: '/dashboard/bella-auto/sales', icon: 'CircleDollarSign' },
