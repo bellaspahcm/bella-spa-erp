@@ -114,40 +114,20 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
 
       // Check for errors with detailed logging
       if (trendResult.error) {
-        console.error('[BellaAuto] Trend RPC error:', {
-          message: trendResult.error.message,
-          details: trendResult.error.details,
-          hint: trendResult.error.hint,
-          code: trendResult.error.code,
-        });
-        throw trendResult.error;
+        console.error('[BellaAuto] Trend RPC error:', trendResult.error);
+        // Don't throw - just use empty data
       }
       if (topModelsResult.error) {
-        console.error('[BellaAuto] Top models RPC error:', {
-          message: topModelsResult.error.message,
-          details: topModelsResult.error.details,
-          hint: topModelsResult.error.hint,
-          code: topModelsResult.error.code,
-        });
-        throw topModelsResult.error;
+        console.error('[BellaAuto] Top models RPC error:', topModelsResult.error);
+        // Don't throw - just use empty data
       }
       if (revenueResult.error) {
-        console.error('[BellaAuto] Revenue RPC error:', {
-          message: revenueResult.error.message,
-          details: revenueResult.error.details,
-          hint: revenueResult.error.hint,
-          code: revenueResult.error.code,
-        });
-        throw revenueResult.error;
+        console.error('[BellaAuto] Revenue RPC error:', revenueResult.error);
+        // Don't throw - just use empty data
       }
       if (deliveriesResult.error) {
-        console.error('[BellaAuto] Deliveries RPC error:', {
-          message: deliveriesResult.error.message,
-          details: deliveriesResult.error.details,
-          hint: deliveriesResult.error.hint,
-          code: deliveriesResult.error.code,
-        });
-        throw deliveriesResult.error;
+        console.error('[BellaAuto] Deliveries RPC error:', deliveriesResult.error);
+        // Don't throw - just use empty data
       }
 
       // Fetch vehicles for status distribution & inventory value
