@@ -34,8 +34,7 @@ const LEGACY_DEFAULT_PINKS = [
   '#9F1239', // Rose 800
 ];
 
-const LEGACY_DEFAULT_NAVY = '#1E3A8A'; // Navy 900 (used for Real Estate)
-const LEGACY_DEFAULT_BLUE = '#1E40AF'; // Blue 700 (old industrial cleaning)
+
 
 /**
  * Check if tenant theme needs upgrade
@@ -51,12 +50,10 @@ export function needsThemeUpgrade(
   const primary = normalized.primaryColor.toUpperCase();
   const preset = normalized.stylePreset;
 
-  // Bella Auto should use cyan (#0891b2), not pink/navy
+  // Bella Auto should use ocean clean blue (#1E40AF) by default, not pink
   if (moduleKey === 'bella_auto') {
     if (LEGACY_DEFAULT_PINKS.includes(primary)) return true;
-    if (primary === LEGACY_DEFAULT_NAVY) return true;
-    if (primary === LEGACY_DEFAULT_BLUE) return true;
-    if (preset === 'bella_rose' || preset === 'luxury_navy') return true;
+    if (preset === 'bella_rose') return true;
   }
 
   // Beauty Spa should use jade green (#074E44), not pink
