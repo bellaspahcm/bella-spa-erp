@@ -59,18 +59,6 @@ export default function PartnerInboxPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
 
-  useEffect(() => {
-    const loadUser = async () => {
-      const user = await getCurrentUser();
-      if (!user) {
-        router.push('/login');
-        return;
-      }
-      await loadNotifications(user.id);
-    };
-    void loadUser();
-  }, [router]);
-
   const loadNotifications = async (userId: string) => {
     try {
       setLoading(true);
@@ -82,6 +70,18 @@ export default function PartnerInboxPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const loadUser = async () => {
+      const user = await getCurrentUser();
+      if (!user) {
+        router.push('/login');
+        return;
+      }
+      await loadNotifications(user.id);
+    };
+    void loadUser();
+  }, [router]);
 
   const handleMarkAsRead = async (notificationId: string) => {
     try {

@@ -57,10 +57,6 @@ export function AuditTrailDashboard() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadAuditLogs();
-  }, []);
-
   const loadAuditLogs = async () => {
     setLoading(true);
     try {
@@ -73,6 +69,10 @@ export function AuditTrailDashboard() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadAuditLogs();
+  }, []);
 
   const stats = {
     total: logs.length,
