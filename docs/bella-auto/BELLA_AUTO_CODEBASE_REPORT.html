@@ -271,23 +271,23 @@
 
         <!-- Executive Summary -->
         <div class="card-glass span-3">
-          <div class="card-title"><span>Tóm Tắt Điều Hành (Executive Summary)</span><span class="badge-status"><span class="glow-dot" style="color:var(--color-success)"></span>PRIORITY 1 FIXES HOÀN THÀNH</span></div>
+          <div class="card-title"><span>Tóm Tắt Điều Hành (Executive Summary)</span><span class="badge-status"><span class="glow-dot" style="color:var(--color-success)"></span>PRIORITY 1 HOÀN THÀNH</span></div>
           <p style="margin-bottom: 16px;">
-            Phân hệ Bella Auto (Automotive Vertical Platform) của Bella ERP đã được xây dựng theo <strong>kiến trúc modular</strong> với 98 files TypeScript (~43,871 dòng code), tích hợp 25+ domain services bao phủ toàn bộ vòng đời khách hàng ô tô: từ Lead → Journey (22 stages) → VIN Management → Booking/Deposit → Delivery → Workshop → After-sales (CSI/NPS/Trade-in).
+            <strong>Bella Auto</strong> là phân hệ quản lý showroom và dịch vụ ô tô của Bella ERP, được thiết kế để quản trị toàn bộ quy trình bán hàng và chăm sóc khách hàng ô tô: từ <strong>tiếp nhận khách hàng tiềm năng</strong> → <strong>tư vấn và chuyển đổi</strong> (22 giai đoạn hành trình khách hàng) → <strong>quản lý xe nhập kho theo số VIN</strong> → <strong>đặt cọc và giao xe</strong> → <strong>bảo dưỡng/sửa chữa</strong> → <strong>dịch vụ hậu mãi</strong> (khảo sát hài lòng, định giá thu cũ).
           </p>
           <p style="margin-bottom: 16px;">
-            Điểm mạnh nổi bật: <strong>VehicleStatusMachineService</strong> triển khai FSM chuẩn với 7 trạng thái (in_transit → warehouse → showroom → allocated → delivered → returned → scrapped) + immutable audit logs. <strong>BusinessRollbackEngine</strong> hỗ trợ 5 rollback scenarios (Delivery, TradeIn, ServiceCompletion, QuotationApproval, LoanDisbursement). AI Layer bao gồm LostAnalysisAIService, NextBestActionEngine, DemandForecastingService, ChurnPredictionService.
+            <strong>Điểm mạnh nổi bật:</strong> Hệ thống theo dõi trạng thái xe chi tiết (đang vận chuyển → nhập kho → trưng bày showroom → đã bán → đã giao → hoàn trả → thanh lý), có lịch sử thay đổi minh bạch không thể chỉnh sửa. Hệ thống cho phép <strong>hoàn tác giao dịch</strong> trong 5 tình huống (giao xe, định giá thu cũ, hoàn thành sửa chữa, phê duyệt báo giá, giải ngân vay). Tích hợp <strong>trí tuệ nhân tạo (AI)</strong> để phân tích khách hàng bỏ lỡ, gợi ý hành động tiếp theo, dự báo nhu cầu, cảnh báo khách hàng có nguy cơ rời bỏ.
           </p>
           <div class="alert-box" style="border-color: rgba(34, 197, 94, 0.25); background: rgba(34, 197, 94, 0.06); color: #065f46;">
             <svg style="fill: var(--color-success);" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
             <div>
-              <strong>✅ Cập nhật 04/08/2026 - Priority 1 Đã Hoàn Thành (7/9 Weaknesses Khắc Phục):</strong>
+              <strong>✅ Cập nhật 04/08/2026 - Giai Đoạn 1 Đã Hoàn Thành (7/9 Vấn Đề Đã Giải Quyết):</strong>
               <ul style="margin: 8px 0 0 0; padding-left: 20px; list-style: disc;">
-                <li><strong>Mock data → Supabase real-time:</strong> VehicleInventoryPage, LeadCenterPage, Workshop page giờ fetch từ auto_vehicles, auto_leads, auto_service_appointments. Loading states + error handling đầy đủ.</li>
-                <li><strong>Workshop tabs interactive:</strong> useState + conditional rendering + per-tab loading. Không còn static mock.</li>
-                <li><strong>API Documentation:</strong> docs/bella-auto/API_DOCUMENTATION.md (10 endpoints: Marketplace, Rules, Rollback, Transactions) với full schemas.</li>
-                <li><strong>Trade-in UI complete:</strong> src/app/dashboard/bella-auto/trade-in/page.tsx (18 photo categories, Supabase Storage upload, completion tracking).</li>
-                <li><strong>Còn lại:</strong> Database migrations documentation (2 items). Insurance/Loan UI roadmap Q2 2026.</li>
+                <li><strong>Dữ liệu thật thay dữ liệu mẫu:</strong> Trang quản lý xe, khách hàng tiềm năng, xưởng sửa chữa giờ hiển thị dữ liệu thực từ hệ thống database. Khi có lỗi kết nối, hệ thống hiển thị thông báo rõ ràng thay vì bị treo.</li>
+                <li><strong>Giao diện xưởng tương tác:</strong> Nhân viên có thể chuyển đổi giữa các tab (lịch hẹn bảo dưỡng / đơn sửa chữa / kỹ thuật viên) bằng cách nhấn nút, không còn hiển thị tĩnh.</li>
+                <li><strong>Tài liệu hướng dẫn API:</strong> Tài liệu kỹ thuật cho nhà phát triển tích hợp với 10 chức năng (Marketplace, Quy tắc nghiệp vụ, Hoàn tác giao dịch, Giao dịch tài chính).</li>
+                <li><strong>Giao diện thu cũ đổi mới hoàn chỉnh:</strong> Nhân viên có thể chụp ảnh xe cũ theo 18 danh mục (ngoại thất, nội thất, động cơ, số VIN, hư hỏng), upload lên hệ thống, và theo dõi tiến độ định giá.</li>
+                <li><strong>Còn lại:</strong> Hoàn thiện tài liệu kỹ thuật về cấu trúc database (2 hạng mục). Xây dựng giao diện bảo hiểm và vay vốn (kế hoạch Q2 2026).</li>
               </ul>
             </div>
           </div>
