@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { ServiceCalendar } from '@/modules/bella-auto/components/workshop/ServiceCalendar';
 import { RepairOrderBoard } from '@/modules/bella-auto/components/workshop/RepairOrderBoard';
 import { TechnicianDashboard } from '@/modules/bella-auto/components/workshop/TechnicianDashboard';
@@ -12,6 +12,24 @@ import { useTenantContext } from '@/core/hooks/useTenantContext';
 
 type TabType = 'appointments' | 'orders' | 'technicians';
 
+interface TechnicianWorkload {
+  technicianId: string;
+  technicianName: string;
+  role?: string;
+  activeOrders: number;
+  totalHoursToday: number;
+  completedToday: number;
+  efficiency?: number;
+  qualityScore?: number;
+  currentJobs: Array<{
+    orderNumber: string;
+    vehicleInfo: string;
+    status: string;
+    progress?: number;
+    estimatedCompletion?: string;
+  }>;
+}
+
 export default function WorkshopPage() {
   const { tenantId } = useTenantContext();
   const [activeTab, setActiveTab] = useState<TabType>('appointments');
@@ -20,7 +38,7 @@ export default function WorkshopPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   // Mock technicians data (auto_technicians table not created yet)
-  const mockTechnicians = [
+  const mockTechnicians: TechnicianWorkload[] = [
     {
       technicianId: '1',
       technicianName: 'Kỹ thuật viên X',
