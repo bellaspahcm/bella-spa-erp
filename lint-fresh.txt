@@ -300,8 +300,8 @@ D:\Antigravity\Projects\BELLA SPA ERP\src\app\hq\hq-dashboard-client.tsx:427:3
 > 443 |   };
       | ^^^^^ `loadServicesData` is declared here
   444 |
-  445 |   const handleOpenTemplateModal = (template: HqPackageTemplate | null = null) => {
-  446 |     setEditingTemplate(template);  react-hooks/immutability
+  445 |   const handleOpenTemplateModal = useCallback((template: HqPackageTemplate | null = null) => {
+  446 |     // Create immutable copy to satisfy React Compiler  react-hooks/immutability
 
 D:\Antigravity\Projects\BELLA SPA ERP\src\app\ktv\dashboard\page.tsx
    13:3   warning  'getKTVEarnings' is defined but never used. Allowed unused vars must match /^_/u                   @typescript-eslint/no-unused-vars
@@ -404,38 +404,6 @@ D:\Antigravity\Projects\BELLA SPA ERP\src\app\partner\documents\page.tsx:70:3
   81 |
   82 |   const handleDownload = async (doc: Document) => {
   83 |     try {  react-hooks/immutability
-
-D:\Antigravity\Projects\BELLA SPA ERP\src\app\partner\inbox\page.tsx
-  69:13  error  Error: Cannot access variable before it is declared
-
-`loadNotifications` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
-
-D:\Antigravity\Projects\BELLA SPA ERP\src\app\partner\inbox\page.tsx:69:13
-  67 |         return;
-  68 |       }
-> 69 |       await loadNotifications(user.id);
-     |             ^^^^^^^^^^^^^^^^^ `loadNotifications` accessed before it is declared
-  70 |     };
-  71 |     void loadUser();
-  72 |   }, [router]);
-
-D:\Antigravity\Projects\BELLA SPA ERP\src\app\partner\inbox\page.tsx:74:3
-  72 |   }, [router]);
-  73 |
-> 74 |   const loadNotifications = async (userId: string) => {
-     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-> 75 |     try {
-     | ^^^^^^^^^
-> 76 |       setLoading(true);
-     ΓÇª
-     | ^^^^^^^^^
-> 83 |     }
-     | ^^^^^^^^^
-> 84 |   };
-     | ^^^^^ `loadNotifications` is declared here
-  85 |
-  86 |   const handleMarkAsRead = async (notificationId: string) => {
-  87 |     try {  react-hooks/immutability
 
 D:\Antigravity\Projects\BELLA SPA ERP\src\app\partner\inventory\page.tsx
   5:3   warning  'Building2' is defined but never used. Allowed unused vars must match /^_/u     @typescript-eslint/no-unused-vars
@@ -825,38 +793,6 @@ D:\Antigravity\Projects\BELLA SPA ERP\src\components\bella-auto\marketplace\Inst
   83 |   const getStatusBadge = (status: string) => {
   84 |     const badges = {  react-hooks/immutability
 
-D:\Antigravity\Projects\BELLA SPA ERP\src\components\bella-auto\rollback\AuditTrailDashboard.tsx
-  61:5  error  Error: Cannot access variable before it is declared
-
-`loadAuditLogs` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
-
-D:\Antigravity\Projects\BELLA SPA ERP\src\components\bella-auto\rollback\AuditTrailDashboard.tsx:61:5
-  59 |
-  60 |   useEffect(() => {
-> 61 |     loadAuditLogs();
-     |     ^^^^^^^^^^^^^ `loadAuditLogs` accessed before it is declared
-  62 |   }, []);
-  63 |
-  64 |   const loadAuditLogs = async () => {
-
-D:\Antigravity\Projects\BELLA SPA ERP\src\components\bella-auto\rollback\AuditTrailDashboard.tsx:64:3
-  62 |   }, []);
-  63 |
-> 64 |   const loadAuditLogs = async () => {
-     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-> 65 |     setLoading(true);
-     | ^^^^^^^^^^^^^^^^^^^^^
-> 66 |     try {
-     ΓÇª
-     | ^^^^^^^^^^^^^^^^^^^^^
-> 74 |     }
-     | ^^^^^^^^^^^^^^^^^^^^^
-> 75 |   };
-     | ^^^^^ `loadAuditLogs` is declared here
-  76 |
-  77 |   const stats = {
-  78 |     total: logs.length,  react-hooks/immutability
-
 D:\Antigravity\Projects\BELLA SPA ERP\src\components\bella-auto\rollback\RollbackConfirmationDialog.tsx
   33:35  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
   34:34  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
@@ -900,12 +836,12 @@ D:\Antigravity\Projects\BELLA SPA ERP\src\components\bella-auto\rollup\CEODashbo
 > 176 |   };
       | ^^^^^ `fetchRollupData` is declared here
   177 |
-  178 |   const toggleExpand = (unitId: string) => {
-  179 |     const newExpanded = new Set(expandedUnits);  react-hooks/immutability
+  178 |   const toggleExpand = useCallback((unitId: string) => {
+  179 |     setExpandedUnits(prev => {  react-hooks/immutability
 
 D:\Antigravity\Projects\BELLA SPA ERP\src\components\bella-auto\rule-builder\ActionConfigurator.tsx
    14:18  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-  246:90  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  250:90  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
 D:\Antigravity\Projects\BELLA SPA ERP\src\components\bella-auto\rule-builder\ConditionBuilder.tsx
     8:10  warning  'useState' is defined but never used. Allowed unused vars must match /^_/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
@@ -1937,6 +1873,6 @@ D:\Antigravity\Projects\BELLA SPA ERP\src\types\real-estate-temp.types.ts
   150:28  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
   168:28  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
-Γ£û 1015 problems (295 errors, 720 warnings)
+Γ£û 1013 problems (293 errors, 720 warnings)
   0 errors and 1 warning potentially fixable with the `--fix` option.
 

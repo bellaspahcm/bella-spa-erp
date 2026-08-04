@@ -301,9 +301,9 @@ export default function HqDashboardClient({
         await loadAuditData(currentPage);
       } else if (activeTab === 'subscriptions') {
         setSubscriptionRefreshSignal(prev => prev + 1);
-      } else if (activeTab === 'services') {
-        await loadServicesData();
-      }
+      } // else if (activeTab === 'services') {
+        // await loadServicesData(); // TODO: Implement loadServicesData
+      // }
       
       toast.success('Đồng bộ dữ liệu Bella HQ thành công!');
     } catch (err) {
