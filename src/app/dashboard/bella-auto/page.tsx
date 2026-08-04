@@ -98,7 +98,7 @@ export default async function BellaAutoPage() {
           </div>
         </div>
       }>
-        <BellaAutoAnalyticsDashboard tenantId={profile.tenant_id} />
+        <BellaAutoAnalyticsDashboard key={profile.tenant_id} tenantId={profile.tenant_id} />
       </Suspense>
 
       {/* Vehicle Inventory Dashboard */}
