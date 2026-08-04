@@ -59,9 +59,14 @@ const CardHeaderActions = () => {
 // Custom Glassmorphic Tooltip
 interface CustomTooltipProps {
   active?: boolean;
-  payload?: any[];
+  payload?: Array<{
+    name: string;
+    value: number;
+    color?: string;
+    fill?: string;
+  }>;
   label?: string;
-  valueFormatter?: (value: any) => string;
+  valueFormatter?: (value: number) => string;
 }
 
 const CustomTooltip = ({ active, payload, label, valueFormatter }: CustomTooltipProps) => {
@@ -96,29 +101,51 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const supabase = createClient();
 
-  useEffect(() => {
-    loadAnalytics();
-  }, [tenantId]);
-
   const loadAnalytics = async () => {
     setLoading(true);
     try {
-      // Fetch vehicles data
-      const { data: vehicles } = await supabase
-        .from('auto_vehicles')
-        .select('*')
-        .eq('tenant_id', tenantId);
+      // ✅ Call real RPCs instead of mock data
+      const [trendResult, topModelsResult, revenueResult, deliveriesResult] = await Promise.all([
+        supabase.rpc('get_auto_inventory_trend', { p_tenant_id: tenantId }),
+        supabase.rpc('get_auto_top_models', { p_tenant_id: tenantId, p_limit: 5 }),
+        supabase.rpc('get_auto_revenue_by_month', { p_tenant_id: tenantId }),
+        supabase.rpc('get_auto_weekly_deliveries', { p_tenant_id: tenantId }),
+      ]);
 
-      if (!vehicles) {
-        setLoading(false);
-        return;
+      // Check for errors
+      if (trendResult.error) {
+        console.error('Trend RPC error:', trendResult.error);
+        throw trendResult.error;
+      }
+      if (topModelsResult.error) {
+        console.error('Top models RPC error:', topModelsResult.error);
+        throw topModelsResult.error;
+      }
+      if (revenueResult.error) {
+        console.error('Revenue RPC error:', revenueResult.error);
+        throw revenueResult.error;
+      }
+      if (deliveriesResult.error) {
+        console.error('Deliveries RPC error:', deliveriesResult.error);
+        throw deliveriesResult.error;
       }
 
-      // Calculate status distribution
-      const statusCounts = vehicles.reduce((acc, v) => {
-        acc[v.status] = (acc[v.status] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
+      // Fetch vehicles for status distribution & inventory value
+      const { data: vehicles, error: vehiclesError } = await supabase
+        .from('auto_vehicles')
+        .select('status, list_price')
+        .eq('tenant_id', tenantId);
+
+      if (vehiclesError) throw vehiclesError;
+
+      if (vehiclesError) throw vehiclesError;
+      const vehicleList = vehicles || [];
+
+      // Calculate status distribution (use copy to avoid mutation)
+      const statusCounts: Record<string, number> = {};
+      vehicleList.forEach(v => {
+        statusCounts[v.status] = (statusCounts[v.status] || 0) + 1;
+      });
 
       const statusDistribution = [
         { name: 'Showroom', value: statusCounts.showroom || 0, color: '#06b6d4' },
@@ -130,79 +157,52 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
 
       // Calculate inventory value
       const inventoryValue = {
-        total: vehicles.reduce((sum, v) => sum + (v.list_price || 0), 0),
-        byStatus: Object.entries(statusCounts).map(([status, count]) => ({
+        total: vehicleList.reduce((sum, v) => sum + (v.list_price || 0), 0),
+        byStatus: Object.entries(statusCounts).map(([status]) => ({
           status: status === 'showroom' ? 'Showroom' :
                   status === 'warehouse' ? 'Kho' :
                   status === 'allocated' ? 'Đã phân bổ' :
                   status === 'in_transit' ? 'Đang vận chuyển' : 'Đã bàn giao',
-          value: vehicles
+          value: vehicleList
             .filter(v => v.status === status)
             .reduce((sum, v) => sum + (v.list_price || 0), 0),
         })),
       };
 
-      // Generate mock monthly trend (last 6 months)
-      const monthlyTrend = generateMonthlyTrend();
+      // Calculate average days in stock (simplified - mock for now)
+      const averageDaysInStock = 42; // TODO: Calculate from actual data
 
-      // Generate mock top models
-      const topModels = [
-        { model: 'VinFast VF 8', sold: 45, revenue: 40500000000 },
-        { model: 'VinFast VF 9', sold: 32, revenue: 48000000000 },
-        { model: 'VinFast VF 7', sold: 28, revenue: 22400000000 },
-        { model: 'VinFast VF 5', sold: 67, revenue: 30150000000 },
-        { model: 'VinFast VF 6', sold: 41, revenue: 28700000000 },
-      ];
-
-      // Generate mock weekly deliveries (last 8 weeks)
-      const weeklyDeliveries = generateWeeklyDeliveries();
-
-      // Generate mock revenue by month (last 6 months)
-      const revenueByMonth = generateRevenueByMonth();
-
-      // Calculate average days in stock (mock)
-      const averageDaysInStock = 42;
-
+      // ✅ Use RPC data instead of mock
       setAnalytics({
-        monthlyTrend,
+        monthlyTrend: trendResult.data || [],
         statusDistribution,
-        topModels,
+        topModels: topModelsResult.data || [],
         inventoryValue,
         averageDaysInStock,
-        weeklyDeliveries,
-        revenueByMonth,
+        weeklyDeliveries: deliveriesResult.data || [],
+        revenueByMonth: revenueResult.data || [],
       });
     } catch (error) {
       console.error('Error loading analytics:', error);
+      // Set empty data on error to prevent crash
+      setAnalytics({
+        monthlyTrend: [],
+        statusDistribution: [],
+        topModels: [],
+        inventoryValue: { total: 0, byStatus: [] },
+        averageDaysInStock: 0,
+        weeklyDeliveries: [],
+        revenueByMonth: [],
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const generateMonthlyTrend = () => {
-    const months = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6'];
-    return months.map((month, idx) => ({
-      month,
-      nhap: Math.floor(Math.random() * 30) + 20,
-      xuat: Math.floor(Math.random() * 25) + 15,
-      ton: Math.floor(Math.random() * 50) + 30 + idx * 5,
-    }));
-  };
-
-  const generateWeeklyDeliveries = () => {
-    return Array.from({ length: 8 }, (_, i) => ({
-      week: `Tuần ${i + 1}`,
-      deliveries: Math.floor(Math.random() * 15) + 5,
-    }));
-  };
-
-  const generateRevenueByMonth = () => {
-    const months = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6'];
-    return months.map(month => ({
-      month,
-      revenue: Math.floor(Math.random() * 50000000000) + 100000000000,
-    }));
-  };
+  useEffect(() => {
+    loadAnalytics();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tenantId]);
 
   const formatCurrency = (value: number) => {
     if (value >= 1000000000) {
@@ -288,7 +288,7 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
         >
           <div className="h-[300px] mt-4">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={analytics.monthlyTrend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <AreaChart data={analytics.monthlyTrend} margin={{ top: 10, right: 10, left: 5, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorNhap" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.25} />
@@ -306,18 +306,18 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
                 <CartesianGrid strokeDasharray="4 4" stroke="rgba(148, 163, 184, 0.08)" vertical={false} />
                 <XAxis 
                   dataKey="month" 
-                  stroke="rgba(148, 163, 184, 0.5)" 
+                  stroke="#cbd5e1"
+                  tick={{ fill: '#64748b', fontSize: 11, fontWeight: 600 }}
                   axisLine={false} 
                   tickLine={false} 
                   dy={8}
-                  style={{ fontSize: '11px', fontWeight: 500 }} 
                 />
                 <YAxis 
-                  stroke="rgba(148, 163, 184, 0.5)" 
+                  stroke="#cbd5e1"
+                  tick={{ fill: '#64748b', fontSize: 11, fontWeight: 600 }}
                   axisLine={false} 
                   tickLine={false} 
-                  dx={-8}
-                  style={{ fontSize: '11px', fontWeight: 500 }} 
+                  dx={-4}
                 />
                 <Tooltip content={<CustomTooltip />} />
                 <Area type="monotone" dataKey="nhap" stroke="#06b6d4" strokeWidth={2.5} fill="url(#colorNhap)" name="Nhập kho" />
@@ -407,7 +407,7 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
         >
           <div className="h-[300px] mt-4">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={analytics.topModels} layout="vertical" margin={{ top: 5, right: 15, left: 10, bottom: 5 }}>
+              <BarChart data={analytics.topModels} layout="vertical" margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
                 <defs>
                   <linearGradient id="barModelGradient" x1="0" y1="0" x2="1" y2="0">
                     <stop offset="0%" stopColor="#06b6d4" />
@@ -417,20 +417,20 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
                 <CartesianGrid strokeDasharray="4 4" stroke="rgba(148, 163, 184, 0.08)" horizontal={false} />
                 <XAxis 
                   type="number" 
-                  stroke="rgba(148, 163, 184, 0.5)" 
+                  stroke="#cbd5e1"
+                  tick={{ fill: '#64748b', fontSize: 11, fontWeight: 600 }}
                   axisLine={false} 
                   tickLine={false} 
-                  style={{ fontSize: '11px', fontWeight: 500 }} 
                 />
                 <YAxis 
                   dataKey="model" 
                   type="category" 
-                  stroke="rgba(148, 163, 184, 0.5)" 
+                  stroke="#cbd5e1"
+                  tick={{ fill: '#475569', fontSize: 11, fontWeight: 700 }}
                   axisLine={false} 
                   tickLine={false} 
-                  dx={-6}
-                  style={{ fontSize: '11px', fontWeight: 600 }} 
-                  width={90} 
+                  dx={-4}
+                  width={110} 
                 />
                 <Tooltip 
                   content={<CustomTooltip />}
@@ -454,7 +454,7 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
         >
           <div className="h-[300px] mt-4">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={analytics.revenueByMonth} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+              <AreaChart data={analytics.revenueByMonth} margin={{ top: 10, right: 10, left: 58, bottom: 0 }}>
                 <defs>
                   <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#10b981" stopOpacity={0.2} />
@@ -464,19 +464,20 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
                 <CartesianGrid strokeDasharray="4 4" stroke="rgba(148, 163, 184, 0.08)" vertical={false} />
                 <XAxis 
                   dataKey="month" 
-                  stroke="rgba(148, 163, 184, 0.5)" 
+                  stroke="#cbd5e1"
+                  tick={{ fill: '#64748b', fontSize: 11, fontWeight: 600 }}
                   axisLine={false} 
                   tickLine={false} 
                   dy={8}
-                  style={{ fontSize: '11px', fontWeight: 500 }} 
                 />
                 <YAxis 
-                  stroke="rgba(148, 163, 184, 0.5)" 
+                  stroke="#cbd5e1"
+                  tick={{ fill: '#64748b', fontSize: 11, fontWeight: 600 }}
                   axisLine={false} 
                   tickLine={false} 
-                  tickFormatter={formatCurrency} 
-                  dx={-8}
-                  style={{ fontSize: '11px', fontWeight: 500 }} 
+                  tickFormatter={formatCurrency}
+                  width={55}
+                  dx={-4}
                 />
                 <Tooltip content={<CustomTooltip valueFormatter={formatCurrency} />} />
                 <Area 
@@ -503,7 +504,7 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
         >
           <div className="h-[300px] mt-4">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={analytics.weeklyDeliveries} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <BarChart data={analytics.weeklyDeliveries} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="deliveryGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#6366f1" />
@@ -513,18 +514,19 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
                 <CartesianGrid strokeDasharray="4 4" stroke="rgba(148, 163, 184, 0.08)" vertical={false} />
                 <XAxis 
                   dataKey="week" 
-                  stroke="rgba(148, 163, 184, 0.5)" 
+                  stroke="#cbd5e1"
+                  tick={{ fill: '#64748b', fontSize: 11, fontWeight: 600 }}
                   axisLine={false} 
                   tickLine={false} 
                   dy={8}
-                  style={{ fontSize: '11px', fontWeight: 500 }} 
                 />
                 <YAxis 
-                  stroke="rgba(148, 163, 184, 0.5)" 
+                  stroke="#cbd5e1"
+                  tick={{ fill: '#64748b', fontSize: 11, fontWeight: 600 }}
                   axisLine={false} 
                   tickLine={false} 
-                  dx={-8}
-                  style={{ fontSize: '11px', fontWeight: 500 }} 
+                  allowDecimals={false}
+                  dx={-4}
                 />
                 <Tooltip content={<CustomTooltip />} />
                 <Bar dataKey="deliveries" fill="url(#deliveryGradient)" name="Xe bàn giao" radius={[5, 5, 0, 0]} barSize={16} />
@@ -542,7 +544,7 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
         >
           <div className="h-[300px] mt-4">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={analytics.inventoryValue.byStatus} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+              <BarChart data={analytics.inventoryValue.byStatus} margin={{ top: 10, right: 10, left: 58, bottom: 0 }}>
                 <defs>
                   <linearGradient id="valueStatusGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#f59e0b" />
@@ -552,19 +554,20 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
                 <CartesianGrid strokeDasharray="4 4" stroke="rgba(148, 163, 184, 0.08)" vertical={false} />
                 <XAxis 
                   dataKey="status" 
-                  stroke="rgba(148, 163, 184, 0.5)" 
+                  stroke="#cbd5e1"
+                  tick={{ fill: '#64748b', fontSize: 11, fontWeight: 600 }}
                   axisLine={false} 
                   tickLine={false} 
                   dy={8}
-                  style={{ fontSize: '11px', fontWeight: 500 }} 
                 />
                 <YAxis 
-                  stroke="rgba(148, 163, 184, 0.5)" 
+                  stroke="#cbd5e1"
+                  tick={{ fill: '#64748b', fontSize: 11, fontWeight: 600 }}
                   axisLine={false} 
                   tickLine={false} 
                   tickFormatter={formatCurrency}
-                  dx={-8}
-                  style={{ fontSize: '11px', fontWeight: 500 }} 
+                  width={55}
+                  dx={-4}
                 />
                 <Tooltip content={<CustomTooltip valueFormatter={formatCurrency} />} />
                 <Bar dataKey="value" fill="url(#valueStatusGradient)" name="Giá trị" radius={[5, 5, 0, 0]} barSize={18} />
