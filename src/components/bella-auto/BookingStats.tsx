@@ -24,11 +24,6 @@ export function BookingStats({ tenantId }: { tenantId: string }) {
     totalDepositPending: 0,
   });
 
-  useEffect(() => {
-    loadStats();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenantId]);
-
   const loadStats = async () => {
     setLoading(true);
     try {
@@ -65,6 +60,11 @@ export function BookingStats({ tenantId }: { tenantId: string }) {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadStats();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tenantId]);
 
   const formatCurrency = (value: number) => {
     if (value >= 1000000000) {
