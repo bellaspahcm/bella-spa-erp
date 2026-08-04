@@ -74,7 +74,7 @@ export function useRollbackAudit(filters?: AuditFilters) {
     } finally {
       setIsLoading(false);
     }
-  }, [filters?.startDate, filters?.endDate, filters?.limit]);
+  }, [filters]); // ✅ Fixed: Use entire filters object instead of individual properties
 
   useEffect(() => {
     void fetchAudit();
