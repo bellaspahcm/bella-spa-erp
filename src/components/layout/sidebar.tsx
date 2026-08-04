@@ -658,7 +658,6 @@ export function Sidebar() {
     : user?.role?.toLowerCase() === 'hr' ? 'Nhân sự'
     : user?.role?.toLowerCase() === 'customer' ? 'Khách hàng'
     : 'Quản trị viên';
-  const isPendingTenantBrand = !isTenantBrandResolved;
   const isBeautySpaShell = tenantBrand.isBeautySpa;
   const isIndustrialCleaningShell = tenantBrand.moduleKey === 'industrial_cleaning';
   const isRealEstateShell = tenantBrand.moduleKey === 'real_estate';
@@ -884,13 +883,13 @@ export function Sidebar() {
           {/* Unified Profile & Actions Panel */}
           <div className={cn(
             "bg-white/80 dark:bg-[#1C1B19] rounded-[1.25rem] shadow-[0_4px_20px_rgba(219,39,119,0.06)] dark:shadow-none border border-[#FFE4E6] dark:border-[#3E3A35] flex flex-col overflow-hidden transition-all duration-300 hover:border-rose-300 dark:hover:border-[#A67D44]/30",
-            (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell) && "beauty-erp-profile-card"
+            (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell || isBellaAutoShell) && "beauty-erp-profile-card"
           )}>
             <div className="p-3 flex items-center gap-3">
               <div className="relative shrink-0">
                 <div className={cn(
                   "w-9 h-9 bg-primary/10 dark:bg-[#5D1C34]/40 rounded-full flex items-center justify-center text-primary dark:text-[#A67D44] font-extrabold text-sm shadow-sm transition-transform duration-300 group-hover:scale-105",
-                  (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell) && "beauty-erp-avatar"
+                  (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell || isBellaAutoShell) && "beauty-erp-avatar"
                 )}>
                   {user?.full_name?.charAt(0)?.toUpperCase() || 'A'}
                 </div>
@@ -899,18 +898,18 @@ export function Sidebar() {
               <div className="min-w-0 flex-1">
                 <p className={cn(
                   "text-[13px] font-extrabold text-[#4C243B] dark:text-[#EFE9E1] truncate leading-tight",
-                  (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell) && "beauty-erp-profile-name"
+                  (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell || isBellaAutoShell) && "beauty-erp-profile-name"
                 )}>{user?.full_name || 'Admin Spa'}</p>
                 <p className={cn(
                   "text-[9px] text-primary dark:text-[#A67D44] font-black uppercase tracking-[0.1em] mt-0.5",
-                  (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell) && "beauty-erp-profile-role"
+                  (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell || isBellaAutoShell) && "beauty-erp-profile-role"
                 )}>{roleLabel}</p>
               </div>
             </div>
             
             <div className={cn(
               "h-px w-full bg-gradient-to-r from-transparent via-[#FFE4E6] dark:via-[#3E3A35] to-transparent",
-              (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell) && "beauty-erp-profile-divider"
+              (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell || isBellaAutoShell) && "beauty-erp-profile-divider"
             )} />
             
             <div className="flex items-center justify-between p-2 gap-2">

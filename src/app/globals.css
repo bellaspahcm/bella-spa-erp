@@ -1810,31 +1810,78 @@ html[data-tenant-module="bella_auto"] .beauty-erp-nav-scroll::-webkit-scrollbar-
 }
 
 /* Profile card */
+/* Profile card */
 html[data-tenant-module="bella_auto"] .beauty-erp-profile-card {
-  background: rgba(6, 182, 212, 0.10) !important;
-  border-color: rgba(6, 182, 212, 0.28) !important;
-  box-shadow: 0 18px 36px rgba(14, 116, 144, 0.18) !important;
+  background: #041b25 !important; /* Xanh đậm đen tối hơn nền sidebar */
+  border: 1px solid rgba(6, 182, 212, 0.35) !important;
+  box-shadow: 0 12px 30px rgba(14, 116, 144, 0.22) !important;
 }
 
 html[data-tenant-module="bella_auto"] .beauty-erp-profile-name {
-  color: #e0f2fe !important;
+  color: #ffffff !important; /* Màu trắng nổi bật tinh tế */
+  font-weight: 800;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+html[data-tenant-module="bella_auto"] .beauty-erp-profile-role {
+  color: #22d3ee !important; /* Màu cyan sáng cực kỳ bắt mắt và tương phản */
+  font-weight: 900 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 html[data-tenant-module="bella_auto"] .beauty-erp-profile-divider {
-  background: linear-gradient(90deg, transparent, rgba(6, 182, 212, 0.34), transparent) !important;
+  background: linear-gradient(90deg, transparent, rgba(6, 182, 212, 0.45), transparent) !important;
 }
 
-html[data-tenant-module="bella_auto"] .beauty-erp-avatar,
+html[data-tenant-module="bella_auto"] .beauty-erp-avatar {
+  background: rgba(6, 182, 212, 0.25) !important;
+  border: 1px solid rgba(6, 182, 212, 0.5) !important;
+  color: #ffffff !important;
+  font-weight: 800;
+}
+
 html[data-tenant-module="bella_auto"] .beauty-erp-icon-button {
   background: rgba(6, 182, 212, 0.15) !important;
-  border-color: rgba(6, 182, 212, 0.36) !important;
+  border: 1px solid rgba(6, 182, 212, 0.35) !important;
   color: #e0f2fe !important;
 }
 
 html[data-tenant-module="bella_auto"] .beauty-erp-icon-button:hover {
-  background: rgba(6, 182, 212, 0.28) !important;
-  border-color: rgba(6, 182, 212, 0.55) !important;
+  background: rgba(6, 182, 212, 0.3) !important;
+  border-color: rgba(6, 182, 212, 0.6) !important;
   color: #ffffff !important;
+}
+
+/* Theme Toggle inside Bella Auto profile card */
+html[data-tenant-module="bella_auto"] .beauty-theme-toggle {
+  background: #020c11 !important; /* Cực kỳ tối để nổi bật */
+  border-color: rgba(6, 182, 212, 0.25) !important;
+}
+
+html[data-tenant-module="bella_auto"] .beauty-theme-toggle button {
+  color: rgba(224, 242, 254, 0.5) !important;
+}
+
+html[data-tenant-module="bella_auto"] .beauty-theme-toggle button:hover {
+  color: #ffffff !important;
+}
+
+html[data-tenant-module="bella_auto"] .beauty-theme-toggle-active-light {
+  background: #ffffff !important;
+  border-color: rgba(6, 182, 212, 0.4) !important;
+}
+
+html[data-tenant-module="bella_auto"] .beauty-theme-toggle button.text-indigo-600 {
+  color: #0c4a6e !important; /* Xanh thẫm khi button light active */
+}
+
+html[data-tenant-module="bella_auto"] .beauty-theme-toggle-active-dark {
+  background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%) !important;
+  border-color: rgba(6, 182, 212, 0.6) !important;
+}
+
+html[data-tenant-module="bella_auto"] .beauty-theme-toggle button.text-white {
+  color: #ffffff !important; /* Trắng khi button dark active */
 }
 
 /* Mobile header */
