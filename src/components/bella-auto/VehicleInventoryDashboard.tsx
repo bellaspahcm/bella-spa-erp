@@ -32,6 +32,21 @@ export default function VehicleInventoryDashboard({ tenantId }: { tenantId: stri
   const loadVehicles = async () => {
     setLoading(true);
     try {
+      // Check authentication first
+      const { data: { session }, error: authError } = await supabase.auth.getSession();
+      
+      if (authError) {
+        console.error('❌ Auth error:', authError);
+        throw new Error(`Authentication failed: ${authError.message}`);
+      }
+      
+      if (!session) {
+        console.warn('⚠️ No active session');
+        throw new Error('No active session. Please log in.');
+      }
+      
+      console.log('✅ Auth session active:', { userId: session.user.id, email: session.user.email });
+
       let query = supabase
         .from('auto_vehicles')
         .select('*', { count: 'exact' })
@@ -71,6 +86,11 @@ export default function VehicleInventoryDashboard({ tenantId }: { tenantId: stri
       }
     } catch (error) {
       console.error('Error loading vehicles:', error);
+      console.error('Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        raw: JSON.stringify(error, null, 2)
+      });
     } finally {
       setLoading(false);
     }

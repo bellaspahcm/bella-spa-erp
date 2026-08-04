@@ -345,6 +345,220 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ---
 
+## 13. Module Theme Color Mapping and CSS Isolation (NEW - 04/08/2026)
+
+### 13.1. Primary Color to Preset Mapping in Runtime Theme Application
+- **ALWAYS add new module primary colors to the color-to-preset switch statement** in `src/components/layout/sidebar.tsx` function `applyTenantBrandRuntime()`.
+- **Critical mapping location:** Line ~250 in sidebar.tsx:
+  ```typescript
+  root.dataset.tenantBrandPreset = brand.stylePreset || (
+    brand.primaryColor === '#074E44' ? 'jade_wellness' : 
+    brand.primaryColor === '#1E3A8A' ? 'luxury_navy' : 
+    brand.primaryColor === '#0891b2' ? 'ocean_clean' :  // ← ADD NEW COLORS HERE
+    brand.primaryColor === '#1E40AF' ? 'ocean_clean' : 
+    brand.primaryColor === '#18181B' ? 'graphite_luxe' : 
+    'bella_rose'  // ← Fallback default
+  );
+  ```
+- **Why this matters:** Without this mapping, the module will fall through to the default `'bella_rose'` preset, applying pink/rose CSS even though the module uses a different color palette.
+- **Symptoms of missing mapping:**
+  - Module shows wrong theme colors (e.g., Bella Auto showing pink instead of cyan/teal)
+  - `data-tenant-brand-preset` attribute on `<html>` tag returns wrong value
+  - CSS scoped to module preset doesn't apply
+  - Sidebar gradient, nav colors, buttons all use fallback theme
+
+### 13.2. Complete CSS Preset Definition in globals.css
+- **EVERY new module theme preset MUST define ALL color tokens** in `src/app/globals.css`.
+- **Required tokens for each preset:**
+  ```css
+  html[data-tenant-brand-preset="preset_name"] {
+    /* Primary colors (MANDATORY) */
+    --tenant-primary-50: #...;
+    --tenant-primary-100: #...;
+    --tenant-primary-200: #...;
+    --tenant-primary-400: #...;
+    --tenant-primary-500: #...;  /* Main brand color */
+    --tenant-primary-600: #...;
+    --tenant-primary-700: #...;
+    
+    /* Accent colors (MANDATORY) */
+    --tenant-accent-50: #...;
+    --tenant-accent-100: #...;
+    --tenant-accent-200: #...;
+    --tenant-accent-400: #...;
+    --tenant-accent-500: #...;
+    --tenant-accent-600: #...;
+    
+    /* Navigation colors (MANDATORY) */
+    --tenant-nav-text: #...;
+    --tenant-nav-icon: #...;
+    --tenant-nav-active-bg: #...;
+    --tenant-nav-hover-bg: #...;
+    
+    /* Gradient stops (MANDATORY for sidebar) */
+    --tenant-gradient-from: #...;
+    --tenant-gradient-to: #...;
+  }
+  ```
+- **Text contrast validation:** Ensure nav text colors meet WCAG AA contrast ratio (4.5:1 minimum) against gradient backgrounds.
+- **Test with color contrast checker:** Use browser DevTools or online tools to verify readability.
+
+### 13.3. Text Contrast and Explicit Child Selectors
+- **NEVER rely on CSS inheritance for navigation text colors** - child elements (svg, span) may not inherit properly.
+- **Use explicit child selectors** for all text/icon elements:
+  ```css
+  .bella-erp-nav-item,
+  .bella-erp-nav-item svg,
+  .bella-erp-nav-item span {
+    color: var(--tenant-nav-text) !important;
+  }
+  
+  .bella-erp-nav-item:hover,
+  .bella-erp-nav-item:hover svg,
+  .bella-erp-nav-item:hover span {
+    color: var(--tenant-nav-hover-text, var(--tenant-nav-text)) !important;
+  }
+  ```
+- **Common mistake:** Setting color only on parent `.bella-erp-nav-item` without explicit child rules → text remains gray/invisible.
+- **Symptoms:**
+  - Navigation text appears gray or hard to read
+  - Icons have different color than text
+  - Hover state doesn't change text color
+  - User complains "chữ vẫn màu xám" (text still gray)
+
+### 13.4. Module-Specific Menu Items Registration
+- **ALWAYS register new module menus in sidebar.tsx** with proper flag and validation.
+- **Required steps:**
+  1. Create module menu items array (e.g., `bellaAutoMenuItems: MenuItem[]`)
+  2. Add module shell flag (e.g., `isBellaAutoShell = enabledModules.includes('bella_auto')`)
+  3. Validate module in conditional logic before rendering menu
+  4. Example pattern:
+     ```typescript
+     const bellaAutoMenuItems: MenuItem[] = [
+       { name: 'Dashboard', icon: HomeIcon, href: '/dashboard/bella-auto' },
+       { name: 'Vehicles', icon: TruckIcon, href: '/dashboard/bella-auto/vehicles' },
+       // ... more items
+     ];
+     
+     const isBellaAutoShell = enabledModules.includes('bella_auto');
+     
+     // In JSX:
+     {isBellaAutoShell && bellaAutoMenuItems.map((item) => (
+       <NavItem key={item.name} item={item} />
+     ))}
+     ```
+
+### 13.5. Dashboard Redirect for Module Default Route
+- **ALWAYS add module redirect in `/dashboard/page.tsx`** to route users to module-specific dashboard.
+- **Pattern:**
+  ```typescript
+  // After tenant/user validation
+  const enabledModules = tenantData.enabled_modules || {};
+  
+  if (enabledModules.bella_auto) {
+    redirect('/dashboard/bella-auto');
+  }
+  if (enabledModules.real_estate) {
+    redirect('/dashboard/real-estate');
+  }
+  // ... other modules
+  ```
+- **Order matters:** Place module checks in priority order (highest priority first).
+- **Fallback:** Always have a default redirect if no modules match.
+
+### 13.6. Module Registration in tenant-modules.ts
+- **ALWAYS register new modules in central registry** `src/lib/business-rules/tenant-modules.ts`.
+- **Required additions:**
+  1. Add module key to `TENANT_MODULE_KEYS` array
+  2. Add to `TENANT_PRIMARY_BUSINESS_MODULE_KEYS` if it's a primary vertical
+  3. Create `DEFAULT_[MODULE]_TENANT_BRAND_THEME` config with:
+     - `primaryColor` (hex)
+     - `accentColor` (hex)
+     - `stylePreset` (string matching globals.css preset name)
+  4. Example:
+     ```typescript
+     export const TENANT_MODULE_KEYS = [
+       'beauty_spa',
+       'babycare',
+       'real_estate',
+       'bella_auto',  // ← NEW MODULE
+     ] as const;
+     
+     export const DEFAULT_BELLA_AUTO_TENANT_BRAND_THEME: TenantBrandTheme = {
+       primaryColor: '#0891b2',  // cyan-600
+       accentColor: '#14b8a6',   // teal-500
+       stylePreset: 'ocean_clean',
+     };
+     ```
+
+### 13.7. Browser Cache and Service Worker Considerations
+- **ALWAYS instruct users to hard refresh after theme changes:** `Ctrl+Shift+R` (Windows) or `Cmd+Shift+R` (Mac)
+- **Service Worker can cache old CSS:** If project uses SW, ensure it skips caching CSS files or has cache-busting strategy
+- **Verification in DevTools:**
+  - Check `document.documentElement.dataset.tenantBrandPreset` → should return correct preset name
+  - Check computed styles for `--tenant-primary-500` → should match module color
+  - Check Network tab → CSS files should not come from SW cache after hard refresh
+
+### 13.8. Testing Checklist for New Module Themes
+- **MANDATORY verification before marking theme implementation complete:**
+  - [ ] `data-tenant-brand-preset` attribute on `<html>` returns correct preset name
+  - [ ] Sidebar gradient uses module colors (not pink/rose)
+  - [ ] Navigation text is readable (high contrast against background)
+  - [ ] Navigation icons match text color
+  - [ ] Hover states work and maintain readability
+  - [ ] Buttons use module primary color
+  - [ ] Cards/badges use module accent color
+  - [ ] Loading spinners use module colors
+  - [ ] All color tokens defined in globals.css
+  - [ ] Primary color mapped in sidebar.tsx line ~250
+  - [ ] Module registered in tenant-modules.ts
+  - [ ] Dashboard redirect added in /dashboard/page.tsx
+  - [ ] Menu items registered in sidebar.tsx
+
+### 13.9. Common Failure Patterns and Solutions
+
+**Pattern 1: Pink theme still showing on new module**
+- **Cause:** Primary color not mapped in sidebar.tsx switch statement
+- **Fix:** Add `brand.primaryColor === '#...' ? 'preset_name' :` to line ~250
+- **Verification:** Check `document.documentElement.dataset.tenantBrandPreset` in console
+
+**Pattern 2: Navigation text is gray/unreadable**
+- **Cause:** Missing explicit child selectors for svg/span elements
+- **Fix:** Add `.bella-erp-nav-item svg, .bella-erp-nav-item span { color: ... }` rules
+- **Verification:** Inspect element, check computed color value on text nodes
+
+**Pattern 3: Wrong preset applied despite correct database config**
+- **Cause:** Browser cache or Service Worker serving stale assets
+- **Fix:** Hard refresh (Ctrl+Shift+R), clear site data, restart dev server
+- **Verification:** Check Network tab for 200 (not 304 or from SW) responses
+
+**Pattern 4: Module shows up but uses wrong colors**
+- **Cause:** CSS preset not defined or has wrong tokens
+- **Fix:** Add complete token set in globals.css, verify all --tenant-* variables
+- **Verification:** Computed styles in DevTools should show module colors
+
+### 13.10. Documentation Requirements
+- **ALWAYS update MODULE_THEME_COLOR_OVERRIDE_GUIDE.md** when adding new patterns or fixes
+- **Document color rationale:** Why specific colors chosen (brand alignment, psychology, industry convention)
+- **Include screenshots:** Before/after showing theme application
+- **Add to incident log:** If bugs found, document root cause and resolution
+
+**Real-world incident (04/08/2026 - Bella Auto Module):**
+- **Issue:** Bella Auto module showed pink Bella Spa colors instead of cyan/teal Ocean Clean theme
+- **Root cause #1:** Primary color #0891b2 (cyan) not mapped in sidebar.tsx line 250 → fell through to 'bella_rose' default
+- **Root cause #2:** Navigation text had low contrast, appeared gray on gradient background
+- **Root cause #3:** Missing explicit svg/span color rules → child elements didn't inherit parent color
+- **Resolution:**
+  1. Added `brand.primaryColor === '#0891b2' ? 'ocean_clean' :` to color switch
+  2. Changed nav text from teal (#ccfbf1) to sky blue (#e0f2fe) for better contrast
+  3. Added explicit child selectors: `.bella-erp-nav-item svg, .bella-erp-nav-item span { color: var(--tenant-nav-text) !important; }`
+  4. Verified data-tenant-brand-preset returns 'ocean_clean'
+- **Time lost:** ~3 hours iterating on text contrast and mapping bugs
+- **Commits:** 7 commits to fix progressively (7dc2839c final fix)
+- **Lesson:** ALWAYS add primary color mapping immediately when creating module, test with DevTools before considering done
+
+---
+
 ## 11. Mobile Development & RPC Best Practices (Week 3 Lessons - 2026-06-22)
 
 ### 11.1. Never Use Client-Side Fallbacks for Authorization
