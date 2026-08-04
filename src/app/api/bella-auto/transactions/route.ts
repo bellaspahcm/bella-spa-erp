@@ -52,8 +52,19 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    type TransactionRow = {
+      id: string;
+      transaction_type: string;
+      status: string;
+      entity_type?: string;
+      entity_id?: string;
+      created_at: string;
+      metadata?: { created_by_email?: string };
+      step_count?: number;
+    };
+
     // Transform to include step count
-    const transactions = data.map((tx: any) => ({
+    const transactions = (data as TransactionRow[]).map((tx) => ({
       id: tx.id,
       transactionType: tx.transaction_type,
       status: tx.status,

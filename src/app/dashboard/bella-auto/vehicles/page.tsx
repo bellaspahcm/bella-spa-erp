@@ -28,6 +28,8 @@ import { useEffect } from 'react';
 // Status configuration
 const STATUS_CONFIG: Record<VehicleStatus, { label: string; bg: string; color: string; border: string }> = {
   in_transit: { label: 'Đang Vận Chuyển', bg: 'bg-amber-50 dark:bg-amber-950/30', color: 'text-amber-700 dark:text-amber-400', border: 'border-amber-200/60 dark:border-amber-900/30' },
+  warehouse:  { label: 'Trong Kho',       bg: 'bg-slate-50 dark:bg-slate-950/30', color: 'text-slate-700 dark:text-slate-400', border: 'border-slate-200/60 dark:border-slate-900/30' },
+  showroom:   { label: 'Showroom',        bg: 'bg-cyan-50 dark:bg-cyan-950/30',   color: 'text-cyan-700 dark:text-cyan-400',   border: 'border-cyan-200/60 dark:border-cyan-900/30' },
   arrived:    { label: 'Đã Về Kho',       bg: 'bg-blue-50 dark:bg-blue-950/30',   color: 'text-blue-700 dark:text-blue-400',   border: 'border-blue-200/60 dark:border-blue-900/30' },
   allocated:  { label: 'Đã Phân Bổ',      bg: 'bg-violet-50 dark:bg-violet-950/30', color: 'text-violet-700 dark:text-violet-400', border: 'border-violet-200/60 dark:border-violet-900/30' },
   delivered:  { label: 'Đã Giao Xe',      bg: 'bg-teal-50 dark:bg-teal-950/30',  color: 'text-teal-700 dark:text-teal-400',   border: 'border-teal-200/60 dark:border-teal-900/30' },
@@ -150,14 +152,20 @@ function StatusChip({
 }) {
   const [isPending, startTransition] = useTransition();
   const buttonRef = React.useRef<HTMLButtonElement>(null);
-  const cfg = STATUS_CONFIG[vehicle.status];
+  const cfg = STATUS_CONFIG[vehicle.status] || { 
+    label: vehicle.status, 
+    bg: 'bg-gray-50 dark:bg-gray-950/30', 
+    color: 'text-gray-700 dark:text-gray-400', 
+    border: 'border-gray-200/60 dark:border-gray-900/30' 
+  };
   const allowed = VehicleStatusMachineService.allowedTransitions(vehicle.status);
 
   const handleTransition = (toStatus: VehicleStatus) => {
     onToggle('');
     startTransition(async () => {
       await new Promise(r => setTimeout(r, 600));
-      toast.success(`Đã chuyển xe ${vehicle.vin.slice(-6)} → ${STATUS_CONFIG[toStatus].label}`);
+      const toLabel = STATUS_CONFIG[toStatus]?.label || toStatus;
+      toast.success(`Đã chuyển xe ${vehicle.vin.slice(-6)} → ${toLabel}`);
       onTransitioned();
     });
   };
@@ -209,16 +217,19 @@ function StatusChip({
             className="absolute z-50 top-full mt-1 left-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl p-2 min-w-44"
           >
             <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 px-2 pb-1.5">Chuyển sang</p>
-            {allowed.map(s => (
-              <button
-                key={s}
-                onClick={() => handleTransition(s)}
-                className="w-full flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors"
-              >
-                <ArrowRight className="w-3 h-3 text-slate-400" />
-                <span className={`text-xs font-bold ${STATUS_CONFIG[s].color}`}>{STATUS_CONFIG[s].label}</span>
-              </button>
-            ))}
+            {allowed.map(s => {
+              const targetCfg = STATUS_CONFIG[s] || { label: s, color: 'text-gray-700 dark:text-gray-400' };
+              return (
+                <button
+                  key={s}
+                  onClick={() => handleTransition(s)}
+                  className="w-full flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors"
+                >
+                  <ArrowRight className="w-3 h-3 text-slate-400" />
+                  <span className={`text-xs font-bold ${targetCfg.color}`}>{targetCfg.label}</span>
+                </button>
+              );
+            })}
           </motion.div>
         )}
       </AnimatePresence>
@@ -235,6 +246,8 @@ export default function VehicleInventoryPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleInventoryItem | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string>('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 50; // Show 50 items per page
 
   // Fetch vehicles from Supabase
   useEffect(() => {
@@ -299,7 +312,8 @@ export default function VehicleInventoryPage() {
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = `bella-auto-inventory-${Date.now()}.csv`; a.click();
+    const timestamp = new Date().getTime(); // Move Date.now() out of render
+    a.href = url; a.download = `bella-auto-inventory-${timestamp}.csv`; a.click();
     URL.revokeObjectURL(url);
     toast.success('Đã xuất danh sách kho xe!');
   };
@@ -309,6 +323,17 @@ export default function VehicleInventoryPage() {
     const matchStatus = statusFilter === 'all' || v.status === statusFilter;
     return matchSearch && matchStatus;
   });
+
+  // Pagination logic
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedVehicles = filtered.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, statusFilter]);
 
   // Summary counts
   const counts = vehicles.reduce((acc, v) => {
@@ -419,7 +444,7 @@ export default function VehicleInventoryPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50 dark:divide-slate-900/80">
-              {filtered.length > 0 ? filtered.map((vehicle, idx) => (
+              {paginatedVehicles.length > 0 ? paginatedVehicles.map((vehicle, idx) => (
                 <motion.tr
                   key={vehicle.id}
                   initial={{ opacity: 0, y: 4 }}
@@ -527,6 +552,60 @@ export default function VehicleInventoryPage() {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between pt-6 border-t border-slate-100 dark:border-slate-900">
+          <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold">
+            Hiển thị <span className="text-slate-900 dark:text-white font-bold">{startIndex + 1}</span> đến{' '}
+            <span className="text-slate-900 dark:text-white font-bold">{Math.min(endIndex, filtered.length)}</span> trong tổng số{' '}
+            <span className="text-slate-900 dark:text-white font-bold">{filtered.length}</span> xe
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              ← Trước
+            </button>
+            <div className="flex items-center gap-1">
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNum;
+                if (totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => setCurrentPage(pageNum)}
+                    className={`w-9 h-9 rounded-lg text-xs font-bold transition-all ${
+                      currentPage === pageNum
+                        ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md'
+                        : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              Tiếp →
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Add Modal */}
       <AnimatePresence>

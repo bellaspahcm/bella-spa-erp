@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
         activation_token: null, // Clear token after use
         activation_token_expires_at: null,
         updated_at: new Date().toISOString(),
-      } as any)
+      })
       .eq('id', application.id);
 
     if (updateError) {
@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
         action_description: 'Account activated by partner',
         performed_by_role: 'partner',
         performed_by_user_id: application.identity_id,
-      } as any);
+      });
 
     return NextResponse.json({
       success: true,

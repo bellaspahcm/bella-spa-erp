@@ -108,10 +108,10 @@ export async function POST(
       }
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[API] Confirm deposit error:', error);
     return NextResponse.json(
-      { error: error.message || 'Lỗi server' },
+      { error: error instanceof Error ? error.message : 'Lỗi server' },
       { status: 500 }
     );
   }

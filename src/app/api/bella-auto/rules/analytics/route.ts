@@ -34,12 +34,26 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    type RuleLogRow = {
+      id: string;
+      rule_id: string;
+      entity_type?: string;
+      entity_id?: string;
+      status?: string;
+      execution_time_ms?: number;
+      executed_at?: string;
+      error_message?: string;
+    };
+
+    const typedLogs = logs as RuleLogRow[];
+
     // Calculate stats
-    const totalExecutions = logs.length;
-    const successCount = logs.filter((l: any) => l.status === 'success').length;
-    const failedCount = logs.filter((l: any) => l.status === 'failed').length;
+    const totalExecutions = typedLogs.length;
+    const successCount = typedLogs.filter((l) => l.status === 'success').length;
+    const failedCount = typedLogs.filter((l) => l.status === 'failed').length;
     
-    const byRule = logs.reduce((acc: any, log: any) => {
+    type RuleStats = { total: number; success: number; failed: number; avgTime: number; times: number[] };
+    const byRule = typedLogs.reduce((acc: Record<string, RuleStats>, log) => {
       const ruleId = log.rule_id;
       if (!acc[ruleId]) {
         acc[ruleId] = { total: 0, success: 0, failed: 0, avgTime: 0, times: [] };
@@ -64,7 +78,7 @@ export async function GET(request: NextRequest) {
       successRate: totalExecutions > 0 ? (successCount / totalExecutions) * 100 : 0,
       failedCount,
       byRule,
-      recentExecutions: logs.slice(0, 20).map((log: any) => ({
+      recentExecutions: typedLogs.slice(0, 20).map((log) => ({
         id: log.id,
         ruleId: log.rule_id,
         entityType: log.entity_type,

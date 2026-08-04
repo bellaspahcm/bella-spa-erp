@@ -214,7 +214,7 @@ export default function TradeInPage() {
       );
       setCompletionStatus(completionStatus);
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Upload error:', error);
       setUploadStatuses(prev => ({
         ...prev,

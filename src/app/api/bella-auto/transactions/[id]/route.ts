@@ -59,7 +59,7 @@ export async function GET(
       rolledBackAt: transaction.rolled_back_at,
       rolledBackBy: transaction.metadata?.rolled_back_by_email,
       metadata: transaction.metadata,
-      steps: steps.map((step: any) => ({
+      steps: steps.map((step: { id: string; step_order: number; action_type: string; target_table: string; target_record_id?: string; before_snapshot?: unknown; after_snapshot?: unknown; status: string; created_at: string }) => ({
         id: step.id,
         stepOrder: step.step_order,
         actionType: step.action_type,

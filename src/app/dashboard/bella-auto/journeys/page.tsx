@@ -155,7 +155,7 @@ export default function CustomerJourneyPage() {
             return (
               <button
                 key={tab.key}
-                onClick={() => setActiveTab(tab.key as any)}
+                onClick={() => setActiveTab(tab.key as 'discovery' | 'consideration' | 'purchase' | 'delivery' | 'ownership')}
                 className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-xl transition-all duration-300 ${
                   activeTab === tab.key
                     ? 'bg-white dark:bg-slate-950 text-indigo-600 dark:text-indigo-400 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-slate-200/20 dark:border-slate-800/30'

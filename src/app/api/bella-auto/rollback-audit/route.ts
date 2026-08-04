@@ -8,6 +8,20 @@ import { getPrimaryClient } from '@/lib/database/read-replica';
 
 export const runtime = 'nodejs';
 
+type RollbackLogRow = {
+  id: string;
+  transaction_id?: string;
+  transaction_type?: string;
+  entity_type?: string;
+  entity_id?: string;
+  status?: string;
+  rollback_reason?: string;
+  created_at?: string;
+  steps_rolled_back?: number;
+  error_message?: string;
+  metadata?: { executed_by_email?: string };
+};
+
 export async function GET(request: NextRequest) {
   try {
     const supabase = getPrimaryClient();
@@ -41,17 +55,19 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const typedData = data as RollbackLogRow[];
+
     // Calculate statistics
     const stats = {
-      totalRollbacks: data.length,
-      successRate: data.filter(log => log.status === 'success').length / (data.length || 1) * 100,
-      failedCount: data.filter(log => log.status === 'failed').length,
-      byTransactionType: data.reduce((acc: Record<string, number>, log: any) => {
+      totalRollbacks: typedData.length,
+      successRate: typedData.filter(log => log.status === 'success').length / (typedData.length || 1) * 100,
+      failedCount: typedData.filter(log => log.status === 'failed').length,
+      byTransactionType: typedData.reduce((acc: Record<string, number>, log) => {
         const type = log.transaction_type || 'unknown';
         acc[type] = (acc[type] || 0) + 1;
         return acc;
       }, {}),
-      recentActivity: data.slice(0, 10).map((log: any) => ({
+      recentActivity: typedData.slice(0, 10).map((log) => ({
         id: log.id,
         transactionId: log.transaction_id,
         transactionType: log.transaction_type,
@@ -66,7 +82,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ 
       stats,
-      logs: data.map((log: any) => ({
+      logs: typedData.map((log) => ({
         id: log.id,
         transactionId: log.transaction_id,
         transactionType: log.transaction_type,

@@ -45,8 +45,19 @@ const STATUS_CONFIG: Record<string, { label: string; bg: string }> = {
   lost:        { label: 'Thất Bại',    bg: 'bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400' },
 };
 
+type Lead = {
+  id: string;
+  customer_name: string;
+  phone: string;
+  email?: string;
+  status: string;
+  source: string;
+  created_at: string;
+  assigned_to?: string;
+};
+
 export default function LeadCenterPage() {
-  const [leads, setLeads] = useState<any[]>([]);
+  const [leads, setLeads] = useState<Lead[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');

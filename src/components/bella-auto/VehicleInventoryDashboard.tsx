@@ -21,6 +21,9 @@ export default function VehicleInventoryDashboard({ tenantId }: { tenantId: stri
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [stats, setStats] = useState({ total: 0, showroom: 0, warehouse: 0, allocated: 0, delivered: 0 });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const itemsPerPage = 15; // Show only 15 items for dashboard
   
   const supabase = createClient();
 
@@ -47,7 +50,7 @@ export default function VehicleInventoryDashboard({ tenantId }: { tenantId: stri
         .select('*', { count: 'exact' })
         .eq('tenant_id', tenantId)
         .order('created_at', { ascending: false })
-        .limit(100);
+        .range((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage - 1);
 
       if (statusFilter !== 'all') {
         query = query.eq('status', statusFilter);
@@ -62,6 +65,7 @@ export default function VehicleInventoryDashboard({ tenantId }: { tenantId: stri
       if (error) throw error;
 
       setVehicles(data || []);
+      setTotalCount(count || 0);
       
       // Load stats
       const { data: statsData } = await supabase
@@ -92,8 +96,12 @@ export default function VehicleInventoryDashboard({ tenantId }: { tenantId: stri
   };
 
   useEffect(() => {
+    setCurrentPage(1); // Reset to page 1 when filters change
+  }, [statusFilter, searchTerm]);
+
+  useEffect(() => {
     loadVehicles();
-  }, [tenantId, statusFilter, searchTerm]);
+  }, [tenantId, statusFilter, searchTerm, currentPage]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -248,6 +256,34 @@ export default function VehicleInventoryDashboard({ tenantId }: { tenantId: stri
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+          
+          {/* Pagination Controls */}
+          {!loading && vehicles.length > 0 && totalCount > itemsPerPage && (
+            <div className="flex items-center justify-between mt-6 pt-6 border-t border-slate-100 dark:border-slate-800">
+              <div className="text-xs text-slate-500 dark:text-slate-400">
+                Hiển thị <span className="font-semibold text-slate-900 dark:text-white">{((currentPage - 1) * itemsPerPage) + 1}</span> - <span className="font-semibold text-slate-900 dark:text-white">{Math.min(currentPage * itemsPerPage, totalCount)}</span> trong tổng số <span className="font-semibold text-slate-900 dark:text-white">{totalCount}</span> xe
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 text-xs font-medium hover:bg-slate-50 dark:hover:bg-slate-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                >
+                  ← Trước
+                </button>
+                <div className="text-xs font-semibold text-slate-700 dark:text-slate-300 px-2">
+                  Trang {currentPage} / {Math.ceil(totalCount / itemsPerPage)}
+                </div>
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(Math.ceil(totalCount / itemsPerPage), p + 1))}
+                  disabled={currentPage >= Math.ceil(totalCount / itemsPerPage)}
+                  className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 text-xs font-medium hover:bg-slate-50 dark:hover:bg-slate-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                >
+                  Tiếp →
+                </button>
+              </div>
             </div>
           )}
         </div>
