@@ -1155,14 +1155,32 @@ html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-logo-mark {
 html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-brand-script { color: #f0fdfa !important; }
 html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-brand-subtitle,
 html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-header { color: #bfdbfe !important; }
-html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item { color: #e0f2fe !important; }
-html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item:hover { color: #ffffff !important; background: rgba(20, 184, 166, 0.22) !important; }
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item,
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item *,
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item span { 
+  color: #e0f2fe !important; 
+}
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item:hover,
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item:hover * { 
+  color: #ffffff !important; 
+  background: rgba(20, 184, 166, 0.22) !important; 
+}
 html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item:hover svg,
 html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item:hover * { color: #ffffff !important; }
 html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item-active {
   background: linear-gradient(135deg, #0891b2 0%, #14b8a6 100%) !important;
   border-color: rgba(94, 234, 212, 0.52) !important;
   color: #ffffff !important;
+}
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item-active svg,
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item-active span {
+  color: #ffffff !important;
+}
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item svg {
+  color: #e0f2fe !important;
+}
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item span {
+  color: #e0f2fe !important;
 }
 html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-profile-card,
 html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-avatar,
