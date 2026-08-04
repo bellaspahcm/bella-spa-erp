@@ -116,8 +116,8 @@ export const DEFAULT_REAL_ESTATE_TENANT_BRAND_THEME: TenantBrandTheme = {
 export const DEFAULT_BELLA_AUTO_TENANT_BRAND_THEME: TenantBrandTheme = {
   brandName: '',
   logoUrl: '',
-  primaryColor: '#0891b2', // Cyan 600 - Ocean Clean primary
-  accentColor: '#14b8a6', // Teal 500 - Ocean Clean accent
+  primaryColor: '#1E40AF', // Blue 700 - Ocean Clean primary (was #0891b2 cyan)
+  accentColor: '#3B82F6', // Blue 500 - Ocean Clean accent (was #14b8a6 teal)
   portalDisplayName: '',
   invoiceDisplayName: '',
   stylePreset: 'ocean_clean',

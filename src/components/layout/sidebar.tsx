@@ -819,7 +819,7 @@ export function Sidebar() {
                   key={`header-${idx}`} 
                   className={cn(
                     "px-5 pt-3 pb-1 text-[9.5px] font-extrabold text-primary/60 dark:text-[#A67D44]/60 uppercase tracking-[0.2em] relative z-10 select-none pointer-events-none mt-4 first:mt-1",
-                    (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell) && "beauty-erp-nav-header"
+                    (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell || isBellaAutoShell) && "beauty-erp-nav-header"
                   )}
                 >
                   {item.label}
