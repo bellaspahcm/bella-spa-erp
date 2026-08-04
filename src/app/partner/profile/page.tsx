@@ -47,18 +47,6 @@ export default function PartnerProfilePage() {
   const [editMode, setEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    const loadUser = async () => {
-      const user = await getCurrentUser();
-      if (!user) {
-        router.push('/login');
-        return;
-      }
-      await loadProfile(user.id);
-    };
-    void loadUser();
-  }, [router]);
-
   const loadProfile = async (userId: string) => {
     try {
       setLoading(true);
@@ -70,6 +58,18 @@ export default function PartnerProfilePage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const loadUser = async () => {
+      const user = await getCurrentUser();
+      if (!user) {
+        router.push('/login');
+        return;
+      }
+      await loadProfile(user.id);
+    };
+    void loadUser();
+  }, [router]);
 
   const handleSaveProfile = async (formData: FormData) => {
     if (!profile) return;

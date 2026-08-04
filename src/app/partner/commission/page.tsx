@@ -58,18 +58,6 @@ export default function PartnerCommissionPage() {
   });
   const [selectedFilter, setSelectedFilter] = useState<CommissionStatus | 'all'>('all');
 
-  useEffect(() => {
-    const loadUser = async () => {
-      const user = await getCurrentUser();
-      if (!user) {
-        router.push('/login');
-        return;
-      }
-      await loadCommissions(user.id);
-    };
-    void loadUser();
-  }, [router]);
-
   const loadCommissions = async (userId: string) => {
     try {
       setLoading(true);
@@ -102,6 +90,18 @@ export default function PartnerCommissionPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const loadUser = async () => {
+      const user = await getCurrentUser();
+      if (!user) {
+        router.push('/login');
+        return;
+      }
+      await loadCommissions(user.id);
+    };
+    void loadUser();
+  }, [router]);
 
   const filteredCommissions =
     selectedFilter === 'all'

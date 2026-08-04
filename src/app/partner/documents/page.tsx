@@ -55,18 +55,6 @@ export default function PartnerDocumentsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [downloading, setDownloading] = useState<string | null>(null);
 
-  useEffect(() => {
-    const loadUser = async () => {
-      const user = await getCurrentUser();
-      if (!user) {
-        router.push('/login');
-        return;
-      }
-      await loadDocuments();
-    };
-    void loadUser();
-  }, [router]);
-
   const loadDocuments = async () => {
     try {
       setLoading(true);
@@ -78,6 +66,18 @@ export default function PartnerDocumentsPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const loadUser = async () => {
+      const user = await getCurrentUser();
+      if (!user) {
+        router.push('/login');
+        return;
+      }
+      await loadDocuments();
+    };
+    void loadUser();
+  }, [router]);
 
   const handleDownload = async (doc: Document) => {
     try {
