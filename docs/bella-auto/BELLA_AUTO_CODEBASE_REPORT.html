@@ -354,8 +354,8 @@
               <tbody>
                 <tr>
                   <td class="text-white">Dashboard & Analytics</td>
-                  <td>AutoAnalyticsCharts (HTML/CSS) + BellaAutoAnalyticsDashboard (Recharts). 6 biểu đồ: Area, Pie, Bar, Line charts.</td>
-                  <td><span style="color:var(--color-warning);font-weight:600">Mock Data</span></td>
+                  <td>Biểu đồ thống kê tổng quan: 6 loại biểu đồ phân tích xu hướng nhập/xuất kho, phân bố trạng thái xe, top xe bán chạy, doanh thu, giao xe hàng tuần.</td>
+                  <td><span style="color:var(--color-warning);font-weight:600">⚠️ Dữ Liệu Mẫu</span></td>
                   <td>75%</td>
                 </tr>
                 <tr>
@@ -372,8 +372,8 @@
                 </tr>
                 <tr>
                   <td class="text-white">Booking & Đặt Cọc Hub</td>
-                  <td>Quản lý thỏa thuận đặt cọc với deposit tracking (unpaid/partial/full). Số booking tự động BK-AUTO-YYYY-XXXX.</td>
-                  <td><span style="color:var(--color-warning);font-weight:600">Mock Integration</span></td>
+                  <td>Quản lý hợp đồng đặt cọc xe với theo dõi thanh toán (chưa trả/trả một phần/đã thanh toán đủ). Mã booking tự động theo định dạng BK-AUTO-YYYY-XXXX.</td>
+                  <td><span style="color:var(--color-warning);font-weight:600">⚠️ Chưa Tích Hợp</span></td>
                   <td>70%</td>
                 </tr>
                 <tr>
@@ -462,18 +462,21 @@
         <div class="card-glass">
           <div class="card-title"><span>Điểm Yếu Cần Khắc Phục (Weaknesses)</span></div>
           <ul class="point-list weaknesses">
-            <li><strong>Không có database migrations documented:</strong> 8+ auto_* tables (auto_vehicles, auto_bookings, auto_customers, etc.) không có migration files trong repo. Phase 6 sẽ consolidate với Supabase migrations.</li>
-            <li><strong>Insurance, Loan services chưa có UI:</strong> Backend services đã có (InsuranceService, LoanApplicationService) nhưng chưa có UI tương ứng. Roadmap Q2 2026 sẽ build UI forms + tracking workflows.</li>
+            <li><strong>Dashboard Analytics dùng dữ liệu mẫu:</strong> 6 biểu đồ thống kê (xu hướng nhập/xuất, top xe bán chạy, doanh thu tháng, giao xe tuần) đang hiển thị số liệu giả định, chưa kết nối với dữ liệu thực từ hệ thống. Cần tích hợp truy vấn tổng hợp từ database (auto_vehicles, auto_bookings, auto_customers) trong Priority 2.</li>
+            <li><strong>Booking & Đặt Cọc chưa tích hợp database:</strong> Tính năng quản lý hợp đồng đặt cọc, theo dõi thanh toán (chưa trả/trả một phần/đã thanh toán) hiện chỉ là giao diện mẫu. Cần xây dựng bảng auto_bookings, auto_deposits và API endpoints để lưu trữ và truy vấn thông tin đặt cọc thực tế.</li>
+            <li><strong>Chưa có tài liệu kỹ thuật cơ sở dữ liệu:</strong> 8+ bảng dữ liệu (auto_vehicles, auto_bookings, auto_customers, v.v.) chưa có file hướng dẫn cấu trúc và cách sử dụng. Kế hoạch Phase 6 sẽ tạo tài liệu migration và schema documentation.</li>
+            <li><strong>Bảo hiểm & Vay vốn chưa có giao diện:</strong> Các chức năng xử lý bảo hiểm và hồ sơ vay vốn đã có backend logic nhưng chưa có giao diện người dùng. Roadmap Q2 2026 sẽ xây dựng form nhập liệu và màn hình theo dõi tiến độ.</li>
           </ul>
           <div style="margin-top: 20px; padding: 16px; background: rgba(5, 150, 105, 0.08); border: 1px solid rgba(5, 150, 105, 0.2); border-radius: 12px;">
             <div style="display: flex; align-items: start; gap: 12px;">
               <svg style="fill: var(--color-success); width: 20px; height: 20px; flex-shrink: 0; margin-top: 2px;" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
               <div style="color: var(--color-success); font-size: 0.9rem;">
-                <strong>✅ Đã Khắc Phục (04/08/2026):</strong>
+                <strong>✅ Đã Khắc Phục (Giai Đoạn 1 - 04/08/2026):</strong>
                 <ul style="margin: 8px 0 0 0; padding-left: 20px; list-style: disc;">
-                  <li><strong>Test coverage:</strong> Đã tăng từ 35% → deployment-ready với Supabase integration tests. E2E tests trong roadmap Priority 2.</li>
-                  <li><strong>Dashboard analytics mock data:</strong> ✅ Đã loại bỏ hoàn toàn. Tất cả pages (Vehicles, Leads, Workshop) giờ fetch real-time từ Supabase với error handling đầy đủ.</li>
-                  <li><strong>Static Workshop tabs:</strong> ✅ Đã chuyển sang interactive với useState, conditional rendering, per-tab loading states.</li>
+                  <li><strong>Dữ liệu mẫu ở trang chính:</strong> ✅ Trang quản lý xe, khách hàng tiềm năng, xưởng sửa chữa giờ hiển thị dữ liệu thực từ database với tốc độ real-time. Khi lỗi kết nối, hệ thống thông báo rõ ràng thay vì bị treo.</li>
+                  <li><strong>Giao diện xưởng không tương tác:</strong> ✅ Nhân viên giờ có thể chuyển đổi giữa các tab (lịch hẹn / đơn sửa chữa / kỹ thuật viên) bằng cách nhấn nút, mỗi tab có loading riêng và hiển thị dữ liệu độc lập.</li>
+                  <li><strong>Thiếu tài liệu API:</strong> ✅ Đã tạo tài liệu hướng dẫn 10 chức năng (Marketplace, Quy tắc nghiệp vụ, Hoàn tác giao dịch, Giao dịch tài chính) cho đội ngũ kỹ thuật tích hợp.</li>
+                  <li><strong>Chưa có giao diện thu cũ đổi mới:</strong> ✅ Nhân viên giờ có thể chụp ảnh xe cũ theo 18 danh mục, upload lên hệ thống, và theo dõi tiến độ định giá đầy đủ.</li>
                 </ul>
               </div>
             </div>
