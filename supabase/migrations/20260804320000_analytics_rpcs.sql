@@ -104,15 +104,17 @@ AS $$
 BEGIN
   RETURN QUERY
   SELECT 
-    v.model AS model,
+    m.name AS model,
     COUNT(*)::BIGINT AS sold,
     COALESCE(SUM(b.total_price), 0)::NUMERIC AS revenue
   FROM auto_vehicles v
+  INNER JOIN auto_variants var ON var.id = v.variant_id
+  INNER JOIN auto_models m ON m.id = var.model_id
   INNER JOIN auto_bookings b ON b.vehicle_id = v.id
   WHERE v.tenant_id = p_tenant_id
     AND b.status = 'completed'
     AND v.status = 'delivered'
-  GROUP BY v.model
+  GROUP BY m.name
   ORDER BY sold DESC, revenue DESC
   LIMIT p_limit;
 END;
@@ -123,7 +125,7 @@ GRANT EXECUTE ON FUNCTION get_auto_top_models(UUID, INTEGER) TO authenticated;
 GRANT EXECUTE ON FUNCTION get_auto_top_models(UUID, INTEGER) TO service_role;
 
 COMMENT ON FUNCTION get_auto_top_models(UUID, INTEGER) IS 
-'Returns top selling vehicle models by volume and revenue. Default limit: 5.';
+'Returns top selling vehicle models by volume and revenue. Joins via auto_variants → auto_models. Default limit: 5.';
 
 -- ============================================================================
 -- RPC 3: Monthly Revenue Trend (6 months)
