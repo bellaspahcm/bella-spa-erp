@@ -15,8 +15,8 @@ type TabType = 'appointments' | 'orders' | 'technicians';
 export default function WorkshopPage() {
   const { tenantId } = useTenantContext();
   const [activeTab, setActiveTab] = useState<TabType>('appointments');
-  const [appointments, setAppointments] = useState<any[]>([]);
-  const [orders, setOrders] = useState<any[]>([]);
+  const [appointments, setAppointments] = useState<Array<Record<string, unknown>>>([]);
+  const [orders, setOrders] = useState<Array<Record<string, unknown>>>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Mock technicians data (auto_technicians table not created yet)

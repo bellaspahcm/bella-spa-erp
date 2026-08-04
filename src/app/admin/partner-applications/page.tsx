@@ -44,35 +44,7 @@ export default function PartnerApplicationsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
   
-  // Load applications
-  useEffect(() => {
-    loadApplications();
-  }, []);
-  
-  // Apply filters
-  useEffect(() => {
-    let filtered = applications;
-    
-    // Status filter
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter((app) => app.status === statusFilter);
-    }
-    
-    // Search filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (app) =>
-          app.full_name.toLowerCase().includes(query) ||
-          app.email.toLowerCase().includes(query) ||
-          (app.company_name && app.company_name.toLowerCase().includes(query))
-      );
-    }
-    
-    setFilteredApplications(filtered);
-    setCurrentPage(1); // Reset to first page when filters change
-  }, [applications, statusFilter, searchQuery]);
-  
+  // Define loadApplications before using it in useEffect
   const loadApplications = async () => {
     setIsLoading(true);
     setError(null);
@@ -101,6 +73,35 @@ export default function PartnerApplicationsPage() {
       setIsLoading(false);
     }
   };
+  
+  // Load applications on mount
+  useEffect(() => {
+    loadApplications();
+  }, []);
+  
+  // Apply filters
+  useEffect(() => {
+    let filtered = applications;
+    
+    // Status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter((app) => app.status === statusFilter);
+    }
+    
+    // Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (app) =>
+          app.full_name.toLowerCase().includes(query) ||
+          app.email.toLowerCase().includes(query) ||
+          (app.company_name && app.company_name.toLowerCase().includes(query))
+      );
+    }
+    
+    setFilteredApplications(filtered);
+    setCurrentPage(1); // Reset to first page when filters change
+  }, [applications, statusFilter, searchQuery]);
   
   // Pagination
   const totalPages = Math.ceil(filteredApplications.length / itemsPerPage);
@@ -182,7 +183,7 @@ export default function PartnerApplicationsPage() {
               <select
                 id="status"
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as any)}
+                onChange={(e) => setStatusFilter(e.target.value as PartnerApplicationStatus | 'all')}
                 className="
                   w-full px-4 py-2 border border-gray-300 rounded-lg
                   focus:outline-none focus:ring-2 focus:ring-rose-500

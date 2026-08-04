@@ -1521,3 +1521,508 @@ TABLE auto_insurance_renewals (
 - `GET /api/bella-auto/insurance/analytics` - Insurance analytics reports
 
 ---
+
+## 🚀 Implementation Roadmap
+
+### Phase 1: Foundation (Week 1-2)
+
+**Finance Center Foundation:**
+- [ ] Create folder structure `/dashboard/bella-auto/finance/`
+- [ ] Setup routing structure
+- [ ] Build Finance Dashboard (5 metrics + 3 charts)
+- [ ] Build Loan Applications List (table + filters)
+- [ ] Test with real backend APIs
+- [ ] Verify RBAC implementation
+
+**Insurance Center Foundation:**
+- [ ] Create folder structure `/dashboard/bella-auto/insurance/`
+- [ ] Setup routing structure
+- [ ] Build Insurance Dashboard (5 metrics + 4 charts)
+- [ ] Build Policies List (table + filters)
+- [ ] Test with real backend APIs
+
+**Design System:**
+- [ ] Extract reusable components from existing centers
+- [ ] Build 5 new specialized components
+- [ ] Document component usage guidelines
+
+**Deliverables:** 2 dashboards + 2 list views working with real data
+
+---
+
+### Phase 2: Detail Views & Workflows (Week 3-4)
+
+**Finance Center:**
+- [ ] Build Loan Detail Page (3-column layout)
+- [ ] Build Loan Workflow Timeline (9 stages)
+- [ ] Implement status transitions (approve/reject)
+- [ ] Build Loan Calculator widget
+- [ ] Test calculation accuracy
+
+**Insurance Center:**
+- [ ] Build Policy Detail Page (4 tabs)
+- [ ] Implement PDF viewer for contracts
+- [ ] Build Renewal History table
+- [ ] Test all tab navigation
+- [ ] Implement quick actions (print, renew, cancel)
+
+**Deliverables:** Full CRUD workflows functional
+
+---
+
+### Phase 3: Document Management (Week 5)
+
+**Finance Center:**
+- [ ] Build Document Upload Center
+- [ ] Integrate Cloudflare R2 storage
+- [ ] Implement file preview (images, PDFs)
+- [ ] Build version tracking
+- [ ] Implement validation (required docs check)
+- [ ] Test file upload/download flow
+
+**Insurance Center:**
+- [ ] Build Claims Management UI
+- [ ] Implement photo upload (max 20 photos)
+- [ ] Build ClaimPhotoGallery component
+- [ ] Implement claim status timeline
+- [ ] Test upload + status tracking
+
+**Deliverables:** Document management fully functional
+
+---
+
+### Phase 4: Advanced Features (Week 6)
+
+**Finance Center:**
+- [ ] Build Banks Management CRUD
+- [ ] Implement bank logo upload
+- [ ] Build interest rate configuration UI
+- [ ] Test bank approval criteria logic
+- [ ] Implement commission calculation display
+
+**Insurance Center:**
+- [ ] Build Renewal Center (4 alert categories)
+- [ ] Implement bulk reminder actions
+- [ ] Setup automation rules (cron jobs)
+- [ ] Build email/SMS template editor
+- [ ] Test renewal alert notifications
+- [ ] Implement expiration calendar heatmap
+
+**Deliverables:** All management screens functional
+
+---
+
+### Phase 5: Analytics & Reporting (Week 7)
+
+**Finance Center:**
+- [ ] Build Finance Analytics page (6 reports)
+- [ ] Implement all charts (Recharts)
+- [ ] Build export to Excel/PDF
+- [ ] Test scheduled email reports
+- [ ] Optimize query performance
+
+**Insurance Center:**
+- [ ] Build Insurance Analytics page (6 reports)
+- [ ] Implement renewal conversion funnel
+- [ ] Build claim frequency analysis
+- [ ] Test export functionality
+- [ ] Build sales performance leaderboard
+
+**Deliverables:** Full analytics suite operational
+
+---
+
+### Phase 6: Polish & Testing (Week 8)
+
+**Testing:**
+- [ ] E2E tests for critical workflows
+  - Loan application → approval → disbursement
+  - Policy creation → renewal alert → renewal
+  - Claim report → photo upload → submit
+- [ ] Unit tests for calculators
+- [ ] Integration tests for APIs
+- [ ] Load testing (handle 1000+ policies)
+
+**Performance:**
+- [ ] Optimize database queries
+- [ ] Implement pagination (20 items/page)
+- [ ] Add caching for dashboards (Redis)
+- [ ] Lazy load images in claim gallery
+
+**UX Polish:**
+- [ ] Loading states for all async operations
+- [ ] Error handling with retry logic
+- [ ] Success/error toast notifications
+- [ ] Confirmation modals for destructive actions
+- [ ] Keyboard shortcuts (Cmd+K for search)
+- [ ] Dark mode support (if applicable)
+
+**Documentation:**
+- [ ] User manual for Finance Center
+- [ ] User manual for Insurance Center
+- [ ] Training video recording
+- [ ] API documentation updates
+
+**Deliverables:** Production-ready Finance & Insurance Centers
+
+---
+
+## 📊 Success Metrics
+
+### User Adoption Metrics
+- **Target:** 90% of sales team using Finance Center within 1 month
+- **Target:** 80% of policies managed through Insurance Center within 2 months
+- **Measure:** Daily active users, feature usage analytics
+
+### Efficiency Metrics
+- **Loan Processing Time:** Reduce from 5 days → 3 days (40% improvement)
+- **Renewal Conversion Rate:** Increase from 50% → 65% (30% improvement)
+- **Document Upload Time:** Reduce from 30 min → 5 min (83% improvement)
+
+### Business Impact Metrics
+- **Loan Volume:** Target 30% increase in loan applications
+- **Insurance Revenue:** Target 25% increase in insurance sales
+- **Commission Tracking:** 100% accuracy in commission calculations
+- **Customer Satisfaction:** Target NPS > 8.0 for finance/insurance services
+
+### Technical Metrics
+- **Page Load Time:** < 2s for all pages
+- **API Response Time:** < 500ms for all endpoints
+- **Uptime:** 99.9% availability
+- **Error Rate:** < 0.1% of transactions
+
+---
+
+## 🎯 Key Differentiators
+
+### vs Competitors
+
+**1. Enterprise Center Architecture**
+- Competitors: Scattered forms and reports
+- Bella Auto: Unified Finance & Insurance Centers with consistent UX
+
+**2. Automation & Alerts**
+- Competitors: Manual renewal tracking
+- Bella Auto: 30-day alert system with automatic reminders
+
+**3. Document Management**
+- Competitors: Email attachments, lost files
+- Bella Auto: Centralized R2 storage with version tracking, OCR extraction
+
+**4. Analytics Depth**
+- Competitors: Basic revenue reports
+- Bella Auto: 6 specialized analytics reports with funnel analysis, profitability tracking
+
+**5. Integration**
+- Competitors: Standalone systems
+- Bella Auto: Deep integration with Vehicle, Customer, Booking, Workshop modules
+
+**6. RBAC Granularity**
+- Competitors: Admin/User only
+- Bella Auto: 4 roles with granular permissions per feature
+
+---
+
+## 🔧 Technical Stack
+
+### Frontend
+- **Framework:** Next.js 15+ (App Router)
+- **UI Library:** React 19+
+- **Styling:** Tailwind CSS 4+
+- **Components:** Headless UI, Radix UI primitives
+- **Forms:** React Hook Form + Zod validation
+- **Charts:** Recharts (consistent with existing analytics)
+- **Tables:** TanStack Table (React Table v8)
+- **File Upload:** react-dropzone
+- **PDF Viewer:** react-pdf
+- **Date Picker:** react-datepicker
+- **Notifications:** react-hot-toast
+- **Animation:** Framer Motion
+
+### Backend (Existing)
+- **API Framework:** Next.js API Routes
+- **ORM:** Supabase Client (PostgreSQL)
+- **Storage:** Cloudflare R2 (S3-compatible)
+- **Authentication:** Supabase Auth
+- **Authorization:** RLS policies + RBAC middleware
+
+### Infrastructure
+- **Database:** Supabase PostgreSQL (existing)
+- **File Storage:** Cloudflare R2 (existing)
+- **Email:** SendGrid or AWS SES (existing)
+- **SMS:** Twilio or VNPT (to be configured)
+- **Cron Jobs:** Vercel Cron or GitHub Actions
+- **Monitoring:** Sentry (existing)
+- **Analytics:** PostHog or Mixpanel (optional)
+
+### Development Tools
+- **TypeScript:** Strict mode enabled
+- **Linting:** ESLint + Prettier
+- **Testing:** Jest + React Testing Library
+- **E2E Testing:** Playwright
+- **Git Workflow:** Feature branches → PR → Main
+- **CI/CD:** GitHub Actions (lint, test, build, deploy)
+
+---
+
+## 📚 Documentation Deliverables
+
+### Technical Documentation
+1. ✅ **This Architecture Spec** (FINANCE_INSURANCE_CENTER_ARCHITECTURE.md)
+2. ⏳ Component API Documentation (per component)
+3. ⏳ API Integration Guide (for mobile/external systems)
+4. ⏳ Database Schema Detailed (ERD diagrams)
+5. ⏳ RBAC Permission Matrix (Excel/CSV)
+
+### User Documentation
+1. ⏳ Finance Center User Manual (PDF)
+2. ⏳ Insurance Center User Manual (PDF)
+3. ⏳ Training Videos (Screen recordings)
+4. ⏳ FAQ Document
+5. ⏳ Troubleshooting Guide
+
+### Process Documentation
+1. ⏳ Loan Application Workflow (Process diagram)
+2. ⏳ Insurance Renewal Process (Process diagram)
+3. ⏳ Claims Management Process (Process diagram)
+4. ⏳ Commission Calculation Rules (Business rules doc)
+
+---
+
+## 🎓 Training Plan
+
+### Week 1: Management Training (2 hours)
+**Audience:** Finance Manager, Insurance Manager  
+**Topics:**
+- Overview of Finance & Insurance Centers
+- Dashboard metrics interpretation
+- Analytics reports usage
+- Approval workflows
+- RBAC configuration
+
+### Week 2: Sales Team Training (3 hours)
+**Audience:** Sales team (20-30 people)  
+**Topics:**
+- Creating loan applications
+- Uploading customer documents
+- Tracking loan status
+- Creating insurance policies
+- Renewal Center usage
+- Commission tracking
+
+### Week 3: Accountant Training (2 hours)
+**Audience:** Accounting team  
+**Topics:**
+- Finance reports navigation
+- Insurance revenue reports
+- Commission reconciliation
+- Export functionality
+- Monthly closing procedures
+
+### Week 4: Support Team Training (1 hour)
+**Audience:** Customer support team  
+**Topics:**
+- Common user issues troubleshooting
+- Document re-upload process
+- Claim status inquiry
+- Renewal reminder procedures
+
+---
+
+## ⚠️ Risks & Mitigation
+
+### Risk 1: Bank API Integration Delays
+**Impact:** Medium  
+**Probability:** Medium  
+**Mitigation:**
+- Start with manual workflows (upload approval letters)
+- Phase 2: Integrate APIs when available
+- Maintain offline-first approach
+
+### Risk 2: User Adoption Resistance
+**Impact:** High  
+**Probability:** Low  
+**Mitigation:**
+- Comprehensive training program (4 weeks)
+- Dedicated support channel (Slack/Teams)
+- Incentivize early adopters
+- Collect feedback and iterate quickly
+
+### Risk 3: Data Migration Errors
+**Impact:** High  
+**Probability:** Low  
+**Mitigation:**
+- Extensive testing on staging environment
+- Rollback procedures documented
+- Parallel run (old system + new system) for 2 weeks
+- Data validation scripts
+
+### Risk 4: Performance Issues with Large Datasets
+**Impact:** Medium  
+**Probability:** Medium  
+**Mitigation:**
+- Implement pagination (20 items/page)
+- Database query optimization (indexes)
+- Redis caching for dashboards
+- Load testing before production
+
+### Risk 5: Security Vulnerabilities
+**Impact:** Critical  
+**Probability:** Low  
+**Mitigation:**
+- Regular security audits (Semgrep, Trivy)
+- RLS policies enforced at database level
+- File upload size limits
+- Signed URLs for R2 downloads
+- HTTPS only
+
+---
+
+## 🏁 Go-Live Checklist
+
+### Pre-Launch (1 week before)
+- [ ] All Phase 1-6 tasks completed
+- [ ] E2E tests passing (100% critical flows)
+- [ ] Load testing completed (1000+ concurrent users)
+- [ ] Security audit passed (no critical vulnerabilities)
+- [ ] User manuals finalized
+- [ ] Training sessions completed (all teams)
+- [ ] Staging environment fully tested
+- [ ] Rollback procedures documented and tested
+- [ ] Support team trained and ready
+
+### Launch Day
+- [ ] Database backup completed
+- [ ] Deploy to production (early morning, low traffic)
+- [ ] Smoke tests passed (critical workflows)
+- [ ] Monitoring dashboards active (Sentry, logs)
+- [ ] Support hotline active
+- [ ] Announcement sent to all users
+- [ ] Executive team notified
+
+### Post-Launch (First Week)
+- [ ] Daily standup with support team
+- [ ] Monitor error rates (target < 0.1%)
+- [ ] Monitor user adoption (target 50% Week 1)
+- [ ] Collect user feedback (surveys, support tickets)
+- [ ] Fix critical bugs within 24 hours
+- [ ] Document known issues and workarounds
+- [ ] Weekly status report to management
+
+### Post-Launch (First Month)
+- [ ] Achieve 90% user adoption (sales team)
+- [ ] Achieve 80% of policies managed in system
+- [ ] User satisfaction survey (target NPS > 7.5)
+- [ ] Performance optimization based on usage patterns
+- [ ] Feature requests prioritization
+- [ ] Plan Phase 7 (enhancements)
+
+---
+
+## 🎉 Success Criteria
+
+### Must-Have (Launch Blockers)
+- ✅ All 12 screens functional (6 Finance + 6 Insurance)
+- ✅ CRUD operations working for all entities
+- ✅ RBAC enforced (4 roles tested)
+- ✅ File upload/download working (R2 integration)
+- ✅ Critical E2E tests passing
+- ✅ No security vulnerabilities (high/critical)
+- ✅ User manuals completed
+- ✅ Training sessions completed
+
+### Should-Have (Launch Non-Blockers)
+- ⚠️ All analytics reports functional
+- ⚠️ Automation rules working (renewal reminders)
+- ⚠️ Email/SMS integration active
+- ⚠️ Export to Excel/PDF working
+- ⚠️ Performance optimized (< 2s page load)
+
+### Nice-to-Have (Post-Launch)
+- 💡 Bank API integration
+- 💡 Insurance provider API integration
+- 💡 Mobile app version
+- 💡 Advanced search (Elasticsearch)
+- 💡 AI-powered loan approval prediction
+- 💡 Renewal churn prediction model
+
+---
+
+## 📞 Support Plan
+
+### Support Channels
+1. **In-App Help:** Contextual help tooltips + chatbot
+2. **Support Email:** support@bella-auto.com (24h response)
+3. **Hotline:** 1900-xxxx (Mon-Fri 8AM-6PM)
+4. **Slack/Teams Channel:** #bella-auto-support (real-time)
+5. **Knowledge Base:** help.bella-auto.com (self-service)
+
+### Support Tiers
+- **Tier 1 (L1):** Basic troubleshooting (password reset, upload issues)
+- **Tier 2 (L2):** Functional issues (workflow errors, calculation bugs)
+- **Tier 3 (L3):** Technical issues (database errors, integration failures)
+- **Escalation Path:** L1 → L2 (2 hours) → L3 (4 hours) → Dev Team (8 hours)
+
+### SLA Commitments
+- **Critical Issues:** Response < 1 hour, Resolution < 4 hours
+- **High Issues:** Response < 4 hours, Resolution < 1 day
+- **Medium Issues:** Response < 1 day, Resolution < 3 days
+- **Low Issues:** Response < 3 days, Resolution < 1 week
+
+---
+
+## 🔄 Continuous Improvement Plan
+
+### Monthly Reviews (First 6 Months)
+- User feedback analysis (surveys, tickets)
+- Feature usage analytics (identify unused features)
+- Performance metrics review (load times, error rates)
+- Prioritize enhancements and bug fixes
+
+### Quarterly Roadmap
+- **Q3 2026:** Launch Finance & Insurance Centers (Phase 1-6)
+- **Q4 2026:** Mobile app version + API integrations
+- **Q1 2027:** AI-powered features (loan approval prediction, renewal churn model)
+- **Q2 2027:** Advanced analytics (predictive analytics, forecasting)
+
+---
+
+## 🎯 Conclusion
+
+This architecture specification provides a comprehensive blueprint for building **Finance Center** and **Insurance Center** as full-featured Enterprise Centers within Bella Auto module.
+
+**Key Takeaways:**
+1. ✅ Backend is **100% ready** (services, database, APIs)
+2. ⏳ Only **Presentation Layer (UI/UX)** needs to be built
+3. 📐 Follow **Enterprise Center Architecture** (consistent with existing centers)
+4. ⏱️ **8-week timeline** (6 phases + 2 weeks buffer)
+5. 🎯 **12 screens total** (6 Finance + 6 Insurance)
+6. 🔐 **RBAC built-in** (4 roles with granular permissions)
+7. 📊 **6 analytics reports per center** (total 12 reports)
+8. 🚀 **Production-ready** with comprehensive testing and documentation
+
+**Next Steps:**
+1. Review and approve this architecture specification
+2. Allocate team resources (2-3 developers)
+3. Setup project tracking (Jira/Linear)
+4. Begin Phase 1 implementation (Week 1-2: Dashboards + Lists)
+5. Weekly progress reviews with stakeholders
+
+**Success Metrics:**
+- 90% user adoption within 1 month
+- 40% reduction in loan processing time
+- 30% increase in renewal conversion rate
+- 100% accuracy in commission calculations
+- NPS > 8.0 for finance/insurance services
+
+---
+
+**Document Version:** 1.0  
+**Last Updated:** 04/08/2026  
+**Next Review:** Phase 1 completion (Week 2)  
+**Owner:** Bella Enterprise AI Architect  
+**Approvers:** Finance Manager, Insurance Manager, CTO
+
+---
+
+**🎉 Ready to build world-class Finance & Insurance Centers! 🎉**
