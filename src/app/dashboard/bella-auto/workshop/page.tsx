@@ -70,13 +70,23 @@ export default function WorkshopPage() {
           return;
         }
         
-        const [appointmentsRes, ordersRes] = await Promise.all([
-          supabase.from('auto_service_appointments').select('*').order('scheduled_date', { ascending: true }),
-          supabase.from('auto_repair_orders').select('*').order('opened_at', { ascending: false }),
-        ]);
+        // Query with proper null handling
+        const appointmentsRes = await supabase
+          .from('auto_service_appointments')
+          .select('*')
+          .order('scheduled_date', { ascending: true });
+        
+        const ordersRes = await supabase
+          .from('auto_repair_orders')
+          .select('*')
+          .order('opened_at', { ascending: false });
 
         if (appointmentsRes.error) {
-          console.error('Appointments fetch error:', appointmentsRes.error);
+          console.error('Appointments fetch error:', appointmentsRes.error.message || appointmentsRes.error);
+          // Check if table exists
+          if (appointmentsRes.error.code === 'PGRST116' || appointmentsRes.error.message?.includes('relation')) {
+            toast.error('Bảng auto_service_appointments chưa được tạo. Vui lòng chạy migration.');
+          }
           setAppointments([]);
         } else {
           // Map database format to component format
@@ -85,7 +95,11 @@ export default function WorkshopPage() {
         }
         
         if (ordersRes.error) {
-          console.error('Orders fetch error:', ordersRes.error);
+          console.error('Orders fetch error:', ordersRes.error.message || ordersRes.error);
+          // Check if table exists
+          if (ordersRes.error.code === 'PGRST116' || ordersRes.error.message?.includes('relation')) {
+            toast.error('Bảng auto_repair_orders chưa được tạo. Vui lòng chạy migration.');
+          }
           setOrders([]);
         } else {
           // Map database format to component format

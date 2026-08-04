@@ -1076,3 +1076,228 @@ Follow existing Bella Auto design system:
 5. Hư hỏng kỹ thuật (Mechanical breakdown)
 6. Kính vỡ (Glass breakage)
 7. Khác (Other)
+
+**Claims List Table:**
+| Claim ID | VIN | Customer | Type | Incident Date | Reported Date | Est. Amount | Status | Actions |
+|----------|-----|----------|------|---------------|---------------|-------------|--------|---------|
+| CLM-001 | JH2... | Nguyễn A | Collision | 01/08/2026 | 02/08/2026 | 15,000,000 | Processing | View |
+
+**Claim Status:**
+- `reported` → 🟡 Đã báo cáo (Yellow)
+- `photos_uploaded` → 🟠 Đã upload ảnh (Orange)
+- `submitted_to_provider` → 🔵 Đã gửi BH (Blue)
+- `provider_reviewing` → 🔵 BH đang xét (Blue)
+- `approved` → 🟢 Đã duyệt (Green)
+- `paid` → ✅ Đã thanh toán (Green check)
+- `rejected` → 🔴 Từ chối (Red)
+
+**Claim Detail Page:**
+
+#### Section 1: Incident Information
+```
+┌─────────────────────────────────────────────┐
+│ 📋 Claim Information                        │
+├─────────────────────────────────────────────┤
+│ Claim ID:         CLM-2024-00123           │
+│ Type:             🚗 Tai nạn va chạm        │
+│ Incident Date:    01/08/2026 15:30         │
+│ Reported Date:    02/08/2026 09:00         │
+│ Location:         123 Đường ABC, Q.1, HCM   │
+│ Police Report:    Yes (Report #: ABC123)    │
+│ Est. Damage:      15,000,000 VND            │
+│ Deductible:       5,000,000 VND             │
+│ Claim Amount:     10,000,000 VND            │
+└─────────────────────────────────────────────┘
+```
+
+#### Section 2: Description & Photos
+- Text area: Mô tả chi tiết sự cố
+- Photo upload: Drag & drop / Browse
+  - Photo categories: Front damage, Rear damage, Side damage, Interior, VIN plate, Scene overview
+  - Max 20 photos per claim
+  - Max 5MB per photo
+- Video upload (optional): Dashcam footage
+  - Max 100MB per video
+
+#### Section 3: Timeline & Status Updates
+```
+Timeline:
+  02/08/2026 09:00  ✓ Claim reported
+  02/08/2026 10:30  ✓ Photos uploaded (8 photos)
+  02/08/2026 14:00  ✓ Submitted to PVI
+  03/08/2026 10:00  ⏳ PVI reviewing
+  05/08/2026 15:00  ⏳ Pending approval
+```
+
+#### Section 4: Provider Communication
+- Internal notes (visible to staff only)
+- Messages from insurance provider
+- Documents from provider (e.g., approval letter, rejection reason)
+- Response form (reply to provider)
+
+**Action Buttons:**
+- "Upload thêm ảnh" (Upload more photos)
+- "Gửi cho BH" (Submit to insurance provider)
+- "Theo dõi tiến độ" (Track status with provider - if API available)
+- "In biên bản" (Print claim report)
+- "Đóng claim" (Close claim - mark as resolved)
+
+**Technical Specs:**
+- Component: `ClaimsManagement.tsx`, `ClaimDetailPage.tsx`
+- Route: `/dashboard/bella-auto/insurance/claims/[id]`
+- Data: `getClaims()`, `getClaimDetail(id)` APIs
+- Photo upload: R2 storage, path `/claims/{claim_id}/photos/`
+- Video upload: R2 with presigned upload URLs
+- Provider API: Optional integration with insurance provider APIs (if available)
+
+---
+
+### 6. Insurance Analytics
+
+**Purpose:** Báo cáo và phân tích hiệu quả bảo hiểm
+
+**Reports (6):**
+
+#### 1. Revenue Breakdown by Type
+- Pie chart: TNDS vs Vật chất vs Combo
+- Table: Type, Policies sold, Total revenue, Avg premium
+- Time filter: This month / Last month / This quarter / This year
+
+#### 2. Renewal Conversion Funnel
+```
+Funnel stages:
+  Expired policies:           120  (100%)
+    ↓
+  Renewal reminders sent:     120  (100%)
+    ↓
+  Customer responded:          85  (71%)
+    ↓
+  Quote accepted:              70  (58%)
+    ↓
+  Payment received:            65  (54%)
+    ↓
+  Policy renewed:              63  (53%)  ← Final conversion rate
+```
+
+#### 3. Claim Frequency Analysis
+- Chart: Number of claims per month
+- Table: Claim type, Count, Avg amount, Approval rate
+- Identify high-risk vehicles (many claims)
+
+#### 4. Profitability per Provider
+- Table: Provider, Policies sold, Revenue, Commission paid, Net profit
+- Sort by: Net profit DESC
+- Highlight: Best performing provider (green), Worst (red)
+
+#### 5. Sales Performance
+- Table: Sales person, Policies sold, Revenue, Commission earned
+- Chart: Top 10 sales by revenue
+- Leaderboard view with rankings
+
+#### 6. Expiry Forecast
+- Chart: Projected expirations next 6 months
+- Alert: Months with high expiry count (prepare renewal campaign)
+- Renewal target vs actual tracking
+
+**Export Options:**
+- Export to Excel
+- Export to PDF
+- Schedule email report (daily/weekly/monthly)
+
+**Technical Specs:**
+- Component: `InsuranceAnalytics.tsx`
+- Data: `getInsuranceAnalytics({ reportType, dateRange })` RPC
+- Charts: Recharts library
+- Export: `xlsx` library for Excel, `jsPDF` for PDF
+- Scheduled reports: Background job with email integration
+
+---
+
+## 🎨 Design System & Component Reuse
+
+### Reusable Components
+
+**From existing centers:**
+1. `<DataTable>` - Used in all list views
+2. `<StatusBadge>` - Consistent status indicators
+3. `<MetricCard>` - Dashboard metrics display
+4. `<Timeline>` - Workflow and history visualization
+5. `<FileUploader>` - Document upload
+6. `<DateRangePicker>` - Date filtering
+7. `<SearchBox>` - Search functionality
+8. `<ExportButton>` - Export to Excel/PDF
+9. `<FilterTabs>` - Status/category filtering
+10. `<ActionMenu>` - Dropdown actions per row
+
+**New components to build:**
+1. `<LoanCalculator>` - Interactive loan calculation widget
+2. `<RenewalAlertCard>` - Specialized card for renewal alerts
+3. `<ClaimPhotoGallery>` - Photo viewer for claims
+4. `<CoverageDisplay>` - Insurance coverage details formatter
+5. `<CommissionTracker>` - Commission calculation display
+
+---
+
+## 🔐 Role-Based Access Control (RBAC)
+
+### Roles & Permissions
+
+#### 1. Finance Manager
+**Finance Center:**
+- ✅ View all loan applications
+- ✅ Approve/reject loans
+- ✅ Manage bank partnerships
+- ✅ View finance analytics
+- ✅ Edit loan terms
+- ✅ Access all documents
+
+**Insurance Center:**
+- ✅ View all policies
+- ✅ Manage claims
+- ✅ View insurance analytics
+- ✅ Configure providers
+- ❌ Cannot delete finalized records
+
+#### 2. Sales Person
+**Finance Center:**
+- ✅ View own loan applications
+- ✅ Create new loan applications
+- ✅ Upload documents
+- ✅ View loan status
+- ❌ Cannot approve loans
+- ❌ Cannot edit bank settings
+- ❌ Limited analytics (own performance only)
+
+**Insurance Center:**
+- ✅ View assigned policies
+- ✅ Create new policies
+- ✅ Send renewal reminders
+- ✅ View renewal alerts
+- ✅ Report claims
+- ❌ Cannot manage providers
+- ❌ Limited analytics
+
+#### 3. Accountant
+**Finance Center:**
+- ✅ View all loans (read-only)
+- ✅ Export financial reports
+- ✅ View commission calculations
+- ✅ Access analytics
+- ❌ Cannot create/edit loans
+- ❌ Cannot manage banks
+
+**Insurance Center:**
+- ✅ View all policies (read-only)
+- ✅ View commission reports
+- ✅ Export revenue reports
+- ❌ Cannot create/edit policies
+- ❌ Cannot manage claims
+
+#### 4. Admin
+- ✅ Full access to all features
+- ✅ Manage users and roles
+- ✅ Configure system settings
+- ✅ View audit logs
+- ✅ Delete/archive records (with confirmation)
+
+---
