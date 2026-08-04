@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 
 type VerificationStatus = 'verifying' | 'success' | 'error' | 'expired';
@@ -14,17 +14,12 @@ export default function PartnerVerifyPage() {
   const [message, setMessage] = useState('');
   const [applicationId, setApplicationId] = useState<string | null>(null);
 
-  useEffect(() => {
+  const verifyEmail = useCallback(async () => {
     if (!token) {
       setStatus('error');
       setMessage('Token xác nhận không hợp lệ');
       return;
     }
-
-    verifyEmail();
-  }, [token]);
-
-  const verifyEmail = async () => {
     try {
       const response = await fetch(`/api/partner/verify?token=${token}`);
       const data = await response.json();
@@ -47,7 +42,11 @@ export default function PartnerVerifyPage() {
       setStatus('error');
       setMessage('Có lỗi xảy ra. Vui lòng thử lại sau.');
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    void verifyEmail();
+  }, [verifyEmail]);
 
   const handleResend = async () => {
     // TODO: Implement resend verification email

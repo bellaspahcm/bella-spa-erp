@@ -75,7 +75,7 @@ export function useTransactions(filters?: TransactionFilters) {
     } finally {
       setIsLoading(false);
     }
-  }, [filters?.entityType, filters?.entityId, filters?.status, filters?.type, filters?.limit]);
+  }, [filters]); // ✅ Fixed: Use entire filters object instead of individual properties
 
   useEffect(() => {
     void fetchTransactions();

@@ -309,7 +309,7 @@ export function useCustomerDetailController() {
       void fetchKtvs();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeBooking?.id, customer?.allBookings?.length]);
+  }, [activeBooking, customer]);
 
   const refreshPageData = useCallback(async () => {
     await Promise.all([loadData(), fetchKtvs()]);
@@ -329,7 +329,7 @@ export function useCustomerDetailController() {
   const handleOpenBookingSessions = useCallback(() => {
     if (!customer) return;
     router.push(`/dashboard/sessions?search=${encodeURIComponent(customer.name_mother)}&bookingId=${activeBooking?.id || ''}`);
-  }, [activeBooking?.id, customer, router]);
+  }, [activeBooking, customer, router]);
 
   const handleOpenEditCustomer = useCallback(() => {
     if (!customer) return;
@@ -780,7 +780,7 @@ export function useCustomerDetailController() {
     } catch (error) {
       toast.error('Lỗi: ' + getErrorMessage(error), { id: 'combined-portal' });
     }
-  }, [customer?.allBookings, selectedBookingIds]);
+  }, [customer, selectedBookingIds]);
 
   const handlePayRemaining = useCallback((amount: number) => {
     if (isRecordingPayment) return;
@@ -874,7 +874,7 @@ export function useCustomerDetailController() {
       console.error('Delete booking error:', error);
       toast.error('Lỗi khi xóa gói: ' + getErrorMessage(error));
     }
-  }, [activeBooking?.id, loadData]);
+  }, [activeBooking, loadData]);
 
   const isDepositOnly = Boolean(activeBooking && activeBooking.status === 'deposit_pending' && !activeBooking.package_id);
   const sortedSessions = useMemo(

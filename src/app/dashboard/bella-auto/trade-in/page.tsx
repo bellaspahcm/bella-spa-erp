@@ -145,15 +145,19 @@ export default function TradeInPage() {
 
   // Handle file upload
   const handleUpload = useCallback(async (category: string) => {
+    // Get current file from state before async operations
+    let fileToUpload: File | null = null;
     setUploadStatuses(prev => {
       const status = prev[category];
       if (!status?.file || !selectedAppraisal) return prev;
-
+      fileToUpload = status.file;
       return {
         ...prev,
         [category]: { ...prev[category], uploading: true, error: null },
       };
     });
+
+    if (!fileToUpload || !selectedAppraisal) return;
 
     try {
       const supabase = createClient();
@@ -168,15 +172,11 @@ export default function TradeInPage() {
 
       if (!profile) throw new Error('Profile not found');
 
-      // Get current status from state
-      const currentStatus = uploadStatuses[category];
-      if (!currentStatus?.file) return;
-
       // Upload to Supabase Storage
-      const fileName = `${selectedAppraisal}/${category}/${Date.now()}_${currentStatus.file.name}`;
+      const fileName = `${selectedAppraisal}/${category}/${Date.now()}_${fileToUpload.name}`;
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('trade-in-photos')
-        .upload(fileName, currentStatus.file, {
+        .upload(fileName, fileToUpload, {
           cacheControl: '3600',
           upsert: false,
         });
@@ -194,9 +194,9 @@ export default function TradeInPage() {
         appraisalId: selectedAppraisal,
         photoCategory: category,
         photoUrl: publicUrl,
-        fileName: currentStatus.file.name,
-        fileSizeBytes: currentStatus.file.size,
-        mimeType: currentStatus.file.type,
+        fileName: fileToUpload.name,
+        fileSizeBytes: fileToUpload.size,
+        mimeType: fileToUpload.type,
         uploadedBy: user.id,
       });
 
@@ -214,11 +214,11 @@ export default function TradeInPage() {
       );
       setPhotoCategories(categories);
 
-      const completionStatus = await TradeInPhotoService.checkPhotoCompletionStatus(
+      const completionResult = await TradeInPhotoService.checkPhotoCompletionStatus(
         profile.tenant_id,
         selectedAppraisal
       );
-      setCompletionStatus(completionStatus);
+      setCompletionStatus(completionResult);
 
     } catch (error: unknown) {
       console.error('Upload error:', error);
@@ -230,6 +230,7 @@ export default function TradeInPage() {
       toast.error(`Lỗi tải ảnh: ${errorMessage}`);
     }
   }, [selectedAppraisal]);
+
 
   // Remove photo preview
   const handleRemovePreview = useCallback((category: string) => {

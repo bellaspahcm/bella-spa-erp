@@ -48,6 +48,8 @@ export default function Customer360Page() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isPending, startTransition] = useTransition();
   const [tick, setTick] = useState(0);
+  // Track profiles in state to avoid mutating module-level const
+  const [profiles, setProfiles] = useState<Record<string, AutoCustomerProfile>>(MOCK_PROFILES);
 
   // Form states for Automotive preferences
   const [prefForm, setPrefForm] = useState({
@@ -58,26 +60,29 @@ export default function Customer360Page() {
   });
 
   const activeCustomer = MOCK_CUSTOMERS.find(c => c.id === selectedCustomerId) || MOCK_CUSTOMERS[0];
-  const activeProfile = MOCK_PROFILES[activeCustomer.id];
+  const activeProfile = profiles[activeCustomer.id];
   const activeVehicles = MOCK_OWNED_VEHICLES[activeCustomer.id] || [];
 
   const handleUpdatePreferences = (e: React.FormEvent) => {
     e.preventDefault();
     startTransition(async () => {
       await new Promise(r => setTimeout(r, 650));
-      MOCK_PROFILES[activeCustomer.id] = {
-        ...MOCK_PROFILES[activeCustomer.id],
-        preferredBrands: prefForm.brands.split(',').map(s => s.trim()).filter(Boolean),
-        preferredSegments: prefForm.segments.split(',').map(s => s.trim()).filter(Boolean),
-        budgetRange: prefForm.budget,
-        purchasingPurpose: prefForm.purpose
-      };
+      setProfiles(prev => ({
+        ...prev,
+        [activeCustomer.id]: {
+          ...prev[activeCustomer.id],
+          preferredBrands: prefForm.brands.split(',').map(s => s.trim()).filter(Boolean),
+          preferredSegments: prefForm.segments.split(',').map(s => s.trim()).filter(Boolean),
+          budgetRange: prefForm.budget,
+          purchasingPurpose: prefForm.purpose
+        }
+      }));
       setTick(t => t + 1);
       toast.success('Đã cập nhật sở thích xe của khách hàng!');
     });
   };
 
-  // Sync Form
+  // Sync Form with activeProfile (from state, not module const)
   React.useEffect(() => {
     if (activeProfile) {
       setPrefForm({
@@ -87,7 +92,7 @@ export default function Customer360Page() {
         purpose: activeProfile.purchasingPurpose || ''
       });
     }
-  }, [selectedCustomerId, tick]);
+  }, [selectedCustomerId, activeProfile]);
 
   const filteredCustomers = MOCK_CUSTOMERS.filter(c => 
     c.name.toLowerCase().includes(searchQuery.toLowerCase()) || 

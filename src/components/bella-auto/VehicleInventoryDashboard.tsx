@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase-client';
 import { RefreshCw, Search, Download } from 'lucide-react';
 
@@ -27,7 +27,7 @@ export default function VehicleInventoryDashboard({ tenantId }: { tenantId: stri
   
   const supabase = createClient();
 
-  const loadVehicles = async () => {
+  const loadVehicles = useCallback(async () => {
     setLoading(true);
     try {
       // Check authentication first
@@ -93,15 +93,15 @@ export default function VehicleInventoryDashboard({ tenantId }: { tenantId: stri
     } finally {
       setLoading(false);
     }
-  };
+  }, [supabase, tenantId, statusFilter, searchTerm, currentPage, itemsPerPage]);
 
   useEffect(() => {
     setCurrentPage(1); // Reset to page 1 when filters change
   }, [statusFilter, searchTerm]);
 
   useEffect(() => {
-    loadVehicles();
-  }, [tenantId, statusFilter, searchTerm, currentPage]);
+    void loadVehicles();
+  }, [loadVehicles]);
 
   const getStatusColor = (status: string) => {
     switch (status) {

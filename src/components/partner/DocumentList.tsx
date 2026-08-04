@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { type DocumentCategory } from '@/lib/storage/partner-documents';
 
 interface DocumentMetadata {
@@ -70,7 +70,7 @@ export default function DocumentList({
   const [error, setError] = useState<string | null>(null);
   const [deletingPath, setDeletingPath] = useState<string | null>(null);
   
-  const fetchDocuments = async () => {
+  const fetchDocuments = useCallback(async () => {
     setLoading(true);
     setError(null);
     
@@ -84,15 +84,16 @@ export default function DocumentList({
         setError(data.error || 'Lỗi tải documents');
       }
     } catch (err) {
+      console.error('Failed to fetch documents:', err);
       setError('Lỗi kết nối');
     } finally {
       setLoading(false);
     }
-  };
+  }, [applicationId]);
   
   useEffect(() => {
-    fetchDocuments();
-  }, [applicationId, refreshTrigger]);
+    void fetchDocuments();
+  }, [fetchDocuments, refreshTrigger]);
   
   const handleDelete = async (filePath: string) => {
     if (!confirm('Bạn có chắc muốn xóa tài liệu này?')) return;

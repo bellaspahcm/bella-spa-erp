@@ -240,7 +240,7 @@ function SessionsContent() {
     router.replace(newPath, { scroll: false });
   };
 
-  function applyFilters(data: SessionBooking[], query: string, status: string, sort: string) {
+  const applyFilters = useCallback((data: SessionBooking[], query: string, status: string, sort: string) => {
     let result = [...data];
     
     if (query) {
@@ -294,11 +294,12 @@ function SessionsContent() {
     }
     
     setFilteredSessions(result);
-  };
+  }, [today]);
 
   useEffect(() => {
     applyFilters(sessions, searchQuery, statusFilter, sortFilter);
-  }, [searchQuery, statusFilter, sortFilter, sessions]);
+  }, [applyFilters, searchQuery, statusFilter, sortFilter, sessions]);
+
 
   // Date filter applied on top of text+status filter
   const displaySessions = useMemo(() => {

@@ -200,8 +200,50 @@ export default function HqDashboardClient({
   const [submittingDistribution, setSubmittingDistribution] = useState(false);
   const [submittingTemplate, setSubmittingTemplate] = useState(false);
 
+  // ✅ FIXED: Move data loading functions BEFORE refreshData to avoid "accessed before declared" error
+  const loadRoyaltyData = useCallback(async () => {
+    setLoadingRoyalty(true);
+    try {
+      const data = await getFranchiseRoyaltyInvoices();
+      setInvoices(data);
+    } catch (err) {
+      toast.error('Không thể tải hóa đơn nhượng quyền: ' + getErrorMessage(err));
+    } finally {
+      setLoadingRoyalty(false);
+    }
+  }, []);
+
+  const loadClearingData = useCallback(async () => {
+    setLoadingClearing(true);
+    try {
+      const data = await getInterBranchClearingRecords();
+      setClearingRecords(data);
+    } catch (err) {
+      toast.error('Không thể tải đối soát liên chi nhánh: ' + getErrorMessage(err));
+    } finally {
+      setLoadingClearing(false);
+    }
+  }, []);
+
+  const loadTransferData = useCallback(async () => {
+    setLoadingTransfers(true);
+    try {
+      const result = await getInventoryTransferOrdersResult();
+      if (!result.success) {
+        setTransferOrders([]);
+        toast.error('Không thể tải danh sách chuyển kho: ' + result.error);
+        return;
+      }
+      setTransferOrders(result.data);
+    } catch (err) {
+      toast.error('Không thể tải danh sách chuyển kho: ' + getErrorMessage(err));
+    } finally {
+      setLoadingTransfers(false);
+    }
+  }, []);
+
   // Sync data manually
-  const refreshData = async () => {
+  const refreshData = useCallback(async () => {
     setLoading(true);
     try {
       const freshStats = await getHqDashboardStats() as HqDashboardStats;
@@ -229,48 +271,8 @@ export default function HqDashboardClient({
     } finally {
       setLoading(false);
     }
-  };
-
-  const loadRoyaltyData = async () => {
-    setLoadingRoyalty(true);
-    try {
-      const data = await getFranchiseRoyaltyInvoices();
-      setInvoices(data);
-    } catch (err) {
-      toast.error('Không thể tải hóa đơn nhượng quyền: ' + getErrorMessage(err));
-    } finally {
-      setLoadingRoyalty(false);
-    }
-  };
-
-  const loadClearingData = async () => {
-    setLoadingClearing(true);
-    try {
-      const data = await getInterBranchClearingRecords();
-      setClearingRecords(data);
-    } catch (err) {
-      toast.error('Không thể tải đối soát liên chi nhánh: ' + getErrorMessage(err));
-    } finally {
-      setLoadingClearing(false);
-    }
-  };
-
-  const loadTransferData = async () => {
-    setLoadingTransfers(true);
-    try {
-      const result = await getInventoryTransferOrdersResult();
-      if (!result.success) {
-        setTransferOrders([]);
-        toast.error('KhÃ´ng thá»ƒ táº£i danh sÃ¡ch chuyá»ƒn kho: ' + result.error);
-        return;
-      }
-      setTransferOrders(result.data);
-    } catch (err) {
-      toast.error('Không thể tải danh sách chuyển kho: ' + getErrorMessage(err));
-    } finally {
-      setLoadingTransfers(false);
-    }
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, currentPage, loadAuditData, loadRoyaltyData, loadClearingData, loadTransferData]);
 
   const loadAuditData = useCallback(async (page: number = 1) => {
     setLoadingAudit(true);

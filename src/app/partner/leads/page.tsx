@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { 
   Users, UserPlus, Search, ShieldAlert, ArrowLeft, 
   Phone, Mail, MessageSquare, Plus, Clock, HelpCircle, Check, Loader2, ChevronDown,
@@ -43,12 +43,7 @@ export default function PartnerLeads() {
     { value: 'Trên 10 tỷ', label: 'Trên 10 tỷ' },
   ];
 
-  // Load leads from API
-  useEffect(() => {
-    loadLeads();
-  }, []);
-
-  const loadLeads = async () => {
+  const loadLeads = useCallback(async () => {
     try {
       setIsLoading(true);
       const data = await fetchPartnerLeads();
@@ -59,7 +54,12 @@ export default function PartnerLeads() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  // Load leads from API
+  useEffect(() => {
+    void loadLeads();
+  }, [loadLeads]);
 
   const handleCreateLead = async (e: React.FormEvent) => {
     e.preventDefault();

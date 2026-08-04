@@ -324,6 +324,13 @@ export default function DashboardPage() {
     };
   }, [scheduleDashboardAlertsRefresh, scheduleDashboardRefresh, isTenantModuleLoading, tenantModuleKey]);
 
+  // Redirect bella_auto to module-specific dashboard (hook moved ABOVE all conditional returns)
+  useEffect(() => {
+    if (tenantModuleKey === 'bella_auto') {
+      router.replace('/dashboard/bella-auto');
+    }
+  }, [tenantModuleKey, router]);
+
   // Now perform conditional early returns safe from Rule of Hooks violation
   if (isTenantModuleLoading) {
     return (
@@ -339,13 +346,6 @@ export default function DashboardPage() {
       </div>
     );
   }
-
-  // Redirect to module-specific dashboard
-  useEffect(() => {
-    if (tenantModuleKey === 'bella_auto') {
-      router.replace('/dashboard/bella-auto');
-    }
-  }, [tenantModuleKey, router]);
 
   // Early return for module-specific pages
   if (tenantModuleKey === 'bella_auto') {

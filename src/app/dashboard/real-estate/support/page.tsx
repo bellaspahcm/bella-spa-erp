@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LifeBuoy, Search, Plus, User, MessageSquare, AlertTriangle, CheckCircle2,
@@ -54,19 +54,19 @@ export default function SupportPage() {
   const [newCategory, setNewCategory] = useState<TicketCategory>("SERVICE_QUALITY");
   const [newCustId, setNewCustId] = useState("inv-1");
 
-  // Load tickets and timeline on mount & when selections change
-  useEffect(() => {
-    refreshData();
-  }, [selectedCustomerId]);
-
-  function refreshData() {
+  const refreshData = useCallback(() => {
     const list = ComplaintTicketService.getTickets("real_estate");
     setTickets(list);
     const events = ComplaintTicketService.getCustomerTimeline("real_estate", selectedCustomerId);
     // Sort newest first
     const sorted = [...events].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
     setTimeline(sorted);
-  }
+  }, [selectedCustomerId]);
+
+  // Load tickets and timeline on mount & when selections change
+  useEffect(() => {
+    refreshData();
+  }, [refreshData]);
 
   function handleCustomerSelect(id: string, name: string) {
     setSelectedCustomerId(id);
