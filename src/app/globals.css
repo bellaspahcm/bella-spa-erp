@@ -1182,6 +1182,19 @@ html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item svg {
 html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item span {
   color: #e0f2fe !important;
 }
+
+/* CRITICAL FIX: Force bright text color for Bella Auto nav items - override ALL possible Tailwind classes */
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item[class*="text-"],
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item [class*="text-gray"],
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item [class*="text-slate"] {
+  color: #e0f2fe !important;
+}
+html[data-tenant-brand-preset="ocean_clean"] a.beauty-erp-nav-item {
+  color: #e0f2fe !important;
+}
+html[data-tenant-brand-preset="ocean_clean"] a.beauty-erp-nav-item > * {
+  color: #e0f2fe !important;
+}
 html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-profile-card,
 html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-avatar,
 html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-icon-button {
