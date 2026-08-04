@@ -92,9 +92,16 @@ export async function GET(request: NextRequest) {
       .eq('id', tenantId)
       .single();
 
-    const capacityConfig = (tenantData?.metadata as any)?.capacity_config as Record<string, unknown> | null;
-    const minBreakMinutes = (capacityConfig?.minBreakMinutes as number) || 15;
-    const enforceBreakTimes = (capacityConfig?.enforceBreakTimes as boolean) !== false; // Default true
+    type TenantMetadata = {
+      capacity_config?: {
+        minBreakMinutes?: number;
+        enforceBreakTimes?: boolean;
+      };
+    };
+
+    const capacityConfig = (tenantData?.metadata as TenantMetadata)?.capacity_config;
+    const minBreakMinutes = capacityConfig?.minBreakMinutes ?? 15;
+    const enforceBreakTimes = capacityConfig?.enforceBreakTimes !== false; // Default true
 
     // Fetch all active KTVs
     const { data: allKtvs, error: ktvsError } = await supabase

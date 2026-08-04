@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
         email_verified_at: new Date().toISOString(),
         status: 'pending_verification', // Move to next stage
         updated_at: new Date().toISOString(),
-      } as any)
+      })
       .eq('id', application.id);
 
     if (updateError) {
@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
         action: 'email_verified',
         action_description: 'Email verified successfully',
         performed_by_role: 'system',
-      } as any);
+      });
 
     return NextResponse.json({
       success: true,

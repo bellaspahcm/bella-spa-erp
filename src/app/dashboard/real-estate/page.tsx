@@ -29,8 +29,16 @@ export default function RealEstateDashboardPage() {
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
+  type AppNotification = {
+    id: string;
+    title: string;
+    message: string;
+    is_read: boolean;
+    created_at: string;
+  };
+
   // States for notifications
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const [showNotifDropdown, setShowNotifDropdown] = useState<boolean>(false);
 
@@ -45,8 +53,8 @@ export default function RealEstateDashboardPage() {
         .limit(5);
 
       if (data) {
-        setNotifications(data);
-        setUnreadCount(data.filter((n: any) => !n.is_read).length);
+        setNotifications(data as AppNotification[]);
+        setUnreadCount(data.filter((n) => !n.is_read).length);
       }
     } catch (err) {
       console.error('Error fetching notifications:', err);

@@ -124,7 +124,8 @@ export class RecommendationService {
           computationTime,
         },
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       return {
         success: false,
         data: {} as ServiceRecommendationResult,
@@ -137,8 +138,8 @@ export class RecommendationService {
         },
         error: {
           code: 'RECOMMENDATION_ERROR',
-          message: error.message || 'Failed to generate service recommendations',
-          details: error,
+          message: errorMessage || 'Failed to generate service recommendations',
+          details: error instanceof Error ? error : new Error(String(error)),
         },
       };
     }

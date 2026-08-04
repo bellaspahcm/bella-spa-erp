@@ -615,7 +615,7 @@ export default function RealEstateCustomersPage() {
                         { value: "cold_call", label: "Telesale" },
                       ]}
                       value={source}
-                      onChange={(val) => setSource(val as any)}
+                      onChange={(val) => setSource(val as "referral" | "website" | "social_media" | "event" | "cold_call" | "all")}
                       buttonClassName="h-9 py-0 px-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-normal text-slate-900 dark:text-white hover:bg-slate-100/50 dark:hover:bg-slate-900/50 shadow-none focus:border-blue-500/50 focus:ring-0 focus:ring-offset-0"
                       dropdownClassName="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-xl rounded-xl py-1"
                       itemClassName="px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm font-normal transition-colors"

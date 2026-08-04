@@ -171,7 +171,13 @@ export default function GlobalSearchPage() {
       try {
         const savedLeadsStr = localStorage.getItem('bella_re_managed_leads');
         if (savedLeadsStr) {
-          const leadsList = JSON.parse(savedLeadsStr) as any[];
+          type SavedLead = {
+            fullName?: string;
+            phone?: string;
+            email?: string;
+            interestedProject?: string;
+          };
+          const leadsList = JSON.parse(savedLeadsStr) as SavedLead[];
           const filteredLeads = leadsList.filter(l => {
             const matchesText =
               (l.fullName && l.fullName.toLowerCase().includes(lowerQ)) ||

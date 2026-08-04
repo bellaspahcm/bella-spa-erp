@@ -124,8 +124,9 @@ export default function DashboardLayout({
                 console.log(`[ThemeUpgrade] ✅ ${getUpgradeDescription(moduleKey)}`);
                 
                 // Show toast notification (optional - only if toast context available)
-                if (typeof window !== 'undefined' && (window as any).showToast) {
-                  (window as any).showToast({
+                type WindowWithToast = Window & { showToast?: (opts: { title: string; description: string; variant: string }) => void };
+                if (typeof window !== 'undefined' && (window as WindowWithToast).showToast) {
+                  (window as WindowWithToast).showToast({
                     title: 'Cập nhật giao diện',
                     description: getUpgradeDescription(moduleKey),
                     variant: 'success',

@@ -618,7 +618,8 @@ export async function POST(request: NextRequest) {
           .in("role", ["admin", "super_admin", "admin_staff", "accountant", "hq_staff"]);
 
         if (adminUsers && adminUsers.length > 0) {
-          const customerName = (booking as any)?.customers?.name_mother || "Khách hàng";
+          type BookingWithCustomer = { customers?: { name_mother?: string } };
+          const customerName = (booking as BookingWithCustomer)?.customers?.name_mother || "Khách hàng";
           const packageName = booking.package_name || "Gói dịch vụ";
           const amountFormatted = new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
           
