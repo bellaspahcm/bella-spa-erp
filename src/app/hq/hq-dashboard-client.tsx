@@ -242,38 +242,6 @@ export default function HqDashboardClient({
     }
   }, []);
 
-  // Sync data manually
-  const refreshData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const freshStats = await getHqDashboardStats() as HqDashboardStats;
-      const freshTenants = await getAllTenants() as unknown as HqTenantRecord[];
-      setStats(freshStats);
-      setTenants(freshTenants);
-      
-      if (activeTab === 'franchise') {
-        await loadRoyaltyData();
-      } else if (activeTab === 'clearing') {
-        await loadClearingData();
-      } else if (activeTab === 'transfers') {
-        await loadTransferData();
-      } else if (activeTab === 'audit') {
-        await loadAuditData(currentPage);
-      } else if (activeTab === 'subscriptions') {
-        setSubscriptionRefreshSignal(prev => prev + 1);
-      } else if (activeTab === 'services') {
-        await loadServicesData();
-      }
-      
-      toast.success('Đồng bộ dữ liệu Bella HQ thành công!');
-    } catch (err) {
-      toast.error('Lỗi khi tải lại dữ liệu: ' + getErrorMessage(err));
-    } finally {
-      setLoading(false);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, currentPage, loadAuditData, loadRoyaltyData, loadClearingData, loadTransferData]);
-
   const loadAuditData = useCallback(async (page: number = 1) => {
     setLoadingAudit(true);
     try {
@@ -313,6 +281,37 @@ export default function HqDashboardClient({
     selectedUser,
     startDate,
   ]);
+
+  // Sync data manually
+  const refreshData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const freshStats = await getHqDashboardStats() as HqDashboardStats;
+      const freshTenants = await getAllTenants() as unknown as HqTenantRecord[];
+      setStats(freshStats);
+      setTenants(freshTenants);
+      
+      if (activeTab === 'franchise') {
+        await loadRoyaltyData();
+      } else if (activeTab === 'clearing') {
+        await loadClearingData();
+      } else if (activeTab === 'transfers') {
+        await loadTransferData();
+      } else if (activeTab === 'audit') {
+        await loadAuditData(currentPage);
+      } else if (activeTab === 'subscriptions') {
+        setSubscriptionRefreshSignal(prev => prev + 1);
+      } else if (activeTab === 'services') {
+        await loadServicesData();
+      }
+      
+      toast.success('Đồng bộ dữ liệu Bella HQ thành công!');
+    } catch (err) {
+      toast.error('Lỗi khi tải lại dữ liệu: ' + getErrorMessage(err));
+    } finally {
+      setLoading(false);
+    }
+  }, [activeTab, currentPage, loadAuditData, loadRoyaltyData, loadClearingData, loadTransferData]);
 
   const handleOpenShipModal = (order: InventoryTransferOrder) => {
     if (submittingTransferAction) return;
@@ -443,8 +442,10 @@ export default function HqDashboardClient({
     }
   };
 
-  const handleOpenTemplateModal = (template: HqPackageTemplate | null = null) => {
-    setEditingTemplate(template);
+  const handleOpenTemplateModal = useCallback((template: HqPackageTemplate | null = null) => {
+    // Create immutable copy to satisfy React Compiler
+    const templateCopy = template ? { ...template } : null;
+    setEditingTemplate(templateCopy);
     if (template) {
       setTemplateName(template.name);
       setTemplatePrice(formatMoneyInput(template.price));
@@ -470,7 +471,7 @@ export default function HqDashboardClient({
     }
     setNewDetailText('');
     setShowTemplateModal(true);
-  };
+  }, []);
 
   const handleSaveTemplate = async (e: React.FormEvent) => {
     e.preventDefault();
