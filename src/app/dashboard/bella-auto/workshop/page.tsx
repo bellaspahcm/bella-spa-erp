@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ServiceCalendar } from '@/modules/bella-auto/components/workshop/ServiceCalendar';
 import { RepairOrderBoard } from '@/modules/bella-auto/components/workshop/RepairOrderBoard';
 import { TechnicianDashboard } from '@/modules/bella-auto/components/workshop/TechnicianDashboard';
@@ -78,113 +78,113 @@ export default function WorkshopPage() {
   ];
 
   // Fetch appointments and repair orders from Supabase
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true);
-        const supabase = createClient();
+  const fetchData = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const supabase = createClient();
+      
+      if (!supabase) {
+        console.error('Supabase client not initialized');
+        toast.error('Không thể kết nối Supabase');
+        setIsLoading(false);
+        return;
+      }
+      
+      // Debug: Log current tenant context
+      console.log('[Workshop] Fetching data...');
+      
+      // Check if tables exist with a simple count query first
+      const { count: aptCount, error: aptTestError } = await supabase
+        .from('auto_service_appointments')
+        .select('*', { count: 'exact', head: true })
+        .eq('tenant_id', tenantId); // ✅ Add tenant filter
+      
+      if (aptTestError) {
+        console.error('[Workshop] Table check failed:', {
+          code: aptTestError.code,
+          message: aptTestError.message,
+          details: aptTestError.details,
+          hint: aptTestError.hint
+        });
         
-        if (!supabase) {
-          console.error('Supabase client not initialized');
-          toast.error('Không thể kết nối Supabase');
+        if (aptTestError.code === 'PGRST116' || aptTestError.message?.includes('does not exist')) {
+          toast.error('Bảng auto_service_appointments chưa được tạo. Chạy migration: 20260803260000');
           setIsLoading(false);
           return;
         }
-        
-        // Debug: Log current tenant context
-        console.log('[Workshop] Fetching data...');
-        
-        // Check if tables exist with a simple count query first
-        const { count: aptCount, error: aptTestError } = await supabase
-          .from('auto_service_appointments')
-          .select('*', { count: 'exact', head: true })
-          .eq('tenant_id', tenantId); // ✅ Add tenant filter
-        
-        if (aptTestError) {
-          console.error('[Workshop] Table check failed:', {
-            code: aptTestError.code,
-            message: aptTestError.message,
-            details: aptTestError.details,
-            hint: aptTestError.hint
-          });
-          
-          if (aptTestError.code === 'PGRST116' || aptTestError.message?.includes('does not exist')) {
-            toast.error('Bảng auto_service_appointments chưa được tạo. Chạy migration: 20260803260000');
-            setIsLoading(false);
-            return;
-          }
-        } else {
-          console.log(`[Workshop] Found ${aptCount} appointments in database`);
-        }
-        
-        // Query with proper null handling
-        const appointmentsRes = await supabase
-          .from('auto_service_appointments')
-          .select('*')
-          .eq('tenant_id', tenantId) // ✅ Add tenant filter
-          .order('scheduled_date', { ascending: true });
-        
-        console.log('[Workshop] Appointments query result:', {
-          success: !appointmentsRes.error,
-          count: appointmentsRes.data?.length || 0,
-          error: appointmentsRes.error ? {
-            code: appointmentsRes.error.code,
-            message: appointmentsRes.error.message
-          } : null
-        });
-        
-        const ordersRes = await supabase
-          .from('auto_repair_orders')
-          .select('*')
-          .eq('tenant_id', tenantId) // ✅ Add tenant filter
-          .order('opened_at', { ascending: false });
-        
-        console.log('[Workshop] Orders query result:', {
-          success: !ordersRes.error,
-          count: ordersRes.data?.length || 0,
-          error: ordersRes.error ? {
-            code: ordersRes.error.code,
-            message: ordersRes.error.message
-          } : null
-        });
-
-        if (appointmentsRes.error) {
-          console.error('Appointments fetch error:', appointmentsRes.error.message || appointmentsRes.error);
-          // Check if table exists
-          if (appointmentsRes.error.code === 'PGRST116' || appointmentsRes.error.message?.includes('relation')) {
-            toast.error('Bảng auto_service_appointments chưa được tạo. Vui lòng chạy migration.');
-          }
-          setAppointments([]);
-        } else {
-          // Map database format to component format
-          const mappedAppointments = (appointmentsRes.data || []).map(mapAppointmentForCalendar);
-          setAppointments(mappedAppointments);
-        }
-        
-        if (ordersRes.error) {
-          console.error('Orders fetch error:', ordersRes.error.message || ordersRes.error);
-          // Check if table exists
-          if (ordersRes.error.code === 'PGRST116' || ordersRes.error.message?.includes('relation')) {
-            toast.error('Bảng auto_repair_orders chưa được tạo. Vui lòng chạy migration.');
-          }
-          setOrders([]);
-        } else {
-          // Map database format to component format
-          const mappedOrders = (ordersRes.data || []).map(mapRepairOrderForBoard);
-          setOrders(mappedOrders);
-        }
-      } catch (error) {
-        console.error('Failed to fetch workshop data:', error);
-        toast.error('Không thể tải dữ liệu workshop');
-        setAppointments([]);
-        setOrders([]);
-      } finally {
-        setIsLoading(false);
+      } else {
+        console.log(`[Workshop] Found ${aptCount} appointments in database`);
       }
-    };
+      
+      // Query with proper null handling
+      const appointmentsRes = await supabase
+        .from('auto_service_appointments')
+        .select('*')
+        .eq('tenant_id', tenantId) // ✅ Add tenant filter
+        .order('scheduled_date', { ascending: true });
+      
+      console.log('[Workshop] Appointments query result:', {
+        success: !appointmentsRes.error,
+        count: appointmentsRes.data?.length || 0,
+        error: appointmentsRes.error ? {
+          code: appointmentsRes.error.code,
+          message: appointmentsRes.error.message
+        } : null
+      });
+      
+      const ordersRes = await supabase
+        .from('auto_repair_orders')
+        .select('*')
+        .eq('tenant_id', tenantId) // ✅ Add tenant filter
+        .order('opened_at', { ascending: false });
+      
+      console.log('[Workshop] Orders query result:', {
+        success: !ordersRes.error,
+        count: ordersRes.data?.length || 0,
+        error: ordersRes.error ? {
+          code: ordersRes.error.code,
+          message: ordersRes.error.message
+        } : null
+      });
 
+      if (appointmentsRes.error) {
+        console.error('Appointments fetch error:', appointmentsRes.error.message || appointmentsRes.error);
+        // Check if table exists
+        if (appointmentsRes.error.code === 'PGRST116' || appointmentsRes.error.message?.includes('relation')) {
+          toast.error('Bảng auto_service_appointments chưa được tạo. Vui lòng chạy migration.');
+        }
+        setAppointments([]);
+      } else {
+        // Map database format to component format
+        const mappedAppointments = (appointmentsRes.data || []).map(mapAppointmentForCalendar);
+        setAppointments(mappedAppointments);
+      }
+      
+      if (ordersRes.error) {
+        console.error('Orders fetch error:', ordersRes.error.message || ordersRes.error);
+        // Check if table exists
+        if (ordersRes.error.code === 'PGRST116' || ordersRes.error.message?.includes('relation')) {
+          toast.error('Bảng auto_repair_orders chưa được tạo. Vui lòng chạy migration.');
+        }
+        setOrders([]);
+      } else {
+        // Map database format to component format
+        const mappedOrders = (ordersRes.data || []).map(mapRepairOrderForBoard);
+        setOrders(mappedOrders);
+      }
+    } catch (error) {
+      console.error('Failed to fetch workshop data:', error);
+      toast.error('Không thể tải dữ liệu workshop');
+      setAppointments([]);
+      setOrders([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [tenantId]);
+
+  useEffect(() => {
     fetchData();
-  }, [tenantId]); // ✅ Add tenantId dependency
+  }, [fetchData]);
 
   return (
     <div className="flex-1 overflow-auto bg-slate-50/30 dark:bg-slate-950 p-6 md:p-10 space-y-8" data-auto-layout>

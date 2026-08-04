@@ -4,7 +4,7 @@
  */
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { getCurrentUser } from '@/services/user-actions';
 import { 
@@ -72,19 +72,9 @@ export default function PartnerBookingsPage() {
         setShowCreateModal(true); // Auto-open modal
       }
     }
+  }, []); // Close useEffect
 
-    const loadUser = async () => {
-      const user = await getCurrentUser();
-      if (!user) {
-        router.push('/login');
-        return;
-      }
-      await loadBookings(user.id);
-    };
-    void loadUser();
-  }, [router]);
-
-  const loadBookings = async (userId: string) => {
+  const loadBookings = useCallback(async (userId: string) => {
     try {
       setLoading(true);
       const data = await fetchPartnerBookings(userId);
@@ -94,7 +84,19 @@ export default function PartnerBookingsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const loadUser = async () => {
+      const user = await getCurrentUser();
+      if (!user) {
+        router.push('/login');
+        return;
+      }
+      await loadBookings(user.id);
+    };
+    void loadUser();
+  }, [router, loadBookings]);
 
   const handleCreateBooking = async (formData: FormData) => {
     try {

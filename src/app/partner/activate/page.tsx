@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 
 export default function PartnerActivatePage() {
@@ -14,17 +14,7 @@ export default function PartnerActivatePage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (!token) {
-      setStep('error');
-      setError('Token kích hoạt không hợp lệ');
-      return;
-    }
-
-    validateToken();
-  }, [token]);
-
-  const validateToken = async () => {
+  const validateToken = useCallback(async () => {
     try {
       const response = await fetch(`/api/partner/activate/validate?token=${token}`);
       const data = await response.json();
@@ -40,7 +30,17 @@ export default function PartnerActivatePage() {
       setStep('error');
       setError('Có lỗi xảy ra. Vui lòng thử lại sau.');
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    if (!token) {
+      setStep('error');
+      setError('Token kích hoạt không hợp lệ');
+      return;
+    }
+
+    void validateToken();
+  }, [token, validateToken]);
 
   const handleActivate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,7 +54,6 @@ export default function PartnerActivatePage() {
       alert('Mật khẩu xác nhận không khớp');
       return;
     }
-
     setIsSubmitting(true);
 
     try {

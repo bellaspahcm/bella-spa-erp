@@ -24,32 +24,33 @@ function StatusContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  useEffect(() => {
-    if (applicationId) {
-      loadApplication(applicationId);
-    } else {
-      setError('Không tìm thấy ID đơn đăng ký');
-      setIsLoading(false);
-    }
-  }, [applicationId]);
-  
   const loadApplication = async (id: string) => {
     setIsLoading(true);
     
     try {
-      const response = await getApplicationById(id);
+      const result = await getApplicationById(id);
       
-      if (response.success && response.application) {
-        setApplication(response.application);
+      if (result.success && result.data) {
+        setApplication(result.data);
       } else {
-        setError(response.error || 'Không tìm thấy đơn đăng ký');
+        setError(result.error || 'Không thể tải thông tin đơn đăng ký');
       }
     } catch (err) {
+      console.error('[loadApplication] Error:', err);
       setError('Có lỗi xảy ra. Vui lòng thử lại sau.');
     } finally {
       setIsLoading(false);
     }
   };
+  
+  useEffect(() => {
+    if (applicationId) {
+      void loadApplication(applicationId);
+    } else {
+      setError('Không tìm thấy ID đơn đăng ký');
+      setIsLoading(false);
+    }
+  }, [applicationId]);
   
   if (isLoading) {
     return (

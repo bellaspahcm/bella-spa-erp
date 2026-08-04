@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useTransition, useEffect } from 'react';
+import React, { useState, useTransition, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users,
@@ -63,20 +63,21 @@ export default function LeadCenterPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [isPending, startTransition] = useTransition();
 
-  useEffect(() => {
-    const fetchLeads = async () => {
-      try {
-        setIsLoading(true);
-        const supabase = createClient();
-        if (!supabase) { setIsLoading(false); return; }
-        const { data, error } = await supabase.from('auto_leads').select('*').order('created_at', { ascending: false });
-        if (error) { toast.error('Không thể tải danh sách lead'); setLeads([]); }
-        else { setLeads(data || []); }
-      } catch { toast.error('Không thể tải danh sách lead'); setLeads([]); }
-      finally { setIsLoading(false); }
-    };
-    fetchLeads();
+  const fetchLeads = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const supabase = createClient();
+      if (!supabase) { setIsLoading(false); return; }
+      const { data, error } = await supabase.from('auto_leads').select('*').order('created_at', { ascending: false });
+      if (error) { toast.error('Không thể tải danh sách lead'); setLeads([]); }
+      else { setLeads(data || []); }
+    } catch { toast.error('Không thể tải danh sách lead'); setLeads([]); }
+    finally { setIsLoading(false); }
   }, []);
+
+  useEffect(() => {
+    fetchLeads();
+  }, [fetchLeads]);
 
   const handleRoundRobin = (leadId: string) => {
     startTransition(async () => {

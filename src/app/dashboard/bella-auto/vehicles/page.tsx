@@ -250,41 +250,41 @@ export default function VehicleInventoryPage() {
   const itemsPerPage = 50; // Show 50 items per page
 
   // Fetch vehicles from Supabase
-  useEffect(() => {
-    const fetchVehicles = async () => {
-      try {
-        setIsLoading(true);
-        const supabase = createClient();
-        
-        if (!supabase) {
-          console.error('Supabase client not initialized');
-          setIsLoading(false);
-          return;
-        }
+  const fetchVehicles = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const supabase = createClient();
+      
+      if (!supabase) {
+        console.error('Supabase client not initialized');
+        setIsLoading(false);
+        return;
+      }
 
-        const { data, error } = await supabase
-          .from('auto_vehicles')
-          .select('*')
-          .order('created_at', { ascending: false });
+      const { data, error } = await supabase
+        .from('auto_vehicles')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-        if (error) {
-          console.error('Failed to fetch vehicles:', error);
-          toast.error('Không thể tải danh sách xe');
-          setVehicles([]);
-        } else {
-          setVehicles(data || []);
-        }
-      } catch (error) {
+      if (error) {
         console.error('Failed to fetch vehicles:', error);
         toast.error('Không thể tải danh sách xe');
         setVehicles([]);
-      } finally {
-        setIsLoading(false);
+      } else {
+        setVehicles(data || []);
       }
-    };
-
-    fetchVehicles();
+    } catch (error) {
+      console.error('Failed to fetch vehicles:', error);
+      toast.error('Không thể tải danh sách xe');
+      setVehicles([]);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchVehicles();
+  }, [fetchVehicles]);
 
   // Handle dropdown toggle - close others when opening one
   const handleDropdownToggle = useCallback((vehicleId: string) => {

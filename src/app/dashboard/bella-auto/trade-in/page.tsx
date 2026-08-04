@@ -145,13 +145,15 @@ export default function TradeInPage() {
 
   // Handle file upload
   const handleUpload = useCallback(async (category: string) => {
-    const status = uploadStatuses[category];
-    if (!status?.file || !selectedAppraisal) return;
+    setUploadStatuses(prev => {
+      const status = prev[category];
+      if (!status?.file || !selectedAppraisal) return prev;
 
-    setUploadStatuses(prev => ({
-      ...prev,
-      [category]: { ...prev[category], uploading: true, error: null },
-    }));
+      return {
+        ...prev,
+        [category]: { ...prev[category], uploading: true, error: null },
+      };
+    });
 
     try {
       const supabase = createClient();
@@ -166,11 +168,15 @@ export default function TradeInPage() {
 
       if (!profile) throw new Error('Profile not found');
 
+      // Get current status from state
+      const currentStatus = uploadStatuses[category];
+      if (!currentStatus?.file) return;
+
       // Upload to Supabase Storage
-      const fileName = `${selectedAppraisal}/${category}/${Date.now()}_${status.file.name}`;
+      const fileName = `${selectedAppraisal}/${category}/${Date.now()}_${currentStatus.file.name}`;
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('trade-in-photos')
-        .upload(fileName, status.file, {
+        .upload(fileName, currentStatus.file, {
           cacheControl: '3600',
           upsert: false,
         });
@@ -188,9 +194,9 @@ export default function TradeInPage() {
         appraisalId: selectedAppraisal,
         photoCategory: category,
         photoUrl: publicUrl,
-        fileName: status.file.name,
-        fileSizeBytes: status.file.size,
-        mimeType: status.file.type,
+        fileName: currentStatus.file.name,
+        fileSizeBytes: currentStatus.file.size,
+        mimeType: currentStatus.file.type,
         uploadedBy: user.id,
       });
 
@@ -216,25 +222,26 @@ export default function TradeInPage() {
 
     } catch (error: unknown) {
       console.error('Upload error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       setUploadStatuses(prev => ({
         ...prev,
-        [category]: { ...prev[category], uploading: false, error: error.message },
+        [category]: { ...prev[category], uploading: false, error: errorMessage },
       }));
-      toast.error(`Lỗi tải ảnh: ${error.message}`);
+      toast.error(`Lỗi tải ảnh: ${errorMessage}`);
     }
-  }, [uploadStatuses, selectedAppraisal]);
+  }, [selectedAppraisal]);
 
   // Remove photo preview
   const handleRemovePreview = useCallback((category: string) => {
-    const status = uploadStatuses[category];
-    if (status?.preview) {
-      URL.revokeObjectURL(status.preview);
-    }
     setUploadStatuses(prev => {
+      const status = prev[category];
+      if (status?.preview) {
+        URL.revokeObjectURL(status.preview);
+      }
       const { [category]: _, ...rest } = prev;
       return rest;
     });
-  }, [uploadStatuses]);
+  }, []);
 
   if (loading) {
     return (
