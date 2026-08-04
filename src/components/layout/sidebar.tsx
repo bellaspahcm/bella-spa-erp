@@ -152,7 +152,8 @@ function isTenantBrandDisplay(value: unknown): value is CachedTenantBrandDisplay
       source.moduleKey === 'beauty_spa' ||
       source.moduleKey === 'student_training' ||
       source.moduleKey === 'industrial_cleaning' ||
-      source.moduleKey === 'real_estate') &&
+      source.moduleKey === 'real_estate' ||
+      source.moduleKey === 'bella_auto') &&
     typeof source.primaryColor === 'string' &&
     typeof source.accentColor === 'string' &&
     typeof source.primaryHoverColor === 'string' &&
@@ -383,6 +384,31 @@ const realEstateMenuItems: SidebarMenuItem[] = [
   { icon: Settings,        label: 'Cài Đặt Hệ Thống',     href: '/dashboard/settings' },
 ];
 
+// ─── Bella Auto Module Menu (isolated — only shown for bella_auto moduleKey) ───
+const bellaAutoMenuItems: SidebarMenuItem[] = [
+  { type: 'header', label: 'Tổng quan & AI' },
+  { icon: LayoutDashboard, label: 'Trung tâm Ô tô',       href: '/dashboard/bella-auto' },
+  { icon: Sparkles,        label: 'AI Copilot',           href: '/dashboard/ai-copilot' },
+
+  { type: 'header', label: 'Dịch vụ Ô tô' },
+  { icon: Car,             label: 'Kho Xe',               href: '/dashboard/bella-auto/vehicles' },
+  { icon: Wrench,          label: 'Xưởng Dịch Vụ',        href: '/dashboard/bella-auto/workshop' },
+  { icon: Calendar,        label: 'Lịch Hẹn Ô Tô',        href: '/dashboard/bella-auto/bookings' },
+  { icon: Users,           label: 'Khách Hàng Ô Tô',      href: '/dashboard/bella-auto/customers' },
+  { icon: Target,          label: 'Quản Lý Lead Ô Tô',    href: '/dashboard/bella-auto/leads' },
+
+  { type: 'header', label: 'Trải nghiệm Khách hàng' },
+  { icon: Smile,           label: 'Hành Trình Khách',     href: '/dashboard/bella-auto/journeys' },
+  { icon: GitCommit,       label: 'Trải Nghiệm Dịch Vụ',  href: '/dashboard/bella-auto/experience' },
+
+  { type: 'header', label: 'Tài chính & Hệ thống' },
+  { icon: Banknote,        label: 'Lương & Hoa Hồng',     href: '/dashboard/salary' },
+  { icon: CircleDollarSign, label: 'Dòng Tiền & Thu Chi', href: '/dashboard/finance' },
+  { icon: Wallet,          label: 'Sổ Cái Kế Toán',       href: '/dashboard/accounting' },
+  { icon: HelpCircle,      label: 'Hướng Dẫn Sử Dụng',   href: '/dashboard/guides' },
+  { icon: Settings,        label: 'Cài Đặt Hệ Thống',     href: '/dashboard/settings' },
+];
+
 const customerMenuItems: SidebarMenuItem[] = [
   { icon: Flower2,       label: 'Tiến trình liệu trình', href: '/dashboard/customer' },
   { icon: Calendar,      label: 'Lịch sử buổi làm',      href: '/dashboard/customer/history' },
@@ -521,11 +547,13 @@ export function Sidebar() {
     }
   };
 
-  // ── Menu resolution: Real Estate tenant always gets isolated real estate menu ──
+  // ── Menu resolution: Bella Auto & Real Estate tenants get isolated menus ──
   // This check runs BEFORE verticalRegistry to ensure manifest import order
   // does not affect other tenants (Spa, Babycare, Cleaning).
   const baseMenuItems: SidebarMenuItem[] = user?.role?.toLowerCase() === 'customer'
     ? customerMenuItems
+    : tenantBrand.moduleKey === 'bella_auto'
+    ? bellaAutoMenuItems
     : tenantBrand.moduleKey === 'real_estate'
     ? realEstateMenuItems
     : verticalRegistry.has(tenantBrand.moduleKey)
@@ -634,20 +662,21 @@ export function Sidebar() {
   const isBeautySpaShell = tenantBrand.isBeautySpa;
   const isIndustrialCleaningShell = tenantBrand.moduleKey === 'industrial_cleaning';
   const isRealEstateShell = tenantBrand.moduleKey === 'real_estate';
+  const isBellaAutoShell = tenantBrand.moduleKey === 'bella_auto';
 
   return (
     <>
       {/* ── Mobile Top Header Bar (lg:hidden) ── */}
       <div className={cn(
         "lg:hidden fixed top-0 left-0 right-0 h-16 bg-white/90 dark:bg-[#11100F]/95 border-b border-[#FFE4E6] dark:border-[#3E3A35] backdrop-blur-md z-30 px-6 flex items-center justify-between shadow-[0_2px_15px_rgba(0,0,0,0.02)] transition-colors duration-300",
-        (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell) && "beauty-erp-mobile-header"
+        (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell || isBellaAutoShell) && "beauty-erp-mobile-header"
       )}>
         <div className="flex w-20 items-center justify-start">
           <button
             onClick={() => setIsOpen(true)}
             className={cn(
               "p-2.5 rounded-xl text-primary dark:text-[#A67D44] hover:bg-rose-50 dark:hover:bg-[#1C1B19] active:scale-95 transition-all",
-              (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell) && "beauty-erp-icon-button"
+              (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell || isBellaAutoShell) && "beauty-erp-icon-button"
             )}
           >
             <Menu className="w-5.5 h-5.5" />
@@ -660,11 +689,11 @@ export function Sidebar() {
             logoUrl={tenantBrand.logoUrl}
             monogram={tenantBrand.monogram}
             className="w-7 h-7 text-[10px]"
-            markClassName={cn("rounded-xl", (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell) && "beauty-erp-logo-mark")}
+            markClassName={cn("rounded-xl", (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell || isBellaAutoShell) && "beauty-erp-logo-mark")}
           />
           <span className={cn(
             "max-w-[9rem] truncate font-handwriting text-2xl text-primary dark:text-[#A67D44] leading-none mt-1",
-            (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell) && "beauty-erp-brand-script"
+            (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell || isBellaAutoShell) && "beauty-erp-brand-script"
           )}>
             {tenantBrand.displayName.toLowerCase().endsWith('headquarter')
               ? tenantBrand.displayName.slice(0, -11).trim()
@@ -681,7 +710,7 @@ export function Sidebar() {
             title="Làm mới dữ liệu"
             className={cn(
               "flex h-10 w-10 items-center justify-center rounded-full border border-pink-100 bg-white/80 text-primary shadow-sm transition-all hover:bg-rose-50 active:scale-95 disabled:opacity-70 dark:border-[#3E3A35] dark:bg-[#1C1B19] dark:text-[#A67D44] dark:hover:bg-[#5D1C34]/30",
-              (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell) && "beauty-erp-icon-button"
+              (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell || isBellaAutoShell) && "beauty-erp-icon-button"
             )}
           >
             <RefreshCw className={cn('h-4 w-4', isMobileRefreshing && 'animate-spin')} />
@@ -711,6 +740,7 @@ export function Sidebar() {
         isBeautySpaShell && "beauty-erp-sidebar",
         isIndustrialCleaningShell && "beauty-erp-sidebar", // Apply same class for theme CSS
         isRealEstateShell && "beauty-erp-sidebar",
+        isBellaAutoShell && "beauty-erp-sidebar",
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         {/* Soft decorative light glows */}
@@ -723,7 +753,7 @@ export function Sidebar() {
 
         {/* ── Logo & Mobile Close Button ── */}
         <div className="px-8 pt-6 pb-4 shrink-0 relative z-10 flex items-center justify-between lg:block">
-          <Link href={tenantBrand.moduleKey === 'real_estate' ? "/dashboard/real-estate" : "/dashboard"} onClick={handleNavigation} className="flex flex-col items-center group">
+          <Link href={tenantBrand.moduleKey === 'bella_auto' ? "/dashboard/bella-auto" : tenantBrand.moduleKey === 'real_estate' ? "/dashboard/real-estate" : "/dashboard"} onClick={handleNavigation} className="flex flex-col items-center group">
             <div className="relative mb-2">
               <div className="absolute inset-0 bg-primary/20 dark:bg-[#A67D44]/15 blur-2xl rounded-full scale-75 group-hover:scale-110 transition-transform duration-500" />
               <TenantBrandLogo
@@ -731,7 +761,7 @@ export function Sidebar() {
                 logoUrl={tenantBrand.logoUrl}
                 monogram={tenantBrand.monogram}
                 className="w-16 h-16 relative z-10 transform group-hover:rotate-[5deg] transition-transform duration-500 text-xl"
-                markClassName={cn("rounded-[1.75rem]", (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell) && "beauty-erp-logo-mark beauty-erp-logo-mark-large")}
+                markClassName={cn("rounded-[1.75rem]", (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell || isBellaAutoShell) && "beauty-erp-logo-mark beauty-erp-logo-mark-large")}
               />
             </div>
             <div className="text-center w-full px-2">
@@ -767,7 +797,7 @@ export function Sidebar() {
             onClick={() => setIsOpen(false)}
             className={cn(
               "lg:hidden p-2 rounded-xl text-primary dark:text-[#A67D44] hover:bg-white/60 dark:hover:bg-[#1C1B19]/50 active:scale-95 transition-all",
-              (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell) && "beauty-erp-icon-button"
+              (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell || isBellaAutoShell) && "beauty-erp-icon-button"
             )}
           >
             <X className="w-5 h-5" />
@@ -895,7 +925,7 @@ export function Sidebar() {
                  title="Đăng xuất"
                  className={cn(
                    "p-2 mr-1 rounded-xl text-[#8A6D7C] dark:text-[#CDBCAB] hover:bg-rose-50 hover:text-primary dark:hover:bg-[#5D1C34]/40 dark:hover:text-[#A67D44] transition-all",
-                   (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell) && "beauty-erp-icon-button"
+                   (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell || isBellaAutoShell) && "beauty-erp-icon-button"
                  )}
                >
                  <LogOut className="w-4 h-4" />

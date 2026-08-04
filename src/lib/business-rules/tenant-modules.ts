@@ -1,7 +1,7 @@
 import type { Json } from '@/types/database.types';
 
-export const TENANT_MODULE_KEYS = ['babycare', 'beauty_spa', 'student_training', 'industrial_cleaning', 'real_estate'] as const;
-export const TENANT_PRIMARY_BUSINESS_MODULE_KEYS = ['babycare', 'beauty_spa', 'industrial_cleaning', 'real_estate'] as const;
+export const TENANT_MODULE_KEYS = ['babycare', 'beauty_spa', 'student_training', 'industrial_cleaning', 'real_estate', 'bella_auto'] as const;
+export const TENANT_PRIMARY_BUSINESS_MODULE_KEYS = ['babycare', 'beauty_spa', 'industrial_cleaning', 'real_estate', 'bella_auto'] as const;
 
 export type TenantModuleKey = (typeof TENANT_MODULE_KEYS)[number];
 export type TenantPrimaryBusinessModuleKey = (typeof TENANT_PRIMARY_BUSINESS_MODULE_KEYS)[number];
@@ -54,6 +54,7 @@ export const DEFAULT_ENABLED_MODULES: TenantEnabledModules = {
   student_training: false,
   industrial_cleaning: false,
   real_estate: false,
+  bella_auto: false,
 };
 
 export const DEFAULT_TENANT_BRAND_THEME: TenantBrandTheme = {
@@ -110,6 +111,20 @@ export const DEFAULT_REAL_ESTATE_TENANT_BRAND_THEME: TenantBrandTheme = {
   buttonStyle: 'rounded',
   menuStyle: 'compact',
   fontHeading: 'sans',
+};
+
+export const DEFAULT_BELLA_AUTO_TENANT_BRAND_THEME: TenantBrandTheme = {
+  brandName: '',
+  logoUrl: '',
+  primaryColor: '#0891b2', // Cyan 600 - Ocean Clean primary
+  accentColor: '#14b8a6', // Teal 500 - Ocean Clean accent
+  portalDisplayName: '',
+  invoiceDisplayName: '',
+  stylePreset: 'ocean_clean',
+  radiusStyle: 'balanced',
+  buttonStyle: 'rounded',
+  menuStyle: 'compact',
+  fontHeading: 'sans', // Automotive: clean, professional sans-serif
 };
 
 const HEX_COLOR_PATTERN = /^#[0-9A-Fa-f]{6}$/;
@@ -187,6 +202,7 @@ export function normalizeEnabledModules(value: unknown): TenantEnabledModules {
       student_training: value.includes('student_training'),
       industrial_cleaning: value.includes('industrial_cleaning'),
       real_estate: value.includes('real_estate'),
+      bella_auto: value.includes('bella_auto'),
     };
   }
 
@@ -203,12 +219,13 @@ export function normalizeEnabledModules(value: unknown): TenantEnabledModules {
     student_training: typeof source.student_training === 'boolean' ? source.student_training : false,
     industrial_cleaning: typeof source.industrial_cleaning === 'boolean' ? source.industrial_cleaning : false,
     real_estate: typeof source.real_estate === 'boolean' ? source.real_estate : false,
+    bella_auto: typeof source.bella_auto === 'boolean' ? source.bella_auto : false,
   };
 }
 
 export function normalizeEnabledModulesForSave(value: unknown): TenantEnabledModules {
   const modules = normalizeEnabledModules(value);
-  if (modules.babycare || modules.beauty_spa || modules.industrial_cleaning || modules.real_estate) return modules;
+  if (modules.babycare || modules.beauty_spa || modules.industrial_cleaning || modules.real_estate || modules.bella_auto) return modules;
   return {
     ...modules,
     babycare: true,
@@ -217,12 +234,16 @@ export function normalizeEnabledModulesForSave(value: unknown): TenantEnabledMod
 
 export function getDefaultTenantModuleKey(value: unknown, tenantName?: string | null): TenantPrimaryBusinessModuleKey {
   const modules = normalizeEnabledModulesForSave(value);
+  if (modules.bella_auto) return 'bella_auto';
   if (modules.real_estate) return 'real_estate';
   if (modules.industrial_cleaning) return 'industrial_cleaning';
   if (modules.beauty_spa) return 'beauty_spa';
 
   if (tenantName) {
     const lower = tenantName.toLowerCase();
+    if (lower.includes('auto') || lower.includes('ô tô') || lower.includes('xe')) {
+      return 'bella_auto';
+    }
     if (lower.includes('land') || lower.includes('bđs') || lower.includes('real estate') || lower.includes('bất động sản')) {
       return 'real_estate';
     }
@@ -238,6 +259,7 @@ export function getDefaultTenantModuleKey(value: unknown, tenantName?: string | 
 }
 
 export function getDefaultTenantBrandThemeForModule(moduleKey: TenantModuleKey): TenantBrandTheme {
+  if (moduleKey === 'bella_auto') return DEFAULT_BELLA_AUTO_TENANT_BRAND_THEME;
   if (moduleKey === 'beauty_spa') return DEFAULT_BEAUTY_TENANT_BRAND_THEME;
   if (moduleKey === 'industrial_cleaning') return DEFAULT_CLEANING_TENANT_BRAND_THEME;
   if (moduleKey === 'real_estate') return DEFAULT_REAL_ESTATE_TENANT_BRAND_THEME;
@@ -314,6 +336,7 @@ export function resolveTenantBrandIdentity(input: {
   const tenantName = cleanText(input.tenantName, TEXT_LIMITS.brandName);
   const explicitLogoUrl = cleanLogoUrl(input.logoUrl);
   const defaultDisplayName = 
+    moduleKey === 'bella_auto' ? 'Bella Auto' :
     moduleKey === 'beauty_spa' ? 'Beauty Spa' :
     moduleKey === 'industrial_cleaning' ? 'Industrial Cleaning' :
     moduleKey === 'real_estate' ? 'Bella Land' :
@@ -341,6 +364,7 @@ export function resolveTenantBrandIdentity(input: {
     invoiceDisplayName,
     logoUrl: explicitLogoUrl || theme.logoUrl || (moduleKey === 'babycare' ? '/logo.png' : ''),
     subtitle: 
+      moduleKey === 'bella_auto' ? 'Automotive Management' :
       moduleKey === 'beauty_spa' ? 'Beauty Spa ERP' :
       moduleKey === 'industrial_cleaning' ? 'Industrial Cleaning ERP' :
       moduleKey === 'real_estate' ? 'Real Estate Management' :
