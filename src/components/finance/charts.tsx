@@ -16,13 +16,12 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
-  ResponsiveContainer,
-  ReferenceLine,
+  Legend, ReferenceLine,
   PieChart,
   Pie,
   Cell,
 } from 'recharts';
+import { SafeResponsiveContainer as ResponsiveContainer } from '@/components/ui/SafeResponsiveContainer';
 import { BarChart3, PieChart as PieIcon, LineChart as LineIcon, TrendingUp, DollarSign } from 'lucide-react';
 
 // ─── Format helper ────────────────────────────────────────────────────────────

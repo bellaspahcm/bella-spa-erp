@@ -6,7 +6,8 @@
  * Displays MoM and YoY growth comparison using bar chart
  */
 
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell } from 'recharts';
+import { SafeResponsiveContainer as ResponsiveContainer } from '@/components/ui/SafeResponsiveContainer';
 
 interface GrowthIndicatorsChartProps {
   momGrowth: number;

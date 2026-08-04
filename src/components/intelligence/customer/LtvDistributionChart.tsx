@@ -5,7 +5,8 @@
  * Shows distribution of customers across LTV value ranges with modern gradients
  */
 
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip} from 'recharts';
+import { SafeResponsiveContainer as ResponsiveContainer } from '@/components/ui/SafeResponsiveContainer';
 import type { CustomerLTV } from '@/services/intelligence/customer/queries-simple';
 
 interface LtvDistributionChartProps {

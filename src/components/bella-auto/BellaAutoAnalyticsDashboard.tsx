@@ -14,8 +14,8 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer,
 } from 'recharts';
+import { SafeResponsiveContainer as ResponsiveContainer } from '@/components/ui/SafeResponsiveContainer';
 import { TrendingUp, TrendingDown, DollarSign, Clock, Package, Activity } from 'lucide-react';
 
 interface AnalyticsData {
@@ -99,35 +99,79 @@ const CustomTooltip = ({ active, payload, label, valueFormatter }: CustomTooltip
 export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnalyticsDashboardProps) {
   const [loading, setLoading] = useState(true);
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+  const [mounted, setMounted] = useState(false);
   const supabase = createClient();
+
+  // Wait for component to mount before rendering charts
+  useEffect(() => {
+    // Delay mounting to ensure parent containers have computed dimensions
+    const timer = setTimeout(() => {
+      setMounted(true);
+    }, 300); // Increased delay for container sizing
+    return () => clearTimeout(timer);
+  }, []);
 
   const loadAnalytics = async () => {
     setLoading(true);
     try {
-      // ✅ Call real RPCs instead of mock data
-      const [trendResult, topModelsResult, revenueResult, deliveriesResult] = await Promise.all([
-        supabase.rpc('get_auto_inventory_trend', { p_tenant_id: tenantId }),
-        supabase.rpc('get_auto_top_models', { p_tenant_id: tenantId, p_limit: 5 }),
-        supabase.rpc('get_auto_revenue_by_month', { p_tenant_id: tenantId }),
-        supabase.rpc('get_auto_weekly_deliveries', { p_tenant_id: tenantId }),
-      ]);
+      console.log('[BellaAuto] Starting analytics load for tenant:', tenantId);
+      
+      // Add timeout wrapper
+      const withTimeout = <T,>(promise: Promise<T>, timeoutMs: number): Promise<T> => {
+        return Promise.race([
+          promise,
+          new Promise<T>((_, reject) => 
+            setTimeout(() => reject(new Error(`Timeout after ${timeoutMs}ms`)), timeoutMs)
+          )
+        ]);
+      };
 
-      // Check for errors with detailed logging
+      // ✅ Call real RPCs with timeout (15 seconds)
+      const [trendResult, topModelsResult, revenueResult, deliveriesResult] = await Promise.all([
+        withTimeout(supabase.rpc('get_auto_inventory_trend', { p_tenant_id: tenantId }), 15000),
+        withTimeout(supabase.rpc('get_auto_top_models', { p_tenant_id: tenantId, p_limit: 5 }), 15000),
+        withTimeout(supabase.rpc('get_auto_revenue_by_month', { p_tenant_id: tenantId }), 15000),
+        withTimeout(supabase.rpc('get_auto_weekly_deliveries', { p_tenant_id: tenantId }), 15000),
+      ]);
+      
+      console.log('[BellaAuto] RPCs completed');
+
+      // Check for errors - log details for debugging
       if (trendResult.error) {
         console.error('[BellaAuto] Trend RPC error:', trendResult.error);
-        // Don't throw - just use empty data
+        console.error('[BellaAuto] Trend error details:', {
+          message: trendResult.error.message,
+          code: trendResult.error.code,
+          details: trendResult.error.details,
+          hint: trendResult.error.hint,
+        });
       }
       if (topModelsResult.error) {
         console.error('[BellaAuto] Top models RPC error:', topModelsResult.error);
-        // Don't throw - just use empty data
+        console.error('[BellaAuto] Top models error details:', {
+          message: topModelsResult.error.message,
+          code: topModelsResult.error.code,
+          details: topModelsResult.error.details,
+          hint: topModelsResult.error.hint,
+        });
       }
       if (revenueResult.error) {
         console.error('[BellaAuto] Revenue RPC error:', revenueResult.error);
-        // Don't throw - just use empty data
+        console.error('[BellaAuto] Revenue error details:', {
+          message: revenueResult.error.message,
+          code: revenueResult.error.code,
+          details: revenueResult.error.details,
+          hint: revenueResult.error.hint,
+        });
       }
       if (deliveriesResult.error) {
         console.error('[BellaAuto] Deliveries RPC error:', deliveriesResult.error);
-        // Don't throw - just use empty data
+        console.error('[BellaAuto] Deliveries error details:', {
+          message: deliveriesResult.error.message,
+          code: deliveriesResult.error.code,
+          details: deliveriesResult.error.details,
+          hint: deliveriesResult.error.hint,
+        });
       }
 
       // Fetch vehicles for status distribution & inventory value
@@ -172,7 +216,7 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
       // Calculate average days in stock (simplified - mock for now)
       const averageDaysInStock = 42; // TODO: Calculate from actual data
 
-      // ✅ Use RPC data instead of mock
+      // ✅ Use RPC data with proper null handling
       setAnalytics({
         monthlyTrend: trendResult.data || [],
         statusDistribution,
@@ -182,8 +226,17 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
         weeklyDeliveries: deliveriesResult.data || [],
         revenueByMonth: revenueResult.data || [],
       });
+
+      // Log data summary for debugging
+      console.log('[BellaAuto] Analytics loaded successfully:', {
+        monthlyTrend: (trendResult.data || []).length,
+        topModels: (topModelsResult.data || []).length,
+        weeklyDeliveries: (deliveriesResult.data || []).length,
+        revenueByMonth: (revenueResult.data || []).length,
+        statusDistribution: statusDistribution.length,
+      });
     } catch (error) {
-      console.error('Error loading analytics:', error);
+      console.error('[BellaAuto] Error loading analytics:', error);
       // Set empty data on error to prevent crash
       setAnalytics({
         monthlyTrend: [],
@@ -195,6 +248,7 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
         revenueByMonth: [],
       });
     } finally {
+      console.log('[BellaAuto] Loading complete, setting loading=false');
       setLoading(false);
     }
   };
@@ -214,7 +268,7 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
     return value.toLocaleString('vi-VN');
   };
 
-  if (loading) {
+  if (loading || !mounted) {
     return (
       <div className="space-y-6 animate-pulse">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -226,14 +280,6 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
           <div className="h-96 bg-slate-100 dark:bg-slate-900 rounded-2xl border border-slate-200/50 dark:border-slate-800/50" />
           <div className="h-96 bg-slate-100 dark:bg-slate-900 rounded-2xl border border-slate-200/50 dark:border-slate-800/50" />
         </div>
-      </div>
-    );
-  }
-
-  if (!analytics) {
-    return (
-      <div className="text-center py-12 bg-white dark:bg-slate-950 border border-slate-200/50 dark:border-slate-800/50 rounded-2xl shadow-sm">
-        <p className="text-slate-500 dark:text-slate-400 font-medium">Không thể tải dữ liệu phân tích</p>
       </div>
     );
   }
@@ -289,7 +335,7 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
           icon={<TrendingUp className="w-4 h-4" />}
           extra={<CardHeaderActions />}
         >
-          <div className="h-[300px] mt-4">
+          <div className="mt-4" style={{ width: '100%', height: 300 }}>
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={analytics.monthlyTrend} margin={{ top: 10, right: 10, left: 5, bottom: 0 }}>
                 <defs>
@@ -351,8 +397,8 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
           icon={<Package className="w-4 h-4" />}
           extra={<CardHeaderActions />}
         >
-          <div className="flex flex-col justify-between min-h-[300px]">
-            <div className="h-[210px] mt-4 relative">
+          <div className="flex flex-col justify-between" style={{ minHeight: 300 }}>
+            <div className="mt-4 relative" style={{ width: '100%', height: 210 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -408,7 +454,7 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
           icon={<TrendingUp className="w-4 h-4" />}
           extra={<CardHeaderActions />}
         >
-          <div className="h-[300px] mt-4">
+          <div className="mt-4" style={{ width: '100%', height: 300 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={analytics.topModels} layout="vertical" margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
                 <defs>
@@ -455,7 +501,7 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
           icon={<DollarSign className="w-4 h-4" />}
           extra={<CardHeaderActions />}
         >
-          <div className="h-[300px] mt-4">
+          <div className="mt-4" style={{ width: '100%', height: 300 }}>
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={analytics.revenueByMonth} margin={{ top: 10, right: 10, left: 58, bottom: 0 }}>
                 <defs>
@@ -505,7 +551,7 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
           icon={<Activity className="w-4 h-4" />}
           extra={<CardHeaderActions />}
         >
-          <div className="h-[300px] mt-4">
+          <div className="mt-4" style={{ width: '100%', height: 300 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={analytics.weeklyDeliveries} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <defs>
@@ -545,7 +591,7 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
           icon={<DollarSign className="w-4 h-4" />}
           extra={<CardHeaderActions />}
         >
-          <div className="h-[300px] mt-4">
+          <div className="mt-4" style={{ width: '100%', height: 300 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={analytics.inventoryValue.byStatus} margin={{ top: 10, right: 10, left: 58, bottom: 0 }}>
                 <defs>
@@ -660,7 +706,8 @@ function ChartCard({ title, subtitle, icon, children, extra }: ChartCardProps) {
         </div>
         {extra && <div className="shrink-0">{extra}</div>}
       </div>
-      <div className="w-full">
+      {/* Fix Recharts width(-1) height(-1) warning by ensuring minimum dimensions */}
+      <div className="w-full" style={{ minWidth: 300, minHeight: 320 }}>
         {children}
       </div>
     </div>

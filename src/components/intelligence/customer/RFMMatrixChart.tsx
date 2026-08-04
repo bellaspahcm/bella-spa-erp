@@ -5,7 +5,8 @@
  * Displays customer distribution by RFM scores
  */
 
-import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ZAxis } from 'recharts';
+import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ZAxis } from 'recharts';
+import { SafeResponsiveContainer as ResponsiveContainer } from '@/components/ui/SafeResponsiveContainer';
 import type { CustomerSegment } from '@/services/intelligence/customer/queries';
 
 interface RFMMatrixChartProps {

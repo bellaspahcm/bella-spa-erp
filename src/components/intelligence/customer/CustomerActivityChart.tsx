@@ -5,7 +5,8 @@
  * Shows correlation between customer risk volume (Bars) and average risk score (Line)
  */
 
-import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { SafeResponsiveContainer as ResponsiveContainer } from '@/components/ui/SafeResponsiveContainer';
 import type { ChurnRiskAnalysis } from '@/services/intelligence/customer/queries-simple';
 
 interface CustomerActivityChartProps {

@@ -18,10 +18,9 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
-  ResponsiveContainer,
-  Cell,
+  Legend, Cell,
 } from 'recharts';
+import { SafeResponsiveContainer as ResponsiveContainer } from '@/components/ui/SafeResponsiveContainer';
 
 interface BudgetVarianceItem {
   category: string;

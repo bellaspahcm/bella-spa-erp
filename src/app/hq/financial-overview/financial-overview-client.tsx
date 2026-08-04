@@ -10,10 +10,9 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
+  Tooltip, Cell,
 } from 'recharts';
+import { SafeResponsiveContainer as ResponsiveContainer } from '@/components/ui/SafeResponsiveContainer';
 import {
   TrendingUp,
   TrendingDown,

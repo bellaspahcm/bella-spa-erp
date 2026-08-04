@@ -5,7 +5,8 @@
  * Shows customer retention rate by cohort over time with smooth green gradient fills
  */
 
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { SafeResponsiveContainer as ResponsiveContainer } from '@/components/ui/SafeResponsiveContainer';
 import type { CohortAnalysis } from '@/services/intelligence/customer/queries-simple';
 
 interface RetentionCurveChartProps {

@@ -107,7 +107,42 @@ export default function DashboardLayout({
         try {
           // Reuse the already-in-flight tenant settings promise (no extra fetch)
           const tenant = await tenantWarmupPromise;
-          await applyDashboardTenantBrandRuntime(tenant ?? undefined);
+          
+          // ── Auto-upgrade legacy theme colors ──
+          if (tenant) {
+            const { needsThemeUpgrade, upgradeTheme, getUpgradeDescription } = await import('@/lib/utils/theme-upgrade');
+            const { getDefaultTenantModuleKey } = await import('@/lib/business-rules/tenant-modules');
+            
+            const moduleKey = getDefaultTenantModuleKey(tenant.enabled_modules, tenant.name);
+            
+            if (needsThemeUpgrade(tenant.brand_theme as Record<string, unknown> | null, moduleKey)) {
+              console.log(`[ThemeUpgrade] 🎨 Detected legacy theme for ${moduleKey}, upgrading...`);
+              
+              const result = await upgradeTheme(tenant.id, moduleKey);
+              
+              if (result.success && result.upgraded) {
+                console.log(`[ThemeUpgrade] ✅ ${getUpgradeDescription(moduleKey)}`);
+                
+                // Show toast notification (optional - only if toast context available)
+                if (typeof window !== 'undefined' && (window as any).showToast) {
+                  (window as any).showToast({
+                    title: 'Cập nhật giao diện',
+                    description: getUpgradeDescription(moduleKey),
+                    variant: 'success',
+                  });
+                }
+                
+                // Force reload tenant settings to get updated theme
+                await getCachedTenantSettings.cache?.delete?.(getCachedTenantSettings);
+                const updatedTenant = await getCachedTenantSettings().catch(() => tenant);
+                await applyDashboardTenantBrandRuntime(updatedTenant ?? undefined);
+              } else {
+                await applyDashboardTenantBrandRuntime(tenant);
+              }
+            } else {
+              await applyDashboardTenantBrandRuntime(tenant);
+            }
+          }
         } catch (brandError) {
           console.error('[DashboardLayout] Brand runtime apply failed:', brandError);
         }

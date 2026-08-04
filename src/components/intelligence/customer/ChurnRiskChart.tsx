@@ -5,7 +5,8 @@
  * Shows count and percentage of customers by churn risk level
  */
 
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
+import { SafeResponsiveContainer as ResponsiveContainer } from '@/components/ui/SafeResponsiveContainer';
 import type { ChurnRiskAnalysis } from '@/services/intelligence/customer/queries-simple';
 
 interface ChurnRiskChartProps {

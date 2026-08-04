@@ -5,7 +5,8 @@
  * Shows customer count by segment
  */
 
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { PieChart, Pie, Cell, Legend, Tooltip } from 'recharts';
+import { SafeResponsiveContainer as ResponsiveContainer } from '@/components/ui/SafeResponsiveContainer';
 import type { SegmentDistribution } from '@/services/intelligence/customer/queries';
 
 interface SegmentDistributionChartProps {

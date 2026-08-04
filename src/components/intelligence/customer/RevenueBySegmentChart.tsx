@@ -5,7 +5,8 @@
  * Shows total revenue contribution by customer segment
  */
 
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip} from 'recharts';
+import { SafeResponsiveContainer as ResponsiveContainer } from '@/components/ui/SafeResponsiveContainer';
 import type { SegmentDistribution } from '@/services/intelligence/customer/queries';
 
 interface RevenueBySegmentChartProps {

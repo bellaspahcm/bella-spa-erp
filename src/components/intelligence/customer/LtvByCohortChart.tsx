@@ -5,7 +5,8 @@
  * Shows average LTV trends by customer signup cohort with smooth gradient fills
  */
 
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip} from 'recharts';
+import { SafeResponsiveContainer as ResponsiveContainer } from '@/components/ui/SafeResponsiveContainer';
 import type { CohortAnalysis } from '@/services/intelligence/customer/queries-simple';
 
 interface LtvByCohortChartProps {

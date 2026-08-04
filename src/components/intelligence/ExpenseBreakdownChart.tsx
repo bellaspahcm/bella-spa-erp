@@ -16,9 +16,8 @@ import {
   Pie,
   Cell,
   Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from 'recharts';
+  Legend, } from 'recharts';
+import { SafeResponsiveContainer as ResponsiveContainer } from '@/components/ui/SafeResponsiveContainer';
 
 interface ExpenseBreakdownItem {
   category: string;
