@@ -200,3 +200,328 @@ Need to build for Finance & Insurance Centers:
 - ✅ Delete/archive records
 
 ---
+
+## 🗄️ Database Schema (Existing - Backend Ready)
+
+### Finance Center Tables (4)
+1. **auto_loan_applications** (16 columns)
+   - Status: pending, bank_reviewing, approved, rejected, disbursed, cancelled
+   - Tracks: amount, rate, term, dates, assigned sales
+
+2. **auto_banks** (15 columns)
+   - Partner banks configuration
+   - Interest rates, terms, LTV ratio
+   - Commission structure
+
+3. **auto_loan_documents** (9 columns)
+   - Document uploads tracking
+   - Types: cccd, household, bank_statement, employment, income_proof
+   - Status: pending, uploaded, verified, rejected
+
+4. **auto_loan_workflow_stages** (implied - tracking timeline)
+
+### Insurance Center Tables (4)
+1. **auto_insurance_policies** (16 columns)
+   - Type: tnds, physical, combo
+   - Status: active, expired, cancelled, pending_renewal
+   - Coverage stored as JSONB
+
+2. **auto_insurance_providers** (10 columns)
+   - Provider configuration
+   - Commission rates
+
+3. **auto_insurance_claims** (18 columns)
+   - 7 claim types
+   - Photos stored as JSONB array
+   - Status: 7 states (reported → paid)
+
+4. **auto_insurance_renewals** (9 columns)
+   - Renewal tracking
+   - Reminder count
+   - Status: pending, quoted, accepted, renewed, lost
+
+**Total:** 8 tables, all existing, production-ready
+
+---
+
+## 🔌 API Endpoints (Existing - Backend Ready)
+
+### Finance Center APIs (15)
+- Loans: GET, POST, PUT, DELETE, approve, reject, disburse (7 endpoints)
+- Documents: POST, GET, DELETE (3 endpoints)
+- Banks: GET, POST, PUT, DELETE (4 endpoints)
+- Analytics: GET dashboard, GET reports (1 endpoint)
+
+### Insurance Center APIs (15+)
+- Policies: GET, POST, PUT, renew, cancel (5 endpoints)
+- Renewals: GET alerts, remind, bulk-remind (3 endpoints)
+- Claims: GET, POST, PUT, upload photos, submit (5 endpoints)
+- Providers: GET, POST, PUT (3 endpoints)
+- Analytics: GET dashboard, GET reports (1 endpoint)
+
+**Total:** 30+ endpoints, all implemented, tested
+
+---
+
+## 🚀 Implementation Roadmap (8 Weeks)
+
+### Phase 1: Foundation (Week 1-2)
+**Deliverables:** 2 dashboards + 2 list views
+- Finance Dashboard (5 metrics + 3 charts)
+- Loan Applications List (table + filters)
+- Insurance Dashboard (5 metrics + 4 charts)
+- Policies List (table + filters)
+- Extract reusable components
+- Build 5 new specialized components
+
+### Phase 2: Detail Views & Workflows (Week 3-4)
+**Deliverables:** Full CRUD workflows
+- Loan Detail Page (3-column layout)
+- Loan Workflow Timeline (9 stages)
+- Policy Detail Page (4 tabs)
+- Implement status transitions
+- Build Loan Calculator widget
+- Test all workflows
+
+### Phase 3: Document Management (Week 5)
+**Deliverables:** Document management functional
+- Document Upload Center (6 doc types)
+- R2 integration
+- File preview (images, PDFs)
+- Claims Management (photo upload)
+- ClaimPhotoGallery component
+- Test upload/download flows
+
+### Phase 4: Advanced Features (Week 6)
+**Deliverables:** All management screens
+- Banks Management CRUD
+- Renewal Center (4 alert categories)
+- Bulk reminder actions
+- Automation rules (cron jobs)
+- Email/SMS integration
+- Expiration calendar heatmap
+
+### Phase 5: Analytics & Reporting (Week 7)
+**Deliverables:** Full analytics suite
+- Finance Analytics (6 reports)
+- Insurance Analytics (6 reports)
+- Export to Excel/PDF
+- Scheduled email reports
+- Query optimization
+
+### Phase 6: Polish & Testing (Week 8)
+**Deliverables:** Production-ready
+- E2E tests (3 critical flows)
+- Unit tests (calculators)
+- Integration tests (APIs)
+- Load testing (1000+ policies)
+- Performance optimization
+- User manuals (2)
+- Training videos
+
+---
+
+## 📊 Success Metrics
+
+### User Adoption
+- **Target:** 90% of sales team using Finance Center within 1 month
+- **Target:** 80% of policies managed through Insurance Center within 2 months
+- **Measure:** Daily active users, feature usage analytics
+
+### Efficiency Gains
+| Metric | Before | After | Improvement |
+|--------|--------|-------|-------------|
+| **Loan Processing Time** | 5 days | 3 days | ⬇️ 40% |
+| **Renewal Conversion Rate** | 50% | 65% | ⬆️ 30% |
+| **Document Upload Time** | 30 min | 5 min | ⬇️ 83% |
+| **Commission Accuracy** | Manual | 100% | ⬆️ 100% |
+
+### Business Impact
+- **Loan Volume:** +30% increase in applications
+- **Insurance Revenue:** +25% increase in sales
+- **Customer Satisfaction:** NPS > 8.0
+- **Renewal Lost Opportunities:** -50% reduction
+
+### Technical Performance
+- **Page Load Time:** < 2s
+- **API Response Time:** < 500ms
+- **Uptime:** 99.9%
+- **Error Rate:** < 0.1%
+
+---
+
+## 🎯 Key Differentiators vs Competitors
+
+### 1. Enterprise Center Architecture
+- **Competitors:** Scattered forms, separate systems
+- **Bella Auto:** Unified Finance & Insurance Centers, consistent UX
+
+### 2. Automation & Alerts
+- **Competitors:** Manual renewal tracking
+- **Bella Auto:** 30-day alert system with 4 categories, automatic reminders
+
+### 3. Document Management
+- **Competitors:** Email attachments, lost files, no version control
+- **Bella Auto:** Centralized R2 storage, version tracking, OCR extraction, inline preview
+
+### 4. Analytics Depth
+- **Competitors:** Basic revenue reports
+- **Bella Auto:** 12 specialized reports (6 per center), funnel analysis, profitability tracking
+
+### 5. Deep Integration
+- **Competitors:** Standalone loan/insurance systems
+- **Bella Auto:** Integrated with Vehicle, Customer, Booking, Workshop modules
+
+### 6. RBAC Granularity
+- **Competitors:** Admin/User only (2 roles)
+- **Bella Auto:** 4 roles with granular permissions per feature
+
+---
+
+## 🔧 Technical Stack
+
+### Frontend (To Build)
+- Next.js 15+ (App Router)
+- React 19+
+- Tailwind CSS 4+
+- Headless UI, Radix UI
+- React Hook Form + Zod
+- Recharts (charts)
+- TanStack Table
+- react-dropzone (file upload)
+- react-pdf (PDF viewer)
+- Framer Motion (animations)
+
+### Backend (Existing ✅)
+- Next.js API Routes
+- Supabase PostgreSQL
+- Cloudflare R2 (S3-compatible)
+- Supabase Auth
+- RLS policies + RBAC
+
+### Infrastructure (Existing ✅)
+- Supabase Database
+- Cloudflare R2
+- SendGrid/AWS SES (email)
+- Twilio/VNPT (SMS - to configure)
+- Vercel Cron (automation)
+- Sentry (monitoring)
+
+---
+
+## 🎓 Training & Support Plan
+
+### Training (4 Weeks)
+- **Week 1:** Management (2 hours) - Dashboard, analytics, approvals
+- **Week 2:** Sales Team (3 hours) - Creating loans/policies, documents, renewals
+- **Week 3:** Accountant (2 hours) - Reports, commission reconciliation, exports
+- **Week 4:** Support Team (1 hour) - Troubleshooting common issues
+
+### Support (3 Tiers)
+- **L1:** Basic troubleshooting (password, upload issues)
+- **L2:** Functional issues (workflow errors, calculation bugs)
+- **L3:** Technical issues (database, integration failures)
+
+### SLA Commitments
+- **Critical:** Response < 1h, Resolution < 4h
+- **High:** Response < 4h, Resolution < 1 day
+- **Medium:** Response < 1 day, Resolution < 3 days
+- **Low:** Response < 3 days, Resolution < 1 week
+
+---
+
+## ⚠️ Risks & Mitigation
+
+### Risk 1: Bank API Integration Delays
+- **Mitigation:** Start with manual workflows, phase 2 API integration
+
+### Risk 2: User Adoption Resistance
+- **Mitigation:** Comprehensive training, incentives, dedicated support
+
+### Risk 3: Data Migration Errors
+- **Mitigation:** Extensive staging testing, parallel run 2 weeks, rollback procedures
+
+### Risk 4: Performance Issues
+- **Mitigation:** Pagination, query optimization, Redis caching, load testing
+
+### Risk 5: Security Vulnerabilities
+- **Mitigation:** Regular audits, RLS policies, signed URLs, HTTPS only
+
+---
+
+## 🏁 Go-Live Checklist
+
+### Pre-Launch (1 week before)
+- [ ] All Phase 1-6 tasks completed
+- [ ] E2E tests passing (100%)
+- [ ] Load testing (1000+ users)
+- [ ] Security audit passed
+- [ ] User manuals finalized
+- [ ] Training completed (all teams)
+- [ ] Rollback procedures tested
+
+### Launch Day
+- [ ] Database backup
+- [ ] Deploy to production
+- [ ] Smoke tests
+- [ ] Monitoring active
+- [ ] Support hotline ready
+- [ ] Announcement sent
+
+### Post-Launch (First Week)
+- [ ] Daily standups
+- [ ] Monitor error rates (< 0.1%)
+- [ ] Monitor adoption (50% Week 1)
+- [ ] Fix critical bugs < 24h
+- [ ] Weekly status reports
+
+### Post-Launch (First Month)
+- [ ] 90% user adoption
+- [ ] 80% policies in system
+- [ ] NPS > 7.5
+- [ ] Performance optimization
+- [ ] Plan Phase 7 (enhancements)
+
+---
+
+## 📦 Deliverables Summary
+
+### Screens (12 total)
+**Finance Center (6):**
+1. Dashboard
+2. Loan Applications List
+3. Loan Detail Page
+4. Loan Workflow Timeline
+5. Document Upload Center
+6. Banks Management
+
+**Insurance Center (6):**
+1. Dashboard
+2. Policies List
+3. Policy Detail Page
+4. Renewal Center
+5. Claims Management
+6. Analytics
+
+### Components (15 total)
+- 10 reusable (existing)
+- 5 new specialized
+
+### API Endpoints (30+)
+- 15 Finance Center
+- 15+ Insurance Center
+- All existing, tested
+
+### Database Tables (8)
+- 4 Finance Center
+- 4 Insurance Center
+- All existing, production-ready
+
+### Documentation
+- Architecture Spec (1,100+ lines)
+- User Manuals (2)
+- Training Materials (4 sessions)
+- API Documentation (30+ endpoints)
+- Database ERD (8 tables)
+
+---
