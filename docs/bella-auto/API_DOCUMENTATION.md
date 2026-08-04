@@ -9,12 +9,15 @@
 ## Table of Contents
 
 1. [Authentication](#authentication)
-2. [Marketplace APIs](#marketplace-apis)
-3. [Business Rules APIs](#business-rules-apis)
-4. [Rollback & Audit APIs](#rollback--audit-apis)
-5. [Transaction Management APIs](#transaction-management-apis)
-6. [Error Handling](#error-handling)
-7. [Rate Limiting](#rate-limiting)
+2. [Booking & Deposit APIs](#booking--deposit-apis)
+3. [Workshop & Service APIs](#workshop--service-apis)
+4. [Analytics APIs](#analytics-apis)
+5. [Marketplace APIs](#marketplace-apis)
+6. [Business Rules APIs](#business-rules-apis)
+7. [Rollback & Audit APIs](#rollback--audit-apis)
+8. [Transaction Management APIs](#transaction-management-apis)
+9. [Error Handling](#error-handling)
+10. [Rate Limiting](#rate-limiting)
 
 ---
 
@@ -30,6 +33,371 @@ Cookie: sb-refresh-token=<token>
 
 **Tenant Isolation:**
 All data is automatically filtered by `tenant_id` from the authenticated user's session. Cross-tenant data access is prevented via Row-Level Security (RLS).
+
+---
+
+## Booking & Deposit APIs
+
+### 1. Confirm Deposit Payment
+
+**Endpoint:** `POST /api/bella-auto/bookings/[id]/confirm-deposit`
+
+**Description:** Records a deposit payment for a booking and updates payment status.
+
+**Path Parameters:**
+- `id` (required): Booking ID (UUID)
+
+**Request Body:**
+```json
+{
+  "amount": 50000000,
+  "paymentMethod": "bank_transfer",
+  "paymentDate": "2026-08-04",
+  "referenceNumber": "TXN123456789",
+  "notes": "Chuyển khoản qua VCB"
+}
+```
+
+**Parameters:**
+- `amount` (required, number): Deposit amount in VND
+- `paymentMethod` (required, enum): `cash`, `bank_transfer`, `credit_card`
+- `paymentDate` (required, ISO date): Date payment was received
+- `referenceNumber` (optional, string): Bank transaction reference
+- `notes` (optional, string): Additional notes
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Deposit confirmed successfully",
+  "data": {
+    "depositId": "dep_001",
+    "bookingId": "bk_123",
+    "amount": 50000000,
+    "paymentMethod": "bank_transfer",
+    "paymentStatus": "partially_paid",
+    "totalDeposit": 50000000,
+    "requiredDeposit": 100000000,
+    "remainingDeposit": 50000000,
+    "confirmedAt": "2026-08-04T10:30:00Z",
+    "confirmedBy": "user_admin_01"
+  }
+}
+```
+
+**Status Codes:**
+- `200 OK` - Deposit confirmed
+- `400 Bad Request` - Invalid amount or booking already fully paid
+- `404 Not Found` - Booking not found
+- `403 Forbidden` - Insufficient permissions
+
+---
+
+### 2. Get Booking Statistics
+
+**Endpoint:** `GET /api/bella-auto/bookings/stats`
+
+**Description:** Retrieves real-time statistics for booking and deposit status.
+
+**Query Parameters:**
+- `startDate` (optional, ISO date): Filter bookings from this date
+- `endDate` (optional, ISO date): Filter bookings until this date
+- `agentId` (optional, UUID): Filter by sales agent
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "total": 145,
+    "unpaid": 28,
+    "partiallyPaid": 42,
+    "fullyPaid": 75,
+    "depositReceived": 3650000000,
+    "depositPending": 1450000000,
+    "averageDepositTime": 2.5
+  }
+}
+```
+
+**Status Codes:**
+- `200 OK` - Success
+- `401 Unauthorized` - Not authenticated
+
+---
+
+## Workshop & Service APIs
+
+### 3. Get Workshop Schedule
+
+**Endpoint:** `GET /api/bella-auto/workshop/schedule`
+
+**Description:** Retrieves service appointments for workshop calendar view.
+
+**Query Parameters:**
+- `startDate` (required, ISO date): Calendar start date
+- `endDate` (required, ISO date): Calendar end date
+- `technicianId` (optional, UUID): Filter by assigned technician
+- `status` (optional, enum): Filter by status (`scheduled`, `in_progress`, `completed`)
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "apt_001",
+      "appointmentNumber": "APT20260804-0001",
+      "scheduledDate": "2026-08-05T09:00:00Z",
+      "customerName": "Nguyễn Văn A",
+      "customerPhone": "0901234567",
+      "vehicleInfo": "2024 Toyota Camry - 30A12345",
+      "serviceType": "routine_maintenance",
+      "description": "Bảo dưỡng định kỳ 10,000km",
+      "estimatedDurationHours": 2.0,
+      "assignedTechnician": {
+        "id": "tech_01",
+        "name": "Trần Văn B"
+      },
+      "status": "scheduled"
+    }
+  ]
+}
+```
+
+**Status Codes:**
+- `200 OK` - Success
+- `400 Bad Request` - Invalid date range
+- `401 Unauthorized` - Not authenticated
+
+---
+
+### 4. Get Repair Orders
+
+**Endpoint:** `GET /api/bella-auto/workshop/repair-orders`
+
+**Description:** Retrieves repair orders for workshop kanban board.
+
+**Query Parameters:**
+- `status` (optional, enum): Filter by status (multiple values comma-separated)
+- `technicianId` (optional, UUID): Filter by primary technician
+- `startDate` (optional, ISO date)
+- `endDate` (optional, ISO date)
+- `limit` (optional, number): Default 50, max 200
+- `offset` (optional, number)
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "ro_001",
+      "orderNumber": "RO20260804-0001",
+      "orderDate": "2026-08-04",
+      "customerName": "Nguyễn Văn A",
+      "customerPhone": "0901234567",
+      "vehicleInfo": "2024 Toyota Camry - 30A12345",
+      "orderType": "repair",
+      "workDescription": "Sửa hệ thống phanh",
+      "status": "in_progress",
+      "primaryTechnician": {
+        "id": "tech_01",
+        "name": "Trần Văn B"
+      },
+      "estimatedTotal": 5000000,
+      "actualTotal": null,
+      "estimatedHours": 4.0,
+      "actualHours": 2.5,
+      "priority": "high"
+    }
+  ],
+  "pagination": {
+    "total": 42,
+    "limit": 50,
+    "offset": 0
+  }
+}
+```
+
+**Status Codes:**
+- `200 OK` - Success
+- `401 Unauthorized` - Not authenticated
+
+---
+
+### 5. Get Workshop Technicians
+
+**Endpoint:** `GET /api/bella-auto/workshop/technicians`
+
+**Description:** Retrieves list of active workshop technicians with availability status.
+
+**Query Parameters:**
+- `available` (optional, boolean): Filter by availability
+- `skillSet` (optional, string): Filter by skill (e.g., "engine", "transmission", "electrical")
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "tech_01",
+      "name": "Trần Văn B",
+      "phone": "0909876543",
+      "skillSet": ["engine", "transmission", "diagnostics"],
+      "certifications": ["ASE Master", "Toyota Certified"],
+      "availability": "available",
+      "activeOrders": 2,
+      "completedToday": 3,
+      "efficiencyRating": 4.8
+    }
+  ]
+}
+```
+
+**Status Codes:**
+- `200 OK` - Success
+- `401 Unauthorized` - Not authenticated
+
+---
+
+## Analytics APIs
+
+### 6. Get Inventory Trend
+
+**Endpoint:** `GET /api/bella-auto/analytics/inventory-trend`
+
+**Description:** Retrieves 6-month inventory trend (nhập, xuất, tồn).
+
+**Query Parameters:**
+- `months` (optional, number): Number of months to retrieve (default: 6, max: 12)
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "month": "2026-03",
+      "monthLabel": "Tháng 3/2026",
+      "nhap": 45,
+      "xuat": 38,
+      "ton": 120
+    },
+    {
+      "month": "2026-04",
+      "monthLabel": "Tháng 4/2026",
+      "nhap": 52,
+      "xuat": 41,
+      "ton": 131
+    }
+  ]
+}
+```
+
+**Status Codes:**
+- `200 OK` - Success
+- `401 Unauthorized` - Not authenticated
+
+---
+
+### 7. Get Top Selling Models
+
+**Endpoint:** `GET /api/bella-auto/analytics/top-models`
+
+**Description:** Retrieves top-selling vehicle models by volume and revenue.
+
+**Query Parameters:**
+- `limit` (optional, number): Number of models to return (default: 5, max: 20)
+- `startDate` (optional, ISO date): Period start
+- `endDate` (optional, ISO date): Period end
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "rank": 1,
+      "brandName": "Toyota",
+      "modelName": "Camry",
+      "variantName": "2.5Q",
+      "unitsSold": 145,
+      "totalRevenue": 5267500000,
+      "averagePrice": 36327586,
+      "growthRate": 0.15
+    }
+  ]
+}
+```
+
+**Status Codes:**
+- `200 OK` - Success
+- `401 Unauthorized` - Not authenticated
+
+---
+
+### 8. Get Monthly Revenue
+
+**Endpoint:** `GET /api/bella-auto/analytics/revenue`
+
+**Description:** Retrieves monthly revenue from completed bookings.
+
+**Query Parameters:**
+- `months` (optional, number): Number of months (default: 12, max: 24)
+- `breakdown` (optional, enum): `total` | `by_model` | `by_agent`
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "month": "2026-01",
+      "monthLabel": "Tháng 1/2026",
+      "revenue": 24350000000,
+      "bookingsCompleted": 68,
+      "averageTransactionValue": 358088235
+    }
+  ]
+}
+```
+
+**Status Codes:**
+- `200 OK` - Success
+- `401 Unauthorized` - Not authenticated
+
+---
+
+### 9. Get Weekly Deliveries
+
+**Endpoint:** `GET /api/bella-auto/analytics/deliveries`
+
+**Description:** Retrieves weekly vehicle delivery trend for the past 8 weeks.
+
+**Query Parameters:**
+- `weeks` (optional, number): Number of weeks (default: 8, max: 16)
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "weekStart": "2026-06-10",
+      "weekEnd": "2026-06-16",
+      "weekLabel": "Tuần 10-16/6",
+      "deliveries": 18,
+      "cumulativeMonth": 42
+    }
+  ]
+}
+```
+
+**Status Codes:**
+- `200 OK` - Success
+- `401 Unauthorized` - Not authenticated
 
 ---
 
@@ -620,6 +988,12 @@ When rate limit is exceeded, API returns `429 Too Many Requests`:
 ---
 
 ## Changelog
+
+### Version 1.1.0 (04/08/2026)
+- ✅ Added Booking & Deposit APIs (2 endpoints)
+- ✅ Added Workshop & Service APIs (3 endpoints)
+- ✅ Added Analytics APIs (4 endpoints)
+- 📝 Total: 19 endpoints documented
 
 ### Version 1.0.0 (04/08/2026)
 - Initial API documentation
