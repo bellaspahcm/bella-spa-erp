@@ -2,12 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase-client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { RefreshCw, Search, Filter, Download } from 'lucide-react';
+import { RefreshCw, Search, Download } from 'lucide-react';
 
 interface Vehicle {
   id: string;
@@ -113,147 +108,141 @@ export default function VehicleInventoryDashboard({ tenantId }: { tenantId: stri
 
   return (
     <div className="space-y-6">
-      {/* Stats Cards */}
+      {/* Stats Cards - Real Estate Style */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">Tổng xe</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-slate-900">{stats.total.toLocaleString()}</div>
-          </CardContent>
-        </Card>
+        <div className="p-5 rounded-2xl bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800/80 shadow-sm transition-all hover:shadow-md">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-sm font-semibold text-slate-600 dark:text-slate-400">Tổng xe</p>
+          </div>
+          <p className="text-3xl font-bold text-slate-900 dark:text-white">{stats.total.toLocaleString()}</p>
+        </div>
         
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">Showroom</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-cyan-600">{stats.showroom.toLocaleString()}</div>
-          </CardContent>
-        </Card>
+        <div className="p-5 rounded-2xl bg-cyan-50 dark:bg-cyan-950/20 border border-cyan-100 dark:border-cyan-900/30 shadow-sm transition-all hover:shadow-md">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-sm font-semibold text-cyan-700 dark:text-cyan-400">Showroom</p>
+          </div>
+          <p className="text-3xl font-bold text-cyan-600 dark:text-cyan-400">{stats.showroom.toLocaleString()}</p>
+        </div>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">Kho</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-slate-600">{stats.warehouse.toLocaleString()}</div>
-          </CardContent>
-        </Card>
+        <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800/50 shadow-sm transition-all hover:shadow-md">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-sm font-semibold text-slate-700 dark:text-slate-400">Kho</p>
+          </div>
+          <p className="text-3xl font-bold text-slate-600 dark:text-slate-300">{stats.warehouse.toLocaleString()}</p>
+        </div>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">Đã phân bổ</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-amber-600">{stats.allocated.toLocaleString()}</div>
-          </CardContent>
-        </Card>
+        <div className="p-5 rounded-2xl bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30 shadow-sm transition-all hover:shadow-md">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-sm font-semibold text-amber-700 dark:text-amber-400">Đã phân bổ</p>
+          </div>
+          <p className="text-3xl font-bold text-amber-600 dark:text-amber-400">{stats.allocated.toLocaleString()}</p>
+        </div>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">Đã bàn giao</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-emerald-600">{stats.delivered.toLocaleString()}</div>
-          </CardContent>
-        </Card>
+        <div className="p-5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 shadow-sm transition-all hover:shadow-md">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">Đã bàn giao</p>
+          </div>
+          <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">{stats.delivered.toLocaleString()}</p>
+        </div>
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Kho xe ({vehicles.length.toLocaleString()})</CardTitle>
+      {/* Vehicle Table - Real Estate Style */}
+      <div className="rounded-2xl bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800/80 shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-slate-100 dark:border-slate-800">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">Kho xe ({vehicles.length.toLocaleString()})</h2>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={loadVehicles}>
-                <RefreshCw className="w-4 h-4 mr-2" />
+              <button 
+                onClick={loadVehicles}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-300 text-sm font-medium transition-all active:scale-95"
+              >
+                <RefreshCw className="w-4 h-4" />
                 Làm mới
-              </Button>
-              <Button variant="outline" size="sm">
-                <Download className="w-4 h-4 mr-2" />
+              </button>
+              <button className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-300 text-sm font-medium transition-all active:scale-95">
+                <Download className="w-4 h-4" />
                 Xuất Excel
-              </Button>
+              </button>
             </div>
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-4 mb-4">
+
+          {/* Filters */}
+          <div className="flex gap-4">
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cyan-400" />
-                <Input
+                <input
+                  type="text"
                   placeholder="Tìm VIN, vị trí..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all"
                 />
               </div>
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[200px]">
-                <Filter className="w-4 h-4 mr-2" />
-                <SelectValue placeholder="Trạng thái" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tất cả</SelectItem>
-                <SelectItem value="in_transit">Đang vận chuyển</SelectItem>
-                <SelectItem value="warehouse">Kho</SelectItem>
-                <SelectItem value="showroom">Showroom</SelectItem>
-                <SelectItem value="allocated">Đã phân bổ</SelectItem>
-                <SelectItem value="delivered">Đã bàn giao</SelectItem>
-              </SelectContent>
-            </Select>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all"
+            >
+              <option value="all">Tất cả</option>
+              <option value="in_transit">Đang vận chuyển</option>
+              <option value="warehouse">Kho</option>
+              <option value="showroom">Showroom</option>
+              <option value="allocated">Đã phân bổ</option>
+              <option value="delivered">Đã bàn giao</option>
+            </select>
           </div>
+        </div>
 
-          {/* Vehicle Table */}
+        <div className="p-6">
+          {/* Vehicle Table Content */}
           {loading ? (
-            <div className="text-center py-8">
-              <RefreshCw className="w-8 h-8 animate-spin mx-auto text-cyan-400" />
-              <p className="text-slate-500 mt-2">Đang tải...</p>
+            <div className="text-center py-12">
+              <RefreshCw className="w-8 h-8 animate-spin mx-auto text-cyan-400 mb-4" />
+              <p className="text-slate-500 dark:text-slate-400">Đang tải...</p>
             </div>
           ) : vehicles.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-slate-500">Không tìm thấy xe</p>
+            <div className="text-center py-12">
+              <p className="text-slate-500 dark:text-slate-400">Không tìm thấy xe</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-3 px-4 font-medium">VIN</th>
-                    <th className="text-left py-3 px-4 font-medium">Màu</th>
-                    <th className="text-left py-3 px-4 font-medium">Năm</th>
-                    <th className="text-left py-3 px-4 font-medium">Trạng thái</th>
-                    <th className="text-left py-3 px-4 font-medium">Vị trí</th>
-                    <th className="text-right py-3 px-4 font-medium">Giá niêm yết</th>
-                    <th className="text-right py-3 px-4 font-medium"></th>
+                  <tr className="border-b border-slate-100 dark:border-slate-800">
+                    <th className="text-left py-3 px-4 font-semibold text-sm text-slate-700 dark:text-slate-300">VIN</th>
+                    <th className="text-left py-3 px-4 font-semibold text-sm text-slate-700 dark:text-slate-300">Màu</th>
+                    <th className="text-left py-3 px-4 font-semibold text-sm text-slate-700 dark:text-slate-300">Năm</th>
+                    <th className="text-left py-3 px-4 font-semibold text-sm text-slate-700 dark:text-slate-300">Trạng thái</th>
+                    <th className="text-left py-3 px-4 font-semibold text-sm text-slate-700 dark:text-slate-300">Vị trí</th>
+                    <th className="text-right py-3 px-4 font-semibold text-sm text-slate-700 dark:text-slate-300">Giá niêm yết</th>
+                    <th className="text-right py-3 px-4 font-semibold text-sm text-slate-700 dark:text-slate-300"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {vehicles.map((vehicle) => (
-                    <tr key={vehicle.id} className="border-b hover:bg-gray-50">
-                      <td className="py-3 px-4 font-mono text-sm">{vehicle.vin}</td>
-                      <td className="py-3 px-4">{vehicle.color_exterior}</td>
-                      <td className="py-3 px-4">{vehicle.model_year}</td>
+                    <tr key={vehicle.id} className="border-b border-slate-50 dark:border-slate-900 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
+                      <td className="py-3 px-4 font-mono text-sm text-slate-900 dark:text-white">{vehicle.vin}</td>
+                      <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-300">{vehicle.color_exterior}</td>
+                      <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-300">{vehicle.model_year}</td>
                       <td className="py-3 px-4">
-                        <Badge className={getStatusColor(vehicle.status)}>
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold ${getStatusColor(vehicle.status)}`}>
                           {vehicle.status === 'in_transit' && 'Đang vận chuyển'}
                           {vehicle.status === 'warehouse' && 'Kho'}
                           {vehicle.status === 'showroom' && 'Showroom'}
                           {vehicle.status === 'allocated' && 'Đã phân bổ'}
                           {vehicle.status === 'delivered' && 'Đã bàn giao'}
-                        </Badge>
+                        </span>
                       </td>
-                      <td className="py-3 px-4 text-slate-600">{vehicle.location_note || '-'}</td>
-                      <td className="py-3 px-4 text-right font-medium">
+                      <td className="py-3 px-4 text-sm text-slate-600 dark:text-slate-400">{vehicle.location_note || '-'}</td>
+                      <td className="py-3 px-4 text-right font-semibold text-sm text-slate-900 dark:text-white">
                         {vehicle.list_price?.toLocaleString('vi-VN')} đ
                       </td>
                       <td className="py-3 px-4 text-right">
-                        <Button variant="ghost" size="sm">
+                        <button className="px-3 py-1.5 rounded-lg text-sm font-medium text-cyan-600 dark:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-950/20 transition-all">
                           Chi tiết
-                        </Button>
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -261,8 +250,8 @@ export default function VehicleInventoryDashboard({ tenantId }: { tenantId: stri
               </table>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
