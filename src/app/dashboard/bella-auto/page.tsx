@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase-server';
 import { redirect } from 'next/navigation';
 import VehicleInventoryDashboard from '@/components/bella-auto/VehicleInventoryDashboard';
 import { BellaAutoHeader } from '@/components/bella-auto/BellaAutoHeader';
+import { AutoAnalyticsCharts } from '@/components/bella-auto/AutoAnalyticsCharts';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,6 +36,20 @@ export default async function BellaAutoPage() {
     .eq('id', profile.tenant_id)
     .single();
 
+  // Fetch vehicle stats for analytics
+  const { data: vehicles } = await supabase
+    .from('auto_vehicles')
+    .select('status')
+    .eq('tenant_id', profile.tenant_id);
+
+  const vehicleStats = {
+    total: vehicles?.length || 0,
+    showroom: vehicles?.filter(v => v.status === 'showroom').length || 0,
+    warehouse: vehicles?.filter(v => v.status === 'warehouse').length || 0,
+    allocated: vehicles?.filter(v => v.status === 'allocated').length || 0,
+    delivered: vehicles?.filter(v => v.status === 'delivered').length || 0,
+  };
+
   const monogram = profile?.full_name ? profile.full_name.substring(0, 2).toUpperCase() : 'BA';
 
   return (
@@ -45,6 +60,30 @@ export default async function BellaAutoPage() {
         fullName={profile?.full_name || 'Admin'}
         tenantName={tenant?.name || 'Bella Auto'}
       />
+
+      {/* Analytics Charts */}
+      <Suspense fallback={
+        <div className="space-y-6 animate-pulse">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="h-32 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
+            <div className="h-32 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
+            <div className="h-32 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
+            <div className="h-32 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 h-96 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
+            <div className="h-96 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
+          </div>
+        </div>
+      }>
+        <AutoAnalyticsCharts 
+          totalVehicles={vehicleStats.total}
+          showroomCount={vehicleStats.showroom}
+          warehouseCount={vehicleStats.warehouse}
+          allocatedCount={vehicleStats.allocated}
+          deliveredCount={vehicleStats.delivered}
+        />
+      </Suspense>
 
       {/* Vehicle Inventory Dashboard */}
       <Suspense fallback={
