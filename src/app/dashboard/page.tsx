@@ -340,9 +340,16 @@ export default function DashboardPage() {
     );
   }
 
+  // Redirect to module-specific dashboard
+  useEffect(() => {
+    if (tenantModuleKey === 'bella_auto') {
+      router.replace('/dashboard/bella-auto');
+    }
+  }, [tenantModuleKey, router]);
+
+  // Early return for module-specific pages
   if (tenantModuleKey === 'bella_auto') {
-    router.replace('/dashboard/bella-auto');
-    return null;
+    return null; // Will redirect via useEffect
   }
 
   if (tenantModuleKey === 'real_estate') {

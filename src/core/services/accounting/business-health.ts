@@ -1,6 +1,7 @@
 'use server';
 
-import invariantModule from '../../../../scripts/check-business-invariants.cjs';
+// @ts-ignore - CJS module with filesystem operations, ignore for Turbopack NFT
+import invariantModule from /*turbopackIgnore: true*/ '../../../../scripts/check-business-invariants.cjs';
 import { enqueueWithAutoClient } from '@/lib/accounting-outbox';
 import {
   buildInventoryConsumedOutboxEvent,

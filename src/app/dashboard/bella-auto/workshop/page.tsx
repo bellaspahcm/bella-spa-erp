@@ -7,6 +7,7 @@ import { TechnicianDashboard } from '@/modules/bella-auto/components/workshop/Te
 import { Wrench, Calendar, Users } from 'lucide-react';
 import { createClient } from '@/lib/supabase-client';
 import { toast } from 'sonner';
+import { mapAppointmentForCalendar, mapRepairOrderForBoard } from '@/modules/bella-auto/lib/workshop-mappers';
 
 type TabType = 'appointments' | 'orders' | 'technicians';
 
@@ -78,14 +79,18 @@ export default function WorkshopPage() {
           console.error('Appointments fetch error:', appointmentsRes.error);
           setAppointments([]);
         } else {
-          setAppointments(appointmentsRes.data || []);
+          // Map database format to component format
+          const mappedAppointments = (appointmentsRes.data || []).map(mapAppointmentForCalendar);
+          setAppointments(mappedAppointments);
         }
         
         if (ordersRes.error) {
           console.error('Orders fetch error:', ordersRes.error);
           setOrders([]);
         } else {
-          setOrders(ordersRes.data || []);
+          // Map database format to component format
+          const mappedOrders = (ordersRes.data || []).map(mapRepairOrderForBoard);
+          setOrders(mappedOrders);
         }
       } catch (error) {
         console.error('Failed to fetch workshop data:', error);

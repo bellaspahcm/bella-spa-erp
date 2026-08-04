@@ -98,7 +98,7 @@
     .span-3 { grid-column: span 3; }
     .card-glass {
       background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 18px; padding: 24px;
-      box-shadow: var(--shadow-premium); transition: var(--transition-smooth); position: relative; overflow: hidden;
+      box-shadow: var(--shadow-premium); transition: var(--transition-smooth); position: relative; overflow: visible;
     }
     .card-glass::before {
       content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px;
@@ -478,7 +478,7 @@
         <div class="card-glass">
           <div class="card-title"><span>Điểm Yếu Cần Khắc Phục (Weaknesses)</span></div>
           <ul class="point-list weaknesses">
-            <li><strong>Bảo hiểm & Vay vốn chưa có giao diện:</strong> Các chức năng xử lý bảo hiểm và hồ sơ vay vốn đã có backend logic nhưng chưa có giao diện người dùng. Roadmap Q2 2026 sẽ xây dựng form nhập liệu và màn hình theo dõi tiến độ.</li>
+            <li><strong>Finance Center & Insurance Center chưa có Presentation Layer:</strong> Backend đã hoàn chỉnh (LoanApplicationService, InsuranceService, database tables, workflows, APIs, notifications, commission tracking) nhưng thiếu UI/UX. Cần xây dựng 2 Enterprise Centers theo chuẩn kiến trúc: <strong>Finance Center</strong> (Loan Dashboard, Applications, Workflow, Banks, Analytics) và <strong>Insurance Center</strong> (Dashboard, Policies, Renewal Center, Claims, Analytics). Mỗi Center gồm 5-6 màn hình với Dashboard, danh sách, chi tiết, timeline, upload documents, analytics. Roadmap Phase 6 sẽ xây dựng đầy đủ để đồng nhất với Journey Center, Workshop Center, Lead Center hiện có.</li>
           </ul>
           <div style="margin-top: 20px; padding: 16px; background: rgba(5, 150, 105, 0.08); border: 1px solid rgba(5, 150, 105, 0.2); border-radius: 12px;">
             <div style="display: flex; align-items: start; gap: 12px;">
@@ -638,16 +638,37 @@
 
         <!-- Priority 2 -->
         <div class="card-glass span-3">
-          <div class="card-title"><span><span style="color: #d97706; font-size: 1.2em;">●</span> Ưu Tiên 2: UI Completion & Interactive Features (4-5 tuần)</span></div>
-          <ul class="point-list recommendations">
-            <li><strong>Workshop page interactive tabs:</strong> Implement tab switching logic cho ServiceCalendar, RepairOrderBoard, TechnicianDashboard. Drag-and-drop Kanban cho RepairOrderBoard.</li>
-            <li><strong>Trade-in UI:</strong> Tạo UI cho TradeInAppraisalService: upload ảnh xe cũ (TradeInPhotoService), form đánh giá giá trị, approval workflow.</li>
-            <li><strong>Insurance & Loan UI:</strong> Tạo UI cho InsuranceService và LoanApplicationService: form đăng ký, tracking trạng thái, integration với third-party APIs.</li>
-            <li><strong>Pagination & virtualization:</strong> Implement pagination cho VehicleInventory table. Virtualization cho danh sách xe lớn (react-window hoặc react-virtualized).</li>
-            <li><strong>Booking → VehicleStatusMachine integration:</strong> Khi xác nhận cọc ở BookingHubPage, tự động trigger VehicleStatusMachine transition: showroom → allocated.</li>
-          </ul>
+          <div class="card-title"><span><span style="color: #d97706; font-size: 1.2em;">●</span> Ưu Tiên 2: Finance Center & Insurance Center Presentation Layer (6-8 tuần)</span></div>
+          <p style="margin-bottom: 16px; padding: 12px; background: rgba(8, 145, 178, 0.05); border-radius: 8px; font-size: 0.9rem; color: var(--text-secondary); border-left: 4px solid var(--color-info);">
+            <strong style="color: var(--color-info);">📌 Quan trọng:</strong> Backend đã hoàn chỉnh (LoanApplicationService, InsuranceService, database, workflows, APIs). Chỉ thiếu Presentation Layer (UI/UX). Sẽ xây dựng theo chuẩn Enterprise Center Architecture để đồng nhất với Journey Center, Workshop Center, Lead Center hiện có.
+          </p>
+          
+          <div style="margin-bottom: 24px;">
+            <h3 style="font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 12px;">🏦 Finance Center (Loan & Banking)</h3>
+            <ul class="point-list recommendations">
+              <li><strong>Loan Dashboard:</strong> 5 metrics cards (tổng hồ sơ, đã duyệt, đang xử lý, tỷ lệ duyệt, doanh số theo ngân hàng). Charts: Loan volume by month, approval rate trend, bank partnership performance.</li>
+              <li><strong>Loan Applications List:</strong> Bảng danh sách với filters (đang xử lý/đã duyệt/từ chối/đã giải ngân). Columns: Khách hàng, Ngân hàng, Khoản vay, Lãi suất, Kỳ hạn, Ngày nộp, Trạng thái, Sale phụ trách. Search + export Excel.</li>
+              <li><strong>Loan Detail Page:</strong> 3 sections - Thông tin khách (profile, contact, credit history), Thông tin xe (VIN, Model, Giá xe), Thông tin khoản vay (Giá xe → Đặt cọc → Khoản vay → Lãi suất → Ngân hàng → Thời hạn). Calculation breakdown visible.</li>
+              <li><strong>Loan Workflow Timeline:</strong> Visual timeline với 9 stages (Lead → Quotation → Booking → Deposit → Loan Submitted → Bank Reviewing → Approved → Disbursed → Delivery). Color-coded status (pending/in-progress/completed/rejected). Click vào stage để xem chi tiết.</li>
+              <li><strong>Document Upload Center:</strong> Upload CCCD, Hộ khẩu, Sao kê, Hợp đồng lao động, Chứng minh thu nhập. Integration với Cloudflare R2. Preview files, version tracking, required vs optional validation.</li>
+              <li><strong>Banks Management:</strong> Danh sách ngân hàng đối tác, lãi suất theo segment, thời hạn, điều kiện phê duyệt. CRUD interface cho admin.</li>
+            </ul>
+          </div>
+          
+          <div style="margin-bottom: 24px;">
+            <h3 style="font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 12px;">🛡️ Insurance Center</h3>
+            <ul class="point-list recommendations">
+              <li><strong>Insurance Dashboard:</strong> 5 metrics cards (Doanh thu BH, Hoa hồng, Sắp hết hạn, Đã gia hạn, Tỷ lệ tái tục). Charts: Revenue by insurance type, renewal rate trend, commission by sales.</li>
+              <li><strong>Insurance Policies List:</strong> Bảng danh sách hợp đồng. Columns: Khách, VIN, Loại BH (TNDS/Vật chất/Combo), Ngày hiệu lực, Ngày hết hạn, Phí, Hoa hồng. Filters: Active/Expired/Expiring soon.</li>
+              <li><strong>Policy Detail Page:</strong> VIN → Chủ xe → Loại bảo hiểm → Quyền lợi (coverage details) → Đơn vị bảo hiểm → File hợp đồng (PDF viewer) → Lịch sử gia hạn (renewal history table).</li>
+              <li><strong>Renewal Center:</strong> Alert system 30 ngày trước hết hạn. 4 categories: Còn 30 ngày (yellow), Còn 15 ngày (orange), Hôm nay (red), Quá hạn (dark red). Nút "Gửi nhắc nhở" và "Gia hạn ngay" per row. Bulk actions.</li>
+              <li><strong>Claims Management:</strong> Danh sách claim (VIN, loại claim, ngày báo, trạng thái xử lý, số tiền). Upload ảnh hiện trường, form mô tả sự cố, timeline theo dõi xử lý. Integration với insurance provider APIs nếu có.</li>
+              <li><strong>Insurance Analytics:</strong> Revenue breakdown by type, renewal conversion funnel, claim frequency analysis, profitability per insurance provider. Export reports Excel/PDF.</li>
+            </ul>
+          </div>
+          
           <p style="margin-top: 16px; padding: 12px; background: rgba(217, 119, 6, 0.05); border-radius: 8px; font-size: 0.9rem; color: var(--text-secondary);">
-            <strong style="color: var(--color-warning);">Mục tiêu:</strong> UI hoàn chỉnh cho tất cả backend services. Interactive UX tốt hơn. Integration giữa các modules chặt chẽ hơn.
+            <strong style="color: var(--color-warning);">🎯 Architectural Goals:</strong> Xây dựng Finance Center và Insurance Center theo chuẩn Enterprise Center pattern giống Journey Center, Workshop Center, Lead Center. Mỗi Center có: (1) Dashboard với metrics + charts, (2) List view với filters + search + export, (3) Detail view với full information, (4) Workflow/Timeline visualization, (5) Document management, (6) Analytics & reporting. Đảm bảo đồng nhất về kiến trúc, UX patterns, và reusable components.
           </p>
         </div>
 

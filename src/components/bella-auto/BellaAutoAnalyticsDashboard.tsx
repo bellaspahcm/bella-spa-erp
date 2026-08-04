@@ -112,21 +112,41 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
         supabase.rpc('get_auto_weekly_deliveries', { p_tenant_id: tenantId }),
       ]);
 
-      // Check for errors
+      // Check for errors with detailed logging
       if (trendResult.error) {
-        console.error('Trend RPC error:', trendResult.error);
+        console.error('[BellaAuto] Trend RPC error:', {
+          message: trendResult.error.message,
+          details: trendResult.error.details,
+          hint: trendResult.error.hint,
+          code: trendResult.error.code,
+        });
         throw trendResult.error;
       }
       if (topModelsResult.error) {
-        console.error('Top models RPC error:', topModelsResult.error);
+        console.error('[BellaAuto] Top models RPC error:', {
+          message: topModelsResult.error.message,
+          details: topModelsResult.error.details,
+          hint: topModelsResult.error.hint,
+          code: topModelsResult.error.code,
+        });
         throw topModelsResult.error;
       }
       if (revenueResult.error) {
-        console.error('Revenue RPC error:', revenueResult.error);
+        console.error('[BellaAuto] Revenue RPC error:', {
+          message: revenueResult.error.message,
+          details: revenueResult.error.details,
+          hint: revenueResult.error.hint,
+          code: revenueResult.error.code,
+        });
         throw revenueResult.error;
       }
       if (deliveriesResult.error) {
-        console.error('Deliveries RPC error:', deliveriesResult.error);
+        console.error('[BellaAuto] Deliveries RPC error:', {
+          message: deliveriesResult.error.message,
+          details: deliveriesResult.error.details,
+          hint: deliveriesResult.error.hint,
+          code: deliveriesResult.error.code,
+        });
         throw deliveriesResult.error;
       }
 
@@ -268,7 +288,10 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
         />
         <MetricCard
           title="Bàn giao tuần này"
-          value={analytics.weeklyDeliveries[analytics.weeklyDeliveries.length - 1].deliveries.toString()}
+          value={(analytics.weeklyDeliveries.length > 0 
+            ? analytics.weeklyDeliveries[analytics.weeklyDeliveries.length - 1].deliveries 
+            : 0
+          ).toString()}
           suffix="xe"
           icon={<Activity className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />}
           trend={{ value: 15.3, isPositive: true }}

@@ -1,4 +1,5 @@
-const { loadLocalEnv } = require('./load-local-env.cjs');
+// @turbopackIgnore: filesystem operations for .env loading
+const { loadLocalEnv } = require(/*turbopackIgnore: true*/ './load-local-env.cjs');
 
 loadLocalEnv();
 
