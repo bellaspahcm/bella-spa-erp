@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { ServiceCalendar } from '@/modules/bella-auto/components/workshop/ServiceCalendar';
 import { RepairOrderBoard } from '@/modules/bella-auto/components/workshop/RepairOrderBoard';
 import { TechnicianDashboard } from '@/modules/bella-auto/components/workshop/TechnicianDashboard';
+import { AppointmentDetailModal, type ServiceAppointment } from '@/modules/bella-auto/components/workshop/AppointmentDetailModal';
 import { Wrench, Calendar, Users } from 'lucide-react';
 import { createClient } from '@/lib/supabase-client';
 import { toast } from 'sonner';
@@ -37,6 +38,8 @@ export default function WorkshopPage() {
   const [orders, setOrders] = useState<Array<Record<string, unknown>>>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedAppointment, setSelectedAppointment] = useState<ServiceAppointment | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   // Mock technicians data (auto_technicians table not created yet)
   const mockTechnicians: TechnicianWorkload[] = [
@@ -187,6 +190,119 @@ export default function WorkshopPage() {
     fetchData();
   }, [fetchData]);
 
+  const handleCheckIn = async (appointmentId: string) => {
+    try {
+      const supabase = createClient();
+      if (!supabase) throw new Error('Supabase client not initialized');
+      
+      const { error } = await supabase
+        .from('auto_service_appointments')
+        .update({ status: 'checked_in' })
+        .eq('id', appointmentId);
+
+      if (error) throw error;
+      toast.success('Đã check-in xe thành công!');
+      
+      // Update local state for modal immediately
+      setSelectedAppointment(prev => prev ? { ...prev, status: 'checked_in' } : null);
+      // Reload lists
+      fetchData();
+    } catch (error) {
+      console.error('Check-in failed:', error);
+      toast.error('Không thể thực hiện check-in');
+    }
+  };
+
+  const handleCancel = async (appointmentId: string) => {
+    try {
+      const supabase = createClient();
+      if (!supabase) throw new Error('Supabase client not initialized');
+      
+      const { error } = await supabase
+        .from('auto_service_appointments')
+        .update({ status: 'cancelled' })
+        .eq('id', appointmentId);
+
+      if (error) throw error;
+      toast.success('Đã hủy lịch hẹn thành công!');
+      setIsDetailModalOpen(false);
+      setSelectedAppointment(null);
+      fetchData();
+    } catch (error) {
+      console.error('Cancel appointment failed:', error);
+      toast.error('Không thể hủy lịch hẹn');
+    }
+  };
+
+  const handleCreateRepairOrder = async (appointmentId: string) => {
+    try {
+      const supabase = createClient();
+      if (!supabase) throw new Error('Supabase client not initialized');
+      
+      // 1. Get detailed info of this appointment first
+      const { data: aptData, error: fetchError } = await supabase
+        .from('auto_service_appointments')
+        .select('*')
+        .eq('id', appointmentId)
+        .single();
+        
+      if (fetchError || !aptData) {
+        throw new Error(fetchError?.message || 'Không tìm thấy lịch hẹn');
+      }
+
+      // Generate a unique RO Number
+      const tenantCode = tenantId.replace(/[^a-fA-F0-9]/g, '').toUpperCase().slice(0, 4).padEnd(4, 'X');
+      const dateSuffix = aptData.appointment_date ? aptData.appointment_date.replace(/-/g, '').slice(2) : '260805';
+      const randHex = Math.floor(Math.random() * 9000 + 1000).toString();
+      const roNum = `RO-${tenantCode}-${dateSuffix}-${randHex}`;
+
+      // 2. Create Repair Order
+      const { error: roError } = await supabase
+        .from('auto_repair_orders')
+        .insert({
+          tenant_id: tenantId,
+          appointment_id: appointmentId,
+          customer_id: aptData.customer_id,
+          vehicle_id: aptData.vehicle_id,
+          order_number: roNum,
+          status: 'open',
+          order_date: aptData.appointment_date || new Date().toISOString().split('T')[0],
+          order_type: 'repair',
+          work_description: aptData.description || aptData.requested_services || 'Sửa chữa bảo dưỡng theo lịch hẹn',
+          customer_name: aptData.customer_name,
+          customer_phone: aptData.customer_phone,
+          vehicle_info: aptData.vehicle_info,
+          estimated_labor_cost: 300000,
+          estimated_parts_cost: 0,
+          estimated_total: 300000
+        });
+
+      if (roError) throw roError;
+
+      // 3. Update appointment status to 'in_progress'
+      const { error: aptUpdateError } = await supabase
+        .from('auto_service_appointments')
+        .update({ status: 'in_progress' })
+        .eq('id', appointmentId);
+
+      if (aptUpdateError) throw aptUpdateError;
+
+      toast.success(`Đã tạo Lệnh Sửa Chữa ${roNum} thành công!`);
+      setIsDetailModalOpen(false);
+      setSelectedAppointment(null);
+      
+      // Refresh database records
+      await fetchData();
+      
+      // Auto switch view to 'Bảng Sửa Chữa'
+      setActiveTab('orders');
+    } catch (error) {
+      console.error('Create RO failed:', error);
+      const errMsg = error instanceof Error ? error.message : String(error);
+      toast.error(`Không thể tạo Lệnh Sửa Chữa: ${errMsg}`);
+    }
+  };
+
   return (
     <div className="flex-1 overflow-auto bg-slate-50/30 dark:bg-slate-950 p-6 md:p-10 space-y-8" data-auto-layout>
       {/* Page Header */}
@@ -261,7 +377,8 @@ export default function WorkshopPage() {
               selectedDate={selectedDate}
               onDateChange={setSelectedDate}
               onAppointmentClick={(apt) => {
-                console.log('Appointment clicked:', apt);
+                setSelectedAppointment(apt as unknown as ServiceAppointment);
+                setIsDetailModalOpen(true);
               }}
             />
           )
@@ -294,6 +411,19 @@ export default function WorkshopPage() {
           />
         )}
       </div>
+
+      {/* Appointment Detail Modal */}
+      <AppointmentDetailModal
+        isOpen={isDetailModalOpen}
+        onClose={() => {
+          setIsDetailModalOpen(false);
+          setSelectedAppointment(null);
+        }}
+        appointment={selectedAppointment}
+        onCheckIn={handleCheckIn}
+        onCreateRepairOrder={handleCreateRepairOrder}
+        onCancel={handleCancel}
+      />
     </div>
   );
 }
