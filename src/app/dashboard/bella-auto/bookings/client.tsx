@@ -8,6 +8,11 @@ import { FileText, Plus } from 'lucide-react';
 
 export default function BookingsPageClient({ tenantId }: { tenantId: string }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleBookingCreated = () => {
+    setRefreshKey(prev => prev + 1); // Trigger refresh
+  };
 
   return (
     <div className="flex-1 overflow-auto bg-slate-50 dark:bg-slate-950 space-y-6 p-6">
@@ -33,12 +38,12 @@ export default function BookingsPageClient({ tenantId }: { tenantId: string }) {
       </div>
 
       {/* Stats */}
-      <Suspense fallback={<StatsLoading />}>
+      <Suspense key={`stats-${refreshKey}`} fallback={<StatsLoading />}>
         <BookingStats tenantId={tenantId} />
       </Suspense>
 
       {/* Table */}
-      <Suspense fallback={<TableLoading />}>
+      <Suspense key={`table-${refreshKey}`} fallback={<TableLoading />}>
         <BookingListTable tenantId={tenantId} />
       </Suspense>
 
@@ -46,6 +51,7 @@ export default function BookingsPageClient({ tenantId }: { tenantId: string }) {
       <CreateBookingModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        onSuccess={handleBookingCreated}
       />
     </div>
   );

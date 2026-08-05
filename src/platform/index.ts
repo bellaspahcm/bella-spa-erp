@@ -248,3 +248,134 @@ export type { MetadataConfig } from './metadata-engine/metadata-engine';
 
 // ─── Compatibility / Legacy Bridge ────────────────────────────────────────
 export { LegacySpaBridge } from './compatibility/legacy-bridge';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SECTION E: INDUSTRY BLUEPRINT ENGINES (Phase 0 — Healthcare Blueprint)
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ─── Platform SDK (Base Abstractions) ─────────────────────────────────────
+export type {
+  BaseDomainModel,
+  RepositorySDK,
+  EventSDK,
+  CommandSDK,
+  ValidationSDK,
+  ProjectionSDK,
+  QuerySDK,
+  PaginatedResult,
+  Result,
+  SaveResult,
+  OptimisticLockError,
+  DomainEvent,
+  Command,
+  CommandResult,
+  ValidationError,
+  ValidationResult,
+  FindOptions,
+} from './sdk';
+export { ok, err } from './sdk';
+
+// ─── Context Engine (First-class Platform Core) ───────────────────────────
+export { contextEngine, ContextBuilder, hasCapability, hasRole, hasAnyRole, isFeatureEnabled, requireCapability, requireRole } from './context';
+export type {
+  PlatformContext,
+  UserRole,
+  TenantInfo,
+  BranchInfo,
+} from './context';
+
+// ─── Party Engine (Identity Aggregate) ───────────────────────────────────
+export { partyEngine } from './party';
+export type {
+  Party,
+  PartyType,
+  PartyRole,
+  PartyIdentifier,
+  PartyRelationship,
+  IdentifierType,
+  RelationshipType,
+  CreatePartyInput,
+  AddRoleInput,
+  AddRelationshipInput,
+  PartySearchFilter,
+  IPartyRepository,
+} from './party';
+
+// ─── Journey Engine (Business Aggregate Root) ────────────────────────────
+export { journeyEngine } from './journey';
+export type {
+  Journey,
+  SubJourney,
+  JourneyMilestone,
+  JourneyStatus,
+  SubJourneyStatus,
+  MilestoneStatus,
+  CreateJourneyInput,
+  JourneyFilter,
+  UpdateMilestoneInput,
+  IJourneyRepository,
+} from './journey';
+
+// ─── Timeline Engine (Platform Event Store) ──────────────────────────────
+export { timelineEngine, computeEventHash, GENESIS_HASH } from './timeline';
+export type {
+  TimelineEvent,
+  TimelineEventCategory,
+  AppendEventInput,
+  TimelineFilter,
+  ReplayResult,
+  ITimelineRepository,
+} from './timeline';
+
+// ─── Knowledge Engine (5-Layer AI RAG Runtime) ───────────────────────────
+export { knowledgeEngine } from './knowledge';
+export type {
+  KnowledgeEntry,
+  KnowledgeDomain,
+  KnowledgeGraphEdge,
+  InferenceRule,
+  InferenceTriggerType,
+  PromptTemplate,
+  OntologyTerm,
+  KnowledgeSearchResult,
+  InferenceCheckResult,
+  IKnowledgeRepository,
+} from './knowledge';
+
+// ─── Asset Engine (Managed Asset Lifecycle) ──────────────────────────────
+export { assetEngine } from './asset';
+export type {
+  Asset,
+  AssetType,
+  AssetStatus,
+  AssetEvent,
+  CreateAssetInput,
+  UpdateAssetStatusInput,
+  AssetFilter,
+  IAssetRepository,
+} from './asset';
+
+// ─── Contract Engine (Business Commitment Lifecycle) ─────────────────────
+export { contractEngine } from './contract';
+export type {
+  Contract,
+  ContractType,
+  ContractStatus,
+  ContractParty,
+  ContractLineItem,
+  PaymentSchedule,
+  PaymentScheduleFrequency,
+  CreateContractInput,
+  ContractFilter,
+  IContractRepository,
+} from './contract';
+
+// ─── Composition Engine (Bootstrap & Capability Lifecycle) ────────────────
+export { compositionEngine } from './composition';
+export type {
+  CapabilityDefinition,
+  CapabilityRecord,
+  CapabilityLifecycleStatus,
+  VerticalProviders,
+  VerificationResult,
+} from './composition';
