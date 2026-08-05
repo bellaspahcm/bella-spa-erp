@@ -331,8 +331,8 @@ export function AppointmentDetailModal({
                 </button>
               )}
 
-              {/* Action: Toggle Edit (Reschedule) */}
-              {(appointment.status === 'confirmed' || appointment.status === 'checked_in') && (
+              {/* Action: Toggle Edit (Reschedule) - Allow for confirmed, checked_in, and in_progress */}
+              {(appointment.status === 'confirmed' || appointment.status === 'checked_in' || appointment.status === 'in_progress') && (
                 <button
                   disabled={isActionLoading}
                   onClick={() => setIsEditing(true)}
@@ -343,8 +343,8 @@ export function AppointmentDetailModal({
                 </button>
               )}
 
-              {/* Action: Cancel */}
-              {(appointment.status === 'confirmed' || appointment.status === 'checked_in') && (
+              {/* Action: Cancel - Allow for confirmed, checked_in, and in_progress */}
+              {(appointment.status === 'confirmed' || appointment.status === 'checked_in' || appointment.status === 'in_progress') && (
                 <button
                   disabled={isActionLoading}
                   onClick={() => handleAction(() => onCancel(appointment.id))}
