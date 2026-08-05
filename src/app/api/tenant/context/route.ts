@@ -104,7 +104,11 @@ export async function GET(_request: NextRequest) {
           if (mockTenant) {
             return NextResponse.json(transformTenantRowToContext(mockTenant), {
               status: 200,
-              headers: { 'Cache-Control': 'private, max-age=60' },
+              headers: {
+                'Cache-Control': 'no-store, no-cache, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0',
+              },
             });
           }
         }
@@ -198,8 +202,10 @@ export async function GET(_request: NextRequest) {
       status: 200,
       headers: {
         'Content-Type': 'application/json',
-        // Cache for 5 minutes to reduce database load
-        'Cache-Control': 'private, max-age=300',
+        // Prevent browser caching to ensure fresh tenant state when switching users or logging in
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
       },
     });
   } catch (error) {

@@ -13,6 +13,12 @@ interface Vehicle {
   status: string;
   location_note: string | null;
   list_price: number;
+  // Fields from seed data (direct columns)
+  brandName?: string;
+  modelName?: string;
+  variantName?: string;
+  chassisNumber?: string | null;
+  colorInterior?: string | null;
 }
 
 // Create client outside component to avoid recreating on every render
@@ -20,6 +26,8 @@ const supabase = createClient();
 const ITEMS_PER_PAGE = 15;
 
 export default function VehicleInventoryDashboard({ tenantId }: { tenantId: string }) {
+  console.log('[VehicleInventoryDashboard] Component mounted with tenantId:', tenantId);
+  
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -47,9 +55,21 @@ export default function VehicleInventoryDashboard({ tenantId }: { tenantId: stri
       
       console.log('✅ Auth session active:', { userId: session.user.id, email: session.user.email });
 
+      // Use AutoInventoryProvider JOIN query (same as vehicles page)
       let query = supabase
         .from('auto_vehicles')
-        .select('*', { count: 'planned' }) // 'planned' avoids full COUNT(*) scan
+        .select(`
+          id, vin, chassis_number, engine_number,
+          color_exterior, color_interior, model_year,
+          list_price, cost_price, status, location_note,
+          expected_arrival_date, actual_arrival_date,
+          variant_id, created_at, updated_at,
+          auto_variants!inner(name, model_id,
+            auto_models!inner(name, brand_id,
+              auto_brands!inner(name)
+            )
+          )
+        `, { count: 'planned' })
         .eq('tenant_id', tenantId)
         .order('created_at', { ascending: false })
         .range((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE - 1);
@@ -66,11 +86,31 @@ export default function VehicleInventoryDashboard({ tenantId }: { tenantId: stri
 
       if (error) throw error;
 
-      setVehicles(data || []);
+      console.log('[VehicleInventory] Loaded vehicles:', data?.length);
+
+      // Map to interface format
+      const mappedVehicles = (data || []).map((row: any) => ({
+        id: row.id,
+        vin: row.vin,
+        variant_id: row.variant_id,
+        color_exterior: row.color_exterior,
+        color_interior: row.color_interior,
+        model_year: row.model_year,
+        status: row.status,
+        location_note: row.location_note,
+        list_price: Number(row.list_price),
+        brandName: row.auto_variants?.auto_models?.auto_brands?.name,
+        modelName: row.auto_variants?.auto_models?.name,
+        variantName: row.auto_variants?.name,
+        chassisNumber: row.chassis_number,
+      }));
+
+      console.log('[VehicleInventory] Sample vehicle:', mappedVehicles[0]);
+
+      setVehicles(mappedVehicles);
       setTotalCount(count || 0);
       
-      // Load stats — dùng HEAD-only COUNT query (zero rows transferred, chỉ lấy count header)
-      // Sử dụng index idx_auto_vehicles_status (tenant_id, status)
+      // Load stats
       const [totalRes, showroomRes, warehouseRes, allocatedRes, deliveredRes] = await Promise.all([
         supabase.from('auto_vehicles').select('*', { count: 'exact', head: true }).eq('tenant_id', tenantId),
         supabase.from('auto_vehicles').select('*', { count: 'exact', head: true }).eq('tenant_id', tenantId).eq('status', 'showroom'),
@@ -222,21 +262,30 @@ export default function VehicleInventoryDashboard({ tenantId }: { tenantId: stri
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-slate-100 dark:border-slate-800">
-                    <th className="text-left py-3 px-4 font-semibold text-sm text-slate-700 dark:text-slate-300">VIN</th>
-                    <th className="text-left py-3 px-4 font-semibold text-sm text-slate-700 dark:text-slate-300">Màu</th>
-                    <th className="text-left py-3 px-4 font-semibold text-sm text-slate-700 dark:text-slate-300">Năm</th>
-                    <th className="text-left py-3 px-4 font-semibold text-sm text-slate-700 dark:text-slate-300">Trạng thái</th>
-                    <th className="text-left py-3 px-4 font-semibold text-sm text-slate-700 dark:text-slate-300">Vị trí</th>
-                    <th className="text-right py-3 px-4 font-semibold text-sm text-slate-700 dark:text-slate-300">Giá niêm yết</th>
-                    <th className="text-right py-3 px-4 font-semibold text-sm text-slate-700 dark:text-slate-300"></th>
+                    <th className="text-left py-3 px-4 font-semibold text-sm text-slate-700 dark:text-slate-300">XE & PHIÊN BẢN</th>
+                    <th className="text-left py-3 px-4 font-semibold text-sm text-slate-700 dark:text-slate-300">SỐ VIN / SỐ KHUNG</th>
+                    <th className="text-left py-3 px-4 font-semibold text-sm text-slate-700 dark:text-slate-300">MÀU SẮC</th>
+                    <th className="text-left py-3 px-4 font-semibold text-sm text-slate-700 dark:text-slate-300">TRẠNG THÁI</th>
+                    <th className="text-left py-3 px-4 font-semibold text-sm text-slate-700 dark:text-slate-300">VỊ TRÍ</th>
+                    <th className="text-right py-3 px-4 font-semibold text-sm text-slate-700 dark:text-slate-300">GIÁ NIÊM YẾT</th>
+                    <th className="text-right py-3 px-4 font-semibold text-sm text-slate-700 dark:text-slate-300">CHI TIẾT</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {vehicles.map((vehicle) => (
+                  {vehicles.map((vehicle) => {
+                    const brand = vehicle.brandName || '-';
+                    const model = vehicle.modelName || '-';
+                    const variant = vehicle.variantName || '-';
+                    const vehicleName = brand !== '-' ? `${brand} ${model} ${variant}` : '-';
+                    
+                    return (
                     <tr key={vehicle.id} className="border-b border-slate-50 dark:border-slate-900 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
-                      <td className="py-3 px-4 font-mono text-sm text-slate-900 dark:text-white">{vehicle.vin}</td>
+                      <td className="py-3 px-4">
+                        <div className="font-medium text-sm text-slate-900 dark:text-white">{vehicleName}</div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Năm {vehicle.model_year}</div>
+                      </td>
+                      <td className="py-3 px-4 font-mono text-sm text-cyan-600 dark:text-cyan-400">{vehicle.vin}</td>
                       <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-300">{vehicle.color_exterior}</td>
-                      <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-300">{vehicle.model_year}</td>
                       <td className="py-3 px-4">
                         <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold ${getStatusColor(vehicle.status)}`}>
                           {vehicle.status === 'in_transit' && 'Đang vận chuyển'}
@@ -246,17 +295,19 @@ export default function VehicleInventoryDashboard({ tenantId }: { tenantId: stri
                           {vehicle.status === 'delivered' && 'Đã bàn giao'}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-sm text-slate-600 dark:text-slate-400">{vehicle.location_note || '-'}</td>
+                      <td className="py-3 px-4 text-sm text-slate-600 dark:text-slate-400">{vehicle.location_note || '--'}</td>
                       <td className="py-3 px-4 text-right font-semibold text-sm text-slate-900 dark:text-white">
-                        {vehicle.list_price?.toLocaleString('vi-VN')} đ
+                        {(vehicle.list_price / 1000000000).toFixed(1)}B
                       </td>
                       <td className="py-3 px-4 text-right">
                         <button className="px-3 py-1.5 rounded-lg text-sm font-medium text-cyan-600 dark:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-950/20 transition-all">
-                          Chi tiết
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
                         </button>
                       </td>
                     </tr>
-                  ))}
+                  )})}
                 </tbody>
               </table>
             </div>

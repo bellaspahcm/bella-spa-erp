@@ -349,7 +349,20 @@ export default function DashboardPage() {
 
   // Early return for module-specific pages
   if (tenantModuleKey === 'bella_auto') {
-    return null; // Will redirect via useEffect
+    // Show a neutral redirect skeleton instead of null to prevent blank/white screen
+    // while router.replace('/dashboard/bella-auto') navigates.
+    return (
+      <div className="flex-1 p-8 space-y-6 animate-pulse bg-slate-50 dark:bg-slate-950 min-h-screen">
+        <div className="h-20 bg-slate-200 dark:bg-slate-800 rounded-2xl w-full" />
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="h-32 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
+          <div className="h-32 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
+          <div className="h-32 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
+          <div className="h-32 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
+        </div>
+        <div className="h-96 bg-slate-200 dark:bg-slate-800 rounded-3xl w-full" />
+      </div>
+    );
   }
 
   if (tenantModuleKey === 'real_estate') {

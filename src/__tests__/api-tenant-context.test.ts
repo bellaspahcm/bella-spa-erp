@@ -8,6 +8,18 @@
 import { GET } from '@/app/api/tenant/context/route';
 import { NextRequest } from 'next/server';
 
+// Mock next/headers
+jest.mock('next/headers', () => ({
+  cookies: jest.fn(async () => ({
+    get: jest.fn(),
+    set: jest.fn(),
+    delete: jest.fn(),
+  })),
+  headers: jest.fn(async () => ({
+    get: jest.fn(),
+  })),
+}));
+
 // Mock Supabase client
 const mockFrom = jest.fn();
 const mockSelect = jest.fn();
@@ -17,6 +29,15 @@ const mockGetUser = jest.fn();
 
 jest.mock('@/lib/supabase-server', () => ({
   createClient: jest.fn(() => ({
+    from: mockFrom,
+    auth: {
+      getUser: mockGetUser,
+    },
+  })),
+}));
+
+jest.mock('@supabase/ssr', () => ({
+  createServerClient: jest.fn(() => ({
     from: mockFrom,
     auth: {
       getUser: mockGetUser,
@@ -272,6 +293,6 @@ describe('GET /api/tenant/context', () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get('Content-Type')).toBe('application/json');
-    expect(response.headers.get('Cache-Control')).toBe('private, max-age=300');
+    expect(response.headers.get('Cache-Control')).toBe('no-store, no-cache, must-revalidate, proxy-revalidate');
   });
 });

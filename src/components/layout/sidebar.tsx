@@ -224,6 +224,14 @@ function clearTenantBrandRuntimeCache() {
   } catch {
     // Runtime cache only prevents first-paint theme flashes.
   }
+
+  // Also clear localStorage brand cache on logout to prevent stale module key
+  // causing blank screen when switching between different tenant accounts.
+  try {
+    window.localStorage.removeItem(SIDEBAR_BRAND_CACHE_KEY);
+  } catch {
+    // Ignore storage failures.
+  }
 }
 
 function resolveTenantBrandDisplay(settings: Awaited<ReturnType<typeof getCachedTenantSettings>>): TenantBrandDisplay {
