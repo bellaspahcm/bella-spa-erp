@@ -1,7 +1,7 @@
 'use client';
 
-import { X, User, Phone, Car, Wrench, Clock, Calendar, CheckCircle2, Play, AlertTriangle } from 'lucide-react';
-import { useState } from 'react';
+import { X, User, Phone, Car, Wrench, Clock, Calendar, CheckCircle2, Play, AlertTriangle, Edit3, Save } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 export interface ServiceAppointment {
   id: string;
@@ -24,6 +24,12 @@ interface AppointmentDetailModalProps {
   onCheckIn: (appointmentId: string) => Promise<void>;
   onCreateRepairOrder: (appointmentId: string) => Promise<void>;
   onCancel: (appointmentId: string) => Promise<void>;
+  onUpdateAppointment: (appointmentId: string, updatedData: {
+    scheduledDate: string;
+    scheduledTime: string;
+    description: string;
+    estimatedDuration: number;
+  }) => Promise<void>;
 }
 
 export function AppointmentDetailModal({
@@ -33,8 +39,26 @@ export function AppointmentDetailModal({
   onCheckIn,
   onCreateRepairOrder,
   onCancel,
+  onUpdateAppointment,
 }: AppointmentDetailModalProps) {
   const [isActionLoading, setIsActionLoading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  
+  // Form states
+  const [editDate, setEditDate] = useState('');
+  const [editTime, setEditTime] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editDuration, setEditDuration] = useState(2);
+
+  // Initialize form states when appointment changes or editing is enabled
+  useEffect(() => {
+    if (appointment) {
+      setEditDate(appointment.scheduledDate);
+      setEditTime(appointment.scheduledTime.substring(0, 5)); // HH:MM
+      setEditDescription(appointment.serviceType);
+      setEditDuration(appointment.estimatedDuration || 2);
+    }
+  }, [appointment, isEditing]);
 
   if (!isOpen || !appointment) return null;
 
@@ -89,6 +113,21 @@ export function AppointmentDetailModal({
     try {
       setIsActionLoading(true);
       await action();
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    try {
+      setIsActionLoading(true);
+      await onUpdateAppointment(appointment.id, {
+        scheduledDate: editDate,
+        scheduledTime: editTime,
+        description: editDescription,
+        estimatedDuration: Number(editDuration),
+      });
+      setIsEditing(false);
     } finally {
       setIsActionLoading(false);
     }
@@ -160,81 +199,171 @@ export function AppointmentDetailModal({
             </div>
           </div>
 
-          {/* Service Group */}
+          {/* Service Group (View/Edit modes) */}
           <div className="p-4 bg-slate-50/50 dark:bg-slate-900/30 rounded-2xl border border-slate-100/50 dark:border-slate-900/50">
             <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
               <Wrench className="w-3.5 h-3.5" />
               Yêu cầu dịch vụ
             </h4>
-            <div className="text-sm font-bold text-slate-800 dark:text-slate-200">
-              {appointment.serviceType}
-            </div>
             
-            <div className="grid grid-cols-2 gap-4 mt-4 pt-3 border-t border-slate-100 dark:border-slate-900/80">
-              <div>
-                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 block">Thời gian hẹn</span>
-                <span className="text-xs font-black text-slate-700 dark:text-slate-350 flex items-center gap-1 mt-0.5">
-                  <Calendar className="w-3.5 h-3.5 text-cyan-500" />
-                  {appointment.scheduledTime} - {appointment.scheduledDate}
-                </span>
+            {isEditing ? (
+              <div className="space-y-4">
+                {/* Edit Description */}
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 dark:text-slate-550 block mb-1">Mô tả / Yêu cầu</label>
+                  <textarea
+                    value={editDescription}
+                    onChange={(e) => setEditDescription(e.target.value)}
+                    className="w-full text-xs font-semibold p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 focus:outline-hidden focus:ring-1 focus:ring-cyan-500/80 transition-all min-h-[60px]"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Edit Date */}
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-400 dark:text-slate-550 block mb-1">Ngày hẹn</label>
+                    <input
+                      type="date"
+                      value={editDate}
+                      onChange={(e) => setEditDate(e.target.value)}
+                      className="w-full text-xs font-semibold p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 focus:outline-hidden focus:ring-1 focus:ring-cyan-500/80 transition-all"
+                    />
+                  </div>
+
+                  {/* Edit Time */}
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-400 dark:text-slate-550 block mb-1">Giờ hẹn</label>
+                    <input
+                      type="time"
+                      value={editTime}
+                      onChange={(e) => setEditTime(e.target.value)}
+                      className="w-full text-xs font-semibold p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 focus:outline-hidden focus:ring-1 focus:ring-cyan-500/80 transition-all"
+                    />
+                  </div>
+                </div>
+
+                {/* Edit Duration */}
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 dark:text-slate-550 block mb-1">Thời gian dự kiến (Giờ)</label>
+                  <input
+                    type="number"
+                    step="0.5"
+                    min="0.5"
+                    value={editDuration}
+                    onChange={(e) => setEditDuration(Number(e.target.value))}
+                    className="w-full text-xs font-semibold p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 focus:outline-hidden focus:ring-1 focus:ring-cyan-500/80 transition-all"
+                  />
+                </div>
               </div>
-              <div>
-                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 block">Thời gian ước tính</span>
-                <span className="text-xs font-black text-slate-700 dark:text-slate-350 flex items-center gap-1 mt-0.5">
-                  <Clock className="w-3.5 h-3.5 text-cyan-500" />
-                  {appointment.estimatedDuration || 2} giờ
-                </span>
-              </div>
-            </div>
+            ) : (
+              <>
+                <div className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                  {appointment.serviceType}
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4 mt-4 pt-3 border-t border-slate-100 dark:border-slate-900/80">
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 block">Thời gian hẹn</span>
+                    <span className="text-xs font-black text-slate-700 dark:text-slate-350 flex items-center gap-1 mt-0.5">
+                      <Calendar className="w-3.5 h-3.5 text-cyan-500" />
+                      {appointment.scheduledTime} - {appointment.scheduledDate}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 block">Thời gian ước tính</span>
+                    <span className="text-xs font-black text-slate-700 dark:text-slate-350 flex items-center gap-1 mt-0.5">
+                      <Clock className="w-3.5 h-3.5 text-cyan-500" />
+                      {appointment.estimatedDuration || 2} giờ
+                    </span>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
         </div>
 
         {/* Actions Buttons */}
         <div className="flex flex-col sm:flex-row gap-2.5">
-          {/* Action: Check-in */}
-          {appointment.status === 'confirmed' && (
-            <button
-              disabled={isActionLoading}
-              onClick={() => handleAction(() => onCheckIn(appointment.id))}
-              className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-black bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-2xl shadow-md transition-all active:scale-95 disabled:opacity-50"
-            >
-              <CheckCircle2 className="w-4 h-4" />
-              Check-in xe vào xưởng
-            </button>
-          )}
+          {isEditing ? (
+            <>
+              {/* Edit Mode Actions */}
+              <button
+                disabled={isActionLoading}
+                onClick={handleSaveEdit}
+                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-black bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-2xl shadow-md transition-all active:scale-95 disabled:opacity-50"
+              >
+                <Save className="w-4 h-4" />
+                Lưu thay đổi
+              </button>
+              <button
+                disabled={isActionLoading}
+                onClick={() => setIsEditing(false)}
+                className="px-4 py-2.5 text-xs font-black bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-2xl transition-all active:scale-95 disabled:opacity-50 border border-slate-200/50 dark:border-slate-800/80"
+              >
+                Hủy
+              </button>
+            </>
+          ) : (
+            <>
+              {/* View Mode Actions */}
+              {/* Action: Check-in */}
+              {appointment.status === 'confirmed' && (
+                <button
+                  disabled={isActionLoading}
+                  onClick={() => handleAction(() => onCheckIn(appointment.id))}
+                  className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-black bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-2xl shadow-md transition-all active:scale-95 disabled:opacity-50"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  Check-in
+                </button>
+              )}
 
-          {/* Action: Create Repair Order */}
-          {appointment.status === 'checked_in' && (
-            <button
-              disabled={isActionLoading}
-              onClick={() => handleAction(() => onCreateRepairOrder(appointment.id))}
-              className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-black bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-2xl shadow-md transition-all active:scale-95 disabled:opacity-50"
-            >
-              <Play className="w-4 h-4" />
-              Tạo Lệnh Sửa Chữa (RO)
-            </button>
-          )}
+              {/* Action: Create Repair Order */}
+              {appointment.status === 'checked_in' && (
+                <button
+                  disabled={isActionLoading}
+                  onClick={() => handleAction(() => onCreateRepairOrder(appointment.id))}
+                  className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-black bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-2xl shadow-md transition-all active:scale-95 disabled:opacity-50"
+                >
+                  <Play className="w-4 h-4" />
+                  Tạo Lệnh RO
+                </button>
+              )}
 
-          {/* Action: Cancel */}
-          {(appointment.status === 'confirmed' || appointment.status === 'checked_in') && (
-            <button
-              disabled={isActionLoading}
-              onClick={() => handleAction(() => onCancel(appointment.id))}
-              className="px-4 py-2.5 text-xs font-black bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-rose-600 dark:text-rose-400 rounded-2xl transition-all active:scale-95 disabled:opacity-50 border border-slate-200/50 dark:border-slate-800/80"
-            >
-              Hủy lịch hẹn
-            </button>
-          )}
+              {/* Action: Toggle Edit (Reschedule) */}
+              {(appointment.status === 'confirmed' || appointment.status === 'checked_in') && (
+                <button
+                  disabled={isActionLoading}
+                  onClick={() => setIsEditing(true)}
+                  className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-black bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-355 rounded-2xl transition-all active:scale-95 disabled:opacity-50 border border-slate-200/50 dark:border-slate-800/80"
+                >
+                  <Edit3 className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+                  Dời lịch / Sửa
+                </button>
+              )}
 
-          {/* Default Close button when already in progress or completed */}
-          {(appointment.status === 'in_progress' || appointment.status === 'completed' || appointment.status === 'cancelled') && (
-            <button
-              onClick={onClose}
-              className="flex-1 inline-flex items-center justify-center px-4 py-2.5 text-xs font-black bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-2xl transition-all active:scale-95"
-            >
-              Đóng
-            </button>
+              {/* Action: Cancel */}
+              {(appointment.status === 'confirmed' || appointment.status === 'checked_in') && (
+                <button
+                  disabled={isActionLoading}
+                  onClick={() => handleAction(() => onCancel(appointment.id))}
+                  className="px-4 py-2.5 text-xs font-black text-rose-600 dark:text-rose-400 rounded-2xl hover:bg-rose-50/50 dark:hover:bg-rose-950/20 transition-all active:scale-95 disabled:opacity-50"
+                >
+                  Hủy lịch
+                </button>
+              )}
+
+              {/* Default Close button when already in progress or completed */}
+              {(appointment.status === 'in_progress' || appointment.status === 'completed' || appointment.status === 'cancelled') && (
+                <button
+                  onClick={onClose}
+                  className="flex-1 inline-flex items-center justify-center px-4 py-2.5 text-xs font-black bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-2xl transition-all active:scale-95"
+                >
+                  Đóng
+                </button>
+              )}
+            </>
           )}
         </div>
 

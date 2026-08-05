@@ -303,6 +303,55 @@ export default function WorkshopPage() {
     }
   };
 
+  const handleUpdateAppointment = async (
+    appointmentId: string,
+    updatedData: {
+      scheduledDate: string;
+      scheduledTime: string;
+      description: string;
+      estimatedDuration: number;
+    }
+  ) => {
+    try {
+      const supabase = createClient();
+      if (!supabase) throw new Error('Supabase client not initialized');
+
+      // Create scheduled_date string (TIMESTAMPTZ) in Vietnam timezone (+07:00)
+      const scheduledDateStr = `${updatedData.scheduledDate}T${updatedData.scheduledTime}:00+07:00`;
+
+      const { error } = await supabase
+        .from('auto_service_appointments')
+        .update({
+          appointment_date: updatedData.scheduledDate,
+          appointment_time: updatedData.scheduledTime + ':00',
+          scheduled_date: scheduledDateStr,
+          description: updatedData.description,
+          estimated_duration_hours: updatedData.estimatedDuration,
+        })
+        .eq('id', appointmentId);
+
+      if (error) throw error;
+      toast.success('Đã cập nhật/dời lịch hẹn thành công!');
+      
+      // Update local state for modal immediately to prevent UI jumps
+      setSelectedAppointment((prev) => 
+        prev ? {
+          ...prev,
+          scheduledDate: updatedData.scheduledDate,
+          scheduledTime: updatedData.scheduledTime,
+          serviceType: updatedData.description,
+          estimatedDuration: updatedData.estimatedDuration,
+        } : null
+      );
+
+      // Reload database records
+      await fetchData();
+    } catch (error) {
+      console.error('Update appointment failed:', error);
+      toast.error('Không thể cập nhật lịch hẹn');
+    }
+  };
+
   return (
     <div className="flex-1 overflow-auto bg-slate-50/30 dark:bg-slate-950 p-6 md:p-10 space-y-8" data-auto-layout>
       {/* Page Header */}
@@ -423,6 +472,7 @@ export default function WorkshopPage() {
         onCheckIn={handleCheckIn}
         onCreateRepairOrder={handleCreateRepairOrder}
         onCancel={handleCancel}
+        onUpdateAppointment={handleUpdateAppointment}
       />
     </div>
   );
