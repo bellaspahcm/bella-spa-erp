@@ -224,7 +224,7 @@ export function ServiceCalendar({
   };
 
   return (
-    <div className="bg-white dark:bg-slate-950 rounded-3xl border border-slate-150 dark:border-slate-900 shadow-[0_4px_24px_rgba(0,0,0,0.015)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.2)] overflow-hidden">
+    <div className="bg-white dark:bg-slate-950 rounded-3xl border border-slate-150 dark:border-slate-900 shadow-lg dark:shadow-2xl overflow-hidden">
       {/* Header */}
       <div className="p-6 border-b border-slate-100 dark:border-slate-900 bg-slate-50/30 dark:bg-slate-950">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 mb-6">
@@ -322,7 +322,7 @@ export function ServiceCalendar({
                     <div
                       key={apt.id}
                       onClick={() => onAppointmentClick?.(apt)}
-                      className={`bg-gradient-to-r p-4 rounded-2xl border cursor-pointer shadow-[0_2px_8px_rgba(0,0,0,0.01)] hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 ${getStatusColor(apt.status)}`}
+                      className={`bg-gradient-to-r p-4 rounded-2xl border cursor-pointer shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 ${getStatusColor(apt.status)}`}
                     >
                       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                         <div className="space-y-1.5 flex-1 min-w-0">

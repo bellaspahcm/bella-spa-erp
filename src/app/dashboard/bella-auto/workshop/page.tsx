@@ -353,7 +353,7 @@ export default function WorkshopPage() {
   };
 
   return (
-    <div className="flex-1 overflow-auto bg-slate-50/30 dark:bg-slate-950 p-6 md:p-10 space-y-8" data-auto-layout>
+    <div className="flex-1 overflow-auto bg-slate-50 dark:bg-slate-950 p-6 md:p-10 space-y-8" data-auto-layout>
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-900 pb-5">
         <div className="flex items-center gap-3.5">

@@ -82,7 +82,7 @@ export function TechnicianDashboard({
   };
 
   return (
-    <div className="bg-white dark:bg-slate-950 rounded-3xl border border-slate-150 dark:border-slate-900 shadow-[0_4px_24px_rgba(0,0,0,0.015)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.2)] overflow-hidden">
+    <div className="bg-white dark:bg-slate-950 rounded-3xl border border-slate-150 dark:border-slate-900 shadow-lg dark:shadow-2xl overflow-hidden">
       {/* Header */}
       <div className="p-6 border-b border-slate-100 dark:border-slate-900 bg-slate-50/30 dark:bg-slate-950 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -109,7 +109,7 @@ export function TechnicianDashboard({
             <div
               key={tech.technicianId}
               onClick={() => onTechnicianClick?.(tech.technicianId)}
-              className="border border-slate-200/50 dark:border-slate-800/50 rounded-2xl p-5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 cursor-pointer bg-white dark:bg-slate-900/20 flex flex-col"
+              className="border border-slate-200/50 dark:border-slate-800/50 rounded-2xl p-5 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 cursor-pointer bg-white dark:bg-slate-900/20 flex flex-col"
             >
               {/* Card Header (Avatar + Workload) */}
               <div className="flex items-start justify-between gap-3 mb-4">

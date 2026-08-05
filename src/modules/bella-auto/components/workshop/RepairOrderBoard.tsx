@@ -90,7 +90,7 @@ export function RepairOrderBoard({
   };
 
   return (
-    <div className="bg-white dark:bg-slate-950 rounded-3xl border border-slate-150 dark:border-slate-900 shadow-[0_4px_24px_rgba(0,0,0,0.015)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.2)] overflow-hidden">
+    <div className="bg-white dark:bg-slate-950 rounded-3xl border border-slate-150 dark:border-slate-900 shadow-lg dark:shadow-2xl overflow-hidden">
       {/* Header */}
       <div className="p-6 border-b border-slate-100 dark:border-slate-900 bg-slate-50/30 dark:bg-slate-950 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -117,7 +117,7 @@ export function RepairOrderBoard({
             return (
               <div
                 key={stage.key}
-                className={`flex-shrink-0 w-80 rounded-2xl border bg-gradient-to-b p-3 flex flex-col ${stage.color}`}
+                className={`flex-shrink-0 w-80 rounded-2xl border bg-gradient-to-b p-3 flex flex-col shadow-md ${stage.color}`}
               >
                 {/* Stage Header */}
                 <div className="pb-3 border-b border-slate-100/60 dark:border-slate-800/30 mb-3 px-1">
@@ -140,7 +140,7 @@ export function RepairOrderBoard({
                       <div
                         key={order.id}
                         onClick={() => onOrderClick?.(order)}
-                        className="bg-white dark:bg-slate-900/60 p-4 rounded-xl border border-slate-200/40 dark:border-slate-800/30 shadow-[0_2px_8px_rgba(0,0,0,0.01)] hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 cursor-pointer"
+                        className="bg-white dark:bg-slate-900/60 p-4 rounded-xl border border-slate-200/40 dark:border-slate-800/30 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 cursor-pointer"
                       >
                         {/* Priority indicator */}
                         {order.priority && (
