@@ -348,8 +348,9 @@ export function AppointmentDetailModal({
                 <button
                   disabled={isActionLoading}
                   onClick={() => handleAction(() => onCancel(appointment.id))}
-                  className="px-4 py-2.5 text-xs font-black text-rose-600 dark:text-rose-400 rounded-2xl hover:bg-rose-50/50 dark:hover:bg-rose-950/20 transition-all active:scale-95 disabled:opacity-50"
+                  className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-black text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/30 hover:bg-rose-100 dark:hover:bg-rose-950/50 border border-rose-200 dark:border-rose-900 rounded-2xl transition-all active:scale-95 disabled:opacity-50"
                 >
+                  <AlertTriangle className="w-3.5 h-3.5" />
                   Hủy lịch
                 </button>
               )}

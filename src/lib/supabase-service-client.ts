@@ -11,6 +11,10 @@ import { createClient } from '@supabase/supabase-js';
 import { Database } from '@/types/database.types';
 
 export function createServiceClient() {
+  if (typeof window !== 'undefined') {
+    return null as any;
+  }
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 

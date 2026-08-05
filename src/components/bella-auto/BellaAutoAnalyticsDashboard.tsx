@@ -85,7 +85,7 @@ const CustomTooltip = ({ active, payload, label, valueFormatter }: CustomTooltip
                 {item.name}:
               </span>
               <span className="text-xs font-bold text-slate-900 dark:text-white ml-auto">
-                {valueFormatter ? valueFormatter(item.value) : item.value}
+                {valueFormatter ? valueFormatter(item.value) : item.value.toLocaleString('vi-VN')}
               </span>
             </div>
           ))}
@@ -263,6 +263,10 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
     return value.toLocaleString('vi-VN');
   };
 
+  const formatNumber = (value: number) => {
+    return value.toLocaleString('vi-VN');
+  };
+
   if (loading || !mounted) {
     return (
       <div className="space-y-6 animate-pulse">
@@ -301,7 +305,7 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
         />
         <MetricCard
           title="Xe trong kho"
-          value={analytics.statusDistribution.reduce((sum, item) => sum + item.value, 0).toString()}
+          value={formatNumber(analytics.statusDistribution.reduce((sum, item) => sum + item.value, 0))}
           suffix="xe"
           icon={<Package className="w-4 h-4 text-slate-600 dark:text-slate-400" />}
           trend={{ value: 5.8, isPositive: true }}
@@ -309,10 +313,10 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
         />
         <MetricCard
           title="Bàn giao tuần này"
-          value={(analytics.weeklyDeliveries.length > 0 
+          value={formatNumber(analytics.weeklyDeliveries.length > 0 
             ? analytics.weeklyDeliveries[analytics.weeklyDeliveries.length - 1].deliveries 
             : 0
-          ).toString()}
+          )}
           suffix="xe"
           icon={<Activity className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />}
           trend={{ value: 15.3, isPositive: true }}
@@ -416,7 +420,7 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
                     Tổng xe
                   </text>
                   <text x="50%" y="57%" textAnchor="middle" dominantBaseline="middle" className="fill-slate-800 dark:fill-slate-100 font-extrabold text-2xl tracking-tight">
-                    {analytics.statusDistribution.reduce((sum, item) => sum + item.value, 0)}
+                    {formatNumber(analytics.statusDistribution.reduce((sum, item) => sum + item.value, 0))}
                   </text>
                 </PieChart>
               </ResponsiveContainer>
@@ -432,7 +436,7 @@ export default function BellaAutoAnalyticsDashboard({ tenantId }: BellaAutoAnaly
                     <div className="min-w-0 flex-1">
                       <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 truncate leading-none mb-0.5 uppercase tracking-wider">{item.name}</p>
                       <p className="text-xs font-extrabold text-slate-700 dark:text-slate-300 leading-none">
-                        {item.value} <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">({percentage}%)</span>
+                        {formatNumber(item.value)} <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">({percentage}%)</span>
                       </p>
                     </div>
                   </div>

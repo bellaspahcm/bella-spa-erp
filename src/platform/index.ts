@@ -16,7 +16,7 @@
 
 // ─── Command Bus ───────────────────────────────────────────────────────────
 export { commandBus, CommandBus } from './messaging/command-bus/command-bus';
-export type { Command, CommandHandler } from './messaging/command-bus/command-bus';
+export type { Command as BusCommand, CommandHandler } from './messaging/command-bus/command-bus';
 
 // ─── Query Bus ─────────────────────────────────────────────────────────────
 export { queryBus, QueryBus } from './messaging/query-bus/query-bus';

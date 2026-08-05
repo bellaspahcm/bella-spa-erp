@@ -75,7 +75,7 @@ export const AutoAnalyticsCharts: React.FC<AutoAnalyticsChartsProps> = ({
             </div>
           </div>
           <div className="mt-3">
-            <div className="text-3xl font-black text-slate-900 dark:text-white font-mono">142.8 <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">Tỷ VNĐ</span></div>
+            <div className="text-3xl font-black text-slate-900 dark:text-white font-mono">{Number(142.8).toLocaleString('vi-VN', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">Tỷ VNĐ</span></div>
             <div className="flex items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-400 font-bold mt-2">
               <TrendingUp className="w-3.5 h-3.5" />
               <span>+22.5% so với tháng trước</span>

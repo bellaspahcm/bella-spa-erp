@@ -1,0 +1,91 @@
+/* Healthcare Platform CSS Design System & Theme Overrides */
+
+[data-hc-layout="true"] {
+  --hc-primary: #0d9488; /* Teal 600 */
+  --hc-primary-hover: #0f766e; /* Teal 700 */
+  --hc-primary-light: #f0fdfa; /* Teal 50 */
+  --hc-primary-glow: rgba(13, 148, 136, 0.15);
+  
+  --hc-secondary: #06b6d4; /* Cyan 500 */
+  --hc-success: #10b981; /* Emerald 500 */
+  --hc-warning: #f59e0b; /* Amber 500 */
+  --hc-danger: #ef4444; /* Red 500 */
+  
+  --hc-font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+[data-hc-layout="true"] .text-primary {
+  color: var(--hc-primary);
+}
+
+[data-hc-layout="true"] .bg-primary {
+  background-color: var(--hc-primary);
+}
+
+[data-hc-layout="true"] .border-primary {
+  border-color: var(--hc-primary);
+}
+
+/* Glassmorphism Styles */
+[data-hc-layout="true"] .glass-panel {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(241, 245, 249, 0.8);
+}
+
+.dark [data-hc-layout="true"] .glass-panel {
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(51, 65, 85, 0.5);
+}
+
+/* Micro-animations */
+[data-hc-layout="true"] .pulse-glow {
+  animation: pulseGlow 2s infinite alternate;
+}
+
+@keyframes pulseGlow {
+  0% {
+    box-shadow: 0 0 4px rgba(13, 148, 136, 0.2);
+  }
+  100% {
+    box-shadow: 0 0 16px rgba(13, 148, 136, 0.6);
+  }
+}
+
+/* Tooth interaction styles for Odontogram */
+[data-hc-layout="true"] .tooth-svg path {
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+}
+
+[data-hc-layout="true"] .tooth-svg path:hover {
+  fill: #2dd4bf !important;
+  opacity: 0.8;
+}
+
+[data-hc-layout="true"] .tooth-decayed {
+  fill: #f43f5e !important; /* Rose 500 */
+}
+
+[data-hc-layout="true"] .tooth-missing {
+  fill: #64748b !important; /* Slate 500 */
+  opacity: 0.3;
+}
+
+[data-hc-layout="true"] .tooth-crowned {
+  fill: #fbbf24 !important; /* Amber 400 */
+}
+
+[data-hc-layout="true"] .tooth-implanted {
+  fill: #06b6d4 !important; /* Cyan 500 */
+}
+
+[data-hc-layout="true"] .tooth-healthy {
+  fill: #e2e8f0;
+}
+.dark [data-hc-layout="true"] .tooth-healthy {
+  fill: #334155;
+}
