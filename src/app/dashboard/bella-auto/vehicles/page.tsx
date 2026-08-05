@@ -105,7 +105,16 @@ function AddVehicleModal({ onClose, onSuccess }: { onClose: () => void; onSucces
             </div>
             <div>
               <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Giá Niêm Yết (VND) *</label>
-              <input type="number" value={form.listPrice} onChange={e => setForm(f => ({ ...f, listPrice: e.target.value }))} placeholder="2439000000" className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 outline-none text-sm font-semibold" />
+              <input 
+                type="text" 
+                value={form.listPrice ? Number(form.listPrice).toLocaleString('vi-VN') : ''} 
+                onChange={e => {
+                  const raw = e.target.value.replace(/[^\d]/g, ''); // Remove non-digits
+                  setForm(f => ({ ...f, listPrice: raw }));
+                }} 
+                placeholder="2,439,000,000" 
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 outline-none text-sm font-semibold" 
+              />
             </div>
             <div>
               <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Số Khung</label>
