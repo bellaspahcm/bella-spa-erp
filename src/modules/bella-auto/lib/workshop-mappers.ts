@@ -15,7 +15,10 @@ type DbRepairOrder = Database['public']['Tables']['auto_repair_orders']['Row'];
 export function mapAppointmentForCalendar(dbApt: DbAppointment) {
   // Parse scheduled_date (TIMESTAMPTZ) to separate date and time
   const scheduledDateTime = new Date(dbApt.scheduled_date);
-  const scheduledDate = scheduledDateTime.toISOString().split('T')[0]; // YYYY-MM-DD
+  const year = scheduledDateTime.getFullYear();
+  const month = (scheduledDateTime.getMonth() + 1).toString().padStart(2, '0');
+  const day = scheduledDateTime.getDate().toString().padStart(2, '0');
+  const scheduledDate = `${year}-${month}-${day}`; // Format: YYYY-MM-DD in local time
   const scheduledTime = scheduledDateTime.toLocaleTimeString('en-GB', { 
     hour: '2-digit', 
     minute: '2-digit',

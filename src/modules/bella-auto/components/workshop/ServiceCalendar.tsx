@@ -6,7 +6,7 @@
  * Designed with high contrast, modern layout, and clean typography
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Calendar as CalendarIcon, Clock, User, Car, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 
 interface ServiceAppointment {
@@ -42,6 +42,10 @@ export function ServiceCalendar({
 }: ServiceCalendarProps) {
   const [currentDate, setCurrentDate] = useState(selectedDate);
   const [viewMode, setViewMode] = useState<ViewMode>('day');
+
+  useEffect(() => {
+    setCurrentDate(selectedDate);
+  }, [selectedDate]);
 
   // Helper to format date string to YYYY-MM-DD in local time
   const getLocalDateStr = (date: Date) => {
@@ -234,6 +238,14 @@ export function ServiceCalendar({
           </div>
           
           <div className="flex flex-wrap items-center gap-3">
+            {/* Button Hôm nay - Đưa sang bên trái của View Mode Switcher và làm nổi bật bằng gradient cyan-blue */}
+            <button
+              onClick={handleToday}
+              className="px-4 py-2 text-xs font-black bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 dark:from-cyan-500 dark:to-blue-500 dark:hover:from-cyan-400 dark:hover:to-blue-400 text-white rounded-xl transition-all shadow-md shadow-cyan-500/10 hover:shadow-lg hover:shadow-cyan-500/20 active:scale-95 border border-cyan-500/10"
+            >
+              Hôm nay
+            </button>
+
             {/* View Mode Switcher */}
             <div className="flex p-1 bg-slate-100 dark:bg-slate-900/80 rounded-xl border border-slate-200/50 dark:border-slate-800/80 shadow-inner">
               {(['day', 'week', 'month'] as ViewMode[]).map((mode) => (
@@ -251,29 +263,21 @@ export function ServiceCalendar({
               ))}
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center bg-slate-100/80 dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/80 rounded-xl p-0.5 shadow-sm">
               <button
-                onClick={handleToday}
-                className="px-3.5 py-1.5 text-xs font-bold bg-slate-100/80 hover:bg-slate-200/80 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/50 dark:border-slate-800/80 rounded-xl transition-all shadow-sm"
+                onClick={handlePrev}
+                className="p-1.5 text-slate-600 hover:text-slate-900 dark:text-slate-450 dark:hover:text-slate-200 rounded-lg hover:bg-white dark:hover:bg-slate-950 transition-all"
+                title="Trước"
               >
-                Hôm nay
+                <ChevronLeft className="h-4 w-4" />
               </button>
-              <div className="flex items-center bg-slate-100/80 dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/80 rounded-xl p-0.5 shadow-sm">
-                <button
-                  onClick={handlePrev}
-                  className="p-1.5 text-slate-600 hover:text-slate-900 dark:text-slate-450 dark:hover:text-slate-200 rounded-lg hover:bg-white dark:hover:bg-slate-950 transition-all"
-                  title="Trước"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={handleNext}
-                  className="p-1.5 text-slate-600 hover:text-slate-900 dark:text-slate-450 dark:hover:text-slate-200 rounded-lg hover:bg-white dark:hover:bg-slate-950 transition-all"
-                  title="Sau"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
+              <button
+                onClick={handleNext}
+                className="p-1.5 text-slate-600 hover:text-slate-900 dark:text-slate-450 dark:hover:text-slate-200 rounded-lg hover:bg-white dark:hover:bg-slate-950 transition-all"
+                title="Sau"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
             </div>
           </div>
         </div>

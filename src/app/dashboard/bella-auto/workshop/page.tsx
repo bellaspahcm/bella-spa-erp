@@ -36,6 +36,7 @@ export default function WorkshopPage() {
   const [appointments, setAppointments] = useState<Array<Record<string, unknown>>>([]);
   const [orders, setOrders] = useState<Array<Record<string, unknown>>>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   // Mock technicians data (auto_technicians table not created yet)
   const mockTechnicians: TechnicianWorkload[] = [
@@ -257,6 +258,8 @@ export default function WorkshopPage() {
           ) : (
             <ServiceCalendar
               appointments={appointments}
+              selectedDate={selectedDate}
+              onDateChange={setSelectedDate}
               onAppointmentClick={(apt) => {
                 console.log('Appointment clicked:', apt);
               }}
