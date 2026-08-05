@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { RefreshCw, Bell } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
+import AdminNotificationBell from '@/components/common/AdminNotificationBell';
 
 interface BellaAutoHeaderProps {
   monogram: string;
@@ -38,23 +39,14 @@ export function BellaAutoHeader({ monogram, fullName, tenantName }: BellaAutoHea
         <button
           onClick={handleRefresh}
           disabled={isRefreshing}
-          className="flex items-center justify-center p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-600 dark:text-slate-300 transition-all duration-200 active:scale-95 disabled:opacity-50"
+          className="flex items-center justify-center p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-all duration-200 active:scale-95 disabled:opacity-50 shadow-sm"
           title="Tải lại dữ liệu"
         >
           <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
         </button>
 
-        {/* Nút Thông báo */}
-        <button
-          className="relative flex items-center justify-center p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-600 dark:text-slate-300 transition-all duration-200 active:scale-95"
-          title="Xem thông báo"
-        >
-          <Bell className="w-5 h-5" />
-          <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-          </span>
-        </button>
+        {/* Notification Bell - Using AdminNotificationBell component */}
+        <AdminNotificationBell position="bottom" className="shrink-0" />
       </div>
     </div>
   );

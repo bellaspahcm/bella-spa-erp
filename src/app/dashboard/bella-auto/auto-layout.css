@@ -32,17 +32,13 @@
   --auto-radius-sm:    12px;
 }
 
-/* ─── Root Background (Ocean Clean gradient) ─────────────────────────────────── */
+/* ─── Root Background (Ocean Clean - simplified, no gradient) ─────────────────────── */
 .auto-layout-root {
-  background: 
-    radial-gradient(circle at 10% 20%, rgba(207, 250, 254, 0.15) 0%, rgba(236, 254, 255, 0.05) 90%),
-    linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #f8fafc 100%);
+  background: #f8fafc;
 }
 
 html.dark .auto-layout-root {
-  background: 
-    radial-gradient(circle at 10% 20%, rgba(8, 145, 178, 0.08) 0%, rgba(6, 95, 70, 0.04) 90%),
-    linear-gradient(135deg, #0c1419 0%, #020617 50%, #0a1420 100%);
+  background: #020617;
 }
 
 /* ─── Page Headers ───────────────────────────────────────────────────────────── */

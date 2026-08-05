@@ -44,7 +44,9 @@ import {
   GitCommit,
   Smile,
   CircleDollarSign,
-  Wrench
+  Wrench,
+  Activity,
+  FileContract
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -456,7 +458,9 @@ const LUCIDE_ICONS_MAP: Record<string, LucideIcon> = {
   GitCommit,
   Smile,
   CircleDollarSign,
-  Wrench
+  Wrench,
+  Activity,
+  FileContract
 };
 
 
@@ -682,7 +686,7 @@ export function Sidebar() {
           <button
             onClick={() => setIsOpen(true)}
             className={cn(
-              "p-2.5 rounded-xl text-primary dark:text-[#A67D44] hover:bg-rose-50 dark:hover:bg-[#1C1B19] active:scale-95 transition-all",
+              "p-2.5 rounded-xl bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-200 dark:hover:bg-slate-800 active:scale-95 transition-all shadow-sm",
               (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell || isBellaAutoShell) && "beauty-erp-icon-button"
             )}
           >
@@ -716,7 +720,7 @@ export function Sidebar() {
             aria-label="Làm mới dữ liệu"
             title="Làm mới dữ liệu"
             className={cn(
-              "flex h-10 w-10 items-center justify-center rounded-full border border-pink-100 bg-white/80 text-primary shadow-sm transition-all hover:bg-rose-50 active:scale-95 disabled:opacity-70 dark:border-[#3E3A35] dark:bg-[#1C1B19] dark:text-[#A67D44] dark:hover:bg-[#5D1C34]/30",
+              "flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-100 text-slate-700 shadow-sm transition-all hover:bg-slate-200 active:scale-95 disabled:opacity-70 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800",
               (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell || isBellaAutoShell) && "beauty-erp-icon-button"
             )}
           >

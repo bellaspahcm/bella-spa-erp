@@ -9,9 +9,20 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Bella Healthcare Platform E2E Workflow', () => {
   
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page, baseURL }) => {
+    page.on('console', msg => console.log('BROWSER CONSOLE:', msg.text()));
+    page.on('pageerror', err => console.error('BROWSER PAGEERROR:', err));
+    
+    // Authenticate using the local dev bypass cookie for the healthcare admin user
+    await page.context().addCookies([
+      {
+        name: "mock_user_email",
+        value: "healthcare.admin@bellaspa.vn",
+        url: baseURL || "http://localhost:3000",
+        sameSite: "Lax",
+      },
+    ]);
     // Navigate to the healthcare dashboard page
-    // In e2e test, we assume a pre-authenticated session or direct access in test environment
     await page.goto('/dashboard/healthcare');
   });
 
@@ -31,7 +42,7 @@ test.describe('Bella Healthcare Platform E2E Workflow', () => {
 
   test('Should interact with Odontogram SVG and update tooth status', async ({ page }) => {
     // 1. Verify default selected patient is "Nguyễn Văn Hùng"
-    await expect(page.locator('text=Nguyễn Văn Hùng')).first().toBeVisible();
+    await expect(page.locator('text=Nguyễn Văn Hùng').first()).toBeVisible();
 
     // 2. Select Tooth #17
     await page.click('text=#17');
@@ -90,7 +101,7 @@ test.describe('Bella Healthcare Platform E2E Workflow', () => {
 
     // 2. Verify active treatment journeys
     await expect(page.locator('h1:has-text("Hành trình điều trị")')).toBeVisible();
-    await expect(page.locator('text=Cấy ghép Implant răng #36')).toBeVisible();
+    await expect(page.locator('text=Cấy ghép Implant răng #36').first()).toBeVisible();
 
     // 3. Mark milestone as completed
     await page.click('button:has-text("Đánh dấu xong")');
