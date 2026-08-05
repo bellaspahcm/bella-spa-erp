@@ -92,7 +92,7 @@ export const AutoAnalyticsCharts: React.FC<AutoAnalyticsChartsProps> = ({
             </div>
           </div>
           <div className="mt-3">
-            <div className="text-3xl font-black text-slate-900 dark:text-white font-mono">{turnoverRate}<span className="text-sm font-bold text-cyan-600 dark:text-cyan-400">%</span></div>
+            <div className="text-3xl font-black text-slate-900 dark:text-white font-mono">{turnoverRate} <span className="text-sm font-bold text-cyan-600 dark:text-cyan-400">%</span></div>
             <div className="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full mt-3 overflow-hidden border border-slate-200 dark:border-slate-700">
               <div className="bg-gradient-to-r from-cyan-500 to-teal-500 h-full rounded-full transition-all duration-1000" style={{ width: `${turnoverRate}%` }} />
             </div>

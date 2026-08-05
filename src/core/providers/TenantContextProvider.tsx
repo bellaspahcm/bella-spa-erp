@@ -158,38 +158,58 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
     let moduleKey: string = 'baby_care'; // Default fallback
 
     // Determine primary module key
-    // CRITICAL FIX: Check object format FIRST (most common in database)
-    // Database stores as JSONB object: { beauty_spa: true, babycare: false }
-    if (typeof enabledModules === 'object' && enabledModules !== null && !Array.isArray(enabledModules)) {
-      // Legacy JSONB object format: { beauty_spa: true, babycare: false }
-      console.log('[TenantContextProvider] Processing JSONB object format (priority check)');
+    // CRITICAL FIX: Check array format FIRST (API returns array)
+    // Convert to array if it's array-like object or already an array
+    let modulesArray: string[] = [];
+    
+    if (Array.isArray(enabledModules)) {
+      modulesArray = enabledModules;
+      console.log('[TenantContextProvider] Processing native array format:', modulesArray);
+    } else if (typeof enabledModules === 'object' && enabledModules !== null) {
+      // Check if it's an array-like object (has numeric keys and length)
+      const hasNumericKeys = Object.keys(enabledModules).some(key => /^\d+$/.test(key));
       
-      const modules = enabledModules as any;
-      if (modules.real_estate === true) {
-        moduleKey = 'real_estate';
-      } else if (modules.industrial_cleaning === true) {
-        moduleKey = 'industrial_cleaning';
-      } else if (modules.beauty_spa === true) {
-        moduleKey = 'beauty_spa';
-      } else if (modules.bella_auto === true) {
-        moduleKey = 'bella_auto';
-      } else if (modules.babycare === true || modules.spa === true) {
-        moduleKey = 'baby_care';
+      if (hasNumericKeys) {
+        // Array-like object: convert to real array
+        modulesArray = Object.values(enabledModules).filter((v): v is string => typeof v === 'string');
+        console.log('[TenantContextProvider] Converted array-like object to array:', modulesArray);
+      } else {
+        // Legacy JSONB object format: { beauty_spa: true, babycare: false }
+        console.log('[TenantContextProvider] Processing JSONB object format');
+        const modules = enabledModules as any;
+        
+        if (modules.real_estate === true) {
+          moduleKey = 'real_estate';
+        } else if (modules.industrial_cleaning === true) {
+          moduleKey = 'industrial_cleaning';
+        } else if (modules.beauty_spa === true) {
+          moduleKey = 'beauty_spa';
+        } else if (modules.bella_auto === true) {
+          moduleKey = 'bella_auto';
+        } else if (modules.babycare === true || modules.spa === true) {
+          moduleKey = 'baby_care';
+        }
+        
+        // Set module and return early
+        document.documentElement.dataset.tenantModule = moduleKey;
+        console.log('[TenantContextProvider] ✅ Applied module theme (JSONB):', moduleKey);
+        return; // Skip array processing below
       }
-    } else if (Array.isArray(enabledModules)) {
-      // API returns array of enabled module names: ['beauty_spa'] or ['babycare'] or ['industrial_cleaning'] or ['real_estate'] or ['bella_auto']
-      console.log('[TenantContextProvider] Processing array format:', enabledModules);
+    }
+    
+    // Process array format: Priority order: real_estate > industrial_cleaning > beauty_spa > bella_auto > babycare/spa
+    if (modulesArray.length > 0) {
+      console.log('[TenantContextProvider] Processing array with priority logic:', modulesArray);
       
-      // Priority order: real_estate > industrial_cleaning > beauty_spa > bella_auto > babycare/spa
-      if (enabledModules.includes('real_estate')) {
+      if (modulesArray.includes('real_estate')) {
         moduleKey = 'real_estate';
-      } else if (enabledModules.includes('industrial_cleaning')) {
+      } else if (modulesArray.includes('industrial_cleaning')) {
         moduleKey = 'industrial_cleaning';
-      } else if (enabledModules.includes('beauty_spa')) {
+      } else if (modulesArray.includes('beauty_spa')) {
         moduleKey = 'beauty_spa';
-      } else if (enabledModules.includes('bella_auto')) {
+      } else if (modulesArray.includes('bella_auto')) {
         moduleKey = 'bella_auto';
-      } else if (enabledModules.includes('babycare') || enabledModules.includes('spa')) {
+      } else if (modulesArray.includes('babycare') || modulesArray.includes('spa')) {
         moduleKey = 'baby_care';
       }
     }

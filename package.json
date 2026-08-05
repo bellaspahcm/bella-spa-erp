@@ -6,7 +6,9 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "next dev",
+    "dev": "cross-env NODE_ENV=development next dev",
+    "dev:windows": "powershell -Command \"$env:NODE_ENV='development'; npm run dev:internal\"",
+    "dev:internal": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -121,6 +123,7 @@
     "@types/pg": "^8.20.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "cross-env": "^10.1.0",
     "eslint": "^9",
     "eslint-config-next": "^16.2.11",
     "jest": "^30.4.2",

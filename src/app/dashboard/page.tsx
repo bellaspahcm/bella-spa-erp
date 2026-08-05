@@ -325,8 +325,12 @@ export default function DashboardPage() {
   }, [scheduleDashboardAlertsRefresh, scheduleDashboardRefresh, isTenantModuleLoading, tenantModuleKey]);
 
   // Redirect bella_auto to module-specific dashboard (hook moved ABOVE all conditional returns)
+  const hasRedirected = useRef(false);
   useEffect(() => {
-    if (tenantModuleKey === 'bella_auto') {
+    console.log('[Dashboard Redirect] tenantModuleKey:', tenantModuleKey, 'hasRedirected:', hasRedirected.current);
+    if (tenantModuleKey === 'bella_auto' && !hasRedirected.current) {
+      console.log('[Dashboard Redirect] ✅ Redirecting to /dashboard/bella-auto');
+      hasRedirected.current = true;
       router.replace('/dashboard/bella-auto');
     }
   }, [tenantModuleKey, router]);
