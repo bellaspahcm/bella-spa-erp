@@ -261,9 +261,21 @@ export default function VehicleInventoryPage() {
         return;
       }
 
+      // Use JOIN query to get brand/model/variant names
       const { data, error } = await supabase
         .from('auto_vehicles')
-        .select('*')
+        .select(`
+          id, vin, chassis_number, engine_number,
+          color_exterior, color_interior, model_year,
+          list_price, cost_price, status, location_note,
+          expected_arrival_date, actual_arrival_date,
+          variant_id, created_at, updated_at,
+          auto_variants!inner(name, model_id,
+            auto_models!inner(name, brand_id,
+              auto_brands!inner(name)
+            )
+          )
+        `)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -271,7 +283,33 @@ export default function VehicleInventoryPage() {
         toast.error('Không thể tải danh sách xe');
         setVehicles([]);
       } else {
-        setVehicles(data || []);
+        // Map to VehicleInventoryItem interface
+        const mappedVehicles = (data || []).map((row: any) => ({
+          id: row.id,
+          vin: row.vin,
+          chassisNumber: row.chassis_number,
+          engineNumber: row.engine_number,
+          colorExterior: row.color_exterior,
+          colorInterior: row.color_interior,
+          modelYear: row.model_year,
+          listPrice: Number(row.list_price),
+          costPrice: Number(row.cost_price),
+          status: row.status,
+          locationNote: row.location_note,
+          expectedArrivalDate: row.expected_arrival_date,
+          actualArrivalDate: row.actual_arrival_date,
+          variantId: row.variant_id,
+          variantName: row.auto_variants?.name,
+          modelName: row.auto_variants?.auto_models?.name,
+          brandName: row.auto_variants?.auto_models?.auto_brands?.name,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
+        }));
+        
+        console.log('[VehiclesPage] Loaded vehicles:', mappedVehicles.length);
+        console.log('[VehiclesPage] Sample vehicle:', mappedVehicles[0]);
+        
+        setVehicles(mappedVehicles);
       }
     } catch (error) {
       console.error('Failed to fetch vehicles:', error);
