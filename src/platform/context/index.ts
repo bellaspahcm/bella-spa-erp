@@ -82,7 +82,7 @@ export interface PlatformContext {
 // ═══════════════════════════════════════════════════════════════════════════
 
 export class ContextBuilder {
-  private data: Partial<PlatformContext> = {};
+  private data: any = {};
 
   withTenant(tenant: TenantInfo): this {
     this.data.tenant = tenant;

@@ -72,18 +72,94 @@ html.dark .auto-layout-root {
   background: linear-gradient(90deg, var(--auto-ocean-light), var(--auto-teal));
 }
 
-/* ─── Generic Cards ──────────────────────────────────────────────────────────── */
+/* ─── Generic Cards & Container Boxes with Elevated Shadows ──────────────────── */
 [data-auto-layout] .auto-card {
   background: var(--auto-surface);
-  border: 1px solid var(--auto-border);
+  border: 1px solid var(--auto-border-soft);
   border-radius: var(--auto-radius);
-  box-shadow: var(--auto-shadow-card);
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.03);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 [data-auto-layout] .auto-card:hover {
-  box-shadow: var(--auto-shadow-ocean);
+  box-shadow: 0 12px 28px -4px rgba(8, 145, 178, 0.12), 0 4px 10px -2px rgba(8, 145, 178, 0.06);
   transform: translateY(-2px);
+}
+
+/* ─── Luxury Tab System (Synchronized across Bella Auto) ───────────────────────── */
+[data-auto-layout] .auto-tabs-container {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px;
+  background: rgba(241, 245, 249, 0.85);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 20px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.06);
+  backdrop-filter: blur(8px);
+  width: fit-content;
+  max-width: 100%;
+}
+
+html.dark [data-auto-layout] .auto-tabs-container {
+  background: rgba(15, 23, 42, 0.75);
+  border-color: rgba(30, 41, 59, 0.8);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+[data-auto-layout] .auto-tab-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 40px;
+  padding: 8px 18px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  border-radius: 14px;
+  color: var(--auto-slate);
+  background: transparent;
+  border: 1px solid transparent;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+[data-auto-layout] .auto-tab-trigger::after {
+  display: none !important;
+  content: none !important;
+}
+
+[data-auto-layout] [data-slot="tabs-trigger"]::after {
+  display: none !important;
+  content: none !important;
+}
+
+[data-auto-layout] .auto-tab-trigger:hover {
+  color: var(--auto-navy);
+  background: rgba(255, 255, 255, 0.6);
+}
+
+html.dark [data-auto-layout] .auto-tab-trigger:hover {
+  color: #f8fafc;
+  background: rgba(30, 41, 59, 0.5);
+}
+
+[data-auto-layout] .auto-tab-trigger[data-state="active"],
+[data-auto-layout] .auto-tab-trigger.active {
+  background: #ffffff;
+  color: var(--auto-ocean-dark);
+  font-weight: 700;
+  border-color: rgba(6, 182, 212, 0.3);
+  box-shadow: 0 4px 14px rgba(8, 145, 178, 0.12), 0 1px 3px rgba(0, 0, 0, 0.05);
+  transform: scale(1.01);
+}
+
+html.dark [data-auto-layout] .auto-tab-trigger[data-state="active"],
+html.dark [data-auto-layout] .auto-tab-trigger.active {
+  background: #020617;
+  color: var(--auto-ocean-light);
+  border-color: rgba(6, 182, 212, 0.4);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
 }
 
 /* ─── Ocean Badge ────────────────────────────────────────────────────────────── */
@@ -173,7 +249,7 @@ html.dark .auto-layout-root {
   background: var(--auto-surface);
   border: 1px solid var(--auto-border-soft);
   border-radius: var(--auto-radius);
-  box-shadow: var(--auto-shadow-card);
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
   overflow: hidden;
 }
 

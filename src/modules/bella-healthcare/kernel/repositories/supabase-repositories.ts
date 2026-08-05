@@ -1336,7 +1336,7 @@ export class SupabaseKnowledgeRepository implements IKnowledgeRepository {
     // Fallback: pgvector requires generating query embeddings and query using raw SQL.
     // In our bootstrap environment, we can fallback to standard text ILIKE lookup if vector is null
     // or perform a simple search query on postgres.
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('knowledge_entries')
       .select('*')
       .eq('tenant_id', tenantId)
@@ -1355,7 +1355,7 @@ export class SupabaseKnowledgeRepository implements IKnowledgeRepository {
   async createInferenceRule(rule: Omit<InferenceRule, 'id' | 'createdAt'>): Promise<InferenceRule> {
     const supabase = await createClient();
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('knowledge_inference_rules')
       .insert({
         tenant_id: rule.tenantId,
@@ -1381,7 +1381,7 @@ export class SupabaseKnowledgeRepository implements IKnowledgeRepository {
     const supabase = await createClient();
 
     // Load active inference rules
-    const { data: rules, error } = await supabase
+    const { data: rules, error } = await (supabase as any)
       .from('knowledge_inference_rules')
       .select('*')
       .eq('tenant_id', tenantId)
