@@ -402,7 +402,7 @@ const bellaAutoMenuItems: SidebarMenuItem[] = [
   { type: 'header', label: 'Dịch vụ' },
   { icon: Car,             label: 'Kho Xe',                href: '/dashboard/bella-auto/vehicles' },
   { icon: Wrench,          label: 'Xưởng Dịch Vụ',         href: '/dashboard/bella-auto/workshop' },
-  { icon: Calendar,        label: 'Lịch Hẹn',              href: '/dashboard/bella-auto/bookings' },
+  { icon: FileText,        label: 'Booking & Đặt Cọc',     href: '/dashboard/bella-auto/bookings' },
   { icon: Users,           label: 'Khách Hàng',            href: '/dashboard/bella-auto/customers' },
   { icon: Target,          label: 'Quản Lý Lead',          href: '/dashboard/bella-auto/leads' },
 
