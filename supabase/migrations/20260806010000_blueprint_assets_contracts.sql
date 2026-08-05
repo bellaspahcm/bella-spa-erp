@@ -69,7 +69,7 @@ ALTER TABLE public.contract_contracts ENABLE ROW LEVEL SECURITY;
 
 -- 4. CREATE RLS TENANT ISOLATION POLICIES
 CREATE POLICY tenant_isolation_assets ON public.asset_assets
-    FOR ALL USING (tenant_id = auth.jwt()->>'tenant_id'::text::uuid);
+    FOR ALL USING (tenant_id = public.get_auth_tenant_id());
 
 CREATE POLICY tenant_isolation_contracts ON public.contract_contracts
-    FOR ALL USING (tenant_id = auth.jwt()->>'tenant_id'::text::uuid);
+    FOR ALL USING (tenant_id = public.get_auth_tenant_id());

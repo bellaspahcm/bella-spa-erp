@@ -115,19 +115,19 @@ ALTER TABLE public.resource_skills ENABLE ROW LEVEL SECURITY;
 
 -- 7. CREATE RLS TENANT ISOLATION POLICIES
 CREATE POLICY tenant_isolation_knowledge ON public.knowledge_entries
-    FOR ALL USING (tenant_id = auth.jwt()->>'tenant_id'::text::uuid);
+    FOR ALL USING (tenant_id = public.get_auth_tenant_id());
 
 CREATE POLICY tenant_isolation_graph ON public.knowledge_graph_edges
-    FOR ALL USING (tenant_id = auth.jwt()->>'tenant_id'::text::uuid);
+    FOR ALL USING (tenant_id = public.get_auth_tenant_id());
 
 CREATE POLICY tenant_isolation_inference ON public.knowledge_inference_rules
-    FOR ALL USING (tenant_id = auth.jwt()->>'tenant_id'::text::uuid);
+    FOR ALL USING (tenant_id = public.get_auth_tenant_id());
 
 CREATE POLICY tenant_isolation_wf_defs ON public.workflow_definitions
-    FOR ALL USING (tenant_id = auth.jwt()->>'tenant_id'::text::uuid);
+    FOR ALL USING (tenant_id = public.get_auth_tenant_id());
 
 CREATE POLICY tenant_isolation_wf_insts ON public.workflow_instances
-    FOR ALL USING (tenant_id = auth.jwt()->>'tenant_id'::text::uuid);
+    FOR ALL USING (tenant_id = public.get_auth_tenant_id());
 
 CREATE POLICY tenant_isolation_skills ON public.resource_skills
-    FOR ALL USING (tenant_id = auth.jwt()->>'tenant_id'::text::uuid);
+    FOR ALL USING (tenant_id = public.get_auth_tenant_id());

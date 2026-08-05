@@ -3,10 +3,16 @@ import React, { useState } from 'react';
 import { Smile, Search, ShieldAlert, Award, FileText, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { OdontogramTwin, type ToothData, type ToothStatus } from '@/modules/bella-healthcare/components/OdontogramTwin';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 export default function OdontogramPage() {
   const [selectedPatient, setSelectedPatient] = useState('Nguyễn Văn Hùng');
   const [selectedTooth, setSelectedTooth] = useState<string | null>(null);
+
+  const patientOptions = [
+    { value: 'Nguyễn Văn Hùng', label: 'Nguyễn Văn Hùng (GD4797921800124)' },
+    { value: 'Lê Thị Mai', label: 'Lê Thị Mai (DN4797921800567)' },
+  ];
 
   // Tooth status database for selected patient
   const [toothData, setToothData] = useState<Record<string, ToothData>>({
@@ -31,7 +37,7 @@ export default function OdontogramPage() {
   return (
     <div className="p-6 w-full space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-2xl bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-[24px] bg-white dark:bg-slate-950 border border-slate-300/85 dark:border-slate-850 shadow-[0_6px_24px_-2px_rgba(15,23,42,0.08),0_2px_6px_-1px_rgba(15,23,42,0.04)] dark:shadow-[0_6px_24px_rgba(0,0,0,0.4)] hover:shadow-[0_16px_36px_-4px_rgba(20,184,166,0.12),0_4px_12px_-2px_rgba(20,184,166,0.06)] hover:-translate-y-0.5 transition-all duration-300">
         <div className="flex items-center gap-3">
           <span className="p-2.5 rounded-xl bg-teal-500/10 text-teal-600 border border-teal-500/20 shadow-sm">
             <Smile className="w-5 h-5" />
@@ -55,17 +61,17 @@ export default function OdontogramPage() {
       </div>
 
       {/* Patient Picker Bar */}
-      <div className="p-4 rounded-xl bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="p-4 rounded-[16px] bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-[0_4px_12px_-1px_rgba(0,0,0,0.04)] dark:shadow-none flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <span className="text-xs font-bold text-slate-500">Bệnh nhân khám:</span>
-          <select
+          <PremiumSelect
+            options={patientOptions}
             value={selectedPatient}
-            onChange={(e) => setSelectedPatient(e.target.value)}
-            className="p-1.5 text-xs font-bold rounded-lg border border-slate-200 focus:border-teal-500 dark:bg-slate-900 dark:border-slate-800 dark:text-white"
-          >
-            <option value="Nguyễn Văn Hùng">Nguyễn Văn Hùng (GD4797921800124)</option>
-            <option value="Lê Thị Mai">Lê Thị Mai (DN4797921800567)</option>
-          </select>
+            onChange={setSelectedPatient}
+            placeholder="Chọn bệnh nhân..."
+            buttonClassName="py-1 px-2.5 text-xs font-bold rounded-lg border border-slate-200 dark:bg-slate-900 dark:border-slate-800 dark:text-white"
+            className="w-auto"
+          />
         </div>
 
         <div className="flex items-center gap-2 text-xs text-slate-500">
@@ -84,7 +90,7 @@ export default function OdontogramPage() {
 
       {/* Pathology History Panel */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="p-5 rounded-2xl bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 shadow-sm text-left space-y-4">
+        <div className="p-5 rounded-[24px] bg-white dark:bg-slate-950 border border-slate-300/85 dark:border-slate-850 shadow-[0_6px_24px_-2px_rgba(15,23,42,0.08),0_2px_6px_-1px_rgba(15,23,42,0.04)] dark:shadow-[0_6px_24px_rgba(0,0,0,0.4)] hover:shadow-[0_16px_36px_-4px_rgba(20,184,166,0.12),0_4px_12px_-2px_rgba(20,184,166,0.06)] hover:-translate-y-0.5 transition-all duration-300 text-left space-y-4">
           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
             <ShieldAlert className="w-4 h-4 text-rose-500" />
             Răng sâu & bệnh lý đang tiến triển
@@ -99,7 +105,7 @@ export default function OdontogramPage() {
           </div>
         </div>
 
-        <div className="p-5 rounded-2xl bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 shadow-sm text-left space-y-4">
+        <div className="p-5 rounded-[24px] bg-white dark:bg-slate-950 border border-slate-300/85 dark:border-slate-850 shadow-[0_6px_24px_-2px_rgba(15,23,42,0.08),0_2px_6px_-1px_rgba(15,23,42,0.04)] dark:shadow-[0_6px_24px_rgba(0,0,0,0.4)] hover:shadow-[0_16px_36px_-4px_rgba(20,184,166,0.12),0_4px_12px_-2px_rgba(20,184,166,0.06)] hover:-translate-y-0.5 transition-all duration-300 text-left space-y-4">
           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
             <Award className="w-4 h-4 text-cyan-500" />
             Lịch sử cấy ghép phục hình răng
@@ -119,7 +125,7 @@ export default function OdontogramPage() {
           </div>
         </div>
 
-        <div className="p-5 rounded-2xl bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 shadow-sm text-left space-y-4">
+        <div className="p-5 rounded-[24px] bg-white dark:bg-slate-950 border border-slate-300/85 dark:border-slate-850 shadow-[0_6px_24px_-2px_rgba(15,23,42,0.08),0_2px_6px_-1px_rgba(15,23,42,0.04)] dark:shadow-[0_6px_24px_rgba(0,0,0,0.4)] hover:shadow-[0_16px_36px_-4px_rgba(20,184,166,0.12),0_4px_12px_-2px_rgba(20,184,166,0.06)] hover:-translate-y-0.5 transition-all duration-300 text-left space-y-4">
           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
             <FileText className="w-4 h-4 text-teal-600" />
             Kế hoạch điều trị nha khoa đề xuất

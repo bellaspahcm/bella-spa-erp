@@ -70,8 +70,8 @@ function normalizeBusinessModule(value: unknown): RegisterTenantBusinessModule {
 
 function getEnabledModulesForBusinessModule(moduleKey: RegisterTenantBusinessModule): TenantEnabledModules {
   return moduleKey === 'beauty_spa'
-    ? { babycare: false, beauty_spa: true, student_training: false, industrial_cleaning: false, real_estate: false, bella_auto: false }
-    : { babycare: true, beauty_spa: false, student_training: false, industrial_cleaning: false, real_estate: false, bella_auto: false };
+    ? { babycare: false, beauty_spa: true, student_training: false, industrial_cleaning: false, real_estate: false, bella_auto: false, bella_healthcare: false }
+    : { babycare: true, beauty_spa: false, student_training: false, industrial_cleaning: false, real_estate: false, bella_auto: false, bella_healthcare: false };
 }
 
 async function assertBusinessModuleSetupAllowed(moduleKey: RegisterTenantBusinessModule) {

@@ -56,6 +56,12 @@ export function needsThemeUpgrade(
     if (preset === 'bella_rose') return true;
   }
 
+  // Bella Healthcare should use clinical cyan (#0891b2) by default, not pink
+  if (moduleKey === 'bella_healthcare') {
+    if (LEGACY_DEFAULT_PINKS.includes(primary)) return true;
+    if (preset === 'bella_rose') return true;
+  }
+
   // Beauty Spa should use jade green (#074E44), not pink
   if (moduleKey === 'beauty_spa') {
     if (LEGACY_DEFAULT_PINKS.includes(primary)) return true;
@@ -152,6 +158,8 @@ export async function upgradeTheme(
  */
 export function getUpgradeDescription(moduleKey: TenantModuleKey): string {
   switch (moduleKey) {
+    case 'bella_healthcare':
+      return 'Đã cập nhật màu sắc Bella Healthcare (Xanh cyan y tế)';
     case 'bella_auto':
       return 'Đã cập nhật màu sắc Bella Auto (Xanh cyan/teal)';
     case 'beauty_spa':

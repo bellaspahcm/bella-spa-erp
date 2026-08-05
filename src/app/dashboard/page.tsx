@@ -81,7 +81,7 @@ const RealEstateDashboardPage = dynamic(
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { tenantModuleKey, isTenantModuleLoading } = useTenantModuleKey();
+  const { tenantModuleKey, isTenantModuleLoading } = useTenantModuleKey({ forceFresh: true });
   const [stats, setStats] = useState<DashboardStatsViewModel[]>([]);
   const [sessions, setSessions] = useState<DashboardSessionViewModel[]>([]);
   const [topKTVs, setTopKTVs] = useState<KtvPerformanceViewModel[]>([]);
@@ -141,7 +141,7 @@ export default function DashboardPage() {
   const { user: profile } = useUser();
 
   useEffect(() => {
-    if (isTenantModuleLoading || tenantModuleKey === 'real_estate') return;
+    if (isTenantModuleLoading || tenantModuleKey === 'real_estate' || tenantModuleKey === 'bella_auto' || tenantModuleKey === 'bella_healthcare') return;
     if (!profile) return;
     setTenantId(profile.tenant_id || null);
     const role = profile.role?.toLowerCase();
@@ -256,7 +256,7 @@ export default function DashboardPage() {
   usePageRefresh(fetchData);
 
   useEffect(() => {
-    if (isTenantModuleLoading || tenantModuleKey === 'real_estate') return;
+    if (isTenantModuleLoading || tenantModuleKey === 'real_estate' || tenantModuleKey === 'bella_auto' || tenantModuleKey === 'bella_healthcare') return;
     // ── Progressive initial load ─────────────────────────────────────
     // Phase 1: today's schedule (sessions + stats) — clears the main spinner
     // Phase 2: KTV leaderboard + alerts — deferred 200ms so it never races
@@ -291,7 +291,7 @@ export default function DashboardPage() {
   }, [fetchAlertsData]);
 
   useEffect(() => {
-    if (isTenantModuleLoading || tenantModuleKey === 'real_estate') return;
+    if (isTenantModuleLoading || tenantModuleKey === 'real_estate' || tenantModuleKey === 'bella_auto' || tenantModuleKey === 'bella_healthcare') return;
     // REALTIME SUBSCRIPTION
     const supabase = createClient();
     const channel = supabase
@@ -324,16 +324,20 @@ export default function DashboardPage() {
     };
   }, [scheduleDashboardAlertsRefresh, scheduleDashboardRefresh, isTenantModuleLoading, tenantModuleKey]);
 
-  // Redirect bella_auto to module-specific dashboard (hook moved ABOVE all conditional returns)
+  // Redirect module-specific dashboards (hook moved ABOVE all conditional returns)
   const hasRedirected = useRef(false);
   useEffect(() => {
     console.log('[Dashboard Redirect] tenantModuleKey:', tenantModuleKey, 'hasRedirected:', hasRedirected.current);
     if (tenantModuleKey === 'bella_auto' && !hasRedirected.current) {
-      console.log('[Dashboard Redirect] ✅ Redirecting to /dashboard/bella-auto');
+      console.log('[Dashboard Redirect] ✅ Redirecting to /dashboard/bella-auto via hard redirect');
       hasRedirected.current = true;
-      router.replace('/dashboard/bella-auto');
+      window.location.replace('/dashboard/bella-auto');
+    } else if (tenantModuleKey === 'bella_healthcare' && !hasRedirected.current) {
+      console.log('[Dashboard Redirect] ✅ Redirecting to /dashboard/healthcare via hard redirect');
+      hasRedirected.current = true;
+      window.location.replace('/dashboard/healthcare');
     }
-  }, [tenantModuleKey, router]);
+  }, [tenantModuleKey]);
 
   // Now perform conditional early returns safe from Rule of Hooks violation
   if (isTenantModuleLoading) {
@@ -352,9 +356,9 @@ export default function DashboardPage() {
   }
 
   // Early return for module-specific pages
-  if (tenantModuleKey === 'bella_auto') {
+  if (tenantModuleKey === 'bella_auto' || tenantModuleKey === 'bella_healthcare') {
     // Show a neutral redirect skeleton instead of null to prevent blank/white screen
-    // while router.replace('/dashboard/bella-auto') navigates.
+    // while router.replace() navigates.
     return (
       <div className="flex-1 p-8 space-y-6 animate-pulse bg-slate-50 dark:bg-slate-950 min-h-screen">
         <div className="h-20 bg-slate-200 dark:bg-slate-800 rounded-2xl w-full" />

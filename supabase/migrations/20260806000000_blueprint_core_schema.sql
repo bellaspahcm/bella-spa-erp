@@ -177,25 +177,25 @@ ALTER TABLE public.timeline_events ENABLE ROW LEVEL SECURITY;
 
 -- 10. CREATE STANDARD TENANT ISOLATION RLS POLICIES
 CREATE POLICY tenant_isolation_parties ON public.party_parties
-    FOR ALL USING (tenant_id = auth.jwt()->>'tenant_id'::text::uuid);
+    FOR ALL USING (tenant_id = public.get_auth_tenant_id());
 
 CREATE POLICY tenant_isolation_party_identifiers ON public.party_identifiers
-    FOR ALL USING (tenant_id = auth.jwt()->>'tenant_id'::text::uuid);
+    FOR ALL USING (tenant_id = public.get_auth_tenant_id());
 
 CREATE POLICY tenant_isolation_party_relationships ON public.party_relationships
-    FOR ALL USING (tenant_id = auth.jwt()->>'tenant_id'::text::uuid);
+    FOR ALL USING (tenant_id = public.get_auth_tenant_id());
 
 CREATE POLICY tenant_isolation_party_roles ON public.party_roles
-    FOR ALL USING (tenant_id = auth.jwt()->>'tenant_id'::text::uuid);
+    FOR ALL USING (tenant_id = public.get_auth_tenant_id());
 
 CREATE POLICY tenant_isolation_journeys ON public.journey_journeys
-    FOR ALL USING (tenant_id = auth.jwt()->>'tenant_id'::text::uuid);
+    FOR ALL USING (tenant_id = public.get_auth_tenant_id());
 
 CREATE POLICY tenant_isolation_sub_journeys ON public.journey_sub_journeys
-    FOR ALL USING (tenant_id = auth.jwt()->>'tenant_id'::text::uuid);
+    FOR ALL USING (tenant_id = public.get_auth_tenant_id());
 
 CREATE POLICY tenant_isolation_milestones ON public.journey_milestones
-    FOR ALL USING (tenant_id = auth.jwt()->>'tenant_id'::text::uuid);
+    FOR ALL USING (tenant_id = public.get_auth_tenant_id());
 
 CREATE POLICY tenant_isolation_timeline ON public.timeline_events
-    FOR ALL USING (tenant_id = auth.jwt()->>'tenant_id'::text::uuid);
+    FOR ALL USING (tenant_id = public.get_auth_tenant_id());

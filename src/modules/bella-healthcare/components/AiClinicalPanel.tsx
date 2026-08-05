@@ -89,7 +89,7 @@ export function AiClinicalPanel({
   };
 
   return (
-    <div className="flex flex-col gap-6 p-6 rounded-2xl bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800/80 shadow-sm">
+    <div className="flex flex-col gap-6 p-6 rounded-[24px] bg-white dark:bg-slate-950 border border-slate-300/85 dark:border-slate-850 shadow-[0_6px_24px_-2px_rgba(15,23,42,0.08),0_2px_6px_-1px_rgba(15,23,42,0.04)] dark:shadow-[0_6px_24px_rgba(0,0,0,0.4)] hover:shadow-[0_16px_36px_-4px_rgba(20,184,166,0.12),0_4px_12px_-2px_rgba(20,184,166,0.06)] hover:-translate-y-0.5 transition-all duration-300">
       {/* SOAP Note Generator Panel */}
       <div className="space-y-4">
         <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1.5">

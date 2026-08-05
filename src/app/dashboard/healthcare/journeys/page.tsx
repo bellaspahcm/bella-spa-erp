@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Activity, Plus, Search, CheckCircle, Clock, Calendar, Check, Play, User } from 'lucide-react';
 import { toast } from 'sonner';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 interface Milestone {
   readonly id: string;
@@ -33,6 +34,12 @@ export default function JourneysPage() {
   // Form states
   const [patientName, setPatientName] = useState('');
   const [journeyType, setJourneyType] = useState('implant_care');
+
+  const journeyTypeOptions = [
+    { value: 'implant_care', label: 'Cấy ghép Implant răng (#36/Nobel)' },
+    { value: 'orthodontics', label: 'Chỉnh nha niềng răng mặt trong' },
+    { value: 'general_dental', label: 'Điều trị tổng quát nha khoa' },
+  ];
 
   const [journeys, setJourneys] = useState<CareJourney[]>([
     {
@@ -160,7 +167,7 @@ export default function JourneysPage() {
   return (
     <div className="p-6 w-full space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-2xl bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-[24px] bg-white dark:bg-slate-950 border border-slate-300/85 dark:border-slate-850 shadow-[0_6px_24px_-2px_rgba(15,23,42,0.08),0_2px_6px_-1px_rgba(15,23,42,0.04)] dark:shadow-[0_6px_24px_rgba(0,0,0,0.4)] hover:shadow-[0_16px_36px_-4px_rgba(20,184,166,0.12),0_4px_12px_-2px_rgba(20,184,166,0.06)] hover:-translate-y-0.5 transition-all duration-300">
         <div className="flex items-center gap-3">
           <span className="p-2.5 rounded-xl bg-teal-500/10 text-teal-600 border border-teal-500/20 shadow-sm">
             <Activity className="w-5 h-5" />
@@ -188,7 +195,7 @@ export default function JourneysPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left column: Journeys List */}
         <div className="lg:col-span-1 space-y-4">
-          <div className="p-4 rounded-xl bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 shadow-sm space-y-3">
+          <div className="p-4 rounded-[16px] bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-[0_4px_12px_-1px_rgba(0,0,0,0.04)] dark:shadow-none space-y-3">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
@@ -239,7 +246,7 @@ export default function JourneysPage() {
         {/* Right column: Selected Journey Detail (Visual Roadmap Timeline) */}
         <div className="lg:col-span-2">
           {selectedJourney ? (
-            <div className="p-6 rounded-2xl bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 shadow-sm space-y-6 text-left">
+            <div className="p-6 rounded-[24px] bg-white dark:bg-slate-950 border border-slate-300/85 dark:border-slate-850 shadow-[0_6px_24px_-2px_rgba(15,23,42,0.08),0_2px_6px_-1px_rgba(15,23,42,0.04)] dark:shadow-[0_6px_24px_rgba(0,0,0,0.4)] hover:shadow-[0_16px_36px_-4px_rgba(20,184,166,0.12),0_4px_12px_-2px_rgba(20,184,166,0.06)] hover:-translate-y-0.5 transition-all duration-300 space-y-6 text-left">
               {/* Profile card */}
               <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 flex items-center justify-between gap-4">
                 <div className="space-y-1">
@@ -343,15 +350,13 @@ export default function JourneysPage() {
 
               <div className="space-y-1">
                 <label className="font-bold text-slate-600 dark:text-slate-400">Loại lộ trình điều trị y khoa</label>
-                <select
+                <PremiumSelect
+                  options={journeyTypeOptions}
                   value={journeyType}
-                  onChange={(e) => setJourneyType(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 dark:bg-slate-900 dark:border-slate-800 dark:text-white"
-                >
-                  <option value="implant_care">Cấy ghép Implant răng (#36/Nobel)</option>
-                  <option value="orthodontics">Chỉnh nha niềng răng mặt trong</option>
-                  <option value="general_dental">Điều trị tổng quát nha khoa</option>
-                </select>
+                  onChange={setJourneyType}
+                  placeholder="Chọn loại lộ trình..."
+                  buttonClassName="py-2.5 px-3 rounded-xl border border-slate-200 dark:bg-slate-900 dark:border-slate-800 dark:text-white focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                />
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">

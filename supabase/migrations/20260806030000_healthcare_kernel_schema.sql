@@ -83,10 +83,10 @@ ALTER TABLE public.den_odontograms ENABLE ROW LEVEL SECURITY;
 
 -- 5. CREATE RLS TENANT ISOLATION POLICIES
 CREATE POLICY tenant_isolation_hc_encounters ON public.hc_encounters
-    FOR ALL USING (tenant_id = auth.jwt()->>'tenant_id'::text::uuid);
+    FOR ALL USING (tenant_id = public.get_auth_tenant_id());
 
 CREATE POLICY tenant_isolation_hc_prescriptions ON public.hc_prescriptions
-    FOR ALL USING (tenant_id = auth.jwt()->>'tenant_id'::text::uuid);
+    FOR ALL USING (tenant_id = public.get_auth_tenant_id());
 
 CREATE POLICY tenant_isolation_den_odontograms ON public.den_odontograms
-    FOR ALL USING (tenant_id = auth.jwt()->>'tenant_id'::text::uuid);
+    FOR ALL USING (tenant_id = public.get_auth_tenant_id());

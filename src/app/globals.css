@@ -1110,6 +1110,15 @@ html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-icon-button {
   border-color: rgba(200, 169, 122, 0.36) !important;
   color: #c8a97a !important;
 }
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-profile-name {
+  color: #ffffff !important;
+}
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-profile-role {
+  color: #e8d4a8 !important;
+}
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-icon-button svg {
+  color: #e8d4a8 !important;
+}
 
 /* 2. LUXURY NAVY & GOLD (#1E3A8A / #D97706 Amber Gold) */
 html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-sidebar,
@@ -1149,6 +1158,15 @@ html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-icon-button {
   background: rgba(15, 23, 42, 0.72) !important;
   border-color: rgba(217, 119, 6, 0.28) !important;
   color: #ffffff !important;
+}
+html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-profile-name {
+  color: #ffffff !important;
+}
+html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-profile-role {
+  color: #fbbf24 !important;
+}
+html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-icon-button svg {
+  color: #fbbf24 !important;
 }
 
 /* 3. OCEAN CLEAN (Blue #1E40AF / Light Blue #3B82F6 - Automotive Theme) */
@@ -1222,6 +1240,15 @@ html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-icon-button {
   color: rgb(15, 23, 42) !important; /* slate-900 text for maximum contrast */
   color: #ffffff !important;
 }
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-profile-name {
+  color: #ffffff !important;
+}
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-profile-role {
+  color: #93c5fd !important;
+}
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-icon-button svg {
+  color: #93c5fd !important;
+}
 
 /* 4. GRAPHITE LUXE (Dark Charcoal #18181B / #71717A Silver) */
 html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-sidebar,
@@ -1261,6 +1288,15 @@ html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-icon-button {
   background: rgba(39, 39, 42, 0.72) !important;
   border-color: rgba(161, 161, 170, 0.28) !important;
   color: #ffffff !important;
+}
+html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-profile-name {
+  color: #ffffff !important;
+}
+html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-profile-role {
+  color: #a1a1aa !important;
+}
+html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-icon-button svg {
+  color: #a1a1aa !important;
 }
 
 /* Dynamic Shadow Color Overrides for Brand Presets & Modules */
@@ -1700,7 +1736,8 @@ html[data-tenant-module="beauty_spa"] .luxury-card-white {
    ========================================================================= */
 
 /* Sidebar gradient background */
-html[data-tenant-module="bella_auto"] .beauty-erp-sidebar {
+html[data-tenant-module="bella_auto"] .beauty-erp-sidebar,
+html[data-tenant-module="bella_healthcare"] .beauty-erp-sidebar {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0) 30%),
     linear-gradient(158deg, #0a3040 0%, #0c4a6e 42%, #0e7490 100%) !important;
@@ -1710,7 +1747,8 @@ html[data-tenant-module="bella_auto"] .beauty-erp-sidebar {
 }
 
 /* Khung viền trang trí bao quanh toàn bộ sidebar */
-html[data-tenant-module="bella_auto"] .beauty-erp-sidebar::before {
+html[data-tenant-module="bella_auto"] .beauty-erp-sidebar::before,
+html[data-tenant-module="bella_healthcare"] .beauty-erp-sidebar::before {
   content: "" !important;
   position: absolute !important;
   top: 12px !important;
@@ -1724,7 +1762,8 @@ html[data-tenant-module="bella_auto"] .beauty-erp-sidebar::before {
   box-shadow: inset 0 0 40px rgba(6, 182, 212, 0.06) !important;
 }
 
-html.dark[data-tenant-module="bella_auto"] .beauty-erp-sidebar::before {
+html.dark[data-tenant-module="bella_auto"] .beauty-erp-sidebar::before,
+html.dark[data-tenant-module="bella_healthcare"] .beauty-erp-sidebar::before {
   content: "" !important;
   position: absolute !important;
   top: 12px !important;
@@ -1739,48 +1778,59 @@ html.dark[data-tenant-module="bella_auto"] .beauty-erp-sidebar::before {
 }
 
 /* Profile/logout card above the decorative border */
-html[data-tenant-module="bella_auto"] .beauty-erp-sidebar > div:last-child {
+html[data-tenant-module="bella_auto"] .beauty-erp-sidebar > div:last-child,
+html[data-tenant-module="bella_healthcare"] .beauty-erp-sidebar > div:last-child {
   position: relative !important;
   z-index: 25 !important;
 }
 
 /* Logo mark */
-html[data-tenant-module="bella_auto"] .beauty-erp-logo-mark {
+html[data-tenant-module="bella_auto"] .beauty-erp-logo-mark,
+html[data-tenant-module="bella_healthcare"] .beauty-erp-logo-mark {
   background: linear-gradient(145deg, #0891b2 0%, #0e7490 100%) !important;
   border: 1px solid rgba(6, 182, 212, 0.65) !important;
   color: #e0f2fe !important;
   box-shadow: 0 14px 30px rgba(14, 116, 144, 0.30) !important;
 }
 
-html[data-tenant-module="bella_auto"] .beauty-erp-logo-mark-large {
+html[data-tenant-module="bella_auto"] .beauty-erp-logo-mark-large,
+html[data-tenant-module="bella_healthcare"] .beauty-erp-logo-mark-large {
   box-shadow: 0 18px 44px rgba(14, 116, 144, 0.35) !important;
 }
 
 /* Brand name & subtitle */
-html[data-tenant-module="bella_auto"] .beauty-erp-brand-script {
+html[data-tenant-module="bella_auto"] .beauty-erp-brand-script,
+html[data-tenant-module="bella_healthcare"] .beauty-erp-brand-script {
   color: #e0f2fe !important;
   text-shadow: 0 6px 20px rgba(0, 0, 0, 0.20) !important;
 }
 
 html[data-tenant-module="bella_auto"] .beauty-erp-brand-subtitle,
 html[data-tenant-module="bella_auto"] .beauty-erp-nav-header,
-html[data-tenant-module="bella_auto"] .beauty-erp-profile-role {
+html[data-tenant-module="bella_auto"] .beauty-erp-profile-role,
+html[data-tenant-module="bella_healthcare"] .beauty-erp-brand-subtitle,
+html[data-tenant-module="bella_healthcare"] .beauty-erp-nav-header,
+html[data-tenant-module="bella_healthcare"] .beauty-erp-profile-role {
   color: rgba(6, 182, 212, 0.85) !important;
 }
 
 /* Nav items — default */
-html[data-tenant-module="bella_auto"] .beauty-erp-nav-item {
+html[data-tenant-module="bella_auto"] .beauty-erp-nav-item,
+html[data-tenant-module="bella_healthcare"] .beauty-erp-nav-item {
   color: rgba(224, 242, 254, 0.80) !important;
   border-color: transparent !important;
 }
 
 html[data-tenant-module="bella_auto"] .beauty-erp-nav-item svg,
-html[data-tenant-module="bella_auto"] .beauty-erp-nav-item span {
+html[data-tenant-module="bella_auto"] .beauty-erp-nav-item span,
+html[data-tenant-module="bella_healthcare"] .beauty-erp-nav-item svg,
+html[data-tenant-module="bella_healthcare"] .beauty-erp-nav-item span {
   color: rgba(224, 242, 254, 0.80) !important;
 }
 
 /* Nav items — hover */
-html[data-tenant-module="bella_auto"] .beauty-erp-nav-item:hover {
+html[data-tenant-module="bella_auto"] .beauty-erp-nav-item:hover,
+html[data-tenant-module="bella_healthcare"] .beauty-erp-nav-item:hover {
   background: rgba(6, 182, 212, 0.12) !important;
   border-color: rgba(6, 182, 212, 0.30) !important;
   color: #ffffff !important;
@@ -1788,12 +1838,15 @@ html[data-tenant-module="bella_auto"] .beauty-erp-nav-item:hover {
 }
 
 html[data-tenant-module="bella_auto"] .beauty-erp-nav-item:hover svg,
-html[data-tenant-module="bella_auto"] .beauty-erp-nav-item:hover span {
+html[data-tenant-module="bella_auto"] .beauty-erp-nav-item:hover span,
+html[data-tenant-module="bella_healthcare"] .beauty-erp-nav-item:hover svg,
+html[data-tenant-module="bella_healthcare"] .beauty-erp-nav-item:hover span {
   color: #ffffff !important;
 }
 
 /* Nav items — active */
-html[data-tenant-module="bella_auto"] .beauty-erp-nav-item-active {
+html[data-tenant-module="bella_auto"] .beauty-erp-nav-item-active,
+html[data-tenant-module="bella_healthcare"] .beauty-erp-nav-item-active {
   background: linear-gradient(135deg, rgba(6, 182, 212, 0.30) 0%, rgba(20, 184, 166, 0.25) 100%) !important;
   border-color: rgba(6, 182, 212, 0.55) !important;
   color: #ffffff !important;
@@ -1801,98 +1854,117 @@ html[data-tenant-module="bella_auto"] .beauty-erp-nav-item-active {
 }
 
 html[data-tenant-module="bella_auto"] .beauty-erp-nav-item-active svg,
-html[data-tenant-module="bella_auto"] .beauty-erp-nav-item-active span {
+html[data-tenant-module="bella_auto"] .beauty-erp-nav-item-active span,
+html[data-tenant-module="bella_healthcare"] .beauty-erp-nav-item-active svg,
+html[data-tenant-module="bella_healthcare"] .beauty-erp-nav-item-active span {
   color: #ffffff !important;
 }
 
 /* Scrollbar */
-html[data-tenant-module="bella_auto"] .beauty-erp-nav-scroll::-webkit-scrollbar-thumb {
+html[data-tenant-module="bella_auto"] .beauty-erp-nav-scroll::-webkit-scrollbar-thumb,
+html[data-tenant-module="bella_healthcare"] .beauty-erp-nav-scroll::-webkit-scrollbar-thumb {
   background: rgba(6, 182, 212, 0.40) !important;
 }
 
 /* Profile card */
 /* Profile card */
-html[data-tenant-module="bella_auto"] .beauty-erp-profile-card {
+html[data-tenant-module="bella_auto"] .beauty-erp-profile-card,
+html[data-tenant-module="bella_healthcare"] .beauty-erp-profile-card {
   background: #041b25 !important; /* Xanh đậm đen tối hơn nền sidebar */
   border: 1px solid rgba(6, 182, 212, 0.35) !important;
   box-shadow: 0 12px 30px rgba(14, 116, 144, 0.22) !important;
 }
 
-html[data-tenant-module="bella_auto"] .beauty-erp-profile-name {
+html[data-tenant-module="bella_auto"] .beauty-erp-profile-name,
+html[data-tenant-module="bella_healthcare"] .beauty-erp-profile-name {
   color: #ffffff !important; /* Màu trắng nổi bật tinh tế */
   font-weight: 800;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
 }
 
-html[data-tenant-module="bella_auto"] .beauty-erp-profile-role {
+html[data-tenant-module="bella_auto"] .beauty-erp-profile-role,
+html[data-tenant-module="bella_healthcare"] .beauty-erp-profile-role {
   color: #22d3ee !important; /* Màu cyan sáng cực kỳ bắt mắt và tương phản */
   font-weight: 900 !important;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
-html[data-tenant-module="bella_auto"] .beauty-erp-profile-divider {
+html[data-tenant-module="bella_auto"] .beauty-erp-profile-divider,
+html[data-tenant-module="bella_healthcare"] .beauty-erp-profile-divider {
   background: linear-gradient(90deg, transparent, rgba(6, 182, 212, 0.45), transparent) !important;
 }
 
-html[data-tenant-module="bella_auto"] .beauty-erp-avatar {
+html[data-tenant-module="bella_auto"] .beauty-erp-avatar,
+html[data-tenant-module="bella_healthcare"] .beauty-erp-avatar {
   background: rgba(6, 182, 212, 0.25) !important;
   border: 1px solid rgba(6, 182, 212, 0.5) !important;
   color: #ffffff !important;
   font-weight: 800;
 }
 
-html[data-tenant-module="bella_auto"] .beauty-erp-icon-button {
+html[data-tenant-module="bella_auto"] .beauty-erp-icon-button,
+html[data-tenant-module="bella_healthcare"] .beauty-erp-icon-button {
   background: rgba(6, 182, 212, 0.15) !important;
   border: 1px solid rgba(6, 182, 212, 0.35) !important;
   color: #e0f2fe !important;
 }
 
-html[data-tenant-module="bella_auto"] .beauty-erp-icon-button:hover {
+html[data-tenant-module="bella_auto"] .beauty-erp-icon-button:hover,
+html[data-tenant-module="bella_healthcare"] .beauty-erp-icon-button:hover {
   background: rgba(6, 182, 212, 0.3) !important;
   border-color: rgba(6, 182, 212, 0.6) !important;
   color: #ffffff !important;
 }
 
 /* Theme Toggle inside Bella Auto profile card */
-html[data-tenant-module="bella_auto"] .beauty-theme-toggle {
+html[data-tenant-module="bella_auto"] .beauty-theme-toggle,
+html[data-tenant-module="bella_healthcare"] .beauty-theme-toggle {
   background: #020c11 !important; /* Cực kỳ tối để nổi bật */
   border-color: rgba(6, 182, 212, 0.25) !important;
 }
 
-html[data-tenant-module="bella_auto"] .beauty-theme-toggle button {
+html[data-tenant-module="bella_auto"] .beauty-theme-toggle button,
+html[data-tenant-module="bella_healthcare"] .beauty-theme-toggle button {
   color: rgba(224, 242, 254, 0.5) !important;
 }
 
-html[data-tenant-module="bella_auto"] .beauty-theme-toggle button:hover {
+html[data-tenant-module="bella_auto"] .beauty-theme-toggle button:hover,
+html[data-tenant-module="bella_healthcare"] .beauty-theme-toggle button:hover {
   color: #ffffff !important;
 }
 
-html[data-tenant-module="bella_auto"] .beauty-theme-toggle-active-light {
+html[data-tenant-module="bella_auto"] .beauty-theme-toggle-active-light,
+html[data-tenant-module="bella_healthcare"] .beauty-theme-toggle-active-light {
   background: #ffffff !important;
   border-color: rgba(6, 182, 212, 0.4) !important;
 }
 
-html[data-tenant-module="bella_auto"] .beauty-theme-toggle button.text-indigo-600 {
+html[data-tenant-module="bella_auto"] .beauty-theme-toggle button.text-indigo-600,
+html[data-tenant-module="bella_healthcare"] .beauty-theme-toggle button.text-indigo-600 {
   color: #0c4a6e !important; /* Xanh thẫm khi button light active */
 }
 
-html[data-tenant-module="bella_auto"] .beauty-theme-toggle-active-dark {
+html[data-tenant-module="bella_auto"] .beauty-theme-toggle-active-dark,
+html[data-tenant-module="bella_healthcare"] .beauty-theme-toggle-active-dark {
   background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%) !important;
   border-color: rgba(6, 182, 212, 0.6) !important;
 }
 
-html[data-tenant-module="bella_auto"] .beauty-theme-toggle button.text-white {
+html[data-tenant-module="bella_auto"] .beauty-theme-toggle button.text-white,
+html[data-tenant-module="bella_healthcare"] .beauty-theme-toggle button.text-white {
   color: #ffffff !important; /* Trắng khi button dark active */
 }
 
 /* Mobile header */
-html[data-tenant-module="bella_auto"] .beauty-erp-mobile-header {
+html[data-tenant-module="bella_auto"] .beauty-erp-mobile-header,
+html[data-tenant-module="bella_healthcare"] .beauty-erp-mobile-header {
   background: rgba(240, 249, 255, 0.94) !important;
   border-color: rgba(6, 182, 212, 0.30) !important;
   box-shadow: 0 8px 28px rgba(14, 116, 144, 0.10) !important;
 }
 
-html[data-tenant-module="bella_auto"] .beauty-erp-mobile-header .beauty-erp-brand-script {
+html[data-tenant-module="bella_auto"] .beauty-erp-mobile-header .beauty-erp-brand-script,
+html[data-tenant-module="bella_healthcare"] .beauty-erp-mobile-header .beauty-erp-brand-script {
   color: #0891b2 !important;
   text-shadow: none !important;
 }
@@ -1968,20 +2040,126 @@ html[data-tenant-module="real_estate"] .beauty-erp-sidebar::before {
   border-radius: 30px !important;
 }
 
+/* Jade Wellness Theme - Sidebar Inner Border and Contrast Overrides */
 html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-sidebar::before {
-  border: 1px solid rgba(200, 169, 122, 0.3) !important;
+  content: "" !important;
+  position: absolute !important;
+  top: 12px !important;
+  left: 12px !important;
+  right: 12px !important;
+  bottom: 12px !important;
+  pointer-events: none !important;
+  border: 1.5px solid rgba(200, 169, 122, 0.65) !important; /* Brighter gold border for contrast */
+  border-radius: 24px !important;
+  z-index: 20 !important;
+  box-shadow: inset 0 0 40px rgba(200, 169, 122, 0.08) !important;
+}
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-profile-name {
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4) !important;
+}
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-profile-role {
+  color: #e8d4a8 !important; /* Bright gold for high contrast */
+  font-weight: 900 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
 }
 
+/* Ocean Clean Theme - Sidebar Inner Border and Contrast Overrides */
 html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-sidebar::before {
-  border: 1px solid rgba(59, 130, 246, 0.22) !important;
+  content: "" !important;
+  position: absolute !important;
+  top: 12px !important;
+  left: 12px !important;
+  right: 12px !important;
+  bottom: 12px !important;
+  pointer-events: none !important;
+  border: 1.5px solid rgba(6, 182, 212, 0.45) !important;
+  border-radius: 24px !important;
+  z-index: 20 !important;
+  box-shadow: inset 0 0 40px rgba(6, 182, 212, 0.06) !important;
+}
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-profile-name {
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4) !important;
+}
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-profile-role {
+  color: #22d3ee !important; /* Bright cyan for contrast */
+  font-weight: 900 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
 }
 
+/* Graphite Luxe Theme - Sidebar Inner Border and Contrast Overrides */
 html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-sidebar::before {
-  border: 1px solid rgba(161, 161, 170, 0.22) !important;
+  content: "" !important;
+  position: absolute !important;
+  top: 12px !important;
+  left: 12px !important;
+  right: 12px !important;
+  bottom: 12px !important;
+  pointer-events: none !important;
+  border: 1.5px solid rgba(161, 161, 170, 0.45) !important;
+  border-radius: 24px !important;
+  z-index: 20 !important;
+  box-shadow: inset 0 0 40px rgba(161, 161, 170, 0.04) !important;
+}
+html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-profile-name {
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4) !important;
+}
+html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-profile-role {
+  color: #e4e4e7 !important; /* Light silver/gray for contrast */
+  font-weight: 900 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
 }
 
+/* Bella Rose Theme - Sidebar Inner Border and Contrast Overrides */
 html[data-tenant-brand-preset="bella_rose"] .beauty-erp-sidebar::before {
-  border: 1px solid rgba(236, 72, 153, 0.18) !important;
+  content: "" !important;
+  position: absolute !important;
+  top: 12px !important;
+  left: 12px !important;
+  right: 12px !important;
+  bottom: 12px !important;
+  pointer-events: none !important;
+  border: 1.5px solid rgba(236, 72, 153, 0.4) !important;
+  border-radius: 24px !important;
+  z-index: 20 !important;
+}
+html[data-tenant-brand-preset="bella_rose"] .beauty-erp-profile-name {
+  color: #4C243B !important;
+  font-weight: 800 !important;
+}
+html[data-tenant-brand-preset="bella_rose"] .beauty-erp-profile-role {
+  color: #a91555 !important;
+  font-weight: 900 !important;
+}
+
+/* Luxury Navy Theme - Sidebar Inner Border and Contrast Overrides */
+html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-sidebar::before {
+  content: "" !important;
+  position: absolute !important;
+  top: 12px !important;
+  left: 12px !important;
+  right: 12px !important;
+  bottom: 12px !important;
+  pointer-events: none !important;
+  border: 1.5px solid rgba(217, 119, 6, 0.45) !important;
+  border-radius: 24px !important;
+  z-index: 20 !important;
+  box-shadow: inset 0 0 40px rgba(217, 119, 6, 0.05) !important;
+}
+html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-profile-name {
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4) !important;
+}
+html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-profile-role {
+  color: #fbbf24 !important; /* Brighter gold for contrast */
+  font-weight: 900 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
 }
 
 html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) .beauty-erp-logo-mark {

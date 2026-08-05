@@ -46,10 +46,10 @@ export function OdontogramTwin({
       <div
         key={num}
         onClick={() => onSelectTooth(num)}
-        className={`flex flex-col items-center justify-between p-2 rounded-xl border transition-all cursor-pointer select-none group ${
+        className={`flex flex-col items-center justify-between p-2 rounded-xl border transition-all duration-300 cursor-pointer select-none group ${
           isSelected
-            ? 'bg-teal-50 border-teal-500 shadow-sm dark:bg-teal-950/30'
-            : 'bg-white border-slate-100 hover:border-slate-300 dark:bg-slate-900 dark:border-slate-800'
+            ? 'bg-teal-50 border-teal-500 shadow-[0_4px_12px_rgba(20,184,166,0.12)] ring-1 ring-teal-500/20 dark:bg-teal-950/30 dark:border-teal-400'
+            : 'bg-white border-slate-200/70 hover:border-teal-300 hover:shadow-[0_4px_12px_rgba(20,184,166,0.06)] dark:bg-slate-900 dark:border-slate-800/80 dark:hover:border-teal-800'
         }`}
       >
         <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 group-hover:text-teal-600 transition-colors">
@@ -88,7 +88,7 @@ export function OdontogramTwin({
   };
 
   return (
-    <div className="flex flex-col gap-6 p-6 rounded-2xl bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800/80 shadow-sm">
+    <div className="flex flex-col gap-6 p-6 rounded-[24px] bg-white dark:bg-slate-950 border border-slate-300/85 dark:border-slate-850 shadow-[0_6px_24px_-2px_rgba(15,23,42,0.08),0_2px_6px_-1px_rgba(15,23,42,0.04)] dark:shadow-[0_6px_24px_rgba(0,0,0,0.4)] hover:shadow-[0_16px_36px_-4px_rgba(20,184,166,0.12),0_4px_12px_-2px_rgba(20,184,166,0.06)] hover:-translate-y-0.5 transition-all duration-300">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">

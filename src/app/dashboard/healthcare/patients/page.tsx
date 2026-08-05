@@ -1,7 +1,9 @@
 'use client';
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Users, Plus, Shield, Search, ArrowRight, UserPlus, Heart } from 'lucide-react';
 import { toast } from 'sonner';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 interface Patient {
   readonly id: string;
@@ -18,6 +20,7 @@ interface Patient {
 }
 
 export default function PatientsPage() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   
@@ -28,6 +31,12 @@ export default function PatientsPage() {
   const [phone, setPhone] = useState('');
   const [bhyt, setBhyt] = useState('');
   const [cccd, setCccd] = useState('');
+
+  const genderOptions = [
+    { value: 'male', label: 'Nam' },
+    { value: 'female', label: 'Nữ' },
+    { value: 'other', label: 'Khác' },
+  ];
 
   const [patients, setPatients] = useState<Patient[]>([
     {
@@ -92,7 +101,7 @@ export default function PatientsPage() {
   return (
     <div className="p-6 w-full space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-2xl bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-[24px] bg-white dark:bg-slate-950 border border-slate-300/85 dark:border-slate-850 shadow-[0_6px_24px_-2px_rgba(15,23,42,0.08),0_2px_6px_-1px_rgba(15,23,42,0.04)] dark:shadow-[0_6px_24px_rgba(0,0,0,0.4)] hover:shadow-[0_16px_36px_-4px_rgba(20,184,166,0.12),0_4px_12px_-2px_rgba(20,184,166,0.06)] hover:-translate-y-0.5 transition-all duration-300">
         <div className="flex items-center gap-3">
           <span className="p-2.5 rounded-xl bg-teal-500/10 text-teal-600 border border-teal-500/20 shadow-sm">
             <Users className="w-5 h-5" />
@@ -117,7 +126,7 @@ export default function PatientsPage() {
       </div>
 
       {/* Search & Actions Bar */}
-      <div className="flex items-center gap-3 p-4 rounded-xl bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 shadow-sm">
+      <div className="flex items-center gap-3 p-4 rounded-[16px] bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-[0_4px_12px_-1px_rgba(0,0,0,0.04)] dark:shadow-none">
         <div className="relative flex-1">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
@@ -131,7 +140,7 @@ export default function PatientsPage() {
       </div>
 
       {/* Patients Table / List */}
-      <div className="rounded-2xl bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800/80 shadow-sm overflow-hidden">
+      <div className="rounded-[24px] bg-white dark:bg-slate-950 border border-slate-300/85 dark:border-slate-850 shadow-[0_6px_24px_-2px_rgba(15,23,42,0.08),0_2px_6px_-1px_rgba(15,23,42,0.04)] dark:shadow-[0_6px_24px_rgba(0,0,0,0.4)] hover:shadow-[0_16px_36px_-4px_rgba(20,184,166,0.12),0_4px_12px_-2px_rgba(20,184,166,0.06)] hover:-translate-y-0.5 transition-all duration-300 overflow-hidden">
         <table className="w-full border-collapse text-left text-xs">
           <thead>
             <tr className="bg-slate-50/80 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 text-slate-500 font-bold">
@@ -176,7 +185,10 @@ export default function PatientsPage() {
                     )}
                   </td>
                   <td className="p-4 text-right">
-                    <button className="text-teal-600 hover:text-teal-700 font-bold hover:underline inline-flex items-center gap-1">
+                    <button 
+                      onClick={() => router.push(`/dashboard/healthcare/patients/${p.id}`)}
+                      className="text-teal-600 hover:text-teal-700 font-bold hover:underline inline-flex items-center gap-1"
+                    >
                       Chi tiết <ArrowRight className="w-3.5 h-3.5" />
                     </button>
                   </td>
@@ -228,15 +240,13 @@ export default function PatientsPage() {
                 </div>
                 <div className="space-y-1">
                   <label className="font-bold text-slate-600 dark:text-slate-400">Giới tính</label>
-                  <select
+                  <PremiumSelect
+                    options={genderOptions}
                     value={gender}
-                    onChange={(e) => setGender(e.target.value as any)}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 dark:bg-slate-900 dark:border-slate-800 dark:text-white"
-                  >
-                    <option value="male">Nam</option>
-                    <option value="female">Nữ</option>
-                    <option value="other">Khác</option>
-                  </select>
+                    onChange={(val) => setGender(val as 'male' | 'female' | 'other')}
+                    placeholder="Chọn giới tính..."
+                    buttonClassName="py-2.5 px-3 rounded-xl border border-slate-200 dark:bg-slate-900 dark:border-slate-800 dark:text-white focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                  />
                 </div>
               </div>
 

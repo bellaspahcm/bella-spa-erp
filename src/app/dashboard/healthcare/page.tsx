@@ -214,7 +214,7 @@ export default function HealthcareDashboardPage() {
   return (
     <div className="p-6 w-full space-y-6">
       {/* Header section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-2xl bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-[24px] bg-white dark:bg-slate-950 border border-slate-300/85 dark:border-slate-850 shadow-[0_6px_24px_-2px_rgba(15,23,42,0.08),0_2px_6px_-1px_rgba(15,23,42,0.04)] dark:shadow-[0_6px_24px_rgba(0,0,0,0.4)] hover:shadow-[0_16px_36px_-4px_rgba(20,184,166,0.12),0_4px_12px_-2px_rgba(20,184,166,0.06)] hover:-translate-y-0.5 transition-all duration-300">
         <div className="flex items-center gap-4">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-teal-500/10 text-teal-600 font-bold text-lg border border-teal-500/20 shadow-sm">
             {monogram}
@@ -251,7 +251,10 @@ export default function HealthcareDashboardPage() {
         ].map((stat, i) => {
           const Icon = stat.icon;
           return (
-            <div key={i} className="p-5 rounded-2xl bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 shadow-sm flex items-center justify-between">
+            <div
+              key={i}
+              className="relative overflow-hidden p-5 rounded-[20px] bg-gradient-to-br from-white to-teal-50/10 dark:from-slate-950 dark:to-slate-900/40 border border-slate-200 dark:border-slate-800/80 shadow-[0_4px_12px_-1px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] hover:shadow-[0_16px_36px_-4px_rgba(20,184,166,0.12),0_4px_12px_-2px_rgba(20,184,166,0.06)] hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-between before:content-[''] before:absolute before:top-0 before:left-0 before:right-0 before:h-[3px] before:bg-gradient-to-r before:from-teal-400 before:to-emerald-500"
+            >
               <div className="space-y-1 text-left">
                 <span className="text-xs text-slate-400 dark:text-slate-500 font-bold block">{stat.label}</span>
                 <span className="text-2xl font-extrabold text-slate-900 dark:text-white">{stat.value}</span>

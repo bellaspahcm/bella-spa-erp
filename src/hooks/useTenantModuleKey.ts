@@ -35,9 +35,14 @@ function getSynchronousModuleKey(): TenantModuleKey | null {
   return null;
 }
 
-export function useTenantModuleKey() {
-  const [tenantModuleKey, setTenantModuleKey] = useState<TenantModuleKey | null>(() => getSynchronousModuleKey());
-  const [isTenantModuleLoading, setIsTenantModuleLoading] = useState(() => !getSynchronousModuleKey());
+export function useTenantModuleKey(options?: { forceFresh?: boolean }) {
+  const forceFresh = options?.forceFresh ?? false;
+  const [tenantModuleKey, setTenantModuleKey] = useState<TenantModuleKey | null>(() =>
+    forceFresh ? null : getSynchronousModuleKey()
+  );
+  const [isTenantModuleLoading, setIsTenantModuleLoading] = useState(() =>
+    forceFresh ? true : !getSynchronousModuleKey()
+  );
   const [tenantModuleError, setTenantModuleError] = useState<string | null>(null);
 
   const refreshTenantModuleKey = useCallback(async () => {

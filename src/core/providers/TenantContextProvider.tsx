@@ -186,6 +186,8 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
           moduleKey = 'beauty_spa';
         } else if (modules.bella_auto === true) {
           moduleKey = 'bella_auto';
+        } else if (modules.bella_healthcare === true) {
+          moduleKey = 'bella_healthcare';
         } else if (modules.babycare === true || modules.spa === true) {
           moduleKey = 'baby_care';
         }
@@ -201,7 +203,9 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
     if (modulesArray.length > 0) {
       console.log('[TenantContextProvider] Processing array with priority logic:', modulesArray);
       
-      if (modulesArray.includes('real_estate')) {
+      if (modulesArray.includes('bella_healthcare')) {
+        moduleKey = 'bella_healthcare';
+      } else if (modulesArray.includes('real_estate')) {
         moduleKey = 'real_estate';
       } else if (modulesArray.includes('industrial_cleaning')) {
         moduleKey = 'industrial_cleaning';
@@ -228,6 +232,7 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
         industrial_cleaning: '#F8FAFC',
         real_estate: '#FFFBEB',
         bella_auto: '#F0F9FF',
+        bella_healthcare: '#ECFEFF',
       };
       themeMeta.setAttribute('content', themeColors[moduleKey] || themeColors.baby_care);
     }
