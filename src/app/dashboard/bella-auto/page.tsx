@@ -9,15 +9,16 @@ import BellaAutoAnalyticsDashboard from '@/components/bella-auto/BellaAutoAnalyt
 export const dynamic = 'force-dynamic';
 
 export default async function BellaAutoPage() {
-  const supabase = await createClient();
+  try {
+    const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  if (!user) {
-    redirect('/login');
-  }
+    if (!user) {
+      redirect('/login');
+    }
 
   // Get tenant and user profile
   const { data: profile } = await supabase
@@ -113,4 +114,24 @@ export default async function BellaAutoPage() {
       </Suspense>
     </div>
   );
+  } catch (error) {
+    console.error('[BellaAutoPage] Fatal error:', error);
+    return (
+      <div className="flex-1 flex items-center justify-center p-8">
+        <div className="text-center space-y-4 max-w-md">
+          <div className="text-6xl">⚠️</div>
+          <h2 className="text-2xl font-bold text-red-600">Lỗi tải Dashboard</h2>
+          <p className="text-slate-600">
+            {error instanceof Error ? error.message : 'Unknown error occurred'}
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-3 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors"
+          >
+            Tải lại trang
+          </button>
+        </div>
+      </div>
+    );
+  }
 }

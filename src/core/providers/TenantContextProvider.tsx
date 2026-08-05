@@ -133,30 +133,19 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
     if (!context) return;
 
     const enabledModules = context.enabledModules;
-    console.log('[TenantContextProvider] enabledModules:', enabledModules);
+    console.log('[TenantContextProvider] enabledModules RAW:', enabledModules);
     console.log('[TenantContextProvider] enabledModules type:', typeof enabledModules);
     console.log('[TenantContextProvider] is Array?', Array.isArray(enabledModules));
+    console.log('[TenantContextProvider] JSON.stringify:', JSON.stringify(enabledModules));
     
     let moduleKey: string = 'baby_care'; // Default fallback
 
     // Determine primary module key
-    // API now returns array of enabled module names: ['beauty_spa'] or ['babycare'] or ['industrial_cleaning'] or ['real_estate']
-    if (Array.isArray(enabledModules)) {
-      console.log('[TenantContextProvider] Processing array format:', enabledModules);
-      
-      // Priority order: real_estate > industrial_cleaning > beauty_spa > babycare/spa
-      if (enabledModules.includes('real_estate')) {
-        moduleKey = 'real_estate';
-      } else if (enabledModules.includes('industrial_cleaning')) {
-        moduleKey = 'industrial_cleaning';
-      } else if (enabledModules.includes('beauty_spa')) {
-        moduleKey = 'beauty_spa';
-      } else if (enabledModules.includes('babycare') || enabledModules.includes('spa')) {
-        moduleKey = 'baby_care';
-      }
-    } else if (typeof enabledModules === 'object' && enabledModules !== null) {
-      // Fallback for legacy JSONB object format: { beauty_spa: true, babycare: false }
-      console.log('[TenantContextProvider] Processing legacy object format');
+    // CRITICAL FIX: Check object format FIRST (most common in database)
+    // Database stores as JSONB object: { beauty_spa: true, babycare: false }
+    if (typeof enabledModules === 'object' && enabledModules !== null && !Array.isArray(enabledModules)) {
+      // Legacy JSONB object format: { beauty_spa: true, babycare: false }
+      console.log('[TenantContextProvider] Processing JSONB object format (priority check)');
       
       const modules = enabledModules as any;
       if (modules.real_estate === true) {
@@ -165,14 +154,33 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
         moduleKey = 'industrial_cleaning';
       } else if (modules.beauty_spa === true) {
         moduleKey = 'beauty_spa';
+      } else if (modules.bella_auto === true) {
+        moduleKey = 'bella_auto';
       } else if (modules.babycare === true || modules.spa === true) {
+        moduleKey = 'baby_care';
+      }
+    } else if (Array.isArray(enabledModules)) {
+      // API returns array of enabled module names: ['beauty_spa'] or ['babycare'] or ['industrial_cleaning'] or ['real_estate'] or ['bella_auto']
+      console.log('[TenantContextProvider] Processing array format:', enabledModules);
+      
+      // Priority order: real_estate > industrial_cleaning > beauty_spa > bella_auto > babycare/spa
+      if (enabledModules.includes('real_estate')) {
+        moduleKey = 'real_estate';
+      } else if (enabledModules.includes('industrial_cleaning')) {
+        moduleKey = 'industrial_cleaning';
+      } else if (enabledModules.includes('beauty_spa')) {
+        moduleKey = 'beauty_spa';
+      } else if (enabledModules.includes('bella_auto')) {
+        moduleKey = 'bella_auto';
+      } else if (enabledModules.includes('babycare') || enabledModules.includes('spa')) {
         moduleKey = 'baby_care';
       }
     }
 
     // Set data-tenant-module attribute on <html> element
     document.documentElement.dataset.tenantModule = moduleKey;
-    console.log('[TenantContextProvider] Applied module theme:', moduleKey);
+    console.log('[TenantContextProvider] ✅ Applied module theme:', moduleKey);
+    console.log('[TenantContextProvider] ✅ HTML data-tenant-module:', document.documentElement.dataset.tenantModule);
 
     // Update theme-color meta tag
     const themeMeta = document.querySelector('meta[name="theme-color"]');
@@ -182,6 +190,7 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
         beauty_spa: '#F0FDF4',
         industrial_cleaning: '#F8FAFC',
         real_estate: '#FFFBEB',
+        bella_auto: '#F0F9FF',
       };
       themeMeta.setAttribute('content', themeColors[moduleKey] || themeColors.baby_care);
     }
