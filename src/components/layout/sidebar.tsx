@@ -45,8 +45,7 @@ import {
   Smile,
   CircleDollarSign,
   Wrench,
-  Activity,
-  FileContract
+  Activity
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -459,8 +458,7 @@ const LUCIDE_ICONS_MAP: Record<string, LucideIcon> = {
   Smile,
   CircleDollarSign,
   Wrench,
-  Activity,
-  FileContract
+  Activity
 };
 
 
