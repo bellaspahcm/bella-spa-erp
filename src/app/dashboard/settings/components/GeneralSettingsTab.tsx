@@ -34,6 +34,7 @@ export default function GeneralSettingsTab({
   const isRealEstate = tenantModuleKey === "real_estate";
   const isIndustrialCleaning = tenantModuleKey === "industrial_cleaning";
   const isBellaAuto = tenantModuleKey === "bella_auto";
+  const isBellaHealthcare = tenantModuleKey === "bella_healthcare";
 
   if (isLoadingSettings) {
     return (
@@ -52,6 +53,8 @@ export default function GeneralSettingsTab({
     ? "Thông tin Showroom"
     : isIndustrialCleaning 
     ? "Thông tin Công ty" 
+    : isBellaHealthcare
+    ? "Thông tin Phòng khám & Y tế"
     : "Thông tin Spa";
 
   const subtitleText = isRealEstate

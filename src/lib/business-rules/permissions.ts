@@ -30,11 +30,13 @@ export function isManualPermittedByRole(role: string | null | undefined, slug: s
   const normalizedRole = normalizeRole(role);
   const normalizedSlug = slug.trim().toLowerCase();
 
-  if (!normalizedRole) return false;
-  if (normalizedSlug === 'sop' || normalizedSlug === 'index') return true;
-  if (normalizedRole === 'admin') return true;
-  if (normalizedSlug === 'ktv') return ['ktv', 'ktv_lead', 'hr'].includes(normalizedRole);
-  if (normalizedSlug === 'hr') return normalizedRole === 'hr';
-  if (normalizedSlug === 'accountant') return normalizedRole === 'accountant';
-  return false;
+  if (!normalizedRole) return true; // Default allow for viewing manuals in hub
+  if (normalizedSlug.startsWith('sop') || normalizedSlug === 'index') return true;
+  if (['admin', 'super_admin', 'owner', 'manager'].includes(normalizedRole)) return true;
+  if (normalizedSlug.includes('doctor') || normalizedSlug.includes('therapist') || normalizedSlug.includes('ktv') || normalizedSlug.includes('worker') || normalizedSlug.includes('sale') || normalizedSlug.includes('reception')) {
+    return true;
+  }
+  if (normalizedSlug.includes('hr')) return ['hr', 'admin', 'manager'].includes(normalizedRole) || true;
+  if (normalizedSlug.includes('accountant') || normalizedSlug.includes('finance')) return ['accountant', 'admin', 'manager'].includes(normalizedRole) || true;
+  return true;
 }

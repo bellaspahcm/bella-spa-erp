@@ -58,7 +58,7 @@ const TABS = [
 
   { type: "header", label: "Vận hành & Tài chính" },
   { id: "salary", label: "Lương & Thưởng", icon: Coins },
-  { id: "commission", label: "Hoa hồng kinh doanh", icon: Sparkles },
+  { id: "commission", label: "Hoa hồng & Chiết khấu", icon: Sparkles },
   { id: "accounting", label: "Chế độ Kế toán", icon: Calculator },
   { id: "promotions", label: "Khuyến mãi", icon: Sparkles },
   { id: "meta-ads", label: "Meta Ads", icon: Megaphone },

@@ -60,6 +60,28 @@ export default function UserManualsHub() {
   // Define dynamic style mapping based on tenantModuleKey
   const getThemeStyles = () => {
     switch (tenantModuleKey) {
+      case 'bella_healthcare':
+        return {
+          wrapperBg: 'bg-slate-50 dark:bg-[#090d16]',
+          glowTop: 'bg-teal-500/10 dark:bg-teal-900/10',
+          glowBottom: 'bg-cyan-500/5 dark:bg-cyan-900/5',
+          tagBg: 'bg-teal-50/80 border-teal-100 dark:bg-teal-950/20 dark:border-teal-800/30',
+          tagText: 'text-teal-700 dark:text-teal-400',
+          titleFont: 'font-sans font-black text-slate-900 dark:text-white',
+          searchGlow: 'bg-teal-500/5 dark:bg-teal-900/5',
+          searchBorder: 'border-slate-200/70 focus-within:border-teal-500/50 dark:border-slate-700 dark:focus-within:border-teal-700',
+          cardBgGlow: 'bg-teal-100/20 dark:bg-teal-950/10',
+          cardBorder: 'border-slate-200/60 dark:border-slate-800',
+          cardHoverBorder: 'hover:border-teal-500/40 dark:hover:border-teal-700',
+          cardIconBg: 'bg-teal-50 dark:bg-teal-950/40 border border-teal-100/50 dark:border-teal-900/30 text-teal-700',
+          cardSubtitle: 'text-teal-700 dark:text-teal-400',
+          cardTitle: 'text-slate-800 group-hover:text-teal-700 dark:text-white dark:group-hover:text-teal-400',
+          cardDivider: 'border-slate-100 dark:border-slate-800',
+          readLink: 'text-teal-700 dark:text-teal-400',
+          emptyStateBorder: 'border-slate-200 dark:border-slate-800',
+          footerBorder: 'border-slate-200/50 dark:border-slate-800/30',
+          footerLink: 'text-teal-700 hover:text-teal-600 dark:text-teal-400 dark:hover:text-teal-300',
+        };
       case 'beauty_spa':
         return {
           wrapperBg: 'bg-[#FAF9F5] dark:bg-[#11100F]',

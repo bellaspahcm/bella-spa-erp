@@ -1,15 +1,16 @@
-/* Healthcare Platform CSS Design System & Theme Overrides */
+/* Healthcare Platform CSS Design System & Executive Theme */
 
 [data-hc-layout="true"] {
   --hc-primary: #0d9488; /* Teal 600 */
   --hc-primary-hover: #0f766e; /* Teal 700 */
   --hc-primary-light: #f0fdfa; /* Teal 50 */
-  --hc-primary-glow: rgba(13, 148, 136, 0.15);
+  --hc-primary-glow: rgba(13, 148, 136, 0.25);
   
   --hc-secondary: #06b6d4; /* Cyan 500 */
   --hc-success: #10b981; /* Emerald 500 */
   --hc-warning: #f59e0b; /* Amber 500 */
   --hc-danger: #ef4444; /* Red 500 */
+  --hc-gold: #d97706; /* Amber 600 Metallic */
   
   --hc-font-sans: 'Inter', system-ui, -apple-system, sans-serif;
 }
@@ -26,66 +27,115 @@
   border-color: var(--hc-primary);
 }
 
-/* Glassmorphism Styles */
-[data-hc-layout="true"] .glass-panel {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(241, 245, 249, 0.8);
+/* Luxurious Glassmorphism & Card Styles */
+.hc-glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.05), 0 2px 6px -2px rgba(15, 23, 42, 0.03);
 }
 
-.dark [data-hc-layout="true"] .glass-panel {
-  background: rgba(15, 23, 42, 0.75);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(51, 65, 85, 0.5);
+.dark .hc-glass-card {
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(30, 41, 59, 0.8);
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5);
 }
 
-/* Micro-animations */
-[data-hc-layout="true"] .pulse-glow {
-  animation: pulseGlow 2s infinite alternate;
+.hc-glass-card-hover {
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease;
 }
 
-@keyframes pulseGlow {
-  0% {
-    box-shadow: 0 0 4px rgba(13, 148, 136, 0.2);
-  }
-  100% {
-    box-shadow: 0 0 16px rgba(13, 148, 136, 0.6);
-  }
+.hc-glass-card-hover:hover {
+  border-color: rgba(20, 184, 166, 0.45);
+  box-shadow: 0 12px 32px -6px rgba(20, 184, 166, 0.14), 0 4px 12px -2px rgba(20, 184, 166, 0.08);
 }
 
-/* Tooth interaction styles for Odontogram */
+/* Ambient AI Pulsing Aura */
+.hc-ai-aura {
+  position: relative;
+}
+
+.hc-ai-aura::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(20, 184, 166, 0.6), rgba(6, 182, 212, 0.4), rgba(99, 102, 241, 0.6));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  animation: aiAuraPulse 3s ease-in-out infinite alternate;
+}
+
+@keyframes aiAuraPulse {
+  0% { opacity: 0.5; filter: drop-shadow(0 0 4px rgba(20, 184, 166, 0.3)); }
+  100% { opacity: 1; filter: drop-shadow(0 0 12px rgba(6, 182, 212, 0.6)); }
+}
+
+/* Custom Gradient Text */
+.hc-gradient-title {
+  background: linear-gradient(135deg, #0f172a 0%, #0f766e 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.dark .hc-gradient-title {
+  background: linear-gradient(135deg, #ffffff 0%, #2dd4bf 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hc-gradient-gold {
+  background: linear-gradient(135deg, #d97706 0%, #fbbf24 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Tooth Interaction & Anatomical Fill Styles */
 [data-hc-layout="true"] .tooth-svg path {
-  transition: all 0.2s ease-in-out;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
 }
 
-[data-hc-layout="true"] .tooth-svg path:hover {
-  fill: #2dd4bf !important;
-  opacity: 0.8;
+[data-hc-layout="true"] .tooth-svg:hover path {
+  filter: brightness(1.1) drop-shadow(0 4px 8px rgba(20, 184, 166, 0.3));
 }
 
 [data-hc-layout="true"] .tooth-decayed {
-  fill: #f43f5e !important; /* Rose 500 */
+  fill: url(#decayedGradient) !important;
 }
 
 [data-hc-layout="true"] .tooth-missing {
-  fill: #64748b !important; /* Slate 500 */
-  opacity: 0.3;
+  fill: #64748b !important;
+  opacity: 0.25;
+  stroke-dasharray: 2 2;
 }
 
 [data-hc-layout="true"] .tooth-crowned {
-  fill: #fbbf24 !important; /* Amber 400 */
+  fill: url(#crownedGradient) !important;
 }
 
 [data-hc-layout="true"] .tooth-implanted {
-  fill: #06b6d4 !important; /* Cyan 500 */
+  fill: url(#implantedGradient) !important;
 }
 
 [data-hc-layout="true"] .tooth-healthy {
-  fill: #e2e8f0;
+  fill: url(#healthyGradient) !important;
 }
-.dark [data-hc-layout="true"] .tooth-healthy {
-  fill: #334155;
+
+/* Micro-animations */
+.hc-pulse-dot {
+  animation: pulseDot 1.8s infinite;
 }
+
+@keyframes pulseDot {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+

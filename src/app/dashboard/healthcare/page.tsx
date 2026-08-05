@@ -212,56 +212,92 @@ export default function HealthcareDashboardPage() {
   const monogram = user?.full_name ? user.full_name.substring(0, 2).toUpperCase() : 'BS';
 
   return (
-    <div className="p-6 w-full space-y-6">
-      {/* Header section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-[24px] bg-white dark:bg-slate-950 border border-slate-300/85 dark:border-slate-850 shadow-[0_6px_24px_-2px_rgba(15,23,42,0.08),0_2px_6px_-1px_rgba(15,23,42,0.04)] dark:shadow-[0_6px_24px_rgba(0,0,0,0.4)] hover:shadow-[0_16px_36px_-4px_rgba(20,184,166,0.12),0_4px_12px_-2px_rgba(20,184,166,0.06)] hover:-translate-y-0.5 transition-all duration-300">
-        <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-teal-500/10 text-teal-600 font-bold text-lg border border-teal-500/20 shadow-sm">
-            {monogram}
+    <div className="p-6 md:p-8 w-full space-y-7 bg-transparent relative">
+      {/* Ambient background mesh glow effects */}
+      <div className="absolute -top-40 -left-40 w-96 h-96 bg-teal-500/10 dark:bg-teal-500/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-1/3 -right-40 w-96 h-96 bg-cyan-500/10 dark:bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
+
+      {/* Executive Header section */}
+      <div className="relative p-6 md:p-7 rounded-[28px] hc-glass-card hc-glass-card-hover flex flex-col md:flex-row md:items-center justify-between gap-6 border border-slate-200/90 dark:border-slate-800/90 shadow-xl">
+        <div className="flex items-center gap-5">
+          {/* Doctor Monogram Avatar with Ring */}
+          <div className="relative group">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-500 via-teal-600 to-emerald-600 text-white font-extrabold text-xl shadow-lg shadow-teal-500/25 ring-4 ring-teal-500/20 dark:ring-teal-500/30">
+              {monogram}
+            </div>
+            <span className="absolute -bottom-1 -right-1 flex h-4 w-4">
+              <span className="hc-pulse-dot absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-4 w-4 bg-emerald-500 border-2 border-white dark:border-slate-950"></span>
+            </span>
           </div>
+
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-              Bác sĩ lâm sàng: <span className="text-teal-600 font-extrabold">{user?.full_name || 'Lê Minh'}</span>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold tracking-wider uppercase bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse" />
+                Vận hành Thời gian thực
+              </span>
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                Lâm sàng Digital Twin
+              </span>
+            </div>
+            <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+              Bác sĩ lâm sàng: <span className="text-teal-600 dark:text-teal-400 font-black">{user?.full_name || 'Lê Minh'}</span>
             </h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">
-              Trung tâm điều hành y tế <span className="font-semibold text-slate-700 dark:text-slate-200">{tenantContext?.tenantName || 'Bella Healthcare'}</span>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+              Trung tâm điều hành y tế <span className="font-bold text-slate-700 dark:text-slate-200">{tenantContext?.tenantName || 'Bella Healthcare Clinic'}</span>
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        {/* Header Action Toolbar */}
+        <div className="flex items-center gap-3 self-end md:self-auto">
+          <div className="hidden sm:flex flex-col items-end mr-2">
+            <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500">Trạng thái hệ thống</span>
+            <span className="text-xs font-extrabold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+              <ShieldCheck className="w-3.5 h-3.5" /> Đồng bộ 100%
+            </span>
+          </div>
+
           <button
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="flex items-center justify-center p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-600 dark:text-slate-300 transition-all active:scale-95 disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-800 dark:hover:bg-slate-700 font-bold text-xs shadow-md shadow-slate-900/10 transition-all active:scale-95 disabled:opacity-50"
             title="Đồng bộ dữ liệu phòng khám"
           >
-            <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin text-teal-600' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-teal-400' : ''}`} />
+            <span>{isRefreshing ? 'Đang đồng bộ...' : 'Làm mới'}</span>
           </button>
         </div>
       </div>
 
       {/* Analytical Quick Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {[
-          { label: 'Hẹn hôm nay', value: '18', icon: Activity, color: 'text-blue-600 bg-blue-50 dark:bg-blue-950/20' },
-          { label: 'Đang điều trị', value: '4', icon: Users, color: 'text-teal-600 bg-teal-50 dark:bg-teal-950/20' },
-          { label: 'Hoàn tất hôm nay', value: '12', icon: CheckCircle, color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/20' },
-          { label: 'Doanh thu phòng khám', value: '18.4M', icon: Heart, color: 'text-cyan-600 bg-cyan-50 dark:bg-cyan-950/20' },
+          { label: 'Hẹn hôm nay', value: '18', trend: '+12% hôm nay', icon: Activity, color: 'text-blue-600 bg-blue-50 dark:bg-blue-950/40 border-blue-200/60 dark:border-blue-800/60' },
+          { label: 'Đang điều trị', value: '4', trend: '4 ca ghế chính', icon: Users, color: 'text-teal-600 bg-teal-50 dark:bg-teal-950/40 border-teal-200/60 dark:border-teal-800/60' },
+          { label: 'Hoàn tất hôm nay', value: '12', trend: '100% đúng giờ', icon: CheckCircle, color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200/60 dark:border-emerald-800/60' },
+          { label: 'Doanh thu phòng khám', value: '18.4M', trend: 'Đạt 85% target', icon: Heart, color: 'text-cyan-600 bg-cyan-50 dark:bg-cyan-950/40 border-cyan-200/60 dark:border-cyan-800/60' },
         ].map((stat, i) => {
           const Icon = stat.icon;
           return (
             <div
               key={i}
-              className="relative overflow-hidden p-5 rounded-[20px] bg-gradient-to-br from-white to-teal-50/10 dark:from-slate-950 dark:to-slate-900/40 border border-slate-200 dark:border-slate-800/80 shadow-[0_4px_12px_-1px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] hover:shadow-[0_16px_36px_-4px_rgba(20,184,166,0.12),0_4px_12px_-2px_rgba(20,184,166,0.06)] hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-between before:content-[''] before:absolute before:top-0 before:left-0 before:right-0 before:h-[3px] before:bg-gradient-to-r before:from-teal-400 before:to-emerald-500"
+              className="relative p-5 rounded-[22px] hc-glass-card hc-glass-card-hover flex items-center justify-between border border-slate-200/80 dark:border-slate-800/80 group"
             >
               <div className="space-y-1 text-left">
-                <span className="text-xs text-slate-400 dark:text-slate-500 font-bold block">{stat.label}</span>
-                <span className="text-2xl font-extrabold text-slate-900 dark:text-white">{stat.value}</span>
+                <span className="text-xs text-slate-400 dark:text-slate-500 font-bold block tracking-wide">{stat.label}</span>
+                <span className="text-3xl font-black tracking-tight text-slate-900 dark:text-white group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
+                  {stat.value}
+                </span>
+                <span className="inline-block text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 mt-1">
+                  {stat.trend}
+                </span>
               </div>
-              <span className={`p-3 rounded-xl ${stat.color}`}>
-                <Icon className="w-5 h-5" />
-              </span>
+
+              <div className={`p-3.5 rounded-2xl border shadow-sm ${stat.color} group-hover:scale-110 transition-transform duration-300`}>
+                <Icon className="w-6 h-6" />
+              </div>
             </div>
           );
         })}
@@ -280,7 +316,7 @@ export default function HealthcareDashboardPage() {
       />
 
       {/* Digital Twin Panels: 2-column layout (Odontogram Twin & AI Safety Check Panel) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-7">
         {/* Panel 2: Odontogram Twin (Spans 2 columns) */}
         <div className="lg:col-span-2">
           <OdontogramTwin
@@ -303,3 +339,4 @@ export default function HealthcareDashboardPage() {
     </div>
   );
 }
+

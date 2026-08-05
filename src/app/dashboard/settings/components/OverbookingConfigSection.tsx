@@ -3,6 +3,7 @@
 import React from "react";
 import { ShieldCheck, BedDouble, Wrench, Users, AlertTriangle, Info } from "lucide-react";
 import type { ConflictDetectionConfig } from "@/types/domain";
+import { useTenantModuleKey } from "@/hooks/useTenantModuleKey";
 
 interface OverbookingConfigSectionProps {
   config: ConflictDetectionConfig;
@@ -99,6 +100,9 @@ export default function OverbookingConfigSection({
   config,
   onChange,
 }: OverbookingConfigSectionProps) {
+  const { tenantModuleKey } = useTenantModuleKey();
+  const isHealthcare = tenantModuleKey === "bella_healthcare";
+
   const update = (key: keyof ConflictDetectionConfig, val: boolean) => {
     onChange({ ...config, [key]: val });
   };
@@ -115,7 +119,9 @@ export default function OverbookingConfigSection({
             Kiểm tra trùng lịch nâng cao
           </h3>
           <p className="text-sm text-muted-foreground font-semibold">
-            Bật / tắt kiểm tra từng loại tài nguyên theo quy mô spa
+            {isHealthcare
+              ? "Bật / tắt kiểm tra từng loại tài nguyên theo quy mô phòng khám"
+              : "Bật / tắt kiểm tra từng loại tài nguyên theo quy mô cơ sở"}
           </p>
         </div>
       </div>
@@ -134,8 +140,8 @@ export default function OverbookingConfigSection({
         <ToggleRow
           id="conflict-toggle-worker"
           icon={<Users className="w-5 h-5" />}
-          label="Trùng lịch nhân sự"
-          description="Ngăn xếp lịch 2 khách cho cùng 1 nhân sự trong cùng khung giờ. Tính năng cốt lõi, không thể tắt."
+          label={isHealthcare ? "Trùng lịch bác sĩ / y sĩ" : "Trùng lịch nhân sự"}
+          description={isHealthcare ? "Ngăn xếp 2 bệnh nhân cho cùng 1 bác sĩ trong cùng khung giờ. Tính năng cốt lõi, không thể tắt." : "Ngăn xếp lịch 2 khách cho cùng 1 nhân sự trong cùng khung giờ. Tính năng cốt lõi, không thể tắt."}
           checked={true}
           disabled={true}
           disabledReason="Bắt buộc"
@@ -146,8 +152,8 @@ export default function OverbookingConfigSection({
         <ToggleRow
           id="conflict-toggle-room"
           icon={<BedDouble className="w-5 h-5" />}
-          label="Trùng phòng / giường"
-          description="Cảnh báo khi 2 khách được đặt cùng phòng hoặc giường trong cùng khung giờ. Tắt nếu spa không quản lý phòng riêng."
+          label={isHealthcare ? "Trùng phòng khám / ghế nha" : "Trùng phòng / giường"}
+          description={isHealthcare ? "Cảnh báo khi 2 bệnh nhân được đặt cùng phòng khám hoặc ghế nha trong cùng khung giờ." : "Cảnh báo khi 2 khách được đặt cùng phòng hoặc giường trong cùng khung giờ."}
           checked={config.detectRoomConflicts}
           onChange={(val) => update("detectRoomConflicts", val)}
         />
@@ -156,8 +162,8 @@ export default function OverbookingConfigSection({
         <ToggleRow
           id="conflict-toggle-equipment"
           icon={<Wrench className="w-5 h-5" />}
-          label="Trùng thiết bị"
-          description="Cảnh báo khi 2 khách dùng cùng thiết bị trong cùng khung giờ. Tắt nếu spa không gán thiết bị theo lịch."
+          label={isHealthcare ? "Trùng máy X-Quang / thiết bị 3D" : "Trùng thiết bị"}
+          description={isHealthcare ? "Cảnh báo khi 2 lượt khám dùng cùng máy X-Quang 3D / thiết bị chuyên khoa trong cùng khung giờ." : "Cảnh báo khi 2 khách dùng cùng thiết bị trong cùng khung giờ."}
           checked={config.detectEquipmentConflicts}
           onChange={(val) => update("detectEquipmentConflicts", val)}
         />
@@ -166,8 +172,8 @@ export default function OverbookingConfigSection({
         <ToggleRow
           id="conflict-toggle-customer"
           icon={<AlertTriangle className="w-5 h-5" />}
-          label="Khách đặt 2 lịch cùng lúc"
-          description="Phát hiện khi cùng 1 khách có 2 booking chồng giờ. Thường nên bật để tránh nhầm lẫn."
+          label={isHealthcare ? "Bệnh nhân đặt 2 lịch cùng lúc" : "Khách đặt 2 lịch cùng lúc"}
+          description={isHealthcare ? "Phát hiện khi cùng 1 bệnh nhân có 2 lịch hẹn khám chồng giờ." : "Phát hiện khi cùng 1 khách có 2 booking chồng giờ."}
           checked={config.detectCustomerDoubleBooking}
           onChange={(val) => update("detectCustomerDoubleBooking", val)}
         />

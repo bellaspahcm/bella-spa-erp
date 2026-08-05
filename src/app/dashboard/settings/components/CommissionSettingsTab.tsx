@@ -23,6 +23,8 @@ import { DEFAULT_COMMISSION_CONFIG } from '@/lib/business-rules/commission';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import type { Json } from '@/types/database.types';
 
+import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
+
 interface CommissionSettingsTabProps {
   className?: string;
 }
@@ -30,6 +32,9 @@ interface CommissionSettingsTabProps {
 type CommissionType = 'fixed' | 'percentage';
 
 export default function CommissionSettingsTab({ className }: CommissionSettingsTabProps) {
+  const { tenantModuleKey } = useTenantModuleKey();
+  const isHealthcare = tenantModuleKey === 'bella_healthcare';
+
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -155,9 +160,13 @@ export default function CommissionSettingsTab({ className }: CommissionSettingsT
             <Coins className="h-6 w-6" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-foreground">Cấu hình hoa hồng</h2>
+            <h2 className="text-2xl font-bold text-foreground">
+              {isHealthcare ? 'Cấu hình hoa hồng & thủ thuật' : 'Cấu hình hoa hồng'}
+            </h2>
             <p className="text-sm font-semibold text-muted-foreground">
-              Thiết lập mức hoa hồng mặc định cho hoạt động kinh doanh & bán hàng
+              {isHealthcare 
+                ? 'Thiết lập mức hoa hồng mặc định cho dịch vụ khám, thủ thuật & dược phẩm'
+                : 'Thiết lập mức hoa hồng mặc định cho hoạt động dịch vụ & bán hàng'}
             </p>
           </div>
         </div>
@@ -189,8 +198,14 @@ export default function CommissionSettingsTab({ className }: CommissionSettingsT
             <DollarSign className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="text-base font-black text-slate-900 uppercase tracking-wide">Hoa hồng dịch vụ & tư vấn</h3>
-            <p className="text-xs text-slate-500 font-semibold">Cấu hình mức hoa hồng mặc định cho các dịch vụ & giao dịch</p>
+            <h3 className="text-base font-black text-slate-900 uppercase tracking-wide">
+              {isHealthcare ? 'Hoa hồng khám & thủ thuật' : 'Hoa hồng dịch vụ & tư vấn'}
+            </h3>
+            <p className="text-xs text-slate-500 font-semibold">
+              {isHealthcare
+                ? 'Cấu hình mức hoa hồng mặc định cho từng lượt khám & thủ thuật y tế'
+                : 'Cấu hình mức hoa hồng mặc định cho các dịch vụ & giao dịch'}
+            </p>
           </div>
         </div>
 
@@ -242,8 +257,14 @@ export default function CommissionSettingsTab({ className }: CommissionSettingsT
             <Percent className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="text-base font-black text-slate-900 uppercase tracking-wide">Hoa hồng bán hàng & sản phẩm</h3>
-            <p className="text-xs text-slate-500 font-semibold">Cấu hình mức hoa hồng mặc định cho việc bán hàng & sản phẩm / bất động sản</p>
+            <h3 className="text-base font-black text-slate-900 uppercase tracking-wide">
+              {isHealthcare ? 'Hoa hồng kê đơn & vật tư y tế' : 'Hoa hồng bán hàng & sản phẩm'}
+            </h3>
+            <p className="text-xs text-slate-500 font-semibold">
+              {isHealthcare
+                ? 'Cấu hình mức hoa hồng mặc định cho việc bán dược phẩm & vật tư y tế'
+                : 'Cấu hình mức hoa hồng mặc định cho việc bán hàng & sản phẩm'}
+            </p>
           </div>
         </div>
 

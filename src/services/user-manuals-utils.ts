@@ -182,9 +182,61 @@ const REAL_ESTATE_GUIDES: GuideListItem[] = [
 ];
 
 /**
+ * Healthcare / Dental / Medical Clinic Guides
+ */
+const HEALTHCARE_GUIDES: GuideListItem[] = [
+  {
+    slug: 'sop-healthcare',
+    title: 'Quy trình SOP Y tế',
+    subtitle: 'SOP · Chuẩn vận hành Y tế',
+    icon: '📋',
+    description: 'Quy trình tiếp đón bệnh nhân, khám lâm sàng, chỉ định thủ thuật, ký hợp đồng và lưu hồ sơ bệnh án.',
+  },
+  {
+    slug: 'doctor-nurse',
+    title: 'Sổ tay Bác sĩ & Y sĩ',
+    subtitle: 'Doctor · Lâm sàng & Chuyên môn',
+    icon: '🩺',
+    description: 'Hướng dẫn khám lâm sàng, cập nhật Odontogram/Hồ sơ răng, kê phác đồ điều trị và chỉ định kỹ thuật.',
+  },
+  {
+    slug: 'reception-healthcare',
+    title: 'Sổ tay Lễ tân & Tiếp đón',
+    subtitle: 'Reception · Tiếp đón & Hợp đồng',
+    icon: '🏥',
+    description: 'Quy trình đặt lịch khám, check-in bệnh nhân, quản lý hợp đồng nha khoa/y tế và hỗ trợ tư vấn.',
+  },
+  {
+    slug: 'hr-healthcare',
+    title: 'Sổ tay Nhân sự Y tế',
+    subtitle: 'HR · Quản lý Y bác sĩ',
+    icon: '👥',
+    description: 'Tuyển dụng Bác sĩ, Y sĩ, Điều dưỡng, chấm công ca trực và tính hoa hồng / thâm niên y tế.',
+  },
+  {
+    slug: 'accountant-healthcare',
+    title: 'Sổ tay Kế toán Phòng khám',
+    subtitle: 'Accountant · Tài chính Y tế',
+    icon: '💰',
+    description: 'Quản lý thu chi dịch vụ nha khoa/y tế, đối soát hợp đồng điều trị, nguyên vật liệu y tế và doanh thu.',
+  },
+  {
+    slug: 'admin-healthcare',
+    title: 'Sổ tay Quản trị Phòng khám',
+    subtitle: 'Admin · Cấu hình Y tế',
+    icon: '👑',
+    description: 'Quản lý danh mục dịch vụ y tế, cấu hình phân quyền bác sĩ, bảo mật dữ liệu bệnh nhân.',
+  },
+];
+
+/**
  * Get guides for a specific module
  */
 export function getModuleGuides(moduleKey: TenantModuleKey | null | undefined): GuideListItem[] {
+  if (moduleKey === 'bella_healthcare') {
+    return HEALTHCARE_GUIDES;
+  }
+
   if (moduleKey === 'real_estate') {
     return REAL_ESTATE_GUIDES;
   }
@@ -202,6 +254,7 @@ export function getModuleGuides(moduleKey: TenantModuleKey | null | undefined): 
 }
 
 export const ALL_GUIDES: GuideListItem[] = [
+  ...HEALTHCARE_GUIDES,
   ...BABYCARE_GUIDES,
   ...BEAUTY_SPA_GUIDES,
   ...CLEANING_GUIDES,

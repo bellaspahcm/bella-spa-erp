@@ -108,7 +108,7 @@ export default function HqBillingTab() {
           Hóa đơn Tổng bộ HQ & Phí Nhượng quyền
         </h3>
         <p className="text-sm text-muted-foreground font-medium mt-1">
-          Theo dõi các hóa đơn phát sinh, quản lý thỏa thuận phí nhượng quyền thương mại (royalty fee) định kỳ với Tổng bộ Bella Spa HQ.
+          Theo dõi các hóa đơn phát sinh, quản lý thỏa thuận phí nhượng quyền thương mại (royalty fee) định kỳ với Tổng bộ Bella HQ.
         </p>
       </div>
 

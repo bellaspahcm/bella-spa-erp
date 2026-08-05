@@ -22,8 +22,8 @@ export default function HealthcareLayout({
     bootstrapHealthcareKernel();
   }, []);
   return (
-    <div data-hc-layout="true" className="hc-layout-root flex-1 w-full min-h-full bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
-      <main className="w-full">
+    <div data-hc-layout="true" className="hc-layout-root flex-1 w-full min-h-screen bg-slate-50/60 dark:bg-slate-950 transition-colors duration-300">
+      <main className="w-full min-h-screen bg-slate-50/60 dark:bg-slate-950">
         {children}
       </main>
     </div>

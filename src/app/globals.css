@@ -2319,8 +2319,8 @@ html[data-tenant-module="beauty_spa"] .bg-background\/30 {
   background: transparent !important;
 }
 
-html[data-tenant-module="beauty_spa"] main h1,
-html[data-tenant-module="beauty_spa"] main h2 {
+html[data-tenant-module="beauty_spa"] main h1:not(.text-white):not([class*="text-white"]):not([class*="text-slate-50"]):not([class*="text-slate-100"]):not([class*="text-emerald-"]):not([class*="text-teal-"]),
+html[data-tenant-module="beauty_spa"] main h2:not(.text-white):not([class*="text-white"]):not([class*="text-slate-50"]):not([class*="text-slate-100"]):not([class*="text-emerald-"]):not([class*="text-teal-"]) {
   color: var(--beauty-sap);
   font-family: var(--font-serif), "Playfair Display", Georgia, serif;
   font-weight: 500;

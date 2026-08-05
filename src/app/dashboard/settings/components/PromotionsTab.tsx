@@ -41,19 +41,23 @@ export default function PromotionsTab() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-        <PromotionForm
-          form={form}
-          isSubmitting={isSubmitting}
-          onChange={updateForm}
-          onSubmit={handleSubmit}
-        />
-        <PromotionList
-          promotions={promotions}
-          actionId={actionId}
-          onToggleActive={handleToggleActive}
-          onDelete={handleDelete}
-        />
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className="lg:col-span-5 xl:col-span-5">
+          <PromotionForm
+            form={form}
+            isSubmitting={isSubmitting}
+            onChange={updateForm}
+            onSubmit={handleSubmit}
+          />
+        </div>
+        <div className="lg:col-span-7 xl:col-span-7">
+          <PromotionList
+            promotions={promotions}
+            actionId={actionId}
+            onToggleActive={handleToggleActive}
+            onDelete={handleDelete}
+          />
+        </div>
       </div>
     </div>
   );

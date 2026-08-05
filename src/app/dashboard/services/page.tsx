@@ -108,7 +108,13 @@ export default function ServicesPage() {
     refreshData,
   } = useServicesPageState();
 
-  const resourceTypeLabels = {
+  const resourceTypeLabels = enabledModules.bella_healthcare ? {
+    chair: 'Ghế nha khoa',
+    room: 'Phòng phẫu thuật',
+    machine: 'Máy X-Quang 3D / CT',
+    bed: 'Giường nằm hồi sức',
+    other: 'Thiết bị khác',
+  } : {
     bed: 'Giường',
     room: 'Phòng',
     machine: 'Máy',
@@ -121,7 +127,12 @@ export default function ServicesPage() {
     maintenance: 'Bảo trì',
     inactive: 'Ngưng dùng',
   };
-  const serviceKindLabels = {
+  const serviceKindLabels = enabledModules.bella_healthcare ? {
+    single_service: 'Dịch vụ khám / Thủ thuật',
+    treatment_package: 'Liệu trình / Phác đồ điều trị',
+    retail_product: 'Vật tư / Dược phẩm y tế',
+    consultation: 'Tư vấn & Chụp X-Quang 3D',
+  } : {
     single_service: 'Dịch vụ lẻ',
     treatment_package: 'Liệu trình / gói buổi',
     retail_product: 'Sản phẩm bán lẻ',
@@ -136,6 +147,9 @@ export default function ServicesPage() {
       : []),
     ...(enabledModules.industrial_cleaning
       ? [{ value: 'industrial_cleaning', label: 'Industrial Cleaning' }]
+      : []),
+    ...(enabledModules.bella_healthcare
+      ? [{ value: 'bella_healthcare', label: 'Bella Healthcare & Nha khoa' }]
       : []),
   ];
   const canManageServices = hasLoadedTenantModules && enabledModuleOptions.length > 0;
@@ -155,15 +169,6 @@ export default function ServicesPage() {
           <p className="text-slate-500 font-medium mt-1">Thiết lập bảng giá và các chương trình ưu đãi</p>
         </div>
         <div className="bella-toolbar flex flex-col gap-3 sm:flex-row">
-          {hasLoadedTenantModules && (enabledModules.babycare || enabledModules.industrial_cleaning || enabledModules.beauty_spa) && (
-            <button
-              onClick={syncDefaultPackages}
-              title="Đồng bộ các gói dịch vụ mặc định của ngành kinh doanh thành các bản nháp trong ERP"
-              className="flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 font-bold text-slate-700 transition-all hover:bg-slate-50 active:scale-95 sm:px-6"
-            >
-              <span>Đồng bộ gói mặc định</span>
-            </button>
-          )}
           <button 
             onClick={openAddModal}
             disabled={!canManageServices}
@@ -209,8 +214,9 @@ export default function ServicesPage() {
                 { value: 'babycare', label: 'Bella Mother & Baby', icon: <CheckCircle2 className="h-4 w-4 text-emerald-500" /> },
                 { value: 'beauty_spa', label: 'Beauty Spa', icon: <Sparkles className="h-4 w-4 text-fuchsia-500" /> },
                 { value: 'industrial_cleaning', label: 'Industrial Cleaning', icon: <Zap className="h-4 w-4 text-cyan-500" /> },
+                { value: 'bella_healthcare', label: 'Bella Healthcare & Nha khoa', icon: <CheckCircle2 className="h-4 w-4 text-teal-500" /> },
               ]}
-              onChange={(val) => setModuleFilter(val as 'all' | 'babycare' | 'beauty_spa' | 'industrial_cleaning')}
+              onChange={(val) => setModuleFilter(val as 'all' | 'babycare' | 'beauty_spa' | 'industrial_cleaning' | 'bella_healthcare')}
               placeholder="Lọc module..."
             />
           </div>
@@ -225,9 +231,13 @@ export default function ServicesPage() {
                 <Database className="h-5 w-5" />
               </div>
               <div>
-                <h2 className="text-lg font-black text-slate-900">Tài nguyên đặt lịch Beauty Spa</h2>
+                <h2 className="text-lg font-black text-slate-900">
+                  {enabledModules.bella_healthcare ? 'Tài nguyên Y tế & Phòng khám' : 'Tài nguyên đặt lịch Beauty Spa'}
+                </h2>
                 <p className="text-sm font-semibold text-slate-500">
-                  Quản lý giường, phòng, máy hoặc ghế dùng khi triển khai lịch hẹn Beauty Spa.
+                  {enabledModules.bella_healthcare
+                    ? 'Quản lý ghế nha khoa, máy X-Quang 3D, phòng phẫu thuật và thiết bị lâm sàng.'
+                    : 'Quản lý giường, phòng, máy hoặc ghế dùng khi triển khai lịch hẹn Beauty Spa.'}
                 </p>
               </div>
             </div>
@@ -335,7 +345,9 @@ export default function ServicesPage() {
                   {bookingResources.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="px-5 py-10 text-center text-xs font-bold italic text-slate-400">
-                        Chưa có giường/phòng/máy nào. Thêm tài nguyên đầu tiên để chuẩn bị pilot Beauty Spa.
+                        {enabledModules.bella_healthcare
+                          ? 'Chưa có ghế nha khoa / máy X-Quang nào. Thêm tài nguyên đầu tiên để phục vụ phòng khám.'
+                          : 'Chưa có giường/phòng/máy nào. Thêm tài nguyên đầu tiên để chuẩn bị pilot Beauty Spa.'}
                       </td>
                     </tr>
                   ) : bookingResources.map((resource) => (
@@ -449,6 +461,11 @@ export default function ServicesPage() {
                     {service.module_key === 'beauty_spa' && (
                       <span className="rounded-full border border-fuchsia-100 bg-fuchsia-50 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-fuchsia-600">
                         Beauty Spa
+                      </span>
+                    )}
+                    {service.module_key === 'bella_healthcare' && (
+                      <span className="rounded-full border border-teal-100 bg-teal-50 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-teal-600">
+                        Y Tế & Nha Khoa
                       </span>
                     )}
                   </div>
@@ -651,7 +668,7 @@ export default function ServicesPage() {
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         className="w-full px-6 py-4 bg-slate-50 dark:bg-white/10 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500" 
-                        placeholder="VD: Mẹ Bầu Toàn Diện" 
+                        placeholder={enabledModules.bella_healthcare ? "VD: Cấy ghép Implant răng (#36)" : "VD: Mẹ Bầu Toàn Diện"} 
                       />
                     </div>
                     <div className="space-y-2">
@@ -677,7 +694,11 @@ export default function ServicesPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-black text-slate-700 ml-1">Số {vocab.workUnit.plural.toLowerCase()} trong {vocab.package.singular.toLowerCase()}</label>
+                      <label className="text-sm font-black text-slate-700 ml-1">
+                        {enabledModules.bella_healthcare
+                          ? 'Số lượt khám trong phác đồ'
+                          : `Số ${vocab.workUnit.plural.toLowerCase()} trong ${vocab.package.singular.toLowerCase()}`}
+                      </label>
                       <input 
                         type="number" 
                         required
@@ -691,7 +712,11 @@ export default function ServicesPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-black text-slate-700 ml-1">Hoa hồng {vocab.worker.short} (VNĐ/{vocab.workUnit.singular.toLowerCase()})</label>
+                      <label className="text-sm font-black text-slate-700 ml-1">
+                        {enabledModules.bella_healthcare
+                          ? 'Hoa hồng Bác sĩ / Y sĩ (VNĐ/lượt khám)'
+                          : `Hoa hồng ${vocab.worker.short} (VNĐ/${vocab.workUnit.singular.toLowerCase()})`}
+                      </label>
                       <input 
                         type="text" 
                         required
@@ -699,6 +724,16 @@ export default function ServicesPage() {
                         onChange={(e) => setKtvCommission(formatMoneyInput(e.target.value))}
                         className="w-full px-6 py-4 bg-slate-50 dark:bg-white/10 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500" 
                         placeholder="VD: 150,000" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-black text-slate-700 dark:text-slate-200 ml-1">Chương trình Ưu đãi & Bảo hành</label>
+                      <input 
+                        type="text" 
+                        value={offer}
+                        onChange={(e) => setOffer(e.target.value)}
+                        className="w-full px-6 py-4 bg-slate-50 dark:bg-white/10 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500" 
+                        placeholder={enabledModules.bella_healthcare ? "VD: Bảo hành trụ Implant trọn đời" : "VD: Ưu đãi giảm 20%"} 
                       />
                     </div>
                   </div>
@@ -711,23 +746,29 @@ export default function ServicesPage() {
                       onChange={(e) => setDetails(e.target.value)}
                       className="w-full px-6 py-4 bg-slate-50 dark:bg-white/10 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500" 
                       placeholder={
-                        vocab.worker.short === 'NVS' 
-                          ? 'VD: Vệ sinh sàn nhà, Lau kính, Dọn toilet' 
-                          : 'VD: Massage body, Chăm sóc da mặt, Xông hơi'
+                        enabledModules.bella_healthcare
+                          ? 'VD: Khám & Chụp CT ConeBeam 3D, Cắm trụ Implant, Gắn Abutment'
+                          : vocab.worker.short === 'NVS' 
+                            ? 'VD: Vệ sinh sàn nhà, Lau kính, Dọn toilet' 
+                            : 'VD: Massage body, Chăm sóc da mặt, Xông hơi'
                       } 
                     />
                   </div>
 
-                  {isBeautySpaEnabled && (
-                    <div className="space-y-4 rounded-2xl border border-fuchsia-100 bg-gradient-to-br from-fuchsia-50/60 to-rose-50/50 p-4 sm:p-6">
+                  {(isBeautySpaEnabled || enabledModules.bella_healthcare) && (
+                    <div className="space-y-4 rounded-2xl border border-teal-100 bg-gradient-to-br from-teal-50/60 to-cyan-50/50 p-4 sm:p-6 dark:border-teal-900/40 dark:from-teal-950/30 dark:to-cyan-950/20">
                       <div className="flex items-start gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-primary shadow-sm">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white dark:bg-slate-900 text-teal-600 shadow-sm">
                           <Sparkles className="h-5 w-5" />
                         </div>
                         <div>
-                          <h4 className="text-sm font-black text-slate-900">Cấu hình Beauty Spa</h4>
-                          <p className="mt-0.5 text-[11px] font-semibold leading-relaxed text-slate-500">
-                            Chỉ dùng cho dịch vụ beauty. Gói Bella Mother & Baby giữ cấu hình mặc định.
+                          <h4 className="text-sm font-black text-slate-900 dark:text-white">
+                            {enabledModules.bella_healthcare ? 'Cấu hình Y tế & Nha Khoa' : 'Cấu hình Dịch vụ Nâng cao'}
+                          </h4>
+                          <p className="mt-0.5 text-[11px] font-semibold leading-relaxed text-slate-500 dark:text-slate-400">
+                            {enabledModules.bella_healthcare 
+                              ? 'Thiết lập nhóm lâm sàng, loại dịch vụ khám & tài nguyên phòng khám.'
+                              : 'Chỉ dùng cho dịch vụ mở rộng.'}
                           </p>
                         </div>
                       </div>
@@ -771,7 +812,7 @@ export default function ServicesPage() {
                             value={serviceCategory}
                             onChange={(event) => setServiceCategory(event.target.value)}
                             className="w-full rounded-2xl border-none bg-white px-5 py-4 text-sm font-bold text-slate-700 outline-none transition focus:ring-4 focus:ring-primary/10"
-                            placeholder="VD: facial, body, laser"
+                            placeholder={enabledModules.bella_healthcare ? "VD: implant, invisalign, dental, porcelain, nhổ răng" : "VD: facial, body, laser"}
                           />
                         </div>
 
@@ -794,27 +835,27 @@ export default function ServicesPage() {
                         <div className="rounded-2xl bg-white p-4">
                           <div className="flex items-center justify-between gap-4">
                             <div>
-                              <p className="text-sm font-black text-slate-800">Cần giường/phòng/máy</p>
-                              <p className="mt-1 text-xs font-bold text-slate-500">Dùng khi lên lịch Beauty Spa sau này.</p>
+                              <p className="text-sm font-black text-slate-800">{enabledModules.bella_healthcare ? 'Cần ghế nha / thiết bị khám' : 'Cần giường/phòng/máy'}</p>
+                              <p className="mt-1 text-xs font-bold text-slate-500">{enabledModules.bella_healthcare ? 'Dùng khi phân bổ ghế nha khoa & máy X-Quang 3D.' : 'Dùng khi lên lịch Spa sau này.'}</p>
                             </div>
                             <button
                               type="button"
                               onClick={() => setRequiresResource(!requiresResource)}
-                              disabled={moduleKey !== 'beauty_spa'}
+                              disabled={!(moduleKey === 'beauty_spa' || moduleKey === 'bella_healthcare')}
                               className={cn(
                                 'relative inline-flex h-6 w-11 shrink-0 rounded-full transition disabled:opacity-40',
-                                requiresResource && moduleKey === 'beauty_spa' ? 'bg-primary' : 'bg-slate-300',
+                                requiresResource && (moduleKey === 'beauty_spa' || moduleKey === 'bella_healthcare') ? 'bg-primary' : 'bg-slate-300',
                               )}
                             >
                               <span
                                 className={cn(
                                   'inline-block h-5 w-5 translate-y-0.5 rounded-full bg-white shadow transition',
-                                  requiresResource && moduleKey === 'beauty_spa' ? 'translate-x-5' : 'translate-x-0.5',
+                                  requiresResource && (moduleKey === 'beauty_spa' || moduleKey === 'bella_healthcare') ? 'translate-x-5' : 'translate-x-0.5',
                                 )}
                               />
                             </button>
                           </div>
-                          {requiresResource && moduleKey === 'beauty_spa' && (
+                          {requiresResource && (moduleKey === 'beauty_spa' || moduleKey === 'bella_healthcare') && (
                             <div className="mt-3">
                               <PremiumSelect
                                 value={defaultResourceType}
@@ -829,22 +870,22 @@ export default function ServicesPage() {
                         <div className="rounded-2xl bg-white p-4">
                           <div className="flex items-center justify-between gap-4">
                             <div>
-                              <p className="text-sm font-black text-slate-800">Cần ảnh trước/sau</p>
-                              <p className="mt-1 text-xs font-bold text-slate-500">Đánh dấu dịch vụ cần theo dõi kết quả.</p>
+                              <p className="text-sm font-black text-slate-800">Cần ảnh trước/sau & Phim X-Quang</p>
+                              <p className="mt-1 text-xs font-bold text-slate-500">{enabledModules.bella_healthcare ? 'Theo dõi kết quả ảnh răng & phim X-Quang.' : 'Đánh dấu dịch vụ cần theo dõi kết quả.'}</p>
                             </div>
                             <button
                               type="button"
                               onClick={() => setBeforeAfterRequired(!beforeAfterRequired)}
-                              disabled={moduleKey !== 'beauty_spa'}
+                              disabled={!(moduleKey === 'beauty_spa' || moduleKey === 'bella_healthcare')}
                               className={cn(
                                 'relative inline-flex h-6 w-11 shrink-0 rounded-full transition disabled:opacity-40',
-                                beforeAfterRequired && moduleKey === 'beauty_spa' ? 'bg-primary' : 'bg-slate-300',
+                                beforeAfterRequired && (moduleKey === 'beauty_spa' || moduleKey === 'bella_healthcare') ? 'bg-primary' : 'bg-slate-300',
                               )}
                             >
                               <span
                                 className={cn(
                                   'inline-block h-5 w-5 translate-y-0.5 rounded-full bg-white shadow transition',
-                                  beforeAfterRequired && moduleKey === 'beauty_spa' ? 'translate-x-5' : 'translate-x-0.5',
+                                  beforeAfterRequired && (moduleKey === 'beauty_spa' || moduleKey === 'bella_healthcare') ? 'translate-x-5' : 'translate-x-0.5',
                                 )}
                               />
                             </button>
@@ -854,13 +895,13 @@ export default function ServicesPage() {
 
                       <div className="space-y-2">
                         <label className="ml-1 text-xs font-black uppercase tracking-widest text-slate-600">
-                          Mẫu ghi chú chăm sóc
+                          {enabledModules.bella_healthcare ? 'Mẫu ghi chú bệnh án / Phác đồ điều trị' : 'Mẫu ghi chú chăm sóc'}
                         </label>
                         <textarea
                           value={careNoteTemplate}
                           onChange={(event) => setCareNoteTemplate(event.target.value)}
                           className="h-20 w-full resize-none rounded-2xl border-none bg-white px-5 py-4 text-sm font-bold text-slate-700 outline-none transition focus:ring-4 focus:ring-primary/10"
-                          placeholder="VD: Tình trạng da, phản ứng sau buổi, lưu ý lần hẹn tiếp theo..."
+                          placeholder={enabledModules.bella_healthcare ? 'VD: Tình trạng răng miệng, phim X-Quang CBCT, chỉ định thuốc & lưu ý sau phẫu thuật...' : 'VD: Tình trạng da, phản ứng sau buổi, lưu ý lần hẹn tiếp theo...'}
                         />
                       </div>
                     </div>
@@ -870,9 +911,11 @@ export default function ServicesPage() {
                     <div className="min-w-0">
                       <span className="text-sm font-black text-slate-700 dark:text-white block">Kích hoạt {vocab.package.singular.toLowerCase()}</span>
                       <span className="text-xs text-slate-500 dark:text-slate-400 font-bold">
-                        {vocab.worker.short === 'NVS' 
-                          ? 'Kích hoạt để hiển thị gói dịch vụ này trong danh sách'
-                          : 'Kích hoạt để gói hiển thị trực tiếp trên trang chủ Landing Page'
+                        {enabledModules.bella_healthcare
+                          ? 'Kích hoạt để hiển thị dịch vụ trong danh mục khám bệnh & đăng ký hẹn'
+                          : vocab.worker.short === 'NVS' 
+                            ? 'Kích hoạt để hiển thị gói dịch vụ này trong danh sách'
+                            : 'Kích hoạt để gói hiển thị trực tiếp trên trang chủ Landing Page'
                         }
                       </span>
                     </div>

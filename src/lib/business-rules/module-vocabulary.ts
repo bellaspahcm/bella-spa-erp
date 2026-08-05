@@ -226,10 +226,53 @@ const REAL_ESTATE_VOCABULARY: ModuleVocabulary = {
 };
 
 /**
+ * Vocabulary for Healthcare / Dental domain
+ */
+const HEALTHCARE_VOCABULARY: ModuleVocabulary = {
+  worker: {
+    singular: 'Bác sĩ / Y sĩ',
+    plural: 'Bác sĩ & Y sĩ',
+    short: 'Bác sĩ',
+    role: 'Bác sĩ',
+  },
+  workUnit: {
+    singular: 'Lượt khám',
+    plural: 'Các lượt khám',
+    action: 'Khám & Điều trị',
+  },
+  service: {
+    singular: 'Dịch vụ Y tế / Nha khoa',
+    plural: 'Dịch vụ Y tế / Nha khoa',
+  },
+  booking: {
+    singular: 'Lịch hẹn khám',
+    plural: 'Lịch hẹn khám',
+    action: 'Đặt lịch khám',
+  },
+  package: {
+    singular: 'Gói trị liệu / Phác đồ',
+    plural: 'Gói trị liệu / Phác đồ',
+  },
+  customer: {
+    singular: 'Bệnh nhân',
+    plural: 'Bệnh nhân',
+    context: 'bệnh nhân nha khoa',
+  },
+  serviceHistory: {
+    label: 'Lịch sử điều trị lâm sàng',
+    emptyState: 'Chưa có thông tin điều trị lâm sàng',
+  },
+};
+
+/**
  * Get vocabulary for a specific module
  * Returns neutral vocabulary when moduleKey is null/undefined (before tenant data loads)
  */
 export function getModuleVocabulary(moduleKey: TenantModuleKey | null | undefined): ModuleVocabulary {
+  if (moduleKey === 'bella_healthcare') {
+    return HEALTHCARE_VOCABULARY;
+  }
+
   if (moduleKey === 'industrial_cleaning') {
     return CLEANING_VOCABULARY;
   }

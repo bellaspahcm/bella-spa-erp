@@ -17,7 +17,7 @@ export function PromotionList({
   onDelete,
 }: PromotionListProps) {
   return (
-    <div className="xl:col-span-2 space-y-6">
+    <div className="w-full space-y-6">
       <h3 className="text-lg font-black text-slate-800">
         Danh sách chương trình ({promotions.length})
       </h3>

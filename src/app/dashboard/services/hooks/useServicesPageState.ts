@@ -99,6 +99,44 @@ const createDefaultPackages = (moduleKey: ServiceModuleKey): PackageActionInput[
     ];
   }
 
+  if (moduleKey === 'bella_healthcare') {
+    return [
+      {
+        name: 'Cấy ghép Implant răng (#36 / Nobel Biocare)',
+        price: 24000000,
+        duration: '120 phút/buổi',
+        total_sessions: 4,
+        details: ['Khám tư vấn & Chụp phim CT ConeBeam 3D', 'Cắm trụ Implant Thụy Sĩ Nobel Biocare', 'Gắn khớp nối Abutment & Lấy dấu răng', 'Phục hình mão sứ Zirconia cao cấp'],
+        offer: 'Bảo hành trụ Implant trọn đời',
+        ktv_commission: 500000,
+        status: 'active',
+        module_key: 'bella_healthcare',
+      },
+      {
+        name: 'Chỉnh nha niềng răng mặt trong (Invisalign)',
+        price: 85000000,
+        duration: '60 phút/buổi',
+        total_sessions: 18,
+        details: ['Quét mẫu răng 3D iTero Element 5D', 'Lập phác đồ điều trị ClinCheck 3D', 'Giao khay niềng trong suốt Invisalign chính hãng', 'Tái khám định kỳ & Siết khay theo lộ trình'],
+        offer: 'Tặng kèm bộ hàm duy trì & Máy tăm nước V300',
+        ktv_commission: 1000000,
+        status: 'active',
+        module_key: 'bella_healthcare',
+      },
+      {
+        name: 'Điều trị nha khoa tổng quát & Bọc sứ',
+        price: 15000000,
+        duration: '90 phút/buổi',
+        total_sessions: 3,
+        details: ['Cạo vôi răng & Đánh bóng chuẩn Y khoa', 'Tẩy trắng răng công nghệ Laser Whitening', 'Mài cùi răng & Bọc mão sứ Cercon HT'],
+        offer: 'Giảm 20% khi mua gói combo gia đình',
+        ktv_commission: 300000,
+        status: 'active',
+        module_key: 'bella_healthcare',
+      },
+    ];
+  }
+
   if (moduleKey === 'beauty_spa') {
     return [
       {
@@ -337,7 +375,7 @@ export function useServicesPageState() {
     try {
       const tenant = await getTenantSettings();
       const modules = normalizeEnabledModules(tenant?.enabled_modules);
-      const beautySpaEnabled = modules.beauty_spa;
+      const beautySpaEnabled = modules.beauty_spa || modules.bella_healthcare;
       const defaultModuleKey = getDefaultTenantModuleKey(modules);
       setEnabledModules(modules);
       setIsBeautySpaEnabled(beautySpaEnabled);
@@ -421,6 +459,7 @@ export function useServicesPageState() {
       status: service.status === 'active' ? 'active' : 'inactive',
       moduleKey: service.module_key === 'beauty_spa' ? 'beauty_spa'
         : service.module_key === 'industrial_cleaning' ? 'industrial_cleaning'
+        : service.module_key === 'bella_healthcare' ? 'bella_healthcare'
         : 'babycare',
       serviceKind: (
         service.service_kind === 'single_service'
@@ -573,6 +612,7 @@ export function useServicesPageState() {
   const syncDefaultPackages = async () => {
     const activeModule = enabledModules.industrial_cleaning ? 'industrial_cleaning'
       : enabledModules.beauty_spa ? 'beauty_spa'
+      : enabledModules.bella_healthcare ? 'bella_healthcare'
       : enabledModules.babycare ? 'babycare'
       : null;
 
@@ -699,6 +739,7 @@ export function useServicesPageState() {
       const normalizedModuleKey = (
         service.module_key === 'beauty_spa' ? 'beauty_spa'
         : service.module_key === 'industrial_cleaning' ? 'industrial_cleaning'
+        : service.module_key === 'bella_healthcare' ? 'bella_healthcare'
         : 'babycare'
       );
       const matchesEnabledModule = enabledModules[normalizedModuleKey];

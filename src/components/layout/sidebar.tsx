@@ -442,6 +442,7 @@ const bellaHealthcareMenuItems: SidebarMenuItem[] = [
   { icon: CircleDollarSign, label: 'Dòng Tiền & Thu Chi',        href: '/dashboard/finance' },
   { icon: Wallet,          label: 'Sổ Cái Kế Toán',             href: '/dashboard/accounting' },
   { icon: HelpCircle,      label: 'Hướng dẫn sử dụng',          href: '/dashboard/guides' },
+  { icon: Sliders,         label: 'Cấu hình Dịch vụ',            href: '/dashboard/services' },
   { icon: Settings,        label: 'Cài Đặt Hệ Thống',           href: '/dashboard/settings' },
 ];
 

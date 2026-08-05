@@ -34,6 +34,12 @@ export default function OdontogramPage() {
     toast.success('🎉 Đã lưu lược đồ răng nha khoa vào bệnh án thành công');
   };
 
+  const handleResetOdontogram = () => {
+    setToothData({});
+    setSelectedTooth(null);
+    toast.info('🎉 Đã đưa sơ đồ 32 răng về trạng thái mặc định ban đầu');
+  };
+
   return (
     <div className="p-6 w-full space-y-6">
       {/* Header */}
@@ -86,6 +92,7 @@ export default function OdontogramPage() {
         selectedTooth={selectedTooth}
         onSelectTooth={setSelectedTooth}
         onUpdateToothStatus={handleUpdateStatus}
+        onResetOdontogram={handleResetOdontogram}
       />
 
       {/* Pathology History Panel */}
