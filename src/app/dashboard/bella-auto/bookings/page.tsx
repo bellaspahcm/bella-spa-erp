@@ -46,13 +46,14 @@ export default async function BookingsPage() {
           </p>
         </div>
         
-        <a
-          href="/dashboard/bella-auto/bookings/new"
-          className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
+        <button
+          disabled
+          className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-semibold cursor-not-allowed opacity-60"
+          title="Tính năng đang phát triển"
         >
           <Plus className="w-5 h-5" />
-          Tạo Booking Mới
-        </a>
+          Tạo Booking Mới (Coming Soon)
+        </button>
       </div>
 
       {/* Stats */}

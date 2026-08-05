@@ -16,10 +16,10 @@ DECLARE
   v_variant_id UUID;
 BEGIN
   -- Get tenant
-  SELECT id INTO v_tenant_id FROM public.tenants WHERE name = 'Bella Auto' LIMIT 1;
+  SELECT id INTO v_tenant_id FROM public.tenants WHERE name = 'bella_auto_stress' LIMIT 1;
   
   IF v_tenant_id IS NULL THEN
-    RAISE EXCEPTION 'Tenant "Bella Auto" not found. Run seed-bella-auto-tenant.sql first.';
+    RAISE EXCEPTION 'Tenant "bella_auto_stress" not found. Please create tenant first.';
   END IF;
 
   RAISE NOTICE 'Using tenant: %', v_tenant_id;
@@ -30,16 +30,15 @@ BEGIN
   
   INSERT INTO public.customers (id, tenant_id, phone, name_mother, address, status)
   VALUES 
-    (gen_random_uuid(), v_tenant_id, '0901234567', 'Nguyễn Văn A', '123 Đường ABC, Quận 1, TP.HCM', 'active'),
-    (gen_random_uuid(), v_tenant_id, '0902345678', 'Trần Thị B', '456 Đường DEF, Quận 3, TP.HCM', 'active'),
-    (gen_random_uuid(), v_tenant_id, '0903456789', 'Lê Văn C', '789 Đường GHI, Quận 7, TP.HCM', 'active')
-  ON CONFLICT (phone) DO NOTHING
-  RETURNING id INTO v_customer_id_1;
+    (gen_random_uuid(), v_tenant_id, '0911111111', 'Nguyễn Văn A', '123 Đường ABC, Quận 1, TP.HCM', 'active'),
+    (gen_random_uuid(), v_tenant_id, '0922222222', 'Trần Thị B', '456 Đường DEF, Quận 3, TP.HCM', 'active'),
+    (gen_random_uuid(), v_tenant_id, '0933333333', 'Lê Văn C', '789 Đường GHI, Quận 7, TP.HCM', 'active')
+  ON CONFLICT (phone) DO NOTHING;
 
-  -- Get customer IDs if already exist
-  SELECT id INTO v_customer_id_1 FROM public.customers WHERE phone = '0901234567' AND tenant_id = v_tenant_id;
-  SELECT id INTO v_customer_id_2 FROM public.customers WHERE phone = '0902345678' AND tenant_id = v_tenant_id;
-  SELECT id INTO v_customer_id_3 FROM public.customers WHERE phone = '0903456789' AND tenant_id = v_tenant_id;
+  -- Get customer IDs (use tenant_id filter to ensure uniqueness)
+  SELECT id INTO v_customer_id_1 FROM public.customers WHERE phone = '0911111111' AND tenant_id = v_tenant_id LIMIT 1;
+  SELECT id INTO v_customer_id_2 FROM public.customers WHERE phone = '0922222222' AND tenant_id = v_tenant_id LIMIT 1;
+  SELECT id INTO v_customer_id_3 FROM public.customers WHERE phone = '0933333333' AND tenant_id = v_tenant_id LIMIT 1;
 
   RAISE NOTICE 'Customer IDs: %, %, %', v_customer_id_1, v_customer_id_2, v_customer_id_3;
 
@@ -48,13 +47,13 @@ BEGIN
   -- ══════════════════════════════════════════════════════════════════════════
   
   SELECT id INTO v_vehicle_id_1 FROM public.auto_vehicles 
-  WHERE tenant_id = v_tenant_id AND vin = 'AN20260803000000001' LIMIT 1;
+  WHERE tenant_id = v_tenant_id AND vin = 'AN202608000000001' LIMIT 1;
   
   SELECT id INTO v_vehicle_id_2 FROM public.auto_vehicles 
-  WHERE tenant_id = v_tenant_id AND vin = 'AN20260803000000002' LIMIT 1;
+  WHERE tenant_id = v_tenant_id AND vin = 'AN202608000000002' LIMIT 1;
   
   SELECT id INTO v_vehicle_id_3 FROM public.auto_vehicles 
-  WHERE tenant_id = v_tenant_id AND vin = 'AN20260803000000003' LIMIT 1;
+  WHERE tenant_id = v_tenant_id AND vin = 'AN202608000000003' LIMIT 1;
 
   IF v_vehicle_id_1 IS NULL THEN
     RAISE EXCEPTION 'Vehicles not found. Run seed-bella-auto-vehicles.sql first.';
@@ -217,7 +216,7 @@ DECLARE
   v_tenant_id UUID;
   v_count INTEGER;
 BEGIN
-  SELECT id INTO v_tenant_id FROM public.tenants WHERE name = 'Bella Auto' LIMIT 1;
+  SELECT id INTO v_tenant_id FROM public.tenants WHERE name = 'bella_auto_stress' LIMIT 1;
   
   SELECT COUNT(*) INTO v_count FROM public.auto_bookings WHERE tenant_id = v_tenant_id;
   RAISE NOTICE '📊 Total bookings: %', v_count;
