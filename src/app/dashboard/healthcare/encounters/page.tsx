@@ -24,7 +24,7 @@ export default function EncountersPage() {
 
   // Form states
   const [patientName, setPatientName] = useState('Nguyễn Văn Hùng');
-  const [doctorName, setDoctorName] = useState('BS. Lê Minh');
+  const [doctorName, setDoctorName] = useState('Lê Minh');
   const [status, setStatus] = useState<'planned' | 'arrived' | 'in_progress' | 'finished'>('planned');
   const [chiefComplaint, setChiefComplaint] = useState('');
   const [queueNumber, setQueueNumber] = useState('104');
@@ -34,7 +34,7 @@ export default function EncountersPage() {
     {
       id: 'enc-01',
       patientName: 'Nguyễn Văn Hùng',
-      doctorName: 'BS. Lê Minh',
+      doctorName: 'Lê Minh',
       status: 'in_progress',
       chiefComplaint: 'Đau răng hàm trái',
       queueNumber: 102,
@@ -42,7 +42,7 @@ export default function EncountersPage() {
     {
       id: 'enc-02',
       patientName: 'Lê Thị Mai',
-      doctorName: 'BS. Trần Thảo',
+      doctorName: 'Trần Thảo',
       status: 'arrived',
       chiefComplaint: 'Tái khám bọc sứ',
       queueNumber: 103,
@@ -50,7 +50,7 @@ export default function EncountersPage() {
     {
       id: 'enc-03',
       patientName: 'Trần Minh Hoàng',
-      doctorName: 'BS. Lê Minh',
+      doctorName: 'Lê Minh',
       status: 'planned',
       chiefComplaint: 'Nhổ răng khôn #38',
       scheduledAt: '2026-08-05T14:30',
@@ -64,8 +64,8 @@ export default function EncountersPage() {
   ];
 
   const doctorOptions = [
-    { value: 'BS. Lê Minh', label: 'BS. Lê Minh (Nha sĩ Trưởng)' },
-    { value: 'BS. Trần Thảo', label: 'BS. Trần Thảo (Chuyên gia phục hình)' },
+    { value: 'Lê Minh', label: 'Lê Minh (Nha sĩ Trưởng)' },
+    { value: 'Trần Thảo', label: 'Trần Thảo (Chuyên gia phục hình)' },
   ];
 
   const statusOptions = [

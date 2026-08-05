@@ -65,7 +65,7 @@ export default function EncounterDetailPage() {
     id: encounterId,
     patientName: 'Nguyễn Văn Hùng',
     patientId: 'pat-01',
-    doctorName: 'BS. Lê Minh',
+    doctorName: 'Lê Minh',
     doctorId: 'doc-01',
     status: 'in_progress',
     chiefComplaint: 'Đau răng hàm trái, sưng nướu',

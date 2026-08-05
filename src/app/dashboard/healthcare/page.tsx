@@ -83,7 +83,7 @@ export default function HealthcareDashboardPage() {
         {
           id: 'enc-01',
           patientName: 'Nguyễn Văn Hùng',
-          doctorName: 'BS. Lê Minh',
+          doctorName: 'Lê Minh',
           status: 'in_progress',
           chiefComplaint: 'Đau răng hàm trái',
           queueNumber: 102,
@@ -91,7 +91,7 @@ export default function HealthcareDashboardPage() {
         {
           id: 'enc-02',
           patientName: 'Lê Thị Mai',
-          doctorName: 'BS. Trần Thảo',
+          doctorName: 'Trần Thảo',
           status: 'arrived',
           chiefComplaint: 'Tái khám bọc sứ',
           queueNumber: 103,
@@ -99,7 +99,7 @@ export default function HealthcareDashboardPage() {
         {
           id: 'enc-03',
           patientName: 'Trần Minh Hoàng',
-          doctorName: 'BS. Lê Minh',
+          doctorName: 'Lê Minh',
           status: 'planned',
           chiefComplaint: 'Nhổ răng khôn #38',
           scheduledAt: '2026-08-05T14:30:00Z',

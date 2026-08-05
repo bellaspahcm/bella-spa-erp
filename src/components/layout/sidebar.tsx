@@ -432,10 +432,10 @@ const bellaHealthcareMenuItems: SidebarMenuItem[] = [
   { icon: FileText,        label: 'Kế hoạch & Hợp đồng',         href: '/dashboard/healthcare/contracts' },
   { icon: Smile,           label: 'Lược đồ răng',                href: '/dashboard/healthcare/odontogram' },
 
-  { type: 'header', label: 'Báo cáo & Phân tích' },
-  { icon: LineChart,       label: 'Trung tâm Phân tích',         href: '/dashboard/analytics' },
-  { icon: BarChart3,       label: 'Bảng quản trị CEO',           href: '/dashboard/executive' },
-  { icon: Activity,        label: 'Hiệu suất Vận hành',          href: '/dashboard/operations' },
+  { type: 'header', label: 'Báo cáo Nha khoa' },
+  { icon: BarChart3,       label: 'Báo cáo Lâm sàng',            href: '/dashboard/healthcare/reports/clinical' },
+  { icon: LineChart,       label: 'Phân tích Doanh thu',         href: '/dashboard/healthcare/reports/revenue' },
+  { icon: Activity,        label: 'Thống kê Điều trị',           href: '/dashboard/healthcare/reports/treatment' },
 
   { type: 'header', label: 'Tài chính & Hệ thống' },
   { icon: Banknote,        label: 'Bảng lương & Công',           href: '/dashboard/salary' },
