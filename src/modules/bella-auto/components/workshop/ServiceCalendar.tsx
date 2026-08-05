@@ -170,6 +170,7 @@ export function ServiceCalendar({
   const handleToday = () => {
     const today = new Date();
     setCurrentDate(today);
+    setViewMode('day');
     onDateChange?.(today);
   };
 
