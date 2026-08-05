@@ -642,30 +642,37 @@ interface MetricCardProps {
 
 function MetricCard({ title, value, suffix, icon, trend, color }: MetricCardProps) {
   const colorClasses = {
-    cyan: 'bg-gradient-to-br from-cyan-50/40 to-cyan-100/10 dark:from-cyan-950/20 dark:to-cyan-900/10 border-cyan-100/80 dark:border-cyan-900/30 text-cyan-600 dark:text-cyan-400 hover:shadow-cyan-100/20 dark:hover:shadow-none',
-    amber: 'bg-gradient-to-br from-amber-50/40 to-amber-100/10 dark:from-amber-950/20 dark:to-amber-900/10 border-amber-100/80 dark:border-amber-900/30 text-amber-600 dark:text-amber-400 hover:shadow-amber-100/20 dark:hover:shadow-none',
-    slate: 'bg-gradient-to-br from-slate-50/40 to-slate-100/10 dark:from-slate-900/30 dark:to-slate-850/15 border-slate-100/80 dark:border-slate-800/50 text-slate-600 dark:text-slate-300 hover:shadow-slate-100/20 dark:hover:shadow-none',
-    emerald: 'bg-gradient-to-br from-emerald-50/40 to-emerald-100/10 dark:from-emerald-950/20 dark:to-emerald-900/10 border-emerald-100/80 dark:border-emerald-900/30 text-emerald-600 dark:text-emerald-400 hover:shadow-emerald-100/20 dark:hover:shadow-none',
+    cyan: 'bg-gradient-to-br from-cyan-50/70 to-cyan-100/20 dark:from-cyan-950/30 dark:to-cyan-900/15 border-cyan-300/80 dark:border-cyan-800/60 shadow-[0_4px_20px_rgba(6,182,212,0.12),0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-[0_12px_28px_rgba(6,182,212,0.22)]',
+    amber: 'bg-gradient-to-br from-amber-50/70 to-amber-100/20 dark:from-amber-950/30 dark:to-amber-900/15 border-amber-300/80 dark:border-amber-800/60 shadow-[0_4px_20px_rgba(245,158,11,0.12),0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-[0_12px_28px_rgba(245,158,11,0.22)]',
+    slate: 'bg-gradient-to-br from-slate-50/70 to-slate-100/20 dark:from-slate-900/40 dark:to-slate-850/20 border-slate-300/80 dark:border-slate-700/60 shadow-[0_4px_20px_rgba(15,23,42,0.08),0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-[0_12px_28px_rgba(15,23,42,0.15)]',
+    emerald: 'bg-gradient-to-br from-emerald-50/70 to-emerald-100/20 dark:from-emerald-950/30 dark:to-emerald-900/15 border-emerald-300/80 dark:border-emerald-800/60 shadow-[0_4px_20px_rgba(16,185,129,0.12),0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-[0_12px_28px_rgba(16,185,129,0.22)]',
+  };
+
+  const iconColorClasses = {
+    cyan: 'text-cyan-600 dark:text-cyan-400 bg-white/90 dark:bg-slate-950/70 border-cyan-200/60 dark:border-cyan-900/40',
+    amber: 'text-amber-600 dark:text-amber-400 bg-white/90 dark:bg-slate-950/70 border-amber-200/60 dark:border-amber-900/40',
+    slate: 'text-slate-600 dark:text-slate-400 bg-white/90 dark:bg-slate-950/70 border-slate-200/60 dark:border-slate-800/40',
+    emerald: 'text-emerald-600 dark:text-emerald-400 bg-white/90 dark:bg-slate-950/70 border-emerald-200/60 dark:border-emerald-900/40',
   };
 
   return (
-    <div className={`p-6 rounded-2xl border shadow-[0_2px_8px_rgba(0,0,0,0.01)] transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 ${colorClasses[color]}`}>
+    <div className={`p-6 rounded-3xl border transition-all duration-300 hover:-translate-y-1 ${colorClasses[color]}`}>
       <div className="flex items-center justify-between mb-3">
-        <p className="text-[11px] font-bold uppercase tracking-wider opacity-70">{title}</p>
-        <div className="p-2 rounded-xl bg-white/80 dark:bg-slate-950/60 shadow-sm border border-slate-100/30 dark:border-slate-800/20">
+        <p className="text-[11px] font-extrabold uppercase tracking-wider opacity-80">{title}</p>
+        <div className={`p-2.5 rounded-2xl shadow-xs border ${iconColorClasses[color]}`}>
           {icon}
         </div>
       </div>
       <div className="flex items-baseline gap-1.5">
-        <p className="text-3xl font-extrabold tracking-tight">{value}</p>
-        <span className="text-xs font-semibold opacity-60">{suffix}</span>
+        <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">{value}</p>
+        <span className="text-xs font-bold text-slate-500 dark:text-slate-400">{suffix}</span>
       </div>
       {trend && (
-        <div className="flex items-center gap-1.5 mt-3.5 pt-3 border-t border-slate-100/40 dark:border-slate-850/40">
-          <div className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-lg text-[10px] font-extrabold ${
-            trend.isPositive 
-              ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400' 
-              : 'bg-rose-50 text-rose-600 dark:bg-rose-950/30 dark:text-rose-400'
+        <div className="flex items-center gap-1.5 mt-3.5 pt-3 border-t border-slate-200/60 dark:border-slate-850/60">
+          <div className={`flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[11px] font-extrabold ${
+            trend.isPositive
+              ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-900/40'
+              : 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-200/60 dark:border-rose-900/40'
           }`}>
             {trend.isPositive ? (
               <TrendingUp className="w-3 h-3 shrink-0" />
@@ -674,7 +681,7 @@ function MetricCard({ title, value, suffix, icon, trend, color }: MetricCardProp
             )}
             {trend.value}%
           </div>
-          <span className="text-[10px] opacity-50 font-medium">so với tháng trước</span>
+          <span className="text-[10px] text-slate-400 font-semibold">so với tháng trước</span>
         </div>
       )}
     </div>
@@ -692,10 +699,10 @@ interface ChartCardProps {
 
 function ChartCard({ title, subtitle, icon, children, extra }: ChartCardProps) {
   return (
-    <div className="p-6 rounded-2xl bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-850/80 shadow-[0_2px_8px_rgba(0,0,0,0.015)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.035)] dark:hover:shadow-[0_8px_32px_rgba(0,0,0,0.25)] transition-all duration-300">
+    <div className="p-6 rounded-3xl bg-white dark:bg-slate-950 border border-slate-200/90 dark:border-slate-800/90 shadow-[0_6px_24px_rgba(15,23,42,0.07),0_1px_3px_rgba(15,23,42,0.03)] dark:shadow-[0_6px_24px_rgba(0,0,0,0.4)] hover:shadow-[0_16px_36px_rgba(15,23,42,0.12)] dark:hover:shadow-[0_16px_36px_rgba(0,0,0,0.6)] transition-all duration-300">
       <div className="flex items-center justify-between gap-4 mb-4">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800/50 text-cyan-600 dark:text-cyan-400 shadow-sm shrink-0">
+          <div className="p-2.5 rounded-2xl bg-cyan-50/80 dark:bg-cyan-950/40 border border-cyan-200/60 dark:border-cyan-900/40 text-cyan-600 dark:text-cyan-400 shadow-xs shrink-0">
             {icon}
           </div>
           <div className="min-w-0">

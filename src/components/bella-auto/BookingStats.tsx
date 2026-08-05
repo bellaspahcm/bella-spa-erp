@@ -143,44 +143,44 @@ interface StatCardProps {
 
 function StatCard({ icon, label, value, suffix, color, alert }: StatCardProps) {
   const colorClasses = {
-    blue: 'from-cyan-50 to-blue-50 dark:from-cyan-950/30 dark:to-blue-950/20 border-cyan-200 dark:border-cyan-900/50',
-    red: 'from-red-50 to-rose-50 dark:from-red-950/30 dark:to-rose-950/20 border-red-200 dark:border-red-900/50',
-    yellow: 'from-amber-50 to-yellow-50 dark:from-amber-950/30 dark:to-yellow-950/20 border-amber-200 dark:border-amber-900/50',
-    green: 'from-emerald-50 to-green-50 dark:from-emerald-950/30 dark:to-green-950/20 border-emerald-200 dark:border-emerald-900/50',
+    blue: 'from-cyan-50/90 to-blue-50/60 dark:from-cyan-950/40 dark:to-blue-950/30 border-cyan-300/80 dark:border-cyan-800/60 shadow-[0_4px_20px_rgba(6,182,212,0.12),0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.4)] hover:shadow-[0_12px_28px_rgba(6,182,212,0.22)]',
+    red: 'from-red-50/90 to-rose-50/60 dark:from-red-950/40 dark:to-rose-950/30 border-rose-300/80 dark:border-rose-800/60 shadow-[0_4px_20px_rgba(244,63,94,0.12),0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.4)] hover:shadow-[0_12px_28px_rgba(244,63,94,0.22)]',
+    yellow: 'from-amber-50/90 to-yellow-50/60 dark:from-amber-950/40 dark:to-yellow-950/30 border-amber-300/80 dark:border-amber-800/60 shadow-[0_4px_20px_rgba(245,158,11,0.12),0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.4)] hover:shadow-[0_12px_28px_rgba(245,158,11,0.22)]',
+    green: 'from-emerald-50/90 to-green-50/60 dark:from-emerald-950/40 dark:to-green-950/30 border-emerald-300/80 dark:border-emerald-800/60 shadow-[0_4px_20px_rgba(16,185,129,0.12),0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.4)] hover:shadow-[0_12px_28px_rgba(16,185,129,0.22)]',
   };
 
   const iconColorClasses = {
-    blue: 'text-cyan-600 dark:text-cyan-400',
-    red: 'text-red-600 dark:text-red-400',
-    yellow: 'text-amber-600 dark:text-amber-400',
-    green: 'text-emerald-600 dark:text-emerald-400',
+    blue: 'text-cyan-600 dark:text-cyan-400 bg-white/90 dark:bg-slate-950/70 border-cyan-200/60 dark:border-cyan-900/40',
+    red: 'text-red-600 dark:text-red-400 bg-white/90 dark:bg-slate-950/70 border-red-200/60 dark:border-red-900/40',
+    yellow: 'text-amber-600 dark:text-amber-400 bg-white/90 dark:bg-slate-950/70 border-amber-200/60 dark:border-amber-900/40',
+    green: 'text-emerald-600 dark:text-emerald-400 bg-white/90 dark:bg-slate-950/70 border-emerald-200/60 dark:border-emerald-900/40',
   };
 
   return (
     <div 
-      className={`relative p-5 rounded-2xl bg-gradient-to-br border shadow-sm ${colorClasses[color]} ${
+      className={`relative p-5 rounded-3xl bg-gradient-to-br border transition-all duration-300 hover:-translate-y-1 ${colorClasses[color]} ${
         alert ? 'ring-2 ring-red-400 dark:ring-red-600 animate-pulse' : ''
       }`}
     >
       <div className="flex items-center justify-between mb-3">
-        <div className={`p-2 rounded-xl bg-white/80 dark:bg-slate-950/60 ${iconColorClasses[color]}`}>
+        <div className={`p-2.5 rounded-2xl shadow-xs border ${iconColorClasses[color]}`}>
           {icon}
         </div>
         {alert && (
-          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300">
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-black bg-red-100/90 text-red-700 dark:bg-red-950/60 dark:text-red-300 border border-red-200 dark:border-red-900/40 shadow-xs">
             Cần xử lý
           </span>
         )}
       </div>
-      <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+      <p className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
         {label}
       </p>
       <div className="flex items-baseline gap-1">
-        <p className="text-2xl font-extrabold text-slate-900 dark:text-white">
+        <p className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
           {value}
         </p>
         {suffix && (
-          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+          <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
             {suffix}
           </span>
         )}
