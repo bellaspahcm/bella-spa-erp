@@ -10,15 +10,20 @@ export const dynamic = 'force-dynamic';
 
 export default async function BellaAutoPage() {
   try {
+    console.log('[BellaAutoPage] Starting render...');
     const supabase = await createClient();
 
+    console.log('[BellaAutoPage] Getting user...');
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
     if (!user) {
+      console.log('[BellaAutoPage] No user, redirecting to login');
       redirect('/login');
     }
+
+    console.log('[BellaAutoPage] User authenticated:', user.id);
 
   // Get tenant and user profile
   const { data: profile } = await supabase

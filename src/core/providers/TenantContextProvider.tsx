@@ -71,7 +71,24 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
 
         // 1. If 401 Unauthorized, redirect to login page gracefully
         if (response.status === 401) {
-          console.warn('[TenantContextProvider] User not authenticated, redirecting to login');
+          console.warn('[TenantContextProvider] User not authenticated');
+          
+          // In development, use dev fallback context instead of redirecting
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('[TenantContextProvider] Dev mode: Using fallback tenant context');
+            setContext({
+              tenantId: 'dev-tenant',
+              tenantName: 'Bella Land (Dev)',
+              enabledModules: ['real_estate', 'beauty_spa', 'cleaning'],
+              subscriptionPlan: 'enterprise',
+              featureFlags: {},
+              settings: {},
+            });
+            setLoading(false);
+            return;
+          }
+          
+          // Production: redirect to login
           window.location.href = '/login';
           return;
         }

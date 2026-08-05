@@ -345,6 +345,138 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ---
 
+## 14. TenantContextProvider White Screen Debug (NEW - 05/08/2026)
+
+### 14.1. Development Environment NODE_ENV Requirement
+- **ALWAYS set NODE_ENV=development when running dev server** to activate dev fallbacks
+- **Issue symptom**: White screen on localhost:3000, no error messages, browser console shows TenantContextProvider logs but no content renders
+- **Root cause**: `process.env.NODE_ENV` is undefined or not 'development' → Dev fallbacks don't activate → 401 from `/api/tenant/context` → Redirect logic fails → White screen stuck
+
+### 14.2. Dev Fallback Context for 401 Unauthorized
+- **MANDATORY dev fallback pattern** in TenantContextProvider:
+  ```typescript
+  if (response.status === 401) {
+    console.warn('[TenantContextProvider] User not authenticated');
+    
+    // In development, use dev fallback context instead of redirecting
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('[TenantContextProvider] Dev mode: Using fallback tenant context');
+      setContext({
+        tenantId: 'dev-tenant',
+        tenantName: 'Bella Land (Dev)',
+        enabledModules: ['real_estate', 'beauty_spa', 'cleaning'],
+        subscriptionPlan: 'enterprise',
+        featureFlags: {},
+        settings: {},
+      });
+      setLoading(false);  // ✅ CRITICAL: Must set loading=false
+      return;
+    }
+    
+    // Production: redirect to login
+    window.location.href = '/login';
+    return;
+  }
+  ```
+- **Why setLoading(false) is critical**: Without it, loading spinner shows infinitely even after context is set
+
+### 14.3. Port Conflict and Stale Dev Server Processes
+- **ALWAYS check for stale dev server processes** before starting new one
+- **Symptoms**: "Port 3000 is in use by process [PID]", new server starts on port 3001 instead
+- **Fix**: Kill old processes before starting dev server:
+  ```powershell
+  Get-Process -Name node | Stop-Process -Force
+  npm run dev
+  ```
+- **Prevention**: Use process monitoring or VS Code tasks to ensure clean server restarts
+
+### 14.4. Large Supabase Auth Cookie Size
+- **Issue**: Supabase session token stored in cookie `sb-[project]-auth-token-base64` can exceed 4KB
+- **Impact**: Large cookies can cause slow server-side auth.getUser() calls → SSR delay → White screen during hydration
+- **Mitigation**: This is expected Supabase behavior; white screen should resolve after initial auth check completes
+- **Don't confuse with**: NODE_ENV issue (white screen persists indefinitely vs temporary SSR delay)
+
+### 14.5. Module-Specific Dashboard Redirects
+- **Pattern**: Main `/dashboard` page redirects to module-specific dashboard based on `tenantModuleKey`
+  ```typescript
+  useEffect(() => {
+    if (tenantModuleKey === 'bella_auto') {
+      router.replace('/dashboard/bella-auto');
+    }
+  }, [tenantModuleKey, router]);
+  ```
+- **Loading skeleton during redirect**: Show neutral skeleton instead of `null` to prevent white screen flash:
+  ```typescript
+  if (tenantModuleKey === 'bella_auto') {
+    return <div className="animate-pulse">...</div>;  // ✅ GOOD
+    // return null;  // ❌ BAD: Causes white screen
+  }
+  ```
+
+### 14.6. Server Component vs Client Component Loading States
+- **Server Components** (bella-auto/page.tsx): Show suspense fallbacks during data fetch
+- **Client Components** (dashboard/page.tsx): Show loading skeletons during useEffect data fetch
+- **White screen occurs when**: No loading state shown during async operations
+
+### 14.7. Debugging Checklist for White Screen Issues
+When user reports white screen on localhost:
+1. **Check NODE_ENV**: `$env:NODE_ENV` in PowerShell → Should be 'development'
+2. **Check browser console**: F12 → Console → Look for `[TenantContextProvider]` logs
+3. **Check Network tab**: F12 → Network → Filter 'tenant' → Check `/api/tenant/context` response (200 vs 401)
+4. **Check cookies**: F12 → Application → Cookies → Check `sb-[project]-auth-token-base64` exists
+5. **Check URL**: Is browser stuck on `/dashboard` or redirected to module-specific route?
+6. **Check port conflicts**: Terminal shows "Port 3000 is in use" → Kill old processes
+7. **Check React DevTools**: Components tab → Is TenantContextProvider mounted? What's its state?
+
+### 14.8. Quick Fix Commands
+```powershell
+# 1. Kill all node processes
+Get-Process -Name node | Stop-Process -Force
+
+# 2. Set NODE_ENV and start dev server
+$env:NODE_ENV = "development"
+npm run dev
+
+# 3. In browser: Hard refresh
+# Ctrl+Shift+R (Windows) or Cmd+Shift+R (Mac)
+```
+
+### 14.9. Prevention Best Practices
+- **Always set NODE_ENV** in dev scripts or IDE launch configurations
+- **Add dev fallback context** to ALL context providers that depend on API auth
+- **Show loading skeletons** during all async operations (don't return null)
+- **Log context provider state changes** in development mode for debugging
+- **Test with clean browser state** (incognito mode) to catch auth-dependent white screens
+
+**Real-world incident (05/08/2026):**
+- **Issue**: White screen on localhost:3000 after checkout/branch switch
+- **Symptoms**: 
+  - Browser shows blank white page with "Rendering" text only
+  - Console logs show TenantContextProvider loading but no errors
+  - Network tab shows `/api/tenant/context` returns 401 Unauthorized
+  - No redirect to login page occurs
+- **Root causes**:
+  1. NODE_ENV not set → `process.env.NODE_ENV === undefined`
+  2. Dev fallback check `if (process.env.NODE_ENV === 'development')` fails
+  3. 401 triggers redirect logic but redirect doesn't execute
+  4. React stuck in loading state with no context
+- **Resolution**:
+  1. Updated TenantContextProvider to use dev fallback for 401 in development
+  2. Added `setLoading(false)` after setting fallback context
+  3. Set `$env:NODE_ENV = "development"` before running dev server
+  4. Killed stale node processes on port 3000
+  5. Hard refresh browser (Ctrl+Shift+R)
+- **Time lost**: ~20 minutes debugging white screen
+- **Lesson**: Always set NODE_ENV=development when running dev server. Dev fallbacks MUST set loading=false. Kill stale processes before restart.
+
+---ink (Baby Care) colors instead of green/teal (Beauty Spa)
+- Root cause: API parsed JSONB wrong + missing CSS overrides for hardcoded Tailwind classes
+- **Resolution:** Fixed API parsing, added 150+ lines of CSS overrides for all rose/pink shades
+- **Time lost:** ~4 hours debugging and fixing colors across entire app
+- **Lesson:** Always follow `MODULE_THEME_COLOR_OVERRIDE_GUIDE.md` when adding new module. Time saved: 3.5 hours.
+
+---
+
 ## 13. Module Theme Color Mapping and CSS Isolation (NEW - 04/08/2026)
 
 ### 13.1. Primary Color to Preset Mapping in Runtime Theme Application
