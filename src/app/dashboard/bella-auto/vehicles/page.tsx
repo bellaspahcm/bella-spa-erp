@@ -391,7 +391,7 @@ export default function VehicleInventoryPage() {
   // Loading state
   if (isLoading) {
     return (
-      <div className="flex-1 overflow-auto bg-slate-50/30 dark:bg-slate-950 p-6 md:p-10">
+      <div className="flex-1 overflow-auto bg-slate-50 dark:bg-slate-950 p-6 md:p-10">
         <div className="flex items-center justify-center h-96">
           <div className="text-center space-y-4">
             <div className="w-10 h-10 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto" />
@@ -403,7 +403,7 @@ export default function VehicleInventoryPage() {
   }
 
   return (
-    <div className="flex-1 overflow-auto bg-slate-50/30 dark:bg-slate-950 p-6 md:p-10 space-y-8" data-auto-layout>
+    <div className="flex-1 overflow-auto bg-slate-50 dark:bg-slate-950 p-6 md:p-10 space-y-8" data-auto-layout>
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 border-b border-slate-100 dark:border-slate-900 pb-6">
         <div className="flex items-center gap-4">

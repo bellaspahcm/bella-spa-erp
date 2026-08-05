@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase-client';
 import { Search, User, Car, CheckCircle } from 'lucide-react';
+import { toast } from 'sonner';
 
 type FilterType = 'all' | 'unpaid' | 'partial' | 'full';
 
@@ -15,13 +16,18 @@ interface Booking {
   status: string;
   created_at: string;
   customers: {
-    full_name: string;
+    name_mother: string;
     phone: string;
   };
   auto_vehicles: {
     vin: string;
-    model: string;
     color_exterior: string;
+    auto_variants: {
+      name: string;
+      auto_models: {
+        name: string;
+      };
+    };
   } | null;
 }
 
@@ -47,8 +53,15 @@ export function BookingListTable({ tenantId }: { tenantId: string }) {
           payment_status,
           status,
           created_at,
-          customers (full_name, phone),
-          auto_vehicles (vin, model, color_exterior)
+          customers (name_mother, phone),
+          auto_vehicles!inner (
+            vin,
+            color_exterior,
+            auto_variants!inner (
+              name,
+              auto_models!inner (name)
+            )
+          )
         `)
         .eq('tenant_id', tenantId)
         .order('created_at', { ascending: false });
@@ -84,6 +97,11 @@ export function BookingListTable({ tenantId }: { tenantId: string }) {
       setBookings(finalBookings as Booking[]);
     } catch (error) {
       console.error('Load bookings error:', error);
+      console.error('Error details:', {
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      toast.error('Không thể tải danh sách booking. Vui lòng thử lại.');
     } finally {
       setLoading(false);
     }
@@ -98,7 +116,7 @@ export function BookingListTable({ tenantId }: { tenantId: string }) {
     const amount = prompt(
       `Nhập số tiền cọc khách đã thanh toán:\n\n` +
       `Booking: ${booking.booking_number}\n` +
-      `Khách hàng: ${booking.customers.full_name}\n` +
+      `Khách hàng: ${booking.customers.name_mother}\n` +
       `Đã cọc: ${formatCurrency(booking.deposit_paid)}\n` +
       `Còn thiếu: ${formatCurrency(booking.deposit_amount - booking.deposit_paid)}\n\n` +
       `Số tiền (VNĐ):`,
@@ -145,7 +163,7 @@ export function BookingListTable({ tenantId }: { tenantId: string }) {
     const term = searchTerm.toLowerCase();
     return (
       b.booking_number.toLowerCase().includes(term) ||
-      b.customers.full_name.toLowerCase().includes(term) ||
+      b.customers.name_mother.toLowerCase().includes(term) ||
       b.customers.phone.includes(term) ||
       (b.auto_vehicles?.vin || '').toLowerCase().includes(term)
     );
@@ -270,7 +288,7 @@ export function BookingListTable({ tenantId }: { tenantId: string }) {
                     <div className="flex items-center gap-2">
                       <User className="w-4 h-4 text-slate-400" />
                       <div>
-                        <div className="font-semibold text-sm">{booking.customers.full_name}</div>
+                        <div className="font-semibold text-sm">{booking.customers.name_mother}</div>
                         <div className="text-xs text-slate-500">{booking.customers.phone}</div>
                       </div>
                     </div>
@@ -280,7 +298,9 @@ export function BookingListTable({ tenantId }: { tenantId: string }) {
                       <div className="flex items-center gap-2">
                         <Car className="w-4 h-4 text-slate-400" />
                         <div>
-                          <div className="font-semibold text-sm">{booking.auto_vehicles.model}</div>
+                          <div className="font-semibold text-sm">
+                            {booking.auto_vehicles.auto_variants.auto_models.name} {booking.auto_vehicles.auto_variants.name}
+                          </div>
                           <div className="text-xs text-slate-500">
                             VIN: {booking.auto_vehicles.vin} • {booking.auto_vehicles.color_exterior}
                           </div>

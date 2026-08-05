@@ -33,7 +33,7 @@ export default async function BookingsPage() {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="flex-1 overflow-auto bg-slate-50 dark:bg-slate-950 space-y-6 p-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
