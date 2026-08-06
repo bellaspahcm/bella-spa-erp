@@ -99,6 +99,24 @@ export default function EncountersPage() {
     assessment: '',
   });
 
+  // Active modal states for quick action buttons
+  const [activePrintEncounter, setActivePrintEncounter] = useState<EncounterRecord | null>(null);
+  const [activeCLSEncounter, setActiveCLSEncounter] = useState<EncounterRecord | null>(null);
+  const [activePrescriptionEncounter, setActivePrescriptionEncounter] = useState<EncounterRecord | null>(null);
+  const [activeFollowUpEncounter, setActiveFollowUpEncounter] = useState<EncounterRecord | null>(null);
+
+  // CLS selection state
+  const [selectedClsItems, setSelectedClsItems] = useState<string[]>(['Công thức máu (CBC)', 'Chụp X-quang ngực thẳng (PACS)']);
+  // Prescription state
+  const [selectedMeds, setSelectedMeds] = useState<string[]>(['Augmentin 1g (Amoxicillin/Clavulanate)', 'Paracetamol 500mg']);
+  // Follow up state
+  const [followUpDate, setFollowUpDate] = useState<string>(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 7);
+    return d.toISOString().split('T')[0];
+  });
+  const [followUpNote, setFollowUpNote] = useState<string>('Tái khám đánh giá tiến triển lâm sàng và đọc kết quả xét nghiệm');
+
   const handleCreateEncounterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newEnc.patientName.trim() || !newEnc.chiefComplaint.trim()) {
