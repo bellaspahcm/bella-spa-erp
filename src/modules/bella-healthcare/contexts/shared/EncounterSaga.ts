@@ -22,7 +22,7 @@ export class EncounterSaga {
 
     switch (eventName) {
       case 'Scheduling.Appointment.Created.v1':
-        this.activeSagas.set(aggregateId, { patientId: (event.payload as any).patientId, step: 'scheduled' });
+        this.activeSagas.set(aggregateId, { patientId: (event.payload as Record<string, unknown>).patientId as string, step: 'scheduled' });
         console.log(`[Saga] Started EncounterSaga for ${aggregateId} - Allocated Chair & Prepped Room`);
         break;
 

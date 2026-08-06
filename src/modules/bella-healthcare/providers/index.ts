@@ -1,5 +1,5 @@
 import type { PlatformContext } from '@/platform';
-import type { KnowledgeEntry, KnowledgeDomain } from '@/platform/knowledge';
+import type { KnowledgeEntry } from '@/platform/knowledge';
 import { healthcareKnowledgeEngine } from '../kernel/knowledge-engine';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -14,8 +14,8 @@ export interface RuleCheckResult {
 }
 
 export interface KnowledgeProvider {
-  search(query: string, context: PlatformContext): Promise<KnowledgeEntry[]>;
-  verifyRules(facts: Record<string, unknown>, context: PlatformContext): Promise<RuleCheckResult>;
+  search(query: string, _context: PlatformContext): Promise<KnowledgeEntry[]>;
+  verifyRules(facts: Record<string, unknown>, _context: PlatformContext): Promise<RuleCheckResult>;
 }
 
 export interface PolicyViolation {
@@ -29,12 +29,12 @@ export interface PolicyResult {
 }
 
 export interface PolicyProvider {
-  evaluate(policyCode: string, input: Record<string, unknown>, context: PlatformContext): Promise<PolicyResult>;
+  evaluate(policyCode: string, input: Record<string, unknown>, _context: PlatformContext): Promise<PolicyResult>;
 }
 
 export interface WorkflowProvider {
-  startInstance(definitionId: string, journeyId: string, context: PlatformContext): Promise<string>;
-  executeStep(instanceId: string, stepName: string, context: PlatformContext): Promise<void>;
+  startInstance(definitionId: string, journeyId: string, _context: PlatformContext): Promise<string>;
+  executeStep(instanceId: string, stepName: string, _context: PlatformContext): Promise<void>;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -42,7 +42,7 @@ export interface WorkflowProvider {
 // ═══════════════════════════════════════════════════════════════════════════
 
 export class HealthcareKnowledgeProvider implements KnowledgeProvider {
-  async search(query: string, context: PlatformContext): Promise<KnowledgeEntry[]> {
+  async search(query: string, _context: PlatformContext): Promise<KnowledgeEntry[]> {
     const results = await healthcareKnowledgeEngine.searchIcd10Diseases(
       context.tenant.id,
       query
@@ -50,7 +50,7 @@ export class HealthcareKnowledgeProvider implements KnowledgeProvider {
     return results.map((r) => r.entry);
   }
 
-  async verifyRules(facts: Record<string, unknown>, context: PlatformContext): Promise<RuleCheckResult> {
+  async verifyRules(facts: Record<string, unknown>, _context: PlatformContext): Promise<RuleCheckResult> {
     const allergies = (facts.allergies as string[]) || [];
     const prescribedDrugs = (facts.prescribed_drugs as string[]) || [];
 
@@ -69,7 +69,7 @@ export class HealthcareKnowledgeProvider implements KnowledgeProvider {
 }
 
 export class HealthcarePolicyProvider implements PolicyProvider {
-  async evaluate(policyCode: string, input: Record<string, unknown>, context: PlatformContext): Promise<PolicyResult> {
+  async evaluate(policyCode: string, input: Record<string, unknown>, _context: PlatformContext): Promise<PolicyResult> {
     // Basic evaluation logic. For production, this will invoke Platform PolicyEngine.
     const violations: PolicyViolation[] = [];
 
@@ -92,12 +92,12 @@ export class HealthcarePolicyProvider implements PolicyProvider {
 }
 
 export class HealthcareWorkflowProvider implements WorkflowProvider {
-  async startInstance(definitionId: string, journeyId: string, context: PlatformContext): Promise<string> {
+  async startInstance(definitionId: string, journeyId: string, _context: PlatformContext): Promise<string> {
     console.log(`[HealthcareWorkflowProvider] Starting workflow definition ${definitionId} for journey ${journeyId}`);
     return crypto.randomUUID();
   }
 
-  async executeStep(instanceId: string, stepName: string, context: PlatformContext): Promise<void> {
+  async executeStep(instanceId: string, stepName: string, _context: PlatformContext): Promise<void> {
     console.log(`[HealthcareWorkflowProvider] Executing workflow step ${stepName} on instance ${instanceId}`);
   }
 }

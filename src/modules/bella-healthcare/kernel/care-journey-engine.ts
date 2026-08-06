@@ -1,4 +1,4 @@
-import { journeyEngine, type Journey, type SubJourney, type JourneyMilestone, type MilestoneStatus } from '@/platform';
+import { journeyEngine, type Journey, type JourneyMilestone, type MilestoneStatus } from '@/platform';
 
 export interface StartCareJourneyInput {
   readonly patientPartyId: string;

@@ -49,8 +49,8 @@ export interface HealthcareAccountingVM {
 // Healthcare Adapter Implementation
 // ─────────────────────────────────────────────────────────────────────────────
 
-export class HealthcareFinanceAdapter implements IndustryFinanceAdapter<any, HealthcareFinanceVM> {
-  map(dto: any): HealthcareFinanceVM {
+export class HealthcareFinanceAdapter implements IndustryFinanceAdapter<Record<string, unknown>, HealthcareFinanceVM> {
+  map(dto: Record<string, unknown>): HealthcareFinanceVM {
     return {
       monthYear: dto.month || dto.month_year || '',
       treatmentRevenue: dto.totalRevenue || dto.total_revenue || 0,
@@ -61,7 +61,7 @@ export class HealthcareFinanceAdapter implements IndustryFinanceAdapter<any, Hea
     };
   }
 
-  mapTransaction(dto: any): HealthcareTransactionVM {
+  mapTransaction(dto: Record<string, unknown>): HealthcareTransactionVM {
     // Translate payment method and status labels if needed
     const methodLabels: Record<string, string> = {
       bank_transfer: 'Chuyển khoản',
@@ -81,8 +81,8 @@ export class HealthcareFinanceAdapter implements IndustryFinanceAdapter<any, Hea
   }
 }
 
-export class HealthcarePayrollAdapter implements IndustryPayrollAdapter<any, HealthcarePayrollVM> {
-  map(dto: any): HealthcarePayrollVM {
+export class HealthcarePayrollAdapter implements IndustryPayrollAdapter<Record<string, unknown>, HealthcarePayrollVM> {
+  map(dto: Record<string, unknown>): HealthcarePayrollVM {
     // Determine healthcareRole based on database role, name prefix or email pattern
     let healthcareRole: 'doctor' | 'nurse' | 'assistant' = 'assistant';
     const fullName = dto.full_name || '';
@@ -128,8 +128,8 @@ export class HealthcarePayrollAdapter implements IndustryPayrollAdapter<any, Hea
   }
 }
 
-export class HealthcareAccountingAdapter implements IndustryAccountingAdapter<any, HealthcareAccountingVM> {
-  map(dto: any): HealthcareAccountingVM {
+export class HealthcareAccountingAdapter implements IndustryAccountingAdapter<Record<string, unknown>, HealthcareAccountingVM> {
+  map(dto: Record<string, unknown>): HealthcareAccountingVM {
     // Map Platform accounting outbox events to standard healthcare events
     const eventNameMap: Record<string, string> = {
       SESSION_DONE: 'Encounter.Completed.v1',

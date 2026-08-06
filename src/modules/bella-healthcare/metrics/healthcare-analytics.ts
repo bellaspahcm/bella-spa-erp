@@ -24,7 +24,12 @@ export class HealthcareAnalytics {
   /**
    * Calculates the revenue share per Doctor based on journal entries
    */
-  static calculateDoctorRevenueShare(journalEntries: any[]): DoctorRevenueShare[] {
+  static calculateDoctorRevenueShare(journalEntries: Array<{
+    description?: string;
+    journal_lines?: Array<{
+      credit_amount?: number | string;
+    }>;
+  }>): DoctorRevenueShare[] {
     const doctorMap = new Map<string, number>();
     let totalRevenue = 0;
 
@@ -52,7 +57,7 @@ export class HealthcareAnalytics {
         // Calculate total credit amount (revenue) for this entry
         let entryRevenue = 0;
         const lines = entry.journal_lines || [];
-        lines.forEach((l: any) => {
+        lines.forEach((l) => {
           entryRevenue += Number(l.credit_amount || 0);
         });
 
@@ -79,7 +84,12 @@ export class HealthcareAnalytics {
   /**
    * Calculates the revenue breakdown by treatment category
    */
-  static calculateTreatmentCategoryRevenue(journalEntries: any[]): TreatmentCategoryShare[] {
+  static calculateTreatmentCategoryRevenue(journalEntries: Array<{
+    description?: string;
+    journal_lines?: Array<{
+      credit_amount?: number | string;
+    }>;
+  }>): TreatmentCategoryShare[] {
     const categories = [
       { category: 'Cấy ghép Implant Nobel Biocare', baseRevenue: 224000000, baseCount: 28, color: 'from-emerald-500 to-teal-500' },
       { category: 'Niềng răng trong suốt Invisalign', baseRevenue: 216000000, baseCount: 18, color: 'from-cyan-500 to-blue-500' },
@@ -104,7 +114,7 @@ export class HealthcareAnalytics {
       if (matchedCategory) {
         let entryRevenue = 0;
         const lines = entry.journal_lines || [];
-        lines.forEach((l: any) => {
+        lines.forEach((l) => {
           entryRevenue += Number(l.credit_amount || 0);
         });
 
@@ -131,7 +141,17 @@ export class HealthcareAnalytics {
   /**
    * Calculates the clinic material cost ratio
    */
-  static calculateMaterialCostRatio(expenses: any[], journalEntries: any[]): number {
+  static calculateMaterialCostRatio(
+    expenses: Array<{
+      category?: string;
+      amount?: number | string;
+    }>,
+    journalEntries: Array<{
+      journal_lines?: Array<{
+        credit_amount?: number | string;
+      }>;
+    }>
+  ): number {
     let suppliesExpense = 0;
     let totalRevenue = 0;
 
@@ -143,7 +163,7 @@ export class HealthcareAnalytics {
 
     journalEntries.forEach(entry => {
       const lines = entry.journal_lines || [];
-      lines.forEach((l: any) => {
+      lines.forEach((l) => {
         totalRevenue += Number(l.credit_amount || 0);
       });
     });

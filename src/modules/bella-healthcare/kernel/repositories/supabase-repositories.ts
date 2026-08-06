@@ -7,7 +7,7 @@ async function createClient() {
   const { createClient: createServerClient } = await import(/* webpackIgnore: true */ '../../../../lib/supabase-server');
   return createServerClient();
 }
-import type { Database } from '@/types/database.types';
+// Database type imported but not used in implementation (repositories use runtime queries)
 import type {
   IPartyRepository,
   Party,
@@ -158,20 +158,20 @@ export class SupabasePartyRepository implements IPartyRepository {
       dob: toDate(party.dob),
       gender: (party.gender as 'male' | 'female' | 'other') || undefined,
       bloodType: party.blood_type || undefined,
-      identifiers: (party.party_identifiers || []).map((i: any) => ({
+      identifiers: (party.party_identifiers || []).map((i: { identifier_type: string; identifier_value: string; issued_at: string | null; expires_at: string | null }) => ({
         type: i.identifier_type as IdentifierType,
         value: i.identifier_value,
         issuedAt: toDate(i.issued_at),
         expiresAt: toDate(i.expires_at),
       })),
-      roles: (party.party_roles || []).map((r: any) => ({
+      roles: (party.party_roles || []).map((r: { vertical: string; role_type: string; attributes: Record<string, unknown>; active_from: string | null; active_to: string | null }) => ({
         vertical: r.vertical,
         roleType: r.role_type,
         attributes: r.attributes || {},
         activeFrom: toDate(r.active_from),
         activeTo: toDate(r.active_to),
       })),
-      relationships: (party.party_relationships || []).map((rel: any) => ({
+      relationships: (party.party_relationships || []).map((rel: { target_party_id: string; relationship_type: string; attributes: Record<string, unknown>; active_from: string | null; active_to: string | null }) => ({
         targetPartyId: rel.target_party_id,
         type: rel.relationship_type,
         attributes: rel.attributes,
@@ -230,7 +230,7 @@ export class SupabasePartyRepository implements IPartyRepository {
     return list;
   }
 
-  async addRole(tenantId: string, input: AddRoleInput, actorId: string): Promise<Party> {
+  async addRole(tenantId: string, input: AddRoleInput, _actorId: string): Promise<Party> {
     const supabase = await createClient();
 
     const { error } = await supabase
@@ -252,7 +252,7 @@ export class SupabasePartyRepository implements IPartyRepository {
     return full;
   }
 
-  async addRelationship(tenantId: string, input: AddRelationshipInput, actorId: string): Promise<void> {
+  async addRelationship(tenantId: string, input: AddRelationshipInput, _actorId: string): Promise<void> {
     const supabase = await createClient();
 
     const { error } = await supabase
@@ -271,7 +271,7 @@ export class SupabasePartyRepository implements IPartyRepository {
   async update(tenantId: string, partyId: string, patch: Partial<CreatePartyInput>, expectedVersion: number, actorId: string): Promise<Party> {
     const supabase = await createClient();
 
-    const updateObj: Record<string, any> = {
+    const updateObj: Record<string, unknown> = {
       version: expectedVersion + 1,
       updated_by: actorId,
       updated_at: new Date().toISOString(),
@@ -322,7 +322,7 @@ export class SupabasePartyRepository implements IPartyRepository {
 // ═══════════════════════════════════════════════════════════════════════════
 
 export class SupabaseJourneyRepository implements IJourneyRepository {
-  async create(tenantId: string, input: CreateJourneyInput, actorId: string): Promise<Journey> {
+  async create(tenantId: string, input: CreateJourneyInput, _actorId: string): Promise<Journey> {
     const supabase = await createClient();
 
     // 1. Insert Journey
@@ -412,22 +412,45 @@ export class SupabaseJourneyRepository implements IJourneyRepository {
       completedAt: toDate(journey.completed_at),
       aiSummary: journey.ai_summary || undefined,
       metadata: journey.metadata || {},
-      subJourneys: (journey.journey_sub_journeys || []).map((sj: any) => ({
+      subJourneys: (journey.journey_sub_journeys || []).map((sj: {
+        id: string;
+        journey_id: string;
+        tenant_id: string;
+        name: string;
+        description: string | null;
+        status: string;
+        started_at: string | null;
+        completed_at: string | null;
+        version: number;
+        created_at: string;
+        journey_milestones: Array<{
+          id: string;
+          journey_id: string;
+          sub_journey_id: string | null;
+          name: string;
+          description: string | null;
+          status: string;
+          target_date: string | null;
+          completed_at: string | null;
+          ai_validation_details: Record<string, unknown>;
+          created_at: string;
+        }>;
+      }) => ({
         id: sj.id,
         journeyId: sj.journey_id,
         tenantId: sj.tenant_id,
         name: sj.name,
         description: sj.description || undefined,
-        status: sj.status as any,
+        status: sj.status as 'pending' | 'active' | 'completed' | 'cancelled',
         startedAt: toDate(sj.started_at),
         completedAt: toDate(sj.completed_at),
-        milestones: (sj.journey_milestones || []).map((ms: any) => ({
+        milestones: (sj.journey_milestones || []).map((ms) => ({
           id: ms.id,
           journeyId: ms.journey_id,
           subJourneyId: ms.sub_journey_id || undefined,
           name: ms.name,
           description: ms.description || undefined,
-          status: ms.status as any,
+          status: ms.status as 'pending' | 'in_progress' | 'completed' | 'skipped',
           targetDate: toDate(ms.target_date),
           completedAt: toDate(ms.completed_at),
           aiValidationDetails: ms.ai_validation_details || {},
@@ -473,7 +496,7 @@ export class SupabaseJourneyRepository implements IJourneyRepository {
     return list;
   }
 
-  async updateStatus(tenantId: string, journeyId: string, status: JourneyStatus, expectedVersion: number, actorId: string): Promise<Journey> {
+  async updateStatus(tenantId: string, journeyId: string, status: JourneyStatus, expectedVersion: number, _actorId: string): Promise<Journey> {
     const supabase = await createClient();
 
     const { data, error } = await supabase
@@ -527,7 +550,7 @@ export class SupabaseJourneyRepository implements IJourneyRepository {
     };
   }
 
-  async activateSubJourney(tenantId: string, subJourneyId: string, actorId: string): Promise<SubJourney> {
+  async activateSubJourney(tenantId: string, subJourneyId: string, _actorId: string): Promise<SubJourney> {
     const supabase = await createClient();
 
     const { data, error } = await supabase
@@ -557,13 +580,24 @@ export class SupabaseJourneyRepository implements IJourneyRepository {
       description: data.description || undefined,
       status: 'active',
       startedAt: toDate(data.started_at),
-      milestones: (milestones || []).map((m: any) => ({
+      milestones: (milestones || []).map((m: {
+        id: string;
+        journey_id: string;
+        sub_journey_id: string | null;
+        name: string;
+        description: string | null;
+        status: string;
+        target_date: string | null;
+        completed_at: string | null;
+        ai_validation_details: Record<string, unknown>;
+        created_at: string;
+      }) => ({
         id: m.id,
         journeyId: m.journey_id,
         subJourneyId: m.sub_journey_id || undefined,
         name: m.name,
         description: m.description || undefined,
-        status: m.status as any,
+        status: m.status as 'pending' | 'in_progress' | 'completed' | 'skipped',
         targetDate: toDate(m.target_date),
         completedAt: toDate(m.completed_at),
         aiValidationDetails: m.ai_validation_details,
@@ -574,7 +608,7 @@ export class SupabaseJourneyRepository implements IJourneyRepository {
     };
   }
 
-  async completeSubJourney(tenantId: string, subJourneyId: string, actorId: string): Promise<SubJourney> {
+  async completeSubJourney(tenantId: string, subJourneyId: string, _actorId: string): Promise<SubJourney> {
     const supabase = await createClient();
 
     const { data, error } = await supabase
@@ -604,13 +638,24 @@ export class SupabaseJourneyRepository implements IJourneyRepository {
       status: 'completed',
       startedAt: toDate(data.started_at),
       completedAt: toDate(data.completed_at),
-      milestones: (milestones || []).map((m: any) => ({
+      milestones: (milestones || []).map((m: {
+        id: string;
+        journey_id: string;
+        sub_journey_id: string | null;
+        name: string;
+        description: string | null;
+        status: string;
+        target_date: string | null;
+        completed_at: string | null;
+        ai_validation_details: Record<string, unknown>;
+        created_at: string;
+      }) => ({
         id: m.id,
         journeyId: m.journey_id,
         subJourneyId: m.sub_journey_id || undefined,
         name: m.name,
         description: m.description || undefined,
-        status: m.status as any,
+        status: m.status as 'pending' | 'in_progress' | 'completed' | 'skipped',
         targetDate: toDate(m.target_date),
         completedAt: toDate(m.completed_at),
         aiValidationDetails: m.ai_validation_details,
@@ -621,7 +666,7 @@ export class SupabaseJourneyRepository implements IJourneyRepository {
     };
   }
 
-  async updateMilestone(tenantId: string, input: UpdateMilestoneInput, actorId: string): Promise<JourneyMilestone> {
+  async updateMilestone(tenantId: string, input: UpdateMilestoneInput, _actorId: string): Promise<JourneyMilestone> {
     const supabase = await createClient();
 
     const { data, error } = await supabase
@@ -644,7 +689,7 @@ export class SupabaseJourneyRepository implements IJourneyRepository {
       subJourneyId: data.sub_journey_id || undefined,
       name: data.name,
       description: data.description || undefined,
-      status: data.status as any,
+      status: data.status as 'pending' | 'in_progress' | 'completed' | 'skipped',
       targetDate: toDate(data.target_date),
       completedAt: toDate(data.completed_at),
       aiValidationDetails: data.ai_validation_details,
@@ -666,7 +711,7 @@ export class SupabaseJourneyRepository implements IJourneyRepository {
     if (error) throw error;
   }
 
-  async softDelete(tenantId: string, journeyId: string, actorId: string): Promise<void> {
+  async softDelete(tenantId: string, journeyId: string, _actorId: string): Promise<void> {
     const supabase = await createClient();
 
     const { error } = await supabase
@@ -722,7 +767,7 @@ export class SupabaseTimelineRepository implements ITimelineRepository {
       journeyId: data.journey_id || undefined,
       correlationId: data.correlation_id,
       causationId: data.causation_id || undefined,
-      eventCategory: data.event_category as any,
+      eventCategory: data.event_category as 'clinical' | 'administrative' | 'operational' | 'financial',
       eventType: data.event_type,
       eventVersion: data.event_version,
       schemaVersion: data.schema_version,
@@ -783,7 +828,28 @@ export class SupabaseTimelineRepository implements ITimelineRepository {
 
     if (error || !data) return [];
 
-    return data.map((d: any) => ({
+    return data.map((d: {
+      id: string;
+      tenant_id: string;
+      vertical: string;
+      primary_party_id: string;
+      journey_id: string | null;
+      correlation_id: string;
+      causation_id: string | null;
+      event_category: string;
+      event_type: string;
+      event_version: number;
+      schema_version: string;
+      aggregate_id: string;
+      aggregate_type: string;
+      sequence_number: number;
+      event_hash: string;
+      summary: string;
+      ai_insight: string | null;
+      event_data: Record<string, unknown>;
+      recorded_by: string | null;
+      occurred_at: string;
+    }) => ({
       id: d.id,
       tenantId: d.tenant_id,
       vertical: d.vertical,
@@ -791,7 +857,7 @@ export class SupabaseTimelineRepository implements ITimelineRepository {
       journeyId: d.journey_id || undefined,
       correlationId: d.correlation_id,
       causationId: d.causation_id || undefined,
-      eventCategory: d.event_category as any,
+      eventCategory: d.event_category as 'clinical' | 'administrative' | 'operational' | 'financial',
       eventType: d.event_type,
       eventVersion: d.event_version,
       schemaVersion: d.schema_version,
@@ -820,7 +886,28 @@ export class SupabaseTimelineRepository implements ITimelineRepository {
 
     if (error || !data) return [];
 
-    return data.map((d: any) => ({
+    return data.map((d: {
+      id: string;
+      tenant_id: string;
+      vertical: string;
+      primary_party_id: string;
+      journey_id: string | null;
+      correlation_id: string;
+      causation_id: string | null;
+      event_category: string;
+      event_type: string;
+      event_version: number;
+      schema_version: string;
+      aggregate_id: string;
+      aggregate_type: string;
+      sequence_number: number;
+      event_hash: string;
+      summary: string;
+      ai_insight: string | null;
+      event_data: Record<string, unknown>;
+      recorded_by: string | null;
+      occurred_at: string;
+    }) => ({
       id: d.id,
       tenantId: d.tenant_id,
       vertical: d.vertical,
@@ -828,7 +915,7 @@ export class SupabaseTimelineRepository implements ITimelineRepository {
       journeyId: d.journey_id || undefined,
       correlationId: d.correlation_id,
       causationId: d.causation_id || undefined,
-      eventCategory: d.event_category as any,
+      eventCategory: d.event_category as 'clinical' | 'administrative' | 'operational' | 'financial',
       eventType: d.event_type,
       eventVersion: d.event_version,
       schemaVersion: d.schema_version,
@@ -963,7 +1050,7 @@ export class SupabaseAssetRepository implements IAssetRepository {
       .from('asset_assets')
       .update({
         status: input.status,
-        events: newEvents as any,
+        events: newEvents as Array<Record<string, unknown>>,
         version: input.expectedVersion + 1,
         updated_by: actorId,
         updated_at: new Date().toISOString(),
@@ -1018,18 +1105,41 @@ export class SupabaseAssetRepository implements IAssetRepository {
     if (error) throw error;
   }
 
-  private mapAsset(d: any): Asset {
+  private mapAsset(d: {
+    id: string;
+    tenant_id: string;
+    vertical: string;
+    asset_type: string;
+    name: string;
+    description: string | null;
+    owner_party_id: string | null;
+    status: string;
+    metadata: Record<string, unknown>;
+    events: Array<{
+      eventType: string;
+      description: string;
+      recordedBy?: string;
+      occurredAt: string;
+      metadata: Record<string, unknown>;
+    }>;
+    version: number;
+    created_at: string;
+    updated_at: string;
+    deleted_at: string | null;
+    created_by: string | null;
+    updated_by: string | null;
+  }): Asset {
     return {
       id: d.id,
       tenantId: d.tenant_id,
       vertical: d.vertical,
-      assetType: d.asset_type as any,
+      assetType: d.asset_type as 'equipment' | 'inventory' | 'facility' | 'digital',
       name: d.name,
       description: d.description || undefined,
       ownerPartyId: d.owner_party_id || undefined,
-      status: d.status as any,
+      status: d.status as 'active' | 'inactive' | 'maintenance' | 'retired',
       metadata: d.metadata || {},
-      events: (d.events || []).map((e: any) => ({
+      events: (d.events || []).map((e) => ({
         eventType: e.eventType,
         description: e.description,
         recordedBy: e.recordedBy || undefined,
@@ -1061,15 +1171,15 @@ export class SupabaseContractRepository implements IContractRepository {
         vertical: input.vertical,
         contract_type: input.contractType,
         contract_number: input.contractNumber || null,
-        parties: input.parties as any,
+        parties: input.parties as unknown[],
         journey_id: input.journeyId || null,
         status: 'draft',
         start_date: input.startDate ? input.startDate.toISOString().split('T')[0] : null,
         end_date: input.endDate ? input.endDate.toISOString().split('T')[0] : null,
         total_value: input.totalValue || null,
         currency: input.currency || 'VND',
-        payment_schedule: input.paymentSchedule as any,
-        line_items: input.lineItems as any ?? [],
+        payment_schedule: input.paymentSchedule as Record<string, unknown> | null,
+        line_items: input.lineItems as unknown[] ?? [],
         terms: input.terms ?? {},
         created_by: actorId,
         updated_by: actorId,
@@ -1204,16 +1314,39 @@ export class SupabaseContractRepository implements IContractRepository {
     return this.mapContract(data);
   }
 
-  private mapContract(d: any): Contract {
+  private mapContract(d: {
+    id: string;
+    tenant_id: string;
+    vertical: string;
+    contract_type: string;
+    contract_number: string | null;
+    parties: unknown[];
+    journey_id: string | null;
+    status: string;
+    start_date: string | null;
+    end_date: string | null;
+    total_value: number | string | null;
+    currency: string;
+    payment_schedule: Record<string, unknown> | null;
+    line_items: unknown[];
+    terms: Record<string, unknown>;
+    signed_at: string | null;
+    signed_by: string | null;
+    version: number;
+    created_at: string;
+    updated_at: string;
+    deleted_at: string | null;
+    created_by: string | null;
+  }): Contract {
     return {
       id: d.id,
       tenantId: d.tenant_id,
       vertical: d.vertical,
-      contractType: d.contract_type as any,
+      contractType: d.contract_type as 'service' | 'product' | 'subscription' | 'employment',
       contractNumber: d.contract_number || undefined,
       parties: d.parties || [],
       journeyId: d.journey_id || undefined,
-      status: d.status as any,
+      status: d.status as 'draft' | 'active' | 'completed' | 'cancelled' | 'expired',
       startDate: toDate(d.start_date),
       endDate: toDate(d.end_date),
       totalValue: d.total_value ? Number(d.total_value) : undefined,
@@ -1268,7 +1401,7 @@ export class SupabaseKnowledgeRepository implements IKnowledgeRepository {
     const supabase = await createClient();
     const queryDate = atDate || new Date();
 
-    let query = supabase
+    const query = supabase
       .from('knowledge_entries')
       .select('*')
       .eq('tenant_id', tenantId)
@@ -1282,7 +1415,7 @@ export class SupabaseKnowledgeRepository implements IKnowledgeRepository {
     if (error || !data || data.length === 0) return null;
 
     // Filter valid items in memory (where effective_to is null or greater than target date)
-    const valid = data.find((d: any) => !d.effective_to || new Date(d.effective_to) > queryDate);
+    const valid = data.find((d: { effective_to: string | null }) => !d.effective_to || new Date(d.effective_to) > queryDate);
     if (!valid) return null;
 
     return this.mapEntry(valid);
@@ -1319,11 +1452,19 @@ export class SupabaseKnowledgeRepository implements IKnowledgeRepository {
 
     if (error || !data) return [];
 
-    return data.map((d: any) => ({
+    return data.map((d: {
+      source_code: string;
+      source_type: string;
+      target_code: string;
+      target_type: string;
+      relationship_type: string;
+      strength: number | string;
+      evidence_source: string | null;
+    }) => ({
       sourceCode: d.source_code,
-      sourceType: d.source_type as any,
+      sourceType: d.source_type as KnowledgeDomain,
       targetCode: d.target_code,
-      targetType: d.target_type as any,
+      targetType: d.target_type as KnowledgeDomain,
       relationshipType: d.relationship_type,
       strength: Number(d.strength),
       evidenceSource: d.evidence_source || undefined,
@@ -1336,7 +1477,7 @@ export class SupabaseKnowledgeRepository implements IKnowledgeRepository {
     // Fallback: pgvector requires generating query embeddings and query using raw SQL.
     // In our bootstrap environment, we can fallback to standard text ILIKE lookup if vector is null
     // or perform a simple search query on postgres.
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from('knowledge_entries')
       .select('*')
       .eq('tenant_id', tenantId)
@@ -1346,7 +1487,7 @@ export class SupabaseKnowledgeRepository implements IKnowledgeRepository {
 
     if (error || !data) return [];
 
-    return data.map((d: any) => ({
+    return data.map((d: Record<string, unknown>) => ({
       entry: this.mapEntry(d),
       score: 0.95, // mock score for text search fallback
     }));
@@ -1355,7 +1496,7 @@ export class SupabaseKnowledgeRepository implements IKnowledgeRepository {
   async createInferenceRule(rule: Omit<InferenceRule, 'id' | 'createdAt'>): Promise<InferenceRule> {
     const supabase = await createClient();
 
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from('knowledge_inference_rules')
       .insert({
         tenant_id: rule.tenantId,
@@ -1363,8 +1504,8 @@ export class SupabaseKnowledgeRepository implements IKnowledgeRepository {
         code: rule.code,
         name: rule.name,
         trigger_type: rule.triggerType,
-        conditions: rule.conditions as any,
-        action: rule.action as any,
+        conditions: rule.conditions as unknown,
+        action: rule.action as unknown,
         version: rule.version,
         effective_from: rule.effectiveFrom.toISOString(),
         effective_to: rule.effectiveTo ? rule.effectiveTo.toISOString() : null,
@@ -1381,7 +1522,7 @@ export class SupabaseKnowledgeRepository implements IKnowledgeRepository {
     const supabase = await createClient();
 
     // Load active inference rules
-    const { data: rules, error } = await (supabase as any)
+    const { data: rules, error } = await supabase
       .from('knowledge_inference_rules')
       .select('*')
       .eq('tenant_id', tenantId)
@@ -1477,20 +1618,35 @@ export class SupabaseKnowledgeRepository implements IKnowledgeRepository {
     };
   }
 
-  async findOntologyTerm(vertical: string, termCode: string): Promise<OntologyTerm | null> {
+  async findOntologyTerm(_vertical: string, _termCode: string): Promise<OntologyTerm | null> {
     return null;
   }
 
-  async getOntologyChildren(vertical: string, parentTermCode: string): Promise<OntologyTerm[]> {
+  async getOntologyChildren(_vertical: string, _parentTermCode: string): Promise<OntologyTerm[]> {
     return [];
   }
 
-  private mapEntry(d: any): KnowledgeEntry {
+  private mapEntry(d: {
+    id: string;
+    tenant_id: string;
+    vertical: string;
+    domain: string;
+    code: string;
+    label: string;
+    description: string | null;
+    version: number;
+    effective_from: string;
+    effective_to: string | null;
+    source: string | null;
+    approved_by: string | null;
+    metadata: Record<string, unknown>;
+    created_at: string;
+  }): KnowledgeEntry {
     return {
       id: d.id,
       tenantId: d.tenant_id,
       vertical: d.vertical,
-      domain: d.domain as any,
+      domain: d.domain as KnowledgeDomain,
       code: d.code,
       label: d.label,
       description: d.description || undefined,
@@ -1504,14 +1660,27 @@ export class SupabaseKnowledgeRepository implements IKnowledgeRepository {
     };
   }
 
-  private mapInferenceRule(d: any): InferenceRule {
+  private mapInferenceRule(d: {
+    id: string;
+    tenant_id: string;
+    vertical: string;
+    code: string;
+    name: string;
+    trigger_type: string;
+    conditions: Array<Record<string, unknown>>;
+    action: Record<string, unknown>;
+    version: number;
+    effective_from: string;
+    effective_to: string | null;
+    created_at: string;
+  }): InferenceRule {
     return {
       id: d.id,
       tenantId: d.tenant_id,
       vertical: d.vertical,
       code: d.code,
       name: d.name,
-      triggerType: d.trigger_type as any,
+      triggerType: d.trigger_type as 'pre_action' | 'post_action' | 'periodic',
       conditions: d.conditions || [],
       action: d.action || {},
       version: d.version,
