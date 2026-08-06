@@ -269,16 +269,36 @@ export default function HealthcareDashboardPage() {
           return true;
         });
 
+      // Consolidate redundant actions for the same patient (e.g., assign_chair + alert_doctor into 1 combined action)
+      const consolidatedActions: AiCooAction[] = [];
+      const tmhActions = sanitizedActions.filter((a) => a.description.includes('Trần Minh Hoàng'));
+      const otherActions = sanitizedActions.filter((a) => !a.description.includes('Trần Minh Hoàng'));
+
+      if (tmhActions.length > 1) {
+        consolidatedActions.push({
+          id: 'act-consolidated-tmh',
+          priority: 'high',
+          category: 'chair',
+          title: '⚡ Cảnh báo SLA & Phân ghế khẩn cấp',
+          description: 'Bệnh nhân Trần Minh Hoàng (Queue #104) đã chờ phòng chờ >22 phút và Ghế #02 đang trống. Đề xuất xếp Ghế #02 & thông báo Bác sĩ ngay.',
+          actionLabel: 'Phân Ghế #02 & Báo Bác sĩ ngay ➔',
+          actionType: 'assign_chair_and_alert',
+        });
+      } else {
+        consolidatedActions.push(...tmhActions);
+      }
+      consolidatedActions.push(...otherActions);
+
       setPatients(finalPatients);
       setEncounters(finalEncounters);
       setChairsMatrix(finalChairs);
-      setAiCooActions(sanitizedActions);
+      setAiCooActions(consolidatedActions);
 
       if (typeof window !== 'undefined') {
         if (!loadedPatients) localStorage.setItem('bella_healthcare_patients', JSON.stringify(mockPatients));
         localStorage.setItem('bella_healthcare_encounters', JSON.stringify(finalEncounters));
         localStorage.setItem('bella_healthcare_chairs', JSON.stringify(finalChairs));
-        localStorage.setItem('bella_healthcare_ai_actions', JSON.stringify(sanitizedActions));
+        localStorage.setItem('bella_healthcare_ai_actions', JSON.stringify(consolidatedActions));
       }
 
       if (finalPatients.length > 0) setSelectedPatientId(finalPatients[0].id);
@@ -632,10 +652,11 @@ export default function HealthcareDashboardPage() {
         <AiCooCommandCenter
           actions={aiCooActions}
           onExecuteAction={(actId, actionType) => {
-            if (actionType === 'assign_chair') {
+            if (actionType === 'assign_chair_and_alert' || actionType === 'assign_chair') {
               handleAssignPatientToChair('ch-2', 'Trần Minh Hoàng', user?.full_name || 'BS. Lê Minh');
+              toast.success('🔔 Đã đồng thời phát thông báo ưu tiên Bác sĩ & phân Ghế #02 cho BN Trần Minh Hoàng!');
             } else if (actionType === 'alert_doctor') {
-              toast.success('🔔 Đã gửi thông báo ưu tiên đặc biệt đến thiết bị của BS. Trần Thảo về ca chờ của BN Lê Thị Mai.');
+              toast.success('🔔 Đã gửi thông báo ưu tiên đặc biệt đến thiết bị của BS. Lê Minh về ca chờ của BN Trần Minh Hoàng.');
             } else if (actionType === 'reroute_queue') {
               toast.success('🔄 AI COO đã điều phối giãn ca khám: Dịch chuyển 2 ca điều trị lúc 13:00 sang khung giờ trống lúc 14:30.');
             }
