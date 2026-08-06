@@ -15,6 +15,7 @@ import { EventStreamViewer } from './EventStreamViewer';
 import { ChairManagementPanel } from './ChairManagementPanel';
 import { CarePathTracker } from './CarePathTracker';
 import { AiCooCommandCenter } from './AiCooCommandCenter';
+import { fetchHealthcareChairsAction, updateHealthcareChairAssignmentAction } from '@/services/healthcare-chairs-actions';
 
 import { eventBus } from '@/platform/messaging/event-bus/event-bus';
 import { EncounterSaga } from '@/modules/bella-healthcare/contexts/shared/EncounterSaga';
@@ -216,11 +217,18 @@ export default function HealthcareDashboardPage() {
         },
       ];
 
+      // Fetch live chairs from Supabase database (booking_resources table)
+      const dbChairsRes = await fetchHealthcareChairsAction();
+      let liveChairs: ChairInfo[] | null = null;
+      if (dbChairsRes.success && dbChairsRes.data.length > 0) {
+        liveChairs = dbChairsRes.data;
+      }
+
       const finalPatients = loadedPatients || mockPatients;
       const finalEncounters = loadedEncounters || mockEncounters;
 
       // Sanitize chairs to prevent any duplicate patient assignments across chairs
-      const rawChairs = loadedChairs || mockChairs;
+      const rawChairs = liveChairs || loadedChairs || mockChairs;
       const seenPatients = new Set<string>();
       const finalChairs = rawChairs.map((c) => {
         if (c.currentPatientName) {
@@ -537,7 +545,7 @@ export default function HealthcareDashboardPage() {
   };
 
   // Business Constraint Guard: Ensure a patient is assigned to at most ONE active chair at any time
-  const handleAssignPatientToChair = (targetChairId: string, patientName: string, doctorName?: string) => {
+  const handleAssignPatientToChair = async (targetChairId: string, patientName: string, doctorName?: string) => {
     let oldChairCode: string | null = null;
 
     setChairsMatrix((prev) => {
@@ -578,6 +586,16 @@ export default function HealthcareDashboardPage() {
           : e
       )
     );
+
+    // Persist assignment to Supabase Database Backend (booking_resources table)
+    try {
+      const dbRes = await updateHealthcareChairAssignmentAction(targetChairId, patientName, doctorName);
+      if (dbRes.success && dbRes.data.length > 0) {
+        setChairsMatrix(dbRes.data);
+      }
+    } catch (dbErr) {
+      console.warn('[handleAssignPatientToChair] Supabase persistence error:', dbErr);
+    }
 
     const targetChair = chairsMatrix.find((c) => c.id === targetChairId);
     const targetCode = targetChair ? targetChair.code : targetChairId;
