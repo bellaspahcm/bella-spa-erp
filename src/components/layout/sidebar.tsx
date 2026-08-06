@@ -46,7 +46,9 @@ import {
   Smile,
   CircleDollarSign,
   Wrench,
-  Activity
+  Activity,
+  Tv,
+  Stethoscope
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -427,9 +429,12 @@ const bellaDentalMenuItems: SidebarMenuItem[] = [
   { icon: Sparkles,        label: 'AI Copilot',                  href: '/dashboard/ai-copilot' },
 
   { type: 'header', label: 'Quản lý Y tế' },
+  { icon: Calendar,        label: 'Đặt Lịch & QR Check-in',      href: '/dashboard/healthcare/appointments' },
+  { icon: Tv,              label: 'Màn Hình TV Hàng Đợi AI',     href: '/dashboard/healthcare/queue/tv' },
+  { icon: Stethoscope,     label: 'Lịch Trực Bác sĩ',            href: '/dashboard/healthcare/schedules' },
   { icon: Users,           label: 'Hồ sơ bệnh nhân',             href: '/dashboard/healthcare/patients' },
   { icon: Activity,        label: 'Hành trình điều trị',         href: '/dashboard/healthcare/journeys' },
-  { icon: ClipboardList,   label: 'Lượt khám bệnh',              href: '/dashboard/healthcare/encounters' },
+  { icon: ClipboardList,   label: 'Lượt khám bệnh (EMR)',        href: '/dashboard/healthcare/encounters' },
   { icon: FileText,        label: 'Kế hoạch & Hợp đồng',         href: '/dashboard/healthcare/contracts' },
   { icon: Smile,           label: 'Lược đồ răng',                href: '/dashboard/healthcare/odontogram' },
 
