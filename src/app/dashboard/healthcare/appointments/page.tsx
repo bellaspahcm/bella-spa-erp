@@ -25,7 +25,7 @@ import {
   Printer,
   Bell
 } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 
 interface Appointment {
   id: string;

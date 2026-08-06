@@ -19,7 +19,7 @@ import {
   ChevronRight,
   VolumeX
 } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 
 interface QueueItem {
   stt: number;
