@@ -5227,36 +5227,3 @@ html[data-tenant-brand-button="minimal"][data-tenant-module="real_estate"] .beau
 html[data-tenant-brand-button="pill"]    { --brand-button-radius: 9999px; }
 html[data-tenant-brand-button="rounded"] { --brand-button-radius: 0.875rem; }
 html[data-tenant-brand-button="minimal"] { --brand-button-radius: 0.5rem; }
-
-/* Healthcare RBAC Simulator Banner - High-contrast text override guarantee */
-.rbac-simulator-banner,
-html[data-tenant-module] .rbac-simulator-banner,
-html[data-tenant-brand-preset] .rbac-simulator-banner {
-  background-color: #020617 !important;
-  color: #ffffff !important;
-}
-
-.rbac-simulator-banner h2,
-html[data-tenant-module] .rbac-simulator-banner h2,
-html[data-tenant-brand-preset] .rbac-simulator-banner h2 {
-  color: #ffffff !important;
-  font-family: inherit !important;
-}
-
-.rbac-simulator-banner p,
-html[data-tenant-module] .rbac-simulator-banner p,
-html[data-tenant-brand-preset] .rbac-simulator-banner p {
-  color: #e2e8f0 !important;
-}
-
-.rbac-simulator-banner button:not([class*="bg-white"]) {
-  background-color: #1e293b !important;
-  color: #ffffff !important;
-  border-color: #475569 !important;
-}
-
-.rbac-simulator-banner button[class*="bg-white"] {
-  background-color: #ffffff !important;
-  color: #020617 !important;
-  border-color: #ffffff !important;
-}

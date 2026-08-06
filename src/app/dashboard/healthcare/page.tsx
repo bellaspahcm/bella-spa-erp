@@ -471,13 +471,13 @@ export default function HealthcareDashboardPage() {
       <div className="absolute top-1/3 -right-40 w-96 h-96 bg-cyan-500/10 dark:bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
 
       {/* Role Simulator Banner (For Dev/Test demonstration) */}
-      <div className="relative p-4.5 rounded-3xl bg-slate-950 !text-white flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl border border-slate-700/80 rbac-simulator-banner">
+      <div className="relative p-5 rounded-[28px] hc-glass-card border border-slate-200/90 dark:border-slate-800/90 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1 text-left">
-          <h2 className="text-sm font-black !text-white flex items-center gap-2 tracking-tight">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0 shadow-sm" />
+          <h2 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2 tracking-tight">
+            <span className="w-2.5 h-2.5 rounded-full bg-teal-500 animate-pulse shrink-0 shadow-sm" />
             Mô phỏng Phân quyền Lâm sàng & Vận hành (RBAC)
           </h2>
-          <p className="text-[11px] !text-slate-200 font-semibold leading-relaxed">
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold leading-relaxed">
             Giao diện sẽ tự động điều chỉnh hiển thị và các quyền thao tác (Đọc/Ghi, y lệnh, kê đơn) dựa trên vai trò đang chọn.
           </p>
         </div>
@@ -495,8 +495,8 @@ export default function HealthcareDashboardPage() {
                 onClick={() => setSimulatedRole(item.role)}
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-black border transition-all duration-200 cursor-pointer ${
                   isActive
-                    ? 'bg-white !text-slate-950 border-white shadow-lg scale-105 ring-2 ring-white/30'
-                    : 'bg-slate-800/90 !text-white border-slate-600 hover:bg-slate-700 hover:border-slate-500 shadow-sm'
+                    ? 'bg-teal-600 text-white border-teal-500 shadow-md shadow-teal-500/20 scale-105'
+                    : 'bg-white/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border-slate-200/80 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 {item.label}
