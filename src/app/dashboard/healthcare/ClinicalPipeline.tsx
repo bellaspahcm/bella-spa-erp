@@ -1,6 +1,6 @@
 'use client';
 import React from 'react';
-import { User, Clipboard, UserCheck, Calendar, Activity, CheckCircle } from 'lucide-react';
+import { User, ClipboardList, UserCheck, Calendar, Activity, CheckCircle } from 'lucide-react';
 
 export interface EncounterItem {
   readonly id: string;
@@ -11,6 +11,8 @@ export interface EncounterItem {
   readonly scheduledAt?: string;
   readonly arrivedAt?: string;
   readonly queueNumber?: number;
+  readonly priority?: 'emergency' | 'high' | 'routine';
+  readonly waitTimeMinutes?: number;
 }
 
 export interface ClinicalPipelineProps {
@@ -36,10 +38,14 @@ export function ClinicalPipeline({
   ];
 
   const columnStyles: Record<string, string> = {
-    planned: 'bg-gradient-to-b from-blue-50/40 to-slate-50/20 dark:from-blue-950/20 dark:to-slate-950/20 border-blue-200/60 dark:border-blue-900/40',
-    arrived: 'bg-gradient-to-b from-amber-50/40 to-slate-50/20 dark:from-amber-950/20 dark:to-slate-950/20 border-amber-200/60 dark:border-amber-900/40',
-    in_progress: 'bg-gradient-to-b from-teal-50/40 to-slate-50/20 dark:from-teal-950/20 dark:to-slate-950/20 border-teal-200/60 dark:border-teal-900/40',
-    finished: 'bg-gradient-to-b from-emerald-50/40 to-slate-50/20 dark:from-emerald-950/20 dark:to-slate-950/20 border-emerald-200/60 dark:border-emerald-900/40',
+    planned:
+      'bg-white/90 dark:bg-slate-900/90 border-blue-200/90 dark:border-blue-900/60 shadow-lg shadow-blue-500/5 hover:shadow-xl hover:shadow-blue-500/10 hover:border-blue-300 transition-all duration-300',
+    arrived:
+      'bg-white/90 dark:bg-slate-900/90 border-amber-200/90 dark:border-amber-900/60 shadow-lg shadow-amber-500/5 hover:shadow-xl hover:shadow-amber-500/10 hover:border-amber-300 transition-all duration-300',
+    in_progress:
+      'bg-white/90 dark:bg-slate-900/90 border-teal-200/90 dark:border-teal-900/60 shadow-lg shadow-teal-500/5 hover:shadow-xl hover:shadow-teal-500/10 hover:border-teal-300 transition-all duration-300',
+    finished:
+      'bg-white/90 dark:bg-slate-900/90 border-emerald-200/90 dark:border-emerald-900/60 shadow-lg shadow-emerald-500/5 hover:shadow-xl hover:shadow-emerald-500/10 hover:border-emerald-300 transition-all duration-300',
   };
 
   const cardStyles: Record<string, { selected: string; normal: string }> = {
@@ -67,7 +73,9 @@ export function ClinicalPipeline({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-100 dark:border-slate-800/60">
         <div>
           <h2 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2 tracking-tight">
-            <span className="p-1.5 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400">📋</span>
+            <span className="p-1.5 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400">
+              <ClipboardList className="w-5 h-5" />
+            </span>
             Hàng đợi khám & Tiến trình Tiếp đón lâm sàng
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
@@ -125,39 +133,68 @@ export function ClinicalPipeline({
                           isSelected ? style.selected : style.normal
                         }`}
                       >
+                        {/* Card Header: Avatar + Name + Badges + Wait Time */}
                         <div className="flex items-start justify-between gap-2">
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-extrabold text-xs flex items-center justify-center border border-slate-200 dark:border-slate-700 shrink-0">
+                          <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                            <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-black text-xs flex items-center justify-center border border-slate-200 dark:border-slate-700 shrink-0 mt-0.5">
                               {patientInitials}
                             </div>
-                            <div>
-                              <h4 className="font-extrabold text-xs text-slate-900 dark:text-white group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors leading-tight">
+                            <div className="min-w-0 flex-1 text-left">
+                              <h4
+                                className="font-black text-xs text-slate-900 dark:text-white group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors leading-snug truncate"
+                                title={item.patientName}
+                              >
                                 {item.patientName}
                               </h4>
-                              {item.queueNumber && (
-                                <span className="text-[9px] font-extrabold px-1.5 py-0.2 bg-teal-50 text-teal-600 dark:bg-teal-950/60 dark:text-teal-300 rounded-md inline-block mt-0.5">
-                                  Stt: #{item.queueNumber}
-                                </span>
-                              )}
+                              <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                                {item.queueNumber && (
+                                  <span className="text-[9px] font-extrabold px-1.5 py-0.5 bg-teal-50 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300 rounded-md shrink-0 border border-teal-200/60">
+                                    Stt: #{item.queueNumber}
+                                  </span>
+                                )}
+                                {item.priority === 'emergency' && (
+                                  <span className="text-[8px] font-black px-1.5 py-0.5 bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300 rounded-md border border-rose-200 shrink-0 uppercase">
+                                    Cấp cứu
+                                  </span>
+                                )}
+                                {item.priority === 'high' && (
+                                  <span className="text-[8px] font-black px-1.5 py-0.5 bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300 rounded-md border border-amber-200 shrink-0 uppercase">
+                                    Ưu tiên
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
+                          {item.waitTimeMinutes !== undefined && (
+                            <span
+                              className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-md shrink-0 whitespace-nowrap border ${
+                                item.waitTimeMinutes > 15
+                                  ? 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-900 animate-pulse'
+                                  : 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'
+                              }`}
+                            >
+                              ⏱ {item.waitTimeMinutes}p
+                            </span>
+                          )}
                         </div>
 
+                        {/* Chief Complaint / Reason */}
                         {item.chiefComplaint && (
                           <div className="mt-2.5 p-2 rounded-xl bg-slate-50 dark:bg-slate-850 border border-slate-100 dark:border-slate-800">
-                            <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
-                              Lý do: <b className="text-slate-800 dark:text-slate-200">{item.chiefComplaint}</b>
+                            <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed font-medium line-clamp-2">
+                              Lý do: <b className="text-slate-800 dark:text-slate-200 font-bold">{item.chiefComplaint}</b>
                             </p>
                           </div>
                         )}
 
+                        {/* Doctor & Time */}
                         <div className="flex items-center justify-between mt-3 text-[10px] text-slate-400 dark:text-slate-500 font-bold">
-                          <div className="flex items-center gap-1">
-                            <User className="w-3 h-3 text-slate-400" />
-                            <span>{item.doctorName ? (item.doctorName.startsWith('BS') ? item.doctorName : `BS. ${item.doctorName}`) : 'BS: Chưa phân công'}</span>
+                          <div className="flex items-center gap-1 min-w-0">
+                            <User className="w-3 h-3 text-slate-400 shrink-0" />
+                            <span className="truncate">{item.doctorName ? (item.doctorName.startsWith('BS') ? item.doctorName : `BS. ${item.doctorName}`) : 'BS: Chưa phân công'}</span>
                           </div>
                           {item.scheduledAt && (
-                            <span className="text-[9px] text-blue-500 dark:text-blue-400">
+                            <span className="text-[9px] text-blue-500 dark:text-blue-400 shrink-0 ml-1">
                               {new Date(item.scheduledAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
                             </span>
                           )}
@@ -171,7 +208,7 @@ export function ClinicalPipeline({
                                 e.stopPropagation();
                                 onUpdateStatus(item.id, 'arrived');
                               }}
-                              className="w-full text-center py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold text-[10px] rounded-xl shadow-sm transition-all active:scale-95"
+                              className="w-full text-center py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold text-[10px] rounded-xl shadow-sm transition-all active:scale-95 cursor-pointer"
                             >
                               Check-In Tiếp Đón
                             </button>
@@ -182,7 +219,7 @@ export function ClinicalPipeline({
                                 e.stopPropagation();
                                 onUpdateStatus(item.id, 'in_progress');
                               }}
-                              className="w-full text-center py-1.5 bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-extrabold text-[10px] rounded-xl shadow-sm transition-all active:scale-95"
+                              className="w-full text-center py-1.5 bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-extrabold text-[10px] rounded-xl shadow-sm transition-all active:scale-95 cursor-pointer"
                             >
                               Bắt đầu Điều trị
                             </button>

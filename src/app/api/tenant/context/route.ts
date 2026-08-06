@@ -125,6 +125,25 @@ export async function GET(_request: NextRequest) {
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
+      if (process.env.NODE_ENV === 'development') {
+        return NextResponse.json(
+          {
+            tenantId: 'dev-tenant',
+            tenantName: 'Bella Land (Dev)',
+            enabledModules: ['real_estate', 'beauty_spa', 'cleaning', 'bella_healthcare'],
+            subscriptionPlan: 'enterprise',
+            featureFlags: {},
+            settings: {},
+          },
+          {
+            status: 200,
+            headers: {
+              'Cache-Control': 'no-store, no-cache, must-revalidate',
+            },
+          }
+        );
+      }
+
       console.error('[GET /api/tenant/context] Authentication failed:', authError);
       return NextResponse.json(
         { error: 'Unauthorized: Please log in to access tenant configuration' },

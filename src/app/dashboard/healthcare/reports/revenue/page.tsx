@@ -29,23 +29,23 @@ export default function RevenueAnalyticsPage() {
     totalEncounters: 234,
   };
 
-  // Mock data - Revenue by service category
+  // Mock data - Revenue by service category (Bella Medical Clinic — Internal Medicine)
   const revenueByCategory = [
-    { category: 'Cấy ghép Implant Nobel Biocare', revenue: 224000000, count: 28, percentage: 24.3, color: 'from-emerald-500 to-teal-500', bg: 'bg-emerald-500' },
-    { category: 'Niềng răng trong suốt Invisalign', revenue: 216000000, count: 18, percentage: 23.5, color: 'from-cyan-500 to-blue-500', bg: 'bg-cyan-500' },
-    { category: 'Bọc sứ thẩm mỹ Cercon HT', revenue: 128000000, count: 32, percentage: 13.9, color: 'from-indigo-500 to-purple-500', bg: 'bg-indigo-500' },
-    { category: 'Tẩy trắng răng Laser Zoom', revenue: 67500000, count: 45, percentage: 7.3, color: 'from-amber-400 to-amber-500', bg: 'bg-amber-400' },
-    { category: 'Nhổ răng khôn Piezotome', revenue: 45600000, count: 38, percentage: 5.0, color: 'from-rose-500 to-pink-500', bg: 'bg-rose-500' },
-    { category: 'Trám răng thẩm mỹ 3M', revenue: 20100000, count: 67, percentage: 2.2, color: 'from-sky-500 to-indigo-400', bg: 'bg-sky-500' },
-    { category: 'Điều trị tủy Nội nha Vi phẫu', revenue: 19200000, count: 24, percentage: 2.1, color: 'from-violet-500 to-purple-600', bg: 'bg-violet-500' },
-    { category: 'Dịch vụ nha khoa khác', revenue: 200100000, count: 82, percentage: 21.7, color: 'from-slate-400 to-slate-500', bg: 'bg-slate-400' },
+    { category: 'Khám nội khoa tổng quát', revenue: 224000000, count: 186, percentage: 24.3, color: 'from-emerald-500 to-teal-500', bg: 'bg-emerald-500' },
+    { category: 'Cấp cứu & Điều trị Nội trú', revenue: 216000000, count: 42, percentage: 23.5, color: 'from-cyan-500 to-blue-500', bg: 'bg-cyan-500' },
+    { category: 'Xét nghiệm & Chẩn đoán hình ảnh', revenue: 128000000, count: 312, percentage: 13.9, color: 'from-indigo-500 to-purple-500', bg: 'bg-indigo-500' },
+    { category: 'Siêu âm tim mạch & Nội tiết', revenue: 67500000, count: 98, percentage: 7.3, color: 'from-amber-400 to-amber-500', bg: 'bg-amber-400' },
+    { category: 'Vật lý trị liệu & Phục hồi', revenue: 45600000, count: 76, percentage: 5.0, color: 'from-rose-500 to-pink-500', bg: 'bg-rose-500' },
+    { category: 'Tiêm chủng & Dự phòng', revenue: 20100000, count: 134, percentage: 2.2, color: 'from-sky-500 to-indigo-400', bg: 'bg-sky-500' },
+    { category: 'Điều trị bệnh mãn tính', revenue: 19200000, count: 67, percentage: 2.1, color: 'from-violet-500 to-purple-600', bg: 'bg-violet-500' },
+    { category: 'Dịch vụ y tế khác', revenue: 200100000, count: 124, percentage: 21.7, color: 'from-slate-400 to-slate-500', bg: 'bg-slate-400' },
   ];
 
   // Mock data - Revenue by doctor
   const revenueByDoctor = [
-    { name: 'BS. Lê Minh', title: 'Nha sĩ Trưởng / Chuyên gia Cấy ghép Implant', revenue: 380000000, patients: 68, avgPerPatient: 5588235, growth: 18.2, avatar: '👨‍⚕️' },
-    { name: 'BS. Trần Thảo', title: 'Chuyên gia Phục hình Sứ & Chỉnh nha Invisalign', revenue: 340000000, patients: 52, avgPerPatient: 6538461, growth: 22.5, avatar: '👩‍⚕️' },
-    { name: 'BS. Nguyễn An', title: 'Bác sĩ Nội nha Vi phẫu & Nha khoa Tổng quát', revenue: 200500000, patients: 36, avgPerPatient: 5569444, growth: 8.3, avatar: '👨‍⚕️' },
+    { name: 'BS. Lê Minh', title: 'Trưởng Khoa Nội tổng quát / Chuyên gia Tim mạch', revenue: 380000000, patients: 68, avgPerPatient: 5588235, growth: 18.2, avatar: '👨‍⚕️' },
+    { name: 'BS. Trần Thảo', title: 'Chuyên gia Nội tiết & Đái tháo đường', revenue: 340000000, patients: 52, avgPerPatient: 6538461, growth: 22.5, avatar: '👩‍⚕️' },
+    { name: 'BS. Nguyễn An', title: 'Bác sĩ Huyết học & Ung bướm soi', revenue: 200500000, patients: 36, avgPerPatient: 5569444, growth: 8.3, avatar: '👨‍⚕️' },
   ];
 
   // Dynamically calculate the last 5 relative months up to current date (e.g. Tháng 4 -> Tháng 8/2026)
@@ -92,7 +92,7 @@ export default function RevenueAnalyticsPage() {
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                Theo dõi cơ cấu doanh thu theo dịch vụ nha khoa, hiệu suất bác sĩ & xu hướng tăng trưởng
+                Theo dõi cơ cấu doanh thu theo dịch vụ y tế, hiệu suất bác sĩ nội khoa & xu hướng tăng trưởng
               </p>
             </div>
           </div>
@@ -218,7 +218,7 @@ export default function RevenueAnalyticsPage() {
                   Biểu Đồ Cơ Cấu Doanh Thu Dịch Vụ (Service Mix Pipeline)
                 </h2>
                 <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                  Phân bổ tỷ trọng đóng góp tài chính của từng nhóm thủ thuật nha khoa
+                  Phân bổ tỷ trọng đóng góp tài chính của từng nhóm dịch vụ y tế nội khoa
                 </p>
               </div>
             </div>

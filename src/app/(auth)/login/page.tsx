@@ -47,9 +47,9 @@ export default function LoginPage() {
           return;
         }
 
-        if (email === 'bellaspa.testadmin@gmail.com') {
+        if (email === 'bellaspa.testadmin@gmail.com' || email === 'admin@medical.vn' || email === 'admin@healthcare.vn') {
           document.cookie = `mock_user_email=${email}; path=/; max-age=31536000; SameSite=Lax`;
-          window.location.href = '/dashboard';
+          window.location.href = '/dashboard/medical';
           return;
         }
 

@@ -123,33 +123,34 @@ export default function PatientDetailPage() {
     return age;
   };
 
-  // Mock patient medical history records
+  // Mock patient medical history records — Bella Medical Clinic internal medicine context
   const medicalHistoryRecords = [
     {
       id: 'enc-101',
       date: '2026-07-20',
       doctor: 'BS. Lê Minh',
-      diagnosis: 'Viêm tủy cấp không hồi phục răng #36',
-      treatment: 'Lấy tủy buồng, đặt Ca(OH)2 diệt khuẩn, kê đơn giảm đau.',
+      diagnosis: 'J18.9 — Viêm phổi cộng đồng (Community-Acquired Pneumonia)',
+      treatment: 'Xét nghiệm CBC + CRP. Kê đơn Azithromycin 500mg/ngày. Theo dõi SpO2.',
       status: 'finished',
     },
     {
       id: 'enc-088',
       date: '2026-06-10',
       doctor: 'BS. Trần Thảo',
-      diagnosis: 'Cạo vôi răng & Tái khám bọc sứ #11, #21',
-      treatment: 'Vệ sinh cạo vôi răng 2 hàm, đánh bóng men răng.',
+      diagnosis: 'I10 — Tăng huyết áp nguyên phát mức độ II',
+      treatment: 'Điều chỉnh liều Amlodipine 10mg. Đo HA theo dõi 3 lần/ngày.',
       status: 'finished',
     },
     {
       id: 'enc-045',
       date: '2026-04-05',
       doctor: 'BS. Lê Minh',
-      diagnosis: 'Khám định kỳ & Trám răng sâu #16',
-      treatment: 'Trám composite thẩm mỹ răng #16.',
+      diagnosis: 'E11.9 — Đái tháo đường type 2 — Kiểm tra định kỳ',
+      treatment: 'Xét nghiệm HbA1c, đường huyết lúc đói. Điều chỉnh chế độ ăn uống.',
       status: 'finished',
     },
   ];
+
 
   const handleViewMedicalHistory = () => {
     router.push(`/dashboard/healthcare/encounters?search=${encodeURIComponent(patient.name)}`);

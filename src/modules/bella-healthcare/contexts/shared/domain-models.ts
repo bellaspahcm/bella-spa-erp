@@ -113,11 +113,11 @@ export interface BillingSummary {
 export interface AiCooAction {
   readonly id: string;
   readonly priority: 'high' | 'medium' | 'info';
-  readonly category: 'chair' | 'patient_wait' | 'pharmacy' | 'capacity';
+  readonly category: 'chair' | 'room' | 'patient_wait' | 'pharmacy' | 'capacity';
   readonly title: string;
   readonly description: string;
   readonly actionLabel: string;
-  readonly actionType: 'assign_chair' | 'alert_doctor' | 'verify_prescription' | 'reroute_queue';
+  readonly actionType: 'assign_chair' | 'assign_room' | 'alert_doctor' | 'verify_prescription' | 'reroute_queue';
 }
 
 export interface ResourceUtilization {

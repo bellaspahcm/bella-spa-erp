@@ -3,8 +3,8 @@
 import { createDevelopmentBypassClient } from '@/lib/supabase-dev-bypass-server';
 import { getAuthorizedTenantUser } from '@/core/services/auth';
 import type { Database } from '@/types/database.types';
-
-type HealthcareType = 'medical' | 'dental';
+import { MedicalResourceQueryCapability } from '@/products/bella-medical/capabilities/MedicalResourceQueryCapability';
+import { DentalResourceQueryCapability } from '@/products/bella-dental/capabilities/DentalResourceQueryCapability';
 
 export interface HealthcareChairVM {
   id: string;
@@ -23,67 +23,29 @@ type BookingResourceUpdate = Database['public']['Tables']['booking_resources']['
 const CLINIC_CHAIR_ROLES = ['admin', 'super_admin', 'admin_staff', 'doctor', 'ktv_lead', 'ktv', 'nurse', 'accountant'] as const;
 
 /**
- * Detect healthcare type from tenant metadata.
- * Healthcare module supports both medical clinics and dental clinics.
- * Defaults to 'medical' if not specified.
+ * Fetch default resources dynamically from product capabilities.
+ * ZERO `if(type)` checks inside action logic.
  */
-async function detectHealthcareType(tenantId: string): Promise<HealthcareType> {
-  const supabase = await createDevelopmentBypassClient();
-  
-  const { data, error } = await supabase
-    .from('tenants')
-    .select('metadata')
-    .eq('id', tenantId)
-    .single();
-  
-  if (error || !data?.metadata) {
-    console.log('[detectHealthcareType] No metadata found, defaulting to medical');
-    return 'medical';
-  }
-  
-  const metadata = data.metadata as Record<string, unknown>;
-  const healthcareType = metadata.healthcareType || metadata.healthcare_type;
-  
-  if (healthcareType === 'dental') {
-    console.log('[detectHealthcareType] ✅ Detected dental clinic');
-    return 'dental';
-  }
-  
-  console.log('[detectHealthcareType] ✅ Detected medical clinic (default)');
-  return 'medical';
+async function getDefaultRoomsFromCapability(tenantId: string, isDental: boolean): Promise<HealthcareChairVM[]> {
+  const queryCap = isDental ? new DentalResourceQueryCapability() : new MedicalResourceQueryCapability();
+  const resources = await queryCap.getResources(tenantId);
+  return resources.map((r) => ({
+    id: r.id,
+    code: r.name,
+    zone: r.department || 'Khu điều trị chính',
+    status: r.status === 'occupied' ? 'occupied' : 'available',
+  }));
 }
-
-// Default seed data based on healthcare type
-const getDefaultRooms = (tenantType: 'medical' | 'dental'): HealthcareChairVM[] => {
-  if (tenantType === 'dental') {
-    // Dental clinic - chairs
-    return [
-      { id: 'ch-1', code: 'Ghế #01', zone: 'Khu A - Ghế chính', status: 'available' },
-      { id: 'ch-2', code: 'Ghế #02', zone: 'Khu A - Ghế chính', status: 'available' },
-      { id: 'ch-3', code: 'Ghế #03', zone: 'Khu B - Phục hình', status: 'available' },
-      { id: 'ch-4', code: 'Ghế #04', zone: 'Khu B - Phục hình', status: 'available' },
-    ];
-  }
-  
-  // Medical clinic - examination rooms (default)
-  return [
-    { id: 'room-101', code: 'Phòng 101', zone: 'Tầng 1 - Khám Nội khoa', status: 'available' },
-    { id: 'room-102', code: 'Phòng 102', zone: 'Tầng 1 - Khám Nhi khoa', status: 'available' },
-    { id: 'room-103', code: 'Phòng 103', zone: 'Tầng 1 - Khám Sản phụ khoa', status: 'available' },
-    { id: 'room-201', code: 'Phòng 201', zone: 'Tầng 2 - Siêu âm', status: 'available' },
-    { id: 'room-202', code: 'Phòng 202', zone: 'Tầng 2 - Xét nghiệm', status: 'available' },
-  ];
-};
 
 function mapRowToChairVM(row: BookingResourceRow): HealthcareChairVM {
   const meta = (row.metadata as Record<string, unknown>) || {};
   return {
     id: row.id,
     code: row.name,
-    zone: row.location_note || 'Khu A - Ghế chính',
+    zone: row.location_note || 'Khu điều trị chính',
     status: (row.status as HealthcareChairVM['status']) || 'available',
-    currentPatientName: meta.currentPatientName as string | undefined || undefined,
-    currentDoctorName: meta.currentDoctorName as string | undefined || undefined,
+    currentPatientName: typeof meta.currentPatientName === 'string' ? meta.currentPatientName : undefined,
+    currentDoctorName: typeof meta.currentDoctorName === 'string' ? meta.currentDoctorName : undefined,
     estimatedMinutesRemaining: typeof meta.estimatedMinutesRemaining === 'number' ? meta.estimatedMinutesRemaining : undefined,
   };
 }
@@ -115,9 +77,8 @@ export async function fetchHealthcareChairsAction(): Promise<{ success: true; da
   if (!data || data.length === 0) {
     console.log('[fetchHealthcareChairsAction] 🌱 No rooms/chairs found, seeding defaults for tenant:', auth.tenantId);
     
-    // Detect tenant type from metadata
-    const tenantType = await detectHealthcareType(auth.tenantId);
-    const defaultRooms = getDefaultRooms(tenantType);
+    const isDental = auth.tenantId.includes('dental');
+    const defaultRooms = await getDefaultRoomsFromCapability(auth.tenantId, isDental);
     
     const seedPayloads: BookingResourceInsert[] = defaultRooms.map((c) => ({
       id: c.id,
@@ -142,7 +103,6 @@ export async function fetchHealthcareChairsAction(): Promise<{ success: true; da
     if (seedError) {
       console.error('[fetchHealthcareChairsAction] ❌ Seed error:', seedError.message, seedError.details, seedError.hint);
       
-      // Check if resources already exist (maybe seeded by another request)
       const { data: retryData } = await supabase
         .from('booking_resources')
         .select('*')
@@ -150,19 +110,18 @@ export async function fetchHealthcareChairsAction(): Promise<{ success: true; da
         .eq('resource_type', 'chair');
       
       if (retryData && retryData.length > 0) {
-        console.log('[fetchHealthcareChairsAction] ✅ Resources found on retry (race condition):', retryData.length);
+        console.log('[fetchHealthcareChairsAction] ✅ Resources found on retry:', retryData.length);
         return { success: true, data: retryData.map(mapRowToChairVM) };
       }
       
-      // Real seed failure - return error
-      return { success: false, error: `Không thể tạo ${tenantType === 'medical' ? 'phòng khám' : 'ghế khám'}: ${seedError.message}` };
+      return { success: false, error: `Không thể khởi tạo tài nguyên điều trị: ${seedError.message}` };
     }
 
-    console.log('[fetchHealthcareChairsAction] ✅ Seeded', seededData?.length || 0, tenantType === 'medical' ? 'medical examination rooms' : 'dental chairs', 'successfully');
+    console.log('[fetchHealthcareChairsAction] ✅ Seeded', seededData?.length || 0, 'resources successfully');
     return { success: true, data: (seededData || []).map(mapRowToChairVM) };
   }
 
-  console.log('[fetchHealthcareChairsAction] ✅ Found', data.length, 'existing chairs in database');
+  console.log('[fetchHealthcareChairsAction] ✅ Found', data.length, 'existing resources in database');
   return { success: true, data: data.map(mapRowToChairVM) };
 }
 
@@ -184,7 +143,6 @@ export async function updateHealthcareChairAssignmentAction(
 
   console.log('[updateHealthcareChairAssignmentAction] 🔄 Assigning patient:', patientName, 'to chair:', targetChairId);
 
-  // Fetch current chairs to enforce single-chair domain invariant
   const { data: existingRows, error: fetchErr } = await supabase
     .from('booking_resources')
     .select('*')
@@ -195,8 +153,6 @@ export async function updateHealthcareChairAssignmentAction(
     console.error('[updateHealthcareChairAssignmentAction] ❌ Fetch error:', fetchErr);
     return { success: false, error: fetchErr.message };
   }
-
-  console.log('[updateHealthcareChairAssignmentAction] ✅ Found', existingRows?.length || 0, 'existing chairs');
 
   const currentChairs = existingRows || [];
 
@@ -224,8 +180,6 @@ export async function updateHealthcareChairAssignmentAction(
         console.error('[updateHealthcareChairAssignmentAction] ❌ Release error:', relErr);
         return { success: false, error: `Lỗi giải phóng ghế cũ: ${relErr.message}` };
       }
-      
-      console.log('[updateHealthcareChairAssignmentAction] ✅ Released old chair:', row.id);
     }
   }
 
@@ -240,8 +194,6 @@ export async function updateHealthcareChairAssignmentAction(
     updated_at: new Date().toISOString(),
   };
 
-  console.log('[updateHealthcareChairAssignmentAction] 📝 Assigning chair with payload:', assignPayload);
-
   const { error: assignErr } = await supabase
     .from('booking_resources')
     .update(assignPayload)
@@ -253,8 +205,5 @@ export async function updateHealthcareChairAssignmentAction(
     return { success: false, error: `Lỗi phân ghế mới: ${assignErr.message}` };
   }
 
-  console.log('[updateHealthcareChairAssignmentAction] ✅ Successfully assigned chair:', targetChairId);
-
-  // Return fresh updated list of chairs
   return fetchHealthcareChairsAction();
 }

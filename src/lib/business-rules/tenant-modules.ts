@@ -357,8 +357,14 @@ export function resolveTenantBrandIdentity(input: {
   const theme = normalizeTenantBrandThemeForModule(input.brandTheme, moduleKey);
   const tenantName = cleanText(input.tenantName, TEXT_LIMITS.brandName);
   const explicitLogoUrl = cleanLogoUrl(input.logoUrl);
+  const isDental = 
+    moduleKey === 'bella_healthcare' && 
+    (Boolean((input.enabledModules as Record<string, unknown> | null)?.dental) ||
+     Boolean((input.enabledModules as Record<string, unknown> | null)?.product === 'dental') ||
+     (input.tenantName && /dental|nha khoa/i.test(input.tenantName)));
+
   const defaultDisplayName = 
-    moduleKey === 'bella_healthcare' ? 'Bella Dental' :
+    moduleKey === 'bella_healthcare' ? (isDental ? 'Bella Dental Clinic' : 'Bella Medical Clinic') :
     moduleKey === 'bella_auto' ? 'Bella Auto' :
     moduleKey === 'beauty_spa' ? 'Beauty Spa' :
     moduleKey === 'industrial_cleaning' ? 'Industrial Cleaning' :
@@ -387,7 +393,7 @@ export function resolveTenantBrandIdentity(input: {
     invoiceDisplayName,
     logoUrl: explicitLogoUrl || theme.logoUrl || (moduleKey === 'babycare' ? '/logo.png' : ''),
     subtitle: 
-      moduleKey === 'bella_healthcare' ? 'Clinical Management' :
+      moduleKey === 'bella_healthcare' ? (isDental ? 'Clinical Management' : 'Medical Clinic EMR Platform') :
       moduleKey === 'bella_auto' ? 'Automotive Management' :
       moduleKey === 'beauty_spa' ? 'Beauty Spa ERP' :
       moduleKey === 'industrial_cleaning' ? 'Industrial Cleaning ERP' :

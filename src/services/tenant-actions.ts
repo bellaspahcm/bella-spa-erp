@@ -124,6 +124,28 @@ export async function getTenantSettings(): Promise<TenantRow | null> {
       return null;
     }
 
+    if (tenantId === '77777777-7777-7777-7777-777777777777' || tenantId === 'tenant-medical-dev-id') {
+      return {
+        id: '77777777-7777-7777-7777-777777777777',
+        name: 'Bella Medical Clinic',
+        contact_phone: '0908 123 456',
+        email: 'admin@medical.vn',
+        address: '123 Nguyễn Thị Minh Khai, Q1, TP.HCM',
+        logo_url: '',
+        enabled_modules: { bella_healthcare: true } as unknown as Json,
+        brand_theme: { primaryColor: '#074E44', brandName: 'Bella Medical Clinic' } as unknown as Json,
+        qr_bank_code: null,
+        qr_account_number: null,
+        qr_account_name: null,
+        salary_config: null,
+        commission_config: null,
+        role_permissions: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        status: 'active',
+      } as TenantRow;
+    }
+
     try {
       const { getCache, setCache, CacheKeys, CacheTTL } = await import('@/lib/redis-cache');
       const cached = await getCache<TenantRow>(CacheKeys.tenant(tenantId));

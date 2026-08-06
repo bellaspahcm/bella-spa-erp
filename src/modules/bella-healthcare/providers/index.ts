@@ -44,7 +44,7 @@ export interface WorkflowProvider {
 export class HealthcareKnowledgeProvider implements KnowledgeProvider {
   async search(query: string, _context: PlatformContext): Promise<KnowledgeEntry[]> {
     const results = await healthcareKnowledgeEngine.searchIcd10Diseases(
-      context.tenant.id,
+      _context.tenant.id,
       query
     );
     return results.map((r) => r.entry);
@@ -55,7 +55,7 @@ export class HealthcareKnowledgeProvider implements KnowledgeProvider {
     const prescribedDrugs = (facts.prescribed_drugs as string[]) || [];
 
     const check = await healthcareKnowledgeEngine.checkPrescriptionSafety(
-      context.tenant.id,
+      _context.tenant.id,
       allergies,
       prescribedDrugs
     );

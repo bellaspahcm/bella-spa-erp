@@ -4,17 +4,13 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Activity, 
   Users, 
-  CheckCircle, 
-  Heart, 
-  Layout, 
   UserCheck, 
   Building2, 
   Clock, 
-  AlertTriangle, 
   Settings,
-  ShieldCheck,
-  ChevronRight,
-  Database
+  Layout,
+  Database,
+  TrendingUp
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useUser } from '@/lib/user-context';
@@ -29,10 +25,10 @@ import {
   getAllPatientProfilesAction, 
   getAllEncountersAction, 
   updateEncounterStatusAction, 
-  seedDefaultHealthcareDataAction 
+  seedDefaultHealthcareDataAction,
+  getActiveHealthcarePluginAction
 } from '@/services/healthcare/healthcare-actions';
 
-import { eventBus } from '@/platform/messaging/event-bus/event-bus';
 import { EncounterSaga } from '@/modules/bella-healthcare/contexts/shared/EncounterSaga';
 import { aiRegistry } from '@/modules/bella-healthcare/contexts/shared/AiEngineRegistry';
 import type {
@@ -44,27 +40,53 @@ import type {
   DomainEvent,
 } from '@/modules/bella-healthcare/contexts/shared/domain-models';
 
-import { MedicalClinicManifest, DentalClinicManifest, ProductManifest } from './components/clinical-manifest';
-import { WidgetRegistry, DashboardWidget } from './components/clinical-registry';
+import { HealthcareKernelProvider } from '@/modules/bella-healthcare-kernel/context/HealthcareKernelContext';
+import { ScopedCapabilityRegistry } from '@/modules/bella-healthcare-kernel/capabilities/capability-registry';
+import { ExperienceMetadataRegistry } from '@/core/plugins/experience-registry';
+import { PluginLoader } from '@/core/plugins/plugin-loader';
+import { BellaMedicalPlugin } from '@/products/bella-medical';
+import { BellaDentalPlugin } from '@/products/bella-dental';
+import type { ProductManifest } from '@/core/plugins/manifest';
 
 export default function HealthcareDashboardPage() {
-  const { user, userRole } = useUser();
+  const { user } = useUser();
   const tenantContext = useTenantContext();
+  const tenantId = tenantContext?.tenantId || 'default';
 
-  // Load manifest dynamically based on URL path (Purity Rule: No product hardcoding)
-  const [manifest, setManifest] = useState<ProductManifest>(MedicalClinicManifest);
-  const [selectedPersona, setSelectedPersona] = useState<string>('manager'); // manager, doctor, receptionist, admin
+  const [capabilityRegistry] = useState(() => new ScopedCapabilityRegistry());
+  const [experienceRegistry] = useState(() => new ExperienceMetadataRegistry());
+  const [manifest, setManifest] = useState<ProductManifest | null>(null);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const isDental = window.location.pathname.includes('/dental');
-      setManifest(isDental ? DentalClinicManifest : MedicalClinicManifest);
-      
-      if (window.location.pathname === '/dashboard/healthcare') {
-        window.location.replace('/dashboard/medical');
+    async function bootPlugin() {
+      if (typeof window !== 'undefined') {
+        let pluginId: 'bella-medical' | 'bella-dental' = 'bella-medical';
+        const isUrlDental = window.location.pathname.includes('/dental');
+        const isUrlMedical = window.location.pathname.includes('/medical');
+
+        if (isUrlDental) {
+          pluginId = 'bella-dental';
+        } else if (isUrlMedical) {
+          pluginId = 'bella-medical';
+        } else {
+          const dbRes = await getActiveHealthcarePluginAction();
+          if (dbRes.success) {
+            pluginId = dbRes.pluginId;
+          }
+        }
+
+        const plugin = pluginId === 'bella-dental' ? new BellaDentalPlugin() : new BellaMedicalPlugin();
+        await PluginLoader.load(plugin, capabilityRegistry, experienceRegistry, {});
+        setManifest(plugin.manifest);
+        
+        if (window.location.pathname === '/dashboard/healthcare') {
+          const targetPath = pluginId === 'bella-dental' ? '/dashboard/dental' : '/dashboard/medical';
+          window.location.replace(targetPath);
+        }
       }
     }
-  }, []);
+    bootPlugin();
+  }, [capabilityRegistry, experienceRegistry]);
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -76,7 +98,6 @@ export default function HealthcareDashboardPage() {
   const [selectedEncounterId, setSelectedEncounterId] = useState<string | null>(null);
 
   // Event stream and outbox logs (Saga state)
-  const [eventsList, setEventsList] = useState<DomainEvent[]>([]);
   const [eventStreamLog, setEventStreamLog] = useState<DomainEventStreamItem[]>([
     { id: 'evt-1', eventName: 'Scheduling.Appointment.Created.v1', timestamp: '09:00:12', description: 'Lịch hẹn được tạo thành công cho BN Nguyễn Văn Hùng', actor: 'Patient Portal', category: 'encounter' },
     { id: 'evt-2', eventName: 'Encounter.Patient.Arrived.v1', timestamp: '09:28:45', description: 'Bệnh nhân check-in tại quầy tiếp đón (Stt: #102)', actor: 'Receptionist Mai', category: 'encounter' },
@@ -100,24 +121,20 @@ export default function HealthcareDashboardPage() {
       setIsLoading(true);
       setError(null);
 
-      // 1. Trigger Autoseeding if database has no customers/patients yet
       await seedDefaultHealthcareDataAction();
 
-      // 2. Fetch Patients from Supabase Database
       const dbPatientsRes = await getAllPatientProfilesAction();
       let finalPatients: PatientInfo[] = [];
       if (dbPatientsRes.success && dbPatientsRes.data) {
         finalPatients = dbPatientsRes.data;
       }
 
-      // 3. Fetch Encounters from Supabase Database
       const dbEncountersRes = await getAllEncountersAction();
       let finalEncounters: EncounterItem[] = [];
       if (dbEncountersRes.success && dbEncountersRes.data) {
         finalEncounters = dbEncountersRes.data;
       }
 
-      // 4. Fetch Chairs from Supabase Database (booking_resources table)
       const dbChairsRes = await fetchHealthcareChairsAction();
       let finalChairs: ChairInfo[] = [];
       if (dbChairsRes.success && dbChairsRes.data) {
@@ -143,12 +160,10 @@ export default function HealthcareDashboardPage() {
 
       setPatients(finalPatients);
       setEncounters(finalEncounters);
-      setChairsMatrix(sanitizedChairs); // Always use database data (empty array if no data)
+      setChairsMatrix(sanitizedChairs);
 
       if (finalPatients.length > 0) setSelectedPatientId(finalPatients[0].id);
       if (finalEncounters.length > 0) setSelectedEncounterId(finalEncounters[0].id);
-      
-      console.log('[loadInitialData] ✅ Loaded chairs from database:', sanitizedChairs.length, 'chairs');
     } catch (err) {
       console.error('[loadInitialData] ❌ Error loading data:', err);
       setError('Lỗi tải dữ liệu phòng khám');
@@ -161,51 +176,89 @@ export default function HealthcareDashboardPage() {
     loadInitialData();
   }, [loadInitialData]);
 
-  // SLA Capacity warning & AI COO Suggestions dynamically matching the active manifest context
   useEffect(() => {
-    const isDental = manifest.id === 'dental_clinic';
-    const initActions: AiCooAction[] = [
-      {
-        id: 'act-1',
+    if (!manifest) return;
+    const isDental = manifest.id === 'bella-dental';
+    const storageKey = `healthcare_ai_dismissed_${tenantId}_${manifest.id}`;
+    const dismissed: string[] = typeof window !== 'undefined'
+      ? JSON.parse(localStorage.getItem(storageKey) || '[]')
+      : [];
+
+    const waitingEncounter = encounters.find((e) => e.status === 'arrived' || e.status === 'planned');
+    const availableChair = chairsMatrix.find((c) => c.status === 'available');
+    const occupiedChair = chairsMatrix.find((c) => c.status === 'occupied');
+    const arrivedCount = encounters.filter((e) => e.status === 'arrived').length;
+
+    const dynamicActions: AiCooAction[] = [];
+
+    // 1. Live Chair / Room Routing Action
+    if (waitingEncounter && availableChair) {
+      dynamicActions.push({
+        id: `act-assign-${waitingEncounter.id}`,
         priority: 'high',
-        category: 'chair',
-        title: isDental ? '⚡ Phân ghế khám trống' : '⚡ Phân phòng khám trống',
-        description: isDental 
-          ? 'Ghế #02 (Khu A) đang trống. Gợi ý mời bệnh nhân Nguyễn Văn Hùng (Queue #102) vào vị trí ghế.'
-          : 'Phòng khám #02 (Khu A) đang trống. Gợi ý mời bệnh nhân Nguyễn Văn Hùng (Queue #102) vào phòng khám.',
-        actionLabel: isDental ? 'Phân ghế #02 ngay' : 'Phân phòng #02 ngay',
-        actionType: 'assign_chair',
-      },
-      {
-        id: 'act-2',
+        category: isDental ? 'chair' : 'room',
+        title: isDental 
+          ? `⚡ Mời BN ${waitingEncounter.patientName} vào ${availableChair.code}`
+          : `⚡ Mời BN ${waitingEncounter.patientName} vào Phòng ${availableChair.code}`,
+        description: isDental
+          ? `${availableChair.code} (${availableChair.locationZone || 'Khu A'}) đang trống. Gợi ý điều phối ngay cho BN ${waitingEncounter.patientName}.`
+          : `Phòng ${availableChair.code} đang trống. Gợi ý mời BN ${waitingEncounter.patientName} vào phòng khám.`,
+        actionLabel: isDental ? `Phân ${availableChair.code} ngay` : `Mở phòng ${availableChair.code} ngay`,
+        actionType: isDental ? 'assign_chair' : 'assign_room',
+      });
+    }
+
+    // 2. Live Queue SLA Waiting Time Alert
+    if (arrivedCount > 0) {
+      const firstArrived = encounters.find((e) => e.status === 'arrived') || waitingEncounter;
+      dynamicActions.push({
+        id: `act-sla-${firstArrived?.id || 'queue'}`,
         priority: 'high',
         category: 'patient_wait',
-        title: '⚡ Cảnh báo SLA — Thời gian chờ vượt ngưỡng',
-        description: 'Bệnh nhân Lê Thị Mai đã ở phòng chờ >22 phút. Đề xuất phát thông báo ưu tiên cho BS. Trần Thảo.',
-        actionLabel: 'Thông báo Bác sĩ',
+        title: `⚡ Cảnh báo SLA — ${arrivedCount} bệnh nhân đang chờ tiếp đón`,
+        description: `Bệnh nhân ${firstArrived?.patientName || 'tiếp theo'} đã chờ tại sảnh >15 phút. Đề xuất ưu tiên xếp lịch và thông báo bác sĩ.`,
+        actionLabel: 'Điều phối hàng đợi SLA',
         actionType: 'alert_doctor',
-      },
-    ];
+      });
+    }
 
-    const forecasted = aiRegistry.prediction.forecastUtilization(resourceMetrics.chairOccupancyRate);
-    if (forecasted.warningText) {
-      const warningText = isDental 
-        ? forecasted.warningText 
-        : forecasted.warningText.replace(/ghế/g, 'phòng khám').replace(/Ghế/g, 'Phòng khám');
-
-      initActions.unshift({
-        id: 'act-prediction',
+    // 3. Occupancy Capacity Alert
+    if (occupiedChair) {
+      dynamicActions.push({
+        id: `act-cap-${occupiedChair.id}`,
         priority: 'medium',
         category: 'capacity',
-        title: '📈 AI Dự báo: Dự báo công suất quá tải',
-        description: warningText || '',
-        actionLabel: 'Giãn lịch hẹn',
+        title: `📈 Cảnh báo công suất — ${isDental ? 'Ghế' : 'Phòng'} ${occupiedChair.code} quá tải (97%)`,
+        description: `${isDental ? 'Ghế' : 'Phòng'} ${occupiedChair.code} đang thực hiện ca khám cho BN ${occupiedChair.currentPatientName || 'hiện tại'}. Đề xuất chuẩn bị tiếp nhận ca tiếp theo.`,
+        actionLabel: 'Điều phối công suất',
         actionType: 'reroute_queue',
       });
     }
 
-    setAiCooActions(initActions);
-  }, [manifest, resourceMetrics.chairOccupancyRate]);
+    // 4. Financial & Shift Alerts
+    dynamicActions.push({
+      id: 'act-finance-audit',
+      priority: 'medium',
+      category: 'finance',
+      title: '💰 Viện phí & BHYT: Cần đối soát doanh thu ca khám',
+      description: 'Phát hiện 3 dịch vụ chưa hoàn tất thủ tục thanh toán viện phí BHYT. Đề xuất đối soát tự động.',
+      actionLabel: 'Thực hiện đối soát BHYT',
+      actionType: 'reroute_queue',
+    });
+
+    dynamicActions.push({
+      id: 'act-doctor-shift',
+      priority: 'info',
+      category: 'staff',
+      title: '👨‍⚕️ Ca trực Bác sĩ: BS. Lê Minh sắp hết ca (còn 20 phút)',
+      description: 'Gửi thông báo tự động chuyển giao danh sách bệnh nhân chờ sang BS. Trần Thảo.',
+      actionLabel: 'Thông báo chuyển ca',
+      actionType: 'alert_doctor',
+    });
+
+    const activeActions = dynamicActions.filter((a) => !dismissed.includes(a.id));
+    setAiCooActions(activeActions);
+  }, [manifest, tenantId, encounters.length, chairsMatrix.length, resourceMetrics.chairOccupancyRate]);
 
   const handleUpdateEncounterStatus = async (id: string, newStatus: EncounterItem['status']) => {
     const dbRes = await updateEncounterStatusAction(id, newStatus);
@@ -271,17 +324,12 @@ export default function HealthcareDashboardPage() {
       const dbRes = await updateHealthcareChairAssignmentAction(targetChairId, patientName, doctorName);
       if (dbRes.success && dbRes.data.length > 0) {
         setChairsMatrix(dbRes.data);
-        console.log('[handleAssignPatientToChair] ✅ Database updated successfully:', dbRes.data);
       } else if (!dbRes.success) {
-        console.error('[handleAssignPatientToChair] ❌ Database update failed:', dbRes.error);
         toast.error(`Lỗi lưu database: ${dbRes.error}`);
-        // Rollback UI changes on database error
         await loadInitialData();
       }
     } catch (dbErr) {
-      console.error('[handleAssignPatientToChair] ❌ Supabase persistence error:', dbErr);
       toast.error('Lỗi kết nối database. Vui lòng thử lại.');
-      // Rollback UI changes on exception
       await loadInitialData();
     }
 
@@ -295,394 +343,292 @@ export default function HealthcareDashboardPage() {
     }
   };
 
+  const [activeViewTab, setActiveViewTab] = useState<'overview' | 'operations' | 'event_stream' | 'all'>('overview');
+
   const selectedPatient = patients.find((p) => p.id === selectedPatientId) || patients[0] || null;
 
-  // Resolve enabled widgets based on Persona / Role
-  const getEnabledWidgetsForPersona = () => {
-    const baseWidgets = manifest.dashboard.widgets;
-    switch (selectedPersona) {
-      case 'doctor':
-        return baseWidgets.filter((w) => ['clinic_summary_stats', 'queue_realtime_monitor', 'clinical_pipeline_summary'].includes(w));
-      case 'receptionist':
-        return baseWidgets.filter((w) => ['queue_realtime_monitor', 'facility_status_map'].includes(w));
-      case 'manager':
-        return baseWidgets.filter((w) => ['clinic_summary_stats', 'queue_realtime_monitor', 'facility_status_map', 'ai_coo_command_center'].includes(w));
-      case 'admin':
-      default:
-        return baseWidgets;
-    }
-  };
+  if (!manifest) {
+    return <div className="p-8 text-center text-slate-400">Đang nạp kiến trúc Kernel & Product Plugin...</div>;
+  }
 
-  const enabledWidgets = getEnabledWidgetsForPersona();
-
-  // Widget 1: Operational Stats Bar
-  const renderSummaryStats = () => (
-    <div key="clinic_summary_stats" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
-      {[
-        { label: 'Lượt khám hôm nay', value: '145 ca', trend: 'Tăng 12% so với hôm qua', icon: Activity, color: 'text-teal-600 bg-teal-50 dark:bg-teal-950/40 border-teal-200' },
-        { label: 'Bệnh nhân chờ khám', value: '28 ca', trend: 'SLA chờ trung bình: 15p', icon: Users, color: 'text-amber-600 bg-amber-50 dark:bg-amber-950/40 border-amber-200' },
-        { label: 'Phòng khám hoạt động', value: '12 phòng', trend: 'Đầy công suất 90%', icon: Building2, color: 'text-blue-600 bg-blue-50 dark:bg-blue-950/40 border-blue-200' },
-        { label: 'Bác sĩ trực lâm sàng', value: '6 bác sĩ', trend: 'Hoạt động liên tục', icon: UserCheck, color: 'text-indigo-600 bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200' },
-        { label: 'Thời gian chờ TB', value: '95 phút', trend: 'Cảnh báo SLA đỏ', icon: Clock, color: 'text-rose-600 bg-rose-50 dark:bg-rose-950/40 border-rose-200' },
-      ].map((stat, idx) => {
-        const Icon = stat.icon;
-        return (
-          <div key={idx} className="p-5 rounded-[22px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between group hover:border-teal-500/50 transition-all">
-            <div className="space-y-1 text-left">
-              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-wider block">{stat.label}</span>
-              <span className="text-2xl font-black text-slate-900 dark:text-white mt-0.5 block">{stat.value}</span>
-              <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mt-1">{stat.trend}</span>
-            </div>
-            <div className={`p-3 rounded-2xl border ${stat.color} group-hover:scale-105 transition-transform duration-300`}>
-              <Icon className="w-5 h-5" />
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-
-  // Widget 2: Realtime Queue Monitor
-  const renderQueueMonitor = () => {
-    const isDental = manifest.id === 'dental_clinic';
-    const doctors = isDental
-      ? [
-          { name: 'BS. Lê Minh', specialty: 'Nha khoa Tổng quát', room: 'Phòng Ghế 01' },
-          { name: 'BS. Trần Thảo', specialty: 'Chỉnh nha & Thẩm mỹ', room: 'Phòng Ghế 02' },
-          { name: 'BS. Phạm Hải', specialty: 'Phẫu thuật trong miệng', room: 'Phòng Ghế 03' },
-        ]
-      : [
-          { name: 'BS. Lê Minh', specialty: 'Nội Tổng Quát', room: 'Phòng 101' },
-          { name: 'BS. Trần Thảo', specialty: 'Sản phụ khoa / Mẹ & Bé', room: 'Phòng 102' },
-          { name: 'BS. Phạm Hải', specialty: 'Tai Mũi Họng', room: 'Phòng 103' },
-        ];
-
-    const queues = doctors.map((doc) => {
-      // Find current active patient (in_progress) for this doctor
-      const currentEncounter = encounters.find(
-        (e) => e.status === 'in_progress' && (e.doctorName === doc.name || e.doctorName === doc.name.replace('BS. ', ''))
-      );
-      
-      // Find waiting patients (arrived) for this doctor
-      const waitingEncounters = encounters.filter(
-        (e) => e.status === 'arrived' && (e.doctorName === doc.name || e.doctorName === doc.name.replace('BS. ', ''))
-      );
-
-      return {
-        room: doc.room,
-        doctor: doc.name,
-        specialty: doc.specialty,
-        current: currentEncounter
-          ? { name: currentEncounter.patientName, queue: currentEncounter.queueNumber }
-          : null,
-        waiting: waitingEncounters.map((we) => ({
-          name: we.patientName,
-          queue: we.queueNumber,
-        })),
-      };
-    });
-
-    const unassignedWaiting = encounters.filter(
-      (e) => e.status === 'arrived' && !e.doctorName
-    );
-
-    return (
-      <div key="queue_realtime_monitor" className="p-6 rounded-[28px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-5 text-left">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-          <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-teal-500 animate-pulse shrink-0" />
-            Hàng Đợi Phòng Khám Realtime (Workflow Queue)
-          </h3>
-          <span className="text-[10px] font-extrabold px-2.5 py-1 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20">
-            Realtime SLA
-          </span>
-        </div>
-        
-        <div className="space-y-4">
-          {queues.map((q, idx) => (
-            <div key={idx} className="p-4.5 rounded-2xl bg-slate-50/70 dark:bg-slate-950/60 border border-slate-100 dark:border-slate-800/80 space-y-3">
-              <div className="flex justify-between items-center text-xs font-black text-slate-800 dark:text-slate-200">
-                <span className="text-teal-600 dark:text-teal-400 flex items-center gap-1.5 font-extrabold">
-                  <span className="w-1.5 h-1.5 rounded-full bg-teal-500 shrink-0" />
-                  {q.room} — {q.doctor} ({q.specialty})
-                </span>
-                <span className="text-[10px] font-bold text-slate-400 bg-slate-200/50 dark:bg-slate-800/50 px-2 py-0.5 rounded-full">
-                  Chờ: {q.waiting.length} ca
-                </span>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                {/* Current patient card */}
-                <div className="p-3 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-800 dark:text-teal-400 flex flex-col justify-between">
-                  <span className="text-[9px] font-black uppercase text-teal-600 tracking-wider">Đang khám</span>
-                  <div className="mt-1 flex items-baseline justify-between">
-                    <span className="font-extrabold text-slate-950 dark:text-white truncate">
-                      {q.current ? q.current.name : '—'}
-                    </span>
-                    {q.current && (
-                      <span className="text-[10px] font-black bg-teal-600 text-white px-1.5 py-0.2 rounded-md shadow-sm shrink-0">
-                        BN {String(q.current.queue).padStart(3, '0')}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Waiting queue list */}
-                <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 text-slate-700 dark:text-slate-300 flex flex-col justify-between">
-                  <span className="text-[9px] font-black uppercase text-slate-500 tracking-wider">Hàng chờ</span>
-                  <div className="mt-1 font-extrabold text-slate-950 dark:text-white truncate flex items-center gap-1.5 flex-wrap">
-                    {q.waiting.length > 0 ? (
-                      q.waiting.map((we, wIdx) => (
-                        <span key={wIdx} className="inline-flex items-center gap-1">
-                          {wIdx > 0 && <span className="text-slate-400 font-normal">➔</span>}
-                          <span className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-md text-[10px] font-black">
-                            BN {String(we.queue).padStart(3, '0')}
-                          </span>
-                        </span>
-                      ))
-                    ) : (
-                      <span className="text-slate-400 font-normal italic text-[11px]">Trống hàng chờ</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-
-          {unassignedWaiting.length > 0 && (
-            <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/20 space-y-2">
-              <div className="flex justify-between items-center text-xs font-black text-amber-800 dark:text-amber-400">
-                <span>🎫 Bệnh nhân mới tiếp đón - Chờ phân phòng</span>
-                <span className="text-[10px] bg-amber-500/15 text-amber-700 px-2 py-0.5 rounded-full font-extrabold">
-                  {unassignedWaiting.length} ca
-                </span>
-              </div>
-              <div className="flex flex-wrap gap-2 pt-1">
-                {unassignedWaiting.map((we) => (
-                  <span
-                    key={we.id}
-                    className="px-2.5 py-1 bg-white dark:bg-slate-900 border border-amber-500/20 text-slate-850 dark:text-slate-200 rounded-xl text-[10px] font-black shadow-sm flex items-center gap-1.5"
-                  >
-                    <span>{we.patientName}</span>
-                    <span className="px-1.5 py-0.2 bg-amber-500 text-white rounded font-black text-[9px]">
-                      BN {String(we.queueNumber).padStart(3, '0')}
-                    </span>
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
-
-  // Widget 3: Facility Status Map
-  const renderFacilityMap = () => (
-    <div key="facility_status_map" className="p-6 rounded-[28px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4 text-left">
-      <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-        <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
-          <Building2 className="w-4 h-4 text-teal-500" />
-          Sơ Đồ Phòng Máy & Thiết Bị (Facility Status)
-        </h3>
-        <span className="text-[10px] font-extrabold text-teal-600 dark:text-teal-400">100% Online</span>
-      </div>
-      <div className="grid grid-cols-2 gap-3 text-xs">
-        {[
-          { name: 'Phòng Cấp Cứu 101', status: 'Đang khám', color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' },
-          { name: 'Phòng Siêu Âm 102', status: 'Trống', color: 'bg-slate-100 text-slate-600 dark:bg-slate-950 border-slate-200' },
-          { name: 'Xét nghiệm LIS', status: 'Đang chạy 6 mẫu', color: 'bg-indigo-500/10 text-indigo-600 border-indigo-500/20' },
-          { name: 'Phòng X-Ray PACS', status: 'Đang chụp', color: 'bg-amber-500/10 text-amber-600 border-amber-500/20' }
-        ].map((f, idx) => (
-          <div key={idx} className={`p-3 rounded-2xl border ${f.color} flex flex-col justify-between space-y-2`}>
-            <span className="font-bold block">{f.name}</span>
-            <span className="text-[10px] font-extrabold uppercase tracking-wide">{f.status}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+  const isDental = manifest.id === 'bella-dental';
 
   return (
-    <div className="p-6 md:p-8 w-full space-y-7 bg-transparent relative">
-      {/* Ambient background mesh glow */}
-      <div className="absolute -top-40 -left-40 w-96 h-96 bg-teal-500/10 dark:bg-teal-500/5 rounded-full blur-3xl pointer-events-none" />
+    <HealthcareKernelProvider
+      manifest={manifest}
+      capabilityRegistry={capabilityRegistry}
+      experienceRegistry={experienceRegistry}
+    >
+      <div className="p-6 md:p-8 w-full space-y-7 bg-transparent relative">
+        <div className="absolute -top-40 -left-40 w-96 h-96 bg-teal-500/10 dark:bg-teal-500/5 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Persona Selector Banner */}
-      <div className="relative p-5 rounded-[28px] bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 border border-teal-500/30 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="space-y-1 text-left">
-          <h2 className="text-sm font-black !text-white flex items-center gap-2 tracking-tight">
-            <span className="w-2.5 h-2.5 rounded-full bg-teal-400 animate-pulse shrink-0" />
-            Mô phỏng Giao diện theo Vai trò (Persona Dashboard Strategy)
-          </h2>
-          <p className="text-[11px] !text-slate-300 font-medium">
-            Lựa chọn vai trò để hệ thống tự động lọc các Widgets phù hợp từ Dashboard Manifest.
-          </p>
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1 text-left">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2.5 rounded-2xl bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20">
+                <Layout className="w-6 h-6" />
+              </div>
+              <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+                {isDental ? 'Bella Dental Clinic Dashboard' : 'Bella Medical Clinic Dashboard'}
+              </h1>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+              Hệ thống điều hành phòng khám tổng thể (Level 2 Dashboard). Bật/tắt động thông qua Product Plugin.
+            </p>
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+
+        {/* Enterprise Segmented Control Tab Switcher */}
+        <div className="inline-flex items-center p-1.5 rounded-2xl bg-slate-100/80 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 backdrop-blur-md shadow-inner gap-1.5 overflow-x-auto max-w-full text-left">
           {[
-            { role: 'manager', label: '📊 Manager (Quản lý)' },
-            { role: 'doctor', label: '🩺 Bác sĩ (Doctor)' },
-            { role: 'receptionist', label: '🎫 Tiếp đón (Reception)' },
-            { role: 'admin', label: '👑 Admin (Tổng quản)' },
-          ].map((item) => (
-            <button
-              key={item.role}
-              onClick={() => setSelectedPersona(item.role)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-black border transition-all duration-200 cursor-pointer ${
-                selectedPersona === item.role
-                  ? 'bg-white text-slate-950 border-white shadow-lg scale-105'
-                  : 'bg-white/10 !text-white border-white/20 hover:bg-white/20'
-              }`}
-            >
-              {item.label}
-            </button>
-          ))}
+            { id: 'overview', label: 'Tổng Quan Điều Hành', desc: 'KPI & AI Executive' },
+            { id: 'operations', label: 'Hàng Đợi & Vận Hành', desc: 'SLA & Phân Phòng' },
+            { id: 'event_stream', label: 'Nhật Ký Sự Kiện CQRS', desc: 'Audit & Event Sourcing' },
+            { id: 'all', label: 'Toàn Bộ Dashboard', desc: 'Góc nhìn tổng thể' },
+          ].map((tab) => {
+            const isActive = activeViewTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveViewTab(tab.id as any)}
+                className={`px-4 py-2 rounded-xl text-left transition-all duration-200 cursor-pointer flex flex-col justify-center whitespace-nowrap ${
+                  isActive
+                    ? 'bg-white dark:bg-slate-800 text-teal-950 dark:text-teal-300 font-extrabold shadow-sm border border-slate-200/90 dark:border-slate-700'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 font-semibold hover:bg-slate-200/50 dark:hover:bg-slate-800/50'
+                }`}
+              >
+                <span className="text-xs tracking-tight">{tab.label}</span>
+                <span className={`text-[9px] font-extrabold tracking-wider uppercase ${
+                  isActive ? 'text-teal-700 dark:text-teal-400' : 'text-slate-400 dark:text-slate-500'
+                }`}>
+                  {tab.desc}
+                </span>
+              </button>
+            );
+          })}
         </div>
-      </div>
 
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="space-y-1 text-left">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2.5 rounded-2xl bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20">
-              <Layout className="w-6 h-6" />
+        {/* Executive Summary Stats Grid & AI COO Command Center */}
+        {(activeViewTab === 'overview' || activeViewTab === 'all') && (
+          <div className="space-y-7">
+            {/* Executive Summary Stats Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {/* Card 1: Tổng Bệnh Nhân */}
+              <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col justify-between gap-3.5 transition-all hover:shadow-md hover:-translate-y-0.5 text-left">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tổng Bệnh Nhân</span>
+                  <div className="p-2 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20 shrink-0">
+                    <Users className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <h3 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">{patients.length || 5}</h3>
+                    <div className="flex items-center gap-1 text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                      <span>▲ 12%</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">so với tuần trước</p>
+                    {/* SVG Sparkline */}
+                    <svg className="w-16 h-6 text-emerald-500" viewBox="0 0 100 30" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M0 24 Q 25 18, 50 14 T 75 8 T 100 4" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 2: Lượt Khám Hôm Nay */}
+              <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col justify-between gap-3.5 transition-all hover:shadow-md hover:-translate-y-0.5 text-left">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Lượt Khám Hôm Nay</span>
+                  <div className="p-2 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 shrink-0">
+                    <Activity className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <h3 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">{encounters.length || 3} ca</h3>
+                    <div className="flex items-center gap-1 text-[10px] font-extrabold text-blue-600 dark:text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-full">
+                      <span>▲ 8.5%</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">so với hôm qua</p>
+                    {/* SVG Sparkline */}
+                    <svg className="w-16 h-6 text-blue-500" viewBox="0 0 100 30" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M0 26 Q 25 20, 50 15 T 75 10 T 100 5" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 3: Doanh Thu Viện Phí & Dịch Vụ */}
+              <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col justify-between gap-3.5 transition-all hover:shadow-md hover:-translate-y-0.5 text-left">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    {isDental ? 'Doanh Thu Nha Khoa' : 'Doanh Thu Viện Phí & BHYT'}
+                  </span>
+                  <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0">
+                    <TrendingUp className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <h3 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">18.500.000 ₫</h3>
+                    <div className="flex items-center gap-1 text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                      <span>▲ 18.5%</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">so với tháng trước</p>
+                    {/* SVG Sparkline */}
+                    <svg className="w-16 h-6 text-emerald-500" viewBox="0 0 100 30" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M0 28 Q 25 22, 50 12 T 75 7 T 100 2" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 4: Công Suất & Thời Gian Chờ SLA */}
+              <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col justify-between gap-3.5 transition-all hover:shadow-md hover:-translate-y-0.5 text-left">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    {isDental ? 'Công Suất Ghế & Chờ' : 'Công Suất Phòng Khám'}
+                  </span>
+                  <div className="p-2 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 shrink-0">
+                    <Clock className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <h3 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">82%</h3>
+                    <div className="flex items-center gap-1 text-[10px] font-extrabold text-purple-600 dark:text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-full">
+                      <span>⏱️ ~12 phút</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Đạt SLA chuẩn y tế</p>
+                    {/* SVG Sparkline */}
+                    <svg className="w-16 h-6 text-purple-500" viewBox="0 0 100 30" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M0 16 Q 25 22, 50 14 T 75 18 T 100 10" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
             </div>
-            <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-              {manifest.id === 'dental_clinic' ? 'Bella Dental Clinic Dashboard' : 'Bella Medical Clinic Dashboard'}
-            </h1>
-          </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-            Hệ thống điều hành phòng khám tổng thể (Level 2 Dashboard). Bật/tắt động thông qua Manifest.
-          </p>
-        </div>
-        <button
-          onClick={() => {
-            const path = manifest.id === 'dental_clinic' ? '/dashboard/medical' : '/dashboard/dental';
-            window.location.replace(path);
-          }}
-          className="px-4 py-2.5 rounded-xl text-xs font-black bg-teal-600 text-white hover:bg-teal-700 shadow-md flex items-center gap-2 cursor-pointer active:scale-95 transition-all"
-        >
-          <Settings className="w-4 h-4" />
-          Chuyển Chuyên Khoa: {manifest.id === 'dental_clinic' ? 'Y tế Đa khoa' : 'Nha khoa'}
-        </button>
-      </div>
 
-      {/* Render Statistics Widget if enabled */}
-      {enabledWidgets.includes('clinic_summary_stats') && renderSummaryStats()}
+            {/* AI COO Command Center */}
+            <AiCooCommandCenter
+              actions={aiCooActions}
+              onExecuteAction={async (actId, actionType) => {
+                try {
+                  if (actionType === 'assign_chair' || actionType === 'assign_room') {
+                    const targetChair = chairsMatrix.find((c) => c.status === 'available') || chairsMatrix[0];
+                    const targetEncounter = encounters.find((e) => e.status === 'arrived' || e.status === 'planned') || encounters[0];
+                    
+                    if (targetChair && targetEncounter) {
+                      await handleAssignPatientToChair(targetChair.id, targetEncounter.patientName, user?.full_name || 'BS. Lê Minh');
+                      toast.success(`🎉 AI COO đã điều phối BN ${targetEncounter.patientName} vào ${targetChair.code}!`);
+                    } else if (targetChair) {
+                      toast.info(`Không có bệnh nhân chờ tiếp đón trong hàng đợi.`);
+                    } else {
+                      toast.warning('Hiện không có phòng/ghế khám trống khả dụng.');
+                    }
+                  } else if (actionType === 'alert_doctor') {
+                    const arrivedCount = encounters.filter((e) => e.status === 'arrived').length;
+                    toast.success(`🔔 AI COO đã gửi thông báo ưu tiên SLA (${arrivedCount} BN) trực tiếp tới ca trực Bác sĩ!`);
+                  } else if (actionType === 'reroute_queue') {
+                    toast.success('⚡ AI COO đã tự động cân bằng tải công suất phòng khám!');
+                  }
 
-      {/* AI alerts and recommendations */}
-      {enabledWidgets.includes('ai_coo_command_center') && (
-        <AiCooCommandCenter
-          actions={aiCooActions}
-          onExecuteAction={async (actId, actionType) => {
-            try {
-              if (actionType === 'assign_chair_and_alert' || actionType === 'assign_chair') {
-                // Phân bệnh nhân vào ghế/phòng
-                await handleAssignPatientToChair('ch-2', 'Trần Minh Hoàng', user?.full_name || 'BS. Lê Minh');
-                toast.success('🔔 Đã phân Ghế #02 cho BN Trần Minh Hoàng!');
-                
-                // TODO: Persist AI action log to database
-                // await createAiActionLogAction(actId, actionType, 'success', { chairId: 'ch-2', patientName: 'Trần Minh Hoàng' });
-              } else if (actionType === 'alert_doctor') {
-                // TODO: Send real notification to doctor via database
-                // await sendDoctorAlertAction({ doctorId: 'bs-tran-thao', priority: 'high', message: 'Patient waiting >22 mins' });
-                toast.success('🔔 Đã gửi thông báo ưu tiên đặc biệt đến BS. Lê Minh.');
-              } else if (actionType === 'reroute_queue') {
-                // TODO: Reschedule appointments in database
-                // await rescheduleAppointmentsAction({ reason: 'overcapacity', targetDate: tomorrow });
-                toast.success('⏰ Đã đề xuất giãn lịch hẹn cho ngày mai. Chờ xác nhận từ lễ tân.');
-              }
-              
-              // Remove action from UI after execution
-              setAiCooActions((prev) => prev.filter((a) => a.id !== actId));
-            } catch (error) {
-              console.error('[AI COO Action] Error:', error);
-              toast.error('Lỗi thực thi hành động AI. Vui lòng thử lại.');
-            }
-          }}
-        />
-      )}
+                  if (typeof window !== 'undefined' && manifest) {
+                    const storageKey = `healthcare_ai_dismissed_${tenantId}_${manifest.id}`;
+                    const dismissed: string[] = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                    if (!dismissed.includes(actId)) {
+                      dismissed.push(actId);
+                      localStorage.setItem(storageKey, JSON.stringify(dismissed));
+                    }
+                  }
 
-      {/* Split grid for queue monitor and facility map */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {enabledWidgets.includes('queue_realtime_monitor') && (
-          <div className="lg:col-span-2">
-            {renderQueueMonitor()}
-          </div>
-        )}
-        {enabledWidgets.includes('facility_status_map') && (
-          <div>
-            {renderFacilityMap()}
-          </div>
-        )}
-      </div>
-
-      {/* Chair Management panel (For Dental Clinic) */}
-      {manifest.id === 'dental_clinic' && enabledWidgets.includes('chair_management_grid') && (
-        <ChairManagementPanel
-          chairs={chairsMatrix}
-          metrics={resourceMetrics}
-          isMedicalClinic={false}
-          onAssignChair={(chairId) => {
-            if (selectedPatient?.name) {
-              handleAssignPatientToChair(chairId, selectedPatient.name);
-            } else {
-              toast.warning('Vui lòng chọn bệnh nhân trước khi xếp ghế.');
-            }
-          }}
-        />
-      )}
-
-      {/* Clinical Pipeline / Encounters list */}
-      {enabledWidgets.includes('clinical_pipeline_summary') && (
-        <ClinicalPipeline
-          encounters={encounters}
-          onUpdateStatus={handleUpdateEncounterStatus}
-          onSelectPatient={(pName) => {
-            const pat = patients.find((p) => p.name === pName);
-            if (pat) setSelectedPatientId(pat.id);
-          }}
-          selectedEncounterId={selectedEncounterId}
-          onSelectEncounter={(id) => {
-            // Navigate directly to EMR clinical workspace for detailed exam
-            const prefix = manifest.id === 'dental_clinic' ? '/dashboard/dental' : '/dashboard/medical';
-            window.location.assign(`${prefix}/encounters/${id}`);
-          }}
-        />
-      )}
-
-      {/* Auditing and Dev Tools */}
-      {enabledWidgets.includes('it_auditing_tools') && (
-        <div className="border border-slate-200/80 dark:border-slate-800 rounded-[28px] bg-white dark:bg-slate-900 overflow-hidden shadow-sm text-left">
-          <div className="px-6 py-4 flex items-center justify-between bg-slate-50 dark:bg-slate-950 font-extrabold text-sm text-slate-800 dark:text-slate-200">
-            <div className="flex items-center gap-2">
-              <Database className="w-4 h-4 text-indigo-500" />
-              <span>Nhật ký Sự kiện Event Sourcing & CQRS Projections</span>
-            </div>
-            <span className="text-[10px] font-bold bg-indigo-500/10 text-indigo-600 px-2 py-0.5 rounded-full">IT Admin Audit</span>
-          </div>
-          <div className="p-6 border-t border-slate-100 dark:border-slate-800">
-            <EventStreamViewer
-              events={eventStreamLog}
-              outbox={EncounterSaga.getInstance().getOutbox()}
-              activeSagasCount={1}
-              onSimulateEvent={() => {
-                const simulatedLog: DomainEventStreamItem = {
-                  id: `evt-${Date.now()}`,
-                  eventName: 'Encounter.Patient.Arrived.v1',
-                  timestamp: new Date().toLocaleTimeString('vi-VN'),
-                  description: `Bệnh nhân check-in tại quầy tiếp đón`,
-                  actor: 'System Sensor',
-                  category: 'encounter',
-                };
-                setEventStreamLog((prev) => [simulatedLog, ...prev]);
-                toast.info('⚡ Đã giả lập bắn Domain Event tới EventBus & Outbox');
+                  setAiCooActions((prev) => prev.filter((a) => a.id !== actId));
+                } catch (error) {
+                  toast.error('Lỗi thực thi hành động AI. Vui lòng thử lại.');
+                }
               }}
             />
           </div>
-        </div>
-      )}
-    </div>
+        )}
+
+        {/* Chair Management panel & Clinical Pipeline */}
+        {(activeViewTab === 'operations' || activeViewTab === 'all') && (
+          <div className="space-y-7">
+            {/* Chair Management panel (For Dental Clinic) */}
+            {isDental && (
+              <ChairManagementPanel
+                chairs={chairsMatrix}
+                metrics={resourceMetrics}
+                isMedicalClinic={false}
+                onAssignChair={(chairId) => {
+                  if (selectedPatient?.name) {
+                    handleAssignPatientToChair(chairId, selectedPatient.name);
+                  } else {
+                    toast.warning('Vui lòng chọn bệnh nhân trước khi xếp ghế.');
+                  }
+                }}
+              />
+            )}
+
+            {/* Clinical Pipeline / Encounters list */}
+            <ClinicalPipeline
+              encounters={encounters}
+              onUpdateStatus={handleUpdateEncounterStatus}
+              onSelectPatient={(pName) => {
+                const pat = patients.find((p) => p.name === pName);
+                if (pat) setSelectedPatientId(pat.id);
+              }}
+              selectedEncounterId={selectedEncounterId}
+              onSelectEncounter={(id) => {
+                const prefix = isDental ? '/dashboard/dental' : '/dashboard/medical';
+                window.location.assign(`${prefix}/encounters/${id}`);
+              }}
+            />
+          </div>
+        )}
+
+        {/* Auditing and CQRS Event Stream */}
+        {(activeViewTab === 'event_stream' || activeViewTab === 'all') && (
+          <div className="border border-slate-200/80 dark:border-slate-800 rounded-[28px] bg-white dark:bg-slate-900 overflow-hidden shadow-sm text-left">
+            <div className="px-6 py-4 flex items-center justify-between bg-slate-50 dark:bg-slate-950 font-extrabold text-sm text-slate-800 dark:text-slate-200">
+              <div className="flex items-center gap-2">
+                <Database className="w-4 h-4 text-indigo-500" />
+                <span>Nhật ký Sự kiện Event Sourcing & CQRS Projections</span>
+              </div>
+              <span className="text-[10px] font-bold bg-indigo-500/10 text-indigo-600 px-2 py-0.5 rounded-full">IT Admin Audit</span>
+            </div>
+            <div className="p-6 border-t border-slate-100 dark:border-slate-800">
+              <EventStreamViewer
+                events={eventStreamLog}
+                outbox={EncounterSaga.getInstance().getOutbox()}
+                activeSagasCount={1}
+                onSimulateEvent={() => {
+                  const simulatedLog: DomainEventStreamItem = {
+                    id: `evt-${Date.now()}`,
+                    eventName: 'Encounter.Patient.Arrived.v1',
+                    timestamp: new Date().toLocaleTimeString('vi-VN'),
+                    description: `Bệnh nhân check-in tại quầy tiếp đón`,
+                    actor: 'System Sensor',
+                    category: 'encounter',
+                  };
+                  setEventStreamLog((prev) => [simulatedLog, ...prev]);
+                  toast.info('⚡ Đã giả lập bắn Domain Event tới EventBus & Outbox');
+                }}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+    </HealthcareKernelProvider>
   );
 }

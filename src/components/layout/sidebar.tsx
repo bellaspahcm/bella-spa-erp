@@ -420,8 +420,8 @@ const bellaAutoMenuItems: SidebarMenuItem[] = [
   { icon: Settings,        label: 'Cài Đặt Hệ Thống',      href: '/dashboard/settings' },
 ];
 
-// ─── Bella Healthcare Module Menu (isolated — only shown for bella_healthcare moduleKey) ───
-const bellaHealthcareMenuItems: SidebarMenuItem[] = [
+// ─── Bella Dental Clinic Module Menu ───
+const bellaDentalMenuItems: SidebarMenuItem[] = [
   { type: 'header', label: 'Tổng quan & AI' },
   { icon: LayoutDashboard, label: 'Dashboard điều hành',         href: '/dashboard/healthcare' },
   { icon: Sparkles,        label: 'AI Copilot',                  href: '/dashboard/ai-copilot' },
@@ -436,12 +436,40 @@ const bellaHealthcareMenuItems: SidebarMenuItem[] = [
   { type: 'header', label: 'Báo cáo Nha khoa' },
   { icon: BarChart3,       label: 'Báo cáo Lâm sàng',            href: '/dashboard/healthcare/reports/clinical' },
   { icon: LineChart,       label: 'Phân tích Doanh thu',         href: '/dashboard/healthcare/reports/revenue' },
-  { icon: Activity,        label: 'Thống kê Điều trị',           href: '/dashboard/healthcare/reports/treatment' },
+  { icon: Activity,        label: 'Thống kê Điều trị',           href: '/dashboard/healthcare/treatment' },
 
   { type: 'header', label: 'Tài chính & Hệ thống' },
   { icon: Banknote,        label: 'Lương bác sĩ & phụ tá',       href: '/dashboard/healthcare/salary' },
   { icon: CircleDollarSign, label: 'Tài chính phòng khám',        href: '/dashboard/healthcare/finance' },
   { icon: Wallet,          label: 'Nhật ký sổ cái y khoa',       href: '/dashboard/healthcare/accounting' },
+  { icon: FileSpreadsheet, label: 'Báo cáo tài chính TT133',     href: '/dashboard/accounting/reports' },
+  { icon: HelpCircle,      label: 'Hướng dẫn sử dụng',          href: '/dashboard/guides' },
+  { icon: Sliders,         label: 'Cấu hình Dịch vụ',            href: '/dashboard/services' },
+  { icon: Settings,        label: 'Cài Đặt Hệ Thống',           href: '/dashboard/settings' },
+];
+
+// ─── Bella Medical Clinic Module Menu ───
+const bellaMedicalClinicMenuItems: SidebarMenuItem[] = [
+  { type: 'header', label: 'Tổng quan & AI' },
+  { icon: LayoutDashboard, label: 'Dashboard điều hành',         href: '/dashboard/medical' },
+  { icon: Sparkles,        label: 'AI Copilot',                  href: '/dashboard/ai-copilot' },
+
+  { type: 'header', label: 'Lâm sàng & Cận lâm sàng' },
+  { icon: Users,           label: 'Hồ sơ bệnh nhân',             href: '/dashboard/medical/patients' },
+  { icon: ClipboardList,   label: 'Lượt khám bệnh (EMR)',        href: '/dashboard/medical/encounters' },
+  { icon: Activity,        label: 'LIS Xét nghiệm',               href: '/dashboard/medical/laboratory' },
+  { icon: FileText,        label: 'RIS CĐHA & PACS',             href: '/dashboard/medical/imaging' },
+  { icon: Package,         label: 'Dược y tế & Kê đơn',          href: '/dashboard/medical/pharmacy' },
+  { icon: CircleDollarSign, label: 'Viện phí & BHYT (80/20)',     href: '/dashboard/medical/billing' },
+  { icon: FileText,        label: 'Hợp đồng BHYT & Bảo hiểm',    href: '/dashboard/medical/contracts' },
+
+  { type: 'header', label: 'Báo cáo & Phân tích' },
+  { icon: BarChart3,       label: 'Báo cáo Vận hành & SLA',      href: '/dashboard/medical/reports' },
+  { icon: LineChart,       label: 'Phân tích Doanh thu Y tế',    href: '/dashboard/medical/reports/revenue' },
+
+  { type: 'header', label: 'Tài chính & Hệ thống' },
+  { icon: Banknote,        label: 'Lương bác sĩ & Y sĩ',         href: '/dashboard/medical/salary' },
+  { icon: Wallet,          label: 'Nhật ký sổ cái y khoa Outbox', href: '/dashboard/medical/accounting' },
   { icon: FileSpreadsheet, label: 'Báo cáo tài chính TT133',     href: '/dashboard/accounting/reports' },
   { icon: HelpCircle,      label: 'Hướng dẫn sử dụng',          href: '/dashboard/guides' },
   { icon: Sliders,         label: 'Cấu hình Dịch vụ',            href: '/dashboard/services' },
@@ -596,7 +624,7 @@ export function Sidebar() {
     : tenantBrand.moduleKey === 'real_estate'
     ? realEstateMenuItems
     : tenantBrand.moduleKey === 'bella_healthcare'
-    ? bellaHealthcareMenuItems
+    ? (/dental|nha khoa/i.test(tenantBrand.displayName) || /clinical management/i.test(tenantBrand.subtitle) ? bellaDentalMenuItems : bellaMedicalClinicMenuItems)
     : verticalRegistry.has(tenantBrand.moduleKey)
     ? [
         { type: 'header', label: verticalRegistry.get(tenantBrand.moduleKey)?.name || 'Phân hệ' },

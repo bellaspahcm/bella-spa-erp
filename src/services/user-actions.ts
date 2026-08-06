@@ -157,6 +157,17 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
           }
           return profile;
         }
+
+        if (mockEmail === 'admin@medical.vn' || mockEmail === 'admin@healthcare.vn') {
+          return {
+            id: '88888888-8888-8888-8888-888888888888',
+            email: mockEmail,
+            full_name: 'Bác sĩ Admin Phòng Khám',
+            role: 'admin',
+            status: 'active',
+            tenant_id: '77777777-7777-7777-7777-777777777777',
+          } as any;
+        }
       }
     }
     console.warn('[getCurrentUser] No active session found');

@@ -3471,6 +3471,22 @@ html[data-tenant-brand-button="minimal"][data-tenant-module="beauty_spa"] .beaut
 
 /* Industrial Cleaning tenant shell: professional blue/teal theme, scoped by runtime module marker */
 /* Color palette: #001C44 (navy), #0C3776 (blue), #2D93AE (teal), #BCFEFE (cyan), #FBDAD0 (peach) */
+/* Bella Healthcare tenant shell: Dynamic Tenant Brand Theme (Emerald Green, Cyan Blue, or custom settings color) */
+html[data-tenant-module="bella_healthcare"] {
+  --primary-foreground: #FFFFFF;
+  --secondary: #0F172A;
+  --secondary-foreground: #FFFFFF;
+  --accent-foreground: #FFFFFF;
+  --background: #F8FAFC;
+  --foreground: #0F172A;
+  --card: #FFFFFF;
+  --card-foreground: #0F172A;
+  --muted: #F1F5F9;
+  --muted-foreground: #475569;
+  --border: color-mix(in srgb, var(--primary, #074E44) 20%, transparent);
+  --input: color-mix(in srgb, var(--primary, #074E44) 18%, transparent);
+}
+
 html[data-tenant-module="industrial_cleaning"] {
   --primary: #0C3776; /* Blue từ palette - primary action color */
   --primary-hover: #001C44; /* Navy đậm - hover state */

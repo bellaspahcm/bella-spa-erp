@@ -1,308 +1,428 @@
-# Bella Auto — Kế Hoạch Triển Khai Chi Tiết & Checklist Theo Dõi
-## BELLA AUTO EXECUTION CHECKLIST
+Nếu thêm kết nối với màn hình chờ đếm số và thông báo giọng AI mời số bao nhiêu vào phòng bao nhiêu thì sao
 
-> **Vị trí tài liệu:** `docs/plans/bella-auto-execution-plan.md`  
-> **Nguyên tắc tối thượng:** ZERO REGRESSION — Tuyệt đối không ảnh hưởng đến Bella Spa (`babycare`, `beauty_spa`), Real Estate (`real_estate`), CleanPro (`cleaning`).
+Nên. Thực tế đây là một Healthcare Capability rất quan trọng, đặc biệt với phòng khám đa khoa, nha khoa và bệnh viện. Nhưng không nên hardcode vào Medical Clinic, mà nên thiết kế thành Queue Orchestration Capability của Bella Healthcare Platform.
 
----
+Điều này đúng với nguyên tắc bạn đang theo đuổi:
 
-## 🚨 Quy Tắc Bất Biến Cho Nhà Phát Triển (Developer Invariants)
+Additive Extension + Composition over Customization + Zero Regression
 
-*   [ ] **Invariant 01:** Không thực hiện bất kỳ lệnh `ALTER TABLE` nào đối với các bảng cốt lõi hiện có (`bookings`, `customers`, `salary_records`, `attendance`, `inventory_items`, `packages`, `services`, `products`, `revenue`, `expenses`).
-*   [ ] **Invariant 02:** Tất cả các bảng mới dành riêng cho Automotive phải có tiền tố `auto_` (ví dụ: `auto_vehicles`, `auto_customer_journeys`).
-*   [ ] **Invariant 03:** Mọi bảng dữ liệu mới bắt buộc phải có trường `tenant_id UUID` và cấu hình **Row Level Security (RLS)** để cô lập dữ liệu giữa các tenant.
-*   [ ] **Invariant 04:** Thiết kế theo mô hình Provider. Không dùng cấu trúc rẽ nhánh cứng (`if/else` hoặc `switch/case`) kiểm tra trực tiếp module ô tô trong các service core. Sử dụng registry để nạp `AutoInventoryProvider`, `AutoCommissionProvider` một cách động.
-*   [ ] **Invariant 05:** Bất kỳ luồng thay đổi trạng thái tài chính nào (doanh thu, hoa hồng, chi phí) đều phải ghi nhận thông qua **Accounting Outbox** (`src/lib/accounting-outbox.ts`), không được phép ghi trực tiếp vào sổ cái kế toán (`journal_entries`, `journal_lines`).
+Nên bổ sung Layer mới
+Bella Host Platform
+        │
+        ▼
+Healthcare Domain Platform
+        │
+        ├── Clinical
+        ├── Laboratory
+        ├── Imaging
+        ├── Billing
+        ├── Insurance
+        ├── Pharmacy
+        ├── Queue Orchestration   ← thêm
+        │
+        ▼
+Products
+    Medical
+    Dental
+    Hospital
 
----
+Queue không thuộc Medical.
 
-## ✅ TRẠNG THÁI HOÀN THÀNH
+Queue thuộc Healthcare Foundation.
 
-**Ngày bắt đầu:** August 3, 2026  
-**Cập nhật lần cuối:** August 4, 2026  
-**Trạng thái tổng:** 🚧 **Phase 14 In Progress** - 13/15 Phases Complete
+Sau này Dental cũng dùng.
 
-### Phases 0-10 (Foundation) ✅ COMPLETE
-**Hoàn thành:** August 3, 2026  
-**Deliverables:**
-- ✅ 10 migrations deployed to production
-- ✅ 33 database tables created (all `auto_*` prefixed)
-- ✅ 40+ service classes (~12,400 LOC)
-- ✅ 18+ RPC functions
-- ✅ 130+ integration tests (ALL PASSING)
-- ✅ Complete documentation (285+ pages)
-- ✅ User testing package ready
+Hospital cũng dùng.
 
-### Phases 11-13 (Enterprise Top-Tier) ✅ COMPLETE
-**Hoàn thành:** August 4, 2026  
-**Deliverables:**
-- ✅ Phase 11: Business Rollback (10/10) - 3 tables, BusinessRollbackEngine, 4 UI components, 4 API routes
-- ✅ Phase 12 Week 1: Temporal History (10/10) - 3 temporal tables, 3 RPCs, automatic snapshots
-- ✅ Phase 13: Rule Engine (10/10) - 5 tables, 2 RPCs, BusinessRuleEngine, 5 UI components, 4 API routes
-- ✅ Total: 11 new tables, 5 RPCs, 3 engines, 9 UI components, 8 API routes
-- ✅ 2,900+ LOC written (TypeScript + SQL)
-- ✅ All tests passing, zero regressions
+Eye Clinic cũng dùng.
 
-### Phase 14 (Marketplace) ✅ COMPLETE
-**Completed:** August 4, 2026  
-**Status:** Production Ready
-- ✅ Migration deployed: 5 tables (capabilities, versions, dependencies, installed, configs)
-- ✅ 7 capabilities seeded (Journey, Vehicle, Trade-In, Experience, Rule, Rollback, Temporal)
-- ✅ 2 UI components created (CapabilityMarketplace, InstalledCapabilities)
-- ✅ 3 API routes created (list, install, uninstall)
-- ✅ One-click install/uninstall flow
-- ✅ Health monitoring & version tracking
+ENT cũng dùng.
 
-### Phase 15 (Rollup Analytics) ✅ COMPLETE
-**Completed:** August 4, 2026  
-**Status:** Production Ready
-- ✅ Migration deployed: 3 tables (organization_units, rollup_configs, rollup_cache)
-- ✅ Hierarchical org structure (6 levels: Holding → Group → Country → Region → Branch → Journey)
-- ✅ 2 RPCs created (get_rollup_analytics, invalidate_rollup_cache)
-- ✅ Materialized path for fast hierarchy queries
-- ✅ Multi-currency support schema
-- ✅ 1 UI component created (CEODashboard with drill-down)
-- ✅ Demo org hierarchy seeded
+Queue Orchestration Capability gồm những gì
+1. Queue Engine
+Patient
 
-**Documentation Package:**
-- ✅ Execution Plan (this file) - Updated with Phases 11-15
-- ✅ API Documentation - 10,000 words, 150+ pages
-- ✅ Phase 13 Completion Report - 402 lines
-- ✅ User Testing Guide - Comprehensive scenarios
+↓
 
-**Git Commits:** 23+ commits total
-- Phase 0-10: Foundation commits
-- Phase 11-13: 7 commits (044bc074, 6890dc3d, ed872cd8, bd7b9e8e, 8a669186, ac89031c, 1c1d1242, 874b396a, 78b8c645, 50344ae6)
+Check In
 
-**Current Score:** 10/10 ✅ 🏆 **ENTERPRISE TOP-TIER ACHIEVED**  
-**All 15 Phases:** COMPLETE  
-**Next Phase:** User Acceptance Testing (4 weeks)
+↓
 
----
+Waiting
 
-## 📅 BẢN ĐỒ TIẾN ĐỘ CHI TIẾT (PHASE CHECKLIST)
+↓
 
-### Phase 0 — Thiết Lập Nền Tảng & Cô Lập Module (Tuần 1-2)
-*   [x] **0.1.** Đăng ký mã module `bella_auto` vào hệ thống registry/manifest chung mà không kích hoạt mặc định cho bất cứ tenant hiện tại nào.
-*   [x] **0.2.** Tạo file cấu hình manifest riêng tại `src/modules/bella-auto/manifest.ts` định nghĩa các capability và provider mặc định.
-*   [x] **0.3.** Viết kịch bản database migration khởi tạo các bảng danh mục cơ bản (`auto_brands`, `auto_models`, `auto_variants`) và cấu hình RLS.
-*   [x] **0.4.** Tạo cấu trúc thư mục route cô lập hoàn toàn tại `src/app/dashboard/bella-auto/` và layout với CSS scoped `html[data-tenant-module="bella_auto"]`.
-*   [x] **0.5.** Tạo tenant demo chuyên biệt `bella_auto_demo` để phục vụ việc kiểm thử phát triển.
-*   [x] **0.6.** Viết integration test `src/__tests__/auto-module-isolation.test.ts` để kiểm chứng tenant spa/real estate không nhìn thấy dữ liệu ô tô và ngược lại.
+Calling
+
+↓
+
+In Room
+
+↓
+
+Completed
+
+State Machine.
+
+2. TV Display
+
+Màn hình lớn
+
+ĐANG GỌI
+
+A025
+
+Phòng 03
+
+Bác sĩ Nguyễn Văn A
+
+----------------
+
+Đang khám
+
+A024
+
+Phòng 03
+
+3. Voice AI
+
+Bella AI đọc
+
+"Kính mời bệnh nhân số A025 vào phòng khám số 03."
+
+hoặc
+
+"Xin mời anh Nguyễn Văn An đến phòng khám Nội số 2."
+
+Có thể thay đổi theo cấu hình.
+
+4. Multi Queue
+
+Ví dụ
+
+Tiếp đón
+
+↓
+
+Khám
+
+↓
+
+Xét nghiệm
+
+↓
+
+Chẩn đoán hình ảnh
+
+↓
+
+Quay lại bác sĩ
+
+↓
+
+Thanh toán
+
+↓
+
+Nhà thuốc
+
+Đây mới đúng workflow bệnh viện.
+
+Không chỉ có một hàng đợi.
+
+5. Queue Routing
+
+Ví dụ
+
+Đăng ký
+
+↓
+
+Nội
+
+↓
+
+Xét nghiệm
+
+↓
+
+Nội
+
+↓
+
+Thanh toán
+
+Queue Engine sẽ tự route.
+
+6. Priority Queue
+
+Ví dụ
+
+Normal
+
+VIP
+
+Emergency
+
+Child
+
+Pregnant
 
 
----
+AI sẽ quyết định ưu tiên.
 
-### Phase 1 — Quản Lý Phương Tiện & Số Khung (VIN Management) (Tuần 3-5)
-*   [x] **1.1.** Tạo bảng cơ sở dữ liệu `auto_vehicles` lưu trữ thông tin số VIN, số khung, số máy, màu sắc và trạng thái của xe.
-*   [x] **1.2.** Xây dựng `VehicleStatusMachineService` quản lý máy trạng thái vòng đời xe (`in_transit` → `warehouse` → `showroom` → `allocated` → `delivered`).
-*   [x] **1.3.** Xây dựng `AutoInventoryProvider` kế thừa từ `InventoryProvider` để xử lý các nghiệp vụ xuất/nhập/điều chuyển kho xe.
-*   [x] **1.4.** Phát triển giao diện quản lý danh mục xe (Thương hiệu, Dòng xe, Phiên bản) và kho xe thời gian thực.
-*   [x] **1.5.** Phát triển chức năng phân bổ xe (`VehicleAllocationService`) để khớp số VIN cụ thể với một hợp đồng đặt cọc.
-*   [x] **1.6.** Hiện thực hóa tính năng nhập danh sách xe hàng loạt từ file Excel/CSV.
+7. Smart Calling
 
----
+Nếu
 
-### Phase 2 — Hồ Sơ Khách Hàng Ô Tô (Customer 360 Extension) (Tuần 5-6)
-*   [x] **2.1.** Tạo bảng phụ trợ `auto_vehicle_owners` liên kết 1-1 hoặc 1-N với bảng `customers` cốt lõi mà không thay đổi cấu trúc bảng cũ.
-*   [x] **2.2.** Xây dựng `AutoCustomerProvider` để đọc và tổng hợp thông tin mở rộng của chủ xe (sở thích thương hiệu, ngân sách, lịch sử đổi xe).
-*   [x] **2.3.** Thiết kế giao diện chi tiết khách hàng tích hợp thêm Tab "Automotive" hiển thị các xe đang sở hữu và lịch sử giao dịch ô tô.
-*   [x] **2.4.** Xây dựng logic gộp/chuẩn hóa dữ liệu khách hàng ô tô trùng lặp nhưng vẫn bảo toàn lịch sử số VIN sở hữu.
+A025
 
----
+không vào
 
-### Phase 3 ⭐ — Journey Engine & Trải Nghiệm Khách Hàng (Tuần 7-12)
-*   [x] **3.1.** Tạo các bảng dữ liệu lưu trữ hành trình: `auto_journey_stages` (22 giai đoạn hành trình), `auto_customer_journeys`, và `auto_journey_events`.
-*   [x] **3.2.** Phát triển `CustomerJourneyService` điều phối việc khởi tạo hành trình khi có Lead mới và cập nhật trạng thái tự động.
-*   [x] **3.3.** Xây dựng `JourneySLAMonitorService` tự động quét và đưa ra cảnh báo (at risk / breached) khi một hành trình bị nghẽn quá thời hạn SLA của stage đó.
-*   [x] **3.4.** Phát triển giao diện **Journey Timeline (CEO View)** trực quan hiển thị dòng lịch sử tương tác của khách hàng từ lúc biết đến qua quảng cáo cho đến bảo dưỡng và Trade-in sau nhiều năm.
-*   [x] **3.5.** Tích hợp cơ chế thu thập Touchpoint tự động (`auto_touchpoints`) ghi nhận lịch sử cuộc gọi, email, tin nhắn Zalo, hay ghé thăm showroom.
-*   [x] **3.6.** Thiết kế giao diện báo cáo **Journey Funnel Analytics** (phân tích tỷ lệ chuyển đổi và tỷ lệ rơi rụng qua từng bước) và **Journey Heatmap** (phân tích thời gian trung bình bị nghẽn tại từng giai đoạn).
+Sau 30 giây
 
----
+↓
 
-### Phase 4 — Lead & Quy Trình Bán Hàng (Lead & Sales Center) (Tuần 11-14)
-*   [x] **4.1.** Kế thừa và viết `AutoLeadProvider` để nhận diện các tín hiệu chấm điểm Lead chuyên biệt cho ngành ô tô (dòng xe quan tâm, mức ngân sách, thời gian dự kiến mua). *(LeadRotationService — Round Robin & Smart Allocation)*
-*   [x] **4.2.** Tích hợp Lead capture tự động từ các kênh Ads (Facebook, Google, TikTok) và Landing Page trực tiếp vào luồng phân bổ Lead (Lead Rotation). *(auto_leads table + LeadRotationService)*
-*   [x] **4.3.** Xây dựng **Quotation Engine** hỗ trợ tạo báo giá nhiều phiên bản, kiểm soát chiết khấu tối đa và cơ chế gửi phê duyệt vượt hạn mức (Approval Matrix). *(AutoSalesProvider.createBooking)*
-*   [x] **4.4.** Phát triển module lái thử **Test Drive Engine**: Đặt lịch xe demo, phân công Sale đồng hành, cập nhật biểu mẫu cam kết và khảo sát phản hồi khách hàng. *(auto_bookings + Lead Center UI)*
-*   [x] **4.5.** Xây dựng luồng đặt cọc (`auto_bookings`), ghi nhận thanh toán đặt cọc (`auto_deposits`) kết hợp khóa giữ xe tạm thời trong kho. *(AutoSalesProvider.recordDepositPayment + VehicleAllocationService.allocate)*
-*   [x] **4.6.** Xây dựng `AutoCommissionProvider` tính toán hoa hồng bán xe cho tư vấn bán hàng dựa trên mức độ hoàn thành chỉ tiêu xe và phụ kiện. *(AutoSalesProvider — Accounting Outbox PACKAGE_SALE)*
+AI gọi lần 2
 
----
+↓
 
-### Phase 5 ⭐ — Trải Nghiệm Khách Hàng & AI Quyết Định (Tuần 14-17)
-*   [x] **5.1.** Hiện thực hóa hệ thống khảo sát tự động **NPS (Net Promoter Score)** kích hoạt sau khi giao xe (Delivery) và sau khi làm dịch vụ sửa chữa (Maintenance).
-*   [x] **5.2.** Xây dựng hệ thống chỉ số đánh giá độ hài lòng **CSI (Customer Satisfaction Index)** theo nhiều chiều (sale phục vụ, cơ sở vật chất, thời gian giao nhận).
-*   [x] **5.3.** Xây dựng dịch vụ `CustomerHealthScoreService` tổng hợp điểm sức khỏe khách hàng dựa trên tần suất tương tác, mức chi tiêu và khảo sát phản hồi.
-*   [x] **5.4.** Phát triển **AI Next Best Action Engine** gợi ý hành động tiếp theo cho Sale (ví dụ: khách xem báo giá đã 5 ngày chưa trả lời -> Gợi ý kịch bản gọi điện chăm sóc).
-*   [x] **5.5.** Tích hợp phân tích AI về nguyên nhân mất khách ở giai đoạn báo giá/thương lượng (Lost Analysis AI).
+Không đến
 
----
+↓
 
-### Phase 6 — Trung Tâm Dịch Vụ & Xưởng (Workshop & Service) (Tuần 17-21)
-*   [x] **6.1.** Xây dựng bảng và dịch vụ đặt lịch hẹn bảo dưỡng/sửa chữa (`auto_service_appointments`) liên kết với thông tin biển số và số VIN của khách hàng. *(ServiceAppointmentService — Full lifecycle management)*
-*   [x] **6.2.** Phát triển luồng tiếp nhận xe, lập lệnh sửa chữa (Repair Order / Job Card) và phân công kỹ thuật viên khoang sửa chữa. *(RepairOrderService — Job card, line items, technician assignment)*
-*   [x] **6.3.** Tạo cơ sở dữ liệu lịch sử sửa chữa không thể sửa xóa (`auto_service_history`) liên kết chặt chẽ với từng số VIN. *(ServiceHistoryService — Immutable VIN-linked history with RLS)*
-*   [x] **6.4.** Phát triển module quản lý yêu cầu bảo hành (`auto_warranty_claims`) kiểm tra thời hạn bảo hành của VIN và phê duyệt phụ tùng thay thế. *(WarrantyService — Claims workflow with validation & approval)*
-*   [x] **6.5.** Tích hợp khấu trừ phụ tùng tự động trong kho vật tư khi hoàn thành lệnh sửa chữa. *(PartsInventoryIntegration — Auto-deduct parts on completion)*
+Skip
 
----
+↓
 
-### Phase 7 — Định Giá & Thu Mua Xe Cũ (Trade-In Center) (Tuần 21-23)
-*   [x] **7.1.** Xây dựng form đánh giá xe cũ đầu vào (`auto_trade_in_appraisals`) đi kèm checklist tình trạng kỹ thuật chi tiết (động cơ, ngoại thất, nội thất). *(TradeInAppraisalService — Full appraisal lifecycle)*
-*   [x] **7.2.** Phát triển module chụp ảnh xe cũ đa góc độ, lưu trữ trực tiếp vào hồ sơ thẩm định. *(TradeInPhotoService — 18 photo categories with damage markers)*
-*   [x] **7.3.** Xây dựng Valuation Engine tích hợp phân tích giá thị trường để đưa ra đề xuất khoảng giá thu mua hợp lý. *(MarketValuationService + AI-powered valuation engine)*
-*   [x] **7.4.** Tích hợp luồng duyệt giá thu mua xe cũ từ giám đốc chi nhánh và kết nối trực tiếp cơ hội thu mua này thành một phần thanh toán cho xe mới của khách hàng. *(Approval workflow + linkToSale integration)*
+Gọi A026
 
----
+Sau đó
 
-### Phase 8 — Nghiệp Vụ Tài Chính Ô Tô (Finance Center) (Tuần 23-25)
-*   [x] **8.1.** Xây dựng module theo dõi hồ sơ vay trả góp ngân hàng (`auto_loan_applications`) theo các trạng thái (đang nộp hồ sơ, đã duyệt thông báo cho vay, đã giải ngân). *(LoanApplicationService — Full lifecycle + commission tracking)*
-*   [x] **8.2.** Xây dựng module theo dõi hợp đồng bảo hiểm xe (`auto_insurance_policies`), tự động cảnh báo tái tục bảo hiểm trước 30 ngày. *(InsuranceService — Policy management + auto-renewal)*
-*   [x] **8.3.** Tích hợp luồng ghi nhận doanh thu tự động thông qua **Accounting Outbox** khi trạng thái xe chuyển sang "Delivered" (Đã bàn giao xe). *(FinancialReportingService — Revenue recognition ready)*
-*   [x] **8.4.** Xây dựng báo cáo phân tích tài chính đặc thù: Biên lợi nhuận gộp trên từng đầu xe bán ra, doanh thu dịch vụ xưởng và hoa hồng liên kết (ngân hàng, bảo hiểm). *(FinancialReportingService — Comprehensive analytics)*
+A025
 
----
+được chuyển cuối hàng.
 
-### Phase 9 — Trí Tuệ Nhân Tạo & Báo Cáo Nâng Cao (AI Center) (Tuần 25-30)
-*   [x] **9.1.** Huấn luyện/Cấu hình AI Agent hỗ trợ Ban giám đốc truy vấn dữ liệu vận hành bằng ngôn ngữ tự nhiên ("Showroom nào đang có tỷ lệ lái thử sang đặt cọc thấp nhất?"). *(AIInsightsService — Foundation layer)*
-*   [x] **9.2.** Xây dựng mô hình AI dự báo nhu cầu tồn kho (Demand Forecasting) theo từng dòng xe, phiên bản và màu sắc dựa trên dữ liệu lịch sử bán hàng. *(DemandForecastingService — Rule-based + ML-ready)*
-*   [x] **9.3.** Tích hợp thuật toán dự đoán khả năng rời bỏ của khách hàng dịch vụ (Service Churn Prediction). *(ChurnPredictionService — Risk scoring + retention)*
-*   [x] **9.4.** Thiết kế màn hình trực quan **Customer Lifetime Journey (10-Year View)** tổng hợp đầy đủ dòng tiền và các điểm chạm dịch vụ của 1 khách hàng trong suốt vòng đời dùng xe. *(CustomerLifetimeJourneyService — Complete timeline)*
+8. Room Assignment
 
----
+Ví dụ
 
-### Phase 10 — Ứng Dụng Di Động Cho Nhân Sự (Mobile Workforce) (Tuần 29-33)
-*   [x] **10.1.** Xây dựng PWA/Mobile View dành cho Tư vấn bán hàng: Tiếp nhận Lead, lập báo giá nhanh tại showroom, ghi nhận thông tin lái thử trực tiếp trên điện thoại. *(MobileSessionService — Foundation)*
-*   [x] **10.2.** Phát triển giao diện di động cho Cố vấn dịch vụ: Chụp ảnh xe khi tiếp nhận vào xưởng, lập báo giá sửa chữa gửi khách hàng duyệt trực tuyến. *(OfflineSyncService — Photo upload tracking)*
-*   [x] **10.3.** Phát triển giao diện di động cho Kỹ thuật viên: Xem danh sách lệnh sửa chữa được phân công, yêu cầu phụ tùng từ kho và báo cáo hoàn thành công việc. *(MobileNotificationService — Push alerts)*
+Doctor A
 
----
+Room 1
 
-### Phase 11 — Business Rollback Engine (Tuần 34-36) ✅ COMPLETE
-*   [x] **11.1.** Tạo bảng `auto_rollback_transactions` lưu trữ thông tin giao dịch nghiệp vụ cần rollback (bookings, quotations, deposits).
-*   [x] **11.2.** Tạo bảng `auto_rollback_steps` lưu trữ các bước rollback chi tiết (dependent cascades).
-*   [x] **11.3.** Tạo bảng `auto_rollback_audit_log` ghi nhận lịch sử rollback không thể xóa.
-*   [x] **11.4.** Xây dựng `BusinessRollbackEngine` với khả năng phân tích dependent cascades tự động.
-*   [x] **11.5.** Phát triển UI component `TransactionHistoryViewer` để xem lịch sử giao dịch.
-*   [x] **11.6.** Phát triển UI component `StepByStepRollbackPreview` để xem trước các bước rollback.
-*   [x] **11.7.** Phát triển UI component `RollbackConfirmationDialog` cho xác nhận rollback.
-*   [x] **11.8.** Phát triển UI component `AuditTrailDashboard` để theo dõi audit log.
-*   [x] **11.9.** Tạo API routes `/api/bella-auto/transactions` và `/api/bella-auto/rollback-audit`.
-*   [x] **11.10.** Viết integration tests cho 4 use cases rollback: Quotation rejected, Booking cancelled, Deposit refunded, Service cancelled.
+Doctor B
 
-**Commits:** 044bc074, 6890dc3d, ed872cd8  
-**Score Impact:** 9.0/10 → 9.5/10
+Room 2
 
----
+Doctor C
 
-### Phase 12 — Temporal History & Time-Travel Queries (Tuần 36-41) ✅ Week 1 COMPLETE
-*   [x] **12.1 (Week 1).** Tạo 3 bảng temporal: `auto_bookings_history`, `auto_customer_journeys_history`, `auto_leads_history`.
-*   [x] **12.2 (Week 1).** Xây dựng RPC function `create_snapshot()` để tạo snapshot tự động.
-*   [x] **12.3 (Week 1).** Xây dựng RPC function `query_as_of(timestamp)` để query dữ liệu tại thời điểm trong quá khứ.
-*   [x] **12.4 (Week 1).** Xây dựng RPC function `get_history(entity_id)` để lấy toàn bộ lịch sử thay đổi.
-*   [x] **12.5 (Week 1).** Tạo automatic snapshot triggers cho các bảng nguồn.
-*   [ ] **12.6 (Week 2).** Tạo 5 bảng temporal bổ sung: `auto_quotations_history`, `auto_loans_history`, `auto_services_history`, `auto_inventory_history`, `auto_commissions_history`.
-*   [ ] **12.7 (Week 2).** Phát triển UI component `TemporalQueryBuilder` để xây dựng truy vấn time-travel.
-*   [ ] **12.8 (Week 3).** Xây dựng as-of compliance reports (báo cáo dữ liệu tại thời điểm kiểm toán).
-*   [ ] **12.9 (Week 3).** Phát triển time-travel debugging UI cho developer.
+Room 3
 
-**Commits:** 044bc074 (Week 1)  
-**Score Impact:** 9.5/10 → 9.7/10 (after full completion)
+Nếu đổi phòng
 
----
+AI đổi luôn.
 
-### Phase 13 — Business Rule Engine (Tuần 41-45) ✅ COMPLETE 10/10
-*   [x] **13.1 (Week 1).** Tạo bảng `auto_business_rules` với JSON DSL cho conditions và actions.
-*   [x] **13.2 (Week 1).** Tạo bảng `auto_rule_execution_log` ghi nhận lịch sử thực thi rule.
-*   [x] **13.3 (Week 1).** Tạo bảng `auto_rule_templates` lưu trữ pre-built templates.
-*   [x] **13.4 (Week 1).** Tạo bảng `auto_approval_workflows` định nghĩa multi-level approval.
-*   [x] **13.5 (Week 1).** Tạo bảng `auto_approval_instances` theo dõi runtime approval tracking.
-*   [x] **13.6 (Week 1).** Xây dựng RPC `evaluate_business_rules()` cho dynamic rule matching.
-*   [x] **13.7 (Week 1).** Xây dựng RPC `get_pending_approvals()` cho user approval queue.
-*   [x] **13.8 (Week 1).** Xây dựng `BusinessRuleEngine` với evaluation và execution logic (400 LOC).
-*   [x] **13.9 (Week 2).** Phát triển UI component `ConditionBuilder` cho visual condition config (300 LOC).
-*   [x] **13.10 (Week 2).** Phát triển UI component `ActionConfigurator` cho action parameters (300 LOC).
-*   [x] **13.11 (Week 2).** Phát triển UI component `RuleBuilderForm` làm wrapper tổng hợp (450 LOC).
-*   [x] **13.12 (Week 2).** Phát triển UI component `TemplateGallery` hiển thị pre-built templates (250 LOC).
-*   [x] **13.13 (Week 2).** Phát triển UI component `ApprovalDashboard` cho user approval queue (200 LOC).
-*   [x] **13.14 (Week 3).** Tạo API routes: GET/POST `/api/bella-auto/rules`.
-*   [x] **13.15 (Week 3).** Tạo API routes: GET/PUT/DELETE `/api/bella-auto/rules/[id]`.
-*   [x] **13.16 (Week 3).** Tạo API route: GET `/api/bella-auto/rules/analytics`.
-*   [x] **13.17 (Week 4).** Tích hợp Rule Engine với quotation/booking workflows.
-*   [x] **13.18 (Week 4).** Xây dựng workflow notifications cho approvals.
-*   [x] **13.19 (Week 4).** Testing và polish.
+TV đổi.
 
-**Commits:** bd7b9e8e, 8a669186, ac89031c, 1c1d1242, 874b396a, 78b8c645, 50344ae6  
-**Score Impact:** 9.7/10 → 10/10 ✅
+Voice đổi.
 
----
+Queue đổi.
 
-### Phase 14 — Capability Marketplace (Tuần 45-53) ✅ COMPLETE 10/10
-*   [x] **14.1 (Week 1).** Tạo bảng `auto_capabilities` registry cho reusable capabilities.
-*   [x] **14.2 (Week 1).** Tạo bảng `auto_capability_versions` với semantic versioning.
-*   [x] **14.3 (Week 1).** Tạo bảng `auto_capability_dependencies` cho dependency graph.
-*   [x] **14.4 (Week 1).** Tạo bảng `auto_installed_capabilities` theo dõi tenant installations.
-*   [x] **14.5 (Week 1).** Tạo bảng `auto_capability_configs` lưu tenant-specific configs.
-*   [x] **14.6 (Week 1).** Deploy migration `20260804100000_bella_auto_phase14_marketplace.sql`.
-*   [x] **14.7 (Week 2).** Extract Journey Engine thành shared capability package (seeded in migration).
-*   [x] **14.8 (Week 2).** Extract Vehicle Lifecycle thành shared capability (seeded in migration).
-*   [x] **14.9 (Week 3).** Extract Trade-In Appraisal thành shared capability (seeded in migration).
-*   [x] **14.10 (Week 3).** Extract Customer Experience thành shared capability (seeded in migration).
-*   [x] **14.11 (Week 4).** Extract Rule Engine thành shared capability (seeded in migration).
-*   [x] **14.12 (Week 4).** Extract Business Rollback thành shared capability (seeded in migration).
-*   [x] **14.13 (Week 4).** Extract Temporal History thành shared capability (seeded in migration).
-*   [x] **14.14 (Week 5).** Phát triển UI `CapabilityMarketplace` component (gallery view with filter/search/sort).
-*   [x] **14.15 (Week 5).** Phát triển UI `CapabilityDetail` component (merged into CapabilityMarketplace cards).
-*   [x] **14.16 (Week 6).** Phát triển UI `InstalledCapabilities` component (tenant installed list).
-*   [x] **14.17 (Week 6).** Phát triển UI `CapabilityConfig` component (configuration hooks ready, full editor in future iteration).
-*   [x] **14.18 (Week 7).** Tạo API routes: GET `/api/bella-auto/marketplace/capabilities`.
-*   [x] **14.19 (Week 7).** Tạo API route: POST `/api/bella-auto/marketplace/install`.
-*   [x] **14.20 (Week 7).** Tạo API route: DELETE `/api/bella-auto/marketplace/uninstall`.
-*   [x] **14.21 (Week 8).** Testing one-click install flow (ready for integration testing with other verticals).
-*   [x] **14.22 (Week 8).** Demo vertical integration (foundation ready, full demo in UAT phase).
+9. WebSocket
+Queue
 
-**Commits:** 7817e4dc  
-**Score Impact:** 10/10 (maintain top-tier) ✅
+↓
 
----
+Realtime
 
-### Phase 15 — Rollup Analytics & Organizational Hierarchy (Tuần 53-58) ✅ COMPLETE 10/10
-*   [x] **15.1 (Week 1).** Tạo bảng `auto_organization_units` định nghĩa cấu trúc tổ chức đa cấp (Branch → Region → Country → Group → Holding).
-*   [x] **15.2 (Week 1).** Tạo bảng `auto_rollup_configs` cấu hình rollup rules theo từng cấp.
-*   [x] **15.3 (Week 1).** Xây dựng `OrganizationHierarchyEngine` quản lý cây tổ chức (materialized path implementation in DB).
-*   [x] **15.4 (Week 2).** Xây dựng `RollupAnalyticsEngine` tổng hợp dữ liệu từ Journey → Branch → Region → Country → Group → Holding (foundation in RPC).
-*   [x] **15.5 (Week 2).** Phát triển RPC `get_rollup_analytics(org_unit_id, depth)` cho aggregation queries.
-*   [x] **15.6 (Week 3).** Phát triển UI `CEODashboard` component hiển thị toàn cảnh consolidated.
-*   [x] **15.7 (Week 3).** Phát triển drill-down capability từ Holding → Group → Country → Region → Branch → Journey (expand/collapse tree).
-*   [x] **15.8 (Week 4).** Tích hợp multi-currency support cho rollup (VND, USD, EUR, JPY) - schema ready with base_currency column.
-*   [x] **15.9 (Week 4).** Xây dựng comparative analytics (Year-over-Year, Quarter-over-Quarter) - schema ready with previous_period_metrics.
-*   [x] **15.10 (Week 5).** Testing rollup accuracy với mock data 100+ branches (demo hierarchy seeded for testing).
-*   [x] **15.11 (Week 5).** Performance optimization cho rollup queries (materialized cache table + invalidation RPC).
+↓
 
-**Commits:** 04cbbfbb  
-**Score Impact:** 10/10 (ENTERPRISE TOP-TIER ACHIEVED) ✅ 🏆
+Doctor
 
----
+↓
 
-## 🧪 KỊCH BẢN KIỂM THỬ TỰ ĐỘNG BẮT BUỘC (TEST SUITE)
+Reception
 
-Để đảm bảo dự án không gặp lỗi hồi quy, các file test sau phải được duy trì và chạy thành công ở mỗi giai đoạn:
+↓
 
-```bash
-# Lệnh chạy kiểm thử tổng thể
-npm.cmd test -- src/__tests__/auto-module-isolation.test.ts --runInBand
-npm.cmd test -- src/__tests__/auto-tenant-isolation.test.ts --runInBand
-npm.cmd test -- src/__tests__/auto-journey-engine.test.ts --runInBand
-```
+TV
 
-*   [x] **Test Case 1:** Đăng nhập tài khoản Admin Bella Spa. Xác nhận không thể thực hiện bất kỳ truy vấn hay thao tác API nào đến các bảng `auto_*`. *(auto-module-isolation.test.ts — PASS)*
-*   [x] **Test Case 2:** Đăng nhập tài khoản Admin Bella Auto. Xác nhận chỉ nhìn thấy dữ liệu có `tenant_id` khớp với tài khoản đăng nhập (cô lập RLS). *(auto-module-isolation.test.ts — PASS)*
-*   [x] **Test Case 3:** Thực hiện chuyển trạng thái hành trình khách hàng từ `test_drive` sang `quotation`. Kiểm chứng bản ghi `auto_journey_events` được tự động ghi nhận chính xác thời gian và thông tin người thực hiện. *(auto-phase3-journey-engine.test.ts — PASS)*
-*   [x] **Test Case 4:** Mô phỏng tình trạng một hành trình vượt quá thời gian SLA quy định của giai đoạn. Kiểm chứng hệ thống tự động kích hoạt cờ cảnh báo `sla_status = 'breached'`. *(auto-phase3-journey-engine.test.ts — PASS)*
-*   [x] **Test Case 5:** Thực hiện bán một chiếc xe có số VIN cụ thể. Xác nhận hệ thống gửi payload sang `accounting_outbox` đúng định dạng và giảm trừ số lượng tồn kho của số VIN đó mà không gây lỗi khóa bảng hay treo kết nối database. *(auto-phase4-sales-lead.test.ts — PASS)*
+↓
 
----
+Mobile
 
-*Tài liệu này được lưu trữ tại [docs/plans/bella-auto-execution-plan.md](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/docs/plans/bella-auto-execution-plan.md). Vui lòng cập nhật trạng thái `[x]` sau khi hoàn thành từng hạng mục nhỏ để các hệ thống IDE khác nhau có thể đồng bộ tiến độ.*
+
+Không cần refresh.
+
+10. Public Display API
+TV
+
+Android TV
+
+Tablet
+
+Web
+
+Kiosk
+
+Đều dùng chung.
+
+AI Voice Service
+
+Tách riêng.
+
+Queue Event
+
+↓
+
+Voice Service
+
+↓
+
+Text
+
+↓
+
+TTS
+
+↓
+
+Speaker
+
+Không để Queue Engine đọc.
+
+Queue chỉ phát Event.
+
+Ví dụ
+
+QueueCalled
+
+↓
+
+AnnouncementRequested
+
+↓
+
+Voice Service
+
+↓
+
+Play Audio
+
+Event-driven.
+
+Kiosk
+
+Có thể mở rộng luôn.
+
+Đăng ký
+
+↓
+
+In số
+
+↓
+
+QR
+
+↓
+
+SMS
+
+↓
+
+Zalo
+
+↓
+
+Queue
+Notification
+
+Ngoài loa
+
+có thể
+
+SMS
+
+Zalo
+
+App
+
+Push
+
+TV
+
+Speaker
+
+
+Tất cả subscribe cùng Event.
+
+Capability Manifest
+queue_management
+
+queue_display
+
+voice_announcement
+
+kiosk_checkin
+
+queue_routing
+
+priority_queue
+
+room_assignment
+
+queue_monitor
+
+
+Medical chỉ bật.
+
+Dental cũng bật.
+
+Hospital bật.
+
+Home Care tắt.
+
+Kiến trúc chuẩn
+Healthcare Foundation
+
+    Queue Engine
+          │
+          ├── State Machine
+          ├── Routing Engine
+          ├── Room Assignment
+          ├── Voice Announcement
+          ├── Display Board
+          ├── Kiosk
+          ├── Ticket Printer
+          ├── Queue Analytics
+          └── WebSocket Gateway
+
+                │
+
+         Product Manifest
+
+        Medical ✔
+
+        Dental ✔
+
+        Hospital ✔
+
+        Eye ✔
+
+        ENT ✔
+Đề xuất thêm một ADR
+
+Với kiến trúc hiện tại của Bella Healthcare, mình sẽ bổ sung một ADR mới, ví dụ:
+
+ADR-010: Queue Orchestration & Patient Flow Platform
+
+Nội dung chính:
+
+Queue là Healthcare Foundation Capability, không thuộc bất kỳ sản phẩm nào.
+Mọi sản phẩm (Medical, Dental, Hospital, Specialist...) chỉ enable capability này qua Manifest.
+Queue Engine hoạt động theo Event-Driven Architecture, phát các sự kiện như PatientCheckedIn, QueueCalled, PatientNoShow, RoomAssigned, ConsultationStarted, ConsultationCompleted.
+TV Display, Voice AI, Kiosk, Mobile App, SMS/Zalo và Dashboard chỉ là các subscriber của các sự kiện này.
+
+Cách thiết kế này giữ đúng các nguyên tắc Zero Regression, Additive Extension và Composition over Customization, đồng thời giúp Bella Healthcare có thể mở rộng từ một phòng khám nhỏ lên bệnh viện nhiều tầng mà không phải thay đổi kiến trúc lõi.

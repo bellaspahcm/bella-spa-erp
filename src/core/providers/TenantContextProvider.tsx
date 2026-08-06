@@ -70,12 +70,11 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
         });
 
         // 1. If 401 Unauthorized, redirect to login page gracefully
+        // 1. If 401 Unauthorized, redirect to login page gracefully
         if (response.status === 401) {
-          console.warn('[TenantContextProvider] User not authenticated');
-          
           // In development, use dev fallback context instead of redirecting
           if (process.env.NODE_ENV === 'development') {
-            console.warn('[TenantContextProvider] Dev mode: Using fallback tenant context');
+            console.info('[TenantContextProvider] Dev mode: Using fallback tenant context');
             setContext({
               tenantId: 'dev-tenant',
               tenantName: 'Bella Land (Dev)',
@@ -99,7 +98,7 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
 
           // In development mode, fallback to default tenant context if backend authentication is transient
           if (process.env.NODE_ENV === 'development') {
-            console.warn('[TenantContextProvider] Dev fallback tenant context activated due to:', msg);
+            console.info('[TenantContextProvider] Dev fallback tenant context activated due to:', msg);
             setContext({
               tenantId: 'dev-tenant',
               tenantName: 'Bella Land (Dev)',
@@ -123,7 +122,6 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
         setContext(data as TenantContext);
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : String(err);
-        console.warn('[TenantContextProvider] Failed to load tenant context: %s', errorMessage);
         
         if (process.env.NODE_ENV === 'development') {
           setContext({
@@ -150,32 +148,18 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
     if (!context) return;
 
     const enabledModules = context.enabledModules;
-    console.log('[TenantContextProvider] enabledModules RAW:', enabledModules);
-    console.log('[TenantContextProvider] enabledModules type:', typeof enabledModules);
-    console.log('[TenantContextProvider] is Array?', Array.isArray(enabledModules));
-    console.log('[TenantContextProvider] JSON.stringify:', JSON.stringify(enabledModules));
-    
     let moduleKey: string = 'baby_care'; // Default fallback
 
-    // Determine primary module key
-    // CRITICAL FIX: Check array format FIRST (API returns array)
-    // Convert to array if it's array-like object or already an array
     let modulesArray: string[] = [];
     
     if (Array.isArray(enabledModules)) {
       modulesArray = enabledModules;
-      console.log('[TenantContextProvider] Processing native array format:', modulesArray);
     } else if (typeof enabledModules === 'object' && enabledModules !== null) {
-      // Check if it's an array-like object (has numeric keys and length)
       const hasNumericKeys = Object.keys(enabledModules).some(key => /^\d+$/.test(key));
       
       if (hasNumericKeys) {
-        // Array-like object: convert to real array
         modulesArray = Object.values(enabledModules).filter((v): v is string => typeof v === 'string');
-        console.log('[TenantContextProvider] Converted array-like object to array:', modulesArray);
       } else {
-        // Legacy JSONB object format: { beauty_spa: true, babycare: false }
-        console.log('[TenantContextProvider] Processing JSONB object format');
         const modules = enabledModules as any;
         
         if (modules.real_estate === true) {
@@ -192,17 +176,12 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
           moduleKey = 'baby_care';
         }
         
-        // Set module and return early
         document.documentElement.dataset.tenantModule = moduleKey;
-        console.log('[TenantContextProvider] ✅ Applied module theme (JSONB):', moduleKey);
-        return; // Skip array processing below
+        return;
       }
     }
     
-    // Process array format: Priority order: real_estate > industrial_cleaning > beauty_spa > bella_auto > babycare/spa
     if (modulesArray.length > 0) {
-      console.log('[TenantContextProvider] Processing array with priority logic:', modulesArray);
-      
       if (modulesArray.includes('bella_healthcare')) {
         moduleKey = 'bella_healthcare';
       } else if (modulesArray.includes('real_estate')) {
@@ -218,7 +197,6 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    // Set data-tenant-module attribute on <html> element
     document.documentElement.dataset.tenantModule = moduleKey;
     console.log('[TenantContextProvider] ✅ Applied module theme:', moduleKey);
     console.log('[TenantContextProvider] ✅ HTML data-tenant-module:', document.documentElement.dataset.tenantModule);
