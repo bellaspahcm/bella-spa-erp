@@ -587,6 +587,12 @@ export default function HealthcareDashboardPage() {
       )
     );
 
+    // Automatically focus context on the assigned patient so Header & Odontogram update instantly
+    const assignedPatient = patients.find((p) => p.name === patientName);
+    if (assignedPatient) {
+      setSelectedPatientId(assignedPatient.id);
+    }
+
     // Persist assignment to Supabase Database Backend (booking_resources table)
     try {
       const dbRes = await updateHealthcareChairAssignmentAction(targetChairId, patientName, doctorName);
