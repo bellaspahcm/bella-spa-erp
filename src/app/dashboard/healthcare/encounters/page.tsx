@@ -46,7 +46,7 @@ export default function EncountersPage() {
   const [queueNumber, setQueueNumber] = useState('104');
   const [scheduledAt, setScheduledAt] = useState('');
 
-  const [encounters, setEncounters] = useState<Encounter[]>([
+  const defaultEncounters: Encounter[] = [
     {
       id: 'enc-01',
       patientName: 'Nguyễn Văn Hùng',
@@ -79,7 +79,26 @@ export default function EncountersPage() {
       chiefComplaint: 'Vệ sinh cạo vôi răng 2 hàm',
       queueNumber: 88,
     },
-  ]);
+  ];
+
+  const [encounters, setEncounters] = useState<Encounter[]>(defaultEncounters);
+
+  // Load persisted encounters from localStorage on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('bella_healthcare_encounters');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setEncounters(parsed);
+          }
+        } catch (e) {
+          console.error('Failed to parse bella_healthcare_encounters', e);
+        }
+      }
+    }
+  }, []);
 
   const patientOptions = [
     { value: 'Nguyễn Văn Hùng', label: 'Nguyễn Văn Hùng (GD4797921800124)' },
@@ -116,7 +135,14 @@ export default function EncountersPage() {
       scheduledAt: status === 'planned' ? scheduledAt || new Date().toISOString().slice(0, 16) : undefined,
     };
 
-    setEncounters((prev) => [newEnc, ...prev]);
+    setEncounters((prev) => {
+      const updated = [newEnc, ...prev];
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('bella_healthcare_encounters', JSON.stringify(updated));
+      }
+      return updated;
+    });
+
     toast.success('🎉 Đăng ký lượt khám bệnh mới thành công');
     
     // Reset form

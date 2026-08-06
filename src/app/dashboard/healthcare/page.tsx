@@ -9,6 +9,8 @@ import { ClinicalPipeline, type EncounterItem } from './ClinicalPipeline';
 import { OdontogramTwin, type ToothData, type ToothStatus } from '@/modules/bella-healthcare/components/OdontogramTwin';
 import { AiClinicalPanel } from '@/modules/bella-healthcare/components/AiClinicalPanel';
 
+import { eventBus } from '@/platform/messaging/event-bus/event-bus';
+
 // Simple types for client view
 interface PatientRecord {
   readonly id: string;
@@ -36,14 +38,37 @@ export default function HealthcareDashboardPage() {
   // Selected tooth
   const [selectedTooth, setSelectedTooth] = useState<string | null>(null);
 
-  // Mock initial setup to show premium dynamic state immediately
+  // Persistent initial setup
   const loadInitialData = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
 
-      // Simulate network request
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      // Check localStorage first for persisted encounters & patients
+      let loadedEncounters: EncounterItem[] | null = null;
+      let loadedPatients: PatientRecord[] | null = null;
+
+      if (typeof window !== 'undefined') {
+        const savedEnc = localStorage.getItem('bella_healthcare_encounters');
+        const savedPat = localStorage.getItem('bella_healthcare_patients');
+        if (savedEnc) {
+          try {
+            loadedEncounters = JSON.parse(savedEnc);
+          } catch (e) {
+            console.error('Failed to parse saved encounters', e);
+          }
+        }
+        if (savedPat) {
+          try {
+            loadedPatients = JSON.parse(savedPat);
+          } catch (e) {
+            console.error('Failed to parse saved patients', e);
+          }
+        }
+      }
+
+      // Simulate slight network request for smooth UX
+      await new Promise((resolve) => setTimeout(resolve, 400));
 
       const mockPatients: PatientRecord[] = [
         {
@@ -106,12 +131,20 @@ export default function HealthcareDashboardPage() {
         },
       ];
 
-      setPatients(mockPatients);
-      setEncounters(mockEncounters);
-      
+      const finalPatients = loadedPatients || mockPatients;
+      const finalEncounters = loadedEncounters || mockEncounters;
+
+      setPatients(finalPatients);
+      setEncounters(finalEncounters);
+
+      if (typeof window !== 'undefined') {
+        if (!loadedPatients) localStorage.setItem('bella_healthcare_patients', JSON.stringify(mockPatients));
+        if (!loadedEncounters) localStorage.setItem('bella_healthcare_encounters', JSON.stringify(mockEncounters));
+      }
+
       // Select first patient & encounter by default
-      setSelectedPatientId(mockPatients[0].id);
-      setSelectedEncounterId(mockEncounters[0].id);
+      if (finalPatients.length > 0) setSelectedPatientId(finalPatients[0].id);
+      if (finalEncounters.length > 0) setSelectedEncounterId(finalEncounters[0].id);
 
     } catch (err) {
       setError('Lỗi tải dữ liệu phòng khám');
@@ -128,7 +161,7 @@ export default function HealthcareDashboardPage() {
     setIsRefreshing(true);
     await loadInitialData();
     setIsRefreshing(false);
-    toast.success('Dữ liệu phòng khám đã đồng bộ');
+    toast.success('Dữ liệu phòng khám đã đồng bộ thành công');
   };
 
   // Find selected patient full info
@@ -171,12 +204,12 @@ export default function HealthcareDashboardPage() {
     };
   };
 
-  // Update tooth status on selected patient's odontogram
+  // Update tooth status on selected patient's odontogram & persist to localStorage & EventBus
   const handleUpdateToothStatus = (toothNumber: string, status: ToothStatus, notes?: string) => {
     if (!selectedPatientId) return;
 
-    setPatients((prev) =>
-      prev.map((p) => {
+    setPatients((prev) => {
+      const updated = prev.map((p) => {
         if (p.id === selectedPatientId) {
           const updatedToothData = {
             ...p.toothData,
@@ -185,18 +218,59 @@ export default function HealthcareDashboardPage() {
           return { ...p, toothData: updatedToothData };
         }
         return p;
-      })
-    );
+      });
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('bella_healthcare_patients', JSON.stringify(updated));
+      }
+      return updated;
+    });
+
+    // Publish telemetry event to platform EventBus
+    eventBus.publish({
+      id: `evt-tooth-${Date.now()}`,
+      name: 'odontogram.tooth_updated',
+      timestamp: new Date().toISOString(),
+      tenantId: tenantContext?.tenantId || undefined,
+      payload: {
+        patientId: selectedPatientId,
+        toothNumber,
+        status,
+        notes,
+      },
+    });
 
     toast.success(`Cập nhật răng #${toothNumber} trạng thái: ${status}`);
   };
 
-  // Move patient step in Clinical Pipeline
+  // Move patient step in Clinical Pipeline & persist to localStorage & EventBus
   const handleUpdateEncounterStatus = (id: string, newStatus: EncounterItem['status']) => {
-    setEncounters((prev) =>
-      prev.map((e) => (e.id === id ? { ...e, status: newStatus } : e))
-    );
-    toast.info(`Di chuyển trạng thái khám: ${newStatus}`);
+    setEncounters((prev) => {
+      const updated = prev.map((e) => (e.id === id ? { ...e, status: newStatus } : e));
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('bella_healthcare_encounters', JSON.stringify(updated));
+      }
+      return updated;
+    });
+
+    // Publish transition event to platform EventBus
+    eventBus.publish({
+      id: `evt-enc-${Date.now()}`,
+      name: 'encounter.status_changed',
+      timestamp: new Date().toISOString(),
+      tenantId: tenantContext?.tenantId || undefined,
+      payload: {
+        encounterId: id,
+        newStatus,
+      },
+    });
+
+    const statusLabels: Record<EncounterItem['status'], string> = {
+      planned: 'Lên lịch hẹn',
+      arrived: 'Phòng chờ (Queue)',
+      in_progress: 'Đang điều trị',
+      finished: 'Đã hoàn tất',
+    };
+    toast.success(`Đã di chuyển lượt khám sang: ${statusLabels[newStatus] || newStatus}`);
   };
 
   if (isLoading) {
@@ -274,10 +348,34 @@ export default function HealthcareDashboardPage() {
       {/* Analytical Quick Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {[
-          { label: 'Hẹn hôm nay', value: '18', trend: '+12% hôm nay', icon: Activity, color: 'text-blue-600 bg-blue-50 dark:bg-blue-950/40 border-blue-200/60 dark:border-blue-800/60' },
-          { label: 'Đang điều trị', value: '4', trend: '4 ca ghế chính', icon: Users, color: 'text-teal-600 bg-teal-50 dark:bg-teal-950/40 border-teal-200/60 dark:border-teal-800/60' },
-          { label: 'Hoàn tất hôm nay', value: '12', trend: '100% đúng giờ', icon: CheckCircle, color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200/60 dark:border-emerald-800/60' },
-          { label: 'Doanh thu phòng khám', value: '18.4M', trend: 'Đạt 85% target', icon: Heart, color: 'text-cyan-600 bg-cyan-50 dark:bg-cyan-950/40 border-cyan-200/60 dark:border-cyan-800/60' },
+          {
+            label: 'Lên lịch hẹn',
+            value: String(encounters.filter((e) => e.status === 'planned').length),
+            trend: 'Tổng lượt hẹn',
+            icon: Activity,
+            color: 'text-blue-600 bg-blue-50 dark:bg-blue-950/40 border-blue-200/60 dark:border-blue-800/60',
+          },
+          {
+            label: 'Đang điều trị',
+            value: String(encounters.filter((e) => e.status === 'in_progress').length),
+            trend: `${encounters.filter((e) => e.status === 'in_progress').length} ca ghế chính`,
+            icon: Users,
+            color: 'text-teal-600 bg-teal-50 dark:bg-teal-950/40 border-teal-200/60 dark:border-teal-800/60',
+          },
+          {
+            label: 'Hoàn tất hôm nay',
+            value: String(encounters.filter((e) => e.status === 'finished').length),
+            trend: 'Đã khám xong',
+            icon: CheckCircle,
+            color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200/60 dark:border-emerald-800/60',
+          },
+          {
+            label: 'Phòng chờ (Queue)',
+            value: String(encounters.filter((e) => e.status === 'arrived').length),
+            trend: 'Bệnh nhân đã đến',
+            icon: Heart,
+            color: 'text-amber-600 bg-amber-50 dark:bg-amber-950/40 border-amber-200/60 dark:border-amber-800/60',
+          },
         ].map((stat, i) => {
           const Icon = stat.icon;
           return (
