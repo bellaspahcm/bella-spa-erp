@@ -377,6 +377,28 @@ export default function HealthcareDashboardPage() {
               Hệ thống điều hành phòng khám tổng thể (Level 2 Dashboard). Bật/tắt động thông qua Product Plugin.
             </p>
           </div>
+
+          {/* Quick Access Action Shortcuts */}
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <a
+              href="/dashboard/medical/appointments"
+              className="px-3.5 py-2 rounded-xl text-xs font-bold bg-cyan-600 hover:bg-cyan-700 text-white shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+            >
+              <span>🗓️ Đặt Lịch & QR</span>
+            </a>
+            <a
+              href="/dashboard/medical/queue/tv"
+              className="px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+            >
+              <span>📺 Màn TV AI Voice</span>
+            </a>
+            <a
+              href="/dashboard/medical/schedules"
+              className="px-3.5 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+            >
+              <span>👨‍⚕️ Lịch Trực Bác Sĩ</span>
+            </a>
+          </div>
         </div>
 
         {/* Enterprise Segmented Control Tab Switcher */}

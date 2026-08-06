@@ -459,6 +459,11 @@ const bellaMedicalClinicMenuItems: SidebarMenuItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard điều hành',         href: '/dashboard/medical' },
   { icon: Sparkles,        label: 'AI Copilot',                  href: '/dashboard/ai-copilot' },
 
+  { type: 'header', label: 'Quản lý & Tiếp đón Y tế' },
+  { icon: Calendar,        label: 'Đặt Lịch & QR Check-in',      href: '/dashboard/medical/appointments' },
+  { icon: Tv,              label: 'Màn Hình TV Hàng Đợi AI',     href: '/dashboard/medical/queue/tv' },
+  { icon: Stethoscope,     label: 'Lịch Trực Bác sĩ',            href: '/dashboard/medical/schedules' },
+
   { type: 'header', label: 'Lâm sàng & Cận lâm sàng' },
   { icon: Users,           label: 'Hồ sơ bệnh nhân',             href: '/dashboard/medical/patients' },
   { icon: ClipboardList,   label: 'Lượt khám bệnh (EMR)',        href: '/dashboard/medical/encounters' },

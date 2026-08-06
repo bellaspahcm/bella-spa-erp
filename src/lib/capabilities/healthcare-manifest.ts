@@ -48,6 +48,9 @@ export const CLINICAL_CAPABILITY_MANIFEST: CapabilityManifest = {
   featureFlags: ['enable_soap_templates', 'enable_vitals_alerts'],
   workflow: 'medical_default_clinical',
   navigation: [
+    { label: 'Đặt lịch & QR Check-in', path: '/dashboard/healthcare/appointments' },
+    { label: 'Màn hình TV Hàng đợi AI', path: '/dashboard/healthcare/queue/tv' },
+    { label: 'Lịch trực Bác sĩ', path: '/dashboard/healthcare/schedules' },
     { label: 'Hàng đợi đón tiếp', path: '/dashboard/healthcare/queue' },
     { label: 'Lượt khám (EMR)', path: '/dashboard/healthcare/encounters' },
     { label: 'Bệnh nhân', path: '/dashboard/healthcare/patients' },

@@ -16,6 +16,9 @@ export const healthcareManifest: VerticalManifest = {
   menus: [
     // Core Healthcare Operations
     { id: 'dashboard', label: 'Dashboard điều hành', href: '/dashboard/healthcare', icon: 'LayoutDashboard' },
+    { id: 'appointments', label: 'Đặt Lịch & QR Check-in', href: '/dashboard/healthcare/appointments', icon: 'Calendar' },
+    { id: 'queue_tv', label: 'Màn Hình TV Hàng Đợi AI', href: '/dashboard/healthcare/queue/tv', icon: 'Tv' },
+    { id: 'schedules', label: 'Lịch Trực Bác sĩ', href: '/dashboard/healthcare/schedules', icon: 'Stethoscope' },
     { id: 'patients', label: 'Hồ sơ bệnh nhân (Parties)', href: '/dashboard/healthcare/patients', icon: 'Users' },
     { id: 'journeys', label: 'Hành trình điều trị (Journeys)', href: '/dashboard/healthcare/journeys', icon: 'Activity' },
     { id: 'encounters', label: 'Lượt khám bệnh (Encounters)', href: '/dashboard/healthcare/encounters', icon: 'ClipboardList' },
