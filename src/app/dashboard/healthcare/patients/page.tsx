@@ -278,66 +278,50 @@ export default function PatientsPage() {
         </button>
       </div>
 
-      {/* Enterprise KPI Counters - Perfectly Synchronized Font Hierarchy Layout */}
+      {/* Enterprise KPI Counters - 100% Synchronized with Encounters Page */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {/* Card 1: Tổng Hồ Sơ */}
-        <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider block">TỔNG HỒ SƠ MPI</span>
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tight font-mono">{patients.length}</span>
-              <span className="text-xs font-bold text-slate-500 dark:text-slate-400">hồ sơ bệnh nhân</span>
-            </div>
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center justify-between">
+          <div>
+            <span className="text-[11px] font-bold text-slate-400 block uppercase">Tổng Hồ Sơ MPI</span>
+            <span className="text-xl font-black text-slate-900 dark:text-white mt-0.5 block">{patients.length} hồ sơ bệnh nhân</span>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 flex items-center justify-center shrink-0">
-            <UserCheck className="w-6 h-6" />
+          <div className="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400">
+            <UserCheck className="w-5 h-5" />
           </div>
         </div>
 
-        {/* Card 2: Thẻ BHYT */}
-        <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider block">BỆNH NHÂN CÓ THẺ BHYT</span>
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight font-mono">
-                {patients.filter((p) => p.bhytCode).length}
-              </span>
-              <span className="text-xs font-bold text-slate-500 dark:text-slate-400">thẻ BHYT</span>
-            </div>
-            <span className="text-[10px] text-slate-400 font-medium block">(Hưởng 80% - 100%)</span>
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center justify-between">
+          <div>
+            <span className="text-[11px] font-bold text-slate-400 block uppercase">Bệnh Nhân Có Thẻ BHYT</span>
+            <span className="text-xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5 block">
+              {patients.filter((p) => p.bhytCode).length} thẻ BHYT
+            </span>
+            <span className="text-[10px] text-slate-400 font-medium block mt-0.5">(Hưởng 80% - 100%)</span>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-            <ShieldCheck className="w-6 h-6" />
+          <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+            <ShieldCheck className="w-5 h-5" />
           </div>
         </div>
 
-        {/* Card 3: Cảnh Báo Nguy Cơ */}
-        <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider block">CẢNH BÁO NGUY CƠ</span>
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-black text-rose-600 dark:text-rose-400 tracking-tight font-mono">
-                {patients.filter((p) => p.allergies && p.allergies.length > 0).length}
-              </span>
-              <span className="text-xs font-bold text-slate-500 dark:text-slate-400">ca cảnh báo</span>
-            </div>
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center justify-between">
+          <div>
+            <span className="text-[11px] font-bold text-slate-400 block uppercase">Cảnh Báo Nguy Cơ</span>
+            <span className="text-xl font-black text-rose-600 dark:text-rose-400 mt-0.5 block">
+              {patients.filter((p) => p.allergies && p.allergies.length > 0).length} ca cảnh báo
+            </span>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
-            <AlertCircle className="w-6 h-6" />
+          <div className="p-2.5 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400">
+            <AlertCircle className="w-5 h-5" />
           </div>
         </div>
 
-        {/* Card 4: Định Danh VNeID */}
-        <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider block">ĐỊNH DANH VNEID & MPI</span>
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-black text-indigo-600 dark:text-indigo-400 tracking-tight font-mono">100%</span>
-              <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Khớp Mã</span>
-            </div>
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center justify-between">
+          <div>
+            <span className="text-[11px] font-bold text-slate-400 block uppercase">Định Danh VNeID & MPI</span>
+            <span className="text-xl font-black text-indigo-600 dark:text-indigo-400 mt-0.5 block">100% Khớp Mã</span>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
-            <IdCard className="w-6 h-6" />
+          <div className="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+            <IdCard className="w-5 h-5" />
           </div>
         </div>
       </div>
