@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Activity, Users, CheckCircle, ShieldCheck, Heart } from 'lucide-react';
+import { Activity, Users, CheckCircle, Heart } from 'lucide-react';
 import { toast } from 'sonner';
 import { useUser } from '@/lib/user-context';
 import { useTenantContext } from '@/core/hooks/useTenantContext';
@@ -34,9 +34,9 @@ export default function HealthcareDashboardPage() {
   const { user } = useUser();
   const tenantContext = useTenantContext();
 
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const [_isLoading, setIsLoading] = useState<boolean>(true);
+  const [_isRefreshing, _setIsRefreshing] = useState<boolean>(false);
+  const [_error, setError] = useState<string | null>(null);
 
   // Core business states
   const [patients, setPatients] = useState<PatientInfo[]>([]);
@@ -46,6 +46,9 @@ export default function HealthcareDashboardPage() {
 
   // Selected tooth
   const [selectedTooth, setSelectedTooth] = useState<string | null>(null);
+
+  // Toggle state for IT admin auditing tools
+  const [showDevTools, setShowDevTools] = useState<boolean>(false);
 
   // Event stream and outbox logs (Saga state)
   const [eventsList, setEventsList] = useState<DomainEvent[]>([]);
@@ -64,7 +67,7 @@ export default function HealthcareDashboardPage() {
     { id: 'ch-4', code: 'Ghế #04', zone: 'Khu B - Phục hình', status: 'occupied', currentPatientName: 'Lê Thị Mai', currentDoctorName: 'BS. Trần Thảo', estimatedMinutesRemaining: 30 },
   ]);
 
-  const [resourceMetrics, setResourceMetrics] = useState<ResourceUtilization>({
+  const [resourceMetrics, _setResourceMetrics] = useState<ResourceUtilization>({
     chairOccupancyRate: 82,
     doctorOccupancyRate: 91,
     avgWaitTimeMinutes: 12,
@@ -115,10 +118,10 @@ export default function HealthcareDashboardPage() {
         const savedEnc = localStorage.getItem('bella_healthcare_encounters');
         const savedPat = localStorage.getItem('bella_healthcare_patients');
         if (savedEnc) {
-          try { loadedEncounters = JSON.parse(savedEnc); } catch (e) {}
+          try { loadedEncounters = JSON.parse(savedEnc); } catch (_e) {}
         }
         if (savedPat) {
-          try { loadedPatients = JSON.parse(savedPat); } catch (e) {}
+          try { loadedPatients = JSON.parse(savedPat); } catch (_e) {}
         }
       }
 
@@ -187,7 +190,7 @@ export default function HealthcareDashboardPage() {
 
       if (finalPatients.length > 0) setSelectedPatientId(finalPatients[0].id);
       if (finalEncounters.length > 0) setSelectedEncounterId(finalEncounters[0].id);
-    } catch (err) {
+    } catch (_err) {
       setError('Lỗi tải dữ liệu phòng khám');
     } finally {
       setIsLoading(false);
@@ -202,9 +205,11 @@ export default function HealthcareDashboardPage() {
   useEffect(() => {
     const forecasted = aiRegistry.prediction.forecastUtilization(resourceMetrics.chairOccupancyRate);
     if (forecasted.warningText) {
-      const alertExists = aiCooActions.some((a) => a.id === 'act-prediction');
-      if (!alertExists) {
-        setAiCooActions((prev) => [
+      setAiCooActions((prev) => {
+        if (prev.some((a) => a.id === 'act-prediction')) {
+          return prev;
+        }
+        return [
           {
             id: 'act-prediction',
             priority: 'medium',
@@ -215,10 +220,12 @@ export default function HealthcareDashboardPage() {
             actionType: 'reroute_queue',
           },
           ...prev,
-        ]);
-      }
+        ];
+      });
+    } else {
+      setAiCooActions((prev) => prev.filter((a) => a.id !== 'act-prediction'));
     }
-  }, [resourceMetrics.chairOccupancyRate, aiCooActions]);
+  }, [resourceMetrics.chairOccupancyRate]);
 
   const selectedPatient = patients.find((p) => p.id === selectedPatientId) || patients[0] || null;
 
@@ -498,40 +505,59 @@ export default function HealthcareDashboardPage() {
         </div>
       </div>
 
-      {/* Layer 9: Real-time Event Stream Viewer */}
-      <EventStreamViewer
-        events={eventStreamLog}
-        outbox={EncounterSaga.getInstance().getOutbox()}
-        activeSagasCount={1}
-        onSimulateEvent={() => {
-          const simulated: DomainEvent = {
-            metadata: {
-              eventId: `evt-${Date.now()}`,
-              aggregateId: selectedPatient?.id || 'pat-01',
-              aggregateType: 'Encounter',
-              eventName: 'Encounter.Patient.Arrived.v1',
-              tenantId: 'default',
-              correlationId: `corr-${Date.now()}`,
-              schemaVersion: 'v1',
-              occurredAt: new Date().toISOString(),
-            },
-            payload: { arrivedAt: new Date().toISOString() },
-          };
-          EncounterSaga.getInstance().handleEvent(simulated);
-          setEventsList((prev) => [simulated, ...prev]);
+      {/* Layer 9: Collapsible IT Admin & Event Auditing Tools */}
+      <div className="border border-slate-200/80 rounded-[28px] bg-white overflow-hidden shadow-sm">
+        <button
+          onClick={() => setShowDevTools(!showDevTools)}
+          className="w-full px-6 py-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors font-extrabold text-sm text-slate-800 focus:outline-none"
+        >
+          <div className="flex items-center gap-2">
+            <span>🛠️ Công cụ Kiểm toán & Nhật ký Sự kiện (IT Admin & Debug)</span>
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 text-slate-700">
+              Outbox & Saga
+            </span>
+          </div>
+          <span className="text-slate-500 font-bold text-xs">{showDevTools ? 'Ẩn bảng điều khiển ▲' : 'Hiện bảng điều khiển ▼'}</span>
+        </button>
 
-          const simulatedLog: DomainEventStreamItem = {
-            id: simulated.metadata.eventId,
-            eventName: simulated.metadata.eventName,
-            timestamp: new Date().toLocaleTimeString('vi-VN'),
-            description: `Ghi nhận bệnh nhân check-in tại quầy tiếp đón`,
-            actor: 'System Sensor',
-            category: 'encounter',
-          };
-          setEventStreamLog((prev) => [simulatedLog, ...prev]);
-          toast.info('⚡ Đã giả lập bắn Domain Event tới EventBus & Outbox');
-        }}
-      />
+        {showDevTools && (
+          <div className="p-6 border-t border-slate-200/80">
+            <EventStreamViewer
+              events={eventStreamLog}
+              outbox={EncounterSaga.getInstance().getOutbox()}
+              activeSagasCount={1}
+              onSimulateEvent={() => {
+                const simulated: DomainEvent = {
+                  metadata: {
+                    eventId: `evt-${Date.now()}`,
+                    aggregateId: selectedPatient?.id || 'pat-01',
+                    aggregateType: 'Encounter',
+                    eventName: 'Encounter.Patient.Arrived.v1',
+                    tenantId: 'default',
+                    correlationId: `corr-${Date.now()}`,
+                    schemaVersion: 'v1',
+                    occurredAt: new Date().toISOString(),
+                  },
+                  payload: { arrivedAt: new Date().toISOString() },
+                };
+                EncounterSaga.getInstance().handleEvent(simulated);
+                setEventsList((prev) => [simulated, ...prev]);
+
+                const simulatedLog: DomainEventStreamItem = {
+                  id: simulated.metadata.eventId,
+                  eventName: simulated.metadata.eventName,
+                  timestamp: new Date().toLocaleTimeString('vi-VN'),
+                  description: `Ghi nhận bệnh nhân check-in tại quầy tiếp đón`,
+                  actor: 'System Sensor',
+                  category: 'encounter',
+                };
+                setEventStreamLog((prev) => [simulatedLog, ...prev]);
+                toast.info('⚡ Đã giả lập bắn Domain Event tới EventBus & Outbox');
+              }}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
