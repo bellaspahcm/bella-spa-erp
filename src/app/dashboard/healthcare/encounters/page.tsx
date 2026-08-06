@@ -464,10 +464,20 @@ export default function EncountersPage() {
                     </div>
                   </div>
                   <button 
-                    onClick={() => toast.success('🤖 Đã áp dụng gợi ý AI vào ghi chú SOAP!')}
-                    className="px-3 py-1 rounded-lg bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-[11px] shadow-sm shrink-0 cursor-pointer"
+                    onClick={() => {
+                      setSelectedEncId(e.id);
+                      setSoapData({
+                        subjective: e.subjective || 'Bệnh nhân đau vùng thượng vị cấp tính, buồn nôn nhẹ.',
+                        objective: e.objective || 'Sinh hiệu: Huyết áp 120/80 mmHg, Mạch 78 l/p, Thân nhiệt 37.0°C.',
+                        assessment: 'K29.7 - Viêm dạ dày cấp (Tự động điền theo gợi ý Bella AI Copilot)',
+                        plan: 'Chỉ định CLS: Nội soi dạ dày + Siêu âm bụng. Kê đơn kháng H2/PPI và tái khám sau 7 ngày.',
+                      });
+                      toast.success('🤖 Đã áp dụng gợi ý AI! Đã điền mã ICD-10 K29.7 & Đề xuất CLS vào ghi chú SOAP.');
+                    }}
+                    className="px-3.5 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-black text-xs shadow-md shrink-0 cursor-pointer transition-all active:scale-95 flex items-center gap-1.5"
                   >
-                    + Áp Dụng AI
+                    <Sparkles className="w-3.5 h-3.5 fill-current" />
+                    <span>+ Áp Dụng AI</span>
                   </button>
                 </div>
               </div>
