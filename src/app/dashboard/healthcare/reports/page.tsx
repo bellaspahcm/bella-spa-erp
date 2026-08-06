@@ -113,111 +113,139 @@ export default function HealthcareReportsPage() {
         </div>
       </div>
 
-      {/* 2. AI COO EXECUTIVE DECISION ASSISTANT CARD ⭐⭐⭐⭐⭐ */}
-      <div className="p-6 rounded-[28px] bg-gradient-to-br from-purple-900 via-indigo-900 to-slate-900 text-white border border-purple-500/30 shadow-2xl space-y-5 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+      {/* 2. AI COO EXECUTIVE DECISION ASSISTANT CARD - LIGHT TONE DESIGN ⭐⭐⭐⭐⭐ */}
+      <div className="p-6 rounded-[28px] bg-gradient-to-br from-indigo-50/90 via-purple-50/60 to-blue-50/90 dark:from-slate-900 dark:via-purple-950/30 dark:to-slate-900 border border-indigo-200/80 dark:border-indigo-800/40 shadow-sm space-y-5 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="flex items-center justify-between border-b border-purple-400/20 pb-4">
+        <div className="flex items-center justify-between border-b border-indigo-200/60 dark:border-indigo-800/40 pb-4">
           <div className="flex items-center gap-3">
-            <span className="p-2 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-400/30 animate-pulse">
+            <span className="p-2.5 rounded-xl bg-indigo-600 text-white shadow-md shadow-indigo-600/20">
               <Sparkles className="w-5 h-5" />
             </span>
-            <div>
-              <h2 className="text-base font-black text-white flex items-center gap-2">
+            <div className="text-left">
+              <h2 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
                 🤖 AI COO Live Operational Insights & Decision Support
               </h2>
-              <p className="text-xs text-purple-200 font-medium">Hệ thống phân tích tự động dữ liệu vận hành thời gian thực & đưa ra gợi ý hành động</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                Hệ thống phân tích tự động dữ liệu vận hành thời gian thực &amp; đưa ra gợi ý hành động
+              </p>
             </div>
           </div>
 
-          <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-mono text-xs font-bold border border-emerald-400/30">
+          <span className="px-3.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 font-mono text-xs font-black border border-emerald-300 dark:border-emerald-700 shadow-xs">
             ✓ 3 Đề Xuất Khuyến Nghị Active
           </span>
         </div>
 
         {/* 3 AI Recommendations Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-left">
           {/* Recommendation 1 */}
-          <div className="p-4 rounded-2xl bg-slate-900/80 border border-rose-500/40 space-y-3 relative group hover:border-rose-400 transition-all">
+          <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-rose-200 dark:border-rose-900/60 space-y-3 relative group hover:shadow-md hover:border-rose-400 transition-all">
             <div className="flex items-start justify-between">
-              <span className="px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 font-black text-[10px] flex items-center gap-1 border border-rose-500/30">
-                <AlertTriangle className="w-3 h-3" /> Điểm Nghẽn LIS (63%)
+              <span className="px-2.5 py-1 rounded-lg bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 font-black text-[10px] flex items-center gap-1 border border-rose-200 dark:border-rose-800">
+                <AlertTriangle className="w-3.5 h-3.5 text-rose-600" /> Điểm Nghẽn LIS (63%)
               </span>
-              <span className="text-[10px] font-mono text-slate-400">Ưu tiên Cao</span>
+              <span className="text-[10px] font-mono font-bold text-slate-400">Ưu tiên Cao</span>
             </div>
 
-            <p className="text-slate-200 leading-relaxed font-medium">
-              🔴 <b className="text-rose-400">Phòng Xét Nghiệm (LIS)</b> đang tạo ra <b className="text-rose-300">63% thời gian chờ</b> toàn viện.
+            <p className="text-slate-800 dark:text-slate-200 leading-relaxed font-medium">
+              🔴 <b className="text-rose-600 dark:text-rose-400 font-black">Phòng Xét Nghiệm (LIS)</b> đang tạo ra <b className="text-rose-600 dark:text-rose-400 font-black">63% thời gian chờ</b> toàn viện.
             </p>
 
-            <div className="p-2.5 rounded-xl bg-purple-950/60 border border-purple-500/30 space-y-1 text-[11px] text-purple-200">
-              <div className="font-bold text-white">💡 Gợi Ý AI COO:</div>
+            <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 space-y-1 text-[11px] text-slate-700 dark:text-slate-300">
+              <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1">
+                💡 Gợi Ý AI COO:
+              </div>
               <div>• Điều chuyển 1 KTV từ Trạm Vitals ➔ LIS.</div>
               <div>• Ưu tiên tự động chạy mẫu Cấp Cứu STAT.</div>
-              <div className="text-emerald-400 font-bold mt-1">➔ Dự kiến giảm SLA LIS xuống 13 phút.</div>
+              <div className="text-emerald-600 dark:text-emerald-400 font-black mt-1">➔ Dự kiến giảm SLA LIS xuống 13 phút.</div>
             </div>
 
             <button
               disabled={aiApplied['lis']}
               onClick={() => handleApplyAiRecommendation('lis', 'Điều chuyển 1 KTV sang LIS & Ưu tiên ca STAT')}
-              className={`w-full py-2 rounded-xl font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              className={`w-full py-2.5 rounded-xl font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs ${
                 aiApplied['lis']
-                  ? 'bg-emerald-600/40 text-emerald-300 border border-emerald-500/40'
-                  : 'bg-rose-600 hover:bg-rose-700 text-white shadow-md'
+                  ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300'
+                  : 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-600/20'
               }`}
             >
-              {aiApplied['lis'] ? <CheckCircle className="w-3.5 h-3.5 text-emerald-400" /> : <Sparkles className="w-3.5 h-3.5" />}
+              {aiApplied['lis'] ? <CheckCircle className="w-4 h-4 text-emerald-600" /> : <Sparkles className="w-4 h-4" />}
               {aiApplied['lis'] ? 'Đã Áp Dụng Điều Chuyển' : 'Áp Dụng Đề Xuất Điều Chuyển'}
             </button>
           </div>
 
           {/* Recommendation 2 */}
-          <div className="p-4 rounded-2xl bg-slate-900/80 border border-amber-500/40 space-y-3 relative group hover:border-amber-400 transition-all">
+          <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-900/60 space-y-3 relative group hover:shadow-md hover:border-amber-400 transition-all">
             <div className="flex items-start justify-between">
-              <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-black text-[10px] flex items-center gap-1 border border-amber-500/30">
-                <SlidersHorizontal className="w-3 h-3" /> Cân Bằng Tải Bác Sĩ
+              <span className="px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 font-black text-[10px] flex items-center gap-1 border border-amber-200 dark:border-amber-800">
+                <SlidersHorizontal className="w-3.5 h-3.5 text-amber-600" /> Cân Bằng Tải Bác Sĩ
               </span>
-              <span className="text-[10px] font-mono text-slate-400">Ưu tiên Vừa</span>
+              <span className="text-[10px] font-mono font-bold text-slate-400">Ưu tiên Vừa</span>
             </div>
 
-            <p className="text-slate-200 leading-relaxed font-medium">
-              🟡 Công suất <b className="text-amber-300">BS. Minh (PK1) đạt 97%</b>, trong khi <b className="text-emerald-300">BS. Hùng (PK2) chỉ đạt 48%</b>.
+            <p className="text-slate-800 dark:text-slate-200 leading-relaxed font-medium">
+              🟡 Công suất <b className="text-amber-700 dark:text-amber-400 font-black">BS. Minh (PK1) đạt 97%</b>, trong khi <b className="text-emerald-700 dark:text-emerald-400 font-black">BS. Hùng (PK2) chỉ đạt 48%</b>.
             </p>
 
-            <div className="p-2.5 rounded-xl bg-purple-950/60 border border-purple-500/30 space-y-1 text-[11px] text-purple-200">
-              <div className="font-bold text-white">💡 Gợi Ý AI COO:</div>
+            <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 space-y-1 text-[11px] text-slate-700 dark:text-slate-300">
+              <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1">
+                💡 Gợi Ý AI COO:
+              </div>
               <div>• Chuyển tự động 4 bệnh nhân chờ từ PK1 ➔ PK2.</div>
-              <div className="text-emerald-400 font-bold mt-1">➔ Giảm thời gian chờ PK1 từ 18m xuống 10m.</div>
+              <div className="text-emerald-600 dark:text-emerald-400 font-black mt-1">➔ Giảm thời gian chờ PK1 từ 18m xuống 10m.</div>
             </div>
 
             <button
               disabled={aiApplied['doctor']}
               onClick={() => handleApplyAiRecommendation('doctor', 'Đã điều chuyển 4 bệnh nhân chờ sang Phòng Khám 2')}
-              className={`w-full py-2 rounded-xl font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              className={`w-full py-2.5 rounded-xl font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs ${
                 aiApplied['doctor']
-                  ? 'bg-emerald-600/40 text-emerald-300 border border-emerald-500/40'
-                  : 'bg-amber-600 hover:bg-amber-700 text-white shadow-md'
+                  ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300'
+                  : 'bg-amber-600 hover:bg-amber-700 text-white shadow-amber-600/20'
               }`}
             >
-              {aiApplied['doctor'] ? <CheckCircle className="w-3.5 h-3.5 text-emerald-400" /> : <Sparkles className="w-3.5 h-3.5" />}
+              {aiApplied['doctor'] ? <CheckCircle className="w-4 h-4 text-emerald-600" /> : <Sparkles className="w-4 h-4" />}
               {aiApplied['doctor'] ? 'Đã Chuyển Lịch Khám' : 'Chuyển Lịch Khám Tự Động'}
             </button>
           </div>
 
           {/* Recommendation 3 */}
-          <div className="p-4 rounded-2xl bg-slate-900/80 border border-indigo-500/40 space-y-3 relative group hover:border-indigo-400 transition-all">
+          <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-900/60 space-y-3 relative group hover:shadow-md hover:border-indigo-400 transition-all">
             <div className="flex items-start justify-between">
-              <span className="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-black text-[10px] flex items-center gap-1 border border-indigo-500/30">
-                <TrendingUp className="w-3 h-3" /> Dự Báo Quá Tải 30-60m
+              <span className="px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 text-indigo-800 dark:text-indigo-300 font-black text-[10px] flex items-center gap-1 border border-indigo-200 dark:border-indigo-800">
+                <TrendingUp className="w-3.5 h-3.5 text-indigo-600" /> Dự Báo Quá Tải 30-60m
               </span>
-              <span className="text-[10px] font-mono text-slate-400">Dự báo AI</span>
+              <span className="text-[10px] font-mono font-bold text-slate-400">Dự báo AI</span>
             </div>
 
-            <p className="text-slate-200 leading-relaxed font-medium">
-              ⚡ Dự báo khung giờ <b className="text-cyan-300">10:00 - 11:00</b> lượng bệnh nhân chờ CĐHA sẽ tăng <b className="text-cyan-300">145%</b>.
+            <p className="text-slate-800 dark:text-slate-200 leading-relaxed font-medium">
+              ⚡ Dự báo khung giờ <b className="text-indigo-600 dark:text-indigo-400 font-black">10:00 - 11:00</b> lượng bệnh nhân chờ CĐHA sẽ tăng <b className="text-indigo-600 dark:text-indigo-400 font-black">145%</b>.
             </p>
 
-            <div className="p-2.5 rounded-xl bg-purple-950/60 border border-purple-500/30 space-y-1 text-[11px] text-purple-200">
+            <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 space-y-1 text-[11px] text-slate-700 dark:text-slate-300">
+              <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1">
+                💡 Gợi Ý AI COO:
+              </div>
+              <div>• Kích hoạt mở thêm Phòng Chẩn Đoán Hình Ảnh Số 3.</div>
+              <div className="text-emerald-600 dark:text-emerald-400 font-black mt-1">➔ Tránh nguy cơ vỡ SLA phòng CĐHA.</div>
+            </div>
+
+            <button
+              disabled={aiApplied['pacs']}
+              onClick={() => handleApplyAiRecommendation('pacs', 'Đã kích hoạt mở Phòng CĐHA PACS Số 3')}
+              className={`w-full py-2.5 rounded-xl font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs ${
+                aiApplied['pacs']
+                  ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300'
+                  : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-600/20'
+              }`}
+            >
+              {aiApplied['pacs'] ? <CheckCircle className="w-4 h-4 text-emerald-600" /> : <Sparkles className="w-4 h-4" />}
+              {aiApplied['pacs'] ? 'Đã Mở Phòng CĐHA Số 3' : 'Kích Hoạt Phòng CĐHA Số 3'}
+            </button>
+          </div>
+        </div>
+      </div>
               <div className="font-bold text-white">💡 Gợi Ý AI COO:</div>
               <div>• Kích hoạt mở thêm Phòng Chẩn Đoán Hình Ảnh Số 3.</div>
               <div className="text-emerald-400 font-bold mt-1">➔ Tránh nguy cơ vỡ SLA phòng CĐHA.</div>
