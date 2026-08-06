@@ -117,38 +117,52 @@ export default function BillingPage() {
         </button>
       </div>
 
-      {/* Quick Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-        <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
-          <div>
-            <span className="text-xs text-slate-400 font-bold block">Tổng Doanh Thu Viện Phí</span>
-            <span className="text-2xl font-black text-slate-900 dark:text-white mt-1 block">2.050.000 VNĐ</span>
-          </div>
-          <div className="p-3 rounded-xl bg-blue-500/10 text-blue-600">
-            <DollarSign className="w-6 h-6" />
-          </div>
-        </div>
+      {/* Quick Summary Cards - Dynamic Computation */}
+      {(() => {
+        const totalRev = records.reduce((sum, r) => sum + (r.totalAmount || 0), 0);
+        const bhytTotal = records.reduce((sum, r) => sum + (r.bhytCovered || 0), 0);
+        const patientPayTotal = records.reduce((sum, r) => sum + (r.patientPay || 0), 0);
 
-        <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
-          <div>
-            <span className="text-xs text-slate-400 font-bold block">BHYT Chi Trả (TK 131_BHYT)</span>
-            <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1 block">1.640.000 VNĐ</span>
-          </div>
-          <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-600">
-            <ShieldCheck className="w-6 h-6" />
-          </div>
-        </div>
+        return (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+            <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-between shadow-xs">
+              <div className="text-left">
+                <span className="text-xs text-slate-400 font-bold block">Tổng Doanh Thu Viện Phí</span>
+                <span className="text-2xl font-black text-slate-900 dark:text-white mt-1 block">
+                  {totalRev.toLocaleString('vi-VN')} VNĐ
+                </span>
+              </div>
+              <div className="p-3 rounded-xl bg-blue-500/10 text-blue-600">
+                <DollarSign className="w-6 h-6" />
+              </div>
+            </div>
 
-        <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
-          <div>
-            <span className="text-xs text-slate-400 font-bold block">Bệnh Nhân Đồng Chi Trả</span>
-            <span className="text-2xl font-black text-indigo-600 dark:text-indigo-400 mt-1 block">410.000 VNĐ</span>
+            <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-between shadow-xs">
+              <div className="text-left">
+                <span className="text-xs text-slate-400 font-bold block">BHYT Chi Trả (TK 131_BHYT)</span>
+                <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1 block">
+                  {bhytTotal.toLocaleString('vi-VN')} VNĐ
+                </span>
+              </div>
+              <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-600">
+                <ShieldCheck className="w-6 h-6" />
+              </div>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-between shadow-xs">
+              <div className="text-left">
+                <span className="text-xs text-slate-400 font-bold block">Bệnh Nhân Đồng Chi Trả</span>
+                <span className="text-2xl font-black text-indigo-600 dark:text-indigo-400 mt-1 block">
+                  {patientPayTotal.toLocaleString('vi-VN')} VNĐ
+                </span>
+              </div>
+              <div className="p-3 rounded-xl bg-indigo-500/10 text-indigo-600">
+                <Wallet className="w-6 h-6" />
+              </div>
+            </div>
           </div>
-          <div className="p-3 rounded-xl bg-indigo-500/10 text-indigo-600">
-            <Wallet className="w-6 h-6" />
-          </div>
-        </div>
-      </div>
+        );
+      })()}
 
       {/* Billing Records Table */}
       <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
