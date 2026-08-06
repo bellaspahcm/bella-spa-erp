@@ -238,18 +238,39 @@ export default function HealthcareDashboardPage() {
         return c;
       });
 
-      const finalActions = loadedActions || mockActions;
+      // Sanitize AI COO Actions: Ensure no action recommends assigning a chair to a patient who is ALREADY seated
+      const occupiedPatientNames = new Set(
+        finalChairs.filter((c) => c.status === 'occupied' && c.currentPatientName).map((c) => c.currentPatientName!)
+      );
+
+      const rawActions = loadedActions || mockActions;
+      const sanitizedActions = rawActions.map((action) => {
+        if (action.actionType === 'assign_chair') {
+          let desc = action.description;
+          for (const name of occupiedPatientNames) {
+            if (desc.includes(name)) {
+              desc = desc.replace(`${name} (Queue #102)`, 'Trần Minh Hoàng (Queue #104)');
+              desc = desc.replace(name, 'Trần Minh Hoàng');
+            }
+          }
+          return {
+            ...action,
+            description: desc,
+          };
+        }
+        return action;
+      });
 
       setPatients(finalPatients);
       setEncounters(finalEncounters);
       setChairsMatrix(finalChairs);
-      setAiCooActions(finalActions);
+      setAiCooActions(sanitizedActions);
 
       if (typeof window !== 'undefined') {
         if (!loadedPatients) localStorage.setItem('bella_healthcare_patients', JSON.stringify(mockPatients));
         if (!loadedEncounters) localStorage.setItem('bella_healthcare_encounters', JSON.stringify(mockEncounters));
         localStorage.setItem('bella_healthcare_chairs', JSON.stringify(finalChairs));
-        if (!loadedActions) localStorage.setItem('bella_healthcare_ai_actions', JSON.stringify(mockActions));
+        localStorage.setItem('bella_healthcare_ai_actions', JSON.stringify(sanitizedActions));
       }
 
       if (finalPatients.length > 0) setSelectedPatientId(finalPatients[0].id);
@@ -264,6 +285,25 @@ export default function HealthcareDashboardPage() {
   useEffect(() => {
     loadInitialData();
   }, [loadInitialData]);
+
+  // Auto-clean AI COO suggestions whenever chairsMatrix changes (dismiss fulfilled suggestions)
+  useEffect(() => {
+    if (chairsMatrix.length === 0) return;
+    const seatedPatients = new Set(
+      chairsMatrix.filter((c) => c.status === 'occupied' && c.currentPatientName).map((c) => c.currentPatientName!)
+    );
+
+    setAiCooActions((prev) =>
+      prev.filter((act) => {
+        if (act.actionType === 'assign_chair') {
+          for (const name of seatedPatients) {
+            if (act.description.includes(name)) return false;
+          }
+        }
+        return true;
+      })
+    );
+  }, [chairsMatrix]);
 
   // Run dynamic capacity forecasting using AI Prediction Engine
   useEffect(() => {
