@@ -184,8 +184,8 @@ export default function HealthcareDashboardPage() {
 
       const mockEncounters: EncounterItem[] = [
         { id: 'enc-01', patientName: 'Nguyễn Văn Hùng', doctorName: 'Lê Minh', status: 'in_progress', chiefComplaint: 'Đau răng hàm trái', queueNumber: 102 },
-        { id: 'enc-02', patientName: 'Lê Thị Mai', doctorName: 'Trần Thảo', status: 'arrived', chiefComplaint: 'Tái khám bọc sứ', queueNumber: 103 },
-        { id: 'enc-03', patientName: 'Trần Minh Hoàng', doctorName: 'Lê Minh', status: 'planned', chiefComplaint: 'Nhổ răng khôn #38', queueNumber: 104, scheduledAt: '2026-08-05T14:30:00Z' },
+        { id: 'enc-02', patientName: 'Lê Thị Mai', doctorName: 'Trần Thảo', status: 'in_progress', chiefComplaint: 'Tái khám bọc sứ', queueNumber: 103 },
+        { id: 'enc-03', patientName: 'Trần Minh Hoàng', doctorName: 'Lê Minh', status: 'arrived', chiefComplaint: 'Nhổ răng khôn #38', queueNumber: 104, scheduledAt: '2026-08-05T14:30:00Z' },
       ];
 
       const mockChairs: ChairInfo[] = [
@@ -210,7 +210,7 @@ export default function HealthcareDashboardPage() {
           priority: 'high',
           category: 'patient_wait',
           title: '⚡ Cảnh báo SLA — Thời gian chờ vượt ngưỡng',
-          description: 'Bệnh nhân Lê Thị Mai đã ở phòng chờ >22 phút. Đề xuất phát thông báo ưu tiên cho BS. Trần Thảo.',
+          description: 'Bệnh nhân Trần Minh Hoàng đã ở phòng chờ >22 phút. Đề xuất phát thông báo ưu tiên cho BS. Lê Minh.',
           actionLabel: 'Thông báo Bác sĩ',
           actionType: 'alert_doctor',
         },
@@ -238,28 +238,36 @@ export default function HealthcareDashboardPage() {
         return c;
       });
 
-      // Sanitize AI COO Actions: Ensure no action recommends assigning a chair to a patient who is ALREADY seated
+      // Sanitize AI COO Actions: Ensure no action recommends assigning a chair or warning SLA for a patient who is ALREADY seated
       const occupiedPatientNames = new Set(
         finalChairs.filter((c) => c.status === 'occupied' && c.currentPatientName).map((c) => c.currentPatientName!)
       );
 
       const rawActions = loadedActions || mockActions;
-      const sanitizedActions = rawActions.map((action) => {
-        if (action.actionType === 'assign_chair') {
+      const sanitizedActions = rawActions
+        .map((action) => {
           let desc = action.description;
           for (const name of occupiedPatientNames) {
             if (desc.includes(name)) {
-              desc = desc.replace(`${name} (Queue #102)`, 'Trần Minh Hoàng (Queue #104)');
-              desc = desc.replace(name, 'Trần Minh Hoàng');
+              if (action.actionType === 'assign_chair') {
+                desc = desc.replace(`${name} (Queue #102)`, 'Trần Minh Hoàng (Queue #104)');
+                desc = desc.replace(name, 'Trần Minh Hoàng');
+              } else if (action.actionType === 'alert_doctor') {
+                desc = desc.replace(name, 'Trần Minh Hoàng');
+              }
             }
           }
           return {
             ...action,
             description: desc,
           };
-        }
-        return action;
-      });
+        })
+        .filter((act) => {
+          for (const name of occupiedPatientNames) {
+            if (act.description.includes(name)) return false;
+          }
+          return true;
+        });
 
       setPatients(finalPatients);
       setEncounters(finalEncounters);
@@ -268,7 +276,7 @@ export default function HealthcareDashboardPage() {
 
       if (typeof window !== 'undefined') {
         if (!loadedPatients) localStorage.setItem('bella_healthcare_patients', JSON.stringify(mockPatients));
-        if (!loadedEncounters) localStorage.setItem('bella_healthcare_encounters', JSON.stringify(mockEncounters));
+        localStorage.setItem('bella_healthcare_encounters', JSON.stringify(finalEncounters));
         localStorage.setItem('bella_healthcare_chairs', JSON.stringify(finalChairs));
         localStorage.setItem('bella_healthcare_ai_actions', JSON.stringify(sanitizedActions));
       }
@@ -286,7 +294,7 @@ export default function HealthcareDashboardPage() {
     loadInitialData();
   }, [loadInitialData]);
 
-  // Auto-clean AI COO suggestions whenever chairsMatrix changes (dismiss fulfilled suggestions)
+  // Auto-clean ALL AI COO suggestions whenever chairsMatrix changes (dismiss fulfilled/invalid suggestions)
   useEffect(() => {
     if (chairsMatrix.length === 0) return;
     const seatedPatients = new Set(
@@ -295,10 +303,9 @@ export default function HealthcareDashboardPage() {
 
     setAiCooActions((prev) =>
       prev.filter((act) => {
-        if (act.actionType === 'assign_chair') {
-          for (const name of seatedPatients) {
-            if (act.description.includes(name)) return false;
-          }
+        // If an action mentions a patient who is ALREADY seated, dismiss it regardless of actionType (assign_chair, alert_doctor, etc.)
+        for (const name of seatedPatients) {
+          if (act.description.includes(name)) return false;
         }
         return true;
       })
