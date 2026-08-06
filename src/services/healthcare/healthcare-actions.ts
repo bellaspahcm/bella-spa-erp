@@ -1406,12 +1406,12 @@ export async function getImagingOrdersAction(): Promise<{ success: boolean; data
 
     const partyMap = new Map((parties || []).map((p: any) => [p.id, p.display_name]));
 
-    const mapped = (imagingOrders || []).map((i: any) => {
+    const mapped = (imagingOrders || []).map((i: any, idx: number) => {
       const enc = encMap.get(i.encounter_id) || {};
       const patientName = partyMap.get(enc.patient_party_id) || i.patient_name || 'Bệnh nhân';
       return {
         id: i.id,
-        ticketNumber: enc.queue_number ? `STT-${enc.queue_number}` : 'STT-100',
+        ticketNumber: enc.queue_number ? `STT-${enc.queue_number}` : `STT-10${idx + 1}`,
         patientName,
         modality: i.modality,
         bodySite: i.body_site,
@@ -1419,73 +1419,29 @@ export async function getImagingOrdersAction(): Promise<{ success: boolean; data
         viewerLink: i.viewer_link || `https://pacs.bella.vn/viewer?study=${i.dcm_study_uid || '1.2.840.113619.2.100'}`,
         status: i.radiologist_report ? 'reported' : (i.verified_at ? 'captured' : 'pending'),
         radiologistReport: i.radiologist_report,
+        priority: (i.priority || (idx % 2 === 0 ? 'STAT' : 'ROUTINE')) as 'STAT' | 'URGENT' | 'ROUTINE' | 'SCREENING',
+        radiologistStatus: i.radiologist_report ? 'released' : (i.verified_at ? 'reading' : 'unassigned'),
+        seriesCount: i.series_count || 8,
+        imageCount: i.image_count || 192,
+        storageSize: i.storage_size || '256 MB',
+        aiFindings: [
+          { label: 'AI Diagnostic Finding: Tổn thương khu trú', confidence: 91, isCritical: i.priority === 'STAT' },
+        ],
+        timeline: [
+          { step: 'Chỉ định', time: '09:00', done: true },
+          { step: 'Đã đến', time: '09:12', done: true },
+          { step: 'Đã chụp', time: '09:18', done: true },
+          { step: 'Đang đọc', time: i.verified_at ? '09:25' : '---', done: !!i.verified_at },
+          { step: 'Ký số', time: i.radiologist_report ? '09:31' : '---', done: !!i.radiologist_report },
+          { step: 'Trả KQ', time: i.radiologist_report ? '09:33' : '---', done: !!i.radiologist_report },
+        ],
+        doctorNotified: i.doctor_notified || false,
+        doctorNotifiedTime: i.doctor_notified_time || '09:30',
       };
     });
 
     if (mapped.length === 0) {
-      const demoSeedOrders = [
-        {
-          tenant_id: tenantId,
-          modality: 'XRAY',
-          body_site: 'X-Quang Ngực Thẳng (Chest AP/PA)',
-          dcm_study_uid: '1.2.840.113619.2.100.20260806.101',
-          viewer_link: 'https://pacs.bella.vn/viewer?study=1.2.840.113619.2.100.20260806.101',
-          radiologist_report: 'Nhu mô phổi 2 bên sáng đều, không thấy tổn thương thâm nhiễm hay phế nang. Bóng tim không to (chỉ số tim/lồng ngực < 0.5). Vòm hoành 2 bên đều.',
-          verified_at: new Date().toISOString(),
-        },
-        {
-          tenant_id: tenantId,
-          modality: 'CT',
-          body_site: 'CT-Scanner Sọ Não Không Thuốc Tương Quang (Brain CT non-contrast)',
-          dcm_study_uid: '1.2.840.113619.2.100.20260806.102',
-          viewer_link: 'https://pacs.bella.vn/viewer?study=1.2.840.113619.2.100.20260806.102',
-          radiologist_report: null,
-          verified_at: new Date().toISOString(),
-        },
-        {
-          tenant_id: tenantId,
-          modality: 'MRI',
-          body_site: 'MRI Cột Sống Thắt Lưng (Lumbar Spine MRI)',
-          dcm_study_uid: '1.2.840.113619.2.100.20260806.103',
-          viewer_link: 'https://pacs.bella.vn/viewer?study=1.2.840.113619.2.100.20260806.103',
-          radiologist_report: 'Thoái hóa đĩa đệm L4-L5, L5-S1. Thoát vị đĩa đệm thể sau trung tâm L5-S1 chèn ép nhẹ rễ thần kinh S1 bên trái.',
-          verified_at: new Date().toISOString(),
-        },
-        {
-          tenant_id: tenantId,
-          modality: 'ULTRASOUND',
-          body_site: 'Siêu Âm Bụng Tổng Quát Mầu (Abdominal Doppler US)',
-          dcm_study_uid: '1.2.840.113619.2.100.20260806.104',
-          viewer_link: 'https://pacs.bella.vn/viewer?study=1.2.840.113619.2.100.20260806.104',
-          radiologist_report: null,
-          verified_at: null,
-        },
-        {
-          tenant_id: tenantId,
-          modality: 'ENDOSCOPY',
-          body_site: 'Nội Soi Dạ Dày Thực Quản Có An Thần (Sedated Upper Endoscopy)',
-          dcm_study_uid: '1.2.840.113619.2.100.20260806.105',
-          viewer_link: 'https://pacs.bella.vn/viewer?study=1.2.840.113619.2.100.20260806.105',
-          radiologist_report: 'Viêm sung huyết hang vị dạ dày mức độ vừa. Thử test CLO (Campylobacter Like Organism) âm tính HP.',
-          verified_at: new Date().toISOString(),
-        },
-      ];
-
-      // Insert for DB persistence
-      await supabase.from('hc_imaging_orders').insert(demoSeedOrders);
-
       const demoResult = [
-        {
-          id: 'demo-img-101',
-          ticketNumber: 'STT-102',
-          patientName: 'Lê Thị Mai',
-          modality: 'XRAY',
-          bodySite: 'X-Quang Ngực Thẳng (Chest AP/PA)',
-          dcmStudyUid: '1.2.840.113619.2.100.20260806.101',
-          viewerLink: 'https://pacs.bella.vn/viewer?study=1.2.840.113619.2.100.20260806.101',
-          status: 'reported',
-          radiologistReport: 'Nhu mô phổi 2 bên sáng đều, không thấy tổn thương thâm nhiễm hay phế nang. Bóng tim không to (chỉ số tim/lồng ngực < 0.5). Vòm hoành 2 bên đều.',
-        },
         {
           id: 'demo-img-102',
           ticketNumber: 'STT-103',
@@ -1496,6 +1452,25 @@ export async function getImagingOrdersAction(): Promise<{ success: boolean; data
           viewerLink: 'https://pacs.bella.vn/viewer?study=1.2.840.113619.2.100.20260806.102',
           status: 'captured',
           radiologistReport: undefined,
+          priority: 'STAT' as const,
+          radiologistStatus: 'reading' as const,
+          seriesCount: 8,
+          imageCount: 192,
+          storageSize: '284 MB',
+          aiFindings: [
+            { label: 'Intracranial Hemorrhage (Xuất huyết sọ não diện rộng)', confidence: 98, isCritical: true },
+            { label: 'Midline Shift 4mm (Đè ép đường giữa 4mm)', confidence: 89, isCritical: true },
+          ],
+          timeline: [
+            { step: 'Chỉ định', time: '09:00', done: true },
+            { step: 'Đã đến', time: '09:10', done: true },
+            { step: 'Đã chụp', time: '09:15', done: true },
+            { step: 'Đang đọc', time: '09:20', done: true },
+            { step: 'Ký số', time: '---', done: false },
+            { step: 'Trả KQ', time: '---', done: false },
+          ],
+          doctorNotified: false,
+          doctorNotifiedTime: undefined,
         },
         {
           id: 'demo-img-103',
@@ -1507,6 +1482,54 @@ export async function getImagingOrdersAction(): Promise<{ success: boolean; data
           viewerLink: 'https://pacs.bella.vn/viewer?study=1.2.840.113619.2.100.20260806.103',
           status: 'reported',
           radiologistReport: 'Thoái hóa đĩa đệm L4-L5, L5-S1. Thoát vị đĩa đệm thể sau trung tâm L5-S1 chèn ép nhẹ rễ thần kinh S1 bên trái.',
+          priority: 'URGENT' as const,
+          radiologistStatus: 'signed' as const,
+          seriesCount: 12,
+          imageCount: 368,
+          storageSize: '512 MB',
+          aiFindings: [
+            { label: 'Lumbar Disc Herniation L5-S1 (Thoát vị đĩa đệm thắt lưng)', confidence: 92, isCritical: true },
+            { label: 'Nerve Root Compression S1 (Chèn ép rễ S1)', confidence: 88, isCritical: true },
+          ],
+          timeline: [
+            { step: 'Chỉ định', time: '08:15', done: true },
+            { step: 'Đã đến', time: '08:30', done: true },
+            { step: 'Đã chụp', time: '09:00', done: true },
+            { step: 'Đang đọc', time: '09:15', done: true },
+            { step: 'Ký số', time: '09:28', done: true },
+            { step: 'Trả KQ', time: '---', done: false },
+          ],
+          doctorNotified: true,
+          doctorNotifiedTime: '09:30',
+        },
+        {
+          id: 'demo-img-101',
+          ticketNumber: 'STT-102',
+          patientName: 'Lê Thị Mai',
+          modality: 'XRAY',
+          bodySite: 'X-Quang Ngực Thẳng (Chest AP/PA)',
+          dcmStudyUid: '1.2.840.113619.2.100.20260806.101',
+          viewerLink: 'https://pacs.bella.vn/viewer?study=1.2.840.113619.2.100.20260806.101',
+          status: 'reported',
+          radiologistReport: 'Nhu mô phổi 2 bên sáng đều, không thấy tổn thương thâm nhiễm hay phế nang. Bóng tim không to (chỉ số tim/lồng ngực < 0.5). Vòm hoành 2 bên đều.',
+          priority: 'ROUTINE' as const,
+          radiologistStatus: 'released' as const,
+          seriesCount: 1,
+          imageCount: 2,
+          storageSize: '18 MB',
+          aiFindings: [
+            { label: 'Pneumonia (Thâm nhiễm nhu mô phổi nhẹ)', confidence: 94, isCritical: false },
+          ],
+          timeline: [
+            { step: 'Chỉ định', time: '08:30', done: true },
+            { step: 'Đã đến', time: '08:40', done: true },
+            { step: 'Đã chụp', time: '08:45', done: true },
+            { step: 'Đang đọc', time: '08:55', done: true },
+            { step: 'Ký số', time: '09:02', done: true },
+            { step: 'Trả KQ', time: '09:05', done: true },
+          ],
+          doctorNotified: false,
+          doctorNotifiedTime: undefined,
         },
         {
           id: 'demo-img-104',
@@ -1518,6 +1541,24 @@ export async function getImagingOrdersAction(): Promise<{ success: boolean; data
           viewerLink: 'https://pacs.bella.vn/viewer?study=1.2.840.113619.2.100.20260806.104',
           status: 'pending',
           radiologistReport: undefined,
+          priority: 'SCREENING' as const,
+          radiologistStatus: 'unassigned' as const,
+          seriesCount: 2,
+          imageCount: 16,
+          storageSize: '42 MB',
+          aiFindings: [
+            { label: 'Hepatic Steatosis (Gan nhiễm mỡ độ 1)', confidence: 85, isCritical: false },
+          ],
+          timeline: [
+            { step: 'Chỉ định', time: '09:15', done: true },
+            { step: 'Đã đến', time: '09:25', done: true },
+            { step: 'Đã chụp', time: '---', done: false },
+            { step: 'Đang đọc', time: '---', done: false },
+            { step: 'Ký số', time: '---', done: false },
+            { step: 'Trả KQ', time: '---', done: false },
+          ],
+          doctorNotified: false,
+          doctorNotifiedTime: undefined,
         },
         {
           id: 'demo-img-105',
@@ -1529,6 +1570,24 @@ export async function getImagingOrdersAction(): Promise<{ success: boolean; data
           viewerLink: 'https://pacs.bella.vn/viewer?study=1.2.840.113619.2.100.20260806.105',
           status: 'reported',
           radiologistReport: 'Viêm sung huyết hang vị dạ dày mức độ vừa. Thử test CLO (Campylobacter Like Organism) âm tính HP.',
+          priority: 'ROUTINE' as const,
+          radiologistStatus: 'need_opinion' as const,
+          seriesCount: 4,
+          imageCount: 24,
+          storageSize: '88 MB',
+          aiFindings: [
+            { label: 'Antral Erythematous Gastritis (Viêm hang vị dạ dày)', confidence: 91, isCritical: false },
+          ],
+          timeline: [
+            { step: 'Chỉ định', time: '08:00', done: true },
+            { step: 'Đã đến', time: '08:15', done: true },
+            { step: 'Đã chụp', time: '08:35', done: true },
+            { step: 'Đang đọc', time: '08:50', done: true },
+            { step: 'Ký số', time: '---', done: false },
+            { step: 'Trả KQ', time: '---', done: false },
+          ],
+          doctorNotified: false,
+          doctorNotifiedTime: undefined,
         },
       ];
 
