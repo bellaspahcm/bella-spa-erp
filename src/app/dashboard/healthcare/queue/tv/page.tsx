@@ -17,7 +17,8 @@ import {
   FlaskConical,
   Pill,
   ChevronRight,
-  VolumeX
+  VolumeX,
+  UserCheck
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -121,7 +122,7 @@ export default function QueueTVScreenPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => setIsAutoSpeechEnabled(!isAutoSpeechEnabled)}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer shadow-2xs transition-all ${
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer shadow-2xs transition-all active:scale-95 ${
               isAutoSpeechEnabled
                 ? 'bg-cyan-600 text-white hover:bg-cyan-700'
                 : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
@@ -133,7 +134,7 @@ export default function QueueTVScreenPage() {
 
           <button
             onClick={() => setIsFullScreen(!isFullScreen)}
-            className="px-4 py-2.5 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 cursor-pointer shadow-2xs transition-all"
+            className="px-4 py-2.5 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 cursor-pointer shadow-2xs transition-all active:scale-95"
           >
             {isFullScreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
             <span>{isFullScreen ? 'Thoát TV Fullscreen' : 'Toàn Màn Hình TV Kiosk'}</span>
@@ -141,23 +142,21 @@ export default function QueueTVScreenPage() {
         </div>
       </div>
 
-      {/* Main TV Hero Banner: Current Calling Patient */}
-      <div className="p-8 md:p-10 rounded-[36px] bg-gradient-to-br from-slate-900 via-cyan-950 to-teal-950 text-white border-2 border-cyan-500/40 shadow-2xl space-y-6 relative overflow-hidden text-left">
-        {/* Glowing Background Radial */}
-        <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
-
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-cyan-500/20 pb-5">
+      {/* Main TV Hero Banner: Ultra-High Contrast Dark Slate Card */}
+      <div className="p-8 md:p-10 rounded-[32px] bg-slate-900 dark:bg-slate-950 text-white border-2 border-cyan-500/80 shadow-2xl space-y-6 relative overflow-hidden text-left">
+        {/* Top Calling Status & Action Bar */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-5">
           <div className="flex items-center gap-3">
-            <span className="px-3.5 py-1.5 rounded-full bg-rose-500 text-white font-black text-xs tracking-wider uppercase shadow-md animate-pulse">
+            <span className="px-4 py-1.5 rounded-full bg-rose-600 text-white font-black text-xs tracking-wider uppercase shadow-md animate-pulse">
               🚨 MỜI BỆNH NHÂN VÀO KHÁM
             </span>
-            <span className="text-xs text-cyan-300 font-mono">Cập nhật lúc: {new Date().toLocaleTimeString('vi-VN')}</span>
+            <span className="text-xs text-cyan-300 font-mono font-bold">Cập nhật lúc: {new Date().toLocaleTimeString('vi-VN')}</span>
           </div>
 
           <div className="flex items-center gap-3">
             <button
               onClick={() => speakAIVoiceCall(currentCalling)}
-              className="px-4 py-2 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 font-black text-xs border border-cyan-500/40 flex items-center gap-2 cursor-pointer transition-all active:scale-95"
+              className="px-4 py-2 rounded-xl bg-cyan-950 hover:bg-cyan-900 text-cyan-300 font-black text-xs border border-cyan-500/60 flex items-center gap-2 cursor-pointer transition-all active:scale-95 shadow-sm"
             >
               <Volume2 className="w-4 h-4 text-cyan-400" />
               <span>Phát Giọng Nói AI (Gọi Lại)</span>
@@ -165,7 +164,7 @@ export default function QueueTVScreenPage() {
 
             <button
               onClick={handleCallNext}
-              className="px-5 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-white font-black text-xs shadow-lg flex items-center gap-2 cursor-pointer transition-all active:scale-95"
+              className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow-lg flex items-center gap-2 cursor-pointer transition-all active:scale-95"
             >
               <Play className="w-4 h-4 fill-current" />
               <span>Gọi Số Tiếp Theo ➔</span>
@@ -173,34 +172,35 @@ export default function QueueTVScreenPage() {
           </div>
         </div>
 
+        {/* Hero Patient Call Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-          {/* STT Giant Badge */}
-          <div className="lg:col-span-4 bg-slate-900/90 border-2 border-cyan-500/50 p-6 md:p-8 rounded-[28px] text-center shadow-xl space-y-2">
-            <span className="text-xs text-cyan-400 font-bold uppercase tracking-widest block">SỐ THỨ TỰ (STT)</span>
-            <div className="text-6xl md:text-7xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400 font-mono">
+          {/* STT Giant Badge - High Contrast Box */}
+          <div className="lg:col-span-4 bg-slate-950 border-2 border-cyan-400 p-6 md:p-8 rounded-[24px] text-center shadow-xl space-y-2">
+            <span className="text-xs text-cyan-300 font-black uppercase tracking-widest block">SỐ THỨ TỰ (STT)</span>
+            <div className="text-6xl md:text-7xl font-black tracking-tight text-cyan-300 font-mono drop-shadow-md">
               #{currentCalling.stt}
             </div>
-            <span className="text-[11px] font-bold text-slate-400 block">Thời gian chờ: {currentCalling.waitTime}</span>
+            <span className="text-xs font-bold text-slate-300 block">Thời gian chờ: {currentCalling.waitTime}</span>
           </div>
 
-          {/* Patient Details */}
-          <div className="lg:col-span-8 space-y-4">
+          {/* Patient Name & Room Details - Crystal Clear High Contrast */}
+          <div className="lg:col-span-8 space-y-5">
             <div>
-              <span className="text-xs text-slate-400 font-bold uppercase tracking-wider block">HỌ VÀ TÊN BỆNH NHÂN:</span>
-              <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight mt-1">
+              <span className="text-xs text-cyan-400 font-extrabold uppercase tracking-widest block">HỌ VÀ TÊN BỆNH NHÂN:</span>
+              <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight mt-1 drop-shadow-sm">
                 {currentCalling.patientName}
               </h2>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-              <div className="p-4 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 space-y-1">
-                <span className="text-[11px] text-cyan-300 font-bold uppercase block">PHÒNG KHÁM CHUYÊN KHOA:</span>
-                <strong className="text-lg font-black text-cyan-200 block">{currentCalling.roomName}</strong>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+              <div className="p-4.5 rounded-2xl bg-cyan-950/80 border-2 border-cyan-500/70 space-y-1">
+                <span className="text-[11px] text-cyan-300 font-extrabold uppercase tracking-wider block">PHÒNG KHÁM CHUYÊN KHOA:</span>
+                <strong className="text-xl font-black text-white block">{currentCalling.roomName}</strong>
               </div>
 
-              <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 space-y-1">
-                <span className="text-[11px] text-emerald-300 font-bold uppercase block">BÁC SĨ KHÁM PHỤ TRÁCH:</span>
-                <strong className="text-lg font-black text-emerald-200 block">{currentCalling.doctorName}</strong>
+              <div className="p-4.5 rounded-2xl bg-emerald-950/80 border-2 border-emerald-500/70 space-y-1">
+                <span className="text-[11px] text-emerald-300 font-extrabold uppercase tracking-wider block">BÁC SĨ KHÁM PHỤ TRÁCH:</span>
+                <strong className="text-xl font-black text-white block">{currentCalling.doctorName}</strong>
               </div>
             </div>
           </div>
@@ -234,13 +234,13 @@ export default function QueueTVScreenPage() {
                       #{item.stt}
                     </span>
                     <div>
-                      <h4 className="font-black text-slate-900 dark:text-white text-sm">{item.patientName}</h4>
-                      <span className="text-xs text-slate-500 font-medium">{item.roomName} • {item.doctorName}</span>
+                      <h4 className="font-black text-slate-900 dark:text-white text-base tracking-tight">{item.patientName}</h4>
+                      <span className="text-xs text-slate-600 dark:text-slate-300 font-semibold block mt-0.5">{item.roomName} • {item.doctorName}</span>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <span className="text-xs font-bold text-amber-600 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20">
+                    <span className="text-xs font-black text-amber-700 dark:text-amber-300 bg-amber-500/15 px-3 py-1 rounded-full border border-amber-500/30">
                       ⏰ Chờ {item.waitTime}
                     </span>
 
@@ -251,7 +251,7 @@ export default function QueueTVScreenPage() {
                           prev.map((i) => (i.stt === item.stt ? { ...i, status: 'calling' } : i))
                         );
                       }}
-                      className="px-3.5 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-black text-xs shadow-xs cursor-pointer transition-all active:scale-95"
+                      className="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-black text-xs shadow-md cursor-pointer transition-all active:scale-95"
                     >
                       Gọi Ngay
                     </button>
@@ -266,33 +266,33 @@ export default function QueueTVScreenPage() {
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
             <div className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-emerald-600" />
-              <h3 className="font-black text-slate-900 dark:text-white text-sm uppercase">Tự Động Chuyển Trạng Thái</h3>
+              <h3 className="font-black text-slate-900 dark:text-white text-sm uppercase tracking-wider">Tự Động Chuyển Trạng Thái</h3>
             </div>
           </div>
 
-          <p className="text-xs text-slate-500 font-medium">
+          <p className="text-xs text-slate-600 dark:text-slate-300 font-medium">
             Khi bác sĩ hoàn tất lượt khám SOAP, bệnh nhân được tự động điều hướng luồng y tế:
           </p>
 
-          <div className="space-y-3 text-xs">
-            <div className="p-3.5 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 space-y-1.5">
+          <div className="space-y-3.5 text-xs">
+            <div className="p-4 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 border-2 border-indigo-200 dark:border-indigo-800 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="font-black text-indigo-700 dark:text-indigo-300 flex items-center gap-1.5">
-                  <FlaskConical className="w-4 h-4" /> 1. Chuyển LIS / RIS PACS
+                <span className="font-black text-indigo-900 dark:text-indigo-200 flex items-center gap-1.5 text-sm">
+                  <FlaskConical className="w-4 h-4 text-indigo-600" /> 1. Chuyển LIS / RIS PACS
                 </span>
-                <span className="text-[10px] font-bold bg-indigo-600 text-white px-2 py-0.5 rounded-md">TỰ ĐỘNG</span>
+                <span className="text-[10px] font-black bg-indigo-600 text-white px-2.5 py-0.5 rounded-md uppercase">TỰ ĐỘNG</span>
               </div>
-              <p className="text-slate-600 dark:text-slate-300 text-[11px]">Tự động phát số chờ Xét Nghiệm / Siêu Âm ngay khi bác sĩ kê chỉ định CLS.</p>
+              <p className="text-slate-700 dark:text-slate-300 text-xs font-medium">Tự động phát số chờ Xét Nghiệm / Siêu Âm ngay khi bác sĩ kê chỉ định CLS.</p>
             </div>
 
-            <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 space-y-1.5">
+            <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border-2 border-emerald-200 dark:border-emerald-800 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="font-black text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5">
-                  <Pill className="w-4 h-4" /> 2. Chuyển Kho Dược BHYT
+                <span className="font-black text-emerald-900 dark:text-emerald-200 flex items-center gap-1.5 text-sm">
+                  <Pill className="w-4 h-4 text-emerald-600" /> 2. Chuyển Kho Dược BHYT
                 </span>
-                <span className="text-[10px] font-bold bg-emerald-600 text-white px-2 py-0.5 rounded-md">TỰ ĐỘNG</span>
+                <span className="text-[10px] font-black bg-emerald-600 text-white px-2.5 py-0.5 rounded-md uppercase">TỰ ĐỘNG</span>
               </div>
-              <p className="text-slate-600 dark:text-slate-300 text-[11px]">Đơn thuốc tự động truyền sang Kho dược sẵn sàng cấp phát khi khám xong.</p>
+              <p className="text-slate-700 dark:text-slate-300 text-xs font-medium">Đơn thuốc tự động truyền sang Kho dược sẵn sàng cấp phát khi khám xong.</p>
             </div>
           </div>
         </div>
