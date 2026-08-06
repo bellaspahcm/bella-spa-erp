@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Clock, CheckCircle2, AlertCircle, ArrowRight, Activity, PlusCircle, AlertTriangle, ShieldCheck } from 'lucide-react';
-import type { TimelineStep } from '@/modules/bella-healthcare/types/encounter-aggregate';
+import type { TimelineStep } from '@/modules/bella-healthcare/contexts/shared/domain-models';
 
 export interface ClinicalTimelineProps {
   readonly steps: TimelineStep[];

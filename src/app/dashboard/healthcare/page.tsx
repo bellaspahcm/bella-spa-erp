@@ -25,7 +25,7 @@ import type {
   CarePathStep,
   AiCooAction,
   ResourceUtilization,
-} from '@/modules/bella-healthcare/types/encounter-aggregate';
+} from '@/modules/bella-healthcare/contexts/shared/domain-models';
 
 export default function HealthcareDashboardPage() {
   const { user } = useUser();

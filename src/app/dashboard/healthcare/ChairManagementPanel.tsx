@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Armchair, Sparkles, CheckCircle2, Clock, Activity, AlertCircle, RefreshCw, UserCheck } from 'lucide-react';
-import type { ChairInfo, ResourceUtilization } from '@/modules/bella-healthcare/types/encounter-aggregate';
+import type { ChairInfo, ResourceUtilization } from '@/modules/bella-healthcare/contexts/shared/domain-models';
 
 export interface ChairManagementPanelProps {
   readonly chairs: ChairInfo[];

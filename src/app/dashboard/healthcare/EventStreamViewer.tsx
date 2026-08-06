@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Terminal, Activity, Zap, Filter, Code2, Check, RefreshCw } from 'lucide-react';
-import type { DomainEventStreamItem } from '@/modules/bella-healthcare/types/encounter-aggregate';
+import type { DomainEventStreamItem } from '@/modules/bella-healthcare/contexts/shared/domain-models';
 
 export interface EventStreamViewerProps {
   readonly events: DomainEventStreamItem[];

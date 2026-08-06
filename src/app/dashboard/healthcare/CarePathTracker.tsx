@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Route, CheckCircle2, ChevronRight, Sparkles, Calendar, Layers } from 'lucide-react';
-import type { CarePathStep } from '@/modules/bella-healthcare/types/encounter-aggregate';
+import type { CarePathStep } from '@/modules/bella-healthcare/contexts/shared/domain-models';
 
 export interface CarePathTrackerProps {
   readonly title?: string;

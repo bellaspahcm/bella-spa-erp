@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Bot, Zap, ArrowRight, AlertCircle, ShieldAlert, CheckCircle, Clock } from 'lucide-react';
-import type { AiCooAction } from '@/modules/bella-healthcare/types/encounter-aggregate';
+import type { AiCooAction } from '@/modules/bella-healthcare/contexts/shared/domain-models';
 
 export interface AiCooCommandCenterProps {
   readonly actions: AiCooAction[];

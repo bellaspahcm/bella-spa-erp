@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { User, AlertTriangle, ShieldAlert, Stethoscope, Armchair, Hash, Calendar, HeartPulse, ChevronDown } from 'lucide-react';
-import type { PatientInfo, DoctorInfo, ChairInfo } from '@/modules/bella-healthcare/types/encounter-aggregate';
+import type { PatientInfo, DoctorInfo, ChairInfo } from '@/modules/bella-healthcare/contexts/shared/domain-models';
 
 export interface PatientContextHeaderProps {
   readonly patient: PatientInfo;

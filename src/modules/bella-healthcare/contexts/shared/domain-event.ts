@@ -1,15 +1,4 @@
-export interface EventMetadata {
-  readonly eventId: string;
-  readonly aggregateId: string;
-  readonly aggregateType: 'Encounter' | 'Patient' | 'Chair' | 'Prescription' | 'CarePath';
-  readonly eventName: string; // e.g. 'appointment.created.v1', 'encounter.finished.v2'
-  readonly tenantId: string;
-  readonly userId?: string;
-  readonly causationId?: string;
-  readonly correlationId: string;
-  readonly schemaVersion: string; // e.g. 'v1', 'v2'
-  readonly occurredAt: string;
-}
+import { EventMetadata } from './domain-models';
 
 export interface DomainEvent<T = unknown> {
   readonly metadata: EventMetadata;

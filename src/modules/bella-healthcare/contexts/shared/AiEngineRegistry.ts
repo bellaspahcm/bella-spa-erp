@@ -1,4 +1,4 @@
-import { PatientInfo, ToothState } from './domain-models';
+import { ToothState } from './domain-models';
 
 // 1. Safety Engine (Contraindications)
 export class SafetyEngine {

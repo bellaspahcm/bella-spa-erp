@@ -1,4 +1,4 @@
-import { DomainEvent, PatientInfo, ChairInfo, TimelineStep, EncounterStatus } from './domain-models';
+import { DomainEvent, PatientInfo, ChairInfo, TimelineStep } from './domain-models';
 
 // --- PATIENT READ MODEL REPOSITORY ---
 export class PatientReadRepository {
@@ -6,7 +6,6 @@ export class PatientReadRepository {
   private patients: Map<string, PatientInfo> = new Map();
 
   private constructor() {
-    // Initial Seed
     this.patients.set('pat-01', {
       id: 'pat-01',
       recordNumber: 'BN000124',
@@ -64,7 +63,6 @@ export class ChairReadRepository {
   private chairs: Map<string, ChairInfo> = new Map();
 
   private constructor() {
-    // Initial Seed
     this.chairs.set('ch-1', { id: 'ch-1', code: 'Ghế #01', zone: 'Khu A - Ghế chính', status: 'occupied', currentPatientName: 'Nguyễn Văn Hùng', currentDoctorName: 'BS. Lê Minh', estimatedMinutesRemaining: 15 });
     this.chairs.set('ch-2', { id: 'ch-2', code: 'Ghế #02', zone: 'Khu A - Ghế chính', status: 'available' });
     this.chairs.set('ch-3', { id: 'ch-3', code: 'Ghế #03', zone: 'Khu B - Phục hình', status: 'sanitizing' });
@@ -97,7 +95,6 @@ export class ChairReadRepository {
 }
 
 // --- TIMELINE PROJECTION SERVICE ---
-// Projects Event Sourcing stream into Timeline Read Model (No standalone timeline table)
 export class TimelineProjectionService {
   public static projectTimeline(events: DomainEvent[]): TimelineStep[] {
     const steps: TimelineStep[] = [
@@ -106,7 +103,7 @@ export class TimelineProjectionService {
 
     events.forEach((evt) => {
       const time = evt.metadata.occurredAt.split('T')[1]?.substring(0, 5) || '09:00';
-      if (evt.metadata.eventName === 'EncounterArrived.v1') {
+      if (evt.metadata.eventName === 'Encounter.Patient.Arrived.v1') {
         steps.push({
           id: `ts-arrived-${evt.metadata.eventId}`,
           time,
@@ -116,7 +113,7 @@ export class TimelineProjectionService {
           durationMinutes: 28,
           isBottleneck: true,
         });
-      } else if (evt.metadata.eventName === 'PrescriptionCreated.v1') {
+      } else if (evt.metadata.eventName === 'Pharmacy.Prescription.Created.v1') {
         steps.push({
           id: `ts-pres-${evt.metadata.eventId}`,
           time,
@@ -125,7 +122,7 @@ export class TimelineProjectionService {
           status: 'completed',
           durationMinutes: 12,
         });
-      } else if (evt.metadata.eventName === 'EncounterFinished.v2') {
+      } else if (evt.metadata.eventName === 'Encounter.Finished.v2') {
         steps.push({
           id: `ts-finish-${evt.metadata.eventId}`,
           time,
@@ -138,4 +135,13 @@ export class TimelineProjectionService {
 
     return steps;
   }
+}
+export interface TimelineStep {
+  id: string;
+  time: string;
+  title: string;
+  actor: string;
+  status: 'completed' | 'current' | 'pending';
+  durationMinutes?: number;
+  isBottleneck?: boolean;
 }

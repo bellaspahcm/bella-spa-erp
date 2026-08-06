@@ -1,11 +1,8 @@
-import { ToothData } from '@/modules/bella-healthcare/components/OdontogramTwin';
-
-// --- EVENT SOURCING METADATA & SYSTEM EVENT ---
 export interface EventMetadata {
   readonly eventId: string;
   readonly aggregateId: string;
   readonly aggregateType: 'Encounter' | 'Patient' | 'Chair' | 'Prescription' | 'CarePath';
-  readonly eventName: string; // e.g. 'AppointmentCreated.v1', 'EncounterArrived.v1'
+  readonly eventName: string; // e.g. 'Scheduling.Appointment.Created.v1', 'Encounter.Patient.Arrived.v1'
   readonly tenantId: string;
   readonly userId?: string;
   readonly causationId?: string;
@@ -40,6 +37,14 @@ export interface PatientInfo {
   readonly bloodType?: string;
   readonly allergies: string[];
   readonly phone?: string;
+  readonly toothData?: Record<string, { status: string; notes?: string }>;
+}
+
+export interface DoctorInfo {
+  readonly id: string;
+  readonly name: string;
+  readonly title: string;
+  readonly avatarUrl?: string;
 }
 
 // 2. Encounter Context
@@ -53,10 +58,6 @@ export interface EncounterAggregate {
   readonly doctorId?: string;
   readonly status: EncounterStatus;
   readonly chiefComplaint: string;
-  readonly subjective?: string;
-  readonly objective?: string;
-  readonly assessment?: string;
-  readonly plan?: string;
   readonly diagnoses: string[];
   readonly procedures: string[];
 }
@@ -124,6 +125,25 @@ export interface ResourceUtilization {
   readonly doctorOccupancyRate: number;
   readonly avgWaitTimeMinutes: number;
   readonly totalEncountersToday: number;
+}
+
+export interface DomainEventStreamItem {
+  readonly id: string;
+  readonly eventName: string;
+  readonly timestamp: string;
+  readonly description: string;
+  readonly actor: string;
+  readonly category: 'encounter' | 'clinical' | 'prescription' | 'resource' | 'billing';
+}
+
+export interface TimelineStep {
+  readonly id: string;
+  readonly time: string;
+  readonly title: string;
+  readonly actor: string;
+  readonly status: 'completed' | 'current' | 'pending';
+  readonly durationMinutes?: number;
+  readonly isBottleneck?: boolean;
 }
 
 // --- COMMAND PATH SCHEMAS (Write Path) ---
