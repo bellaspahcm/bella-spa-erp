@@ -25,7 +25,9 @@ import {
   Ruler,
   Split,
   AlertTriangle,
-  ChevronRight
+  ChevronRight,
+  ZoomIn,
+  ZoomOut
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { 
