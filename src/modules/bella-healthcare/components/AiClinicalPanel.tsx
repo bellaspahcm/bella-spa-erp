@@ -167,107 +167,50 @@ export function AiClinicalPanel({
 
       <hr className="border-slate-100 dark:border-slate-800/80" />
 
-      {/* Clinical Decision Support System (CDSS) - Safety Check */}
-      <div className="space-y-4 text-left">
-        <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2 tracking-tight">
-          <span className="p-1 rounded-lg bg-cyan-500/10 text-cyan-600 dark:text-cyan-400">
-            <Brain className="w-4 h-4" />
+      {/* Clinical Decision Support System (CDSS) - Recommendations */}
+      <div className="space-y-4 text-left border-t border-slate-100 dark:border-slate-800/80 pt-5">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2 tracking-tight">
+            <span className="p-1 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+              <Brain className="w-4 h-4" />
+            </span>
+            AI Clinical Recommendation Engine
+          </h3>
+          <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 border border-indigo-500/20">
+            Decision Support
           </span>
-          Hệ thống CDSS (Kiểm tra An toàn Đơn thuốc)
-        </h3>
-
-        <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200/70 dark:border-slate-800/80">
-          <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">
-            Bệnh nhân đang chỉ định:
-          </span>
-          <span className="text-xs font-black text-slate-900 dark:text-slate-100 mt-0.5 block">
-            {patientName}
-          </span>
-          
-          <div className="flex flex-wrap items-center gap-1.5 mt-2">
-            <span className="text-[10px] text-slate-500 font-bold">Tiền sử dị ứng:</span>
-            {patientAllergies.length > 0 ? (
-              patientAllergies.map((alg) => (
-                <span
-                  key={alg}
-                  className="text-[9px] font-black px-2 py-0.5 bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400 rounded-full border border-rose-200/60 dark:border-rose-900/50"
-                >
-                  ⚠️ {alg.toUpperCase()}
-                </span>
-              ))
-            ) : (
-              <span className="text-[9px] font-extrabold px-2 py-0.5 bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 rounded-full">
-                Không có dị ứng ghi nhận
-              </span>
-            )}
-          </div>
         </div>
 
-        {/* Drug Picker */}
-        <div className="space-y-2">
-          <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">
-            Chọn đơn thuốc dự kiến:
-          </label>
-          <div className="flex flex-col gap-2">
-            {availableDrugs.map((drug) => {
-              const selected = selectedDrugs.includes(drug.code);
-              return (
-                <div
-                  key={drug.code}
-                  onClick={() => handleToggleDrug(drug.code)}
-                  className={`flex items-center justify-between p-3 rounded-2xl border cursor-pointer select-none transition-all ${
-                    selected
-                      ? 'bg-cyan-50/60 border-cyan-500 dark:bg-cyan-950/30 ring-1 ring-cyan-500/20'
-                      : 'bg-white dark:bg-slate-900/80 border-slate-200/80 hover:border-slate-300 dark:border-slate-800'
-                  }`}
-                >
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                    {drug.label}
-                  </span>
-                  <div className={`w-4 h-4 rounded-lg border flex items-center justify-center transition-colors ${
-                    selected ? 'bg-cyan-600 border-cyan-600 text-white' : 'border-slate-300 dark:border-slate-600'
-                  }`}>
-                    {selected && <Check className="w-3 h-3 stroke-[3]" />}
-                  </div>
-                </div>
-              );
-            })}
+        {/* AI Suggested Protocol for Tooth #16 Deep Caries */}
+        <div className="p-4 rounded-2xl bg-gradient-to-br from-indigo-50/80 to-purple-50/40 dark:from-indigo-950/30 dark:to-purple-950/20 border border-indigo-200/80 dark:border-indigo-900/60 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-black text-indigo-900 dark:text-indigo-300 flex items-center gap-1.5">
+              🦷 Đề xuất phác đồ: Răng #16 (Sâu ngà sâu / Deep Caries)
+            </span>
+            <span className="px-2 py-0.2 rounded text-[9px] font-black bg-rose-500 text-white">
+              CẤP THIẾT
+            </span>
           </div>
-        </div>
 
-        {/* Check Action */}
-        <button
-          onClick={handleCheckSafety}
-          disabled={isCheckingSafety || selectedDrugs.length === 0}
-          className="w-full flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white font-extrabold text-xs rounded-xl shadow-lg shadow-cyan-500/20 transition-all disabled:opacity-50 active:scale-95"
-        >
-          <span>Check an toàn lâm sàng (CDSS Engine)</span>
-        </button>
-
-        {/* Check Result Display */}
-        {checkResult.status !== 'unchecked' && (
-          <div className={`p-4 rounded-2xl border flex items-start gap-3 shadow-md ${
-            checkResult.status === 'blocked'
-              ? 'bg-rose-50/90 border-rose-300 text-rose-800 dark:bg-rose-950/30 dark:border-rose-900/60 dark:text-rose-300'
-              : checkResult.status === 'warning'
-              ? 'bg-amber-50/90 border-amber-300 text-amber-800 dark:bg-amber-950/30 dark:border-amber-900/60 dark:text-amber-300'
-              : 'bg-emerald-50/90 border-emerald-300 text-emerald-800 dark:bg-emerald-950/30 dark:border-emerald-900/60 dark:text-emerald-300'
-          }`}>
-            {checkResult.status === 'safe' ? (
-              <ShieldCheck className="w-5 h-5 shrink-0 text-emerald-600 dark:text-emerald-400 mt-0.5" />
-            ) : (
-              <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
-            )}
-            <div className="space-y-1">
-              <h4 className="text-xs font-black uppercase tracking-wider">
-                {checkResult.status === 'blocked' ? 'Khóa kê đơn tuyệt đối' : checkResult.status === 'warning' ? 'Cảnh báo tương tác' : 'Kê đơn an toàn'}
-              </h4>
-              {checkResult.messages.map((m, idx) => (
-                <p key={idx} className="text-xs font-medium leading-relaxed">{m}</p>
-              ))}
+          <div className="space-y-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
+            <div className="p-2.5 rounded-xl bg-white/80 dark:bg-slate-900/80 border border-indigo-100 dark:border-indigo-900/40 flex items-center justify-between">
+              <span>1. Điều trị tủy (RCT - Root Canal Treatment)</span>
+              <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400">Bước 1</span>
+            </div>
+            <div className="p-2.5 rounded-xl bg-white/80 dark:bg-slate-900/80 border border-indigo-100 dark:border-indigo-900/40 flex items-center justify-between">
+              <span>2. Bọc mão răng sứ thẩm mỹ Cercon (Crown)</span>
+              <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400">Bước 2</span>
+            </div>
+            <div className="p-2.5 rounded-xl bg-white/80 dark:bg-slate-900/80 border border-indigo-100 dark:border-indigo-900/40 flex items-center justify-between">
+              <span>3. Lịch tái khám kiểm tra định kỳ (Recall 6 tháng)</span>
+              <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400">Bước 3</span>
             </div>
           </div>
-        )}
+
+          <p className="text-[10px] text-indigo-700 dark:text-indigo-300 font-medium leading-relaxed italic pt-1">
+            💡 AI Rationale: Răng #16 có dấu hiệu tổn thương sâu ngà độ 2 gần sát tủy. Chỉ định RCT kết hợp bọc Crown giúp bảo tồn tối đa cấu trúc chân răng thật và ngăn nguy cơ vỡ thân răng.
+          </p>
+        </div>
       </div>
     </div>
   );
