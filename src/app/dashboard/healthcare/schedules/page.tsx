@@ -93,6 +93,8 @@ export default function DoctorSchedulePage() {
 
   return (
     <div className="p-6 md:p-8 w-full space-y-7 bg-transparent relative text-left">
+      <div className="absolute -top-40 -left-40 w-96 h-96 bg-cyan-500/10 dark:bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
+
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1 text-left">
@@ -117,6 +119,55 @@ export default function DoctorSchedulePage() {
             <Plus className="w-4 h-4" />
             Phân Ca Trực Mới
           </button>
+        </div>
+      </div>
+
+      {/* Quick Summary KPI Counters Bar */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center justify-between">
+          <div>
+            <span className="text-[11px] font-bold text-slate-400 block uppercase">Tổng Ca Trực Trong Tuần</span>
+            <span className="text-xl font-black text-slate-900 dark:text-white mt-0.5 block">{shifts.length} ca trực</span>
+          </div>
+          <div className="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-600">
+            <Calendar className="w-5 h-5" />
+          </div>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center justify-between">
+          <div>
+            <span className="text-[11px] font-bold text-slate-400 block uppercase">Ca Đã Khóa Mổ Cấp Cứu</span>
+            <span className="text-xl font-black text-rose-600 dark:text-rose-400 mt-0.5 block">
+              {shifts.filter((s) => s.isBlockedForEmergency).length} ca cấp cứu
+            </span>
+          </div>
+          <div className="p-2.5 rounded-xl bg-rose-500/10 text-rose-600">
+            <Lock className="w-5 h-5" />
+          </div>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center justify-between">
+          <div>
+            <span className="text-[11px] font-bold text-slate-400 block uppercase">Bác Sĩ Đang Trực Sáng</span>
+            <span className="text-xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5 block">
+              {shifts.filter((s) => s.shiftType === 'morning').length} bác sĩ
+            </span>
+          </div>
+          <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600">
+            <UserCheck className="w-5 h-5" />
+          </div>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center justify-between">
+          <div>
+            <span className="text-[11px] font-bold text-slate-400 block uppercase">Ca Trực Khẩn Ban Đêm</span>
+            <span className="text-xl font-black text-indigo-600 dark:text-indigo-400 mt-0.5 block">
+              {shifts.filter((s) => s.shiftType === 'night_call').length} ca trực đêm
+            </span>
+          </div>
+          <div className="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-600">
+            <Clock className="w-5 h-5" />
+          </div>
         </div>
       </div>
 

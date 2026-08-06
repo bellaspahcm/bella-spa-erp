@@ -189,6 +189,8 @@ export default function AppointmentCenterPage() {
 
   return (
     <div className="p-6 md:p-8 w-full space-y-7 bg-transparent relative text-left">
+      <div className="absolute -top-40 -left-40 w-96 h-96 bg-cyan-500/10 dark:bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
+
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1 text-left">
