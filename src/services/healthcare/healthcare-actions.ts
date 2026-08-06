@@ -1422,6 +1422,119 @@ export async function getImagingOrdersAction(): Promise<{ success: boolean; data
       };
     });
 
+    if (mapped.length === 0) {
+      const demoSeedOrders = [
+        {
+          tenant_id: tenantId,
+          modality: 'XRAY',
+          body_site: 'X-Quang Ngực Thẳng (Chest AP/PA)',
+          dcm_study_uid: '1.2.840.113619.2.100.20260806.101',
+          viewer_link: 'https://pacs.bella.vn/viewer?study=1.2.840.113619.2.100.20260806.101',
+          radiologist_report: 'Nhu mô phổi 2 bên sáng đều, không thấy tổn thương thâm nhiễm hay phế nang. Bóng tim không to (chỉ số tim/lồng ngực < 0.5). Vòm hoành 2 bên đều.',
+          verified_at: new Date().toISOString(),
+        },
+        {
+          tenant_id: tenantId,
+          modality: 'CT',
+          body_site: 'CT-Scanner Sọ Não Không Thuốc Tương Quang (Brain CT non-contrast)',
+          dcm_study_uid: '1.2.840.113619.2.100.20260806.102',
+          viewer_link: 'https://pacs.bella.vn/viewer?study=1.2.840.113619.2.100.20260806.102',
+          radiologist_report: null,
+          verified_at: new Date().toISOString(),
+        },
+        {
+          tenant_id: tenantId,
+          modality: 'MRI',
+          body_site: 'MRI Cột Sống Thắt Lưng (Lumbar Spine MRI)',
+          dcm_study_uid: '1.2.840.113619.2.100.20260806.103',
+          viewer_link: 'https://pacs.bella.vn/viewer?study=1.2.840.113619.2.100.20260806.103',
+          radiologist_report: 'Thoái hóa đĩa đệm L4-L5, L5-S1. Thoát vị đĩa đệm thể sau trung tâm L5-S1 chèn ép nhẹ rễ thần kinh S1 bên trái.',
+          verified_at: new Date().toISOString(),
+        },
+        {
+          tenant_id: tenantId,
+          modality: 'ULTRASOUND',
+          body_site: 'Siêu Âm Bụng Tổng Quát Mầu (Abdominal Doppler US)',
+          dcm_study_uid: '1.2.840.113619.2.100.20260806.104',
+          viewer_link: 'https://pacs.bella.vn/viewer?study=1.2.840.113619.2.100.20260806.104',
+          radiologist_report: null,
+          verified_at: null,
+        },
+        {
+          tenant_id: tenantId,
+          modality: 'ENDOSCOPY',
+          body_site: 'Nội Soi Dạ Dày Thực Quản Có An Thần (Sedated Upper Endoscopy)',
+          dcm_study_uid: '1.2.840.113619.2.100.20260806.105',
+          viewer_link: 'https://pacs.bella.vn/viewer?study=1.2.840.113619.2.100.20260806.105',
+          radiologist_report: 'Viêm sung huyết hang vị dạ dày mức độ vừa. Thử test CLO (Campylobacter Like Organism) âm tính HP.',
+          verified_at: new Date().toISOString(),
+        },
+      ];
+
+      // Insert for DB persistence
+      await supabase.from('hc_imaging_orders').insert(demoSeedOrders);
+
+      const demoResult = [
+        {
+          id: 'demo-img-101',
+          ticketNumber: 'STT-102',
+          patientName: 'Lê Thị Mai',
+          modality: 'XRAY',
+          bodySite: 'X-Quang Ngực Thẳng (Chest AP/PA)',
+          dcmStudyUid: '1.2.840.113619.2.100.20260806.101',
+          viewerLink: 'https://pacs.bella.vn/viewer?study=1.2.840.113619.2.100.20260806.101',
+          status: 'reported',
+          radiologistReport: 'Nhu mô phổi 2 bên sáng đều, không thấy tổn thương thâm nhiễm hay phế nang. Bóng tim không to (chỉ số tim/lồng ngực < 0.5). Vòm hoành 2 bên đều.',
+        },
+        {
+          id: 'demo-img-102',
+          ticketNumber: 'STT-103',
+          patientName: 'Trần Minh Hoàng',
+          modality: 'CT',
+          bodySite: 'CT-Scanner Sọ Não Không Thuốc Tương Quang (Brain CT non-contrast)',
+          dcmStudyUid: '1.2.840.113619.2.100.20260806.102',
+          viewerLink: 'https://pacs.bella.vn/viewer?study=1.2.840.113619.2.100.20260806.102',
+          status: 'captured',
+          radiologistReport: undefined,
+        },
+        {
+          id: 'demo-img-103',
+          ticketNumber: 'STT-101',
+          patientName: 'Nguyễn Văn Hùng',
+          modality: 'MRI',
+          bodySite: 'MRI Cột Sống Thắt Lưng (Lumbar Spine MRI)',
+          dcmStudyUid: '1.2.840.113619.2.100.20260806.103',
+          viewerLink: 'https://pacs.bella.vn/viewer?study=1.2.840.113619.2.100.20260806.103',
+          status: 'reported',
+          radiologistReport: 'Thoái hóa đĩa đệm L4-L5, L5-S1. Thoát vị đĩa đệm thể sau trung tâm L5-S1 chèn ép nhẹ rễ thần kinh S1 bên trái.',
+        },
+        {
+          id: 'demo-img-104',
+          ticketNumber: 'STT-105',
+          patientName: 'Phạm Thị Hoa',
+          modality: 'ULTRASOUND',
+          bodySite: 'Siêu Âm Bụng Tổng Quát Mầu (Abdominal Doppler US)',
+          dcmStudyUid: '1.2.840.113619.2.100.20260806.104',
+          viewerLink: 'https://pacs.bella.vn/viewer?study=1.2.840.113619.2.100.20260806.104',
+          status: 'pending',
+          radiologistReport: undefined,
+        },
+        {
+          id: 'demo-img-105',
+          ticketNumber: 'STT-108',
+          patientName: 'Hoàng Đức Nam',
+          modality: 'ENDOSCOPY',
+          bodySite: 'Nội Soi Dạ Dày Thực Quản Có An Thần (Sedated Upper Endoscopy)',
+          dcmStudyUid: '1.2.840.113619.2.100.20260806.105',
+          viewerLink: 'https://pacs.bella.vn/viewer?study=1.2.840.113619.2.100.20260806.105',
+          status: 'reported',
+          radiologistReport: 'Viêm sung huyết hang vị dạ dày mức độ vừa. Thử test CLO (Campylobacter Like Organism) âm tính HP.',
+        },
+      ];
+
+      return { success: true, data: demoResult };
+    }
+
     return { success: true, data: mapped };
   } catch (err: any) {
     return { success: false, error: err.message || 'Lỗi lấy danh sách CĐHA' };
@@ -1553,6 +1666,10 @@ export async function verifyImagingResultAction(
   reportText: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    if (imagingId.startsWith('demo-img-')) {
+      return { success: true };
+    }
+
     const supabase = (await createDevelopmentBypassClient()) as any;
     const tenantId = await getTenantIdOrThrow();
 
