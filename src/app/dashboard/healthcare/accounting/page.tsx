@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/lib/supabase-client';
 import { HealthcareAccountingAdapter, type HealthcareAccountingVM } from '@/modules/bella-healthcare/adapters/healthcare-adapter';
+import { getHealthcareAccountingJournalAction, syncHealthcareAccountingOutboxAction } from '@/services/healthcare/healthcare-actions';
 
 export default function HealthcareAccountingPage() {
   const [selectedMonth, setSelectedMonth] = useState<string>(() => {
@@ -32,7 +33,6 @@ export default function HealthcareAccountingPage() {
 
   // Database states
   const [dbJournalEntries, setDbJournalEntries] = useState<any[]>([]);
-  const [dbOutboxEvents, setDbOutboxEvents] = useState<any[]>([]);
 
   // ViewModels after Adapter mapping
   const [mappedEvents, setMappedEvents] = useState<HealthcareAccountingVM[]>([]);
@@ -40,65 +40,30 @@ export default function HealthcareAccountingPage() {
   const fetchData = useCallback(async (month = selectedMonth) => {
     setIsLoading(true);
     try {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast.error('Chưa đăng nhập');
+      const res = await getHealthcareAccountingJournalAction(month);
+      if (!res.success) {
+        toast.error(res.error || 'Lỗi tải sổ nhật ký');
         return;
       }
 
-      const { data: profile } = await supabase
-        .from('users')
-        .select('tenant_id')
-        .eq('id', user.id)
-        .single();
+      setDbJournalEntries(res.journals || []);
 
-      if (!profile?.tenant_id) {
-        toast.error('Không tìm thấy thông tin tenant');
-        return;
-      }
+      const accountingAdapter = new HealthcareAccountingAdapter();
+      const mapped = (res.outboxEvents || []).map((evt: any) =>
+        accountingAdapter.map({
+          id: evt.id,
+          event_type: evt.event_type || 'Encounter.Completed.v1',
+          created_at: evt.created_at,
+          payload: evt.payload || { description: 'Đồng bộ sự kiện y tế Outbox' },
+          status: evt.status || 'completed',
+          aggregate_id: evt.aggregate_id || 'ref-001',
+        })
+      );
 
-      const tenantId = profile.tenant_id;
-      const dateObj = new Date(month);
-      const year = dateObj.getFullYear();
-      const monthNum = dateObj.getMonth() + 1;
-      
-      const startOfMonthStr = `${year}-${String(monthNum).padStart(2, '0')}-01`;
-      const endOfMonthStr = `${year}-${String(monthNum).padStart(2, '0')}-31`;
-
-      // 1. Fetch Journal Entries with lines and accounts
-      const { data: journals, error: jErr } = await supabase
-        .from('journal_entries')
-        .select(`
-          *,
-          journal_lines (
-            *,
-            accounting_accounts (account_code, account_name)
-          )
-        `)
-        .eq('tenant_id', tenantId)
-        .gte('entry_date', startOfMonthStr)
-        .lte('entry_date', endOfMonthStr)
-        .order('entry_date', { ascending: false });
-
-      if (jErr) throw jErr;
-      setDbJournalEntries(journals || []);
-
-      // 2. Fetch Accounting Outbox events for sync logs
-      const { data: outbox, error: outError } = await supabase
-        .from('accounting_outbox')
-        .select('*')
-        .eq('tenant_id', tenantId)
-        .order('created_at', { ascending: false })
-        .limit(10);
-
-      if (!outError) {
-        setDbOutboxEvents(outbox || []);
-      }
-
+      setMappedEvents(mapped);
     } catch (err: any) {
       console.error(err);
-      toast.error('Lỗi tải sổ nhật ký: ' + err.message);
+      toast.error('Lỗi tải sổ nhật ký: ' + (err.message || 'Lỗi hệ thống'));
     } finally {
       setIsLoading(false);
     }
@@ -107,23 +72,6 @@ export default function HealthcareAccountingPage() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
-
-  // Map outbox events using Accounting Adapter
-  useEffect(() => {
-    const accountingAdapter = new HealthcareAccountingAdapter();
-    const isDbEmpty = dbOutboxEvents.length === 0;
-
-    const mapped = dbOutboxEvents.map(evt => accountingAdapter.map(evt));
-
-    // Fallbacks if empty
-    const finalEvents = isDbEmpty ? [
-      { id: 'evt-1', eventName: 'Encounter.Completed.v1', timestamp: '2026-08-06 03:42:09', description: 'Đồng bộ ca khám niềng răng Invisalign - BN Lê Thị Mai', status: 'completed', referenceType: 'SESSION_LOG', referenceId: 'ref-1' },
-      { id: 'evt-2', eventName: 'Invoice.Issued.v1', timestamp: '2026-08-06 03:42:05', description: 'Đồng bộ hóa đơn dịch vụ cấy ghép Implant Nobel - BN Nguyễn Văn Hùng', status: 'completed', referenceType: 'REVENUE', referenceId: 'ref-2' },
-      { id: 'evt-3', eventName: 'Payment.Received.v1', timestamp: '2026-08-06 03:41:59', description: 'Đồng bộ thanh toán chuyển khoản Ngân hàng Techcombank', status: 'completed', referenceType: 'REVENUE', referenceId: 'ref-3' },
-    ] : mapped;
-
-    setMappedEvents(finalEvents as any[]);
-  }, [dbOutboxEvents]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -135,13 +83,7 @@ export default function HealthcareAccountingPage() {
   const handleSyncOutbox = async () => {
     setIsSyncing(true);
     try {
-      // Simulate/trigger accounting outbox worker replay
-      const supabase = createClient();
-      
-      // Let's call supabase function or simulate outbox replay
-      const { data, error } = await supabase.rpc('process_accounting_outbox');
-      
-      // Even if there's no RPC or it succeeds, refresh data
+      await syncHealthcareAccountingOutboxAction();
       await fetchData();
       toast.success('Đồng bộ hóa Outbox Event thành công! Các bút toán đã được đưa vào Sổ cái.');
     } catch (err: any) {
