@@ -20,6 +20,8 @@ import {
   PieChart,
   Pie,
   Cell,
+  BarChart,
+  Bar,
 } from 'recharts';
 import { SafeResponsiveContainer as ResponsiveContainer } from '@/components/ui/SafeResponsiveContainer';
 import { BarChart3, PieChart as PieIcon, LineChart as LineIcon, TrendingUp, DollarSign } from 'lucide-react';
@@ -545,12 +547,196 @@ export function RevenueBreakdownChart({ data, height }: { data: RevenueBreakdown
 
 // ─── 5. Profitability Trend Chart (Interactive HTML Multi-Bar Chart) ──────────
 
-export function PnLStatementChart({ data: _data, height }: { data: unknown; height: number }) {
-  return <div style={{ height }}><ChartPlaceholder title="P&L Statement Chart" icon={BarChart3} /></div>;
+export interface PnLStatementChartData {
+  totalRevenue: number;
+  totalExpenses: number;
+  netProfit: number;
+  profitMargin: number;
 }
 
-export function ExpenseBreakdownChart({ data: _data, height }: { data: unknown; height: number }) {
-  return <div style={{ height }}><ChartPlaceholder title="Expense Breakdown Chart" icon={PieIcon} /></div>;
+export function PnLStatementChart({
+  data,
+  height,
+}: {
+  data: PnLStatementChartData;
+  height: number;
+}) {
+  if (!data) {
+    return <div style={{ height }}><ChartPlaceholder title="Báo Cáo P&L" icon={BarChart3} /></div>;
+  }
+
+  const chartData = [
+    {
+      name: 'Doanh thu',
+      value: data.totalRevenue,
+      fill: 'url(#pnlRevenueGrad)',
+    },
+    {
+      name: 'Chi phí',
+      value: data.totalExpenses,
+      fill: 'url(#pnlExpenseGrad)',
+    },
+    {
+      name: 'Lợi nhuận',
+      value: data.netProfit,
+      fill: data.netProfit >= 0 ? 'url(#pnlProfitGrad)' : 'url(#pnlLossGrad)',
+    },
+  ];
+
+  return (
+    <div style={{ height }} className="relative">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={chartData} margin={{ top: 20, right: 20, left: 10, bottom: 5 }}>
+          <defs>
+            <linearGradient id="pnlRevenueGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#34d399" />
+              <stop offset="100%" stopColor="#10b981" />
+            </linearGradient>
+            <linearGradient id="pnlExpenseGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#f87171" />
+              <stop offset="100%" stopColor="#ef4444" />
+            </linearGradient>
+            <linearGradient id="pnlProfitGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#60a5fa" />
+              <stop offset="100%" stopColor="#3b82f6" />
+            </linearGradient>
+            <linearGradient id="pnlLossGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#fbbf24" />
+              <stop offset="100%" stopColor="#f59e0b" />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="6 6" stroke="#e2e8f0" vertical={false} opacity={0.6} />
+          <XAxis
+            dataKey="name"
+            axisLine={false}
+            tickLine={false}
+            tick={{ fontSize: 11, fontWeight: 800, fill: '#475569' }}
+          />
+          <YAxis
+            axisLine={false}
+            tickLine={false}
+            tickFormatter={formatVND}
+            tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }}
+            width={70}
+          />
+          <Tooltip
+            formatter={(value: number) => [formatVNDFull(value), 'Số tiền']}
+            contentStyle={{
+              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+              borderRadius: '16px',
+              border: '1px solid #e2e8f0',
+              boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)',
+            }}
+          />
+          <Bar
+            dataKey="value"
+            radius={[8, 8, 0, 0]}
+            maxBarSize={60}
+          />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+export type ExpenseBreakdownItem = {
+  category: string;
+  expense: number;
+  percentage: number;
+};
+
+export function ExpenseBreakdownChart({
+  data,
+  height,
+}: {
+  data: ExpenseBreakdownItem[];
+  height: number;
+}) {
+  if (!data || data.length === 0) {
+    return <div style={{ height }}><ChartPlaceholder title="Phân Bổ Chi Phí" icon={PieIcon} /></div>;
+  }
+
+  const totalExpense = data.reduce((sum, item) => sum + item.expense, 0);
+
+  return (
+    <div style={{ height }} className="flex flex-col justify-between font-sans select-none relative pt-2">
+      {/* Circular Donut Diagram */}
+      <div className="flex-1 min-h-[140px] relative flex items-center justify-center">
+        <div className="absolute flex flex-col items-center justify-center text-center pointer-events-none z-10">
+          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Tổng Chi Phí</span>
+          <span className="text-xl font-black text-slate-900 dark:text-slate-100 font-mono mt-1 leading-none">
+            {formatVND(totalExpense)}
+          </span>
+        </div>
+
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <defs>
+              {data.map((_, i) => {
+                const colors = PIE_GRADIENTS[(i + 1) % PIE_GRADIENTS.length];
+                return (
+                  <linearGradient id={`pieGradCustomExp-${i}`} key={i} x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor={colors.end} />
+                    <stop offset="100%" stopColor={colors.start} />
+                  </linearGradient>
+                );
+              })}
+            </defs>
+            <Pie
+              data={data}
+              dataKey="expense"
+              nameKey="category"
+              cx="50%"
+              cy="50%"
+              innerRadius="66%"
+              outerRadius="86%"
+              cornerRadius={8}
+              paddingAngle={3}
+              label={false}
+            >
+              {data.map((_, i) => (
+                <Cell
+                  key={i}
+                  fill={`url(#pieGradCustomExp-${i})`}
+                  style={{
+                    filter: `drop-shadow(0 6px 10px ${PIE_GRADIENTS[(i + 1) % PIE_GRADIENTS.length].glow})`,
+                    cursor: 'pointer',
+                  }}
+                />
+              ))}
+            </Pie>
+            <Tooltip content={<PremiumVNDTooltip />} />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Grid Legend List with Details */}
+      <div className="grid grid-cols-2 gap-2.5 pt-4 pb-2 border-t border-slate-100 dark:border-slate-800">
+        {data.map((item, i) => {
+          const colorSet = PIE_GRADIENTS[(i + 1) % PIE_GRADIENTS.length];
+          return (
+            <div
+              key={i}
+              className="flex justify-between items-center text-xs p-2.5 bg-slate-50/50 dark:bg-slate-900/40 rounded-2xl border border-slate-100/60 dark:border-slate-800/80 transition-all duration-300 hover:bg-slate-100/50"
+            >
+              <div className="flex items-center gap-2 truncate">
+                <span
+                  className="w-2.5 h-2.5 rounded-full flex-shrink-0 shadow-sm"
+                  style={{ background: `linear-gradient(135deg, ${colorSet.end}, ${colorSet.start})` }}
+                />
+                <span className="text-slate-700 dark:text-slate-350 font-extrabold truncate tracking-wide">
+                  {item.category}
+                </span>
+              </div>
+              <span className="font-mono font-black text-slate-800 dark:text-slate-100 text-[11px] flex-shrink-0 ml-2">
+                {item.percentage}%
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 export function ProfitabilityTrendChart({
