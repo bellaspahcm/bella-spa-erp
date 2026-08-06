@@ -9,17 +9,17 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-primary: #f4f7fa;
+      --bg-primary: linear-gradient(135deg, #eef5f6 0%, #e4eff9 50%, #f0f4f8 100%);
       --bg-secondary: #ffffff;
       --accent-teal: #0d9488;
       --accent-cyan: #0284c7;
-      --accent-green: #10b981;
-      --accent-purple: #7c3aed;
-      --text-main: #1e293b;
-      --text-muted: #64748b;
-      --border-color: rgba(13, 148, 136, 0.08);
-      --glass-bg: rgba(255, 255, 255, 0.85);
-      --glass-glow: rgba(13, 148, 136, 0.02);
+      --accent-green: #059669;
+      --accent-red: #d97706;
+      --text-main: #0f172a;
+      --text-muted: #475569;
+      --border-color: rgba(13, 148, 136, 0.12);
+      --glass-bg: rgba(255, 255, 255, 0.92);
+      --glass-glow: rgba(13, 148, 136, 0.04);
     }
 
     * {
@@ -29,7 +29,8 @@
     }
 
     body {
-      background-color: var(--bg-primary);
+      background: var(--bg-primary);
+      background-attachment: fixed;
       color: var(--text-main);
       font-family: 'Plus Jakarta Sans', sans-serif;
       line-height: 1.65;
@@ -50,14 +51,14 @@
       position: relative;
     }
 
-    /* Decorative ambient backgrounds */
+    /* Ambient glows */
     .glow-1 {
       position: absolute;
       top: -100px;
       left: -150px;
       width: 500px;
       height: 500px;
-      background: radial-gradient(circle, rgba(13, 148, 136, 0.04) 0%, transparent 70%);
+      background: radial-gradient(circle, rgba(13, 148, 136, 0.06) 0%, transparent 70%);
       pointer-events: none;
     }
     .glow-2 {
@@ -66,7 +67,7 @@
       right: -150px;
       width: 500px;
       height: 500px;
-      background: radial-gradient(circle, rgba(2, 132, 199, 0.04) 0%, transparent 70%);
+      background: radial-gradient(circle, rgba(2, 132, 199, 0.06) 0%, transparent 70%);
       pointer-events: none;
     }
 
@@ -82,8 +83,8 @@
       display: inline-block;
       padding: 6px 18px;
       border-radius: 9999px;
-      background: rgba(13, 148, 136, 0.06);
-      border: 1px solid rgba(13, 148, 136, 0.15);
+      background: rgba(13, 148, 136, 0.08);
+      border: 1.5px solid rgba(13, 148, 136, 0.25);
       color: var(--accent-teal);
       font-size: 11px;
       font-weight: 800;
@@ -105,17 +106,17 @@
       font-size: 16px;
       max-width: 650px;
       margin: 0 auto;
-      font-weight: 500;
+      font-weight: 600;
     }
 
     /* Top Section Card: Large single gauge */
     .top-gauge-card {
       background: var(--glass-bg);
-      border: 1px solid rgba(15, 23, 42, 0.06);
+      border: 1px solid rgba(15, 23, 42, 0.08);
       border-radius: 28px;
       padding: 40px;
       margin-bottom: 30px;
-      box-shadow: 0 10px 40px -15px rgba(15, 23, 42, 0.05);
+      box-shadow: 0 15px 45px -15px rgba(15, 23, 42, 0.08);
       backdrop-filter: blur(20px);
       text-align: center;
       display: flex;
@@ -141,18 +142,18 @@
     /* Card styling */
     .card {
       background: var(--glass-bg);
-      border: 1px solid rgba(15, 23, 42, 0.06);
+      border: 1px solid rgba(15, 23, 42, 0.08);
       border-radius: 28px;
       padding: 35px;
       backdrop-filter: blur(20px);
-      box-shadow: 0 10px 40px -15px rgba(15, 23, 42, 0.05);
+      box-shadow: 0 15px 45px -15px rgba(15, 23, 42, 0.08);
       transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .card:hover {
       transform: translateY(-4px);
-      border-color: rgba(13, 148, 136, 0.2);
-      box-shadow: 0 20px 40px -20px rgba(13, 148, 136, 0.12);
+      border-color: rgba(13, 148, 136, 0.25);
+      box-shadow: 0 25px 50px -20px rgba(13, 148, 136, 0.15);
     }
 
     /* Overall Score Circle */
@@ -161,12 +162,12 @@
       width: 170px;
       height: 170px;
       border-radius: 50%;
-      background: #f8fafc;
+      background: #ffffff;
       display: flex;
       align-items: center;
       justify-content: center;
-      border: 8px solid var(--accent-teal);
-      box-shadow: 0 10px 30px rgba(13, 148, 136, 0.1);
+      border: 10px solid var(--accent-teal);
+      box-shadow: 0 10px 30px rgba(13, 148, 136, 0.15);
       margin-bottom: 20px;
     }
 
@@ -203,9 +204,9 @@
     }
 
     .score-title {
-      font-size: 13px;
+      font-size: 13.5px;
       font-weight: 700;
-      color: #334155;
+      color: #1e293b;
     }
 
     .score-value {
@@ -215,8 +216,8 @@
     }
 
     .progress-bar-bg {
-      height: 6px;
-      background: #f1f5f9;
+      height: 8px;
+      background: #e2e8f0;
       border-radius: 999px;
       overflow: hidden;
     }
@@ -238,23 +239,23 @@
 
     th, td {
       padding: 16px 20px;
-      border-bottom: 1px solid #f1f5f9;
+      border-bottom: 1px solid #e2e8f0;
     }
 
     th {
       font-weight: 700;
       color: #0f172a;
-      background: rgba(13, 148, 136, 0.04);
+      background: rgba(13, 148, 136, 0.06);
     }
 
     td {
-      color: #475569;
-      font-weight: 550;
+      color: #1e293b;
+      font-weight: 600;
     }
 
     tr:hover td {
       color: #0f172a;
-      background: rgba(13, 148, 136, 0.01);
+      background: rgba(13, 148, 136, 0.02);
     }
 
     /* Highlights list */
@@ -264,16 +265,16 @@
       flex-direction: column;
       gap: 12px;
       margin-top: 20px;
-      border-top: 1px solid #e2e8f0;
+      border-top: 1.5px solid #e2e8f0;
       padding-top: 15px;
     }
 
     .bullet-list li {
       position: relative;
       padding-left: 24px;
-      font-size: 13px;
-      color: var(--text-muted);
-      font-weight: 500;
+      font-size: 13.5px;
+      color: #334155;
+      font-weight: 600;
     }
 
     .bullet-list li::before {
@@ -288,11 +289,11 @@
     /* Comparison Section */
     .comparison-section {
       background: var(--bg-secondary);
-      border: 1px solid rgba(15, 23, 42, 0.06);
+      border: 1px solid rgba(15, 23, 42, 0.08);
       border-radius: 28px;
       padding: 40px;
       margin-top: 30px;
-      box-shadow: 0 10px 40px -15px rgba(15, 23, 42, 0.04);
+      box-shadow: 0 15px 45px -15px rgba(15, 23, 42, 0.06);
     }
 
     .section-title {
@@ -306,23 +307,23 @@
 
     .section-desc {
       color: var(--text-muted);
-      font-size: 13px;
+      font-size: 13.5px;
       margin-bottom: 25px;
-      font-weight: 550;
+      font-weight: 600;
     }
 
     /* Status Indicator Icons */
     .marker-yes {
-      color: #10b981;
+      color: #059669;
       font-weight: 900;
-      font-size: 14px;
+      font-size: 15px;
       margin-right: 6px;
     }
 
     .marker-no {
-      color: #ef4444;
+      color: #dc2626;
       font-weight: 900;
-      font-size: 14px;
+      font-size: 15px;
       margin-right: 6px;
     }
 
@@ -330,20 +331,20 @@
     .score-summary-box {
       width: 100%;
       text-align: left;
-      border: 1.5px solid rgba(13, 148, 136, 0.15);
+      border: 1.5px solid rgba(13, 148, 136, 0.22);
       border-radius: 20px;
       padding: 22px;
-      background: linear-gradient(135deg, rgba(13, 148, 136, 0.03), rgba(2, 132, 199, 0.03));
-      box-shadow: inset 0 0 15px rgba(13, 148, 136, 0.02);
-      font-size: 12px;
-      color: #475569;
+      background: linear-gradient(135deg, rgba(13, 148, 136, 0.04), rgba(2, 132, 199, 0.04));
+      box-shadow: inset 0 0 15px rgba(13, 148, 136, 0.03);
+      font-size: 12.5px;
+      color: #1e293b;
     }
 
     .score-summary-item {
       display: flex;
       justify-content: space-between;
       margin-bottom: 8px;
-      font-weight: 550;
+      font-weight: 600;
       font-size: 13px;
     }
 
@@ -352,12 +353,12 @@
     }
 
     .score-summary-label {
-      color: var(--text-muted);
+      color: #475569;
     }
 
     .score-summary-value {
       color: #0f172a;
-      font-weight: 700;
+      font-weight: 800;
     }
   </style>
 </head>
@@ -382,7 +383,7 @@
           <div class="score-label">XẾP HẠNG CORE</div>
         </div>
       </div>
-      <p style="font-size: 14px; color: var(--text-muted); max-width: 480px; font-weight: 550; margin-top: 10px;">
+      <p style="font-size: 14.5px; color: var(--text-main); max-width: 480px; font-weight: 600; margin-top: 10px;">
         Kiến trúc chuẩn y khoa cao cấp DDD + CQRS + Event Sourcing đạt chuẩn kiểm duyệt tuyệt đối.
       </p>
     </div>
@@ -464,9 +465,9 @@
             <span class="score-summary-label">Kết quả Kiểm thử</span>
             <span class="score-summary-value" style="color: var(--accent-teal);">6/6 ĐẠT (100% Pass)</span>
           </div>
-          <div style="border-top: 1px solid rgba(13, 148, 136, 0.1); margin-top: 15px; padding-top: 15px;">
-            <div style="font-weight: 700; color: #0f172a; margin-bottom: 8px;">Bảo mật & Phân quyền Enterprise:</div>
-            <div style="font-size: 11.5px; color: #475569; line-height: 1.6;">
+          <div style="border-top: 1.5px solid rgba(13, 148, 136, 0.15); margin-top: 15px; padding-top: 15px;">
+            <div style="font-weight: 750; color: #0f172a; margin-bottom: 8px;">Bảo mật & Phân quyền Enterprise:</div>
+            <div style="font-size: 12px; color: #1e293b; line-height: 1.6; font-weight: 600;">
               • Phân quyền RBAC 4 vai trò y khoa chi tiết<br>
               • Cô lập chi nhánh qua Tenant ID mức CSDL<br>
               • Outbox Pattern chống mất mát sự kiện miền
@@ -499,28 +500,28 @@
             <td><strong>Kiểm tra An toàn Đơn thuốc</strong></td>
             <td>SafetyEngine</td>
             <td>2 Ca kiểm thử</td>
-            <td style="color: var(--accent-teal); font-weight: 700;">ĐẠT (100% PASS)</td>
+            <td style="color: var(--accent-green); font-weight: 800;">ĐẠT (100% PASS)</td>
             <td>Chặn đứng việc kê toa kháng sinh Amoxicillin cho bệnh nhân dị ứng Penicillin.</td>
           </tr>
           <tr>
             <td><strong>Dự báo Công suất Vận hành</strong></td>
             <td>PredictionEngine</td>
             <td>2 Ca kiểm thử</td>
-            <td style="color: var(--accent-teal); font-weight: 700;">ĐẠT (100% PASS)</td>
+            <td style="color: var(--accent-green); font-weight: 800;">ĐẠT (100% PASS)</td>
             <td>AI COO phát tín hiệu điều phối giảm tải khi phát hiện nguy cơ quá công suất ghế.</td>
           </tr>
           <tr>
             <td><strong>Ánh xạ dòng thời gian lâm sàng</strong></td>
             <td>TimelineProjectionService</td>
             <td>1 Ca kiểm thử</td>
-            <td style="color: var(--accent-teal); font-weight: 700;">ĐẠT (100% PASS)</td>
+            <td style="color: var(--accent-green); font-weight: 800;">ĐẠT (100% PASS)</td>
             <td>Tính toán chính xác bước tiến và điểm nghẽn SLA trực tiếp từ chuỗi sự kiện y khoa.</td>
           </tr>
           <tr>
             <td><strong>Kiểm soát Luồng Giao dịch Outbox</strong></td>
             <td>EncounterSaga</td>
             <td>1 Ca kiểm thử</td>
-            <td style="color: var(--accent-teal); font-weight: 700;">ĐẠT (100% PASS)</td>
+            <td style="color: var(--accent-green); font-weight: 800;">ĐẠT (100% PASS)</td>
             <td>Xác nhận Domain Event được lưu an toàn vào Outbox trước khi đẩy ra EventBus.</td>
           </tr>
         </tbody>
@@ -548,35 +549,35 @@
         <tbody>
           <tr>
             <td><strong>Kiến trúc hệ thống cốt lõi</strong></td>
-            <td style="color: var(--accent-teal); font-weight: 700;"><span class="marker-yes">✔</span> Bounded Contexts + Event Sourcing</td>
+            <td style="color: var(--accent-teal); font-weight: 800;"><span class="marker-yes">✔</span> Bounded Contexts + Event Sourcing</td>
             <td><span class="marker-no">✘</span> Hệ CSDL Monolith cổ điển</td>
             <td><span class="marker-no">✘</span> Hệ CSDL Monolith cổ điển</td>
             <td><span class="marker-no">✘</span> Mô hình Client-Server tĩnh</td>
           </tr>
           <tr>
             <td><strong>Cảnh báo tương tác thuốc lâm sàng</strong></td>
-            <td style="color: var(--accent-teal); font-weight: 700;"><span class="marker-yes">✔</span> AI Safety Gatekeeper (Chuẩn ATC)</td>
+            <td style="color: var(--accent-teal); font-weight: 800;"><span class="marker-yes">✔</span> AI Safety Gatekeeper (Chuẩn ATC)</td>
             <td><span class="marker-no">✘</span> Không hỗ trợ tự động check</td>
             <td><span class="marker-no">✘</span> Cảnh báo dạng text ghi chú</td>
             <td><span class="marker-no">✘</span> Không hỗ trợ kiểm tra chéo</td>
           </tr>
           <tr>
             <td><strong>Kết nối chuẩn hóa y khoa</strong></td>
-            <td style="color: var(--accent-teal); font-weight: 700;"><span class="marker-yes">✔</span> HL7/FHIR, DICOM PACS, BHYT VNPT</td>
+            <td style="color: var(--accent-teal); font-weight: 800;"><span class="marker-yes">✔</span> HL7/FHIR, DICOM PACS, BHYT VNPT</td>
             <td><span class="marker-no">✘</span> Tích hợp API mở rộng cơ bản</td>
             <td><span class="marker-no">✘</span> Không có HL7/FHIR</td>
             <td><span class="marker-no">✘</span> Chỉ tích hợp thiết bị hãng chỉ định</td>
           </tr>
           <tr>
             <td><strong>Điều khiển tự động hóa (Saga)</strong></td>
-            <td style="color: var(--accent-teal); font-weight: 700;"><span class="marker-yes">✔</span> Saga Orchestration + AI COO Agent</td>
+            <td style="color: var(--accent-teal); font-weight: 800;"><span class="marker-yes">✔</span> Saga Orchestration + AI COO Agent</td>
             <td><span class="marker-no">✘</span> Nhân viên tự đổi lịch hẹn</td>
             <td><span class="marker-no">✘</span> Nhân viên tự phân buồng</td>
             <td><span class="marker-no">✘</span> Bảng phân công tĩnh</td>
           </tr>
           <tr>
             <td><strong>Khả năng ứng dụng đa vertical</strong></td>
-            <td style="color: var(--accent-teal); font-weight: 700;"><span class="marker-yes">✔</span> Lõi Bella Core (Plugin Capability)</td>
+            <td style="color: var(--accent-teal); font-weight: 800;"><span class="marker-yes">✔</span> Lõi Bella Core (Plugin Capability)</td>
             <td><span class="marker-no">✘</span> Chỉ dùng cho nha khoa</td>
             <td><span class="marker-no">✘</span> Chỉ dùng cho nha khoa</td>
             <td><span class="marker-no">✘</span> Chỉ dùng cho phòng khám</td>
