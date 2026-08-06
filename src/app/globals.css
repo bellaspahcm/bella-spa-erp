@@ -1206,7 +1206,7 @@ html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item:hover svg,
 html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item:hover * { color: #ffffff !important; }
 html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item-active {
   background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%) !important;
-  border-color: rgba(147, 197, 253, 0.52) !important;
+  border-color: rgba(16, 185, 129, 0.52) !important;
   color: #ffffff !important;
 }
 html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item-active svg,
