@@ -187,9 +187,9 @@ export default function HealthcareSalaryPage() {
         </div>
 
         {/* Salary List Table */}
-        <div className="p-7 rounded-[28px] bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-6 text-left">
-          <div className="border border-slate-200/60 dark:border-slate-800 rounded-2xl overflow-hidden">
-            <table className="w-full text-xs text-left">
+        <div className="p-6 md:p-7 rounded-[28px] bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-6 text-left overflow-hidden">
+          <div className="border border-slate-200/60 dark:border-slate-800 rounded-2xl overflow-x-auto shadow-2xs">
+            <table className="w-full min-w-[900px] text-xs text-left">
               <thead>
                 <tr className="bg-slate-100/80 dark:bg-slate-850/80 border-b border-slate-200/60 dark:border-slate-800 text-slate-500 font-bold uppercase tracking-wider">
                   <th className="px-6 py-4 whitespace-nowrap">Nhân viên y tế</th>
