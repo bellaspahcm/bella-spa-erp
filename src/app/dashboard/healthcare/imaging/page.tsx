@@ -20,7 +20,12 @@ import {
   ArrowRight, 
   Activity, 
   SlidersHorizontal,
-  CheckCircle2
+  CheckCircle2,
+  Flame,
+  Ruler,
+  Split,
+  AlertTriangle,
+  ChevronRight
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { 
@@ -71,6 +76,8 @@ export default function ImagingPage() {
   const [dcmPreset, setDcmPreset] = useState<'BRAIN' | 'BONE' | 'SOFT_TISSUE' | 'LUNG'>('BRAIN');
   const [dcmIsCine, setDcmIsCine] = useState(false);
   const [dcmShowAI, setDcmShowAI] = useState(true);
+  const [dcmHeatmapOpacity, setDcmHeatmapOpacity] = useState(50);
+  const [dcmCompareMode, setDcmCompareMode] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [items, setItems] = useState<ImagingWorkItem[]>([]);
   
