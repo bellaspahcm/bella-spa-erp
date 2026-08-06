@@ -263,11 +263,11 @@ export default function EncountersPage() {
                       <AlertTriangle className="w-4 h-4" />
                     </div>
                     <span className="tracking-wide">
-                      🚨 CẢNH BÁO AN TOÀN LÂM SÀNG: <strong className="underline decoration-rose-500 decoration-2">{e.allergies.join(' • ')}</strong>
+                      🚨 CẢNH BÁO AN TOÀN LÂM SÀNG: <strong>{e.allergies.join(' • ')}</strong>
                     </span>
                   </div>
                   <span className="text-[10px] bg-rose-600 text-white px-2.5 py-1 rounded-full uppercase font-black tracking-wider shadow-xs shrink-0 self-start sm:self-auto">
-                    ⚠️ TỐI NGUY HIỂM - CHÚ Ý KHI KÊ ĐƠN
+                    ⚠️ NGUY HIỂM - CHÚ Ý KHI KÊ ĐƠN
                   </span>
                 </div>
               )}
