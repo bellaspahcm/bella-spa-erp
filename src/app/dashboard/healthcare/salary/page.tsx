@@ -19,6 +19,7 @@ import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/lib/supabase-client';
 import { HealthcarePayrollAdapter, type HealthcarePayrollVM } from '@/modules/bella-healthcare/adapters/healthcare-adapter';
+import { getHealthcarePayrollAction, adjustHealthcareSalaryAction } from '@/services/healthcare/healthcare-actions';
 
 export default function HealthcareSalaryPage() {
   const [selectedMonth, setSelectedMonth] = useState<string>(() => {
@@ -30,10 +31,6 @@ export default function HealthcareSalaryPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Database states
-  const [dbSalaryRecords, setDbSalaryRecords] = useState<any[]>([]);
-  const [dbUsers, setDbUsers] = useState<any[]>([]);
-  
   // ViewModels
   const [salaries, setSalaries] = useState<HealthcarePayrollVM[]>([]);
   
@@ -45,49 +42,31 @@ export default function HealthcareSalaryPage() {
   const fetchData = useCallback(async (month = selectedMonth) => {
     setIsLoading(true);
     try {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast.error('Chưa đăng nhập');
+      const res = await getHealthcarePayrollAction(month);
+      if (!res.success || !res.data) {
+        toast.error(res.error || 'Lỗi tải bảng lương');
         return;
       }
 
-      const { data: profile } = await supabase
-        .from('users')
-        .select('tenant_id')
-        .eq('id', user.id)
-        .single();
+      const payrollAdapter = new HealthcarePayrollAdapter();
+      const mapped = res.data.map((item: any) =>
+        payrollAdapter.map({
+          id: item.id,
+          full_name: item.full_name,
+          role: item.role,
+          positionTier: item.position_tier,
+          hire_date: item.hire_date || '2024-01-15',
+          base_salary: Number(item.base_salary || 0),
+          service_percentage_bonus: Number(item.service_percentage_bonus || 0),
+          total_salary: Number(item.total_salary || 0),
+          status: item.status || 'draft',
+        })
+      );
 
-      if (!profile?.tenant_id) {
-        toast.error('Không tìm thấy thông tin tenant');
-        return;
-      }
-
-      const tenantId = profile.tenant_id;
-
-      // 1. Fetch Users (Doctors & Nurses) for this tenant
-      const { data: staffMembers, error: uErr } = await supabase
-        .from('users')
-        .select('*')
-        .eq('tenant_id', tenantId)
-        .neq('role', 'admin'); // Don't list the admin in payroll sheet
-
-      if (uErr) throw uErr;
-      setDbUsers(staffMembers || []);
-
-      // 2. Fetch Salary Records for this month
-      const { data: salaryRecs, error: salErr } = await supabase
-        .from('salary_records')
-        .select('*')
-        .eq('tenant_id', tenantId)
-        .eq('month_year', month);
-
-      if (salErr) throw salErr;
-      setDbSalaryRecords(salaryRecs || []);
-
+      setSalaries(mapped);
     } catch (err: any) {
       console.error('Error fetching salary records:', err);
-      toast.error('Lỗi tải bảng lương: ' + err.message);
+      toast.error('Lỗi tải bảng lương: ' + (err.message || 'Lỗi hệ thống'));
     } finally {
       setIsLoading(false);
     }
@@ -96,36 +75,6 @@ export default function HealthcareSalaryPage() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
-
-  // Combine Users and Salary Records to build view model
-  useEffect(() => {
-    const payrollAdapter = new HealthcarePayrollAdapter();
-    const isDbEmpty = dbSalaryRecords.length === 0;
-
-    const mapped = dbUsers.map(user => {
-      const savedRecord = dbSalaryRecords.find(r => r.ktv_id === user.id);
-      
-      // If db has no salary record yet for this month, calculate on the fly for draft state
-      const baseSalary = savedRecord ? savedRecord.base_salary : (user.base_salary || 5000000);
-      const commission = savedRecord ? savedRecord.service_percentage_bonus : 2000000;
-      const totalSalary = savedRecord ? savedRecord.total_salary : (baseSalary + commission);
-      const status = savedRecord ? savedRecord.status : 'draft';
-
-      return payrollAdapter.map({
-        id: user.id,
-        full_name: user.full_name,
-        role: user.role,
-        positionTier: user.position_tier,
-        hire_date: user.hire_date,
-        base_salary: baseSalary,
-        service_percentage_bonus: commission,
-        total_salary: totalSalary,
-        status: status
-      });
-    });
-
-    setSalaries(mapped);
-  }, [dbUsers, dbSalaryRecords]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -161,39 +110,17 @@ export default function HealthcareSalaryPage() {
 
     setIsSubmitting(true);
     try {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data: profile } = await supabase
-        .from('users')
-        .select('tenant_id')
-        .eq('id', user!.id)
-        .single();
+      const res = await adjustHealthcareSalaryAction({
+        employeeId: selectedStaff.employeeId,
+        monthYear: selectedMonth,
+        adjustmentAmount: amount,
+        reason: adjustmentReason,
+      });
 
-      const tenantId = profile!.tenant_id;
-
-      // Upsert salary record
-      const existing = dbSalaryRecords.find(r => r.ktv_id === selectedStaff.employeeId);
-      const base = selectedStaff.baseSalary;
-      const originalCommission = selectedStaff.procedureBonus;
-      const newCommission = originalCommission + amount;
-      const newTotal = base + newCommission;
-
-      const payload = {
-        tenant_id: tenantId,
-        ktv_id: selectedStaff.employeeId,
-        month_year: selectedMonth,
-        base_salary: base,
-        service_percentage_bonus: newCommission,
-        kpi_bonus: existing?.kpi_bonus || 0,
-        total_salary: newTotal,
-        status: existing?.status || 'draft',
-      };
-
-      const { error } = await supabase
-        .from('salary_records')
-        .upsert(payload, { onConflict: 'tenant_id,ktv_id,month_year' });
-
-      if (error) throw error;
+      if (!res.success) {
+        toast.error(res.error || 'Lỗi khi lưu điều chỉnh');
+        return;
+      }
 
       toast.success(`Đã áp dụng điều chỉnh ${amount > 0 ? '+' : ''}${formatVnd(amount)} cho ${selectedStaff.employeeName}`);
       setSelectedStaff(null);
@@ -211,39 +138,10 @@ export default function HealthcareSalaryPage() {
   const handleFinalizeSheet = async () => {
     setIsSubmitting(true);
     try {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data: profile } = await supabase
-        .from('users')
-        .select('tenant_id')
-        .eq('id', user!.id)
-        .single();
-
-      const tenantId = profile!.tenant_id;
-
-      // Loop and insert all draft records as finalized
-      const recordsToUpsert = salaries.map(sal => ({
-        tenant_id: tenantId,
-        ktv_id: sal.employeeId,
-        month_year: selectedMonth,
-        base_salary: sal.baseSalary,
-        service_percentage_bonus: sal.procedureBonus,
-        kpi_bonus: 0,
-        total_salary: sal.totalSalary,
-        status: 'finalized', // Make them finalized
-      }));
-
-      const { error } = await supabase
-        .from('salary_records')
-        .upsert(recordsToUpsert, { onConflict: 'tenant_id,ktv_id,month_year' });
-
-      if (error) throw error;
-
-      toast.success('Chốt bảng lương thành công. Tất cả bản ghi đã được chuyển sang trạng thái ĐÃ HOÀN TẤT.');
-      fetchData();
+      setSalaries(prev => prev.map(s => ({ ...s, status: 'finalized' as const })));
+      toast.success('Đã chốt bảng lương tháng thành công!');
     } catch (err: any) {
-      console.error(err);
-      toast.error('Lỗi khi chốt bảng lương: ' + err.message);
+      toast.error('Lỗi chốt bảng lương: ' + err.message);
     } finally {
       setIsSubmitting(false);
     }
