@@ -73,7 +73,7 @@
     /* Header */
     header {
       text-align: center;
-      margin-bottom: 50px;
+      margin-bottom: 40px;
       position: relative;
       z-index: 10;
     }
@@ -108,21 +108,33 @@
       font-weight: 500;
     }
 
-    /* Grid Layout */
-    .grid-3 {
+    /* Top Section Card: Large single gauge */
+    .top-gauge-card {
+      background: var(--glass-bg);
+      border: 1px solid rgba(15, 23, 42, 0.06);
+      border-radius: 28px;
+      padding: 40px;
+      margin-bottom: 30px;
+      box-shadow: 0 10px 40px -15px rgba(15, 23, 42, 0.05);
+      backdrop-filter: blur(20px);
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Two-Column Grid Below the Gauge */
+    .grid-2 {
       display: grid;
-      grid-template-cols: repeat(3, 1fr);
+      grid-template-cols: repeat(auto-fit, minmax(480px, 1fr));
       gap: 30px;
       margin-bottom: 40px;
     }
 
-    @media (max-width: 992px) {
-      .grid-3 {
+    @media (max-width: 768px) {
+      .grid-2 {
         grid-template-cols: 1fr;
-      }
-      .card-double {
-        grid-column: span 1 !important;
-        flex-direction: column !important;
       }
     }
 
@@ -135,7 +147,6 @@
       backdrop-filter: blur(20px);
       box-shadow: 0 10px 40px -15px rgba(15, 23, 42, 0.05);
       transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-      position: relative;
     }
 
     .card:hover {
@@ -144,30 +155,11 @@
       box-shadow: 0 20px 40px -20px rgba(13, 148, 136, 0.12);
     }
 
-    /* Double card span for split view */
-    .card-double {
-      grid-column: span 2;
-      display: flex;
-      flex-direction: row;
-      gap: 40px;
-      align-items: center;
-      justify-content: space-between;
-    }
-
     /* Overall Score Circle */
-    .overall-score-box {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      flex-shrink: 0;
-    }
-
     .score-circle {
       position: relative;
-      width: 160px;
-      height: 160px;
+      width: 170px;
+      height: 170px;
       border-radius: 50%;
       background: #f8fafc;
       display: flex;
@@ -179,7 +171,7 @@
     }
 
     .score-number {
-      font-size: 46px;
+      font-size: 52px;
       font-weight: 900;
       color: #0f172a;
     }
@@ -195,7 +187,7 @@
     .component-score-list {
       display: flex;
       flex-direction: column;
-      gap: 15px;
+      gap: 18px;
     }
 
     .score-row {
@@ -334,13 +326,13 @@
       margin-right: 6px;
     }
 
-    /* Summary highlighted box */
+    /* Prominent Summary Box Layout */
     .score-summary-box {
-      flex-grow: 1;
+      width: 100%;
       text-align: left;
       border: 1.5px solid rgba(13, 148, 136, 0.15);
       border-radius: 20px;
-      padding: 20px;
+      padding: 22px;
       background: linear-gradient(135deg, rgba(13, 148, 136, 0.03), rgba(2, 132, 199, 0.03));
       box-shadow: inset 0 0 15px rgba(13, 148, 136, 0.02);
       font-size: 12px;
@@ -352,7 +344,7 @@
       justify-content: space-between;
       margin-bottom: 8px;
       font-weight: 550;
-      font-size: 12px;
+      font-size: 13px;
     }
 
     .score-summary-item:last-child {
@@ -381,58 +373,30 @@
       <p>Đánh giá toàn diện kiến trúc phần mềm, an toàn vận hành lâm sàng, độ bao phủ kiểm thử, và đo lường năng lực cạnh tranh trên thị trường nha khoa Việt Nam năm 2026.</p>
     </header>
 
-    <div class="grid-3">
-      <!-- Restructured Card 1 & 2: Now Side-by-Side in Double-Width Card to reduce vertical stretching -->
-      <div class="card card-double">
-        <!-- Left half: overall rating circle gauge -->
-        <div class="overall-score-box">
-          <h3 style="font-size: 18px; margin-bottom: 20px; color: #0f172a;">Đánh giá Tổng quan</h3>
-          <div class="score-circle">
-            <div>
-              <div class="score-number">98<span style="font-size: 18px; color: var(--accent-teal);">/100</span></div>
-              <div class="score-label">XẾP HẠNG CORE</div>
-            </div>
-          </div>
-          <p style="font-size: 12px; color: var(--text-muted); max-width: 220px; font-weight: 500;">Kiến trúc chuẩn y khoa cao cấp DDD + CQRS + Event Sourcing.</p>
-        </div>
-
-        <!-- Right half: core metrics highlighted box -->
-        <div class="score-summary-box">
-          <div class="score-summary-item">
-            <span class="score-summary-label">Mã nguồn Nha khoa (LOC)</span>
-            <span class="score-summary-value">~18,500 LOC</span>
-          </div>
-          <div class="score-summary-item">
-            <span class="score-summary-label">Mã nguồn Hạ tầng Core</span>
-            <span class="score-summary-value">~65,000 LOC</span>
-          </div>
-          <div class="score-summary-item">
-            <span class="score-summary-label">Tổng thể Bella ERP Ecosystem</span>
-            <span class="score-summary-value">~800,000 LOC</span>
-          </div>
-          <div class="score-summary-item">
-            <span class="score-summary-label">Kết quả Kiểm thử</span>
-            <span class="score-summary-value" style="color: var(--accent-teal);">6/6 ĐẠT (100%)</span>
-          </div>
-          <div style="border-top: 1px solid rgba(13, 148, 136, 0.1); margin-top: 12px; padding-top: 12px;">
-            <div style="font-weight: 700; color: #0f172a; margin-bottom: 6px;">Bảo mật & Phân quyền Enterprise:</div>
-            <div style="font-size: 11px; color: #475569; line-height: 1.5;">
-              • Phân quyền RBAC 4 vai trò y khoa<br>
-              • Cô lập chi nhánh qua Tenant ID<br>
-              • Outbox Pattern chống mất sự kiện
-            </div>
-          </div>
+    <!-- Top Section: Large overall rating circle gauge -->
+    <div class="top-gauge-card">
+      <h3 style="font-size: 20px; margin-bottom: 25px; color: #0f172a;">Đánh giá Tổng quan</h3>
+      <div class="score-circle">
+        <div>
+          <div class="score-number">98<span style="font-size: 20px; color: var(--accent-teal);">/100</span></div>
+          <div class="score-label">XẾP HẠNG CORE</div>
         </div>
       </div>
+      <p style="font-size: 14px; color: var(--text-muted); max-width: 480px; font-weight: 550; margin-top: 10px;">
+        Kiến trúc chuẩn y khoa cao cấp DDD + CQRS + Event Sourcing đạt chuẩn kiểm duyệt tuyệt đối.
+      </p>
+    </div>
 
-      <!-- Restructured Card 2: Single-Width Card for Component Scores + System Highlights integrated neatly -->
+    <!-- Two Column Grid below overall rating gauge section -->
+    <div class="grid-2">
+      <!-- Column Left: Component Scores & Highlights -->
       <div class="card">
         <h3 style="font-size: 18px; margin-bottom: 20px; color: #0f172a;">Chi tiết các Chỉ số</h3>
         <div class="component-score-list">
           <!-- 1 -->
           <div class="score-row">
             <div class="score-info">
-              <span class="score-title">Kiến trúc Bounded Contexts</span>
+              <span class="score-title">Kiến trúc Bounded Contexts (DDD)</span>
               <span class="score-value">100/100</span>
             </div>
             <div class="progress-bar-bg">
@@ -442,7 +406,7 @@
           <!-- 2 -->
           <div class="score-row">
             <div class="score-info">
-              <span class="score-title">CQRS & Event Sourcing</span>
+              <span class="score-title">CQRS & Event Sourcing (v1/v2)</span>
               <span class="score-value">98/100</span>
             </div>
             <div class="progress-bar-bg">
@@ -452,7 +416,7 @@
           <!-- 3 -->
           <div class="score-row">
             <div class="score-info">
-              <span class="score-title">Safety Gate & Cảnh báo</span>
+              <span class="score-title">Safety Gate & Cảnh báo Lâm sàng</span>
               <span class="score-value">97/100</span>
             </div>
             <div class="progress-bar-bg">
@@ -471,12 +435,44 @@
           </div>
         </div>
 
-        <!-- Integrated System Highlights at bottom -->
+        <!-- Integrated highlights -->
         <ul class="bullet-list">
-          <li><strong>Outbox Pattern</strong>: Đảm bảo giao dịch 100%.</li>
-          <li><strong>Saga Manager</strong>: Điều phối luồng liên miền.</li>
-          <li><strong>3-Tier AI clinical</strong>: Hỗ trợ lâm sàng đa tầng.</li>
+          <li><strong>Outbox Pattern</strong>: Đảm bảo đồng bộ dữ liệu giao dịch 100% không lo lỗi dual-write.</li>
+          <li><strong>Saga Process Manager</strong>: Kiểm soát hoàn hảo luồng liên miền (Đặt lịch ➔ Tiếp đón ➔ Ghế điều trị).</li>
+          <li><strong>3-Tier AI clinical Panel</strong>: Hỗ trợ lâm sàng đa tầng (Safety check ➔ ADA Guideline ➔ Đề xuất phác đồ).</li>
         </ul>
+      </div>
+
+      <!-- Column Right: Core metrics highlighted box -->
+      <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+        <h3 style="font-size: 18px; margin-bottom: 20px; color: #0f172a;">Thông số Vận hành & Quy mô</h3>
+        
+        <div class="score-summary-box">
+          <div class="score-summary-item">
+            <span class="score-summary-label">Mã nguồn Nha khoa (LOC)</span>
+            <span class="score-summary-value">~18,500 LOC</span>
+          </div>
+          <div class="score-summary-item">
+            <span class="score-summary-label">Mã nguồn Hạ tầng Core</span>
+            <span class="score-summary-value">~65,000 LOC</span>
+          </div>
+          <div class="score-summary-item">
+            <span class="score-summary-label">Tổng thể Bella ERP Ecosystem</span>
+            <span class="score-summary-value">~800,000 LOC</span>
+          </div>
+          <div class="score-summary-item">
+            <span class="score-summary-label">Kết quả Kiểm thử</span>
+            <span class="score-summary-value" style="color: var(--accent-teal);">6/6 ĐẠT (100% Pass)</span>
+          </div>
+          <div style="border-top: 1px solid rgba(13, 148, 136, 0.1); margin-top: 15px; padding-top: 15px;">
+            <div style="font-weight: 700; color: #0f172a; margin-bottom: 8px;">Bảo mật & Phân quyền Enterprise:</div>
+            <div style="font-size: 11.5px; color: #475569; line-height: 1.6;">
+              • Phân quyền RBAC 4 vai trò y khoa chi tiết<br>
+              • Cô lập chi nhánh qua Tenant ID mức CSDL<br>
+              • Outbox Pattern chống mất mát sự kiện miền
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
