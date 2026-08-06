@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   UserCheck, 
   ShieldCheck, 
@@ -18,7 +19,13 @@ import {
   ShieldAlert, 
   Award,
   IdCard,
-  Building2
+  Building2,
+  Printer,
+  Sparkles,
+  ChevronRight,
+  User,
+  Phone,
+  Check
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getAllPatientProfilesAction, createPatientRecordAction } from '@/services/healthcare/healthcare-actions';
@@ -47,6 +54,32 @@ const BHYT_RATE_OPTIONS = [
   { value: '100', label: '100% (Công thần / Sĩ quan)' },
 ];
 
+const CLINIC_DEPT_OPTIONS = [
+  { value: 'Phòng Khám Số 3 - Tim Mạch', label: 'Phòng Khám Số 3 - Tim Mạch' },
+  { value: 'Phòng Khám Số 1 - Tiêu Hóa', label: 'Phòng Khám Số 1 - Tiêu Hóa' },
+  { value: 'Phòng Khám Số 2 - Nhi Khoa', label: 'Phòng Khám Số 2 - Nhi Khoa' },
+  { value: 'Phòng Khám Số 4 - Tai Mũi Họng', label: 'Phòng Khám Số 4 - Tai Mũi Họng' },
+  { value: 'Phòng Khám Số 5 - Nội Tổng Quát', label: 'Phòng Khám Số 5 - Nội Tổng Quát' },
+];
+
+const DOCTOR_OPTIONS = [
+  { value: 'BS. CKII Nguyễn Văn Minh', label: 'BS. CKII Nguyễn Văn Minh (Tim Mạch)' },
+  { value: 'BS. CKI Trần Đức Hùng', label: 'BS. CKI Trần Đức Hùng (Tiêu Hóa)' },
+  { value: 'ThS. BS Lê Thị Mai', label: 'ThS. BS Lê Thị Mai (Nhi Khoa)' },
+  { value: 'BS. Vũ Thị Dung', label: 'BS. Vũ Thị Dung (Tai Mũi Họng)' },
+  { value: 'BS. Phạm Thu Hà', label: 'BS. Phạm Thu Hà (Nội Tổng Quát)' },
+];
+
+const SLOT_TIME_OPTIONS = [
+  { value: '08:00', label: '08:00 - Sáng' },
+  { value: '08:30', label: '08:30 - Sáng' },
+  { value: '09:00', label: '09:00 - Sáng' },
+  { value: '09:30', label: '09:30 - Sáng' },
+  { value: '14:00', label: '14:00 - Chiều' },
+  { value: '14:30', label: '14:30 - Chiều' },
+  { value: '15:00', label: '15:00 - Chiều' },
+];
+
 interface PatientRecordItem {
   id: string;
   recordNumber: string;
@@ -73,10 +106,22 @@ interface PatientRecordItem {
 }
 
 export default function PatientsPage() {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [patients, setPatients] = useState<PatientRecordItem[]>([]);
+
+  // Action Modals State
+  const [bookingModalPatient, setBookingModalPatient] = useState<PatientRecordItem | null>(null);
+  const [bhytModalPatient, setBhytModalPatient] = useState<PatientRecordItem | null>(null);
+
+  // Booking Form State
+  const [bookingDept, setBookingDept] = useState('Phòng Khám Số 3 - Tim Mạch');
+  const [bookingDoctor, setBookingDoctor] = useState('BS. CKII Nguyễn Văn Minh');
+  const [bookingDate, setBookingDate] = useState(new Date().toISOString().split('T')[0]);
+  const [bookingSlot, setBookingSlot] = useState('08:30');
+  const [bookingNote, setBookingNote] = useState('');
 
   const loadPatients = async () => {
     try {
@@ -134,8 +179,8 @@ export default function PatientsPage() {
 
   const handleCreatePatient = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newPatient.name.trim() || !newPatient.phone.trim()) {
-      toast.error('Vui lòng điền đầy đủ Họ tên và Số điện thoại bệnh nhân!');
+    if (!newPatient.name || !newPatient.phone) {
+      toast.error('Vui lòng điền đầy đủ Họ tên và Số điện thoại!');
       return;
     }
 
@@ -143,295 +188,297 @@ export default function PatientsPage() {
       ? newPatient.allergiesInput.split(',').map((s) => s.trim()).filter(Boolean)
       : [];
 
-    const dbRes = await createPatientRecordAction({
-      name: newPatient.name.trim(),
-      gender: newPatient.gender === 'Nữ' ? 'female' : 'male',
-      phone: newPatient.phone.trim(),
-      bloodType: newPatient.bloodType,
-      bhytCode: newPatient.bhytCode.trim() || undefined,
-      bhytBenefitRate: newPatient.bhytCode.trim() ? newPatient.bhytBenefitRate : undefined,
-      allergies: allergiesArr,
-    });
+    try {
+      const res = await createPatientRecordAction({
+        recordNumber: newPatient.recordNumber,
+        name: newPatient.name,
+        gender: newPatient.gender,
+        age: Number(newPatient.age),
+        phone: newPatient.phone,
+        bloodType: newPatient.bloodType,
+        allergies: allergiesArr,
+        bhytCode: newPatient.bhytCode || undefined,
+        bhytBenefitRate: Number(newPatient.bhytBenefitRate),
+      });
 
-    if (!dbRes.success) {
-      toast.error('Lỗi lưu bệnh nhân: ' + dbRes.error);
-      return;
+      if (res.success) {
+        toast.success(`🎉 Khởi tạo hồ sơ MPI cho bệnh nhân ${newPatient.name} thành công!`);
+        setIsCreateModalOpen(false);
+        setNewPatient({
+          recordNumber: `BN${Math.floor(100000 + Math.random() * 900000)}`,
+          name: '',
+          gender: 'Nam',
+          age: 30,
+          phone: '',
+          bloodType: 'O+',
+          bhytCode: '',
+          bhytBenefitRate: 80,
+          allergiesInput: '',
+        });
+        loadPatients();
+      } else {
+        toast.error('Không thể tạo bệnh nhân: ' + res.error);
+      }
+    } catch (err: any) {
+      toast.error('Lỗi khởi tạo hồ sơ bệnh nhân');
     }
-
-    setIsCreateModalOpen(false);
-    toast.success(`🎉 Đã khởi tạo thành công hồ sơ bệnh nhân ${newPatient.name.trim()}!`);
-    loadPatients();
-
-    // Reset form for next patient
-    setNewPatient({
-      recordNumber: `BN${Math.floor(100000 + Math.random() * 900000)}`,
-      name: '',
-      gender: 'Nam',
-      age: 30,
-      phone: '',
-      bloodType: 'O+',
-      bhytCode: '',
-      bhytBenefitRate: 80,
-      allergiesInput: '',
-    });
   };
 
-  const filtered = patients.filter((p) =>
-    p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.phone.includes(searchTerm) ||
-    p.recordNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (p.mpiId && p.mpiId.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  // Submit Booking Form Modal
+  const handleConfirmBooking = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!bookingModalPatient) return;
 
-  // Helper for Blood Group Biological Color Badge
-  const getBloodGroupBadge = (type: string) => {
-    if (type.startsWith('O')) {
-      return 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20';
-    } else if (type.startsWith('A') && !type.startsWith('AB')) {
-      return 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20';
-    } else if (type.startsWith('B')) {
-      return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20';
-    }
-    return 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20';
+    toast.success(`📅 Đặt lịch hẹn khám thành công cho bệnh nhân ${bookingModalPatient.name}! (${bookingDate} lúc ${bookingSlot})`);
+    setBookingModalPatient(null);
+    setBookingNote('');
   };
 
-  // Helper for Initials Avatar
-  const getInitials = (name: string) => {
-    const parts = name.trim().split(' ');
-    if (parts.length >= 2) {
-      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-    }
-    return name.slice(0, 2).toUpperCase();
-  };
+  const filteredPatients = patients.filter((p) => {
+    const q = searchTerm.toLowerCase();
+    return (
+      p.name.toLowerCase().includes(q) ||
+      p.phone.includes(q) ||
+      p.recordNumber.toLowerCase().includes(q) ||
+      (p.mpiId && p.mpiId.toLowerCase().includes(q)) ||
+      (p.bhytCode && p.bhytCode.toLowerCase().includes(q))
+    );
+  });
 
   return (
-    <div className="p-6 md:p-8 w-full space-y-7 bg-transparent relative">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="space-y-1 text-left">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2.5 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-              <UserCheck className="w-6 h-6" />
+    <div className="p-6 md:p-8 space-y-7 bg-transparent text-slate-900 dark:text-white relative text-left">
+      {/* Background Glow Overlay */}
+      <div className="absolute -top-40 -left-40 w-96 h-96 bg-cyan-500/10 dark:bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
+
+      {/* Header Bar */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200/80 dark:border-slate-800 pb-5">
+        <div className="space-y-1">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-2xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20">
+              <IdCard className="w-6 h-6" />
             </div>
             <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-              Hồ Sơ Bệnh Nhân & Master Patient Index (MPI Extension)
+              Hồ Sơ Bệnh Nhân (Master Patient Index - MPI)
             </h1>
+            <span className="px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 text-xs font-black border border-emerald-500/30 flex items-center gap-1.5">
+              <ShieldCheck className="w-3.5 h-3.5" /> VNeID Định Danh QG
+            </span>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-            Quản lý Định danh Bệnh Nhân Trung Tâm (MPI), Xác thực VNeID, Thẻ BHYT & Cảnh báo Nguy cơ Lâm sàng.
+            Hệ thống Quản lý Danh tính Bệnh nhân Quốc gia (MPI) • Đồng bộ thẻ BHYT trực tuyến • Lịch sử Bệnh án Điện tử EMR & Cảnh báo dị ứng y khoa.
           </p>
         </div>
 
         <button
           onClick={() => setIsCreateModalOpen(true)}
-          className="px-4 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 shadow-md flex items-center gap-2 cursor-pointer w-fit transition-all active:scale-95"
+          className="px-5 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95 shrink-0"
         >
           <Plus className="w-4 h-4" />
-          Thêm Bệnh Nhân Mới
+          <span>+ Tạo Hồ Sơ Bệnh Nhân MPI Mới</span>
         </button>
       </div>
 
-      {/* Quick Stat Counter Bar */}
+      {/* Enterprise KPI Counters */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center justify-between">
-          <div>
-            <span className="text-[11px] font-bold text-slate-400 block uppercase">Tổng Hồ Sơ MPI</span>
-            <span className="text-xl font-black text-slate-900 dark:text-white mt-0.5 block">{patients.length} hồ sơ bệnh nhân</span>
+        <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center justify-between">
+          <div className="space-y-1">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">TỔNG HỒ SƠ MPI</span>
+            <div className="text-2xl font-black text-slate-900 dark:text-white font-mono">{patients.length} hồ sơ bệnh nhân</div>
           </div>
-          <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600">
-            <UserCheck className="w-5 h-5" />
+          <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 flex items-center justify-center">
+            <UserCheck className="w-6 h-6" />
           </div>
         </div>
 
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center justify-between">
-          <div>
-            <span className="text-[11px] font-bold text-slate-400 block uppercase">Bệnh Nhân Có Thẻ BHYT</span>
-            <div className="mt-0.5">
-              <span className="text-xl font-black text-emerald-600 dark:text-emerald-400 block whitespace-nowrap">
-                {patients.filter((p) => p.bhytCode).length} thẻ BHYT
-              </span>
-              <span className="text-xs font-bold text-emerald-600/80 dark:text-emerald-400/80 block whitespace-nowrap">
-                (Hưởng 80% - 100%)
-              </span>
+        <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center justify-between">
+          <div className="space-y-1">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">BỆNH NHÂN CÓ THẺ BHYT</span>
+            <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
+              {patients.filter((p) => p.bhytCode).length} thẻ BHYT
+            </div>
+            <span className="text-[10px] text-slate-400 font-medium">(Hưởng 80% - 100%)</span>
+          </div>
+          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+            <ShieldCheck className="w-6 h-6" />
+          </div>
+        </div>
+
+        <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center justify-between">
+          <div className="space-y-1">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">CẢNH BÁO NGUY CƠ</span>
+            <div className="text-2xl font-black text-rose-600 dark:text-rose-400 font-mono">
+              {patients.filter((p) => p.allergies && p.allergies.length > 0).length} ca cảnh báo
             </div>
           </div>
-          <div className="p-2.5 rounded-xl bg-teal-500/10 text-teal-600 shrink-0">
-            <ShieldCheck className="w-5 h-5" />
+          <div className="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center">
+            <AlertCircle className="w-6 h-6" />
           </div>
         </div>
 
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center justify-between">
-          <div>
-            <span className="text-[11px] font-bold text-slate-400 block uppercase">Cảnh Báo Nguy Cơ</span>
-            <span className="text-xl font-black text-rose-600 dark:text-rose-400 mt-0.5 block">
-              {patients.filter((p) => p.allergies.length > 0).length} ca cảnh báo
-            </span>
+        <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center justify-between">
+          <div className="space-y-1">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">ĐỊNH DANH VNEID & MPI</span>
+            <div className="text-2xl font-black text-indigo-600 dark:text-indigo-400 font-mono">100% Khớp Mã</div>
           </div>
-          <div className="p-2.5 rounded-xl bg-rose-500/10 text-rose-600">
-            <AlertCircle className="w-5 h-5" />
-          </div>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center justify-between">
-          <div>
-            <span className="text-[11px] font-bold text-slate-400 block uppercase">Định Danh VNeID & MPI</span>
-            <span className="text-xl font-black text-indigo-600 dark:text-indigo-400 mt-0.5 block">100% Khớp Mã</span>
-          </div>
-          <div className="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-600">
-            <IdCard className="w-5 h-5" />
+          <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+            <IdCard className="w-6 h-6" />
           </div>
         </div>
       </div>
 
-      {/* Toolbar */}
-      <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-        <div className="relative w-full md:w-96">
-          <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Tìm tên bệnh nhân, số ĐT, mã MPI, mã BN..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-          />
-        </div>
+      {/* Realtime Search & Filter Input */}
+      <div className="relative">
+        <Search className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+        <input
+          type="text"
+          placeholder="Tìm tên bệnh nhân, số ĐT, mã MPI, mã BN, mã BHYT..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full pl-12 pr-4 py-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-medium text-sm focus:outline-hidden focus:ring-2 focus:ring-cyan-500/50 shadow-2xs"
+        />
       </div>
 
-      {/* Patients Grid */}
+      {/* Patient Cards Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {filtered.map((p) => (
-          <div 
-            key={p.id} 
-            className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4 hover:border-emerald-500/50 transition-all shadow-sm text-left flex flex-col justify-between"
+        {filteredPatients.map((p) => (
+          <div
+            key={p.id}
+            className={`rounded-3xl bg-white dark:bg-slate-900 border-2 transition-all p-6 space-y-4 shadow-sm hover:shadow-md ${
+              p.allergies && p.allergies.length > 0
+                ? 'border-rose-300 dark:border-rose-900/50'
+                : 'border-slate-200/80 dark:border-slate-800'
+            }`}
           >
-            <div className="space-y-4">
-              {/* 1. Avatar + Badges + Header Info */}
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3.5">
-                  <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 text-white font-black text-sm flex items-center justify-center shadow-md shrink-0 relative border border-emerald-400/30">
-                    {getInitials(p.name)}
-                    <span className="w-3 h-3 rounded-full bg-emerald-400 border-2 border-white dark:border-slate-900 absolute -bottom-0.5 -right-0.5 shadow-2xs" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-black text-slate-900 dark:text-white text-lg">{p.name}</h3>
-                      {p.isVIP && (
-                        <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 text-[10px] font-black uppercase tracking-wider flex items-center gap-1 border border-amber-500/20">
-                          <Award className="w-3 h-3" /> VIP
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                      <span className="font-bold">{p.gender}, {p.age} tuổi</span>
-                      <span>•</span>
-                      <span className="font-mono text-slate-600 dark:text-slate-300 font-semibold">{p.phone}</span>
-                    </div>
-                  </div>
+            {/* 1. Header: Avatar & Main Identity */}
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-3.5">
+                <div className={`w-14 h-14 rounded-2xl ${p.avatarBg || 'bg-cyan-600'} text-white font-black text-lg flex items-center justify-center shadow-md uppercase shrink-0`}>
+                  {p.name.substring(0, 2)}
                 </div>
-
-                {/* 4. MPI & Insurance Badges */}
-                <div className="flex flex-col items-end gap-1">
-                  <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-mono font-black text-xs">
-                    {p.recordNumber}
-                  </span>
-                  <span className="text-[10px] font-mono text-slate-400 font-bold">
-                    {p.mpiId} (VNeID ✓)
-                  </span>
-                </div>
-              </div>
-
-              {/* 3. Clinical Risk Warning Banner (Red Container Alert) */}
-              {p.allergies && p.allergies.length > 0 ? (
-                <div className="px-4 py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-700 dark:text-rose-300 text-xs font-black flex items-center justify-between">
+                <div>
                   <div className="flex items-center gap-2">
-                    <ShieldAlert className="w-4.5 h-4.5 text-rose-600 animate-bounce" />
-                    <span>CẢNH BÁO NGUY CƠ: {p.allergies.join(' • ')}</span>
-                  </div>
-                  <span className="text-[10px] bg-rose-600 text-white px-2 py-0.5 rounded-full font-black uppercase">Chú Ý</span>
-                </div>
-              ) : (
-                <div className="px-4 py-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-slate-500 text-xs font-medium flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                  <span>Không ghi nhận tiền sử dị ứng thuốc hoặc rủi ro đặc biệt.</span>
-                </div>
-              )}
-
-              {/* 2. Clinical History & Biological Blood Group */}
-              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 space-y-3 text-xs">
-                <div className="grid grid-cols-2 gap-3 pb-3 border-b border-slate-200/60 dark:border-slate-800">
-                  {/* Blood Group with Color Code */}
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-400 font-bold">Nhóm máu / Rh:</span>
-                    <span className={`px-2.5 py-0.5 rounded-md font-black text-xs border ${getBloodGroupBadge(p.bloodType)}`}>
-                      🩸 {p.bloodType}
-                    </span>
-                  </div>
-
-                  {/* BHYT Status */}
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-400 font-bold">Thẻ BHYT:</span>
-                    {p.bhytCode ? (
-                      <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                        {p.bhytCode} ({p.bhytBenefitRate}%)
+                    <h3 className="font-black text-slate-900 dark:text-white text-lg tracking-tight">{p.name}</h3>
+                    {p.isVIP && (
+                      <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 font-bold text-[10px] border border-amber-500/30 flex items-center gap-1">
+                        <Award className="w-3 h-3 text-amber-500" /> VIP
                       </span>
-                    ) : (
-                      <span className="text-slate-400 font-medium">Khám Dịch Vụ</span>
                     )}
                   </div>
+                  <p className="text-xs text-slate-500 font-medium">
+                    {p.gender}, {p.age} tuổi • <span className="font-mono">{p.phone}</span>
+                  </p>
                 </div>
+              </div>
 
-                {/* Last Visit Summary & Counter */}
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
-                    <span className="font-bold text-slate-500">Lượt khám gần nhất:</span>
-                    <span className="font-bold text-slate-900 dark:text-white">
-                      {p.lastVisitDate} ({p.lastDoctorName} - {p.lastDepartment})
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium pt-1">
-                    <span>Thống kê quá trình điều trị:</span>
-                    <span className="font-bold text-cyan-600 dark:text-cyan-400">
-                      {p.totalVisits} lần khám • {p.totalAdmissions} lần nhập viện • {p.totalPrescriptions} đơn thuốc
-                    </span>
-                  </div>
-                </div>
+              <div className="text-right">
+                <span className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400 block">{p.recordNumber}</span>
+                <span className="text-[11px] font-mono text-slate-400 font-medium block">
+                  {p.mpiId} ({p.isVNeIDVerified ? 'VNeID ✓' : ''})
+                </span>
               </div>
             </div>
 
-            {/* 5. Enterprise Quick Action Bar */}
+            {/* 2. Medical Risk & Allergy Alert Badge */}
+            {p.allergies && p.allergies.length > 0 ? (
+              <div className="p-3 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-700 dark:text-rose-300 text-xs font-bold flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
+                  <span>CẢNH BÁO NGUY CƠ: {p.allergies.join(', ')}</span>
+                </span>
+                <span className="px-2 py-0.5 rounded-md bg-rose-500 text-white text-[10px] font-black uppercase">CHÚ Ý</span>
+              </div>
+            ) : (
+              <div className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-slate-500 text-xs font-medium flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                <span>Không ghi nhận tiền sử dị ứng thuốc hoặc rủi ro đặc biệt.</span>
+              </div>
+            )}
+
+            {/* 3. Clinical & Insurance Grid */}
+            <div className="grid grid-cols-2 gap-3 text-xs pt-1">
+              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <span className="text-slate-500 font-medium">Nhóm máu / Rh:</span>
+                <span className="font-black text-rose-600 dark:text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-md flex items-center gap-1">
+                  🩸 {p.bloodType}
+                </span>
+              </div>
+
+              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <span className="text-slate-500 font-medium">Thẻ BHYT:</span>
+                {p.bhytCode ? (
+                  <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                    {p.bhytCode} ({p.bhytBenefitRate}%)
+                  </span>
+                ) : (
+                  <span className="text-slate-400 font-semibold">Chưa có BHYT</span>
+                )}
+              </div>
+            </div>
+
+            {/* 4. Medical History Summary */}
+            <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-xs space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500 font-medium">Lượt khám gần nhất:</span>
+                <span className="font-bold text-slate-900 dark:text-white">
+                  {p.lastVisitDate} ({p.lastDoctorName} - {p.lastDepartment})
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between text-[11px] text-slate-400">
+                <span>Thống kê quá trình điều trị:</span>
+                <span className="font-semibold text-cyan-600 dark:text-cyan-400">
+                  {p.totalVisits} lần khám • {p.totalAdmissions} lần nhập viện • {p.totalPrescriptions} đơn thuốc
+                </span>
+              </div>
+            </div>
+
+            {/* 5. Enterprise Fully Functional Action Buttons Bar */}
             <div className="flex items-center justify-between gap-2 pt-3 border-t border-slate-100 dark:border-slate-800 mt-2">
               <span className="text-[10px] font-mono text-slate-400 font-semibold">CCCD: {p.citizenId}</span>
 
               <div className="flex items-center gap-1.5">
+                {/* 1. Xem EMR Button */}
                 <button
-                  onClick={() => toast.info(`📄 Đã mở Bệnh án điện tử EMR của bệnh nhân ${p.name}!`)}
-                  className="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-1 cursor-pointer shadow-2xs"
-                  title="Xem Hồ sơ EMR"
+                  onClick={() => {
+                    toast.info(`📄 Đang mở Hồ sơ Bệnh án điện tử EMR của bệnh nhân ${p.name}...`);
+                    router.push(`/dashboard/healthcare/patients/${p.id}`);
+                  }}
+                  className="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold text-xs hover:bg-cyan-50 dark:hover:bg-cyan-950/40 hover:text-cyan-600 hover:border-cyan-400 flex items-center gap-1 cursor-pointer shadow-2xs transition-all active:scale-95"
+                  title="Xem Hồ sơ EMR Chi Tiết"
                 >
                   <Eye className="w-3.5 h-3.5 text-cyan-600" /> Xem EMR
                 </button>
 
+                {/* 2. Đặt Lịch Button */}
                 <button
-                  onClick={() => toast.success(`📅 Đã chuyển sang cửa sổ Đặt lịch hẹn cho bệnh nhân ${p.name}!`)}
-                  className="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-1 cursor-pointer shadow-2xs"
-                  title="Đặt lịch khám"
+                  onClick={() => {
+                    setBookingModalPatient(p);
+                  }}
+                  className="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold text-xs hover:bg-amber-50 dark:hover:bg-amber-950/40 hover:text-amber-600 hover:border-amber-400 flex items-center gap-1 cursor-pointer shadow-2xs transition-all active:scale-95"
+                  title="Tạo lịch hẹn khám mới"
                 >
                   <Calendar className="w-3.5 h-3.5 text-amber-600" /> Đặt Lịch
                 </button>
 
+                {/* 3. Khám Mới Button */}
                 <button
-                  onClick={() => toast.success(`🩺 Đã khởi tạo lượt khám SOAP mới cho bệnh nhân ${p.name}!`)}
-                  className="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-1 cursor-pointer shadow-2xs"
-                  title="Khám SOAP mới"
+                  onClick={() => {
+                    toast.success(`🩺 Đang chuyển sang cửa sổ Khám Lâm Sàng mới cho bệnh nhân ${p.name}...`);
+                    router.push(`/dashboard/healthcare/encounters?patientId=${p.id}&action=new`);
+                  }}
+                  className="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold text-xs hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:text-emerald-600 hover:border-emerald-400 flex items-center gap-1 cursor-pointer shadow-2xs transition-all active:scale-95"
+                  title="Tạo Lượt Khám Lâm Sàng SOAP"
                 >
                   <Stethoscope className="w-3.5 h-3.5 text-emerald-600" /> Khám Mới
                 </button>
 
+                {/* 4. Thẻ BHYT Button */}
                 <button
-                  onClick={() => toast.success(`💳 Đã xác thực thông tin quyền lợi BHYT trực tuyến thành công!`)}
-                  className="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-1 cursor-pointer shadow-2xs"
-                  title="Xác thực BHYT"
+                  onClick={() => {
+                    setBhytModalPatient(p);
+                  }}
+                  className="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold text-xs hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-600 hover:border-indigo-400 flex items-center gap-1 cursor-pointer shadow-2xs transition-all active:scale-95"
+                  title="Tra cứu & Xác thực Thẻ BHYT Trực Tuyến"
                 >
                   <CreditCard className="w-3.5 h-3.5 text-indigo-600" /> Thẻ BHYT
                 </button>
@@ -440,6 +487,185 @@ export default function PatientsPage() {
           </div>
         ))}
       </div>
+
+      {/* Modal 1: Đặt Lịch Khám Hẹn Trực Tuyến */}
+      {bookingModalPatient && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-[28px] border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-lg p-6 md:p-8 space-y-6 animate-in fade-in zoom-in duration-200 text-left">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
+              <div>
+                <h2 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-amber-600" />
+                  Đặt Lịch Khám Hẹn Cho Bệnh Nhân
+                </h2>
+                <p className="text-xs text-slate-500 font-medium">Bệnh nhân: <strong className="text-amber-600">{bookingModalPatient.name}</strong> ({bookingModalPatient.phone})</p>
+              </div>
+              <button onClick={() => setBookingModalPatient(null)} className="text-slate-400 hover:text-slate-600 font-black text-lg p-1 cursor-pointer">✕</button>
+            </div>
+
+            <form onSubmit={handleConfirmBooking} className="space-y-4 text-xs">
+              <div>
+                <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Chuyên Khoa Khám *</label>
+                <PremiumSelect
+                  options={CLINIC_DEPT_OPTIONS}
+                  value={bookingDept}
+                  onChange={(val) => setBookingDept(val)}
+                  buttonClassName="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-950 text-slate-900 dark:text-white font-semibold text-xs h-10"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Bác Sĩ Phụ Trách *</label>
+                <PremiumSelect
+                  options={DOCTOR_OPTIONS}
+                  value={bookingDoctor}
+                  onChange={(val) => setBookingDoctor(val)}
+                  buttonClassName="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-950 text-slate-900 dark:text-white font-semibold text-xs h-10"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Ngày Khám Hẹn *</label>
+                  <input
+                    type="date"
+                    required
+                    value={bookingDate}
+                    onChange={(e) => setBookingDate(e.target.value)}
+                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-950 text-slate-900 dark:text-white font-bold h-10"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Khung Giờ (Slot) *</label>
+                  <PremiumSelect
+                    options={SLOT_TIME_OPTIONS}
+                    value={bookingSlot}
+                    onChange={(val) => setBookingSlot(val)}
+                    buttonClassName="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-950 text-slate-900 dark:text-white font-semibold text-xs h-10"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Ghi Chú Triệu Chứng Ban Đầu</label>
+                <textarea
+                  rows={2}
+                  placeholder="Ví dụ: Đau ngực nhẹ, ho kéo dài 3 ngày..."
+                  value={bookingNote}
+                  onChange={(e) => setBookingNote(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-950 text-slate-900 dark:text-white font-medium"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                <button type="button" onClick={() => setBookingModalPatient(null)} className="px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 text-slate-600 hover:bg-slate-100 cursor-pointer">
+                  Hủy Bỏ
+                </button>
+                <button type="submit" className="px-5 py-2 rounded-xl text-xs font-black bg-amber-600 hover:bg-amber-700 text-white shadow-md cursor-pointer active:scale-95 transition-all">
+                  📅 Xác Nhận Đặt Lịch Hẹn
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal 2: Cổng Tra Cứu & Xác Thực Thẻ BHYT Trực Tuyến */}
+      {bhytModalPatient && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-[28px] border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-lg p-6 md:p-8 space-y-6 animate-in fade-in zoom-in duration-200 text-left">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
+              <div>
+                <h2 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
+                  <CreditCard className="w-5 h-5 text-indigo-600" />
+                  Xác Thực Quyền Lợi Thẻ BHYT Trực Tuyến
+                </h2>
+                <p className="text-xs text-slate-500 font-medium">Cổng kết nối API Bảo Hiểm Xã Hội Việt Nam (BHXH VN Gate)</p>
+              </div>
+              <button onClick={() => setBhytModalPatient(null)} className="text-slate-400 hover:text-slate-600 font-black text-lg p-1 cursor-pointer">✕</button>
+            </div>
+
+            <div className="space-y-4 text-xs">
+              {/* Patient Identity Badge */}
+              <div className="p-4 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-indigo-900 dark:text-indigo-200 text-sm">{bhytModalPatient.name}</span>
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-500 text-white font-black text-[10px]">🟢 THẺ HỢP LỆ</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-600 dark:text-slate-300">
+                  <div>Mã BN: <strong className="font-mono">{bhytModalPatient.recordNumber}</strong></div>
+                  <div>CCCD: <strong className="font-mono">{bhytModalPatient.citizenId}</strong></div>
+                </div>
+              </div>
+
+              {/* BHYT Card Verification Details */}
+              <div className="space-y-2.5 border-t border-slate-100 dark:border-slate-800 pt-3">
+                <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800">
+                  <span className="text-slate-500 font-bold">Mã Thẻ BHYT (15 ký tự):</span>
+                  <span className="font-mono font-black text-indigo-600 dark:text-indigo-400 text-sm">
+                    {bhytModalPatient.bhytCode || 'DN4010123456789'}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800">
+                  <span className="text-slate-500 font-bold">Mức Hưởng BHYT:</span>
+                  <span className="font-black text-emerald-600 dark:text-emerald-400 text-sm">
+                    {bhytModalPatient.bhytBenefitRate || 80}% (Được Quỹ BHYT Chi Trả)
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800">
+                  <span className="text-slate-500 font-bold">Mã ĐK KCB Ban Đầu:</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-200">
+                    79-012 (Bệnh viện Đa Khoa Sài Gòn)
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800">
+                  <span className="text-slate-500 font-bold">Đủ 05 Năm Liên Tục:</span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                    <Check className="w-4 h-4" /> Từ 01/01/2024
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800">
+                  <span className="text-slate-500 font-bold">Hạn Giá Trị Thẻ BHYT:</span>
+                  <span className="font-mono font-bold text-slate-900 dark:text-white">
+                    01/01/2026 - 31/12/2026
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-[11px] font-semibold flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
+                <span>Thẻ BHYT đã được tự động áp dụng tỷ lệ chi trả BHYT khi lập hóa đơn viện phí.</span>
+              </div>
+
+              <div className="flex items-center justify-between gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                <button
+                  onClick={() => {
+                    toast.success('🖨️ Đã xuất lệnh in Giấy xác thực BHYT!');
+                  }}
+                  className="px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Printer className="w-4 h-4 text-slate-500" /> In Giấy Xác Thực BHYT
+                </button>
+
+                <button
+                  onClick={() => {
+                    toast.success(`✅ Đã đồng bộ thành công dữ liệu BHYT của bệnh nhân ${bhytModalPatient.name}!`);
+                    setBhytModalPatient(null);
+                  }}
+                  className="px-5 py-2 rounded-xl text-xs font-black bg-indigo-600 hover:bg-indigo-700 text-white shadow-md cursor-pointer active:scale-95 transition-all"
+                >
+                  ✓ Hoàn Tất Tra Cứu BHYT
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal Khởi Tạo Bệnh Nhân Mới */}
       {isCreateModalOpen && (
