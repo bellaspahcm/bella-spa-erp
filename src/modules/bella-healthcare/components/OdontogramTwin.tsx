@@ -14,6 +14,7 @@ export interface OdontogramTwinProps {
   readonly onSelectTooth: (toothNumber: string) => void;
   readonly onUpdateToothStatus: (toothNumber: string, status: ToothStatus, notes?: string) => void;
   readonly onResetOdontogram?: () => void;
+  readonly patientName?: string;
 }
 
 export function OdontogramTwin({
@@ -22,6 +23,7 @@ export function OdontogramTwin({
   onSelectTooth,
   onUpdateToothStatus,
   onResetOdontogram,
+  patientName,
 }: OdontogramTwinProps) {
   // 32 adult teeth numbered by FDI notation
   const maxillaRight = ['18', '17', '16', '15', '14', '13', '12', '11'];
@@ -135,10 +137,10 @@ export function OdontogramTwin({
         <div>
           <h2 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2 tracking-tight">
             <span className="p-1.5 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400">🧬</span>
-            Lược đồ răng Nha khoa (Odontogram Twin)
+            Lược đồ răng Nha khoa {patientName ? `— BN. ${patientName}` : ''}
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-            Mô hình Digital Twin 3D theo chuẩn quốc tế FDI. Click chọn răng để cập nhật hồ sơ lâm sàng.
+            Mô hình sơ đồ răng ảo kỹ thuật số theo chuẩn quốc tế FDI. Click chọn răng để cập nhật hồ sơ lâm sàng.
           </p>
         </div>
         
@@ -151,7 +153,7 @@ export function OdontogramTwin({
             <span className="w-2 h-2 rounded-full bg-amber-500 shadow-sm" /> Bọc Sứ ({countByStatus('crowned')})
           </span>
           <span className="px-2.5 py-1 rounded-full bg-cyan-50 dark:bg-cyan-950/30 text-cyan-600 dark:text-cyan-400 border border-cyan-200/60 dark:border-cyan-900/50 flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-cyan-500 shadow-sm" /> Implant ({countByStatus('implanted')})
+            <span className="w-2 h-2 rounded-full bg-cyan-500 shadow-sm" /> Trụ Implant ({countByStatus('implanted')})
           </span>
           <span className="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-slate-400 opacity-60" /> Mất ({countByStatus('missing')})
@@ -171,11 +173,11 @@ export function OdontogramTwin({
 
       {/* Adult Dentition Layout - Curved FDI Quadrants */}
       <div className="flex flex-col gap-5 p-4 rounded-2xl bg-slate-50/60 dark:bg-slate-900/40 border border-slate-200/60 dark:border-slate-800/60">
-        {/* Upper Arch (Hàm Trên - Maxilla) */}
+        {/* Upper Arch (Hàm Trên) */}
         <div>
           <div className="flex items-center justify-between text-[10px] font-black tracking-wider text-slate-400 dark:text-slate-500 uppercase mb-2 px-1">
             <span>Phân hàm Q1 (Phải)</span>
-            <span className="text-teal-600 dark:text-teal-400 font-extrabold">HÀM TRÊN (MAXILLA)</span>
+            <span className="text-teal-600 dark:text-teal-400 font-extrabold">HÀM TRÊN</span>
             <span>Phân hàm Q2 (Trái)</span>
           </div>
           <div className="grid grid-cols-8 sm:grid-cols-16 gap-1.5 sm:gap-2">
@@ -190,15 +192,15 @@ export function OdontogramTwin({
         <div className="relative flex items-center justify-center my-1">
           <div className="border-t border-dashed border-slate-300 dark:border-slate-700 w-full" />
           <span className="absolute px-3 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-widest bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-700">
-            Đường cắn trung tâm (Occlusal Line)
+            Đường cắn trung tâm
           </span>
         </div>
 
-        {/* Lower Arch (Hàm Dưới - Mandible) */}
+        {/* Lower Arch (Hàm Dưới) */}
         <div>
           <div className="flex items-center justify-between text-[10px] font-black tracking-wider text-slate-400 dark:text-slate-500 uppercase mb-2 px-1">
             <span>Phân hàm Q4 (Phải)</span>
-            <span className="text-teal-600 dark:text-teal-400 font-extrabold">HÀM DƯỚI (MANDIBLE)</span>
+            <span className="text-teal-600 dark:text-teal-400 font-extrabold">HÀM DƯỚI</span>
             <span>Phân hàm Q3 (Trái)</span>
           </div>
           <div className="grid grid-cols-8 sm:grid-cols-16 gap-1.5 sm:gap-2">
@@ -251,7 +253,7 @@ export function OdontogramTwin({
               onClick={() => onUpdateToothStatus(selectedTooth, 'implanted', 'Đã cắm trụ Implant phục hình')}
               className="px-3 py-1.5 bg-cyan-600/20 hover:bg-cyan-600/30 text-xs font-extrabold text-cyan-300 border border-cyan-500/40 rounded-xl transition-all active:scale-95 shadow-sm"
             >
-              🔩 Implant
+              🔩 Trụ Implant
             </button>
             <button
               onClick={() => onUpdateToothStatus(selectedTooth, 'missing', 'Răng đã nhổ/mất răng')}

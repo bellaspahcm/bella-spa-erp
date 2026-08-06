@@ -638,7 +638,12 @@ export default function HealthcareDashboardPage() {
       {(isAdmin || isDoctor) && <ClinicalTimeline steps={dynamicTimelineSteps} />}
 
       {/* Layer 7: Care Path & Specialty Journey Tracker */}
-      {(isAdmin || isDoctor) && <CarePathTracker steps={carePathSteps} />}
+      {(isAdmin || isDoctor) && (
+        <CarePathTracker
+          title={`Lộ trình Điều trị Implant Chuyên sâu (Phác đồ: ${selectedPatient?.name || 'Bệnh nhân'})`}
+          steps={carePathSteps}
+        />
+      )}
 
       {/* Layer 8: Odontogram Twin & AI Clinical Panel */}
       {(isAdmin || isDoctor) && (
@@ -649,6 +654,7 @@ export default function HealthcareDashboardPage() {
               selectedTooth={selectedTooth}
               onSelectTooth={setSelectedTooth}
               onUpdateToothStatus={isAdmin || isDoctor ? handleUpdateToothStatus : undefined}
+              patientName={selectedPatient?.name}
             />
           </div>
 
