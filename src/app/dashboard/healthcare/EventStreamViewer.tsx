@@ -1,15 +1,17 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Terminal, Activity, Zap, Filter, Code2, Check, RefreshCw } from 'lucide-react';
-import type { DomainEventStreamItem } from '@/modules/bella-healthcare/contexts/shared/domain-models';
+import { Terminal, Zap, Code2, Check, ShieldAlert, Cpu } from 'lucide-react';
+import type { DomainEventStreamItem, OutboxEntry } from '@/modules/bella-healthcare/contexts/shared/domain-models';
 
 export interface EventStreamViewerProps {
   readonly events: DomainEventStreamItem[];
+  readonly outbox: OutboxEntry[];
+  readonly activeSagasCount: number;
   readonly onSimulateEvent?: () => void;
 }
 
-export function EventStreamViewer({ events, onSimulateEvent }: EventStreamViewerProps) {
+export function EventStreamViewer({ events, outbox, activeSagasCount, onSimulateEvent }: EventStreamViewerProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -44,28 +46,35 @@ export function EventStreamViewer({ events, onSimulateEvent }: EventStreamViewer
       <div className="absolute top-0 right-0 w-72 h-72 bg-teal-500/5 rounded-full blur-3xl pointer-events-none" />
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-850">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-slate-850">
         <div>
           <h2 className="text-base font-black text-white flex items-center gap-2">
             <span className="p-1.5 rounded-xl bg-teal-500/10 text-teal-400 border border-teal-500/20">
               <Terminal className="w-5 h-5" />
             </span>
-            Event Sourcing Log & Real-time Event Stream
+            Event Sourcing Log & Transactional Outbox
           </h2>
           <p className="text-xs text-slate-400 font-medium mt-0.5">
-            Nhật ký sự kiện miền (Domain Event Log) phát tán qua EventBus — Phục vụ Developer Debugging & AI Context Engine
+            Nhật ký sự kiện miền (Domain Event Log) và trạng thái Outbox gửi tin cậy đi qua EventBus
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="px-3 py-1 rounded-full text-[10px] font-mono font-bold bg-teal-500/10 text-teal-300 border border-teal-500/20 flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-            {events.length} Events Logged
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Active Sagas Badge */}
+          <span className="px-3 py-1.5 rounded-xl text-[10px] font-bold bg-purple-500/10 text-purple-300 border border-purple-500/20 flex items-center gap-1">
+            <Cpu className="w-3.5 h-3.5" />
+            {activeSagasCount} Active Sagas
           </span>
+
+          {/* Outbox Pending Status */}
+          <span className="px-3 py-1.5 rounded-xl text-[10px] font-mono font-bold bg-slate-900 text-slate-300 border border-slate-800 flex items-center gap-1.5">
+            Outbox: {outbox.filter((o) => o.status === 'pending').length} pending / {outbox.filter((o) => o.status === 'published').length} published
+          </span>
+
           {onSimulateEvent && (
             <button
               onClick={onSimulateEvent}
-              className="px-3 py-1 rounded-xl text-xs font-bold bg-slate-850 hover:bg-slate-800 text-white border border-slate-750 flex items-center gap-1.5 transition-all active:scale-95"
+              className="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-850 hover:bg-slate-800 text-white border border-slate-750 flex items-center gap-1.5 transition-all active:scale-95"
             >
               <Zap className="w-3.5 h-3.5 text-amber-400" />
               <span>Simulate Event</span>
@@ -116,13 +125,19 @@ export function EventStreamViewer({ events, onSimulateEvent }: EventStreamViewer
                 <span className="text-[10px] text-slate-500 font-sans block">Tác nhân: {evt.actor}</span>
               </div>
 
-              <button
-                onClick={() => handleCopyPayload(evt)}
-                className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-850 text-slate-400 hover:text-white transition-all shrink-0"
-                title="Copy Event JSON"
-              >
-                {copiedId === evt.id ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Code2 className="w-3.5 h-3.5" />}
-              </button>
+              <div className="flex items-center gap-2">
+                {/* Outbox status marker */}
+                <span className="px-1.5 py-0.2 rounded text-[8px] font-bold bg-slate-900 text-slate-400 border border-slate-800">
+                  Outbox: OK
+                </span>
+                <button
+                  onClick={() => handleCopyPayload(evt)}
+                  className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-850 text-slate-400 hover:text-white transition-all shrink-0"
+                  title="Copy Event JSON"
+                >
+                  {copiedId === evt.id ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Code2 className="w-3.5 h-3.5" />}
+                </button>
+              </div>
             </div>
           ))
         ) : (

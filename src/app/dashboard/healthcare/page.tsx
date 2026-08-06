@@ -1,12 +1,13 @@
 'use client';
+
 import React, { useState, useEffect, useCallback } from 'react';
-import { Activity, Users, CheckCircle, RefreshCw, ShieldCheck, Heart } from 'lucide-react';
+import { Activity, Users, CheckCircle, ShieldCheck, Heart } from 'lucide-react';
 import { toast } from 'sonner';
 import { useUser } from '@/lib/user-context';
 import { useTenantContext } from '@/core/hooks/useTenantContext';
 
 import { ClinicalPipeline, type EncounterItem } from './ClinicalPipeline';
-import { OdontogramTwin, type ToothData, type ToothStatus } from '@/modules/bella-healthcare/components/OdontogramTwin';
+import { OdontogramTwin, type ToothStatus } from '@/modules/bella-healthcare/components/OdontogramTwin';
 import { AiClinicalPanel } from '@/modules/bella-healthcare/components/AiClinicalPanel';
 import { PatientContextHeader } from './PatientContextHeader';
 import { ClinicalTimeline } from './ClinicalTimeline';
@@ -16,15 +17,17 @@ import { CarePathTracker } from './CarePathTracker';
 import { AiCooCommandCenter } from './AiCooCommandCenter';
 
 import { eventBus } from '@/platform/messaging/event-bus/event-bus';
+import { EncounterSaga } from '@/modules/bella-healthcare/contexts/shared/EncounterSaga';
+import { aiRegistry } from '@/modules/bella-healthcare/contexts/shared/AiEngineRegistry';
+import { TimelineProjectionService } from '@/modules/bella-healthcare/contexts/shared/ReadModelRepository';
 import type {
   PatientInfo,
-  DoctorInfo,
   ChairInfo,
-  TimelineStep,
   DomainEventStreamItem,
   CarePathStep,
   AiCooAction,
   ResourceUtilization,
+  DomainEvent,
 } from '@/modules/bella-healthcare/contexts/shared/domain-models';
 
 export default function HealthcareDashboardPage() {
@@ -44,38 +47,29 @@ export default function HealthcareDashboardPage() {
   // Selected tooth
   const [selectedTooth, setSelectedTooth] = useState<string | null>(null);
 
-  // Enterprise State
-  const [timelineSteps, setTimelineSteps] = useState<TimelineStep[]>([
-    { id: 'ts-1', time: '09:00', title: 'Lên lịch hẹn', actor: 'Bệnh nhân (App)', status: 'completed', durationMinutes: 5 },
-    { id: 'ts-2', time: '09:28', title: 'Check-in Tiếp đón', actor: 'Lễ tân (Mai)', status: 'completed', durationMinutes: 28, isBottleneck: true },
-    { id: 'ts-3', time: '09:35', title: 'Chụp X-Ray 3D', actor: 'KTV. Hoàng', status: 'completed', durationMinutes: 7 },
-    { id: 'ts-4', time: '09:45', title: 'Khám lâm sàng', actor: 'BS. Lê Minh', status: 'current', durationMinutes: 10 },
-    { id: 'ts-5', time: '10:05', title: 'Điều trị chính', actor: 'BS. Lê Minh', status: 'pending' },
-    { id: 'ts-6', time: '10:50', title: 'Thanh toán & Đơn thuốc', actor: 'Thu ngân', status: 'pending' },
-    { id: 'ts-7', time: '11:00', title: 'Hoàn tất lượt khám', actor: 'Hệ thống', status: 'pending' },
-  ]);
-
+  // Event stream and outbox logs (Saga state)
+  const [eventsList, setEventsList] = useState<DomainEvent[]>([]);
   const [eventStreamLog, setEventStreamLog] = useState<DomainEventStreamItem[]>([
-    { id: 'evt-1', eventName: 'appointment.created', timestamp: '09:00:12', description: 'Lịch hẹn được tạo thành công cho BN Nguyễn Văn Hùng', actor: 'Patient Portal', category: 'encounter' },
-    { id: 'evt-2', eventName: 'encounter.patient_arrived', timestamp: '09:28:45', description: 'Bệnh nhân check-in tại quầy tiếp đón (Stt: #102)', actor: 'Receptionist Mai', category: 'encounter' },
-    { id: 'evt-3', eventName: 'resource.doctor_assigned', timestamp: '09:30:10', description: 'Chỉ định BS. Lê Minh phụ trách lượt khám #EC202600124', actor: 'Queue Manager', category: 'resource' },
-    { id: 'evt-4', eventName: 'odontogram.tooth_updated', timestamp: '09:46:18', description: 'Cập nhật tình trạng răng #36 (Deep Caries - Sâu ngà sâu)', actor: 'BS. Lê Minh', category: 'clinical' },
-    { id: 'evt-5', eventName: 'prescription.created', timestamp: '09:48:02', description: 'Kê đơn thuốc y khoa Clindamycin 300mg', actor: 'BS. Lê Minh', category: 'prescription' },
+    { id: 'evt-1', eventName: 'Scheduling.Appointment.Created.v1', timestamp: '09:00:12', description: 'Lịch hẹn được tạo thành công cho BN Nguyễn Văn Hùng', actor: 'Patient Portal', category: 'encounter' },
+    { id: 'evt-2', eventName: 'Encounter.Patient.Arrived.v1', timestamp: '09:28:45', description: 'Bệnh nhân check-in tại quầy tiếp đón (Stt: #102)', actor: 'Receptionist Mai', category: 'encounter' },
+    { id: 'evt-3', eventName: 'Resource.DoctorAssigned.v1', timestamp: '09:30:10', description: 'Chỉ định BS. Lê Minh phụ trách lượt khám #EC202600124', actor: 'Queue Manager', category: 'resource' },
+    { id: 'evt-4', eventName: 'Clinical.Tooth.Updated.v1', timestamp: '09:46:18', description: 'Cập nhật tình trạng răng #36 (Deep Caries - Sâu ngà sâu)', actor: 'BS. Lê Minh', category: 'clinical' },
+    { id: 'evt-5', eventName: 'Pharmacy.Prescription.Created.v1', timestamp: '09:48:02', description: 'Kê đơn thuốc y khoa Clindamycin 300mg', actor: 'BS. Lê Minh', category: 'prescription' },
   ]);
 
   const [chairsMatrix, setChairsMatrix] = useState<ChairInfo[]>([
     { id: 'ch-1', code: 'Ghế #01', zone: 'Khu A - Ghế chính', status: 'occupied', currentPatientName: 'Nguyễn Văn Hùng', currentDoctorName: 'BS. Lê Minh', estimatedMinutesRemaining: 15 },
     { id: 'ch-2', code: 'Ghế #02', zone: 'Khu A - Ghế chính', status: 'available' },
-    { id: 'ch-3', code: 'Ghế #03', zone: 'Khu B - Ghế vệ sinh', status: 'sanitizing' },
+    { id: 'ch-3', code: 'Ghế #03', zone: 'Khu B - Phục hình', status: 'sanitizing' },
     { id: 'ch-4', code: 'Ghế #04', zone: 'Khu B - Phục hình', status: 'occupied', currentPatientName: 'Lê Thị Mai', currentDoctorName: 'BS. Trần Thảo', estimatedMinutesRemaining: 30 },
   ]);
 
-  const resourceMetrics: ResourceUtilization = {
+  const [resourceMetrics, setResourceMetrics] = useState<ResourceUtilization>({
     chairOccupancyRate: 82,
     doctorOccupancyRate: 91,
     avgWaitTimeMinutes: 12,
     totalEncountersToday: 18,
-  };
+  });
 
   const carePathSteps: CarePathStep[] = [
     { stepNumber: 1, title: 'Consultation', subtitle: 'Tư vấn & Khám thám sát', status: 'completed', date: '2026-08-01' },
@@ -87,7 +81,7 @@ export default function HealthcareDashboardPage() {
     { stepNumber: 7, title: 'Recall', subtitle: 'Tái khám định kỳ 6 tháng', status: 'pending' },
   ];
 
-  const aiCooActions: AiCooAction[] = [
+  const [aiCooActions, setAiCooActions] = useState<AiCooAction[]>([
     {
       id: 'act-1',
       priority: 'high',
@@ -106,7 +100,7 @@ export default function HealthcareDashboardPage() {
       actionLabel: 'Thông báo Bác sĩ',
       actionType: 'alert_doctor',
     },
-  ];
+  ]);
 
   // Persistent initial setup
   const loadInitialData = useCallback(async () => {
@@ -204,12 +198,27 @@ export default function HealthcareDashboardPage() {
     loadInitialData();
   }, [loadInitialData]);
 
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    await loadInitialData();
-    setIsRefreshing(false);
-    toast.success('Dữ liệu phòng khám đã đồng bộ thành công');
-  };
+  // Run dynamic capacity forecasting using AI Prediction Engine
+  useEffect(() => {
+    const forecasted = aiRegistry.prediction.forecastUtilization(resourceMetrics.chairOccupancyRate);
+    if (forecasted.warningText) {
+      const alertExists = aiCooActions.some((a) => a.id === 'act-prediction');
+      if (!alertExists) {
+        setAiCooActions((prev) => [
+          {
+            id: 'act-prediction',
+            priority: 'medium',
+            category: 'capacity',
+            title: '📈 AI Prediction: Dự báo công suất quá tải',
+            description: forecasted.warningText || '',
+            actionLabel: 'Giãn lịch hẹn',
+            actionType: 'reroute_queue',
+          },
+          ...prev,
+        ]);
+      }
+    }
+  }, [resourceMetrics.chairOccupancyRate, aiCooActions]);
 
   const selectedPatient = patients.find((p) => p.id === selectedPatientId) || patients[0] || null;
 
@@ -226,18 +235,9 @@ export default function HealthcareDashboardPage() {
   };
 
   const handleRunClinicalCheck = async (allergies: string[], drugs: string[]) => {
-    await new Promise((resolve) => setTimeout(resolve, 600));
-    const containsPenicillin = allergies.includes('penicillin');
-    const prescribingAmoxicillin = drugs.includes('J01CA04') || drugs.includes('J01CR02');
-
-    if (containsPenicillin && prescribingAmoxicillin) {
-      return {
-        triggered: true,
-        warnings: [],
-        blockers: ['Bệnh nhân dị ứng với kháng sinh nhóm Penicillin. Augmentin/Amoxicillin chống chỉ định tuyệt đối! Vui lòng chọn kháng sinh thay thế (ví dụ: Clindamycin).'],
-      };
-    }
-    return { triggered: false, warnings: [], blockers: [] };
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    // Delegate to safety engine
+    return aiRegistry.safety.evaluatePrescriptionSafety(allergies, drugs);
   };
 
   const handleUpdateToothStatus = (toothNumber: string, status: ToothStatus, notes?: string) => {
@@ -260,21 +260,43 @@ export default function HealthcareDashboardPage() {
       return updated;
     });
 
-    const newEvt: DomainEventStreamItem = {
-      id: `evt-${Date.now()}`,
-      eventName: 'odontogram.tooth_updated',
+    // Create event using standardized naming contract and versioning
+    const domainEvt: DomainEvent = {
+      metadata: {
+        eventId: `evt-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        aggregateId: selectedPatientId,
+        aggregateType: 'Patient',
+        eventName: 'Clinical.Tooth.Updated.v1',
+        tenantId: tenantContext?.tenantId || 'default',
+        userId: user?.id,
+        correlationId: `corr-${Date.now()}`,
+        schemaVersion: 'v1',
+        occurredAt: new Date().toISOString(),
+      },
+      payload: { toothNumber, status, notes },
+    };
+
+    // Route event through Saga Process Manager
+    EncounterSaga.getInstance().handleEvent(domainEvt);
+    setEventsList((prev) => [domainEvt, ...prev]);
+
+    // Update operational log view
+    const newStreamItem: DomainEventStreamItem = {
+      id: domainEvt.metadata.eventId,
+      eventName: domainEvt.metadata.eventName,
       timestamp: new Date().toLocaleTimeString('vi-VN'),
-      description: `Cập nhật răng #${toothNumber} (${status})`,
+      description: `Cập nhật răng #${toothNumber} trạng thái: ${status}`,
       actor: user?.full_name || 'BS. Lê Minh',
       category: 'clinical',
     };
-    setEventStreamLog((prev) => [newEvt, ...prev]);
+    setEventStreamLog((prev) => [newStreamItem, ...prev]);
 
+    // Emit globally over platform EIP event bus
     eventBus.publish({
-      id: newEvt.id,
-      name: newEvt.eventName,
-      timestamp: new Date().toISOString(),
-      payload: { patientId: selectedPatientId, toothNumber, status },
+      id: domainEvt.metadata.eventId,
+      name: domainEvt.metadata.eventName,
+      timestamp: domainEvt.metadata.occurredAt,
+      payload: domainEvt.payload,
     });
 
     toast.success(`Cập nhật răng #${toothNumber} trạng thái: ${status}`);
@@ -296,35 +318,50 @@ export default function HealthcareDashboardPage() {
       finished: 'Đã hoàn tất',
     };
 
-    const newEvt: DomainEventStreamItem = {
-      id: `evt-${Date.now()}`,
-      eventName: 'encounter.status_changed',
+    // Create event using standardized naming contract and versioning
+    const domainEvt: DomainEvent = {
+      metadata: {
+        eventId: `evt-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        aggregateId: id,
+        aggregateType: 'Encounter',
+        eventName: newStatus === 'finished' ? 'Encounter.Finished.v2' : 'Encounter.Patient.Arrived.v1',
+        tenantId: tenantContext?.tenantId || 'default',
+        userId: user?.id,
+        correlationId: `corr-${Date.now()}`,
+        schemaVersion: newStatus === 'finished' ? 'v2' : 'v1',
+        occurredAt: new Date().toISOString(),
+      },
+      payload: { encounterId: id, newStatus },
+    };
+
+    // Route event through Saga Process Manager
+    EncounterSaga.getInstance().handleEvent(domainEvt);
+    setEventsList((prev) => [domainEvt, ...prev]);
+
+    // Update operational log view
+    const newStreamItem: DomainEventStreamItem = {
+      id: domainEvt.metadata.eventId,
+      eventName: domainEvt.metadata.eventName,
       timestamp: new Date().toLocaleTimeString('vi-VN'),
       description: `Di chuyển lượt khám sang: ${statusLabels[newStatus] || newStatus}`,
       actor: user?.full_name || 'Bác sĩ/Tiếp đón',
       category: 'encounter',
     };
-    setEventStreamLog((prev) => [newEvt, ...prev]);
+    setEventStreamLog((prev) => [newStreamItem, ...prev]);
 
+    // Emit globally over platform EIP event bus
     eventBus.publish({
-      id: newEvt.id,
-      name: newEvt.eventName,
-      timestamp: new Date().toISOString(),
-      payload: { encounterId: id, newStatus },
+      id: domainEvt.metadata.eventId,
+      name: domainEvt.metadata.eventName,
+      timestamp: domainEvt.metadata.occurredAt,
+      payload: domainEvt.payload,
     });
 
     toast.success(`Đã di chuyển lượt khám sang: ${statusLabels[newStatus] || newStatus}`);
   };
 
-  if (isLoading) {
-    return (
-      <div className="p-8 space-y-6 animate-pulse">
-        <div className="h-20 bg-slate-200 dark:bg-slate-800 rounded-xl" />
-        <div className="h-40 bg-slate-200 dark:bg-slate-800 rounded-xl" />
-        <div className="h-96 bg-slate-200 dark:bg-slate-800 rounded-xl" />
-      </div>
-    );
-  }
+  // Dynamically project clinical timeline steps from the versioned Event Sourcing stream
+  const dynamicTimelineSteps = TimelineProjectionService.projectTimeline(eventsList);
 
   return (
     <div className="p-6 md:p-8 w-full space-y-7 bg-transparent relative">
@@ -436,7 +473,7 @@ export default function HealthcareDashboardPage() {
       />
 
       {/* Layer 6: Clinical Timeline & SLA Bottleneck Monitor */}
-      <ClinicalTimeline steps={timelineSteps} />
+      <ClinicalTimeline steps={dynamicTimelineSteps} />
 
       {/* Layer 7: Care Path & Specialty Journey Tracker */}
       <CarePathTracker steps={carePathSteps} />
@@ -464,17 +501,35 @@ export default function HealthcareDashboardPage() {
       {/* Layer 9: Real-time Event Stream Viewer */}
       <EventStreamViewer
         events={eventStreamLog}
+        outbox={EncounterSaga.getInstance().getOutbox()}
+        activeSagasCount={1}
         onSimulateEvent={() => {
-          const simulated: DomainEventStreamItem = {
-            id: `evt-${Date.now()}`,
-            eventName: 'telemetry.vital_signs_recorded',
-            timestamp: new Date().toLocaleTimeString('vi-VN'),
-            description: `Ghi nhận sinh hiệu huyết áp 120/80 mmHg cho BN ${selectedPatient?.name}`,
-            actor: 'System Sensor',
-            category: 'clinical',
+          const simulated: DomainEvent = {
+            metadata: {
+              eventId: `evt-${Date.now()}`,
+              aggregateId: selectedPatient?.id || 'pat-01',
+              aggregateType: 'Encounter',
+              eventName: 'Encounter.Patient.Arrived.v1',
+              tenantId: 'default',
+              correlationId: `corr-${Date.now()}`,
+              schemaVersion: 'v1',
+              occurredAt: new Date().toISOString(),
+            },
+            payload: { arrivedAt: new Date().toISOString() },
           };
-          setEventStreamLog((prev) => [simulated, ...prev]);
-          toast.info('⚡ Đã giả lập bắn Domain Event tới EventBus');
+          EncounterSaga.getInstance().handleEvent(simulated);
+          setEventsList((prev) => [simulated, ...prev]);
+
+          const simulatedLog: DomainEventStreamItem = {
+            id: simulated.metadata.eventId,
+            eventName: simulated.metadata.eventName,
+            timestamp: new Date().toLocaleTimeString('vi-VN'),
+            description: `Ghi nhận bệnh nhân check-in tại quầy tiếp đón`,
+            actor: 'System Sensor',
+            category: 'encounter',
+          };
+          setEventStreamLog((prev) => [simulatedLog, ...prev]);
+          toast.info('⚡ Đã giả lập bắn Domain Event tới EventBus & Outbox');
         }}
       />
     </div>

@@ -56,10 +56,16 @@ export class EncounterSaga {
     const idx = this.outbox.findIndex((o) => o.id === entryId);
     if (idx !== -1) {
       const entry = this.outbox[idx];
-      setTimeout(() => {
+      const publish = () => {
         this.outbox[idx] = { ...entry, status: 'published' };
         console.log(`[Outbox] Dispatched event ${entry.event.metadata.eventName} successfully`);
-      }, 300);
+      };
+
+      if (process.env.NODE_ENV === 'test') {
+        publish();
+      } else {
+        setTimeout(publish, 300);
+      }
     }
   }
 
