@@ -154,7 +154,7 @@
       justify-content: center;
       border: 8px solid var(--accent-teal);
       box-shadow: 0 10px 30px rgba(13, 148, 136, 0.1);
-      margin-bottom: 20px;
+      margin-bottom: 25px;
     }
 
     .score-number {
@@ -311,13 +311,16 @@
       margin-right: 6px;
     }
 
-    /* Summary list under score circle */
-    .score-summary-list {
+    /* Summary highlighted box under score circle */
+    .score-summary-box {
       width: 100%;
       text-align: left;
-      margin-top: 20px;
-      border-top: 1px solid #e2e8f0;
-      padding-top: 15px;
+      margin-top: 25px;
+      border: 1.5px solid rgba(13, 148, 136, 0.15);
+      border-radius: 20px;
+      padding: 20px;
+      background: linear-gradient(135deg, rgba(13, 148, 136, 0.03), rgba(2, 132, 199, 0.03));
+      box-shadow: inset 0 0 15px rgba(13, 148, 136, 0.02);
       font-size: 12px;
       color: #475569;
     }
@@ -327,6 +330,11 @@
       justify-content: space-between;
       margin-bottom: 8px;
       font-weight: 550;
+      font-size: 12px;
+    }
+
+    .score-summary-item:last-child {
+      margin-bottom: 0;
     }
 
     .score-summary-label {
@@ -352,7 +360,7 @@
     </header>
 
     <div class="grid-3">
-      <!-- Card 1: Overall Score & Prominent Core Metrics Summary -->
+      <!-- Card 1: Overall Score & Highlighted Box Summary -->
       <div class="card overall-score-box">
         <h3 style="font-size: 18px; margin-bottom: 20px; color: #0f172a;">Đánh giá Tổng quan</h3>
         <div class="score-circle">
@@ -362,8 +370,8 @@
           </div>
         </div>
         
-        <!-- Prominent metrics summary table below the score circle -->
-        <div class="score-summary-list">
+        <!-- Highlighted Box under the score circle -->
+        <div class="score-summary-box">
           <div class="score-summary-item">
             <span class="score-summary-label">Mã nguồn Nha khoa (LOC)</span>
             <span class="score-summary-value">~2,500 LOC</span>
@@ -376,13 +384,13 @@
             <span class="score-summary-label">Kết quả Kiểm thử</span>
             <span class="score-summary-value" style="color: var(--accent-teal);">6/6 ĐẠT (100%)</span>
           </div>
-          <div class="score-summary-item" style="flex-direction: column; margin-top: 5px; gap: 2px;">
-            <span class="score-summary-label">Bảo mật & Phân quyền Enterprise:</span>
-            <span class="score-summary-value" style="font-size: 11px; padding-left: 5px; margin-top: 2px; color: #334155;">
+          <div style="border-top: 1px solid rgba(13, 148, 136, 0.1); margin-top: 12px; padding-top: 12px;">
+            <div style="font-weight: 700; color: #0f172a; margin-bottom: 6px;">Bảo mật & Phân quyền Enterprise:</div>
+            <div style="font-size: 11px; padding-left: 5px; color: #475569; line-height: 1.5;">
               • Phân quyền RBAC 4 vai trò y khoa<br>
               • Cô lập chi nhánh qua Tenant ID<br>
               • Outbox Pattern chống mất sự kiện
-            </span>
+            </div>
           </div>
         </div>
       </div>
