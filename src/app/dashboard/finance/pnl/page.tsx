@@ -75,11 +75,19 @@ export default function PnLDashboardPage() {
 
   const formattedMonth = `${year}-${month}`;
 
-  // Fetch data using Intelligence Layer hooks (correct arguments: tenantId, formattedMonth)
-  const monthlyPnL = useMonthlyPnL(month, year);
-  const revenueBreakdown = useRevenueBreakdown(tenantId, formattedMonth);
-  const expenseBreakdown = useExpenseBreakdown(tenantId, formattedMonth);
-  const profitabilityTrends = useProfitabilityTrends(month, year);
+  // Custom date range configuration for custom period
+  const customRange = useMemo(() => {
+    if (period === 'custom' && startDate && endDate) {
+      return { startDate, endDate };
+    }
+    return undefined;
+  }, [period, startDate, endDate]);
+
+  // Fetch data using Intelligence Layer hooks (with customRange support)
+  const monthlyPnL = useMonthlyPnL(month, year, customRange);
+  const revenueBreakdown = useRevenueBreakdown(tenantId, formattedMonth, customRange);
+  const expenseBreakdown = useExpenseBreakdown(tenantId, formattedMonth, customRange);
+  const profitabilityTrends = useProfitabilityTrends(month, year, customRange);
 
   // Manual refresh mutation
   const { mutate: refreshData, isPending: isRefreshing } = useRefreshFinanceData();

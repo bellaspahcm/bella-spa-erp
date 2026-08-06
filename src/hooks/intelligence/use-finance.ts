@@ -81,13 +81,25 @@ export interface FinancialRatiosData {
 // API FUNCTIONS
 // ============================================================================
 
-async function fetchMonthlyPnL(month: string, year: string): Promise<FinanceIntelligenceResponse<MonthlyPnLData[]>> {
-  // Build startDate/endDate from month+year (API requires startDate/endDate or period, not 'month')
-  const monthNum = month.padStart(2, '0');
-  const startDate = `${year}-${monthNum}-01`;
-  // Calculate last day of month
-  const lastDay = new Date(Number(year), Number(month), 0).getDate();
-  const endDate = `${year}-${monthNum}-${String(lastDay).padStart(2, '0')}`;
+async function fetchMonthlyPnL(
+  month: string,
+  year: string,
+  customRange?: { startDate?: string; endDate?: string }
+): Promise<FinanceIntelligenceResponse<MonthlyPnLData[]>> {
+  let startDate: string;
+  let endDate: string;
+
+  if (customRange?.startDate && customRange?.endDate) {
+    startDate = customRange.startDate;
+    endDate = customRange.endDate;
+  } else {
+    // Build startDate/endDate from month+year (API requires startDate/endDate or period, not 'month')
+    const monthNum = month.padStart(2, '0');
+    startDate = `${year}-${monthNum}-01`;
+    // Calculate last day of month
+    const lastDay = new Date(Number(year), Number(month), 0).getDate();
+    endDate = `${year}-${monthNum}-${String(lastDay).padStart(2, '0')}`;
+  }
   
   const params = new URLSearchParams({ startDate, endDate });
   const response = await fetch(`/api/intelligence/finance/monthly-pnl?${params}`);
@@ -121,8 +133,18 @@ async function fetchBudgetVariance(tenantId: string, month: string): Promise<Fin
   return response.json();
 }
 
-async function fetchExpenseBreakdown(tenantId: string, month: string): Promise<FinanceIntelligenceResponse<ExpenseBreakdownData[]>> {
-  const params = new URLSearchParams({ tenant_id: tenantId, month });
+async function fetchExpenseBreakdown(
+  tenantId: string,
+  month: string,
+  customRange?: { startDate?: string; endDate?: string }
+): Promise<FinanceIntelligenceResponse<ExpenseBreakdownData[]>> {
+  const params = new URLSearchParams({ tenant_id: tenantId });
+  if (customRange?.startDate && customRange?.endDate) {
+    params.append('startDate', customRange.startDate);
+    params.append('endDate', customRange.endDate);
+  } else {
+    params.append('month', month);
+  }
   const response = await fetch(`/api/intelligence/finance/expense-breakdown?${params}`);
   
   if (!response.ok) {
@@ -132,8 +154,18 @@ async function fetchExpenseBreakdown(tenantId: string, month: string): Promise<F
   return response.json();
 }
 
-async function fetchRevenueBreakdown(tenantId: string, month: string): Promise<FinanceIntelligenceResponse<RevenueBreakdownData[]>> {
-  const params = new URLSearchParams({ tenant_id: tenantId, month });
+async function fetchRevenueBreakdown(
+  tenantId: string,
+  month: string,
+  customRange?: { startDate?: string; endDate?: string }
+): Promise<FinanceIntelligenceResponse<RevenueBreakdownData[]>> {
+  const params = new URLSearchParams({ tenant_id: tenantId });
+  if (customRange?.startDate && customRange?.endDate) {
+    params.append('startDate', customRange.startDate);
+    params.append('endDate', customRange.endDate);
+  } else {
+    params.append('month', month);
+  }
   const response = await fetch(`/api/intelligence/finance/revenue-breakdown?${params}`);
   
   if (!response.ok) {
@@ -170,12 +202,13 @@ async function fetchFinancialRatios(tenantId: string, month: string): Promise<Fi
 export function useMonthlyPnL(
   month: string,
   year: string,
+  customRange?: { startDate?: string; endDate?: string },
   queryOptions?: Omit<UseQueryOptions<FinanceIntelligenceResponse<MonthlyPnLData[]>>, 'queryKey' | 'queryFn'>
 ) {
   return useQuery({
-    queryKey: ['finance', 'monthly-pnl', year, month],
-    queryFn: () => fetchMonthlyPnL(month, year),
-    enabled: !!(month && year),
+    queryKey: ['finance', 'monthly-pnl', year, month, customRange?.startDate, customRange?.endDate],
+    queryFn: () => fetchMonthlyPnL(month, year, customRange),
+    enabled: !!(month && year) || !!(customRange?.startDate && customRange?.endDate),
     staleTime: 1 * 60 * 60 * 1000, // 1 hour
     refetchOnWindowFocus: false,
     ...queryOptions
@@ -240,11 +273,12 @@ export function useBudgetVariance(
 export function useExpenseBreakdown(
   tenantId: string,
   month: string,
+  customRange?: { startDate?: string; endDate?: string },
   queryOptions?: Omit<UseQueryOptions<FinanceIntelligenceResponse<ExpenseBreakdownData[]>>, 'queryKey' | 'queryFn'>
 ) {
   return useQuery({
-    queryKey: ['finance', 'expense-breakdown', tenantId, month],
-    queryFn: () => fetchExpenseBreakdown(tenantId, month),
+    queryKey: ['finance', 'expense-breakdown', tenantId, month, customRange?.startDate, customRange?.endDate],
+    queryFn: () => fetchExpenseBreakdown(tenantId, month, customRange),
     staleTime: 1 * 60 * 60 * 1000, // 1 hour
     refetchOnWindowFocus: false,
     ...queryOptions
@@ -263,11 +297,12 @@ export function useExpenseBreakdown(
 export function useRevenueBreakdown(
   tenantId: string,
   month: string,
+  customRange?: { startDate?: string; endDate?: string },
   queryOptions?: Omit<UseQueryOptions<FinanceIntelligenceResponse<RevenueBreakdownData[]>>, 'queryKey' | 'queryFn'>
 ) {
   return useQuery({
-    queryKey: ['finance', 'revenue-breakdown', tenantId, month],
-    queryFn: () => fetchRevenueBreakdown(tenantId, month),
+    queryKey: ['finance', 'revenue-breakdown', tenantId, month, customRange?.startDate, customRange?.endDate],
+    queryFn: () => fetchRevenueBreakdown(tenantId, month, customRange),
     staleTime: 1 * 60 * 60 * 1000, // 1 hour
     refetchOnWindowFocus: false,
     ...queryOptions
@@ -341,18 +376,28 @@ export function useAllFinanceData(tenantId: string, month: string) {
 export function useProfitabilityTrends(
   month: string,
   year: string,
+  customRange?: { startDate?: string; endDate?: string },
   queryOptions?: Omit<UseQueryOptions<FinanceIntelligenceResponse<{ monthlyTrends: MonthlyPnLData[] }>>, 'queryKey' | 'queryFn'>
 ) {
   return useQuery({
-    queryKey: ['finance', 'profitability-trends', year, month],
+    queryKey: ['finance', 'profitability-trends', year, month, customRange?.startDate, customRange?.endDate],
     queryFn: async () => {
-      const targetDate = new Date(Number(year), Number(month) - 1, 1);
+      let finalMonth = month;
+      let finalYear = year;
+
+      if (customRange?.endDate) {
+        const date = new Date(customRange.endDate);
+        finalMonth = String(date.getMonth() + 1).padStart(2, '0');
+        finalYear = String(date.getFullYear());
+      }
+
+      const targetDate = new Date(Number(finalYear), Number(finalMonth) - 1, 1);
       const startRange = new Date(targetDate);
       startRange.setMonth(startRange.getMonth() - 5);
       
       const startDate = `${startRange.getFullYear()}-${String(startRange.getMonth() + 1).padStart(2, '0')}-01`;
-      const lastDay = new Date(Number(year), Number(month), 0).getDate();
-      const endDate = `${year}-${month.padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+      const lastDay = new Date(Number(finalYear), Number(finalMonth), 0).getDate();
+      const endDate = `${finalYear}-${finalMonth.padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
       
       const params = new URLSearchParams({ startDate, endDate });
       const response = await fetch(`/api/intelligence/finance/monthly-pnl?${params}`);
@@ -371,7 +416,7 @@ export function useProfitabilityTrends(
         metadata: json.metadata
       };
     },
-    enabled: !!(month && year),
+    enabled: !!(month && year) || !!(customRange?.startDate && customRange?.endDate),
     staleTime: 1 * 60 * 60 * 1000,
     refetchOnWindowFocus: false,
     ...queryOptions
