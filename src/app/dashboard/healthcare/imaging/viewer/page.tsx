@@ -157,44 +157,44 @@ function DICOMViewerContent() {
   };
 
   return (
-    <div className="w-screen h-screen bg-[#060912] text-white flex flex-col overflow-x-hidden overflow-y-hidden select-none font-sans max-w-full">
-      {/* 1. PACS Enterprise Top Toolbar Bar - Responsive Wrap & Compact Grid (No Slide Ngang) */}
-      <header className="bg-[#0c1220] border-b border-slate-800/80 px-3 py-2 shrink-0 shadow-md max-w-full overflow-hidden">
+    <div className="w-screen h-screen bg-[#f8fafc] text-slate-800 flex flex-col overflow-x-hidden overflow-y-hidden select-none font-sans max-w-full">
+      {/* 1. PACS Light Theme Header Bar */}
+      <header className="bg-white border-b border-slate-200 px-4 py-2.5 shrink-0 shadow-xs max-w-full overflow-hidden">
         <div className="flex flex-wrap items-center justify-between gap-y-2 gap-x-3 w-full">
           {/* Section 1: Navigation & Patient Info */}
-          <div className="flex items-center gap-2.5 min-w-0">
+          <div className="flex items-center gap-3 min-w-0">
             <button
               onClick={() => {
                 if (window.history.length > 1) window.history.back();
                 else window.location.href = '/dashboard/healthcare/imaging';
               }}
-              className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer shrink-0"
+              className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer shrink-0 border border-slate-200"
             >
-              <ArrowLeft className="w-3.5 h-3.5" /> RIS Workstation
+              <ArrowLeft className="w-3.5 h-3.5 text-slate-600" /> RIS Workstation
             </button>
 
-            <div className="h-4 w-px bg-slate-800 shrink-0 hidden sm:block" />
+            <div className="h-5 w-px bg-slate-200 shrink-0 hidden sm:block" />
 
             <div className="min-w-0 truncate text-left">
-              <h2 className="text-xs font-black text-white flex items-center gap-1.5 truncate">
-                <span className="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-400 font-mono text-[9px] font-bold shrink-0">
+              <h2 className="text-xs font-black text-slate-900 flex items-center gap-1.5 truncate">
+                <span className="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200 font-mono text-[9px] font-bold shrink-0">
                   {modality} WORKSTATION
                 </span>
-                <span className="truncate">{patientName}</span>
+                <span className="truncate text-slate-900 font-black">{patientName}</span>
               </h2>
-              <p className="text-[10px] text-slate-400 font-mono truncate hidden md:block">{studyTitle} • UID: {studyUid}</p>
+              <p className="text-[10px] text-slate-500 font-mono truncate hidden md:block">{studyTitle} • UID: {studyUid}</p>
             </div>
           </div>
 
           {/* Section 2: Viewport Mode Selector Pills */}
-          <div className="flex items-center gap-1 bg-[#12192c] p-1 rounded-xl border border-slate-800 text-[11px] font-bold shrink-0">
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 text-[11px] font-bold shrink-0">
             <button
               onClick={() => {
                 setIsCompareMode(false);
                 setMprLayout('SINGLE');
               }}
-              className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
-                !isCompareMode && mprLayout === 'SINGLE' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
+              className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                !isCompareMode && mprLayout === 'SINGLE' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               Single 2D
@@ -204,8 +204,8 @@ function DICOMViewerContent() {
                 setIsCompareMode(!isCompareMode);
                 setMprLayout('SINGLE');
               }}
-              className={`px-2.5 py-1 rounded-lg flex items-center gap-1 transition-all cursor-pointer ${
-                isCompareMode ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
+              className={`px-3 py-1 rounded-lg flex items-center gap-1 transition-all cursor-pointer ${
+                isCompareMode ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               <Split className="w-3.5 h-3.5" /> Compare Study
@@ -215,8 +215,8 @@ function DICOMViewerContent() {
                 setMprLayout(mprLayout === 'QUAD_MPR' ? 'SINGLE' : 'QUAD_MPR');
                 setIsCompareMode(false);
               }}
-              className={`px-2.5 py-1 rounded-lg flex items-center gap-1 transition-all cursor-pointer ${
-                mprLayout === 'QUAD_MPR' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
+              className={`px-3 py-1 rounded-lg flex items-center gap-1 transition-all cursor-pointer ${
+                mprLayout === 'QUAD_MPR' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               <Layers className="w-3.5 h-3.5" /> 4-MPR Quad
@@ -228,7 +228,7 @@ function DICOMViewerContent() {
             {isBrainCT && (
               <button
                 onClick={handleDispatchER}
-                className="px-2.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black text-xs flex items-center gap-1 shadow-lg shadow-rose-600/30 animate-pulse cursor-pointer shrink-0"
+                className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black text-xs flex items-center gap-1 shadow-md shadow-rose-500/20 animate-pulse cursor-pointer shrink-0"
               >
                 <AlertTriangle className="w-3.5 h-3.5" /> 🚨 NOTIFY ER
               </button>
@@ -236,16 +236,16 @@ function DICOMViewerContent() {
 
             <button
               onClick={handleDictate}
-              className={`px-2.5 py-1.5 rounded-xl font-bold flex items-center gap-1 transition-all cursor-pointer shrink-0 ${
-                isDictating ? 'bg-amber-500 text-white animate-pulse' : 'bg-slate-800 hover:bg-slate-700 text-slate-200'
+              className={`px-3 py-1.5 rounded-xl font-bold flex items-center gap-1 transition-all cursor-pointer shrink-0 border ${
+                isDictating ? 'bg-amber-500 text-white border-amber-600 animate-pulse' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
               }`}
             >
-              <Mic className="w-3.5 h-3.5 text-amber-400" /> {isDictating ? 'Đang đọc...' : 'Dictate'}
+              <Mic className="w-3.5 h-3.5 text-amber-600" /> {isDictating ? 'Đang đọc...' : 'Dictate'}
             </button>
 
             <button
               onClick={() => toast.success('🖨️ Đã xuất tệp DICOM & Kết xuất phim 3D sang Server PACS!')}
-              className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 shrink-0"
+              className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200 shrink-0"
               title="In / Export DICOM"
             >
               <Printer className="w-3.5 h-3.5" />
@@ -256,11 +256,11 @@ function DICOMViewerContent() {
 
       {/* Main Workstation Body Layout */}
       <div className="flex-1 flex overflow-hidden relative max-w-full">
-        {/* Left Sub-Toolbar: Advanced Tools (Measurements & Annotations) */}
-        <div className="w-12 bg-[#0a0e19] border-r border-slate-800/80 flex flex-col items-center py-2 gap-2.5 shrink-0">
+        {/* Left Toolbar: Light Theme Measurements & Annotations */}
+        <div className="w-12 bg-white border-r border-slate-200 flex flex-col items-center py-3 gap-2.5 shrink-0 shadow-xs">
           <button
             onClick={() => setActiveTool('DISTANCE')}
-            className={`p-2 rounded-xl transition-all cursor-pointer ${activeTool === 'DISTANCE' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+            className={`p-2 rounded-xl transition-all cursor-pointer ${activeTool === 'DISTANCE' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'}`}
             title="Measure Distance (mm)"
           >
             <Ruler className="w-4 h-4" />
@@ -268,7 +268,7 @@ function DICOMViewerContent() {
 
           <button
             onClick={() => setActiveTool('AREA')}
-            className={`p-2 rounded-xl transition-all cursor-pointer ${activeTool === 'AREA' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+            className={`p-2 rounded-xl transition-all cursor-pointer ${activeTool === 'AREA' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'}`}
             title="Measure Area (cm²)"
           >
             <Square className="w-4 h-4" />
@@ -276,7 +276,7 @@ function DICOMViewerContent() {
 
           <button
             onClick={() => setActiveTool('VOLUME')}
-            className={`p-2 rounded-xl transition-all cursor-pointer ${activeTool === 'VOLUME' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+            className={`p-2 rounded-xl transition-all cursor-pointer ${activeTool === 'VOLUME' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'}`}
             title="Measure Volume (cc)"
           >
             <Circle className="w-4 h-4" />
@@ -284,17 +284,17 @@ function DICOMViewerContent() {
 
           <button
             onClick={() => setActiveTool('ANGLE')}
-            className={`p-2 rounded-xl transition-all cursor-pointer ${activeTool === 'ANGLE' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+            className={`p-2 rounded-xl transition-all cursor-pointer ${activeTool === 'ANGLE' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'}`}
             title="Measure Angle (°)"
           >
             <Compass className="w-4 h-4" />
           </button>
 
-          <div className="w-6 h-px bg-slate-800 my-0.5" />
+          <div className="w-6 h-px bg-slate-200 my-0.5" />
 
           <button
             onClick={() => setActiveTool('ARROW')}
-            className={`p-2 rounded-xl transition-all cursor-pointer ${activeTool === 'ARROW' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+            className={`p-2 rounded-xl transition-all cursor-pointer ${activeTool === 'ARROW' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'}`}
             title="Add Arrow Pointer"
           >
             <MoveUpRight className="w-4 h-4" />
@@ -302,7 +302,7 @@ function DICOMViewerContent() {
 
           <button
             onClick={() => setActiveTool('TEXT')}
-            className={`p-2 rounded-xl transition-all cursor-pointer ${activeTool === 'TEXT' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+            className={`p-2 rounded-xl transition-all cursor-pointer ${activeTool === 'TEXT' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'}`}
             title="Add Text Annotation"
           >
             <FileText className="w-4 h-4" />
@@ -310,40 +310,40 @@ function DICOMViewerContent() {
 
           <button
             onClick={() => setActiveTool('BOOKMARK')}
-            className={`p-2 rounded-xl transition-all cursor-pointer ${activeTool === 'BOOKMARK' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+            className={`p-2 rounded-xl transition-all cursor-pointer ${activeTool === 'BOOKMARK' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'}`}
             title="Bookmark Slice for Clinical Consult"
           >
             <Bookmark className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Center DICOM Viewports Container */}
-        <div className="flex-1 bg-[#040710] flex flex-col justify-between items-center relative overflow-hidden p-2.5 max-w-full">
-          {/* Top Controls Bar Ribbon - Flexible Wrap */}
-          <div className="z-20 bg-[#0d1322]/90 backdrop-blur-md px-3 py-1.5 rounded-2xl border border-slate-800 flex flex-wrap items-center justify-center gap-2.5 text-xs shadow-2xl mb-1.5 max-w-full">
+        {/* Center DICOM Viewports Container (Light Theme Frame + High Contrast DICOM Canvas) */}
+        <div className="flex-1 bg-[#f1f5f9] flex flex-col justify-between items-center relative overflow-hidden p-3 max-w-full">
+          {/* Top Controls Bar Ribbon - Light Theme */}
+          <div className="z-20 bg-white/95 backdrop-blur-md px-4 py-2 rounded-2xl border border-slate-200 flex flex-wrap items-center justify-center gap-3 text-xs shadow-md mb-2 max-w-full">
             {/* Zoom Controls */}
             <div className="flex items-center gap-1.5">
               <button
                 onClick={() => setZoomLevel((z) => Math.min(z + 25, 250))}
-                className="p-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200"
+                className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200"
                 title="Phóng to"
               >
                 <ZoomIn className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={() => setZoomLevel((z) => Math.max(z - 25, 75))}
-                className="p-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200"
+                className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200"
                 title="Thu nhỏ"
               >
                 <ZoomOut className="w-3.5 h-3.5" />
               </button>
-              <span className="text-[10px] font-mono text-indigo-400 font-bold">{zoomLevel}%</span>
+              <span className="text-[10px] font-mono text-indigo-700 font-bold">{zoomLevel}%</span>
             </div>
 
-            <div className="w-px h-3.5 bg-slate-800" />
+            <div className="w-px h-4 bg-slate-200" />
 
             {/* Window Preset Selector Pills */}
-            <div className="flex items-center gap-1 bg-[#12192c] p-0.5 rounded-lg border border-slate-800 text-[10px] font-bold">
+            <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-[10px] font-bold">
               {[
                 { key: 'BRAIN', label: 'Brain W/L' },
                 { key: 'BONE', label: 'Bone' },
@@ -356,7 +356,7 @@ function DICOMViewerContent() {
                   className={`px-2 py-0.5 rounded transition-all cursor-pointer ${
                     windowPreset === preset.key
                       ? 'bg-indigo-600 text-white shadow-xs'
-                      : 'text-slate-400 hover:text-white'
+                      : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   {preset.label}
@@ -364,17 +364,17 @@ function DICOMViewerContent() {
               ))}
             </div>
 
-            <div className="w-px h-3.5 bg-slate-800" />
+            <div className="w-px h-4 bg-slate-200" />
 
             {/* Heatmap Opacity Selector */}
-            <div className="flex items-center gap-1 text-[10px] font-bold text-slate-400">
-              <Flame className="w-3 h-3 text-rose-500" /> Heatmap:
+            <div className="flex items-center gap-1 text-[10px] font-bold text-slate-600">
+              <Flame className="w-3.5 h-3.5 text-rose-500" /> Heatmap:
               {[0, 20, 50, 80, 100].map((op) => (
                 <button
                   key={op}
                   onClick={() => setHeatmapOpacity(op)}
                   className={`px-1.5 py-0.5 rounded text-[9px] font-mono transition-all cursor-pointer ${
-                    heatmapOpacity === op ? 'bg-rose-600 text-white font-bold' : 'bg-slate-800 text-slate-400'
+                    heatmapOpacity === op ? 'bg-rose-600 text-white font-bold' : 'bg-slate-100 text-slate-600 border border-slate-200'
                   }`}
                 >
                   {op}%
@@ -382,24 +382,24 @@ function DICOMViewerContent() {
               ))}
             </div>
 
-            <div className="w-px h-3.5 bg-slate-800" />
+            <div className="w-px h-4 bg-slate-200" />
 
             <button
               onClick={() => setIsPlayingCine(!isPlayingCine)}
-              className={`px-2.5 py-0.5 rounded-xl font-bold flex items-center gap-1 transition-all text-[10px] ${
-                isPlayingCine ? 'bg-rose-600 text-white animate-pulse' : 'bg-emerald-600 text-white'
+              className={`px-3 py-1 rounded-xl font-bold flex items-center gap-1 transition-all text-[11px] ${
+                isPlayingCine ? 'bg-rose-600 text-white animate-pulse' : 'bg-emerald-600 text-white shadow-xs'
               }`}
             >
-              {isPlayingCine ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
-              {isPlayingCine ? 'Dừng Cine' : 'Cine Loop'}
+              {isPlayingCine ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+              {isPlayingCine ? 'Dừng Cine' : 'Phát Cine Loop'}
             </button>
           </div>
 
-          {/* Viewport Canvas Grid */}
+          {/* Viewport Canvas Grid (High Contrast Slate-950 DICOM Frame for Crystal Clear Imaging) */}
           <div className="flex-1 w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-3 items-center justify-center relative overflow-hidden">
             {/* Viewport 1: Today Study */}
-            <div className="w-full h-full relative border border-slate-800 rounded-2xl bg-slate-950 flex flex-col items-center justify-center overflow-hidden shadow-2xl">
-              <div className="absolute top-3 left-3 z-10 text-left text-[10px] font-mono text-cyan-400">
+            <div className="w-full h-full relative border border-slate-800 rounded-2xl bg-slate-950 flex flex-col items-center justify-center overflow-hidden shadow-xl">
+              <div className="absolute top-3 left-3 z-10 text-left text-[10px] font-mono text-cyan-400 bg-slate-900/80 backdrop-blur-md p-2 rounded-xl border border-slate-800">
                 <div className="font-bold text-white text-xs">TODAY STUDY (07/08/2026)</div>
                 <div>Slice: {currentSlice} / {totalSlices}</div>
                 <div>Matrix: 512x512 • 1.0mm Axial</div>
@@ -462,15 +462,15 @@ function DICOMViewerContent() {
                 </svg>
               </div>
 
-              <div className="absolute bottom-3 left-3 text-[10px] font-mono text-slate-500">
+              <div className="absolute bottom-3 left-3 text-[10px] font-mono text-slate-400 bg-slate-900/80 px-2 py-1 rounded-lg">
                 W/L: {windowPreset} Mode
               </div>
             </div>
 
             {/* Viewport 2: Compare Prior Study OR Sagittal MPR */}
             {(isCompareMode || mprLayout === 'QUAD_MPR') && (
-              <div className="w-full h-full relative border border-slate-800 rounded-2xl bg-slate-950 flex flex-col items-center justify-center overflow-hidden shadow-2xl">
-                <div className="absolute top-3 left-3 z-10 text-left text-[10px] font-mono text-amber-400">
+              <div className="w-full h-full relative border border-slate-800 rounded-2xl bg-slate-950 flex flex-col items-center justify-center overflow-hidden shadow-xl">
+                <div className="absolute top-3 left-3 z-10 text-left text-[10px] font-mono text-amber-400 bg-slate-900/80 backdrop-blur-md p-2 rounded-xl border border-slate-800">
                   <div className="font-bold text-amber-300 text-xs">
                     {isCompareMode ? 'PRIOR STUDY (05/05/2026 - 3 Thâm Trước)' : 'SAGITTAL MPR PLANE'}
                   </div>
@@ -492,9 +492,9 @@ function DICOMViewerContent() {
             )}
           </div>
 
-          {/* Bottom Interactive Slice Slider */}
-          <div className="w-full max-w-xl z-20 bg-[#0d1322]/90 backdrop-blur-md px-4 py-2 rounded-2xl border border-slate-800 flex items-center gap-3 text-xs mt-1.5">
-            <span className="font-mono text-slate-400 text-[10px] shrink-0">Slice {currentSlice}</span>
+          {/* Bottom Interactive Slice Slider - Light Theme */}
+          <div className="w-full max-w-xl z-20 bg-white/95 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-slate-200 flex items-center gap-3 text-xs mt-2 shadow-md">
+            <span className="font-mono text-slate-600 text-[11px] font-bold shrink-0">Slice {currentSlice}</span>
             <input
               type="range"
               min="1"
@@ -505,16 +505,16 @@ function DICOMViewerContent() {
                 setCurrentSlice(val);
                 if (isCompareMode) setPriorSlice(val);
               }}
-              className="w-full accent-indigo-500 cursor-pointer"
+              className="w-full accent-indigo-600 cursor-pointer"
             />
-            <span className="font-mono text-slate-400 text-[10px] shrink-0">{totalSlices} Slices</span>
+            <span className="font-mono text-slate-600 text-[11px] font-bold shrink-0">{totalSlices} Slices</span>
           </div>
         </div>
 
-        {/* Right Collapsible Panel: AI Findings ⭐⭐⭐⭐⭐ & Report Writer & Audit Timeline */}
-        <div className="w-80 bg-[#0a0e19] border-l border-slate-800 flex flex-col shrink-0 overflow-hidden text-left">
+        {/* Right Panel: Light Theme AI Findings ⭐⭐⭐⭐⭐ & Report Writer & Audit Timeline */}
+        <div className="w-80 bg-white border-l border-slate-200 flex flex-col shrink-0 overflow-hidden text-left shadow-xs">
           {/* Sub-Header Tabs */}
-          <div className="flex items-center border-b border-slate-800 bg-[#0e1424] text-[11px] font-bold">
+          <div className="flex items-center border-b border-slate-200 bg-slate-50 text-[11px] font-bold">
             {[
               { id: 'AI_FINDINGS', label: '🤖 AI Findings' },
               { id: 'REPORT_WRITER', label: '📝 Báo Cáo' },
@@ -525,8 +525,8 @@ function DICOMViewerContent() {
                 onClick={() => setActiveTabSidebar(tab.id as any)}
                 className={`flex-1 py-3 text-center transition-all cursor-pointer border-b-2 ${
                   activeTabSidebar === tab.id
-                    ? 'border-indigo-500 text-indigo-400 bg-indigo-500/10 font-black'
-                    : 'border-transparent text-slate-400 hover:text-white'
+                    ? 'border-indigo-600 text-indigo-700 bg-white font-black shadow-xs'
+                    : 'border-transparent text-slate-500 hover:text-slate-900'
                 }`}
               >
                 {tab.label}
@@ -538,10 +538,10 @@ function DICOMViewerContent() {
           {activeTabSidebar === 'AI_FINDINGS' && (
             <div className="flex-1 p-4 space-y-4 overflow-y-auto">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                  <Sparkles className="w-4 h-4 text-purple-400" /> Vùng AI Phát Hiện Nghi Ngờ
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-purple-600" /> Vùng AI Phát Hiện Nghi Ngờ
                 </span>
-                <span className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-mono text-[10px] font-bold">
+                <span className="px-2 py-0.5 rounded bg-purple-100 text-purple-700 font-mono text-[10px] font-bold border border-purple-200">
                   {aiFindingsList.length} Findings
                 </span>
               </div>
@@ -550,46 +550,46 @@ function DICOMViewerContent() {
                 <div
                   key={item.id}
                   onClick={() => setCurrentSlice(item.slice)}
-                  className={`p-3 rounded-2xl border transition-all cursor-pointer group ${
+                  className={`p-3.5 rounded-2xl border transition-all cursor-pointer group ${
                     currentSlice === item.slice
-                      ? 'bg-purple-600/20 border-purple-500 text-white shadow-lg'
-                      : 'bg-[#101625] border-slate-800 text-slate-300 hover:border-slate-700'
+                      ? 'bg-purple-50 border-purple-400 text-slate-900 shadow-md ring-2 ring-purple-200'
+                      : 'bg-slate-50 border-slate-200 text-slate-800 hover:border-slate-300 hover:bg-slate-100/80'
                   }`}
                 >
                   <div className="flex items-start justify-between">
-                    <h4 className="text-xs font-black text-white group-hover:text-purple-300 flex items-center gap-1.5">
-                      {item.isCritical && <AlertTriangle className="w-3.5 h-3.5 text-rose-500 shrink-0" />}
+                    <h4 className="text-xs font-black text-slate-900 group-hover:text-purple-700 flex items-center gap-1.5">
+                      {item.isCritical && <AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0" />}
                       {item.label}
                     </h4>
-                    <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 font-mono text-[10px] font-black">
+                    <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-mono text-[10px] font-black border border-emerald-200">
                       {item.confidence}%
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 mt-2.5 pt-2 border-t border-slate-800 text-[10px] font-mono text-slate-400">
+                  <div className="grid grid-cols-2 gap-2 mt-2.5 pt-2 border-t border-slate-200/80 text-[10px] font-mono text-slate-600">
                     <div>
-                      Lát cắt: <span className="text-indigo-400 font-bold">Slice {item.slice}</span>
+                      Lát cắt: <span className="text-indigo-700 font-bold">Slice {item.slice}</span>
                     </div>
                     <div>
-                      Thể tích: <span className="text-amber-400 font-bold">{item.volume || item.shift}</span>
+                      Thể tích: <span className="text-amber-700 font-bold">{item.volume || item.shift}</span>
                     </div>
                   </div>
 
-                  <button className="w-full mt-2 py-1 rounded-xl bg-purple-600/30 hover:bg-purple-600 text-purple-200 text-[10px] font-bold flex items-center justify-center gap-1 transition-all">
+                  <button className="w-full mt-2.5 py-1.5 rounded-xl bg-purple-600 text-white text-[10px] font-bold flex items-center justify-center gap-1 shadow-xs hover:bg-purple-700 transition-all cursor-pointer">
                     Nhảy ngay đến Slice {item.slice} <ChevronRight className="w-3 h-3" />
                   </button>
                 </div>
               ))}
 
               {/* Measurements Recorded List */}
-              <div className="pt-3 border-t border-slate-800 space-y-2">
+              <div className="pt-3 border-t border-slate-200 space-y-2">
                 <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 block">
                   Đo Đạc Lâm Sàng Recorded
                 </span>
                 {measurements.map((m, idx) => (
-                  <div key={idx} className="p-2 rounded-xl bg-[#12192a] border border-slate-800 flex items-center justify-between text-[11px] font-mono">
-                    <span className="text-slate-400">{m.type} (Slice {m.slice}):</span>
-                    <span className="text-emerald-400 font-bold">{m.value}</span>
+                  <div key={idx} className="p-2 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-[11px] font-mono">
+                    <span className="text-slate-600 font-medium">{m.type} (Slice {m.slice}):</span>
+                    <span className="text-emerald-700 font-bold">{m.value}</span>
                   </div>
                 ))}
               </div>
@@ -601,54 +601,54 @@ function DICOMViewerContent() {
             <div className="flex-1 p-4 space-y-3 overflow-y-auto text-xs">
               <button
                 onClick={() => toast.success('✨ Bella AI đã tự động điền Báo Cáo Theo Mẫu Chuẩn RadReport!')}
-                className="w-full py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
+                className="w-full py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
               >
                 <Sparkles className="w-4 h-4" /> AI Auto-Fill Structured Report
               </button>
 
               <div>
-                <label className="font-bold text-slate-400 text-[10px] uppercase">1. Kỹ Thuật (Technique)</label>
+                <label className="font-bold text-slate-500 text-[10px] uppercase">1. Kỹ Thuật (Technique)</label>
                 <textarea
                   rows={2}
                   value={report.technique}
                   onChange={(e) => setReport({ ...report, technique: e.target.value })}
-                  className="w-full mt-1 p-2 rounded-xl bg-[#101625] border border-slate-800 text-slate-200 text-[11px] focus:ring-1 focus:ring-indigo-500"
+                  className="w-full mt-1 p-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-[11px] focus:ring-2 focus:ring-indigo-500 focus:bg-white"
                 />
               </div>
 
               <div>
-                <label className="font-bold text-slate-400 text-[10px] uppercase">2. Mô Tả Hình Ảnh (Findings)</label>
+                <label className="font-bold text-slate-500 text-[10px] uppercase">2. Mô Tả Hình Ảnh (Findings)</label>
                 <textarea
                   rows={4}
                   value={report.findings}
                   onChange={(e) => setReport({ ...report, findings: e.target.value })}
-                  className="w-full mt-1 p-2 rounded-xl bg-[#101625] border border-slate-800 text-slate-200 text-[11px] focus:ring-1 focus:ring-indigo-500"
+                  className="w-full mt-1 p-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-[11px] focus:ring-2 focus:ring-indigo-500 focus:bg-white"
                 />
               </div>
 
               <div>
-                <label className="font-bold text-rose-400 text-[10px] uppercase">3. Kết Luận (Impression)</label>
+                <label className="font-bold text-rose-600 text-[10px] uppercase">3. Kết Luận (Impression)</label>
                 <textarea
                   rows={2}
                   value={report.impression}
                   onChange={(e) => setReport({ ...report, impression: e.target.value })}
-                  className="w-full mt-1 p-2 rounded-xl bg-[#101625] border border-rose-500/40 text-rose-300 text-[11px] font-bold focus:ring-1 focus:ring-rose-500"
+                  className="w-full mt-1 p-2 rounded-xl bg-rose-50/60 border border-rose-300 text-rose-900 text-[11px] font-bold focus:ring-2 focus:ring-rose-500 focus:bg-white"
                 />
               </div>
 
               <div>
-                <label className="font-bold text-slate-400 text-[10px] uppercase">4. Gợi Ý Đề Nghị (Recommendation)</label>
+                <label className="font-bold text-slate-500 text-[10px] uppercase">4. Gợi Ý Đề Nghị (Recommendation)</label>
                 <textarea
                   rows={2}
                   value={report.recommendation}
                   onChange={(e) => setReport({ ...report, recommendation: e.target.value })}
-                  className="w-full mt-1 p-2 rounded-xl bg-[#101625] border border-slate-800 text-slate-200 text-[11px] focus:ring-1 focus:ring-indigo-500"
+                  className="w-full mt-1 p-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-[11px] focus:ring-2 focus:ring-indigo-500 focus:bg-white"
                 />
               </div>
 
               <button
                 onClick={() => toast.success('✍️ Đã ký số và trả kết quả Báo Cáo Chẩn Đoán PACS lên hệ thống EMR!')}
-                className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-600/20 cursor-pointer"
+                className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black flex items-center justify-center gap-1.5 shadow-md shadow-emerald-600/20 cursor-pointer"
               >
                 <CheckCircle className="w-4 h-4" /> Bác Sĩ Xác Nhận & Ký Số KQ
               </button>
@@ -658,11 +658,11 @@ function DICOMViewerContent() {
           {/* Tab 3: AI Audit Timeline */}
           {activeTabSidebar === 'AUDIT_TIMELINE' && (
             <div className="flex-1 p-4 space-y-4 overflow-y-auto">
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 block">
                 Nhật Ký Quyết Định Lâm Sàng (AI & Doctor Audit)
               </span>
 
-              <div className="space-y-4 relative before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-800">
+              <div className="space-y-4 relative before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
                 {[
                   { title: 'AI Automatic Scan Completed', desc: 'Phát hiện Xuất Huyết Sọ Não (98% confidence) tại Slice 48', time: '09:18:02', done: true },
                   { title: '🚨 STAT ER Alert Dispatched', desc: 'Đã gửi SMS Push cảnh báo cho Đội Cấp Cứu Trực', time: '09:18:15', done: true },
@@ -671,10 +671,10 @@ function DICOMViewerContent() {
                   { title: 'Structured Report Signed', desc: 'Báo cáo chẩn đoán đã ký số và phát hành lên EMR', time: '09:28:00', done: false },
                 ].map((step, idx) => (
                   <div key={idx} className="relative pl-7 text-xs">
-                    <div className={`absolute left-1.5 top-1 w-3 h-3 rounded-full border-2 ${step.done ? 'bg-emerald-500 border-emerald-400' : 'bg-slate-800 border-slate-600'}`} />
-                    <h5 className="font-bold text-white text-[11px]">{step.title}</h5>
-                    <p className="text-[10px] text-slate-400 mt-0.5">{step.desc}</p>
-                    <span className="text-[9px] font-mono text-indigo-400 block mt-1">{step.time}</span>
+                    <div className={`absolute left-1.5 top-1 w-3 h-3 rounded-full border-2 ${step.done ? 'bg-emerald-600 border-emerald-400' : 'bg-slate-200 border-slate-400'}`} />
+                    <h5 className="font-bold text-slate-900 text-[11px]">{step.title}</h5>
+                    <p className="text-[10px] text-slate-500 mt-0.5">{step.desc}</p>
+                    <span className="text-[9px] font-mono text-indigo-600 font-bold block mt-1">{step.time}</span>
                   </div>
                 ))}
               </div>
@@ -688,7 +688,7 @@ function DICOMViewerContent() {
 
 export default function DICOMViewerPage() {
   return (
-    <Suspense fallback={<div className="p-10 text-white font-bold bg-[#060912] h-screen">Đang tải Radiology Workstation Enterprise...</div>}>
+    <Suspense fallback={<div className="p-10 text-slate-900 font-bold bg-[#f8fafc] h-screen">Đang tải Radiology Workstation Enterprise...</div>}>
       <DICOMViewerContent />
     </Suspense>
   );
