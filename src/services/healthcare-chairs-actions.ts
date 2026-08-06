@@ -65,6 +65,8 @@ export async function fetchHealthcareChairsAction(): Promise<{ success: true; da
 
   // Seed default chairs into database if tenant has no chairs yet
   if (!data || data.length === 0) {
+    console.log('[fetchHealthcareChairsAction] 🌱 No chairs found, seeding default chairs for tenant:', auth.tenantId);
+    
     const seedPayloads: BookingResourceInsert[] = DEFAULT_MOCK_CHAIRS.map((c) => ({
       id: c.id,
       tenant_id: auth.tenantId,
@@ -86,14 +88,29 @@ export async function fetchHealthcareChairsAction(): Promise<{ success: true; da
       .select();
 
     if (seedError) {
-      console.error('[fetchHealthcareChairsAction] Seed error:', seedError);
-      // Fallback to default mock chairs if DB insert failed
-      return { success: true, data: DEFAULT_MOCK_CHAIRS };
+      console.error('[fetchHealthcareChairsAction] ❌ Seed error:', seedError.message, seedError.details, seedError.hint);
+      
+      // Check if chairs already exist (maybe seeded by another request)
+      const { data: retryData } = await supabase
+        .from('booking_resources')
+        .select('*')
+        .eq('tenant_id', auth.tenantId)
+        .eq('resource_type', 'chair');
+      
+      if (retryData && retryData.length > 0) {
+        console.log('[fetchHealthcareChairsAction] ✅ Chairs found on retry (race condition):', retryData.length);
+        return { success: true, data: retryData.map(mapRowToChairVM) };
+      }
+      
+      // Real seed failure - return error instead of mock data
+      return { success: false, error: `Không thể tạo ghế khám: ${seedError.message}` };
     }
 
+    console.log('[fetchHealthcareChairsAction] ✅ Seeded', seededData?.length || 0, 'chairs successfully');
     return { success: true, data: (seededData || []).map(mapRowToChairVM) };
   }
 
+  console.log('[fetchHealthcareChairsAction] ✅ Found', data.length, 'existing chairs in database');
   return { success: true, data: data.map(mapRowToChairVM) };
 }
 
@@ -113,6 +130,8 @@ export async function updateHealthcareChairAssignmentAction(
 
   const supabase = await createDevelopmentBypassClient();
 
+  console.log('[updateHealthcareChairAssignmentAction] 🔄 Assigning patient:', patientName, 'to chair:', targetChairId);
+
   // Fetch current chairs to enforce single-chair domain invariant
   const { data: existingRows, error: fetchErr } = await supabase
     .from('booking_resources')
@@ -121,8 +140,11 @@ export async function updateHealthcareChairAssignmentAction(
     .eq('resource_type', 'chair');
 
   if (fetchErr) {
+    console.error('[updateHealthcareChairAssignmentAction] ❌ Fetch error:', fetchErr);
     return { success: false, error: fetchErr.message };
   }
+
+  console.log('[updateHealthcareChairAssignmentAction] ✅ Found', existingRows?.length || 0, 'existing chairs');
 
   const currentChairs = existingRows || [];
 
@@ -147,8 +169,11 @@ export async function updateHealthcareChairAssignmentAction(
         .eq('tenant_id', auth.tenantId);
 
       if (relErr) {
+        console.error('[updateHealthcareChairAssignmentAction] ❌ Release error:', relErr);
         return { success: false, error: `Lỗi giải phóng ghế cũ: ${relErr.message}` };
       }
+      
+      console.log('[updateHealthcareChairAssignmentAction] ✅ Released old chair:', row.id);
     }
   }
 
@@ -163,6 +188,8 @@ export async function updateHealthcareChairAssignmentAction(
     updated_at: new Date().toISOString(),
   };
 
+  console.log('[updateHealthcareChairAssignmentAction] 📝 Assigning chair with payload:', assignPayload);
+
   const { error: assignErr } = await supabase
     .from('booking_resources')
     .update(assignPayload)
@@ -170,8 +197,11 @@ export async function updateHealthcareChairAssignmentAction(
     .eq('tenant_id', auth.tenantId);
 
   if (assignErr) {
+    console.error('[updateHealthcareChairAssignmentAction] ❌ Assign error:', assignErr.message, assignErr.details);
     return { success: false, error: `Lỗi phân ghế mới: ${assignErr.message}` };
   }
+
+  console.log('[updateHealthcareChairAssignmentAction] ✅ Successfully assigned chair:', targetChairId);
 
   // Return fresh updated list of chairs
   return fetchHealthcareChairsAction();
