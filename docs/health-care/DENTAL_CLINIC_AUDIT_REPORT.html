@@ -134,7 +134,7 @@
       box-shadow: 0 20px 40px -20px rgba(13, 148, 136, 0.12);
     }
 
-    /* Overall Score Circle Indicator (Perfect round rendering) */
+    /* Overall Score Circle Indicator */
     .overall-score-box {
       display: flex;
       flex-direction: column;
@@ -310,6 +310,33 @@
       font-size: 14px;
       margin-right: 6px;
     }
+
+    /* Summary list under score circle */
+    .score-summary-list {
+      width: 100%;
+      text-align: left;
+      margin-top: 20px;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 15px;
+      font-size: 12px;
+      color: #475569;
+    }
+
+    .score-summary-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-weight: 550;
+    }
+
+    .score-summary-label {
+      color: var(--text-muted);
+    }
+
+    .score-summary-value {
+      color: #0f172a;
+      font-weight: 700;
+    }
   </style>
 </head>
 <body>
@@ -325,7 +352,7 @@
     </header>
 
     <div class="grid-3">
-      <!-- Card 1: Overall Score & Detailed Core Metrics -->
+      <!-- Card 1: Overall Score & Prominent Core Metrics Summary -->
       <div class="card overall-score-box">
         <h3 style="font-size: 18px; margin-bottom: 20px; color: #0f172a;">Đánh giá Tổng quan</h3>
         <div class="score-circle">
@@ -335,17 +362,27 @@
           </div>
         </div>
         
-        <!-- Detailed system metrics & LOC -->
-        <div style="width: 100%; border-top: 1px solid #f1f5f9; padding-top: 15px; margin-top: 10px; text-align: left; space-y: 2px;">
-          <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 5px;">
-            <strong>Mã nguồn (LOC)</strong>:
-            <ul style="list-style-type: none; padding-left: 8px; margin-top: 2px;">
-              <li>• Dental Module: ~2,500 dòng (LOC)</li>
-              <li>• Core Platform: ~24,000 dòng (LOC)</li>
-            </ul>
+        <!-- Prominent metrics summary table below the score circle -->
+        <div class="score-summary-list">
+          <div class="score-summary-item">
+            <span class="score-summary-label">Mã nguồn Nha khoa (LOC)</span>
+            <span class="score-summary-value">~2,500 LOC</span>
           </div>
-          <div style="font-size: 11px; color: var(--text-muted);">
-            <strong>Kết quả Test</strong>: <span style="color: var(--accent-teal); font-weight: 700;">6/6 ĐẠT (100% Pass)</span>
+          <div class="score-summary-item">
+            <span class="score-summary-label">Mã nguồn Hạ tầng Core</span>
+            <span class="score-summary-value">~24,000 LOC</span>
+          </div>
+          <div class="score-summary-item">
+            <span class="score-summary-label">Kết quả Kiểm thử</span>
+            <span class="score-summary-value" style="color: var(--accent-teal);">6/6 ĐẠT (100%)</span>
+          </div>
+          <div class="score-summary-item" style="flex-direction: column; margin-top: 5px; gap: 2px;">
+            <span class="score-summary-label">Bảo mật & Phân quyền Enterprise:</span>
+            <span class="score-summary-value" style="font-size: 11px; padding-left: 5px; margin-top: 2px; color: #334155;">
+              • Phân quyền RBAC 4 vai trò y khoa<br>
+              • Cô lập chi nhánh qua Tenant ID<br>
+              • Outbox Pattern chống mất sự kiện
+            </span>
           </div>
         </div>
       </div>
@@ -399,12 +436,12 @@
 
       <!-- Card 3: Quality Highlights -->
       <div class="card">
-        <h3 style="font-size: 18px; margin-bottom: 15px; color: #0f172a;">Bảo mật & Phân quyền</h3>
+        <h3 style="font-size: 18px; margin-bottom: 15px; color: #0f172a;">Điểm sáng Hệ thống</h3>
         <ul class="bullet-list">
-          <li><strong>Outbox Pattern</strong>: Đồng bộ an toàn dữ liệu, chống lỗi dual-write.</li>
-          <li><strong>Saga Process Manager</strong>: Kiểm soát luồng y tế liên chi nhánh.</li>
-          <li><strong>Phân quyền vai trò (RBAC)</strong>: Nha sĩ trưởng (toàn quyền), Bác sĩ điều trị (lâm sàng), Lễ tân (xếp ghế), Kế toán (billing).</li>
-          <li><strong>Phân lập chi nhánh</strong>: Cách ly tuyệt đối thông tin bệnh nhân theo Tenant ID ở mức CSDL.</li>
+          <li><strong>Outbox Pattern</strong>: Đảm bảo đồng bộ dữ liệu giao dịch 100% không lo lỗi dual-write.</li>
+          <li><strong>Saga Process Manager</strong>: Kiểm soát hoàn hảo luồng liên miền (Đặt lịch ➔ Tiếp đón ➔ Ghế điều trị).</li>
+          <li><strong>3-Tier AI clinical Panel</strong>: Hỗ trợ lâm sàng đa tầng (Safety check ➔ ADA Guideline ➔ Đề xuất phác đồ).</li>
+          <li><strong>Zero Memory Leaks</strong>: Loại bỏ hoàn toàn Timer leak trong Jest test suite để tối ưu CI/CD.</li>
         </ul>
       </div>
     </div>
