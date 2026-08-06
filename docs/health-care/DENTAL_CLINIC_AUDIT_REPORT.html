@@ -310,6 +310,21 @@
       margin-bottom: 25px;
       font-weight: 550;
     }
+
+    /* Status Indicator Icons */
+    .marker-yes {
+      color: #10b981;
+      font-weight: 900;
+      font-size: 14px;
+      margin-right: 6px;
+    }
+
+    .marker-no {
+      color: #ef4444;
+      font-weight: 900;
+      font-size: 14px;
+      margin-right: 6px;
+    }
   </style>
 </head>
 <body>
@@ -468,38 +483,38 @@
         <tbody>
           <tr>
             <td><strong>Kiến trúc hệ thống cốt lõi</strong></td>
-            <td style="color: var(--accent-teal); font-weight: 700;">Bounded Contexts + Event Sourcing</td>
-            <td>Hệ CSDL Monolith cổ điển</td>
-            <td>Hệ CSDL Monolith cổ điển</td>
-            <td>Mô hình Client-Server tĩnh</td>
+            <td style="color: var(--accent-teal); font-weight: 700;"><span class="marker-yes">✔</span> Bounded Contexts + Event Sourcing</td>
+            <td><span class="marker-no">✘</span> Hệ CSDL Monolith cổ điển</td>
+            <td><span class="marker-no">✘</span> Hệ CSDL Monolith cổ điển</td>
+            <td><span class="marker-no">✘</span> Mô hình Client-Server tĩnh</td>
           </tr>
           <tr>
             <td><strong>Cảnh báo tương tác thuốc lâm sàng</strong></td>
-            <td style="color: var(--accent-teal); font-weight: 700;">AI Safety Gatekeeper (Chuẩn ATC)</td>
-            <td>Không hỗ trợ tự động check</td>
-            <td>Cảnh báo dạng text ghi chú</td>
-            <td>Không hỗ trợ kiểm tra chéo</td>
+            <td style="color: var(--accent-teal); font-weight: 700;"><span class="marker-yes">✔</span> AI Safety Gatekeeper (Chuẩn ATC)</td>
+            <td><span class="marker-no">✘</span> Không hỗ trợ tự động check</td>
+            <td><span class="marker-no">✘</span> Cảnh báo dạng text ghi chú</td>
+            <td><span class="marker-no">✘</span> Không hỗ trợ kiểm tra chéo</td>
           </tr>
           <tr>
             <td><strong>Kết nối chuẩn hóa y khoa</strong></td>
-            <td style="color: var(--accent-teal); font-weight: 700;">HL7/FHIR, DICOM PACS, BHYT VNPT</td>
-            <td>Tích hợp API mở rộng cơ bản</td>
-            <td>Không có HL7/FHIR</td>
-            <td>Chỉ tích hợp thiết bị hãng chỉ định</td>
+            <td style="color: var(--accent-teal); font-weight: 700;"><span class="marker-yes">✔</span> HL7/FHIR, DICOM PACS, BHYT VNPT</td>
+            <td><span class="marker-no">✘</span> Tích hợp API mở rộng cơ bản</td>
+            <td><span class="marker-no">✘</span> Không có HL7/FHIR</td>
+            <td><span class="marker-no">✘</span> Chỉ tích hợp thiết bị hãng chỉ định</td>
           </tr>
           <tr>
             <td><strong>Điều khiển tự động hóa (Saga)</strong></td>
-            <td style="color: var(--accent-teal); font-weight: 700;">Saga Orchestration + AI COO Agent</td>
-            <td>Nhân viên tự đổi lịch hẹn</td>
-            <td>Nhân viên tự phân buồng</td>
-            <td>Bảng phân công tĩnh</td>
+            <td style="color: var(--accent-teal); font-weight: 700;"><span class="marker-yes">✔</span> Saga Orchestration + AI COO Agent</td>
+            <td><span class="marker-no">✘</span> Nhân viên tự đổi lịch hẹn</td>
+            <td><span class="marker-no">✘</span> Nhân viên tự phân buồng</td>
+            <td><span class="marker-no">✘</span> Bảng phân công tĩnh</td>
           </tr>
           <tr>
             <td><strong>Khả năng ứng dụng đa vertical</strong></td>
-            <td style="color: var(--accent-teal); font-weight: 700;">Lõi Bella Core (Plugin Capability)</td>
-            <td>Chỉ dùng cho nha khoa</td>
-            <td>Chỉ dùng cho nha khoa</td>
-            <td>Chỉ dùng cho phòng khám</td>
+            <td style="color: var(--accent-teal); font-weight: 700;"><span class="marker-yes">✔</span> Lõi Bella Core (Plugin Capability)</td>
+            <td><span class="marker-no">✘</span> Chỉ dùng cho nha khoa</td>
+            <td><span class="marker-no">✘</span> Chỉ dùng cho nha khoa</td>
+            <td><span class="marker-no">✘</span> Chỉ dùng cho phòng khám</td>
           </tr>
         </tbody>
       </table>
