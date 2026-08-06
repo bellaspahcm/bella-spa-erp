@@ -483,96 +483,155 @@ export default function EncountersPage() {
               </div>
 
               {/* 5. Quick Action Bar & Edit Controls */}
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 border-t border-slate-100 dark:border-slate-800/60">
                 {/* Enterprise Quick Actions */}
-                <div className="flex flex-wrap items-center gap-1.5 w-full sm:w-auto">
+                <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                   <button 
                     onClick={() => setActivePrintEncounter(e)}
-                    className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all active:scale-95"
+                    className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all active:scale-95"
                   >
-                    <Printer className="w-3.5 h-3.5 text-cyan-600" />
+                    <Printer className="w-4 h-4 text-cyan-600" />
                     <span>In Bệnh Án</span>
                   </button>
 
                   <button 
                     onClick={() => setActiveCLSEncounter(e)}
-                    className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all active:scale-95"
+                    className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all active:scale-95"
                   >
-                    <Stethoscope className="w-3.5 h-3.5 text-indigo-600" />
+                    <Stethoscope className="w-4 h-4 text-indigo-600" />
                     <span>Chỉ Định CLS</span>
                   </button>
 
                   <button 
                     onClick={() => setActivePrescriptionEncounter(e)}
-                    className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all active:scale-95"
+                    className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all active:scale-95"
                   >
-                    <Pill className="w-3.5 h-3.5 text-emerald-600" />
+                    <Pill className="w-4 h-4 text-emerald-600" />
                     <span>Kê Đơn Thuốc</span>
                   </button>
 
                   <button 
                     onClick={() => setActiveFollowUpEncounter(e)}
-                    className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all active:scale-95"
+                    className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all active:scale-95"
                   >
-                    <Calendar className="w-3.5 h-3.5 text-amber-600" />
+                    <Calendar className="w-4 h-4 text-amber-600" />
                     <span>Hẹn Tái Khám</span>
                   </button>
                 </div>
-                {/* Primary SOAP Edit Actions */}
+
+                {/* Primary SOAP Edit Trigger & Complete Actions */}
                 <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-                  {isSelected ? (
-                    <div className="w-full space-y-3 p-4 bg-cyan-500/5 rounded-2xl border border-cyan-500/30">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                        <div>
-                          <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">S - Hỏi Bệnh & Tiền Sử</label>
-                          <textarea rows={2} placeholder="S - Hỏi bệnh & Tiền sử..." value={soapData.subjective} onChange={(ev) => setSoapData({ ...soapData, subjective: ev.target.value })} className="w-full p-2 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-950 text-slate-900 dark:text-white" />
-                        </div>
-                        <div>
-                          <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">O - Khám Thể Trạng & Sinh Hiệu</label>
-                          <textarea rows={2} placeholder="O - Khám thể trạng & Sinh hiệu..." value={soapData.objective} onChange={(ev) => setSoapData({ ...soapData, objective: ev.target.value })} className="w-full p-2 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-950 text-slate-900 dark:text-white" />
-                        </div>
-                        <div>
-                          <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">A - Chẩn Đoán & Mã ICD-10</label>
-                          <textarea rows={2} placeholder="A - Chẩn đoán & Mã ICD-10..." value={soapData.assessment} onChange={(ev) => setSoapData({ ...soapData, assessment: ev.target.value })} className="w-full p-2 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-950 text-slate-900 dark:text-white" />
-                        </div>
-                        <div>
-                          <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">P - Kế Hoạch & Hướng Điều Trị</label>
-                          <textarea rows={2} placeholder="P - Kế hoạch & Hướng điều trị..." value={soapData.plan} onChange={(ev) => setSoapData({ ...soapData, plan: ev.target.value })} className="w-full p-2 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-950 text-slate-900 dark:text-white" />
-                        </div>
-                      </div>
-                      <div className="flex justify-end gap-2">
-                        <button onClick={() => setSelectedEncId(null)} className="px-3.5 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-500 hover:bg-slate-100 cursor-pointer">Hủy Bỏ</button>
-                        <button onClick={() => handleSaveSOAP(e.id)} className="px-4 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-black shadow-md cursor-pointer">Lưu Nhật Ký SOAP</button>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <button
-                        onClick={() => {
-                          setSelectedEncId(e.id);
-                          setSoapData({
-                            subjective: e.subjective || '',
-                            objective: e.objective || '',
-                            assessment: e.assessment || '',
-                            plan: e.plan || '',
-                          });
-                        }}
-                        className="px-3.5 py-2 rounded-xl border border-cyan-300 dark:border-cyan-800 bg-cyan-50 dark:bg-cyan-950/60 text-cyan-800 dark:text-cyan-200 font-bold text-xs hover:bg-cyan-100 cursor-pointer transition-all shadow-2xs"
-                      >
-                        Cập nhật Nhật Ký SOAP
-                      </button>
-                      {e.status !== 'completed' && (
-                        <button
-                          onClick={() => handleCompleteEncounter(e.id)}
-                          className="px-4 py-2 rounded-xl bg-emerald-600 text-white font-black text-xs hover:bg-emerald-700 shadow-md cursor-pointer active:scale-95 transition-all"
-                        >
-                          Hoàn Tất Lượt Khám
-                        </button>
-                      )}
-                    </>
+                  <button
+                    onClick={() => {
+                      if (isSelected) {
+                        setSelectedEncId(null);
+                      } else {
+                        setSelectedEncId(e.id);
+                        setSoapData({
+                          subjective: e.subjective || '',
+                          objective: e.objective || '',
+                          assessment: e.assessment || '',
+                          plan: e.plan || '',
+                        });
+                      }
+                    }}
+                    className={`px-4 py-2 rounded-xl font-bold text-xs cursor-pointer transition-all shadow-2xs ${
+                      isSelected
+                        ? 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+                        : 'border border-cyan-300 dark:border-cyan-800 bg-cyan-50 dark:bg-cyan-950/60 text-cyan-800 dark:text-cyan-200 hover:bg-cyan-100'
+                    }`}
+                  >
+                    {isSelected ? '✕ Đóng Khung SOAP' : 'Cập nhật Nhật Ký SOAP'}
+                  </button>
+
+                  {e.status !== 'completed' && (
+                    <button
+                      onClick={() => handleCompleteEncounter(e.id)}
+                      className="px-4 py-2 rounded-xl bg-emerald-600 text-white font-black text-xs hover:bg-emerald-700 shadow-md cursor-pointer active:scale-95 transition-all"
+                    >
+                      Hoàn Tất Lượt Khám
+                    </button>
                   )}
                 </div>
               </div>
+
+              {/* 8. Full-Width Spacious Dedicated SOAP Editor Card */}
+              {isSelected && (
+                <div className="w-full space-y-4 p-5 md:p-6 bg-slate-50/90 dark:bg-slate-950/90 rounded-3xl border-2 border-cyan-500/40 shadow-xl animate-in fade-in zoom-in-95 duration-200 text-left">
+                  <div className="flex items-center justify-between pb-3 border-b border-cyan-500/20">
+                    <div className="flex items-center gap-2">
+                      <Stethoscope className="w-5 h-5 text-cyan-600" />
+                      <h4 className="font-black text-slate-900 dark:text-white text-sm">
+                        CHỈNH SỬA BỆNH ÁN & GHI CHÚ SOAP: <span className="text-cyan-600">{e.patientName}</span>
+                      </h4>
+                    </div>
+                    <span className="text-[11px] font-bold text-cyan-600 bg-cyan-500/10 px-3 py-1 rounded-full">
+                      Mã HS: #{e.id.substring(0, 8).toUpperCase()}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                    <div className="space-y-1">
+                      <label className="font-black text-slate-800 dark:text-slate-200 block">S - Hỏi Bệnh & Tiền Sử</label>
+                      <textarea 
+                        rows={3} 
+                        placeholder="Ghi nhận tiền sử bệnh, triệu chứng cơ năng (đau ngực, sốt...)" 
+                        value={soapData.subjective} 
+                        onChange={(ev) => setSoapData({ ...soapData, subjective: ev.target.value })} 
+                        className="w-full p-3 rounded-2xl border border-slate-200 dark:border-slate-700 dark:bg-slate-900 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-cyan-500 shadow-2xs leading-relaxed" 
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="font-black text-slate-800 dark:text-slate-200 block">O - Khám Thể Trạng & Sinh Hiệu</label>
+                      <textarea 
+                        rows={3} 
+                        placeholder="Ghi nhận chỉ số sinh hiệu (Huyết áp, Mạch, SpO2, Thân nhiệt...)" 
+                        value={soapData.objective} 
+                        onChange={(ev) => setSoapData({ ...soapData, objective: ev.target.value })} 
+                        className="w-full p-3 rounded-2xl border border-slate-200 dark:border-slate-700 dark:bg-slate-900 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-cyan-500 shadow-2xs leading-relaxed" 
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="font-black text-slate-800 dark:text-slate-200 block">A - Chẩn Đoán & Mã Bệnh ICD-10</label>
+                      <textarea 
+                        rows={3} 
+                        placeholder="Chẩn đoán xác định, mã bệnh ICD-10 (Ví dụ: K29.7 - Viêm dạ dày cấp)" 
+                        value={soapData.assessment} 
+                        onChange={(ev) => setSoapData({ ...soapData, assessment: ev.target.value })} 
+                        className="w-full p-3 rounded-2xl border border-slate-200 dark:border-slate-700 dark:bg-slate-900 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-cyan-500 shadow-2xs leading-relaxed" 
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="font-black text-slate-800 dark:text-slate-200 block">P - Kế Hoạch & Hướng Điều Trị</label>
+                      <textarea 
+                        rows={3} 
+                        placeholder="Chỉ định CLS, kê đơn thuốc, hướng dẫn theo dõi và hẹn tái khám..." 
+                        value={soapData.plan} 
+                        onChange={(ev) => setSoapData({ ...soapData, plan: ev.target.value })} 
+                        className="w-full p-3 rounded-2xl border border-slate-200 dark:border-slate-700 dark:bg-slate-900 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-cyan-500 shadow-2xs leading-relaxed" 
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-200/80 dark:border-slate-800">
+                    <button 
+                      onClick={() => setSelectedEncId(null)} 
+                      className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 cursor-pointer"
+                    >
+                      Hủy Bỏ
+                    </button>
+                    <button 
+                      onClick={() => handleSaveSOAP(e.id)} 
+                      className="px-6 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-black shadow-md cursor-pointer transition-all active:scale-95"
+                    >
+                      ✓ Lưu Nhật Ký SOAP
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           );
         })}
