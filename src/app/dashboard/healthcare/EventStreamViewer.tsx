@@ -22,15 +22,15 @@ export function EventStreamViewer({ events, outbox, activeSagasCount, onSimulate
   const getCategoryBadge = (category: DomainEventStreamItem['category']) => {
     switch (category) {
       case 'encounter':
-        return <span className="px-2 py-0.5 text-[9px] font-black bg-blue-50 text-blue-700 border border-blue-200/60 rounded-md">ENCOUNTER</span>;
+        return <span className="px-2 py-0.5 text-[9px] font-black bg-blue-50 text-blue-700 border border-blue-200/60 rounded-md">CA KHÁM</span>;
       case 'clinical':
-        return <span className="px-2 py-0.5 text-[9px] font-black bg-teal-50 text-teal-700 border border-teal-200/60 rounded-md">CLINICAL</span>;
+        return <span className="px-2 py-0.5 text-[9px] font-black bg-teal-50 text-teal-700 border border-teal-200/60 rounded-md">LÂM SÀNG</span>;
       case 'prescription':
-        return <span className="px-2 py-0.5 text-[9px] font-black bg-purple-50 text-purple-700 border border-purple-200/60 rounded-md">PRESCRIPTION</span>;
+        return <span className="px-2 py-0.5 text-[9px] font-black bg-purple-50 text-purple-700 border border-purple-200/60 rounded-md">KÊ ĐƠN TUYẾN</span>;
       case 'resource':
-        return <span className="px-2 py-0.5 text-[9px] font-black bg-amber-50 text-amber-700 border border-amber-200/60 rounded-md">RESOURCE</span>;
+        return <span className="px-2 py-0.5 text-[9px] font-black bg-amber-50 text-amber-700 border border-amber-200/60 rounded-md">TÀI NGUYÊN</span>;
       case 'billing':
-        return <span className="px-2 py-0.5 text-[9px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200/60 rounded-md">BILLING</span>;
+        return <span className="px-2 py-0.5 text-[9px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200/60 rounded-md">HÓA ĐƠN</span>;
     }
   };
 
@@ -52,7 +52,7 @@ export function EventStreamViewer({ events, outbox, activeSagasCount, onSimulate
             <span className="p-1.5 rounded-xl bg-teal-50 text-teal-600 border border-teal-200/60">
               <Terminal className="w-5 h-5" />
             </span>
-            Event Sourcing Log & Transactional Outbox
+            Nhật ký Sự kiện Sổ cái & Outbox Giao dịch
           </h2>
           <p className="text-xs text-slate-500 font-semibold mt-0.5">
             Nhật ký sự kiện miền (Domain Event Log) và trạng thái Outbox gửi tin cậy đi qua EventBus
@@ -63,12 +63,12 @@ export function EventStreamViewer({ events, outbox, activeSagasCount, onSimulate
           {/* Active Sagas Badge */}
           <span className="px-3 py-1.5 rounded-xl text-[10px] font-bold bg-purple-50 text-purple-750 border border-purple-200/60 flex items-center gap-1">
             <Cpu className="w-3.5 h-3.5 text-purple-600" />
-            {activeSagasCount} Active Sagas
+            {activeSagasCount} Tiến trình Saga hoạt động
           </span>
 
           {/* Outbox Pending Status */}
           <span className="px-3 py-1.5 rounded-xl text-[10px] font-mono font-bold bg-slate-50 text-slate-700 border border-slate-200 flex items-center gap-1.5">
-            Outbox: {outbox.filter((o) => o.status === 'pending').length} pending / {outbox.filter((o) => o.status === 'published').length} published
+            Outbox: {outbox.filter((o) => o.status === 'pending').length} chờ gửi / {outbox.filter((o) => o.status === 'published').length} đã phát đi
           </span>
 
           {onSimulateEvent && (
@@ -77,7 +77,7 @@ export function EventStreamViewer({ events, outbox, activeSagasCount, onSimulate
               className="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 flex items-center gap-1.5 transition-all active:scale-95"
             >
               <Zap className="w-3.5 h-3.5 text-amber-500" />
-              <span>Simulate Event</span>
+              <span>Giả lập Sự kiện</span>
             </button>
           )}
         </div>
@@ -87,11 +87,11 @@ export function EventStreamViewer({ events, outbox, activeSagasCount, onSimulate
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
         {[
           { key: 'all', label: 'Tất cả' },
-          { key: 'encounter', label: 'Encounter' },
-          { key: 'clinical', label: 'Clinical' },
-          { key: 'prescription', label: 'Prescription' },
-          { key: 'resource', label: 'Resource' },
-          { key: 'billing', label: 'Billing' },
+          { key: 'encounter', label: 'Ca khám' },
+          { key: 'clinical', label: 'Lâm sàng' },
+          { key: 'prescription', label: 'Kê đơn' },
+          { key: 'resource', label: 'Tài nguyên' },
+          { key: 'billing', label: 'Hóa đơn' },
         ].map((tab) => (
           <button
             key={tab.key}
@@ -128,12 +128,12 @@ export function EventStreamViewer({ events, outbox, activeSagasCount, onSimulate
               <div className="flex items-center gap-2">
                 {/* Outbox status marker */}
                 <span className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-slate-50 text-slate-500 border border-slate-200">
-                  Outbox: OK
+                  Outbox: Đã gửi
                 </span>
                 <button
                   onClick={() => handleCopyPayload(evt)}
                   className="p-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-all shrink-0"
-                  title="Copy Event JSON"
+                  title="Sao chép JSON sự kiện"
                 >
                   {copiedId === evt.id ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Code2 className="w-3.5 h-3.5" />}
                 </button>

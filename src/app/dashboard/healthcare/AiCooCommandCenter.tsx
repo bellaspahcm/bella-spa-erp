@@ -16,11 +16,24 @@ export function AiCooCommandCenter({
   const getPriorityBadge = (priority: AiCooAction['priority']) => {
     switch (priority) {
       case 'high':
-        return <span className="px-2 py-0.5 text-[9px] font-black bg-rose-50 text-rose-700 border border-rose-200/60 rounded-md">HIGH PRIORITY</span>;
+        return <span className="px-2 py-0.5 text-[9px] font-black bg-rose-50 text-rose-700 border border-rose-200/60 rounded-md">ƯU TIÊN CAO</span>;
       case 'medium':
-        return <span className="px-2 py-0.5 text-[9px] font-black bg-amber-50 text-amber-700 border border-amber-200/60 rounded-md">MEDIUM</span>;
+        return <span className="px-2 py-0.5 text-[9px] font-black bg-amber-50 text-amber-700 border border-amber-200/60 rounded-md">TRUNG BÌNH</span>;
       case 'info':
-        return <span className="px-2 py-0.5 text-[9px] font-black bg-blue-50 text-blue-700 border border-blue-200/60 rounded-md">INFO</span>;
+        return <span className="px-2 py-0.5 text-[9px] font-black bg-blue-50 text-blue-700 border border-blue-200/60 rounded-md">THÔNG TIN</span>;
+    }
+  };
+
+  const getCategoryLabel = (category: string) => {
+    switch (category) {
+      case 'chair':
+        return 'Ghế điều trị';
+      case 'patient_wait':
+        return 'Thời gian chờ';
+      case 'capacity':
+        return 'Công suất vận hành';
+      default:
+        return category;
     }
   };
 
@@ -38,7 +51,7 @@ export function AiCooCommandCenter({
           <div className="text-left">
             <div className="flex items-center gap-2">
               <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-teal-50 text-teal-700 border border-teal-200/50">
-                AI COO Agent Active
+                AI COO Đang hoạt động
               </span>
             </div>
             <h3 className="text-base font-black text-slate-900 leading-tight mt-0.5">
@@ -63,7 +76,7 @@ export function AiCooCommandCenter({
             <div className="space-y-1.5">
               <div className="flex items-center justify-between gap-2">
                 {getPriorityBadge(act.priority)}
-                <span className="text-[10px] font-bold text-slate-500 capitalize">{act.category}</span>
+                <span className="text-[10px] font-bold text-slate-500">{getCategoryLabel(act.category)}</span>
               </div>
               <h4 className="font-extrabold text-sm text-slate-900 group-hover:text-teal-700 transition-colors leading-tight">
                 {act.title}

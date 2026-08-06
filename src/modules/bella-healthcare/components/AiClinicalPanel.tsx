@@ -11,12 +11,14 @@ export interface AiClinicalPanelProps {
     readonly warnings: string[];
     readonly blockers: string[];
   }>;
+  readonly isReadOnly?: boolean;
 }
 
 export function AiClinicalPanel({
   patientName,
   patientAllergies,
   onRunClinicalCheck,
+  isReadOnly = false,
 }: AiClinicalPanelProps) {
   const [rawNotes, setRawNotes] = useState<string>('');
   const [soapNote, setSoapNote] = useState<{
@@ -115,15 +117,17 @@ export function AiClinicalPanel({
           <textarea
             value={rawNotes}
             onChange={(e) => setRawNotes(e.target.value)}
-            placeholder="Nhập ghi chú thô của bác sĩ (ví dụ: bệnh nhân đau răng 36 khi ăn đồ nóng lạnh, đau nhiều tối qua, khám thấy sâu sâu sát tủy...)"
-            className="w-full min-h-[90px] p-3.5 text-xs rounded-2xl border border-slate-200/90 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 dark:bg-slate-900/90 dark:border-slate-800 dark:text-white leading-relaxed resize-none"
+            readOnly={isReadOnly}
+            placeholder={isReadOnly ? "Chỉ Bác sĩ điều trị mới có quyền soạn ghi chú lâm sàng." : "Nhập ghi chú thô của bác sĩ (ví dụ: bệnh nhân đau răng 36 khi ăn đồ nóng lạnh, đau nhiều tối qua, khám thấy sâu sâu sát tủy...)"}
+            className="w-full min-h-[90px] p-3.5 text-xs rounded-2xl border border-slate-200/90 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 dark:bg-slate-900/90 dark:border-slate-800 dark:text-white leading-relaxed resize-none disabled:opacity-60"
+            disabled={isReadOnly}
           />
         </div>
 
         <button
           onClick={handleGenerateSoap}
-          disabled={isGeneratingSoap}
-          className="w-full flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-teal-500 via-teal-600 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 text-white font-extrabold text-xs rounded-xl shadow-lg shadow-teal-500/20 transition-all active:scale-95 disabled:opacity-50"
+          disabled={isGeneratingSoap || isReadOnly}
+          className="w-full flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-teal-500 via-teal-600 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 text-white font-extrabold text-xs rounded-xl shadow-lg shadow-teal-500/20 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <Brain className={`w-4 h-4 ${isGeneratingSoap ? 'animate-spin' : ''}`} />
           <span>{isGeneratingSoap ? 'AI đang phân tích lâm sàng...' : 'Cấu trúc hóa SOAP Note (AI)'}</span>

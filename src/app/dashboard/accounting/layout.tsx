@@ -132,12 +132,12 @@ export default function AccountingLayout({
         <div className="flex flex-col gap-4 max-w-7xl mx-auto">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div className="w-full lg:w-auto">
-              <h1 className="text-2xl font-black text-[#4C243B] dark:text-[#EFE9E1] tracking-tight uppercase flex items-center gap-2.5">
-                <Scale className="w-6 h-6 text-primary dark:text-[#A67D44] animate-pulse" />
-                Hệ thống Kế toán Sổ cái
+              <h1 className="text-xl sm:text-2xl font-black text-[#4C243B] dark:text-[#EFE9E1] tracking-tight uppercase flex items-center gap-2.5 whitespace-nowrap">
+                <Scale className="w-5 h-5 sm:w-6 sm:h-6 text-primary dark:text-[#A67D44] shrink-0" />
+                Kế toán sổ cái
               </h1>
-              <p className="text-xs font-bold text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest mt-1">
-                Phân hệ quản trị tài chính doanh nghiệp chuẩn Thông tư 133
+              <p className="text-[10px] sm:text-xs font-bold text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest mt-1 whitespace-nowrap">
+                Quản trị tài chính chuẩn Thông tư 133
               </p>
             </div>
 
@@ -221,20 +221,20 @@ export default function AccountingLayout({
             </div>
 
             {/* Desktop Navigation Groups */}
-            <nav className="hidden md:flex md:flex-wrap items-center gap-1.5 mt-6 lg:mt-0 w-full lg:w-auto">
+            <nav className="hidden md:flex md:flex-nowrap items-center gap-1 mt-6 lg:mt-0 w-full lg:w-auto overflow-x-auto [scrollbar-width:none] &::-webkit-scrollbar{display:none} whitespace-nowrap">
               {navGroups.map((group) => {
                 const isActive = isGroupActive(pathname, group);
                 const GroupIcon = group.icon;
                 return (
                   <Link key={group.href} href={group.href} className="relative block shrink-0 w-full md:w-auto">
                     <div className={cn(
-                      "flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs font-bold transition-all relative z-10 cursor-pointer w-full justify-start",
+                      "flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all relative z-10 cursor-pointer w-full justify-start whitespace-nowrap",
                       isActive
                         ? "text-[#BE185D] dark:text-[#EFE9E1]"
                         : "text-slate-500 hover:text-[#BE185D] dark:text-[#CDBCAB]/80 dark:hover:text-[#EFE9E1]"
                     )}>
                       <GroupIcon className={cn(
-                        "w-4 h-4 transition-colors shrink-0",
+                        "w-3.5 h-3.5 transition-colors shrink-0",
                         isActive ? "text-[#BE185D] dark:text-[#A67D44]" : "text-slate-400 dark:text-[#CDBCAB]/60"
                       )} />
                       <span className="truncate">{group.label}</span>
@@ -290,7 +290,7 @@ export default function AccountingLayout({
       </header>
 
       {/* Main content body container */}
-      <main className="flex-1 p-6 md:p-8 max-w-7xl mx-auto w-full relative z-10">
+      <main className="flex-1 p-6 md:p-8 max-w-7xl mx-auto w-full min-w-0 relative z-10">
         {children}
       </main>
     </div>

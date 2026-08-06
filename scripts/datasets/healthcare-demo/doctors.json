@@ -1,0 +1,42 @@
+[
+  {
+    "email": "doctor.minh@belladental.vn",
+    "full_name": "BS. Lê Minh",
+    "role": "ktv_lead",
+    "position_tier": "lead",
+    "description": "Nha sĩ Trưởng / Chuyên gia Cấy ghép Implant",
+    "hire_date": "2024-01-15"
+  },
+  {
+    "email": "doctor.thao@belladental.vn",
+    "full_name": "BS. Trần Thảo",
+    "role": "ktv",
+    "position_tier": "senior",
+    "description": "Chuyên gia Phục hình Sứ & Chỉnh nha Invisalign",
+    "hire_date": "2024-06-20"
+  },
+  {
+    "email": "doctor.an@belladental.vn",
+    "full_name": "BS. Nguyễn An",
+    "role": "ktv",
+    "position_tier": "junior",
+    "description": "Bác sĩ Nội nha Vi phẫu & Nha khoa Tổng quát",
+    "hire_date": "2025-02-10"
+  },
+  {
+    "email": "nurse.mai@belladental.vn",
+    "full_name": "Điều dưỡng Lê Mai",
+    "role": "ktv",
+    "position_tier": "senior",
+    "description": "Điều dưỡng trưởng phòng vô trùng",
+    "hire_date": "2025-03-01"
+  },
+  {
+    "email": "nurse.vy@belladental.vn",
+    "full_name": "Trợ lý nha khoa Vy",
+    "role": "ktv",
+    "position_tier": "junior",
+    "description": "Trợ lý phụ tá bác sĩ",
+    "hire_date": "2025-09-12"
+  }
+]

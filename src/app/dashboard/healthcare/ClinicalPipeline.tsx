@@ -30,7 +30,7 @@ export function ClinicalPipeline({
 }: ClinicalPipelineProps) {
   const categories = [
     { key: 'planned', label: 'Lên lịch hẹn', icon: Calendar, color: 'text-blue-600 bg-blue-500/10 border-blue-500/20' },
-    { key: 'arrived', label: 'Phòng chờ (Queue)', icon: UserCheck, color: 'text-amber-600 bg-amber-500/10 border-amber-500/20' },
+    { key: 'arrived', label: 'Phòng chờ tiếp đón', icon: UserCheck, color: 'text-amber-600 bg-amber-500/10 border-amber-500/20' },
     { key: 'in_progress', label: 'Đang điều trị', icon: Activity, color: 'text-teal-600 bg-teal-500/10 border-teal-500/20' },
     { key: 'finished', label: 'Đã hoàn tất', icon: CheckCircle, color: 'text-emerald-600 bg-emerald-500/10 border-emerald-500/20' },
   ];
@@ -68,7 +68,7 @@ export function ClinicalPipeline({
         <div>
           <h2 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2 tracking-tight">
             <span className="p-1.5 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400">📋</span>
-            Hàng đợi khám & Tiếp đón (Clinical Pipeline)
+            Hàng đợi khám & Tiến trình Tiếp đón lâm sàng
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
             Theo dõi luồng dịch chuyển bệnh nhân trong phòng khám theo thời gian thực

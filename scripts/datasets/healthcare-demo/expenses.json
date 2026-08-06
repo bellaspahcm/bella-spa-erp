@@ -1,0 +1,44 @@
+[
+  {
+    "category": "Supplies",
+    "amount": 25000000,
+    "description": "Nhập lô trụ Implant Nobel Biocare & khớp nối Abutment",
+    "expense_date": "2026-07-05",
+    "status": "paid"
+  },
+  {
+    "category": "Supplies",
+    "amount": 18000000,
+    "description": "Nhập khay chỉnh nha trong suốt Invisalign",
+    "expense_date": "2026-07-12",
+    "status": "paid"
+  },
+  {
+    "category": "Rent",
+    "amount": 40000000,
+    "description": "Thuê mặt bằng phòng khám Nha khoa - Quận 3",
+    "expense_date": "2026-07-01",
+    "status": "paid"
+  },
+  {
+    "category": "Utilities",
+    "amount": 4500000,
+    "description": "Tiền điện nước & vận hành máy chụp phim CT ConeBeam",
+    "expense_date": "2026-07-28",
+    "status": "paid"
+  },
+  {
+    "category": "Marketing",
+    "amount": 15000000,
+    "description": "Chạy chiến dịch quảng cáo Implant thẩm mỹ Facebook",
+    "expense_date": "2026-07-10",
+    "status": "approved"
+  },
+  {
+    "category": "Other",
+    "amount": 3500000,
+    "description": "Bảo dưỡng định kỳ ghế nha khoa số 3 và số 4",
+    "expense_date": "2026-07-20",
+    "status": "paid"
+  }
+]

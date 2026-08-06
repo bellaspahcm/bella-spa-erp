@@ -54,10 +54,10 @@ const dateInputClassName =
 const dateFieldClassName = 'grid w-full min-w-0 grid-cols-1 gap-1.5 sm:w-auto sm:min-w-[10.75rem]';
 const dateLabelClassName = 'text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest whitespace-nowrap';
 const reportTableWrapperClassName =
-  'w-full max-w-full overflow-x-auto overscroll-x-contain rounded-2xl border border-slate-100 bg-white shadow-sm dark:border-[#3E3A35]/50 dark:bg-[#11100F]/20';
-const reportTableClassName = 'w-full min-w-[64rem] table-auto border-collapse';
-const reportWideTableClassName = 'w-full min-w-[72rem] table-auto border-collapse';
-const reportLedgerTableClassName = 'w-full min-w-[78rem] table-auto border-collapse';
+  'w-full max-w-full overflow-x-auto overscroll-x-contain rounded-2xl border border-slate-100 bg-white shadow-sm dark:border-[#3E3A35]/50 dark:bg-[#11100F]/20 custom-scrollbar';
+const reportTableClassName = 'w-full min-w-[68rem] table-auto border-collapse';
+const reportWideTableClassName = 'w-full min-w-[82rem] table-auto border-collapse';
+const reportLedgerTableClassName = 'w-full min-w-[88rem] table-auto border-collapse';
 const reportLabelCellClassName = 'min-w-0 whitespace-normal break-words leading-relaxed';
 const reportNumericCellClassName = 'whitespace-nowrap tabular-nums';
 const stickyHeaderCellClassName =
@@ -254,7 +254,7 @@ export default function AccountingReportsPage() {
         </div>
       )}
 
-      <div className="bg-white dark:bg-[#1C1B19] rounded-[2.5rem] border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-5 sm:p-6 shadow-sm grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
+      <div className="bg-white dark:bg-[#1C1B19] rounded-[2.5rem] border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-5 sm:p-6 shadow-sm grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start w-full max-w-full overflow-hidden">
         {/* Switch report type tabs */}
         <div className="flex max-w-full flex-wrap items-center gap-1 rounded-2xl border border-slate-100 bg-slate-50 p-1.5 dark:border-none dark:bg-[#11100F]">
           {reportTabs.map((t) => (
@@ -356,7 +356,7 @@ export default function AccountingReportsPage() {
       </div>
 
       {/* ── REPORT CONTENT DISPLAY ── */}
-      <div className="bg-white dark:bg-[#1C1B19] rounded-[2.5rem] border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-6 md:p-8 shadow-sm">
+      <div className="bg-white dark:bg-[#1C1B19] rounded-[2.5rem] border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-6 md:p-8 shadow-sm w-full max-w-full overflow-hidden">
         {loading ? (
           <SkeletonTable />
         ) : activeTab === 'trial_balance' ? (
@@ -379,19 +379,19 @@ export default function AccountingReportsPage() {
                 </colgroup>
                 <thead>
                   <tr className="text-left bg-slate-50 dark:bg-[#11100F]/40 border-b border-slate-200 dark:border-[#3E3A35]/40">
-                    <th rowSpan={2} className={`${stickyHeaderCellClassName} ${reportNumericCellClassName} px-4 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest border-r border-slate-100 dark:border-[#3E3A35]/20`}>Mã TK</th>
-                    <th rowSpan={2} className="px-4 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest border-r border-slate-100 dark:border-[#3E3A35]/20">Tên Tài Khoản</th>
-                    <th colSpan={2} className="px-4 py-2 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-center border-b border-r border-slate-100 dark:border-[#3E3A35]/20">Số dư đầu kỳ</th>
-                    <th colSpan={2} className="px-4 py-2 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-center border-b border-r border-slate-100 dark:border-[#3E3A35]/20">Số phát sinh trong kỳ</th>
-                    <th colSpan={2} className="px-4 py-2 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-center border-b border-slate-100 dark:border-[#3E3A35]/20">Số dư cuối kỳ</th>
+                    <th rowSpan={2} className={`${stickyHeaderCellClassName} ${reportNumericCellClassName} px-4 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest border-r border-slate-100 dark:border-[#3E3A35]/20 whitespace-nowrap`}>Mã TK</th>
+                    <th rowSpan={2} className="px-4 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest border-r border-slate-100 dark:border-[#3E3A35]/20 whitespace-nowrap">Tên Tài Khoản</th>
+                    <th colSpan={2} className="px-4 py-2 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-center border-b border-r border-slate-100 dark:border-[#3E3A35]/20 whitespace-nowrap">Số dư đầu kỳ</th>
+                    <th colSpan={2} className="px-4 py-2 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-center border-b border-r border-slate-100 dark:border-[#3E3A35]/20 whitespace-nowrap">Số phát sinh trong kỳ</th>
+                    <th colSpan={2} className="px-4 py-2 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-center border-b border-slate-100 dark:border-[#3E3A35]/20 whitespace-nowrap">Số dư cuối kỳ</th>
                   </tr>
                   <tr className="text-right bg-slate-50 dark:bg-[#11100F]/40 border-b border-slate-200 dark:border-[#3E3A35]/40 text-4xs uppercase tracking-widest text-slate-400">
-                    <th className="px-4 py-2 border-r border-slate-100 dark:border-[#3E3A35]/20">Nợ</th>
-                    <th className="px-4 py-2 border-r border-slate-100 dark:border-[#3E3A35]/20">Có</th>
-                    <th className="px-4 py-2 border-r border-slate-100 dark:border-[#3E3A35]/20">Nợ</th>
-                    <th className="px-4 py-2 border-r border-slate-100 dark:border-[#3E3A35]/20">Có</th>
-                    <th className="px-4 py-2 border-r border-slate-100 dark:border-[#3E3A35]/20">Nợ</th>
-                    <th className="px-4 py-2">Có</th>
+                    <th className="px-4 py-2 border-r border-slate-100 dark:border-[#3E3A35]/20 whitespace-nowrap">Nợ</th>
+                    <th className="px-4 py-2 border-r border-slate-100 dark:border-[#3E3A35]/20 whitespace-nowrap">Có</th>
+                    <th className="px-4 py-2 border-r border-slate-100 dark:border-[#3E3A35]/20 whitespace-nowrap">Nợ</th>
+                    <th className="px-4 py-2 border-r border-slate-100 dark:border-[#3E3A35]/20 whitespace-nowrap">Có</th>
+                    <th className="px-4 py-2 border-r border-slate-100 dark:border-[#3E3A35]/20 whitespace-nowrap">Nợ</th>
+                    <th className="px-4 py-2 whitespace-nowrap">Có</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-[#3E3A35]/20 font-mono text-2xs">

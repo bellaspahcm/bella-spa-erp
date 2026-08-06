@@ -10,7 +10,7 @@ export interface CarePathTrackerProps {
 }
 
 export function CarePathTracker({
-  title = 'Lộ trình Điều trị Implant Chuyên sâu (Care Path)',
+  title = 'Lộ trình Điều trị Implant Chuyên sâu (Phác đồ Lâm sàng)',
   steps,
 }: CarePathTrackerProps) {
   const currentStep = steps.find((s) => s.status === 'in_progress') || steps[0];

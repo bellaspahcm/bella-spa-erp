@@ -58,7 +58,7 @@ export function ChairManagementPanel({
             <span className="p-1.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
               <Armchair className="w-5 h-5" />
             </span>
-            Chair & Resource Management (Ma trận Ghế điều trị)
+            Quản lý Ghế & Tài nguyên điều trị (Ma trận Ghế)
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
             Quản lý và điều phối ghế điều trị, công suất bác sĩ và phòng kỹ thuật theo thời gian thực
@@ -68,12 +68,12 @@ export function ChairManagementPanel({
         {/* Live Utilization Metrics Pills */}
         <div className="flex flex-wrap items-center gap-3">
           <div className="px-3.5 py-1.5 rounded-2xl bg-teal-500/10 border border-teal-500/20 text-left">
-            <span className="text-[9px] font-bold text-teal-600 dark:text-teal-400 uppercase block">Chair Utilization</span>
+            <span className="text-[9px] font-bold text-teal-600 dark:text-teal-400 uppercase block">Hiệu suất sử dụng Ghế</span>
             <span className="text-sm font-black text-slate-900 dark:text-white">{metrics.chairOccupancyRate}% công suất</span>
           </div>
 
           <div className="px-3.5 py-1.5 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-left">
-            <span className="text-[9px] font-bold text-blue-600 dark:text-blue-400 uppercase block">Doctor Utilization</span>
+            <span className="text-[9px] font-bold text-blue-600 dark:text-blue-400 uppercase block">Hiệu suất Bác sĩ</span>
             <span className="text-sm font-black text-slate-900 dark:text-white">{metrics.doctorOccupancyRate}% hiệu suất</span>
           </div>
 

@@ -1,0 +1,56 @@
+[
+  {
+    "description": "Thu tiền dịch vụ khám và cấy ghép Implant Nobel - BN Nguyễn Văn Hùng",
+    "entry_date": "2026-07-15",
+    "status": "POSTED",
+    "reference_type": "Encounter.Completed.v1",
+    "lines": [
+      {
+        "account_code": "112",
+        "debit_amount": 15000000,
+        "credit_amount": 0
+      },
+      {
+        "account_code": "5111",
+        "debit_amount": 0,
+        "credit_amount": 15000000
+      }
+    ]
+  },
+  {
+    "description": "Thu tiền dịch vụ niềng răng Invisalign đợt 1 - BN Lê Thị Mai",
+    "entry_date": "2026-07-20",
+    "status": "POSTED",
+    "reference_type": "Invoice.Issued.v1",
+    "lines": [
+      {
+        "account_code": "112",
+        "debit_amount": 22000000,
+        "credit_amount": 0
+      },
+      {
+        "account_code": "5111",
+        "debit_amount": 0,
+        "credit_amount": 22000000
+      }
+    ]
+  },
+  {
+    "description": "Chi lương tháng 7/2026 cho Bác sĩ Lê Minh",
+    "entry_date": "2026-07-31",
+    "status": "POSTED",
+    "reference_type": "Payroll.Paid.v1",
+    "lines": [
+      {
+        "account_code": "6421",
+        "debit_amount": 28000000,
+        "credit_amount": 0
+      },
+      {
+        "account_code": "112",
+        "debit_amount": 0,
+        "credit_amount": 28000000
+      }
+    ]
+  }
+]

@@ -22,7 +22,7 @@ export function ClinicalTimeline({ steps, onAddStep }: ClinicalTimelineProps) {
             <span className="p-1.5 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
               <Clock className="w-5 h-5" />
             </span>
-            Clinical Timeline & SLA Bottleneck Monitor
+            Tiến trình Lâm sàng & Giám sát Nút thắt SLA
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
             Dòng thời gian vận hành đợt khám và phát hiện nút thắt cổ chai (Bottlenecks) theo SLA y tế
