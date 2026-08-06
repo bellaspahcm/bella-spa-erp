@@ -78,7 +78,7 @@ function DICOMViewerContent() {
     technique: 'Chụp cắt lớp vi tính sọ não 128 dãy không tiêm thuốc tương quang (1.0mm axial slices).',
     findings: 'Nhu mô não vùng thái dương - đỉnh bên phải có vùng tăng tỷ trọng tự nhiên (HU +65) kích thước 24x18mm. Đè ép nhẹ não thất bên phải, đường giữa dịch chuyển sang trái 4.2mm.',
     impression: '🚨 XUẤT HUYẾT NÃO CẤP VÙNG THÁI DƯƠNG - ĐỈNH (R). ĐÈ ÉP ĐƯỜNG GIỮA 4.2MM.',
-    recommendation: 'Hội chẩn khẩn cấp chuyên khoa Phẫu thuật Thần kinh. Đề nghị chụp CT Angio mạch máu não tầm soát dị dạng AVM/Túi phình.',
+    recommendation: 'Hội chẩn khẩn cấp chuyên khoa Phẫu thuật Thần kinh. Đề nghị chụp CT Angio mạch máu bệnh lý.',
   });
 
   const isBrainCT = studyUid.includes('102') || studyUid.includes('CT');
@@ -103,17 +103,17 @@ function DICOMViewerContent() {
     : isSpineMRI 
     ? 'MRI Cột Sống Thắt Lưng 3D' 
     : isChestXray 
-    ? 'X-Quang Ngực Thẳng Kỹ Thuật Số DR' 
+    ? 'X-Quang Ngực Thẳng DR' 
     : isUltrasound 
-    ? 'Siêu Âm Bụng 4D Doppler' 
-    : 'Nội Soi Dạ Dày Thực Quản An Thần';
+    ? 'Siêu Âm Bụng 4D' 
+    : 'Nội Soi Dạ Dày';
 
   // Interactive AI Findings
   const aiFindingsList = isBrainCT
     ? [
         { id: 'f1', label: 'Intracranial Hemorrhage (Xuất huyết sọ não cấp)', confidence: 98, slice: 48, volume: '2.3 cc', isCritical: true, status: 'CONFIRMED' },
         { id: 'f2', label: 'Midline Shift 4.2mm (Đè ép đường giữa)', confidence: 89, slice: 52, shift: '4.2 mm', isCritical: true, status: 'PENDING' },
-        { id: 'f3', label: 'Perilesional Edema (Phù não quanh tổn thương)', confidence: 82, slice: 46, volume: '1.1 cc', isCritical: false, status: 'PENDING' },
+        { id: 'f3', label: 'Perilesional Edema (Phù phát sau tổn thương)', confidence: 82, slice: 46, volume: '1.1 cc', isCritical: false, status: 'PENDING' },
       ]
     : isSpineMRI
     ? [
@@ -157,108 +157,110 @@ function DICOMViewerContent() {
   };
 
   return (
-    <div className="w-screen h-screen bg-[#060912] text-white flex flex-col overflow-hidden select-none font-sans">
-      {/* 1. PACS Enterprise Top Toolbar Bar */}
-      <div className="h-14 px-4 bg-[#0c1220] border-b border-slate-800 flex items-center justify-between shrink-0 shadow-md">
-        {/* Left Info & Navigation */}
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => {
-              if (window.history.length > 1) window.history.back();
-              else window.location.href = '/dashboard/healthcare/imaging';
-            }}
-            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer"
-          >
-            <ArrowLeft className="w-4 h-4" /> Workstation
-          </button>
+    <div className="w-screen h-screen bg-[#060912] text-white flex flex-col overflow-x-hidden overflow-y-hidden select-none font-sans max-w-full">
+      {/* 1. PACS Enterprise Top Toolbar Bar - Responsive Wrap & Compact Grid (No Slide Ngang) */}
+      <header className="bg-[#0c1220] border-b border-slate-800/80 px-3 py-2 shrink-0 shadow-md max-w-full overflow-hidden">
+        <div className="flex flex-wrap items-center justify-between gap-y-2 gap-x-3 w-full">
+          {/* Section 1: Navigation & Patient Info */}
+          <div className="flex items-center gap-2.5 min-w-0">
+            <button
+              onClick={() => {
+                if (window.history.length > 1) window.history.back();
+                else window.location.href = '/dashboard/healthcare/imaging';
+              }}
+              className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer shrink-0"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" /> RIS Workstation
+            </button>
 
-          <div className="h-5 w-px bg-slate-800" />
+            <div className="h-4 w-px bg-slate-800 shrink-0 hidden sm:block" />
 
-          <div className="space-y-0.5 text-left">
-            <h2 className="text-xs font-black text-white flex items-center gap-2">
-              <span className="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-400 font-mono text-[10px]">
-                {modality} WORKSTATION ENTERPRISE
-              </span>
-              {patientName}
-            </h2>
-            <p className="text-[10px] text-slate-400 font-mono">{studyTitle} • UID: {studyUid}</p>
+            <div className="min-w-0 truncate text-left">
+              <h2 className="text-xs font-black text-white flex items-center gap-1.5 truncate">
+                <span className="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-400 font-mono text-[9px] font-bold shrink-0">
+                  {modality} WORKSTATION
+                </span>
+                <span className="truncate">{patientName}</span>
+              </h2>
+              <p className="text-[10px] text-slate-400 font-mono truncate hidden md:block">{studyTitle} • UID: {studyUid}</p>
+            </div>
+          </div>
+
+          {/* Section 2: Viewport Mode Selector Pills */}
+          <div className="flex items-center gap-1 bg-[#12192c] p-1 rounded-xl border border-slate-800 text-[11px] font-bold shrink-0">
+            <button
+              onClick={() => {
+                setIsCompareMode(false);
+                setMprLayout('SINGLE');
+              }}
+              className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                !isCompareMode && mprLayout === 'SINGLE' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Single 2D
+            </button>
+            <button
+              onClick={() => {
+                setIsCompareMode(!isCompareMode);
+                setMprLayout('SINGLE');
+              }}
+              className={`px-2.5 py-1 rounded-lg flex items-center gap-1 transition-all cursor-pointer ${
+                isCompareMode ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Split className="w-3.5 h-3.5" /> Compare Study
+            </button>
+            <button
+              onClick={() => {
+                setMprLayout(mprLayout === 'QUAD_MPR' ? 'SINGLE' : 'QUAD_MPR');
+                setIsCompareMode(false);
+              }}
+              className={`px-2.5 py-1 rounded-lg flex items-center gap-1 transition-all cursor-pointer ${
+                mprLayout === 'QUAD_MPR' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" /> 4-MPR Quad
+            </button>
+          </div>
+
+          {/* Section 3: Critical ER & Actions */}
+          <div className="flex items-center gap-2 text-xs shrink-0">
+            {isBrainCT && (
+              <button
+                onClick={handleDispatchER}
+                className="px-2.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black text-xs flex items-center gap-1 shadow-lg shadow-rose-600/30 animate-pulse cursor-pointer shrink-0"
+              >
+                <AlertTriangle className="w-3.5 h-3.5" /> 🚨 NOTIFY ER
+              </button>
+            )}
+
+            <button
+              onClick={handleDictate}
+              className={`px-2.5 py-1.5 rounded-xl font-bold flex items-center gap-1 transition-all cursor-pointer shrink-0 ${
+                isDictating ? 'bg-amber-500 text-white animate-pulse' : 'bg-slate-800 hover:bg-slate-700 text-slate-200'
+              }`}
+            >
+              <Mic className="w-3.5 h-3.5 text-amber-400" /> {isDictating ? 'Đang đọc...' : 'Dictate'}
+            </button>
+
+            <button
+              onClick={() => toast.success('🖨️ Đã xuất tệp DICOM & Kết xuất phim 3D sang Server PACS!')}
+              className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 shrink-0"
+              title="In / Export DICOM"
+            >
+              <Printer className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
-
-        {/* Center Viewport Layout Controls */}
-        <div className="hidden lg:flex items-center gap-1 bg-[#12192c] p-1 rounded-xl border border-slate-800 text-[11px] font-bold">
-          <button
-            onClick={() => {
-              setIsCompareMode(false);
-              setMprLayout('SINGLE');
-            }}
-            className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
-              !isCompareMode && mprLayout === 'SINGLE' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            Single 2D
-          </button>
-          <button
-            onClick={() => {
-              setIsCompareMode(!isCompareMode);
-              setMprLayout('SINGLE');
-            }}
-            className={`px-3 py-1 rounded-lg flex items-center gap-1 transition-all cursor-pointer ${
-              isCompareMode ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <Split className="w-3.5 h-3.5" /> Compare Study (Today vs Prior)
-          </button>
-          <button
-            onClick={() => {
-              setMprLayout(mprLayout === 'QUAD_MPR' ? 'SINGLE' : 'QUAD_MPR');
-              setIsCompareMode(false);
-            }}
-            className={`px-3 py-1 rounded-lg flex items-center gap-1 transition-all cursor-pointer ${
-              mprLayout === 'QUAD_MPR' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <Layers className="w-3.5 h-3.5" /> MPR Quad (Axial/Sag/Cor/3D)
-          </button>
-        </div>
-
-        {/* Right Critical Alert & Actions */}
-        <div className="flex items-center gap-2 text-xs">
-          {isBrainCT && (
-            <button
-              onClick={handleDispatchER}
-              className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold flex items-center gap-1.5 shadow-lg shadow-rose-600/30 animate-pulse cursor-pointer"
-            >
-              <AlertTriangle className="w-4 h-4" /> 🚨 NOTIFY ER EMERGENCY
-            </button>
-          )}
-
-          <button
-            onClick={handleDictate}
-            className={`px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-              isDictating ? 'bg-amber-500 text-white animate-pulse' : 'bg-slate-800 hover:bg-slate-700 text-slate-200'
-            }`}
-          >
-            <Mic className="w-3.5 h-3.5 text-amber-400" /> {isDictating ? 'Đang đọc...' : 'Voice Dictate'}
-          </button>
-
-          <button
-            onClick={() => toast.success('🖨️ Đã xuất tệp DICOM & Kết xuất phim 3D sang Server PACS!')}
-            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300"
-            title="In / Export DICOM"
-          >
-            <Printer className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
+      </header>
 
       {/* Main Workstation Body Layout */}
-      <div className="flex-1 flex overflow-hidden relative">
+      <div className="flex-1 flex overflow-hidden relative max-w-full">
         {/* Left Sub-Toolbar: Advanced Tools (Measurements & Annotations) */}
-        <div className="w-14 bg-[#0a0e19] border-r border-slate-800/80 flex flex-col items-center py-3 gap-3 shrink-0">
+        <div className="w-12 bg-[#0a0e19] border-r border-slate-800/80 flex flex-col items-center py-2 gap-2.5 shrink-0">
           <button
             onClick={() => setActiveTool('DISTANCE')}
-            className={`p-2.5 rounded-xl transition-all cursor-pointer ${activeTool === 'DISTANCE' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+            className={`p-2 rounded-xl transition-all cursor-pointer ${activeTool === 'DISTANCE' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
             title="Measure Distance (mm)"
           >
             <Ruler className="w-4 h-4" />
@@ -266,7 +268,7 @@ function DICOMViewerContent() {
 
           <button
             onClick={() => setActiveTool('AREA')}
-            className={`p-2.5 rounded-xl transition-all cursor-pointer ${activeTool === 'AREA' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+            className={`p-2 rounded-xl transition-all cursor-pointer ${activeTool === 'AREA' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
             title="Measure Area (cm²)"
           >
             <Square className="w-4 h-4" />
@@ -274,7 +276,7 @@ function DICOMViewerContent() {
 
           <button
             onClick={() => setActiveTool('VOLUME')}
-            className={`p-2.5 rounded-xl transition-all cursor-pointer ${activeTool === 'VOLUME' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+            className={`p-2 rounded-xl transition-all cursor-pointer ${activeTool === 'VOLUME' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
             title="Measure Volume (cc)"
           >
             <Circle className="w-4 h-4" />
@@ -282,17 +284,17 @@ function DICOMViewerContent() {
 
           <button
             onClick={() => setActiveTool('ANGLE')}
-            className={`p-2.5 rounded-xl transition-all cursor-pointer ${activeTool === 'ANGLE' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+            className={`p-2 rounded-xl transition-all cursor-pointer ${activeTool === 'ANGLE' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
             title="Measure Angle (°)"
           >
             <Compass className="w-4 h-4" />
           </button>
 
-          <div className="w-8 h-px bg-slate-800 my-1" />
+          <div className="w-6 h-px bg-slate-800 my-0.5" />
 
           <button
             onClick={() => setActiveTool('ARROW')}
-            className={`p-2.5 rounded-xl transition-all cursor-pointer ${activeTool === 'ARROW' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+            className={`p-2 rounded-xl transition-all cursor-pointer ${activeTool === 'ARROW' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
             title="Add Arrow Pointer"
           >
             <MoveUpRight className="w-4 h-4" />
@@ -300,7 +302,7 @@ function DICOMViewerContent() {
 
           <button
             onClick={() => setActiveTool('TEXT')}
-            className={`p-2.5 rounded-xl transition-all cursor-pointer ${activeTool === 'TEXT' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+            className={`p-2 rounded-xl transition-all cursor-pointer ${activeTool === 'TEXT' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
             title="Add Text Annotation"
           >
             <FileText className="w-4 h-4" />
@@ -308,7 +310,7 @@ function DICOMViewerContent() {
 
           <button
             onClick={() => setActiveTool('BOOKMARK')}
-            className={`p-2.5 rounded-xl transition-all cursor-pointer ${activeTool === 'BOOKMARK' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+            className={`p-2 rounded-xl transition-all cursor-pointer ${activeTool === 'BOOKMARK' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
             title="Bookmark Slice for Clinical Consult"
           >
             <Bookmark className="w-4 h-4" />
@@ -316,35 +318,62 @@ function DICOMViewerContent() {
         </div>
 
         {/* Center DICOM Viewports Container */}
-        <div className="flex-1 bg-[#040710] flex flex-col justify-between items-center relative overflow-hidden p-3">
-          {/* Top Interactive Tool Ribbon */}
-          <div className="z-20 bg-[#0d1322]/90 backdrop-blur-md px-4 py-2 rounded-2xl border border-slate-800 flex items-center gap-3 text-xs shadow-2xl mb-2">
-            <button
-              onClick={() => setZoomLevel((z) => Math.min(z + 25, 250))}
-              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200"
-              title="Phóng to"
-            >
-              <ZoomIn className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setZoomLevel((z) => Math.max(z - 25, 75))}
-              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200"
-              title="Thu nhỏ"
-            >
-              <ZoomOut className="w-4 h-4" />
-            </button>
-            <span className="text-[10px] font-mono text-indigo-400 font-bold">{zoomLevel}%</span>
-            
-            <div className="w-px h-4 bg-slate-800" />
+        <div className="flex-1 bg-[#040710] flex flex-col justify-between items-center relative overflow-hidden p-2.5 max-w-full">
+          {/* Top Controls Bar Ribbon - Flexible Wrap */}
+          <div className="z-20 bg-[#0d1322]/90 backdrop-blur-md px-3 py-1.5 rounded-2xl border border-slate-800 flex flex-wrap items-center justify-center gap-2.5 text-xs shadow-2xl mb-1.5 max-w-full">
+            {/* Zoom Controls */}
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setZoomLevel((z) => Math.min(z + 25, 250))}
+                className="p-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200"
+                title="Phóng to"
+              >
+                <ZoomIn className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => setZoomLevel((z) => Math.max(z - 25, 75))}
+                className="p-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200"
+                title="Thu nhỏ"
+              >
+                <ZoomOut className="w-3.5 h-3.5" />
+              </button>
+              <span className="text-[10px] font-mono text-indigo-400 font-bold">{zoomLevel}%</span>
+            </div>
+
+            <div className="w-px h-3.5 bg-slate-800" />
+
+            {/* Window Preset Selector Pills */}
+            <div className="flex items-center gap-1 bg-[#12192c] p-0.5 rounded-lg border border-slate-800 text-[10px] font-bold">
+              {[
+                { key: 'BRAIN', label: 'Brain W/L' },
+                { key: 'BONE', label: 'Bone' },
+                { key: 'SOFT_TISSUE', label: 'Soft Tissue' },
+                { key: 'LUNG', label: 'Lung' },
+              ].map((preset) => (
+                <button
+                  key={preset.key}
+                  onClick={() => setWindowPreset(preset.key as any)}
+                  className={`px-2 py-0.5 rounded transition-all cursor-pointer ${
+                    windowPreset === preset.key
+                      ? 'bg-indigo-600 text-white shadow-xs'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="w-px h-3.5 bg-slate-800" />
 
             {/* Heatmap Opacity Selector */}
-            <div className="flex items-center gap-1 text-[11px] font-bold text-slate-400">
-              <Flame className="w-3.5 h-3.5 text-rose-500" /> AI Heatmap Opacity:
+            <div className="flex items-center gap-1 text-[10px] font-bold text-slate-400">
+              <Flame className="w-3 h-3 text-rose-500" /> Heatmap:
               {[0, 20, 50, 80, 100].map((op) => (
                 <button
                   key={op}
                   onClick={() => setHeatmapOpacity(op)}
-                  className={`px-2 py-0.5 rounded text-[10px] font-mono transition-all cursor-pointer ${
+                  className={`px-1.5 py-0.5 rounded text-[9px] font-mono transition-all cursor-pointer ${
                     heatmapOpacity === op ? 'bg-rose-600 text-white font-bold' : 'bg-slate-800 text-slate-400'
                   }`}
                 >
@@ -353,20 +382,20 @@ function DICOMViewerContent() {
               ))}
             </div>
 
-            <div className="w-px h-4 bg-slate-800" />
+            <div className="w-px h-3.5 bg-slate-800" />
 
             <button
               onClick={() => setIsPlayingCine(!isPlayingCine)}
-              className={`px-3 py-1 rounded-xl font-bold flex items-center gap-1 transition-all ${
+              className={`px-2.5 py-0.5 rounded-xl font-bold flex items-center gap-1 transition-all text-[10px] ${
                 isPlayingCine ? 'bg-rose-600 text-white animate-pulse' : 'bg-emerald-600 text-white'
               }`}
             >
-              {isPlayingCine ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-              {isPlayingCine ? 'Dừng Cine' : 'Phát Cine Loop'}
+              {isPlayingCine ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+              {isPlayingCine ? 'Dừng Cine' : 'Cine Loop'}
             </button>
           </div>
 
-          {/* Viewport Canvas Grid (Single vs Dual Compare vs Quad MPR) */}
+          {/* Viewport Canvas Grid */}
           <div className="flex-1 w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-3 items-center justify-center relative overflow-hidden">
             {/* Viewport 1: Today Study */}
             <div className="w-full h-full relative border border-slate-800 rounded-2xl bg-slate-950 flex flex-col items-center justify-center overflow-hidden shadow-2xl">
@@ -464,8 +493,8 @@ function DICOMViewerContent() {
           </div>
 
           {/* Bottom Interactive Slice Slider */}
-          <div className="w-full max-w-xl z-20 bg-[#0d1322]/90 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-slate-800 flex items-center gap-4 text-xs mt-2">
-            <span className="font-mono text-slate-400 text-[11px] shrink-0">Slice {currentSlice}</span>
+          <div className="w-full max-w-xl z-20 bg-[#0d1322]/90 backdrop-blur-md px-4 py-2 rounded-2xl border border-slate-800 flex items-center gap-3 text-xs mt-1.5">
+            <span className="font-mono text-slate-400 text-[10px] shrink-0">Slice {currentSlice}</span>
             <input
               type="range"
               min="1"
@@ -478,7 +507,7 @@ function DICOMViewerContent() {
               }}
               className="w-full accent-indigo-500 cursor-pointer"
             />
-            <span className="font-mono text-slate-400 text-[11px] shrink-0">{totalSlices} Slices</span>
+            <span className="font-mono text-slate-400 text-[10px] shrink-0">{totalSlices} Slices</span>
           </div>
         </div>
 
