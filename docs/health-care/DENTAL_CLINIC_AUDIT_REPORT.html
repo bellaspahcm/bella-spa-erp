@@ -51,7 +51,7 @@
       position: relative;
     }
 
-    /* Ambient glows */
+    /* Decorative ambient backgrounds */
     .glow-1 {
       position: absolute;
       top: -100px;
@@ -130,7 +130,7 @@
       display: grid;
       grid-template-cols: repeat(auto-fit, minmax(480px, 1fr));
       gap: 30px;
-      margin-bottom: 40px;
+      margin-bottom: 30px;
     }
 
     @media (max-width: 768px) {
@@ -284,6 +284,49 @@
       top: 0;
       color: var(--accent-teal);
       font-weight: 900;
+    }
+
+    /* Features Grid */
+    .features-grid {
+      display: grid;
+      grid-template-cols: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 25px;
+      margin-top: 20px;
+    }
+
+    .feature-card {
+      background: #f8fafc;
+      border: 1px solid rgba(13, 148, 136, 0.1);
+      border-radius: 20px;
+      padding: 22px;
+      transition: all 0.3s ease;
+    }
+
+    .feature-card:hover {
+      border-color: var(--accent-teal);
+      background: #ffffff;
+      box-shadow: 0 10px 25px -10px rgba(13, 148, 136, 0.1);
+    }
+
+    .feature-icon {
+      color: var(--accent-teal);
+      font-size: 20px;
+      font-weight: 900;
+      margin-bottom: 10px;
+      display: inline-block;
+    }
+
+    .feature-title {
+      font-size: 14.5px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 8px;
+    }
+
+    .feature-desc {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      line-height: 1.5;
     }
 
     /* Comparison Section */
@@ -473,6 +516,43 @@
               • Outbox Pattern chống mất mát sự kiện miền
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Advanced Dental Clinic Features Section -->
+    <div class="comparison-section" style="margin-top: 0px;">
+      <div class="section-title">
+        <svg style="width: 24px; height: 24px; fill: var(--accent-teal);" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+        Tính năng Lâm sàng Nha khoa Chuyên sâu (Advanced Dental Core)
+      </div>
+      <p class="section-desc">Hệ thống tính năng hỗ trợ điều trị lâm sàng và tự động hóa phòng khám nha khoa hiện đại.</p>
+
+      <div class="features-grid">
+        <div class="feature-card">
+          <span class="feature-icon">🦷</span>
+          <div class="feature-title">Sơ đồ răng số hóa (Interactive Odontogram)</div>
+          <div class="feature-desc">Mô phỏng 3D bản đồ 32 răng vĩnh viễn và 20 răng sữa. Lưu trữ lịch sử điều trị chi tiết của từng răng theo thời gian thực.</div>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">📝</span>
+          <div class="feature-title">Bệnh án điện tử SOAP Notes & Lộ trình AI</div>
+          <div class="feature-desc">Ghi nhận SOAP lâm sàng thông minh, tích hợp AI đề xuất phác đồ điều trị 3 cấp độ (VIP, Standard, Basic) tối ưu chi phí.</div>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">🛋️</span>
+          <div class="feature-title">Điều phối Ghế & Phòng khám (Chair Allocator)</div>
+          <div class="feature-desc">Tự động phân bổ bác sĩ, phụ tá và bệnh nhân vào các ghế điều trị theo lịch hẹn, giảm thiểu tối đa thời gian chờ của bệnh nhân.</div>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">📷</span>
+          <div class="feature-title">Tích hợp DICOM PACS (X-Ray Viewer)</div>
+          <div class="feature-desc">Xem trực tiếp hình ảnh chụp X-quang răng và Cone Beam CT trên hồ sơ bệnh án, hỗ trợ công nghệ AI phát hiện vùng sâu răng sâu.</div>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">🔬</span>
+          <div class="feature-title">Kê đơn & Theo dõi Labo (Labo Tracking)</div>
+          <div class="feature-desc">Quản lý và kiểm soát trạng thái gửi thiết kế răng sứ, khay niềng đến Labo gia công ngoài, cập nhật ngày hoàn thiện lên lịch hẹn.</div>
         </div>
       </div>
     </div>
