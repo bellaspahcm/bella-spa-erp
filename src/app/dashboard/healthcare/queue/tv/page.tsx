@@ -93,8 +93,8 @@ export default function QueueTVScreenPage() {
   return (
     <div className={`w-full min-h-screen transition-all duration-300 ${
       isFullScreen 
-        ? 'fixed inset-0 z-50 bg-slate-950 text-white p-8 overflow-y-auto' 
-        : 'p-6 md:p-8 bg-transparent text-slate-900 dark:text-white space-y-7 relative'
+        ? 'fixed inset-0 z-50 bg-slate-950 text-white p-8 pb-24 overflow-y-auto' 
+        : 'p-6 md:p-8 pb-28 md:pb-36 bg-transparent text-slate-900 dark:text-white space-y-7 relative'
     }`}>
       {!isFullScreen && (
         <div className="absolute -top-40 -left-40 w-96 h-96 bg-cyan-500/10 dark:bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
