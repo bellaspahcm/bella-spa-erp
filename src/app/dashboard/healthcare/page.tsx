@@ -201,7 +201,7 @@ export default function HealthcareDashboardPage() {
           priority: 'high',
           category: 'chair',
           title: '⚡ Phân ghế khám trống',
-          description: 'Ghế #02 (Khu A) đang trống. Gợi ý mời bệnh nhân Nguyễn Văn Hùng (Queue #102) vào vị trí ghế.',
+          description: 'Ghế #02 (Khu A) đang trống. Gợi ý mời bệnh nhân Trần Minh Hoàng (Queue #104) vào vị trí ghế.',
           actionLabel: 'Phân ghế #02 ngay',
           actionType: 'assign_chair',
         },
@@ -218,7 +218,26 @@ export default function HealthcareDashboardPage() {
 
       const finalPatients = loadedPatients || mockPatients;
       const finalEncounters = loadedEncounters || mockEncounters;
-      const finalChairs = loadedChairs || mockChairs;
+
+      // Sanitize chairs to prevent any duplicate patient assignments across chairs
+      const rawChairs = loadedChairs || mockChairs;
+      const seenPatients = new Set<string>();
+      const finalChairs = rawChairs.map((c) => {
+        if (c.currentPatientName) {
+          if (seenPatients.has(c.currentPatientName)) {
+            return {
+              ...c,
+              status: 'available' as const,
+              currentPatientName: undefined,
+              currentDoctorName: undefined,
+              estimatedMinutesRemaining: undefined,
+            };
+          }
+          seenPatients.add(c.currentPatientName);
+        }
+        return c;
+      });
+
       const finalActions = loadedActions || mockActions;
 
       setPatients(finalPatients);
@@ -229,7 +248,7 @@ export default function HealthcareDashboardPage() {
       if (typeof window !== 'undefined') {
         if (!loadedPatients) localStorage.setItem('bella_healthcare_patients', JSON.stringify(mockPatients));
         if (!loadedEncounters) localStorage.setItem('bella_healthcare_encounters', JSON.stringify(mockEncounters));
-        if (!loadedChairs) localStorage.setItem('bella_healthcare_chairs', JSON.stringify(mockChairs));
+        localStorage.setItem('bella_healthcare_chairs', JSON.stringify(finalChairs));
         if (!loadedActions) localStorage.setItem('bella_healthcare_ai_actions', JSON.stringify(mockActions));
       }
 
@@ -461,6 +480,50 @@ export default function HealthcareDashboardPage() {
     toast.success(`Đã di chuyển lượt khám sang: ${statusLabels[newStatus] || newStatus}`);
   };
 
+  // Business Constraint Guard: Ensure a patient is assigned to at most ONE active chair at any time
+  const handleAssignPatientToChair = (targetChairId: string, patientName: string, doctorName?: string) => {
+    let oldChairCode: string | null = null;
+
+    setChairsMatrix((prev) => {
+      // Step 1: Automatically release any other chair currently occupied by this patient
+      const freedMatrix = prev.map((c) => {
+        if (c.currentPatientName === patientName && c.id !== targetChairId) {
+          oldChairCode = c.code;
+          return {
+            ...c,
+            status: 'available' as const,
+            currentPatientName: undefined,
+            currentDoctorName: undefined,
+            estimatedMinutesRemaining: undefined,
+          };
+        }
+        return c;
+      });
+
+      // Step 2: Assign patient to the target chair
+      return freedMatrix.map((c) =>
+        c.id === targetChairId
+          ? {
+              ...c,
+              status: 'occupied' as const,
+              currentPatientName: patientName,
+              currentDoctorName: doctorName || user?.full_name || 'BS. Lê Minh',
+              estimatedMinutesRemaining: 25,
+            }
+          : c
+      );
+    });
+
+    const targetChair = chairsMatrix.find((c) => c.id === targetChairId);
+    const targetCode = targetChair ? targetChair.code : targetChairId;
+
+    if (oldChairCode) {
+      toast.info(`🔄 Đã chuyển bệnh nhân ${patientName} từ ${oldChairCode} sang ${targetCode}`);
+    } else {
+      toast.success(`🎉 Đã phân ${targetCode} cho bệnh nhân ${patientName} thành công!`);
+    }
+  };
+
   // Dynamically project clinical timeline steps from the versioned Event Sourcing stream
   const dynamicTimelineSteps = TimelineProjectionService.projectTimeline(eventsList);
 
@@ -523,20 +586,7 @@ export default function HealthcareDashboardPage() {
           actions={aiCooActions}
           onExecuteAction={(actId, actionType) => {
             if (actionType === 'assign_chair') {
-              setChairsMatrix((prev) =>
-                prev.map((c) =>
-                  c.id === 'ch-2'
-                    ? {
-                        ...c,
-                        status: 'occupied',
-                        currentPatientName: 'Nguyễn Văn Hùng',
-                        currentDoctorName: user?.full_name || 'BS. Lê Minh',
-                        estimatedMinutesRemaining: 30,
-                      }
-                    : c
-                )
-              );
-              toast.success('🎉 Đã tự động phân Ghế #02 cho bệnh nhân Nguyễn Văn Hùng thành công!');
+              handleAssignPatientToChair('ch-2', 'Trần Minh Hoàng', user?.full_name || 'BS. Lê Minh');
             } else if (actionType === 'alert_doctor') {
               toast.success('🔔 Đã gửi thông báo ưu tiên đặc biệt đến thiết bị của BS. Trần Thảo về ca chờ của BN Lê Thị Mai.');
             } else if (actionType === 'reroute_queue') {
@@ -555,14 +605,11 @@ export default function HealthcareDashboardPage() {
           chairs={chairsMatrix}
           metrics={resourceMetrics}
           onAssignChair={(chairId) => {
-            setChairsMatrix((prev) =>
-              prev.map((c) =>
-                c.id === chairId
-                  ? { ...c, status: 'occupied', currentPatientName: selectedPatient?.name, currentDoctorName: user?.full_name || 'BS. Lê Minh', estimatedMinutesRemaining: 25 }
-                  : c
-              )
-            );
-            toast.success(`🎉 Đã phân ghế ${chairId} cho bệnh nhân ${selectedPatient?.name}`);
+            if (selectedPatient?.name) {
+              handleAssignPatientToChair(chairId, selectedPatient.name);
+            } else {
+              toast.warning('Vui lòng chọn bệnh nhân trước khi xếp ghế.');
+            }
           }}
         />
       )}
