@@ -172,44 +172,58 @@ export default function QueueTVScreenPage() {
           </div>
         </div>
 
-        {/* Hero Patient Call Grid - Perfectly Aligned 3-Card Equal Height Layout */}
+        {/* Hero Patient Call Grid - Perfectly Aligned 3-Card Layout with Absolute High Contrast Inline Styles */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
           {/* Card 1: STT Giant Badge Box */}
           <div className="lg:col-span-3 bg-slate-950 border-2 border-cyan-400 p-6 rounded-[24px] text-center shadow-xl flex flex-col justify-center items-center h-full space-y-2">
-            <span className="text-xs text-cyan-300 font-black uppercase tracking-widest block">SỐ THỨ TỰ (STT)</span>
-            <div className="text-6xl md:text-7xl font-black tracking-tight text-cyan-300 font-mono drop-shadow-md">
+            <span className="text-xs font-black uppercase tracking-widest block" style={{ color: '#38bdf8' }}>
+              SỐ THỨ TỰ (STT)
+            </span>
+            <div className="text-6xl md:text-7xl font-black tracking-tight font-mono drop-shadow-md" style={{ color: '#38bdf8' }}>
               #{currentCalling.stt}
             </div>
-            <span className="text-xs font-bold text-slate-300 block">⏰ Thời gian chờ: {currentCalling.waitTime}</span>
+            <span className="text-xs font-bold block" style={{ color: '#e2e8f0' }}>
+              ⏰ Thời gian chờ: {currentCalling.waitTime}
+            </span>
           </div>
 
           {/* Card 2: Bệnh Nhân & Phòng Khám Box */}
-          <div className="lg:col-span-5 bg-cyan-950/90 border-2 border-cyan-500/80 p-6 rounded-[24px] shadow-xl flex flex-col justify-between h-full space-y-4">
+          <div className="lg:col-span-5 bg-slate-900 border-2 border-cyan-400 p-6 rounded-[24px] shadow-xl flex flex-col justify-between h-full space-y-4">
             <div className="space-y-1">
-              <span className="text-xs text-cyan-300 font-extrabold uppercase tracking-widest block">HỌ VÀ TÊN BỆNH NHÂN:</span>
-              <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight drop-shadow-sm">
+              <span className="text-xs font-extrabold uppercase tracking-widest block" style={{ color: '#38bdf8' }}>
+                HỌ VÀ TÊN BỆNH NHÂN:
+              </span>
+              <div className="text-2xl md:text-3xl font-black tracking-tight drop-shadow-sm" style={{ color: '#ffffff' }}>
                 {currentCalling.patientName}
-              </h2>
+              </div>
             </div>
 
             <div className="border-t border-cyan-500/30 pt-3 space-y-1">
-              <span className="text-[11px] text-cyan-300 font-extrabold uppercase tracking-wider block">PHÒNG KHÁM CHUYÊN KHOA:</span>
-              <strong className="text-base md:text-lg font-black text-white block">{currentCalling.roomName}</strong>
+              <span className="text-[11px] font-extrabold uppercase tracking-wider block" style={{ color: '#38bdf8' }}>
+                PHÒNG KHÁM CHUYÊN KHOA:
+              </span>
+              <strong className="text-base md:text-lg font-black block" style={{ color: '#ffffff' }}>
+                {currentCalling.roomName}
+              </strong>
             </div>
           </div>
 
           {/* Card 3: Bác Sĩ Khám Phụ Trách Box */}
-          <div className="lg:col-span-4 bg-emerald-950/90 border-2 border-emerald-500/80 p-6 rounded-[24px] shadow-xl flex flex-col justify-between h-full space-y-4">
+          <div className="lg:col-span-4 bg-slate-900 border-2 border-emerald-400 p-6 rounded-[24px] shadow-xl flex flex-col justify-between h-full space-y-4">
             <div className="space-y-1">
-              <span className="text-xs text-emerald-300 font-extrabold uppercase tracking-widest block">BÁC SĨ KHÁM PHỤ TRÁCH:</span>
-              <h3 className="text-xl md:text-2xl font-black text-white tracking-tight drop-shadow-sm">
+              <span className="text-xs font-extrabold uppercase tracking-widest block" style={{ color: '#34d399' }}>
+                BÁC SĨ KHÁM PHỤ TRÁCH:
+              </span>
+              <div className="text-xl md:text-2xl font-black tracking-tight drop-shadow-sm" style={{ color: '#ffffff' }}>
                 {currentCalling.doctorName}
-              </h3>
+              </div>
             </div>
 
             <div className="border-t border-emerald-500/30 pt-3 flex items-center justify-between">
-              <span className="text-[11px] text-emerald-300 font-extrabold uppercase tracking-wider">TRẠNG THÁI KHÁM:</span>
-              <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-black text-[10px] border border-emerald-400/40">
+              <span className="text-[11px] font-extrabold uppercase tracking-wider" style={{ color: '#34d399' }}>
+                TRẠNG THÁI KHÁM:
+              </span>
+              <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 font-black text-[10px] border border-emerald-400/40" style={{ color: '#34d399' }}>
                 ✓ Sẵn Sàng Khám
               </span>
             </div>
