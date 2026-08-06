@@ -243,62 +243,46 @@ export default function HealthcareDashboardPage() {
         finalChairs.filter((c) => c.status === 'occupied' && c.currentPatientName).map((c) => c.currentPatientName!)
       );
 
-      const rawActions = loadedActions || mockActions;
-      const sanitizedActions = rawActions
-        .map((action) => {
-          let desc = action.description;
-          for (const name of occupiedPatientNames) {
-            if (desc.includes(name)) {
-              if (action.actionType === 'assign_chair') {
-                desc = desc.replace(`${name} (Queue #102)`, 'Trần Minh Hoàng (Queue #104)');
-                desc = desc.replace(name, 'Trần Minh Hoàng');
-              } else if (action.actionType === 'alert_doctor') {
-                desc = desc.replace(name, 'Trần Minh Hoàng');
-              }
-            }
-          }
-          return {
-            ...action,
-            description: desc,
-          };
-        })
-        .filter((act) => {
+      let finalActions: AiCooAction[];
+      if (loadedActions !== null) {
+        // Respect user's persisted action state from localStorage
+        finalActions = loadedActions.filter((act) => {
           for (const name of occupiedPatientNames) {
             if (act.description.includes(name)) return false;
           }
           return true;
         });
-
-      // Consolidate redundant actions for the same patient (e.g., assign_chair + alert_doctor into 1 combined action)
-      const consolidatedActions: AiCooAction[] = [];
-      const tmhActions = sanitizedActions.filter((a) => a.description.includes('Trần Minh Hoàng'));
-      const otherActions = sanitizedActions.filter((a) => !a.description.includes('Trần Minh Hoàng'));
-
-      if (tmhActions.length > 1) {
-        consolidatedActions.push({
-          id: 'act-consolidated-tmh',
-          priority: 'high',
-          category: 'chair',
-          title: '⚡ Cảnh báo SLA & Phân ghế khẩn cấp',
-          description: 'Bệnh nhân Trần Minh Hoàng (Queue #104) đã chờ phòng chờ >22 phút và Ghế #02 đang trống. Đề xuất xếp Ghế #02 & thông báo Bác sĩ ngay.',
-          actionLabel: 'Phân Ghế #02 & Báo Bác sĩ ngay ➔',
-          actionType: 'assign_chair_and_alert',
-        });
       } else {
-        consolidatedActions.push(...tmhActions);
+        // Initial setup for first-time visits: consolidate mockActions
+        const tmhActions = mockActions.filter((a) => a.description.includes('Trần Minh Hoàng'));
+        const otherActions = mockActions.filter((a) => !a.description.includes('Trần Minh Hoàng'));
+        finalActions = [];
+        if (tmhActions.length > 1) {
+          finalActions.push({
+            id: 'act-consolidated-tmh',
+            priority: 'high',
+            category: 'chair',
+            title: '⚡ Cảnh báo SLA & Phân ghế khẩn cấp',
+            description: 'Bệnh nhân Trần Minh Hoàng (Queue #104) đã chờ phòng chờ >22 phút và Ghế #02 đang trống. Đề xuất xếp Ghế #02 & thông báo Bác sĩ ngay.',
+            actionLabel: 'Phân Ghế #02 & Báo Bác sĩ ngay ➔',
+            actionType: 'assign_chair_and_alert',
+          });
+        } else {
+          finalActions.push(...tmhActions);
+        }
+        finalActions.push(...otherActions);
       }
-      consolidatedActions.push(...otherActions);
 
       setPatients(finalPatients);
       setEncounters(finalEncounters);
       setChairsMatrix(finalChairs);
-      setAiCooActions(consolidatedActions);
+      setAiCooActions(finalActions);
 
       if (typeof window !== 'undefined') {
         if (!loadedPatients) localStorage.setItem('bella_healthcare_patients', JSON.stringify(mockPatients));
         localStorage.setItem('bella_healthcare_encounters', JSON.stringify(finalEncounters));
         localStorage.setItem('bella_healthcare_chairs', JSON.stringify(finalChairs));
-        localStorage.setItem('bella_healthcare_ai_actions', JSON.stringify(consolidatedActions));
+        localStorage.setItem('bella_healthcare_ai_actions', JSON.stringify(finalActions));
       }
 
       if (finalPatients.length > 0) setSelectedPatientId(finalPatients[0].id);
@@ -370,7 +354,6 @@ export default function HealthcareDashboardPage() {
     }
   }, [selectedPatientId, patients, encounters, selectedEncounterId]);
 
-  // Persist chairsMatrix and aiCooActions to localStorage on any state changes
   useEffect(() => {
     if (chairsMatrix.length > 0 && typeof window !== 'undefined') {
       localStorage.setItem('bella_healthcare_chairs', JSON.stringify(chairsMatrix));
@@ -378,7 +361,13 @@ export default function HealthcareDashboardPage() {
   }, [chairsMatrix]);
 
   useEffect(() => {
-    if (aiCooActions.length > 0 && typeof window !== 'undefined') {
+    if (encounters.length > 0 && typeof window !== 'undefined') {
+      localStorage.setItem('bella_healthcare_encounters', JSON.stringify(encounters));
+    }
+  }, [encounters]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
       localStorage.setItem('bella_healthcare_ai_actions', JSON.stringify(aiCooActions));
     }
   }, [aiCooActions]);
@@ -580,6 +569,15 @@ export default function HealthcareDashboardPage() {
           : c
       );
     });
+
+    // Sync encounters state: Update patient encounter status to 'in_progress' so they are no longer in reception waiting queue
+    setEncounters((prev) =>
+      prev.map((e) =>
+        e.patientName === patientName
+          ? { ...e, status: 'in_progress' as const, doctorName: doctorName || e.doctorName || 'BS. Lê Minh' }
+          : e
+      )
+    );
 
     const targetChair = chairsMatrix.find((c) => c.id === targetChairId);
     const targetCode = targetChair ? targetChair.code : targetChairId;
