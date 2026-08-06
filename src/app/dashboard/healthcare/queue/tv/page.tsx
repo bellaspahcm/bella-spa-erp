@@ -232,9 +232,9 @@ export default function QueueTVScreenPage() {
       </div>
 
       {/* Queue List Table & Workflow Dispatch Panel */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
         {/* Left 2 Cols: Upcoming Waiting Queue */}
-        <div className="lg:col-span-2 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm p-6 space-y-5 text-left">
+        <div className="lg:col-span-2 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm p-7 pb-10 md:p-8 md:pb-12 space-y-6 text-left">
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
             <div className="flex items-center gap-2.5">
               <Users className="w-5 h-5 text-cyan-600" />
@@ -245,13 +245,13 @@ export default function QueueTVScreenPage() {
             <span className="text-xs text-slate-400 font-bold">Màn Hình TV Hàng Đợi Realtime</span>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-3.5 pb-2">
             {queueList
               .filter((i) => i.status === 'waiting')
               .map((item) => (
                 <div
                   key={item.stt}
-                  className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-4 hover:border-cyan-500/40 transition-all shadow-2xs"
+                  className="p-4.5 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-4 hover:border-cyan-500/40 transition-all shadow-2xs"
                 >
                   <div className="flex items-center gap-4">
                     <span className="w-12 h-12 rounded-xl bg-cyan-600 text-white font-mono font-black text-lg flex items-center justify-center shadow-md shrink-0">
@@ -286,7 +286,7 @@ export default function QueueTVScreenPage() {
         </div>
 
         {/* Right Col: Automated Workflow Router (LIS / RIS PACS / Pharmacy) */}
-        <div className="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm p-6 space-y-5 text-left">
+        <div className="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm p-7 pb-10 md:p-8 md:pb-12 space-y-6 text-left">
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
             <div className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-emerald-600" />
@@ -298,8 +298,8 @@ export default function QueueTVScreenPage() {
             Khi bác sĩ hoàn tất lượt khám SOAP, bệnh nhân được tự động điều hướng luồng y tế:
           </p>
 
-          <div className="space-y-3.5 text-xs">
-            <div className="p-4 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 border-2 border-indigo-200 dark:border-indigo-800 space-y-2">
+          <div className="space-y-4 text-xs pb-2">
+            <div className="p-4.5 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 border-2 border-indigo-200 dark:border-indigo-800 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="font-black text-indigo-900 dark:text-indigo-200 flex items-center gap-1.5 text-sm">
                   <FlaskConical className="w-4 h-4 text-indigo-600" /> 1. Chuyển LIS / RIS PACS
@@ -309,7 +309,7 @@ export default function QueueTVScreenPage() {
               <p className="text-slate-700 dark:text-slate-300 text-xs font-medium">Tự động phát số chờ Xét Nghiệm / Siêu Âm ngay khi bác sĩ kê chỉ định CLS.</p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border-2 border-emerald-200 dark:border-emerald-800 space-y-2">
+            <div className="p-4.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border-2 border-emerald-200 dark:border-emerald-800 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="font-black text-emerald-900 dark:text-emerald-200 flex items-center gap-1.5 text-sm">
                   <Pill className="w-4 h-4 text-emerald-600" /> 2. Chuyển Kho Dược BHYT
@@ -321,6 +321,9 @@ export default function QueueTVScreenPage() {
           </div>
         </div>
       </div>
+
+      {/* Explicit Bottom Extra Scroll Spacer Block */}
+      <div className="h-40 w-full shrink-0 pointer-events-none" aria-hidden="true" />
     </div>
   );
 }
