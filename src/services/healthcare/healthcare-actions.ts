@@ -178,19 +178,19 @@ export async function startEncounterAction(input: {
       .from('hc_encounters')
       .insert({
         tenant_id: tenantId,
-        patient_id: patientProfile.id,
-        customer_id: input.customerId,
-        practitioner_id: input.practitionerId || null,
-        facility_id: input.facilityId || null,
+        patient_party_id: '00000000-0000-0000-0000-000000000000',
+        care_journey_id: '00000000-0000-0000-0000-000000000000',
+        encounter_class: 'ambulatory',
         status: 'in_consultation',
-        priority: input.priority || 'routine',
         chief_complaint: input.chiefComplaint || '',
-        subjective_notes: '',
-        objective_notes: '',
-        assessment_notes: '',
-        plan_notes: '',
-        vitals: {},
-        diagnoses: [],
+        notes: JSON.stringify({
+          subjective: '',
+          objective: '',
+          assessment: '',
+          plan: '',
+          vitals: {},
+          diagnoses: []
+        }),
         started_at: new Date().toISOString()
       })
       .select()
@@ -262,18 +262,27 @@ export async function updateEncounterSOAPAction(input: {
     const supabase = (await createDevelopmentBypassClient()) as any;
     const tenantId = await getTenantIdOrThrow();
 
+    const soapPayload = {
+      subjective: input.soap.subjective || '',
+      objective: input.soap.objective || '',
+      assessment: input.soap.assessment || '',
+      plan: input.soap.plan || '',
+      vitals: input.vitals || {},
+      diagnoses: input.diagnoses || [],
+    };
+
+    const updatePayload: Record<string, any> = {
+      notes: JSON.stringify(soapPayload),
+      updated_at: new Date().toISOString()
+    };
+
+    if (input.soap.chiefComplaint) {
+      updatePayload.chief_complaint = input.soap.chiefComplaint;
+    }
+
     const { error: updateError } = await supabase
       .from('hc_encounters')
-      .update({
-        chief_complaint: input.soap.chiefComplaint,
-        subjective_notes: input.soap.subjective,
-        objective_notes: input.soap.objective,
-        assessment_notes: input.soap.assessment,
-        plan_notes: input.soap.plan,
-        vitals: input.vitals || {},
-        diagnoses: input.diagnoses || [],
-        updated_at: new Date().toISOString()
-      })
+      .update(updatePayload)
       .eq('id', input.encounterId)
       .eq('tenant_id', tenantId);
 
@@ -575,6 +584,15 @@ export async function getAllEncountersAction(): Promise<{ success: boolean; data
         mappedStatus = 'planned';
       }
 
+      let parsedSoap: any = {};
+      if (e.notes) {
+        try {
+          parsedSoap = typeof e.notes === 'string' ? JSON.parse(e.notes) : e.notes;
+        } catch {
+          parsedSoap = { assessment: e.notes };
+        }
+      }
+
       return {
         id: e.id,
         patientName,
@@ -585,10 +603,10 @@ export async function getAllEncountersAction(): Promise<{ success: boolean; data
         scheduledAt: e.scheduled_at || new Date().toISOString(),
         priority: prioritiesList[idx % prioritiesList.length],
         waitTimeMinutes: waitTimesList[idx % waitTimesList.length],
-        subjective: e.subjective_notes || template.subjective,
-        objective: e.objective_notes || template.objective,
-        assessment: e.assessment_notes || template.assessment,
-        plan: e.plan_notes || template.plan,
+        subjective: parsedSoap.subjective || e.subjective_notes || template.subjective,
+        objective: parsedSoap.objective || e.objective_notes || template.objective,
+        assessment: parsedSoap.assessment || e.assessment_notes || template.assessment,
+        plan: parsedSoap.plan || e.plan_notes || template.plan,
       };
     });
 
@@ -810,10 +828,12 @@ export async function seedDefaultHealthcareDataAction(options?: { force?: boolea
             encounter_class: 'walk_in',
             status: enc.status,
             chief_complaint: enc.complaint,
-            subjective_notes: enc.subjective,
-            objective_notes: enc.objective,
-            assessment_notes: enc.assessment,
-            plan_notes: enc.plan,
+            notes: JSON.stringify({
+              subjective: enc.subjective,
+              objective: enc.objective,
+              assessment: enc.assessment,
+              plan: enc.plan,
+            }),
             queue_number: enc.qNum,
             scheduled_at: new Date().toISOString(),
           })
@@ -1192,8 +1212,12 @@ export async function createEMREncounterAction(input: {
         encounter_class: 'walk_in',
         status: 'in_consultation',
         chief_complaint: input.chiefComplaint,
-        subjective_notes: input.subjective || '',
-        assessment_notes: input.assessment || '',
+        notes: JSON.stringify({
+          subjective: input.subjective || '',
+          objective: '',
+          assessment: input.assessment || '',
+          plan: '',
+        }),
       });
 
     if (encError) {
