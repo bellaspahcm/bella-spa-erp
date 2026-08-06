@@ -457,40 +457,39 @@ export default function EncountersPage() {
               {/* 5. Quick Action Bar & Edit Controls */}
               <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
                 {/* Enterprise Quick Actions */}
-                <div className="flex items-center gap-1.5 w-full sm:w-auto">
+                <div className="flex flex-wrap items-center gap-1.5 w-full sm:w-auto">
                   <button 
-                    onClick={() => toast.success(`🖨️ Đã gửi lệnh in Bệnh án điện tử của bệnh nhân ${e.patientName} sang máy in phòng khám!`)}
-                    className="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                    onClick={() => setActivePrintEncounter(e)}
+                    className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all active:scale-95"
                   >
                     <Printer className="w-3.5 h-3.5 text-cyan-600" />
                     <span>In Bệnh Án</span>
                   </button>
 
                   <button 
-                    onClick={() => toast.info(`🩺 Đã mở cửa sổ chỉ định LIS Xét nghiệm & RIS CĐHA cho bệnh nhân ${e.patientName}!`)}
-                    className="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                    onClick={() => setActiveCLSEncounter(e)}
+                    className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all active:scale-95"
                   >
                     <Stethoscope className="w-3.5 h-3.5 text-indigo-600" />
                     <span>Chỉ Định CLS</span>
                   </button>
 
                   <button 
-                    onClick={() => toast.info(`💊 Đã mở cửa sổ Kê đơn thuốc BHYT cho bệnh nhân ${e.patientName}!`)}
-                    className="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                    onClick={() => setActivePrescriptionEncounter(e)}
+                    className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all active:scale-95"
                   >
                     <Pill className="w-3.5 h-3.5 text-emerald-600" />
                     <span>Kê Đơn Thuốc</span>
                   </button>
 
                   <button 
-                    onClick={() => toast.success(`📅 Đã lên lịch hẹn tái khám tự động sau 7 ngày cho bệnh nhân ${e.patientName}!`)}
-                    className="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                    onClick={() => setActiveFollowUpEncounter(e)}
+                    className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all active:scale-95"
                   >
                     <Calendar className="w-3.5 h-3.5 text-amber-600" />
                     <span>Hẹn Tái Khám</span>
                   </button>
                 </div>
-
                 {/* Primary SOAP Edit Actions */}
                 <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
                   {isSelected ? (
@@ -550,6 +549,259 @@ export default function EncountersPage() {
           );
         })}
       </div>
+
+      {/* Modal 1: In Bệnh Án Điện Tử (EMR Print Preview Modal) */}
+      {activePrintEncounter && (
+        <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-[28px] border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-2xl p-6 md:p-8 space-y-5 text-left max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-600">
+                  <Printer className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-base font-black text-slate-900 dark:text-white">BỆNH ÁN ĐIỆN TỬ (EMR MEDICAL RECORD)</h2>
+                  <p className="text-xs text-slate-500">Mẫu Phiếu Khám Bệnh Chuẩn Bộ Y Tế • Mã HS: #{activePrintEncounter.id.substring(0, 8).toUpperCase()}</p>
+                </div>
+              </div>
+              <button onClick={() => setActivePrintEncounter(null)} className="text-slate-400 hover:text-slate-600 font-black text-lg p-1">✕</button>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 space-y-4 text-xs">
+              <div className="grid grid-cols-2 gap-3 pb-3 border-b border-slate-200 dark:border-slate-800">
+                <div><span className="text-slate-400 font-bold">Họ và tên Bệnh nhân:</span> <strong className="text-slate-900 dark:text-white font-black text-sm block">{activePrintEncounter.patientName}</strong></div>
+                <div><span className="text-slate-400 font-bold">Giới tính / Tuổi:</span> <strong className="text-slate-800 dark:text-slate-200 block">{activePrintEncounter.gender} • {activePrintEncounter.age} tuổi</strong></div>
+                <div><span className="text-slate-400 font-bold">Loại Viện Phí / BHYT:</span> <strong className="text-emerald-600 block">{activePrintEncounter.insuranceType}</strong></div>
+                <div><span className="text-slate-400 font-bold">Bác sĩ khám:</span> <strong className="text-slate-800 dark:text-slate-200 block">{activePrintEncounter.doctorName || 'BS. CKII Nguyễn Văn Minh'}</strong></div>
+              </div>
+
+              <div className="space-y-2">
+                <div><span className="font-bold text-cyan-600">S - Hỏi bệnh & Tiền sử:</span> <p className="text-slate-700 dark:text-slate-300 font-medium mt-0.5">{activePrintEncounter.subjective}</p></div>
+                <div><span className="font-bold text-cyan-600">O - Sinh hiệu & Thể trạng:</span> <p className="text-slate-700 dark:text-slate-300 font-medium mt-0.5">{activePrintEncounter.objective}</p></div>
+                <div><span className="font-bold text-cyan-600">A - Chẩn đoán ICD-10:</span> <p className="text-slate-900 dark:text-white font-bold mt-0.5">{activePrintEncounter.assessment}</p></div>
+                <div><span className="font-bold text-cyan-600">P - Kế hoạch & Đơn thuốc:</span> <p className="text-slate-700 dark:text-slate-300 font-medium mt-0.5 whitespace-pre-line">{activePrintEncounter.plan}</p></div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button onClick={() => setActivePrintEncounter(null)} className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100">Đóng</button>
+              <button 
+                onClick={() => {
+                  window.print();
+                  toast.success('🖨️ Đã phát lệnh in Bệnh Án Điện Tử thành công!');
+                  setActivePrintEncounter(null);
+                }} 
+                className="px-5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-black text-xs shadow-md flex items-center gap-2 cursor-pointer"
+              >
+                <Printer className="w-4 h-4" /> In Bệnh Án Khẩn (Ctrl+P)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal 2: Chỉ Định Cận Lâm Sàng CLS (Lab & Imaging Modal) */}
+      {activeCLSEncounter && (
+        <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-[28px] border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-xl p-6 md:p-8 space-y-5 text-left">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-600">
+                  <Stethoscope className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-base font-black text-slate-900 dark:text-white">PHIẾU CHỈ ĐỊNH CẬN LÂM SÀNG (CLS)</h2>
+                  <p className="text-xs text-slate-500">Bệnh nhân: <strong>{activeCLSEncounter.patientName}</strong></p>
+                </div>
+              </div>
+              <button onClick={() => setActiveCLSEncounter(null)} className="text-slate-400 hover:text-slate-600 font-black text-lg p-1">✕</button>
+            </div>
+
+            <div className="space-y-4 text-xs">
+              <div className="space-y-2">
+                <label className="font-black text-slate-800 dark:text-slate-200 block uppercase">1. Xét nghiệm LIS Khẩn (STAT)</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {['Công thức máu (CBC)', 'Men tim Troponin I (STAT)', 'Bạch cầu WBC & CRP', 'Sinh hóa máu (Glucose, Urea)'].map((item) => {
+                    const isChecked = selectedClsItems.includes(item);
+                    return (
+                      <button
+                        key={item}
+                        type="button"
+                        onClick={() => {
+                          if (isChecked) setSelectedClsItems(selectedClsItems.filter(i => i !== item));
+                          else setSelectedClsItems([...selectedClsItems, item]);
+                        }}
+                        className={`p-2.5 rounded-xl border text-left font-bold transition-all ${
+                          isChecked ? 'bg-indigo-500/10 border-indigo-500 text-indigo-700 dark:text-indigo-300' : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600'
+                        }`}
+                      >
+                        {isChecked ? '✓ ' : '+ '}{item}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="font-black text-slate-800 dark:text-slate-200 block uppercase">2. Chẩn Đoán Hình Ảnh RIS / PACS</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {['Chụp X-quang ngực thẳng (PACS)', 'Siêu âm tim màu khẩn', 'CT-Scanner sọ não / lồng ngực'].map((item) => {
+                    const isChecked = selectedClsItems.includes(item);
+                    return (
+                      <button
+                        key={item}
+                        type="button"
+                        onClick={() => {
+                          if (isChecked) setSelectedClsItems(selectedClsItems.filter(i => i !== item));
+                          else setSelectedClsItems([...selectedClsItems, item]);
+                        }}
+                        className={`p-2.5 rounded-xl border text-left font-bold transition-all ${
+                          isChecked ? 'bg-indigo-500/10 border-indigo-500 text-indigo-700 dark:text-indigo-300' : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600'
+                        }`}
+                      >
+                        {isChecked ? '✓ ' : '+ '}{item}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button onClick={() => setActiveCLSEncounter(null)} className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100">Hủy Bỏ</button>
+              <button 
+                onClick={() => {
+                  toast.success(`🩺 Đã gửi ${selectedClsItems.length} chỉ định CLS khẩn cho bệnh nhân ${activeCLSEncounter.patientName} sang phòng LIS/RIS!`);
+                  setActiveCLSEncounter(null);
+                }} 
+                className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs shadow-md flex items-center gap-2 cursor-pointer"
+              >
+                <Stethoscope className="w-4 h-4" /> Xác Nhận Chỉ Định Khẩn
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal 3: Kê Đơn Thuốc BHYT (Prescription Order Modal) */}
+      {activePrescriptionEncounter && (
+        <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-[28px] border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-xl p-6 md:p-8 space-y-5 text-left">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600">
+                  <Pill className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-base font-black text-slate-900 dark:text-white">KÊ ĐƠN THUỐC BHYT / DỊCH VỤ</h2>
+                  <p className="text-xs text-slate-500">Bệnh nhân: <strong>{activePrescriptionEncounter.patientName}</strong></p>
+                </div>
+              </div>
+              <button onClick={() => setActivePrescriptionEncounter(null)} className="text-slate-400 hover:text-slate-600 font-black text-lg p-1">✕</button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <label className="font-black text-slate-800 dark:text-slate-200 block uppercase">Danh mục thuốc kê đơn:</label>
+              <div className="space-y-2">
+                {[
+                  { name: 'Augmentin 1g (Amoxicillin/Clavulanate)', dose: 'Uống 1 viên x 2 lần/ngày (sáng/tối sau ăn)' },
+                  { name: 'Paracetamol 500mg (Hạ sốt giảm đau)', dose: 'Uống 1 viên khi sốt ≥ 38.5°C' },
+                  { name: 'Nitroglycerin 0.4mg xịt dưới lưỡi', dose: 'Xịt 1 lần dưới lưỡi khi đau tức ngực' },
+                  { name: 'Esomeprazole 40mg (Trào ngược dạ dày)', dose: 'Uống 1 viên trước ăn sáng 30 phút' },
+                ].map((med) => {
+                  const isChecked = selectedMeds.includes(med.name);
+                  return (
+                    <div 
+                      key={med.name}
+                      onClick={() => {
+                        if (isChecked) setSelectedMeds(selectedMeds.filter(m => m !== med.name));
+                        else setSelectedMeds([...selectedMeds, med.name]);
+                      }}
+                      className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
+                        isChecked ? 'bg-emerald-500/10 border-emerald-500 text-emerald-900 dark:text-emerald-200' : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800'
+                      }`}
+                    >
+                      <div>
+                        <strong className="block font-black">{isChecked ? '✓ ' : '+ '}{med.name}</strong>
+                        <span className="text-[11px] text-slate-500">{med.dose}</span>
+                      </div>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">BHYT 80%</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button onClick={() => setActivePrescriptionEncounter(null)} className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100">Hủy Bỏ</button>
+              <button 
+                onClick={() => {
+                  toast.success(`💊 Đã xuất đơn thuốc gồm ${selectedMeds.length} loại cho bệnh nhân ${activePrescriptionEncounter.patientName} sang Kho Dược!`);
+                  setActivePrescriptionEncounter(null);
+                }} 
+                className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-md flex items-center gap-2 cursor-pointer"
+              >
+                <Pill className="w-4 h-4" /> Kê Đơn & Xuất Kho Dược
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal 4: Lên Lịch Hẹn Tái Khám (Follow-up Modal) */}
+      {activeFollowUpEncounter && (
+        <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-[28px] border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-lg p-6 md:p-8 space-y-5 text-left">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600">
+                  <Calendar className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-base font-black text-slate-900 dark:text-white">LÊN LỊCH HẸN TÁI KHÁM</h2>
+                  <p className="text-xs text-slate-500">Bệnh nhân: <strong>{activeFollowUpEncounter.patientName}</strong></p>
+                </div>
+              </div>
+              <button onClick={() => setActiveFollowUpEncounter(null)} className="text-slate-400 hover:text-slate-600 font-black text-lg p-1">✕</button>
+            </div>
+
+            <div className="space-y-4 text-xs">
+              <div>
+                <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Ngày Hẹn Tái Khám *</label>
+                <input 
+                  type="date"
+                  value={followUpDate}
+                  onChange={(ev) => setFollowUpDate(ev.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-950 font-bold text-slate-900 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Ghi Chú Dặn Đồ Tái Khám</label>
+                <textarea 
+                  rows={3}
+                  value={followUpNote}
+                  onChange={(ev) => setFollowUpNote(ev.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-950 text-slate-900 dark:text-white"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button onClick={() => setActiveFollowUpEncounter(null)} className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100">Hủy Bỏ</button>
+              <button 
+                onClick={() => {
+                  toast.success(`📅 Đã lên lịch hẹn tái khám thành công vào ngày ${followUpDate} cho bệnh nhân ${activeFollowUpEncounter.patientName}!`);
+                  setActiveFollowUpEncounter(null);
+                }} 
+                className="px-5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-black text-xs shadow-md flex items-center gap-2 cursor-pointer"
+              >
+                <Calendar className="w-4 h-4" /> Xác Nhận Lịch Hẹn
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal Tạo Lượt Khám Mới */}
       {isCreateModalOpen && (
