@@ -24,6 +24,7 @@ const CLINIC_CHAIR_ROLES = ['admin', 'super_admin', 'admin_staff', 'doctor', 'kt
 
 /**
  * Detect healthcare type from tenant metadata.
+ * Healthcare module supports both medical clinics and dental clinics.
  * Defaults to 'medical' if not specified.
  */
 async function detectHealthcareType(tenantId: string): Promise<HealthcareType> {
@@ -52,9 +53,10 @@ async function detectHealthcareType(tenantId: string): Promise<HealthcareType> {
   return 'medical';
 }
 
-// Default seed data will be created dynamically based on tenant type
+// Default seed data based on healthcare type
 const getDefaultRooms = (tenantType: 'medical' | 'dental'): HealthcareChairVM[] => {
   if (tenantType === 'dental') {
+    // Dental clinic - chairs
     return [
       { id: 'ch-1', code: 'Ghế #01', zone: 'Khu A - Ghế chính', status: 'available' },
       { id: 'ch-2', code: 'Ghế #02', zone: 'Khu A - Ghế chính', status: 'available' },
@@ -63,7 +65,7 @@ const getDefaultRooms = (tenantType: 'medical' | 'dental'): HealthcareChairVM[] 
     ];
   }
   
-  // Medical clinic - examination rooms
+  // Medical clinic - examination rooms (default)
   return [
     { id: 'room-101', code: 'Phòng 101', zone: 'Tầng 1 - Khám Nội khoa', status: 'available' },
     { id: 'room-102', code: 'Phòng 102', zone: 'Tầng 1 - Khám Nhi khoa', status: 'available' },
@@ -109,11 +111,11 @@ export async function fetchHealthcareChairsAction(): Promise<{ success: true; da
     return { success: false, error: error.message };
   }
 
-  // Seed default chairs into database if tenant has no chairs yet
+  // Seed default rooms/chairs into database if tenant has no resources yet
   if (!data || data.length === 0) {
     console.log('[fetchHealthcareChairsAction] 🌱 No rooms/chairs found, seeding defaults for tenant:', auth.tenantId);
     
-    // Detect tenant type from settings
+    // Detect tenant type from metadata
     const tenantType = await detectHealthcareType(auth.tenantId);
     const defaultRooms = getDefaultRooms(tenantType);
     
@@ -140,7 +142,7 @@ export async function fetchHealthcareChairsAction(): Promise<{ success: true; da
     if (seedError) {
       console.error('[fetchHealthcareChairsAction] ❌ Seed error:', seedError.message, seedError.details, seedError.hint);
       
-      // Check if chairs already exist (maybe seeded by another request)
+      // Check if resources already exist (maybe seeded by another request)
       const { data: retryData } = await supabase
         .from('booking_resources')
         .select('*')
@@ -148,7 +150,7 @@ export async function fetchHealthcareChairsAction(): Promise<{ success: true; da
         .eq('resource_type', 'chair');
       
       if (retryData && retryData.length > 0) {
-        console.log('[fetchHealthcareChairsAction] ✅ Chairs found on retry (race condition):', retryData.length);
+        console.log('[fetchHealthcareChairsAction] ✅ Resources found on retry (race condition):', retryData.length);
         return { success: true, data: retryData.map(mapRowToChairVM) };
       }
       
@@ -156,7 +158,7 @@ export async function fetchHealthcareChairsAction(): Promise<{ success: true; da
       return { success: false, error: `Không thể tạo ${tenantType === 'medical' ? 'phòng khám' : 'ghế khám'}: ${seedError.message}` };
     }
 
-    console.log('[fetchHealthcareChairsAction] ✅ Seeded', seededData?.length || 0, tenantType === 'medical' ? 'examination rooms' : 'dental chairs', 'successfully');
+    console.log('[fetchHealthcareChairsAction] ✅ Seeded', seededData?.length || 0, tenantType === 'medical' ? 'medical examination rooms' : 'dental chairs', 'successfully');
     return { success: true, data: (seededData || []).map(mapRowToChairVM) };
   }
 
