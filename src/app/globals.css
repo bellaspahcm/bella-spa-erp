@@ -381,6 +381,116 @@ html[data-tenant-module="pending"] .ktv-profile-btn-primary:hover {
 
 
 /* Luxury Utilities */
+/* =========================================================================
+   LUXURY HIGH-END LAYERED SHADOW SYSTEM
+   ========================================================================= */
+
+/* Overrides for standard Tailwind shadow classes to elevate ALL boxes & containers globally */
+.shadow-2xs,
+.shadow-xs {
+  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.04), 0 1px 2px -1px rgba(15, 23, 42, 0.03) !important;
+}
+
+.shadow-sm {
+  box-shadow: 0 2px 8px 0 rgba(15, 23, 42, 0.05), 0 1px 3px -1px rgba(15, 23, 42, 0.04), inset 0 1px 0 0 rgba(255, 255, 255, 0.7) !important;
+}
+
+.shadow,
+.shadow-md {
+  box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.06), 0 10px 28px -4px rgba(15, 23, 42, 0.07), inset 0 1px 0 0 rgba(255, 255, 255, 0.85) !important;
+}
+
+.shadow-lg {
+  box-shadow: 0 8px 28px -4px rgba(15, 23, 42, 0.07), 0 20px 48px -8px rgba(15, 23, 42, 0.1), inset 0 1px 0 0 rgba(255, 255, 255, 0.9) !important;
+}
+
+.shadow-xl {
+  box-shadow: 0 16px 40px -6px rgba(15, 23, 42, 0.09), 0 32px 64px -12px rgba(15, 23, 42, 0.13), inset 0 1px 0 0 rgba(255, 255, 255, 0.95) !important;
+}
+
+.shadow-2xl {
+  box-shadow: 0 24px 54px -10px rgba(15, 23, 42, 0.13), 0 44px 88px -15px rgba(15, 23, 42, 0.18), inset 0 1px 0 0 rgba(255, 255, 255, 1) !important;
+}
+
+/* Dedicated Luxury Premium Shadow Utility Classes */
+.shadow-premium-card {
+  box-shadow: 
+    0 0 0 1px rgba(226, 232, 240, 0.7),
+    0 4px 18px -2px rgba(15, 23, 42, 0.05),
+    0 14px 36px -6px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.95);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.shadow-premium-card:hover {
+  box-shadow: 
+    0 0 0 1px rgba(99, 102, 241, 0.25),
+    0 10px 28px -4px rgba(15, 23, 42, 0.07),
+    0 22px 52px -10px rgba(99, 102, 241, 0.14),
+    inset 0 1px 0 0 rgba(255, 255, 255, 1);
+  transform: translateY(-2px);
+}
+
+.shadow-premium-container {
+  box-shadow: 
+    0 0 0 1px rgba(241, 245, 249, 0.9),
+    0 8px 24px -3px rgba(15, 23, 42, 0.05),
+    0 20px 48px -8px rgba(15, 23, 42, 0.09),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.8);
+}
+
+.shadow-glass-luxury {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 
+    0 10px 36px 0 rgba(31, 38, 135, 0.08),
+    0 2px 6px 0 rgba(0, 0, 0, 0.03),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+/* Glow Shadow Variants */
+.shadow-glow-emerald {
+  box-shadow: 0 8px 24px -4px rgba(16, 185, 129, 0.22), 0 2px 8px -1px rgba(16, 185, 129, 0.12) !important;
+}
+
+.shadow-glow-indigo {
+  box-shadow: 0 8px 24px -4px rgba(99, 102, 241, 0.22), 0 2px 8px -1px rgba(99, 102, 241, 0.12) !important;
+}
+
+.shadow-glow-rose {
+  box-shadow: 0 8px 24px -4px rgba(244, 63, 94, 0.22), 0 2px 8px -1px rgba(244, 63, 94, 0.12) !important;
+}
+
+.shadow-glow-sky {
+  box-shadow: 0 8px 24px -4px rgba(14, 165, 233, 0.22), 0 2px 8px -1px rgba(14, 165, 233, 0.12) !important;
+}
+
+.shadow-glow-amber {
+  box-shadow: 0 8px 24px -4px rgba(245, 158, 11, 0.22), 0 2px 8px -1px rgba(245, 158, 11, 0.12) !important;
+}
+
+/* Dark mode luxury shadow adjustments */
+.dark .shadow-2xs,
+.dark .shadow-xs,
+.dark .shadow-sm,
+.dark .shadow,
+.dark .shadow-md,
+.dark .shadow-lg,
+.dark .shadow-xl,
+.dark .shadow-2xl {
+  box-shadow: 0 12px 34px -5px rgba(0, 0, 0, 0.55), inset 0 1px 0 0 rgba(255, 255, 255, 0.07) !important;
+}
+
+.dark .shadow-premium-card {
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 12px 36px -5px rgba(0, 0, 0, 0.65) !important;
+}
+
+.dark .shadow-premium-card:hover {
+  box-shadow: 0 0 0 1px rgba(166, 125, 68, 0.35), 0 18px 48px -8px rgba(0, 0, 0, 0.85) !important;
+}
+
 .luxury-card-dark {
   background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
   color: white;

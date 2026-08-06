@@ -906,16 +906,23 @@ export function Sidebar() {
                     (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell || isBellaAutoShell || isBellaHealthcareShell) && "beauty-erp-nav-item",
                     (isBeautySpaShell || isIndustrialCleaningShell || isRealEstateShell || isBellaAutoShell || isBellaHealthcareShell) && isActive && "beauty-erp-nav-item-active",
                     isActive
-                      ? "bg-white text-primary border-primary/20 shadow-[0_8px_20px_rgba(219,39,119,0.12)] ring-1 ring-primary/20 dark:bg-[#5D1C34]/30 dark:text-[#EFE9E1] dark:border-[#A67D44]/40 dark:ring-[#A67D44]/20 dark:shadow-none"
+                      ? (isBellaAutoShell || isBellaHealthcareShell)
+                        ? "bg-white/20 text-white border-cyan-300/50 shadow-[0_8px_25px_rgba(56,189,248,0.3)] ring-1 ring-cyan-300/40 backdrop-blur-md font-bold"
+                        : "bg-white text-primary border-primary/20 shadow-[0_8px_20px_rgba(219,39,119,0.12)] ring-1 ring-primary/20 dark:bg-[#5D1C34]/30 dark:text-[#EFE9E1] dark:border-[#A67D44]/40 dark:ring-[#A67D44]/20 dark:shadow-none"
                       : (isBellaAutoShell || isBellaHealthcareShell)
-                      ? "text-[#e0f2fe] bg-transparent border-transparent hover:bg-white/10 hover:text-white hover:shadow-[0_4px_12px_rgba(20,184,166,0.15)] hover:border-cyan-400/30"
+                      ? "text-[#e0f2fe] bg-transparent border-transparent hover:bg-white/10 hover:text-white hover:shadow-[0_4px_16px_rgba(56,189,248,0.2)] hover:border-cyan-400/30"
                       : "text-[#8A6D7C] bg-transparent border-transparent hover:bg-white/70 hover:text-primary hover:shadow-[0_4px_12px_rgba(219,39,119,0.03)] hover:border-[#FFE4E6]/50 dark:text-[#CDBCAB] dark:hover:bg-[#1C1B19]/50 dark:hover:text-[#EFE9E1] dark:hover:border-[#3E3A35]/50"
                   )}
                 >
                   {isActive && (
                     <motion.div
                       layoutId="desktop-active-rail"
-                      className="absolute left-1.5 top-1/2 hidden h-8 w-1 -translate-y-1/2 rounded-full bg-primary shadow-[0_0_10px_rgba(190,24,93,0.35)] dark:bg-[#A67D44] dark:shadow-[0_0_10px_rgba(166,125,68,0.25)] lg:block"
+                      className={cn(
+                        "absolute left-1.5 top-1/2 hidden h-8 w-1 -translate-y-1/2 rounded-full lg:block",
+                        (isBellaAutoShell || isBellaHealthcareShell)
+                          ? "bg-cyan-300 shadow-[0_0_14px_#38bdf8]"
+                          : "bg-primary shadow-[0_0_10px_rgba(190,24,93,0.35)] dark:bg-[#A67D44]"
+                      )}
                     />
                   )}
                   <item.icon className={cn(
