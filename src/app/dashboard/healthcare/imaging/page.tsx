@@ -65,6 +65,12 @@ interface ImagingWorkItem {
 export default function ImagingPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [viewingDcmItem, setViewingDcmItem] = useState<ImagingWorkItem | null>(null);
+  const [dcmSlice, setDcmSlice] = useState(48);
+  const [dcmZoom, setDcmZoom] = useState(125);
+  const [dcmPreset, setDcmPreset] = useState<'BRAIN' | 'BONE' | 'SOFT_TISSUE' | 'LUNG'>('BRAIN');
+  const [dcmIsCine, setDcmIsCine] = useState(false);
+  const [dcmShowAI, setDcmShowAI] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [items, setItems] = useState<ImagingWorkItem[]>([]);
   
@@ -447,14 +453,12 @@ export default function ImagingPage() {
 
                   <div className="flex items-center justify-between pt-1 border-t border-slate-200/50 dark:border-slate-800">
                     <span className="text-slate-400 font-mono text-[10px]">UID: {item.dcmStudyUid.slice(-12)}</span>
-                    <a
-                      href={item.viewerLink}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="px-2.5 py-1 rounded-lg bg-indigo-600 text-white font-extrabold text-[11px] hover:bg-indigo-700 flex items-center gap-1 shadow-xs transition-all"
+                    <button
+                      onClick={() => setViewingDcmItem(item)}
+                      className="px-2.5 py-1 rounded-lg bg-indigo-600 text-white font-extrabold text-[11px] hover:bg-indigo-700 flex items-center gap-1 shadow-xs transition-all cursor-pointer"
                     >
                       <Eye className="w-3.5 h-3.5" /> Xem Phim DICOM 3D PACS <ExternalLink className="w-3 h-3" />
-                    </a>
+                    </button>
                   </div>
                 </div>
 
@@ -692,6 +696,213 @@ export default function ImagingPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Full-Screen Professional Interactive DICOM PACS 3D Viewer Modal */}
+      {viewingDcmItem && (
+        <div className="fixed inset-0 z-50 bg-[#070b14]/95 backdrop-blur-xl flex flex-col font-sans select-none text-white animate-in fade-in duration-200">
+          {/* Modal Header Bar */}
+          <div className="h-14 px-5 bg-[#0d1322] border-b border-slate-800 flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="px-2.5 py-1 rounded-md bg-indigo-600 text-white font-mono text-xs font-black tracking-wider">
+                {viewingDcmItem.modality} 3D PACS
+              </div>
+              <div>
+                <h2 className="text-sm font-black text-white flex items-center gap-2">
+                  {viewingDcmItem.patientName}
+                  <span className="text-slate-400 font-normal text-xs">({viewingDcmItem.ticketNumber})</span>
+                </h2>
+                <p className="text-[11px] text-slate-400 font-mono">
+                  {viewingDcmItem.bodySite} • UID: {viewingDcmItem.dcmStudyUid}
+                </p>
+              </div>
+            </div>
+
+            {/* Presets */}
+            <div className="hidden lg:flex items-center gap-1 bg-[#12192c] p-1 rounded-xl border border-slate-800 text-[11px] font-bold">
+              {[
+                { key: 'BRAIN', label: 'Brain W/L (350/40)' },
+                { key: 'BONE', label: 'Bone W/L (2000/400)' },
+                { key: 'SOFT_TISSUE', label: 'Soft Tissue (400/50)' },
+                { key: 'LUNG', label: 'Lung W/L (1500/-600)' },
+              ].map((preset) => (
+                <button
+                  key={preset.key}
+                  onClick={() => setDcmPreset(preset.key as any)}
+                  className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                    dcmPreset === preset.key
+                      ? 'bg-indigo-600 text-white shadow-xs'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <a
+                href={viewingDcmItem.viewerLink}
+                target="_blank"
+                rel="noreferrer"
+                className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold flex items-center gap-1"
+              >
+                Mở Cửa Sổ Mới <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+              <button
+                onClick={() => setViewingDcmItem(null)}
+                className="p-2 rounded-xl bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white transition-all cursor-pointer"
+                title="Đóng PACS Viewer"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+
+          {/* Modal Main Content */}
+          <div className="flex-1 flex overflow-hidden">
+            {/* Series Thumbnails */}
+            <div className="w-60 bg-[#0a0e1a] border-r border-slate-800 p-3 space-y-3 shrink-0 overflow-y-auto hidden md:block text-left">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 block">
+                DANH SÁCH SERIES ({viewingDcmItem.seriesCount || 8} Series)
+              </span>
+
+              {[
+                { id: 1, name: 'Series 1: Localizer Scout', count: 2, type: '2D' },
+                { id: 2, name: `Series 2: Axial 1.0mm (${viewingDcmItem.modality})`, count: viewingDcmItem.imageCount || 192, type: '3D Volume' },
+                { id: 3, name: 'Series 3: Coronal Reconstruct', count: 48, type: 'MPR' },
+                { id: 4, name: 'Series 4: 3D Bone / Angio VR', count: 1, type: 'VR 3D' },
+              ].map((s) => (
+                <div
+                  key={s.id}
+                  className={`p-3 rounded-xl border text-left cursor-pointer transition-all ${
+                    s.id === 2
+                      ? 'bg-indigo-600/20 border-indigo-500 text-white shadow-md'
+                      : 'bg-[#101625] border-slate-800 text-slate-400 hover:border-slate-700'
+                  }`}
+                >
+                  <div className="flex items-center justify-between text-xs font-bold">
+                    <span>{s.name}</span>
+                    <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 font-mono text-[9px]">
+                      {s.type}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-slate-500 mt-1 font-mono">{s.count} Slices • 512x512 matrix</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Central DICOM Interactive Viewport */}
+            <div className="flex-1 bg-[#050810] flex flex-col justify-between items-center relative p-4 overflow-hidden">
+              {/* Top Controls Toolbar */}
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 bg-[#0d1322]/90 backdrop-blur-md px-4 py-2 rounded-2xl border border-slate-800 flex items-center gap-3 text-xs shadow-2xl">
+                <button
+                  onClick={() => setDcmZoom((z) => Math.min(z + 25, 250))}
+                  className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200"
+                  title="Phóng to"
+                >
+                  <ZoomIn className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setDcmZoom((z) => Math.max(z - 25, 75))}
+                  className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200"
+                  title="Thu nhỏ"
+                >
+                  <ZoomOut className="w-4 h-4" />
+                </button>
+                <span className="text-[10px] font-mono text-indigo-400 font-bold">{dcmZoom}%</span>
+                <div className="w-px h-4 bg-slate-800" />
+                <button
+                  onClick={() => setDcmShowAI(!dcmShowAI)}
+                  className={`px-3 py-1 rounded-xl font-bold flex items-center gap-1 transition-all ${
+                    dcmShowAI ? 'bg-purple-600 text-white shadow-md' : 'bg-slate-800 text-slate-400'
+                  }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5" /> AI Diagnostic Overlays
+                </button>
+              </div>
+
+              {/* HUD Top Left */}
+              <div className="absolute top-4 left-4 z-10 text-left text-[11px] font-mono text-cyan-400 space-y-0.5">
+                <div className="font-bold text-white text-xs">{viewingDcmItem.patientName}</div>
+                <div>{viewingDcmItem.ticketNumber} • Modality: {viewingDcmItem.modality}</div>
+                <div>Preset: {dcmPreset} Mode</div>
+              </div>
+
+              {/* HUD Top Right */}
+              <div className="absolute top-4 right-4 z-10 text-right text-[11px] font-mono text-emerald-400 space-y-0.5">
+                <div>Bella DICOM Engine 3D</div>
+                <div>Matrix: 512x512</div>
+                <div>Lossless Render Mode</div>
+              </div>
+
+              {/* Canvas SVG Anatomical View */}
+              <div
+                className="flex-1 w-full flex items-center justify-center relative transition-transform duration-150"
+                style={{ transform: `scale(${dcmZoom / 100})` }}
+              >
+                <div className="w-96 h-96 relative border border-slate-800 rounded-3xl bg-slate-950 flex items-center justify-center shadow-2xl overflow-hidden">
+                  <svg className="w-full h-full p-6 text-slate-700" viewBox="0 0 200 200">
+                    {viewingDcmItem.modality === 'CT' ? (
+                      <>
+                        <circle cx="100" cy="100" r="75" fill="#151d30" stroke="#475569" strokeWidth="6" />
+                        <circle cx="100" cy="100" r="62" fill="#0d1322" stroke="#334155" strokeWidth="2" />
+                        <path d="M 85 80 Q 95 65 100 80 Q 105 65 115 80 Q 100 110 85 80" fill="#1e293b" />
+                        {dcmShowAI && (
+                          <g className="animate-pulse">
+                            <ellipse cx="125" cy="95" rx="18" ry="14" fill="#ef4444" opacity="0.75" />
+                            <rect x="95" y="65" width="55" height="50" fill="none" stroke="#ef4444" strokeWidth="1.5" strokeDasharray="3 3" />
+                            <text x="100" y="60" fill="#ef4444" fontSize="7" fontWeight="bold">AI: Xuất Huyết (98%)</text>
+                          </g>
+                        )}
+                      </>
+                    ) : viewingDcmItem.modality === 'MRI' ? (
+                      <>
+                        <rect x="80" y="30" width="40" height="22" rx="4" fill="#1e293b" stroke="#475569" strokeWidth="2" />
+                        <rect x="80" y="60" width="40" height="22" rx="4" fill="#1e293b" stroke="#475569" strokeWidth="2" />
+                        <rect x="80" y="90" width="40" height="22" rx="4" fill="#1e293b" stroke="#475569" strokeWidth="2" />
+                        <rect x="80" y="120" width="40" height="22" rx="4" fill="#1e293b" stroke="#475569" strokeWidth="2" />
+                        {dcmShowAI && (
+                          <g className="animate-pulse">
+                            <ellipse cx="122" cy="118" rx="12" ry="8" fill="#f59e0b" opacity="0.8" />
+                            <text x="110" y="140" fill="#f59e0b" fontSize="7" fontWeight="bold">AI: L5-S1 (92%)</text>
+                          </g>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <path d="M 50 40 Q 100 20 150 40 L 160 160 L 40 160 Z" fill="#111827" stroke="#374151" strokeWidth="4" />
+                        <ellipse cx="75" cy="90" rx="25" ry="35" fill="#1f2937" />
+                        <ellipse cx="125" cy="90" rx="25" ry="35" fill="#1f2937" />
+                        <circle cx="115" cy="115" r="22" fill="#374151" opacity="0.6" />
+                      </>
+                    )}
+                  </svg>
+
+                  <div className="absolute inset-0 border border-indigo-500/20 pointer-events-none flex items-center justify-center">
+                    <div className="w-4 h-4 border border-cyan-400 rounded-full flex items-center justify-center">
+                      <div className="w-1 h-1 bg-cyan-400 rounded-full" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Slider Slice Bar */}
+              <div className="w-full max-w-xl z-20 bg-[#0d1322]/90 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-slate-800 flex items-center gap-4 text-xs">
+                <span className="font-mono text-slate-400 text-[11px] shrink-0">Slice {dcmSlice}</span>
+                <input
+                  type="range"
+                  min="1"
+                  max={viewingDcmItem.imageCount || 192}
+                  value={dcmSlice}
+                  onChange={(e) => setDcmSlice(Number(e.target.value))}
+                  className="w-full accent-indigo-500 cursor-pointer"
+                />
+                <span className="font-mono text-slate-400 text-[11px] shrink-0">{viewingDcmItem.imageCount || 192} Slices</span>
+              </div>
+            </div>
           </div>
         </div>
       )}
