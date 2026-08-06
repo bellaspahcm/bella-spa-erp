@@ -329,7 +329,7 @@
       line-height: 1.5;
     }
 
-    /* Comparison Section */
+    /* Comparison & Details Section */
     .comparison-section {
       background: var(--bg-secondary);
       border: 1px solid rgba(15, 23, 42, 0.08);
@@ -481,7 +481,7 @@
 
         <!-- Integrated highlights -->
         <ul class="bullet-list">
-          <li><strong>Outbox Pattern</strong>: Đảm bộ đồng bộ dữ liệu giao dịch 100% không lo lỗi dual-write.</li>
+          <li><strong>Outbox Pattern</strong>: Đảm bảo đồng bộ dữ liệu giao dịch 100% không lo lỗi dual-write.</li>
           <li><strong>Saga Process Manager</strong>: Kiểm soát hoàn hảo luồng liên miền (Đặt lịch ➔ Tiếp đón ➔ Ghế điều trị).</li>
           <li><strong>3-Tier AI clinical Panel</strong>: Hỗ trợ lâm sàng đa tầng (Safety check ➔ ADA Guideline ➔ Đề xuất phác đồ).</li>
         </ul>
@@ -520,7 +520,7 @@
       </div>
     </div>
 
-    <!-- Advanced Dental Clinic Features Section -->
+    <!-- Implemented Clinical Features -->
     <div class="comparison-section" style="margin-top: 0px;">
       <div class="section-title">
         <svg style="width: 24px; height: 24px; fill: var(--accent-teal);" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
@@ -531,28 +531,70 @@
       <div class="features-grid">
         <div class="feature-card">
           <span class="feature-icon">⏱</span>
-          <div class="feature-title">Hành trình y tế & Đo lường SLA (SLA Clinical Timeline)</div>
+          <div class="feature-title">Hành trình y tế & Đo lường SLA</div>
           <div class="feature-desc">Tự động ánh xạ các cột mốc: Check-in, Khám bác sĩ, Điều trị, Thanh toán và Check-out để giám sát thời gian chờ và phát hiện điểm nghẽn.</div>
         </div>
         <div class="feature-card">
           <span class="feature-icon">📝</span>
-          <div class="feature-title">Bệnh án điện tử SOAP & Đơn thuốc (SOAP Notes)</div>
+          <div class="feature-title">Bệnh án điện tử SOAP & Đơn thuốc</div>
           <div class="feature-desc">Lưu vết bệnh án lâm sàng theo chuẩn y khoa (Subjective, Objective, Assessment, Plan) và khởi tạo đơn thuốc điện tử an toàn.</div>
         </div>
         <div class="feature-card">
           <span class="feature-icon">🛡</span>
-          <div class="feature-title">Check dị ứng & Cảnh báo an toàn (Safety Gatekeeper)</div>
-          <div class="feature-desc">AI quét lịch sử dị ứng tự động ngăn chặn kê đơn các thuốc tương tác chéo (ví dụ: Chặn kê Amoxicillin nếu bệnh nhân dị ứng nhóm Penicillin).</div>
+          <div class="feature-title">Check dị ứng & Cảnh báo an toàn</div>
+          <div class="feature-desc">AI quét lịch sử dị ứng tự động ngăn chặn kê đơn các thuốc tương tác chéo (ví dụ: Chặn kê Amoxicillin nếu dị ứng nhóm Penicillin).</div>
         </div>
         <div class="feature-card">
           <span class="feature-icon">🛋</span>
-          <div class="feature-title">Điều phối & Giám sát ghế điều trị (Chair Monitor)</div>
+          <div class="feature-title">Điều phối & Giám sát ghế điều trị</div>
           <div class="feature-desc">Giám sát trạng thái chiếm dụng của các ghế nha khoa thời gian thực. AI COO tự phát tín hiệu điều phối và cảnh báo quá tải công suất ghế khám.</div>
         </div>
         <div class="feature-card">
           <span class="feature-icon">⚡</span>
-          <div class="feature-title">Luồng sự kiện kiểm toán thời gian thực (Audit Event Stream)</div>
-          <div class="feature-desc">Lưu trữ và trình chiếu toàn bộ các sự kiện lâm sàng theo thời gian thực dưới dạng Event Sourcing, giúp kiểm duyệt lịch sử điều trị dễ dàng.</div>
+          <div class="feature-title">Luồng sự kiện kiểm toán thời gian thực</div>
+          <div class="feature-desc">Lưu trữ và trình chiếu toàn bộ các sự kiện lâm sàng dưới dạng Event Sourcing, giúp kiểm duyệt lịch sử điều trị dễ dàng.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Enterprise Finance, Accounting and Business Intelligence Section -->
+    <div class="comparison-section" style="margin-top: 30px;">
+      <div class="section-title">
+        <svg style="width: 24px; height: 24px; fill: var(--accent-teal);" viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+        Tài chính, Kế toán & Trí tuệ Doanh nghiệp (Enterprise Finance, BI & AI)
+      </div>
+      <p class="section-desc">Hệ thống xử lý dòng tiền y khoa, phân tích hiệu quả vận hành và công cụ quản trị thông minh trong lõi Bella ERP.</p>
+
+      <div class="features-grid">
+        <div class="feature-card">
+          <span class="feature-icon">📊</span>
+          <div class="feature-title">Business Intelligence & P&L</div>
+          <div class="feature-desc">Báo cáo lãi lỗ (P&L) tự động theo tháng. Áp dụng quy tắc ghi nhận chi phí thực tế chỉ khi trạng thái chi lương hoặc chi phí vận hành đạt mức 'approved' hoặc 'paid' (tránh ghi nhận ảo).</div>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">💵</span>
+          <div class="feature-title">Ghi nhận doanh thu dòng tiền</div>
+          <div class="feature-desc">Doanh thu chỉ được ghi nhận trong P&L khi trạng thái thanh toán hoặc đặt lịch đạt mức 'confirmed'. Không tính cọc ảo hoặc lịch chưa chốt, đảm bảo dòng tiền thực chất.</div>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">🧮</span>
+          <div class="feature-title">Tính lương KTV theo công thực tế</div>
+          <div class="feature-desc">Động cơ tính lương tự động đồng bộ từ bảng chấm công: Đối với KTV chưa chốt lương, hệ thống tự tính lương cứng theo tỷ lệ ngày làm việc thực tế (pro-rata). Nếu đã có bản ghi nháp (Draft), tự động cập nhật liên tục từ dữ liệu chấm công trực tiếp.</div>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">🔐</span>
+          <div class="feature-title">Khóa sổ cuối tháng (Month-End Close)</div>
+          <div class="feature-desc">Khi bảng lương đạt trạng thái 'finalized' hoặc chốt sổ 'is_locked = true', hệ thống khóa toàn bộ quyền sửa đổi dữ liệu (chặn mọi thay đổi về ca điều trị, phụ cấp, hoa hồng, đơn thuốc để tránh sai lệch kế toán).</div>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">💎</span>
+          <div class="feature-title">Quản lý Hoa hồng & Overrides</div>
+          <div class="feature-desc">Áp dụng chính xác kiểm soát hoa hồng theo 3 cấp độ: Ghi đè cấp dịch vụ (override), thiết lập mặc định của chi nhánh (tenant config) và mặc định hệ thống. Chặn hoàn toàn tỷ lệ hoa hồng âm hoặc vượt quá doanh số.</div>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">🤖</span>
+          <div class="feature-title">Lớp Quản trị AI COO thông minh</div>
+          <div class="feature-desc">Tự động kết nối 4 động cơ AI: Safety check tương tác chéo, ADA Guideline lâm sàng y khoa, Recommendation gợi ý phác đồ 3 cấp và Prediction dự báo công suất phòng khám.</div>
         </div>
       </div>
     </div>
