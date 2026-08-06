@@ -246,26 +246,6 @@ export default function HealthcareReportsPage() {
           </div>
         </div>
       </div>
-              <div className="font-bold text-white">💡 Gợi Ý AI COO:</div>
-              <div>• Kích hoạt mở thêm Phòng Chẩn Đoán Hình Ảnh Số 3.</div>
-              <div className="text-emerald-400 font-bold mt-1">➔ Tránh nguy cơ vỡ SLA phòng CĐHA.</div>
-            </div>
-
-            <button
-              disabled={aiApplied['pacs']}
-              onClick={() => handleApplyAiRecommendation('pacs', 'Đã kích hoạt mở Phòng CĐHA PACS Số 3')}
-              className={`w-full py-2 rounded-xl font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                aiApplied['pacs']
-                  ? 'bg-emerald-600/40 text-emerald-300 border border-emerald-500/40'
-                  : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md'
-              }`}
-            >
-              {aiApplied['pacs'] ? <CheckCircle className="w-3.5 h-3.5 text-emerald-400" /> : <Sparkles className="w-3.5 h-3.5" />}
-              {aiApplied['pacs'] ? 'Đã Mở Phòng CĐHA Số 3' : 'Kích Hoạt Phòng CĐHA Số 3'}
-            </button>
-          </div>
-        </div>
-      </div>
 
       {/* 3. Operational Executive KPI Metrics (8 Cards Grid) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
