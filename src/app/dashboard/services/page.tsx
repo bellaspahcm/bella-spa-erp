@@ -69,7 +69,20 @@ export default function ServicesPage() {
     setBeforeAfterRequired,
     careNoteTemplate,
     setCareNoteTemplate,
+    lisCode,
+    setLisCode,
+    lisSampleType,
+    setLisSampleType,
+    lisTubeColor,
+    setLisTubeColor,
+    risCode,
+    setRisCode,
+    risModality,
+    setRisModality,
+    risBodySite,
+    setRisBodySite,
     enabledModules,
+    tenantName,
     hasLoadedTenantModules,
     isBeautySpaEnabled,
     bookingResources,
@@ -108,6 +121,8 @@ export default function ServicesPage() {
     refreshData,
   } = useServicesPageState();
 
+  const isDental = /dental|nha khoa/i.test(tenantName);
+
   const resourceTypeLabels = enabledModules.bella_healthcare ? {
     chair: 'Ghế nha khoa',
     room: 'Phòng phẫu thuật',
@@ -132,6 +147,8 @@ export default function ServicesPage() {
     treatment_package: 'Liệu trình / Phác đồ điều trị',
     retail_product: 'Vật tư / Dược phẩm y tế',
     consultation: 'Tư vấn & Chụp X-Quang 3D',
+    lis_test: 'Xét nghiệm chuyên môn (LIS)',
+    ris_imaging: 'Chẩn đoán hình ảnh (RIS)',
   } : {
     single_service: 'Dịch vụ lẻ',
     treatment_package: 'Liệu trình / gói buổi',
@@ -149,7 +166,7 @@ export default function ServicesPage() {
       ? [{ value: 'industrial_cleaning', label: 'Industrial Cleaning' }]
       : []),
     ...(enabledModules.bella_healthcare
-      ? [{ value: 'bella_healthcare', label: 'Bella Healthcare & Nha khoa' }]
+      ? [{ value: 'bella_healthcare', label: isDental ? 'Bella Healthcare & Nha khoa' : 'Bella Healthcare & Phòng khám' }]
       : []),
   ];
   const canManageServices = hasLoadedTenantModules && enabledModuleOptions.length > 0;
@@ -169,7 +186,7 @@ export default function ServicesPage() {
           <p className="text-slate-500 font-medium mt-1">Thiết lập bảng giá và các chương trình ưu đãi</p>
         </div>
         <div className="bella-toolbar flex flex-col gap-3 sm:flex-row">
-          <button 
+          <button
             onClick={openAddModal}
             disabled={!canManageServices}
             title={canManageServices ? undefined : 'Dang tai cau hinh nganh kinh doanh'}
@@ -185,9 +202,9 @@ export default function ServicesPage() {
       <div className="bella-toolbar mb-6 flex flex-col gap-3 rounded-3xl border border-slate-100 bg-white p-3 shadow-sm sm:p-4 md:mb-8 lg:flex-row lg:items-center">
         <div className="relative flex-1 w-full group">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-5 h-5" />
-          <input 
-            type="text" 
-            placeholder="Tìm kiếm dịch vụ..." 
+          <input
+            type="text"
+            placeholder="Tìm kiếm dịch vụ..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all font-medium text-slate-700"
@@ -214,7 +231,7 @@ export default function ServicesPage() {
                 { value: 'babycare', label: 'Bella Mother & Baby', icon: <CheckCircle2 className="h-4 w-4 text-emerald-500" /> },
                 { value: 'beauty_spa', label: 'Beauty Spa', icon: <Sparkles className="h-4 w-4 text-fuchsia-500" /> },
                 { value: 'industrial_cleaning', label: 'Industrial Cleaning', icon: <Zap className="h-4 w-4 text-cyan-500" /> },
-                { value: 'bella_healthcare', label: 'Bella Healthcare & Nha khoa', icon: <CheckCircle2 className="h-4 w-4 text-teal-500" /> },
+                { value: 'bella_healthcare', label: isDental ? 'Bella Healthcare & Nha khoa' : 'Bella Healthcare & Phòng khám', icon: <CheckCircle2 className="h-4 w-4 text-teal-500" /> },
               ]}
               onChange={(val) => setModuleFilter(val as 'all' | 'babycare' | 'beauty_spa' | 'industrial_cleaning' | 'bella_healthcare')}
               placeholder="Lọc module..."
@@ -424,7 +441,7 @@ export default function ServicesPage() {
       ) : (
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-2 xl:gap-6">
           {paginatedServices.map((service, idx) => (
-          <motion.div 
+          <motion.div
             key={service.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -452,8 +469,8 @@ export default function ServicesPage() {
                     <h3 className="break-words text-lg font-black text-slate-900 sm:text-xl">{service.name}</h3>
                     <span className={cn(
                       "px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border",
-                      service.status === 'active' 
-                        ? "bg-emerald-50 text-emerald-600 border-emerald-100" 
+                      service.status === 'active'
+                        ? "bg-emerald-50 text-emerald-600 border-emerald-100"
                         : "bg-slate-100 text-slate-400 border-slate-200"
                     )}>
                       {service.status === 'active' ? 'Đang hoạt động' : 'Tạm ngưng / Nháp'}
@@ -491,13 +508,13 @@ export default function ServicesPage() {
                       )}
                     />
                   </button>
-                  <button 
+                  <button
                     onClick={() => openEditModal(service)}
                     className="p-2 text-slate-400 hover:text-primary hover:bg-rose-50 rounded-xl transition-all"
                   >
                     <Zap className="w-5 h-5" />
                   </button>
-                  <button 
+                  <button
                     onClick={() => handleDelete(service.id)}
                     className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
                   >
@@ -567,16 +584,16 @@ export default function ServicesPage() {
           <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">
             Hiển thị <span className="text-slate-900">{startIndex}-{endIndex}</span> trên tổng số <span className="text-slate-900">{filteredServices.length}</span> gói dịch vụ
           </p>
-          
+
           <div className="bella-pagination">
-            <button 
+            <button
               onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
               disabled={currentPage === 1}
               className="p-3 rounded-xl bg-white border border-slate-100 text-slate-400 hover:text-primary hover:border-primary/20 disabled:opacity-30 disabled:hover:text-slate-400 disabled:hover:border-slate-100 transition-all active:scale-90 shadow-sm"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" /></svg>
             </button>
-            
+
             <div className="flex items-center gap-1">
               {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
                 if (totalPages > 7) {
@@ -585,15 +602,15 @@ export default function ServicesPage() {
                     return null;
                   }
                 }
-                
+
                 return (
-                  <button 
+                  <button
                     key={page}
                     onClick={() => handlePageChange(page)}
                     className={cn(
                       "w-10 h-10 rounded-xl font-black text-sm transition-all active:scale-90",
-                      currentPage === page 
-                        ? "bg-primary text-white shadow-lg shadow-rose-200 dark:shadow-none" 
+                      currentPage === page
+                        ? "bg-primary text-white shadow-lg shadow-rose-200 dark:shadow-none"
                         : "bg-white border border-slate-100 text-slate-400 hover:text-slate-600 hover:border-slate-300"
                     )}
                   >
@@ -602,8 +619,8 @@ export default function ServicesPage() {
                 );
               })}
             </div>
-            
-            <button 
+
+            <button
               onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
               disabled={currentPage === totalPages}
               className="p-3 rounded-xl bg-white border border-slate-100 text-slate-400 hover:text-primary hover:border-primary/20 disabled:opacity-30 disabled:hover:text-slate-400 disabled:hover:border-slate-100 transition-all active:scale-90 shadow-sm"
@@ -619,14 +636,14 @@ export default function ServicesPage() {
       <AnimatePresence>
         {isModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsModalOpen(false)}
               className="absolute inset-0 bg-[#1A0A0E]/70 backdrop-blur-md"
             />
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -648,7 +665,7 @@ export default function ServicesPage() {
                       </p>
                     </div>
                   </div>
-                  <button 
+                  <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
                     className="p-3 bg-slate-50 dark:bg-white/10 hover:bg-slate-100 dark:hover:bg-white/20 rounded-full text-slate-400 dark:text-slate-300 hover:text-slate-600 dark:hover:text-white transition-all"
@@ -662,35 +679,41 @@ export default function ServicesPage() {
                   <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6">
                     <div className="space-y-2">
                       <label className="text-sm font-black text-slate-700 dark:text-slate-200 ml-1">Tên dịch vụ / Gói</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         required
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        className="w-full px-6 py-4 bg-slate-50 dark:bg-white/10 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500" 
-                        placeholder={enabledModules.bella_healthcare ? "VD: Cấy ghép Implant răng (#36)" : "VD: Mẹ Bầu Toàn Diện"} 
+                        className="w-full px-6 py-4 bg-slate-50 dark:bg-white/10 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                        placeholder={
+                          enabledModules.bella_healthcare
+                            ? isDental
+                              ? "VD: Cấy ghép Implant răng (#36)"
+                              : "VD: Gói khám sức khỏe tổng quát"
+                            : "VD: Mẹ Bầu Toàn Diện"
+                        }
                       />
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-black text-slate-700 dark:text-slate-200 ml-1">Giá trọn gói (VNĐ)</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         required
                         value={price}
                         onChange={(e) => setPrice(formatMoneyInput(e.target.value))}
-                        className="w-full px-6 py-4 bg-slate-50 dark:bg-white/10 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500" 
-                        placeholder="VD: 15,500,000" 
+                        className="w-full px-6 py-4 bg-slate-50 dark:bg-white/10 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                        placeholder="VD: 15,500,000"
                       />
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-black text-slate-700 dark:text-slate-200 ml-1">Thời lượng (phút)</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         required
                         value={duration}
                         onChange={(e) => setDuration(e.target.value)}
-                        className="w-full px-6 py-4 bg-slate-50 dark:bg-white/10 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500" 
-                        placeholder="VD: 90" 
+                        className="w-full px-6 py-4 bg-slate-50 dark:bg-white/10 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                        placeholder="VD: 90"
                       />
                     </div>
                     <div className="space-y-2">
@@ -699,16 +722,16 @@ export default function ServicesPage() {
                           ? 'Số lượt khám trong phác đồ'
                           : `Số ${vocab.workUnit.plural.toLowerCase()} trong ${vocab.package.singular.toLowerCase()}`}
                       </label>
-                      <input 
-                        type="number" 
+                      <input
+                        type="number"
                         required
                         value={sessions}
                         onChange={(e) => {
                           const value = e.target.value;
                           setSessions(value === '' ? '' : String(parseIntegerInput(value, { min: 1, max: 100, fallback: 1 })));
                         }}
-                        className="w-full px-6 py-4 bg-slate-50 dark:bg-white/10 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500" 
-                        placeholder="VD: 15" 
+                        className="w-full px-6 py-4 bg-slate-50 dark:bg-white/10 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                        placeholder="VD: 15"
                       />
                     </div>
                     <div className="space-y-2">
@@ -717,45 +740,143 @@ export default function ServicesPage() {
                           ? 'Hoa hồng Bác sĩ / Y sĩ (VNĐ/lượt khám)'
                           : `Hoa hồng ${vocab.worker.short} (VNĐ/${vocab.workUnit.singular.toLowerCase()})`}
                       </label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         required
                         value={formatMoneyInput(ktvCommission)}
                         onChange={(e) => setKtvCommission(formatMoneyInput(e.target.value))}
-                        className="w-full px-6 py-4 bg-slate-50 dark:bg-white/10 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500" 
-                        placeholder="VD: 150,000" 
+                        className="w-full px-6 py-4 bg-slate-50 dark:bg-white/10 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                        placeholder="VD: 150,000"
                       />
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-black text-slate-700 dark:text-slate-200 ml-1">Chương trình Ưu đãi & Bảo hành</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         value={offer}
                         onChange={(e) => setOffer(e.target.value)}
-                        className="w-full px-6 py-4 bg-slate-50 dark:bg-white/10 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500" 
-                        placeholder={enabledModules.bella_healthcare ? "VD: Bảo hành trụ Implant trọn đời" : "VD: Ưu đãi giảm 20%"} 
+                        className="w-full px-6 py-4 bg-slate-50 dark:bg-white/10 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                        placeholder={
+                          enabledModules.bella_healthcare
+                            ? isDental
+                              ? "VD: Bảo hành trụ Implant trọn đời"
+                              : "VD: Tặng kèm voucher xét nghiệm đường huyết"
+                            : "VD: Ưu đãi giảm 20%"
+                        }
                       />
                     </div>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <label className="text-sm font-black text-slate-700 dark:text-slate-200 ml-1">Chi tiết dịch vụ (Phân cách bằng dấu phẩy)</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={details}
                       onChange={(e) => setDetails(e.target.value)}
-                      className="w-full px-6 py-4 bg-slate-50 dark:bg-white/10 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500" 
+                      className="w-full px-6 py-4 bg-slate-50 dark:bg-white/10 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                       placeholder={
                         enabledModules.bella_healthcare
-                          ? 'VD: Khám & Chụp CT ConeBeam 3D, Cắm trụ Implant, Gắn Abutment'
-                          : vocab.worker.short === 'NVS' 
-                            ? 'VD: Vệ sinh sàn nhà, Lau kính, Dọn toilet' 
+                          ? isDental
+                            ? 'VD: Khám & Chụp CT ConeBeam 3D, Cắm trụ Implant, Gắn Abutment'
+                            : 'VD: Khám lâm sàng, Xét nghiệm công thức máu, Siêu âm ổ bụng, Đo điện tâm đồ'
+                          : vocab.worker.short === 'NVS'
+                            ? 'VD: Vệ sinh sàn nhà, Lau kính, Dọn toilet'
                             : 'VD: Massage body, Chăm sóc da mặt, Xông hơi'
-                      } 
+                      }
                     />
                   </div>
 
-                  {(isBeautySpaEnabled || enabledModules.bella_healthcare) && (
+                  {serviceKind === 'lis_test' && (
+                    <div className="p-5 rounded-2xl border border-cyan-100 bg-cyan-50/20 dark:border-cyan-900/30 dark:bg-cyan-950/10 space-y-4 text-left">
+                      <h4 className="text-xs font-black text-cyan-800 dark:text-cyan-400 flex items-center gap-2 uppercase tracking-wider">
+                        <span>🧪 THÔNG TIN XÉT NGHIỆM CHUYÊN MÔN (LIS)</span>
+                      </h4>
+                      <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+                        <div className="space-y-2">
+                          <label className="text-xs font-black text-slate-600 dark:text-slate-300 ml-1">Mã Xét Nghiệm (Test Code) *</label>
+                          <input
+                            type="text"
+                            required={serviceKind === 'lis_test'}
+                            value={lisCode}
+                            onChange={(e) => setLisCode(e.target.value)}
+                            className="w-full px-6 py-4 bg-slate-50 dark:bg-white/10 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700 dark:text-white placeholder:text-slate-400"
+                            placeholder="VD: CBC-01"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-black text-slate-600 dark:text-slate-300 ml-1">Loại Mẫu Bệnh Phẩm *</label>
+                          <input
+                            type="text"
+                            required={serviceKind === 'lis_test'}
+                            value={lisSampleType}
+                            onChange={(e) => setLisSampleType(e.target.value)}
+                            className="w-full px-6 py-4 bg-slate-50 dark:bg-white/10 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700 dark:text-white placeholder:text-slate-400"
+                            placeholder="VD: Máu EDTA"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-black text-slate-600 dark:text-slate-300 ml-1">Màu Ống Bệnh Phẩm *</label>
+                          <input
+                            type="text"
+                            required={serviceKind === 'lis_test'}
+                            value={lisTubeColor}
+                            onChange={(e) => setLisTubeColor(e.target.value)}
+                            className="w-full px-6 py-4 bg-slate-50 dark:bg-white/10 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700 dark:text-white placeholder:text-slate-400"
+                            placeholder="VD: Tím"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {serviceKind === 'ris_imaging' && (
+                    <div className="p-5 rounded-2xl border border-indigo-100 bg-indigo-50/20 dark:border-indigo-900/30 dark:bg-indigo-950/10 space-y-4 text-left">
+                      <h4 className="text-xs font-black text-indigo-800 dark:text-indigo-400 flex items-center gap-2 uppercase tracking-wider">
+                        <span>📷 THÔNG TIN CHẨN ĐOÁN HÌNH ẢNH (RIS / PACS)</span>
+                      </h4>
+                      <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+                        <div className="space-y-2">
+                          <label className="text-xs font-black text-slate-600 dark:text-slate-300 ml-1">Mã Chỉ Định (Code) *</label>
+                          <input
+                            type="text"
+                            required={serviceKind === 'ris_imaging'}
+                            value={risCode}
+                            onChange={(e) => setRisCode(e.target.value)}
+                            className="w-full px-6 py-4 bg-slate-50 dark:bg-white/10 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700 dark:text-white placeholder:text-slate-400"
+                            placeholder="VD: XRAY-CHEST"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-black text-slate-600 dark:text-slate-300 ml-1">Phương Pháp (Modality) *</label>
+                          <PremiumSelect
+                            value={risModality}
+                            onChange={(val) => setRisModality(val as any)}
+                            options={[
+                              { value: 'XRAY', label: 'XRAY — X-Quang Kỹ Thuật Số' },
+                              { value: 'CT', label: 'CT — CT-Scanner Cắt Lớp' },
+                              { value: 'MRI', label: 'MRI — Cộng Hưởng Từ' },
+                              { value: 'ULTRASOUND', label: 'ULTRASOUND — Siêu Âm 4D' },
+                              { value: 'ENDOSCOPY', label: 'ENDOSCOPY — Nội Soi' },
+                            ]}
+                            placeholder="Chọn phương pháp"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-black text-slate-600 dark:text-slate-300 ml-1">Vị Trí & Chỉ Định Chụp *</label>
+                          <input
+                            type="text"
+                            required={serviceKind === 'ris_imaging'}
+                            value={risBodySite}
+                            onChange={(e) => setRisBodySite(e.target.value)}
+                            className="w-full px-6 py-4 bg-slate-50 dark:bg-white/10 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700 dark:text-white placeholder:text-slate-400"
+                            placeholder="VD: X-Quang Ngực Thẳng (Chest AP)"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                   {(isBeautySpaEnabled || enabledModules.bella_healthcare) && (
                     <div className="space-y-4 rounded-2xl border border-teal-100 bg-gradient-to-br from-teal-50/60 to-cyan-50/50 p-4 sm:p-6 dark:border-teal-900/40 dark:from-teal-950/30 dark:to-cyan-950/20">
                       <div className="flex items-start gap-3">
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white dark:bg-slate-900 text-teal-600 shadow-sm">
@@ -763,11 +884,17 @@ export default function ServicesPage() {
                         </div>
                         <div>
                           <h4 className="text-sm font-black text-slate-900 dark:text-white">
-                            {enabledModules.bella_healthcare ? 'Cấu hình Y tế & Nha Khoa' : 'Cấu hình Dịch vụ Nâng cao'}
+                            {enabledModules.bella_healthcare
+                              ? isDental
+                                ? 'Cấu hình Y tế & Nha Khoa'
+                                : 'Cấu hình Y tế & Phòng Khám'
+                              : 'Cấu hình Dịch vụ Nâng cao'}
                           </h4>
                           <p className="mt-0.5 text-[11px] font-semibold leading-relaxed text-slate-500 dark:text-slate-400">
-                            {enabledModules.bella_healthcare 
-                              ? 'Thiết lập nhóm lâm sàng, loại dịch vụ khám & tài nguyên phòng khám.'
+                            {enabledModules.bella_healthcare
+                              ? isDental
+                                ? 'Thiết lập nhóm lâm sàng, loại dịch vụ khám & tài nguyên phòng khám.'
+                                : 'Thiết lập chuyên khoa, loại dịch vụ khám bệnh & tài nguyên phòng khám.'
                               : 'Chỉ dùng cho dịch vụ mở rộng.'}
                           </p>
                         </div>
@@ -812,7 +939,7 @@ export default function ServicesPage() {
                             value={serviceCategory}
                             onChange={(event) => setServiceCategory(event.target.value)}
                             className="w-full rounded-2xl border-none bg-white px-5 py-4 text-sm font-bold text-slate-700 outline-none transition focus:ring-4 focus:ring-primary/10"
-                            placeholder={enabledModules.bella_healthcare ? "VD: implant, invisalign, dental, porcelain, nhổ răng" : "VD: facial, body, laser"}
+                            placeholder={enabledModules.bella_healthcare ? (isDental ? "VD: implant, invisalign, dental, porcelain, nhổ răng" : "VD: nội khoa, ngoại khoa, nhi khoa, siêu âm, xét nghiệm") : "VD: facial, body, laser"}
                           />
                         </div>
 
@@ -835,8 +962,20 @@ export default function ServicesPage() {
                         <div className="rounded-2xl bg-white p-4">
                           <div className="flex items-center justify-between gap-4">
                             <div>
-                              <p className="text-sm font-black text-slate-800">{enabledModules.bella_healthcare ? 'Cần ghế nha / thiết bị khám' : 'Cần giường/phòng/máy'}</p>
-                              <p className="mt-1 text-xs font-bold text-slate-500">{enabledModules.bella_healthcare ? 'Dùng khi phân bổ ghế nha khoa & máy X-Quang 3D.' : 'Dùng khi lên lịch Spa sau này.'}</p>
+                              <p className="text-sm font-black text-slate-800">
+                                {enabledModules.bella_healthcare
+                                  ? isDental
+                                    ? 'Cần ghế nha / thiết bị khám'
+                                    : 'Cần giường bệnh / phòng khám'
+                                  : 'Cần giường/phòng/máy'}
+                              </p>
+                              <p className="mt-1 text-xs font-bold text-slate-500">
+                                {enabledModules.bella_healthcare
+                                  ? isDental
+                                    ? 'Dùng khi phân bổ ghế nha khoa & máy X-Quang 3D.'
+                                    : 'Dùng khi phân bổ phòng khám chuyên khoa & giường bệnh.'
+                                  : 'Dùng khi lên lịch Spa sau này.'}
+                              </p>
                             </div>
                             <button
                               type="button"
@@ -870,8 +1009,20 @@ export default function ServicesPage() {
                         <div className="rounded-2xl bg-white p-4">
                           <div className="flex items-center justify-between gap-4">
                             <div>
-                              <p className="text-sm font-black text-slate-800">Cần ảnh trước/sau & Phim X-Quang</p>
-                              <p className="mt-1 text-xs font-bold text-slate-500">{enabledModules.bella_healthcare ? 'Theo dõi kết quả ảnh răng & phim X-Quang.' : 'Đánh dấu dịch vụ cần theo dõi kết quả.'}</p>
+                              <p className="text-sm font-black text-slate-800">
+                                {enabledModules.bella_healthcare
+                                  ? isDental
+                                    ? 'Cần ảnh trước/sau & Phim X-Quang'
+                                    : 'Cần ảnh kết quả & PACS / CĐHA'
+                                  : 'Cần ảnh trước/sau'}
+                              </p>
+                              <p className="mt-1 text-xs font-bold text-slate-500">
+                                {enabledModules.bella_healthcare
+                                  ? isDental
+                                    ? 'Theo dõi kết quả ảnh răng & phim X-Quang.'
+                                    : 'Theo dõi kết quả hình ảnh lâm sàng & phim chụp PACS.'
+                                  : 'Đánh dấu dịch vụ cần theo dõi kết quả.'}
+                              </p>
                             </div>
                             <button
                               type="button"
@@ -895,13 +1046,21 @@ export default function ServicesPage() {
 
                       <div className="space-y-2">
                         <label className="ml-1 text-xs font-black uppercase tracking-widest text-slate-600">
-                          {enabledModules.bella_healthcare ? 'Mẫu ghi chú bệnh án / Phác đồ điều trị' : 'Mẫu ghi chú chăm sóc'}
+                          {enabledModules.bella_healthcare
+                            ? isDental
+                              ? 'Mẫu ghi chú bệnh án / Phác đồ điều trị'
+                              : 'Mẫu ghi chú bệnh án / Chỉ định điều trị'
+                            : 'Mẫu ghi chú chăm sóc'}
                         </label>
                         <textarea
                           value={careNoteTemplate}
                           onChange={(event) => setCareNoteTemplate(event.target.value)}
                           className="h-20 w-full resize-none rounded-2xl border-none bg-white px-5 py-4 text-sm font-bold text-slate-700 outline-none transition focus:ring-4 focus:ring-primary/10"
-                          placeholder={enabledModules.bella_healthcare ? 'VD: Tình trạng răng miệng, phim X-Quang CBCT, chỉ định thuốc & lưu ý sau phẫu thuật...' : 'VD: Tình trạng da, phản ứng sau buổi, lưu ý lần hẹn tiếp theo...'}
+                          placeholder={enabledModules.bella_healthcare
+                            ? isDental
+                              ? 'VD: Tình trạng răng miệng, phim X-Quang CBCT, chỉ định thuốc & lưu ý sau phẫu thuật...'
+                              : 'VD: Tình trạng lâm sàng, kết quả xét nghiệm/siêu âm, chỉ định điều trị & thuốc...'
+                            : 'VD: Tình trạng da, phản ứng sau buổi, lưu ý lần hẹn tiếp theo...'}
                         />
                       </div>
                     </div>
@@ -913,7 +1072,7 @@ export default function ServicesPage() {
                       <span className="text-xs text-slate-500 dark:text-slate-400 font-bold">
                         {enabledModules.bella_healthcare
                           ? 'Kích hoạt để hiển thị dịch vụ trong danh mục khám bệnh & đăng ký hẹn'
-                          : vocab.worker.short === 'NVS' 
+                          : vocab.worker.short === 'NVS'
                             ? 'Kích hoạt để hiển thị gói dịch vụ này trong danh sách'
                             : 'Kích hoạt để gói hiển thị trực tiếp trên trang chủ Landing Page'
                         }

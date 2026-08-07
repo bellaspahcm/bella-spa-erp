@@ -23,7 +23,8 @@ import { toast } from 'sonner';
 import { 
   getLabOrdersAction, 
   createLabOrderAction, 
-  verifyLabResultAction 
+  verifyLabResultAction,
+  getMedicalServicesAction
 } from '@/services/healthcare/healthcare-actions';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
@@ -51,27 +52,74 @@ interface LabWorkItem {
   qcStatus?: 'Passed (Westgard OK)' | 'Pending QC';
 }
 
-const TEST_OPTIONS = [
-  { value: 'CBC-01', label: 'CBC-01 — Tổng phân tích tế bào máu (24 thông số)' },
-  { value: 'K-BLOOD', label: 'K-BLOOD — Xét nghiệm Kali máu (K+)' },
-  { value: 'GLU-02', label: 'GLU-02 — Đường huyết lúc đói (Glucose)' },
-  { value: 'URI-10', label: 'URI-10 — Tổng phân tích nước tiểu (10 thông số)' },
-];
-
 export default function LaboratoryPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [items, setItems] = useState<LabWorkItem[]>([]);
+  const [testOptions, setTestOptions] = useState<{ value: string; label: string; name: string; sample: string; color: string }[]>([]);
 
   const [newLab, setNewLab] = useState({
     patientName: '',
-    testCode: 'CBC-01',
-    testName: 'Tổng phân tích tế bào máu ngoại vi (24 thông số)',
-    sampleType: 'Máu EDTA',
-    tubeColor: 'Tím',
+    testCode: '',
+    testName: '',
+    sampleType: '',
+    tubeColor: '',
   });
+
+  const loadTestOptions = async () => {
+    try {
+      const res = await getMedicalServicesAction('lis_test');
+      const defaultOpts = [
+        { value: 'CBC-01', label: 'CBC-01 — Tổng phân tích tế bào máu (24 thông số)', name: 'Tổng phân tích tế bào máu ngoại vi (24 thông số)', sample: 'Máu EDTA', color: 'Tím' },
+        { value: 'K-BLOOD', label: 'K-BLOOD — Xét nghiệm Kali máu (K+)', name: 'Xét nghiệm Kali máu (K+)', sample: 'Máu toàn phần', color: 'Đỏ' },
+        { value: 'GLU-02', label: 'GLU-02 — Đường huyết lúc đói (Glucose)', name: 'Đường huyết lúc đói (Glucose)', sample: 'Huyết thanh', color: 'Xám' },
+        { value: 'URI-10', label: 'URI-10 — Tổng phân tích nước tiểu (10 thông số)', name: 'Tổng phân tích nước tiểu (10 thông số)', sample: 'Nước tiểu tươi', color: 'Trong' },
+      ];
+      if (res.success && res.data && res.data.length > 0) {
+        const dbOptions = res.data.map((item: any) => {
+          const meta = item.metadata || {};
+          const code = meta.lisCode || item.id.slice(0, 8).toUpperCase();
+          return {
+            value: code,
+            label: `${code} — ${item.name}`,
+            name: item.name,
+            sample: meta.lisSampleType || 'Máu toàn phần',
+            color: meta.lisTubeColor || 'Đỏ',
+          };
+        });
+        // Merge to avoid overriding default seed data if not added
+        const merged = [...dbOptions];
+        defaultOpts.forEach(def => {
+          if (!merged.some(m => m.value === def.value)) {
+            merged.push(def);
+          }
+        });
+        setTestOptions(merged);
+        if (merged.length > 0) {
+          setNewLab(prev => ({
+            ...prev,
+            testCode: merged[0].value,
+            testName: merged[0].name,
+            sampleType: merged[0].sample,
+            tubeColor: merged[0].color,
+          }));
+        }
+      } else {
+        setTestOptions(defaultOpts);
+        setNewLab(prev => ({
+          ...prev,
+          testCode: defaultOpts[0].value,
+          testName: defaultOpts[0].name,
+          sampleType: defaultOpts[0].sample,
+          tubeColor: defaultOpts[0].color,
+        }));
+      }
+    } catch (err) {
+      console.error('Lỗi tải danh sách xét nghiệm LIS:', err);
+    }
+  };
 
   const loadLabOrders = async () => {
     try {
@@ -101,6 +149,7 @@ export default function LaboratoryPage() {
 
   useEffect(() => {
     loadLabOrders();
+    loadTestOptions();
   }, []);
 
   const [selectedLabId, setSelectedLabId] = useState<string | null>(null);
@@ -582,28 +631,19 @@ export default function LaboratoryPage() {
               <div>
                 <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Danh Mục Xét Nghiệm LIS</label>
                 <PremiumSelect
-                  options={TEST_OPTIONS}
+                  options={testOptions.map(opt => ({ value: opt.value, label: opt.label }))}
                   value={newLab.testCode}
                   onChange={(val) => {
-                    let name = 'Tổng phân tích tế bào máu';
-                    let sample = 'Máu EDTA';
-                    let color = 'Tím';
-
-                    if (val === 'K-BLOOD') {
-                      name = 'Xét nghiệm Kali máu (K+)';
-                      sample = 'Máu toàn phần';
-                      color = 'Đỏ';
-                    } else if (val === 'GLU-02') {
-                      name = 'Đường huyết lúc đói (Glucose)';
-                      sample = 'Huyết thanh';
-                      color = 'Xám';
-                    } else if (val === 'URI-10') {
-                      name = 'Tổng phân tích nước tiểu (10 thông số)';
-                      sample = 'Nước tiểu tươi';
-                      color = 'Trong';
+                    const match = testOptions.find(o => o.value === val);
+                    if (match) {
+                      setNewLab({
+                        ...newLab,
+                        testCode: match.value,
+                        testName: match.name,
+                        sampleType: match.sample,
+                        tubeColor: match.color,
+                      });
                     }
-
-                    setNewLab({ ...newLab, testCode: val, testName: name, sampleType: sample, tubeColor: color });
                   }}
                   buttonClassName="px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-950 font-bold text-slate-900 dark:text-white text-xs h-10"
                 />

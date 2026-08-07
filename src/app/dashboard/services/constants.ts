@@ -20,6 +20,12 @@ export function createBlankServiceForm(): ServiceFormState {
     defaultResourceType: 'bed',
     beforeAfterRequired: false,
     careNoteTemplate: '',
+    lisCode: '',
+    lisSampleType: '',
+    lisTubeColor: '',
+    risCode: '',
+    risModality: 'XRAY',
+    risBodySite: '',
   };
 }
 

@@ -11,7 +11,7 @@ export type ServiceStatusFilter = 'all' | ServiceStatus;
 export type ServiceModalMode = 'add' | 'edit';
 export type ServiceModuleKey = 'babycare' | 'beauty_spa' | 'industrial_cleaning' | 'real_estate' | 'bella_healthcare';
 export type ServiceModuleFilter = 'all' | ServiceModuleKey;
-export type ServiceKind = 'single_service' | 'treatment_package' | 'retail_product' | 'consultation';
+export type ServiceKind = 'single_service' | 'treatment_package' | 'retail_product' | 'consultation' | 'lis_test' | 'ris_imaging';
 export type ResourceType = 'bed' | 'room' | 'machine' | 'chair' | 'other';
 export type ResourceStatus = 'available' | 'in_use' | 'maintenance' | 'inactive';
 
@@ -39,6 +39,12 @@ export type ServiceFormState = {
   defaultResourceType: ResourceType;
   beforeAfterRequired: boolean;
   careNoteTemplate: string;
+  lisCode: string;
+  lisSampleType: string;
+  lisTubeColor: string;
+  risCode: string;
+  risModality: 'XRAY' | 'CT' | 'MRI' | 'ULTRASOUND' | 'ENDOSCOPY';
+  risBodySite: string;
 };
 
 export type BookingResourceFormState = {

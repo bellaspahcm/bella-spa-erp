@@ -40,6 +40,7 @@ import type {
   ServicePackage,
   ServiceStatus,
   ServiceStatusFilter,
+  ServiceKind,
 } from '../types';
 
 type PackageMaterialWithItem = {
@@ -283,6 +284,7 @@ export function useServicesPageState() {
   const [loadingResources, setLoadingResources] = useState(false);
   const [resourceForm, setResourceForm] = useState<BookingResourceFormState>(createBlankBookingResourceForm);
   const [isSavingResource, setIsSavingResource] = useState(false);
+  const [tenantName, setTenantName] = useState('');
 
   const updateSearchQuery = (value: string) => {
     setSearchQuery(value);
@@ -314,9 +316,15 @@ export function useServicesPageState() {
     }));
   };
   const setModuleKey = (moduleKey: ServiceModuleKey) => setForm(prev => ({ ...prev, moduleKey }));
-  const setServiceKind = (serviceKind: 'single_service' | 'treatment_package' | 'retail_product' | 'consultation') => {
+  const setServiceKind = (serviceKind: ServiceKind) => {
     setForm(prev => ({ ...prev, serviceKind }));
   };
+  const setLisCode = (lisCode: string) => setForm(prev => ({ ...prev, lisCode }));
+  const setLisSampleType = (lisSampleType: string) => setForm(prev => ({ ...prev, lisSampleType }));
+  const setLisTubeColor = (lisTubeColor: string) => setForm(prev => ({ ...prev, lisTubeColor }));
+  const setRisCode = (risCode: string) => setForm(prev => ({ ...prev, risCode }));
+  const setRisModality = (risModality: 'XRAY' | 'CT' | 'MRI' | 'ULTRASOUND' | 'ENDOSCOPY') => setForm(prev => ({ ...prev, risModality }));
+  const setRisBodySite = (risBodySite: string) => setForm(prev => ({ ...prev, risBodySite }));
   const setServiceCategory = (serviceCategory: string) => setForm(prev => ({ ...prev, serviceCategory }));
   const setDefaultDurationMinutes = (defaultDurationMinutes: string) => {
     setForm(prev => ({ ...prev, defaultDurationMinutes }));
@@ -374,6 +382,7 @@ export function useServicesPageState() {
   const loadTenantModuleConfig = useCallback(async () => {
     try {
       const tenant = await getTenantSettings();
+      setTenantName(tenant?.name || '');
       const modules = normalizeEnabledModules(tenant?.enabled_modules);
       const beautySpaEnabled = modules.beauty_spa || modules.bella_healthcare;
       const defaultModuleKey = getDefaultTenantModuleKey(modules);
@@ -465,6 +474,8 @@ export function useServicesPageState() {
         service.service_kind === 'single_service'
         || service.service_kind === 'retail_product'
         || service.service_kind === 'consultation'
+        || service.service_kind === 'lis_test'
+        || service.service_kind === 'ris_imaging'
       ) ? service.service_kind : 'treatment_package',
       serviceCategory: service.service_category || '',
       defaultDurationMinutes: String(parseIntegerInput(service.default_duration_minutes, { min: 1, max: 1440, fallback: 90 })),
@@ -477,6 +488,12 @@ export function useServicesPageState() {
       ) ? service.default_resource_type : 'bed',
       beforeAfterRequired: service.before_after_required === true,
       careNoteTemplate: service.care_note_template || '',
+      lisCode: (service.metadata as any)?.lisCode || '',
+      lisSampleType: (service.metadata as any)?.lisSampleType || '',
+      lisTubeColor: (service.metadata as any)?.lisTubeColor || '',
+      risCode: (service.metadata as any)?.risCode || '',
+      risModality: (service.metadata as any)?.risModality || 'XRAY',
+      risBodySite: (service.metadata as any)?.risBodySite || '',
     });
     setMaterialRows([]);
     setIsModalOpen(true);
@@ -657,6 +674,18 @@ export function useServicesPageState() {
       const selectedModuleKey = enabledModules[form.moduleKey]
         ? form.moduleKey
         : getDefaultTenantModuleKey(enabledModules);
+
+      const metadata: Record<string, any> = {};
+      if (form.serviceKind === 'lis_test') {
+        metadata.lisCode = form.lisCode || undefined;
+        metadata.lisSampleType = form.lisSampleType || undefined;
+        metadata.lisTubeColor = form.lisTubeColor || undefined;
+      } else if (form.serviceKind === 'ris_imaging') {
+        metadata.risCode = form.risCode || undefined;
+        metadata.risModality = form.risModality || undefined;
+        metadata.risBodySite = form.risBodySite || undefined;
+      }
+
       const dbData: PackageActionInput = {
         name: form.name,
         price: parseMoneyInput(form.price),
@@ -679,6 +708,7 @@ export function useServicesPageState() {
           : null,
         before_after_required: selectedModuleKey === 'beauty_spa' ? form.beforeAfterRequired : false,
         care_note_template: form.careNoteTemplate,
+        metadata: Object.keys(metadata).length > 0 ? metadata : null,
       };
 
       let packageId: string | null = null;
@@ -809,7 +839,20 @@ export function useServicesPageState() {
     setBeforeAfterRequired,
     careNoteTemplate: form.careNoteTemplate,
     setCareNoteTemplate,
+    lisCode: form.lisCode,
+    setLisCode,
+    lisSampleType: form.lisSampleType,
+    setLisSampleType,
+    lisTubeColor: form.lisTubeColor,
+    setLisTubeColor,
+    risCode: form.risCode,
+    setRisCode,
+    risModality: form.risModality,
+    setRisModality,
+    risBodySite: form.risBodySite,
+    setRisBodySite,
     enabledModules,
+    tenantName,
     hasLoadedTenantModules,
     isBeautySpaEnabled,
     bookingResources,

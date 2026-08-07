@@ -33,8 +33,10 @@ import { toast } from 'sonner';
 import { 
   getImagingOrdersAction, 
   createImagingOrderAction, 
-  verifyImagingResultAction 
+  verifyImagingResultAction,
+  getMedicalServicesAction
 } from '@/services/healthcare/healthcare-actions';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 interface AIFinding {
   label: string;
@@ -90,12 +92,62 @@ export default function ImagingPage() {
   // Voice Dictation Simulation
   const [isRecordingId, setIsRecordingId] = useState<string | null>(null);
 
+  const [imagingOptions, setImagingOptions] = useState<{ value: string; name: string; modality: 'XRAY' | 'CT' | 'MRI' | 'ULTRASOUND' | 'ENDOSCOPY'; bodySite: string }[]>([]);
+
   const [newImaging, setNewImaging] = useState({
     patientName: '',
     modality: 'XRAY' as ImagingWorkItem['modality'],
-    bodySite: 'X-Quang Ngực Thẳng (Chest AP)',
+    bodySite: '',
     priority: 'ROUTINE' as NonNullable<ImagingWorkItem['priority']>,
   });
+
+  const loadImagingOptions = async () => {
+    try {
+      const res = await getMedicalServicesAction('ris_imaging');
+      const defaultOpts = [
+        { value: 'XRAY-CHEST', name: 'X-Quang Ngực Thẳng (Chest AP)', modality: 'XRAY' as const, bodySite: 'X-Quang Ngực Thẳng (Chest AP)' },
+        { value: 'CT-BRAIN', name: 'CT-Scanner Sọ Não Không Tiêm Thuốc', modality: 'CT' as const, bodySite: 'CT-Scanner Sọ Não Không Tiêm Thuốc' },
+        { value: 'MRI-LSPINE', name: 'MRI Cột Sống Thắt Lưng (L-Spine)', modality: 'MRI' as const, bodySite: 'MRI Cột Sống Thắt Lưng (L-Spine)' },
+        { value: 'US-ABDOMEN', name: 'Siêu âm Ổ bụng tổng quát', modality: 'ULTRASOUND' as const, bodySite: 'Siêu âm Ổ bụng tổng quát' },
+        { value: 'ENDO-STOMACH', name: 'Nội soi Dạ dày - Tá tràng', modality: 'ENDOSCOPY' as const, bodySite: 'Nội soi Dạ dày - Tá tràng' },
+      ];
+      if (res.success && res.data && res.data.length > 0) {
+        const dbOptions = res.data.map((item: any) => {
+          const meta = item.metadata || {};
+          const code = meta.risCode || item.id.slice(0, 8).toUpperCase();
+          return {
+            value: code,
+            name: item.name,
+            modality: (meta.risModality || 'XRAY') as any,
+            bodySite: meta.risBodySite || item.name,
+          };
+        });
+        const merged = [...dbOptions];
+        defaultOpts.forEach(def => {
+          if (!merged.some(m => m.value === def.value)) {
+            merged.push(def);
+          }
+        });
+        setImagingOptions(merged);
+        if (merged.length > 0) {
+          setNewImaging(prev => ({
+            ...prev,
+            modality: merged[0].modality,
+            bodySite: merged[0].bodySite,
+          }));
+        }
+      } else {
+        setImagingOptions(defaultOpts);
+        setNewImaging(prev => ({
+          ...prev,
+          modality: defaultOpts[0].modality,
+          bodySite: defaultOpts[0].bodySite,
+        }));
+      }
+    } catch (err) {
+      console.error('Lỗi tải danh mục chỉ định RIS:', err);
+    }
+  };
 
   const loadImagingOrders = async () => {
     try {
@@ -115,6 +167,7 @@ export default function ImagingPage() {
 
   useEffect(() => {
     loadImagingOrders();
+    loadImagingOptions();
   }, []);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -645,43 +698,49 @@ export default function ImagingPage() {
                 />
               </div>
 
+              <div>
+                <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Dịch Vụ Chỉ Định Chẩn Đoán *</label>
+                <PremiumSelect
+                  options={imagingOptions.map(opt => ({ value: opt.value, label: `${opt.value} — ${opt.name}` }))}
+                  value={imagingOptions.find(o => o.bodySite === newImaging.bodySite)?.value || ''}
+                  onChange={(val) => {
+                    const match = imagingOptions.find(o => o.value === val);
+                    if (match) {
+                      setNewImaging({
+                        ...newImaging,
+                        modality: match.modality,
+                        bodySite: match.bodySite,
+                      });
+                    }
+                  }}
+                  placeholder="Chọn dịch vụ chỉ định chẩn đoán"
+                />
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Phương Pháp (Modality)</label>
-                  <select
+                  <input
+                    type="text"
+                    readOnly
+                    disabled
                     value={newImaging.modality}
-                    onChange={(e) => {
-                      const mod = e.target.value as any;
-                      let site = 'X-Quang Ngực Thẳng (Chest AP)';
-                      if (mod === 'CT') site = 'CT-Scanner Sọ Não Không Tiêm Thuốc';
-                      else if (mod === 'MRI') site = 'MRI Cột Sống Thắt Lưng (L-Spine)';
-                      else if (mod === 'ULTRASOUND') site = 'Siêu âm Ổ bụng tổng quát';
-                      else if (mod === 'ENDOSCOPY') site = 'Nội soi Dạ dày - Tá tràng';
-
-                      setNewImaging({ ...newImaging, modality: mod, bodySite: site });
-                    }}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-950 font-bold text-slate-900 dark:text-white"
-                  >
-                    <option value="XRAY">XRAY — X-Quang Kỹ Thuật Số</option>
-                    <option value="CT">CT — CT-Scanner Cắt Lớp</option>
-                    <option value="MRI">MRI — Cộng Hưởng Từ</option>
-                    <option value="ULTRASOUND">ULTRASOUND — Siêu Âm 4D</option>
-                    <option value="ENDOSCOPY">ENDOSCOPY — Nội Soi Tiêu Hóa</option>
-                  </select>
+                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 font-bold text-slate-500"
+                  />
                 </div>
 
                 <div>
                   <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Mức Ưu Tiên (Priority)</label>
-                  <select
+                  <PremiumSelect
                     value={newImaging.priority}
-                    onChange={(e) => setNewImaging({ ...newImaging, priority: e.target.value as any })}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-950 font-bold text-slate-900 dark:text-white"
-                  >
-                    <option value="STAT">🚨 STAT — Cấp Cứu Khẩn</option>
-                    <option value="URGENT">🟠 Urgent — Khẩn</option>
-                    <option value="ROUTINE">🔵 Routine — Thường Quy</option>
-                    <option value="SCREENING">🟢 Screening — Tầm Soát</option>
-                  </select>
+                    onChange={(val) => setNewImaging({ ...newImaging, priority: val as any })}
+                    options={[
+                      { value: 'STAT', label: '🚨 STAT — Cấp Cứu Khẩn' },
+                      { value: 'URGENT', label: '🟠 Urgent — Khẩn' },
+                      { value: 'ROUTINE', label: '🔵 Routine — Thường Quy' },
+                      { value: 'SCREENING', label: '🟢 Screening — Tầm Soát' },
+                    ]}
+                  />
                 </div>
               </div>
 

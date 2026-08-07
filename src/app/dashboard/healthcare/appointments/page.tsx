@@ -31,6 +31,7 @@ import {
   List
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 interface Appointment {
   id: string;
@@ -306,20 +307,22 @@ export default function AppointmentCenterPage() {
         </div>
 
         <div className="flex items-center gap-3 w-full sm:w-auto justify-end flex-wrap">
-          <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-slate-400" />
-            <select
+          <div className="flex items-center gap-2 w-60">
+            <Filter className="w-4 h-4 text-slate-400 shrink-0" />
+            <PremiumSelect
+              options={[
+                { value: 'ALL', label: 'Tất cả Chuyên Khoa' },
+                { value: 'Khoa Tim Mạch', label: 'Khoa Tim Mạch' },
+                { value: 'Khoa Tiêu Hóa', label: 'Khoa Tiêu Hóa' },
+                { value: 'Khoa Nhi', label: 'Khoa Nhi' },
+                { value: 'Khoa Tai Mũi Họng', label: 'Khoa Tai Mũi Họng' },
+                { value: 'Khoa Thần Kinh', label: 'Khoa Thần Kinh' }
+              ]}
               value={filterSpecialty}
-              onChange={(e) => setFilterSpecialty(e.target.value)}
-              className="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-950 text-xs font-bold text-slate-700 dark:text-slate-200 cursor-pointer"
-            >
-              <option value="ALL">Tất cả Chuyên Khoa</option>
-              <option value="Khoa Tim Mạch">Khoa Tim Mạch</option>
-              <option value="Khoa Tiêu Hóa">Khoa Tiêu Hóa</option>
-              <option value="Khoa Nhi">Khoa Nhi</option>
-              <option value="Khoa Tai Mũi Họng">Khoa Tai Mũi Họng</option>
-              <option value="Khoa Thần Kinh">Khoa Thần Kinh</option>
-            </select>
+              onChange={(val) => setFilterSpecialty(val)}
+              placeholder="Chọn chuyên khoa..."
+              buttonClassName="py-2 px-3.5 rounded-xl text-xs font-bold border-slate-200 dark:border-slate-700 dark:bg-slate-950"
+            />
           </div>
 
           {/* Dual View Mode Switcher */}
@@ -633,83 +636,88 @@ export default function AppointmentCenterPage() {
               <button onClick={() => setIsBookingModalOpen(false)} className="text-slate-400 hover:text-slate-600 font-black text-lg p-1">✕</button>
             </div>
 
-            <form onSubmit={handleCreateBookingSubmit} className="space-y-4 text-xs">
-              <div>
-                <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Tên Bệnh Nhân *</label>
+            <form onSubmit={handleCreateBookingSubmit} className="space-y-5 text-xs font-sans">
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-400 uppercase tracking-widest ml-1 block">Tên Bệnh Nhân *</label>
                 <input
                   type="text"
                   required
                   placeholder="Nhập họ và tên..."
                   value={newApp.patientName}
                   onChange={(e) => setNewApp({ ...newApp, patientName: e.target.value })}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-950 font-bold text-slate-900 dark:text-white"
+                  className="w-full px-5 py-3.5 rounded-2xl border border-slate-100 dark:border-slate-800 dark:bg-slate-950 font-semibold text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500/50 hover:border-cyan-500/20 transition-all duration-300 shadow-2xs"
                 />
               </div>
 
-              <div>
-                <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Số Điện Thoại Zalo *</label>
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-400 uppercase tracking-widest ml-1 block">Số Điện Thoại Zalo *</label>
                 <input
                   type="text"
                   required
                   placeholder="09xx xxx xxx"
                   value={newApp.patientPhone}
                   onChange={(e) => setNewApp({ ...newApp, patientPhone: e.target.value })}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-950 font-mono text-slate-900 dark:text-white"
+                  className="w-full px-5 py-3.5 rounded-2xl border border-slate-100 dark:border-slate-800 dark:bg-slate-950 font-mono font-semibold text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500/50 hover:border-cyan-500/20 transition-all duration-300 shadow-2xs"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Chọn Chuyên Khoa</label>
-                  <select
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="font-bold text-slate-400 uppercase tracking-widest ml-1 block">Chọn Chuyên Khoa</label>
+                  <PremiumSelect
+                    options={[
+                      { value: 'Khoa Tim Mạch', label: 'Khoa Tim Mạch' },
+                      { value: 'Khoa Tiêu Hóa', label: 'Khoa Tiêu Hóa' },
+                      { value: 'Khoa Nhi', label: 'Khoa Nhi' },
+                      { value: 'Khoa Tai Mũi Họng', label: 'Khoa Tai Mũi Họng' },
+                      { value: 'Khoa Thần Kinh', label: 'Khoa Thần Kinh' }
+                    ]}
                     value={newApp.specialty}
-                    onChange={(e) => setNewApp({ ...newApp, specialty: e.target.value })}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-950 font-bold text-slate-900 dark:text-white"
-                  >
-                    <option value="Khoa Tim Mạch">Khoa Tim Mạch</option>
-                    <option value="Khoa Tiêu Hóa">Khoa Tiêu Hóa</option>
-                    <option value="Khoa Nhi">Khoa Nhi</option>
-                    <option value="Khoa Tai Mũi Họng">Khoa Tai Mũi Họng</option>
-                  </select>
+                    onChange={(val) => setNewApp({ ...newApp, specialty: val })}
+                    placeholder="Chuyên khoa..."
+                    buttonClassName="py-3 px-5 rounded-2xl border-slate-100 hover:border-cyan-500/20 dark:border-slate-800 dark:bg-slate-950 text-slate-800 dark:text-white font-semibold text-sm"
+                  />
                 </div>
 
-                <div>
-                  <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Chọn Khung Giờ (Slot)</label>
-                  <select
+                <div className="space-y-1.5">
+                  <label className="font-bold text-slate-400 uppercase tracking-widest ml-1 block">Chọn Khung Giờ (Slot)</label>
+                  <PremiumSelect
+                    options={[
+                      { value: '08:00 - 08:30', label: '08:00 - 08:30' },
+                      { value: '08:30 - 09:00', label: '08:30 - 09:00' },
+                      { value: '09:00 - 09:30', label: '09:00 - 09:30' },
+                      { value: '10:00 - 10:30', label: '10:00 - 10:30' },
+                      { value: '14:00 - 14:30', label: '14:00 - 14:30' }
+                    ]}
                     value={newApp.slotTime}
-                    onChange={(e) => setNewApp({ ...newApp, slotTime: e.target.value })}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-950 font-bold text-slate-900 dark:text-white font-mono"
-                  >
-                    <option value="08:00 - 08:30">08:00 - 08:30</option>
-                    <option value="08:30 - 09:00">08:30 - 09:00</option>
-                    <option value="09:00 - 09:30">09:00 - 09:30</option>
-                    <option value="10:00 - 10:30">10:00 - 10:30</option>
-                    <option value="14:00 - 14:30">14:00 - 14:30</option>
-                  </select>
+                    onChange={(val) => setNewApp({ ...newApp, slotTime: val })}
+                    placeholder="Chọn Slot..."
+                    buttonClassName="py-3 px-5 rounded-2xl border-slate-100 hover:border-cyan-500/20 dark:border-slate-800 dark:bg-slate-950 font-mono text-slate-800 dark:text-white font-semibold text-sm"
+                  />
                 </div>
               </div>
 
-              <div>
-                <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Bác Sĩ Khám Phụ Trách</label>
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-400 uppercase tracking-widest ml-1 block">Bác Sĩ Khám Phụ Trách</label>
                 <input
                   type="text"
                   value={newApp.doctorName}
                   onChange={(e) => setNewApp({ ...newApp, doctorName: e.target.value })}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-950 text-slate-900 dark:text-white font-medium"
+                  className="w-full px-5 py-3.5 rounded-2xl border border-slate-100 dark:border-slate-800 dark:bg-slate-950 font-semibold text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500/50 hover:border-cyan-500/20 transition-all duration-300 shadow-2xs"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3">
+              <div className="flex items-center justify-end gap-3 pt-4">
                 <button
                   type="button"
                   onClick={() => setIsBookingModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-100"
+                  className="px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest text-slate-500 hover:bg-slate-100 transition-all cursor-pointer"
                 >
                   Hủy Bỏ
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl text-xs font-black bg-cyan-600 text-white hover:bg-cyan-700 shadow-md cursor-pointer"
+                  className="px-6 py-2.5 rounded-xl text-xs font-black bg-cyan-600 hover:bg-cyan-700 text-white shadow-md hover:shadow-lg transition-all uppercase tracking-widest cursor-pointer"
                 >
                   Xác Nhận Đặt Lịch
                 </button>

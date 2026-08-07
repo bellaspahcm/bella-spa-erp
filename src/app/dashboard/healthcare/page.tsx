@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  Activity, 
-  Users, 
-  UserCheck, 
-  Building2, 
-  Clock, 
+import {
+  Activity,
+  Users,
+  UserCheck,
+  Building2,
+  Clock,
   Settings,
   Layout,
   Database,
@@ -21,10 +21,10 @@ import { EventStreamViewer } from './EventStreamViewer';
 import { ChairManagementPanel } from './ChairManagementPanel';
 import { AiCooCommandCenter } from './AiCooCommandCenter';
 import { fetchHealthcareChairsAction, updateHealthcareChairAssignmentAction } from '@/services/healthcare-chairs-actions';
-import { 
-  getAllPatientProfilesAction, 
-  getAllEncountersAction, 
-  updateEncounterStatusAction, 
+import {
+  getAllPatientProfilesAction,
+  getAllEncountersAction,
+  updateEncounterStatusAction,
   seedDefaultHealthcareDataAction,
   getActiveHealthcarePluginAction
 } from '@/services/healthcare/healthcare-actions';
@@ -78,7 +78,7 @@ export default function HealthcareDashboardPage() {
         const plugin = pluginId === 'bella-dental' ? new BellaDentalPlugin() : new BellaMedicalPlugin();
         await PluginLoader.load(plugin, capabilityRegistry, experienceRegistry, {});
         setManifest(plugin.manifest);
-        
+
         if (window.location.pathname === '/dashboard/healthcare') {
           const targetPath = pluginId === 'bella-dental' ? '/dashboard/dental' : '/dashboard/medical';
           window.location.replace(targetPath);
@@ -184,10 +184,11 @@ export default function HealthcareDashboardPage() {
       ? JSON.parse(localStorage.getItem(storageKey) || '[]')
       : [];
 
-    const waitingEncounter = encounters.find((e) => e.status === 'arrived' || e.status === 'planned');
+    const waitingEncounter = encounters.find((e) => e.status === 'arrived');
     const availableChair = chairsMatrix.find((c) => c.status === 'available');
-    const occupiedChair = chairsMatrix.find((c) => c.status === 'occupied');
+    const occupiedChairs = chairsMatrix.filter((c) => c.status === 'occupied');
     const arrivedCount = encounters.filter((e) => e.status === 'arrived').length;
+    const finishedEncounters = encounters.filter((e) => e.status === 'finished');
 
     const dynamicActions: AiCooAction[] = [];
 
@@ -197,9 +198,11 @@ export default function HealthcareDashboardPage() {
         id: `act-assign-${waitingEncounter.id}`,
         priority: 'high',
         category: isDental ? 'chair' : 'room',
-        title: isDental 
+        title: isDental
           ? `⚡ Mời BN ${waitingEncounter.patientName} vào ${availableChair.code}`
-          : `⚡ Mời BN ${waitingEncounter.patientName} vào Phòng ${availableChair.code}`,
+          : availableChair.code.startsWith('Phòng')
+            ? `⚡ Mời BN ${waitingEncounter.patientName} vào ${availableChair.code}`
+            : `⚡ Mời BN ${waitingEncounter.patientName} vào Phòng ${availableChair.code}`,
         description: isDental
           ? `${availableChair.code} (${availableChair.locationZone || 'Khu A'}) đang trống. Gợi ý điều phối ngay cho BN ${waitingEncounter.patientName}.`
           : `Phòng ${availableChair.code} đang trống. Gợi ý mời BN ${waitingEncounter.patientName} vào phòng khám.`,
@@ -209,56 +212,88 @@ export default function HealthcareDashboardPage() {
     }
 
     // 2. Live Queue SLA Waiting Time Alert
-    if (arrivedCount > 0) {
-      const firstArrived = encounters.find((e) => e.status === 'arrived') || waitingEncounter;
+    const overduePatients = encounters.filter((e) => e.status === 'arrived' && (e.waitTimeMinutes || 0) > 15);
+    if (overduePatients.length > 0) {
+      const firstOverdue = overduePatients[0];
       dynamicActions.push({
-        id: `act-sla-${firstArrived?.id || 'queue'}`,
+        id: `act-sla-${firstOverdue.id}`,
         priority: 'high',
         category: 'patient_wait',
-        title: `⚡ Cảnh báo SLA — ${arrivedCount} bệnh nhân đang chờ tiếp đón`,
-        description: `Bệnh nhân ${firstArrived?.patientName || 'tiếp theo'} đã chờ tại sảnh >15 phút. Đề xuất ưu tiên xếp lịch và thông báo bác sĩ.`,
+        title: `⚡ Cảnh báo SLA — Có ${overduePatients.length} bệnh nhân chờ >15 phút`,
+        description: `Bệnh nhân ${firstOverdue.patientName} và các bệnh nhân khác đã chờ tại sảnh vượt quá thời gian SLA chuẩn. Đề xuất ưu tiên sắp xếp phòng điều trị ngay.`,
+        actionLabel: 'Điều phối hàng đợi SLA',
+        actionType: 'alert_doctor',
+      });
+    } else if (arrivedCount > 0) {
+      const firstArrived = encounters.find((e) => e.status === 'arrived');
+      dynamicActions.push({
+        id: `act-sla-normal-${firstArrived?.id || 'queue'}`,
+        priority: 'medium',
+        category: 'patient_wait',
+        title: `⏱️ Giám sát hàng đợi — Có ${arrivedCount} bệnh nhân đang chờ khám`,
+        description: `Bệnh nhân ${firstArrived?.patientName || 'tiếp theo'} đang chờ tại sảnh tiếp đón. Đề xuất sắp xếp phòng khám theo số thứ tự để tối ưu hóa thời gian chờ.`,
         actionLabel: 'Điều phối hàng đợi SLA',
         actionType: 'alert_doctor',
       });
     }
 
     // 3. Occupancy Capacity Alert
-    if (occupiedChair) {
+    const totalChairs = chairsMatrix.length;
+    const occupancyRate = totalChairs > 0 ? Math.round((occupiedChairs.length / totalChairs) * 100) : 0;
+
+    if (occupancyRate >= 75) {
+      dynamicActions.push({
+        id: 'act-high-occupancy',
+        priority: 'high',
+        category: 'capacity',
+        title: `⚠️ Cảnh báo quá tải — Công suất phòng khám đạt ${occupancyRate}%`,
+        description: `Có ${occupiedChairs.length}/${totalChairs} phòng khám đang hoạt động đồng thời. Đề xuất sẵn sàng mở thêm phòng khám dự phòng hoặc điều chuyển ca khám nhẹ.`,
+        actionLabel: 'Điều phối công suất',
+        actionType: 'reroute_queue',
+      });
+    } else if (occupiedChairs.length > 0) {
+      const occupiedChair = occupiedChairs[0];
       dynamicActions.push({
         id: `act-cap-${occupiedChair.id}`,
         priority: 'medium',
         category: 'capacity',
-        title: `📈 Cảnh báo công suất — ${isDental ? 'Ghế' : 'Phòng'} ${occupiedChair.code} quá tải (97%)`,
-        description: `${isDental ? 'Ghế' : 'Phòng'} ${occupiedChair.code} đang thực hiện ca khám cho BN ${occupiedChair.currentPatientName || 'hiện tại'}. Đề xuất chuẩn bị tiếp nhận ca tiếp theo.`,
+        title: `📈 Công suất hoạt động — ${isDental ? 'Ghế' : 'Phòng'} ${occupiedChair.code} đang bận`,
+        description: `${isDental ? 'Ghế' : 'Phòng'} ${occupiedChair.code} đang thực hiện ca khám cho bệnh nhân ${occupiedChair.currentPatientName || 'hiện tại'} bởi ${occupiedChair.currentDoctorName || 'Bác sĩ'}.`,
         actionLabel: 'Điều phối công suất',
         actionType: 'reroute_queue',
       });
     }
 
-    // 4. Financial & Shift Alerts
-    dynamicActions.push({
-      id: 'act-finance-audit',
-      priority: 'medium',
-      category: 'finance',
-      title: '💰 Viện phí & BHYT: Cần đối soát doanh thu ca khám',
-      description: 'Phát hiện 3 dịch vụ chưa hoàn tất thủ tục thanh toán viện phí BHYT. Đề xuất đối soát tự động.',
-      actionLabel: 'Thực hiện đối soát BHYT',
-      actionType: 'reroute_queue',
-    });
+    // 4. Financial & Shift Alerts based on actual clinic data
+    if (finishedEncounters.length > 0) {
+      dynamicActions.push({
+        id: 'act-finance-audit-dynamic',
+        priority: 'medium',
+        category: 'finance',
+        title: `💰 Đối soát viện phí — Phát hiện ${finishedEncounters.length} lượt khám cần đối soát`,
+        description: `Lượt khám của BN ${finishedEncounters.map(e => e.patientName).slice(0, 2).join(', ')} đã hoàn tất. Đề xuất rà soát thông tin BHYT và xác nhận thanh toán viện phí.`,
+        actionLabel: 'Thực hiện đối soát BHYT',
+        actionType: 'reroute_queue',
+      });
+    }
 
-    dynamicActions.push({
-      id: 'act-doctor-shift',
-      priority: 'info',
-      category: 'staff',
-      title: '👨‍⚕️ Ca trực Bác sĩ: BS. Lê Minh sắp hết ca (còn 20 phút)',
-      description: 'Gửi thông báo tự động chuyển giao danh sách bệnh nhân chờ sang BS. Trần Thảo.',
-      actionLabel: 'Thông báo chuyển ca',
-      actionType: 'alert_doctor',
-    });
+    const doctorsList = Array.from(new Set(encounters.map(e => e.doctorName).filter(Boolean)));
+    if (doctorsList.length > 0) {
+      const activeDoc = doctorsList[0];
+      dynamicActions.push({
+        id: `act-doctor-shift-${activeDoc}`,
+        priority: 'info',
+        category: 'staff',
+        title: `👨‍⚕️ Bàn giao ca trực — Bác sĩ ${activeDoc} sắp hết ca trực`,
+        description: `Đề xuất chuẩn bị gửi danh sách bàn giao các ca khám chờ tiếp theo của Bác sĩ ${activeDoc} sang Bác sĩ nhận ca trực tiếp theo.`,
+        actionLabel: 'Thông báo chuyển ca',
+        actionType: 'alert_doctor',
+      });
+    }
 
     const activeActions = dynamicActions.filter((a) => !dismissed.includes(a.id));
     setAiCooActions(activeActions);
-  }, [manifest, tenantId, encounters.length, chairsMatrix.length, resourceMetrics.chairOccupancyRate]);
+  }, [manifest, tenantId, encounters, chairsMatrix, resourceMetrics.chairOccupancyRate]);
 
   const handleUpdateEncounterStatus = async (id: string, newStatus: EncounterItem['status']) => {
     const dbRes = await updateEncounterStatusAction(id, newStatus);
@@ -549,7 +584,7 @@ export default function HealthcareDashboardPage() {
                   if (actionType === 'assign_chair' || actionType === 'assign_room') {
                     const targetChair = chairsMatrix.find((c) => c.status === 'available') || chairsMatrix[0];
                     const targetEncounter = encounters.find((e) => e.status === 'arrived' || e.status === 'planned') || encounters[0];
-                    
+
                     if (targetChair && targetEncounter) {
                       await handleAssignPatientToChair(targetChair.id, targetEncounter.patientName, user?.full_name || 'BS. Lê Minh');
                       toast.success(`🎉 AI COO đã điều phối BN ${targetEncounter.patientName} vào ${targetChair.code}!`);

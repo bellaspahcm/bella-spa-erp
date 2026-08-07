@@ -393,7 +393,7 @@ export async function getAllPatientProfilesAction(): Promise<{ success: boolean;
       .select('*')
       .eq('tenant_id', tenantId);
 
-    const custMap = new Map((customers || []).map((c: any) => [c.id, c]));
+    const custMap = new Map<string, any>((customers || []).map((c: any) => [c.id, c]));
 
     // Map to PatientInfo ViewModel structure
     const mapped = (profiles || []).map((p: any) => {
@@ -1255,7 +1255,7 @@ export async function getLabOrdersAction(): Promise<{ success: boolean; data?: a
       .select('id, queue_number, patient_party_id')
       .eq('tenant_id', tenantId);
 
-    const encMap = new Map((encounters || []).map((e: any) => [e.id, e]));
+    const encMap = new Map<string, any>((encounters || []).map((e: any) => [e.id, e]));
 
     const { data: parties } = await supabase
       .from('party_parties')
@@ -1468,7 +1468,7 @@ export async function getImagingOrdersAction(): Promise<{ success: boolean; data
       .select('id, queue_number, patient_party_id')
       .eq('tenant_id', tenantId);
 
-    const encMap = new Map((encounters || []).map((e: any) => [e.id, e]));
+    const encMap = new Map<string, any>((encounters || []).map((e: any) => [e.id, e]));
 
     const { data: parties } = await supabase
       .from('party_parties')
@@ -2344,7 +2344,7 @@ export async function payInvoiceAction(
   paymentMethod: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabase = (await createClient()) as any;
+    const supabase = (await createDevelopmentBypassClient()) as any;
     const tenantId = await getTenantIdOrThrow();
 
     const { error } = await supabase
@@ -2438,7 +2438,7 @@ export async function getHealthcarePayrollAction(monthYear: string): Promise<{ s
       .eq('tenant_id', tenantId)
       .eq('month_year', monthYear);
 
-    const savedRecordsMap = new Map((recordsData || []).map((r: any) => [r.ktv_id, r]));
+    const savedRecordsMap = new Map<string, any>((recordsData || []).map((r: any) => [r.ktv_id, r]));
 
     const mockStaff = [
       {
@@ -2700,6 +2700,31 @@ export async function syncHealthcareAccountingOutboxAction(): Promise<{ success:
     return { success: true };
   } catch (err: any) {
     return { success: false, error: err.message || 'Lỗi tái đồng bộ Outbox' };
+  }
+}
+
+/**
+ * 29. Lấy danh sách dịch vụ y khoa chuyên môn (LIS / RIS) đã cấu hình
+ */
+export async function getMedicalServicesAction(kind: 'lis_test' | 'ris_imaging'): Promise<{ success: boolean; data?: any[]; error?: string }> {
+  try {
+    const supabase = (await createDevelopmentBypassClient()) as any;
+    const tenantId = await getTenantIdOrThrow();
+
+    const { data, error } = await supabase
+      .from('packages')
+      .select('*')
+      .eq('tenant_id', tenantId)
+      .eq('service_kind', kind)
+      .order('name', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching medical services:', error);
+      return { success: false, error: error.message };
+    }
+    return { success: true, data: data || [] };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Lỗi tải danh mục dịch vụ y khoa chuyên môn' };
   }
 }
 

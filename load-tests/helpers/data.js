@@ -67,3 +67,45 @@ export function randomVnPhone() {
 export function randomBookingNumber() {
   return `LOAD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 }
+
+/** Lấy ID tenant y tế/medical. */
+export function getMedicalTenantId() {
+  const res = http.get(
+    `${ENV.SUPABASE_URL}/rest/v1/tenants?select=id&name=eq.Bella%20Medical%20Clinic&limit=1`,
+    { headers: serviceHeaders(), tags: { name: "setup.medical_tenant" } }
+  );
+  if (res.status !== 200) {
+    throw new Error(`getMedicalTenantId failed: ${res.status} ${res.body}`);
+  }
+  const arr = JSON.parse(res.body);
+  if (!arr.length) {
+    return "88888888-8888-8888-8888-888888888888";
+  }
+  return arr[0].id;
+}
+
+/** Lấy 1 Doctor Party ID bất kỳ trong tenant. */
+export function getAnyDoctorPartyId(tenantId) {
+  const res = http.get(
+    `${ENV.SUPABASE_URL}/rest/v1/party_parties?select=id&tenant_id=eq.${tenantId}&party_type=eq.person&limit=1`,
+    { headers: serviceHeaders(), tags: { name: "setup.doctor_party" } }
+  );
+  if (res.status !== 200) {
+    throw new Error(`getAnyDoctorPartyId failed: ${res.status} ${res.body}`);
+  }
+  const arr = JSON.parse(res.body);
+  return arr.length ? arr[0].id : null;
+}
+
+/** Lấy 1 Care Journey ID bất kỳ trong tenant. */
+export function getAnyCareJourneyId(tenantId) {
+  const res = http.get(
+    `${ENV.SUPABASE_URL}/rest/v1/journey_journeys?select=id&tenant_id=eq.${tenantId}&vertical=eq.healthcare&limit=1`,
+    { headers: serviceHeaders(), tags: { name: "setup.care_journey" } }
+  );
+  if (res.status !== 200) {
+    throw new Error(`getAnyCareJourneyId failed: ${res.status} ${res.body}`);
+  }
+  const arr = JSON.parse(res.body);
+  return arr.length ? arr[0].id : null;
+}

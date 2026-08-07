@@ -143,7 +143,7 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);
   --color-pink-deep: #881337;
-  
+
   /* Override Tailwind default slate colors for better contrast on white/pink bg
      Default Tailwind values are too light. Push slate-400/500/600/700 to darker shades for maximum legibility. */
   --color-slate-300: #64748b; /* was #cbd5e1, now use 500 (2 steps darker) */
@@ -207,7 +207,7 @@ body {
   font-size: 14px;
   font-weight: 400;
   line-height: 1.5;
-  background-image: 
+  background-image:
     radial-gradient(circle at 0% 0%, rgba(157, 23, 77, 0.04) 0%, transparent 40%),
     radial-gradient(circle at 100% 100%, rgba(190, 24, 93, 0.04) 0%, transparent 40%);
   background-attachment: fixed;
@@ -414,7 +414,7 @@ html[data-tenant-module="pending"] .ktv-profile-btn-primary:hover {
 
 /* Dedicated Luxury Premium Shadow Utility Classes */
 .shadow-premium-card {
-  box-shadow: 
+  box-shadow:
     0 0 0 1px rgba(226, 232, 240, 0.7),
     0 4px 18px -2px rgba(15, 23, 42, 0.05),
     0 14px 36px -6px rgba(15, 23, 42, 0.08),
@@ -423,7 +423,7 @@ html[data-tenant-module="pending"] .ktv-profile-btn-primary:hover {
 }
 
 .shadow-premium-card:hover {
-  box-shadow: 
+  box-shadow:
     0 0 0 1px rgba(99, 102, 241, 0.25),
     0 10px 28px -4px rgba(15, 23, 42, 0.07),
     0 22px 52px -10px rgba(99, 102, 241, 0.14),
@@ -432,7 +432,7 @@ html[data-tenant-module="pending"] .ktv-profile-btn-primary:hover {
 }
 
 .shadow-premium-container {
-  box-shadow: 
+  box-shadow:
     0 0 0 1px rgba(241, 245, 249, 0.9),
     0 8px 24px -3px rgba(15, 23, 42, 0.05),
     0 20px 48px -8px rgba(15, 23, 42, 0.09),
@@ -444,7 +444,7 @@ html[data-tenant-module="pending"] .ktv-profile-btn-primary:hover {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.7);
-  box-shadow: 
+  box-shadow:
     0 10px 36px 0 rgba(31, 38, 135, 0.08),
     0 2px 6px 0 rgba(0, 0, 0, 0.03),
     inset 0 1px 1px 0 rgba(255, 255, 255, 0.95);
@@ -804,7 +804,7 @@ input[type="time"]::-webkit-datetime-edit-ampm-field {
 /* Dark Mode Overrides */
 .dark body {
   background-color: #11100F !important;
-  background-image: 
+  background-image:
     radial-gradient(circle at 0% 0%, rgba(166, 125, 68, 0.02) 0%, transparent 40%),
     radial-gradient(circle at 100% 100%, rgba(93, 28, 52, 0.02) 0%, transparent 40%);
 }
@@ -964,8 +964,8 @@ input[type="time"]::-webkit-datetime-edit-ampm-field {
    Safari and mobile browsers from auto-zooming. Desktop layout remains unchanged.
    ========================================================================= */
 @media (max-width: 767px) {
-  input, 
-  textarea, 
+  input,
+  textarea,
   select,
   input[type="text"],
   input[type="number"],
@@ -1197,7 +1197,7 @@ html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-logo-mark {
 }
 html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-brand-script { color: #f8f6f2 !important; }
 html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-brand-subtitle,
-html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-header { 
+html[data-tenant-brand-preset="jade_wellness"] .beauty-erp-nav-header {
   color: #e8d4a8 !important; /* Lighter warm gold for better contrast (was #c8a97a) - WCAG AA ✅ 5.2:1 contrast on #074e44 */
 }
 /* Override inline Tailwind text-primary/60 for section headers in jade_wellness preset */
@@ -1246,7 +1246,7 @@ html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-logo-mark {
 }
 html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-brand-script { color: #f8fafc !important; }
 html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-brand-subtitle,
-html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-header { 
+html[data-tenant-brand-preset="luxury_navy"] .beauty-erp-nav-header {
   color: #fbbf24 !important; /* Brighter amber for better contrast (was #f59e0b) - WCAG AA ✅ 6.8:1 contrast on #1e3a8a */
 }
 /* Override inline Tailwind text-primary/60 for section headers in luxury_navy preset */
@@ -1295,7 +1295,7 @@ html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-logo-mark {
 }
 html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-brand-script { color: #f0f9ff !important; }
 html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-brand-subtitle,
-html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-header { 
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-header {
   color: #60a5fa !important; /* Light blue (blue-400) for accent section headers - WCAG AA ✅ 5.8:1 contrast on #1E40AF */
 }
 /* Override inline Tailwind text-primary/60 for section headers in ocean_clean preset */
@@ -1304,16 +1304,17 @@ html[data-tenant-brand-preset="ocean_clean"] .text-\[9\.5px\][class*="text-prima
 }
 html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item,
 html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item *,
-html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item span { 
-  color: #dbeafe !important; 
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item span {
+  color: #dbeafe !important;
 }
-html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item:hover,
-html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item:hover * { 
-  color: #ffffff !important; 
-  background: rgba(59, 130, 246, 0.22) !important; 
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item:hover {
+  color: #ffffff !important;
+  background: rgba(59, 130, 246, 0.22) !important;
 }
 html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item:hover svg,
-html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item:hover * { color: #ffffff !important; }
+html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item:hover * {
+  color: #ffffff !important;
+}
 html[data-tenant-brand-preset="ocean_clean"] .beauty-erp-nav-item-active {
   background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%) !important;
   border-color: rgba(16, 185, 129, 0.52) !important;
@@ -1376,7 +1377,7 @@ html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-logo-mark {
 }
 html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-brand-script { color: #f4f4f5 !important; }
 html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-brand-subtitle,
-html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-nav-header { 
+html[data-tenant-brand-preset="graphite_luxe"] .beauty-erp-nav-header {
   color: #d4d4d8 !important; /* Brighter silver-gray for better contrast (was #a1a1aa) - WCAG AA ✅ 8.2:1 contrast on #18181b */
 }
 /* Override inline Tailwind text-primary/60 for section headers in graphite_luxe preset */
@@ -1448,7 +1449,7 @@ html[data-tenant-brand-preset="bella_rose"] .beauty-erp-logo-mark {
 }
 html[data-tenant-brand-preset="bella_rose"] .beauty-erp-brand-script { color: #831843 !important; }
 html[data-tenant-brand-preset="bella_rose"] .beauty-erp-brand-subtitle,
-html[data-tenant-brand-preset="bella_rose"] .beauty-erp-nav-header { 
+html[data-tenant-brand-preset="bella_rose"] .beauty-erp-nav-header {
   color: #be123c !important; /* Darker burgundy-red for better contrast (was #9d174d) - WCAG AA ✅ 5.1:1 contrast on #FFF0F3 light pink */
 }
 /* Override inline Tailwind text-primary/60 for section headers in bella_rose preset */
@@ -4096,7 +4097,7 @@ html[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_welln
 /* Real Estate Dark Mode Overrides — scoped to luxury_navy preset (default) */
 html.dark[data-tenant-module="real_estate"]:not([data-tenant-brand-preset="jade_wellness"]):not([data-tenant-brand-preset="ocean_clean"]):not([data-tenant-brand-preset="graphite_luxe"]):not([data-tenant-brand-preset="bella_rose"]) body {
   background-color: #0b0f19 !important;
-  background-image: 
+  background-image:
     radial-gradient(circle at 0% 0%, rgba(37, 99, 235, 0.03) 0%, transparent 40%),
     radial-gradient(circle at 100% 100%, rgba(217, 119, 6, 0.03) 0%, transparent 40%) !important;
 }
@@ -4798,13 +4799,13 @@ html[data-tenant-module="beauty_spa"] .border-rose-100\/50 {
   --color-automation-primary: #f43f5e; /* rose-500 */
   --color-automation-primary-light: #ffe4e6; /* rose-50 */
   --color-automation-primary-dark: #be123c; /* rose-700 */
-  
+
   /* Semantic colors for automation states */
   --color-automation-success: #10b981; /* green-500 */
   --color-automation-error: #ef4444; /* red-500 */
   --color-automation-warning: #f59e0b; /* amber-500 */
   --color-automation-info: #3b82f6; /* blue-500 */
-  
+
   /* Automation spacing */
   --spacing-automation-xs: 4px;
   --spacing-automation-sm: 8px;
@@ -4812,7 +4813,7 @@ html[data-tenant-module="beauty_spa"] .border-rose-100\/50 {
   --spacing-automation-lg: 24px;
   --spacing-automation-xl: 32px;
   --spacing-automation-card: 20px;
-  
+
   /* Automation shadows */
   --shadow-automation-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-automation-md: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -4820,13 +4821,13 @@ html[data-tenant-module="beauty_spa"] .border-rose-100\/50 {
   --shadow-automation-xl: 0 16px 32px rgba(0, 0, 0, 0.2);
   --shadow-automation-rose: 0 4px 12px rgba(244, 63, 94, 0.2);
   --shadow-automation-blue: 0 4px 12px rgba(59, 130, 246, 0.2);
-  
+
   /* Automation border radius */
   --radius-automation-sm: 8px;
   --radius-automation-md: 12px;
   --radius-automation-lg: 16px;
   --radius-automation-xl: 24px;
-  
+
   /* Automation transitions */
   --transition-automation-fast: 100ms ease-out;
   --transition-automation-default: 200ms ease-out;
@@ -4836,7 +4837,7 @@ html[data-tenant-module="beauty_spa"] .border-rose-100\/50 {
 
 /* Automation Studio utility classes */
 .automation-card-hover {
-  transition: transform var(--transition-automation-default), 
+  transition: transform var(--transition-automation-default),
               box-shadow var(--transition-automation-default);
 }
 
@@ -4846,7 +4847,7 @@ html[data-tenant-module="beauty_spa"] .border-rose-100\/50 {
 }
 
 .automation-btn-press {
-  transition: transform var(--transition-automation-fast), 
+  transition: transform var(--transition-automation-fast),
               background var(--transition-automation-default);
 }
 
@@ -4993,13 +4994,13 @@ html[data-tenant-module="beauty_spa"] .border-rose-100\/50 {
   --color-automation-primary: #f43f5e; /* rose-500 */
   --color-automation-primary-light: #ffe4e6; /* rose-50 */
   --color-automation-primary-dark: #be123c; /* rose-700 */
-  
+
   /* Semantic colors for automation states */
   --color-automation-success: #10b981; /* green-500 */
   --color-automation-error: #ef4444; /* red-500 */
   --color-automation-warning: #f59e0b; /* amber-500 */
   --color-automation-info: #3b82f6; /* blue-500 */
-  
+
   /* Automation spacing */
   --spacing-automation-xs: 4px;
   --spacing-automation-sm: 8px;
@@ -5007,7 +5008,7 @@ html[data-tenant-module="beauty_spa"] .border-rose-100\/50 {
   --spacing-automation-lg: 24px;
   --spacing-automation-xl: 32px;
   --spacing-automation-card: 20px;
-  
+
   /* Automation shadows */
   --shadow-automation-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-automation-md: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -5015,13 +5016,13 @@ html[data-tenant-module="beauty_spa"] .border-rose-100\/50 {
   --shadow-automation-xl: 0 16px 32px rgba(0, 0, 0, 0.2);
   --shadow-automation-rose: 0 4px 12px rgba(244, 63, 94, 0.2);
   --shadow-automation-blue: 0 4px 12px rgba(59, 130, 246, 0.2);
-  
+
   /* Automation border radius */
   --radius-automation-sm: 8px;
   --radius-automation-md: 12px;
   --radius-automation-lg: 16px;
   --radius-automation-xl: 24px;
-  
+
   /* Automation transitions */
   --transition-automation-fast: 100ms ease-out;
   --transition-automation-default: 200ms ease-out;
@@ -5031,7 +5032,7 @@ html[data-tenant-module="beauty_spa"] .border-rose-100\/50 {
 
 /* Automation Studio utility classes */
 .automation-card-hover {
-  transition: transform var(--transition-automation-default), 
+  transition: transform var(--transition-automation-default),
               box-shadow var(--transition-automation-default);
 }
 
@@ -5041,7 +5042,7 @@ html[data-tenant-module="beauty_spa"] .border-rose-100\/50 {
 }
 
 .automation-btn-press {
-  transition: transform var(--transition-automation-fast), 
+  transition: transform var(--transition-automation-fast),
               background var(--transition-automation-default);
 }
 

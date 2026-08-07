@@ -13,69 +13,69 @@ export function AiCooCommandCenter({
   actions,
   onExecuteAction,
 }: AiCooCommandCenterProps) {
-  // Enterprise default operational alerts detected by AI COO if actions array is small
-  const defaultDetections = [
-    {
-      id: 'det-1',
-      type: 'assign_room' as const,
-      priority: 'high' as const,
-      category: 'room',
-      alertMessage: 'Phòng khám #03 đang quá tải công suất (97%)',
-      recommendation: 'Đề xuất mời bệnh nhân sang Phòng #05 khả dụng',
-      actionLabel: 'Mở thêm phòng / Điều phối',
-      icon: ShieldAlert,
-      badgeColor: 'bg-rose-50 text-rose-700 border-rose-200/80 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-900',
-    },
-    {
-      id: 'det-2',
-      type: 'assign_room' as const,
-      priority: 'high' as const,
-      category: 'patient_wait',
-      alertMessage: 'Có 4 bệnh nhân chờ tiếp đón >15 phút (Vượt SLA)',
-      recommendation: 'Ưu tiên xếp hàng tiếp đón nhanh cho bệnh nhân cao tuổi',
-      actionLabel: 'Điều phối hàng đợi SLA',
-      icon: AlertTriangle,
-      badgeColor: 'bg-amber-50 text-amber-700 border-amber-200/80 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-900',
-    },
-    {
-      id: 'det-3',
-      type: 'reroute_queue' as const,
-      priority: 'medium' as const,
-      category: 'capacity',
-      alertMessage: 'Doanh thu viện phí hôm nay giảm 18% so với trung bình',
-      recommendation: 'Rà soát danh sách dịch vụ chưa thanh toán hoặc hỗ trợ BHYT',
-      actionLabel: 'Thực hiện đối soát BHYT',
-      icon: Sparkles,
-      badgeColor: 'bg-blue-50 text-blue-700 border-blue-200/80 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-900',
-    },
-    {
-      id: 'det-4',
-      type: 'alert_doctor' as const,
-      priority: 'info' as const,
-      category: 'capacity',
-      alertMessage: 'BS. Lê Minh sắp hết ca làm việc (còn 20 phút)',
-      recommendation: 'Gửi thông báo chuyển giao ca khám cho BS. Trần Thảo',
-      actionLabel: 'Thông báo chuyển ca',
-      icon: Bell,
-      badgeColor: 'bg-purple-50 text-purple-700 border-purple-200/80 dark:bg-purple-950/60 dark:text-purple-300 dark:border-purple-900',
-    },
-  ];
+  if (actions.length === 0) {
+    return (
+      <div className="p-6 md:p-7 rounded-[28px] bg-white dark:bg-slate-900 text-slate-900 dark:text-white border border-slate-200/80 dark:border-slate-800 shadow-lg space-y-6 relative overflow-hidden text-left font-sans">
+        {/* Decorative Blur Background */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
 
-  const displayActions = actions.length > 0 
-    ? actions.map((act) => ({
-        id: act.id,
-        type: act.actionType,
-        priority: act.priority,
-        category: act.category,
-        alertMessage: act.title,
-        recommendation: act.description,
-        actionLabel: act.actionLabel,
-        icon: act.priority === 'high' ? AlertTriangle : Sparkles,
-        badgeColor: act.priority === 'high' 
-          ? 'bg-rose-50 text-rose-700 border-rose-200/80 dark:bg-rose-950/60 dark:text-rose-300' 
-          : 'bg-teal-50 text-teal-700 border-teal-200/80 dark:bg-teal-950/60 dark:text-teal-300',
-      }))
-    : defaultDetections;
+        {/* Control Center Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
+          <div className="flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-teal-600 to-emerald-500 text-white font-black flex items-center justify-center shadow-md shadow-teal-500/20 shrink-0">
+              <Bot className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-teal-50 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300 border border-teal-200/60 dark:border-teal-800/60 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                  AI COO EXECUTIVE ACTIVE MONITORING
+                </span>
+              </div>
+              <h3 className="text-base font-black text-slate-900 dark:text-white leading-tight mt-0.5 tracking-tight">
+                Giám Đốc Vận Hành Số AI — AI COO Incident Control Center
+              </h3>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="px-3 py-1.5 rounded-xl text-xs font-black bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1.5">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 animate-pulse" />
+              Vận hành ổn định
+            </span>
+          </div>
+        </div>
+
+        {/* Premium Empty State */}
+        <div className="flex flex-col items-center justify-center py-10 px-4 text-center space-y-4 rounded-2xl bg-slate-50/50 dark:bg-slate-950/40 border border-dashed border-slate-200 dark:border-slate-800">
+          <div className="w-16 h-16 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shadow-inner relative">
+            <CheckCircle2 className="w-8 h-8" />
+            <div className="absolute inset-0 rounded-full border border-emerald-500/30 animate-ping opacity-25" />
+          </div>
+          <div className="space-y-1 max-w-md">
+            <h4 className="font-extrabold text-sm text-slate-900 dark:text-white">Hệ thống vận hành tối ưu</h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
+              Không phát hiện bất kỳ sự cố hay điểm nghẽn SLA nào. Công suất sử dụng phòng khám, hàng đợi tiếp đón và các chỉ số tài chính đều đang nằm trong giới hạn an toàn.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const displayActions = actions.map((act) => ({
+    id: act.id,
+    type: act.actionType,
+    priority: act.priority,
+    category: act.category,
+    alertMessage: act.title,
+    recommendation: act.description,
+    actionLabel: act.actionLabel,
+    icon: act.priority === 'high' ? AlertTriangle : Sparkles,
+    badgeColor: act.priority === 'high'
+      ? 'bg-rose-50 text-rose-700 border-rose-200/80 dark:bg-rose-950/60 dark:text-rose-300'
+      : 'bg-teal-50 text-teal-700 border-teal-200/80 dark:bg-teal-950/60 dark:text-teal-300',
+  }));
 
   return (
     <div className="p-6 md:p-7 rounded-[28px] bg-white dark:bg-slate-900 text-slate-900 dark:text-white border border-slate-200/80 dark:border-slate-800 shadow-lg space-y-6 relative overflow-hidden text-left font-sans">
