@@ -21,6 +21,7 @@ import { toast } from 'sonner';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
 import type { Database, Json } from '@/types/database.types';
+import { getCurrentUser } from '@/services/user-actions';
 
 type AuditAction = 'INSERT' | 'UPDATE' | 'DELETE' | 'UNKNOWN';
 type AuditLogRow = Database['public']['Tables']['audit_logs']['Row'] & {
@@ -28,7 +29,7 @@ type AuditLogRow = Database['public']['Tables']['audit_logs']['Row'] & {
 };
 type JsonRecord = { [key: string]: Json | undefined };
 type AuditSession =
-  | { status: 'ready'; userId: string }
+  | { status: 'ready'; userId: string; tenantId: string }
   | { status: 'missing' };
 
 interface AuditLog {
@@ -544,32 +545,22 @@ export default function AuditPage() {
   };
 
   const resolveAuditSession = useCallback(async (): Promise<AuditSession> => {
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-    if (authError) {
-      if (isMissingAuthSession(authError)) return { status: 'missing' };
-      throw authError;
+    try {
+      const user = await getCurrentUser();
+      if (!user || !user.tenant_id) return { status: 'missing' };
+      return { status: 'ready', userId: user.id, tenantId: user.tenant_id };
+    } catch (err) {
+      console.error('Error resolving audit session:', err);
+      return { status: 'missing' };
     }
-
-    if (!user) return { status: 'missing' };
-
-    return { status: 'ready', userId: user.id };
-  }, [supabase]);
+  }, []);
 
   const fetchReferenceMaps = useCallback(async () => {
     try {
       const session = await resolveAuditSession();
       if (session.status === 'missing') return;
 
-      const { data: userData, error: userDataError } = await supabase
-        .from('users')
-        .select('tenant_id')
-        .eq('id', session.userId)
-        .single();
-      if (userDataError) throw userDataError;
-      if (!userData?.tenant_id) return;
-
-      const tenantId = userData.tenant_id;
+      const tenantId = session.tenantId;
 
       const { data: users, error: usersError } = await supabase
         .from('users')
@@ -621,20 +612,7 @@ export default function AuditPage() {
         return;
       }
       
-      const { data: userData, error: userDataError } = await supabase
-        .from('users')
-        .select('tenant_id')
-        .eq('id', session.userId)
-        .single();
-      if (userDataError) throw userDataError;
-        
-      if (!userData?.tenant_id) {
-        setLogs([]);
-        setAuthNotice('Không xác định được chi nhánh hoặc quyền truy cập cho tài khoản hiện tại.');
-        return;
-      }
-      
-      const tenantId = userData.tenant_id;
+      const tenantId = session.tenantId;
       setAuthNotice(null);
 
       const { data, error } = await supabase
