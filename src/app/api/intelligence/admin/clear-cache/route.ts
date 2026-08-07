@@ -9,16 +9,31 @@
 
 import { NextResponse } from 'next/server';
 import { getCache } from '@/services/intelligence/cache';
+import { createServiceClient } from '@/lib/supabase-service-client';
 
 export async function DELETE() {
   try {
     const cache = getCache();
     await cache.clear();
 
+    // Refresh database materialized views
+    const supabase = createServiceClient();
+    if (supabase) {
+      console.log('[API/clear-cache] Refreshing database materialized views...');
+      await Promise.all([
+        supabase.rpc('refresh_all_finance_mvs').catch((err) => {
+          console.warn('[API/clear-cache] Failed to refresh finance materialized views:', err);
+        }),
+        supabase.rpc('refresh_all_intelligence_materialized_views').catch((err) => {
+          console.warn('[API/clear-cache] Failed to refresh operational materialized views:', err);
+        })
+      ]);
+    }
+
     return NextResponse.json(
       { 
         success: true,
-        message: 'Intelligence cache cleared successfully',
+        message: 'Intelligence cache and database views refreshed successfully',
         timestamp: new Date().toISOString(),
       },
       { status: 200 }

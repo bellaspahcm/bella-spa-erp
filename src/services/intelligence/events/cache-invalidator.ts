@@ -174,6 +174,40 @@ export const cacheInvalidationHandler: EventHandler = async (event: BusinessEven
 
     await Promise.all(promises);
 
+    // Refresh database materialized views based on the patterns
+    let needsFinanceRefresh = false;
+    let needsOperationalRefresh = false;
+
+    for (const pattern of patterns) {
+      if (pattern.startsWith('finance:')) {
+        needsFinanceRefresh = true;
+      }
+      if (pattern.startsWith('hr:') || pattern.startsWith('customer:') || pattern.startsWith('marketing:') || pattern.startsWith('sales:')) {
+        needsOperationalRefresh = true;
+      }
+    }
+
+    if (needsFinanceRefresh || needsOperationalRefresh) {
+      try {
+        const { createServiceClient } = await import('@/lib/supabase-service-client');
+        const supabase = createServiceClient();
+        
+        if (supabase) {
+          if (needsFinanceRefresh) {
+            console.log('[CacheInvalidator] Refreshing finance materialized views...');
+            await supabase.rpc('refresh_all_finance_mvs');
+          }
+          
+          if (needsOperationalRefresh) {
+            console.log('[CacheInvalidator] Refreshing operational materialized views...');
+            await supabase.rpc('refresh_all_intelligence_materialized_views');
+          }
+        }
+      } catch (dbError) {
+        console.error('[CacheInvalidator] Failed to refresh database materialized views (non-critical):', dbError);
+      }
+    }
+
     console.log(
       `[CacheInvalidator] Successfully invalidated cache for ${event.eventType}`
     );

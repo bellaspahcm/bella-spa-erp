@@ -2328,6 +2328,19 @@ export async function getInvoicesAction(): Promise<{ success: boolean; data?: an
       }
     }
 
+    // Refresh database materialized views
+    await supabase.rpc('refresh_all_finance_mvs').catch((err: any) => {
+      console.warn('[importMockInvoicesAction] Failed to refresh materialized views:', err);
+    });
+
+    // Clear cache for this tenant
+    try {
+      const { getFinanceIntelligenceService } = await import('@/services/intelligence/finance/service');
+      await getFinanceIntelligenceService().clearCache(tenantId);
+    } catch (cacheErr) {
+      console.warn('[importMockInvoicesAction] Failed to clear cache:', cacheErr);
+    }
+
     // Re-fetch list
     const { data: reData, error: reErr } = await supabase
       .from('revenue')
@@ -2439,6 +2452,7 @@ export async function payInvoiceAction(
       .update({
         status: 'confirmed',
         payment_method: dbMethod,
+        received_date: new Date().toISOString().split('T')[0], // Ghi nhận theo ngày thực thu
       })
       .eq('id', invoiceId)
       .eq('tenant_id', tenantId);
@@ -2446,6 +2460,19 @@ export async function payInvoiceAction(
     if (error) {
       console.error('Error paying invoice:', error);
       return { success: false, error: error.message };
+    }
+
+    // Refresh database materialized views
+    await supabase.rpc('refresh_all_finance_mvs').catch((err: any) => {
+      console.warn('[payInvoiceAction] Failed to refresh materialized views:', err);
+    });
+
+    // Clear cache for this tenant
+    try {
+      const { getFinanceIntelligenceService } = await import('@/services/intelligence/finance/service');
+      await getFinanceIntelligenceService().clearCache(tenantId);
+    } catch (cacheErr) {
+      console.warn('[payInvoiceAction] Failed to clear cache:', cacheErr);
     }
 
     return { success: true };

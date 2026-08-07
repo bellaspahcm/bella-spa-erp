@@ -431,6 +431,13 @@ export function useRefreshFinanceData() {
   
   return useMutation({
     mutationFn: async (type: 'pnl' | 'cashflow' | 'budget' | 'expenses' | 'revenue' | 'ratios' | 'all' = 'all') => {
+      // Clear server-side cache and refresh database views
+      try {
+        await fetch('/api/intelligence/admin/clear-cache', { method: 'DELETE' });
+      } catch (err) {
+        console.warn('Failed to clear server-side cache:', err);
+      }
+
       const queryKeyPrefixes = {
         pnl: ['finance', 'monthly-pnl'],
         cashflow: ['finance', 'cash-flow'],
