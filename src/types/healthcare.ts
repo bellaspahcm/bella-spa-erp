@@ -185,3 +185,171 @@ export interface PatientJourneyQueueItem {
   called_at?: string;
   created_at: string;
 }
+
+/**
+ * Master Patient Index (MPI) — Universal Identity Resolution
+ */
+export interface MasterPatientIndex {
+  id: string;
+  tenant_id: string;
+  national_id?: string;
+  insurance_number?: string;
+  mrn_code: string; // Medical Record Number
+  full_name: string;
+  gender: 'male' | 'female' | 'other';
+  dob: string;
+  phone?: string;
+  address?: string;
+  emergency_contact?: {
+    name: string;
+    phone: string;
+    relationship: string;
+  };
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Bed Engine & Facility Infrastructure Hierarchy
+ */
+export type BedStatus = 'available' | 'occupied' | 'reserved' | 'cleaning' | 'maintenance' | 'out_of_service';
+export type BedType = 'standard' | 'icu' | 'vip' | 'isolation' | 'pediatric' | 'recovery';
+
+export interface Building {
+  id: string;
+  tenant_id: string;
+  code: string;
+  name: string;
+  address?: string;
+}
+
+export interface Ward {
+  id: string;
+  tenant_id: string;
+  building_id: string;
+  code: string;
+  name: string; // e.g. "Khoa Nội Tổng Hợp", "Khoa Hồi Sức Tích Cực ICU"
+  department_head_practitioner_id?: string;
+}
+
+export interface Room {
+  id: string;
+  tenant_id: string;
+  ward_id: string;
+  room_number: string;
+  floor_number: number;
+  gender_restriction?: 'male' | 'female' | 'unrestricted';
+  is_isolation?: boolean;
+}
+
+export interface Bed {
+  id: string;
+  tenant_id: string;
+  room_id: string;
+  ward_id: string;
+  bed_code: string; // e.g. "BED-301-A"
+  bed_type: BedType;
+  status: BedStatus;
+  daily_rate: number;
+  current_admission_id?: string;
+  current_patient_id?: string;
+  updated_at: string;
+}
+
+/**
+ * Inpatient Admission & Nursing Care Records
+ */
+export type InpatientAdmissionStatus = 'admitted' | 'transferred' | 'discharge_planned' | 'discharged' | 'cancelled';
+
+export interface InpatientAdmission {
+  id: string;
+  tenant_id: string;
+  encounter_id: string; // FK to Encounter Aggregate Root
+  patient_id: string;
+  bed_id: string;
+  ward_id: string;
+  admitting_doctor_id: string;
+  attending_doctor_id: string;
+  admission_diagnosis: ICD10Diagnosis[];
+  status: InpatientAdmissionStatus;
+  admitted_at: string;
+  discharged_at?: string;
+  discharge_summary?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface NursingVitalSigns {
+  id: string;
+  tenant_id: string;
+  inpatient_admission_id: string;
+  encounter_id: string;
+  patient_id: string;
+  nurse_practitioner_id: string;
+  temperature: number; // Celsius
+  heart_rate: number; // bpm
+  systolic_bp: number; // mmHg
+  diastolic_bp: number; // mmHg
+  spo2: number; // %
+  respiratory_rate?: number; // breaths/min
+  notes?: string;
+  recorded_at: string;
+}
+
+export type MARStatus = 'scheduled' | 'administered' | 'refused' | 'held' | 'missed';
+
+export interface MedicationAdministrationRecord {
+  id: string;
+  tenant_id: string;
+  inpatient_admission_id: string;
+  prescription_item_id: string;
+  drug_name: string;
+  dosage: string;
+  route: string;
+  scheduled_time: string;
+  administered_time?: string;
+  administered_by_nurse_id?: string;
+  status: MARStatus;
+  notes?: string;
+}
+
+/**
+ * Break-Glass Emergency Access Audit Log
+ */
+export interface SecurityBreakGlassLog {
+  id: string;
+  tenant_id: string;
+  user_id: string;
+  user_email: string;
+  user_name: string;
+  patient_id: string;
+  encounter_id?: string;
+  reason: string;
+  ip_address?: string;
+  activated_at: string;
+}
+
+/**
+ * Enterprise Asset Registry Record
+ */
+export type RegistryType =
+  | 'capability'
+  | 'policy'
+  | 'schema'
+  | 'api'
+  | 'workflow'
+  | 'ai'
+  | 'metadata'
+  | 'terminology'
+  | 'adr'
+  | 'data_contract';
+
+export interface EnterpriseRegistryRecord {
+  id: string;
+  registry_type: RegistryType;
+  code: string;
+  version: string;
+  definition: Record<string, unknown>;
+  is_active: boolean;
+  created_at: string;
+}

@@ -28,24 +28,189 @@ interface CareJourney {
   readonly subJourneys: SubJourney[];
 }
 
+const DENTAL_PRESET_JOURNEYS: CareJourney[] = [
+  {
+    id: 'journey-01',
+    patientName: 'Nguyễn Văn Hùng',
+    doctorName: 'BS. Lê Minh',
+    type: 'Cấy ghép Implant răng #36',
+    status: 'active',
+    startedAt: '2026-06-01',
+    subJourneys: [
+      {
+        id: 'sj-01',
+        name: 'Giai đoạn 1: Phẫu thuật cấy ghép trụ',
+        status: 'completed',
+        milestones: [
+          { id: 'ms-11', name: 'Chụp phim CBCT 3D & Lên phác đồ', status: 'completed' },
+          { id: 'ms-12', name: 'Phẫu thuật cắm trụ Implant', status: 'completed' },
+          { id: 'ms-13', name: 'Cắt chỉ & Kiểm tra sau 7-10 ngày', status: 'completed' },
+        ],
+      },
+      {
+        id: 'sj-02',
+        name: 'Giai đoạn 2: Chờ tích hợp xương (Osseointegration)',
+        status: 'active',
+        milestones: [
+          { id: 'ms-21', name: 'Kiểm tra độ tích hợp xương Implant', status: 'in_progress' },
+          { id: 'ms-22', name: 'Đặt nắp lành thương (Healing Abutment)', status: 'pending' },
+        ],
+      },
+      {
+        id: 'sj-03',
+        name: 'Giai đoạn 3: Lắp mão răng sứ phục hình',
+        status: 'pending',
+        milestones: [
+          { id: 'ms-31', name: 'Lấy dấu răng & Chế tác răng sứ CAD/CAM', status: 'pending' },
+          { id: 'ms-32', name: 'Thử răng sứ & Gắn cố định khớp cắn', status: 'pending' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'journey-02',
+    patientName: 'Lê Thị Mai',
+    doctorName: 'BS. Trần Thảo',
+    type: 'Chỉnh nha mặt trong (Orthodontics)',
+    status: 'active',
+    startedAt: '2026-07-15',
+    subJourneys: [
+      {
+        id: 'sj-21',
+        name: 'Giai đoạn 1: Chuẩn bị lâm sàng',
+        status: 'completed',
+        milestones: [
+          { id: 'ms-41', name: 'Lấy mẫu răng & Phân tích khớp cắn', status: 'completed' },
+          { id: 'ms-42', name: 'Nhổ răng tiền cối chỉ định', status: 'completed' },
+        ],
+      },
+      {
+        id: 'sj-22',
+        name: 'Giai đoạn 2: Gắn khí cụ chỉnh nha',
+        status: 'active',
+        milestones: [
+          { id: 'ms-51', name: 'Gắn mắc cài hai hàm', status: 'in_progress' },
+          { id: 'ms-52', name: 'Thay thun & Tăng lực kéo định kỳ', status: 'pending' },
+        ],
+      },
+    ],
+  },
+];
+
+const MEDICAL_PRESET_JOURNEYS: CareJourney[] = [
+  {
+    id: 'journey-01',
+    patientName: 'Nguyễn Văn Hùng',
+    doctorName: 'BS. Lê Minh',
+    type: 'Điều trị nội trú viêm phổi cấp',
+    status: 'active',
+    startedAt: '2026-06-01',
+    subJourneys: [
+      {
+        id: 'sj-01',
+        name: 'Giai đoạn 1: Tiếp nhận & Nhập viện',
+        status: 'completed',
+        milestones: [
+          { id: 'ms-11', name: 'Khám cấp cứu & Chụp X-quang phổi', status: 'completed' },
+          { id: 'ms-12', name: 'Xét nghiệm công thức máu & Khí máu', status: 'completed' },
+          { id: 'ms-13', name: 'Lập hồ sơ bệnh án nội trú & Nhận buồng bệnh', status: 'completed' },
+        ],
+      },
+      {
+        id: 'sj-02',
+        name: 'Giai đoạn 2: Điều trị tích cực tại khoa Nội',
+        status: 'active',
+        milestones: [
+          { id: 'ms-21', name: 'Kháng sinh truyền tĩnh mạch & Thở oxy', status: 'in_progress' },
+          { id: 'ms-22', name: 'Theo dõi sinh hiệu (HA, Nhiệt độ, SpO2) mỗi 4h', status: 'pending' },
+        ],
+      },
+      {
+        id: 'sj-03',
+        name: 'Giai đoạn 3: Phục hồi & Xuất viện',
+        status: 'pending',
+        milestones: [
+          { id: 'ms-31', name: 'Đánh giá lại phim X-quang & Chức năng hô hấp', status: 'pending' },
+          { id: 'ms-32', name: 'Hoàn thiện thủ tục thanh toán ra viện & Kê đơn thuốc về', status: 'pending' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'journey-02',
+    patientName: 'Lê Thị Mai',
+    doctorName: 'BS. Trần Thảo',
+    type: 'Chăm sóc hậu sản thường quy',
+    status: 'active',
+    startedAt: '2026-07-15',
+    subJourneys: [
+      {
+        id: 'sj-21',
+        name: 'Giai đoạn 1: Theo dõi 24h đầu sau sinh',
+        status: 'completed',
+        milestones: [
+          { id: 'ms-41', name: 'Kiểm tra cơn co tử cung & Lượng máu mất', status: 'completed' },
+          { id: 'ms-42', name: 'Hướng dẫn mẹ cho bé bú sớm & Vận động nhẹ', status: 'completed' },
+        ],
+      },
+      {
+        id: 'sj-22',
+        name: 'Giai đoạn 2: Chăm sóc & Phục hồi tại buồng',
+        status: 'active',
+        milestones: [
+          { id: 'ms-51', name: 'Chiếu tia plasma cuống rốn bé & Vết khâu mẹ', status: 'in_progress' },
+          { id: 'ms-52', name: 'Tiêm vaccine viêm gan B & Lao cho trẻ sơ sinh', status: 'pending' },
+        ],
+      },
+    ],
+  },
+];
+
 export default function JourneysPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedJourneyId, setSelectedJourneyId] = useState<string | null>('journey-01');
+  const [isMedical, setIsMedical] = useState(false);
 
   // Form states
   const [patientName, setPatientName] = useState('');
   const [doctorName, setDoctorName] = useState('BS. Lê Minh');
   const [journeyType, setJourneyType] = useState('Cấy ghép Implant răng (#36 / Nobel Biocare)');
+  const [journeys, setJourneys] = useState<CareJourney[]>(DENTAL_PRESET_JOURNEYS);
 
-  const doctorOptions = [
-    { value: 'BS. Lê Minh', label: 'BS. Lê Minh (Trưởng khoa Phục hình)' },
-    { value: 'BS. Trần Thảo', label: 'BS. Trần Thảo (Chuyên gia Chỉnh nha)' },
-  ];
+  const doctorOptions = isMedical
+    ? [
+        { value: 'BS. Lê Minh', label: 'BS. Lê Minh (Trưởng khoa Nội tổng quát)' },
+        { value: 'BS. Trần Thảo', label: 'BS. Trần Thảo (Chuyên gia Sản phụ khoa)' },
+      ]
+    : [
+        { value: 'BS. Lê Minh', label: 'BS. Lê Minh (Trưởng khoa Phục hình)' },
+        { value: 'BS. Trần Thảo', label: 'BS. Trần Thảo (Chuyên gia Chỉnh nha)' },
+      ];
 
   const [customServices, setCustomServices] = useState<{ value: string; label: string }[]>([]);
 
   React.useEffect(() => {
+    // Detect tenant healthcare specialization
+    try {
+      const cached = window.localStorage.getItem('bella.sidebar.brand.v3');
+      if (cached) {
+        const brand = JSON.parse(cached) as Record<string, unknown>;
+        const displayName = typeof brand.displayName === 'string' ? brand.displayName : '';
+        const subtitle = typeof brand.subtitle === 'string' ? brand.subtitle : '';
+        const hasHospital = Boolean(brand.isHospitalInpatient) || /hospital|bệnh viện|medical|y khoa|y tế/i.test(displayName);
+        const hasDental = /dental|nha khoa/i.test(displayName) || /clinical management/i.test(subtitle);
+        const isMed = hasHospital && !hasDental;
+        setIsMedical(isMed);
+        if (isMed) {
+          setJourneys(MEDICAL_PRESET_JOURNEYS);
+          setJourneyType('Điều trị nội trú viêm phổi cấp (Kháng sinh đồ)');
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+
     import('@/services/package-actions').then(m => {
       m.getPackages().then(packages => {
         if (packages && packages.length > 0) {
@@ -59,81 +224,19 @@ export default function JourneysPage() {
     });
   }, []);
 
-  const journeyTypeOptions = [
-    { value: 'Cấy ghép Implant răng (#36 / Nobel Biocare)', label: 'Cấy ghép Implant răng (#36 / Nobel Biocare)' },
-    { value: 'Chỉnh nha niềng răng mặt trong (Invisalign)', label: 'Chỉnh nha niềng răng mặt trong (Invisalign)' },
-    { value: 'Điều trị nha khoa tổng quát & Bọc sứ', label: 'Điều trị nha khoa tổng quát & Bọc sứ' },
-    ...customServices.filter(s => !['Cấy ghép Implant răng (#36 / Nobel Biocare)', 'Chỉnh nha niềng răng mặt trong (Invisalign)', 'Điều trị nha khoa tổng quát & Bọc sứ'].includes(s.value)),
-  ];
-
-  const [journeys, setJourneys] = useState<CareJourney[]>([
-    {
-      id: 'journey-01',
-      patientName: 'Nguyễn Văn Hùng',
-      doctorName: 'BS. Lê Minh',
-      type: 'Cấy ghép Implant răng #36',
-      status: 'active',
-      startedAt: '2026-06-01',
-      subJourneys: [
-        {
-          id: 'sj-01',
-          name: 'Giai đoạn 1: Phẫu thuật cấy ghép trụ',
-          status: 'completed',
-          milestones: [
-            { id: 'ms-11', name: 'Chụp phim CBCT 3D & Lên phác đồ', status: 'completed' },
-            { id: 'ms-12', name: 'Phẫu thuật cắm trụ Implant', status: 'completed' },
-            { id: 'ms-13', name: 'Cắt chỉ & Kiểm tra sau 7-10 ngày', status: 'completed' },
-          ],
-        },
-        {
-          id: 'sj-02',
-          name: 'Giai đoạn 2: Chờ tích hợp xương (Osseointegration)',
-          status: 'active',
-          milestones: [
-            { id: 'ms-21', name: 'Kiểm tra độ tích hợp xương Implant', status: 'in_progress' },
-            { id: 'ms-22', name: 'Đặt nắp lành thương (Healing Abutment)', status: 'pending' },
-          ],
-        },
-        {
-          id: 'sj-03',
-          name: 'Giai đoạn 3: Lắp mão răng sứ phục hình',
-          status: 'pending',
-          milestones: [
-            { id: 'ms-31', name: 'Lấy dấu răng & Chế tác răng sứ CAD/CAM', status: 'pending' },
-            { id: 'ms-32', name: 'Thử răng sứ & Gắn cố định khớp cắn', status: 'pending' },
-          ],
-        },
-      ],
-    },
-    {
-      id: 'journey-02',
-      patientName: 'Lê Thị Mai',
-      doctorName: 'BS. Trần Thảo',
-      type: 'Chỉnh nha mặt trong (Orthodontics)',
-      status: 'active',
-      startedAt: '2026-07-15',
-      subJourneys: [
-        {
-          id: 'sj-21',
-          name: 'Giai đoạn 1: Chuẩn bị lâm sàng',
-          status: 'completed',
-          milestones: [
-            { id: 'ms-41', name: 'Lấy mẫu răng & Phân tích khớp cắn', status: 'completed' },
-            { id: 'ms-42', name: 'Nhổ răng tiền cối chỉ định', status: 'completed' },
-          ],
-        },
-        {
-          id: 'sj-22',
-          name: 'Giai đoạn 2: Gắn khí cụ chỉnh nha',
-          status: 'active',
-          milestones: [
-            { id: 'ms-51', name: 'Gắn mắc cài hai hàm', status: 'in_progress' },
-            { id: 'ms-52', name: 'Thay thun & Tăng lực kéo định kỳ', status: 'pending' },
-          ],
-        },
-      ],
-    },
-  ]);
+  const journeyTypeOptions = isMedical
+    ? [
+        { value: 'Điều trị nội trú viêm phổi cấp (Kháng sinh đồ)', label: 'Điều trị nội trú viêm phổi cấp (Kháng sinh đồ)' },
+        { value: 'Chăm sóc hậu sản thường quy (Sinh thường/Sinh mổ)', label: 'Chăm sóc hậu sản thường quy (Sinh thường/Sinh mổ)' },
+        { value: 'Tầm soát sức khỏe tổng quát VIP (LIS/RIS)', label: 'Tầm soát sức khỏe tổng quát VIP (LIS/RIS)' },
+        ...customServices.filter(s => !['Điều trị nội trú viêm phổi cấp (Kháng sinh đồ)', 'Chăm sóc hậu sản thường quy (Sinh thường/Sinh mổ)', 'Tầm soát sức khỏe tổng quát VIP (LIS/RIS)'].includes(s.value)),
+      ]
+    : [
+        { value: 'Cấy ghép Implant răng (#36 / Nobel Biocare)', label: 'Cấy ghép Implant răng (#36 / Nobel Biocare)' },
+        { value: 'Chỉnh nha niềng răng mặt trong (Invisalign)', label: 'Chỉnh nha niềng răng mặt trong (Invisalign)' },
+        { value: 'Điều trị nha khoa tổng quát & Bọc sứ', label: 'Điều trị nha khoa tổng quát & Bọc sứ' },
+        ...customServices.filter(s => !['Cấy ghép Implant răng (#36 / Nobel Biocare)', 'Chỉnh nha niềng răng mặt trong (Invisalign)', 'Điều trị nha khoa tổng quát & Bọc sứ'].includes(s.value)),
+      ];
 
   const handleStartJourney = (e: React.FormEvent) => {
     e.preventDefault();

@@ -48,7 +48,9 @@ import {
   Wrench,
   Activity,
   Tv,
-  Stethoscope
+  Stethoscope,
+  Bed,
+  Hospital,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -101,6 +103,7 @@ type TenantBrandDisplay = Pick<
   | 'menuStyle'
   | 'radiusStyle'
   | 'isBeautySpa'
+  | 'isHospitalInpatient'
   | 'fontHeading'
   | 'stylePreset'
 >;
@@ -121,6 +124,7 @@ const DEFAULT_SIDEBAR_BRAND: TenantBrandDisplay = {
   menuStyle: 'comfortable',
   radiusStyle: 'soft',
   isBeautySpa: false,
+  isHospitalInpatient: false,
   fontHeading: 'serif',
   stylePreset: 'bella_rose',
 };
@@ -137,10 +141,11 @@ const NEUTRAL_SIDEBAR_BRAND: TenantBrandDisplay = {
   menuStyle: 'comfortable',
   radiusStyle: 'soft',
   isBeautySpa: false,
+  isHospitalInpatient: false,
   fontHeading: 'sans',
   stylePreset: 'graphite_luxe',
 };
-const SIDEBAR_BRAND_CACHE_KEY = 'bella.sidebar.brand.v2';
+const SIDEBAR_BRAND_CACHE_KEY = 'bella.sidebar.brand.v3';
 const RUNTIME_BRAND_CACHE_KEY = 'bella.runtime.brand.v1';
 const MOBILE_REFRESH_TIMEOUT_MS = 8_000;
 
@@ -166,7 +171,8 @@ function isTenantBrandDisplay(value: unknown): value is CachedTenantBrandDisplay
     typeof source.buttonStyle === 'string' &&
     typeof source.menuStyle === 'string' &&
     typeof source.radiusStyle === 'string' &&
-    typeof source.isBeautySpa === 'boolean'
+    typeof source.isBeautySpa === 'boolean' &&
+    typeof source.isHospitalInpatient === 'boolean'
   );
 }
 
@@ -184,6 +190,7 @@ function toTenantBrandDisplay(parsed: CachedTenantBrandDisplay): TenantBrandDisp
     menuStyle: parsed.menuStyle,
     radiusStyle: parsed.radiusStyle,
     isBeautySpa: parsed.isBeautySpa,
+    isHospitalInpatient: parsed.isHospitalInpatient ?? false,
     fontHeading: parsed.fontHeading ?? 'serif',
     stylePreset: parsed.stylePreset ?? 'bella_rose',
   };
@@ -240,7 +247,31 @@ function clearTenantBrandRuntimeCache() {
 }
 
 function resolveTenantBrandDisplay(settings: Awaited<ReturnType<typeof getCachedTenantSettings>>): TenantBrandDisplay {
-  if (!settings) return DEFAULT_SIDEBAR_BRAND;
+  if (!settings) {
+    if (typeof window !== 'undefined') {
+      const path = window.location.pathname;
+      if (path.startsWith('/dashboard/medical') || path.startsWith('/dashboard/healthcare') || path.startsWith('/dashboard/dental')) {
+        return resolveTenantBrandIdentity({
+          enabledModules: { bella_healthcare: true },
+          tenantName: path.includes('dental') ? 'Bella Dental Clinic' : 'Bella Medical Clinic',
+          surface: 'app',
+        });
+      } else if (path.startsWith('/dashboard/real-estate')) {
+        return resolveTenantBrandIdentity({
+          enabledModules: { real_estate: true },
+          tenantName: 'Bella Land',
+          surface: 'app',
+        });
+      } else if (path.startsWith('/dashboard/bella-auto')) {
+        return resolveTenantBrandIdentity({
+          enabledModules: { bella_auto: true },
+          tenantName: 'Bella Auto',
+          surface: 'app',
+        });
+      }
+    }
+    return DEFAULT_SIDEBAR_BRAND;
+  }
 
   return resolveTenantBrandIdentity({
     enabledModules: settings.enabled_modules,
@@ -487,6 +518,49 @@ const bellaMedicalClinicMenuItems: SidebarMenuItem[] = [
   { icon: Settings,        label: 'Cài Đặt Hệ Thống',           href: '/dashboard/settings' },
 ];
 
+// ─── Bella General Hospital Module Menu (hospital_inpatient capability) ───
+const bellaHospitalInpatientMenuItems: SidebarMenuItem[] = [
+  { type: 'header', label: 'Tổng quan & AI' },
+  { icon: LayoutDashboard, label: 'Dashboard điều hành',         href: '/dashboard/healthcare' },
+  { icon: Sparkles,        label: 'AI Copilot',                  href: '/dashboard/ai-copilot' },
+
+  { type: 'header', label: 'Tiếp đón & Ngoại trú' },
+  { icon: Calendar,        label: 'Đặt Lịch & QR Check-in',      href: '/dashboard/healthcare/appointments' },
+  { icon: Tv,              label: 'Màn Hình TV Hàng Đợi AI',     href: '/dashboard/healthcare/queue/tv' },
+  { icon: Stethoscope,     label: 'Lịch Trực Bác sĩ',            href: '/dashboard/healthcare/schedules' },
+  { icon: Users,           label: 'Hồ sơ bệnh nhân (MPI)',       href: '/dashboard/healthcare/patients' },
+  { icon: ClipboardList,   label: 'Lượt khám bệnh (EMR)',        href: '/dashboard/healthcare/encounters' },
+  { icon: Activity,        label: 'Hành trình điều trị',         href: '/dashboard/healthcare/journeys' },
+
+  { type: 'header', label: 'Nội trú & Buồng Giường' },
+  { icon: Bed,             label: 'Sơ đồ Buồng Giường Nội Trú',  href: '/dashboard/hospital/beds' },
+  { icon: Hospital,        label: 'Bệnh Án Nội Trú & MAR',       href: '/dashboard/hospital/admissions' },
+
+  { type: 'header', label: 'Cận Lâm Sàng' },
+  { icon: ClipboardList,   label: 'LIS Xét nghiệm',               href: '/dashboard/medical/laboratory' },
+  { icon: FileText,        label: 'RIS CĐHA & PACS',             href: '/dashboard/medical/imaging' },
+  { icon: Package,         label: 'Dược y tế & Kê đơn',          href: '/dashboard/medical/pharmacy' },
+  { icon: FileText,        label: 'Cận Lâm Sàng (LIS/RIS)',      href: '/dashboard/hospital/ancillary' },
+
+  { type: 'header', label: 'BHYT & Viện Phí' },
+  { icon: CircleDollarSign, label: 'Viện phí & BHYT (80/20)',     href: '/dashboard/medical/billing' },
+  { icon: FileText,        label: 'Cổng Giám Định BHYT XML 130',  href: '/dashboard/hospital/bhyt' },
+  { icon: FileText,        label: 'Hợp đồng BHYT & Bảo hiểm',    href: '/dashboard/medical/contracts' },
+
+  { type: 'header', label: 'Báo cáo & Phân tích' },
+  { icon: BarChart3,       label: 'Báo cáo Vận hành & SLA',      href: '/dashboard/medical/reports' },
+  { icon: LineChart,       label: 'Phân tích Doanh thu Y tế',    href: '/dashboard/medical/reports/revenue' },
+
+  { type: 'header', label: 'Tài chính & Hệ thống' },
+  { icon: Banknote,        label: 'Lương bác sĩ & Y sĩ',         href: '/dashboard/medical/salary' },
+  { icon: CircleDollarSign, label: 'Báo cáo thu chi',            href: '/dashboard/medical/finance' },
+  { icon: Wallet,          label: 'Nhật ký sổ cái y khoa',        href: '/dashboard/medical/accounting' },
+  { icon: FileSpreadsheet, label: 'Báo cáo tài chính TT133',     href: '/dashboard/accounting/reports' },
+  { icon: HelpCircle,      label: 'Hướng dẫn sử dụng',          href: '/dashboard/guides' },
+  { icon: Sliders,         label: 'Cấu hình Dịch vụ',            href: '/dashboard/services' },
+  { icon: Settings,        label: 'Cài Đặt Hệ Thống',           href: '/dashboard/settings' },
+];
+
 const customerMenuItems: SidebarMenuItem[] = [
   { icon: Flower2,       label: 'Tiến trình liệu trình', href: '/dashboard/customer' },
   { icon: Calendar,      label: 'Lịch sử buổi làm',      href: '/dashboard/customer/history' },
@@ -527,7 +601,9 @@ const LUCIDE_ICONS_MAP: Record<string, LucideIcon> = {
   Smile,
   CircleDollarSign,
   Wrench,
-  Activity
+  Activity,
+  Bed,
+  Hospital
 };
 
 
@@ -550,8 +626,22 @@ export function Sidebar() {
 
       const cachedBrand = readCachedTenantBrand(userData?.tenant_id);
       if (cachedBrand) {
-        setTenantBrand(cachedBrand);
-        setIsTenantBrandResolved(true);
+        if (typeof window !== 'undefined') {
+          const path = window.location.pathname;
+          const isMedicalPath = path.startsWith('/dashboard/medical') || path.startsWith('/dashboard/healthcare') || path.startsWith('/dashboard/dental');
+          const isRealEstatePath = path.startsWith('/dashboard/real-estate');
+          const isAutoPath = path.startsWith('/dashboard/bella-auto');
+
+          if (
+            (isMedicalPath && cachedBrand.moduleKey === 'bella_healthcare') ||
+            (isRealEstatePath && cachedBrand.moduleKey === 'real_estate') ||
+            (isAutoPath && cachedBrand.moduleKey === 'bella_auto') ||
+            (!isMedicalPath && !isRealEstatePath && !isAutoPath)
+          ) {
+            setTenantBrand(cachedBrand);
+            setIsTenantBrandResolved(true);
+          }
+        }
       }
 
       let settings: Awaited<ReturnType<typeof getCachedTenantSettings>> = null;
@@ -635,7 +725,11 @@ export function Sidebar() {
     : tenantBrand.moduleKey === 'real_estate'
     ? realEstateMenuItems
     : tenantBrand.moduleKey === 'bella_healthcare'
-    ? (/dental|nha khoa/i.test(tenantBrand.displayName) || /clinical management/i.test(tenantBrand.subtitle) ? bellaDentalMenuItems : bellaMedicalClinicMenuItems)
+    ? (tenantBrand.isHospitalInpatient
+        ? bellaHospitalInpatientMenuItems
+        : /dental|nha khoa/i.test(tenantBrand.displayName) || /clinical management/i.test(tenantBrand.subtitle)
+          ? bellaDentalMenuItems
+          : bellaMedicalClinicMenuItems)
     : verticalRegistry.has(tenantBrand.moduleKey)
     ? [
         { type: 'header', label: verticalRegistry.get(tenantBrand.moduleKey)?.name || 'Phân hệ' },

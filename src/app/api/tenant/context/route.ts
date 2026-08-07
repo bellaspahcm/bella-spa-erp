@@ -83,6 +83,27 @@ export async function GET(_request: NextRequest) {
       const adminUrl = getSupabaseAdminUrl();
       const adminKey = getSupabaseAdminKey();
 
+      if (mockEmail === 'admin@medical.vn' || mockEmail === 'admin@healthcare.vn') {
+        return NextResponse.json(
+          {
+            tenantId: '77777777-7777-7777-7777-777777777777',
+            tenantName: 'Bella Medical Clinic',
+            enabledModules: ['bella_healthcare'],
+            subscriptionPlan: 'enterprise',
+            featureFlags: {},
+            settings: {},
+          },
+          {
+            status: 200,
+            headers: {
+              'Cache-Control': 'no-store, no-cache, must-revalidate',
+              'Pragma': 'no-cache',
+              'Expires': '0',
+            },
+          }
+        );
+      }
+
       if (mockEmail && adminUrl && adminKey) {
         const admin = createSupabaseJsClient<Database>(adminUrl, adminKey, {
           auth: { persistSession: false, autoRefreshToken: false },

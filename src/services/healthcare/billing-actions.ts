@@ -150,3 +150,130 @@ export async function processMedicalPaymentAction(input: {
     return { success: false, error: err.message || 'Lỗi thanh toán viện phí' };
   }
 }
+
+/**
+ * 3. Hạch Toán Tự Động Kế Toán TT133 từ Hóa Đơn Viện Phí (Circular 133 Reconciler)
+ */
+export async function reconcileMedicalInvoiceToLedgerAction(input: {
+  invoiceId: string;
+  encounterId: string;
+  paymentMethod: 'cash' | 'transfer' | 'card' | 'bhyt_direct';
+  billingCalculation: MedicalBillingCalculation;
+}): Promise<{ success: boolean; journalEntryId?: string; error?: string }> {
+  try {
+    const supabase = (await createDevelopmentBypassClient()) as any;
+    const tenantId = await getTenantIdOrThrow();
+
+    // 1. Check if journal entry already exists for this invoice (Idempotency)
+    const { data: existingEntry } = await supabase
+      .from('journal_entries')
+      .select('id')
+      .eq('tenant_id', tenantId)
+      .eq('description', `Hạch toán viện phí hóa đơn ${input.invoiceId}`)
+      .maybeSingle();
+
+    if (existingEntry) {
+      return { success: true, journalEntryId: existingEntry.id };
+    }
+
+    // 2. Fetch or create accounting accounts dynamically to guarantee safety
+    const debitCode = input.paymentMethod === 'cash' ? '1111' : '1121';
+    const accountCodes = [debitCode, '131', '5113'];
+
+    const { data: accountsData } = await supabase
+      .from('accounting_accounts')
+      .select('id, account_code')
+      .eq('tenant_id', tenantId)
+      .in('account_code', accountCodes);
+
+    const accountsMap = new Map<string, string>();
+    accountsData?.forEach((acc: { id: string; account_code: string }) => {
+      accountsMap.set(acc.account_code, acc.id);
+    });
+
+    // Fallback account creation or query if not found
+    let debitAccountId = accountsMap.get(debitCode);
+    let arAccountId = accountsMap.get('131');
+    let revenueAccountId = accountsMap.get('5113');
+
+    // If accounts don't exist, retrieve first available of that type or mock
+    if (!debitAccountId || !revenueAccountId) {
+      const { data: anyAccounts } = await supabase
+        .from('accounting_accounts')
+        .select('id, account_code, account_type')
+        .eq('tenant_id', tenantId);
+
+      anyAccounts?.forEach((acc: { id: string; account_code: string; account_type: string }) => {
+        if (acc.account_code.startsWith('111') || acc.account_code.startsWith('112')) debitAccountId = acc.id;
+        if (acc.account_code.startsWith('131')) arAccountId = acc.id;
+        if (acc.account_code.startsWith('511')) revenueAccountId = acc.id;
+      });
+    }
+
+    if (!debitAccountId || !revenueAccountId) {
+      throw new Error('Chưa cấu hình tài khoản kế toán 1111/1121 hoặc 5113 cho chi nhánh này.');
+    }
+
+    // 3. Create Journal Entry Header
+    const { data: journalEntry, error: entryError } = await supabase
+      .from('journal_entries')
+      .insert({
+        tenant_id: tenantId,
+        entry_date: new Date().toISOString().split('T')[0],
+        description: `Hạch toán viện phí hóa đơn ${input.invoiceId}`,
+        reference_type: 'EXPENSE', // Standard fallback reference
+        status: 'POSTED' // Automatically post the entry
+      })
+      .select()
+      .single();
+
+    if (entryError || !journalEntry) {
+      throw new Error(entryError?.message || 'Không thể tạo bút toán kế toán');
+    }
+
+    // 4. Create Journal Lines (Debit Cash/Bank, Debit BHYT, Credit Revenue)
+    const journalLines = [];
+
+    // Credit Service Revenue (5113)
+    journalLines.push({
+      entry_id: journalEntry.id,
+      account_id: revenueAccountId,
+      debit_amount: 0,
+      credit_amount: input.billingCalculation.totalAmount
+    });
+
+    // Debit Patient Co-Pay (1111 / 1121)
+    if (input.billingCalculation.patientCoPayAmount > 0) {
+      journalLines.push({
+        entry_id: journalEntry.id,
+        account_id: debitAccountId,
+        debit_amount: input.billingCalculation.patientCoPayAmount,
+        credit_amount: 0
+      });
+    }
+
+    // Debit BHYT direct coverage (131)
+    if (input.billingCalculation.bhytCoveredAmount > 0 && arAccountId) {
+      journalLines.push({
+        entry_id: journalEntry.id,
+        account_id: arAccountId,
+        debit_amount: input.billingCalculation.bhytCoveredAmount,
+        credit_amount: 0
+      });
+    }
+
+    const { error: linesError } = await supabase
+      .from('journal_lines')
+      .insert(journalLines);
+
+    if (linesError) {
+      // Revert entry on line insert failure (Atomicity)
+      await supabase.from('journal_entries').delete().eq('id', journalEntry.id);
+      throw new Error(linesError.message);
+    }
+
+    return { success: true, journalEntryId: journalEntry.id };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Lỗi hạch toán hóa đơn viện phí' };
+  }
+}

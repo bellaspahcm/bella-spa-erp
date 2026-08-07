@@ -11,15 +11,25 @@ export const healthcareManifest: VerticalManifest = {
     'soap_ai',
     'bhyt_connector',
     'care_journey',
-    'clinical_rules'
+    'clinical_rules',
+    'hospital_inpatient',
+    'bed_engine',
+    'smart_queue',
+    'break_glass_security',
+    'ancillary_integration',
+    'bhyt_connector'
   ],
   menus: [
     // Core Healthcare Operations
     { id: 'dashboard', label: 'Dashboard điều hành', href: '/dashboard/healthcare', icon: 'LayoutDashboard' },
     { id: 'appointments', label: 'Đặt Lịch & QR Check-in', href: '/dashboard/healthcare/appointments', icon: 'Calendar' },
     { id: 'queue_tv', label: 'Màn Hình TV Hàng Đợi AI', href: '/dashboard/healthcare/queue/tv', icon: 'Tv' },
+    { id: 'hospital_beds', label: 'Sơ đồ Buồng Giường Nội Trú', href: '/dashboard/hospital/beds', icon: 'Bed' },
+    { id: 'hospital_admissions', label: 'Bệnh Án Nội Trú & MAR', href: '/dashboard/hospital/admissions', icon: 'Hospital' },
+    { id: 'hospital_ancillary', label: 'Cận Lâm Sàng (LIS/RIS)', href: '/dashboard/hospital/ancillary', icon: 'ClipboardList' },
+    { id: 'hospital_bhyt', label: 'Cổng Giám Định BHYT XML 130', href: '/dashboard/hospital/bhyt', icon: 'FileText' },
     { id: 'schedules', label: 'Lịch Trực Bác sĩ', href: '/dashboard/healthcare/schedules', icon: 'Stethoscope' },
-    { id: 'patients', label: 'Hồ sơ bệnh nhân (Parties)', href: '/dashboard/healthcare/patients', icon: 'Users' },
+    { id: 'patients', label: 'Hồ sơ bệnh nhân (MPI)', href: '/dashboard/healthcare/patients', icon: 'Users' },
     { id: 'journeys', label: 'Hành trình điều trị (Journeys)', href: '/dashboard/healthcare/journeys', icon: 'Activity' },
     { id: 'encounters', label: 'Lượt khám bệnh (Encounters)', href: '/dashboard/healthcare/encounters', icon: 'ClipboardList' },
     { id: 'contracts', label: 'Kế hoạch & Hợp đồng', href: '/dashboard/healthcare/contracts', icon: 'FileText' },

@@ -46,6 +46,8 @@ export type ResolvedTenantBrandIdentity = TenantBrandTheme & {
   primaryHoverColor: string;
   monogram: string;
   isBeautySpa: boolean;
+  /** True when the healthcare tenant has hospital_inpatient capability (General Hospital, not just clinic) */
+  isHospitalInpatient: boolean;
 };
 
 export const DEFAULT_ENABLED_MODULES: TenantEnabledModules = {
@@ -385,6 +387,9 @@ export function resolveTenantBrandIdentity(input: {
         ? invoiceDisplayName
         : baseDisplayName;
 
+  const modules = isPlainRecord(input.enabledModules) ? input.enabledModules : {};
+  const isHospitalInpatient = moduleKey === 'bella_healthcare' && Boolean(modules.hospital_inpatient);
+
   return {
     ...theme,
     moduleKey,
@@ -393,7 +398,10 @@ export function resolveTenantBrandIdentity(input: {
     invoiceDisplayName,
     logoUrl: explicitLogoUrl || theme.logoUrl || (moduleKey === 'babycare' ? '/logo.png' : ''),
     subtitle: 
-      moduleKey === 'bella_healthcare' ? (isDental ? 'Clinical Management' : 'Medical Clinic EMR Platform') :
+      moduleKey === 'bella_healthcare' ? (
+        isHospitalInpatient ? 'General Hospital Management' :
+        isDental ? 'Clinical Management' : 'Medical Clinic EMR Platform'
+      ) :
       moduleKey === 'bella_auto' ? 'Automotive Management' :
       moduleKey === 'beauty_spa' ? 'Beauty Spa ERP' :
       moduleKey === 'industrial_cleaning' ? 'Industrial Cleaning ERP' :
@@ -402,5 +410,6 @@ export function resolveTenantBrandIdentity(input: {
     primaryHoverColor: darkenHexColor(theme.primaryColor),
     monogram: buildMonogram(displayName),
     isBeautySpa: moduleKey === 'beauty_spa',
+    isHospitalInpatient,
   };
 }

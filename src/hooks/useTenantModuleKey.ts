@@ -6,7 +6,7 @@ import { getDefaultTenantModuleKey, type TenantModuleKey } from '@/lib/business-
 import { getCachedTenantSettings } from '@/lib/dashboard-client-context';
 
 const RUNTIME_BRAND_CACHE_KEY = 'bella.runtime.brand.v1';
-const SIDEBAR_BRAND_CACHE_KEY = 'bella.sidebar.brand.v2';
+const SIDEBAR_BRAND_CACHE_KEY = 'bella.sidebar.brand.v3';
 
 function getSynchronousModuleKey(): TenantModuleKey | null {
   if (typeof window === 'undefined') return null;

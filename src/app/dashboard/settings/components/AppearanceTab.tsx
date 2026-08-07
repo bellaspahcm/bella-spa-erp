@@ -35,7 +35,7 @@ import { cn } from '@/lib/utils';
 import { clearDashboardClientContextCache } from '@/lib/dashboard-client-context';
 
 const RUNTIME_BRAND_CACHE_KEY = 'bella.runtime.brand.v1';
-const SIDEBAR_BRAND_CACHE_KEY = 'bella.sidebar.brand.v2';
+const SIDEBAR_BRAND_CACHE_KEY = 'bella.sidebar.brand.v3';
 
 function FieldLabel({ children }: { children: ReactNode }) {
   return (

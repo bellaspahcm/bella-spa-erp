@@ -50,6 +50,34 @@ const TENANT_LOADING_MESSAGE = 'Đang tải cấu hình chi nhánh...';
  * @param props - Component props
  * @param props.children - Child components that will have access to tenant context
  */
+function getDevFallbackContext(): TenantContext {
+  let moduleKey = 'bella_healthcare';
+  let name = 'Bella Medical Clinic (Dev)';
+
+  if (typeof window !== 'undefined') {
+    const path = window.location.pathname;
+    if (path.startsWith('/dashboard/real-estate')) {
+      moduleKey = 'real_estate';
+      name = 'Bella Land (Dev)';
+    } else if (path.startsWith('/dashboard/bella-auto')) {
+      moduleKey = 'bella_auto';
+      name = 'Bella Auto (Dev)';
+    } else if (path.startsWith('/dashboard/medical') || path.startsWith('/dashboard/healthcare') || path.startsWith('/dashboard/dental')) {
+      moduleKey = 'bella_healthcare';
+      name = 'Bella Medical Clinic (Dev)';
+    }
+  }
+
+  return {
+    tenantId: 'dev-tenant',
+    tenantName: name,
+    enabledModules: [moduleKey, 'bella_healthcare', 'bella_auto', 'real_estate', 'beauty_spa', 'cleaning'],
+    subscriptionPlan: 'enterprise',
+    featureFlags: {},
+    settings: {},
+  };
+}
+
 export function TenantContextProvider({ children }: { children: ReactNode }) {
   const [context, setContext] = useState<TenantContext | null>(null);
   const [loading, setLoading] = useState(true);
@@ -70,19 +98,11 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
         });
 
         // 1. If 401 Unauthorized, redirect to login page gracefully
-        // 1. If 401 Unauthorized, redirect to login page gracefully
         if (response.status === 401) {
           // In development, use dev fallback context instead of redirecting
           if (process.env.NODE_ENV === 'development') {
             console.info('[TenantContextProvider] Dev mode: Using fallback tenant context');
-            setContext({
-              tenantId: 'dev-tenant',
-              tenantName: 'Bella Land (Dev)',
-              enabledModules: ['real_estate', 'beauty_spa', 'cleaning'],
-              subscriptionPlan: 'enterprise',
-              featureFlags: {},
-              settings: {},
-            });
+            setContext(getDevFallbackContext());
             setLoading(false);
             return;
           }
@@ -99,14 +119,7 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
           // In development mode, fallback to default tenant context if backend authentication is transient
           if (process.env.NODE_ENV === 'development') {
             console.info('[TenantContextProvider] Dev fallback tenant context activated due to:', msg);
-            setContext({
-              tenantId: 'dev-tenant',
-              tenantName: 'Bella Land (Dev)',
-              enabledModules: ['real_estate', 'beauty_spa', 'cleaning'],
-              subscriptionPlan: 'enterprise',
-              featureFlags: {},
-              settings: {},
-            });
+            setContext(getDevFallbackContext());
             return;
           }
 
@@ -124,14 +137,7 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
         const errorMessage = err instanceof Error ? err.message : String(err);
         
         if (process.env.NODE_ENV === 'development') {
-          setContext({
-            tenantId: 'dev-tenant',
-            tenantName: 'Bella Land (Dev)',
-            enabledModules: ['real_estate', 'beauty_spa', 'cleaning'],
-            subscriptionPlan: 'enterprise',
-            featureFlags: {},
-            settings: {},
-          });
+          setContext(getDevFallbackContext());
         } else {
           setError(errorMessage);
         }
@@ -181,19 +187,28 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
       }
     }
     
-    if (modulesArray.length > 0) {
-      if (modulesArray.includes('bella_healthcare')) {
+    if (typeof window !== 'undefined') {
+      const path = window.location.pathname;
+      if (path.startsWith('/dashboard/medical') || path.startsWith('/dashboard/healthcare') || path.startsWith('/dashboard/dental')) {
         moduleKey = 'bella_healthcare';
-      } else if (modulesArray.includes('real_estate')) {
+      } else if (path.startsWith('/dashboard/real-estate')) {
         moduleKey = 'real_estate';
-      } else if (modulesArray.includes('industrial_cleaning')) {
-        moduleKey = 'industrial_cleaning';
-      } else if (modulesArray.includes('beauty_spa')) {
-        moduleKey = 'beauty_spa';
-      } else if (modulesArray.includes('bella_auto')) {
+      } else if (path.startsWith('/dashboard/bella-auto')) {
         moduleKey = 'bella_auto';
-      } else if (modulesArray.includes('babycare') || modulesArray.includes('spa')) {
-        moduleKey = 'baby_care';
+      } else if (modulesArray.length > 0) {
+        if (modulesArray.includes('bella_healthcare')) {
+          moduleKey = 'bella_healthcare';
+        } else if (modulesArray.includes('real_estate')) {
+          moduleKey = 'real_estate';
+        } else if (modulesArray.includes('industrial_cleaning')) {
+          moduleKey = 'industrial_cleaning';
+        } else if (modulesArray.includes('beauty_spa')) {
+          moduleKey = 'beauty_spa';
+        } else if (modulesArray.includes('bella_auto')) {
+          moduleKey = 'bella_auto';
+        } else if (modulesArray.includes('babycare') || modulesArray.includes('spa')) {
+          moduleKey = 'baby_care';
+        }
       }
     }
 
