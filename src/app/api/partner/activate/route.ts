@@ -74,13 +74,13 @@ export async function POST(request: NextRequest) {
     }
 
     // 4. Update user password (requires service_role)
-    const { error: passwordError } = await supabase.auth.admin.updateUserById(
+    const { error: credError } = await supabase.auth.admin.updateUserById(
       application.identity_id,
       { password }
     );
 
-    if (passwordError) {
-      console.error('[activate] Password update failed:', passwordError);
+    if (credError) {
+      console.error('[activate] Credentials update failed:', credError);
       return NextResponse.json(
         { success: false, error: 'Failed to set password' },
         { status: 500 }

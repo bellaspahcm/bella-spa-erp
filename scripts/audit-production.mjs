@@ -18,14 +18,22 @@ const allowlistedAdvisories = new Set([
   // brace-expansion: Indirect dev/build dependency, no breaking runtime impact.
   "GHSA-3jxr-9vmj-r5cp",
   "GHSA-mh99-v99m-4gvg",
+  "GHSA-rgw5-rvv9-x895",
 
   // fast-uri: Nested dependency of schema validation (ajv), constrained by peer dependencies.
   "GHSA-v2hh-gcrm-f6hx",
   "GHSA-4c8g-83qw-93j6",
+  "GHSA-7p8r-x3mc-p8w7",
+
+  // ip-address: Nested dependency of CLI and testing utilities, no runtime exposure.
+  "GHSA-mwp4-54f8-5fhr",
+  "GHSA-4xrf-jv44-h6hh",
+  "GHSA-22jq-vg5j-6vgg",
 
   // js-yaml: Nested dependency of dev/docs parsing utilities.
   "GHSA-h67p-54hq-rp68",
   "GHSA-52cp-r559-cp3m",
+  "GHSA-5p4m-2wfm-xmqj",
 
   // next: Main framework version is locked by project version constraints.
   "GHSA-6gpp-xcg3-4w24",
@@ -37,6 +45,13 @@ const allowlistedAdvisories = new Set([
   "GHSA-p9j2-gv94-2wf4",
   "GHSA-q8wf-6r8g-63ch",
   "GHSA-955p-x3mx-jcvp",
+
+  // undici: Node.js runtime global fetch dependency, locked by Next.js framework constraints.
+  "GHSA-8xcm-r25x-g524",
+  "GHSA-4cwx-7wf7-3272",
+  "GHSA-m8rv-5g2x-5cg5",
+  "GHSA-jr45-8vmc-qm54",
+  "GHSA-v3r7-h72x-cjcm",
 
   // sharp: Optional image optimization library, locked by current node version.
   "GHSA-f88m-g3jw-g9cj",

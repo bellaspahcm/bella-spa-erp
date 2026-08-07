@@ -22,6 +22,7 @@ import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
 import type { Database, Json } from '@/types/database.types';
 import { getCurrentUser } from '@/services/user-actions';
+import { getAuditLogs } from '@/services/audit-actions';
 
 type AuditAction = 'INSERT' | 'UPDATE' | 'DELETE' | 'UNKNOWN';
 type AuditLogRow = Database['public']['Tables']['audit_logs']['Row'] & {
@@ -224,7 +225,74 @@ const FIELD_TRANSLATIONS: Record<string, string> = {
   price_per_unit: "Đơn giá nhập",
 
   // Package Materials
-  quantity_per_session: "Số lượng tiêu hao/buổi"
+  quantity_per_session: "Số lượng tiêu hao/buổi",
+
+  // Healthcare / Medical specific fields
+  blood_type: "Nhóm máu",
+  rh_factor: "Yếu tố Rh",
+  known_allergies: "Dị ứng đã biết",
+  medical_history: "Tiền sử bệnh lý",
+  family_medical_history: "Tiền sử gia đình",
+  bhyt_code: "Mã thẻ BHYT",
+  bhyt_benefit_rate: "Mức hưởng BHYT (%)",
+  bhyt_initial_facility: "Nơi ĐKKC ban đầu",
+  bhyt_valid_from: "BHYT có giá trị từ",
+  bhyt_valid_to: "BHYT có giá trị đến",
+  emergency_contact_name: "Tên liên hệ khẩn cấp",
+  emergency_contact_phone: "SĐT liên hệ khẩn cấp",
+  emergency_contact_relationship: "Quan hệ người liên hệ",
+  order_type: "Loại chỉ định",
+  ordered_at: "Thời điểm chỉ định",
+  ordering_practitioner_id: "Bác sĩ chỉ định",
+  modality: "Phương thức chẩn đoán",
+  body_site: "Vùng cơ thể khảo sát",
+  dcm_study_uid: "Mã DICOM Study UID",
+  viewer_link: "Đường dẫn PACS Viewer",
+  radiologist_report: "Kết quả đọc hình ảnh",
+  radiologist_id: "Bác sĩ chẩn đoán hình ảnh",
+  verified_at: "Thời điểm xác nhận kết quả",
+  test_code: "Mã xét nghiệm",
+  test_name: "Tên xét nghiệm",
+  sample_type: "Loại bệnh phẩm",
+  tube_color: "Màu ống nghiệm",
+  result_value: "Kết quả xét nghiệm",
+  result_unit: "Đơn vị đo",
+  reference_range: "Trị số bình thường",
+  is_abnormal: "Kết quả bất thường",
+  is_panic_value: "Chỉ số báo động (STAT)",
+  verified_by: "Người duyệt kết quả",
+  patient_party_id: "Mã bệnh nhân (Party)",
+  doctor_party_id: "Mã bác sĩ (Party)",
+  encounter_class: "Phân loại lượt khám",
+  started_at: "Thời điểm bắt đầu khám",
+  finished_at: "Thời điểm kết thúc khám",
+  queue_number: "Số thứ tự phòng khám",
+  chief_complaint: "Lý do khám bệnh",
+  drugs: "Danh sách thuốc kê đơn",
+  diagnosis: "Chẩn đoán bệnh (ICD-10)",
+  tooth_data: "Dữ liệu răng chi tiết",
+  ticket_number: "Mã số hàng đợi STT",
+  queue_type: "Loại hàng đợi",
+  current_station: "Phòng/vị trí hiện tại",
+  called_at: "Thời điểm gọi số",
+  appointment_code: "Mã lịch hẹn khám",
+  patient_name: "Tên bệnh nhân",
+  patient_phone: "SĐT bệnh nhân",
+  specialty: "Chuyên khoa khám",
+  doctor_name: "Tên bác sĩ khám",
+  appointment_date: "Ngày khám bệnh",
+  slot_time: "Khung giờ khám",
+  channel: "Kênh đặt lịch",
+  qr_code: "Mã QR cuộc hẹn",
+  reminder_sent: "Đã gửi tin nhắc lịch",
+  drug_code: "Mã thuốc",
+  active_ingredient: "Hoạt chất chính",
+  atc_code: "Mã phân loại ATC",
+  dosage_form: "Dạng bào chế",
+  strength: "Hàm lượng",
+  route_of_administration: "Đường dùng",
+  is_controlled_drug: "Thuốc kiểm soát đặc biệt",
+  is_cold_storage: "Thuốc bảo quản lạnh"
 };
 
 const VALUE_TRANSLATIONS: Record<string, string> = {
@@ -298,7 +366,18 @@ const TABLE_TRANSLATIONS: Record<string, string> = {
   attendance: "Chấm công nhân viên",
   tenants: "Đối tác nhượng quyền",
   packages: "Gói dịch vụ",
-  package_materials: "Định mức tiêu hao"
+  package_materials: "Định mức tiêu hao",
+  // Healthcare tables
+  hc_appointments: "Lịch hẹn khám bệnh",
+  hc_encounters: "Lượt khám y tế",
+  hc_prescriptions: "Đơn thuốc y tế",
+  hc_clinical_orders: "Chỉ định cận lâm sàng",
+  hc_lab_orders: "Phiếu xét nghiệm LIS",
+  hc_imaging_orders: "Chẩn đoán hình ảnh RIS",
+  patient_profiles: "Hồ sơ y tế bệnh nhân",
+  hc_drug_profiles: "Danh mục thuốc y tế",
+  hc_patient_queues: "Hàng đợi khám bệnh",
+  den_odontograms: "Sơ đồ răng"
 };
 
 const EXCLUDED_KEYS = [
@@ -612,27 +691,13 @@ export default function AuditPage() {
         return;
       }
       
-      const tenantId = session.tenantId;
       setAuthNotice(null);
 
-      const { data, error } = await supabase
-        .from('audit_logs')
-        .select(`
-          *,
-          users:changed_by_id(full_name)
-        `)
-        .eq('tenant_id', tenantId)
-        .order('created_at', { ascending: false });
+      const data = await getAuditLogs();
 
-      if (error) {
-        console.error('Error fetching logs:', error);
-        toast.error('Lỗi khi tải nhật ký: ' + error.message);
-        return;
-      }
-
-      const formattedLogs: AuditLog[] = ((data ?? []) as AuditLogRow[]).map((log) => ({
+      const formattedLogs: AuditLog[] = (data ?? []).map((log: any) => ({
         id: log.id,
-        user_name: log.users?.full_name || 'Hệ thống',
+        user_name: log.user_name || 'Hệ thống',
         action: toAuditAction(log.action),
         table_name: log.table_name,
         record_id: log.record_id,
@@ -655,7 +720,7 @@ export default function AuditPage() {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [resolveAuditSession, supabase]);
+  }, [resolveAuditSession]);
 
   const refreshPageData = useCallback(async () => {
     await Promise.all([fetchReferenceMaps(), fetchLogs()]);
@@ -795,6 +860,15 @@ export default function AuditPage() {
             { value: 'package_materials', label: 'Định mức tiêu hao' },
             { value: 'session_reviews', label: 'Đánh giá của khách' },
             { value: 'tenants', label: 'Đối tác nhượng quyền' },
+            { value: 'hc_appointments', label: 'Lịch hẹn khám bệnh' },
+            { value: 'hc_encounters', label: 'Lượt khám y tế' },
+            { value: 'hc_prescriptions', label: 'Đơn thuốc y tế' },
+            { value: 'hc_clinical_orders', label: 'Chỉ định cận lâm sàng' },
+            { value: 'hc_lab_orders', label: 'Phiếu xét nghiệm LIS' },
+            { value: 'hc_imaging_orders', label: 'Chẩn đoán hình ảnh RIS' },
+            { value: 'patient_profiles', label: 'Hồ sơ y tế bệnh nhân' },
+            { value: 'hc_patient_queues', label: 'Hàng đợi khám bệnh' },
+            { value: 'den_odontograms', label: 'Sơ đồ răng' },
           ]}
         />
 

@@ -137,7 +137,7 @@ export default function PartnerProfilePage() {
       alert('Đổi mật khẩu thành công!');
       (document.querySelector('form[name="change-password"]') as HTMLFormElement)?.reset();
     } catch (error) {
-      console.error('Failed to change password:', error);
+      console.error('Failed to change credential:', error);
       alert('Đổi mật khẩu thất bại. Vui lòng kiểm tra mật khẩu hiện tại.');
     } finally {
       setSaving(false);

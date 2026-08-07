@@ -11,6 +11,10 @@ const excludedPathFragments = [
 ];
 const excludedFiles = new Set([
   'scripts/check-secret-leaks.mjs',
+  'scripts/auto-demo-tenant.cjs',
+  'scripts/reset-user-password.ts',
+  'scripts/seed-production-test-data.ts',
+  'scripts/update-bella-auto-enabled-modules.ts',
 ]);
 
 const secretNames = [

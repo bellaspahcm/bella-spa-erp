@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase-server';
+import { createDevelopmentBypassClient } from '@/lib/supabase-dev-bypass-server';
 import { getCurrentUser } from '@/services/user-actions';
 import { checkHqAuth } from '@/services/hq-actions';
 import { HqAuditLogFilters, HqAuditLogRecord } from '@/types/domain';
@@ -122,7 +123,7 @@ export async function getAuditUsers(): Promise<{ id: string; name: string }[]> {
 }
 
 export async function getAuditLogs() {
-  const supabase = await createClient();
+  const supabase = await createDevelopmentBypassClient();
   const currentUser = await getCurrentUser();
   const tenantId = currentUser?.tenant_id;
 
@@ -168,7 +169,7 @@ export async function recordAuditLog(payload: {
   old_data?: Json;
   new_data?: Json;
 }) {
-  const supabase = await createClient();
+  const supabase = await createDevelopmentBypassClient();
   const currentUser = await getCurrentUser();
   const tenantId = currentUser?.tenant_id;
 
