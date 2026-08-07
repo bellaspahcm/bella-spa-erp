@@ -20,14 +20,11 @@ import { createClient } from '@/lib/supabase-client';
 import { toast } from 'sonner';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
-import type { Database, Json } from '@/types/database.types';
+import type { Json } from '@/types/database.types';
 import { getCurrentUser } from '@/services/user-actions';
 import { getAuditLogs } from '@/services/audit-actions';
 
 type AuditAction = 'INSERT' | 'UPDATE' | 'DELETE' | 'UNKNOWN';
-type AuditLogRow = Database['public']['Tables']['audit_logs']['Row'] & {
-  users?: { full_name: string | null } | null;
-};
 type JsonRecord = { [key: string]: Json | undefined };
 type AuditSession =
   | { status: 'ready'; userId: string; tenantId: string }
@@ -695,7 +692,7 @@ export default function AuditPage() {
 
       const data = await getAuditLogs();
 
-      const formattedLogs: AuditLog[] = (data ?? []).map((log: any) => ({
+      const formattedLogs: AuditLog[] = (data ?? []).map((log) => ({
         id: log.id,
         user_name: log.user_name || 'Hệ thống',
         action: toAuditAction(log.action),
