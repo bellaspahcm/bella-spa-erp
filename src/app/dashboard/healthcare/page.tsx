@@ -15,6 +15,7 @@ import {
 import { toast } from 'sonner';
 import { useUser } from '@/lib/user-context';
 import { useTenantContext } from '@/core/hooks/useTenantContext';
+import { createClient } from '@/lib/supabase-client';
 
 import { ClinicalPipeline, type EncounterItem } from './ClinicalPipeline';
 import { EventStreamViewer } from './EventStreamViewer';
@@ -173,7 +174,25 @@ export default function HealthcareDashboardPage() {
   }, []);
 
   useEffect(() => {
-    loadInitialData();
+    void loadInitialData();
+
+    const supabase = createClient();
+    const channel = supabase
+      .channel('hc-dashboard-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'hc_encounters' }, () => {
+        void loadInitialData();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'hc_appointments' }, () => {
+        void loadInitialData();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'hc_patient_queues' }, () => {
+        void loadInitialData();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [loadInitialData]);
 
   useEffect(() => {

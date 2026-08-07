@@ -24,9 +24,11 @@ import {
   getLabOrdersAction, 
   createLabOrderAction, 
   verifyLabResultAction,
-  getMedicalServicesAction
+  getMedicalServicesAction,
+  confirmLabDoctorNotificationAction
 } from '@/services/healthcare/healthcare-actions';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
+import { createClient } from '@/lib/supabase-client';
 
 interface LabWorkItem {
   id: string;
@@ -57,6 +59,7 @@ export default function LaboratoryPage() {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
   const [items, setItems] = useState<LabWorkItem[]>([]);
   const [testOptions, setTestOptions] = useState<{ value: string; label: string; name: string; sample: string; color: string }[]>([]);
 
@@ -78,7 +81,7 @@ export default function LaboratoryPage() {
         { value: 'URI-10', label: 'URI-10 — Tổng phân tích nước tiểu (10 thông số)', name: 'Tổng phân tích nước tiểu (10 thông số)', sample: 'Nước tiểu tươi', color: 'Trong' },
       ];
       if (res.success && res.data && res.data.length > 0) {
-        const dbOptions = res.data.map((item: any) => {
+        const dbOptions = res.data.map((item: { id: string; name: string; metadata?: { lisCode?: string; lisSampleType?: string; lisTubeColor?: string } }) => {
           const meta = item.metadata || {};
           const code = meta.lisCode || item.id.slice(0, 8).toUpperCase();
           return {
@@ -121,21 +124,24 @@ export default function LaboratoryPage() {
     }
   };
 
-  const loadLabOrders = async () => {
+  const loadLabOrders = async (dateStr?: string) => {
     try {
       setIsLoading(true);
-      const res = await getLabOrdersAction();
+      const res = await getLabOrdersAction(dateStr || undefined);
       if (res.success && res.data) {
         // Enhance with mock Enterprise LIS attributes for rich CAP/JCI demonstration
-        const enhanced: LabWorkItem[] = (res.data as any[]).map((i, index) => ({
-          ...i,
-          barcode: `LIS-2026-${8800 + index}`,
-          tatMinutes: i.status === 'panic' ? 78 : i.status === 'pending' ? 42 : 18,
-          specimenStep: i.status === 'completed' ? 5 : i.status === 'panic' ? 4 : i.status === 'in_progress' ? 3 : 2,
-          doctorNotified: i.status === 'panic' ? index % 2 === 0 : true,
-          doctorNotifiedTime: i.status === 'panic' ? '09:32 AM' : undefined,
-          qcStatus: 'Passed (Westgard OK)',
-        }));
+        const enhanced: LabWorkItem[] = (res.data as Omit<LabWorkItem, 'barcode' | 'tatMinutes' | 'specimenStep' | 'qcStatus'>[]).map((i, index) => {
+          const hasDbNotification = i.doctorNotified !== undefined && i.doctorNotified !== null;
+          return {
+            ...i,
+            barcode: `LIS-2026-${8800 + index}`,
+            tatMinutes: i.status === 'panic' ? 78 : i.status === 'pending' ? 42 : 18,
+            specimenStep: i.status === 'completed' ? 5 : i.status === 'panic' ? 4 : i.status === 'in_progress' ? 3 : 2,
+            doctorNotified: hasDbNotification ? i.doctorNotified : (i.status === 'panic' ? index % 2 === 0 : true),
+            doctorNotifiedTime: i.doctorNotifiedTime ? i.doctorNotifiedTime : (i.status === 'panic' ? '09:32 AM' : undefined),
+            qcStatus: 'Passed (Westgard OK)',
+          };
+        });
         setItems(enhanced);
       } else {
         toast.error('Lỗi tải phiếu xét nghiệm: ' + res.error);
@@ -148,9 +154,21 @@ export default function LaboratoryPage() {
   };
 
   useEffect(() => {
-    loadLabOrders();
-    loadTestOptions();
-  }, []);
+    void loadLabOrders(selectedDate);
+    void loadTestOptions();
+
+    const supabase = createClient();
+    const channel = supabase
+      .channel('hc-laboratory-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'hc_lab_orders' }, () => {
+        void loadLabOrders(selectedDate);
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedDate]);
 
   const [selectedLabId, setSelectedLabId] = useState<string | null>(null);
   const [inputVal, setInputVal] = useState<string>('');
@@ -208,11 +226,18 @@ export default function LaboratoryPage() {
   };
 
   // Helper for CAP/JCI confirmation call log
-  const handleConfirmDoctorCall = (id: string) => {
+  const handleConfirmDoctorCall = async (id: string) => {
+    const timeStr = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+    const res = await confirmLabDoctorNotificationAction(id, timeStr);
+    if (!res.success) {
+      toast.error(res.error || 'Lỗi không thể xác nhận thông báo');
+      return;
+    }
+
     setItems((prev) =>
       prev.map((item) =>
         item.id === id
-          ? { ...item, doctorNotified: true, doctorNotifiedTime: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) }
+          ? { ...item, doctorNotified: true, doctorNotifiedTime: timeStr }
           : item
       )
     );
@@ -361,18 +386,38 @@ export default function LaboratoryPage() {
 
       {/* Control Toolbar */}
       <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row gap-4 justify-between items-center">
-        <div className="relative w-full md:w-80">
-          <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Tìm tên bệnh nhân, mã XN, mã vạch Barcode..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-          />
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+          <div className="relative w-full sm:w-72">
+            <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Tìm tên bệnh nhân, mã XN, mã vạch Barcode..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+            />
+          </div>
+
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="w-full sm:w-44 px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-cyan-500 cursor-pointer"
+            />
+            {selectedDate && (
+              <button
+                onClick={() => setSelectedDate('')}
+                className="px-3 py-2 text-xs font-bold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl cursor-pointer shrink-0 transition-all active:scale-95"
+                title="Xem tất cả các ngày"
+              >
+                Tất cả
+              </button>
+            )}
+          </div>
         </div>
 
-        <div className="flex items-center gap-2 w-full md:w-auto">
+        <div className="flex items-center gap-2 w-full md:w-auto justify-end">
           <Filter className="w-4 h-4 text-slate-400" />
           {['all', 'pending', 'completed', 'panic'].map((st) => (
             <button

@@ -22,6 +22,7 @@ import { MedicalClinicManifest, DentalClinicManifest, ProductManifest } from '..
 import { WorkspaceComponentRegistry } from '../../components/workspace-engine';
 import { getEncounterByIdAction, getAllPatientProfilesAction, updateEncounterStatusAction } from '@/services/healthcare/healthcare-actions';
 import { fetchHealthcareChairsAction } from '@/services/healthcare-chairs-actions';
+import { createClient } from '@/lib/supabase-client';
 
 export default function ClinicalWorkspaceEnginePage() {
   const router = useRouter();
@@ -196,7 +197,25 @@ export default function ClinicalWorkspaceEnginePage() {
 
   useEffect(() => {
     loadData();
-  }, [loadData]);
+
+    if (!encounterId) return;
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`hc-encounter-workspace-${encounterId}`)
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'hc_encounters', 
+        filter: `id=eq.${encounterId}` 
+      }, () => {
+        void loadData();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [loadData, encounterId]);
 
   const handleUpdateStatus = async (newStatus: EncounterContext['status']) => {
     if (!encounter) return;

@@ -26,14 +26,18 @@ import {
   getAllEncountersAction, 
   createEMREncounterAction, 
   updateEncounterSOAPAction, 
-  completeEncounterAction 
+  completeEncounterAction,
+  createLabOrderAction,
+  createAppointmentAction
 } from '@/services/healthcare/healthcare-actions';
+import { issuePrescriptionAction } from '@/services/healthcare/pharmacy-actions';
+import { createClient } from '@/lib/supabase-client';
 
 interface EncounterRecord {
   id: string;
   patientName: string;
   chiefComplaint: string;
-  status: 'in_consultation' | 'orders_pending' | 'completed';
+  status: 'planned' | 'arrived' | 'in_progress' | 'finished' | 'in_consultation' | 'orders_pending' | 'completed';
   startedAt: string;
   subjective?: string;
   objective?: string;
@@ -52,11 +56,12 @@ interface EncounterRecord {
 export default function EncountersPage() {
   const [encounters, setEncounters] = useState<EncounterRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
 
-  const loadEncounters = async () => {
+  const loadEncounters = async (dateStr?: string) => {
     try {
       setIsLoading(true);
-      const res = await getAllEncountersAction();
+      const res = await getAllEncountersAction(dateStr || undefined);
       if (res.success && res.data) {
         // Enhance data with mock EMR attributes for rich UI presentation
         const enhancedData: EncounterRecord[] = (res.data as any[]).map((e, index) => ({
@@ -65,13 +70,13 @@ export default function EncountersPage() {
           gender: e.gender || (index % 2 === 0 ? 'Nam' : 'Nữ'),
           insuranceType: e.insuranceType || (index % 3 === 0 ? 'Khám Dịch Vụ' : index % 3 === 1 ? 'BHYT (80%)' : 'BHYT (100%)'),
           visitType: e.visitType || (index % 2 === 0 ? 'Khám lần đầu' : 'Tái khám'),
-          waitTimeMinutes: e.waitTimeMinutes || (8 + (index * 5)),
+          waitTimeMinutes: e.waitTimeMinutes !== undefined ? e.waitTimeMinutes : (8 + (index * 5)),
           allergies: index % 2 === 0 ? ['Dị ứng Penicillin', 'Tăng Huyết Áp'] : ['Tiểu đường Tuýp 2'],
-          timeline: [
+          timeline: e.timeline || [
             { time: '09:15', label: 'Check-in', done: true },
             { time: '09:20', label: 'Đón Tiếp', done: true },
             { time: '09:25', label: 'Sinh Hiệu', done: true },
-            { time: '09:32', label: 'Bác Sĩ Khám', done: e.status === 'completed' || e.status === 'in_consultation' },
+            { time: '09:32', label: 'Bác Sĩ Khám', done: e.status === 'completed' || e.status === 'finished' || e.status === 'in_consultation' },
           ]
         }));
         setEncounters(enhancedData);
@@ -86,8 +91,20 @@ export default function EncountersPage() {
   };
 
   useEffect(() => {
-    loadEncounters();
-  }, []);
+    loadEncounters(selectedDate);
+
+    const supabase = createClient();
+    const channel = supabase
+      .channel('hc-encounters-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'hc_encounters' }, () => {
+        void loadEncounters(selectedDate);
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedDate]);
 
   const [selectedEncId, setSelectedEncId] = useState<string | null>(null);
   const [soapData, setSoapData] = useState({ subjective: '', objective: '', assessment: '', plan: '' });
@@ -184,6 +201,83 @@ export default function EncountersPage() {
     return filled * 25;
   };
 
+  // Modal 2: Submit CLS Orders to Database
+  const handleConfirmCLSOrderSubmit = async () => {
+    if (!activeCLSEncounter) return;
+    if (selectedClsItems.length === 0) {
+      toast.error('Vui lòng chọn ít nhất 1 dịch vụ CLS!');
+      return;
+    }
+
+    for (const item of selectedClsItems) {
+      await createLabOrderAction({
+        patientName: activeCLSEncounter.patientName,
+        testCode: 'CLS-ORD',
+        testName: item,
+        sampleType: 'Máu toàn phần',
+        tubeColor: 'Đỏ',
+      });
+    }
+
+    toast.success(`🩺 Đã lưu ${selectedClsItems.length} chỉ định CLS cho bệnh nhân ${activeCLSEncounter.patientName} vào Database & sang LIS/RIS!`);
+    setActiveCLSEncounter(null);
+    loadEncounters();
+  };
+
+  // Modal 3: Submit Prescription Order to Database
+  const handleIssuePrescriptionSubmit = async () => {
+    if (!activePrescriptionEncounter) return;
+    if (selectedMeds.length === 0) {
+      toast.error('Vui lòng chọn ít nhất 1 loại thuốc!');
+      return;
+    }
+
+    const res = await issuePrescriptionAction({
+      encounterId: activePrescriptionEncounter.id,
+      patientId: '00000000-0000-0000-0000-000000000000',
+      items: selectedMeds.map((med, idx) => ({
+        drugId: `drug-${idx}`,
+        drugCode: `DRUG-0${idx + 1}`,
+        drugName: med,
+        activeIngredient: med.split(' ')[0],
+        quantity: 10,
+        unit: 'Viên',
+        dosageInstruction: 'Uống sau ăn',
+      })),
+    });
+
+    if (!res.success) {
+      toast.error(res.error || 'Lỗi kê đơn thuốc');
+      return;
+    }
+
+    toast.success(`💊 Đã xuất đơn thuốc gồm ${selectedMeds.length} loại cho bệnh nhân ${activePrescriptionEncounter.patientName} vào Database & Kho Dược!`);
+    setActivePrescriptionEncounter(null);
+    loadEncounters();
+  };
+
+  // Modal 4: Submit Follow-up Appointment to Database
+  const handleCreateAppointmentSubmitModal = async () => {
+    if (!activeFollowUpEncounter) return;
+
+    const res = await createAppointmentAction({
+      patientName: activeFollowUpEncounter.patientName,
+      specialty: 'Khoa Nội Tổng Hợp',
+      doctorName: activeFollowUpEncounter.doctorName || 'BS. CKII Nguyễn Văn Minh',
+      appointmentDate: followUpDate,
+      notes: followUpNote,
+    });
+
+    if (!res.success) {
+      toast.error(res.error || 'Lỗi lưu lịch hẹn tái khám');
+      return;
+    }
+
+    toast.success(`📅 Đã lưu lịch hẹn tái khám thành công vào ngày ${followUpDate} cho bệnh nhân ${activeFollowUpEncounter.patientName} vào Database!`);
+    setActiveFollowUpEncounter(null);
+    loadEncounters();
+  };
+
   return (
     <div className="p-6 md:p-8 w-full space-y-7 bg-transparent relative">
       {/* Header */}
@@ -202,13 +296,33 @@ export default function EncountersPage() {
           </p>
         </div>
 
-        <button
-          onClick={() => setIsCreateModalOpen(true)}
-          className="px-4 py-2.5 rounded-xl text-xs font-bold bg-cyan-600 text-white hover:bg-cyan-700 shadow-md flex items-center gap-2 cursor-pointer w-fit transition-all active:scale-95"
-        >
-          <Plus className="w-4 h-4" />
-          Tạo Lượt Khám Mới
-        </button>
+        <div className="flex items-center gap-3 self-start md:self-auto flex-wrap">
+          <div className="flex items-center gap-2">
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-950 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 cursor-pointer shadow-xs"
+            />
+            {selectedDate && (
+              <button
+                onClick={() => setSelectedDate('')}
+                className="px-3 py-2.5 text-xs font-bold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl cursor-pointer shrink-0 transition-all active:scale-95"
+                title="Xem tất cả các ngày"
+              >
+                Tất cả
+              </button>
+            )}
+          </div>
+
+          <button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="px-4 py-2.5 rounded-xl text-xs font-bold bg-cyan-600 text-white hover:bg-cyan-700 shadow-md flex items-center gap-2 cursor-pointer w-fit transition-all active:scale-95 shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            Tạo Lượt Khám Mới
+          </button>
+        </div>
       </div>
 
       {/* Quick Stat Counter Bar */}
@@ -227,7 +341,7 @@ export default function EncountersPage() {
           <div>
             <span className="text-[11px] font-bold text-slate-400 block uppercase">Đang Khám Lâm Sàng</span>
             <span className="text-xl font-black text-cyan-600 dark:text-cyan-400 mt-0.5 block">
-              {encounters.filter((e) => e.status !== 'completed').length} ca trực tiếp
+              {encounters.filter((e) => e.status !== 'completed' && e.status !== 'finished').length} ca trực tiếp
             </span>
           </div>
           <div className="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-600">
@@ -239,7 +353,7 @@ export default function EncountersPage() {
           <div>
             <span className="text-[11px] font-bold text-slate-400 block uppercase">Đã Khám Xong</span>
             <span className="text-xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5 block">
-              {encounters.filter((e) => e.status === 'completed').length} lượt hoàn tất
+              {encounters.filter((e) => e.status === 'completed' || e.status === 'finished').length} lượt hoàn tất
             </span>
           </div>
           <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600">
@@ -320,7 +434,7 @@ export default function EncountersPage() {
                         </span>
                       )}
 
-                      {e.status === 'completed' ? (
+                      {e.status === 'completed' || e.status === 'finished' ? (
                         <span className="px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 font-black text-[11px] flex items-center gap-1 shadow-2xs">
                           <CheckCircle className="w-3.5 h-3.5" /> Đã Khám Xong
                         </span>
@@ -544,7 +658,7 @@ export default function EncountersPage() {
                     {isSelected ? '✕ Đóng Khung SOAP' : 'Cập nhật Nhật Ký SOAP'}
                   </button>
 
-                  {e.status !== 'completed' && (
+                  {e.status !== 'completed' && e.status !== 'finished' && (
                     <button
                       onClick={() => handleCompleteEncounter(e.id)}
                       className="px-4 py-2 rounded-xl bg-emerald-600 text-white font-black text-xs hover:bg-emerald-700 shadow-md cursor-pointer active:scale-95 transition-all"
@@ -757,11 +871,8 @@ export default function EncountersPage() {
             <div className="flex items-center justify-end gap-3 pt-2">
               <button onClick={() => setActiveCLSEncounter(null)} className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100">Hủy Bỏ</button>
               <button 
-                onClick={() => {
-                  toast.success(`🩺 Đã gửi ${selectedClsItems.length} chỉ định CLS khẩn cho bệnh nhân ${activeCLSEncounter.patientName} sang phòng LIS/RIS!`);
-                  setActiveCLSEncounter(null);
-                }} 
-                className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs shadow-md flex items-center gap-2 cursor-pointer"
+                onClick={handleConfirmCLSOrderSubmit} 
+                className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs shadow-md flex items-center gap-2 cursor-pointer active:scale-95 transition-all"
               >
                 <Stethoscope className="w-4 h-4" /> Xác Nhận Chỉ Định Khẩn
               </button>
@@ -822,11 +933,8 @@ export default function EncountersPage() {
             <div className="flex items-center justify-end gap-3 pt-2">
               <button onClick={() => setActivePrescriptionEncounter(null)} className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100">Hủy Bỏ</button>
               <button 
-                onClick={() => {
-                  toast.success(`💊 Đã xuất đơn thuốc gồm ${selectedMeds.length} loại cho bệnh nhân ${activePrescriptionEncounter.patientName} sang Kho Dược!`);
-                  setActivePrescriptionEncounter(null);
-                }} 
-                className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-md flex items-center gap-2 cursor-pointer"
+                onClick={handleIssuePrescriptionSubmit} 
+                className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-md flex items-center gap-2 cursor-pointer active:scale-95 transition-all"
               >
                 <Pill className="w-4 h-4" /> Kê Đơn & Xuất Kho Dược
               </button>
@@ -877,11 +985,8 @@ export default function EncountersPage() {
             <div className="flex items-center justify-end gap-3 pt-2">
               <button onClick={() => setActiveFollowUpEncounter(null)} className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100">Hủy Bỏ</button>
               <button 
-                onClick={() => {
-                  toast.success(`📅 Đã lên lịch hẹn tái khám thành công vào ngày ${followUpDate} cho bệnh nhân ${activeFollowUpEncounter.patientName}!`);
-                  setActiveFollowUpEncounter(null);
-                }} 
-                className="px-5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-black text-xs shadow-md flex items-center gap-2 cursor-pointer"
+                onClick={handleCreateAppointmentSubmitModal} 
+                className="px-5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-black text-xs shadow-md flex items-center gap-2 cursor-pointer active:scale-95 transition-all"
               >
                 <Calendar className="w-4 h-4" /> Xác Nhận Lịch Hẹn
               </button>

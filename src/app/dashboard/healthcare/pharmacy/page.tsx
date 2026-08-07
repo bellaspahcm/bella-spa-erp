@@ -23,7 +23,13 @@ import {
   CheckCheck
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { getDrugsAction, createPrescriptionAction } from '@/services/healthcare/healthcare-actions';
+import { 
+  getDrugsAction, 
+  createPrescriptionAction,
+  createDrugAction
+} from '@/services/healthcare/healthcare-actions';
+import { createClient } from '@/lib/supabase-client';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 interface DrugInteraction {
   drugName: string;
@@ -72,8 +78,20 @@ interface PrescriptionReview {
 export default function PharmacyPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isAddDrugModalOpen, setIsAddDrugModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [inventory, setInventory] = useState<DrugItem[]>([]);
+  const [newDrug, setNewDrug] = useState({
+    drugCode: '',
+    drugName: '',
+    activeIngredient: '',
+    atcCode: '',
+    dosageForm: 'Viên nén bao phim',
+    stockQty: 100,
+    unit: 'Viên',
+    isControlled: false,
+    isColdStorage: false,
+  });
 
   // Navigation View Tabs
   const [activeTab, setActiveTab] = useState<'INVENTORY' | 'PRESCRIPTION_REVIEW' | 'CONTROLLED_AUDIT'>('INVENTORY');
@@ -133,7 +151,7 @@ export default function PharmacyPage() {
       dosageInstruction: 'Uống 1 viên khi sốt > 38.5°C',
       status: 'completed',
       createdAt: '08:50',
-      cdssAlerts: ['🟢 Thai kỳ Category B: An toàn cho phụ nữ mang thai'],
+      cdssAlerts: ['🟢 Thai kỳ Nhóm B: An toàn cho phụ nữ mang thai'],
     },
   ]);
 
@@ -164,7 +182,22 @@ export default function PharmacyPage() {
   };
 
   useEffect(() => {
-    loadDrugs();
+    void loadDrugs();
+
+    const supabase = createClient();
+    const channel = supabase
+      .channel('hc-pharmacy-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'hc_drug_profiles' }, () => {
+        void loadDrugs();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory_items' }, () => {
+        void loadDrugs();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const handleCreatePrescriptionSubmit = async (e: React.FormEvent) => {
@@ -229,6 +262,45 @@ export default function PharmacyPage() {
     loadDrugs();
   };
 
+  const handleCreateDrugSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newDrug.drugCode.trim() || !newDrug.drugName.trim() || !newDrug.activeIngredient.trim() || !newDrug.atcCode.trim()) {
+      toast.error('Vui lòng nhập đầy đủ thông tin thuốc bắt buộc!');
+      return;
+    }
+
+    const res = await createDrugAction({
+      drugCode: newDrug.drugCode.trim().toUpperCase(),
+      drugName: newDrug.drugName.trim(),
+      activeIngredient: newDrug.activeIngredient.trim(),
+      atcCode: newDrug.atcCode.trim().toUpperCase(),
+      dosageForm: newDrug.dosageForm,
+      stockQty: Number(newDrug.stockQty),
+      unit: newDrug.unit,
+      isControlled: newDrug.isControlled,
+      isColdStorage: newDrug.isColdStorage,
+    });
+
+    if (res.success) {
+      toast.success(`🎉 Đã thêm mới thuốc ${newDrug.drugName} vào kho dược FEFO thành công!`);
+      setIsAddDrugModalOpen(false);
+      setNewDrug({
+        drugCode: '',
+        drugName: '',
+        activeIngredient: '',
+        atcCode: '',
+        dosageForm: 'Viên nén bao phim',
+        stockQty: 100,
+        unit: 'Viên',
+        isControlled: false,
+        isColdStorage: false,
+      });
+      void loadDrugs();
+    } else {
+      toast.error('Lỗi thêm thuốc mới: ' + res.error);
+    }
+  };
+
   const handleApprovePrescription = (id: string) => {
     setPrescriptions((prev) =>
       prev.map((p) => (p.id === id ? { ...p, status: 'completed' } : p))
@@ -237,7 +309,7 @@ export default function PharmacyPage() {
   };
 
   const handleBarcodeScanVerify = () => {
-    toast.success('📷 [Barcode Verified] Mã vạch thuốc khớp 100% với đơn Bác Sĩ (FEFO Lot Verified)!');
+    toast.success('📷 [Đã Xác Minh Mã Vạch] Mã vạch thuốc khớp 100% với đơn Bác Sĩ (Đã Kiểm Chứng Lô FEFO)!');
   };
 
   const filtered = inventory.filter((d) =>
@@ -252,30 +324,30 @@ export default function PharmacyPage() {
       <div className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-900/90 via-teal-900/80 to-slate-900 text-white flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg border border-emerald-500/30">
         <div className="flex items-center gap-2.5 text-xs font-bold">
           <span className="px-2.5 py-1 rounded-full bg-emerald-500/30 text-emerald-300 border border-emerald-400/30 text-[10px] uppercase font-black">
-            HOSPITAL PHARMACY SYSTEM
+            HỆ THỐNG DƯỢC BỆNH VIỆN
           </span>
           <div className="flex items-center gap-1.5 font-mono text-[11px] text-slate-200">
-            <span>EMR KÊ ĐƠN</span> <ArrowRight className="w-3 h-3 text-emerald-400" />
+            <span>BỆNH ÁN KÊ ĐƠN</span> <ArrowRight className="w-3 h-3 text-emerald-400" />
             <span className="text-cyan-400 font-bold">DƯỢC LÂM SÀNG DUYỆT</span> <ArrowRight className="w-3 h-3 text-emerald-400" />
-            <span className="text-purple-400 font-bold">CDSS GUARD</span> <ArrowRight className="w-3 h-3 text-emerald-400" />
+            <span className="text-purple-400 font-bold">CẢNH BÁO CDSS</span> <ArrowRight className="w-3 h-3 text-emerald-400" />
             <span>XUẤT THUỐC FEFO</span> <ArrowRight className="w-3 h-3 text-emerald-400" />
             <span>BHYT</span>
           </div>
         </div>
         <span className="text-[11px] text-emerald-400 font-bold flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> CDSS Active Safety Guard
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> Hệ Thống CDSS Cảnh Báo Lâm Sàng
         </span>
       </div>
 
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div className="space-y-1 text-left">
           <div className="flex items-center gap-2.5">
             <div className="p-2.5 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
               <Pill className="w-6 h-6" />
             </div>
             <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-              Phân Hệ Dược Y Tế & Nhà Thuốc (Pharmacy Engine)
+              Phân Hệ Dược Y Tế & Nhà Thuốc
             </h1>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
@@ -283,20 +355,27 @@ export default function PharmacyPage() {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-2.5 sm:gap-3 shrink-0 w-full lg:w-auto overflow-x-auto pb-1 lg:pb-0">
+          <button
+            onClick={() => setIsAddDrugModalOpen(true)}
+            className="px-3.5 py-2.5 rounded-xl text-xs font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 flex items-center gap-2 cursor-pointer shadow-sm active:scale-95 transition-all whitespace-nowrap"
+          >
+            <Pill className="w-4 h-4 text-emerald-500" />
+            + Nhập Thuốc Mới (Kho)
+          </button>
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="px-4 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 shadow-md flex items-center gap-2 cursor-pointer active:scale-95 transition-all"
+            className="px-3.5 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 shadow-md flex items-center gap-2 cursor-pointer active:scale-95 transition-all whitespace-nowrap"
           >
             <Pill className="w-4 h-4" />
             + Kê Đơn Thuốc Mới
           </button>
           <button
             onClick={handleBarcodeScanVerify}
-            className="px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-900 dark:bg-slate-800 text-white hover:bg-slate-800 flex items-center gap-2 cursor-pointer shadow-sm"
+            className="px-3.5 py-2.5 rounded-xl text-xs font-bold bg-slate-900 dark:bg-slate-800 text-white hover:bg-slate-800 flex items-center gap-2 cursor-pointer shadow-sm active:scale-95 transition-all whitespace-nowrap"
           >
             <ScanLine className="w-4 h-4 text-emerald-400" />
-            📷 Quét Barcode Quầy Thuốc
+            📷 Quét Mã Vạch Quầy Thuốc
           </button>
         </div>
       </div>
@@ -309,7 +388,7 @@ export default function PharmacyPage() {
           </div>
           <div className="space-y-1 text-left">
             <span className="text-[11px] font-black uppercase text-emerald-700 dark:text-emerald-300 tracking-wider block">
-              BELLA AI CLINICAL MEDICATION ADVISOR
+              CỐ VẤN THUỐC LÂM SÀNG BELLA AI
             </span>
             <p className="text-xs text-slate-700 dark:text-slate-200 font-semibold leading-relaxed">
               Phát hiện <span className="text-rose-600 font-extrabold">1 Tương tác nguy cơ cao</span> (Warfarin + Augmentin), <span className="text-amber-600 font-extrabold">2 Lô cận hạn FEFO</span> cần xuất ưu tiên, và <span className="text-indigo-600 font-extrabold">1 Đơn suy thận (eGFR 28 ml/min)</span> cần chỉnh liều 50%.
@@ -519,7 +598,7 @@ export default function PharmacyPage() {
                         )}
                         {drug.pregnancyCategory && (
                           <span className="px-2 py-0.5 rounded bg-purple-500/10 text-purple-600 font-bold text-[10px]">
-                            Category {drug.pregnancyCategory}
+                            Nhóm {drug.pregnancyCategory} (Thai kỳ)
                           </span>
                         )}
                       </div>
@@ -594,7 +673,7 @@ export default function PharmacyPage() {
                   {rx.cdssAlerts && rx.cdssAlerts.length > 0 && (
                     <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 space-y-1.5 text-xs text-left">
                       <span className="font-extrabold text-[10px] text-rose-700 dark:text-rose-300 uppercase tracking-wider flex items-center gap-1">
-                        <ShieldAlert className="w-3.5 h-3.5 text-rose-600" /> CDSS Clinical Guard Warnings
+                        <ShieldAlert className="w-3.5 h-3.5 text-rose-600" /> Cảnh Báo An Toàn Lâm Sàng CDSS
                       </span>
                       {rx.cdssAlerts.map((alert, aIdx) => (
                         <p key={aIdx} className="text-[11px] font-bold text-rose-700 dark:text-rose-300 leading-snug">
@@ -681,17 +760,15 @@ export default function PharmacyPage() {
 
               <div>
                 <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Chọn Biệt Dược Trong Kho FEFO</label>
-                <select
+                <PremiumSelect
+                  options={inventory.map((d) => ({
+                    value: d.id,
+                    label: `${d.drugName} (Còn: ${d.stockQty} ${d.unit})${d.isControlled ? ' ⚠️ Thuốc Độc' : ''}${d.isNearExpiry ? ' 📦 Cận Hạn FEFO' : ''}`,
+                  }))}
                   value={newPrescription.drugId}
-                  onChange={(e) => setNewPrescription({ ...newPrescription, drugId: e.target.value })}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-950 font-bold text-slate-900 dark:text-white"
-                >
-                  {inventory.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.drugName} (Còn: {d.stockQty} {d.unit}) {d.isControlled ? '⚠️ Thuốc Độc' : ''} {d.isNearExpiry ? '📦 Cận Hạn FEFO' : ''}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(val) => setNewPrescription({ ...newPrescription, drugId: val })}
+                  buttonClassName="py-2.5 px-3 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 dark:bg-slate-950 text-slate-900 dark:text-white"
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -725,6 +802,147 @@ export default function PharmacyPage() {
                 </button>
                 <button type="submit" className="px-5 py-2 rounded-xl text-xs font-black bg-emerald-600 hover:bg-emerald-700 text-white shadow-md cursor-pointer active:scale-95 transition-all">
                   + Kiểm Tra CDSS & Gửi Duyệt
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Nhập Thuốc Mới vào Kho */}
+      {isAddDrugModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-[28px] border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-lg p-6 space-y-5 animate-in fade-in zoom-in duration-200 text-left">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+              <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+                <Pill className="w-5 h-5 text-emerald-600" />
+                Nhập Khai Báo Biệt Dược Mới vào Kho
+              </h3>
+              <button onClick={() => setIsAddDrugModalOpen(false)} className="text-slate-400 hover:text-slate-600 font-bold p-1 cursor-pointer">✕</button>
+            </div>
+
+            <form onSubmit={handleCreateDrugSubmit} className="space-y-4 text-xs">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Mã Biệt Dược (SKU) *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="VD: AUG-625, MORPH-10"
+                    value={newDrug.drugCode}
+                    onChange={(e) => setNewDrug({ ...newDrug, drugCode: e.target.value })}
+                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-950 font-mono font-bold uppercase text-slate-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Tên Biệt Dược *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="VD: Augmentin 625mg"
+                    value={newDrug.drugName}
+                    onChange={(e) => setNewDrug({ ...newDrug, drugName: e.target.value })}
+                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-950 font-bold text-slate-900 dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Hoạt Chất Chính *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="VD: Morphine, Paracetamol"
+                    value={newDrug.activeIngredient}
+                    onChange={(e) => setNewDrug({ ...newDrug, activeIngredient: e.target.value })}
+                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-950 font-semibold"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Mã ATC Quốc Tế *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="VD: N02AA01, J01CR02"
+                    value={newDrug.atcCode}
+                    onChange={(e) => setNewDrug({ ...newDrug, atcCode: e.target.value })}
+                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-950 font-mono uppercase font-bold text-slate-900 dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="col-span-2">
+                  <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Dạng Bào Chế</label>
+                  <PremiumSelect
+                    options={[
+                      { value: "Viên nén bao phim", label: "Viên nén bao phim" },
+                      { value: "Viên nang cứng", label: "Viên nang cứng" },
+                      { value: "Dung dịch tiêm", label: "Dung dịch tiêm" },
+                      { value: "Hỗn dịch tiêm", label: "Hỗn dịch tiêm" },
+                      { value: "Siro", label: "Siro" },
+                    ]}
+                    value={newDrug.dosageForm}
+                    onChange={(val) => setNewDrug({ ...newDrug, dosageForm: val })}
+                    buttonClassName="py-2.5 px-3 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 dark:bg-slate-950 text-slate-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Đơn Vị Tính</label>
+                  <PremiumSelect
+                    options={[
+                      { value: "Viên", label: "Viên" },
+                      { value: "Ống", label: "Ống" },
+                      { value: "Lọ", label: "Lọ" },
+                      { value: "Chai", label: "Chai" },
+                    ]}
+                    value={newDrug.unit}
+                    onChange={(val) => setNewDrug({ ...newDrug, unit: val })}
+                    buttonClassName="py-2.5 px-3 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 dark:bg-slate-950 text-slate-900 dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Số Lượng Nhập Kho Ban Đầu *</label>
+                <input
+                  type="number"
+                  required
+                  min="0"
+                  value={newDrug.stockQty}
+                  onChange={(e) => setNewDrug({ ...newDrug, stockQty: Number(e.target.value) })}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-950 font-black text-sm text-slate-900 dark:text-white"
+                />
+              </div>
+
+              <div className="flex items-center gap-6 p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800">
+                <label className="flex items-center gap-2 font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={newDrug.isControlled}
+                    onChange={(e) => setNewDrug({ ...newDrug, isControlled: e.target.checked })}
+                    className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300"
+                  />
+                  ⚠️ Thuốc Độc / Kiểm Soát
+                </label>
+                <label className="flex items-center gap-2 font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={newDrug.isColdStorage}
+                    onChange={(e) => setNewDrug({ ...newDrug, isColdStorage: e.target.checked })}
+                    className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300"
+                  />
+                  ❄️ Bảo Quản Lạnh (2-8°C)
+                </label>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+                <button type="button" onClick={() => setIsAddDrugModalOpen(false)} className="px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 text-slate-600 hover:bg-slate-100 cursor-pointer">
+                  Hủy Bỏ
+                </button>
+                <button type="submit" className="px-5 py-2 rounded-xl text-xs font-black bg-emerald-600 hover:bg-emerald-700 text-white shadow-md cursor-pointer active:scale-95 transition-all">
+                  + Khai Báo Biệt Dược
                 </button>
               </div>
             </form>

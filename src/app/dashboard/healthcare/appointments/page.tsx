@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Calendar as CalendarIcon,
   Clock,
@@ -32,95 +32,84 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
-
-interface Appointment {
-  id: string;
-  patientName: string;
-  patientPhone: string;
-  specialty: string;
-  doctorName: string;
-  date: string;
-  slotTime: string;
-  status: 'confirmed' | 'checked_in' | 'no_show' | 'cancelled' | 'completed';
-  channel: 'online_website' | 'zalo_oa' | 'call_center' | 'walk_in';
-  qrCode: string;
-  reminderSent: boolean;
-  notes?: string;
-}
+import {
+  getAppointmentsAction,
+  updateAppointmentStatusAction,
+  createAppointmentAction,
+  sendAppointmentReminderAction,
+  type Appointment
+} from '@/services/healthcare/appointments-actions';
+import { ClinicalPipeline, type EncounterItem } from '../ClinicalPipeline';
+import { getAllEncountersAction, updateEncounterStatusAction } from '@/services/healthcare/healthcare-actions';
+import { createClient } from '@/lib/supabase-client';
 
 export default function AppointmentCenterPage() {
-  const [appointments, setAppointments] = useState<Appointment[]>([
-    {
-      id: 'APP-8801',
-      patientName: 'Trần Minh Hoàng',
-      patientPhone: '0908 123 456',
-      specialty: 'Khoa Tim Mạch',
-      doctorName: 'BS. CKII Nguyễn Văn Minh',
-      date: '2026-08-07',
-      slotTime: '08:30 - 09:00',
-      status: 'confirmed',
-      channel: 'online_website',
-      qrCode: 'QR-APP-8801',
-      reminderSent: true,
-      notes: 'Bệnh nhân tái khám huyết áp định kỳ. Cần đo điện tâm đồ ECG trước khi vào gặp bác sĩ.',
-    },
-    {
-      id: 'APP-8802',
-      patientName: 'Lê Thị Mai',
-      patientPhone: '0912 345 678',
-      specialty: 'Khoa Tiêu Hóa',
-      doctorName: 'BS. CKI Trần Đức Hùng',
-      date: '2026-08-07',
-      slotTime: '09:00 - 09:30',
-      status: 'checked_in',
-      channel: 'zalo_oa',
-      qrCode: 'QR-APP-8802',
-      reminderSent: true,
-      notes: 'Đau tức thượng vị sau ăn 2 tuần. Đã nhịn ăn sáng sẵn sàng siêu âm ổ bụng.',
-    },
-    {
-      id: 'APP-8803',
-      patientName: 'Nguyễn Văn Hùng',
-      patientPhone: '0988 999 888',
-      specialty: 'Khoa Nhi',
-      doctorName: 'ThS. BS Lê Thị Mai',
-      date: '2026-08-07',
-      slotTime: '10:00 - 10:30',
-      status: 'no_show',
-      channel: 'call_center',
-      qrCode: 'QR-APP-8803',
-      reminderSent: true,
-      notes: 'Khám ho sốt ban đêm. Quá hạn 20 phút không phản hồi Zalo.',
-    },
-    {
-      id: 'APP-8804',
-      patientName: 'Phạm Thị Hoa',
-      patientPhone: '0933 111 222',
-      specialty: 'Khoa Tai Mũi Họng',
-      doctorName: 'BS. Vũ Thị Dung',
-      date: '2026-08-07',
-      slotTime: '14:00 - 14:30',
-      status: 'confirmed',
-      channel: 'online_website',
-      qrCode: 'QR-APP-8804',
-      reminderSent: false,
-      notes: 'Viêm họng hạt tái phát kèm sưng hạch góc hàm.',
-    },
-    {
-      id: 'APP-8805',
-      patientName: 'Hoàng Đức Nam',
-      patientPhone: '0977 444 555',
-      specialty: 'Khoa Thần Kinh',
-      doctorName: 'BS. CKII Nguyễn Văn Minh',
-      date: '2026-08-07',
-      slotTime: '15:30 - 16:00',
-      status: 'confirmed',
-      channel: 'walk_in',
-      qrCode: 'QR-APP-8805',
-      reminderSent: true,
-      notes: 'Chóng mặt tư thế kịch phát lành tính. Đặt khám trực tiếp tại quầy.',
-    },
-  ]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [encounters, setEncounters] = useState<EncounterItem[]>([]);
+  const [selectedEncounterId, setSelectedEncounterId] = useState<string | null>(null);
+
+  const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
+
+  const loadEncounters = async (dateStr?: string) => {
+    const res = await getAllEncountersAction(dateStr || undefined);
+    if (res.success && res.data) {
+      setEncounters(res.data);
+    }
+  };
+
+  const loadAppointments = async (dateStr?: string) => {
+    setIsLoading(true);
+    const res = await getAppointmentsAction(dateStr || undefined);
+    if (res.success && res.data) {
+      setAppointments(res.data);
+    } else {
+      toast.error(res.error || 'Không thể tải danh sách lịch khám từ database');
+    }
+    setIsLoading(false);
+  };
+
+  // Load from database on mount & setup realtime subscription when selectedDate changes
+  useEffect(() => {
+    void loadAppointments(selectedDate);
+    void loadEncounters(selectedDate);
+
+    const supabase = createClient();
+    const channel = supabase
+      .channel('hc-appointments-center-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'hc_appointments' }, () => {
+        void loadAppointments(selectedDate);
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'hc_encounters' }, () => {
+        void loadEncounters(selectedDate);
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedDate]);
+
+  const handleUpdateEncounterStatus = async (id: string, newStatus: EncounterItem['status']) => {
+    const dbRes = await updateEncounterStatusAction(id, newStatus);
+    if (!dbRes.success) {
+      toast.error('Lỗi lưu trạng thái lượt khám: ' + dbRes.error);
+      return;
+    }
+
+    setEncounters((prev) =>
+      prev.map((e) => (e.id === id ? { ...e, status: newStatus } : e))
+    );
+
+    const statusLabels: Record<EncounterItem['status'], string> = {
+      planned: 'Lên lịch hẹn',
+      arrived: 'Phòng chờ tiếp đón',
+      in_progress: 'Đang điều trị',
+      finished: 'Đã hoàn tất',
+    };
+
+    toast.success(`Đã di chuyển lượt khám sang: ${statusLabels[newStatus] || newStatus}`);
+  };
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterSpecialty, setFilterSpecialty] = useState('ALL');
@@ -150,15 +139,28 @@ export default function AppointmentCenterPage() {
   });
 
   // Handle Quick Check-in
-  const handleCheckIn = (id: string) => {
+  const handleCheckIn = async (id: string) => {
+    const res = await updateAppointmentStatusAction(id, 'checked_in');
+    if (!res.success) {
+      toast.error(res.error || 'Lỗi không thể check-in');
+      return;
+    }
+
     setAppointments((prev) =>
       prev.map((app) => (app.id === id ? { ...app, status: 'checked_in' } : app))
     );
     toast.success('📱 Đã xác nhận Check-in QR thành công! Đã tự động đẩy bệnh nhân vào Hàng Đợi Khám.');
+    await loadEncounters();
   };
 
   // Handle Send Reminder
-  const handleSendReminder = (id: string, name: string) => {
+  const handleSendReminder = async (id: string, name: string) => {
+    const res = await sendAppointmentReminderAction(id);
+    if (!res.success) {
+      toast.error(res.error || 'Lỗi không thể gửi nhắc lịch');
+      return;
+    }
+
     setAppointments((prev) =>
       prev.map((app) => (app.id === id ? { ...app, reminderSent: true } : app))
     );
@@ -166,32 +168,31 @@ export default function AppointmentCenterPage() {
   };
 
   // Handle Create Booking
-  const handleCreateBookingSubmit = (e: React.FormEvent) => {
+  const handleCreateBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newApp.patientName || !newApp.patientPhone) {
       toast.error('Vui lòng điền tên và số điện thoại bệnh nhân!');
       return;
     }
 
-    const created: Appointment = {
-      id: `APP-${Math.floor(8800 + Math.random() * 200)}`,
+    const res = await createAppointmentAction({
       patientName: newApp.patientName,
       patientPhone: newApp.patientPhone,
       specialty: newApp.specialty,
       doctorName: newApp.doctorName,
-      date: new Date().toISOString().split('T')[0],
       slotTime: newApp.slotTime,
-      status: 'confirmed',
-      channel: 'online_website',
-      qrCode: `QR-APP-${Math.floor(1000 + Math.random() * 9000)}`,
-      reminderSent: true,
-      notes: newApp.notes,
-    };
+      notes: newApp.notes || undefined,
+    });
 
-    setAppointments([created, ...appointments]);
+    if (!res.success || !res.data) {
+      toast.error(res.error || 'Lỗi không thể đặt lịch khám');
+      return;
+    }
+
+    setAppointments([res.data, ...appointments]);
     setIsBookingModalOpen(false);
     setNewApp({ patientName: '', patientPhone: '', specialty: 'Khoa Tim Mạch', doctorName: 'BS. CKII Nguyễn Văn Minh', slotTime: '08:00 - 08:30', notes: '' });
-    toast.success(`🎉 Đã đặt lịch khám thành công cho bệnh nhân ${created.patientName}! Mã QR: ${created.qrCode}`);
+    toast.success(`🎉 Đã đặt lịch khám thành công cho bệnh nhân ${res.data.patientName}! Mã QR: ${res.data.qrCode}`);
   };
 
   const getInitials = (name: string) => {
@@ -294,16 +295,36 @@ export default function AppointmentCenterPage() {
       </div>
 
       {/* Filter & Search Bar with Dual View Mode Switcher */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs">
-        <div className="relative w-full sm:w-96">
-          <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Tìm theo Tên bệnh nhân, SĐT, Mã Lịch..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-950 text-xs font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-          />
+      <div className="flex flex-col lg:flex-row items-center justify-between gap-4 p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
+          <div className="relative w-full sm:w-80">
+            <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Tìm theo Tên bệnh nhân, SĐT, Mã Lịch..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-950 text-xs font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+            />
+          </div>
+
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="w-full sm:w-44 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-950 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 cursor-pointer"
+            />
+            {selectedDate && (
+              <button
+                onClick={() => setSelectedDate('')}
+                className="px-3 py-2 text-xs font-bold text-slate-500 hover:text-slate-700 dark:text-slate-450 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-850 rounded-xl cursor-pointer shrink-0 transition-all active:scale-95"
+                title="Xem tất cả các ngày"
+              >
+                Tất cả
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center gap-3 w-full sm:w-auto justify-end flex-wrap">
@@ -354,8 +375,25 @@ export default function AppointmentCenterPage() {
         </div>
       </div>
 
+      {/* Live Hàng Đợi Khám & Tiến Trình Tiếp Đón Lâm Sàng */}
+      <ClinicalPipeline
+        encounters={encounters}
+        onUpdateStatus={handleUpdateEncounterStatus}
+        onSelectPatient={() => {}}
+        selectedEncounterId={selectedEncounterId}
+        onSelectEncounter={(id) => {
+          setSelectedEncounterId(id);
+          window.location.assign(`/dashboard/medical/encounters/${id}`);
+        }}
+      />
+
       {/* RENDER VIEW MODE 1: Dạng Thẻ (Card Grid 2 Cột) */}
-      {viewMode === 'grid' ? (
+      {isLoading ? (
+        <div className="flex flex-col items-center justify-center py-20 space-y-4">
+          <div className="w-12 h-12 rounded-full border-4 border-cyan-500/20 border-t-cyan-500 animate-spin" />
+          <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Đang tải lịch khám từ database...</p>
+        </div>
+      ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {filteredAppointments.map((app) => (
             <div

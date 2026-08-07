@@ -34,9 +34,11 @@ import {
   getImagingOrdersAction, 
   createImagingOrderAction, 
   verifyImagingResultAction,
-  getMedicalServicesAction
+  getMedicalServicesAction,
+  confirmImagingDoctorNotificationAction
 } from '@/services/healthcare/healthcare-actions';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
+import { createClient } from '@/lib/supabase-client';
 
 interface AIFinding {
   label: string;
@@ -54,7 +56,6 @@ interface ImagingWorkItem {
   id: string;
   ticketNumber: string;
   patientName: string;
-  modality: 'XRAY' | 'CT' | 'MRI' | 'ULTRASOUND' | 'ENDOSCOPY';
   bodySite: string;
   dcmStudyUid: string;
   viewerLink: string;
@@ -69,6 +70,7 @@ interface ImagingWorkItem {
   timeline?: TimelineStep[];
   doctorNotified?: boolean;
   doctorNotifiedTime?: string;
+  modality: 'XRAY' | 'CT' | 'MRI' | 'ULTRASOUND' | 'ENDOSCOPY';
 }
 
 export default function ImagingPage() {
@@ -80,9 +82,11 @@ export default function ImagingPage() {
   const [dcmPreset, setDcmPreset] = useState<'BRAIN' | 'BONE' | 'SOFT_TISSUE' | 'LUNG'>('BRAIN');
   const [dcmIsCine, setDcmIsCine] = useState(false);
   const [dcmShowAI, setDcmShowAI] = useState(true);
+  const [selectedSeriesId, setSelectedSeriesId] = useState(2);
   const [dcmHeatmapOpacity, setDcmHeatmapOpacity] = useState(50);
   const [dcmCompareMode, setDcmCompareMode] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
   const [items, setItems] = useState<ImagingWorkItem[]>([]);
   
   // Worklist & Priority Filters
@@ -112,13 +116,13 @@ export default function ImagingPage() {
         { value: 'ENDO-STOMACH', name: 'Nội soi Dạ dày - Tá tràng', modality: 'ENDOSCOPY' as const, bodySite: 'Nội soi Dạ dày - Tá tràng' },
       ];
       if (res.success && res.data && res.data.length > 0) {
-        const dbOptions = res.data.map((item: any) => {
+        const dbOptions = res.data.map((item: { id: string; name: string; metadata?: { risCode?: string; risModality?: string; risBodySite?: string } }) => {
           const meta = item.metadata || {};
           const code = meta.risCode || item.id.slice(0, 8).toUpperCase();
           return {
             value: code,
             name: item.name,
-            modality: (meta.risModality || 'XRAY') as any,
+            modality: (meta.risModality || 'XRAY') as 'XRAY' | 'CT' | 'MRI' | 'ULTRASOUND' | 'ENDOSCOPY',
             bodySite: meta.risBodySite || item.name,
           };
         });
@@ -149,10 +153,10 @@ export default function ImagingPage() {
     }
   };
 
-  const loadImagingOrders = async () => {
+  const loadImagingOrders = async (dateStr?: string) => {
     try {
       setIsLoading(true);
-      const res = await getImagingOrdersAction();
+      const res = await getImagingOrdersAction(dateStr || undefined);
       if (res.success && res.data) {
         setItems(res.data as ImagingWorkItem[]);
       } else {
@@ -166,9 +170,21 @@ export default function ImagingPage() {
   };
 
   useEffect(() => {
-    loadImagingOrders();
-    loadImagingOptions();
-  }, []);
+    void loadImagingOrders(selectedDate);
+    void loadImagingOptions();
+
+    const supabase = createClient();
+    const channel = supabase
+      .channel('hc-imaging-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'hc_imaging_orders' }, () => {
+        void loadImagingOrders(selectedDate);
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedDate]);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [reportText, setReportText] = useState('');
@@ -215,11 +231,18 @@ export default function ImagingPage() {
     loadImagingOrders();
   };
 
-  const handleConfirmCallLog = (id: string) => {
+  const handleConfirmCallLog = async (id: string) => {
+    const timeStr = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+    const res = await confirmImagingDoctorNotificationAction(id, timeStr);
+    if (!res.success) {
+      toast.error(res.error || 'Lỗi không thể xác nhận thông báo');
+      return;
+    }
+
     setItems((prev) =>
       prev.map((item) =>
         item.id === id
-          ? { ...item, doctorNotified: true, doctorNotifiedTime: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) }
+          ? { ...item, doctorNotified: true, doctorNotifiedTime: timeStr }
           : item
       )
     );
@@ -290,6 +313,17 @@ export default function ImagingPage() {
       if (a.priority !== 'STAT' && b.priority === 'STAT') return 1;
       return 0;
     });
+
+  const seriesList = viewingDcmItem
+    ? [
+        { id: 1, name: 'Series 1: Localizer Scout', count: 2, type: '2D' },
+        { id: 2, name: `Series 2: Axial 1.0mm (${viewingDcmItem.modality})`, count: viewingDcmItem.imageCount || 192, type: '3D Volume' },
+        { id: 3, name: 'Series 3: Coronal Reconstruct', count: 48, type: 'MPR' },
+        { id: 4, name: 'Series 4: 3D Bone / Angio VR', count: 1, type: 'VR 3D' },
+      ]
+    : [];
+
+  const activeSeries = seriesList.find((s) => s.id === selectedSeriesId) || seriesList[1];
 
   return (
     <div className="p-6 md:p-8 w-full space-y-7 bg-transparent relative">
@@ -405,7 +439,7 @@ export default function ImagingPage() {
           ].map((tab) => (
             <button
               key={tab.key}
-              onClick={() => setActiveTab(tab.key as any)}
+              onClick={() => setActiveTab(tab.key as typeof activeTab)}
               className={`px-3.5 py-2 rounded-xl whitespace-nowrap transition-all cursor-pointer ${
                 activeTab === tab.key
                   ? 'bg-indigo-600 text-white shadow-md font-extrabold'
@@ -418,16 +452,36 @@ export default function ImagingPage() {
         </div>
 
         {/* Search & Priority Filter Row */}
-        <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
-          <div className="relative w-full md:w-80">
-            <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Tìm tên bệnh nhân, loại chụp..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
+        <div className="flex flex-col md:flex-row gap-4 justify-between items-center w-full">
+          <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+            <div className="relative w-full sm:w-72">
+              <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Tìm tên bệnh nhân, loại chụp..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="w-full sm:w-44 px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+              />
+              {selectedDate && (
+                <button
+                  onClick={() => setSelectedDate('')}
+                  className="px-3 py-2 text-xs font-bold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl cursor-pointer shrink-0 transition-all active:scale-95"
+                  title="Xem tất cả các ngày"
+                >
+                  Tất cả
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center gap-2 w-full md:w-auto text-xs">
@@ -733,7 +787,7 @@ export default function ImagingPage() {
                   <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Mức Ưu Tiên (Priority)</label>
                   <PremiumSelect
                     value={newImaging.priority}
-                    onChange={(val) => setNewImaging({ ...newImaging, priority: val as any })}
+                    onChange={(val) => setNewImaging({ ...newImaging, priority: val as typeof newImaging.priority })}
                     options={[
                       { value: 'STAT', label: '🚨 STAT — Cấp Cứu Khẩn' },
                       { value: 'URGENT', label: '🟠 Urgent — Khẩn' },
@@ -799,7 +853,7 @@ export default function ImagingPage() {
                 ].map((preset) => (
                   <button
                     key={preset.key}
-                    onClick={() => setDcmPreset(preset.key as any)}
+                    onClick={() => setDcmPreset(preset.key as typeof dcmPreset)}
                     className={`px-2 py-0.5 rounded transition-all cursor-pointer ${
                       dcmPreset === preset.key
                         ? 'bg-indigo-600 text-white shadow-xs'
@@ -839,28 +893,28 @@ export default function ImagingPage() {
                 DANH SÁCH SERIES ({viewingDcmItem.seriesCount || 8} Series)
               </span>
 
-              {[
-                { id: 1, name: 'Series 1: Localizer Scout', count: 2, type: '2D' },
-                { id: 2, name: `Series 2: Axial 1.0mm (${viewingDcmItem.modality})`, count: viewingDcmItem.imageCount || 192, type: '3D Volume' },
-                { id: 3, name: 'Series 3: Coronal Reconstruct', count: 48, type: 'MPR' },
-                { id: 4, name: 'Series 4: 3D Bone / Angio VR', count: 1, type: 'VR 3D' },
-              ].map((s) => (
-                <div
+              {seriesList.map((s) => (
+                <button
                   key={s.id}
-                  className={`p-3 rounded-xl border text-left cursor-pointer transition-all ${
-                    s.id === 2
+                  type="button"
+                  onClick={() => {
+                    setSelectedSeriesId(s.id);
+                    setDcmSlice(1);
+                  }}
+                  className={`w-full p-3 rounded-xl border text-left cursor-pointer transition-all ${
+                    s.id === selectedSeriesId
                       ? 'bg-indigo-600/20 border-indigo-500 text-white shadow-md'
                       : 'bg-[#101625] border-slate-800 text-slate-400 hover:border-slate-700'
                   }`}
                 >
-                  <div className="flex items-center justify-between text-xs font-bold">
+                  <div className="flex items-center justify-between text-xs font-bold font-sans">
                     <span>{s.name}</span>
                     <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 font-mono text-[9px]">
                       {s.type}
                     </span>
                   </div>
                   <p className="text-[10px] text-slate-500 mt-1 font-mono">{s.count} Slices • 512x512 matrix</p>
-                </div>
+                </button>
               ))}
             </div>
 
@@ -915,11 +969,50 @@ export default function ImagingPage() {
               >
                 <div className="w-96 h-96 relative border border-slate-800 rounded-3xl bg-slate-950 flex items-center justify-center shadow-2xl overflow-hidden">
                   <svg className="w-full h-full p-6 text-slate-700" viewBox="0 0 200 200">
-                    {viewingDcmItem.modality === 'CT' ? (
+                    {selectedSeriesId === 1 ? (
+                      <>
+                        {/* 2D Sagittal Scout View */}
+                        <path d="M 130 140 C 130 80, 110 50, 80 50 C 50 50, 45 70, 45 100 C 45 120, 50 135, 60 140 C 70 145, 80 145, 80 160 L 110 160 C 110 150, 115 145, 130 140 Z" fill="#151d30" stroke="#475569" strokeWidth="4" />
+                        <path d="M 80 50 L 80 160" stroke="#334155" strokeWidth="1" strokeDasharray="3 3" />
+                        <path d="M 45 100 L 130 100" stroke="#334155" strokeWidth="1" strokeDasharray="3 3" />
+                        <line x1="45" y1={70 + (dcmSlice * 30)} x2="130" y2={70 + (dcmSlice * 30)} stroke="#22d3ee" strokeWidth="2" className="animate-pulse" />
+                        <text x="50" y="45" fill="#22d3ee" fontSize="6.5" fontWeight="bold" fontFamily="sans-serif">2D Sagittal Localizer</text>
+                      </>
+                    ) : selectedSeriesId === 3 ? (
+                      <>
+                        {/* Coronal MPR View */}
+                        <ellipse cx="100" cy="100" rx="55" ry="65" fill="#151d30" stroke="#475569" strokeWidth="4" />
+                        <path d="M 100 35 Q 100 165 100 165" stroke="#334155" strokeWidth="2" />
+                        <ellipse cx="100" cy="100" rx={Math.max(10, Math.min(42, 15 + (dcmSlice % 15)))} ry="25" fill="#0d1322" stroke="#475569" strokeWidth="1.5" />
+                        <text x="50" y="28" fill="#a855f7" fontSize="6.5" fontWeight="bold" fontFamily="sans-serif">Coronal MPR Reconstruct</text>
+                        {dcmShowAI && (
+                          <g className="animate-pulse">
+                            <ellipse cx="100" cy="100" rx="10" ry="15" fill="#ef4444" opacity="0.65" />
+                            <text x="75" y="75" fill="#ef4444" fontSize="6.5" fontWeight="bold" fontFamily="sans-serif">AI: Midline Shift (5.2mm)</text>
+                          </g>
+                        )}
+                      </>
+                    ) : selectedSeriesId === 4 ? (
+                      <>
+                        {/* 3D Bone / Angio VR View */}
+                        <circle cx="100" cy="100" r="70" fill="#1e1b4b" stroke="#f59e0b" strokeWidth="4" />
+                        <path d="M 100 170 Q 100 130 90 100 T 110 60" fill="none" stroke="#f59e0b" strokeWidth="3" opacity="0.9" />
+                        <path d="M 90 100 Q 70 80 60 70" fill="none" stroke="#f59e0b" strokeWidth="2" opacity="0.8" />
+                        <path d="M 110 90 Q 130 80 140 70" fill="none" stroke="#f59e0b" strokeWidth="2" opacity="0.8" />
+                        <text x="50" y="22" fill="#f59e0b" fontSize="6.5" fontWeight="bold" fontFamily="sans-serif">3D Volume Reconstruction</text>
+                        {dcmShowAI && (
+                          <g className="animate-pulse">
+                            <circle cx="110" cy="60" r="8" fill="#f43f5e" opacity="0.7" />
+                            <text x="112" y="48" fill="#f43f5e" fontSize="6.5" fontWeight="bold" fontFamily="sans-serif">AI: Aneurysm (99%)</text>
+                          </g>
+                        )}
+                      </>
+                    ) : viewingDcmItem.modality === 'CT' ? (
                       <>
                         <circle cx="100" cy="100" r="75" fill="#151d30" stroke="#475569" strokeWidth="6" />
                         <circle cx="100" cy="100" r="62" fill="#0d1322" stroke="#334155" strokeWidth="2" />
                         <path d="M 85 80 Q 95 65 100 80 Q 105 65 115 80 Q 100 110 85 80" fill="#1e293b" />
+                        <ellipse cx="100" cy="100" rx={Math.max(5, 15 - Math.abs(96 - dcmSlice) * 0.1)} ry={Math.max(10, 25 - Math.abs(96 - dcmSlice) * 0.15)} fill="#151d30" opacity="0.5" />
                         {dcmShowAI && (
                           <g className="animate-pulse">
                             <ellipse cx="125" cy="95" rx="18" ry="14" fill="#ef4444" opacity="0.75" />
@@ -965,12 +1058,12 @@ export default function ImagingPage() {
                 <input
                   type="range"
                   min="1"
-                  max={viewingDcmItem.imageCount || 192}
-                  value={dcmSlice}
+                  max={activeSeries?.count || 192}
+                  value={Math.min(dcmSlice, activeSeries?.count || 192)}
                   onChange={(e) => setDcmSlice(Number(e.target.value))}
                   className="w-full accent-indigo-500 cursor-pointer"
                 />
-                <span className="font-mono text-slate-400 text-[11px] shrink-0">{viewingDcmItem.imageCount || 192} Slices</span>
+                <span className="font-mono text-slate-400 text-[11px] shrink-0">{activeSeries?.count || 192} Slices</span>
               </div>
             </div>
           </div>

@@ -324,6 +324,7 @@ export async function completeEncounterAction(encounterId: string): Promise<{ su
       .from('hc_encounters')
       .update({
         status: 'completed',
+        finished_at: new Date().toISOString(),
         completed_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
@@ -497,16 +498,23 @@ export async function createPatientRecordAction(input: {
 /**
  * 8. Lấy toàn bộ danh sách lượt khám (hc_encounters + customers + patient_profiles)
  */
-export async function getAllEncountersAction(): Promise<{ success: boolean; data?: any[]; error?: string }> {
+export async function getAllEncountersAction(dateFilter?: string): Promise<{ success: boolean; data?: any[]; error?: string }> {
   try {
     const supabase = (await createDevelopmentBypassClient()) as any;
     const tenantId = await getTenantIdOrThrow();
 
-    const { data: encounters, error } = await supabase
+    let query = supabase
       .from('hc_encounters')
       .select('*')
-      .eq('tenant_id', tenantId)
-      .order('created_at', { ascending: false });
+      .eq('tenant_id', tenantId);
+
+    if (dateFilter) {
+      const startDate = `${dateFilter}T00:00:00.000Z`;
+      const endDate = `${dateFilter}T23:59:59.999Z`;
+      query = query.gte('created_at', startDate).lte('created_at', endDate);
+    }
+
+    const { data: encounters, error } = await query.order('created_at', { ascending: false });
 
     if (error) {
       console.error('Error fetching encounters:', error);
@@ -593,6 +601,35 @@ export async function getAllEncountersAction(): Promise<{ success: boolean; data
         }
       }
 
+      const formatTime = (isoString?: string) => {
+        if (!isoString) return '--:--';
+        try {
+          return new Date(isoString).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+        } catch {
+          return '--:--';
+        }
+      };
+
+      const createdAtIso = e.created_at || e.scheduled_at || new Date().toISOString();
+      const arrivedAtIso = e.arrived_at || e.created_at || new Date().toISOString();
+      const startedAtIso = e.started_at || e.arrived_at;
+      const completedAtIso = e.completed_at || e.finished_at;
+
+      const arrivalTimeMs = new Date(arrivedAtIso).getTime();
+      const endTimeMs = completedAtIso ? new Date(completedAtIso).getTime() : Date.now();
+      const dynamicWaitTime = Math.max(1, Math.floor((endTimeMs - arrivalTimeMs) / 60000));
+
+      const isCompleted = mappedStatus === 'completed';
+      const isInProgress = mappedStatus === 'in_progress' || isCompleted;
+      const isArrived = mappedStatus === 'arrived' || isInProgress;
+
+      const dynamicTimeline = [
+        { time: formatTime(createdAtIso), label: 'Check-in', done: true },
+        { time: formatTime(arrivedAtIso), label: 'Đón Tiếp', done: isArrived },
+        { time: formatTime(arrivedAtIso), label: 'Sinh Hiệu', done: isArrived },
+        { time: formatTime(startedAtIso || completedAtIso || arrivedAtIso), label: 'Bác Sĩ Khám', done: isCompleted },
+      ];
+
       return {
         id: e.id,
         patientName,
@@ -600,9 +637,13 @@ export async function getAllEncountersAction(): Promise<{ success: boolean; data
         status: mappedStatus,
         chiefComplaint: e.chief_complaint || template.chiefComplaint,
         queueNumber: e.queue_number || (101 + idx),
-        scheduledAt: e.scheduled_at || new Date().toISOString(),
+        scheduledAt: createdAtIso,
+        arrivedAt: arrivedAtIso,
+        startedAt: startedAtIso,
+        completedAt: completedAtIso,
         priority: prioritiesList[idx % prioritiesList.length],
-        waitTimeMinutes: waitTimesList[idx % waitTimesList.length],
+        waitTimeMinutes: dynamicWaitTime,
+        timeline: dynamicTimeline,
         subjective: parsedSoap.subjective || e.subjective_notes || template.subjective,
         objective: parsedSoap.objective || e.objective_notes || template.objective,
         assessment: parsedSoap.assessment || e.assessment_notes || template.assessment,
@@ -1234,16 +1275,23 @@ export async function createEMREncounterAction(input: {
 /**
  * 14. Lấy danh sách kết quả LIS Xét nghiệm
  */
-export async function getLabOrdersAction(): Promise<{ success: boolean; data?: any[]; error?: string }> {
+export async function getLabOrdersAction(dateFilter?: string): Promise<{ success: boolean; data?: any[]; error?: string }> {
   try {
     const supabase = (await createDevelopmentBypassClient()) as any;
     const tenantId = await getTenantIdOrThrow();
 
-    const { data: labOrders, error } = await supabase
+    let query = supabase
       .from('hc_lab_orders')
       .select('*')
-      .eq('tenant_id', tenantId)
-      .order('created_at', { ascending: false });
+      .eq('tenant_id', tenantId);
+
+    if (dateFilter) {
+      const startDate = `${dateFilter}T00:00:00.000Z`;
+      const endDate = `${dateFilter}T23:59:59.999Z`;
+      query = query.gte('created_at', startDate).lte('created_at', endDate);
+    }
+
+    const { data: labOrders, error } = await query.order('created_at', { ascending: false });
 
     if (error) {
       console.error('Error fetching lab orders:', error);
@@ -1282,6 +1330,8 @@ export async function getLabOrdersAction(): Promise<{ success: boolean; data?: a
         resultUnit: l.result_unit || 'mmol/L',
         referenceRange: l.reference_range || '3.5 - 5.0 mmol/L',
         isPanicValue: l.is_panic_value,
+        doctorNotified: l.doctor_notified || false,
+        doctorNotifiedTime: l.doctor_notified_time || undefined,
       };
     });
 
@@ -1438,6 +1488,20 @@ export async function verifyLabResultAction(
       return { success: false, error: error.message };
     }
 
+    // Auto-complete parent clinical order
+    const { data: labOrder } = await supabase
+      .from('hc_lab_orders')
+      .select('clinical_order_id')
+      .eq('id', labId)
+      .maybeSingle();
+
+    if (labOrder?.clinical_order_id) {
+      await supabase
+        .from('hc_clinical_orders')
+        .update({ status: 'completed' })
+        .eq('id', labOrder.clinical_order_id);
+    }
+
     return { success: true };
   } catch (err: any) {
     return { success: false, error: err.message || 'Lỗi duyệt kết quả LIS' };
@@ -1447,16 +1511,23 @@ export async function verifyLabResultAction(
 /**
  * 17. Lấy danh sách kết quả RIS PACS Chẩn đoán hình ảnh
  */
-export async function getImagingOrdersAction(): Promise<{ success: boolean; data?: any[]; error?: string }> {
+export async function getImagingOrdersAction(dateFilter?: string): Promise<{ success: boolean; data?: any[]; error?: string }> {
   try {
     const supabase = (await createDevelopmentBypassClient()) as any;
     const tenantId = await getTenantIdOrThrow();
 
-    const { data: imagingOrders, error } = await supabase
+    let query = supabase
       .from('hc_imaging_orders')
       .select('*')
-      .eq('tenant_id', tenantId)
-      .order('created_at', { ascending: false });
+      .eq('tenant_id', tenantId);
+
+    if (dateFilter) {
+      const startDate = `${dateFilter}T00:00:00.000Z`;
+      const endDate = `${dateFilter}T23:59:59.999Z`;
+      query = query.gte('created_at', startDate).lte('created_at', endDate);
+    }
+
+    const { data: imagingOrders, error } = await query.order('created_at', { ascending: false });
 
     if (error) {
       console.error('Error fetching imaging orders:', error);
@@ -1480,9 +1551,26 @@ export async function getImagingOrdersAction(): Promise<{ success: boolean; data
     const mapped = (imagingOrders || []).map((i: any, idx: number) => {
       const enc = encMap.get(i.encounter_id) || {};
       const patientName = partyMap.get(enc.patient_party_id) || i.patient_name || 'Bệnh nhân';
+      const isTranMinhHoang = patientName.includes('Trần Minh Hoàng');
+      const isNguyenVanHung = patientName.includes('Nguyễn Văn Hùng');
+      
+      const aiFindings = isTranMinhHoang
+        ? [
+            { label: 'Intracranial Hemorrhage (Xuất huyết sọ não diện rộng)', confidence: 98, isCritical: true },
+            { label: 'Midline Shift 4mm (Đè ép đường giữa 4mm)', confidence: 89, isCritical: true },
+          ]
+        : isNguyenVanHung
+        ? [
+            { label: 'Lumbar Disc Herniation L5-S1 (Thoát vị đĩa đệm thắt lưng)', confidence: 92, isCritical: true },
+            { label: 'Nerve Root Compression S1 (Chèn ép rễ S1)', confidence: 88, isCritical: true },
+          ]
+        : [
+            { label: 'AI Diagnostic Finding: Nhu mô phổi sáng đều', confidence: 94, isCritical: false },
+          ];
+
       return {
         id: i.id,
-        ticketNumber: enc.queue_number ? `STT-${enc.queue_number}` : `STT-10${idx + 1}`,
+        ticketNumber: i.ticket_number || (enc.queue_number ? `STT-${enc.queue_number}` : `STT-10${idx + 1}`),
         patientName,
         modality: i.modality,
         bodySite: i.body_site,
@@ -1496,10 +1584,8 @@ export async function getImagingOrdersAction(): Promise<{ success: boolean; data
         radiologistStatus: i.radiologist_report ? 'released' : (i.verified_at ? 'reading' : 'unassigned'),
         seriesCount: i.series_count || 8,
         imageCount: i.image_count || 192,
-        storageSize: i.storage_size || '256 MB',
-        aiFindings: [
-          { label: 'AI Diagnostic Finding: Tổn thương khu trú', confidence: 91, isCritical: i.priority === 'STAT' },
-        ],
+        storageSize: i.storage_size || '284 MB',
+        aiFindings,
         timeline: [
           { step: 'Chỉ định', time: '09:00', done: true },
           { step: 'Đã đến', time: '09:12', done: true },
@@ -1509,7 +1595,7 @@ export async function getImagingOrdersAction(): Promise<{ success: boolean; data
           { step: 'Trả KQ', time: i.radiologist_report ? '09:33' : '---', done: !!i.radiologist_report },
         ],
         doctorNotified: i.doctor_notified || false,
-        doctorNotifiedTime: i.doctor_notified_time || '09:30',
+        doctorNotifiedTime: i.doctor_notified_time || undefined,
       };
     });
 
@@ -2725,6 +2811,203 @@ export async function getMedicalServicesAction(kind: 'lis_test' | 'ris_imaging')
     return { success: true, data: data || [] };
   } catch (err: any) {
     return { success: false, error: err.message || 'Lỗi tải danh mục dịch vụ y khoa chuyên môn' };
+  }
+}
+
+/**
+ * 30. Ghi nhận nhật ký Bác sĩ Lâm sàng xác nhận thông báo Panic Value (LIS CAP/JCI Audit Log)
+ */
+export async function confirmLabDoctorNotificationAction(
+  labId: string,
+  timeString: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = (await createDevelopmentBypassClient()) as any;
+    const tenantId = await getTenantIdOrThrow();
+
+    const { error } = await supabase
+      .from('hc_lab_orders')
+      .update({
+        doctor_notified: true,
+        doctor_notified_time: timeString,
+      })
+      .eq('id', labId)
+      .eq('tenant_id', tenantId);
+
+    if (error) {
+      console.error('Error confirming lab doctor notification:', error);
+      return { success: false, error: error.message };
+    }
+
+    // Auto-complete parent clinical order
+    const { data: labOrder } = await supabase
+      .from('hc_lab_orders')
+      .select('clinical_order_id')
+      .eq('id', labId)
+      .maybeSingle();
+
+    if (labOrder?.clinical_order_id) {
+      await supabase
+        .from('hc_clinical_orders')
+        .update({ status: 'completed' })
+        .eq('id', labOrder.clinical_order_id);
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Lỗi ghi nhận call log' };
+  }
+}
+
+/**
+ * 31. Ghi nhận nhật ký Bác sĩ Cấp cứu/Lâm sàng xác nhận thông báo CĐHA Khẩn STAT (RIS PACS Call Log)
+ */
+export async function confirmImagingDoctorNotificationAction(
+  imagingId: string,
+  timeString: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = (await createDevelopmentBypassClient()) as any;
+    const tenantId = await getTenantIdOrThrow();
+
+    const { error } = await supabase
+      .from('hc_imaging_orders')
+      .update({
+        doctor_notified: true,
+        doctor_notified_time: timeString,
+      })
+      .eq('id', imagingId)
+      .eq('tenant_id', tenantId);
+
+    if (error) {
+      console.error('Error confirming imaging doctor notification:', error);
+      return { success: false, error: error.message };
+    }
+
+    // Auto-complete parent clinical order
+    const { data: imgOrder } = await supabase
+      .from('hc_imaging_orders')
+      .select('clinical_order_id')
+      .eq('id', imagingId)
+      .maybeSingle();
+
+    if (imgOrder?.clinical_order_id) {
+      await supabase
+        .from('hc_clinical_orders')
+        .update({ status: 'completed' })
+        .eq('id', imgOrder.clinical_order_id);
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Lỗi ghi nhận call log CĐHA' };
+  }
+}
+
+/**
+ * 32. Tạo lịch hẹn tái khám (hc_appointments)
+ */
+export async function createAppointmentAction(input: {
+  patientName: string;
+  patientPhone?: string;
+  specialty: string;
+  doctorName?: string;
+  appointmentDate: string;
+  notes?: string;
+}): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = (await createDevelopmentBypassClient()) as any;
+    const tenantId = await getTenantIdOrThrow();
+
+    const apptCode = `APP-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    const { error } = await supabase
+      .from('hc_appointments')
+      .insert({
+        tenant_id: tenantId,
+        appointment_code: apptCode,
+        patient_name: input.patientName,
+        patient_phone: input.patientPhone || '0908 123 456',
+        specialty: input.specialty || 'Khoa Nội Tổng Hợp',
+        doctor_name: input.doctorName || 'BS. CKII Nguyễn Văn Minh',
+        appointment_date: input.appointmentDate,
+        slot_time: '09:00 - 09:30',
+        status: 'confirmed',
+        channel: 'walk_in',
+        qr_code: `QR-${apptCode}`,
+        notes: input.notes,
+      });
+
+    if (error) {
+      console.error('Error creating appointment:', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Lỗi tạo lịch hẹn' };
+  }
+}
+
+/**
+ * 33. Thêm mới biệt dược (hc_drug_profiles + inventory_items)
+ */
+export async function createDrugAction(input: {
+  drugCode: string;
+  drugName: string;
+  activeIngredient: string;
+  atcCode: string;
+  dosageForm: string;
+  stockQty: number;
+  unit: string;
+  isControlled: boolean;
+  isColdStorage: boolean;
+}): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = (await createDevelopmentBypassClient()) as any;
+    const tenantId = await getTenantIdOrThrow();
+
+    // 1. Insert into inventory_items
+    const { data: invItem, error: invErr } = await supabase
+      .from('inventory_items')
+      .insert({
+        tenant_id: tenantId,
+        name: input.drugName,
+        sku: input.drugCode,
+        stock_qty: input.stockQty,
+        unit: input.unit,
+        status: 'active',
+      })
+      .select()
+      .single();
+
+    if (invErr) {
+      console.error('Error inserting inventory item:', invErr);
+      return { success: false, error: invErr.message };
+    }
+
+    // 2. Insert into hc_drug_profiles
+    const { error: drugErr } = await supabase
+      .from('hc_drug_profiles')
+      .insert({
+        tenant_id: tenantId,
+        inventory_item_id: invItem.id,
+        drug_code: input.drugCode,
+        active_ingredient: input.activeIngredient,
+        atc_code: input.atcCode,
+        dosage_form: input.dosageForm,
+        is_controlled_drug: input.isControlled,
+        is_cold_storage: input.isColdStorage,
+      });
+
+    if (drugErr) {
+      console.error('Error inserting drug profile:', drugErr);
+      return { success: false, error: drugErr.message };
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Lỗi thêm biệt dược mới' };
   }
 }
 
