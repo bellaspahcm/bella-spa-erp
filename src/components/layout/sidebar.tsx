@@ -51,6 +51,7 @@ import {
   Stethoscope,
   Bed,
   Hospital,
+  Tablets,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -250,7 +251,7 @@ function resolveTenantBrandDisplay(settings: Awaited<ReturnType<typeof getCached
   if (!settings) {
     if (typeof window !== 'undefined') {
       const path = window.location.pathname;
-      if (path.startsWith('/dashboard/medical') || path.startsWith('/dashboard/healthcare') || path.startsWith('/dashboard/dental')) {
+      if (path.startsWith('/dashboard/hospital') || path.startsWith('/dashboard/medical') || path.startsWith('/dashboard/healthcare') || path.startsWith('/dashboard/dental')) {
         return resolveTenantBrandIdentity({
           enabledModules: { bella_healthcare: true },
           tenantName: path.includes('dental') ? 'Bella Dental Clinic' : 'Bella Medical Clinic',
@@ -521,7 +522,7 @@ const bellaMedicalClinicMenuItems: SidebarMenuItem[] = [
 // ─── Bella General Hospital Module Menu (hospital_inpatient capability) ───
 const bellaHospitalInpatientMenuItems: SidebarMenuItem[] = [
   { type: 'header', label: 'Tổng quan & AI' },
-  { icon: LayoutDashboard, label: 'Dashboard điều hành',         href: '/dashboard/healthcare' },
+  { icon: LayoutDashboard, label: 'Dashboard điều hành',         href: '/dashboard/hospital' },
   { icon: Sparkles,        label: 'AI Copilot',                  href: '/dashboard/ai-copilot' },
 
   { type: 'header', label: 'Tiếp đón & Ngoại trú' },
@@ -534,13 +535,13 @@ const bellaHospitalInpatientMenuItems: SidebarMenuItem[] = [
 
   { type: 'header', label: 'Nội trú & Buồng Giường' },
   { icon: Bed,             label: 'Sơ đồ Buồng Giường Nội Trú',  href: '/dashboard/hospital/beds' },
-  { icon: Hospital,        label: 'Bệnh Án Nội Trú & MAR',       href: '/dashboard/hospital/admissions' },
+  { icon: Hospital,        label: 'Bệnh Án Nội Trú',             href: '/dashboard/hospital/admissions' },
+  { icon: Activity,        label: 'Sinh Hiệu Điều Dưỡng',        href: '/dashboard/hospital/nursing-vitals' },
+  { icon: Tablets,         label: 'Phiếu Y Lệnh (MAR)',          href: '/dashboard/hospital/mar' },
 
   { type: 'header', label: 'Cận Lâm Sàng' },
-  { icon: ClipboardList,   label: 'LIS Xét nghiệm',               href: '/dashboard/medical/laboratory' },
-  { icon: FileText,        label: 'RIS CĐHA & PACS',             href: '/dashboard/medical/imaging' },
+  { icon: ClipboardList,   label: 'Cận Lâm Sàng (LIS/RIS)',      href: '/dashboard/hospital/ancillary' },
   { icon: Package,         label: 'Dược y tế & Kê đơn',          href: '/dashboard/medical/pharmacy' },
-  { icon: FileText,        label: 'Cận Lâm Sàng (LIS/RIS)',      href: '/dashboard/hospital/ancillary' },
 
   { type: 'header', label: 'BHYT & Viện Phí' },
   { icon: CircleDollarSign, label: 'Viện phí & BHYT (80/20)',     href: '/dashboard/medical/billing' },
@@ -603,7 +604,8 @@ const LUCIDE_ICONS_MAP: Record<string, LucideIcon> = {
   Wrench,
   Activity,
   Bed,
-  Hospital
+  Hospital,
+  Tablets,
 };
 
 

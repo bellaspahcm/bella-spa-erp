@@ -49,7 +49,7 @@ export default function LoginPage() {
 
         if (email === 'bellaspa.testadmin@gmail.com' || email === 'admin@medical.vn' || email === 'admin@healthcare.vn') {
           document.cookie = `mock_user_email=${email}; path=/; max-age=31536000; SameSite=Lax`;
-          window.location.href = '/dashboard/medical';
+          window.location.href = '/dashboard/hospital';
           return;
         }
 

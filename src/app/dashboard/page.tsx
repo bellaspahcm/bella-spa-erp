@@ -333,9 +333,9 @@ export default function DashboardPage() {
       hasRedirected.current = true;
       window.location.replace('/dashboard/bella-auto');
     } else if (tenantModuleKey === 'bella_healthcare' && !hasRedirected.current) {
-      console.log('[Dashboard Redirect] ✅ Redirecting to /dashboard/medical via hard redirect');
+      console.log('[Dashboard Redirect] ✅ Redirecting to /dashboard/hospital via hard redirect');
       hasRedirected.current = true;
-      window.location.replace('/dashboard/medical');
+      window.location.replace('/dashboard/hospital');
     }
   }, [tenantModuleKey]);
 

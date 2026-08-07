@@ -381,3 +381,211 @@ export class BreakGlassSecurityService {
     return MOCK_BREAK_GLASS_LOGS;
   }
 }
+
+/**
+ * Nursing Vital Signs Service
+ */
+const MOCK_VITAL_SIGNS: NursingVitalSigns[] = [
+  {
+    id: 'vital-001',
+    tenant_id: 'bella_healthcare',
+    inpatient_admission_id: 'adm-001',
+    encounter_id: 'enc-001',
+    patient_id: 'pat-001',
+    nurse_practitioner_id: 'nurse-001',
+    temperature: 37.2,
+    heart_rate: 78,
+    systolic_bp: 120,
+    diastolic_bp: 80,
+    spo2: 98,
+    respiratory_rate: 16,
+    notes: 'Bệnh nhân ổn định',
+    recorded_at: new Date(Date.now() - 3600000).toISOString(),
+  },
+];
+
+export class NursingVitalsService {
+  static async getVitalSignsByAdmission(admissionId: string): Promise<NursingVitalSigns[]> {
+    try {
+      const { data, error } = await supabase
+        .from('hc_nursing_vital_signs')
+        .select('*')
+        .eq('inpatient_admission_id', admissionId)
+        .order('recorded_at', { ascending: false });
+
+      if (!error && data && data.length > 0) {
+        return data as NursingVitalSigns[];
+      }
+    } catch {
+      // Fallback
+    }
+    return MOCK_VITAL_SIGNS.filter((v) => v.inpatient_admission_id === admissionId);
+  }
+
+  static async recordVitalSigns(input: RecordVitalsInput): Promise<NursingVitalSigns> {
+    const newVital: NursingVitalSigns = {
+      id: `vital-${Date.now()}`,
+      tenant_id: input.tenantId,
+      inpatient_admission_id: input.inpatientAdmissionId,
+      encounter_id: input.encounterId,
+      patient_id: input.patientId,
+      nurse_practitioner_id: input.nursePractitionerId,
+      temperature: input.temperature,
+      heart_rate: input.heartRate,
+      systolic_bp: input.systolicBp,
+      diastolic_bp: input.diastolicBp,
+      spo2: input.spo2,
+      respiratory_rate: input.respiratoryRate,
+      notes: input.notes,
+      recorded_at: new Date().toISOString(),
+    };
+
+    MOCK_VITAL_SIGNS.unshift(newVital);
+
+    try {
+      const { data, error } = await supabase
+        .from('hc_nursing_vital_signs')
+        .insert(newVital)
+        .select()
+        .single();
+
+      if (!error && data) {
+        return data as NursingVitalSigns;
+      }
+    } catch {
+      // Dev fallback
+    }
+
+    return newVital;
+  }
+}
+
+/**
+ * MAR (Medication Administration Record) Service
+ */
+export interface CreateMARInput {
+  tenantId: string;
+  inpatientAdmissionId: string;
+  prescriptionItemId: string;
+  drugName: string;
+  dosage: string;
+  route: string;
+  scheduledTime: string;
+}
+
+export interface AdministerMARInput {
+  marId: string;
+  administeredByNurseId: string;
+  notes?: string;
+}
+
+const MOCK_MAR_RECORDS: MedicationAdministrationRecord[] = [
+  {
+    id: 'mar-001',
+    tenant_id: 'bella_healthcare',
+    inpatient_admission_id: 'adm-001',
+    prescription_item_id: 'rx-item-001',
+    drug_name: 'Amoxicillin 500mg',
+    dosage: '1 viên',
+    route: 'Uống sau ăn',
+    scheduled_time: new Date(Date.now() + 3600000).toISOString(),
+    status: 'scheduled',
+  },
+  {
+    id: 'mar-002',
+    tenant_id: 'bella_healthcare',
+    inpatient_admission_id: 'adm-001',
+    prescription_item_id: 'rx-item-002',
+    drug_name: 'Paracetamol 500mg',
+    dosage: '1 viên',
+    route: 'Uống khi sốt',
+    scheduled_time: new Date(Date.now() - 1800000).toISOString(),
+    administered_time: new Date(Date.now() - 1500000).toISOString(),
+    administered_by_nurse_id: 'nurse-001',
+    status: 'administered',
+    notes: 'Bệnh nhân sốt 38.5°C',
+  },
+];
+
+export class MARService {
+  static async getMARByAdmission(admissionId: string): Promise<MedicationAdministrationRecord[]> {
+    try {
+      const { data, error } = await supabase
+        .from('hc_medication_administration_records')
+        .select('*')
+        .eq('inpatient_admission_id', admissionId)
+        .order('scheduled_time', { ascending: true });
+
+      if (!error && data && data.length > 0) {
+        return data as MedicationAdministrationRecord[];
+      }
+    } catch {
+      // Fallback
+    }
+    return MOCK_MAR_RECORDS.filter((m) => m.inpatient_admission_id === admissionId);
+  }
+
+  static async createMAR(input: CreateMARInput): Promise<MedicationAdministrationRecord> {
+    const newMAR: MedicationAdministrationRecord = {
+      id: `mar-${Date.now()}`,
+      tenant_id: input.tenantId,
+      inpatient_admission_id: input.inpatientAdmissionId,
+      prescription_item_id: input.prescriptionItemId,
+      drug_name: input.drugName,
+      dosage: input.dosage,
+      route: input.route,
+      scheduled_time: input.scheduledTime,
+      status: 'scheduled',
+    };
+
+    MOCK_MAR_RECORDS.unshift(newMAR);
+
+    try {
+      const { data, error } = await supabase
+        .from('hc_medication_administration_records')
+        .insert(newMAR)
+        .select()
+        .single();
+
+      if (!error && data) {
+        return data as MedicationAdministrationRecord;
+      }
+    } catch {
+      // Dev fallback
+    }
+
+    return newMAR;
+  }
+
+  static async administerMAR(input: AdministerMARInput): Promise<MedicationAdministrationRecord> {
+    const marIndex = MOCK_MAR_RECORDS.findIndex((m) => m.id === input.marId);
+    if (marIndex === -1) throw new Error('MAR record not found');
+
+    MOCK_MAR_RECORDS[marIndex].status = 'administered';
+    MOCK_MAR_RECORDS[marIndex].administered_time = new Date().toISOString();
+    MOCK_MAR_RECORDS[marIndex].administered_by_nurse_id = input.administeredByNurseId;
+    MOCK_MAR_RECORDS[marIndex].notes = input.notes;
+
+    try {
+      const { data, error } = await supabase
+        .from('hc_medication_administration_records')
+        .update({
+          status: 'administered',
+          administered_time: MOCK_MAR_RECORDS[marIndex].administered_time,
+          administered_by_nurse_id: input.administeredByNurseId,
+          notes: input.notes,
+        })
+        .eq('id', input.marId)
+        .select()
+        .single();
+
+      if (!error && data) {
+        return data as MedicationAdministrationRecord;
+      }
+    } catch {
+      // Dev fallback
+    }
+
+    return MOCK_MAR_RECORDS[marIndex];
+  }
+}

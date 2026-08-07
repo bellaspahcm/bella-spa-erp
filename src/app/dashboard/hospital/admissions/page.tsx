@@ -29,7 +29,7 @@ export default function HospitalAdmissionsPage() {
   const [encounterId, setEncounterId] = useState<string>('enc-003');
   const [selectedWardId, setSelectedWardId] = useState<string>('ward-002');
   const [selectedBedId, setSelectedBedId] = useState<string>('');
-  const [doctorName, setDoctorName] = useState<string font-semibold>('BS. Nguyễn Thị Mai');
+  const [doctorName, setDoctorName] = useState<string>('BS. Nguyễn Thị Mai');
   const [icd10Code, setIcd10Code] = useState<string>('J18.9');
   const [icd10Name, setIcd10Name] = useState<string>('Viêm phổi, không đặc hiệu');
 
@@ -70,12 +70,12 @@ export default function HospitalAdmissionsPage() {
             <tr>
               <td style="padding: 8px;"><strong>Chẩn đoán chính:</strong></td>
               <td colspan="3" style="padding: 8px; border-bottom: 1px dashed #000;">
-                \${adm.admission_diagnosis.map((d) => `[\${d.icd10_code}] \${d.icd10_name_vi}`).join(', ')}
+                ${adm.admission_diagnosis.map((d) => `[${d.icd10_code}] ${d.icd10_name_vi}`).join(', ')}
               </td>
             </tr>
           </table>
           <div style="margin-top: 50px; float: right; text-align: center; width: 250px;">
-            <p>Ngày \${new Date().getDate()} tháng \${new Date().getMonth() + 1} năm \${new Date().getFullYear()}</p>
+            <p>Ngày ${new Date().getDate()} tháng ${new Date().getMonth() + 1} năm ${new Date().getFullYear()}</p>
             <strong>BÁC SĨ ĐIỀU TRỊ</strong>
             <div style="margin-top: 80px;">BS. Nguyễn Thị Mai</div>
           </div>
@@ -91,7 +91,7 @@ export default function HospitalAdmissionsPage() {
             <h1 style="margin-top: 20px;">ĐƠN THUỐC ĐIỀU TRỊ NỘI TRÚ</h1>
           </div>
           <p><strong>Bệnh nhân:</strong> Nguyễn Văn A | <strong>Tuổi:</strong> 35</p>
-          <p><strong>Chẩn đoán:</strong> \${adm.admission_diagnosis.map((d) => `[\${d.icd10_code}] \${d.icd10_name_vi}`).join(', ')}</p>
+          <p><strong>Chẩn đoán:</strong> ${adm.admission_diagnosis.map((d) => `[${d.icd10_code}] ${d.icd10_name_vi}`).join(', ')}</p>
           <h3 style="margin-top: 30px; border-bottom: 2px solid #000; padding-bottom: 5px;">CHỈ ĐỊNH THUỐC</h3>
           <ol style="padding-left: 20px; font-size: 15px;">
             <li style="margin-bottom: 15px;">
@@ -160,11 +160,11 @@ export default function HospitalAdmissionsPage() {
             <h1 style="margin-top: 20px;">GIẤY RA VIỆN (DISCHARGE REPORT)</h1>
           </div>
           <p><strong>Bệnh nhân:</strong> Nguyễn Văn A | <strong>Giới tính:</strong> Nam | <strong>Tuổi:</strong> 35</p>
-          <p><strong>Chẩn đoán ra viện:</strong> \${adm.admission_diagnosis.map((d) => `[\${d.icd10_code}] \${d.icd10_name_vi}`).join(', ')}</p>
-          <p><strong>Tóm tắt quá trình điều trị:</strong> \${adm.discharge_summary || 'Bệnh nhân đáp ứng điều trị tốt, các chỉ số sinh hiệu trở lại bình thường.'}</p>
+          <p><strong>Chẩn đoán ra viện:</strong> ${adm.admission_diagnosis.map((d) => `[${d.icd10_code}] ${d.icd10_name_vi}`).join(', ')}</p>
+          <p><strong>Tóm tắt quá trình điều trị:</strong> ${adm.discharge_summary || 'Bệnh nhân đáp ứng điều trị tốt, các chỉ số sinh hiệu trở lại bình thường.'}</p>
           <p><strong>Lời dặn bác sĩ:</strong> Uống thuốc theo đơn ra viện, tái khám sau 7 ngày.</p>
           <div style="margin-top: 60px; float: right; text-align: center; width: 250px;">
-            <p>Ngày \${new Date().getDate()} tháng \${new Date().getMonth() + 1} năm \${new Date().getFullYear()}</p>
+            <p>Ngày ${new Date().getDate()} tháng ${new Date().getMonth() + 1} năm ${new Date().getFullYear()}</p>
             <strong>TRƯỞNG KHOA LÂM SÀNG</strong>
             <div style="margin-top: 80px;">BS. Nguyễn Thị Mai</div>
           </div>

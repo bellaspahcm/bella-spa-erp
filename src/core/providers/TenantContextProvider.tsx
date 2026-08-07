@@ -62,6 +62,9 @@ function getDevFallbackContext(): TenantContext {
     } else if (path.startsWith('/dashboard/bella-auto')) {
       moduleKey = 'bella_auto';
       name = 'Bella Auto (Dev)';
+    } else if (path.startsWith('/dashboard/hospital')) {
+      moduleKey = 'bella_healthcare';
+      name = 'Bella General Hospital (Dev)';
     } else if (path.startsWith('/dashboard/medical') || path.startsWith('/dashboard/healthcare') || path.startsWith('/dashboard/dental')) {
       moduleKey = 'bella_healthcare';
       name = 'Bella Medical Clinic (Dev)';
@@ -189,7 +192,9 @@ export function TenantContextProvider({ children }: { children: ReactNode }) {
     
     if (typeof window !== 'undefined') {
       const path = window.location.pathname;
-      if (path.startsWith('/dashboard/medical') || path.startsWith('/dashboard/healthcare') || path.startsWith('/dashboard/dental')) {
+      if (path.startsWith('/dashboard/hospital')) {
+        moduleKey = 'bella_healthcare';
+      } else if (path.startsWith('/dashboard/medical') || path.startsWith('/dashboard/healthcare') || path.startsWith('/dashboard/dental')) {
         moduleKey = 'bella_healthcare';
       } else if (path.startsWith('/dashboard/real-estate')) {
         moduleKey = 'real_estate';
