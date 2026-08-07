@@ -24,6 +24,7 @@ import type {
   BedQueryRequest,
 } from '../../contracts/bed-engine.contract';
 import type { EngineResponse, Bed, EngineHealthStatus } from '../../shared-kernel/types';
+import { eventBus } from '@/platform/host/event-bus';
 
 export class BedEngineService implements BedEngineContract {
   readonly engineName = 'bed-engine';
@@ -32,7 +33,6 @@ export class BedEngineService implements BedEngineContract {
 
   constructor(
     private readonly supabase: SupabaseClient,
-    // TODO: Inject EventBusService
     // TODO: Inject ContractRegistryService
   ) {}
 
@@ -95,8 +95,25 @@ export class BedEngineService implements BedEngineContract {
         };
       }
 
-      // 3. TODO: Publish BedAllocated event
-      // await this.eventBus.publish({...});
+      // 3. Publish BedAllocated event
+      await eventBus.publish({
+        eventType: 'BedAllocated',
+        tenantId: request.tenantId,
+        aggregateId: updatedBed.id,
+        aggregateType: 'Bed',
+        payload: {
+          bedId: updatedBed.id,
+          bedCode: updatedBed.bed_number,
+          bedType: updatedBed.bed_type,
+          wardId: updatedBed.ward_id,
+          patientId: request.patientId,
+          admissionId: request.admissionId,
+          encounterId: request.encounterId,
+          allocatedAt: updatedBed.assigned_at!,
+          dailyRate: updatedBed.daily_rate || 0,
+        },
+        userId: request.userId,
+      });
 
       console.log(`[BedEngine] Allocated bed ${bed.id} to patient ${request.patientId}`);
 

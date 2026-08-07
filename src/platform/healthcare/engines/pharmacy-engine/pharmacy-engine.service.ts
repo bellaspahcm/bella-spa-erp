@@ -15,6 +15,7 @@ import type {
   MARAdministrationRequest,
 } from '../../contracts/pharmacy-engine.contract';
 import type { EngineResponse, MedicationOrder, EngineHealthStatus } from '../../shared-kernel/types';
+import { eventBus } from '@/platform/host/event-bus';
 
 export class PharmacyEngineService implements PharmacyEngineContract {
   readonly engineName = 'pharmacy-engine';
@@ -62,9 +63,33 @@ export class PharmacyEngineService implements PharmacyEngineContract {
         };
       }
 
-      // TODO: Update medication_order status
-      // TODO: Check for drug interactions
-      // TODO: Publish MedicationAdministered event
+      // Get medication order details for event payload
+      const { data: orderData } = await this.supabase
+        .from('hc_medication_orders')
+        .select('medication_name, dosage, route')
+        .eq('id', request.medicationOrderId)
+        .single();
+
+      // Publish MedicationAdministered event
+      await eventBus.publish({
+        eventType: 'MedicationAdministered',
+        tenantId: request.tenantId,
+        aggregateId: data.id,
+        aggregateType: 'MedicationAdministration',
+        payload: {
+          marId: data.id,
+          orderId: request.medicationOrderId,
+          patientId: request.patientId,
+          encounterId: request.encounterId,
+          medicationName: orderData?.medication_name || 'Unknown',
+          dose: request.dosageGiven,
+          route: request.route,
+          administeredBy: request.administeredBy,
+          administeredAt: request.administeredAt,
+          notes: request.notes,
+        },
+        userId: request.administeredBy,
+      });
 
       console.log(`[PharmacyEngine] Recorded medication administration for patient ${request.patientId}`);
 

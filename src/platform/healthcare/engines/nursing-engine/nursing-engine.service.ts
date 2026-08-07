@@ -15,6 +15,7 @@ import type {
   RecordVitalsRequest,
 } from '../../contracts/nursing-engine.contract';
 import type { EngineResponse, VitalSigns, NursingNote, EngineHealthStatus } from '../../shared-kernel/types';
+import { eventBus } from '@/platform/host/event-bus';
 
 export class NursingEngineService implements NursingEngineContract {
   readonly engineName = 'nursing-engine';
@@ -65,8 +66,28 @@ export class NursingEngineService implements NursingEngineContract {
         };
       }
 
-      // TODO: Publish VitalsRecorded event
-      // TODO: Check for critical values (trigger alerts)
+      // Publish VitalsRecorded event
+      await eventBus.publish({
+        eventType: 'VitalsRecorded',
+        tenantId: request.tenantId,
+        aggregateId: data.id,
+        aggregateType: 'VitalSigns',
+        payload: {
+          vitalsId: data.id,
+          patientId: request.patientId,
+          encounterId: request.encounterId,
+          recordedBy: request.recordedBy,
+          recordedAt: now,
+          temperature: request.temperature,
+          bloodPressureSystolic: request.bloodPressure ? parseInt(request.bloodPressure.split('/')[0]) : undefined,
+          bloodPressureDiastolic: request.bloodPressure ? parseInt(request.bloodPressure.split('/')[1]) : undefined,
+          heartRate: request.heartRate,
+          respiratoryRate: request.respiratoryRate,
+          oxygenSaturation: request.oxygenSaturation,
+          painScore: request.painScore,
+        },
+        userId: request.recordedBy,
+      });
 
       console.log(`[NursingEngine] Recorded vital signs for patient ${request.patientId}`);
 

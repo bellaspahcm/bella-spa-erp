@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { MedicationAdministrationRecord, InpatientAdmission, Bed, Ward, MARStatus } from '@/types/healthcare';
-import { MARService, InpatientAdmissionService, BedEngineService } from '@/services/healthcare-hospital-services';
+import { usePharmacyEngine } from '@/hooks/use-pharmacy-engine';
+import { InpatientAdmissionService, BedEngineService } from '@/services/healthcare-hospital-services';
 import {
   Tablets,
   Clock,
@@ -16,9 +17,13 @@ import {
   FileText,
   Syringe,
   ClipboardCheck,
+  Pill,
 } from 'lucide-react';
 
 export default function MARPage() {
+  // Use Pharmacy Engine hook
+  const { recordMAR, getMedicationOrders, loading: engineLoading, error: engineError } = usePharmacyEngine();
+  
   const [admissions, setAdmissions] = useState<InpatientAdmission[]>([]);
   const [beds, setBeds] = useState<Bed[]>([]);
   const [wards, setWards] = useState<Ward[]>([]);
@@ -73,10 +78,17 @@ export default function MARPage() {
 
   const loadMAR = async (admissionId: string) => {
     try {
-      const marData = await MARService.getMARByAdmission(admissionId);
-      setMarRecords(marData);
+      // Use getMedicationOrders from usePharmacyEngine hook
+      const result = await getMedicationOrders({
+        tenantId: 'bella_healthcare',
+        encounterId: admissionId,
+      });
+      
+      if (result.success && result.data) {
+        setMarRecords(result.data);
+      }
     } catch (error) {
-      console.error('Error loading MAR:', error);
+      console.error('[MAR] Error loading MAR:', error);
     }
   };
 
@@ -111,19 +123,35 @@ export default function MARPage() {
     if (!selectedMAR) return;
 
     try {
-      const administered = await MARService.administerMAR({
-        marId: selectedMAR.id,
-        administeredByNurseId: 'nurse-001',
+      // Use recordMAR from usePharmacyEngine hook
+      const result = await recordMAR({
+        tenantId: 'bella_healthcare',
+        encounterId: selectedMAR.inpatient_admission_id,
+        patientId: selectedAdmission?.patient_id || '',
+        medicationId: selectedMAR.prescription_item_id,
+        practitionerId: 'nurse-001',
+        status: 'administered',
         notes: administerNotes || undefined,
       });
 
-      setMarRecords((prev) => prev.map((m) => (m.id === administered.id ? administered : m)));
-      setShowAdministerModal(false);
-      setSelectedMAR(null);
-      setAdministerNotes('');
+      if (result.success && result.data) {
+        // Update record status
+        setMarRecords((prev) =>
+          prev.map((m) =>
+            m.id === selectedMAR.id
+              ? { ...m, status: 'administered' as MARStatus, administered_time: new Date().toISOString(), administered_by_nurse_id: 'nurse-001', notes: administerNotes }
+              : m
+          )
+        );
+        setShowAdministerModal(false);
+        setSelectedMAR(null);
+        setAdministerNotes('');
+      } else {
+        alert(`Không thể xác nhận thực hiện thuốc: ${result.error || 'Unknown error'}`);
+      }
     } catch (error) {
       alert('Không thể xác nhận thực hiện thuốc');
-      console.error('Error administering MAR:', error);
+      console.error('[MAR] Error administering MAR:', error);
     }
   };
 

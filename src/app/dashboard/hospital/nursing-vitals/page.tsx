@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { NursingVitalSigns, InpatientAdmission, Bed, Ward } from '@/types/healthcare';
-import { NursingVitalsService, InpatientAdmissionService, BedEngineService } from '@/services/healthcare-hospital-services';
+import { useNursingEngine } from '@/hooks/use-nursing-engine';
+import { InpatientAdmissionService, BedEngineService } from '@/services/healthcare-hospital-services';
 import {
   Activity,
   Heart,
@@ -21,6 +22,9 @@ import {
 } from 'lucide-react';
 
 export default function NursingVitalsPage() {
+  // Use Nursing Engine hook
+  const { recordVitals, getVitals, loading: engineLoading, error: engineError } = useNursingEngine();
+  
   const [admissions, setAdmissions] = useState<InpatientAdmission[]>([]);
   const [beds, setBeds] = useState<Bed[]>([]);
   const [wards, setWards] = useState<Ward[]>([]);
@@ -72,10 +76,17 @@ export default function NursingVitalsPage() {
 
   const loadVitals = async (admissionId: string) => {
     try {
-      const vitalsData = await NursingVitalsService.getVitalSignsByAdmission(admissionId);
-      setVitals(vitalsData);
+      // Use getVitals from useNursingEngine hook
+      const result = await getVitals({
+        tenantId: 'bella_healthcare',
+        encounterId: admissionId, // Using admissionId as encounterId for now
+      });
+      
+      if (result.success && result.data) {
+        setVitals(result.data);
+      }
     } catch (error) {
-      console.error('Error loading vitals:', error);
+      console.error('[NursingVitals] Error loading vitals:', error);
     }
   };
 
@@ -87,27 +98,31 @@ export default function NursingVitalsPage() {
     if (!admission) return;
 
     try {
-      const newVital = await NursingVitalsService.recordVitalSigns({
+      // Use recordVitals from useNursingEngine hook
+      const result = await recordVitals({
         tenantId: 'bella_healthcare',
-        inpatientAdmissionId: selectedAdmissionId,
         encounterId: admission.encounter_id,
         patientId: admission.patient_id,
-        nursePractitionerId: 'nurse-001',
+        practitionerId: 'nurse-001',
         temperature: parseFloat(temperature),
         heartRate: parseInt(heartRate, 10),
-        systolicBp: parseInt(systolicBp, 10),
-        diastolicBp: parseInt(diastolicBp, 10),
-        spo2: parseInt(spo2, 10),
+        bloodPressureSystolic: parseInt(systolicBp, 10),
+        bloodPressureDiastolic: parseInt(diastolicBp, 10),
+        oxygenSaturation: parseInt(spo2, 10),
         respiratoryRate: respiratoryRate ? parseInt(respiratoryRate, 10) : undefined,
         notes: notes || undefined,
       });
 
-      setVitals((prev) => [newVital, ...prev]);
-      setShowAddModal(false);
-      resetForm();
+      if (result.success && result.data) {
+        setVitals((prev) => [result.data, ...prev]);
+        setShowAddModal(false);
+        resetForm();
+      } else {
+        alert(`Không thể ghi nhận sinh hiệu: ${result.error || 'Unknown error'}`);
+      }
     } catch (error) {
       alert('Không thể ghi nhận sinh hiệu');
-      console.error('Error recording vitals:', error);
+      console.error('[NursingVitals] Error recording vitals:', error);
     }
   };
 

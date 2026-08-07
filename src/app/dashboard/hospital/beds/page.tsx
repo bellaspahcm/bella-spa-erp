@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { Bed, Ward, BedStatus } from '@/types/healthcare';
-import { BedEngineService, BreakGlassSecurityService } from '@/services/healthcare-hospital-services';
+import { useBedEngine } from '@/hooks/use-bed-engine';
+import { BreakGlassSecurityService } from '@/services/healthcare-hospital-services';
 import {
   Bed as BedIcon,
   Building,
@@ -19,6 +20,9 @@ import {
 } from 'lucide-react';
 
 export default function HospitalBedsPage() {
+  // Use Bed Engine hook instead of direct service calls
+  const { queryBeds, allocateBed, releaseBed, loading: engineLoading, error: engineError } = useBedEngine();
+  
   const [wards, setWards] = useState<Ward[]>([]);
   const [beds, setBeds] = useState<Bed[]>([]);
   const [selectedWardId, setSelectedWardId] = useState<string>('all');
@@ -38,12 +42,32 @@ export default function HospitalBedsPage() {
   const loadHospitalData = async () => {
     setLoading(true);
     try {
-      const wardsData = await BedEngineService.getHospitalWards('bella_healthcare');
-      const bedsData = await BedEngineService.getHospitalBeds('bella_healthcare');
-      setWards(wardsData);
-      setBeds(bedsData);
-    } catch {
-      // Handled
+      // Use queryBeds from useBedEngine hook
+      const result = await queryBeds({ tenantId: 'bella_healthcare' });
+      
+      if (result.success && result.data) {
+        setBeds(result.data);
+        
+        // Extract unique wards from beds
+        const uniqueWards = Array.from(
+          new Set(result.data.map((b) => b.ward_id))
+        ).map((wardId) => {
+          const bed = result.data.find((b) => b.ward_id === wardId);
+          return {
+            id: wardId,
+            name: `Ward ${wardId}`, // Placeholder, should fetch from wards table
+            code: wardId,
+            tenant_id: 'bella_healthcare',
+            capacity: 0,
+            current_occupancy: 0,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          } as Ward;
+        });
+        setWards(uniqueWards);
+      }
+    } catch (error) {
+      console.error('[BedsPage] Failed to load beds:', error);
     } finally {
       setLoading(false);
     }
@@ -51,9 +75,24 @@ export default function HospitalBedsPage() {
 
   const handleStatusChange = async (bedId: string, newStatus: BedStatus) => {
     try {
-      const updated = await BedEngineService.updateBedStatus(bedId, newStatus);
-      setBeds((prev) => prev.map((b) => (b.id === bedId ? updated : b)));
-    } catch {
+      // For now, update beds directly via Supabase
+      // TODO: Add updateBedStatus to useBedEngine hook
+      const { createClient } = await import('@/lib/supabase/client');
+      const supabase = createClient();
+      
+      const { data, error } = await supabase
+        .from('hc_beds')
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .eq('id', bedId)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      if (data) {
+        setBeds((prev) => prev.map((b) => (b.id === bedId ? data as Bed : b)));
+      }
+    } catch (error) {
+      console.error('[BedsPage] Failed to update bed status:', error);
       alert('Không thể cập nhật trạng thái giường');
     }
   };
