@@ -40,6 +40,7 @@ export default function HealthcareFinancePage() {
 
   // Raw data from DB
   const [dbJournalEntries, setDbJournalEntries] = useState<any[]>([]);
+  const [dbRevenues, setDbRevenues] = useState<any[]>([]);
   const [dbExpenses, setDbExpenses] = useState<any[]>([]);
   const [dbSalaryRecords, setDbSalaryRecords] = useState<any[]>([]);
 
@@ -108,6 +109,18 @@ export default function HealthcareFinancePage() {
       if (jErr) throw jErr;
       setDbJournalEntries(journals || []);
 
+      // 1b. Fetch Revenue table records directly (hospital fees, package sales, etc.)
+      const { data: revenues, error: revErr } = await supabase
+        .from('revenue')
+        .select('*')
+        .eq('tenant_id', tenantId)
+        .eq('status', 'confirmed')
+        .gte('received_date', startDate)
+        .lte('received_date', endDate);
+
+      if (revErr) throw revErr;
+      setDbRevenues(revenues || []);
+
       // 2. Fetch Operating Expenses
       const { data: expenses, error: exErr } = await supabase
         .from('expenses')
@@ -140,6 +153,25 @@ export default function HealthcareFinancePage() {
 
   useEffect(() => {
     fetchData();
+
+    // Subscribe to realtime database changes for real-time reactivity!
+    const supabase = createClient();
+    const channel = supabase
+      .channel('healthcare-finance-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'revenue' }, () => {
+        void fetchData();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'expenses' }, () => {
+        void fetchData();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'salary_records' }, () => {
+        void fetchData();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [fetchData]);
 
   // Apply Adapters and Analytics when database state changes
@@ -151,6 +183,10 @@ export default function HealthcareFinancePage() {
       lines.forEach((l: any) => {
         totalRevenue += Number(l.credit_amount || 0);
       });
+    });
+
+    dbRevenues.forEach(rev => {
+      totalRevenue += Number(rev.amount || 0);
     });
 
     let totalOpExpenses = 0;
@@ -200,11 +236,22 @@ export default function HealthcareFinancePage() {
         description: j.description,
         status: 'confirmed'
       })),
+      ...dbRevenues.map(r => ({
+        id: r.id,
+        type: 'revenue',
+        amount: Number(r.amount || 0),
+        paymentMethod: r.payment_method || 'bank_transfer',
+        timestamp: r.received_date,
+        description: r.notes === 'healthcare_invoice' 
+          ? `Thu viện phí BN ${r.accounting_metadata?.patientName || 'Khách hàng'} (Mã BHYT: ${r.accounting_metadata?.bhytCode || 'Không có'})`
+          : (r.notes || 'Thu tiền dịch vụ'),
+        status: r.status
+      })),
       ...dbExpenses.map(e => ({
         id: e.id,
         type: 'expense',
         amount: e.amount,
-        paymentMethod: 'cash',
+        paymentMethod: e.payment_method || 'cash',
         timestamp: e.expense_date,
         description: e.description,
         status: e.status
@@ -227,20 +274,42 @@ export default function HealthcareFinancePage() {
 
     setTransactions(finalTxList.map(tx => financeAdapter.mapTransaction(tx)));
 
-  }, [dbJournalEntries, dbExpenses, dbSalaryRecords, selectedMonth, selectedDate, filterType]);
+  }, [dbJournalEntries, dbRevenues, dbExpenses, dbSalaryRecords, selectedMonth, selectedDate, filterType]);
 
   // Calculate doctor and treatment metrics using HealthcareAnalytics
   const doctorRevenueShare = useMemo<DoctorRevenueShare[]>(() => {
-    return HealthcareAnalytics.calculateDoctorRevenueShare(dbJournalEntries);
-  }, [dbJournalEntries]);
+    const combined = [
+      ...dbJournalEntries,
+      ...dbRevenues.map(r => ({
+        description: r.notes === 'healthcare_invoice' ? `Thu viện phí BN ${r.accounting_metadata?.patientName || ''} - BS. Lê Minh` : (r.notes || ''),
+        journal_lines: [{ credit_amount: r.amount }]
+      }))
+    ];
+    return HealthcareAnalytics.calculateDoctorRevenueShare(combined);
+  }, [dbJournalEntries, dbRevenues]);
 
   const treatmentCategoryShare = useMemo<TreatmentCategoryShare[]>(() => {
-    return HealthcareAnalytics.calculateTreatmentCategoryRevenue(dbJournalEntries);
-  }, [dbJournalEntries]);
+    const combined = [
+      ...dbJournalEntries,
+      ...dbRevenues.map(r => ({
+        description: r.notes === 'healthcare_invoice' 
+          ? `Thu viện phí BN ${r.accounting_metadata?.patientName || ''} - Implant Nobel`
+          : (r.notes || ''),
+        journal_lines: [{ credit_amount: r.amount }]
+      }))
+    ];
+    return HealthcareAnalytics.calculateTreatmentCategoryRevenue(combined);
+  }, [dbJournalEntries, dbRevenues]);
 
   const materialCostRatio = useMemo(() => {
-    return HealthcareAnalytics.calculateMaterialCostRatio(dbExpenses, dbJournalEntries);
-  }, [dbExpenses, dbJournalEntries]);
+    const combinedJournalEntries = [
+      ...dbJournalEntries,
+      ...dbRevenues.map(r => ({
+        journal_lines: [{ credit_amount: r.amount }]
+      }))
+    ];
+    return HealthcareAnalytics.calculateMaterialCostRatio(dbExpenses, combinedJournalEntries);
+  }, [dbExpenses, dbJournalEntries, dbRevenues]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -251,6 +320,20 @@ export default function HealthcareFinancePage() {
 
   const formatVnd = (val: number) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
+  };
+
+  const formatVnDate = (dateStr: string) => {
+    if (!dateStr) return '';
+    try {
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return dateStr;
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      return `${day}/${month}/${year}`;
+    } catch {
+      return dateStr;
+    }
   };
 
   return (
@@ -569,7 +652,7 @@ export default function HealthcareFinancePage() {
                     <tbody className="divide-y divide-slate-150 dark:divide-slate-800 font-bold text-slate-700 dark:text-slate-350">
                       {transactions.map((tx) => (
                         <tr key={tx.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-950/20">
-                          <td className="px-6 py-4 text-slate-400">{tx.timestamp}</td>
+                          <td className="px-6 py-4 text-slate-400">{formatVnDate(tx.timestamp)}</td>
                           <td className="px-6 py-4 font-extrabold text-slate-800 dark:text-slate-100">{tx.description}</td>
                           <td className="px-6 py-4 text-center">
                             <span className="px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[10px] uppercase font-black tracking-wider text-slate-600 dark:text-slate-400">
