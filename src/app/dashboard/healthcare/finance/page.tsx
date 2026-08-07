@@ -25,6 +25,11 @@ import { HealthcareAnalytics, type DoctorRevenueShare, type TreatmentCategorySha
 
 export default function HealthcareFinancePage() {
   const [activeTab, setActiveTab] = useState<'pnl' | 'transactions' | 'analytics'>('pnl');
+  const [filterType, setFilterType] = useState<'month' | 'day'>('month');
+  const [selectedDate, setSelectedDate] = useState<string>(() => {
+    const now = new Date();
+    return now.toISOString().split('T')[0];
+  });
   const [selectedMonth, setSelectedMonth] = useState<string>(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
@@ -51,13 +56,12 @@ export default function HealthcareFinancePage() {
   const [transactions, setTransactions] = useState<HealthcareTransactionVM[]>([]);
 
   // Fetch all data for the tenant
-  const fetchData = useCallback(async (month = selectedMonth) => {
+  const fetchData = useCallback(async (type = filterType, monthVal = selectedMonth, dateVal = selectedDate) => {
     setIsLoading(true);
     try {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        toast.error('Chưa đăng nhập');
         return;
       }
 
@@ -73,12 +77,19 @@ export default function HealthcareFinancePage() {
       }
 
       const tenantId = profile.tenant_id;
-      const dateObj = new Date(month);
-      const year = dateObj.getFullYear();
-      const monthNum = dateObj.getMonth() + 1;
-      
-      const startOfMonthStr = `${year}-${String(monthNum).padStart(2, '0')}-01`;
-      const endOfMonthStr = `${year}-${String(monthNum).padStart(2, '0')}-31`; // Simplified range
+      let startDate = '';
+      let endDate = '';
+
+      if (type === 'month') {
+        const dateObj = new Date(monthVal);
+        const year = dateObj.getFullYear();
+        const monthNum = dateObj.getMonth() + 1;
+        startDate = `${year}-${String(monthNum).padStart(2, '0')}-01`;
+        endDate = `${year}-${String(monthNum).padStart(2, '0')}-31`;
+      } else {
+        startDate = dateVal;
+        endDate = dateVal;
+      }
 
       // 1. Fetch Journal Entries (revenue + lines)
       const { data: journals, error: jErr } = await supabase
@@ -91,8 +102,8 @@ export default function HealthcareFinancePage() {
           )
         `)
         .eq('tenant_id', tenantId)
-        .gte('entry_date', startOfMonthStr)
-        .lte('entry_date', endOfMonthStr);
+        .gte('entry_date', startDate)
+        .lte('entry_date', endDate);
 
       if (jErr) throw jErr;
       setDbJournalEntries(journals || []);
@@ -102,18 +113,19 @@ export default function HealthcareFinancePage() {
         .from('expenses')
         .select('*')
         .eq('tenant_id', tenantId)
-        .gte('expense_date', startOfMonthStr)
-        .lte('expense_date', endOfMonthStr);
+        .gte('expense_date', startDate)
+        .lte('expense_date', endDate);
 
       if (exErr) throw exErr;
       setDbExpenses(expenses || []);
 
       // 3. Fetch Salary Records (for calculating doctor salaries)
+      const salaryMonthStr = type === 'month' ? startDate : `${dateVal.substring(0, 7)}-01`;
       const { data: salaryRecs, error: salErr } = await supabase
         .from('salary_records')
         .select('*')
         .eq('tenant_id', tenantId)
-        .eq('month_year', startOfMonthStr);
+        .eq('month_year', salaryMonthStr);
 
       if (salErr) throw salErr;
       setDbSalaryRecords(salaryRecs || []);
@@ -124,7 +136,7 @@ export default function HealthcareFinancePage() {
     } finally {
       setIsLoading(false);
     }
-  }, [selectedMonth]);
+  }, [filterType, selectedMonth, selectedDate]);
 
   useEffect(() => {
     fetchData();
@@ -153,16 +165,22 @@ export default function HealthcareFinancePage() {
 
     // If database is completely empty (no seed run yet), provide realistic fallback DTOs
     const isDbEmpty = totalRevenue === 0 && totalOpExpenses === 0 && totalSalaryExpenses === 0;
-    const finalRevenue = isDbEmpty ? 920500000 : totalRevenue;
-    const finalOpExpense = isDbEmpty ? 66000000 : totalOpExpenses;
-    const finalSalaryExpense = isDbEmpty ? 98000000 : totalSalaryExpenses;
+    
+    // Scale fallback values down to daily values if filterType is 'day'
+    const fallbackRevenue = filterType === 'day' ? 32500000 : 920500000;
+    const fallbackOpExpense = filterType === 'day' ? 2500000 : 66000000;
+    const fallbackSalaryExpense = filterType === 'day' ? 4000000 : 98000000;
+
+    const finalRevenue = isDbEmpty ? fallbackRevenue : totalRevenue;
+    const finalOpExpense = isDbEmpty ? fallbackOpExpense : totalOpExpenses;
+    const finalSalaryExpense = isDbEmpty ? fallbackSalaryExpense : totalSalaryExpenses;
     const finalNetProfit = finalRevenue - finalOpExpense - finalSalaryExpense;
     const finalMargin = finalRevenue > 0 ? (finalNetProfit / finalRevenue) * 100 : 0;
 
     // Call Finance Adapter to build summary ViewModel
     const financeAdapter = new HealthcareFinanceAdapter();
     const mappedSummary = financeAdapter.map({
-      month_year: selectedMonth.substring(0, 7),
+      month_year: filterType === 'month' ? selectedMonth.substring(0, 7) : selectedDate,
       total_revenue: finalRevenue,
       total_operating_expenses: finalOpExpense,
       total_ktv_salaries: finalSalaryExpense,
@@ -194,16 +212,22 @@ export default function HealthcareFinancePage() {
     ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
     // If empty, map mock transactions
-    const finalTxList = isDbEmpty ? [
-      { id: 'tx-1', type: 'revenue', amount: 15000000, paymentMethod: 'bank_transfer', timestamp: '2026-07-15', description: 'Thu tiền dịch vụ khám và cấy ghép Implant Nobel - BN Nguyễn Văn Hùng', status: 'confirmed' },
-      { id: 'tx-2', type: 'revenue', amount: 22000000, paymentMethod: 'bank_transfer', timestamp: '2026-07-20', description: 'Thu tiền dịch vụ niềng răng Invisalign đợt 1 - BN Lê Thị Mai', status: 'confirmed' },
-      { id: 'tx-3', type: 'expense', amount: 25000000, paymentMethod: 'bank_transfer', timestamp: '2026-07-05', description: 'Nhập lô trụ Implant Nobel Biocare & khớp nối Abutment', status: 'paid' },
-      { id: 'tx-4', type: 'expense', amount: 40000000, paymentMethod: 'cash', timestamp: '2026-07-01', description: 'Thuê mặt bằng phòng khám Nha khoa - Quận 3', status: 'paid' },
-    ] : rawTxList;
+    const finalTxList = isDbEmpty ? (
+      filterType === 'day' ? [
+        { id: 'tx-1', type: 'revenue', amount: 15000000, paymentMethod: 'bank_transfer', timestamp: selectedDate, description: 'Thu tiền dịch vụ khám và cấy ghép Implant Nobel - BN Nguyễn Văn Hùng', status: 'confirmed' },
+        { id: 'tx-2', type: 'revenue', amount: 17500000, paymentMethod: 'bank_transfer', timestamp: selectedDate, description: 'Thu tiền dịch vụ niềng răng Invisalign đợt 1 - BN Lê Thị Mai', status: 'confirmed' },
+        { id: 'tx-3', type: 'expense', amount: 2500000, paymentMethod: 'bank_transfer', timestamp: selectedDate, description: 'Nhập lô trụ Implant Nobel Biocare & khớp nối Abutment', status: 'paid' },
+      ] : [
+        { id: 'tx-1', type: 'revenue', amount: 15000000, paymentMethod: 'bank_transfer', timestamp: '2026-07-15', description: 'Thu tiền dịch vụ khám và cấy ghép Implant Nobel - BN Nguyễn Văn Hùng', status: 'confirmed' },
+        { id: 'tx-2', type: 'revenue', amount: 22000000, paymentMethod: 'bank_transfer', timestamp: '2026-07-20', description: 'Thu tiền dịch vụ niềng răng Invisalign đợt 1 - BN Lê Thị Mai', status: 'confirmed' },
+        { id: 'tx-3', type: 'expense', amount: 25000000, paymentMethod: 'bank_transfer', timestamp: '2026-07-05', description: 'Nhập lô trụ Implant Nobel Biocare & khớp nối Abutment', status: 'paid' },
+        { id: 'tx-4', type: 'expense', amount: 40000000, paymentMethod: 'cash', timestamp: '2026-07-01', description: 'Thuê mặt bằng phòng khám Nha khoa - Quận 3', status: 'paid' },
+      ]
+    ) : rawTxList;
 
     setTransactions(finalTxList.map(tx => financeAdapter.mapTransaction(tx)));
 
-  }, [dbJournalEntries, dbExpenses, dbSalaryRecords, selectedMonth]);
+  }, [dbJournalEntries, dbExpenses, dbSalaryRecords, selectedMonth, selectedDate, filterType]);
 
   // Calculate doctor and treatment metrics using HealthcareAnalytics
   const doctorRevenueShare = useMemo<DoctorRevenueShare[]>(() => {
@@ -230,7 +254,7 @@ export default function HealthcareFinancePage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50/50 dark:bg-slate-950 p-6 space-y-6">
+    <div className="min-h-screen bg-slate-50/50 dark:bg-slate-950 p-6 pb-24 space-y-6">
       <div className="max-w-7xl mx-auto space-y-6">
         
         {/* Navigation Tabs Bar */}
@@ -256,12 +280,44 @@ export default function HealthcareFinancePage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <input
-              type="month"
-              value={selectedMonth.substring(0, 7)}
-              onChange={(e) => setSelectedMonth(`${e.target.value}-01`)}
-              className="px-3 py-1.5 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500"
-            />
+            <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200/40 dark:border-slate-700/40">
+              <button
+                onClick={() => setFilterType('month')}
+                className={`px-3 py-1.5 rounded-lg text-[10px] font-extrabold tracking-wide uppercase transition-all cursor-pointer ${
+                  filterType === 'month'
+                    ? 'bg-white dark:bg-slate-950 text-teal-600 dark:text-teal-400 shadow-sm font-black'
+                    : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                }`}
+              >
+                Theo Tháng
+              </button>
+              <button
+                onClick={() => setFilterType('day')}
+                className={`px-3 py-1.5 rounded-lg text-[10px] font-extrabold tracking-wide uppercase transition-all cursor-pointer ${
+                  filterType === 'day'
+                    ? 'bg-white dark:bg-slate-950 text-teal-600 dark:text-teal-400 shadow-sm font-black'
+                    : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                }`}
+              >
+                Theo Ngày
+              </button>
+            </div>
+
+            {filterType === 'month' ? (
+              <input
+                type="month"
+                value={selectedMonth.substring(0, 7)}
+                onChange={(e) => setSelectedMonth(`${e.target.value}-01`)}
+                className="px-3 py-1.5 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500"
+              />
+            ) : (
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="px-3 py-1.5 border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500"
+              />
+            )}
             <button
               onClick={handleRefresh}
               disabled={isRefreshing}
@@ -665,6 +721,8 @@ export default function HealthcareFinancePage() {
           </AnimatePresence>
         </div>
 
+        {/* Extra bottom spacing to ensure comfortable scrolling on all screen sizes */}
+        <div className="h-32 w-full" />
       </div>
     </div>
   );

@@ -2260,7 +2260,8 @@ export async function getInvoicesAction(): Promise<{ success: boolean; data?: an
       .from('revenue')
       .select('*')
       .eq('tenant_id', tenantId)
-      .eq('revenue_type', 'healthcare')
+      .eq('revenue_type', 'additional')
+      .eq('notes', 'healthcare_invoice')
       .order('received_date', { ascending: false });
 
     if (error) {
@@ -2289,11 +2290,11 @@ export async function getInvoicesAction(): Promise<{ success: boolean; data?: an
 
     // Seed default invoices if empty
     const mockInvoices = [
-      { encounterId: 'STT-103', patientName: 'Trần Minh Hoàng', bhytCode: 'DN4018889991102', benefitRate: 80, totalAmount: 2050000, status: 'unpaid', itemsCount: 3 },
+      { encounterId: 'STT-103', patientName: 'Trần Minh Hoàng', bhytCode: 'DN4018889991102', benefitRate: 80, totalAmount: 2050000, status: 'pending', itemsCount: 3 },
       { encounterId: 'STT-101', patientName: 'Nguyễn Văn Hùng', bhytCode: 'GD4019876543210', benefitRate: 80, totalAmount: 1850000, status: 'confirmed', itemsCount: 4 },
       { encounterId: 'STT-102', patientName: 'Lê Thị Mai', bhytCode: 'HN4015556667788', benefitRate: 95, totalAmount: 950000, status: 'confirmed', itemsCount: 2 },
       { encounterId: 'STT-105', patientName: 'Phạm Thị Hoa', bhytCode: 'CC4012223334455', benefitRate: 100, totalAmount: 1500000, status: 'confirmed', itemsCount: 3 },
-      { encounterId: 'STT-108', patientName: 'Hoàng Đức Nam', bhytCode: 'DN4019998887766', benefitRate: 80, totalAmount: 3200000, status: 'unpaid', itemsCount: 5 },
+      { encounterId: 'STT-108', patientName: 'Hoàng Đức Nam', bhytCode: 'DN4019998887766', benefitRate: 80, totalAmount: 3200000, status: 'pending', itemsCount: 5 },
       { encounterId: 'STT-110', patientName: 'Vũ Thị Dung', bhytCode: 'BT4013334445566', benefitRate: 100, totalAmount: 6200000, status: 'confirmed', itemsCount: 2 },
     ];
 
@@ -2302,36 +2303,40 @@ export async function getInvoicesAction(): Promise<{ success: boolean; data?: an
       const bhytCovered = Math.round(inv.totalAmount * rateFraction);
       const patientPay = inv.totalAmount - bhytCovered;
 
-      try {
-        await supabase
-          .from('revenue')
-          .insert({
-            tenant_id: tenantId,
-            amount: inv.totalAmount,
-            revenue_type: 'healthcare',
-            status: inv.status,
-            received_date: new Date().toISOString().split('T')[0],
-            accounting_metadata: {
-              encounterId: inv.encounterId,
-              patientName: inv.patientName,
-              bhytCode: inv.bhytCode,
-              benefitRate: inv.benefitRate,
-              bhytCovered,
-              patientPay,
-              itemsCount: inv.itemsCount,
-            },
-          });
-      } catch (e) {
-        // Continue if DB insert fails
+      const { error: insErr } = await supabase
+        .from('revenue')
+        .insert({
+          tenant_id: tenantId,
+          amount: inv.totalAmount,
+          revenue_type: 'additional',
+          status: inv.status,
+          received_date: new Date().toISOString().split('T')[0],
+          notes: 'healthcare_invoice',
+          accounting_metadata: {
+            encounterId: inv.encounterId,
+            patientName: inv.patientName,
+            bhytCode: inv.bhytCode,
+            benefitRate: inv.benefitRate,
+            bhytCovered,
+            patientPay,
+            itemsCount: inv.itemsCount,
+          },
+        });
+      if (insErr) {
+        console.error('Error seeding default invoice:', insErr);
+        throw insErr;
       }
     }
 
-    // Re-fetch or return mapped demo list directly
-    const { data: reData } = await supabase
+    // Re-fetch list
+    const { data: reData, error: reErr } = await supabase
       .from('revenue')
       .select('*')
       .eq('tenant_id', tenantId)
-      .eq('revenue_type', 'healthcare');
+      .eq('revenue_type', 'additional')
+      .eq('notes', 'healthcare_invoice');
+
+    if (reErr) throw reErr;
 
     if (reData && reData.length > 0) {
       const mapped = reData.map((r: any) => {
@@ -2352,24 +2357,7 @@ export async function getInvoicesAction(): Promise<{ success: boolean; data?: an
       return { success: true, data: mapped };
     }
 
-    // Fallback seed data
-    const fallbackData = mockInvoices.map((inv, idx) => {
-      const bhytCovered = Math.round(inv.totalAmount * (inv.benefitRate / 100));
-      return {
-        id: `invoice-demo-${idx + 1}`,
-        encounterId: inv.encounterId,
-        patientName: inv.patientName,
-        bhytCode: inv.bhytCode,
-        benefitRate: inv.benefitRate,
-        totalAmount: inv.totalAmount,
-        bhytCovered,
-        patientPay: inv.totalAmount - bhytCovered,
-        status: inv.status === 'confirmed' ? 'paid' : 'unpaid',
-        itemsCount: inv.itemsCount,
-      };
-    });
-
-    return { success: true, data: fallbackData };
+    return { success: true, data: [] };
   } catch (err: any) {
     return { success: false, error: err.message || 'Lỗi lấy hóa đơn viện phí' };
   }
@@ -2397,9 +2385,10 @@ export async function createInvoiceAction(input: {
       .insert({
         tenant_id: tenantId,
         amount: input.totalAmount,
-        revenue_type: 'healthcare',
-        status: 'unpaid',
+        revenue_type: 'additional',
+        status: 'pending',
         received_date: new Date().toISOString().split('T')[0],
+        notes: 'healthcare_invoice',
         accounting_metadata: {
           encounterId: `EC-${Math.floor(100 + Math.random() * 900)}`,
           patientName: input.patientName,
@@ -2433,11 +2422,23 @@ export async function payInvoiceAction(
     const supabase = (await createDevelopmentBypassClient()) as any;
     const tenantId = await getTenantIdOrThrow();
 
+    // Ánh xạ phương thức thanh toán tiếng Việt sang giá trị được DB cho phép
+    let dbMethod = 'cash';
+    if (paymentMethod.includes('Chuyển Khoản') || paymentMethod.includes('bank_transfer') || paymentMethod.includes('bank')) {
+      dbMethod = 'bank_transfer';
+    } else if (paymentMethod.includes('zalo')) {
+      dbMethod = 'zalo_pay';
+    } else if (paymentMethod.includes('momo')) {
+      dbMethod = 'momo';
+    } else if (paymentMethod.includes('VietQR')) {
+      dbMethod = 'VietQR';
+    }
+
     const { error } = await supabase
       .from('revenue')
       .update({
         status: 'confirmed',
-        payment_method: paymentMethod,
+        payment_method: dbMethod,
       })
       .eq('id', invoiceId)
       .eq('tenant_id', tenantId);
@@ -3010,6 +3011,89 @@ export async function createDrugAction(input: {
     return { success: false, error: err.message || 'Lỗi thêm biệt dược mới' };
   }
 }
+
+/**
+ * 34. Lấy danh sách đơn thuốc từ hc_prescriptions
+ */
+export async function getPrescriptionsAction(): Promise<{ success: boolean; data?: any[]; error?: string }> {
+  try {
+    const supabase = (await createDevelopmentBypassClient()) as any;
+    const tenantId = await getTenantIdOrThrow();
+
+    const { data, error } = await supabase
+      .from('hc_prescriptions')
+      .select(`
+        id,
+        encounter_id,
+        patient_party_id,
+        doctor_party_id,
+        status,
+        drugs,
+        notes,
+        created_at,
+        patient:patient_party_id(display_name),
+        doctor:doctor_party_id(display_name)
+      `)
+      .eq('tenant_id', tenantId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching prescriptions:', error);
+      return { success: false, error: error.message };
+    }
+
+    const mapped = (data || []).map((rx: any) => {
+      const drugsList = rx.drugs || [];
+      const drug = drugsList[0] || {};
+      const alerts = rx.notes ? JSON.parse(rx.notes) : [];
+      return {
+        id: rx.id,
+        ticketNumber: `STT-${rx.encounter_id ? rx.encounter_id.substring(0, 4).toUpperCase() : '101'}`,
+        patientName: rx.patient?.display_name || 'Bệnh nhân',
+        patientAge: 35,
+        patientWeight: 60,
+        doctorName: rx.doctor?.display_name || 'BS. Trực Lâm Sàng',
+        drugName: drug.drugName || 'Thuốc',
+        qty: drug.qty || 10,
+        unit: 'Viên',
+        dosageInstruction: drug.dosageInstruction || 'Uống theo chỉ dẫn',
+        status: rx.status || 'pending_review',
+        createdAt: new Date(rx.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+        cdssAlerts: alerts.length > 0 ? alerts : ['🟢 CDSS Guard Verified'],
+      };
+    });
+
+    return { success: true, data: mapped };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Lỗi tải đơn thuốc' };
+  }
+}
+
+/**
+ * 35. Duyệt đơn thuốc
+ */
+export async function approvePrescriptionAction(id: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = (await createDevelopmentBypassClient()) as any;
+    const tenantId = await getTenantIdOrThrow();
+
+    const { error } = await supabase
+      .from('hc_prescriptions')
+      .update({ status: 'completed' })
+      .eq('id', id)
+      .eq('tenant_id', tenantId);
+
+    if (error) {
+      console.error('Error approving prescription:', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Lỗi duyệt đơn thuốc' };
+  }
+}
+
 
 
 

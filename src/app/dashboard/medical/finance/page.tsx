@@ -1,1 +1,5 @@
-export { default } from '@/app/dashboard/healthcare/finance/page';
+import HealthcareFinancePage from '../../healthcare/finance/page';
+
+export default function MedicalFinancePage() {
+  return <HealthcareFinancePage />;
+}

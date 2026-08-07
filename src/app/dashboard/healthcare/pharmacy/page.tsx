@@ -26,7 +26,9 @@ import { toast } from 'sonner';
 import { 
   getDrugsAction, 
   createPrescriptionAction,
-  createDrugAction
+  createDrugAction,
+  getPrescriptionsAction,
+  approvePrescriptionAction
 } from '@/services/healthcare/healthcare-actions';
 import { createClient } from '@/lib/supabase-client';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
@@ -162,6 +164,235 @@ export default function PharmacyPage() {
     dosageInstruction: 'Uống 2 viên/ngày (Sáng - Tối sau khi ăn)',
   });
 
+  const loadPrescriptions = async () => {
+    try {
+      const res = await getPrescriptionsAction();
+      if (res.success && res.data) {
+        if (res.data.length > 0) {
+          const mapped: PrescriptionReview[] = res.data.map((rx: any) => {
+            const drugs = Array.isArray(rx.drugs) ? rx.drugs : [];
+            const primaryDrug = drugs[0] || {};
+            let alerts: string[] = [];
+            if (rx.notes && rx.notes.startsWith('[')) {
+              try {
+                alerts = JSON.parse(rx.notes);
+              } catch (_) {}
+            } else if (rx.notes) {
+              alerts = [rx.notes];
+            } else {
+              if (primaryDrug.drugName?.includes('Augmentin')) {
+                alerts = [
+                  '⚠️ TƯƠNG TÁC THUỐC: Bệnh nhân đang dùng Warfarin (Nguy cơ xuất huyết cao)',
+                  '💡 CHỈNH LIỀU SUY THẬN: eGFR = 28 ml/min ➔ Khuyên dùng 500mg mỗi 12h',
+                  '🚨 DỊ ỨNG: Tiền sử Dị ứng Penicillin nhẹ',
+                ];
+              } else if (primaryDrug.drugName?.includes('Morphin')) {
+                alerts = [
+                  '⚠️ THUỐC ĐỘC KHUÔN HÀNG: Yêu cầu Ký Số Xác Nhận Kép (Dược Sĩ + Bác Sĩ)',
+                  '📦 FEFO: Xuất lô Lô Cận Hạn LOT-MRP-9902X trước (Hạn: 15/11/2026)',
+                ];
+              } else if (primaryDrug.drugName?.includes('Paracetamol')) {
+                alerts = ['🟢 Thai kỳ Nhóm B: An toàn cho phụ nữ mang thai'];
+              }
+            }
+
+            return {
+              id: rx.id,
+              ticketNumber: `STT-${rx.id.substring(0, 3).toUpperCase()}`,
+              patientName: rx.patient?.display_name || 'Bệnh Nhân',
+              patientAge: rx.patient?.display_name?.includes('Hùng') ? 45 : rx.patient?.display_name?.includes('Hoàng') ? 30 : 28,
+              patientWeight: rx.patient?.display_name?.includes('Hùng') ? 68 : rx.patient?.display_name?.includes('Hoàng') ? 72 : 52,
+              eGFR: rx.patient?.display_name?.includes('Hùng') ? 28 : undefined,
+              isPregnant: rx.patient?.display_name?.includes('Mai') ? true : false,
+              doctorName: rx.doctor?.display_name || 'BS. Trực Lâm Sàng',
+              drugName: primaryDrug.drugName || 'Thuốc',
+              qty: primaryDrug.qty || 1,
+              unit: rx.patient?.display_name?.includes('Hoàng') ? 'Ống' : 'Viên',
+              dosageInstruction: primaryDrug.dosageInstruction || 'Uống theo đơn',
+              status: rx.status as any,
+              createdAt: new Date(rx.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+              cdssAlerts: alerts,
+            };
+          });
+          setPrescriptions(mapped);
+        } else {
+          void seedDefaultPrescriptions();
+        }
+      }
+    } catch (err) {
+      console.error('Lỗi tải đơn thuốc:', err);
+    }
+  };
+
+  const seedDefaultPrescriptions = async () => {
+    try {
+      const supabase = createClient();
+      const { data: tenantData } = await supabase.from('tenants').select('id').limit(1).single();
+      if (!tenantData) return;
+      const tenantId = tenantData.id;
+
+      const { count } = await supabase
+        .from('hc_prescriptions')
+        .select('*', { count: 'exact', head: true })
+        .eq('tenant_id', tenantId);
+
+      if (count && count > 0) return;
+
+      const getOrCreateParty = async (name: string, type: 'person' | 'organization') => {
+        let { data: party } = await supabase
+          .from('party_parties')
+          .select('id')
+          .eq('tenant_id', tenantId)
+          .eq('display_name', name)
+          .maybeSingle();
+        if (!party) {
+          const { data: newParty } = await supabase
+            .from('party_parties')
+            .insert({ tenant_id: tenantId, party_type: type, display_name: name })
+            .select()
+            .single();
+          party = newParty;
+        }
+        return party?.id;
+      };
+
+      const hungId = await getOrCreateParty('Nguyễn Văn Hùng', 'person');
+      const hoangId = await getOrCreateParty('Trần Minh Hoàng', 'person');
+      const maiId = await getOrCreateParty('Lê Thị Mai', 'person');
+      const minhId = await getOrCreateParty('BS. Lê Hoàng Minh', 'person');
+      const tungId = await getOrCreateParty('BS. Phạm Thanh Tùng', 'person');
+      const anhId = await getOrCreateParty('BS. Hoàng Quỳnh Anh', 'person');
+
+      const getOrCreateEncounter = async (patientId: string) => {
+        let { data: enc } = await supabase
+          .from('hc_encounters')
+          .select('id')
+          .eq('tenant_id', tenantId)
+          .eq('patient_party_id', patientId)
+          .maybeSingle();
+        if (!enc) {
+          const { data: newEnc } = await supabase
+            .from('hc_encounters')
+            .insert({
+              tenant_id: tenantId,
+              patient_party_id: patientId,
+              care_journey_id: '99999999-9999-9999-9999-999999999999',
+              encounter_class: 'walk_in',
+              status: 'finished',
+              chief_complaint: 'Khám bệnh',
+            })
+            .select()
+            .single();
+          enc = newEnc;
+        }
+        return enc?.id;
+      };
+
+      const hungEnc = await getOrCreateEncounter(hungId!);
+      const hoangEnc = await getOrCreateEncounter(hoangId!);
+      const maiEnc = await getOrCreateEncounter(maiId!);
+
+      const getOrCreateDrug = async (name: string, code: string) => {
+        let { data: drug } = await supabase
+          .from('hc_drug_profiles')
+          .select('id')
+          .eq('drug_code', code)
+          .maybeSingle();
+        if (!drug) {
+          const { data: inv } = await supabase
+            .from('inventory_items')
+            .insert({
+              tenant_id: tenantId,
+              sku: code,
+              name: name,
+              stock_qty: 100,
+              unit: 'Viên',
+            })
+            .select()
+            .single();
+
+          const { data: newDrug } = await supabase
+            .from('hc_drug_profiles')
+            .insert({
+              tenant_id: tenantId,
+              inventory_item_id: inv?.id,
+              drug_code: code,
+            })
+            .select()
+            .single();
+          drug = newDrug;
+        }
+        return drug?.id;
+      };
+
+      const augmentinId = await getOrCreateDrug('Augmentin 625mg', 'AUG-625');
+      const morphinId = await getOrCreateDrug('Morphin Sulfat 10mg/ml', 'MORPH-10');
+      const paracetamolId = await getOrCreateDrug('Paracetamol Kabi 500mg', 'PARA-500');
+
+      await supabase.from('hc_prescriptions').insert([
+        {
+          tenant_id: tenantId,
+          encounter_id: hungEnc,
+          patient_party_id: hungId,
+          doctor_party_id: minhId,
+          status: 'pending_review',
+          notes: JSON.stringify([
+            '⚠️ TƯƠNG TÁC THUỐC: Bệnh nhân đang dùng Warfarin (Nguy cơ xuất huyết cao)',
+            '💡 CHỈNH LIỀU SUY THẬN: eGFR = 28 ml/min ➔ Khuyên dùng 500mg mỗi 12h',
+            '🚨 DỊ ỨNG: Tiền sử Dị ứng Penicillin nhẹ',
+          ]),
+          drugs: [
+            {
+              drugId: augmentinId,
+              drugName: 'Augmentin 625mg',
+              qty: 14,
+              dosageInstruction: 'Uống 1 viên mỗi 12h sau ăn',
+            }
+          ]
+        },
+        {
+          tenant_id: tenantId,
+          encounter_id: hoangEnc,
+          patient_party_id: hoangId,
+          doctor_party_id: tungId,
+          status: 'pending_review',
+          notes: JSON.stringify([
+            '⚠️ THUỐC ĐỘC KHUÔN HÀNG: Yêu cầu Ký Số Xác Nhận Kép (Dược Sĩ + Bác Sĩ)',
+            '📦 FEFO: Xuất lô Lô Cận Hạn LOT-MRP-9902X trước (Hạn: 15/11/2026)',
+          ]),
+          drugs: [
+            {
+              drugId: morphinId,
+              drugName: 'Morphin Sulfat 10mg/ml',
+              qty: 2,
+              dosageInstruction: 'Tiêm bắp 1 ống theo lệnh cấp cứu STAT',
+            }
+          ]
+        },
+        {
+          tenant_id: tenantId,
+          encounter_id: maiEnc,
+          patient_party_id: maiId,
+          doctor_party_id: anhId,
+          status: 'completed',
+          notes: JSON.stringify(['🟢 Thai kỳ Nhóm B: An toàn cho phụ nữ mang thai']),
+          drugs: [
+            {
+              drugId: paracetamolId,
+              drugName: 'Paracetamol Kabi 500mg',
+              qty: 10,
+              dosageInstruction: 'Uống 1 viên khi sốt > 38.5°C',
+            }
+          ]
+        }
+      ]);
+
+      void loadPrescriptions();
+    } catch (err) {
+      console.error('Lỗi seed đơn thuốc mẫu:', err);
+    }
+  };
+
   const loadDrugs = async () => {
     try {
       setIsLoading(true);
@@ -183,6 +414,7 @@ export default function PharmacyPage() {
 
   useEffect(() => {
     void loadDrugs();
+    void loadPrescriptions();
 
     const supabase = createClient();
     const channel = supabase
@@ -192,6 +424,9 @@ export default function PharmacyPage() {
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory_items' }, () => {
         void loadDrugs();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'hc_prescriptions' }, () => {
+        void loadPrescriptions();
       })
       .subscribe();
 
@@ -237,29 +472,10 @@ export default function PharmacyPage() {
 
     setIsAddModalOpen(false);
     toast.success(`🎉 Đã tạo đơn thuốc ${drug.drugName} (${newPrescription.qty} ${drug.unit}) gửi sang Hàng Đợi Dược Sĩ Duyệt!`);
-    
-    // Push into review queue
-    setPrescriptions((prev) => [
-      {
-        id: `rx-${Date.now()}`,
-        ticketNumber: `STT-10${prev.length + 1}`,
-        patientName: newPrescription.patientName.trim(),
-        patientAge: 35,
-        patientWeight: 60,
-        doctorName: 'BS. Trực Lâm Sàng',
-        drugName: drug.drugName,
-        qty: newPrescription.qty,
-        unit: drug.unit,
-        dosageInstruction: newPrescription.dosageInstruction,
-        status: 'pending_review',
-        createdAt: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-        cdssAlerts: drug.isControlled ? ['⚠️ Thuốc Độc: Cần Ký Số Xác Nhận Kép'] : ['🟢 CDSS Guard Verified'],
-      },
-      ...prev,
-    ]);
 
     setNewPrescription({ patientName: '', drugId: inventory[0]?.id || '', qty: 10, dosageInstruction: 'Uống 2 viên/ngày (Sáng - Tối sau khi ăn)' });
-    loadDrugs();
+    void loadPrescriptions();
+    void loadDrugs();
   };
 
   const handleCreateDrugSubmit = async (e: React.FormEvent) => {
@@ -301,11 +517,18 @@ export default function PharmacyPage() {
     }
   };
 
-  const handleApprovePrescription = (id: string) => {
-    setPrescriptions((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, status: 'completed' } : p))
-    );
-    toast.success('🎉 Dược sĩ lâm sàng đã Duyệt & Xuất Thuốc Điện Tử thành công!');
+  const handleApprovePrescription = async (id: string) => {
+    try {
+      const res = await approvePrescriptionAction(id);
+      if (res.success) {
+        toast.success('🎉 Dược sĩ lâm sàng đã Duyệt & Xuất Thuốc Điện Tử thành công!');
+        void loadPrescriptions();
+      } else {
+        toast.error('Lỗi duyệt đơn thuốc: ' + res.error);
+      }
+    } catch (err) {
+      toast.error('Lỗi kết nối máy chủ');
+    }
   };
 
   const handleBarcodeScanVerify = () => {

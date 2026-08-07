@@ -445,7 +445,7 @@ const bellaDentalMenuItems: SidebarMenuItem[] = [
 
   { type: 'header', label: 'Tài chính & Hệ thống' },
   { icon: Banknote,        label: 'Lương bác sĩ & phụ tá',       href: '/dashboard/healthcare/salary' },
-  { icon: CircleDollarSign, label: 'Tài chính phòng khám',        href: '/dashboard/healthcare/finance' },
+  { icon: CircleDollarSign, label: 'Báo cáo thu chi',            href: '/dashboard/healthcare/finance' },
   { icon: Wallet,          label: 'Nhật ký sổ cái y khoa',       href: '/dashboard/healthcare/accounting' },
   { icon: FileSpreadsheet, label: 'Báo cáo tài chính TT133',     href: '/dashboard/accounting/reports' },
   { icon: HelpCircle,      label: 'Hướng dẫn sử dụng',          href: '/dashboard/guides' },
@@ -479,6 +479,7 @@ const bellaMedicalClinicMenuItems: SidebarMenuItem[] = [
 
   { type: 'header', label: 'Tài chính & Hệ thống' },
   { icon: Banknote,        label: 'Lương bác sĩ & Y sĩ',         href: '/dashboard/medical/salary' },
+  { icon: CircleDollarSign, label: 'Báo cáo thu chi',            href: '/dashboard/medical/finance' },
   { icon: Wallet,          label: 'Nhật ký sổ cái y khoa Outbox', href: '/dashboard/medical/accounting' },
   { icon: FileSpreadsheet, label: 'Báo cáo tài chính TT133',     href: '/dashboard/accounting/reports' },
   { icon: HelpCircle,      label: 'Hướng dẫn sử dụng',          href: '/dashboard/guides' },

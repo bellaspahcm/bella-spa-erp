@@ -8,6 +8,7 @@ import {
   createInvoiceAction, 
   payInvoiceAction 
 } from '@/services/healthcare/healthcare-actions';
+import { createClient } from '@/lib/supabase-client';
 
 interface BillingRecord {
   id: string;
@@ -52,6 +53,18 @@ export default function BillingPage() {
 
   useEffect(() => {
     loadInvoices();
+
+    const supabase = createClient();
+    const channel = supabase
+      .channel('hc-billing-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'revenue' }, () => {
+        void loadInvoices();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const handleCreateInvoiceSubmit = async (e: React.FormEvent) => {
