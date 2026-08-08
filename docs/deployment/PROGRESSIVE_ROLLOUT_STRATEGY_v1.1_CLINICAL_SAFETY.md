@@ -11,13 +11,23 @@
 
 ## Executive Summary
 
-**Framework Relationship:**
+### Purpose in One Paragraph
 
-v1.0 Progressive Rollout Strategy (Phase A) là **canonical framework** cho platform infrastructure và remains valid.
+Progressive Rollout Strategy v1.1 defines **how Bella deploys clinical capabilities where software errors = patient safety risk**. It extends v1.0 (platform deployment) with a **Clinical Safety Profile** enforcing: Shadow Mode validation (7-14 days), 5 hard gates (medication/vital event loss = 0, patient identity mismatch = 0, cross-tenant leakage = 0), department-level rollout granularity, controlled high-risk pilots, automated P0 rollbacks, and mandatory hypercare periods.
 
-v1.1 **extends v1.0** với Clinical Safety Profile - một **mandatory overlay** cho patient-safety-critical capabilities như Perioperative Care, ICU monitoring, Medication Administration, Emergency Department.
+**This is NOT a feature** - it's the **governance/deployment safety layer** of Bella Healthcare, activated when a capability crosses the clinical risk threshold (Perioperative, ICU, Emergency Department, Medication Management, Blood Bank).
 
-v1.1 KHÔNG thay thế v1.0 - nó là Tier 3 profile với **20 additional safeguards** trên nền v1.0.
+**Key Insight:** v1.0 answers *"How to rollout software safely?"* — v1.1 answers *"How to rollout clinical software affecting patient life in a controlled, auditable manner?"*
+
+---
+
+### Framework Relationship
+
+v1.0 Progressive Rollout Strategy (Phase A) is the **canonical framework** for platform infrastructure and remains valid.
+
+v1.1 **extends v1.0** with Clinical Safety Profile - a **mandatory overlay** for patient-safety-critical capabilities such as Perioperative Care, ICU monitoring, Medication Administration, Emergency Department.
+
+v1.1 does NOT replace v1.0 - it is the Tier 3 profile with **20 additional safeguards** on top of v1.0 foundation.
 
 **Key Changes:**
 1. 🔴 **Clinical Safety Gates** (P0) - Event loss = 0, Patient safety incidents = 0
