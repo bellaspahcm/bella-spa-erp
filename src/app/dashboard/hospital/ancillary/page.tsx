@@ -454,7 +454,7 @@ function AncillaryPageInner() {
               : 'border-transparent text-slate-500 hover:text-slate-700'
           }`}
         >
-          <Video className="w-4 h-4" />
+          <Scan className="w-4 h-4" />
           <span>RIS / PACS DICOM (Chẩn Đoán Hình Ảnh)</span>
         </button>
       </div>
