@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { 
   Stethoscope, 
   Plus, 
@@ -126,6 +127,12 @@ const MOCK_EMR_ENCOUNTERS: EncounterRecord[] = [
 ];
 
 export default function EncountersPage() {
+  const searchParams = useSearchParams();
+  // context=hospital → Hospital inpatient view (only 'inpatient' class encounters)
+  // default          → Medical/Clinic ambulatory view (outpatient encounters)
+  const isHospitalContext = searchParams.get('context') === 'hospital';
+  const careSetting = isHospitalContext ? 'inpatient' : 'ambulatory';
+
   const [encounters, setEncounters] = useState<EncounterRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
@@ -133,7 +140,7 @@ export default function EncountersPage() {
   const loadEncounters = async (dateStr?: string) => {
     try {
       setIsLoading(true);
-      const res = await getAllEncountersAction(dateStr || undefined);
+      const res = await getAllEncountersAction(dateStr || undefined, careSetting);
       if (res.success && res.data && res.data.length > 0) {
         // Enhance data with mock EMR attributes for rich UI presentation
         const enhancedData: EncounterRecord[] = (res.data as Record<string, unknown>[]).map((e, index) => ({
@@ -228,6 +235,7 @@ export default function EncountersPage() {
       chiefComplaint: newEnc.chiefComplaint.trim(),
       subjective: newEnc.subjective.trim() || undefined,
       assessment: newEnc.assessment.trim() || undefined,
+      careSetting: careSetting,
     });
 
     if (!dbRes.success) {
@@ -370,11 +378,15 @@ export default function EncountersPage() {
               <Stethoscope className="w-6 h-6" />
             </div>
             <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-              Bệnh Án Điện Tử & Khám SOAP
+              {isHospitalContext
+                ? 'Bệnh Án Điện Tử Nội Trú'
+                : 'Bệnh Án Điện Tử & Khám SOAP'}
             </h1>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-            Ghi nhận Sinh hiệu, Khám bệnh SOAP & Mã hóa Chẩn đoán ICD-10 chuẩn Enterprise HIS/EMR.
+            {isHospitalContext
+              ? 'Quản lý bệnh án điện tử bệnh nhân nội trú — ghi chú SOAP theo ngày, chẩn đoán ICD-10, hội chẩn và tóm tắt xuất viện.'
+              : 'Ghi nhận Sinh hiệu, Khám bệnh SOAP & Mã hóa Chẩn đoán ICD-10 chuẩn Enterprise HIS/EMR.'}
           </p>
         </div>
 

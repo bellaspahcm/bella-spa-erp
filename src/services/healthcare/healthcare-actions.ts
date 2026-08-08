@@ -293,6 +293,12 @@ export async function startEncounterAction(input: {
   facilityId?: string;
   chiefComplaint?: string;
   priority?: 'routine' | 'urgent' | 'emergency';
+  /**
+   * Care setting for data isolation.
+   * - 'ambulatory': outpatient/clinic context (default, Medical module)
+   * - 'inpatient':  inpatient/hospital context (Hospital module)
+   */
+  careSetting?: 'ambulatory' | 'inpatient';
 }): Promise<{ success: boolean; data?: Encounter; error?: string }> {
   try {
     const supabase = await createDevelopmentBypassClient();
@@ -314,6 +320,11 @@ export async function startEncounterAction(input: {
 
     const patientName = customer?.full_name || 'Bệnh nhân';
 
+    // Determine encounter_class based on care setting
+    // ambulatory = outpatient clinic (Medical module)
+    // inpatient  = hospital admission (Hospital module)
+    const encounterClass = input.careSetting === 'inpatient' ? 'inpatient' : 'walk_in';
+
     // Insert Encounter Record
     const { data: encounter, error: encError } = await supabase
       .from('hc_encounters')
@@ -321,7 +332,7 @@ export async function startEncounterAction(input: {
         tenant_id: tenantId,
         patient_party_id: '00000000-0000-0000-0000-000000000000',
         care_journey_id: '00000000-0000-0000-0000-000000000000',
-        encounter_class: 'ambulatory',
+        encounter_class: encounterClass,
         status: 'in_consultation',
         chief_complaint: input.chiefComplaint || '',
         notes: JSON.stringify({
@@ -644,7 +655,32 @@ export async function createPatientRecordAction(input: {
 /**
  * 8. Lấy toàn bộ danh sách lượt khám (hc_encounters + customers + patient_profiles)
  */
-export async function getAllEncountersAction(dateFilter?: string): Promise<{ success: boolean; data?: EncounterViewModel[]; error?: string }> {
+/**
+ * AMBULATORY_CLASSES: encounter_class values that belong to the Medical/Clinic module.
+ * INPATIENT_CLASS: encounter_class value for the Hospital inpatient module.
+ * Kept as a const to avoid magic strings throughout the codebase.
+ */
+const AMBULATORY_ENCOUNTER_CLASSES = [
+  'walk_in',
+  'scheduled',
+  'emergency',
+  'telemedicine',
+  'follow_up',
+  'homecare',
+] as const;
+
+const INPATIENT_ENCOUNTER_CLASS = 'inpatient' as const;
+
+export async function getAllEncountersAction(
+  dateFilter?: string,
+  /**
+   * careSetting controls which encounter_class values are included:
+   * - 'ambulatory' (default): Medical/Clinic module — outpatient encounters only
+   * - 'inpatient':            Hospital module — inpatient admissions only
+   * - 'all':                  No class filter (admin/reporting views)
+   */
+  careSetting: 'ambulatory' | 'inpatient' | 'all' = 'ambulatory'
+): Promise<{ success: boolean; data?: EncounterViewModel[]; error?: string }> {
   try {
     const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
@@ -653,6 +689,16 @@ export async function getAllEncountersAction(dateFilter?: string): Promise<{ suc
       .from('hc_encounters')
       .select('*')
       .eq('tenant_id', tenantId);
+
+    // ── Data Isolation Gate ──────────────────────────────────────────────────
+    // Filter by care setting so Medical and Hospital data never mix.
+    if (careSetting === 'ambulatory') {
+      query = query.in('encounter_class', [...AMBULATORY_ENCOUNTER_CLASSES]);
+    } else if (careSetting === 'inpatient') {
+      query = query.eq('encounter_class', INPATIENT_ENCOUNTER_CLASS);
+    }
+    // careSetting === 'all' → no class filter
+    // ────────────────────────────────────────────────────────────────────────
 
     if (dateFilter) {
       const startDate = `${dateFilter}T00:00:00.000Z`;
@@ -1319,6 +1365,7 @@ export async function createEMREncounterAction(input: {
   chiefComplaint: string;
   subjective?: string;
   assessment?: string;
+  careSetting?: 'ambulatory' | 'inpatient';
 }): Promise<{ success: boolean; error?: string }> {
   try {
     const supabase = await createDevelopmentBypassClient();
@@ -1387,6 +1434,8 @@ export async function createEMREncounterAction(input: {
       .maybeSingle();
     const careJourneyId = journey ? journey.id : '99999999-9999-9999-9999-999999999999';
 
+    const encounterClass = input.careSetting === 'inpatient' ? 'inpatient' : 'walk_in';
+
     // 4. Insert Encounter Record
     const { error: encError } = await supabase
       .from('hc_encounters')
@@ -1395,7 +1444,7 @@ export async function createEMREncounterAction(input: {
         care_journey_id: careJourneyId,
         patient_party_id: party.id,
         doctor_party_id: doctor ? doctor.id : null,
-        encounter_class: 'walk_in',
+        encounter_class: encounterClass,
         status: 'in_consultation',
         chief_complaint: input.chiefComplaint,
         notes: JSON.stringify({
