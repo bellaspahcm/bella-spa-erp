@@ -145,30 +145,30 @@ export default function HospitalDashboardPage() {
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6 text-slate-800">
       {/* 4. HOSPITAL STATUS BAR */}
-      <div className="bg-slate-900 text-slate-200 px-6 py-3 rounded-2xl flex flex-wrap items-center justify-between shadow-md border border-slate-800 text-xs font-semibold tracking-wide">
-        <div className="flex items-center space-x-6">
-          <div className="flex items-center space-x-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>TRẠNG THÁI VẬN HÀNH: <span className="text-emerald-400">ỔN ĐỊNH</span></span>
+      <div className="bg-slate-900 text-slate-200 px-6 py-2 rounded-2xl flex items-center justify-between shadow-md border border-slate-800 text-[10px] md:text-[11px] font-bold tracking-wide">
+        <div className="flex items-center space-x-4 flex-wrap">
+          <div className="flex items-center space-x-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span>VẬN HÀNH: <span className="text-emerald-400">ỔN ĐỊNH</span></span>
           </div>
-          <span className="text-slate-700">|</span>
-          <div className="flex items-center space-x-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>AN TOÀN LÂM SÀNG: <span className="text-emerald-400">BÌNH THƯỜNG</span></span>
+          <span className="text-slate-800">|</span>
+          <div className="flex items-center space-x-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span>LÂM SÀNG: <span className="text-emerald-400">BÌNH THƯỜNG</span></span>
           </div>
-          <span className="text-slate-700">|</span>
-          <div className="flex items-center space-x-2">
-            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-            <span>HỆ THỐNG NỀN TẢNG: <span className="text-cyan-300">HOÀN HẢO</span></span>
+          <span className="text-slate-800">|</span>
+          <div className="flex items-center space-x-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+            <span>NỀN TẢNG: <span className="text-cyan-300">HOÀN HẢO</span></span>
           </div>
-          <span className="text-slate-700">|</span>
-          <div className="flex items-center space-x-2">
-            <ShieldAlert className="w-3.5 h-3.5 text-slate-400" />
-            <span>CẢNH BÁO NGUY CẤP: <span className="text-slate-300">0</span></span>
+          <span className="text-slate-800">|</span>
+          <div className="flex items-center space-x-1.5">
+            <ShieldAlert className="w-3 h-3 text-slate-400" />
+            <span>CẢNH BÁO: <span className="text-slate-300">0</span></span>
           </div>
         </div>
-        <div className="flex items-center space-x-4 mt-2 sm:mt-0 text-slate-400">
-          <span>{currentTime || '08 Tháng 8 2026 • 15:06'}</span>
+        <div className="flex items-center space-x-3 text-slate-400">
+          <span className="text-[10px] text-slate-400">{currentTime || '08 Tháng 8 2026 • 15:06'}</span>
           <button 
             onClick={loadDashboardData}
             className="p-1 hover:text-white hover:bg-slate-800 rounded transition-colors"
@@ -793,25 +793,25 @@ export default function HospitalDashboardPage() {
       </div>
 
       {/* Sub-modules Quick Directory */}
-      <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100">
+      <div className="bg-slate-50/60 p-6 rounded-3xl border border-slate-200/60 shadow-inner">
         <h3 className="text-sm font-black uppercase text-slate-400 tracking-wider mb-4">
           Danh Mục Truy Cập Nhanh Vận Hành Bệnh Viện
         </h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           {[
-            { label: 'Sơ Đồ Buồng Giường', href: '/dashboard/hospital/beds', icon: BedIcon, color: 'text-cyan-600 bg-cyan-50 border-cyan-100 hover:bg-cyan-100/55' },
-            { label: 'Bệnh Án Nội Trú', href: '/dashboard/hospital/admissions', icon: Hospital, color: 'text-indigo-600 bg-indigo-50 border-indigo-100 hover:bg-indigo-100/55' },
-            { label: 'Sinh Hiệu Điều Dưỡng', href: '/dashboard/hospital/nursing-vitals', icon: Activity, color: 'text-orange-600 bg-orange-50 border-orange-100 hover:bg-orange-100/55' },
-            { label: 'Phiếu Y Lệnh (MAR)', href: '/dashboard/hospital/mar', icon: Pill, color: 'text-purple-600 bg-purple-50 border-purple-100 hover:bg-purple-100/55' },
-            { label: 'Cận Lâm Sàng (LIS/RIS)', href: '/dashboard/hospital/ancillary', icon: ClipboardList, color: 'text-emerald-600 bg-emerald-50 border-emerald-100 hover:bg-emerald-100/55' },
-            { label: 'Giám Định BHYT XML 130', href: '/dashboard/hospital/bhyt', icon: FileText, color: 'text-slate-700 bg-slate-100 border-slate-200 hover:bg-slate-200/55' },
+            { label: 'Sơ Đồ Buồng Giường', href: '/dashboard/hospital/beds', icon: BedIcon, color: 'text-cyan-700 bg-cyan-50/70 border-cyan-100 hover:bg-cyan-100/70 hover:border-cyan-300' },
+            { label: 'Bệnh Án Nội Trú', href: '/dashboard/hospital/admissions', icon: Hospital, color: 'text-indigo-700 bg-indigo-50/70 border-indigo-100 hover:bg-indigo-100/70 hover:border-indigo-300' },
+            { label: 'Sinh Hiệu Điều Dưỡng', href: '/dashboard/hospital/nursing-vitals', icon: Activity, color: 'text-orange-700 bg-orange-50/70 border-orange-100 hover:bg-orange-100/70 hover:border-orange-300' },
+            { label: 'Phiếu Y Lệnh (MAR)', href: '/dashboard/hospital/mar', icon: Pill, color: 'text-purple-700 bg-purple-50/70 border-purple-100 hover:bg-purple-100/70 hover:border-purple-300' },
+            { label: 'Cận Lâm Sàng (LIS/RIS)', href: '/dashboard/hospital/ancillary', icon: ClipboardList, color: 'text-emerald-700 bg-emerald-50/70 border-emerald-100 hover:bg-emerald-100/70 hover:border-emerald-300' },
+            { label: 'Giám Định BHYT XML 130', href: '/dashboard/hospital/bhyt', icon: FileText, color: 'text-slate-800 bg-slate-100 border-slate-200 hover:bg-slate-200/70 hover:border-slate-350' },
           ].map((item, idx) => {
             const Icon = item.icon;
             return (
               <Link
                 key={idx}
                 href={item.href}
-                className={`p-4 border rounded-2xl flex flex-col items-center justify-center text-center transition-all ${item.color}`}
+                className={`p-4 border rounded-2xl flex flex-col items-center justify-center text-center shadow-sm hover:shadow-md hover:-translate-y-1 active:translate-y-0 active:scale-[0.98] transition-all duration-300 ${item.color}`}
               >
                 <Icon className="w-5 h-5 mb-2" />
                 <span className="text-xs font-bold leading-tight">{item.label}</span>
