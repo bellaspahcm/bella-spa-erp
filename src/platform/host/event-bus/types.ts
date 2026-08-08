@@ -52,7 +52,29 @@ export type EventType =
   | 'hos.cds.dispense.blocked.v1'
   | 'hos.order.created.v1'
   | 'hos.order.approved.v1'
-  | 'hos.order.discontinued.v1';
+  | 'hos.order.discontinued.v1'
+  // Phase D1 — Compensating Transaction Engine events
+  | 'platform.transaction.started.v1'
+  | 'platform.transaction.step.executed.v1'
+  | 'platform.transaction.committed.v1'
+  | 'platform.transaction.rollback.started.v1'
+  | 'platform.transaction.rollback.completed.v1'
+  | 'platform.transaction.rollback.failed.v1'
+  | 'platform.transaction.manual_recovery.required.v1'
+  // Phase D2 — Temporal Intelligence Engine events
+  | 'platform.temporal.snapshot.captured.v1'
+  // Phase D3 — Governed Business Rule Engine events
+  | 'platform.rule.created.v1'
+  | 'platform.rule.approved.v1'
+  | 'platform.rule.activated.v1'
+  | 'platform.rule.evaluated.v1'
+  | 'platform.rule.suspended.v1'
+  | 'platform.rule.retired.v1'
+  // Phase D4 — Analytics Engine events
+  | 'platform.metric.recorded.v1'
+  | 'platform.metric.daily_rollup.completed.v1'
+  | 'platform.metric.monthly_rollup.completed.v1'
+  | 'platform.metric.enterprise_rollup.completed.v1';
 
 
 export interface DomainEvent<T = unknown> {
