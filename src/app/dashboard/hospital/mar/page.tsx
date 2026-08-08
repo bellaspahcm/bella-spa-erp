@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { MedicationAdministrationRecord, InpatientAdmission, Bed, Ward, MARStatus } from '@/types/healthcare';
 import { usePharmacyEngine } from '@/hooks/use-pharmacy-engine';
 import { InpatientAdmissionService, BedEngineService } from '@/services/healthcare-hospital-services';
+import { PatientContextBar, BELLA_DEMO_PATIENT } from '@/components/hospital/PatientContextBar';
 import {
   Pill,
   Clock,
@@ -682,6 +683,22 @@ export default function MARPage() {
   const selectedBed = selectedAdmission ? beds.find((b) => b.id === selectedAdmission.bed_id) : null;
   const selectedWard = selectedAdmission ? wards.find((w) => w.id === selectedAdmission.ward_id) : null;
 
+  const patientContextData = useMemo(() => {
+    if (!selectedAdmission) return BELLA_DEMO_PATIENT;
+    return {
+      name: selectedAdmission.patient_id === 'pat-001' || selectedAdmission.patient_id === 'pat-mock-001' ? 'Lê Thị Hương' : selectedAdmission.patient_id,
+      gender: 'Nữ' as const,
+      age: 62,
+      mrn: selectedAdmission.patient_id,
+      bedCode: selectedBed?.bed_code ?? 'Chưa xếp giường',
+      wardName: selectedWard?.name ?? 'Chưa xếp khoa',
+      admitDay: 5,
+      allergies: ['Penicillin', 'Sulfonamides'],
+      weight: '58kg',
+      diagnosis: 'Suy hô hấp cấp tiến triển — Theo dõi sau phẫu thuật',
+    };
+  }, [selectedAdmission, selectedBed, selectedWard]);
+
   return (
     <div className="p-5 max-w-[1440px] mx-auto space-y-5">
 
@@ -725,32 +742,9 @@ export default function MARPage() {
             </select>
           </div>
 
-          {/* Patient info */}
-          <div className="flex-1 flex flex-wrap gap-3 items-center">
-            <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-black text-base shadow">
-                {PATIENT_INFO.name.charAt(0)}
-              </div>
-              <div>
-                <div className="font-bold text-slate-900 text-sm">{PATIENT_INFO.name}</div>
-                <div className="text-xs text-slate-500">{PATIENT_INFO.gender} · {PATIENT_INFO.age} tuổi · MRN: {PATIENT_INFO.mrn}</div>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <span className="flex items-center gap-1 text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-1 rounded-full">
-                <BedIcon className="w-3 h-3" /> {selectedBed?.bed_code ?? PATIENT_INFO.bed}
-              </span>
-              <span className="flex items-center gap-1 text-xs font-semibold text-slate-700 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-full">
-                <Building2 className="w-3 h-3" /> {selectedWard?.name ?? PATIENT_INFO.ward}
-              </span>
-              <span className="flex items-center gap-1 text-xs font-semibold text-teal-700 bg-teal-50 border border-teal-200 px-2.5 py-1 rounded-full">
-                <Calendar className="w-3 h-3" /> Ngày điều trị {PATIENT_INFO.admitDay}
-              </span>
-              <span className="text-xs font-semibold text-slate-500 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-full">
-                {PATIENT_INFO.weight}
-              </span>
-              <AllergyAlert allergies={PATIENT_INFO.allergies} />
-            </div>
+          {/* Patient info via unified PatientContextBar */}
+          <div className="flex-1">
+            <PatientContextBar patient={patientContextData} workspace="MAR · Phiếu Thực Hiện Y Lệnh Thuốc" />
           </div>
         </div>
       </div>

@@ -492,7 +492,7 @@ function IncidentWorkspace({ incident, onClose }: { incident: Incident; onClose:
             { label: 'Harm',        value: `${harmCfg.label} — ${harmCfg.desc.split(' ').slice(0,2).join(' ')}`, color: harmCfg.color, bg: 'bg-white' },
           ].map(d => (
             <div key={d.label} className={`rounded-lg px-2 py-1 ${d.bg}`}>
-              <div className="text-[8px] font-black text-slate-400 uppercase">{d.label}</div>
+              <div className="text-[8px] font-black text-slate-500 uppercase">{d.label}</div>
               <div className={`text-[10px] font-black ${d.color}`}>{d.value}</div>
             </div>
           ))}
@@ -815,18 +815,18 @@ export default function IncidentManagementPage() {
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <ShieldAlert className="w-4 h-4 text-rose-400" />
-                <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Bella Hospital · Patient Safety · Quality Management</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-200">Bella Hospital · Patient Safety · Quality Management</span>
               </div>
-              <h1 className="text-xl md:text-2xl font-black">Quản Lý Sự Cố Lâm Sàng</h1>
-              <p className="text-[10px] text-slate-400 mt-0.5">Incident Report · RCA · CAPA · Effectiveness Check · Quality Intelligence</p>
+              <h1 className="text-xl md:text-2xl font-black !text-white">Quản Lý Sự Cố Lâm Sàng</h1>
+              <p className="text-[11px] text-slate-200 mt-0.5 font-medium">Incident Report · RCA · CAPA · Effectiveness Check · Quality Intelligence</p>
             </div>
             <div className="flex gap-2 flex-wrap shrink-0">
               {[
-                { v: openCount,   label: 'Mới mở',      bg: 'bg-red-900/50 border-red-700',     txt: 'text-red-300',     sub: 'text-red-500' },
-                { v: activeCount, label: 'Đang xử lý',  bg: 'bg-orange-900/40 border-orange-700', txt: 'text-orange-300', sub: 'text-orange-500' },
-                { v: p1Count,     label: 'P1 Active',   bg: 'bg-rose-900/40 border-rose-700',   txt: 'text-rose-300',    sub: 'text-rose-500' },
-                { v: overdueCAPAs.length, label: 'CAPA Quá hạn', bg: 'bg-amber-900/30 border-amber-700', txt: overdueCAPAs.length > 0 ? 'text-amber-300' : 'text-emerald-300', sub: 'text-amber-500' },
-                { v: closedCount, label: 'Đã đóng',     bg: 'bg-emerald-900/30 border-emerald-700', txt: 'text-emerald-300', sub: 'text-emerald-500' },
+                { v: openCount,   label: 'Mới mở',      bg: 'bg-red-900/50 border-red-700',     txt: 'text-red-300',     sub: 'text-red-200' },
+                { v: activeCount, label: 'Đang xử lý',  bg: 'bg-orange-900/40 border-orange-700', txt: 'text-orange-300', sub: 'text-orange-200' },
+                { v: p1Count,     label: 'P1 Active',   bg: 'bg-rose-900/40 border-rose-700',   txt: 'text-rose-300',    sub: 'text-rose-200' },
+                { v: overdueCAPAs.length, label: 'CAPA Quá hạn', bg: 'bg-amber-900/30 border-amber-700', txt: overdueCAPAs.length > 0 ? 'text-amber-300' : 'text-emerald-300', sub: 'text-amber-200' },
+                { v: closedCount, label: 'Đã đóng',     bg: 'bg-emerald-900/30 border-emerald-700', txt: 'text-emerald-300', sub: 'text-emerald-200' },
               ].map(k => (
                 <div key={k.label} className={`border rounded-xl px-3 py-2 text-center ${k.bg}`}>
                   <div className={`text-xl font-black ${k.txt}`}>{k.v}</div>

@@ -291,16 +291,20 @@ function AckTimer({ detectedAt, slaMinutes, status }: { detectedAt: string; slaM
   };
 
   return (
-    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border ${
-      isBreached ? 'bg-rose-950 border-rose-700' : isWarn ? 'bg-amber-950 border-amber-700' : 'bg-slate-950 border-slate-800'
+    <div className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl border text-[11px] font-bold ${
+      isBreached 
+        ? 'bg-rose-100 border-rose-300 text-rose-900 font-extrabold shadow-sm' 
+        : isWarn 
+          ? 'bg-amber-100 border-amber-300 text-amber-900 animate-pulse' 
+          : 'bg-blue-50 border-blue-200 text-blue-900'
     }`}>
-      <Timer className={`w-3.5 h-3.5 shrink-0 ${isBreached ? 'text-rose-400 animate-ping' : isWarn ? 'text-amber-400' : 'text-slate-400'}`} />
+      <Timer className={`w-4 h-4 shrink-0 ${isBreached ? 'text-rose-600 animate-bounce' : isWarn ? 'text-amber-600' : 'text-blue-600'}`} />
       <div className="flex-1 min-w-0">
-        <div className={`text-[9px] font-black uppercase ${isBreached ? 'text-rose-400' : isWarn ? 'text-amber-400' : 'text-slate-500'}`}>
-          {isBreached ? `ACK SLA BREACHED +${fmt(elapsed - slaSecs)}` : `ACK SLA: ${fmt(remaining)} left`}
+        <div className="uppercase tracking-wide">
+          {isBreached ? `SLA Phản hồi: ĐÃ QUÁ HẠN +${fmt(elapsed - slaSecs)}` : `SLA Phản hồi: ${fmt(remaining)} còn lại`}
         </div>
-        <div className="h-0.5 w-full bg-slate-800 rounded-full mt-0.5 overflow-hidden">
-          <div className={`h-full rounded-full ${isBreached ? 'bg-rose-500' : isWarn ? 'bg-amber-500' : 'bg-emerald-600'}`}
+        <div className="h-1 w-full bg-slate-200/60 rounded-full mt-1.5 overflow-hidden">
+          <div className={`h-full rounded-full transition-all duration-500 ${isBreached ? 'bg-rose-600' : isWarn ? 'bg-amber-500' : 'bg-blue-600'}`}
             style={{ width: `${pct}%` }} />
         </div>
       </div>
@@ -397,18 +401,18 @@ function AlertCard({
 
             {/* Q1+Q2: Patient Context (persistent invariant) */}
             <div className="bg-white border border-slate-200 rounded-xl p-3 space-y-1.5">
-              <div className="text-[9px] font-black text-slate-400 uppercase tracking-wide">Bệnh nhân</div>
+              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Bệnh nhân</div>
               <div className="font-black text-slate-900 text-sm">{alert.patient.name}</div>
-              <div className="text-[10px] text-slate-500">{alert.patient.age}t · {alert.patient.gender} · {alert.patient.mrn}</div>
+              <div className="text-[11px] font-bold text-slate-600">{alert.patient.age}t · {alert.patient.gender} · {alert.patient.mrn}</div>
               <div className="flex flex-wrap gap-1 mt-1">
-                <span className="text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded-full">
+                <span className="text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 px-2.5 py-0.5 rounded-full">
                   {alert.patient.bed}
                 </span>
-                <span className="text-[10px] font-semibold bg-slate-50 text-slate-600 border border-slate-200 px-2 py-0.5 rounded-full">
+                <span className="text-[10px] font-bold bg-slate-50 text-slate-600 border border-slate-200 px-2.5 py-0.5 rounded-full">
                   Ngày điều trị {alert.patient.daysAdmitted}
                 </span>
                 {alert.patient.allergies.map((a) => (
-                  <span key={a} className="text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200 px-2 py-0.5 rounded-full">
+                  <span key={a} className="text-[10px] font-extrabold bg-rose-50 text-rose-700 border border-rose-200 px-2.5 py-0.5 rounded-full">
                     ⚠ {a}
                   </span>
                 ))}
@@ -417,16 +421,16 @@ function AlertCard({
 
             {/* Q3: Vital + Trend */}
             <div className="bg-white border border-slate-200 rounded-xl p-3 space-y-1.5">
-              <div className="text-[9px] font-black text-slate-400 uppercase tracking-wide">
-                {alert.vital.parameter} · Trigger: {alert.vital.threshold}
+              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">
+                {alert.vital.parameter} · Ngưỡng: {alert.vital.threshold}
               </div>
               <div className={`font-black text-2xl ${alert.vital.abnormal ? 'text-rose-700' : 'text-slate-800'}`}>
                 {alert.vital.value}
                 {alert.vital.abnormal && <TrendingDown className="inline w-5 h-5 ml-1 text-rose-500" />}
               </div>
               {alert.vital.previousValues.length > 0 && (
-                <div className="flex items-center gap-1 text-[10px] text-slate-500">
-                  <span className="font-semibold text-slate-400">Trend:</span>
+                <div className="flex items-center gap-1 text-[11px] text-slate-600 font-medium">
+                  <span className="font-bold text-slate-400">Xu hướng:</span>
                   {alert.vital.previousValues.map((v, i) => (
                     <React.Fragment key={i}>
                       <span className="font-bold">{v}</span>
@@ -440,21 +444,21 @@ function AlertCard({
           </div>
 
           {/* Detection + SLA */}
-          <div className="flex flex-wrap items-center gap-2 text-[10px] text-slate-500">
+          <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-600 font-medium">
             <span className="flex items-center gap-1">
-              <Clock className="w-3 h-3" />
-              Detected: <strong>{alert.detectedDisplay}</strong>
+              <Clock className="w-3.5 h-3.5 text-slate-400" />
+              Detected: <strong className="text-slate-800 font-bold">{alert.detectedDisplay}</strong>
             </span>
             {alert.acknowledgedBy && (
-              <span className="flex items-center gap-1 text-amber-700">
-                <UserCheck className="w-3 h-3" />
-                ACK: <strong>{alert.acknowledgedBy}</strong> · {alert.acknowledgedAt}
+              <span className="flex items-center gap-1 text-amber-800 font-bold">
+                <UserCheck className="w-3.5 h-3.5" />
+                ACK: <strong className="text-amber-900 font-black">{alert.acknowledgedBy}</strong> · {alert.acknowledgedAt}
               </span>
             )}
             {alert.owner && (
-              <span className="flex items-center gap-1 text-blue-700">
-                <Stethoscope className="w-3 h-3" />
-                Owner: <strong>{alert.owner}</strong>
+              <span className="flex items-center gap-1 text-blue-800 font-bold">
+                <Stethoscope className="w-3.5 h-3.5" />
+                Owner: <strong className="text-blue-900 font-black">{alert.owner}</strong>
               </span>
             )}
           </div>
@@ -679,16 +683,16 @@ function ClinicalSafetyContent() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <ShieldAlert className="w-4 h-4 text-rose-400" />
-            <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-200">
               Bella Hospital · Clinical Safety Alert Center
             </span>
-            <div className="flex items-center gap-1.5 ml-2 px-2 py-0.5 rounded-full border border-emerald-700 bg-emerald-950/50 text-[9px] font-bold text-emerald-400">
+            <div className="flex items-center gap-1.5 ml-2 px-2.5 py-0.5 rounded-full border border-emerald-700 bg-emerald-950/50 text-[9px] font-bold text-emerald-400">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
               LIVE · {liveTime}
             </div>
           </div>
-          <h1 className="text-xl md:text-2xl font-black">Cảnh Báo An Toàn Lâm Sàng</h1>
-          <p className="text-[11px] text-slate-400 mt-0.5">
+          <h1 className="text-xl md:text-2xl font-black !text-white">Cảnh Báo An Toàn Lâm Sàng</h1>
+          <p className="text-[11px] text-slate-300 mt-0.5 font-medium">
             Detect → Understand → Acknowledge → Act → Escalate → Resolve → Audit
           </p>
         </div>
@@ -796,10 +800,10 @@ function ClinicalSafetyContent() {
             </div>
             <div className="divide-y divide-slate-100">
               {SAFETY_DOMAINS.map((d) => (
-                <div key={d.name} className={`px-4 py-2.5 flex items-center justify-between text-xs ${d.status === 'alert' ? 'bg-amber-50/60' : ''}`}>
-                  <span className={`font-semibold ${d.status === 'alert' ? 'text-amber-800' : 'text-slate-600'}`}>{d.name}</span>
-                  <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${
-                    d.status === 'alert' ? 'bg-amber-500 text-white' : 'bg-emerald-600 text-white'
+                <div key={d.name} className={`px-4 py-3 flex items-center justify-between text-xs transition-all hover:bg-slate-50 ${d.status === 'alert' ? 'bg-amber-50/40' : ''}`}>
+                  <span className={`font-bold ${d.status === 'alert' ? 'text-amber-900' : 'text-slate-700'}`}>{d.name}</span>
+                  <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full border ${
+                    d.status === 'alert' ? 'bg-amber-100 text-amber-800 border-amber-300 font-extrabold' : 'bg-emerald-100 text-emerald-800 border-emerald-300 font-extrabold'
                   }`}>
                     {d.status === 'alert' ? `${d.alertCount} Alert` : 'Normal'}
                   </span>
@@ -809,30 +813,32 @@ function ClinicalSafetyContent() {
           </div>
 
           {/* Alert Lifecycle explanation */}
-          <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-2">
-            <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase">
-              <Info className="w-3.5 h-3.5" />
-              Alert Lifecycle
+          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
+            <div className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-wider">
+              <Info className="w-4 h-4 text-indigo-600" />
+              Quy Trình Xử Lý Cảnh Báo
             </div>
-            {[
-              { status: 'open' as const, desc: 'Chưa có ai nhận cảnh báo' },
-              { status: 'acknowledged' as const, desc: 'Người có trách nhiệm đã nhận biết' },
-              { status: 'reported' as const, desc: 'Bác sĩ/liên quan đã được thông báo' },
-              { status: 'escalated' as const, desc: 'Chuyển cấp — escalation initiated' },
-              { status: 'closed' as const, desc: 'Hoàn tất — patient stable / resolved' },
-            ].map(({ status, desc }) => {
-              const cfg = STATUS_CFG[status];
-              return (
-                <div key={status} className="flex items-start gap-2">
-                  <span className={`text-[9px] font-black px-1.5 py-0.5 rounded shrink-0 ${cfg.bg} opacity-90`}>
-                    {cfg.label}
-                  </span>
-                  <span className="text-[9px] text-slate-500">{desc}</span>
-                </div>
-              );
-            })}
-            <div className="pt-2 border-t border-slate-800 text-[9px] text-slate-600 font-semibold">
-              ⚠ ACK ≠ RESOLVED · Alert closed only when patient stable
+            <div className="space-y-2">
+              {[
+                { status: 'open' as const, desc: 'Cảnh báo mới kích hoạt, chưa có ai tiếp nhận' },
+                { status: 'acknowledged' as const, desc: 'Điều dưỡng trực đã xác nhận nhận biết tín hiệu' },
+                { status: 'reported' as const, desc: 'Bác sĩ trực/người liên quan đã được thông báo' },
+                { status: 'escalated' as const, desc: 'Tình huống nguy kịch vượt ngưỡng, chuyển cấp cứu ICU' },
+                { status: 'closed' as const, desc: 'Sự cố kết thúc, sinh hiệu bệnh nhân đã ổn định trở lại' },
+              ].map(({ status, desc }) => {
+                const cfg = STATUS_CFG[status];
+                return (
+                  <div key={status} className="flex items-start gap-2.5 text-[11px] leading-relaxed">
+                    <span className={`text-[9px] font-black px-2 py-0.5 rounded-full shrink-0 border uppercase font-mono ${cfg.bg}`}>
+                      {cfg.label}
+                    </span>
+                    <span className="text-slate-600 font-semibold">{desc}</span>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="pt-2.5 border-t border-slate-100 text-[10px] text-slate-400 italic font-medium">
+              * ACK (Xác nhận) chỉ có nghĩa đã nhận biết tín hiệu, sự cố chỉ đóng (CLOSED) khi lâm sàng an toàn.
             </div>
           </div>
 
