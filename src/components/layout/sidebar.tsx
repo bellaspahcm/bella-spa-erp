@@ -549,7 +549,7 @@ const bellaHospitalInpatientMenuItems: SidebarMenuItem[] = [
   { icon: ShieldAlert,     label: 'Cảnh báo nguy kịch',          href: '/dashboard/hospital/queue?severity=critical' },
 
   { type: 'header', label: 'Vận Hành & Nhân Sự' },
-  { icon: Users,           label: 'Quản lý nhân lực',            href: '/dashboard/hr/workforce' },
+  { icon: Users,           label: 'Quản lý nhân lực',            href: '/dashboard/hospital/workforce' },
   { icon: Package,         label: 'Kho dược & Cấp phát',         href: '/dashboard/hospital/pharmacy' },
 
   { type: 'header', label: 'Viện Phí & Bảo Hiểm' },
