@@ -1,0 +1,618 @@
+Γùç injected env (19) from .env.local // tip: Γîÿ custom filepath { path: '/custom/path/.env' }
+≡ƒÅÑ Querying Tenants for Progressive Rollout...
+
+Found 73 active tenants
+
+====================================================================================================
+
+Tenant Risk Profile:
+====================================================================================================
+1. ≡ƒƒó Tenant A Leak Test (ΓÅ╕∩╕Å  Not enabled)
+   ID: 993744e7-6999-4b70-b963-9555e4c2bf33
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+2. ≡ƒƒó Test Tenant VAT (ΓÅ╕∩╕Å  Not enabled)
+   ID: 0bc7860e-d617-47fe-9c95-b173323f0a11
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+3. ≡ƒƒó Test Webhook Tenant (ΓÅ╕∩╕Å  Not enabled)
+   ID: 163a951b-6939-43da-8324-c07770d33437
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+4. ≡ƒƒó Test Tenant Branch Scope (ΓÅ╕∩╕Å  Not enabled)
+   ID: 4b2d5bd0-bf2b-4d50-a3d6-6c8105eb1170
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+5. ≡ƒƒó Test Tenant Manual Reversal (ΓÅ╕∩╕Å  Not enabled)
+   ID: 7bf44d21-40d0-4b1c-abcf-eb447dea1c83
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+6. ≡ƒƒó Test Tenant Commission Clawback (ΓÅ╕∩╕Å  Not enabled)
+   ID: da6e66d0-2dc3-4f21-9323-1d894162438d
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+7. ≡ƒƒó Test Concurrent Tenant (ΓÅ╕∩╕Å  Not enabled)
+   ID: 05c1b40b-6780-4c06-bffb-754815b51102
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+8. ≡ƒƒó Tenant B Leak Test (ΓÅ╕∩╕Å  Not enabled)
+   ID: ee1ffaff-f430-4d1f-9055-15b9cfa8c83a
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+9. ≡ƒƒó Test Tenant Mid Month Join (ΓÅ╕∩╕Å  Not enabled)
+   ID: acb6dfd9-4fbb-4ff1-b523-9c6784f32b95
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+10. ≡ƒƒó Test Orphan Tenant (ΓÅ╕∩╕Å  Not enabled)
+   ID: 5cd623dc-0be2-46ab-8276-a00caac78253
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+11. ≡ƒƒó Test Double Payment Tenant (ΓÅ╕∩╕Å  Not enabled)
+   ID: 4ea90af4-bb46-4379-97a8-5469bc1a65f0
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+12. ≡ƒƒó Test Tenant Inter Branch (ΓÅ╕∩╕Å  Not enabled)
+   ID: ba4fba75-6626-4773-b74f-33f0d5059688
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+13. ≡ƒƒó Test Tenant Gateway Timeout (ΓÅ╕∩╕Å  Not enabled)
+   ID: 5037701d-9b66-4327-88f3-213bc196b661
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+14. ≡ƒƒó Test Tenant Partial Refund (ΓÅ╕∩╕Å  Not enabled)
+   ID: 9204efc1-9472-473f-9579-4bfe811c64d0
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+15. ≡ƒƒó Test Over Commission Tenant (ΓÅ╕∩╕Å  Not enabled)
+   ID: 4bf6e743-fa91-4b1a-b671-9aedef9cf147
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+16. ≡ƒƒó Test Tenant Payroll Reopen (ΓÅ╕∩╕Å  Not enabled)
+   ID: 4fd0ae4b-8047-43b4-a157-664ca86cc6a8
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+17. ≡ƒƒó Test Tenant Multi Payment (ΓÅ╕∩╕Å  Not enabled)
+   ID: 682fcbed-e4f2-4b22-99d5-074855b0e2fa
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+18. ≡ƒƒó Test Tenant Split Payment (ΓÅ╕∩╕Å  Not enabled)
+   ID: 900457b9-d561-4313-a826-78a112927b14
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+19. ≡ƒƒó Test Tenant Dispute (ΓÅ╕∩╕Å  Not enabled)
+   ID: 4c65a7d8-1342-4aa4-8b2e-3fb32adb9067
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+20. ≡ƒƒó Test Rate Limit Tenant (ΓÅ╕∩╕Å  Not enabled)
+   ID: a7268074-91da-4e76-ade4-120b766c8ebc
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+21. ≡ƒƒó Tenant A RPC Test (ΓÅ╕∩╕Å  Not enabled)
+   ID: e9a1be6f-70ba-4c19-994f-e0d79c5b5fa6
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+22. ≡ƒƒó Tenant B RPC Test (ΓÅ╕∩╕Å  Not enabled)
+   ID: 08f8c236-deda-4c31-a770-7d626e1ac4da
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+23. ≡ƒƒó Test Tenant Cross Month (ΓÅ╕∩╕Å  Not enabled)
+   ID: 801b0174-31ef-4265-9e1c-04361e8c72b9
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+24. ≡ƒƒó Test Partner API Tenant (ΓÅ╕∩╕Å  Not enabled)
+   ID: 2ad521ee-dcad-4915-ac5f-25f4f22002de
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+25. ≡ƒƒó Test Tenant KTV Scope (ΓÅ╕∩╕Å  Not enabled)
+   ID: 9f58dd2f-4f23-4167-8f9e-3881225634c3
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+26. ≡ƒƒó Test Scope Tenant (ΓÅ╕∩╕Å  Not enabled)
+   ID: 45417d27-e9b1-4a77-9a45-53711ffc668b
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+27. ≡ƒƒó Test Tenant Leave (ΓÅ╕∩╕Å  Not enabled)
+   ID: 11257009-5ba5-41d3-b04b-babe2f638fda
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+28. ≡ƒƒó Test Tenant Period Lock (ΓÅ╕∩╕Å  Not enabled)
+   ID: db9f0559-286e-4475-a5cc-e59247538613
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+29. ≡ƒƒó Tenant A Leak Test (ΓÅ╕∩╕Å  Not enabled)
+   ID: cb953074-be43-4512-9dc8-f213e9b78e49
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+30. ≡ƒƒó Tenant B Leak Test (ΓÅ╕∩╕Å  Not enabled)
+   ID: b53d2ac5-330a-4ba2-80fa-f56a7002e846
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+31. ≡ƒƒó Tenant A RPC Test (ΓÅ╕∩╕Å  Not enabled)
+   ID: 6b64933f-9f76-49e5-9aa5-f2f736149180
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+32. ≡ƒƒó Tenant B RPC Test (ΓÅ╕∩╕Å  Not enabled)
+   ID: a1fd146d-15f4-4d00-b5cd-c03386be9d91
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+33. ≡ƒƒó Test Tenant Accounting GL (ΓÅ╕∩╕Å  Not enabled)
+   ID: da9e610b-88c5-4901-8ab9-5439f4931467
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+34. ≡ƒƒó Test Tenant E2E (ΓÅ╕∩╕Å  Not enabled)
+   ID: 4323f264-07f4-4275-9c3d-d5ffeb4c4da8
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+35. ≡ƒƒó Test Tenant Refund E2E (ΓÅ╕∩╕Å  Not enabled)
+   ID: e49b16be-9ca1-4b66-a942-e56e3327743b
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+36. ≡ƒƒó Test Tenant Payroll (ΓÅ╕∩╕Å  Not enabled)
+   ID: 4face414-7f0b-4b52-bbd7-771840c382a0
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+37. ≡ƒƒó Bella Real Estate Development [DEMO] (ΓÅ╕∩╕Å  Not enabled)
+   ID: 896d68b0-eb3a-47b2-a2fe-ff1176df9abf
+   Type: Unknown | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+38. ≡ƒƒó Bella Real Estate Development [DEMO] (ΓÅ╕∩╕Å  Not enabled)
+   ID: f926c69d-45a6-4d57-a197-354ab8c9da33
+   Type: Unknown | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+39. ≡ƒƒó Bella Real Estate Development [DEMO] (ΓÅ╕∩╕Å  Not enabled)
+   ID: a322ec09-6134-4a7b-8013-fc7f8b31eaee
+   Type: Unknown | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+40. ≡ƒƒó Bella Real Estate Development [DEMO] (ΓÅ╕∩╕Å  Not enabled)
+   ID: 2eb42ea0-913e-47dc-8f16-49b9f11d88ac
+   Type: Unknown | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+41. ≡ƒƒó Bella Real Estate Development [DEMO] (ΓÅ╕∩╕Å  Not enabled)
+   ID: aec31443-4d27-4138-8353-a4222acdec07
+   Type: Unknown | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+42. ≡ƒƒó Bella Real Estate Development [DEMO] (ΓÅ╕∩╕Å  Not enabled)
+   ID: 5e289cb5-bf8d-4348-9bc2-27d36c349491
+   Type: Unknown | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+43. ≡ƒƒó Tenant A Leak Test (ΓÅ╕∩╕Å  Not enabled)
+   ID: 3973cd01-44d8-4dfe-840a-2a41eb8ec5ab
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+44. ≡ƒƒó Tenant B Leak Test (ΓÅ╕∩╕Å  Not enabled)
+   ID: 0d8eec91-b726-4dfd-a506-2e88dcf91f41
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+45. ≡ƒƒó Tenant A RPC Test (ΓÅ╕∩╕Å  Not enabled)
+   ID: de1fcc2f-dcff-44f1-83eb-570bf0994fa8
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+46. ≡ƒƒó Tenant B RPC Test (ΓÅ╕∩╕Å  Not enabled)
+   ID: ca8c06eb-3621-4b8c-8b1b-92fdb965615d
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+47. ≡ƒƒó Tenant A Leak Test (ΓÅ╕∩╕Å  Not enabled)
+   ID: 30c4e445-7e22-4b46-ac7c-a6dbadf88caa
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+48. ≡ƒƒó Tenant B Leak Test (ΓÅ╕∩╕Å  Not enabled)
+   ID: 557658c0-29cb-45c2-8882-d524f3532bb1
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+49. ≡ƒƒó Tenant A RPC Test (ΓÅ╕∩╕Å  Not enabled)
+   ID: 79e832b7-c9d6-4eec-87a8-359be01732bc
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+50. ≡ƒƒó Tenant B RPC Test (ΓÅ╕∩╕Å  Not enabled)
+   ID: ed1fe5cb-30bb-4fc5-8c09-a6be9c213afc
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+51. ≡ƒƒó Tenant A Leak Test (ΓÅ╕∩╕Å  Not enabled)
+   ID: 3f042f90-e9bb-448a-8001-2f418a705dad
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+52. ≡ƒƒó Tenant B Leak Test (ΓÅ╕∩╕Å  Not enabled)
+   ID: c694883d-944c-4db8-b4cf-d7a579208646
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+53. ≡ƒƒó Tenant A RPC Test (ΓÅ╕∩╕Å  Not enabled)
+   ID: e65a611e-bdc6-407f-84f8-6af1b0135e95
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+54. ≡ƒƒó Tenant B RPC Test (ΓÅ╕∩╕Å  Not enabled)
+   ID: 3a52310c-f0ac-4e0c-a007-1839b0c77fa7
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+55. ≡ƒƒó Bella Real Estate Development [DEMO] (ΓÅ╕∩╕Å  Not enabled)
+   ID: d4710089-f0bc-4cca-bde4-3904c17c2782
+   Type: Unknown | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+56. ≡ƒƒó bella_auto_stress_test (ΓÅ╕∩╕Å  Not enabled)
+   ID: f8504953-03c0-43dc-ad03-1b0febd58caf
+   Type: Unknown | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+57. ≡ƒƒó Test Integration Tenant (ΓÅ╕∩╕Å  Not enabled)
+   ID: 11111111-1111-1111-1111-111111111111
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+58. ≡ƒƒó E2E Test Tenant (ΓÅ╕∩╕Å  Not enabled)
+   ID: 00000000-0000-0000-0000-000000000001
+   Type: Unknown | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+59. ≡ƒƒó Tenant A Leak Test (ΓÅ╕∩╕Å  Not enabled)
+   ID: fef08f73-9462-4bab-afd0-06a39ed39e55
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+60. ≡ƒƒó Tenant B Leak Test (ΓÅ╕∩╕Å  Not enabled)
+   ID: 7305e761-f5a2-416c-bcaf-4928665ecb52
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+61. ≡ƒƒó Test Tenant - Rules API (ΓÅ╕∩╕Å  Not enabled)
+   ID: b293dbd2-cb83-40b4-806e-09564da80bf9
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+62. ≡ƒƒó Tenant A RPC Test (ΓÅ╕∩╕Å  Not enabled)
+   ID: 2176e5cd-fe94-4557-9fa0-bfd748b79d3a
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+63. ≡ƒƒó Tenant B RPC Test (ΓÅ╕∩╕Å  Not enabled)
+   ID: 57de2916-9c8b-4e85-978f-9821b28b2b53
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 0/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+64. ≡ƒƒó Test Tenant for Finance Intelligence (ΓÅ╕∩╕Å  Not enabled)
+   ID: 28a36223-ec6a-47e8-8987-d9796f8cee90
+   Type: Baby Care | Tier: premium
+   Risk: LOW (Score: 10/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+65. ≡ƒƒó Beauty Spa Franchise Demo - TEST (ΓÅ╕∩╕Å  Not enabled)
+   ID: 94e179de-4ab3-4807-8f7d-58a196e75e15
+   Type: Beauty Spa | Tier: enterprise
+   Risk: LOW (Score: 10/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: No (dev/test)
+
+66. ≡ƒƒó Bella Spa Headquarter (ΓÅ╕∩╕Å  Not enabled)
+   ID: 0e66365b-42b0-420e-acca-f7d7692e125e
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 20/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: Yes
+
+67. ≡ƒƒó E2E-BEAUTY-ISOLATION-1785473756071 Tenant (ΓÅ╕∩╕Å  Not enabled)
+   ID: 769646a5-f094-4a62-8a71-4fcf2f1fc98f
+   Type: Beauty Spa | Tier: free_trial
+   Risk: LOW (Score: 20/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: Yes
+
+68. ≡ƒƒó bella_auto_stress (ΓÅ╕∩╕Å  Not enabled)
+   ID: 20fed1f5-6bcb-465e-9e90-5442d3b3e9e6
+   Type: Unknown | Tier: free_trial
+   Risk: LOW (Score: 20/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: Yes
+
+69. ≡ƒƒó Bella Auto Pilot (ΓÅ╕∩╕Å  Not enabled)
+   ID: 60b2af9f-82b0-44d3-b0ff-1beabd65258e
+   Type: Unknown | Tier: free_trial
+   Risk: LOW (Score: 20/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: Yes
+
+70. ≡ƒƒó Bella General Hospital (ΓÅ╕∩╕Å  Not enabled)
+   ID: c1e19d70-36ab-4a5f-a36c-92f7e7f6e05d
+   Type: Unknown | Tier: free_trial
+   Risk: LOW (Score: 20/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: Yes
+
+71. ≡ƒƒó Other Tenant (ΓÅ╕∩╕Å  Not enabled)
+   ID: 924ce015-d570-4daa-ba19-7e9d8e6cbc3a
+   Type: Baby Care | Tier: free_trial
+   Risk: LOW (Score: 20/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: Yes
+
+72. ≡ƒƒó Bella Medical Clinic (ΓÅ╕∩╕Å  Not enabled)
+   ID: 88888888-8888-8888-8888-888888888888
+   Type: Baby Care | Tier: enterprise
+   Risk: LOW (Score: 30/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: Yes
+
+73. ≡ƒƒó Bella Medical Clinic (ΓÅ╕∩╕Å  Not enabled)
+   ID: 77777777-7777-7777-7777-777777777777
+   Type: Baby Care | Tier: enterprise
+   Risk: LOW (Score: 30/100)
+   Rooms/Beds: 0, Users: 0, Avg Daily Bookings: 0
+   Production: Yes
+
+
+====================================================================================================
+SUMMARY STATISTICS:
+====================================================================================================
+≡ƒƒó Low Risk:    73 tenants (100.0%)
+≡ƒƒí Medium Risk: 0 tenants (0.0%)
+≡ƒö┤ High Risk:   0 tenants (0.0%)
+
+Already Enabled: 0/73 tenants
+
+====================================================================================================
+ROLLOUT STAGE RECOMMENDATIONS:
+====================================================================================================
+
+Stage 1 (10%): 8 tenants
+  - Tenant A Leak Test (low)
+  - Test Tenant VAT (low)
+  - Test Webhook Tenant (low)
+  - Test Tenant Branch Scope (low)
+  - Test Tenant Manual Reversal (low)
+  - Test Tenant Commission Clawback (low)
+  - Test Concurrent Tenant (low)
+  - Tenant B Leak Test (low)
+
+Stage 2 (25%): 11 tenants
+  - Test Tenant Mid Month Join (low)
+  - Test Orphan Tenant (low)
+  - Test Double Payment Tenant (low)
+  - Test Tenant Inter Branch (low)
+  - Test Tenant Gateway Timeout (low)
+  - Test Tenant Partial Refund (low)
+  - Test Over Commission Tenant (low)
+  - Test Tenant Payroll Reopen (low)
+  - Test Tenant Multi Payment (low)
+  - Test Tenant Split Payment (low)
+  - Test Tenant Dispute (low)
+
+Stage 3 (50%): 18 tenants
+  - Test Rate Limit Tenant (low)
+  - Tenant A RPC Test (low)
+  - Tenant B RPC Test (low)
+  - Test Tenant Cross Month (low)
+  - Test Partner API Tenant (low)
+  - Test Tenant KTV Scope (low)
+  - Test Scope Tenant (low)
+  - Test Tenant Leave (low)
+  - Test Tenant Period Lock (low)
+  - Tenant A Leak Test (low)
+  - Tenant B Leak Test (low)
+  - Tenant A RPC Test (low)
+  - Tenant B RPC Test (low)
+  - Test Tenant Accounting GL (low)
+  - Test Tenant E2E (low)
+  - Test Tenant Refund E2E (low)
+  - Test Tenant Payroll (low)
+  - Bella Real Estate Development [DEMO] (low)
+
+Stage 4 (100%): 36 tenants
+  - Bella Real Estate Development [DEMO] (low)
+  - Bella Real Estate Development [DEMO] (low)
+  - Bella Real Estate Development [DEMO] (low)
+  - Bella Real Estate Development [DEMO] (low)
+  - Bella Real Estate Development [DEMO] (low)
+  - Tenant A Leak Test (low)
+  - Tenant B Leak Test (low)
+  - Tenant A RPC Test (low)
+  - Tenant B RPC Test (low)
+  - Tenant A Leak Test (low)
+  - Tenant B Leak Test (low)
+  - Tenant A RPC Test (low)
+  - Tenant B RPC Test (low)
+  - Tenant A Leak Test (low)
+  - Tenant B Leak Test (low)
+  - Tenant A RPC Test (low)
+  - Tenant B RPC Test (low)
+  - Bella Real Estate Development [DEMO] (low)
+  - bella_auto_stress_test (low)
+  - Test Integration Tenant (low)
+  - E2E Test Tenant (low)
+  - Tenant A Leak Test (low)
+  - Tenant B Leak Test (low)
+  - Test Tenant - Rules API (low)
+  - Tenant A RPC Test (low)
+  - Tenant B RPC Test (low)
+  - Test Tenant for Finance Intelligence (low)
+  - Beauty Spa Franchise Demo - TEST (low)
+  - Bella Spa Headquarter (low)
+  - E2E-BEAUTY-ISOLATION-1785473756071 Tenant (low)
+  - bella_auto_stress (low)
+  - Bella Auto Pilot (low)
+  - Bella General Hospital (low)
+  - Other Tenant (low)
+  - Bella Medical Clinic (low)
+  - Bella Medical Clinic (low)
+
+====================================================================================================
+Γ£à Query complete!
+
