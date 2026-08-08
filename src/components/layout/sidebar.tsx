@@ -550,20 +550,20 @@ const bellaHospitalInpatientMenuItems: SidebarMenuItem[] = [
 
   { type: 'header', label: 'Vận Hành & Nhân Sự' },
   { icon: Users,           label: 'Quản lý nhân lực',            href: '/dashboard/hr/workforce' },
-  { icon: Package,         label: 'Kho dược & Cấp phát',         href: '/dashboard/medical/pharmacy' },
+  { icon: Package,         label: 'Kho dược & Cấp phát',         href: '/dashboard/hospital/pharmacy' },
 
   { type: 'header', label: 'Viện Phí & Bảo Hiểm' },
-  { icon: CircleDollarSign, label: 'Viện phí & Thanh toán',       href: '/dashboard/medical/billing' },
+  { icon: CircleDollarSign, label: 'Viện phí & Thanh toán',       href: '/dashboard/hospital/billing' },
   { icon: FileText,        label: 'Cổng giám định BHYT',         href: '/dashboard/hospital/bhyt' },
-  { icon: FileText,        label: 'Hợp đồng bảo hiểm',           href: '/dashboard/medical/contracts' },
+  { icon: FileText,        label: 'Hợp đồng bảo hiểm',           href: '/dashboard/hospital/contracts' },
 
   { type: 'header', label: 'Chất Lượng & An Toàn' },
   { icon: ShieldCheck,     label: 'Sự cố an toàn bệnh nhân',     href: '/dashboard/healthcare/reports/clinical' },
   { icon: ShieldCheck,     label: 'Kiểm toán an toàn',           href: '/dashboard/healthcare/reports/treatment' },
 
   { type: 'header', label: 'Phân Tích & Quản Trị' },
-  { icon: BarChart3,       label: 'Báo cáo phân tích BI',        href: '/dashboard/medical/reports' },
-  { icon: LineChart,       label: 'Doanh thu & Chi phí P&L',     href: '/dashboard/medical/reports/revenue' },
+  { icon: BarChart3,       label: 'Báo cáo phân tích BI',        href: '/dashboard/hospital/reports' },
+  { icon: LineChart,       label: 'Doanh thu & Chi phí P&L',     href: '/dashboard/hospital/reports/revenue' },
   { icon: Layers,          label: 'Quản trị nền tảng',           href: '/dashboard/rules' },
   { icon: Settings,        label: 'Cài đặt hệ thống',            href: '/dashboard/settings' },
 ];
