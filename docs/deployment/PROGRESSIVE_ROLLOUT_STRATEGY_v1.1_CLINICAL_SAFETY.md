@@ -1,20 +1,23 @@
 # Progressive Rollout Strategy v1.1 - Clinical Safety
 
-**Version:** 1.1 (Clinical Safety Edition)  
+**Version:** 1.1 (Clinical Safety Profile)  
 **Date:** 2026-08-07  
 **Status:** Draft - Awaiting Approval  
-**Previous Version:** v1.0 (Generic Platform Rollout)  
-**Applies To:** Phase B1 Perioperative Care Platform and all future clinical-risk capabilities
+**Extends:** Progressive Rollout Strategy v1.0 (Canonical Framework)  
+**Profile:** Tier 3 - Clinical Safety (High-Risk Capabilities)  
+**Applies To:** Phase B1 Perioperative Care Platform and all future patient-safety-critical capabilities
 
 ---
 
 ## Executive Summary
 
-**v1.0 → v1.1 Upgrade Rationale:**
+**Framework Relationship:**
 
-v1.0 Progressive Rollout Strategy (Phase A) đạt ~75-80% production-ready cho generic platform features nhưng **không đủ an toàn cho clinical workflows** như Perioperative Care, ICU monitoring, Medication Administration, hay Emergency Department.
+v1.0 Progressive Rollout Strategy (Phase A) là **canonical framework** cho platform infrastructure và remains valid.
 
-v1.1 nâng cấp với **20 critical improvements** để đạt **90%+ clinical safety** trước khi rollout high-risk healthcare capabilities.
+v1.1 **extends v1.0** với Clinical Safety Profile - một **mandatory overlay** cho patient-safety-critical capabilities như Perioperative Care, ICU monitoring, Medication Administration, Emergency Department.
+
+v1.1 KHÔNG thay thế v1.0 - nó là Tier 3 profile với **20 additional safeguards** trên nền v1.0.
 
 **Key Changes:**
 1. 🔴 **Clinical Safety Gates** (P0) - Event loss = 0, Patient safety incidents = 0
@@ -49,7 +52,30 @@ Clinical Capabilities (Phase B+) ← v1.1 rollout strategy (THIS DOCUMENT)
 ```
 
 
-### 1.2. Relationship with v1.0
+### 1.2. 3-Tier Rollout Framework
+
+**v1.0 remains canonical - v1.1 is a Clinical Safety Profile on top.**
+
+```
+BELLA PROGRESSIVE ROLLOUT FRAMEWORK
+        │
+        ├── Tier 1: Generic Platform (v1.0)
+        │     ├── Platform infrastructure
+        │     ├── Event Bus, Feature Flags
+        │     ├── Non-clinical workflows
+        │     └── 10% → 25% → 50% → 100%
+        │
+        ├── Tier 2: Healthcare Operational (v1.0 + Healthcare Gates)
+        │     ├── Bed, Billing, OPD, Scheduling
+        │     ├── v1.0 stages + Healthcare validation
+        │     └── Medium clinical risk
+        │
+        └── Tier 3: Clinical Safety (v1.1 Profile) ← THIS DOCUMENT
+              ├── Perioperative, ICU, ED, Medication, Blood Bank
+              ├── Shadow → Stages → Pilot → Hypercare
+              ├── 5 Hard Gates (Clinical Safety)
+              └── Critical patient-safety risk
+```
 
 **v1.0 (Phase A) is NOT replaced - it becomes the foundation.**
 
@@ -686,9 +712,11 @@ Can remove `phase_b1_perioperative_platform` flag when:
 
 ---
 
-## 10. Comparison: v1.0 vs v1.1
+## 10. Comparison: Tier 1 (v1.0) vs Tier 3 (v1.1)
 
-| Aspect | v1.0 (Phase A Generic) | v1.1 (Phase B1 Clinical) |
+**Note:** v1.1 extends v1.0, NOT replaces it. Both are active in Bella Platform.
+
+| Aspect | Tier 1: v1.0 (Generic Platform) | Tier 3: v1.1 (Clinical Safety) |
 |--------|------------------------|--------------------------|
 | **Risk Level** | Low-Medium (Platform) | Critical (Patient Safety) |
 | **Shadow Mode** | Optional | ✅ Mandatory 7 days |
@@ -705,7 +733,59 @@ Can remove `phase_b1_perioperative_platform` flag when:
 
 ---
 
-## 11. Approval Process
+## 11. Framework Tier Selection Guide
+
+### 11.1. When to Use Each Tier
+
+**Tier 1 (v1.0 Generic Platform):**
+- Platform infrastructure (Event Bus, Feature Flags, IAM)
+- Organization management (tenants, users, roles)
+- Non-clinical workflows (reporting, dashboards)
+- Generic business logic
+- **Example:** Phase A Platform-of-Platforms
+
+**Tier 2 (v1.0 + Healthcare Gates):**
+- Healthcare operational workflows (medium risk)
+- Bed management, Ward operations
+- Billing, Insurance claims
+- OPD scheduling
+- Administrative workflows
+- **Example:** Bed allocation, OPD booking
+
+**Tier 3 (v1.1 Clinical Safety Profile):**
+- **Patient-safety-critical workflows (MANDATORY for)**:
+  - ✅ Perioperative Care Platform (OR, Surgery, Anesthesia, PACU)
+  - ✅ ICU monitoring & Ventilator management
+  - ✅ Emergency Department & Triage
+  - ✅ Medication Administration
+  - ✅ Blood Bank & Transfusion
+  - ✅ Critical vital signs monitoring
+  - ✅ Anesthesia monitoring
+  - ✅ Surgical Safety Checklist
+- **Criteria:** Event loss = patient harm, Wrong patient/site/medication risk
+
+### 11.2. Decision Matrix
+
+```
+Is it patient-safety-critical?
+   │
+   ├─YES─► Is wrong data life-threatening?
+   │           │
+   │           ├─YES─► Tier 3 (v1.1 Clinical Safety)
+   │           │       Shadow + 5 Gates + Pilot + Hypercare
+   │           │
+   │           └─NO──► Is it clinical workflow?
+   │                      │
+   │                      ├─YES─► Tier 2 (v1.0 + Healthcare)
+   │                      │
+   │                      └─NO──► Tier 1 (v1.0 Generic)
+   │
+   └─NO──► Tier 1 (v1.0 Generic Platform)
+```
+
+---
+
+## 12. Approval Process
 
 ### 11.1. Document Approval (This Document)
 
@@ -804,9 +884,11 @@ Can remove `phase_b1_perioperative_platform` flag when:
 ---
 
 **Document Status:** ✅ COMPLETE - Awaiting Approval  
-**Version:** 1.1 Clinical Safety  
-**Supersedes:** v1.0 Generic Platform Rollout  
-**Applies To:** Phase B1+ (All clinical-risk capabilities)  
+**Version:** 1.1 Clinical Safety Profile (Tier 3)  
+**Extends:** Progressive Rollout Strategy v1.0 (remains canonical)  
+**Framework Tier:** Tier 3 (Clinical Safety - Patient-Safety-Critical Capabilities)  
+**Applies To:** Phase B1+ Perioperative, ICU, ED, Medication, Blood Bank  
+**v1.0 Status:** ✅ Active (Tier 1 Generic Platform + Tier 2 Healthcare Operational)  
 **Next Review:** After Phase B1 deployment complete  
 **Last Updated:** 2026-08-07
 
