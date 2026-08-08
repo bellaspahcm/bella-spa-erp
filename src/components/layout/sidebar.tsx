@@ -531,7 +531,7 @@ const bellaHospitalInpatientMenuItems: SidebarMenuItem[] = [
 
   { type: 'header', label: 'Chăm Sóc Bệnh Nhân' },
   { icon: Calendar,        label: 'Đặt lịch & Ngoại trú',        href: '/dashboard/healthcare/appointments' },
-  { icon: Tv,              label: 'Khoa Cấp Cứu (ER)',           href: '/dashboard/healthcare/queue/tv' },
+  { icon: Tv,              label: 'TV Gọi Số Hàng Đợi',          href: '/dashboard/healthcare/queue/tv' },
   { icon: Bed,             label: 'Sơ đồ buồng giường',          href: '/dashboard/hospital/beds' },
   { icon: Hospital,        label: 'Thủ tục xuất viện',           href: '/dashboard/hospital/admissions' },
   { icon: Activity,        label: 'Hành trình điều trị',         href: '/dashboard/healthcare/journeys' },
