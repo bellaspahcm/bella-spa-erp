@@ -212,12 +212,12 @@ export default function HospitalDashboardPage() {
           </div>
           <div className="my-3">
             <div className="text-3xl font-black text-slate-900">{stats.totalAdmissions + 100}</div>
-            <div className="text-[10px] text-slate-500 font-semibold mt-1">
+            <div className="text-xs text-slate-500 font-semibold mt-1.5">
               Ngoại trú: <span className="text-slate-800 font-bold">142</span> • Nội trú: <span className="text-slate-800 font-bold">{stats.activeAdmissions}</span> • Cấp cứu: <span className="text-slate-800 font-bold">24</span>
             </div>
           </div>
-          <div className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md self-start flex items-center space-x-1">
-            <TrendingUp className="w-3 h-3" />
+          <div className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md self-start flex items-center space-x-1">
+            <TrendingUp className="w-3.5 h-3.5" />
             <span>+12% lượt khám vs hôm qua</span>
           </div>
         </div>
@@ -233,7 +233,7 @@ export default function HospitalDashboardPage() {
           <div className="my-2">
             <div className="flex items-baseline space-x-2">
               <span className="text-3xl font-black text-slate-900">{stats.occupancyRate.toFixed(0)}%</span>
-              <span className="text-[10px] font-semibold text-slate-500">Tỉ lệ sử dụng</span>
+              <span className="text-xs font-bold text-slate-400">Tỉ lệ sử dụng</span>
             </div>
             <div className="w-full bg-slate-100 rounded-full h-2 mt-2 overflow-hidden">
               <div 
@@ -244,7 +244,7 @@ export default function HospitalDashboardPage() {
               />
             </div>
           </div>
-          <div className="text-[10px] text-slate-500 font-semibold">
+          <div className="text-xs text-slate-500 font-semibold mt-1">
             ICU: <span className="text-slate-800 font-bold">12/14</span> • Thường: <span className="text-slate-800 font-bold">{stats.occupiedBeds - 12}/{stats.totalBeds - 14}</span> • Dọn dẹp: <span className="text-indigo-600 font-bold">3</span>
           </div>
         </div>
@@ -259,11 +259,11 @@ export default function HospitalDashboardPage() {
           </div>
           <div className="my-3">
             <div className="text-3xl font-black text-rose-600">24</div>
-            <div className="text-[10px] text-slate-500 font-semibold mt-1">
+            <div className="text-xs text-slate-500 font-semibold mt-1.5">
               Chờ khám: <span className="text-rose-600 font-bold">8</span> • Nguy kịch: <span className="text-rose-700 font-bold">2</span> • Phân loại: <span className="text-amber-600 font-bold">3</span>
             </div>
           </div>
-          <div className="text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md self-start">
+          <div className="text-xs font-bold text-rose-700 bg-rose-50 px-2.5 py-1 rounded-md self-start">
             1 Bệnh nhân đang chờ giường ICU
           </div>
         </div>
@@ -278,12 +278,12 @@ export default function HospitalDashboardPage() {
           </div>
           <div className="my-3">
             <div className="text-3xl font-black text-slate-900">12/14</div>
-            <div className="text-[10px] text-slate-500 font-semibold mt-1">
+            <div className="text-xs text-slate-500 font-semibold mt-1.5">
               Thở máy: <span className="text-purple-600 font-bold">4</span> • Cảnh báo cao: <span className="text-indigo-600 font-bold">2</span>
             </div>
           </div>
-          <div className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md self-start flex items-center space-x-1">
-            <AlertCircle className="w-3 h-3 text-amber-500 animate-pulse" />
+          <div className="text-xs font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-md self-start flex items-center space-x-1">
+            <AlertCircle className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
             <span>01 Cảnh báo chưa xác nhận</span>
           </div>
         </div>
@@ -298,11 +298,11 @@ export default function HospitalDashboardPage() {
           </div>
           <div className="my-3">
             <div className="text-3xl font-black text-slate-900">18 <span className="text-xs text-slate-400 font-medium">Ca mổ</span></div>
-            <div className="text-[10px] text-slate-500 font-semibold mt-1">
+            <div className="text-xs text-slate-500 font-semibold mt-1.5">
               Đang mổ: <span className="text-emerald-600 font-bold">3</span> • Xong: <span className="text-slate-500 font-bold">11</span> • Trễ lịch: <span className="text-amber-600 font-bold">2</span>
             </div>
           </div>
-          <div className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md self-start">
+          <div className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md self-start">
             P.Mổ 01, P.Mổ 03: Đang thực hiện
           </div>
         </div>
