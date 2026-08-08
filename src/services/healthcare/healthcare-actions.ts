@@ -1,16 +1,157 @@
 'use server';
 
+import { Database, Json } from '@/types/supabase';
+
+interface SoapNotesType {
+  subjective?: string;
+  objective?: string;
+  assessment?: string;
+  plan?: string;
+}
+
+export interface PatientViewModel {
+  id: string;
+  recordNumber: string;
+  name: string;
+  gender: 'male' | 'female';
+  dob: string;
+  age: number;
+  bloodType: string;
+  allergies: string[];
+  phone: string;
+  bhytCode?: string | null;
+  bhytBenefitRate?: number | null;
+  toothData: Record<string, unknown>;
+}
+
+export interface EncounterTimelineItem {
+  time: string;
+  label: string;
+  done: boolean;
+}
+
+export interface EncounterViewModel {
+  id: string;
+  patientName: string;
+  doctorName: string;
+  status: 'planned' | 'arrived' | 'in_progress' | 'finished';
+  chiefComplaint: string;
+  queueNumber: number;
+  scheduledAt: string;
+  arrivedAt: string;
+  startedAt?: string;
+  completedAt?: string;
+  priority: 'emergency' | 'high' | 'routine';
+  waitTimeMinutes: number;
+  timeline: EncounterTimelineItem[];
+  subjective: string;
+  objective: string;
+  assessment: string;
+  plan: string;
+}
+
+export interface LabOrderViewModel {
+  id: string;
+  ticketNumber: string;
+  patientName: string;
+  gender: string;
+  age: number;
+  testCode: string;
+  testName: string;
+  sampleType: string | null;
+  tubeColor: string;
+  status: 'panic' | 'completed' | 'pending';
+  resultValue: string | null;
+  resultUnit: string;
+  referenceRange: string;
+  isPanicValue: boolean | null;
+  doctorNotified: boolean;
+  doctorNotifiedTime?: string;
+}
+
+export interface ImagingOrderViewModel {
+  id: string;
+  ticketNumber: string;
+  patientName: string;
+  modality: string;
+  bodySite: string;
+  dcmStudyUid: string;
+  viewerLink: string;
+  status: 'reported' | 'captured' | 'pending';
+  radiologistReport: string | null;
+  priority: 'STAT' | 'URGENT' | 'ROUTINE' | 'SCREENING';
+  radiologistStatus: 'released' | 'reading' | 'unassigned';
+  seriesCount: number;
+  imageCount: number;
+  storageSize: string;
+  aiFindings: Array<{ label: string; confidence: number; isCritical: boolean }>;
+  timeline: Array<{ step: string; time: string; done: boolean }>;
+  doctorNotified: boolean;
+  doctorNotifiedTime?: string;
+}
+
+export interface DrugViewModel {
+  id: string;
+  drugCode: string;
+  drugName: string;
+  activeIngredient: string | null;
+  atcCode: string | null;
+  dosageForm: string;
+  stockQty: number;
+  unit: string;
+  isControlled: boolean;
+  isColdStorage: boolean;
+}
+
+export interface HealthcareInvoiceViewModel {
+  id: string;
+  encounterId: string;
+  patientName: string;
+  bhytCode: string;
+  benefitRate: number;
+  totalAmount: number;
+  bhytCovered: number;
+  patientPay: number;
+  status: 'paid' | 'unpaid';
+  itemsCount: number;
+}
+
+export interface HealthcareStaffPayroll {
+  id: string;
+  full_name: string | null;
+  role: string;
+  position_tier: string;
+  base_salary: number;
+  service_percentage_bonus: number;
+  kpi_bonus: number;
+  total_salary: number;
+  status: string;
+}
+
+export interface PrescriptionViewModel {
+  id: string;
+  ticketNumber: string;
+  patientName: string;
+  patientAge: number;
+  patientWeight: number;
+  doctorName: string;
+  drugName: string;
+  qty: number;
+  unit: string;
+  dosageInstruction: string;
+  status: string;
+  createdAt: string;
+  cdssAlerts: string[];
+}
+
+function getErrorMessage(err: unknown, fallback: string): string {
+  if (err instanceof Error) return err.message;
+  return fallback;
+}
+
 import { createDevelopmentBypassClient } from '@/lib/supabase-dev-bypass-server';
 import { getCurrentUser } from '@/services/user-actions';
-import { 
-  PatientProfile, 
-  Encounter, 
-  ClinicalOrder, 
-  LabOrderItem, 
-  ImagingOrderItem, 
-  PrescriptionItem,
-  PatientJourneyQueueItem 
-} from '@/types/healthcare';
+import type { PatientProfile, Encounter } from '@/types/healthcare';
 import { createHealthcareEvent, HEALTHCARE_EVENT_CATALOG } from '@/lib/events/healthcare-events';
 
 async function getTenantIdOrThrow(): Promise<string> {
@@ -23,7 +164,7 @@ async function getTenantIdOrThrow(): Promise<string> {
  */
 export async function getActiveHealthcarePluginAction(): Promise<{ success: boolean; pluginId: 'bella-medical' | 'bella-dental' }> {
   try {
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     const { data, error } = await supabase
@@ -42,7 +183,7 @@ export async function getActiveHealthcarePluginAction(): Promise<{ success: bool
       success: true,
       pluginId: activePlugin === 'bella-dental' ? 'bella-dental' : 'bella-medical',
     };
-  } catch (err) {
+  } catch {
     return { success: true, pluginId: 'bella-medical' };
   }
 }
@@ -54,7 +195,7 @@ export async function switchActiveHealthcarePluginAction(
   pluginId: 'bella-medical' | 'bella-dental'
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     const { data: tenant, error: fetchErr } = await supabase
@@ -88,7 +229,7 @@ export async function switchActiveHealthcarePluginAction(
 
     return { success: true };
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : 'Lỗi chuyển đổi sản phẩm';
+    const msg = err instanceof Error ? getErrorMessage(err, "Lỗi hệ thống") : 'Lỗi chuyển đổi sản phẩm';
     return { success: false, error: msg };
   }
 }
@@ -98,7 +239,7 @@ export async function switchActiveHealthcarePluginAction(
  */
 export async function getOrCreatePatientProfileAction(customerId: string): Promise<{ success: boolean; data?: PatientProfile; error?: string }> {
   try {
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     // Check existing profile
@@ -138,8 +279,8 @@ export async function getOrCreatePatientProfileAction(customerId: string): Promi
     }
 
     return { success: true, data: newProfile as PatientProfile };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Lỗi hệ thống khi tạo Hồ sơ bệnh nhân' };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err, "Lỗi") || 'Lỗi hệ thống khi tạo Hồ sơ bệnh nhân' };
   }
 }
 
@@ -154,7 +295,7 @@ export async function startEncounterAction(input: {
   priority?: 'routine' | 'urgent' | 'emergency';
 }): Promise<{ success: boolean; data?: Encounter; error?: string }> {
   try {
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     // Ensure patient profile exists
@@ -234,12 +375,12 @@ export async function startEncounterAction(input: {
     await supabase.from('audit_logs').insert({
       tenant_id: tenantId,
       action: 'HEALTHCARE_EVENT_EMITTED',
-      details: domainEvent as any
+      details: domainEvent as unknown as Json
     });
 
     return { success: true, data: encounter as Encounter };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Lỗi tạo lượt khám' };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err, "Lỗi") || 'Lỗi tạo lượt khám' };
   }
 }
 
@@ -255,11 +396,11 @@ export async function updateEncounterSOAPAction(input: {
     assessment?: string;
     plan?: string;
   };
-  vitals?: Record<string, any>;
+  vitals?: Record<string, unknown>;
   diagnoses?: Array<{ code: string; name: string; isPrimary: boolean }>;
 }): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     const soapPayload = {
@@ -271,7 +412,7 @@ export async function updateEncounterSOAPAction(input: {
       diagnoses: input.diagnoses || [],
     };
 
-    const updatePayload: Record<string, any> = {
+    const updatePayload: Record<string, unknown> = {
       notes: JSON.stringify(soapPayload),
       updated_at: new Date().toISOString()
     };
@@ -292,8 +433,8 @@ export async function updateEncounterSOAPAction(input: {
     }
 
     return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Lỗi cập nhật SOAP' };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err, "Lỗi") || 'Lỗi cập nhật SOAP' };
   }
 }
 
@@ -302,7 +443,7 @@ export async function updateEncounterSOAPAction(input: {
  */
 export async function completeEncounterAction(encounterId: string): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     // Invariant Guard Check: Verify no pending clinical orders exist
@@ -359,12 +500,12 @@ export async function completeEncounterAction(encounterId: string): Promise<{ su
     await supabase.from('audit_logs').insert({
       tenant_id: tenantId,
       action: 'HEALTHCARE_EVENT_EMITTED',
-      details: domainEvent as any
+      details: domainEvent as unknown as Json
     });
 
     return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Lỗi hoàn tất lượt khám' };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err, "Lỗi") || 'Lỗi hoàn tất lượt khám' };
   }
 }
 
@@ -372,9 +513,9 @@ export async function completeEncounterAction(encounterId: string): Promise<{ su
 /**
  * 6. Lấy toàn bộ danh sách bệnh nhân (Patient Profiles + Core Customers)
  */
-export async function getAllPatientProfilesAction(): Promise<{ success: boolean; data?: any[]; error?: string }> {
+export async function getAllPatientProfilesAction(): Promise<{ success: boolean; data?: PatientViewModel[]; error?: string }> {
   try {
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     // Query patient profiles
@@ -394,10 +535,15 @@ export async function getAllPatientProfilesAction(): Promise<{ success: boolean;
       .select('*')
       .eq('tenant_id', tenantId);
 
-    const custMap = new Map<string, any>((customers || []).map((c: any) => [c.id, c]));
+    const custMap = new Map<string, Database['public']['Tables']['customers']['Row']>((customers || []).map((c) => [c.id, c]));
 
     // Map to PatientInfo ViewModel structure
-    const mapped = (profiles || []).map((p: any) => {
+    const mapped: PatientViewModel[] = (profiles || []).map((p) => {
+      const parseJsonArray = (jsonVal: Json | null): string[] => {
+        if (!jsonVal) return [];
+        if (Array.isArray(jsonVal)) return jsonVal.map(String);
+        return [];
+      };
       const cust = custMap.get(p.customer_id) || {};
       return {
         id: p.id,
@@ -407,7 +553,7 @@ export async function getAllPatientProfilesAction(): Promise<{ success: boolean;
         dob: cust.dob_baby || '1995-10-12',
         age: 30, // Default age fallback
         bloodType: p.blood_type || 'O+',
-        allergies: Array.isArray(p.known_allergies) ? p.known_allergies : [],
+        allergies: parseJsonArray(p.known_allergies),
         phone: cust.phone || '',
         bhytCode: p.bhyt_code,
         bhytBenefitRate: p.bhyt_benefit_rate,
@@ -416,8 +562,8 @@ export async function getAllPatientProfilesAction(): Promise<{ success: boolean;
     });
 
     return { success: true, data: mapped };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Lỗi lấy hồ sơ bệnh nhân' };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err, "Lỗi") || 'Lỗi lấy hồ sơ bệnh nhân' };
   }
 }
 
@@ -434,7 +580,7 @@ export async function createPatientRecordAction(input: {
   allergies?: string[];
 }): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     // 1. Insert into party_parties first
@@ -490,17 +636,17 @@ export async function createPatientRecordAction(input: {
     }
 
     return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Lỗi thêm mới bệnh nhân' };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err, "Lỗi") || 'Lỗi thêm mới bệnh nhân' };
   }
 }
 
 /**
  * 8. Lấy toàn bộ danh sách lượt khám (hc_encounters + customers + patient_profiles)
  */
-export async function getAllEncountersAction(dateFilter?: string): Promise<{ success: boolean; data?: any[]; error?: string }> {
+export async function getAllEncountersAction(dateFilter?: string): Promise<{ success: boolean; data?: EncounterViewModel[]; error?: string }> {
   try {
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     let query = supabase
@@ -526,11 +672,10 @@ export async function getAllEncountersAction(dateFilter?: string): Promise<{ suc
       .select('id, display_name')
       .eq('tenant_id', tenantId);
 
-    const partyMap = new Map((parties || []).map((p: any) => [p.id, p.display_name]));
+    const partyMap = new Map<string, string>((parties || []).map((p) => [p.id, p.display_name]));
 
     const prioritiesList: Array<'emergency' | 'high' | 'routine'> = ['high', 'routine', 'emergency', 'routine', 'routine'];
-    const waitTimesList = [22, 12, 5, 14, 8];
-
+    
     const mockSoapTemplates = [
       {
         chiefComplaint: 'Đau tức vùng thượng vị và ngực trái khẩn cấp',
@@ -569,15 +714,15 @@ export async function getAllEncountersAction(dateFilter?: string): Promise<{ suc
       }
     ];
 
-    const rawEncounters = (!encounters || encounters.length === 0) ? [
+    const rawEncounters = (!encounters || encounters.length === 0) ? ([
       { id: 'enc-101', patient_party_id: 'p-1', chief_complaint: mockSoapTemplates[0].chiefComplaint, status: 'in_consultation', queue_number: 101 },
       { id: 'enc-102', patient_party_id: 'p-2', chief_complaint: mockSoapTemplates[1].chiefComplaint, status: 'orders_pending', queue_number: 102 },
       { id: 'enc-103', patient_party_id: 'p-3', chief_complaint: mockSoapTemplates[2].chiefComplaint, status: 'in_consultation', queue_number: 103 },
       { id: 'enc-104', patient_party_id: 'p-4', chief_complaint: mockSoapTemplates[3].chiefComplaint, status: 'completed', queue_number: 104 },
       { id: 'enc-105', patient_party_id: 'p-5', chief_complaint: mockSoapTemplates[4].chiefComplaint, status: 'completed', queue_number: 105 },
-    ] : encounters;
+    ] as unknown as Database['public']['Tables']['hc_encounters']['Row'][]) : encounters;
 
-    const mapped = rawEncounters.map((e: any, idx: number) => {
+    const mapped: EncounterViewModel[] = rawEncounters.map((e, idx: number) => {
       const patientName = partyMap.get(e.patient_party_id) || ['Lê Thị Mai', 'Trần Đức Hùng', 'Nguyễn Văn Hùng', 'Phạm Thị Hoa', 'Hoàng Đức Nam'][idx % 5];
       const template = mockSoapTemplates[idx % mockSoapTemplates.length];
 
@@ -592,7 +737,7 @@ export async function getAllEncountersAction(dateFilter?: string): Promise<{ suc
         mappedStatus = 'planned';
       }
 
-      let parsedSoap: any = {};
+      let parsedSoap: SoapNotesType = {};
       if (e.notes) {
         try {
           parsedSoap = typeof e.notes === 'string' ? JSON.parse(e.notes) : e.notes;
@@ -652,17 +797,17 @@ export async function getAllEncountersAction(dateFilter?: string): Promise<{ suc
     });
 
     return { success: true, data: mapped };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Lỗi lấy lượt khám' };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err, "Lỗi") || 'Lỗi lấy lượt khám' };
   }
 }
 
 /**
  * 9. Cập nhật trạng thái lượt khám trong Database
  */
-export async function updateEncounterStatusAction(encounterId: string, newStatus: string): Promise<{ success: boolean; error?: string }> {
+export async function updateEncounterStatusAction(encounterId: string, newStatus: EncounterStatus): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     const dbStatus = newStatus === 'finished' ? 'finished' : (newStatus === 'in_progress' ? 'in_progress' : (newStatus === 'arrived' ? 'arrived' : 'planned'));
@@ -679,8 +824,8 @@ export async function updateEncounterStatusAction(encounterId: string, newStatus
     }
 
     return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Lỗi cập nhật trạng thái lượt khám' };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err, "Lỗi") || 'Lỗi cập nhật trạng thái lượt khám' };
   }
 }
 
@@ -689,7 +834,7 @@ export async function updateEncounterStatusAction(encounterId: string, newStatus
  */
 export async function seedDefaultHealthcareDataAction(options?: { force?: boolean }): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     if (!options?.force) {
@@ -793,7 +938,7 @@ export async function seedDefaultHealthcareDataAction(options?: { force?: boolea
       if (!cust) continue;
       customerMap.set(p.name, cust.id);
 
-      let { data: prof } = await supabase
+      const { data: prof } = await supabase
         .from('patient_profiles')
         .select('id')
         .eq('id', party.id)
@@ -850,7 +995,7 @@ export async function seedDefaultHealthcareDataAction(options?: { force?: boolea
       const partyId = partyMap.get(enc.patientName);
       if (!partyId) continue;
 
-      let { data: existingEnc } = await supabase
+      const { data: existingEnc } = await supabase
         .from('hc_encounters')
         .select('id')
         .eq('tenant_id', tenantId)
@@ -885,7 +1030,7 @@ export async function seedDefaultHealthcareDataAction(options?: { force?: boolea
 
       // Seed Patient Queue Record
       if (encId) {
-        let { data: qItem } = await supabase
+        const { data: qItem } = await supabase
           .from('hc_patient_queues')
           .select('id')
           .eq('tenant_id', tenantId)
@@ -917,7 +1062,7 @@ export async function seedDefaultHealthcareDataAction(options?: { force?: boolea
       const partyId = partyMap.get(lab.pName);
       const custId = customerMap.get(lab.pName);
 
-      let { data: enc } = await supabase
+      const { data: enc } = await supabase
         .from('hc_encounters')
         .select('id')
         .eq('tenant_id', tenantId)
@@ -925,7 +1070,7 @@ export async function seedDefaultHealthcareDataAction(options?: { force?: boolea
         .limit(1)
         .maybeSingle();
 
-      let { data: cOrder } = await supabase
+      const { data: cOrder } = await supabase
         .from('hc_clinical_orders')
         .insert({
           tenant_id: tenantId,
@@ -968,7 +1113,7 @@ export async function seedDefaultHealthcareDataAction(options?: { force?: boolea
       const partyId = partyMap.get(img.pName);
       const custId = customerMap.get(img.pName);
 
-      let { data: enc } = await supabase
+      const { data: enc } = await supabase
         .from('hc_encounters')
         .select('id')
         .eq('tenant_id', tenantId)
@@ -976,7 +1121,7 @@ export async function seedDefaultHealthcareDataAction(options?: { force?: boolea
         .limit(1)
         .maybeSingle();
 
-      let { data: cOrder } = await supabase
+      const { data: cOrder } = await supabase
         .from('hc_clinical_orders')
         .insert({
           tenant_id: tenantId,
@@ -1004,18 +1149,18 @@ export async function seedDefaultHealthcareDataAction(options?: { force?: boolea
     }
 
     return { success: true };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Error seeding healthcare data:', err);
-    return { success: false, error: err.message || 'Lỗi khởi tạo dữ liệu y khoa' };
+    return { success: false, error: getErrorMessage(err, "Lỗi hệ thống") || 'Lỗi khởi tạo dữ liệu y khoa' };
   }
 }
 
 /**
  * 11.0. Lấy danh sách hàng đợi bệnh nhân
  */
-export async function getPatientQueueAction(): Promise<{ success: boolean; data?: any[]; error?: string }> {
+export async function getPatientQueueAction(): Promise<{ success: boolean; data?: Database['public']['Tables']['hc_patient_queues']['Row'][]; error?: string }> {
   try {
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     const { data, error } = await supabase
@@ -1030,8 +1175,8 @@ export async function getPatientQueueAction(): Promise<{ success: boolean; data?
     }
 
     return { success: true, data: data || [] };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Lỗi lấy danh sách hàng đợi' };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err, "Lỗi") || 'Lỗi lấy danh sách hàng đợi' };
   }
 }
 
@@ -1042,9 +1187,9 @@ export async function createQueueTicketAction(input: {
   patientName: string;
   queueType: 'bhyt' | 'service' | 'priority';
   station: 'registration' | 'vitals' | 'consultation' | 'lab' | 'imaging' | 'billing' | 'pharmacy';
-}): Promise<{ success: boolean; data?: any; error?: string }> {
+}): Promise<{ success: boolean; data?: Database['public']['Tables']['hc_patient_queues']['Row']; error?: string }> {
   try {
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     // 1. Find or create patient party
@@ -1131,17 +1276,17 @@ export async function createQueueTicketAction(input: {
     }
 
     return { success: true, data: ticket };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Lỗi cấp số STT mới' };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err, "Lỗi") || 'Lỗi cấp số STT mới' };
   }
 }
 
 /**
  * 12. Gọi số khám tiếp theo hoặc gọi một số cụ thể
  */
-export async function callTicketAction(ticketId: string): Promise<{ success: boolean; data?: any; error?: string }> {
+export async function callTicketAction(ticketId: string): Promise<{ success: boolean; data?: Database['public']['Tables']['hc_patient_queues']['Row']; error?: string }> {
   try {
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     const { data, error } = await supabase
@@ -1161,8 +1306,8 @@ export async function callTicketAction(ticketId: string): Promise<{ success: boo
     }
 
     return { success: true, data };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Lỗi gọi số' };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err, "Lỗi") || 'Lỗi gọi số' };
   }
 }
 
@@ -1176,7 +1321,7 @@ export async function createEMREncounterAction(input: {
   assessment?: string;
 }): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     // 1. Find or create patient party
@@ -1267,17 +1412,17 @@ export async function createEMREncounterAction(input: {
     }
 
     return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Lỗi tạo lượt khám' };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err, "Lỗi") || 'Lỗi tạo lượt khám' };
   }
 }
 
 /**
  * 14. Lấy danh sách kết quả LIS Xét nghiệm
  */
-export async function getLabOrdersAction(dateFilter?: string): Promise<{ success: boolean; data?: any[]; error?: string }> {
+export async function getLabOrdersAction(dateFilter?: string): Promise<{ success: boolean; data?: LabOrderViewModel[]; error?: string }> {
   try {
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     let query = supabase
@@ -1303,18 +1448,18 @@ export async function getLabOrdersAction(dateFilter?: string): Promise<{ success
       .select('id, queue_number, patient_party_id')
       .eq('tenant_id', tenantId);
 
-    const encMap = new Map<string, any>((encounters || []).map((e: any) => [e.id, e]));
+    const encMap = new Map<string, Pick<Database['public']['Tables']['hc_encounters']['Row'], 'id' | 'queue_number' | 'patient_party_id'>>((encounters || []).map((e) => [e.id, e]));
 
     const { data: parties } = await supabase
       .from('party_parties')
       .select('id, display_name')
       .eq('tenant_id', tenantId);
 
-    const partyMap = new Map((parties || []).map((p: any) => [p.id, p.display_name]));
+    const partyMap = new Map<string, string>((parties || []).map((p) => [p.id, p.display_name]));
 
-    const mapped = (labOrders || []).map((l: any) => {
-      const enc = encMap.get(l.encounter_id) || {};
-      const patientName = partyMap.get(enc.patient_party_id) || l.patient_name || 'Bệnh nhân';
+    const mapped = (labOrders || []).map((l): LabOrderViewModel => {
+      const enc = encMap.get(l.encounter_id) || { id: '', queue_number: null, patient_party_id: '' };
+      const patientName = (enc.patient_party_id ? partyMap.get(enc.patient_party_id) : null) || l.patient_name || 'Bệnh nhân';
       return {
         id: l.id,
         ticketNumber: enc.queue_number ? `STT-${enc.queue_number}` : 'STT-100',
@@ -1336,8 +1481,8 @@ export async function getLabOrdersAction(dateFilter?: string): Promise<{ success
     });
 
     return { success: true, data: mapped };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Lỗi lấy danh sách xét nghiệm' };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err, "Lỗi") || 'Lỗi lấy danh sách xét nghiệm' };
   }
 }
 
@@ -1352,7 +1497,7 @@ export async function createLabOrderAction(input: {
   tubeColor: string;
 }): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     // 1. Find or create patient party
@@ -1455,8 +1600,8 @@ export async function createLabOrderAction(input: {
     if (labErr) throw labErr;
 
     return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Lỗi lưu chỉ định LIS' };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err, "Lỗi") || 'Lỗi lưu chỉ định LIS' };
   }
 }
 
@@ -1469,7 +1614,7 @@ export async function verifyLabResultAction(
   isPanic: boolean
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     const { error } = await supabase
@@ -1503,17 +1648,17 @@ export async function verifyLabResultAction(
     }
 
     return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Lỗi duyệt kết quả LIS' };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err, "Lỗi") || 'Lỗi duyệt kết quả LIS' };
   }
 }
 
 /**
  * 17. Lấy danh sách kết quả RIS PACS Chẩn đoán hình ảnh
  */
-export async function getImagingOrdersAction(dateFilter?: string): Promise<{ success: boolean; data?: any[]; error?: string }> {
+export async function getImagingOrdersAction(dateFilter?: string): Promise<{ success: boolean; data?: ImagingOrderViewModel[]; error?: string }> {
   try {
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     let query = supabase
@@ -1539,18 +1684,18 @@ export async function getImagingOrdersAction(dateFilter?: string): Promise<{ suc
       .select('id, queue_number, patient_party_id')
       .eq('tenant_id', tenantId);
 
-    const encMap = new Map<string, any>((encounters || []).map((e: any) => [e.id, e]));
+    const encMap = new Map<string, Pick<Database['public']['Tables']['hc_encounters']['Row'], 'id' | 'queue_number' | 'patient_party_id'>>((encounters || []).map((e) => [e.id, e]));
 
     const { data: parties } = await supabase
       .from('party_parties')
       .select('id, display_name')
       .eq('tenant_id', tenantId);
 
-    const partyMap = new Map((parties || []).map((p: any) => [p.id, p.display_name]));
+    const partyMap = new Map<string, string>((parties || []).map((p) => [p.id, p.display_name]));
 
-    const mapped = (imagingOrders || []).map((i: any, idx: number) => {
-      const enc = encMap.get(i.encounter_id) || {};
-      const patientName = partyMap.get(enc.patient_party_id) || i.patient_name || 'Bệnh nhân';
+    const mapped = (imagingOrders || []).map((i, idx: number): ImagingOrderViewModel => {
+      const enc = encMap.get(i.encounter_id) || { id: '', queue_number: null, patient_party_id: '' };
+      const patientName = (enc.patient_party_id ? partyMap.get(enc.patient_party_id) : null) || i.patient_name || 'Bệnh nhân';
       const isTranMinhHoang = patientName.includes('Trần Minh Hoàng');
       const isNguyenVanHung = patientName.includes('Nguyễn Văn Hùng');
       
@@ -1754,8 +1899,8 @@ export async function getImagingOrdersAction(dateFilter?: string): Promise<{ suc
     }
 
     return { success: true, data: mapped };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Lỗi lấy danh sách CĐHA' };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err, "Lỗi") || 'Lỗi lấy danh sách CĐHA' };
   }
 }
 
@@ -1768,7 +1913,7 @@ export async function createImagingOrderAction(input: {
   bodySite: string;
 }): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     // 1. Find or create patient party
@@ -1871,8 +2016,8 @@ export async function createImagingOrderAction(input: {
     if (imgErr) throw imgErr;
 
     return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Lỗi lưu chỉ định CĐHA' };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err, "Lỗi") || 'Lỗi lưu chỉ định CĐHA' };
   }
 }
 
@@ -1888,7 +2033,7 @@ export async function verifyImagingResultAction(
       return { success: true };
     }
 
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     const { error } = await supabase
@@ -1906,17 +2051,17 @@ export async function verifyImagingResultAction(
     }
 
     return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Lỗi lưu báo cáo CĐHA' };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err, "Lỗi") || 'Lỗi lưu báo cáo CĐHA' };
   }
 }
 
 /**
  * 20. Lấy danh sách thuốc (hc_drug_profiles + inventory_items) & seed nếu chưa có
  */
-export async function getDrugsAction(): Promise<{ success: boolean; data?: any[]; error?: string }> {
+export async function getDrugsAction(): Promise<{ success: boolean; data?: DrugViewModel[]; error?: string }> {
   try {
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     const { data, error } = await supabase
@@ -1930,17 +2075,18 @@ export async function getDrugsAction(): Promise<{ success: boolean; data?: any[]
     }
 
     if (data && data.length > 0) {
-      const mapped = data.map((d: any) => {
-        const item = d.inventory_items || {};
+      const mapped = data.map((d): DrugViewModel => {
+        const item = Array.isArray(d.inventory_items) ? d.inventory_items[0] : d.inventory_items;
+        const itemRow = item || { name: 'Thuốc', stock_level: 100, unit: 'Viên' };
         return {
           id: d.id,
           drugCode: d.drug_code,
-          drugName: item.name || 'Thuốc',
+          drugName: itemRow.name || 'Thuốc',
           activeIngredient: d.active_ingredient,
           atcCode: d.atc_code,
           dosageForm: d.dosage_form || 'Viên nang',
-          stockQty: item.stock_qty || 100,
-          unit: item.unit || 'Viên',
+          stockQty: itemRow.stock_level || 100,
+          unit: itemRow.unit || 'Viên',
           isControlled: d.is_controlled_drug || false,
           isColdStorage: d.is_cold_storage || false,
         };
@@ -1964,9 +2110,9 @@ export async function getDrugsAction(): Promise<{ success: boolean; data?: any[]
           tenant_id: tenantId,
           name: d.name,
           sku: `${d.code}-SKU`,
-          stock_qty: d.qty,
+          stock_level: d.qty,
           unit: d.unit,
-        } as any)
+        })
         .select()
         .single();
 
@@ -1996,17 +2142,18 @@ export async function getDrugsAction(): Promise<{ success: boolean; data?: any[]
       .select('*, inventory_items(*)')
       .eq('tenant_id', tenantId);
 
-    const mapped = (reData || []).map((d: any) => {
-      const item = d.inventory_items || {};
+    const mapped = (reData || []).map((d) => {
+      const item = Array.isArray(d.inventory_items) ? d.inventory_items[0] : d.inventory_items;
+        const itemRow = item || { name: 'Thuốc', stock_level: 100, unit: 'Viên' };
       return {
         id: d.id,
         drugCode: d.drug_code,
-        drugName: item.name || 'Thuốc',
+        drugName: itemRow.name || 'Thuốc',
         activeIngredient: d.active_ingredient,
         atcCode: d.atc_code,
         dosageForm: d.dosage_form || 'Viên nang',
-        stockQty: item.stock_qty || 100,
-        unit: item.unit || 'Viên',
+        stockQty: itemRow.stock_level || 100,
+        unit: itemRow.unit || 'Viên',
         isControlled: d.is_controlled_drug || false,
         isColdStorage: d.is_cold_storage || false,
       };
@@ -2133,8 +2280,8 @@ export async function getDrugsAction(): Promise<{ success: boolean; data?: any[]
     }
 
     return { success: true, data: mapped };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Lỗi lấy danh sách dược phẩm' };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err, "Lỗi") || 'Lỗi lấy danh sách dược phẩm' };
   }
 }
 
@@ -2151,7 +2298,7 @@ export async function createPrescriptionAction(input: {
     if (input.drugId.startsWith('demo-drug-')) {
       return { success: true };
     }
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     // 1. Find patient party
@@ -2243,17 +2390,17 @@ export async function createPrescriptionAction(input: {
     if (rxErr) throw rxErr;
 
     return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Lỗi lưu đơn thuốc' };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err, "Lỗi") || 'Lỗi lưu đơn thuốc' };
   }
 }
 
 /**
  * 22. Lấy danh sách hóa đơn viện phí từ bảng revenue
  */
-export async function getInvoicesAction(): Promise<{ success: boolean; data?: any[]; error?: string }> {
+export async function getInvoicesAction(): Promise<{ success: boolean; data?: HealthcareInvoiceViewModel[]; error?: string }> {
   try {
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     const { data, error } = await supabase
@@ -2270,19 +2417,21 @@ export async function getInvoicesAction(): Promise<{ success: boolean; data?: an
     }
 
     if (data && data.length > 0) {
-      const mapped = data.map((r: any) => {
-        const meta = r.accounting_metadata || {};
+      const mapped = data.map((r): HealthcareInvoiceViewModel => {
+        const meta = (r.accounting_metadata && typeof r.accounting_metadata === 'object' && !Array.isArray(r.accounting_metadata))
+          ? (r.accounting_metadata as Record<string, unknown>)
+          : {};
         return {
           id: r.id,
-          encounterId: meta.encounterId || 'EC-100',
-          patientName: meta.patientName || 'Bệnh nhân',
-          bhytCode: meta.bhytCode || 'CHƯA CÓ',
-          benefitRate: meta.benefitRate || 80,
+          encounterId: String(meta.encounterId || 'EC-100'),
+          patientName: String(meta.patientName || 'Bệnh nhân'),
+          bhytCode: String(meta.bhytCode || 'CHƯA CÓ'),
+          benefitRate: typeof meta.benefitRate === 'number' ? meta.benefitRate : 80,
           totalAmount: Number(r.amount),
-          bhytCovered: meta.bhytCovered || Math.round(Number(r.amount) * (meta.benefitRate || 80) / 100),
-          patientPay: meta.patientPay || (Number(r.amount) - Math.round(Number(r.amount) * (meta.benefitRate || 80) / 100)),
+          bhytCovered: typeof meta.bhytCovered === 'number' ? meta.bhytCovered : Math.round(Number(r.amount) * (typeof meta.benefitRate === 'number' ? meta.benefitRate : 80) / 100),
+          patientPay: typeof meta.patientPay === 'number' ? meta.patientPay : (Number(r.amount) - Math.round(Number(r.amount) * (typeof meta.benefitRate === 'number' ? meta.benefitRate : 80) / 100)),
           status: r.status === 'confirmed' ? 'paid' : 'unpaid',
-          itemsCount: meta.itemsCount || 1,
+          itemsCount: typeof meta.itemsCount === 'number' ? meta.itemsCount : 1,
         };
       });
       return { success: true, data: mapped };
@@ -2329,7 +2478,7 @@ export async function getInvoicesAction(): Promise<{ success: boolean; data?: an
     }
 
     // Refresh database materialized views
-    await supabase.rpc('refresh_all_finance_mvs').catch((err: any) => {
+    await supabase.rpc('refresh_all_finance_mvs').catch((err: unknown) => {
       console.warn('[importMockInvoicesAction] Failed to refresh materialized views:', err);
     });
 
@@ -2352,27 +2501,29 @@ export async function getInvoicesAction(): Promise<{ success: boolean; data?: an
     if (reErr) throw reErr;
 
     if (reData && reData.length > 0) {
-      const mapped = reData.map((r: any) => {
-        const meta = r.accounting_metadata || {};
+      const mapped = reData.map((r) => {
+        const meta = (r.accounting_metadata && typeof r.accounting_metadata === 'object' && !Array.isArray(r.accounting_metadata))
+          ? (r.accounting_metadata as Record<string, unknown>)
+          : {};
         return {
           id: r.id,
-          encounterId: meta.encounterId || 'EC-100',
-          patientName: meta.patientName || 'Bệnh nhân',
-          bhytCode: meta.bhytCode || 'CHƯA CÓ',
-          benefitRate: meta.benefitRate || 80,
+          encounterId: String(meta.encounterId || 'EC-100'),
+          patientName: String(meta.patientName || 'Bệnh nhân'),
+          bhytCode: String(meta.bhytCode || 'CHƯA CÓ'),
+          benefitRate: typeof meta.benefitRate === 'number' ? meta.benefitRate : 80,
           totalAmount: Number(r.amount),
-          bhytCovered: meta.bhytCovered || Math.round(Number(r.amount) * (meta.benefitRate || 80) / 100),
-          patientPay: meta.patientPay || (Number(r.amount) - Math.round(Number(r.amount) * (meta.benefitRate || 80) / 100)),
+          bhytCovered: typeof meta.bhytCovered === 'number' ? meta.bhytCovered : Math.round(Number(r.amount) * (typeof meta.benefitRate === 'number' ? meta.benefitRate : 80) / 100),
+          patientPay: typeof meta.patientPay === 'number' ? meta.patientPay : (Number(r.amount) - Math.round(Number(r.amount) * (typeof meta.benefitRate === 'number' ? meta.benefitRate : 80) / 100)),
           status: r.status === 'confirmed' ? 'paid' : 'unpaid',
-          itemsCount: meta.itemsCount || 1,
+          itemsCount: typeof meta.itemsCount === 'number' ? meta.itemsCount : 1,
         };
       });
       return { success: true, data: mapped };
     }
 
     return { success: true, data: [] };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Lỗi lấy hóa đơn viện phí' };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err, "Lỗi") || 'Lỗi lấy hóa đơn viện phí' };
   }
 }
 
@@ -2386,7 +2537,7 @@ export async function createInvoiceAction(input: {
   totalAmount: number;
 }): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     const rateFraction = input.benefitRate / 100;
@@ -2419,8 +2570,8 @@ export async function createInvoiceAction(input: {
     }
 
     return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Lỗi lập hóa đơn' };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err, "Lỗi") || 'Lỗi lập hóa đơn' };
   }
 }
 
@@ -2432,7 +2583,7 @@ export async function payInvoiceAction(
   paymentMethod: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     // Ánh xạ phương thức thanh toán tiếng Việt sang giá trị được DB cho phép
@@ -2463,7 +2614,7 @@ export async function payInvoiceAction(
     }
 
     // Refresh database materialized views
-    await supabase.rpc('refresh_all_finance_mvs').catch((err: any) => {
+    await supabase.rpc('refresh_all_finance_mvs').catch((err: unknown) => {
       console.warn('[payInvoiceAction] Failed to refresh materialized views:', err);
     });
 
@@ -2476,14 +2627,14 @@ export async function payInvoiceAction(
     }
 
     return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Lỗi thanh toán hóa đơn' };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err, "Lỗi") || 'Lỗi thanh toán hóa đơn' };
   }
 }
 
 export async function getEncounterByIdAction(id: string) {
   try {
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     const { data, error } = await supabase
@@ -2525,21 +2676,21 @@ export async function getEncounterByIdAction(id: string) {
     };
 
     return { success: true, data: enriched };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Lỗi lấy thông tin lượt khám' };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err, "Lỗi") || 'Lỗi lấy thông tin lượt khám' };
   }
 }
 
 /**
  * 25. Server Action Lấy Bảng Lương Y Bác Sĩ (Healthcare Payroll)
  */
-export async function getHealthcarePayrollAction(monthYear: string): Promise<{ success: boolean; data?: any[]; error?: string }> {
+export async function getHealthcarePayrollAction(monthYear: string): Promise<{ success: boolean; data?: HealthcareStaffPayroll[]; error?: string }> {
   try {
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     // 1. Fetch Users
-    const { data: usersData, error: uErr } = await supabase
+    const { data: usersData, error: _uErr } = await supabase
       .from('users')
       .select('*')
       .eq('tenant_id', tenantId)
@@ -2552,9 +2703,9 @@ export async function getHealthcarePayrollAction(monthYear: string): Promise<{ s
       .eq('tenant_id', tenantId)
       .eq('month_year', monthYear);
 
-    const savedRecordsMap = new Map<string, any>((recordsData || []).map((r: any) => [r.ktv_id, r]));
+    const savedRecordsMap = new Map<string, Database['public']['Tables']['salary_records']['Row']>((recordsData || []).map((r) => [r.ktv_id, r]));
 
-    const mockStaff = [
+    const mockStaff: HealthcareStaffPayroll[] = [
       {
         id: 'doc-101',
         full_name: 'BS. CKII Nguyễn Văn Minh',
@@ -2628,7 +2779,7 @@ export async function getHealthcarePayrollAction(monthYear: string): Promise<{ s
       return { success: true, data: mockStaff };
     }
 
-    const result = usersData.map((u: any) => {
+    const result = usersData.map((u): HealthcareStaffPayroll => {
       const saved = savedRecordsMap.get(u.id);
       const baseSalary = saved ? saved.base_salary : (u.base_salary || 15000000);
       const commission = saved ? saved.service_percentage_bonus : 8000000;
@@ -2650,8 +2801,8 @@ export async function getHealthcarePayrollAction(monthYear: string): Promise<{ s
     });
 
     return { success: true, data: result };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Lỗi lấy bảng lương y bác sĩ' };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err, "Lỗi") || 'Lỗi lấy bảng lương y bác sĩ' };
   }
 }
 
@@ -2665,7 +2816,7 @@ export async function adjustHealthcareSalaryAction(input: {
   reason: string;
 }): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     const { data: existing } = await supabase
@@ -2700,8 +2851,8 @@ export async function adjustHealthcareSalaryAction(input: {
     }
 
     return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Lỗi điều chỉnh lương' };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err, "Lỗi") || 'Lỗi điều chỉnh lương' };
   }
 }
 
@@ -2710,12 +2861,12 @@ export async function adjustHealthcareSalaryAction(input: {
  */
 export async function getHealthcareAccountingJournalAction(monthYear: string): Promise<{
   success: boolean;
-  journals?: any[];
-  outboxEvents?: any[];
+  journals?: unknown[];
+  outboxEvents?: unknown[];
   error?: string;
 }> {
   try {
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     const dateObj = new Date(monthYear);
@@ -2795,8 +2946,8 @@ export async function getHealthcareAccountingJournalAction(monthYear: string): P
       journals: finalJournals,
       outboxEvents: finalOutbox,
     };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Lỗi lấy sổ cái y khoa Outbox' };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err, "Lỗi") || 'Lỗi lấy sổ cái y khoa Outbox' };
   }
 }
 
@@ -2805,24 +2956,24 @@ export async function getHealthcareAccountingJournalAction(monthYear: string): P
  */
 export async function syncHealthcareAccountingOutboxAction(): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     try {
       await supabase.rpc('process_accounting_outbox');
-    } catch (e) {
+    } catch (_e) {
       // Continue if RPC not defined
     }
     return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Lỗi tái đồng bộ Outbox' };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err, "Lỗi") || 'Lỗi tái đồng bộ Outbox' };
   }
 }
 
 /**
  * 29. Lấy danh sách dịch vụ y khoa chuyên môn (LIS / RIS) đã cấu hình
  */
-export async function getMedicalServicesAction(kind: 'lis_test' | 'ris_imaging'): Promise<{ success: boolean; data?: any[]; error?: string }> {
+export async function getMedicalServicesAction(kind: 'lis_test' | 'ris_imaging'): Promise<{ success: boolean; data?: Database['public']['Tables']['packages']['Row'][]; error?: string }> {
   try {
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     const { data, error } = await supabase
@@ -2837,8 +2988,8 @@ export async function getMedicalServicesAction(kind: 'lis_test' | 'ris_imaging')
       return { success: false, error: error.message };
     }
     return { success: true, data: data || [] };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Lỗi tải danh mục dịch vụ y khoa chuyên môn' };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err, "Lỗi") || 'Lỗi tải danh mục dịch vụ y khoa chuyên môn' };
   }
 }
 
@@ -2850,7 +3001,7 @@ export async function confirmLabDoctorNotificationAction(
   timeString: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     const { error } = await supabase
@@ -2882,8 +3033,8 @@ export async function confirmLabDoctorNotificationAction(
     }
 
     return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Lỗi ghi nhận call log' };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err, "Lỗi") || 'Lỗi ghi nhận call log' };
   }
 }
 
@@ -2895,7 +3046,7 @@ export async function confirmImagingDoctorNotificationAction(
   timeString: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     const { error } = await supabase
@@ -2927,8 +3078,8 @@ export async function confirmImagingDoctorNotificationAction(
     }
 
     return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Lỗi ghi nhận call log CĐHA' };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err, "Lỗi") || 'Lỗi ghi nhận call log CĐHA' };
   }
 }
 
@@ -2944,7 +3095,7 @@ export async function createAppointmentAction(input: {
   notes?: string;
 }): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     const apptCode = `APP-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -2972,8 +3123,8 @@ export async function createAppointmentAction(input: {
     }
 
     return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Lỗi tạo lịch hẹn' };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err, "Lỗi") || 'Lỗi tạo lịch hẹn' };
   }
 }
 
@@ -2992,7 +3143,7 @@ export async function createDrugAction(input: {
   isColdStorage: boolean;
 }): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     // 1. Insert into inventory_items
@@ -3034,17 +3185,17 @@ export async function createDrugAction(input: {
     }
 
     return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Lỗi thêm biệt dược mới' };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err, "Lỗi") || 'Lỗi thêm biệt dược mới' };
   }
 }
 
 /**
  * 34. Lấy danh sách đơn thuốc từ hc_prescriptions
  */
-export async function getPrescriptionsAction(): Promise<{ success: boolean; data?: any[]; error?: string }> {
+export async function getPrescriptionsAction(): Promise<{ success: boolean; data?: PrescriptionViewModel[]; error?: string }> {
   try {
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     const { data, error } = await supabase
@@ -3069,7 +3220,7 @@ export async function getPrescriptionsAction(): Promise<{ success: boolean; data
       return { success: false, error: error.message };
     }
 
-    const mapped = (data || []).map((rx: any) => {
+    const mapped = (data || []).map((rx): PrescriptionViewModel => {
       const drugsList = rx.drugs || [];
       const drug = drugsList[0] || {};
       const alerts = rx.notes ? JSON.parse(rx.notes) : [];
@@ -3091,8 +3242,8 @@ export async function getPrescriptionsAction(): Promise<{ success: boolean; data
     });
 
     return { success: true, data: mapped };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Lỗi tải đơn thuốc' };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err, "Lỗi") || 'Lỗi tải đơn thuốc' };
   }
 }
 
@@ -3101,7 +3252,7 @@ export async function getPrescriptionsAction(): Promise<{ success: boolean; data
  */
 export async function approvePrescriptionAction(id: string): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabase = (await createDevelopmentBypassClient()) as any;
+    const supabase = await createDevelopmentBypassClient();
     const tenantId = await getTenantIdOrThrow();
 
     const { error } = await supabase
@@ -3116,8 +3267,8 @@ export async function approvePrescriptionAction(id: string): Promise<{ success: 
     }
 
     return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Lỗi duyệt đơn thuốc' };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err, "Lỗi") || 'Lỗi duyệt đơn thuốc' };
   }
 }
 
