@@ -79,6 +79,55 @@ Maximum: 4 × 5 × 5 = 100
 
 ---
 
+## Safety Override Rules (CRITICAL)
+
+**Problem:** The multiplicative formula can underestimate risk for high-criticality capabilities at small scale.
+
+**Example Edge Case:**
+- Small clinic (S=1)
+- Medication Administration (C=5, critical)
+- Patient Safety impact (B=5)
+- **Calculated Score: 1×5×5 = 25 → Tier 2** ❌ **DANGEROUS!**
+
+This capability can cause patient death but bypasses Tier 3 safety gates.
+
+**Solution:** Hard override rules that force Tier 3 regardless of calculated score.
+
+### Override Rules
+
+```
+Final_Tier = MAX(Calculated_Tier, Override_Tier)
+
+Override Rules (ANY condition triggers Tier 3):
+1. Clinical_Criticality = 5 (Critical) → Tier 3 MANDATORY
+2. Blast_Radius = 5 (Patient Safety) → Tier 3 MANDATORY
+3. Clinical_Criticality ≥ 4 AND Blast_Radius ≥ 4 → Tier 3 MANDATORY
+4. High-Risk Domain (medication, anesthesia, blood_bank, surgery, critical_lab, emergency_triage) → Tier 3 MANDATORY
+```
+
+### Override Examples
+
+| Capability | S | C | B | Calculated Score | Calculated Tier | Override Trigger | **Final Tier** |
+|------------|---|---|---|------------------|-----------------|------------------|----------------|
+| Small Clinic Medication | 1 | 5 | 5 | 25 | T2 | C=5, B=5 | **T3** ✅ |
+| Single-Room ICU Monitor | 1 | 4 | 5 | 20 | T2 | C≥4, B≥4 | **T3** ✅ |
+| Blood Bank (Small Hospital) | 2 | 5 | 5 | 50 | T3 | C=5, B=5 | **T3** ✅ (already T3) |
+| Dental Appointment | 2 | 2 | 2 | 8 | T1 | None | **T1** (no override) |
+
+### Rationale
+
+**Patient safety cannot be compromised by deployment scale.** A medication administration module that serves 10 patients is as dangerous as one serving 10,000 patients when a single wrong dose can be fatal.
+
+**Tier 3 safety gates are NOT optional for:**
+- Medication (wrong drug, wrong dose)
+- Anesthesia (airway management, drug interactions)
+- Blood Bank (wrong blood type)
+- Surgery (wrong site, retained instruments)
+- Emergency (missed critical conditions)
+- Critical Labs (missed life-threatening values)
+
+---
+
 ## Tier Assignment Rules
 
 | Risk Score Range | Tier | Rollout Policy | Safety Requirements |
